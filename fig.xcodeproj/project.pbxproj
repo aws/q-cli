@@ -220,13 +220,6 @@
 /* End PBXBuildFile section */
 
 /* Begin PBXContainerItemProxy section */
-		754569F92729FFE300C7588F /* PBXContainerItemProxy */ = {
-			isa = PBXContainerItemProxy;
-			containerPortal = 75675949244634AD006AA988 /* Project object */;
-			proxyType = 1;
-			remoteGlobalIDString = 754569F52729FF2600C7588F;
-			remoteInfo = cli;
-		};
 		7546F5B027164A1B0077359F /* PBXContainerItemProxy */ = {
 			isa = PBXContainerItemProxy;
 			containerPortal = 75675949244634AD006AA988 /* Project object */;
@@ -254,6 +247,13 @@
 			proxyType = 1;
 			remoteGlobalIDString = 757A85BA270E31160017996A;
 			remoteInfo = figterm;
+		};
+		DBF9FB3A28122491000A7836 /* PBXContainerItemProxy */ = {
+			isa = PBXContainerItemProxy;
+			containerPortal = 75675949244634AD006AA988 /* Project object */;
+			proxyType = 1;
+			remoteGlobalIDString = 754569F52729FF2600C7588F;
+			remoteInfo = cli;
 		};
 /* End PBXContainerItemProxy section */
 
@@ -1126,7 +1126,7 @@
 			buildPhases = (
 			);
 			buildToolPath = /usr/bin/make;
-			buildWorkingDirectory = ./figcli;
+			buildWorkingDirectory = ./fig_cli;
 			dependencies = (
 			);
 			name = cli;
@@ -1187,7 +1187,7 @@
 			buildRules = (
 			);
 			dependencies = (
-				754569FA2729FFE300C7588F /* PBXTargetDependency */,
+				DBF9FB3B28122491000A7836 /* PBXTargetDependency */,
 				7546F5B127164A1B0077359F /* PBXTargetDependency */,
 				757A85BF270E37380017996A /* PBXTargetDependency */,
 			);
@@ -1684,11 +1684,6 @@
 /* End PBXSourcesBuildPhase section */
 
 /* Begin PBXTargetDependency section */
-		754569FA2729FFE300C7588F /* PBXTargetDependency */ = {
-			isa = PBXTargetDependency;
-			target = 754569F52729FF2600C7588F /* cli */;
-			targetProxy = 754569F92729FFE300C7588F /* PBXContainerItemProxy */;
-		};
 		7546F5B127164A1B0077359F /* PBXTargetDependency */ = {
 			isa = PBXTargetDependency;
 			target = 754316F326E08F5C00188887 /* FigInputMethod */;
@@ -1708,6 +1703,11 @@
 			isa = PBXTargetDependency;
 			target = 757A85BA270E31160017996A /* figterm */;
 			targetProxy = 757A85BE270E37380017996A /* PBXContainerItemProxy */;
+		};
+		DBF9FB3B28122491000A7836 /* PBXTargetDependency */ = {
+			isa = PBXTargetDependency;
+			target = 754569F52729FF2600C7588F /* cli */;
+			targetProxy = DBF9FB3A28122491000A7836 /* PBXContainerItemProxy */;
 		};
 /* End PBXTargetDependency section */
 

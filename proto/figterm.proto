@@ -17,6 +17,9 @@ message FigtermMessage {
 // Intercept command
 // Used to set which input is intercepted by figterm
 message InterceptCommand {
+    // Set figterm to intercept all input
+    message SetInterceptAll { }
+
     // Set the utf8 characters to intercept
     message SetIntercept {
         repeated uint32 chars = 1;
@@ -41,6 +44,7 @@ message InterceptCommand {
         ClearIntercept clear_intercept = 2;
         AddIntercept add_intercept = 3;
         RemoveIntercept remove_intercept = 4;
+        SetInterceptAll set_intercept_all = 5;
     }
 }
 

@@ -1,0 +1,14 @@
+{
+  "name": "fig_tauri",
+  "private": true,
+  "version": "0.0.0",
+  "scripts": {
+    "dev": "cd ../../autocomplete-engine && yarn run dev",
+    "build": "echo \"Dummy build\"",
+    "tauri": "tauri"
+  },
+  "devDependencies": {
+    "@tauri-apps/cli": "^1.0.0-rc.9",
+    "@tauri-apps/tauricon": "github:tauri-apps/tauricon"
+  }
+}

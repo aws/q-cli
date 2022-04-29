@@ -1,82 +1,111 @@
-FIGTERM_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-MACOS_DIR:=$(shell dirname $(FIGTERM_DIR))
+PLATFORM := $(shell uname -s)
 
-export BUILT_PRODUCTS_DIR ?= $(FIGTERM_DIR)/build
-export ARTIFACTS ?= $(FIGTERM_DIR)/build
+# Check if variable contains string https://stackoverflow.com/a/2741747
+ifneq (,$(findstring CYGWIN,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
+ifneq (,$(findstring MINGW,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
+ifneq (,$(findstring MSYS,$(PLATFORM)))
+	PLATFORM := "windows"
+endif
 
-TARGET_DIR ?= $(MACOS_DIR)/target
+$(warning PLATFORM is $(PLATFORM))
 
+ifeq "$(PLATFORM)" "Darwin"
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
+endif
+
 # Add cargo executables to PATH
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-SHELL := env PATH=$(PATH) /bin/bash
-
-# check if cargo exists
+# Check if cargo exists
 CARGO := $(shell command -v cargo 2> /dev/null)
-
-CARGO_FLAGS ?= --release --locked
 
 ifndef CARGO
     $(error "cargo is not in PATH $(PATH)")
 endif
 
-$(shell mkdir -p $(BUILT_PRODUCTS_DIR))
-$(shell mkdir -p $(ARTIFACTS))
+MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+TARGET_DIR  ?= $(shell cargo metadata --format-version 1 | jq -r .target_directory)
 
-SRC := $(shell find $(FIGTERM_DIR)/src -name '*.rs' -o -name '*.toml')\
-	   $(shell find $(MACOS_DIR)/rust-lib -name '*.rs' -o -name '*.toml' -o -name '*.c' -o -name '*.h')\
-	   $(shell find $(MACOS_DIR)/proto -name '*.proto')\
-	   $(MACOS_DIR)/Cargo.toml $(MACOS_DIR)/Cargo.lock
+BUILT_PRODUCTS_DIR ?= $(MAKE_DIR)/build
+OUT_DIR            := $(BUILT_PRODUCTS_DIR)
+$(shell mkdir -p $(OUT_DIR))
 
-PLATFORM := $(shell uname -s)
+SHELL := env PATH=$(PATH) /bin/bash
 
-all: figterm 
+CARGO_OPTIONS ?= --locked --release
 
-$(ARTIFACTS)/figterm-aarch64: $(SRC)
-	cargo build --target=aarch64-apple-darwin $(CARGO_FLAGS)
-	mkdir -p $(dir $@)
-	install $(TARGET_DIR)/aarch64-apple-darwin/release/figterm $@
+BINARY_NAME ?= figterm
+CRATE_NAME  ?= figterm
 
-$(ARTIFACTS)/figterm-x86_64: $(SRC)
-	cargo build --target=x86_64-apple-darwin $(CARGO_FLAGS)
-	mkdir -p $(dir $@)
-	install $(TARGET_DIR)/x86_64-apple-darwin/release/figterm $@
-
-figterm-x86_64: $(ARTIFACTS)/figterm-x86_64
-	install $^ $(BUILT_PRODUCTS_DIR)
-figterm-aarch64: $(ARTIFACTS)/figterm-aarch64
-	install $^ $(BUILT_PRODUCTS_DIR)
-figterm: $(ARTIFACTS)/figterm
-	install $^ $(BUILT_PRODUCTS_DIR)
+### Build for each platform
 
 ifeq "$(PLATFORM)" "Darwin"
-$(ARTIFACTS)/figterm: $(ARTIFACTS)/figterm-x86_64 $(ARTIFACTS)/figterm-aarch64
-	lipo -create -output $(ARTIFACTS)/figterm $(ARTIFACTS)/figterm-x86_64 $(ARTIFACTS)/figterm-aarch64
-else
-$(ARTIFACTS)/figterm:
-	cargo build $(CARGO_FLAGS)
-	install $(TARGET_DIR)/release/figterm $(ARTIFACTS)/figterm
+all: macos
+endif
+ifeq "$(PLATFORM)" "Linux"
+all: linux
+endif
+ifeq "$(PLATFORM)" "windows"
+all: windows
 endif
 
-install: all
-	mkdir -p $(HOME)/.fig/bin; \
-	cd $(HOME)/.fig/bin && \
-		rm -rf $(PROGS) *figterm* && \
-		cd $(BUILT_PRODUCTS_DIR) && \
-		install -p figterm $(HOME)/.fig/bin && \
-		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/zsh\ \(figterm\) && \
-		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/fish\ \(figterm\) && \
-		install -p $(HOME)/.fig/bin/figterm $(HOME)/.fig/bin/bash\ \(figterm\); \
-	# Add fake fig binary on linux or if fig not installed that just logs
-	# commands to fig.
-	command -v ~/.fig/bin/fig > /dev/null 2>&1 || ( \
-		printf "#!/bin/bash\necho \"\$$@\" >> ~/.fig/fig.log" > $(HOME)/.fig/bin/fig && \
-		chmod +x $(HOME)/.fig/bin/fig)
+macos: $(BINARY_NAME)-darwin-universal
+	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
+
+$(BINARY_NAME)-x86_64-apple-darwin:
+	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
+
+$(BINARY_NAME)-aarch64-apple-darwin:
+	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
+
+$(BINARY_NAME)-darwin-universal: $(BINARY_NAME)-x86_64-apple-darwin $(BINARY_NAME)-aarch64-apple-darwin
+	lipo -create -output $(OUT_DIR)/$@ $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(OUT_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
+
+linux: $(BINARY_NAME)-x86_64-unknown-linux-gnu
+	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
+
+$(BINARY_NAME)-x86_64-unknown-linux-gnu:
+	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(CRATE_NAME) $(OUT_DIR)/$@
+
+$(BINARY_NAME)-aarch64-unknown-linux-gnu:
+	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(CRATE_NAME) $(OUT_DIR)/$@
+
+windows: $(BINARY_NAME)-x86_64-pc-windows-gnu
+	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
+
+$(BINARY_NAME)-x86_64-pc-windows-gnu:
+	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(CRATE_NAME).exe $(OUT_DIR)/$@
+
+### Build and Install for local dev
+
+build-native:
+	cargo build
+
+build-native-release:
+	cargo build --release
+
+install-native: build-native
+	mkdir -p $(HOME)/.fig/bin/
+	rm -rf $(HOME)/.fig/bin/*figterm*
+	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
+
+install-native-release: build-native-release
+	mkdir -p $(HOME)/.fig/bin/
+	rm -rf $(HOME)/.fig/bin/*figterm*
+	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
+
+### Clean the project
 
 clean:
 	command -v cargo &>/dev/null && cargo clean
-	rm -rf $(TARGET_DIR)
-	rm -rf $(ARTIFACTS)
 	rm -rf $(BUILT_PRODUCTS_DIR)

@@ -34,7 +34,6 @@ message Command {
 		PromptAccessibilityCommand prompt_accessibility = 114;
 		InputMethodCommand input_method = 115;
 		UninstallCommand uninstall = 116;
-
 	}
 }
 
@@ -53,6 +52,9 @@ message Hook {
 		HideHook hide = 110;
 		EventHook event = 111;
 		FileChangedHook file_changed = 112;
+		CursorPositionHook cursor_position = 113;
+		FocusChangeHook focus_change = 114;
+		InterceptedKeyHook intercepted_key = 115;
 	}
 }
 
@@ -225,6 +227,21 @@ message FileChangedHook {
 	optional string filepath = 2;
 }
 
+message CursorPositionHook {
+	int32 x = 1;
+	int32 y = 2;
+	int32 width = 3;
+	int32 height = 4;
+}
+  
+message FocusChangeHook {}
+
+message InterceptedKeyHook {
+	ShellContext context = 1;
+	string key = 2;
+	string action = 3;
+}
+
 // == Responses ==
 message ErrorResponse {
 	optional int32 exit_code = 1;
@@ -271,6 +288,7 @@ message DiagnosticsResponse {
 
 message CommandResponse {
 	optional int64 id = 1;
+	
 	oneof response {
 		ErrorResponse error = 2;
 		SuccessResponse success = 3;

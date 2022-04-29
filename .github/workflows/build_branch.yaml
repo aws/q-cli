@@ -168,12 +168,12 @@ jobs:
         run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
 
       - name: Build figterm
-        run: make figterm
+        run: make macos
         working-directory: ./figterm
 
-      - name: Build figcli
+      - name: Build fig_cli
         run: make macos
-        working-directory: ./figcli
+        working-directory: ./fig_cli
           
 ############################################
 # Build, Archive & Export 

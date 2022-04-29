@@ -1,0 +1,10 @@
+[package]
+name = "fig_directories"
+version = "0.1.0"
+authors = ["fig developers"]
+edition = "2021"
+homepage = "https://fig.io"
+publish = false
+
+[dependencies]
+dirs = "4.0.0"

@@ -1,16 +1,26 @@
 [workspace]
 members = [
-    "figcli",
+    "fig_cli",
+    "fig_ibus_engine",
+    "fig_tauri/src-tauri",
     "figterm",
-    "rust-lib/alacritty_terminal",
-    "rust-lib/fig-auth",
-    "rust-lib/fig-color",
-    "rust-lib/fig-directories",
-    "rust-lib/fig-ipc",
-    "rust-lib/fig-proto",
-    "rust-lib/fig-settings",
-    "rust-lib/fig-telemetry",
+    "rust-lib/*",
+    "rust-lib/ibus/ibus-sys",
 ]
 
-[profile.release]
-debug = true
+default-members = [
+    "fig_cli",
+    "fig_tauri/src-tauri",
+    "figterm",
+    "rust-lib/alacritty_terminal",
+    "rust-lib/fig_auth",
+    "rust-lib/fig_color",
+    "rust-lib/fig_directories",
+    "rust-lib/fig_ipc",
+    "rust-lib/fig_log",
+    "rust-lib/fig_proto",
+    "rust-lib/fig_settings",
+    "rust-lib/fig_telemetry",
+    "rust-lib/fig_util",
+    "rust-lib/system_socket",
+]

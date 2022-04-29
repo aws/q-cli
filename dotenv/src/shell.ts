@@ -130,12 +130,12 @@ class FigtermListener {
   }
 }
 
-class FigCLIListener {
+class FigCliListener {
   id: string;
 
   commands: string[] = [];
 
-  constructor(sessionId: string, path = '/tmp/mock_figcli.socket') {
+  constructor(sessionId: string, path = '/tmp/mock_fig_cli.socket') {
     this.id = socketListen(path, data => {
       const message = String(Buffer.from(data.toString(), 'base64'));
       const tokens = message.slice(0, -1).split(' ');
@@ -151,7 +151,7 @@ class FigCLIListener {
   }
 
   async stop() {
-    await removeListener('/tmp/mock_figcli.socket', this.id);
+    await removeListener('/tmp/mock_fig_cli.socket', this.id);
   }
 
   reset() {
@@ -160,7 +160,7 @@ class FigCLIListener {
 }
 
 class Shell {
-  cliListener: FigCLIListener | undefined;
+  cliListener: FigCliListener | undefined;
 
   figtermListener: FigtermListener | undefined;
 
@@ -223,7 +223,7 @@ class Shell {
       FIG_SHELL_EXTRA_ARGS: Array.isArray(args) ? args.join(' ') : args ?? '',
     };
 
-    this.cliListener = new FigCLIListener(this.initialEnv.TERM_SESSION_ID);
+    this.cliListener = new FigCliListener(this.initialEnv.TERM_SESSION_ID);
     this.figtermListener = new FigtermListener(
       `/var/tmp/fig/${os.userInfo().username}/fig.socket`,
       this.initialEnv.TERM_SESSION_ID

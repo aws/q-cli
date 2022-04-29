@@ -16,6 +16,7 @@ node_modules/
 .eslintcache
 yarn-error.log
 yarn.lock
+package-lock.json
 
 dotenv/docker-compose.yaml
 
@@ -23,3 +24,4 @@ dotenv/docker-compose.yaml
 **/*.pb.*
 
 target/
+build/
