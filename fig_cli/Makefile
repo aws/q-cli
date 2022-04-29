@@ -1,33 +1,3 @@
-FIG_CLI_DIR:=$(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
-MACOS_DIR:=$(shell dirname $(FIG_CLI_DIR))
-
-export BUILT_PRODUCTS_DIR ?= $(FIG_CLI_DIR)/build
-export ARTIFACTS ?= $(FIG_CLI_DIR)/build/artifacts
-
-TARGET_DIR ?= $(MACOS_DIR)/target
-
-# Add brew executables to PATH
-export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
-# Add cargo executables to PATH
-export PATH := $(HOME)/.cargo/bin:$(PATH)
-
-SHELL := env PATH=$(PATH) /bin/bash
-
-# check if cargo exists
-CARGO := $(shell command -v cargo 2> /dev/null)
-
-ifndef CARGO
-    $(error "cargo is not in PATH $(PATH)")
-endif
-
-CARGO_OPTIONS ?= --locked --release
-
-BINARY_NAME=fig
-SRC = Cargo.toml $(wildcard src/**/*)
-
-$(shell mkdir -p $(BUILT_PRODUCTS_DIR))
-$(shell mkdir -p $(ARTIFACTS))
-
 PLATFORM := $(shell uname -s)
 
 # Check if variable contains string https://stackoverflow.com/a/2741747
@@ -44,6 +14,37 @@ endif
 $(warning PLATFORM is $(PLATFORM))
 
 ifeq "$(PLATFORM)" "Darwin"
+# Add brew executables to PATH
+export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
+endif
+
+# Add cargo executables to PATH
+export PATH := $(HOME)/.cargo/bin:$(PATH)
+
+# Check if cargo exists
+CARGO := $(shell command -v cargo 2> /dev/null)
+
+ifndef CARGO
+    $(error "cargo is not in PATH $(PATH)")
+endif
+
+MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+TARGET_DIR  ?= $(shell cargo metadata --format-version 1 | jq -r .target_directory)
+
+BUILT_PRODUCTS_DIR ?= $(MAKE_DIR)/build
+OUT_DIR            := $(BUILT_PRODUCTS_DIR)
+$(shell mkdir -p $(OUT_DIR))
+
+SHELL := env PATH=$(PATH) /bin/bash
+
+CARGO_OPTIONS ?= --locked --release
+
+BINARY_NAME ?= fig
+CRATE_NAME  ?= fig_cli
+
+### Build for each platform
+
+ifeq "$(PLATFORM)" "Darwin"
 all: macos
 endif
 ifeq "$(PLATFORM)" "Linux"
@@ -53,69 +54,59 @@ ifeq "$(PLATFORM)" "windows"
 all: windows
 endif
 
-macos: $(ARTIFACTS)/$(BINARY_NAME)-darwin-universal
-	install $^ $(BUILT_PRODUCTS_DIR)
+macos: $(BINARY_NAME)-darwin-universal
 
-build-x86_64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin
-	install $^ $(BUILT_PRODUCTS_DIR)
-
-build-aarch64-apple-darwin: $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
-	install $^ $(BUILT_PRODUCTS_DIR)
-
-build-x86_64-unknown-linux-gnu: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu
-	install $^ $(BUILT_PRODUCTS_DIR)
-
-$(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin: $(SRC)
+$(BINARY_NAME)-x86_64-apple-darwin:
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/x86_64-apple-darwin/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/x86_64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
 
-$(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin: $(SRC)
+$(BINARY_NAME)-aarch64-apple-darwin:
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
 
-$(ARTIFACTS)/$(BINARY_NAME)-darwin-universal: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-apple-darwin $(ARTIFACTS)/$(BINARY_NAME)-aarch64-apple-darwin
-	lipo -create -output $@ $^
+$(BINARY_NAME)-darwin-universal: $(BINARY_NAME)-x86_64-apple-darwin $(BINARY_NAME)-aarch64-apple-darwin
+	lipo -create -output $(OUT_DIR)/$@ $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
 
-linux: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu $(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu
+linux: $(BINARY_NAME)-x86_64-unknown-linux-gnu
 
-$(ARTIFACTS)/$(BINARY_NAME)-x86_64-unknown-linux-gnu: $(SRC)
-	# RUSTFLAGS='-C target-feature=+crt-static' cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
+$(BINARY_NAME)-x86_64-unknown-linux-gnu:
 	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(CRATE_NAME) $(OUT_DIR)/$@
 
-$(ARTIFACTS)/$(BINARY_NAME)-aarch64-unknown-linux-gnu: $(SRC)
+$(BINARY_NAME)-aarch64-unknown-linux-gnu:
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(BINARY_NAME) $@
+	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(CRATE_NAME) $(OUT_DIR)/$@
 
-windows: $(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu
+windows: $(BINARY_NAME)-x86_64-pc-windows-gnu
 
-$(ARTIFACTS)/$(BINARY_NAME)-x86_64-pc-windows-gnu: $(SRC)
+$(BINARY_NAME)-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(BINARY_NAME).exe $@
+	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(CRATE_NAME).exe $(OUT_DIR)/$@
+
+### Build and Install for local dev
 
 build-native:
 	cargo build
-	install $(TARGET_DIR)/debug/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
 
 build-native-release:
 	cargo build --release
-	install $(TARGET_DIR)/release/$(BINARY_NAME) $(ARTIFACTS)/$(BINARY_NAME)
-
-install: all
 
 install-native: build-native
-	mkdir -p ~/.local/bin/
-	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
+	mkdir -p $(HOME)/.local/bin/
+	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
 install-native-release: build-native-release
-	mkdir -p ~/.local/bin/
-	install $(ARTIFACTS)/$(BINARY_NAME) ~/.local/bin/$(BINARY_NAME)
+	mkdir -p $(HOME)/.local/bin/
+	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
+
+### Generate Fig compleation spec
 
 generate-spec: install-native
-	~/.local/bin/$(BINARY_NAME) completion fig > spec.ts
+	$(HOME)/.local/bin/$(BINARY_NAME) completion fig > spec.ts
+
+### Clean the project
 
 clean:
 	command -v cargo &>/dev/null && cargo clean
-	rm -rf $(TARGET_DIR)
-	rm -rf $(ARTIFACTS)
 	rm -rf $(BUILT_PRODUCTS_DIR)
+
