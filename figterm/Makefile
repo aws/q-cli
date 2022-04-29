@@ -66,7 +66,7 @@ $(BINARY_NAME)-aarch64-apple-darwin:
 	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
 
 $(BINARY_NAME)-darwin-universal: $(BINARY_NAME)-x86_64-apple-darwin $(BINARY_NAME)-aarch64-apple-darwin
-	lipo -create -output $(OUT_DIR)/$@ $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin
+	lipo -create -output $(OUT_DIR)/$@ $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(OUT_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
 
 linux: $(BINARY_NAME)-x86_64-unknown-linux-gnu
 	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
