@@ -395,11 +395,13 @@ impl Cli {
             None => root_command().await,
         };
 
-        if let Err(e) = result {
+        if let Err(err) = result {
+            // sentry::integrations::anyhow::capture_anyhow(&err);
+
             if env_level > LevelFilter::INFO {
-                eprintln!("{:?}", e);
+                eprintln!("{err:?}");
             } else {
-                eprintln!("{}", e);
+                eprintln!("{err}");
             }
             exit(1);
         }

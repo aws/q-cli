@@ -1,6 +1,6 @@
 use std::{sync::Arc, time::Duration};
 
-use crate::util::fig_bundle;
+use crate::{cli::app::uninstall::UninstallArgs, util::fig_bundle};
 use anyhow::{anyhow, Context, Result};
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::{hooks, local::file_changed_hook::FileChanged};
@@ -69,7 +69,19 @@ pub async fn spawn_settings_watcher(
 
                                     if let Some(app_bundle_exists) = fig_bundle() {
                                         if !app_bundle_exists.is_dir() {
-                                            crate::cli::app::uninstall::uninstall_mac_app().await;
+                                            crate::cli::app::uninstall::uninstall_mac_app(
+                                                &UninstallArgs {
+                                                    user_data: true,
+                                                    app_bundle: true,
+                                                    input_method: true,
+                                                    terminal_integrations: true,
+                                                    daemon: true,
+                                                    dotfiles: true,
+                                                    ssh: true,
+                                                    no_open: false,
+                                                },
+                                            )
+                                            .await;
                                         }
                                     }
                                 }

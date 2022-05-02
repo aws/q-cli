@@ -33,7 +33,7 @@ pub enum AppSubcommand {
     /// Set the internal psudo-terminal path
     SetPath,
     /// Uninstall the Fig app
-    Uninstall,
+    Uninstall(uninstall::UninstallArgs),
     /// Prompts shown on terminal startup
     Prompts,
 }
@@ -189,8 +189,8 @@ impl AppSubcommand {
                     }
                 }
             }
-            AppSubcommand::Uninstall => {
-                uninstall::uninstall_mac_app().await;
+            AppSubcommand::Uninstall(args) => {
+                uninstall::uninstall_mac_app(args).await;
             }
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,

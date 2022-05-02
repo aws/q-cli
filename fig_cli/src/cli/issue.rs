@@ -45,7 +45,12 @@ pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
         .map(|(version, _)| version)
         .unwrap_or_default();
     let shell = get_parent_process_exe().unwrap_or_default();
-    body.push_str(&format!("|{}|{}|{}|\n", &os_version, &fig_version, &shell.display()));
+    body.push_str(&format!(
+        "|{}|{}|{}|\n",
+        &os_version,
+        &fig_version,
+        &shell.display()
+    ));
     body.push_str("<details><summary><code>fig diagnostic</code></summary>\n<p>\n\n");
 
     let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n");
