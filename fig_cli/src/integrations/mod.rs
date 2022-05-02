@@ -1,5 +1,5 @@
-pub mod ssh;
 pub mod shell;
+pub mod ssh;
 
 use anyhow::{Context, Result};
 use std::{

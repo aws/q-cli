@@ -13,7 +13,6 @@ use fig_proto::local::{
 use regex::Regex;
 use serde::{Deserialize, Serialize};
 use std::{borrow::Cow, ffi::OsStr, fmt::Display, path::PathBuf, process::Command};
-use sysinfo::{System, SystemExt, ProcessorExt};
 
 pub trait Diagnostic {
     fn user_readable(&self) -> Result<Vec<String>> {
@@ -93,10 +92,12 @@ impl HardwareInfo {
                     memory: match_regex(r"Memory: (.+)", &text),
                 })
             } else {
+                use sysinfo::{System, SystemExt, ProcessorExt};
+
                 let mut sys = System::new();
                 sys.refresh_cpu();
                 sys.refresh_memory();
-        
+
                 let mut hardware_info = HardwareInfo {
                     model_name: None,
                     model_identifier: None,
@@ -107,13 +108,13 @@ impl HardwareInfo {
                     ),
                     memory: Some(format!("{} KB", sys.total_memory())),
                 };
-        
+
                 if let Some(processor) = sys.processors().first() {
                     hardware_info.model_name = Some(processor.name().into());
                     hardware_info.model_identifier = Some(processor.vendor_id().into());
                     hardware_info.chip = Some(processor.brand().into());
                 }
-                
+
                 Ok(hardware_info)
             }
         }

@@ -13,7 +13,6 @@ use fig_proto::hooks::new_callback_hook;
 use native_dialog::{MessageDialog, MessageType};
 use rand::distributions::{Alphanumeric, DistString};
 use rand::seq::IteratorRandom;
-use sysinfo::SystemExt;
 use std::{
     fs,
     io::{Read, Write},
@@ -21,6 +20,7 @@ use std::{
     process::exit,
     str::FromStr,
 };
+use sysinfo::SystemExt;
 use tracing::{debug, error, info, trace};
 use viu::{run, Config};
 
@@ -313,7 +313,7 @@ impl InternalSubcommand {
                 } else {
                     exit(1);
                 }
-            },
+            }
         }
 
         Ok(())
