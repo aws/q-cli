@@ -41,7 +41,7 @@ impl KeyBindings {
     }
 
     pub fn load_hardcoded() -> Self {
-        serde_json::from_str(&include_str!("test/actions.json"))
+        serde_json::from_str(include_str!("test/actions.json"))
             .expect("Unable to load hardcoded actions")
     }
 }

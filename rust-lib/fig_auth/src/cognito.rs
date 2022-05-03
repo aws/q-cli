@@ -14,7 +14,6 @@ use aws_smithy_client::{
     erase::{DynConnector, DynMiddleware},
     hyper_ext,
 };
-use base64::encode;
 use fig_directories::fig_data_dir;
 use jwt::{Header, RegisteredClaims, Token};
 use serde::{Deserialize, Serialize};
@@ -634,7 +633,7 @@ impl Credentials {
 
     /// Encodes the credentials as a base64 string for authentication
     pub fn encode(&self) -> String {
-        encode(
+        base64::encode(
             json!({
                 "accessToken": self.access_token,
                 "idToken": self.id_token
