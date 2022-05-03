@@ -1,7 +1,6 @@
 //! CLI functionality
 
 pub mod app;
-pub mod auth;
 pub mod debug;
 pub mod diagnostics;
 pub mod doctor;
@@ -19,6 +18,7 @@ pub mod ssh;
 pub mod theme;
 pub mod tips;
 pub mod tweet;
+pub mod user;
 pub mod util;
 
 use crate::{
@@ -143,16 +143,10 @@ pub enum CliRootCommands {
         /// Issue description
         description: Vec<String>,
     },
-    /// Login to Fig
-    Login {
-        /// Manually refresh the auth token
-        #[clap(long, short)]
-        refresh: bool,
-    },
-    /// Logout of Fig
-    Logout,
-    /// Details about the current user
-    User,
+    #[clap(flatten)]
+    RootUser(user::RootUserSubcommand),
+    #[clap(subcommand)]
+    User(user::UserSubcommand),
     /// Check Fig is properly configured
     Doctor {
         /// Run all doctor tests, with no fixes
@@ -321,9 +315,8 @@ impl Cli {
                     rcfile,
                 } => init::shell_init_cli(&shell, &when, rcfile).await,
                 CliRootCommands::Source => source::source_cli().await,
-                CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
-                CliRootCommands::Logout => auth::logout_cli().await,
-                CliRootCommands::User => auth::user_info_cli().await,
+                CliRootCommands::User(user) => user.execute().await,
+                CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Doctor { verbose, strict } => {
                     doctor::doctor_cli(verbose, strict).await
                 }

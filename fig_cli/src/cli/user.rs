@@ -1,12 +1,103 @@
-//! CLI auth
-
 use crate::cli::util::dialoguer_theme;
 
 use anyhow::{bail, Result};
+use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_auth::cognito::{
     get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput,
 };
+
+#[derive(Subcommand, Debug)]
+pub enum RootUserSubcommand {
+    /// Login to Fig
+    Login {
+        /// Manually refresh the auth token
+        #[clap(long, short)]
+        refresh: bool,
+    },
+    /// Logout of Fig
+    Logout,
+}
+
+impl RootUserSubcommand {
+    pub async fn execute(self) -> Result<()> {
+        match self {
+            Self::Login { refresh } => login_cli(refresh).await,
+            Self::Logout => logout_cli().await,
+        }
+    }
+}
+
+#[derive(Subcommand, Debug)]
+pub enum UserSubcommand {
+    #[clap(flatten)]
+    Root(RootUserSubcommand),
+    Whoami,
+    #[clap(subcommand)]
+    Token(TokenSubcommand),
+}
+
+impl UserSubcommand {
+    pub async fn execute(self) -> Result<()> {
+        match self {
+            Self::Root(cmd) => cmd.execute().await,
+            Self::Whoami => whoami_cli().await,
+            Self::Token(cmd) => cmd.execute().await,
+        }
+    }
+}
+
+/*
+fig user token new --name <name> --expires <date> [ --team <namespace> ]
+
+fig user token new --name Github --expires never --team fig
+
+fig user token list [ --team <namespace> ]
+
+fig user token revoke <token-name> [ --team <namespace> ]
+ */
+
+#[derive(Subcommand, Debug)]
+pub enum TokenSubcommand {
+    New {
+        /// The name of the token
+        #[clap(long, short)]
+        name: String,
+        /// The expiration date of the token
+        #[clap(long, short)]
+        expires: Option<String>,
+        /// The team namespace to create the token for
+        #[clap(long, short)]
+        team: Option<String>,
+    },
+    List {
+        /// The team namespace to list the tokens for
+        #[clap(long, short)]
+        team: Option<String>,
+    },
+    Revoke {
+        /// The name of the token to revoke
+        #[clap(long, short)]
+        name: String,
+        /// The team namespace to revoke the token for
+        #[clap(long, short)]
+        team: Option<String>,
+    },
+}
+
+impl TokenSubcommand {
+    pub async fn execute(self) -> Result<()> {
+        match self {
+            Self::New {
+                name,
+                expires,
+                team,
+            } => todo!(),
+            Self::List { team } => todo!(),
+            Self::Revoke { name, team } => todo!(),
+        }
+    }
+}
 
 /// Login to fig
 pub async fn login_cli(refresh: bool) -> Result<()> {
@@ -118,7 +209,7 @@ pub async fn logout_cli() -> Result<()> {
     Ok(())
 }
 
-pub async fn user_info_cli() -> Result<()> {
+pub async fn whoami_cli() -> Result<()> {
     match fig_auth::get_email() {
         Some(email) => println!("Logged in as {}", email),
         None => bail!("Not logged in"),
