@@ -194,23 +194,27 @@ pub async fn clone_git_repo_with_reference(
     directory: impl AsRef<Path>,
     reference: Option<&GitReference>,
 ) -> Result<()> {
+    let directory = directory.as_ref();
     let url = url.into_url()?;
 
-    if let Some(parent_directory) = directory.as_ref().parent() {
+    if let Some(parent_directory) = directory.parent() {
         if !parent_directory.exists() {
             tokio::fs::create_dir_all(parent_directory).await?;
         }
     }
 
-    if !directory.as_ref().exists() {
-        let _hash = clone_git_repo(url, &directory).await?;
+    if !directory.exists() {
+        if let Err(err) = clone_git_repo(url, &directory).await {
+            sentry::integrations::anyhow::capture_anyhow(&err);
+            return Err(err);
+        }
     } else {
-        anyhow::bail!("{} already exists", directory.as_ref().display());
+        anyhow::bail!("{} already exists", directory.display());
     }
 
     if let Some(reference) = reference {
         tokio::task::block_in_place(|| {
-            set_reference(&Repository::open(directory.as_ref())?, reference)?;
+            set_reference(&Repository::open(directory)?, reference)?;
             anyhow::Ok(())
         })?;
     }
@@ -222,9 +226,10 @@ pub async fn update_git_repo_with_reference(
     directory: impl AsRef<Path>,
     reference: Option<&GitReference>,
 ) -> Result<()> {
-    if directory.as_ref().exists() {
+    let directory = directory.as_ref();
+    if directory.exists() {
         tokio::task::block_in_place(|| {
-            let repository = Repository::open(directory.as_ref())?;
+            let repository = Repository::open(directory)?;
             update_git_repo(&repository)?;
             anyhow::Ok(())
         })?;
@@ -232,7 +237,7 @@ pub async fn update_git_repo_with_reference(
 
     if let Some(reference) = reference {
         tokio::task::block_in_place(|| {
-            set_reference(&Repository::open(directory.as_ref())?, reference)?;
+            set_reference(&Repository::open(directory)?, reference)?;
             anyhow::Ok(())
         })?;
     }
