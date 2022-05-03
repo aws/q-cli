@@ -1,6 +1,7 @@
 use crate::util::{glob, glob_dir, LaunchOptions};
 
 use crate::cli::{app::quit_fig, diagnostics::get_diagnostics, launch_fig};
+use crate::dotfiles::download_and_notify;
 use anyhow::{anyhow, Context, Result};
 use clap::{ArgEnum, Subcommand};
 use crossterm::style::Stylize;
@@ -50,6 +51,12 @@ pub enum AccessibilityAction {
 pub enum DebugSubcommand {
     /// Debug fig app
     App,
+    /// Debug dotfiles
+    Dotfiles {
+        /// Disable debug mode
+        #[clap(long)]
+        disable: bool,
+    },
     /// Switch build
     Build {
         #[clap(arg_enum)]
@@ -154,6 +161,16 @@ impl DebugSubcommand {
                     );
                     return res;
                 }
+            }
+            DebugSubcommand::Dotfiles { disable } => {
+                if *disable {
+                    fig_settings::state::remove_value("developer.dotfiles.debug")?;
+                } else {
+                    fig_settings::state::set_value("developer.dotfiles.debug", json!(true))?;
+                }
+                download_and_notify()
+                    .await
+                    .context("Could not sync remote dotfiles")?;
             }
             DebugSubcommand::AutocompleteWindow { mode } => {
                 let result = match mode {
