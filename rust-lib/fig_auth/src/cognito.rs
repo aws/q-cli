@@ -1,32 +1,55 @@
+use std::collections::HashMap;
+use std::fs::{
+    self,
+    File,
+};
+use std::sync::Arc;
+
 use anyhow::Context;
+use aws_sdk_cognitoidentityprovider::error::{
+    InitiateAuthError,
+    InitiateAuthErrorKind,
+    RespondToAuthChallengeError,
+    RespondToAuthChallengeErrorKind,
+    SignUpErrorKind,
+    UpdateUserAttributesError,
+    UserLambdaValidationException,
+};
+use aws_sdk_cognitoidentityprovider::model::{
+    AttributeType,
+    AuthFlowType,
+    ChallengeNameType,
+};
+use aws_sdk_cognitoidentityprovider::types::SdkError;
 use aws_sdk_cognitoidentityprovider::{
-    error::{
-        InitiateAuthError, InitiateAuthErrorKind, RespondToAuthChallengeError,
-        RespondToAuthChallengeErrorKind, SignUpErrorKind, UpdateUserAttributesError,
-        UserLambdaValidationException,
-    },
-    model::{AttributeType, AuthFlowType, ChallengeNameType},
-    types::SdkError,
-    Client, Config, Region, RetryConfig,
+    Client,
+    Config,
+    Region,
+    RetryConfig,
 };
 use aws_smithy_async::rt::sleep::TokioSleep;
-use aws_smithy_client::{
-    erase::{DynConnector, DynMiddleware},
-    hyper_ext,
+use aws_smithy_client::erase::{
+    DynConnector,
+    DynMiddleware,
 };
+use aws_smithy_client::hyper_ext;
 use fig_directories::fig_data_dir;
-use jwt::{Header, RegisteredClaims, Token};
-use serde::{Deserialize, Serialize};
-use serde_json::json;
-use std::{
-    collections::HashMap,
-    fs::{self, File},
-    sync::Arc,
+use jwt::{
+    Header,
+    RegisteredClaims,
+    Token,
 };
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_json::json;
 use thiserror::Error;
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 
-use crate::{password::generate_password, CLIENT_ID};
+use crate::password::generate_password;
+use crate::CLIENT_ID;
 
 pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
     let https = hyper_rustls::HttpsConnectorBuilder::new()
@@ -50,9 +73,7 @@ pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
 
     let config = Config::builder().region(Region::new("us-east-1")).build();
 
-    Ok(aws_sdk_cognitoidentityprovider::Client::with_config(
-        client, config,
-    ))
+    Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -95,16 +116,15 @@ fn parse_lambda_error(error: UserLambdaValidationException) -> anyhow::Result<Va
                     let message = message.strip_prefix("ValidationError=").unwrap();
                     let message = &message["ValidationError=".len()..];
 
-                    let details = match serde_json::from_str::<Vec<ValidationErrorDetail>>(message)
-                    {
+                    let details = match serde_json::from_str::<Vec<ValidationErrorDetail>>(message) {
                         Ok(details) => details,
                         Err(err) => {
                             return Err(err.into());
-                        }
+                        },
                     };
 
                     return Ok(ValidationError { details });
-                }
+                },
                 None => return Err(error.into()),
             }
         }
@@ -136,11 +156,7 @@ pub enum SignInError {
 }
 
 impl<'a> SignInInput<'a> {
-    pub fn new(
-        client: &'a Client,
-        client_id: impl Into<String>,
-        username_or_email: impl Into<String>,
-    ) -> Self {
+    pub fn new(client: &'a Client, client_id: impl Into<String>, username_or_email: impl Into<String>) -> Self {
         Self {
             client,
             client_id: client_id.into(),
@@ -159,20 +175,16 @@ impl<'a> SignInInput<'a> {
             .await;
 
         let initiate_auth_output = initiate_auth_result.map_err(|err| match err {
-            SdkError::ServiceError {
-                err: ref auth_err, ..
-            } => match auth_err.kind {
+            SdkError::ServiceError { err: ref auth_err, .. } => match auth_err.kind {
                 InitiateAuthErrorKind::UserNotFoundException(ref user_not_found) => {
                     SignInError::UserNotFound(user_not_found.message.clone())
-                }
+                },
                 _ => SignInError::SdkInitiateAuthError(Box::new(err)),
             },
             err => SignInError::SdkInitiateAuthError(Box::new(err)),
         })?;
 
-        let session = initiate_auth_output
-            .session
-            .ok_or(SignInError::MissingSession)?;
+        let session = initiate_auth_output.session.ok_or(SignInError::MissingSession)?;
 
         let challenge_name = initiate_auth_output
             .challenge_name
@@ -190,12 +202,10 @@ impl<'a> SignInInput<'a> {
             .send()
             .await;
 
-        let respond_to_auth_output = respond_to_auth_result
-            .map_err(|err| SignInError::SdkRespondToAuthChallengeError(Box::new(err)))?;
+        let respond_to_auth_output =
+            respond_to_auth_result.map_err(|err| SignInError::SdkRespondToAuthChallengeError(Box::new(err)))?;
 
-        let session = respond_to_auth_output
-            .session
-            .ok_or(SignInError::MissingSession)?;
+        let session = respond_to_auth_output.session.ok_or(SignInError::MissingSession)?;
 
         let challenge_name = respond_to_auth_output
             .challenge_name
@@ -240,10 +250,7 @@ pub enum SignInConfirmError {
 }
 
 impl<'a> SignInOutput<'a> {
-    pub async fn confirm(
-        &mut self,
-        code: impl Into<String>,
-    ) -> Result<Credentials, SignInConfirmError> {
+    pub async fn confirm(&mut self, code: impl Into<String>) -> Result<Credentials, SignInConfirmError> {
         let respond_to_auth_result = self
             .client
             .respond_to_auth_challenge()
@@ -256,18 +263,14 @@ impl<'a> SignInOutput<'a> {
             .await;
 
         let out = respond_to_auth_result.map_err(|err| match err {
-            SdkError::ServiceError {
-                err: ref auth_err, ..
-            } => match auth_err.kind {
+            SdkError::ServiceError { err: ref auth_err, .. } => match auth_err.kind {
                 RespondToAuthChallengeErrorKind::UserLambdaValidationException(ref error) => {
                     match parse_lambda_error(error.clone()) {
                         Ok(err) => SignInConfirmError::ValidationError(err),
                         _ => SignInConfirmError::SdkError(Box::new(err)),
                     }
-                }
-                RespondToAuthChallengeErrorKind::NotAuthorizedException(_) => {
-                    SignInConfirmError::NotAuthorized
-                }
+                },
+                RespondToAuthChallengeErrorKind::NotAuthorizedException(_) => SignInConfirmError::NotAuthorized,
                 _ => SignInConfirmError::SdkError(Box::new(err)),
             },
             err => SignInConfirmError::SdkError(Box::new(err)),
@@ -291,7 +294,7 @@ impl<'a> SignInOutput<'a> {
                         self.challenge_parameters = challenge_parameters;
                     }
                     Err(SignInConfirmError::ErrorCodeMismatch)
-                }
+                },
                 None => Err(SignInConfirmError::CouldNotSignIn),
             },
         }
@@ -331,26 +334,18 @@ impl<'a> SignUpInput<'a> {
             .client_id(&self.client_id)
             .username(username)
             .password(&password)
-            .user_attributes(
-                AttributeType::builder()
-                    .name("email")
-                    .value(&self.email)
-                    .build(),
-            )
+            .user_attributes(AttributeType::builder().name("email").value(&self.email).build())
             .send()
             .await;
 
         sign_up_result.map_err(|err| match err {
             SdkError::ServiceError {
-                err: ref sign_up_err,
-                ..
+                err: ref sign_up_err, ..
             } => match sign_up_err.kind {
-                SignUpErrorKind::UserLambdaValidationException(ref error) => {
-                    match parse_lambda_error(error.clone()) {
-                        Ok(err) => SignUpError::ValidationError(err),
-                        _ => SignUpError::SdkError(Box::new(err)),
-                    }
-                }
+                SignUpErrorKind::UserLambdaValidationException(ref error) => match parse_lambda_error(error.clone()) {
+                    Ok(err) => SignUpError::ValidationError(err),
+                    _ => SignUpError::SdkError(Box::new(err)),
+                },
                 _ => SignUpError::SdkError(Box::new(err)),
             },
             err => SignUpError::SdkError(Box::new(err)),
@@ -367,11 +362,7 @@ pub struct ChangeUsernameInput {
 }
 
 impl ChangeUsernameInput {
-    pub fn new(
-        client: Client,
-        username: impl Into<String>,
-        access_token: impl Into<String>,
-    ) -> Self {
+    pub fn new(client: Client, username: impl Into<String>, access_token: impl Into<String>) -> Self {
         Self {
             client,
             username: username.into(),
@@ -419,9 +410,7 @@ impl Credentials {
             access_token,
             id_token,
             refresh_token,
-            expiration_time: Some(
-                time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into()),
-            ),
+            expiration_time: Some(time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into())),
         }
     }
 
@@ -444,42 +433,45 @@ impl Credentials {
 
         #[cfg(target_os = "macos")]
         {
-            use crate::{remove_default, set_default};
+            use crate::{
+                remove_default,
+                set_default,
+            };
 
             match &self.id_token {
                 Some(id) => {
                     set_default("id_token", id)?;
-                }
+                },
                 None => {
                     remove_default("id_token").ok();
-                }
+                },
             }
 
             match &self.access_token {
                 Some(access) => {
                     set_default("access_token", access)?;
-                }
+                },
                 None => {
                     remove_default("access_token").ok();
-                }
+                },
             }
 
             match &self.refresh_token {
                 Some(refresh) => {
                     set_default("refresh_token", refresh)?;
-                }
+                },
                 None => {
                     remove_default("refresh_token").ok();
-                }
+                },
             }
 
             match &self.email {
                 Some(email) => {
                     set_default("userEmail", email)?;
-                }
+                },
                 None => {
                     remove_default("userEmail").ok();
-                }
+                },
             }
 
             match &self.expiration_time {
@@ -487,10 +479,10 @@ impl Credentials {
                     if let Ok(formatted_time) = time.format(&Rfc3339) {
                         set_default("expiration_time", formatted_time)?;
                     }
-                }
+                },
                 None => {
                     remove_default("expiration_time").ok();
-                }
+                },
             }
         }
 
@@ -509,13 +501,10 @@ impl Credentials {
         let creds_file = File::open(data_dir.join("credentials.json"))?;
 
         // Load the values in one by one from the json
-        let json: serde_json::Value = serde_json::from_reader(creds_file)
-            .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
+        let json: serde_json::Value =
+            serde_json::from_reader(creds_file).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
 
-        let email = json
-            .get("email")
-            .and_then(serde_json::Value::as_str)
-            .map(String::from);
+        let email = json.get("email").and_then(serde_json::Value::as_str).map(String::from);
 
         let access_token = json
             .get("access_token")
@@ -548,11 +537,7 @@ impl Credentials {
         Ok(creds)
     }
 
-    pub async fn refresh_credentials(
-        &mut self,
-        client: &Client,
-        client_id: &str,
-    ) -> anyhow::Result<()> {
+    pub async fn refresh_credentials(&mut self, client: &Client, client_id: &str) -> anyhow::Result<()> {
         let refresh_token = self
             .refresh_token
             .as_ref()
@@ -570,11 +555,9 @@ impl Credentials {
             Some(auth_result) => {
                 self.access_token = auth_result.access_token;
                 self.id_token = auth_result.id_token;
-                self.expiration_time = Some(
-                    time::OffsetDateTime::now_utc()
-                        + time::Duration::seconds(auth_result.expires_in.into()),
-                );
-            }
+                self.expiration_time =
+                    Some(time::OffsetDateTime::now_utc() + time::Duration::seconds(auth_result.expires_in.into()));
+            },
             None => return Err(anyhow::anyhow!("Could not refresh credentials")),
         }
 
@@ -611,8 +594,7 @@ impl Credentials {
 
     pub fn get_expiration_time(&self) -> Option<time::OffsetDateTime> {
         let access_token = self.access_token.as_ref()?;
-        let token: Token<Header, RegisteredClaims, _> =
-            Token::parse_unverified(access_token).ok()?;
+        let token: Token<Header, RegisteredClaims, _> = Token::parse_unverified(access_token).ok()?;
         time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
     }
 

@@ -1,9 +1,18 @@
-use anyhow::{anyhow, Context, Result};
-use clap::{ArgGroup, Args, Subcommand};
+use std::process::Command;
+
+use anyhow::{
+    anyhow,
+    Context,
+    Result,
+};
+use clap::{
+    ArgGroup,
+    Args,
+    Subcommand,
+};
 use crossterm::style::Stylize;
 use fig_ipc::command::restart_settings_listener;
 use serde_json::json;
-use std::process::Command;
 
 use crate::cli::OutputFormat;
 
@@ -56,11 +65,11 @@ impl LocalStateArgs {
                 Ok(()) => {
                     println!("\nState listener restarted\n");
                     Ok(())
-                }
+                },
                 Err(err) => {
                     print_connection_error!();
                     Err(err)
-                }
+                },
             },
             Some(LocalStateSubcommand::Open) => {
                 let path = fig_settings::state::state_path().context("Could not get state path")?;
@@ -68,7 +77,7 @@ impl LocalStateArgs {
                     true => Ok(()),
                     false => Err(anyhow!("Could not open state file")),
                 }
-            }
+            },
             Some(LocalStateSubcommand::All { format }) => {
                 let local_state = fig_settings::state::local_settings()?.to_inner();
 
@@ -81,15 +90,15 @@ impl LocalStateArgs {
                         } else {
                             println!("Settings is empty");
                         }
-                    }
+                    },
                     OutputFormat::Json => println!("{}", serde_json::to_string(&local_state)?),
                     OutputFormat::JsonPretty => {
                         println!("{}", serde_json::to_string_pretty(&local_state)?)
-                    }
+                    },
                 }
 
                 Ok(())
-            }
+            },
             None => match &self.key {
                 Some(key) => match (&self.value, self.delete) {
                     (None, false) => match fig_settings::state::get_value(key)? {
@@ -101,35 +110,32 @@ impl LocalStateArgs {
                                 },
                                 OutputFormat::Json => {
                                     println!("{}", value)
-                                }
+                                },
                                 OutputFormat::JsonPretty => {
                                     println!("{:#}", value)
-                                }
+                                },
                             }
                             Ok(())
-                        }
+                        },
                         None => match self.format {
-                            OutputFormat::Plain => {
-                                Err(anyhow::anyhow!("No value associated with {}", key))
-                            }
+                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {}", key)),
                             OutputFormat::Json | OutputFormat::JsonPretty => {
                                 println!("null");
                                 Ok(())
-                            }
+                            },
                         },
                     },
                     (None, true) => {
                         fig_settings::state::remove_value(key)?;
                         println!("Successfully updated state");
                         Ok(())
-                    }
+                    },
                     (Some(value), false) => {
-                        let value: serde_json::Value =
-                            serde_json::from_str(value).unwrap_or_else(|_| json!(value));
+                        let value: serde_json::Value = serde_json::from_str(value).unwrap_or_else(|_| json!(value));
                         fig_settings::state::set_value(key, value)?;
                         println!("Successfully updated state");
                         Ok(())
-                    }
+                    },
                     (Some(_), true) => Err(anyhow!("Cannot delete a value with a value")),
                 },
                 None => Err(anyhow!("{}", "No key specified")),

@@ -1,15 +1,26 @@
 use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
-    AppendToFileRequest, ContentsOfDirectoryRequest, ContentsOfDirectoryResponse,
-    DestinationOfSymbolicLinkRequest, DestinationOfSymbolicLinkResponse, WriteFileRequest,
+    AppendToFileRequest,
+    ContentsOfDirectoryRequest,
+    ContentsOfDirectoryResponse,
+    DestinationOfSymbolicLinkRequest,
+    DestinationOfSymbolicLinkResponse,
+    ReadFileRequest,
+    ReadFileResponse,
+    WriteFileRequest,
 };
-use fig_proto::fig::{ReadFileRequest, ReadFileResponse};
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 
-use crate::api::{RequestResult, RequestResultImpl};
-use crate::utils::{build_filepath, resolve_filepath};
+use crate::api::{
+    RequestResult,
+    RequestResultImpl,
+};
+use crate::utils::{
+    build_filepath,
+    resolve_filepath,
+};
 
 pub async fn read_file(request: ReadFileRequest) -> RequestResult {
     use fig_proto::fig::read_file_response::Type;
@@ -27,8 +38,7 @@ pub async fn read_file(request: ReadFileRequest) -> RequestResult {
                 .map_err(|_| anyhow!("Failed reading file: {file_path:?}"))?,
         )
     };
-    let response =
-        ServerOriginatedSubMessage::ReadFileResponse(ReadFileResponse { r#type: Some(kind) });
+    let response = ServerOriginatedSubMessage::ReadFileResponse(ReadFileResponse { r#type: Some(kind) });
 
     Ok(response.into())
 }
@@ -71,19 +81,15 @@ pub async fn append_to_file(request: AppendToFileRequest) -> RequestResult {
     RequestResult::success()
 }
 
-pub async fn destination_of_symbolic_link(
-    request: DestinationOfSymbolicLinkRequest,
-) -> RequestResult {
+pub async fn destination_of_symbolic_link(request: DestinationOfSymbolicLinkRequest) -> RequestResult {
     let file_path = resolve_filepath(request.path.unwrap());
     let real_path = tokio::fs::canonicalize(&file_path)
         .await
         .map_err(|_| anyhow!("Failed resolving symlink: {file_path:?}"))?;
 
-    let response = ServerOriginatedSubMessage::DestinationOfSymbolicLinkResponse(
-        DestinationOfSymbolicLinkResponse {
-            destination: Some(build_filepath(real_path)),
-        },
-    );
+    let response = ServerOriginatedSubMessage::DestinationOfSymbolicLinkResponse(DestinationOfSymbolicLinkResponse {
+        destination: Some(build_filepath(real_path)),
+    });
 
     Ok(response.into())
 }
@@ -104,9 +110,7 @@ pub async fn contents_of_directory(request: ContentsOfDirectoryRequest) -> Reque
     }
 
     let response =
-        ServerOriginatedSubMessage::ContentsOfDirectoryResponse(ContentsOfDirectoryResponse {
-            file_names: contents,
-        });
+        ServerOriginatedSubMessage::ContentsOfDirectoryResponse(ContentsOfDirectoryResponse { file_names: contents });
 
     Ok(response.into())
 }

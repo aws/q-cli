@@ -1,14 +1,21 @@
-use crate::{
-    dotfiles::api::DotfileData,
-    integrations::shell::When,
-    util::{app_path_from_bundle_id, shell::Shell},
+use std::borrow::Cow;
+use std::env;
+use std::fmt::Display;
+use std::io::stdin;
+
+use anyhow::{
+    Context,
+    Result,
 };
-use anyhow::{Context, Result};
-use crossterm::{style::Stylize, tty::IsTty};
+use crossterm::style::Stylize;
+use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
 use fig_util::Terminal;
 
-use std::{borrow::Cow, env, fmt::Display, io::stdin};
+use crate::dotfiles::api::DotfileData;
+use crate::integrations::shell::When;
+use crate::util::app_path_from_bundle_id;
+use crate::util::shell::Shell;
 
 #[derive(PartialEq)]
 enum GuardAssignment {
@@ -46,11 +53,11 @@ fn guard_source(
             // If script may trigger rc file to be rerun, guard assignment must happen first to avoid recursion
             output.push(assign_shell_variable(shell, guard_var, export).into());
             output.push(source.into());
-        }
+        },
         GuardAssignment::AfterSourcing => {
             output.push(source.into());
             output.push(assign_shell_variable(shell, guard_var, export).into());
-        }
+        },
     }
 
     output.push(match shell {
@@ -82,13 +89,8 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         {
             // Add dotfiles sourcing
             let get_dotfile_source = || {
-                let raw = std::fs::read_to_string(
-                    shell
-                        .get_data_path()
-                        .context("Failed to get shell data path")
-                        .ok()?,
-                )
-                .ok()?;
+                let raw = std::fs::read_to_string(shell.get_data_path().context("Failed to get shell data path").ok()?)
+                    .ok()?;
                 let source: DotfileData = serde_json::from_str(&raw).ok()?;
                 Some(source.dotfile)
             };
@@ -107,8 +109,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
             // if no value, assume that we have seen onboarding already.
             // this is explictly set in onboarding in macOS app.
-            let has_see_onboarding: bool =
-                fig_settings::state::get_bool_or("user.onboarding", true);
+            let has_see_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
 
             let terminal = Terminal::parent_terminal();
 
@@ -141,9 +142,9 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
     let is_jetbrains_terminal = Terminal::is_jetbrains_terminal();
 
     if when == &When::Pre && shell == &Shell::Bash && is_jetbrains_terminal {
-        // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does not work.
-        // Thus, FIG_IS_LOGIN_SHELL will be incorrect. We must manually set it so the user's bash_profile is sourced.
-        // https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
+        // JediTerm does not launch as a 'true' login shell, so our normal "shopt -q login_shell" check does
+        // not work. Thus, FIG_IS_LOGIN_SHELL will be incorrect. We must manually set it so the
+        // user's bash_profile is sourced. https://github.com/JetBrains/intellij-community/blob/master/plugins/terminal/resources/jediterm-bash.in
         to_source.push("FIG_IS_LOGIN_SHELL=1".into())
     }
 
@@ -154,21 +155,14 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         // Manually call JetBrains shell integration after exec-ing to figterm.
         // This may recursively call out to bashrc/zshrc so make sure to assign guard variable first.
 
-        let get_jetbrains_source = if let Some(bundle_id) = std::env::var_os("__CFBundleIdentifier")
-        {
+        let get_jetbrains_source = if let Some(bundle_id) = std::env::var_os("__CFBundleIdentifier") {
             if let Some(bundle) = app_path_from_bundle_id(bundle_id) {
                 // The source for JetBrains shell integrations can be found here.
                 // https://github.com/JetBrains/intellij-community/tree/master/plugins/terminal/resources
                 match shell {
-                    Shell::Bash => Some(format!(
-                        "source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",
-                    )),
-                    Shell::Zsh => Some(format!(
-                        "source '{bundle}/Contents/plugins/terminal/.zshenv'",
-                    )),
-                    Shell::Fish => Some(format!(
-                        "source '{bundle}/Contents/plugins/terminal/fish/config.fish'",
-                    )),
+                    Shell::Bash => Some(format!("source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",)),
+                    Shell::Zsh => Some(format!("source '{bundle}/Contents/plugins/terminal/.zshenv'",)),
+                    Shell::Fish => Some(format!("source '{bundle}/Contents/plugins/terminal/fish/config.fish'",)),
                 }
             } else {
                 None
@@ -204,7 +198,11 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
                     false,
                     "FIG_INPUT_METHOD_PROMPT",
                     GuardAssignment::AfterSourcing,
-                    format!("printf '\\n🚀 Fig now supports {terminal} Terminal!\\nEnable integrations with {terminal} by running:\\n  {}\\n\\n'\n", "fig install --input-method".magenta()),
+                    format!(
+                        "printf '\\n🚀 Fig now supports {terminal} Terminal!\\nEnable integrations with {terminal} by \
+                         running:\\n  {}\\n\\n'\n",
+                        "fig install --input-method".magenta()
+                    ),
                 ));
             }
         }
@@ -212,15 +210,19 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
 
     // April Fools
     if fig_settings::settings::get_bool_or("command-not-found.beta", false) {
-        let after_text = format!("Command not found: {}\nTo disable Terminal Reactions™️ by Fig run: fig settings command-not-found.beta false", 
+        let after_text = format!(
+            "Command not found: {}\nTo disable Terminal Reactions™️ by Fig run: fig settings command-not-found.beta \
+             false",
             match shell {
                 Shell::Bash | Shell::Zsh => "$0",
-                Shell::Fish => "$argv[1]"
+                Shell::Fish => "$argv[1]",
             }
         );
 
         let fools_cmd = format!(
-            "fig _ animation -f random --before-text \"Loading Terminal Reactions™️ by Fig...\" --after-text \"{after_text}\"\nreturn 127");
+            "fig _ animation -f random --before-text \"Loading Terminal Reactions™️ by Fig...\" --after-text \
+             \"{after_text}\"\nreturn 127"
+        );
 
         to_source.push(guard_source(
             shell,

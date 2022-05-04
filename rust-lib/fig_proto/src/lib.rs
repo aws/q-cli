@@ -7,16 +7,21 @@ pub mod hooks;
 pub mod local;
 pub mod util;
 
-pub use prost;
+use std::fmt::Debug;
+use std::io::{
+    Cursor,
+    Read,
+};
+use std::mem::size_of;
 
 use anyhow::Result;
-use bytes::{Buf, Bytes, BytesMut};
-use prost::Message;
-use std::{
-    fmt::Debug,
-    io::{Cursor, Read},
-    mem::size_of,
+use bytes::{
+    Buf,
+    Bytes,
+    BytesMut,
 };
+pub use prost;
+use prost::Message;
 use thiserror::Error;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
@@ -139,10 +144,7 @@ mod tests {
         let hook = hooks::new_edit_buffer_hook(None, "test", 0, 0);
         let message = hooks::hook_to_message(hook);
 
-        assert!(message
-            .encode_fig_protobuf()
-            .unwrap()
-            .starts_with(b"\x1b@fig-pbuf"));
+        assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"));
 
         assert_eq!(
             message.encode_fig_protobuf().unwrap()._message_type,

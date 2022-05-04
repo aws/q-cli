@@ -1,17 +1,32 @@
+use std::borrow::Cow;
+use std::fs::File;
+use std::io::{
+    BufWriter,
+    Read,
+    Write,
+};
+use std::path::PathBuf;
+
 use alacritty_terminal::term::CommandInfo;
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use fig_directories::fig_dir;
-use flume::{bounded, Sender};
+use flume::{
+    bounded,
+    Sender,
+};
 use once_cell::sync::Lazy;
 use regex::Regex;
-use rusqlite::{params, Connection};
-use std::{
-    borrow::Cow,
-    fs::File,
-    io::{BufWriter, Read, Write},
-    path::PathBuf,
+use rusqlite::{
+    params,
+    Connection,
 };
-use tracing::{error, trace};
+use tracing::{
+    error,
+    trace,
+};
 
 pub async fn spawn_history_task() -> Sender<CommandInfo> {
     trace!("Spawning history task");
@@ -27,13 +42,13 @@ pub async fn spawn_history_task() -> Sender<CommandInfo> {
                         error!("Failed to insert command into history: {}", e);
                     }
                 }
-            }
+            },
             Ok(Err(e)) => {
                 error!("Failed to load history: {}", e);
-            }
+            },
             Err(e) => {
                 error!("Failed to join history thread: {}", e);
-            }
+            },
         }
     });
 
@@ -80,9 +95,7 @@ impl History {
 
         let old_history_path = fig_dir().context("Failed to get fig_dir")?.join("history");
 
-        let history_path: PathBuf = [fig_dir().unwrap(), "fig.history".into()]
-            .into_iter()
-            .collect();
+        let history_path: PathBuf = [fig_dir().unwrap(), "fig.history".into()].into_iter().collect();
 
         let mut old_history = Vec::new();
 
@@ -96,7 +109,10 @@ impl History {
             let mut file_string = String::new();
             file.read_to_string(&mut file_string)?;
 
-            let re = Regex::new(r"- command: (.*)\n  exit_code: (.*)\n  shell: (.*)\n  session_id: (.*)\n  cwd: (.*)\n  time: (.*)").unwrap();
+            let re = Regex::new(
+                r"- command: (.*)\n  exit_code: (.*)\n  shell: (.*)\n  session_id: (.*)\n  cwd: (.*)\n  time: (.*)",
+            )
+            .unwrap();
 
             old_history = re
                 .captures_iter(&file_string)
@@ -160,28 +176,14 @@ impl History {
         if let Some(command) = &command_info.command {
             if !command.is_empty() {
                 self.connection.execute(
-                    "INSERT INTO history (\
-                            command, \
-                            shell, \
-                            pid, \
-                            session_id, \
-                            cwd, \
-                            time, \
-                            in_ssh, \
-                            in_docker, \
-                            hostname, \
-                            exit_code) \
-                        VALUES \
-                            (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO history (command, shell, pid, session_id, cwd, time, in_ssh, in_docker, hostname, \
+                     exit_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     params![
                         &command_info.command,
                         &command_info.shell,
                         &command_info.pid,
                         &command_info.session_id,
-                        &command_info
-                            .cwd
-                            .as_ref()
-                            .map(|p| p.to_string_lossy().into_owned()),
+                        &command_info.cwd.as_ref().map(|p| p.to_string_lossy().into_owned()),
                         &command_info.time,
                         &command_info.in_ssh,
                         &command_info.in_docker,
@@ -194,11 +196,10 @@ impl History {
 
         // Legacy insert into old history file
         if legacy {
-            let legacy_history_file = File::options().create(true).append(true).open(
-                &[fig_dir().unwrap(), "history".into()]
-                    .into_iter()
-                    .collect::<PathBuf>(),
-            )?;
+            let legacy_history_file = File::options()
+                .create(true)
+                .append(true)
+                .open(&[fig_dir().unwrap(), "history".into()].into_iter().collect::<PathBuf>())?;
 
             let mut legacy_history_buff = BufWriter::new(legacy_history_file);
 
@@ -226,8 +227,8 @@ impl History {
 
                     legacy_history_buff.write_all(entry.as_bytes())?;
                     legacy_history_buff.flush()?;
-                }
-                _ => {}
+                },
+                _ => {},
             }
         }
 
@@ -238,10 +239,8 @@ impl History {
 fn create_migrations_table(conn: &Connection) -> Result<()> {
     trace!("Creating migrations table");
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS migrations( \
-                id INTEGER PRIMARY KEY, \
-                version INTEGER NOT NULL, \
-                migration_time INTEGER NOT NULL);",
+        "CREATE TABLE IF NOT EXISTS migrations( id INTEGER PRIMARY KEY, version INTEGER NOT NULL, migration_time \
+         INTEGER NOT NULL);",
     )?;
 
     Ok(())
@@ -250,27 +249,14 @@ fn create_migrations_table(conn: &Connection) -> Result<()> {
 fn migrate_history_db(conn: &Connection) -> Result<()> {
     trace!("Migrating history database");
     let mut max_migration_version_stmt = conn.prepare("SELECT max(version) from migrations;")?;
-    let max_migration_version: i64 = max_migration_version_stmt
-        .query_row([], |row| row.get(0))
-        .unwrap_or(0);
+    let max_migration_version: i64 = max_migration_version_stmt.query_row([], |row| row.get(0)).unwrap_or(0);
 
     if max_migration_version < 1 {
         conn.execute_batch(
-            "BEGIN; \
-                CREATE TABLE IF NOT EXISTS history( \
-                    id INTEGER PRIMARY KEY, \
-                    command TEXT, \
-                    shell TEXT, \
-                    pid INTEGER, \
-                    session_id TEXT, \
-                    cwd TEXT, \
-                    time INTEGER , \
-                    in_ssh INTEGER, \
-                    in_docker INTEGER, \
-                    hostname TEXT, \
-                    exit_code INTEGER); \
-                INSERT INTO migrations(version, migration_time) VALUES (1, strftime('%s', 'now')); \
-                COMMIT;",
+            "BEGIN; CREATE TABLE IF NOT EXISTS history( id INTEGER PRIMARY KEY, command TEXT, shell TEXT, pid \
+             INTEGER, session_id TEXT, cwd TEXT, time INTEGER , in_ssh INTEGER, in_docker INTEGER, hostname TEXT, \
+             exit_code INTEGER); INSERT INTO migrations(version, migration_time) VALUES (1, strftime('%s', 'now')); \
+             COMMIT;",
         )?;
     }
 

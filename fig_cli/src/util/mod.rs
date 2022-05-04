@@ -3,21 +3,33 @@ pub mod checksum;
 pub mod shell;
 pub mod sync;
 
-use std::{
-    env,
-    ffi::OsStr,
-    path::{Path, PathBuf},
+use std::env;
+use std::ffi::OsStr;
+use std::path::{
+    Path,
+    PathBuf,
 };
 
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use cfg_if::cfg_if;
-use globset::{Glob, GlobSet, GlobSetBuilder};
-use sysinfo::{get_current_pid, ProcessExt, System, SystemExt};
+use globset::{
+    Glob,
+    GlobSet,
+    GlobSetBuilder,
+};
+use sysinfo::{
+    get_current_pid,
+    ProcessExt,
+    System,
+    SystemExt,
+};
 
 pub fn get_parent_process_exe() -> Result<PathBuf> {
     let mut system = System::new();
-    let current_pid =
-        get_current_pid().map_err(|_| anyhow::anyhow!("Could not get current pid"))?;
+    let current_pid = get_current_pid().map_err(|_| anyhow::anyhow!("Could not get current pid"))?;
     if !system.refresh_process(current_pid) {
         anyhow::bail!("Could not find current process info")
     }
@@ -25,9 +37,7 @@ pub fn get_parent_process_exe() -> Result<PathBuf> {
         .process(current_pid)
         .context("Could not find current process info")?;
 
-    let parent_pid = current_process
-        .parent()
-        .context("Could not get parent pid")?;
+    let parent_pid = current_process.parent().context("Could not get parent pid")?;
 
     if !system.refresh_process(parent_pid) {
         anyhow::bail!("Could not find parent process info")
@@ -196,10 +206,7 @@ impl LaunchOptions {
     }
 
     pub fn verbose(self) -> Self {
-        Self {
-            verbose: true,
-            ..self
-        }
+        Self { verbose: true, ..self }
     }
 }
 

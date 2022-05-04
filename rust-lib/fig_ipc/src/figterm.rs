@@ -1,4 +1,8 @@
-use std::path::{Path, PathBuf};
+use std::path::{
+    Path,
+    PathBuf,
+};
+
 use wsl::is_wsl;
 
 pub fn get_figterm_socket_path(session_id: impl AsRef<str>) -> PathBuf {

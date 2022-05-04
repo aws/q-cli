@@ -1,7 +1,4 @@
-#![cfg_attr(
-    all(not(debug_assertions), target_os = "windows"),
-    windows_subsystem = "windows"
-)]
+#![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
 mod api;
 mod figterm;
@@ -19,9 +16,13 @@ use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use native::NativeState;
 use parking_lot::RwLock;
+use tauri::plugin::{
+    Builder,
+    TauriPlugin,
+};
 use tauri::{
-    plugin::{Builder, TauriPlugin},
-    Manager, Runtime,
+    Manager,
+    Runtime,
 };
 use tokio::sync::mpsc;
 use window::WindowState;
@@ -104,9 +105,7 @@ fn main() {
         .on_system_tray_event({
             let debug_state = debug_state.clone();
             let figterm_state = figterm_state.clone();
-            move |app, event| {
-                tray::handle_tray_event(app, event, debug_state.clone(), figterm_state.clone())
-            }
+            move |app, event| tray::handle_tray_event(app, event, debug_state.clone(), figterm_state.clone())
         })
         .register_uri_scheme_protocol("fig", icons::handle)
         .manage(debug_state)

@@ -1,7 +1,11 @@
+use std::fmt;
+
 use anyhow::Result;
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
-use std::fmt;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// GitHub repo
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -35,12 +39,8 @@ impl<'de> Deserialize<'de> for GitHub {
     {
         let s = String::deserialize(deserializer)?;
         let mut parts = s.split('/');
-        let owner = parts
-            .next()
-            .ok_or_else(|| serde::de::Error::custom("missing owner"))?;
-        let repo = parts
-            .next()
-            .ok_or_else(|| serde::de::Error::custom("missing repo"))?;
+        let owner = parts.next().ok_or_else(|| serde::de::Error::custom("missing owner"))?;
+        let repo = parts.next().ok_or_else(|| serde::de::Error::custom("missing repo"))?;
         Ok(GitHub {
             owner: owner.to_owned(),
             repo: repo.to_owned(),
@@ -68,11 +68,7 @@ impl GitHub {
     }
 
     pub fn git_url(&self) -> Url {
-        Url::parse(&format!(
-            "https://github.com/{}/{}.git",
-            self.owner, self.repo
-        ))
-        .unwrap()
+        Url::parse(&format!("https://github.com/{}/{}.git", self.owner, self.repo)).unwrap()
     }
 }
 
@@ -97,10 +93,6 @@ impl Gist {
     }
 
     pub fn raw_url(&self) -> Url {
-        Url::parse(&format!(
-            "https://gist.githubusercontent.com/raw/{}",
-            self.0
-        ))
-        .unwrap()
+        Url::parse(&format!("https://gist.githubusercontent.com/raw/{}", self.0)).unwrap()
     }
 }

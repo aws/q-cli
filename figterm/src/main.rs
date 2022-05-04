@@ -6,51 +6,111 @@ pub mod logger;
 pub mod pty;
 pub mod term;
 
-use crate::{
-    interceptor::KeyInterceptor,
-    ipc::{remove_socket, spawn_incoming_receiver, spawn_outgoing_sender},
-    logger::init_logger,
-    pty::{async_pty::AsyncPtyMaster, fork_pty, ioctl_tiocswinsz, PtyForkResult},
-    term::get_winsize,
-    term::{read_winsize, termios_to_raw},
+use std::ffi::CString;
+use std::os::unix::prelude::AsRawFd;
+use std::process::exit;
+use std::str::FromStr;
+use std::time::{
+    Duration,
+    SystemTime,
+};
+use std::{
+    env,
+    vec,
 };
 
-use alacritty_terminal::{
-    ansi::Processor,
-    event::{Event, EventListener},
-    term::{CommandInfo, ShellState, SizeInfo},
-    Term,
+use alacritty_terminal::ansi::Processor;
+use alacritty_terminal::event::{
+    Event,
+    EventListener,
 };
-use anyhow::{anyhow, Context, Result};
+use alacritty_terminal::term::{
+    CommandInfo,
+    ShellState,
+    SizeInfo,
+};
+use alacritty_terminal::Term;
+use anyhow::{
+    anyhow,
+    Context,
+    Result,
+};
 use clap::StructOpt;
 use cli::Cli;
-use fig_proto::{
-    figterm::{figterm_message, intercept_command, FigtermMessage},
-    hooks::{
-        hook_to_message, new_context, new_edit_buffer_hook, new_preexec_hook, new_prompt_hook,
-    },
-    local::{self, LocalMessage},
+use fig_proto::figterm::{
+    figterm_message,
+    intercept_command,
+    FigtermMessage,
+};
+use fig_proto::hooks::{
+    hook_to_message,
+    new_context,
+    new_edit_buffer_hook,
+    new_preexec_hook,
+    new_prompt_hook,
+};
+use fig_proto::local::{
+    self,
+    LocalMessage,
 };
 use fig_settings::state;
 use fig_util::Terminal;
 use flume::Sender;
-use nix::{
-    libc::STDIN_FILENO,
-    sys::termios::{tcgetattr, tcsetattr, SetArg},
-    unistd::{execvp, getpid, isatty},
+use nix::libc::STDIN_FILENO;
+use nix::sys::termios::{
+    tcgetattr,
+    tcsetattr,
+    SetArg,
+};
+use nix::unistd::{
+    execvp,
+    getpid,
+    isatty,
 };
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
-use parking_lot::{lock_api::RawRwLock, RwLock};
-use sentry::integrations::anyhow::capture_anyhow;
-use std::time::{Duration, SystemTime};
-use std::{env, ffi::CString, os::unix::prelude::AsRawFd, process::exit, str::FromStr, vec};
-use tokio::{
-    io::{self, AsyncReadExt, AsyncWriteExt},
-    runtime, select,
-    signal::unix::SignalKind,
+use parking_lot::lock_api::RawRwLock;
+use parking_lot::{
+    Mutex,
+    RwLock,
 };
-use tracing::{debug, error, info, level_filters::LevelFilter, trace, warn};
+use sentry::integrations::anyhow::capture_anyhow;
+use tokio::io::{
+    self,
+    AsyncReadExt,
+    AsyncWriteExt,
+};
+use tokio::signal::unix::SignalKind;
+use tokio::{
+    runtime,
+    select,
+};
+use tracing::level_filters::LevelFilter;
+use tracing::{
+    debug,
+    error,
+    info,
+    trace,
+    warn,
+};
+
+use crate::interceptor::KeyInterceptor;
+use crate::ipc::{
+    remove_socket,
+    spawn_incoming_receiver,
+    spawn_outgoing_sender,
+};
+use crate::logger::init_logger;
+use crate::pty::async_pty::AsyncPtyMaster;
+use crate::pty::{
+    fork_pty,
+    ioctl_tiocswinsz,
+    PtyForkResult,
+};
+use crate::term::{
+    get_winsize,
+    read_winsize,
+    termios_to_raw,
+};
 
 const BUFFER_SIZE: usize = 4096;
 
@@ -127,7 +187,7 @@ impl EventListener for EventSender {
                 if let Err(err) = self.socket_sender.send(message) {
                     error!("Sender error: {:?}", err);
                 }
-            }
+            },
             Event::PreExec => {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
@@ -135,12 +195,12 @@ impl EventListener for EventSender {
                 if let Err(err) = self.socket_sender.send(message) {
                     error!("Sender error: {:?}", err);
                 }
-            }
+            },
             Event::CommandInfo(command_info) => {
                 if let Err(err) = self.history_sender.send(command_info.clone()) {
                     error!("Sender error: {:?}", err);
                 }
-            }
+            },
             Event::ShellChanged => {
                 let shell = if shell_state.in_ssh || shell_state.in_docker {
                     shell_state.remote_context.shell.as_ref()
@@ -152,7 +212,7 @@ impl EventListener for EventSender {
                         scope.set_tag("shell", shell);
                     }
                 });
-            }
+            },
         }
     }
 
@@ -173,19 +233,18 @@ where
     T: EventListener,
 {
     let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
-    let shell_enabled = [Some("bash"), Some("zsh"), Some("fish")]
-        .contains(&term.shell_state().get_context().shell.as_deref());
+    let shell_enabled =
+        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
     let mut handle = INSERTION_LOCKED_AT.write();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
-            let lock_expired =
-                at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
+            let lock_expired = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
             let should_unlock = lock_expired
-                || term.get_current_buffer().map_or(true, |buff| {
-                    &buff.buffer == (&EXPECTED_BUFFER.lock() as &String)
-                });
+                || term
+                    .get_current_buffer()
+                    .map_or(true, |buff| &buff.buffer == (&EXPECTED_BUFFER.lock() as &String));
             if should_unlock {
                 handle.take();
                 if lock_expired {
@@ -197,7 +256,7 @@ where
             } else {
                 true
             }
-        }
+        },
         None => false,
     };
     drop(handle);
@@ -222,14 +281,10 @@ where
             if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
                 debug!("edit_buffer: {:?}", edit_buffer);
                 trace!("buffer bytes: {:02X?}", edit_buffer.buffer.as_bytes());
-                trace!(
-                    "buffer chars: {:?}",
-                    edit_buffer.buffer.chars().collect::<Vec<_>>()
-                );
+                trace!("buffer chars: {:?}", edit_buffer.buffer.chars().collect::<Vec<_>>());
 
                 let context = shell_state_to_context(term.shell_state());
-                let edit_buffer_hook =
-                    new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0);
+                let edit_buffer_hook = new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0);
                 let message = hook_to_message(edit_buffer_hook);
 
                 debug!("Sending: {:?}", message);
@@ -237,7 +292,7 @@ where
                 sender.send_async(message).await?;
             }
             Ok(())
-        }
+        },
         None => Err(anyhow!("No edit buffer to send")),
     }
 }
@@ -251,9 +306,8 @@ async fn process_figterm_message(
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
             if let Some(ref text_to_insert) = command.insertion {
-                if let Some((buffer, Some(position))) = term
-                    .get_current_buffer()
-                    .map(|buff| (buff.buffer, buff.cursor_idx))
+                if let Some((buffer, Some(position))) =
+                    term.get_current_buffer().map(|buff| (buff.buffer, buff.cursor_idx))
                 {
                     trace!("buffer: {:?}, cursor_position: {:?}", buffer, position);
 
@@ -275,39 +329,37 @@ async fn process_figterm_message(
                     *EXPECTED_BUFFER.lock() = expected;
                 }
             }
-            pty_master
-                .write(command.to_term_string().as_bytes())
-                .await?;
-        }
+            pty_master.write(command.to_term_string().as_bytes()).await?;
+        },
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
                 Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
                     debug!("Set intercept all");
                     key_interceptor.set_intercept_all(true);
-                }
+                },
                 Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
                     debug!("Clear intercept");
                     key_interceptor.set_intercept_all(false);
-                }
+                },
                 Some(intercept_command::InterceptCommand::SetIntercept(_set_intercept)) => {
                     debug!("Set intercept");
                     // TODO: Rework this
-                }
+                },
                 Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
                     debug!("{:?}", set_intercept.chars);
                     // TODO: Rework this
-                }
+                },
                 Some(intercept_command::InterceptCommand::RemoveIntercept(set_intercept)) => {
                     debug!("{:?}", set_intercept.chars);
                     // TODO: Rework this
-                }
-                _ => {}
+                },
+                _ => {},
             }
-        }
+        },
         Some(figterm_message::Command::SetBufferCommand(_command)) => {
             todo!();
-        }
-        _ => {}
+        },
+        _ => {},
     }
 
     Ok(())
@@ -320,23 +372,16 @@ fn launch_shell() -> Result<()> {
             Some(shell) => shell,
             None => {
                 anyhow::bail!("No FIG_SHELL or SHELL found");
-            }
+            },
         },
     };
 
-    let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL")
-        .ok()
-        .filter(|s| !s.is_empty());
-    let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS")
-        .ok()
-        .filter(|s| !s.is_empty());
+    let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL").ok().filter(|s| !s.is_empty());
+    let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty());
 
-    let parent_shell_execution_string = env::var("FIG_EXECUTION_STRING")
-        .ok()
-        .filter(|s| !s.is_empty());
+    let parent_shell_execution_string = env::var("FIG_EXECUTION_STRING").ok().filter(|s| !s.is_empty());
 
-    let mut args =
-        vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
+    let mut args = vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
 
     if parent_shell_is_login.as_deref() == Some("1") {
         args.push(CString::new("--login").expect("Failed to convert arg to CString"));
@@ -344,9 +389,7 @@ fn launch_shell() -> Result<()> {
 
     if let Some(execution_string) = parent_shell_execution_string {
         args.push(CString::new("-c").expect("Failed to convert -c flag to CString"));
-        args.push(
-            CString::new(execution_string).expect("Failed to convert execution string to CString"),
-        );
+        args.push(CString::new(execution_string).expect("Failed to convert execution string to CString"));
     }
 
     if let Some(extra_args) = parent_shell_extra_args {
@@ -376,8 +419,7 @@ fn launch_shell() -> Result<()> {
 }
 
 fn figterm_main() -> Result<()> {
-    let term_session_id = env::var("TERM_SESSION_ID")
-        .context("Failed to get TERM_SESSION_ID environment variable")?;
+    let term_session_id = env::var("TERM_SESSION_ID").context("Failed to get TERM_SESSION_ID environment variable")?;
 
     logger::stdio_debug_log("Checking stdin fd is a tty");
 
@@ -596,7 +638,7 @@ fn figterm_main() -> Result<()> {
                         Err(e)
                     },
                 }
-        }
+        },
         PtyForkResult::Child => {
             // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
@@ -606,25 +648,20 @@ fn figterm_main() -> Result<()> {
                     println!("ERROR: {:?}", e);
                     capture_anyhow(&e);
                     Err(e)
-                }
+                },
             }
-        }
+        },
     }
 }
 
 fn main() {
-    fig_telemetry::init_sentry(
-        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-    );
+    fig_telemetry::init_sentry("https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825");
 
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
 
-    let should_launch_figterm = state::get_bool("figterm.enabled")
-        .ok()
-        .flatten()
-        .unwrap_or(true);
+    let should_launch_figterm = state::get_bool("figterm.enabled").ok().flatten().unwrap_or(true);
 
     if !should_launch_figterm {
         println!("[NOTE] figterm is disabled. Autocomplete will not work.");

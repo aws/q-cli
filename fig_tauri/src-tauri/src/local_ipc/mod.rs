@@ -4,20 +4,33 @@ mod hooks;
 use std::sync::Arc;
 
 use anyhow::anyhow;
+use fig_proto::local::command_response::Response as CommandResponseTypes;
+use fig_proto::local::local_message::Type as LocalMessageType;
 use fig_proto::local::{
-    command_response::Response as CommandResponseTypes, local_message::Type as LocalMessageType,
-    CommandResponse, ErrorResponse, LocalMessage, SuccessResponse,
+    CommandResponse,
+    ErrorResponse,
+    LocalMessage,
+    SuccessResponse,
 };
-use tokio::io::{AsyncRead, AsyncWrite};
-use tracing::{error, trace, warn};
+use tokio::io::{
+    AsyncRead,
+    AsyncWrite,
+};
+use tracing::{
+    error,
+    trace,
+    warn,
+};
 
-use crate::{figterm::FigtermState, native, window::WindowState, NotificationsState};
+use crate::figterm::FigtermState;
+use crate::window::WindowState;
+use crate::{
+    native,
+    NotificationsState,
+};
 
 pub enum LocalResponse {
-    Error {
-        code: Option<i32>,
-        message: Option<String>,
-    },
+    Error { code: Option<i32>, message: Option<String> },
     Success(Option<String>),
     Message(Box<CommandResponseTypes>),
 }
@@ -83,15 +96,13 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                         use fig_proto::local::command::Command::*;
 
                         match command {
-                            DebugMode(command) => {
-                                commands::debug(command).await.unwrap_or_else(|r| r)
-                            }
+                            DebugMode(command) => commands::debug(command).await.unwrap_or_else(|r| r),
                             _ => LocalResponse::Error {
                                 code: None,
                                 message: Some("Unknown command".to_owned()),
                             },
                         }
-                    }
+                    },
                 };
 
                 let message = {
@@ -104,7 +115,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                             } => CommandResponseTypes::Error(ErrorResponse { exit_code, message }),
                             LocalResponse::Success(message) => {
                                 CommandResponseTypes::Success(SuccessResponse { message })
-                            }
+                            },
                             LocalResponse::Message(m) => *m,
                         }),
                     }
@@ -115,29 +126,21 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                     error!("Failed sending local response: {}", err);
                     break;
                 }
-            }
+            },
             Some(LocalMessageType::Hook(hook)) => {
                 use fig_proto::local::hook::Hook;
 
                 match hook.hook {
                     Some(Hook::EditBuffer(request)) => {
-                        hooks::edit_buffer(
-                            request,
-                            figterm_state.clone(),
-                            &notification_state,
-                            &window_state,
-                        )
-                        .await
-                    }
-                    Some(Hook::CursorPosition(request)) => {
-                        hooks::caret_position(request, &window_state).await
-                    }
+                        hooks::edit_buffer(request, figterm_state.clone(), &notification_state, &window_state).await
+                    },
+                    Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &window_state).await,
                     Some(Hook::Prompt(request)) => hooks::prompt(request).await,
                     Some(Hook::FocusChange(request)) => hooks::focus_change(request).await,
                     Some(Hook::PreExec(request)) => hooks::pre_exec(request).await,
                     Some(Hook::InterceptedKey(request)) => {
                         hooks::intercepted_key(request, &notification_state, &window_state).await
-                    }
+                    },
                     err => {
                         match &err {
                             Some(unknown) => error!("Unknown hook: {:?}", unknown),
@@ -145,10 +148,10 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                         }
 
                         Err(anyhow!("Failed to process hook {err:?}"))
-                    }
+                    },
                 }
                 .unwrap();
-            }
+            },
             None => warn!("Received empty local message"),
         }
     }

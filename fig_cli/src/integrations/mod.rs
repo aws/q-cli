@@ -1,10 +1,15 @@
 pub mod shell;
 pub mod ssh;
 
-use anyhow::{Context, Result};
-use std::{
-    borrow::Cow,
-    path::{Path, PathBuf},
+use std::borrow::Cow;
+use std::path::{
+    Path,
+    PathBuf,
+};
+
+use anyhow::{
+    Context,
+    Result,
 };
 use thiserror::Error;
 use time::OffsetDateTime;
@@ -70,8 +75,8 @@ pub struct FileIntegration {
 
 impl Integration for FileIntegration {
     fn is_installed(&self) -> Result<(), InstallationError> {
-        let current_contents = std::fs::read_to_string(&self.path)
-            .context(format!("{} does not exist.", self.path.display()))?;
+        let current_contents =
+            std::fs::read_to_string(&self.path).context(format!("{} does not exist.", self.path.display()))?;
         if current_contents.ne(&self.contents) {
             let message = format!("{} should contain:\n{}", self.path.display(), self.contents);
             return Err(InstallationError::ImproperInstallation(message.into()));
@@ -83,10 +88,7 @@ impl Integration for FileIntegration {
         if self.is_installed().is_ok() {
             return Ok(());
         }
-        let parent_dir = self
-            .path
-            .parent()
-            .context("Could not get integration file directory")?;
+        let parent_dir = self.path.parent().context("Could not get integration file directory")?;
         std::fs::create_dir_all(parent_dir)?;
         std::fs::write(&self.path, &self.contents)?;
         Ok(())

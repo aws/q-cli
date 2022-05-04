@@ -1,28 +1,54 @@
 pub mod local_state;
 
-use crate::cli::installation::{self, InstallComponents};
-use crate::dotfiles::notify::TerminalNotification;
-use crate::util::get_parent_process_exe;
+use std::fs;
+use std::io::{
+    Read,
+    Write,
+};
+use std::path::PathBuf;
+use std::process::exit;
+use std::str::FromStr;
 
-use anyhow::{Context, Result};
-use clap::{ArgGroup, Args, Subcommand};
+use anyhow::{
+    Context,
+    Result,
+};
+use clap::{
+    ArgGroup,
+    Args,
+    Subcommand,
+};
 use crossterm::style::Stylize;
 use fig_directories::fig_dir;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_callback_hook;
-use native_dialog::{MessageDialog, MessageType};
-use rand::distributions::{Alphanumeric, DistString};
-use rand::seq::IteratorRandom;
-use std::{
-    fs,
-    io::{Read, Write},
-    path::PathBuf,
-    process::exit,
-    str::FromStr,
+use native_dialog::{
+    MessageDialog,
+    MessageType,
 };
+use rand::distributions::{
+    Alphanumeric,
+    DistString,
+};
+use rand::seq::IteratorRandom;
 use sysinfo::SystemExt;
-use tracing::{debug, error, info, trace};
-use viu::{run, Config};
+use tracing::{
+    debug,
+    error,
+    info,
+    trace,
+};
+use viu::{
+    run,
+    Config,
+};
+
+use crate::cli::installation::{
+    self,
+    InstallComponents,
+};
+use crate::dotfiles::notify::TerminalNotification;
+use crate::util::get_parent_process_exe;
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -160,7 +186,7 @@ impl InternalSubcommand {
                 };
 
                 installation::uninstall_cli(uninstall_components)?
-            }
+            },
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
             InternalSubcommand::Callback(CallbackArgs {
@@ -178,7 +204,7 @@ impl InternalSubcommand {
                             exit_code
                         );
                         (filename, exit_code)
-                    }
+                    },
                     _ => {
                         let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 9);
                         let tmp_filename = format!("fig-callback-{}", file_id);
@@ -194,18 +220,13 @@ impl InternalSubcommand {
                                 break;
                             }
                             tmp_file.write_all(&buffer[..size])?;
-                            trace!(
-                                "Read {} bytes\n{}",
-                                size,
-                                std::str::from_utf8(&buffer[..size])?
-                            );
+                            trace!("Read {} bytes\n{}", size, std::str::from_utf8(&buffer[..size])?);
                         }
 
-                        let filename: String =
-                            tmp_path.to_str().context("invalid file path")?.into();
+                        let filename: String = tmp_path.to_str().context("invalid file path")?.into();
                         trace!("Done reading from stdin!");
                         (filename, -1)
-                    }
+                    },
                 };
                 let hook = new_callback_hook(&handler_id, &filename, exit_code);
 
@@ -217,12 +238,12 @@ impl InternalSubcommand {
                 match send_hook_to_socket(hook).await {
                     Ok(()) => {
                         debug!("Successfully sent hook");
-                    }
+                    },
                     Err(e) => {
                         debug!("Couldn't send hook {}", e);
-                    }
+                    },
                 }
-            }
+            },
             InternalSubcommand::WarnUserWhenUninstallingIncorrectly => {
                 MessageDialog::new()
                     .set_type(MessageType::Warning)
@@ -230,7 +251,7 @@ impl InternalSubcommand {
                     .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
                     .show_alert()
                     .unwrap();
-            }
+            },
             InternalSubcommand::Animation(AnimationArgs {
                 filename,
                 rate,
@@ -246,24 +267,20 @@ impl InternalSubcommand {
                             match paths.choose(&mut rand::thread_rng()).unwrap() {
                                 Ok(p) => {
                                     fname = p.file_name().into_string().unwrap();
-                                }
+                                },
                                 Err(e) => {
                                     eprintln!("{}", e);
                                     std::process::exit(1);
-                                }
+                                },
                             }
                         }
 
-                        animations_folder
-                            .join(fname)
-                            .into_os_string()
-                            .into_string()
-                            .unwrap()
-                    }
+                        animations_folder.join(fname).into_os_string().into_string().unwrap()
+                    },
                     None => {
                         eprintln!("filename cannot be empty");
                         std::process::exit(1);
-                    }
+                    },
                 };
 
                 let loading_message = match before_text {
@@ -299,21 +316,21 @@ impl InternalSubcommand {
                     eprintln!("{:?}", e);
                     std::process::exit(1);
                 }
-            }
+            },
             InternalSubcommand::GetShell => {
                 if let Ok(exe) = get_parent_process_exe() {
                     print!("{}", exe.display())
                 } else {
                     exit(1);
                 }
-            }
+            },
             InternalSubcommand::Hostname => {
                 if let Some(hostname) = sysinfo::System::new().host_name() {
                     println!("{}", hostname);
                 } else {
                     exit(1);
                 }
-            }
+            },
         }
 
         Ok(())
@@ -353,10 +370,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     let file_content = match tokio::fs::read_to_string(&file).await {
         Ok(content) => content,
         Err(_) => {
-            if let Err(err) =
-                tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir"))
-                    .await
-            {
+            if let Err(err) = tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir")).await {
                 error!("Unable to create directory: {}", err);
             }
 
@@ -365,7 +379,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
             }
 
             exit(1);
-        }
+        },
     };
 
     let exit_code = match TerminalNotification::from_str(&file_content) {
@@ -375,7 +389,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
             println!();
 
             0
-        }
+        },
         Ok(TerminalNotification::NewUpdates) => {
             let verbosity = match fig_settings::settings::get_value("dotfiles.verbosity")
                 .ok()
@@ -389,19 +403,18 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                 _ => UpdatedVerbosity::Minimal,
             };
 
-            let source_immediately =
-                fig_settings::settings::get_value("dotfiles.sourceImmediately")
-                    .ok()
-                    .flatten()
-                    .and_then(|s| s.as_str().map(|s| s.to_owned()));
+            let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")
+                .ok()
+                .flatten()
+                .and_then(|s| s.as_str().map(|s| s.to_owned()));
 
             let source_updates = match source_immediately.as_deref() {
                 Some("always") => true,
                 // Ask is depercated
                 // Some("ask") => {
                 //     let dialog_result =  dialoguer::Select::with_theme(&dialoguer_theme())
-                //             .with_prompt("In the future, would you like Fig to auto-apply dotfiles changes in open terminals?")
-                //             .items(&["Yes", "No"])
+                //             .with_prompt("In the future, would you like Fig to auto-apply dotfiles changes in open
+                // terminals?")             .items(&["Yes", "No"])
                 //             .default(0)
                 //             .interact_opt();
 
@@ -455,7 +468,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
                 1
             }
-        }
+        },
         Err(_) => 1,
     };
 

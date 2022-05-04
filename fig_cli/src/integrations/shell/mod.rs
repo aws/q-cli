@@ -1,14 +1,28 @@
-use crate::integrations::{backup_file, FileIntegration, InstallationError, Integration};
-use crate::util::shell::Shell;
-use anyhow::{Context, Result};
+use std::fs::File;
+use std::io::Write;
+use std::path::{
+    Path,
+    PathBuf,
+};
+
+use anyhow::{
+    Context,
+    Result,
+};
 use clap::ArgEnum;
 use regex::Regex;
-use serde::{Deserialize, Serialize};
-use std::{
-    fs::File,
-    io::Write,
-    path::{Path, PathBuf},
+use serde::{
+    Deserialize,
+    Serialize,
 };
+
+use crate::integrations::{
+    backup_file,
+    FileIntegration,
+    InstallationError,
+    Integration,
+};
+use crate::util::shell::Shell;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -150,9 +164,7 @@ impl DotfileShellIntegration {
     fn script_integration(&self, when: When) -> Result<ShellScriptShellIntegration> {
         let integration_file_name = format!(
             "{}.{}.{}",
-            Regex::new(r"^\.")
-                .unwrap()
-                .replace_all(self.dotfile_name, ""),
+            Regex::new(r"^\.").unwrap().replace_all(self.dotfile_name, ""),
             when,
             self.shell
         );
@@ -182,18 +194,13 @@ impl DotfileShellIntegration {
         let old_eval_source = match when {
             When::Pre => match self.shell {
                 Shell::Fish => format!("set -Ua fish_user_paths $HOME/.local/bin\n{}", eval_line),
-                _ => format!(
-                    "export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{}",
-                    eval_line
-                ),
+                _ => format!("export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{}", eval_line),
             },
             When::Post => eval_line,
         };
 
         let old_file_regex = match when {
-            When::Pre => {
-                Regex::new(r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?")?
-            }
+            When::Pre => Regex::new(r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?")?,
             When::Post => Regex::new(r"\[ -s ~/\.fig/fig\.sh \] && source ~/\.fig/fig\.sh\n?")?,
         };
         let old_eval_regex = format!(
@@ -314,14 +321,11 @@ impl Integration for DotfileShellIntegration {
         let dotfile = self.dotfile_path();
         let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
             // Remove comments and empty lines.
-            Ok(contents) => Regex::new(r"^\s*(#.*)?\n")
-                .unwrap()
-                .replace_all(&contents, "")
-                .into(),
+            Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
             _ => {
                 let message = format!("{} does not exist.", dotfile.display());
                 return Err(InstallationError::NotInstalled(message.into()));
-            }
+            },
         };
 
         if self.pre {
@@ -347,11 +351,9 @@ impl Integration for DotfileShellIntegration {
                 .replace_all(&contents, "")
                 .into();
 
-            contents = Regex::new(
-                r"(?mi)^#.*Please make sure this block is at the .* of this file.*$\n?",
-            )?
-            .replace_all(&contents, "")
-            .into();
+            contents = Regex::new(r"(?mi)^#.*Please make sure this block is at the .* of this file.*$\n?")?
+                .replace_all(&contents, "")
+                .into();
 
             if self.pre {
                 contents = self.remove_from_text(&contents, When::Pre)?;

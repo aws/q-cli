@@ -2,13 +2,29 @@ use std::time::Duration;
 
 use anyhow::Result;
 use fig_proto::local::{
-    self, command, BuildCommand, DebugModeCommand, InputMethodAction, InputMethodCommand,
-    OpenUiElementCommand, PromptAccessibilityCommand, QuitCommand, RestartCommand,
-    RestartSettingsListenerCommand, UiElement, UninstallCommand, UpdateCommand,
+    self,
+    command,
+    BuildCommand,
+    DebugModeCommand,
+    InputMethodAction,
+    InputMethodCommand,
+    OpenUiElementCommand,
+    PromptAccessibilityCommand,
+    QuitCommand,
+    RestartCommand,
+    RestartSettingsListenerCommand,
+    UiElement,
+    UninstallCommand,
+    UpdateCommand,
 };
 use system_socket::SystemStream;
 
-use super::{connect_timeout, get_fig_socket_path, recv_message, send_message};
+use super::{
+    connect_timeout,
+    get_fig_socket_path,
+    recv_message,
+    send_message,
+};
 
 pub async fn restart_settings_listener() -> Result<()> {
     let command = command::Command::RestartSettingsListener(RestartSettingsListenerCommand {});
@@ -82,10 +98,7 @@ pub async fn run_install_script_command() -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn send_command(
-    connection: &mut SystemStream,
-    command: local::command::Command,
-) -> Result<()> {
+pub async fn send_command(connection: &mut SystemStream, command: local::command::Command) -> Result<()> {
     let message = local::LocalMessage {
         r#type: Some(local::local_message::Type::Command(local::Command {
             id: None,
@@ -111,63 +124,58 @@ pub async fn send_command_to_socket(command: local::command::Command) -> Result<
     send_command(&mut conn, command).await
 }
 
-pub async fn send_recv_command_to_socket(
-    command: local::command::Command,
-) -> Result<Option<local::CommandResponse>> {
+pub async fn send_recv_command_to_socket(command: local::command::Command) -> Result<Option<local::CommandResponse>> {
     let path = get_fig_socket_path();
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
     send_recv_command(&mut conn, command).await
 }
 
-/*
-
-func RunInstallScriptCommand() error {
-    noResponse := true
-
-    cmd := fig_proto.Command{
-        NoResponse: &noResponse,
-        Command: &fig_proto.Command_RunInstallScript{
-            RunInstallScript: &fig_proto.RunInstallScriptCommand{},
-        },
-    }
-
-    if err := SendCommand(&cmd); err != nil {
-        return err
-    }
-
-    return nil
-}
-
-func RunResetCacheCommand() error {
-    noResponse := true
-
-    cmd := fig_proto.Command{
-        NoResponse: &noResponse,
-        Command: &fig_proto.Command_ResetCache{
-            ResetCache: &fig_proto.ResetCacheCommand{},
-        },
-    }
-
-    if err := SendCommand(&cmd); err != nil {
-        return err
-    }
-
-    return nil
-}
-
-func GetDebugModeCommand() (string, error) {
-    cmd := fig_proto.Command{
-        Command: &fig_proto.Command_DebugMode{
-            DebugMode: &fig_proto.DebugModeCommand{},
-        },
-    }
-
-    response, err := SendRecvCommand(&cmd)
-    if err != nil {
-        return "", err
-    }
-
-    return GetCommandResponseMessage(response)
-}
-
-*/
+// func RunInstallScriptCommand() error {
+// noResponse := true
+//
+// cmd := fig_proto.Command{
+// NoResponse: &noResponse,
+// Command: &fig_proto.Command_RunInstallScript{
+// RunInstallScript: &fig_proto.RunInstallScriptCommand{},
+// },
+// }
+//
+// if err := SendCommand(&cmd); err != nil {
+// return err
+// }
+//
+// return nil
+// }
+//
+// func RunResetCacheCommand() error {
+// noResponse := true
+//
+// cmd := fig_proto.Command{
+// NoResponse: &noResponse,
+// Command: &fig_proto.Command_ResetCache{
+// ResetCache: &fig_proto.ResetCacheCommand{},
+// },
+// }
+//
+// if err := SendCommand(&cmd); err != nil {
+// return err
+// }
+//
+// return nil
+// }
+//
+// func GetDebugModeCommand() (string, error) {
+// cmd := fig_proto.Command{
+// Command: &fig_proto.Command_DebugMode{
+// DebugMode: &fig_proto.DebugModeCommand{},
+// },
+// }
+//
+// response, err := SendRecvCommand(&cmd)
+// if err != nil {
+// return "", err
+// }
+//
+// return GetCommandResponseMessage(response)
+// }
+//

@@ -5,28 +5,44 @@ pub mod system_handler;
 pub mod systemd_unit;
 pub mod websocket;
 
-use crate::{
-    daemon::{
-        launchd_plist::LaunchdPlist, settings_watcher::spawn_settings_watcher,
-        systemd_unit::SystemdUnit, websocket::process_websocket,
-    },
-    util::backoff::Backoff,
+use std::path::{
+    Path,
+    PathBuf,
 };
+use std::process::Command;
+use std::sync::Arc;
+use std::time::Duration;
 
-use anyhow::{anyhow, Context, Result};
-use cfg_if::cfg_if;
-use futures::{SinkExt, StreamExt};
-use parking_lot::{lock_api::RawMutex, Mutex, RwLock};
-use rand::{distributions::Uniform, prelude::Distribution};
-use std::{
-    path::{Path, PathBuf},
-    process::Command,
-    sync::Arc,
-    time::Duration,
+use anyhow::{
+    anyhow,
+    Context,
+    Result,
 };
+use cfg_if::cfg_if;
+use futures::{
+    SinkExt,
+    StreamExt,
+};
+use parking_lot::lock_api::RawMutex;
+use parking_lot::{
+    Mutex,
+    RwLock,
+};
+use rand::distributions::Uniform;
+use rand::prelude::Distribution;
 use tokio::select;
 use tokio_tungstenite::tungstenite;
-use tracing::{debug, error, info};
+use tracing::{
+    debug,
+    error,
+    info,
+};
+
+use crate::daemon::launchd_plist::LaunchdPlist;
+use crate::daemon::settings_watcher::spawn_settings_watcher;
+use crate::daemon::systemd_unit::SystemdUnit;
+use crate::daemon::websocket::process_websocket;
+use crate::util::backoff::Backoff;
 
 pub fn get_daemon() -> Result<LaunchService> {
     cfg_if! {
@@ -73,10 +89,7 @@ pub enum InitSystem {
 
 impl InitSystem {
     pub fn get_init_system() -> Result<InitSystem> {
-        let output = Command::new("ps")
-            .args(["-p1"])
-            .output()
-            .context("Could not run ps")?;
+        let output = Command::new("ps").args(["-p1"]).output().context("Could not run ps")?;
 
         if !output.status.success() {
             return Err(anyhow!("ps failed: {}", output.status));
@@ -102,10 +115,7 @@ impl InitSystem {
     pub fn start_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
         match self {
             InitSystem::Launchd => {
-                let output = Command::new("launchctl")
-                    .arg("load")
-                    .arg(path.as_ref())
-                    .output()?;
+                let output = Command::new("launchctl").arg("load").arg(path.as_ref()).output()?;
 
                 if !output.status.success() {
                     return Err(anyhow!(
@@ -124,7 +134,7 @@ impl InitSystem {
                 }
 
                 Ok(())
-            }
+            },
             InitSystem::Systemd => {
                 let output = Command::new("systemctl")
                     .arg("--user")
@@ -142,7 +152,7 @@ impl InitSystem {
                 }
 
                 Ok(())
-            }
+            },
             InitSystem::SCM => {
                 let output = Command::new("sc")
                     .arg("start")
@@ -158,7 +168,7 @@ impl InitSystem {
                 }
 
                 Ok(())
-            }
+            },
             _ => Err(anyhow!("Could not start daemon: unsupported init system")),
         }
     }
@@ -166,10 +176,7 @@ impl InitSystem {
     fn stop_daemon(&self, path: impl AsRef<Path>) -> Result<()> {
         match self {
             InitSystem::Launchd => {
-                let output = Command::new("launchctl")
-                    .arg("unload")
-                    .arg(path.as_ref())
-                    .output()?;
+                let output = Command::new("launchctl").arg("unload").arg(path.as_ref()).output()?;
 
                 if !output.status.success() {
                     return Err(anyhow!(
@@ -188,7 +195,7 @@ impl InitSystem {
                 }
 
                 Ok(())
-            }
+            },
             InitSystem::Systemd => {
                 Command::new("systemctl")
                     .arg("--now")
@@ -198,7 +205,7 @@ impl InitSystem {
                     .with_context(|| format!("Could not disable {:?}", path.as_ref()))?;
 
                 Ok(())
-            }
+            },
             InitSystem::SCM => {
                 Command::new("sc")
                     .arg("stop")
@@ -207,7 +214,7 @@ impl InitSystem {
                     .with_context(|| format!("Could not disable {:?}", path.as_ref()))?;
 
                 Ok(())
-            }
+            },
             _ => Err(anyhow!("Could not stop daemon: unsupported init system")),
         }
     }
@@ -244,7 +251,7 @@ impl InitSystem {
                     .and_then(|data| data.get(1).and_then(|v| v.parse::<i32>().ok()));
 
                 Ok(status)
-            }
+            },
             InitSystem::Systemd => {
                 let output = Command::new("systemctl")
                     .arg("--user")
@@ -255,13 +262,10 @@ impl InitSystem {
 
                 let stdout = String::from_utf8_lossy(&output.stdout);
 
-                let status = stdout
-                    .split('=')
-                    .last()
-                    .and_then(|s| s.trim().parse::<i32>().ok());
+                let status = stdout.split('=').last().and_then(|s| s.trim().parse::<i32>().ok());
 
                 Ok(status)
-            }
+            },
             InitSystem::SCM => {
                 let _output = Command::new("sc")
                     .arg("query")
@@ -271,10 +275,8 @@ impl InitSystem {
                     .context("Could not query SCM")?;
 
                 todo!("Parse service status and return it (windows)");
-            }
-            _ => Err(anyhow!(
-                "Could not get daemon status: unsupported init system"
-            )),
+            },
+            _ => Err(anyhow!("Could not get daemon status: unsupported init system")),
         }
     }
 }
@@ -373,12 +375,7 @@ impl LaunchService {
 
     pub fn install(&self) -> Result<()> {
         // Create parent directory
-        std::fs::create_dir_all(
-            &self
-                .path
-                .parent()
-                .context("Could not get parent directory")?,
-        )?;
+        std::fs::create_dir_all(&self.path.parent().context("Could not get parent directory")?)?;
 
         // Write to the definition file
         std::fs::write(&self.path, self.data.as_bytes())?;
@@ -434,7 +431,8 @@ pub async fn daemon() -> Result<()> {
 
     let daemon_status = Arc::new(RwLock::new(DaemonStatus::default()));
 
-    // Add small random element to the delay to avoid all clients from sending the messages at the same time
+    // Add small random element to the delay to avoid all clients from sending the messages at the same
+    // time
     let dist = Uniform::new(59., 60.);
     let delay = dist.sample(&mut rand::thread_rng());
     let mut ping_interval = tokio::time::interval(Duration::from_secs_f64(delay));
@@ -453,8 +451,7 @@ pub async fn daemon() -> Result<()> {
     let daemon_status_clone = daemon_status.clone();
     let unix_join = tokio::spawn(async move {
         let daemon_status = daemon_status_clone;
-        let mut backoff =
-            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
             match spawn_incoming_system_handler(daemon_status.clone()).await {
                 Ok(handle) => {
@@ -465,11 +462,11 @@ pub async fn daemon() -> Result<()> {
                         daemon_status.write().system_socket_status = Err(err.into());
                     }
                     return;
-                }
+                },
                 Err(err) => {
                     error!("Error spawning system handler: {:?}", err);
                     daemon_status.write().system_socket_status = Err(err);
-                }
+                },
             }
             backoff.sleep().await;
         }
@@ -479,8 +476,7 @@ pub async fn daemon() -> Result<()> {
     let daemon_status_clone = daemon_status.clone();
     let websocket_join = tokio::spawn(async move {
         let daemon_status = daemon_status_clone;
-        let mut backoff =
-            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
             match websocket::connect_to_fig_websocket().await {
                 Ok(mut websocket_stream) => {
@@ -508,11 +504,11 @@ pub async fn daemon() -> Result<()> {
                             }
                         }
                     }
-                }
+                },
                 Err(err) => {
                     error!("Error while connecting to websocket: {}", err);
                     daemon_status.write().websocket_status = Err(err);
-                }
+                },
             }
             backoff.sleep().await;
         }
@@ -522,8 +518,7 @@ pub async fn daemon() -> Result<()> {
     let daemon_status_clone = daemon_status.clone();
     let settings_watcher_join = tokio::spawn(async move {
         let daemon_status = daemon_status_clone;
-        let mut backoff =
-            Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
         loop {
             match spawn_settings_watcher(daemon_status.clone()).await {
                 Ok(join_handle) => {
@@ -534,11 +529,11 @@ pub async fn daemon() -> Result<()> {
                         daemon_status.write().settings_watcher_status = Err(err.into());
                     }
                     return;
-                }
+                },
                 Err(err) => {
                     error!("Error spawning settings watcher: {:?}", err);
                     daemon_status.write().settings_watcher_status = Err(err);
-                }
+                },
             }
             backoff.sleep().await;
         }
@@ -546,12 +541,7 @@ pub async fn daemon() -> Result<()> {
 
     info!("Daemon is now running");
 
-    match tokio::try_join!(
-        scheduler_join,
-        unix_join,
-        websocket_join,
-        settings_watcher_join,
-    ) {
+    match tokio::try_join!(scheduler_join, unix_join, websocket_join, settings_watcher_join,) {
         Ok(_) => Ok(()),
         Err(err) => Err(err.into()),
     }

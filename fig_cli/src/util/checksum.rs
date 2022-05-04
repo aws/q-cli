@@ -1,5 +1,9 @@
-use serde::{Deserialize, Serialize};
 use std::ops::Deref;
+
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// A checksum for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]

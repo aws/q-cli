@@ -1,40 +1,27 @@
 use std::sync::Arc;
 
 use parking_lot::RwLock;
-use tauri::PhysicalPosition;
-use tauri::PhysicalSize;
-use tauri::Position;
-use tauri::Size;
-use tauri::Window;
-use tokio::sync::mpsc::UnboundedReceiver;
-use tokio::sync::mpsc::UnboundedSender;
+use tauri::{
+    PhysicalPosition,
+    PhysicalSize,
+    Position,
+    Size,
+    Window,
+};
+use tokio::sync::mpsc::{
+    UnboundedReceiver,
+    UnboundedSender,
+};
 
 #[derive(Debug)]
 pub enum WindowEvent {
-    Reanchor {
-        x: i32,
-        y: i32,
-    },
-    Reposition {
-        x: i32,
-        y: i32,
-    },
-    UpdateCaret {
-        x: i32,
-        y: i32,
-        width: i32,
-        height: i32,
-    },
-    Resize {
-        width: u32,
-        height: u32,
-    },
+    Reanchor { x: i32, y: i32 },
+    Reposition { x: i32, y: i32 },
+    UpdateCaret { x: i32, y: i32, width: i32, height: i32 },
+    Resize { width: u32, height: u32 },
     Hide,
     Show,
-    Emit {
-        event: &'static str,
-        payload: String,
-    },
+    Emit { event: &'static str, payload: String },
 }
 
 #[derive(Debug)]
@@ -51,11 +38,7 @@ impl WindowState {
         Self {
             event_sender: RwLock::new(event_sender),
             anchor: RwLock::new(PhysicalPosition::default()),
-            position: RwLock::new(
-                window
-                    .inner_position()
-                    .expect("Failed to acquire window position"),
-            ),
+            position: RwLock::new(window.inner_position().expect("Failed to acquire window position")),
             caret_position: RwLock::new(PhysicalPosition::default()),
             caret_size: RwLock::new(PhysicalSize::default()),
         }
@@ -69,11 +52,7 @@ impl WindowState {
     }
 }
 
-pub async fn handle_window(
-    window: Window,
-    mut recv: UnboundedReceiver<WindowEvent>,
-    state: Arc<WindowState>,
-) {
+pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEvent>, state: Arc<WindowState>) {
     while let Some(event) = recv.recv().await {
         match event {
             WindowEvent::Reanchor { x, y } => {
@@ -84,7 +63,7 @@ pub async fn handle_window(
                     x: x + position.x + caret_position.x,
                     y: y + position.y + caret_position.y,
                 }))
-            }
+            },
             WindowEvent::Reposition { x, y } => {
                 let anchor = state.anchor.read();
                 let caret_position = state.caret_position.read();
@@ -93,13 +72,8 @@ pub async fn handle_window(
                     x: anchor.x + x + caret_position.x,
                     y: anchor.y + y + caret_position.y,
                 }))
-            }
-            WindowEvent::UpdateCaret {
-                x,
-                y,
-                width,
-                height,
-            } => {
+            },
+            WindowEvent::UpdateCaret { x, y, width, height } => {
                 let anchor = PhysicalPosition { x, y };
                 let position = state.position.read();
                 *state.caret_position.write() = PhysicalPosition { x, y };
@@ -108,10 +82,8 @@ pub async fn handle_window(
                     x: anchor.x + position.x + x,
                     y: anchor.y + position.y + y,
                 }))
-            }
-            WindowEvent::Resize { width, height } => {
-                window.set_size(Size::Physical(PhysicalSize { width, height }))
-            }
+            },
+            WindowEvent::Resize { width, height } => window.set_size(Size::Physical(PhysicalSize { width, height })),
             WindowEvent::Hide => window.hide(),
             WindowEvent::Show => window.show(),
             WindowEvent::Emit { event, payload } => window.emit(event, payload),

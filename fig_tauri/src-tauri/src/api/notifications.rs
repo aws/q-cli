@@ -1,8 +1,13 @@
-use fig_proto::fig::{NotificationRequest, NotificationType};
+use fig_proto::fig::{
+    NotificationRequest,
+    NotificationType,
+};
 
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
 use crate::NotificationsState;
-
-use super::{RequestResult, RequestResultImpl};
 
 pub async fn handle_request(
     request: NotificationRequest,
@@ -18,19 +23,13 @@ pub async fn handle_request(
     }
 }
 
-fn subscribe(
-    channel: i64,
-    notification_type: NotificationType,
-    state: &NotificationsState,
-) -> RequestResult {
+fn subscribe(channel: i64, notification_type: NotificationType, state: &NotificationsState) -> RequestResult {
     if notification_type == NotificationType::All {
         return RequestResult::error("Cannot subscribe to 'all' notification type");
     }
 
     if state.subscriptions.contains_key(&notification_type) {
-        return RequestResult::error(format!(
-            "Already subscribed to notification type {notification_type:?}",
-        ));
+        return RequestResult::error(format!("Already subscribed to notification type {notification_type:?}",));
     }
 
     state.subscriptions.insert(notification_type, channel);
@@ -44,9 +43,7 @@ fn unsubscribe(notification_type: NotificationType, state: &NotificationsState) 
     }
 
     if !state.subscriptions.contains_key(&notification_type) {
-        return RequestResult::error(format!(
-            "Not subscribed notification type {notification_type:?}",
-        ));
+        return RequestResult::error(format!("Not subscribed notification type {notification_type:?}",));
     }
 
     state.subscriptions.remove(&notification_type);

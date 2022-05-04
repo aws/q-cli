@@ -2,14 +2,20 @@
 
 use std::path::Path;
 
-use crate::cli::ssh::get_ssh_config_path;
-use crate::integrations::{ssh::SshIntegration, Integration};
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use crossterm::style::Stylize;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
-use crate::{cli::util::dialoguer_theme, daemon, util::shell::Shell};
+use crate::cli::ssh::get_ssh_config_path;
+use crate::cli::util::dialoguer_theme;
+use crate::daemon;
+use crate::integrations::ssh::SshIntegration;
+use crate::integrations::Integration;
+use crate::util::shell::Shell;
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -21,11 +27,7 @@ bitflags::bitflags! {
     }
 }
 
-pub fn install_cli(
-    install_components: InstallComponents,
-    no_confirm: bool,
-    force: bool,
-) -> Result<()> {
+pub fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<()> {
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
@@ -46,8 +48,10 @@ pub fn install_cli(
             false
         } else {
             !dialoguer::Confirm::with_theme(&dialoguer_theme())
-            .with_prompt("Do you want fig to modify your shell config (you will have to manually do this otherwise)?")
-            .interact()?
+                .with_prompt(
+                    "Do you want fig to modify your shell config (you will have to manually do this otherwise)?",
+                )
+                .interact()?
         };
         if !manual_install {
             if let Err(err) = install_fig(true) {
@@ -76,15 +80,13 @@ pub fn install_cli(
         }
     }
 
-    /*
-     * Disable ssh by default for now.
-    if install_components.contains(InstallComponents::SSH) {
-        let ssh_integration = SshIntegration { path: get_ssh_config_path()? };
-        if let Err(e) = ssh_integration.install(None) {
-            println!("{}\n {}", "Failed to install SSH integration.".bold(), e);
-        }
-    }
-    */
+    // Disable ssh by default for now.
+    // if install_components.contains(InstallComponents::SSH) {
+    // let ssh_integration = SshIntegration { path: get_ssh_config_path()? };
+    // if let Err(e) = ssh_integration.install(None) {
+    // println!("{}\n {}", "Failed to install SSH integration.".bold(), e);
+    // }
+    // }
 
     if install_components.contains(InstallComponents::DAEMON) {
         daemon::install_daemon()?;
@@ -111,10 +113,10 @@ fn install_fig(_modify_files: bool) -> Result<()> {
                         errs.push(format!("{}: {}", integration, e));
                     }
                 }
-            }
+            },
             Err(e) => {
                 errs.push(format!("{}: {}", shell, e));
-            }
+            },
         }
     }
 
@@ -157,8 +159,7 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
 
         for path in binary_paths {
             if path.exists() {
-                std::fs::remove_file(path)
-                    .with_context(|| format!("Could not delete {}", path.display()))?;
+                std::fs::remove_file(path).with_context(|| format!("Could not delete {}", path.display()))?;
             }
         }
 

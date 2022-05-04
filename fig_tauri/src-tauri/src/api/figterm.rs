@@ -1,9 +1,14 @@
 use anyhow::anyhow;
 use fig_proto::fig::InsertTextRequest;
 
-use crate::figterm::{FigTermCommand, FigtermState};
-
-use super::{RequestResult, RequestResultImpl};
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
+use crate::figterm::{
+    FigTermCommand,
+    FigtermState,
+};
 
 pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> RequestResult {
     let figterm_command = match request.r#type {
@@ -14,14 +19,12 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
                 immediate: None,
                 offset: None,
             },
-            fig_proto::fig::insert_text_request::Type::Update(update) => {
-                FigTermCommand::InsertText {
-                    insertion: update.insertion,
-                    deletion: update.deletion,
-                    immediate: update.immediate,
-                    offset: update.offset,
-                }
-            }
+            fig_proto::fig::insert_text_request::Type::Update(update) => FigTermCommand::InsertText {
+                insertion: update.insertion,
+                deletion: update.deletion,
+                immediate: update.immediate,
+                offset: update.offset,
+            },
         },
         None => todo!(),
     };

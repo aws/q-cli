@@ -1,20 +1,35 @@
 pub mod uninstall;
 
-use crate::{
-    cli::debug::get_app_info,
-    util::{launch_fig, LaunchOptions},
-};
+use std::process::Command;
+use std::time::Duration;
 
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_ipc::command::{quit_command, restart_command, update_command};
+use fig_ipc::command::{
+    quit_command,
+    restart_command,
+    update_command,
+};
+use fig_settings::{
+    settings,
+    state,
+};
 use regex::Regex;
 use serde_json::json;
-use std::{process::Command, time::Duration};
-use tracing::{info, trace};
+use tracing::{
+    info,
+    trace,
+};
 
-use fig_settings::{settings, state};
+use crate::cli::debug::get_app_info;
+use crate::util::{
+    launch_fig,
+    LaunchOptions,
+};
 
 #[derive(Debug, Subcommand)]
 pub enum AppSubcommand {
@@ -108,7 +123,7 @@ impl AppSubcommand {
         match self {
             AppSubcommand::Install => {
                 fig_ipc::command::run_install_script_command().await?;
-            }
+            },
             AppSubcommand::Onboarding => {
                 cfg_if! {
                     if #[cfg(unix)] {
@@ -124,7 +139,7 @@ impl AppSubcommand {
                         println!("Onboarding isn't supported on Windows yet");
                     }
                 }
-            }
+            },
             AppSubcommand::Prompts => {
                 if is_app_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
@@ -136,8 +151,7 @@ impl AppSubcommand {
                             trace!("starting autoupdate");
 
                             println!("Updating {} to latest version...", "Fig".magenta());
-                            let already_seen_hint =
-                                state::get_bool_or("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", false);
+                            let already_seen_hint = state::get_bool_or("DISPLAYED_AUTOUPDATE_SETTINGS_HINT", false);
 
                             if !already_seen_hint {
                                 println!(
@@ -159,9 +173,7 @@ impl AppSubcommand {
                         } else {
                             trace!("autoupdates are disabled.");
 
-                            println!(
-                                "A new version of Fig is available. (Autoupdates are disabled)"
-                            );
+                            println!("A new version of Fig is available. (Autoupdates are disabled)");
                             println!("To update, run: {}", "fig update".magenta());
                         }
                     }
@@ -169,35 +181,30 @@ impl AppSubcommand {
                     let no_autolaunch = settings::get_bool_or("app.disableAutolaunch", false);
                     let user_quit_app = state::get_bool_or("APP_TERMINATED_BY_USER", false);
                     if !no_autolaunch && !user_quit_app {
-                        let already_seen_hint: bool = fig_settings::state::get_bool_or(
-                            "DISPLAYED_AUTOLAUNCH_SETTINGS_HINT",
-                            false,
-                        );
+                        let already_seen_hint: bool =
+                            fig_settings::state::get_bool_or("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", false);
                         println!("Launching {}...", "Fig".magenta());
                         if !already_seen_hint {
                             println!(
                                 "(To turn off autolaunch, run {})",
                                 "fig settings app.disableAutolaunch true".magenta()
                             );
-                            fig_settings::state::set_value(
-                                "DISPLAYED_AUTOLAUNCH_SETTINGS_HINT",
-                                true,
-                            )?
+                            fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?
                         }
 
                         launch_fig(LaunchOptions::new())?;
                     }
                 }
-            }
+            },
             AppSubcommand::Uninstall(args) => {
                 uninstall::uninstall_mac_app(args).await;
-            }
+            },
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
             AppSubcommand::Launch => launch_fig_cli()?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
-            }
+            },
             AppSubcommand::SetPath => {
                 println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
                 let path = std::env::var("PATH")?;
@@ -232,7 +239,7 @@ impl AppSubcommand {
                         "fig launch".magenta()
                     ))?;
                 }
-            }
+            },
         }
         Ok(())
     }

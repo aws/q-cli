@@ -4,7 +4,11 @@ use anyhow::Result;
 use fig_proto::local;
 use system_socket::SystemStream;
 
-use super::{connect_timeout, get_fig_socket_path, send_message};
+use super::{
+    connect_timeout,
+    get_fig_socket_path,
+    send_message,
+};
 
 /// Send a hook using a system socket
 pub async fn send_hook(connection: &mut SystemStream, hook: local::Hook) -> Result<()> {

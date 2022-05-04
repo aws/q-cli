@@ -2,7 +2,10 @@
 
 use std::path::Path;
 
-use tokio::net::{UnixListener, UnixStream};
+use tokio::net::{
+    UnixListener,
+    UnixStream,
+};
 
 pub const SHELL: &str = "/bin/bash";
 pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];

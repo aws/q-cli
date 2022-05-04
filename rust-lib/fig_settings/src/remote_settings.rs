@@ -1,9 +1,13 @@
-use crate::{api_host, settings::LocalSettings};
-
 use fig_auth::get_token;
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use thiserror::Error;
+
+use crate::api_host;
+use crate::settings::LocalSettings;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -37,10 +41,7 @@ pub async fn update_remote_all_settings(settings: LocalSettings) -> Result<(), E
     Ok(())
 }
 
-pub async fn update_remote_setting(
-    key: impl AsRef<str>,
-    value: impl Into<serde_json::Value>,
-) -> Result<(), Error> {
+pub async fn update_remote_setting(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<(), Error> {
     let token = get_token().await.map_err(|_| Error::AuthError)?;
 
     let mut body = serde_json::Map::new();

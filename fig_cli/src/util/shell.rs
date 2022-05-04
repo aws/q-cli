@@ -1,15 +1,26 @@
-use anyhow::{Context, Result};
+use std::fmt::Display;
+use std::path::PathBuf;
+use std::str::FromStr;
+
+use anyhow::{
+    Context,
+    Result,
+};
 use clap::ArgEnum;
 use fig_settings::api_host;
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
-use std::{fmt::Display, path::PathBuf, str::FromStr};
-
-use crate::util::get_parent_process_exe;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use crate::integrations::shell::{
-    DotfileShellIntegration, ShellIntegration, ShellScriptShellIntegration, When,
+    DotfileShellIntegration,
+    ShellIntegration,
+    ShellScriptShellIntegration,
+    When,
 };
+use crate::util::get_parent_process_exe;
 
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]
@@ -75,27 +86,19 @@ impl Shell {
                 .or_else(fig_directories::home_dir),
             Shell::Fish => std::env::var_os("__fish_config_dir")
                 .map(PathBuf::from)
-                .or_else(|| {
-                    fig_directories::home_dir().map(|home| home.join(".config").join("fish"))
-                }),
+                .or_else(|| fig_directories::home_dir().map(|home| home.join(".config").join("fish"))),
         }
     }
 
     pub fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>> {
-        let config_dir = self
-            .get_config_directory()
-            .context("Failed to get base directories")?;
+        let config_dir = self.get_config_directory().context("Failed to get base directories")?;
 
         let integrations: Vec<Box<dyn ShellIntegration>> = match self {
             Shell::Bash => {
                 let mut configs = vec![".bashrc"];
                 let other_configs = [".profile", ".bash_login", ".bash_profile"];
 
-                configs.extend(
-                    other_configs
-                        .into_iter()
-                        .filter(|f| config_dir.join(f).exists()),
-                );
+                configs.extend(other_configs.into_iter().filter(|f| config_dir.join(f).exists()));
 
                 // Include .profile if none of [.profile, .bash_login, .bash_profile] exist.
                 if configs.len() == 1 {
@@ -114,7 +117,7 @@ impl Shell {
                         }) as Box<dyn ShellIntegration>
                     })
                     .collect()
-            }
+            },
             Shell::Zsh => vec![".zshrc", ".zprofile"]
                 .into_iter()
                 .map(|filename| {
@@ -141,7 +144,7 @@ impl Shell {
                         path: fish_config_dir.join("99_fig_post.fish"),
                     }),
                 ]
-            }
+            },
         };
 
         Ok(integrations)
@@ -157,22 +160,18 @@ impl Shell {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
                     include_str!("../integrations/shell/scripts/bash-preexec.sh"),
-                    "\n}\n\
-                    __fig_source_bash_preexec\n\
-                    function __bp_adjust_histcontrol() { :; }\n",
+                    "\n}\n__fig_source_bash_preexec\nfunction __bp_adjust_histcontrol() { :; }\n",
                     include_str!("../integrations/shell/scripts/pre.sh")
                 )
-            }
+            },
             (Shell::Bash, When::Post) => {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
                     include_str!("../integrations/shell/scripts/bash-preexec.sh"),
-                    "\n}\n\
-                    __fig_source_bash_preexec\n\
-                    function __bp_adjust_histcontrol() { :; }\n",
+                    "\n}\n__fig_source_bash_preexec\nfunction __bp_adjust_histcontrol() { :; }\n",
                     include_str!("../integrations/shell/scripts/post.bash")
                 )
-            }
+            },
         }
     }
 

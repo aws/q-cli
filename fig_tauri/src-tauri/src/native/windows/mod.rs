@@ -6,19 +6,30 @@ use std::path::Path;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use tokio::sync::mpsc::UnboundedSender;
-use windows::Win32::{
-    Foundation::HWND,
-    Foundation::RECT,
-    System::Com,
-    UI::{
-        Accessibility::{SetWinEventHook, UnhookWinEvent, HWINEVENTHOOK},
-        WindowsAndMessaging::{
-            GetWindowRect, GetWindowTextA, GetWindowThreadProcessId, CHILDID_SELF,
-            EVENT_OBJECT_LOCATIONCHANGE, EVENT_SYSTEM_FOREGROUND, EVENT_UIA_PROPID_END,
-            EVENT_UIA_PROPID_START, OBJECT_IDENTIFIER, OBJID_QUERYCLASSNAMEIDX, OBJID_WINDOW,
-            WINEVENT_OUTOFCONTEXT, WINEVENT_SKIPOWNPROCESS,
-        },
-    },
+use windows::Win32::Foundation::{
+    HWND,
+    RECT,
+};
+use windows::Win32::System::Com;
+use windows::Win32::UI::Accessibility::{
+    SetWinEventHook,
+    UnhookWinEvent,
+    HWINEVENTHOOK,
+};
+use windows::Win32::UI::WindowsAndMessaging::{
+    GetWindowRect,
+    GetWindowTextA,
+    GetWindowThreadProcessId,
+    CHILDID_SELF,
+    EVENT_OBJECT_LOCATIONCHANGE,
+    EVENT_SYSTEM_FOREGROUND,
+    EVENT_UIA_PROPID_END,
+    EVENT_UIA_PROPID_START,
+    OBJECT_IDENTIFIER,
+    OBJID_QUERYCLASSNAMEIDX,
+    OBJID_WINDOW,
+    WINEVENT_OUTOFCONTEXT,
+    WINEVENT_SKIPOWNPROCESS,
 };
 
 use crate::window::WindowEvent;
@@ -144,7 +155,7 @@ unsafe extern "system" fn win_event_proc(
             } else {
                 UNMANAGED.send_event(WindowEvent::Hide);
             }
-        }
+        },
         // The focused app has moved
         e if e == EVENT_OBJECT_LOCATIONCHANGE => {
             let mut rect = RECT::default();
@@ -158,7 +169,7 @@ unsafe extern "system" fn win_event_proc(
             } else if OBJECT_IDENTIFIER(id_object) == OBJID_QUERYCLASSNAMEIDX {
                 todo!();
             }
-        }
+        },
         _ => (),
     }
 }

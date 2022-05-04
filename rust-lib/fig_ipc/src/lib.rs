@@ -4,23 +4,41 @@ pub mod figterm;
 pub mod hook;
 
 use std::fmt::Debug;
-use std::io::{Cursor, Write};
-use std::{
-    path::{Path, PathBuf},
-    time::Duration,
+use std::io::{
+    Cursor,
+    Write,
 };
+#[cfg(unix)]
+use std::os::unix::net::UnixStream as SyncUnixStream;
+use std::path::{
+    Path,
+    PathBuf,
+};
+use std::time::Duration;
 
-use anyhow::{bail, Result};
+use anyhow::{
+    bail,
+    Result,
+};
 use bytes::BytesMut;
-use fig_proto::{FigMessage, FigProtobufEncodable};
+use fig_proto::{
+    FigMessage,
+    FigProtobufEncodable,
+};
 use prost::Message;
 use system_socket::SystemStream;
 use thiserror::Error;
-use tokio::io::{self, AsyncRead, AsyncReadExt, AsyncWrite, AsyncWriteExt};
-use tracing::{error, trace};
-
-#[cfg(unix)]
-use std::os::unix::net::UnixStream as SyncUnixStream;
+use tokio::io::{
+    self,
+    AsyncRead,
+    AsyncReadExt,
+    AsyncWrite,
+    AsyncWriteExt,
+};
+use tracing::{
+    error,
+    trace,
+};
 
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
 pub fn get_fig_socket_path() -> PathBuf {
@@ -47,12 +65,9 @@ pub fn get_fig_socket_path() -> PathBuf {
 
 /// Get path to "$TMPDIR/fig_linux.socket"
 pub fn get_fig_linux_socket_path() -> PathBuf {
-    [
-        std::env::temp_dir().as_path(),
-        Path::new("fig_linux.socket"),
-    ]
-    .into_iter()
-    .collect()
+    [std::env::temp_dir().as_path(), Path::new("fig_linux.socket")]
+        .into_iter()
+        .collect()
 }
 
 /// Connect to a system socket with a timeout
@@ -62,11 +77,11 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
         Ok(Err(err)) => {
             error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
             bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-        }
+        },
         Err(_) => {
             error!("Timeout while connecting to {:?}", socket.as_ref());
             bail!("Timeout while connecting to {:?}", socket.as_ref());
-        }
+        },
     };
 
     #[cfg(target_os = "macos")]
@@ -87,7 +102,7 @@ pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
         Err(err) => {
             error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
             bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-        }
+        },
     };
 
     trace!("Connected to {:?}", socket.as_ref());
@@ -110,17 +125,17 @@ where
         Err(err) => {
             error!("Failed to encode message: {}", err);
             bail!("Failed to encode message: {}", err);
-        }
+        },
     };
 
     match stream.write_all(&encoded_message).await {
         Ok(()) => {
             trace!("Sent message: {:?}", message);
-        }
+        },
         Err(err) => {
             error!("Failed to write message: {}", err);
             bail!("Failed to write message: {}", err);
-        }
+        },
     };
 
     Ok(())
@@ -136,17 +151,17 @@ where
         Err(err) => {
             error!("Failed to encode message: {}", err);
             bail!("Failed to encode message: {}", err);
-        }
+        },
     };
 
     match stream.write_all(&encoded_message) {
         Ok(()) => {
             trace!("Sent message: {:?}", message);
-        }
+        },
         Err(err) => {
             error!("Failed to write message: {}", err);
             bail!("Failed to write message: {}", err);
-        }
+        },
     };
 
     Ok(())
@@ -207,33 +222,27 @@ where
             // If the message is incomplete, read more into the buffer
             Err(fig_proto::FigMessageParseError::Incomplete) => {
                 read_buffer!();
-            }
+            },
             // On any other error, return the error
             Err(err) => {
                 return Err(err.into());
-            }
+            },
         }
     }
 }
 
-pub async fn send_recv_message<M, R, S>(
-    stream: &mut S,
-    message: M,
-    timeout: Duration,
-) -> Result<Option<R>>
+pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<Option<R>>
 where
     M: Message + FigProtobufEncodable,
     R: Message + Default,
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
     send_message(stream, message).await?;
-    Ok(
-        match tokio::time::timeout(timeout, recv_message(stream)).await {
-            Ok(result) => result?,
-            Err(_) => {
-                error!("Timeout while receiving message");
-                bail!("Timeout while receiving message");
-            }
+    Ok(match tokio::time::timeout(timeout, recv_message(stream)).await {
+        Ok(result) => result?,
+        Err(_) => {
+            error!("Timeout while receiving message");
+            bail!("Timeout while receiving message");
         },
-    )
+    })
 }

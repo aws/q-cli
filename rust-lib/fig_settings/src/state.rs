@@ -1,5 +1,6 @@
-use crate::LocalJson;
 use std::path::PathBuf;
+
+use crate::LocalJson;
 
 pub fn state_path() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|path| path.join("state.json"))
@@ -12,10 +13,7 @@ pub fn local_settings() -> Result<LocalState, super::Error> {
     LocalState::load(path)
 }
 
-pub fn set_value(
-    key: impl Into<String>,
-    value: impl Into<serde_json::Value>,
-) -> Result<(), super::Error> {
+pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), super::Error> {
     let mut settings = local_settings()?;
     settings.set(key, value)?;
     settings.save()?;
@@ -44,10 +42,7 @@ pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>, super::Error> 
 }
 
 pub fn get_string_or(key: impl AsRef<str>, default: impl Into<String>) -> String {
-    get_string(key)
-        .ok()
-        .flatten()
-        .unwrap_or_else(|| default.into())
+    get_string(key).ok().flatten().unwrap_or_else(|| default.into())
 }
 
 pub fn get_int(key: impl AsRef<str>) -> Result<Option<i64>, super::Error> {
