@@ -1,11 +1,17 @@
-use crate::cli::util::dialoguer_theme;
+use crate::{cli::util::dialoguer_theme, util::api::handle_fig_response};
 
 use anyhow::{bail, Result};
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_auth::cognito::{
-    get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput,
+use fig_auth::{
+    cognito::{get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput},
+    get_token,
 };
+use fig_settings::api_host;
+use serde_json::json;
+use std::process::exit;
+
+use super::OutputFormat;
 
 #[derive(Subcommand, Debug)]
 pub enum RootUserSubcommand {
@@ -50,8 +56,6 @@ impl UserSubcommand {
 /*
 fig user token new --name <name> --expires <date> [ --team <namespace> ]
 
-fig user token new --name Github --expires never --team fig
-
 fig user token list [ --team <namespace> ]
 
 fig user token revoke <token-name> [ --team <namespace> ]
@@ -61,7 +65,6 @@ fig user token revoke <token-name> [ --team <namespace> ]
 pub enum TokenSubcommand {
     New {
         /// The name of the token
-        #[clap(long, short)]
         name: String,
         /// The expiration date of the token
         #[clap(long, short)]
@@ -74,10 +77,11 @@ pub enum TokenSubcommand {
         /// The team namespace to list the tokens for
         #[clap(long, short)]
         team: Option<String>,
+        #[clap(long, short, arg_enum, default_value_t)]
+        format: OutputFormat,
     },
     Revoke {
         /// The name of the token to revoke
-        #[clap(long, short)]
         name: String,
         /// The team namespace to revoke the token for
         #[clap(long, short)]
@@ -91,10 +95,109 @@ impl TokenSubcommand {
             Self::New {
                 name,
                 expires,
-                team,
-            } => todo!(),
-            Self::List { team } => todo!(),
-            Self::Revoke { name, team } => todo!(),
+                team: _,
+            } => {
+                println!("Creating token \"{name}\"");
+
+                if let Some(expires) = expires {
+                    match time::OffsetDateTime::parse(
+                        &expires,
+                        &time::format_description::well_known::Rfc3339,
+                    ) {
+                        Ok(date) => {
+                            println!("{date}");
+                        }
+                        Err(err) => {
+                            println!("Failed to parse date: {err}");
+                        }
+                    }
+                }
+
+                let api_host = api_host();
+                let token = get_token().await.unwrap();
+
+                let url = reqwest::Url::parse(&format!("{api_host}/auth/tokens/new")).unwrap();
+                let response = reqwest::Client::new()
+                    .post(url)
+                    .bearer_auth(token)
+                    .header("Accept", "application/json")
+                    .json(&json!({ "name": name }))
+                    .send()
+                    .await?;
+
+                let json: serde_json::Value = handle_fig_response(response)
+                    .await?
+                    .json()
+                    .await?;
+
+                match json.get("apiToken").and_then(|x| x.as_str()) {
+                    Some(val) => {
+                        eprintln!("API token:");
+                        println!("{val}");
+                    }
+                    None => {
+                        eprintln!("Could not get API token");
+                        exit(1);
+                    }
+                }
+                Ok(())
+            }
+            Self::List { format, team: _ } => {
+                let api_host = api_host();
+                let token = get_token().await.unwrap();
+
+                let url = reqwest::Url::parse(&format!("{api_host}/auth/tokens/list")).unwrap();
+                let response = reqwest::Client::new()
+                    .get(url)
+                    .bearer_auth(token)
+                    .header("Accept", "application/json")
+                    .send()
+                    .await?;
+
+                let json: serde_json::Value = handle_fig_response(response)
+                    .await?
+                    .json()
+                    .await?;
+
+                match json.get("apiTokens") {
+                    Some(val) => {
+                        match format {
+                            OutputFormat::Json => {
+                                println!("{}", serde_json::to_string(val).unwrap())
+                            }
+                            OutputFormat::JsonPretty => {
+                                println!("{}", serde_json::to_string_pretty(val).unwrap())
+                            }
+                            OutputFormat::Plain => {
+                                todo!();
+                            }
+                        }
+                    }
+                    None => {
+                        eprintln!("Could not get API token");
+                        exit(1);
+                    }
+                }
+                Ok(())
+            }
+            Self::Revoke { name, team: _ } => {
+                let api_host = api_host();
+                let token = get_token().await.unwrap();
+
+                let url = reqwest::Url::parse(&format!("{api_host}/auth/tokens/revoke")).unwrap();
+                let response = reqwest::Client::new()
+                    .post(url)
+                    .bearer_auth(token)
+                    .header("Accept", "application/json")
+                    .json(&json!({ "name": name }))
+                    .send()
+                    .await?;
+
+                handle_fig_response(response).await?;
+                
+                println!("Revoked token: {name}");
+                Ok(())
+            }
         }
     }
 }

@@ -11,6 +11,7 @@ use fig_settings::api_host;
 use reqwest::{Client, Url};
 
 use super::OutputFormat;
+use crate::util::api::handle_fig_response;
 
 #[derive(Debug, Subcommand)]
 pub enum PluginsSubcommands {
@@ -283,30 +284,6 @@ impl PluginsSubcommands {
                     Err(err) => Err(err),
                 }
             }
-        }
-    }
-}
-
-async fn handle_fig_response(resp: reqwest::Response) -> Result<reqwest::Response> {
-    if resp.status().is_success() {
-        Ok(resp)
-    } else {
-        let err = resp.error_for_status_ref().err();
-
-        match resp.json::<serde_json::Value>().await {
-            Ok(json) => {
-                let error = json
-                    .get("error")
-                    .and_then(|error| error.as_str())
-                    .unwrap_or("Unknown error")
-                    .to_string();
-
-                bail!(error)
-            }
-            Err(_) => match err {
-                Some(err) => bail!(err),
-                None => bail!("Unknown error"),
-            },
         }
     }
 }
