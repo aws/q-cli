@@ -104,6 +104,8 @@ where
     I: IntoIterator<Item = T>,
     T: Into<(&'a str, &'a str)>,
 {
+    let event: TrackEvent = event.into();
+
     if fig_settings::settings::get_bool("telemetry.disabled")
         .ok()
         .flatten()
@@ -115,7 +117,7 @@ where
     // Initial properties
     let mut track = HashMap::from([
         ("userId".into(), fig_auth::get_default("uuid")?),
-        ("event".into(), (event.into().to_string())),
+        ("event".into(), (event.to_string())),
     ]);
 
     // Default properties

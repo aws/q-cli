@@ -1,23 +1,52 @@
+use std::sync::Arc;
+
 use tauri::{
     AppHandle, CustomMenuItem, SystemTray, SystemTrayEvent, SystemTrayMenu, SystemTrayMenuItem,
     SystemTraySubmenu,
 };
 use tracing::{trace, warn};
 
-use crate::state::STATE;
+use crate::{figterm::FigtermState, DebugState};
 
-pub(crate) fn create_tray() -> SystemTray {
+pub fn create_tray() -> SystemTray {
     SystemTray::new().with_menu(create_tray_menu())
+}
+
+pub fn handle_tray_event(
+    app: &AppHandle,
+    event: SystemTrayEvent,
+    debug_state: Arc<DebugState>,
+    figterm_state: Arc<FigtermState>,
+) {
+    match event {
+        SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
+            "debugger-refresh" => {
+                if let Err(err) = update_tray_menu(app, &debug_state, &figterm_state) {
+                    warn!("Failed to update tray menu: {}", err);
+                }
+            }
+            "quit" => {
+                app.exit(0);
+            }
+            unknown_id => warn!("unknown menu item clicked: '{}'", unknown_id),
+        },
+        SystemTrayEvent::LeftClick { .. } | SystemTrayEvent::RightClick { .. } => {
+            if let Err(err) = update_tray_menu(app, &debug_state, &figterm_state) {
+                warn!("Failed to update tray menu: {}", err);
+            }
+        }
+        _ => {}
+    }
 }
 
 fn create_tray_menu() -> SystemTrayMenu {
     SystemTrayMenu::new()
         .add_submenu(SystemTraySubmenu::new(
-            "🐛 Debugger",
+            "Debugger",
             SystemTrayMenu::new()
                 .add_item(CustomMenuItem::new(
                     "debugger-status",
-                    "🟡 Fig can't link your terminal window to the TTY",
+                    "Fig can't link your terminal window to the TTY",
                 ))
                 .add_native_item(SystemTrayMenuItem::Separator)
                 .add_item(CustomMenuItem::new("debugger-window", "window: None").disabled())
@@ -41,19 +70,23 @@ fn create_tray_menu() -> SystemTrayMenu {
         .add_item(CustomMenuItem::new("quit", "Quit"))
 }
 
-fn update_tray_menu(app: &AppHandle) -> Result<(), tauri::Error> {
-    let figterm_session = STATE.figterm_state.most_recent_session();
+fn update_tray_menu(
+    app: &AppHandle,
+    debug_state: &DebugState,
+    figterm_state: &FigtermState,
+) -> Result<(), tauri::Error> {
+    let figterm_session = figterm_state.most_recent_session();
 
     match figterm_session {
         Some(_) => {
             app.tray_handle()
                 .get_item("debugger-status")
-                .set_title("🟢 Fig is running as expected")?;
+                .set_title("Fig is running as expected")?;
         }
         None => {
             app.tray_handle()
                 .get_item("debugger-status")
-                .set_title("🟡 Fig can't link your terminal window to the TTY")?;
+                .set_title("Fig can't link your terminal window to the TTY")?;
         }
     }
 
@@ -101,7 +134,7 @@ fn update_tray_menu(app: &AppHandle) -> Result<(), tauri::Error> {
 
     let api_message = format!(
         "api-message: {}",
-        match &*STATE.debug_state.debug_lines.read() {
+        match &*debug_state.debug_lines.read() {
             v if !v.is_empty() => v.join(" | "),
             _ => "None".to_string(),
         }
@@ -114,28 +147,4 @@ fn update_tray_menu(app: &AppHandle) -> Result<(), tauri::Error> {
     trace!("Updating tray menu");
 
     Ok(())
-}
-
-pub(crate) fn handle_tray_event(app: &AppHandle, event: SystemTrayEvent) {
-    match event {
-        SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-            "debugger-refresh" => {
-                if let Err(err) = update_tray_menu(app) {
-                    warn!("Failed to update tray menu: {}", err);
-                }
-            }
-            "quit" => {
-                app.exit(0);
-            }
-            unknown_id => {
-                warn!("unknown menu item clicked: '{}'", unknown_id);
-            }
-        },
-        SystemTrayEvent::LeftClick { .. } | SystemTrayEvent::RightClick { .. } => {
-            if let Err(err) = update_tray_menu(app) {
-                warn!("Failed to update tray menu: {}", err);
-            }
-        }
-        _ => {}
-    }
 }

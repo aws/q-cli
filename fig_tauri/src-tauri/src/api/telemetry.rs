@@ -1,21 +1,20 @@
+use anyhow::anyhow;
 use fig_proto::fig::{TelemetryAliasRequest, TelemetryIdentifyRequest, TelemetryTrackRequest};
 use fig_telemetry::{emit_alias, emit_identify, emit_track, TrackEvent, TrackSource};
 
-use super::{ResponseKind, ResponseResult};
+use super::{RequestResult, RequestResultImpl};
 
-pub async fn handle_alias_request(request: TelemetryAliasRequest, _: i64) -> ResponseResult {
-    let user_id = request
-        .user_id
-        .ok_or_else(|| ResponseKind::Error("Empty user id".into()))?;
+pub async fn handle_alias_request(request: TelemetryAliasRequest) -> RequestResult {
+    let user_id = request.user_id.ok_or_else(|| anyhow!("Empty user id"))?;
 
     emit_alias(user_id)
         .await
-        .map_err(|e| ResponseKind::Error(format!("Failed to emit alias, {e}")))?;
+        .map_err(|e| anyhow!("Failed to emit alias, {e}"))?;
 
-    Ok(ResponseKind::Success)
+    RequestResult::success()
 }
 
-pub async fn handle_identify_request(request: TelemetryIdentifyRequest, _: i64) -> ResponseResult {
+pub async fn handle_identify_request(request: TelemetryIdentifyRequest) -> RequestResult {
     let traits: Vec<(&str, &str)> = request
         .traits
         .iter()
@@ -24,15 +23,13 @@ pub async fn handle_identify_request(request: TelemetryIdentifyRequest, _: i64) 
 
     emit_identify(traits)
         .await
-        .map_err(|e| ResponseKind::Error(format!("Failed to emit identify, {e}")))?;
+        .map_err(|e| anyhow!("Failed to emit identify, {e}"))?;
 
-    Ok(ResponseKind::Success)
+    RequestResult::success()
 }
 
-pub async fn handle_track_request(request: TelemetryTrackRequest, _: i64) -> ResponseResult {
-    let event = request
-        .event
-        .ok_or_else(|| ResponseKind::Error("Empty track event".into()))?;
+pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResult {
+    let event: String = request.event.ok_or_else(|| anyhow!("Empty track event"))?;
 
     let properties: Vec<(&str, &str)> = request
         .properties
@@ -42,7 +39,7 @@ pub async fn handle_track_request(request: TelemetryTrackRequest, _: i64) -> Res
 
     emit_track(TrackEvent::Other(event), TrackSource::App, properties)
         .await
-        .map_err(|e| ResponseKind::Error(format!("Failed to emit track, {e}")))?;
+        .map_err(|e| anyhow!("Failed to emit track, {e}"))?;
 
-    Ok(ResponseKind::Success)
+    RequestResult::success()
 }
