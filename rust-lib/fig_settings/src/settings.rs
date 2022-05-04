@@ -1,8 +1,13 @@
-use crate::{
-    remote_settings::{delete_remote_setting, update_remote_setting},
-    Error, LocalJson,
-};
 use std::path::PathBuf;
+
+use crate::remote_settings::{
+    delete_remote_setting,
+    update_remote_setting,
+};
+use crate::{
+    Error,
+    LocalJson,
+};
 
 pub fn settings_path() -> Option<PathBuf> {
     fig_directories::fig_dir().map(|path| path.join("settings.json"))
@@ -19,10 +24,7 @@ pub fn get_map() -> Result<Option<serde_json::Map<String, serde_json::Value>>, s
     Ok(local_settings()?.to_inner().as_object().cloned())
 }
 
-pub async fn set_value(
-    key: impl Into<String>,
-    value: impl Into<serde_json::Value>,
-) -> Result<(), super::Error> {
+pub async fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), super::Error> {
     let key = key.into();
     let value = value.into();
     let mut settings = local_settings()?;

@@ -1,14 +1,22 @@
-use anyhow::{Context, Result};
+use std::fs::{
+    self,
+    File,
+};
+use std::path::PathBuf;
+use std::str::FromStr;
+
+use anyhow::{
+    Context,
+    Result,
+};
 use fig_directories::fig_dir;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use std::{
-    fs::{self, File},
-    path::PathBuf,
-    str::FromStr,
-};
-use tracing::{level_filters::LevelFilter, Level};
-use tracing_subscriber::{filter::DynFilterFn, fmt, prelude::*};
+use tracing::level_filters::LevelFilter;
+use tracing::Level;
+use tracing_subscriber::filter::DynFilterFn;
+use tracing_subscriber::fmt;
+use tracing_subscriber::prelude::*;
 
 static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| {
     RwLock::new(
@@ -51,27 +59,20 @@ pub fn get_log_level() -> LevelFilter {
 }
 
 pub fn init_logger(ptc_name: impl AsRef<str>) -> Result<()> {
-    let filter_layer =
-        DynFilterFn::new(|metadata, _ctx| metadata.level() <= &*FIG_LOG_LEVEL.read());
+    let filter_layer = DynFilterFn::new(|metadata, _ctx| metadata.level() <= &*FIG_LOG_LEVEL.read());
 
     let log_path = log_path(ptc_name)?;
 
     // Make folder if it doesn't exist
     if !log_path.parent().unwrap().exists() {
-        stdio_debug_log(format!(
-            "Creating log folder: {:?}",
-            log_path.parent().unwrap()
-        ));
+        stdio_debug_log(format!("Creating log folder: {:?}", log_path.parent().unwrap()));
         fs::create_dir_all(log_path.parent().unwrap())?;
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
     let fmt_layer = fmt::layer().with_line_number(true).with_writer(file);
 
-    tracing_subscriber::registry()
-        .with(filter_layer)
-        .with(fmt_layer)
-        .init();
+    tracing_subscriber::registry().with(filter_layer).with(fmt_layer).init();
 
     Ok(())
 }

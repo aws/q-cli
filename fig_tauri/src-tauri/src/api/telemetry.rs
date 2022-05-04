@@ -1,8 +1,21 @@
 use anyhow::anyhow;
-use fig_proto::fig::{TelemetryAliasRequest, TelemetryIdentifyRequest, TelemetryTrackRequest};
-use fig_telemetry::{emit_alias, emit_identify, emit_track, TrackEvent, TrackSource};
+use fig_proto::fig::{
+    TelemetryAliasRequest,
+    TelemetryIdentifyRequest,
+    TelemetryTrackRequest,
+};
+use fig_telemetry::{
+    emit_alias,
+    emit_identify,
+    emit_track,
+    TrackEvent,
+    TrackSource,
+};
 
-use super::{RequestResult, RequestResultImpl};
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
 
 pub async fn handle_alias_request(request: TelemetryAliasRequest) -> RequestResult {
     let user_id = request.user_id.ok_or_else(|| anyhow!("Empty user id"))?;

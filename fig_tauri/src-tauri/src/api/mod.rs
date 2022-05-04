@@ -14,17 +14,26 @@ use anyhow::Result;
 use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
-use fig_proto::{
-    fig::{ClientOriginatedMessage, ServerOriginatedMessage},
-    prost::Message,
+use fig_proto::fig::{
+    ClientOriginatedMessage,
+    ServerOriginatedMessage,
 };
-use tauri::{State, Window};
+use fig_proto::prost::Message;
+use tauri::{
+    State,
+    Window,
+};
 use tracing::warn;
 
 use crate::figterm::FigtermState;
 use crate::utils::truncate_string;
 use crate::window::WindowState;
-use crate::{DebugState, InterceptState, NotificationsState, FIG_PROTO_MESSAGE_RECIEVED};
+use crate::{
+    DebugState,
+    InterceptState,
+    NotificationsState,
+    FIG_PROTO_MESSAGE_RECIEVED,
+};
 
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 
@@ -62,7 +71,7 @@ pub async fn handle_api_request(
         Err(_) => {
             window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Decode error")?;
             return Ok(());
-        }
+        },
     };
 
     // TODO: return error
@@ -73,7 +82,7 @@ pub async fn handle_api_request(
             let truncated = truncate_string(format!("{message:?}"), 150);
             warn!("Missing submessage: {}", truncated);
             RequestResult::error(format!("Missing submessage {truncated}"))
-        }
+        },
         Some(submessage) => {
             use ClientOriginatedSubMessage::*;
 
@@ -86,14 +95,12 @@ pub async fn handle_api_request(
                 ReadFileRequest(request) => fs::read_file(request).await,
                 WriteFileRequest(request) => fs::write_file(request).await,
                 AppendToFileRequest(request) => fs::append_to_file(request).await,
-                DestinationOfSymbolicLinkRequest(request) => {
-                    fs::destination_of_symbolic_link(request).await
-                }
+                DestinationOfSymbolicLinkRequest(request) => fs::destination_of_symbolic_link(request).await,
                 ContentsOfDirectoryRequest(request) => fs::contents_of_directory(request).await,
                 // notifications
                 NotificationRequest(request) => {
                     notifications::handle_request(request, message_id, &notification_state).await
-                }
+                },
                 // process
                 RunProcessRequest(request) => process::run(request).await,
                 PseudoterminalExecuteRequest(request) => process::execute(request).await,
@@ -101,26 +108,22 @@ pub async fn handle_api_request(
                 // properties
                 UpdateApplicationPropertiesRequest(request) => {
                     properties::update(request, &figterm_state, &intercept_state).await
-                }
+                },
                 // settings
                 GetSettingsPropertyRequest(request) => settings::get(request).await,
                 UpdateSettingsPropertyRequest(request) => settings::update(request).await,
                 // telemetry
                 TelemetryAliasRequest(request) => telemetry::handle_alias_request(request).await,
-                TelemetryIdentifyRequest(request) => {
-                    telemetry::handle_identify_request(request).await
-                }
+                TelemetryIdentifyRequest(request) => telemetry::handle_identify_request(request).await,
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 // window
-                PositionWindowRequest(request) => {
-                    window::position_window(request, &window_state).await
-                }
+                PositionWindowRequest(request) => window::position_window(request, &window_state).await,
                 unknown => {
                     warn!("Missing handler: {unknown:?}");
                     RequestResult::error(format!("Unknown submessage {unknown:?}"))
-                }
+                },
             }
-        }
+        },
     };
 
     let message = ServerOriginatedMessage {
@@ -130,7 +133,7 @@ pub async fn handle_api_request(
             Err(msg) => {
                 warn!("Send error response: {}", msg);
                 ServerOriginatedSubMessage::Error(msg.to_string())
-            }
+            },
         }),
     };
 

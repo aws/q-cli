@@ -1,4 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 /// Terminals supported by Fig
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -106,11 +109,7 @@ impl Terminal {
     pub fn is_input_dependant(&self) -> bool {
         matches!(
             self,
-            Terminal::WezTerm
-                | Terminal::Alacritty
-                | Terminal::Kitty
-                | Terminal::Nova
-                | Terminal::JediTerm(_)
+            Terminal::WezTerm | Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::JediTerm(_)
         )
     }
 

@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{Error, API_DOMAIN, IDENTIFY_SUBDOMAIN};
+use crate::{
+    Error,
+    API_DOMAIN,
+    IDENTIFY_SUBDOMAIN,
+};
 
 pub async fn emit_identify<'a, I, T>(traits: I) -> Result<(), Error>
 where

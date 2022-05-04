@@ -3,22 +3,38 @@ use std::sync::Arc;
 use anyhow::Result;
 use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
-use fig_proto::fig::KeyEvent;
-use fig_proto::local::{FocusChangeHook, PreExecHook};
-use fig_proto::{
-    fig::{
-        EditBufferChangedNotification, KeybindingPressedNotification, Notification,
-        NotificationType, ServerOriginatedMessage,
-    },
-    local::{CursorPositionHook, EditBufferHook, InterceptedKeyHook, PromptHook},
-    prost::Message,
+use fig_proto::fig::{
+    EditBufferChangedNotification,
+    KeyEvent,
+    KeybindingPressedNotification,
+    Notification,
+    NotificationType,
+    ServerOriginatedMessage,
 };
+use fig_proto::local::{
+    CursorPositionHook,
+    EditBufferHook,
+    FocusChangeHook,
+    InterceptedKeyHook,
+    PreExecHook,
+    PromptHook,
+};
+use fig_proto::prost::Message;
 use tracing::debug;
 
-use crate::figterm::FigtermSessionId;
-use crate::figterm::{ensure_figterm, FigtermState};
-use crate::window::{WindowEvent, WindowState};
-use crate::{NotificationsState, FIG_PROTO_MESSAGE_RECIEVED};
+use crate::figterm::{
+    ensure_figterm,
+    FigtermSessionId,
+    FigtermState,
+};
+use crate::window::{
+    WindowEvent,
+    WindowState,
+};
+use crate::{
+    NotificationsState,
+    FIG_PROTO_MESSAGE_RECIEVED,
+};
 
 pub async fn send_notification(
     notification_type: &NotificationType,
@@ -30,7 +46,7 @@ pub async fn send_notification(
         Some(id) => *id,
         None => {
             return Ok(());
-        }
+        },
     };
 
     let message = ServerOriginatedMessage {
@@ -71,7 +87,7 @@ pub async fn edit_buffer(
         Some(id) => *id,
         None => {
             return Ok(());
-        }
+        },
     };
 
     let message = ServerOriginatedMessage {
@@ -132,17 +148,15 @@ pub async fn intercepted_key(
     send_notification(
         &NotificationType::NotifyOnKeybindingPressed,
         Notification {
-            r#type: Some(
-                fig_proto::fig::notification::Type::KeybindingPressedNotification(
-                    KeybindingPressedNotification {
-                        keypress: Some(KeyEvent {
-                            characters: Some(intercepted_key_hook.key),
-                            ..Default::default()
-                        }),
-                        action: Some(intercepted_key_hook.action),
-                    },
-                ),
-            ),
+            r#type: Some(fig_proto::fig::notification::Type::KeybindingPressedNotification(
+                KeybindingPressedNotification {
+                    keypress: Some(KeyEvent {
+                        characters: Some(intercepted_key_hook.key),
+                        ..Default::default()
+                    }),
+                    action: Some(intercepted_key_hook.action),
+                },
+            )),
         },
         notification_state,
         window_state,

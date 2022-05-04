@@ -92,7 +92,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<(KeyCode<'static>, KeyModi
             let f_key = f_key.trim_start_matches('f');
             let f_key = f_key.parse::<u8>().ok()?;
             KeyCode::F(f_key)
-        }
+        },
         c => KeyCode::Char(Cow::Owned(c.as_bytes().to_vec())),
     };
 
@@ -118,9 +118,7 @@ pub fn parse_code(code: &[u8]) -> Option<(KeyCode, KeyModifiers)> {
     }
 
     macro_rules! peek {
-        () => {{
-            code.get(idx)
-        }};
+        () => {{ code.get(idx) }};
     }
 
     macro_rules! consume_modifier {
@@ -135,7 +133,7 @@ pub fn parse_code(code: &[u8]) -> Option<(KeyCode, KeyModifiers)> {
                             Some(n) => num = Some(n * 10 + digit),
                         }
                         next!();
-                    }
+                    },
                     _ => break,
                 }
             }
@@ -293,12 +291,12 @@ pub fn parse_code(code: &[u8]) -> Option<(KeyCode, KeyModifiers)> {
                         let char1 = next!();
                         let char2 = next!();
                         match_ss3!(char1, char2).map(|code| (code, KeyModifiers::NONE))
-                    }
+                    },
                     b'[' => {
                         next!();
                         let number = consume_modifier!();
                         match (peek!(), number) {
-                            /* vt */
+                            // vt
                             (Some(b'~' | b';'), Some(number)) => match match_vt!(number) {
                                 Some(key) => match peek!() {
                                     Some(b';') => {
@@ -307,31 +305,28 @@ pub fn parse_code(code: &[u8]) -> Option<(KeyCode, KeyModifiers)> {
                                             .and_then(key_modifier_from_u8)
                                             .unwrap_or(KeyModifiers::NONE);
                                         Some((key, modifier))
-                                    }
+                                    },
                                     Some(b'~') => Some((key, KeyModifiers::NONE)),
                                     _ => None,
                                 },
                                 None => None,
                             },
-                            /* xterm */
+                            // xterm
                             (Some(idx_2), Some(number)) => {
                                 next!();
                                 let next = next!();
-                                match_xterm!(Some(idx_2), next).and_then(|key| {
-                                    key_modifier_from_u8(number).map(|modifier| (key, modifier))
-                                })
-                            }
+                                match_xterm!(Some(idx_2), next)
+                                    .and_then(|key| key_modifier_from_u8(number).map(|modifier| (key, modifier)))
+                            },
                             (Some(idx_2), None) => {
                                 next!();
                                 let next = next!();
                                 match_xterm!(Some(idx_2), next).map(|key| (key, KeyModifiers::NONE))
-                            }
+                            },
 
-                            (None, _) => {
-                                Some((KeyCode::Char(Cow::Borrowed(b"[")), KeyModifiers::ALT))
-                            }
+                            (None, _) => Some((KeyCode::Char(Cow::Borrowed(b"[")), KeyModifiers::ALT)),
                         }
-                    }
+                    },
                     _ => None,
                 },
                 None => Some((KeyCode::Esc, KeyModifiers::NONE)),
@@ -341,10 +336,7 @@ pub fn parse_code(code: &[u8]) -> Option<(KeyCode, KeyModifiers)> {
                 b"\r" => Some((KeyCode::Enter, KeyModifiers::NONE)),
                 b"\x7f" => Some((KeyCode::Delete, KeyModifiers::NONE)),
                 b"\t" => Some((KeyCode::Tab, KeyModifiers::NONE)),
-                _ => Some((
-                    KeyCode::Char(Cow::Borrowed(&code[idx..])),
-                    KeyModifiers::NONE,
-                )),
+                _ => Some((KeyCode::Char(Cow::Borrowed(&code[idx..])), KeyModifiers::NONE)),
             },
         },
         None => None,
@@ -357,19 +349,13 @@ mod test {
 
     #[test]
     fn test_parser() {
-        /* <esc> <nochar> -> esc */
-        assert_eq!(
-            parse_code(b"\x1b"),
-            Some((KeyCode::Esc, KeyModifiers::NONE))
-        );
+        // <esc> <nochar> -> esc
+        assert_eq!(parse_code(b"\x1b"), Some((KeyCode::Esc, KeyModifiers::NONE)));
 
-        /* <esc> <esc> -> esc */
-        assert_eq!(
-            parse_code(b"\x1b\x1b"),
-            Some((KeyCode::Esc, KeyModifiers::NONE))
-        );
+        // <esc> <esc> -> esc
+        assert_eq!(parse_code(b"\x1b\x1b"), Some((KeyCode::Esc, KeyModifiers::NONE)));
 
-        /* <char> -> char */
+        // <char> -> char
         assert_eq!(
             parse_code(b"a"),
             Some((KeyCode::Char(Cow::Borrowed(b"a")), KeyModifiers::NONE))
@@ -380,37 +366,23 @@ mod test {
             Some((KeyCode::Char(Cow::Borrowed(b"hello")), KeyModifiers::NONE))
         );
 
-        /* <esc> '[' <nochar> -> Alt-[ */
+        // <esc> '[' <nochar> -> Alt-[
         assert_eq!(
             parse_code(b"\x1b["),
             Some((KeyCode::Char(Cow::Borrowed(b"[")), KeyModifiers::ALT))
         );
 
-        /* <esc> '[' (<modifier>) <char> -> keycode sequence, <modifier> is a decimal number and defaults to 1 (xterm) */
-        assert_eq!(
-            parse_code(b"\x1b[A"),
-            Some((KeyCode::Up, KeyModifiers::NONE))
-        );
+        // <esc> '[' (<modifier>) <char> -> keycode sequence, <modifier> is a decimal number and defaults to
+        // 1 (xterm)
+        assert_eq!(parse_code(b"\x1b[A"), Some((KeyCode::Up, KeyModifiers::NONE)));
 
-        assert_eq!(
-            parse_code(b"\x1b[2A"),
-            Some((KeyCode::Up, KeyModifiers::SHIFT))
-        );
+        assert_eq!(parse_code(b"\x1b[2A"), Some((KeyCode::Up, KeyModifiers::SHIFT)));
 
-        assert_eq!(
-            parse_code(b"\x1b[3A"),
-            Some((KeyCode::Up, KeyModifiers::ALT))
-        );
+        assert_eq!(parse_code(b"\x1b[3A"), Some((KeyCode::Up, KeyModifiers::ALT)));
 
-        assert_eq!(
-            parse_code(b"\x1b[5A"),
-            Some((KeyCode::Up, KeyModifiers::CONTROL))
-        );
+        assert_eq!(parse_code(b"\x1b[5A"), Some((KeyCode::Up, KeyModifiers::CONTROL)));
 
-        assert_eq!(
-            parse_code(b"\x1b[9A"),
-            Some((KeyCode::Up, KeyModifiers::META))
-        );
+        assert_eq!(parse_code(b"\x1b[9A"), Some((KeyCode::Up, KeyModifiers::META)));
 
         assert_eq!(
             parse_code(b"\x1b[13A"),
@@ -421,18 +393,12 @@ mod test {
             parse_code(b"\x1b[16A"),
             Some((
                 KeyCode::Up,
-                KeyModifiers::CONTROL
-                    | KeyModifiers::META
-                    | KeyModifiers::SHIFT
-                    | KeyModifiers::ALT
+                KeyModifiers::CONTROL | KeyModifiers::META | KeyModifiers::SHIFT | KeyModifiers::ALT
             ))
         );
 
-        /* <esc> 'O' <char> -> SS3 */
-        assert_eq!(
-            parse_code(b"\x1bOA"),
-            Some((KeyCode::Up, KeyModifiers::NONE))
-        );
+        // <esc> 'O' <char> -> SS3
+        assert_eq!(parse_code(b"\x1bOA"), Some((KeyCode::Up, KeyModifiers::NONE)));
 
         assert_eq!(
             parse_code("\x1bOI".as_bytes()),
@@ -444,12 +410,10 @@ mod test {
             Some((KeyCode::Char(Cow::Borrowed(b" ")), KeyModifiers::NONE))
         );
 
-        /* <esc> '[' (<keycode>) (';'<modifier>) '~' -> keycode sequence, <keycode> and <modifier> are decimal numbers and default to 1 (vt) */
-        assert_eq!(
-            parse_code(b"\x1b[1;5A"),
-            Some((KeyCode::Home, KeyModifiers::CONTROL))
-        );
+        // <esc> '[' (<keycode>) (';'<modifier>) '~' -> keycode sequence, <keycode> and <modifier> are
+        // decimal numbers and default to 1 (vt)
+        assert_eq!(parse_code(b"\x1b[1;5A"), Some((KeyCode::Home, KeyModifiers::CONTROL)));
 
-        /* <esc> <char> -> Alt-keypress or keycode sequence */
+        // <esc> <char> -> Alt-keypress or keycode sequence
     }
 }

@@ -1,12 +1,18 @@
 use fig_proto::fig::UpdateApplicationPropertiesRequest;
-use tracing::{error, trace};
-
-use crate::{
-    figterm::{FigTermCommand, FigtermState},
-    InterceptState,
+use tracing::{
+    error,
+    trace,
 };
 
-use super::{RequestResult, RequestResultImpl};
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
+use crate::figterm::{
+    FigTermCommand,
+    FigtermState,
+};
+use crate::InterceptState;
 
 pub async fn update(
     request: UpdateApplicationPropertiesRequest,
@@ -20,10 +26,7 @@ pub async fn update(
 
     if let Some(intercept_global_keystrokes) = request.intercept_global_keystrokes {
         *intercept_state.intercept_global_keystrokes.write() = intercept_global_keystrokes;
-        trace!(
-            "intercept_global_keystrokes: {}",
-            intercept_global_keystrokes
-        );
+        trace!("intercept_global_keystrokes: {}", intercept_global_keystrokes);
 
         if intercept_global_keystrokes {
             if let Some(session) = figterm_state.most_recent_session() {
@@ -34,11 +37,7 @@ pub async fn update(
         } else {
             for session in figterm_state.sessions.iter() {
                 if let Err(err) = session.sender.send(FigTermCommand::ClearIntercept).await {
-                    error!(
-                        "Failed sending command to figterm session {}: {}",
-                        session.key(),
-                        err
-                    );
+                    error!("Failed sending command to figterm session {}: {}", session.key(), err);
                 }
             }
         }

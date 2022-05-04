@@ -1,7 +1,13 @@
 use anyhow::Result;
-use copypasta::{ClipboardContext, ClipboardProvider};
+use copypasta::{
+    ClipboardContext,
+    ClipboardProvider,
+};
 use crossterm::style::Stylize;
-use fig_auth::{get_email, get_token};
+use fig_auth::{
+    get_email,
+    get_token,
+};
 use fig_settings::api_host;
 use reqwest::Url;
 
@@ -12,9 +18,7 @@ pub async fn invite_cli() -> Result<()> {
 
         let host = api_host();
 
-        let url = Url::parse(&format!(
-            "{host}/waitlist/get-referral-link-from-email/{email}",
-        ))?;
+        let url = Url::parse(&format!("{host}/waitlist/get-referral-link-from-email/{email}",))?;
 
         let response = reqwest::Client::new()
             .get(url)
@@ -39,7 +43,7 @@ pub async fn invite_cli() -> Result<()> {
                 }
 
                 println!();
-            }
+            },
             Err(_) => {
                 println!();
                 println!(
@@ -54,7 +58,7 @@ pub async fn invite_cli() -> Result<()> {
                     "hello@fig.io".underlined()
                 );
                 println!();
-            }
+            },
         }
     } else {
         println!();

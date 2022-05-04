@@ -1,4 +1,7 @@
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use thiserror::Error;
 use tokio::io;
 
@@ -41,8 +44,7 @@ impl KeyBindings {
     }
 
     pub fn load_hardcoded() -> Self {
-        serde_json::from_str(include_str!("test/actions.json"))
-            .expect("Unable to load hardcoded actions")
+        serde_json::from_str(include_str!("test/actions.json")).expect("Unable to load hardcoded actions")
     }
 }
 
@@ -64,10 +66,7 @@ mod test {
 
         assert_eq!(json.0[0].identifier, "insertSelected");
         assert_eq!(json.0[0].name, Some("Insert selected".to_string()));
-        assert_eq!(
-            json.0[0].description,
-            Some("Insert selected suggestion".to_string())
-        );
+        assert_eq!(json.0[0].description, Some("Insert selected suggestion".to_string()));
         assert_eq!(json.0[0].category, Some("Insertion".to_string()));
         assert_eq!(json.0[0].availability, Some(Availability::WhenFocused));
         assert_eq!(json.0[0].default_bindings, Some(vec!["enter".to_string()]));

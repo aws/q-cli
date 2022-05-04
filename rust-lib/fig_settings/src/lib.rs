@@ -3,7 +3,8 @@ pub mod remote_settings;
 pub mod settings;
 pub mod state;
 
-use std::{fs, path::PathBuf};
+use std::fs;
+use std::path::PathBuf;
 
 use thiserror::Error;
 
@@ -61,8 +62,7 @@ impl LocalJson {
         let file = fs::read_to_string(&path)?;
 
         Ok(Self {
-            inner: serde_json::from_str(&file)
-                .unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new())),
+            inner: serde_json::from_str(&file).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new())),
             path,
         })
     }
@@ -80,11 +80,7 @@ impl LocalJson {
         Ok(())
     }
 
-    pub fn set(
-        &mut self,
-        key: impl Into<String>,
-        value: impl Into<serde_json::Value>,
-    ) -> Result<(), Error> {
+    pub fn set(&mut self, key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), Error> {
         self.inner
             .as_object_mut()
             .ok_or(Error::SettingsNotObject)?

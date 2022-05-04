@@ -1,9 +1,14 @@
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
-use fig_proto::fig::{PositionWindowRequest, PositionWindowResponse};
-
-use crate::window::{WindowEvent, WindowState};
+use fig_proto::fig::{
+    PositionWindowRequest,
+    PositionWindowResponse,
+};
 
 use super::RequestResult;
+use crate::window::{
+    WindowEvent,
+    WindowState,
+};
 
 /// TODO(vikram): implement is_above, is_clipped and corresponding window behavior
 pub async fn position_window(request: PositionWindowRequest, state: &WindowState) -> RequestResult {
@@ -30,10 +35,10 @@ pub async fn position_window(request: PositionWindowRequest, state: &WindowState
         }
     }
 
-    RequestResult::Ok(Box::new(
-        ServerOriginatedSubMessage::PositionWindowResponse(PositionWindowResponse {
+    RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
+        PositionWindowResponse {
             is_above: Some(false),
             is_clipped: Some(false),
-        }),
-    ))
+        },
+    )))
 }

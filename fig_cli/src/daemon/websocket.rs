@@ -1,19 +1,45 @@
-use anyhow::{anyhow, Context, Result};
-use fig_auth::{get_email, get_token, refresh_credentals};
-use fig_settings::{api_host, ws_host};
+use std::fmt;
+use std::io::Write;
+use std::time::Duration;
+
+use anyhow::{
+    anyhow,
+    Context,
+    Result,
+};
+use fig_auth::{
+    get_email,
+    get_token,
+    refresh_credentals,
+};
+use fig_settings::{
+    api_host,
+    ws_host,
+};
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::json;
-use std::{fmt, io::Write, time::Duration};
 use time::format_description::well_known::Rfc3339;
 use tokio::net::TcpStream;
-use tokio_tungstenite::{tungstenite::Message, MaybeTlsStream, WebSocketStream};
-use tracing::{debug, error, info};
-
-use crate::{
-    daemon::scheduler::{Scheduler, SyncDotfiles},
-    util::get_machine_id,
+use tokio_tungstenite::tungstenite::Message;
+use tokio_tungstenite::{
+    MaybeTlsStream,
+    WebSocketStream,
 };
+use tracing::{
+    debug,
+    error,
+    info,
+};
+
+use crate::daemon::scheduler::{
+    Scheduler,
+    SyncDotfiles,
+};
+use crate::util::get_machine_id;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -28,11 +54,7 @@ enum FigWebsocketMessage {
     },
 }
 
-async fn get_ticket(
-    reqwest_client: &reqwest::Client,
-    url: Url,
-    token: impl fmt::Display,
-) -> Result<reqwest::Response> {
+async fn get_ticket(reqwest_client: &reqwest::Client, url: Url, token: impl fmt::Display) -> Result<reqwest::Response> {
     Ok(tokio::time::timeout(
         Duration::from_secs(30),
         reqwest_client.get(url.clone()).bearer_auth(&token).send(),
@@ -56,7 +78,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
             get_ticket(&reqwest_client, url.clone(), get_token().await?)
                 .await
                 .context("Failed to get ticket")?
-        }
+        },
     }
     .text()
     .await?;
@@ -69,12 +91,9 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     let url = Url::parse_with_params(&ws_host(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
 
-    let (websocket_stream, _) = tokio::time::timeout(
-        Duration::from_secs(30),
-        tokio_tungstenite::connect_async(url),
-    )
-    .await
-    .context("Failed to connect to websocket")??;
+    let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
+        .await
+        .context("Failed to connect to websocket")??;
 
     info!("Websocket connected");
 
@@ -91,21 +110,17 @@ pub async fn process_websocket(
                 Message::Text(text) => {
                     debug!("message: {:?}", text);
 
-                    let websocket_message_result =
-                        serde_json::from_str::<FigWebsocketMessage>(text);
+                    let websocket_message_result = serde_json::from_str::<FigWebsocketMessage>(text);
 
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message {
                             FigWebsocketMessage::DotfilesUpdated => {
                                 scheduler.schedule_now(SyncDotfiles);
-                            }
-                            FigWebsocketMessage::SettingsUpdated {
-                                settings,
-                                updated_at,
-                            } => {
+                            },
+                            FigWebsocketMessage::SettingsUpdated { settings, updated_at } => {
                                 // Write settings to disk
-                                let path = fig_settings::settings::settings_path()
-                                    .context("Could not get settings path")?;
+                                let path =
+                                    fig_settings::settings::settings_path().context("Could not get settings path")?;
 
                                 info!("Settings updated: Writing settings to disk at {:?}", path);
 
@@ -114,51 +129,47 @@ pub async fn process_websocket(
                                 settings_file.write_all(settings_json.as_bytes())?;
 
                                 if let Ok(updated_at) = updated_at.format(&Rfc3339) {
-                                    fig_settings::state::set_value(
-                                        "settings.updatedAt",
-                                        json!(updated_at),
-                                    )
-                                    .ok();
+                                    fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
                                 }
-                            }
+                            },
                         },
                         Err(e) => {
                             error!("Could not parse json message: {:?}", e);
-                        }
+                        },
                     }
                     Ok(())
-                }
+                },
                 Message::Close(close_frame) => match close_frame {
                     Some(close_frame) => {
                         info!("Websocket close frame: {:?}", close_frame);
                         Err(anyhow!("Websocket close frame: {:?}", close_frame))
-                    }
+                    },
                     None => {
                         info!("Websocket close frame");
                         Err(anyhow!("Websocket close frame"))
-                    }
+                    },
                 },
                 Message::Ping(_) => {
                     debug!("Websocket ping");
                     Ok(())
-                }
+                },
                 Message::Pong(_) => {
                     debug!("Websocket pong");
                     Ok(())
-                }
+                },
                 unknown_message => {
                     debug!("Unknown message: {:?}", unknown_message);
                     Ok(())
-                }
+                },
             },
             Err(err) => {
                 error!("Websock next error: {:?}", err);
                 Err(anyhow!("Websock next error: {:?}", err))
-            }
+            },
         },
         None => {
             info!("Websocket closed");
             Err(anyhow!("Websocket closed"))
-        }
+        },
     }
 }

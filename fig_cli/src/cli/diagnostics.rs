@@ -1,18 +1,36 @@
-use crate::{
-    cli::{util::OSVersion, OutputFormat},
-    util::{glob, glob_dir, is_app_running},
-};
+use std::borrow::Cow;
+use std::ffi::OsStr;
+use std::fmt::Display;
+use std::path::PathBuf;
+use std::process::Command;
 
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use crossterm::style::Stylize;
 use fig_ipc::command::send_recv_command_to_socket;
+use fig_proto::local::command_response::Response;
 use fig_proto::local::{
-    command, command_response::Response, DiagnosticsCommand, DiagnosticsResponse,
-    IntegrationAction, TerminalIntegrationCommand,
+    command,
+    DiagnosticsCommand,
+    DiagnosticsResponse,
+    IntegrationAction,
+    TerminalIntegrationCommand,
 };
 use regex::Regex;
-use serde::{Deserialize, Serialize};
-use std::{borrow::Cow, ffi::OsStr, fmt::Display, path::PathBuf, process::Command};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use crate::cli::util::OSVersion;
+use crate::cli::OutputFormat;
+use crate::util::{
+    glob,
+    glob_dir,
+    is_app_running,
+};
 
 pub trait Diagnostic {
     fn user_readable(&self) -> Result<Vec<String>> {
@@ -21,14 +39,9 @@ pub trait Diagnostic {
 }
 
 pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
-    let username_command = Command::new("id")
-        .arg("-un")
-        .output()
-        .context("Could not get id")?;
+    let username_command = Command::new("id").arg("-un").output().context("Could not get id")?;
 
-    let username: String = String::from_utf8_lossy(&username_command.stdout)
-        .trim()
-        .into();
+    let username: String = String::from_utf8_lossy(&username_command.stdout).trim().into();
 
     let result = Command::new("dscl")
         .arg(".")
@@ -124,10 +137,7 @@ impl HardwareInfo {
 impl Diagnostic for HardwareInfo {
     fn user_readable(&self) -> Result<Vec<String>> {
         Ok(vec![
-            format!(
-                "Model Name: {}",
-                self.model_name.as_deref().unwrap_or_default()
-            ),
+            format!("Model Name: {}", self.model_name.as_deref().unwrap_or_default()),
             format!(
                 "Model Identifier: {}",
                 self.model_identifier.as_deref().unwrap_or_default()
@@ -157,10 +167,9 @@ fn installed_via_brew() -> Result<bool> {
 }
 
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
-    let response =
-        send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
-            .await?
-            .context("Recieved EOF while reading diagnostics")?;
+    let response = send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
+        .await?
+        .context("Recieved EOF while reading diagnostics")?;
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
@@ -213,12 +222,7 @@ impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let envs = std::env::vars()
             .into_iter()
-            .filter(|(key, _)| {
-                key.starts_with("FIG_")
-                    || key == "TERM_SESSION_ID"
-                    || key == "PATH"
-                    || key == "TERM"
-            })
+            .filter(|(key, _)| key.starts_with("FIG_") || key == "TERM_SESSION_ID" || key == "PATH" || key == "TERM")
             .collect();
 
         EnvVarDiagnostic { envs }
@@ -310,12 +314,10 @@ impl Diagnostic for CurrentEnvironment {
 }
 
 pub async fn verify_integration(integration: impl Into<String>) -> Result<String> {
-    let response = send_recv_command_to_socket(command::Command::TerminalIntegration(
-        TerminalIntegrationCommand {
-            identifier: integration.into(),
-            action: IntegrationAction::VerifyInstall as i32,
-        },
-    ))
+    let response = send_recv_command_to_socket(command::Command::TerminalIntegration(TerminalIntegrationCommand {
+        identifier: integration.into(),
+        action: IntegrationAction::VerifyInstall as i32,
+    }))
     .await?
     .context("Recieved EOF while getting terminal integration")?;
 
@@ -364,63 +366,40 @@ struct IntegrationDiagnostics {
 impl IntegrationDiagnostics {
     async fn new() -> IntegrationDiagnostics {
         let mut integrations = vec![
-            (
-                Integrations::Ssh,
-                IntegrationStatus {
-                    status: "false".into(),
-                },
-            ),
-            (
-                Integrations::Tmux,
-                IntegrationStatus {
-                    status: "false".into(),
-                },
-            ),
+            (Integrations::Ssh, IntegrationStatus { status: "false".into() }),
+            (Integrations::Tmux, IntegrationStatus { status: "false".into() }),
         ];
 
         let integration_result = verify_integration("com.googlecode.iterm2")
             .await
             .unwrap_or_else(|e| format!("Error {}", e));
 
-        integrations.push((
-            Integrations::ITerm,
-            IntegrationStatus {
-                status: integration_result,
-            },
-        ));
+        integrations.push((Integrations::ITerm, IntegrationStatus {
+            status: integration_result,
+        }));
 
         let integration_result = verify_integration("co.zeit.hyper")
             .await
             .unwrap_or_else(|e| format!("Error {}", e));
 
-        integrations.push((
-            Integrations::Hyper,
-            IntegrationStatus {
-                status: integration_result,
-            },
-        ));
+        integrations.push((Integrations::Hyper, IntegrationStatus {
+            status: integration_result,
+        }));
 
         let integration_result = verify_integration("com.microsoft.VSCode")
             .await
             .unwrap_or_else(|e| format!("Error {}", e));
 
-        integrations.push((
-            Integrations::VsCode,
-            IntegrationStatus {
-                status: integration_result,
-            },
-        ));
+        integrations.push((Integrations::VsCode, IntegrationStatus {
+            status: integration_result,
+        }));
 
         IntegrationDiagnostics { integrations }
     }
 
     fn docker(&mut self, status: impl Into<String>) {
-        self.integrations.push((
-            Integrations::Docker,
-            IntegrationStatus {
-                status: status.into(),
-            },
-        ));
+        self.integrations
+            .push((Integrations::Docker, IntegrationStatus { status: status.into() }));
     }
 }
 
@@ -488,10 +467,7 @@ impl Diagnostic for FigDetails {
         lines.push(format!("Installation Script: {}", self.installscript));
         lines.push(format!("PseudoTerminal Path: {}", self.psudoterminal_path));
         lines.push(format!("SecureKeyboardInput: {}", self.securekeyboard));
-        lines.push(format!(
-            "SecureKeyboardProcess: {}",
-            self.securekeyboard_path
-        ));
+        lines.push(format!("SecureKeyboardProcess: {}", self.securekeyboard_path));
 
         Ok(lines)
     }
@@ -576,7 +552,7 @@ impl Diagnostics {
                     integrations: Some(integrations),
                     dotfiles: DotfilesDiagnostics::new()?,
                 })
-            }
+            },
             _ => Ok(Diagnostics {
                 timestamp,
                 fig_running: false,
@@ -606,9 +582,7 @@ impl Diagnostic for Diagnostics {
         let mut lines = vec!["# Fig Diagnostics".into()];
 
         if !self.fig_running {
-            lines.push(
-                "## NOTE: Fig is not running, run `fig launch` to get the full diagnostics".into(),
-            );
+            lines.push("## NOTE: Fig is not running, run `fig launch` to get the full diagnostics".into());
         }
 
         lines.push("## Fig details:".into());

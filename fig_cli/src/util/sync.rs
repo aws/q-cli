@@ -1,9 +1,13 @@
-use anyhow::{Context, Result};
-use fig_auth::get_token;
 use std::path::PathBuf;
-use tokio::{fs::File, io::AsyncWriteExt};
 
+use anyhow::{
+    Context,
+    Result,
+};
+use fig_auth::get_token;
 use reqwest::Url;
+use tokio::fs::File;
+use tokio::io::AsyncWriteExt;
 
 /// Sync from a url to a local file
 pub trait Sync {
@@ -28,8 +32,7 @@ impl Sync for Settings {
     }
 
     fn data(&self, data: &[u8]) -> Result<Vec<u8>> {
-        let settings: serde_json::Value =
-            serde_json::from_slice(data).context("Could not parse settings")?;
+        let settings: serde_json::Value = serde_json::from_slice(data).context("Could not parse settings")?;
 
         let settings = settings.get("settings").context("Could not get settings")?;
 

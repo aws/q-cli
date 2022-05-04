@@ -1,8 +1,17 @@
-use std::cmp::{max, PartialEq};
+use std::cmp::{
+    max,
+    PartialEq,
+};
 use std::mem;
-use std::ops::{Index, IndexMut};
+use std::ops::{
+    Index,
+    IndexMut,
+};
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use super::Row;
 use crate::index::Line;
@@ -278,9 +287,15 @@ impl<T> IndexMut<Line> for Storage<T> {
 #[cfg(test)]
 mod tests {
     use crate::grid::row::Row;
-    use crate::grid::storage::{Storage, MAX_CACHE_SIZE};
+    use crate::grid::storage::{
+        Storage,
+        MAX_CACHE_SIZE,
+    };
     use crate::grid::GridCell;
-    use crate::index::{Column, Line};
+    use crate::index::{
+        Column,
+        Line,
+    };
     use crate::term::cell::ShellFlags;
 
     impl GridCell for char {
@@ -378,9 +393,7 @@ mod tests {
             visible_lines: 4,
             len: 4,
         };
-        expected
-            .inner
-            .append(&mut vec![filled_row('\0'); MAX_CACHE_SIZE]);
+        expected.inner.append(&mut vec![filled_row('\0'); MAX_CACHE_SIZE]);
 
         assert_eq!(storage.visible_lines, expected.visible_lines);
         assert_eq!(storage.inner, expected.inner);
@@ -421,9 +434,7 @@ mod tests {
             visible_lines: 4,
             len: 4,
         };
-        expected
-            .inner
-            .append(&mut vec![filled_row('\0'); MAX_CACHE_SIZE]);
+        expected.inner.append(&mut vec![filled_row('\0'); MAX_CACHE_SIZE]);
 
         assert_eq!(storage.visible_lines, expected.visible_lines);
         assert_eq!(storage.inner, expected.inner);

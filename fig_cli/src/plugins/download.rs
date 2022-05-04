@@ -1,34 +1,41 @@
 //! Download and updating of plugins
 
-use crate::{plugins::manifest::GitReference, util::checksum::GitChecksum};
+use std::io::Write;
+use std::path::{
+    Path,
+    PathBuf,
+};
+use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use flume::Receiver;
-use git2::{build::RepoBuilder, FetchOptions, RemoteCallbacks, Repository};
+use git2::build::RepoBuilder;
+use git2::{
+    FetchOptions,
+    RemoteCallbacks,
+    Repository,
+};
 use parking_lot::RwLock;
-use reqwest::{IntoUrl, Url};
-use serde::{Deserialize, Serialize};
-use std::{
-    io::Write,
-    path::{Path, PathBuf},
-    sync::Arc,
-    time::Duration,
+use reqwest::{
+    IntoUrl,
+    Url,
+};
+use serde::{
+    Deserialize,
+    Serialize,
 };
 use tokio::io::AsyncWriteExt;
+
+use crate::plugins::manifest::GitReference;
+use crate::util::checksum::GitChecksum;
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
 pub enum DownloadMetadata {
-    Git {
-        git_repo: Url,
-        checksum: GitChecksum,
-    },
-    Remote {
-        url: Url,
-    },
-    Local {
-        path: PathBuf,
-    },
+    Git { git_repo: Url, checksum: GitChecksum },
+    Remote { url: Url },
+    Local { path: PathBuf },
 }
 
 #[must_use]
@@ -174,9 +181,7 @@ pub fn set_reference(repository: &Repository, reference: &GitReference) -> Resul
 
     let (object, reference) = repository.revparse_ext(refname).expect("Object not found");
 
-    repository
-        .checkout_tree(&object, None)
-        .expect("Failed to checkout");
+    repository.checkout_tree(&object, None).expect("Failed to checkout");
 
     match reference {
         // gref is an actual reference like branches or tags
@@ -266,9 +271,8 @@ mod tests {
     use reqwest::Url;
     use tokio::process::Command;
 
-    use crate::plugins::manifest::GitHub;
-
     use super::*;
+    use crate::plugins::manifest::GitHub;
 
     #[tokio::test]
     async fn test_download_remote_file_checksum_mismatch() {

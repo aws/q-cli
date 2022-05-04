@@ -1,7 +1,9 @@
 use std::collections::HashMap;
 
-use crate::{local::*, util::get_shell};
 use anyhow::Result;
+
+use crate::local::*;
+use crate::util::get_shell;
 
 const CURRENT_INTEGRATION_VERSION: i32 = 7;
 
@@ -51,14 +53,8 @@ pub fn generate_shell_context(
     Ok(ShellContext {
         pid: Some(pid.into()),
         ttys: Some(tty.into()),
-        session_id: session_id
-            .into()
-            .or_else(|| std::env::var("TERM_SESSION_ID").ok()),
-        integration_version: Some(
-            integration_version
-                .into()
-                .unwrap_or(CURRENT_INTEGRATION_VERSION),
-        ),
+        session_id: session_id.into().or_else(|| std::env::var("TERM_SESSION_ID").ok()),
+        integration_version: Some(integration_version.into().unwrap_or(CURRENT_INTEGRATION_VERSION)),
         process_name: Some(shell),
         current_working_directory: Some(cwd.to_string_lossy().into()),
         terminal: None,
@@ -158,11 +154,7 @@ pub fn new_file_changed_hook(
     }))
 }
 
-pub fn new_callback_hook(
-    handler_id: impl Into<String>,
-    filepath: impl Into<String>,
-    exit_code: i64,
-) -> Hook {
+pub fn new_callback_hook(handler_id: impl Into<String>, filepath: impl Into<String>, exit_code: i64) -> Hook {
     hook_enum_to_hook(hook::Hook::Callback(CallbackHook {
         handler_id: handler_id.into(),
         filepath: filepath.into(),

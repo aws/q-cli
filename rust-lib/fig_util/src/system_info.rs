@@ -1,4 +1,7 @@
-use sha2::{Digest, Sha256};
+use sha2::{
+    Digest,
+    Sha256,
+};
 
 use crate::Error;
 
@@ -47,10 +50,10 @@ pub fn get_system_id() -> Result<String, Error> {
     }
     #[cfg(windows)]
     {
-        use winreg::{enums::HKEY_LOCAL_MACHINE, RegKey};
+        use winreg::enums::HKEY_LOCAL_MACHINE;
+        use winreg::RegKey;
 
-        let rkey =
-            RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("SOFTWARE\\Microsoft\\Cryptography")?;
+        let rkey = RegKey::predef(HKEY_LOCAL_MACHINE).open_subkey("SOFTWARE\\Microsoft\\Cryptography")?;
         let id: String = rkey.get_value("MachineGuid")?;
 
         hwid = Some(id);

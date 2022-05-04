@@ -1,12 +1,20 @@
 //! CLI auth
 
-use crate::cli::util::dialoguer_theme;
-
-use anyhow::{bail, Result};
+use anyhow::{
+    bail,
+    Result,
+};
 use crossterm::style::Stylize;
 use fig_auth::cognito::{
-    get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput,
+    get_client,
+    Credentials,
+    SignInConfirmError,
+    SignInError,
+    SignInInput,
+    SignUpInput,
 };
+
+use crate::cli::util::dialoguer_theme;
 
 /// Login to fig
 pub async fn login_cli(refresh: bool) -> Result<()> {
@@ -46,12 +54,10 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
         Ok(out) => out,
         Err(err) => match err {
             SignInError::UserNotFound(_) => {
-                SignUpInput::new(&client, client_id, email)
-                    .sign_up()
-                    .await?;
+                SignUpInput::new(&client, client_id, email).sign_up().await?;
 
                 sign_in_input.sign_in().await?
-            }
+            },
             err => return Err(err.into()),
         },
     };
@@ -73,17 +79,17 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
                 creds.save_credentials()?;
                 println!("Login successful!");
                 return Ok(());
-            }
+            },
             Err(err) => match err {
                 SignInConfirmError::ErrorCodeMismatch => {
                     println!("Code mismatch, try again...");
                     continue;
-                }
+                },
                 SignInConfirmError::NotAuthorized => {
                     return Err(anyhow::anyhow!(
                         "Not authorized, you may have entered the wrong code too many times."
                     ));
-                }
+                },
                 err => return Err(err.into()),
             },
         };

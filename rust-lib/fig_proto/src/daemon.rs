@@ -9,9 +9,7 @@ pub fn new_diagnostic_message() -> DaemonMessage {
     DaemonMessage {
         id: None,
         no_response: None,
-        command: Some(daemon_message::Command::Diagnostic(DiagnosticCommand {
-            parts: vec![],
-        })),
+        command: Some(daemon_message::Command::Diagnostic(DiagnosticCommand { parts: vec![] })),
     }
 }
 

@@ -1,6 +1,6 @@
-use std::{cmp, time::Duration};
-
+use std::cmp;
 use std::future::Future;
+use std::time::Duration;
 
 pub struct Backoff {
     current_duration: Duration,

@@ -1,14 +1,26 @@
-use std::{collections::HashMap, path::PathBuf};
+use std::collections::HashMap;
+use std::path::PathBuf;
 
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use fig_auth::get_token;
 use fig_settings::api_host;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::json;
-use time::{format_description::well_known::Rfc3339, OffsetDateTime};
-use tracing::{debug, info};
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
+use tracing::{
+    debug,
+    info,
+};
 
-use crate::{plugins::api::PluginData, util::shell::Shell};
+use crate::plugins::api::PluginData;
+use crate::util::shell::Shell;
 
 /// The data for all the shells
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -42,8 +54,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     let token = get_token().await?;
 
     let device_uniqueid = crate::util::get_machine_id();
-    let plugins_directry =
-        crate::plugins::download::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
+    let plugins_directry = crate::plugins::download::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
 
     let url: reqwest::Url = format!("{}/dotfiles/source/all", api_host()).parse()?;
 
@@ -84,9 +95,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
 
     // Write to the individual shell files
     for (shell, dotfile) in dotfiles.dotfiles {
-        let shell_json_path = shell
-            .get_data_path()
-            .context("Could not get cache file path")?;
+        let shell_json_path = shell.get_data_path().context("Could not get cache file path")?;
 
         let dotfiles = DotfileData {
             dotfile,
@@ -120,11 +129,11 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
         (None, Some(_)) => Ok(UpdateStatus::New),
         (Some(previous_updated), Some(current_updated)) if current_updated > previous_updated => {
             Ok(UpdateStatus::Updated)
-        }
+        },
         (_, _) => {
             info!("All dotfiles are up to date");
             Ok(UpdateStatus::NotUpdated)
-        }
+        },
     }
 }
 

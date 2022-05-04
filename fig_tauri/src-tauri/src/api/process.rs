@@ -1,15 +1,19 @@
 use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
-    PseudoterminalExecuteRequest, PseudoterminalExecuteResponse, RunProcessRequest,
+    PseudoterminalExecuteRequest,
+    PseudoterminalExecuteResponse,
+    RunProcessRequest,
     RunProcessResponse,
 };
 use tokio::process::Command;
 
-use crate::api::RequestResult;
-use crate::native::{SHELL, SHELL_ARGS};
-
 use super::RequestResultImpl;
+use crate::api::RequestResult;
+use crate::native::{
+    SHELL,
+    SHELL_ARGS,
+};
 
 // TODO(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
@@ -38,8 +42,8 @@ pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
         .await
         .map_err(|_| anyhow!("Failed running command: {:?}", request.command))?;
 
-    RequestResult::Ok(Box::new(
-        ServerOriginatedSubMessage::PseudoterminalExecuteResponse(PseudoterminalExecuteResponse {
+    RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
+        PseudoterminalExecuteResponse {
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: if output.stderr.is_empty() {
                 None
@@ -47,8 +51,8 @@ pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
                 Some(String::from_utf8_lossy(&output.stderr).to_string())
             },
             exit_code: output.status.code(),
-        }),
-    ))
+        },
+    )))
 }
 
 pub async fn run(request: RunProcessRequest) -> RequestResult {

@@ -1,10 +1,18 @@
-use anyhow::Result;
-use nix::{
-    ioctl_read_bad, libc,
-    pty::Winsize,
-    sys::termios::{ControlFlags, InputFlags, LocalFlags, OutputFlags, Termios},
-};
 use std::os::unix::prelude::*;
+
+use anyhow::Result;
+use nix::pty::Winsize;
+use nix::sys::termios::{
+    ControlFlags,
+    InputFlags,
+    LocalFlags,
+    OutputFlags,
+    Termios,
+};
+use nix::{
+    ioctl_read_bad,
+    libc,
+};
 
 ioctl_read_bad!(read_winsize, libc::TIOCGWINSZ, Winsize);
 
@@ -41,9 +49,7 @@ pub fn termios_to_raw(mut termios: Termios) -> Termios {
     );
 
     // Clear size bits, parity checking off.
-    termios
-        .control_flags
-        .remove(ControlFlags::CSIZE | ControlFlags::PARENB);
+    termios.control_flags.remove(ControlFlags::CSIZE | ControlFlags::PARENB);
 
     // 8 bits/char
     termios.control_flags.insert(ControlFlags::CS8);
@@ -60,7 +66,8 @@ pub fn termios_to_raw(mut termios: Termios) -> Termios {
 
 #[cfg(test)]
 mod tests {
-    use nix::{libc::STDIN_FILENO, sys::termios::tcgetattr};
+    use nix::libc::STDIN_FILENO;
+    use nix::sys::termios::tcgetattr;
 
     use super::termios_to_raw;
 

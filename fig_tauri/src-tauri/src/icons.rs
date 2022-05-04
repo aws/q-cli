@@ -1,13 +1,17 @@
-use std::{
-    collections::{hash_map::RandomState, HashMap},
-    fs,
-};
+use std::collections::hash_map::RandomState;
+use std::collections::HashMap;
+use std::fs;
 
 use bytes::Bytes;
 use once_cell::sync::Lazy;
+use tauri::http::status::StatusCode;
+use tauri::http::{
+    Request as HttpRequest,
+    Response as HttpResponse,
+};
 use tauri::{
-    http::{status::StatusCode, Request as HttpRequest, Response as HttpResponse},
-    AppHandle, Runtime,
+    AppHandle,
+    Runtime,
 };
 use tracing::trace;
 use url::Url;
@@ -67,10 +71,7 @@ fn build_default() -> HttpResponse {
     build_asset("template")
 }
 
-pub fn handle<R: Runtime>(
-    _: &AppHandle<R>,
-    request: &HttpRequest,
-) -> Result<HttpResponse, Box<dyn std::error::Error>> {
+pub fn handle<R: Runtime>(_: &AppHandle<R>, request: &HttpRequest) -> Result<HttpResponse, Box<dyn std::error::Error>> {
     trace!("request for fig://{} over fig protocol", request.uri());
     let url = Url::parse(request.uri())?;
     let domain = url.domain();

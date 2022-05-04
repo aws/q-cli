@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 
-use crate::{Error, API_DOMAIN, TRACK_SUBDOMAIN};
+use crate::{
+    Error,
+    API_DOMAIN,
+    TRACK_SUBDOMAIN,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TrackEvent {
@@ -95,11 +99,7 @@ impl std::fmt::Display for TrackSource {
     }
 }
 
-pub async fn emit_track<'a, I, T>(
-    event: impl Into<TrackEvent>,
-    source: TrackSource,
-    properties: I,
-) -> Result<(), Error>
+pub async fn emit_track<'a, I, T>(event: impl Into<TrackEvent>, source: TrackSource, properties: I) -> Result<(), Error>
 where
     I: IntoIterator<Item = T>,
     T: Into<(&'a str, &'a str)>,

@@ -1,19 +1,28 @@
-use std::{fmt::Display, ops::Deref, sync::Arc, time::Duration};
+use std::fmt::Display;
+use std::ops::Deref;
+use std::sync::Arc;
+use std::time::Duration;
 
 use dashmap::DashMap;
-use fig_proto::{
-    figterm::{
-        figterm_message, intercept_command, FigtermMessage, InsertTextCommand, InterceptCommand,
-        SetBufferCommand,
-    },
-    local::ShellContext,
+use fig_proto::figterm::{
+    figterm_message,
+    intercept_command,
+    FigtermMessage,
+    InsertTextCommand,
+    InterceptCommand,
+    SetBufferCommand,
 };
+use fig_proto::local::ShellContext;
 use parking_lot::RwLock;
-use tokio::{
-    sync::mpsc,
-    time::{sleep_until, Instant},
+use tokio::sync::mpsc;
+use tokio::time::{
+    sleep_until,
+    Instant,
 };
-use tracing::{error, trace};
+use tracing::{
+    error,
+    trace,
+};
 
 #[derive(Debug, Clone)]
 pub struct FigTermSession {
@@ -108,7 +117,7 @@ impl FigtermState {
                 self.set_most_recent_session(key);
                 f(&mut *session);
                 true
-            }
+            },
             None => false,
         }
     }
@@ -132,30 +141,23 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<FigtermState>) {
     if state.contains_key(&session_id) {
         return;
     }
-    let (tx, mut rx) = mpsc::channel(0xFF);
-    state.insert(
-        session_id.clone(),
-        FigTermSession {
-            sender: tx,
-            last_receive: Instant::now(),
-            edit_buffer: EditBuffer::default(),
-            context: None,
-        },
-    );
+    let (tx, mut rx) = mpsc::channel(0xff);
+    state.insert(session_id.clone(), FigTermSession {
+        sender: tx,
+        last_receive: Instant::now(),
+        edit_buffer: EditBuffer::default(),
+        context: None,
+    });
     tokio::spawn(async move {
         let socket = fig_ipc::figterm::get_figterm_socket_path(&*session_id);
 
-        let mut stream =
-            match fig_ipc::connect_timeout(socket.clone(), Duration::from_secs(1)).await {
-                Ok(stream) => stream,
-                Err(err) => {
-                    error!(
-                        "Error connecting to figterm socket at {:?}: {:?}",
-                        socket, err
-                    );
-                    return;
-                }
-            };
+        let mut stream = match fig_ipc::connect_timeout(socket.clone(), Duration::from_secs(1)).await {
+            Ok(stream) => stream,
+            Err(err) => {
+                error!("Error connecting to figterm socket at {:?}: {:?}", socket, err);
+                return;
+            },
+        };
 
         trace!("figterm session {} opened", session_id);
 
@@ -167,43 +169,32 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<FigtermState>) {
                         intercept_command::SetInterceptAll {},
                     )),
                 }),
-                FigTermCommand::SetIntercept(chars) => {
-                    Command::InterceptCommand(InterceptCommand {
-                        intercept_command: Some(intercept_command::InterceptCommand::SetIntercept(
-                            intercept_command::SetIntercept {
-                                chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
-                            },
-                        )),
-                    })
-                }
+                FigTermCommand::SetIntercept(chars) => Command::InterceptCommand(InterceptCommand {
+                    intercept_command: Some(intercept_command::InterceptCommand::SetIntercept(
+                        intercept_command::SetIntercept {
+                            chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
+                        },
+                    )),
+                }),
                 FigTermCommand::ClearIntercept => Command::InterceptCommand(InterceptCommand {
                     intercept_command: Some(intercept_command::InterceptCommand::ClearIntercept(
                         intercept_command::ClearIntercept {},
                     )),
                 }),
-                FigTermCommand::AddIntercept(chars) => {
-                    Command::InterceptCommand(InterceptCommand {
-                        intercept_command: Some(intercept_command::InterceptCommand::AddIntercept(
-                            intercept_command::AddIntercept {
-                                chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
-                            },
-                        )),
-                    })
-                }
-                FigTermCommand::RemoveIntercept(chars) => {
-                    Command::InterceptCommand(InterceptCommand {
-                        intercept_command: Some(
-                            intercept_command::InterceptCommand::RemoveIntercept(
-                                intercept_command::RemoveIntercept {
-                                    chars: chars
-                                        .into_iter()
-                                        .map(|x| x as u32)
-                                        .collect::<Vec<u32>>(),
-                                },
-                            ),
-                        ),
-                    })
-                }
+                FigTermCommand::AddIntercept(chars) => Command::InterceptCommand(InterceptCommand {
+                    intercept_command: Some(intercept_command::InterceptCommand::AddIntercept(
+                        intercept_command::AddIntercept {
+                            chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
+                        },
+                    )),
+                }),
+                FigTermCommand::RemoveIntercept(chars) => Command::InterceptCommand(InterceptCommand {
+                    intercept_command: Some(intercept_command::InterceptCommand::RemoveIntercept(
+                        intercept_command::RemoveIntercept {
+                            chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
+                        },
+                    )),
+                }),
                 FigTermCommand::InsertText {
                     insertion,
                     deletion,
@@ -215,33 +206,17 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<FigtermState>) {
                     offset,
                     immediate,
                 }),
-                FigTermCommand::SetBuffer {
-                    text,
-                    cursor_position,
-                } => Command::SetBufferCommand(SetBufferCommand {
-                    text,
-                    cursor_position,
-                }),
+                FigTermCommand::SetBuffer { text, cursor_position } => {
+                    Command::SetBufferCommand(SetBufferCommand { text, cursor_position })
+                },
             };
 
-            if let Err(err) = fig_ipc::send_message(
-                &mut stream,
-                FigtermMessage {
-                    command: Some(message),
-                },
-            )
-            .await
-            {
-                error!(
-                    "Failed sending message to figterm session {}: {:?}",
-                    session_id, err
-                );
+            if let Err(err) = fig_ipc::send_message(&mut stream, FigtermMessage { command: Some(message) }).await {
+                error!("Failed sending message to figterm session {}: {:?}", session_id, err);
                 break;
             }
 
-            if !state.with_mut(session_id.clone(), |session| {
-                session.last_receive = Instant::now()
-            }) {
+            if !state.with_mut(session_id.clone(), |session| session.last_receive = Instant::now()) {
                 break;
             }
         }

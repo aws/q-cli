@@ -1,10 +1,27 @@
 //! Defines the Row type which makes up lines in the grid.
 
-use std::cmp::{max, min};
-use std::ops::{Index, IndexMut, Range, RangeFrom, RangeFull, RangeTo, RangeToInclusive};
-use std::{ptr, slice};
+use std::cmp::{
+    max,
+    min,
+};
+use std::ops::{
+    Index,
+    IndexMut,
+    Range,
+    RangeFrom,
+    RangeFull,
+    RangeTo,
+    RangeToInclusive,
+};
+use std::{
+    ptr,
+    slice,
+};
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use crate::grid::GridCell;
 use crate::index::Column;
@@ -76,20 +93,12 @@ impl<T: Clone + Default> Row<T> {
 
         // Split off cells for a new row.
         let mut new_row = self.inner.split_off(columns);
-        let index = new_row
-            .iter()
-            .rposition(|c| !c.is_empty())
-            .map(|i| i + 1)
-            .unwrap_or(0);
+        let index = new_row.iter().rposition(|c| !c.is_empty()).map(|i| i + 1).unwrap_or(0);
         new_row.truncate(index);
 
         self.occ = min(self.occ, columns);
 
-        if new_row.is_empty() {
-            None
-        } else {
-            Some(new_row)
-        }
+        if new_row.is_empty() { None } else { Some(new_row) }
     }
 
     /// Reset all cells in the row to the `template` cell.

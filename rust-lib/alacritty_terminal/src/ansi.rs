@@ -4,14 +4,32 @@ use std::convert::TryFrom;
 use std::ffi::OsStr;
 use std::os::unix::prelude::OsStrExt;
 use std::path::Path;
-use std::time::{Duration, Instant};
-use std::{iter, str};
+use std::time::{
+    Duration,
+    Instant,
+};
+use std::{
+    iter,
+    str,
+};
 
-use log::{debug, trace};
-use serde::{Deserialize, Serialize};
-use vte::{Params, ParamsIter};
+use log::{
+    debug,
+    trace,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use vte::{
+    Params,
+    ParamsIter,
+};
 
-use crate::index::{Column, Line};
+use crate::index::{
+    Column,
+    Line,
+};
 use crate::term::color::Rgb;
 
 /// Maximum time before a synchronized update is aborted.
@@ -247,7 +265,7 @@ impl Processor {
             0x1b => match self.state.sync_state.pending_dcs.take() {
                 Some(Dcs::SyncStart) => {
                     self.state.sync_state.timeout = Some(Instant::now() + SYNC_UPDATE_TIMEOUT);
-                }
+                },
                 Some(Dcs::SyncEnd) => self.stop_sync(handler),
                 None => (),
             },
@@ -527,11 +545,7 @@ pub trait Handler {
     }
 
     /// Unhandled `osc_dispatch` fallthrough
-    fn unhandled_osc_dispatch(
-        &mut self,
-        _params: &[&[u8]],
-        _bell_terminated: bool,
-    ) -> HandledStatus {
+    fn unhandled_osc_dispatch(&mut self, _params: &[&[u8]], _bell_terminated: bool) -> HandledStatus {
         HandledStatus::Unhandled
     }
 
@@ -547,12 +561,7 @@ pub trait Handler {
     }
 
     /// Unhandled `esc_dispatch` fallthrough
-    fn unhandled_esc_dispatch(
-        &mut self,
-        _intermediates: &[u8],
-        _ignore: bool,
-        _byte: u8,
-    ) -> HandledStatus {
+    fn unhandled_esc_dispatch(&mut self, _intermediates: &[u8], _ignore: bool, _byte: u8) -> HandledStatus {
         HandledStatus::Unhandled
     }
 }
@@ -593,7 +602,7 @@ impl Default for CursorShape {
 #[derive(Debug, Eq, PartialEq)]
 pub enum Mode {
     /// ?1
-    CursorKeys = 1,
+    CursorKeys                    = 1,
     /// Select 80 or 132 columns per page (DECCOLM).
     ///
     /// CSI ? 3 h -> set 132 column font.
@@ -605,47 +614,47 @@ pub enum Mode {
     /// * erases all data in page memory
     /// * resets DECLRMM to unavailable
     /// * clears data from the status line (if set to host-writable)
-    ColumnMode = 3,
+    ColumnMode                    = 3,
     /// IRM Insert Mode.
     ///
     /// NB should be part of non-private mode enum.
     ///
     /// * `CSI 4 h` change to insert mode
     /// * `CSI 4 l` reset to replacement mode
-    Insert = 4,
+    Insert                        = 4,
     /// ?6
-    Origin = 6,
+    Origin                        = 6,
     /// ?7
-    LineWrap = 7,
+    LineWrap                      = 7,
     /// ?12
-    BlinkingCursor = 12,
+    BlinkingCursor                = 12,
     /// 20
     ///
     /// NB This is actually a private mode. We should consider adding a second
     /// enumeration for public/private modesets.
-    LineFeedNewLine = 20,
+    LineFeedNewLine               = 20,
     /// ?25
-    ShowCursor = 25,
+    ShowCursor                    = 25,
     /// ?1000
-    ReportMouseClicks = 1000,
+    ReportMouseClicks             = 1000,
     /// ?1002
-    ReportCellMouseMotion = 1002,
+    ReportCellMouseMotion         = 1002,
     /// ?1003
-    ReportAllMouseMotion = 1003,
+    ReportAllMouseMotion          = 1003,
     /// ?1004
-    ReportFocusInOut = 1004,
+    ReportFocusInOut              = 1004,
     /// ?1005
-    Utf8Mouse = 1005,
+    Utf8Mouse                     = 1005,
     /// ?1006
-    SgrMouse = 1006,
+    SgrMouse                      = 1006,
     /// ?1007
-    AlternateScroll = 1007,
+    AlternateScroll               = 1007,
     /// ?1042
-    UrgencyHints = 1042,
+    UrgencyHints                  = 1042,
     /// ?1049
     SwapScreenAndSetRestoreCursor = 1049,
     /// ?2004
-    BracketedPaste = 2004,
+    BracketedPaste                = 2004,
 }
 
 impl Mode {
@@ -678,7 +687,7 @@ impl Mode {
                 _ => {
                     trace!("[unimplemented] primitive mode: {}", num);
                     return None;
-                }
+                },
             })
         } else {
             Some(match num {
@@ -734,7 +743,7 @@ pub enum TabulationClearMode {
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, Eq, PartialEq, PartialOrd, Ord)]
 pub enum NamedColor {
     /// Black.
-    Black = 0,
+    Black      = 0,
     /// Red.
     Red,
     /// Green.
@@ -1000,7 +1009,7 @@ where
                 if self.handler.unhandled_execute(byte) == HandledStatus::Unhandled {
                     debug!("[unhandled] execute byte={:02x}", byte);
                 }
-            }
+            },
         }
     }
 
@@ -1012,19 +1021,15 @@ where
                 if params.iter().next().map_or(false, |param| param[0] == 1) {
                     self.state.dcs = Some(Dcs::SyncStart);
                 }
-            }
+            },
             _ => {
-                if self
-                    .handler
-                    .unhandled_hook(params, intermediates, ignore, action)
-                    == HandledStatus::Unhandled
-                {
+                if self.handler.unhandled_hook(params, intermediates, ignore, action) == HandledStatus::Unhandled {
                     debug!(
                         "[unhandled hook] params={:?}, ints: {:?}, ignore: {:?}, action: {:?}",
                         params, intermediates, ignore, action
                     );
                 }
-            }
+            },
         }
     }
 
@@ -1040,13 +1045,13 @@ where
         match self.state.dcs {
             Some(Dcs::SyncStart) => {
                 self.state.sync_state.timeout = Some(Instant::now() + SYNC_UPDATE_TIMEOUT);
-            }
+            },
             Some(Dcs::SyncEnd) => (),
             _ => {
                 if self.handler.unhandled_unhook() == HandledStatus::Unhandled {
                     debug!("[unhandled unhook]");
                 }
-            }
+            },
         }
     }
 
@@ -1054,9 +1059,7 @@ where
     fn osc_dispatch(&mut self, params: &[&[u8]], bell_terminated: bool) {
         macro_rules! unhandled {
             () => {{
-                if self.handler.unhandled_osc_dispatch(params, bell_terminated)
-                    == HandledStatus::Unhandled
-                {
+                if self.handler.unhandled_osc_dispatch(params, bell_terminated) == HandledStatus::Unhandled {
                     let mut buf = String::new();
                     for items in params {
                         buf.push('[');
@@ -1089,7 +1092,7 @@ where
                     return;
                 }
                 unhandled!();
-            }
+            },
 
             // Set color index.
             b"4" => {
@@ -1104,7 +1107,7 @@ where
                     }
                 }
                 unhandled!();
-            }
+            },
 
             // Get/set Foreground, Background, Cursor colors.
             b"10" | b"11" | b"12" => {
@@ -1132,14 +1135,11 @@ where
                     }
                 }
                 unhandled!();
-            }
+            },
 
             // Set cursor style.
             b"50" => {
-                if params.len() >= 2
-                    && params[1].len() >= 13
-                    && params[1][0..12] == *b"CursorShape="
-                {
+                if params.len() >= 2 && params[1].len() >= 13 && params[1][0..12] == *b"CursorShape=" {
                     let shape = match params[1][12] as char {
                         '0' => CursorShape::Block,
                         '1' => CursorShape::Beam,
@@ -1150,7 +1150,7 @@ where
                     return;
                 }
                 unhandled!();
-            }
+            },
 
             // Reset color index.
             b"104" => {
@@ -1169,7 +1169,7 @@ where
                         None => unhandled!(),
                     }
                 }
-            }
+            },
 
             // Reset foreground color.
             b"110" => self.handler.reset_color(NamedColor::Foreground as usize),
@@ -1200,13 +1200,13 @@ where
                                     b"Dir" => {
                                         let path = Path::new(OsStr::from_bytes(val[1..].as_ref()));
                                         self.handler.dir(path);
-                                    }
+                                    },
                                     b"ExitCode" => match str::from_utf8(&val[1..]) {
                                         Ok(code) => match code.parse::<i32>() {
                                             Ok(code) => self.handler.exit_code(code),
                                             Err(err) => {
                                                 log::error!("Error parsing ExitCode: {}", err)
-                                            }
+                                            },
                                         },
                                         Err(err) => log::error!("Error decoding ExitCode: {}", err),
                                     },
@@ -1217,20 +1217,14 @@ where
                                     b"FishSuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.fish_suggestion_color(s),
                                         Err(err) => {
-                                            log::error!(
-                                                "Error decoding FishSuggestionColor: {}",
-                                                err
-                                            )
-                                        }
+                                            log::error!("Error decoding FishSuggestionColor: {}", err)
+                                        },
                                     },
                                     b"ZshAutosuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.zsh_suggestion_color(s),
                                         Err(err) => {
-                                            log::error!(
-                                                "Error decoding ZshAutosuggestionColor: {}",
-                                                err
-                                            )
-                                        }
+                                            log::error!("Error decoding ZshAutosuggestionColor: {}", err)
+                                        },
                                     },
                                     b"TTY" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.tty(s),
@@ -1241,7 +1235,7 @@ where
                                             Ok(pid) => self.handler.pid(pid),
                                             Err(err) => {
                                                 log::error!("Error parsing ExitCode: {}", err)
-                                            }
+                                            },
                                         },
                                         Err(err) => log::error!("Error decoding ExitCode: {}", err),
                                     },
@@ -1249,11 +1243,11 @@ where
                                         Ok(s) => self.handler.session_id(s),
                                         Err(err) => {
                                             log::error!("Error decoding SessionId: {}", err)
-                                        }
+                                        },
                                     },
                                     b"Docker" => {
                                         self.handler.docker(!(val.len() <= 2 && val[1] == b'0'));
-                                    }
+                                    },
                                     b"Hostname" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.hostname(s),
                                         Err(err) => log::error!("Error decoding Hostname: {}", err),
@@ -1264,37 +1258,27 @@ where
                                     },
                                     b"SSH" => {
                                         self.handler.ssh(!(val.len() <= 2 && val[1] == b'0'));
-                                    }
+                                    },
                                     _ => unhandled!(),
                                 }
                             }
-                        }
+                        },
                     }
                 }
-            }
+            },
             _ => unhandled!(),
         }
     }
 
     #[allow(clippy::cognitive_complexity)]
     #[inline]
-    fn csi_dispatch(
-        &mut self,
-        params: &Params,
-        intermediates: &[u8],
-        has_ignored_intermediates: bool,
-        action: char,
-    ) {
+    fn csi_dispatch(&mut self, params: &Params, intermediates: &[u8], has_ignored_intermediates: bool, action: char) {
         let handler = &mut self.handler;
 
         macro_rules! unhandled {
             () => {{
-                if handler.unhandled_csi_dispatch(
-                    params,
-                    intermediates,
-                    has_ignored_intermediates,
-                    action,
-                ) == HandledStatus::Unhandled
+                if handler.unhandled_csi_dispatch(params, intermediates, has_ignored_intermediates, action)
+                    == HandledStatus::Unhandled
                 {
                     debug!(
                         "[Unhandled CSI] action={:?}, params={:?}, intermediates={:?}",
@@ -1331,7 +1315,7 @@ where
                 } else {
                     debug!("tried to repeat with no preceding char");
                 }
-            }
+            },
             ('C', []) | ('a', []) => handler.move_forward(Column(next_param_or(1) as usize)),
             ('D', []) => handler.move_backward(Column(next_param_or(1) as usize)),
             ('d', []) => handler.goto_line(Line(next_param_or(1) as i32 - 1)),
@@ -1345,16 +1329,16 @@ where
                     _ => {
                         unhandled!();
                         return;
-                    }
+                    },
                 };
 
                 handler.clear_tabs(mode);
-            }
+            },
             ('H', []) | ('f', []) => {
                 let y = next_param_or(1) as i32;
                 let x = next_param_or(1) as usize;
                 handler.goto(Line(y - 1), Column(x - 1));
-            }
+            },
             ('h', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
                     match Mode::from_primitive(intermediates.get(0), param) {
@@ -1362,7 +1346,7 @@ where
                         None => unhandled!(),
                     }
                 }
-            }
+            },
             ('I', []) => handler.move_forward_tabs(next_param_or(1)),
             ('J', []) => {
                 let mode = match next_param_or(0) {
@@ -1373,11 +1357,11 @@ where
                     _ => {
                         unhandled!();
                         return;
-                    }
+                    },
                 };
 
                 handler.clear_screen(mode);
-            }
+            },
             ('K', []) => {
                 let mode = match next_param_or(0) {
                     0 => LineClearMode::Right,
@@ -1386,11 +1370,11 @@ where
                     _ => {
                         unhandled!();
                         return;
-                    }
+                    },
                 };
 
                 handler.clear_line(mode);
-            }
+            },
             ('L', []) => handler.insert_blank_lines(next_param_or(1) as usize),
             ('l', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
@@ -1399,7 +1383,7 @@ where
                         None => unhandled!(),
                     }
                 }
-            }
+            },
             ('M', []) => handler.delete_lines(next_param_or(1) as usize),
             ('m', []) => {
                 if params.is_empty() {
@@ -1412,7 +1396,7 @@ where
                         }
                     }
                 }
-            }
+            },
             ('P', []) => handler.delete_chars(next_param_or(1) as usize),
             ('q', [b' ']) => {
                 // DECSCUSR (CSI Ps SP q) -- Set Cursor Style.
@@ -1425,7 +1409,7 @@ where
                     _ => {
                         unhandled!();
                         return;
-                    }
+                    },
                 };
                 let cursor_style = shape.map(|shape| CursorStyle {
                     shape,
@@ -1433,7 +1417,7 @@ where
                 });
 
                 handler.set_cursor_style(cursor_style);
-            }
+            },
             ('r', []) => {
                 let top = next_param_or(1) as usize;
                 let bottom = params_iter
@@ -1442,7 +1426,7 @@ where
                     .filter(|&param| param != 0);
 
                 handler.set_scrolling_region(top, bottom);
-            }
+            },
             ('S', []) => handler.scroll_up(next_param_or(1) as usize),
             ('s', []) => handler.save_cursor_position(),
             ('T', []) => handler.scroll_down(next_param_or(1) as usize),
@@ -1462,11 +1446,7 @@ where
     fn esc_dispatch(&mut self, intermediates: &[u8], ignore: bool, byte: u8) {
         macro_rules! unhandled {
             () => {{
-                if self
-                    .handler
-                    .unhandled_esc_dispatch(intermediates, ignore, byte)
-                    == HandledStatus::Unhandled
-                {
+                if self.handler.unhandled_esc_dispatch(intermediates, ignore, byte) == HandledStatus::Unhandled {
                     debug!(
                         "[unhandled] esc_dispatch ints={:?}, byte={:?} ({:02x})",
                         intermediates, byte as char, byte
@@ -1485,7 +1465,7 @@ where
                     _ => {
                         unhandled!();
                         return;
-                    }
+                    },
                 };
                 self.handler.configure_charset(index, $charset)
             }};
@@ -1497,16 +1477,13 @@ where
             (b'E', []) => {
                 self.handler.linefeed();
                 self.handler.carriage_return();
-            }
+            },
             (b'H', []) => self.handler.set_horizontal_tabstop(),
             (b'M', []) => self.handler.reverse_index(),
             (b'c', []) => self.handler.reset_state(),
             (b'0', intermediates) => {
-                configure_charset!(
-                    StandardCharset::SpecialCharacterAndLineDrawing,
-                    intermediates
-                )
-            }
+                configure_charset!(StandardCharset::SpecialCharacterAndLineDrawing, intermediates)
+            },
             (b'7', []) => self.handler.save_cursor_position(),
             (b'8', [b'#']) => self.handler.decaln(),
             (b'8', []) => self.handler.restore_cursor_position(),
@@ -1556,14 +1533,14 @@ fn attrs_from_sgr_parameters(params: &mut ParamsIter<'_>) -> Vec<Option<Attr>> {
             [38] => {
                 let mut iter = params.map(|param| param[0]);
                 parse_sgr_color(&mut iter).map(Attr::Foreground)
-            }
+            },
             [38, params @ ..] => {
                 let rgb_start = if params.len() > 4 { 2 } else { 1 };
                 let rgb_iter = params[rgb_start..].iter().copied();
                 let mut iter = iter::once(params[0]).chain(rgb_iter);
 
                 parse_sgr_color(&mut iter).map(Attr::Foreground)
-            }
+            },
             [39] => Some(Attr::Foreground(Color::Named(NamedColor::Foreground))),
             [40] => Some(Attr::Background(Color::Named(NamedColor::Black))),
             [41] => Some(Attr::Background(Color::Named(NamedColor::Red))),
@@ -1576,14 +1553,14 @@ fn attrs_from_sgr_parameters(params: &mut ParamsIter<'_>) -> Vec<Option<Attr>> {
             [48] => {
                 let mut iter = params.map(|param| param[0]);
                 parse_sgr_color(&mut iter).map(Attr::Background)
-            }
+            },
             [48, params @ ..] => {
                 let rgb_start = if params.len() > 4 { 2 } else { 1 };
                 let rgb_iter = params[rgb_start..].iter().copied();
                 let mut iter = iter::once(params[0]).chain(rgb_iter);
 
                 parse_sgr_color(&mut iter).map(Attr::Background)
-            }
+            },
             [49] => Some(Attr::Background(Color::Named(NamedColor::Background))),
             [90] => Some(Attr::Foreground(Color::Named(NamedColor::BrightBlack))),
             [91] => Some(Attr::Foreground(Color::Named(NamedColor::BrightRed))),
@@ -1646,17 +1623,17 @@ pub mod C0 {
     /// Horizontal Tabulation, move to next predetermined position.
     pub const HT: u8 = 0x09;
     /// Linefeed, move to same position on next line (see also NL).
-    pub const LF: u8 = 0x0A;
+    pub const LF: u8 = 0x0a;
     /// Vertical Tabulation, move to next predetermined line.
-    pub const VT: u8 = 0x0B;
+    pub const VT: u8 = 0x0b;
     /// Form Feed, move to next form or page.
-    pub const FF: u8 = 0x0C;
+    pub const FF: u8 = 0x0c;
     /// Carriage Return, move to first character of current line.
-    pub const CR: u8 = 0x0D;
+    pub const CR: u8 = 0x0d;
     /// Shift Out, switch to G1 (other half of character set).
-    pub const SO: u8 = 0x0E;
+    pub const SO: u8 = 0x0e;
     /// Shift In, switch to G0 (normal half of character set).
-    pub const SI: u8 = 0x0F;
+    pub const SI: u8 = 0x0f;
     /// Data Link Escape, interpret next control character specially.
     pub const DLE: u8 = 0x10;
     /// (DC1) Terminal is allowed to resume transmitting.
@@ -1678,17 +1655,17 @@ pub mod C0 {
     /// End of Medium.
     pub const EM: u8 = 0x19;
     /// Substitute (VT100 uses this to display parity errors).
-    pub const SUB: u8 = 0x1A;
+    pub const SUB: u8 = 0x1a;
     /// Prefix to an escape sequence.
-    pub const ESC: u8 = 0x1B;
+    pub const ESC: u8 = 0x1b;
     /// File Separator.
-    pub const FS: u8 = 0x1C;
+    pub const FS: u8 = 0x1c;
     /// Group Separator.
-    pub const GS: u8 = 0x1D;
+    pub const GS: u8 = 0x1d;
     /// Record Separator (sent by VT132 in block-transfer mode).
-    pub const RS: u8 = 0x1E;
+    pub const RS: u8 = 0x1e;
     /// Unit Separator.
-    pub const US: u8 = 0x1F;
+    pub const US: u8 = 0x1f;
     /// Delete, should be ignored by terminal.
     pub const DEL: u8 = 0x7f;
 }
@@ -1699,7 +1676,6 @@ pub mod C0 {
 #[cfg(test)]
 mod tests {
     use super::*;
-
     use crate::term::color::Rgb;
 
     struct MockHandler {
@@ -1754,8 +1730,7 @@ mod tests {
     #[test]
     fn parse_truecolor_attr() {
         static BYTES: &[u8] = &[
-            0x1b, b'[', b'3', b'8', b';', b'2', b';', b'1', b'2', b'8', b';', b'6', b'6', b';',
-            b'2', b'5', b'5', b'm',
+            0x1b, b'[', b'3', b'8', b';', b'2', b';', b'1', b'2', b'8', b';', b'6', b'6', b';', b'2', b'5', b'5', b'm',
         ];
 
         let mut parser = Processor::new();
@@ -1765,11 +1740,7 @@ mod tests {
             parser.advance(&mut handler, *byte);
         }
 
-        let spec = Rgb {
-            r: 128,
-            g: 66,
-            b: 255,
-        };
+        let spec = Rgb { r: 128, g: 66, b: 255 };
 
         assert_eq!(handler.attr, Some(Attr::Foreground(Color::Spec(spec))));
     }
@@ -1778,19 +1749,16 @@ mod tests {
     #[test]
     fn parse_zsh_startup() {
         static BYTES: &[u8] = &[
-            0x1b, b'[', b'1', b'm', 0x1b, b'[', b'7', b'm', b'%', 0x1b, b'[', b'2', b'7', b'm',
-            0x1b, b'[', b'1', b'm', 0x1b, b'[', b'0', b'm', b' ', b' ', b' ', b' ', b' ', b' ',
-            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
-            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
-            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
-            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
-            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
-            b' ', b' ', b' ', b'\r', b' ', b'\r', b'\r', 0x1b, b'[', b'0', b'm', 0x1b, b'[', b'2',
-            b'7', b'm', 0x1b, b'[', b'2', b'4', b'm', 0x1b, b'[', b'J', b'j', b'w', b'i', b'l',
-            b'm', b'@', b'j', b'w', b'i', b'l', b'm', b'-', b'd', b'e', b's', b'k', b' ', 0x1b,
-            b'[', b'0', b'1', b';', b'3', b'2', b'm', 0xe2, 0x9e, 0x9c, b' ', 0x1b, b'[', b'0',
-            b'1', b';', b'3', b'2', b'm', b' ', 0x1b, b'[', b'3', b'6', b'm', b'~', b'/', b'c',
-            b'o', b'd', b'e',
+            0x1b, b'[', b'1', b'm', 0x1b, b'[', b'7', b'm', b'%', 0x1b, b'[', b'2', b'7', b'm', 0x1b, b'[', b'1', b'm',
+            0x1b, b'[', b'0', b'm', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
+            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
+            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
+            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ',
+            b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b' ', b'\r', b' ', b'\r', b'\r', 0x1b, b'[',
+            b'0', b'm', 0x1b, b'[', b'2', b'7', b'm', 0x1b, b'[', b'2', b'4', b'm', 0x1b, b'[', b'J', b'j', b'w', b'i',
+            b'l', b'm', b'@', b'j', b'w', b'i', b'l', b'm', b'-', b'd', b'e', b's', b'k', b' ', 0x1b, b'[', b'0', b'1',
+            b';', b'3', b'2', b'm', 0xe2, 0x9e, 0x9c, b' ', 0x1b, b'[', b'0', b'1', b';', b'3', b'2', b'm', b' ', 0x1b,
+            b'[', b'3', b'6', b'm', b'~', b'/', b'c', b'o', b'd', b'e',
         ];
 
         let mut handler = MockHandler::default();
@@ -1812,10 +1780,7 @@ mod tests {
         }
 
         assert_eq!(handler.index, CharsetIndex::G0);
-        assert_eq!(
-            handler.charset,
-            StandardCharset::SpecialCharacterAndLineDrawing
-        );
+        assert_eq!(handler.charset, StandardCharset::SpecialCharacterAndLineDrawing);
     }
 
     #[test]
@@ -1829,10 +1794,7 @@ mod tests {
         }
 
         assert_eq!(handler.index, CharsetIndex::G1);
-        assert_eq!(
-            handler.charset,
-            StandardCharset::SpecialCharacterAndLineDrawing
-        );
+        assert_eq!(handler.charset, StandardCharset::SpecialCharacterAndLineDrawing);
 
         let mut handler = MockHandler::default();
         parser.advance(&mut handler, BYTES[3]);
