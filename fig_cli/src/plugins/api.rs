@@ -1,8 +1,15 @@
-use super::manifest::GitHub;
-use anyhow::{Context, Result};
+use anyhow::{
+    Context,
+    Result,
+};
 use fig_settings::api_host;
 use reqwest::Url;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+
+use super::manifest::GitHub;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]

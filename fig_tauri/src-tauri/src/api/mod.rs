@@ -1,136 +1,147 @@
-pub mod debugger;
-pub mod figterm;
+mod debug;
+mod figterm;
 mod fs;
 mod notifications;
 mod process;
-pub mod properties;
+mod properties;
 mod settings;
 mod telemetry;
-pub mod window;
+mod window;
 
-use crate::utils::truncate_string;
+use std::sync::Arc;
+
+use anyhow::Result;
 use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
-use fig_proto::{
-    fig::{ClientOriginatedMessage, ServerOriginatedMessage},
-    prost::Message,
+use fig_proto::fig::{
+    ClientOriginatedMessage,
+    ServerOriginatedMessage,
 };
-use serde::Serialize;
-use tauri::Window;
+use fig_proto::prost::Message;
+use tauri::{
+    State,
+    Window,
+};
 use tracing::warn;
 
+use crate::figterm::FigtermState;
+use crate::utils::truncate_string;
+use crate::window::WindowState;
+use crate::{
+    DebugState,
+    InterceptState,
+    NotificationsState,
+    FIG_PROTO_MESSAGE_RECIEVED,
+};
+
 const FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
-pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 
-#[derive(Debug)]
-pub enum ResponseKind {
-    Error(String),
-    Success,
-    Message(Box<ServerOriginatedSubMessage>),
+type RequestResult = Result<Box<ServerOriginatedSubMessage>>;
+
+trait RequestResultImpl {
+    fn success() -> Self;
+    fn error(msg: impl Into<String>) -> Self;
 }
 
-impl From<ServerOriginatedSubMessage> for ResponseKind {
-    fn from(from: ServerOriginatedSubMessage) -> Self {
-        ResponseKind::Message(Box::new(from))
+impl RequestResultImpl for RequestResult {
+    fn success() -> Self {
+        RequestResult::Ok(Box::new(ServerOriginatedSubMessage::Success(true)))
     }
-}
 
-#[derive(Serialize, Debug)]
-pub enum ApiRequestError {
-    DecodeError,
-    EncodeError,
+    fn error(msg: impl Into<String>) -> Self {
+        RequestResult::Ok(Box::new(ServerOriginatedSubMessage::Error(msg.into())))
+    }
 }
 
 #[tauri::command]
-pub async fn handle_api_request(window: Window, client_originated_message_b64: String) {
-    let res = handle_request(base64::decode(client_originated_message_b64).unwrap()).await;
-    match res {
-        Ok(data) => window.emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(data)),
-        Err(ApiRequestError::DecodeError) => window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Decode error"),
-        Err(ApiRequestError::EncodeError) => window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Encode error"),
-    }
-    .unwrap();
-}
+pub async fn handle_api_request(
+    window: Window,
+    client_originated_message_b64: String,
+    debug_state: State<'_, Arc<DebugState>>,
+    figterm_state: State<'_, Arc<FigtermState>>,
+    intercept_state: State<'_, InterceptState>,
+    notification_state: State<'_, Arc<NotificationsState>>,
+    window_state: State<'_, Arc<WindowState>>,
+) -> Result<(), tauri::Error> {
+    let data = base64::decode(client_originated_message_b64).unwrap();
 
-async fn handle_request(data: Vec<u8>) -> Result<BytesMut, ApiRequestError> {
-    let message = ClientOriginatedMessage::decode(data.as_slice())
-        .map_err(|_| ApiRequestError::DecodeError)?;
+    let message = match ClientOriginatedMessage::decode(data.as_slice()) {
+        Ok(message) => message,
+        Err(_) => {
+            window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Decode error")?;
+            return Ok(());
+        },
+    };
 
     // TODO: return error
     let message_id = message.id.unwrap();
 
-    macro_rules! route {
-        ($($struct: ident => $func: path)*) => {
-            match message.submessage {
-                $(
-                    Some(ClientOriginatedSubMessage::$struct(request)) => $func(request, message_id).await,
-                )*
-                _ => {
-                    let truncated = truncate_string(format!("{:?}", message), 150);
-                    warn!("Missing handler: {}", truncated);
-                    Err(ResponseKind::Error(format!("Unknown submessage {}", truncated)))
-                }
-            }
-        }
-    }
+    let response = match message.submessage {
+        None => {
+            let truncated = truncate_string(format!("{message:?}"), 150);
+            warn!("Missing submessage: {}", truncated);
+            RequestResult::error(format!("Missing submessage {truncated}"))
+        },
+        Some(submessage) => {
+            use ClientOriginatedSubMessage::*;
 
-    let response = route! {
-        /* fs */
-        ReadFileRequest => fs::read_file
-        WriteFileRequest => fs::write_file
-        AppendToFileRequest => fs::append_to_file
-        DestinationOfSymbolicLinkRequest => fs::destination_of_symbolic_link
-        ContentsOfDirectoryRequest => fs::contents_of_directory
-        /* settings */
-        GetSettingsPropertyRequest => settings::get
-        UpdateSettingsPropertyRequest => settings::update
-        /* notifications */
-        NotificationRequest => notifications::handle_request
-        /* processes */
-        RunProcessRequest => process::run
-        PseudoterminalExecuteRequest => process::execute
-        PseudoterminalWriteRequest => process::write
-        /* window */
-        PositionWindowRequest => window::position_window
-        /* telemetry */
-        TelemetryAliasRequest => telemetry::handle_alias_request
-        TelemetryIdentifyRequest => telemetry::handle_identify_request
-        TelemetryTrackRequest => telemetry::handle_track_request
-        /* debugger */
-        DebuggerUpdateRequest => debugger::update
-        /* properties */
-        UpdateApplicationPropertiesRequest => properties::update
-        /* figterm */
-        InsertTextRequest => figterm::insert_text
-    }
-    .unwrap_or_else(|s| s);
+            match submessage {
+                // debug
+                DebuggerUpdateRequest(request) => debug::update(request, &debug_state).await,
+                // figterm
+                InsertTextRequest(request) => figterm::insert_text(request, &figterm_state).await,
+                // fs
+                ReadFileRequest(request) => fs::read_file(request).await,
+                WriteFileRequest(request) => fs::write_file(request).await,
+                AppendToFileRequest(request) => fs::append_to_file(request).await,
+                DestinationOfSymbolicLinkRequest(request) => fs::destination_of_symbolic_link(request).await,
+                ContentsOfDirectoryRequest(request) => fs::contents_of_directory(request).await,
+                // notifications
+                NotificationRequest(request) => {
+                    notifications::handle_request(request, message_id, &notification_state).await
+                },
+                // process
+                RunProcessRequest(request) => process::run(request).await,
+                PseudoterminalExecuteRequest(request) => process::execute(request).await,
+                PseudoterminalWriteRequest(_deprecated) => process::write().await,
+                // properties
+                UpdateApplicationPropertiesRequest(request) => {
+                    properties::update(request, &figterm_state, &intercept_state).await
+                },
+                // settings
+                GetSettingsPropertyRequest(request) => settings::get(request).await,
+                UpdateSettingsPropertyRequest(request) => settings::update(request).await,
+                // telemetry
+                TelemetryAliasRequest(request) => telemetry::handle_alias_request(request).await,
+                TelemetryIdentifyRequest(request) => telemetry::handle_identify_request(request).await,
+                TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
+                // window
+                PositionWindowRequest(request) => window::position_window(request, &window_state).await,
+                unknown => {
+                    warn!("Missing handler: {unknown:?}");
+                    RequestResult::error(format!("Unknown submessage {unknown:?}"))
+                },
+            }
+        },
+    };
 
     let message = ServerOriginatedMessage {
         id: message.id,
         submessage: Some(match response {
-            ResponseKind::Error(msg) => {
+            Ok(msg) => *msg,
+            Err(msg) => {
                 warn!("Send error response: {}", msg);
-                ServerOriginatedSubMessage::Error(msg)
-            }
-            ResponseKind::Success => ServerOriginatedSubMessage::Success(true),
-            ResponseKind::Message(m) => *m,
+                ServerOriginatedSubMessage::Error(msg.to_string())
+            },
         }),
     };
 
     let mut encoded = BytesMut::new();
-    message
-        .encode(&mut encoded)
-        .map_err(|_| ApiRequestError::EncodeError)?;
+    if message.encode(&mut encoded).is_err() {
+        window.emit(FIG_GLOBAL_ERROR_OCCURRED, "Encode error")?;
+        return Ok(());
+    };
 
-    Ok(encoded)
-}
-
-pub type ResponseResult = Result<ResponseKind, ResponseKind>;
-
-#[macro_export]
-macro_rules! response_error {
-    ($($arg:tt)*) => {{
-        |_| ResponseKind::Error(format!($($arg)*))
-    }};
+    window.emit(FIG_PROTO_MESSAGE_RECIEVED, base64::encode(encoded))
 }

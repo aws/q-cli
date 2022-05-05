@@ -1,16 +1,35 @@
-use crate::util::{glob, glob_dir, LaunchOptions};
+use std::path::Path;
+use std::process::Command;
 
-use crate::cli::{app::quit_fig, diagnostics::get_diagnostics, launch_fig};
-use anyhow::{anyhow, Context, Result};
-use clap::{ArgEnum, Subcommand};
+use anyhow::{
+    anyhow,
+    Context,
+    Result,
+};
+use clap::{
+    ArgEnum,
+    Subcommand,
+};
 use crossterm::style::Stylize;
 use fig_ipc::command::{
-    input_method_command, prompt_accessibility_command, run_build_command, set_debug_mode,
+    input_method_command,
+    prompt_accessibility_command,
+    run_build_command,
+    set_debug_mode,
     toggle_debug_mode,
 };
 use fig_proto::local::InputMethodAction;
 use serde_json::json;
-use std::{path::Path, process::Command};
+
+use crate::cli::app::quit_fig;
+use crate::cli::diagnostics::get_diagnostics;
+use crate::cli::launch_fig;
+use crate::dotfiles::download_and_notify;
+use crate::util::{
+    glob,
+    glob_dir,
+    LaunchOptions,
+};
 
 #[derive(Debug, ArgEnum, Clone)]
 pub enum Build {
@@ -50,6 +69,12 @@ pub enum AccessibilityAction {
 pub enum DebugSubcommand {
     /// Debug fig app
     App,
+    /// Debug dotfiles
+    Dotfiles {
+        /// Disable debug mode
+        #[clap(long)]
+        disable: bool,
+    },
     /// Switch build
     Build {
         #[clap(arg_enum)]
@@ -140,11 +165,9 @@ impl DebugSubcommand {
                 Command::new(format!("{}/Contents/MacOS/fig", fig_path))
                     .spawn()?
                     .wait()?;
-            }
+            },
             DebugSubcommand::Build { build } => {
-                let x = build
-                    .to_possible_value()
-                    .context(anyhow!("Invalid build value"))?;
+                let x = build.to_possible_value().context(anyhow!("Invalid build value"))?;
                 let res = run_build_command(x.get_name()).await;
                 if res.is_err() {
                     println!("\n{}", "Unable to connect to Fig.".bold());
@@ -154,7 +177,15 @@ impl DebugSubcommand {
                     );
                     return res;
                 }
-            }
+            },
+            DebugSubcommand::Dotfiles { disable } => {
+                if *disable {
+                    fig_settings::state::remove_value("developer.dotfiles.debug")?;
+                } else {
+                    fig_settings::state::set_value("developer.dotfiles.debug", json!(true))?;
+                }
+                download_and_notify().await.context("Could not sync remote dotfiles")?;
+            },
             DebugSubcommand::AutocompleteWindow { mode } => {
                 let result = match mode {
                     Some(AutocompleteWindowDebug::On) => set_debug_mode(true).await,
@@ -165,16 +196,15 @@ impl DebugSubcommand {
                     println!("Could not update debug mode");
                     return result.map(|_| ());
                 }
-            }
+            },
             DebugSubcommand::Logs { files } => {
                 fig_settings::state::set_value("developer.logging", json!(true))?;
 
                 ctrlc::set_handler(|| {
-                    let code =
-                        match fig_settings::state::set_value("developer.logging", json!(false)) {
-                            Ok(_) => 0,
-                            Err(_) => 1,
-                        };
+                    let code = match fig_settings::state::set_value("developer.logging", json!(false)) {
+                        Ok(_) => 0,
+                        Err(_) => 1,
+                    };
                     std::process::exit(code);
                 })?;
 
@@ -203,11 +233,7 @@ impl DebugSubcommand {
                     }
 
                     // Push any remaining files to open
-                    paths.extend(
-                        files
-                            .iter()
-                            .map(|file| log_dir.join(format!("{}.log", file))),
-                    );
+                    paths.extend(files.iter().map(|file| log_dir.join(format!("{}.log", file))));
 
                     paths
                 };
@@ -218,7 +244,7 @@ impl DebugSubcommand {
                     .args(log_paths)
                     .spawn()?
                     .wait()?;
-            }
+            },
             DebugSubcommand::Ime { command } => {
                 let action = match command {
                     ImeCommand::Install => InputMethodAction::InstallInputMethod,
@@ -235,24 +261,20 @@ impl DebugSubcommand {
                     println!("Could not run ime command.");
                     return result;
                 }
-            }
+            },
             DebugSubcommand::PromptAccessibility => {
                 let result = prompt_accessibility_command().await;
                 if result.is_err() {
                     println!("Could not prompt for accessibility permissions.");
                     return result;
                 }
-            }
+            },
             DebugSubcommand::Sample => {
                 let output = Command::new("lsappinfo")
                     .args(["info", "-only", "-pid", "-app", "com.mschrage.fig"])
                     .output()?;
                 let pid_str = String::from_utf8(output.stdout)?;
-                let pid = pid_str
-                    .split('=')
-                    .nth(1)
-                    .context("Could not get Fig app pid")?
-                    .trim();
+                let pid = pid_str.split('=').nth(1).context("Could not get Fig app pid")?.trim();
                 let outfile = Path::new("/tmp").join("fig-sample");
 
                 println!(
@@ -272,27 +294,21 @@ impl DebugSubcommand {
                 }
                 println!("\n\n\n-------\nFinished writing to {}", outfile.display());
                 println!("Please send this file to the Fig Team");
-                println!(
-                    "Or attach it to a Github issue (run '{}')",
-                    "fig issue".magenta()
-                );
-            }
+                println!("Or attach it to a Github issue (run '{}')", "fig issue".magenta());
+            },
             DebugSubcommand::UnixSocket => {
                 println!("Listening on /tmp/fig.socket...");
                 println!("Note: You will need to restart Fig afterwards");
                 let socket_path = "/tmp/fig.socket";
                 std::fs::remove_file(socket_path)?;
-                Command::new("nc")
-                    .args(["-Ulk", socket_path])
-                    .spawn()?
-                    .wait()?;
-            }
+                Command::new("nc").args(["-Ulk", socket_path]).spawn()?.wait()?;
+            },
             DebugSubcommand::VerifyCodesign => {
                 Command::new("codesign")
                     .args(["-vvvv", "/Applications/Fig.app"])
                     .spawn()?
                     .wait()?;
-            }
+            },
             DebugSubcommand::Accessibility { action } => match action {
                 Some(AccessibilityAction::Refresh) => {
                     quit_fig().await?;
@@ -308,7 +324,7 @@ impl DebugSubcommand {
                     //     println!("Could not prompt for accessibility permissions.");
                     //     return result;
                     // }
-                }
+                },
                 Some(AccessibilityAction::Reset) => {
                     quit_fig().await?;
 
@@ -316,7 +332,7 @@ impl DebugSubcommand {
                         .args(["reset", "Accessibility", "com.mschrage.fig"])
                         .spawn()?
                         .wait()?;
-                }
+                },
                 Some(AccessibilityAction::Prompt) => {
                     launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
                     let result = prompt_accessibility_command().await;
@@ -324,18 +340,18 @@ impl DebugSubcommand {
                         println!("Could not prompt for accessibility permissions.");
                         return result;
                     }
-                }
+                },
                 Some(AccessibilityAction::Open) => {
                     Command::new("open")
                         .args(["x-apple.systempreferences:com.apple.preference.security?Privacy_Accessibility"])
                         .spawn()?
                         .wait()?;
-                }
+                },
                 Some(AccessibilityAction::Status) | None => {
                     let diagnostic = get_diagnostics().await?;
 
                     println!("Accessibility Enabled: {}", diagnostic.accessibility)
-                }
+                },
             },
         }
         Ok(())

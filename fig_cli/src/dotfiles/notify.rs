@@ -27,10 +27,7 @@ impl std::fmt::Display for TerminalNotification {
     }
 }
 
-pub fn notify_terminal(
-    session_id: impl AsRef<str>,
-    notification: TerminalNotification,
-) -> Result<()> {
+pub fn notify_terminal(session_id: impl AsRef<str>, notification: TerminalNotification) -> Result<()> {
     let dotfiles_update_path = std::env::temp_dir()
         .join("fig")
         .join("dotfiles_updates")

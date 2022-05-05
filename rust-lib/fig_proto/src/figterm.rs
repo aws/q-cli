@@ -16,7 +16,7 @@ impl InsertTextCommand {
         match &self.offset.map(|i| i.signum()) {
             Some(1) => out.extend(repeat("\x1b[C").take(self.offset.unwrap_or(0).abs() as usize)),
             Some(-1) => out.extend(repeat("\x1b[D").take(self.offset.unwrap_or(0).abs() as usize)),
-            _ => {}
+            _ => {},
         }
 
         out.extend(repeat('\x08').take(self.deletion.unwrap_or(0) as usize));

@@ -1,11 +1,13 @@
 pub mod cognito;
 pub mod password;
 
-pub use cognito::Credentials;
+use std::ffi::OsStr;
+use std::process::Command;
+use std::time::Duration;
 
 use anyhow::Result;
 use cognito::get_client;
-use std::{ffi::OsStr, process::Command, time::Duration};
+pub use cognito::Credentials;
 
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
 const TIMEOUT_DURATION: Duration = Duration::from_secs(10);
@@ -65,11 +67,7 @@ pub async fn get_token() -> Result<String> {
     if let Ok(mut creds) = Credentials::load_credentials() {
         if creds.is_expired() {
             let aws_client = get_client()?;
-            tokio::time::timeout(
-                TIMEOUT_DURATION,
-                creds.refresh_credentials(&aws_client, CLIENT_ID),
-            )
-            .await??;
+            tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID)).await??;
             creds.save_credentials()?;
         }
 
@@ -92,19 +90,15 @@ pub async fn get_token() -> Result<String> {
                 };
 
                 let aws_client = get_client()?;
-                tokio::time::timeout(
-                    TIMEOUT_DURATION,
-                    creds.refresh_credentials(&aws_client, CLIENT_ID),
-                )
-                .await??;
+                tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID)).await??;
                 creds.save_credentials()?;
 
                 Ok(creds.encode())
-            }
+            },
             Err(_) => {
                 // Cotter token
                 Ok(access_token)
-            }
+            },
         }
     }
 }

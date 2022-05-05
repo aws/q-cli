@@ -1,9 +1,18 @@
-use anyhow::{Context, Result};
+use std::ffi::OsStr;
+use std::fmt::Display;
+use std::process::Command;
+
+use anyhow::{
+    Context,
+    Result,
+};
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use serde::{Deserialize, Serialize};
-use std::{ffi::OsStr, fmt::Display, process::Command};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 pub fn open_url(url: impl AsRef<OsStr>) -> Result<()> {
     cfg_if! {
@@ -76,10 +85,8 @@ impl Display for OSVersion {
             } => {
                 let patch = patch.unwrap_or(0);
                 f.write_str(&format!("macOS {major}.{minor}.{patch} ({build})",))
-            }
-            OSVersion::Linux { kernel_version, .. } => {
-                f.write_str(&format!("Linux {kernel_version}"))
-            }
+            },
+            OSVersion::Linux { kernel_version, .. } => f.write_str(&format!("Linux {kernel_version}")),
             OSVersion::Windows { version } => f.write_str(&format!("Windows {version}")),
         }
     }
@@ -188,7 +195,7 @@ impl OSVersion {
                 } else {
                     SupportLevel::Unsupported
                 }
-            }
+            },
             OSVersion::Linux { .. } => SupportLevel::InDevelopment,
             _ => SupportLevel::Unsupported,
         }

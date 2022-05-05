@@ -1,4 +1,3 @@
-use std::process::Command;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -17,6 +16,8 @@ pub fn get_shell() -> Result<String, GetShellError> {
 
     #[cfg(unix)]
     {
+        use std::process::Command;
+
         let ppid = nix::unistd::getppid();
 
         let result = Command::new("ps")

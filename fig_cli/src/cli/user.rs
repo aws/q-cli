@@ -1,17 +1,26 @@
-use crate::{cli::util::dialoguer_theme, util::api::handle_fig_response};
-
-use anyhow::{bail, Result};
-use clap::Subcommand;
-use crossterm::style::Stylize;
-use fig_auth::{
-    cognito::{get_client, Credentials, SignInConfirmError, SignInError, SignInInput, SignUpInput},
-    get_token,
-};
-use fig_settings::api_host;
-use serde_json::json;
 use std::process::exit;
 
+use anyhow::{
+    bail,
+    Result,
+};
+use clap::Subcommand;
+use crossterm::style::Stylize;
+use fig_auth::cognito::{
+    get_client,
+    Credentials,
+    SignInConfirmError,
+    SignInError,
+    SignInInput,
+    SignUpInput,
+};
+use fig_auth::get_token;
+use fig_settings::api_host;
+use serde_json::json;
+
 use super::OutputFormat;
+use crate::cli::util::dialoguer_theme;
+use crate::util::api::handle_fig_response;
 
 #[derive(Subcommand, Debug)]
 pub enum RootUserSubcommand {
@@ -53,13 +62,11 @@ impl UserSubcommand {
     }
 }
 
-/*
-fig user token new --name <name> --expires <date> [ --team <namespace> ]
-
-fig user token list [ --team <namespace> ]
-
-fig user token revoke <token-name> [ --team <namespace> ]
- */
+// fig user token new --name <name> --expires <date> [ --team <namespace> ]
+//
+// fig user token list [ --team <namespace> ]
+//
+// fig user token revoke <token-name> [ --team <namespace> ]
 
 #[derive(Subcommand, Debug)]
 pub enum TokenSubcommand {
@@ -92,24 +99,17 @@ pub enum TokenSubcommand {
 impl TokenSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            Self::New {
-                name,
-                expires,
-                team: _,
-            } => {
+            Self::New { name, expires, team: _ } => {
                 println!("Creating token \"{name}\"");
 
                 if let Some(expires) = expires {
-                    match time::OffsetDateTime::parse(
-                        &expires,
-                        &time::format_description::well_known::Rfc3339,
-                    ) {
+                    match time::OffsetDateTime::parse(&expires, &time::format_description::well_known::Rfc3339) {
                         Ok(date) => {
                             println!("{date}");
-                        }
+                        },
                         Err(err) => {
                             println!("Failed to parse date: {err}");
-                        }
+                        },
                     }
                 }
 
@@ -131,14 +131,14 @@ impl TokenSubcommand {
                     Some(val) => {
                         eprintln!("API token:");
                         println!("{val}");
-                    }
+                    },
                     None => {
                         eprintln!("Could not get API token");
                         exit(1);
-                    }
+                    },
                 }
                 Ok(())
-            }
+            },
             Self::List { format, team: _ } => {
                 let api_host = api_host();
                 let token = get_token().await.unwrap();
@@ -157,21 +157,21 @@ impl TokenSubcommand {
                     Some(val) => match format {
                         OutputFormat::Json => {
                             println!("{}", serde_json::to_string(val).unwrap())
-                        }
+                        },
                         OutputFormat::JsonPretty => {
                             println!("{}", serde_json::to_string_pretty(val).unwrap())
-                        }
+                        },
                         OutputFormat::Plain => {
                             todo!();
-                        }
+                        },
                     },
                     None => {
                         eprintln!("Could not get API token");
                         exit(1);
-                    }
+                    },
                 }
                 Ok(())
-            }
+            },
             Self::Revoke { name, team: _ } => {
                 let api_host = api_host();
                 let token = get_token().await.unwrap();
@@ -189,7 +189,7 @@ impl TokenSubcommand {
 
                 println!("Revoked token: {name}");
                 Ok(())
-            }
+            },
         }
     }
 }
@@ -232,12 +232,10 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
         Ok(out) => out,
         Err(err) => match err {
             SignInError::UserNotFound(_) => {
-                SignUpInput::new(&client, client_id, email)
-                    .sign_up()
-                    .await?;
+                SignUpInput::new(&client, client_id, email).sign_up().await?;
 
                 sign_in_input.sign_in().await?
-            }
+            },
             err => return Err(err.into()),
         },
     };
@@ -259,17 +257,17 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
                 creds.save_credentials()?;
                 println!("Login successful!");
                 return Ok(());
-            }
+            },
             Err(err) => match err {
                 SignInConfirmError::ErrorCodeMismatch => {
                     println!("Code mismatch, try again...");
                     continue;
-                }
+                },
                 SignInConfirmError::NotAuthorized => {
                     return Err(anyhow::anyhow!(
                         "Not authorized, you may have entered the wrong code too many times."
                     ));
-                }
+                },
                 err => return Err(err.into()),
             },
         };

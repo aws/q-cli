@@ -166,7 +166,13 @@ __fig_reset_hooks() {
 # Ensure that bash-preexec is installed
 # even if the user overrides COMMAND_PROMPT
 # https://github.com/withfig/fig/issues/888
-__bp_install_after_session_init
+# 
+# We also need to ensure Warp is not running
+# since they expect any plugins to not include
+# it again
+if [[ ! "${TERM_PROGRAM}" = WarpTerminal ]]; then
+  __bp_install_after_session_init
+fi
 __fig_reset_hooks
 if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
   fig_osc DoneSourcing

@@ -1,8 +1,13 @@
-use crate::integrations::{ssh::SshIntegration, Integration};
-use anyhow::Context;
-use anyhow::Result;
-use clap::Subcommand;
 use std::path::PathBuf;
+
+use anyhow::{
+    Context,
+    Result,
+};
+use clap::Subcommand;
+
+use crate::integrations::ssh::SshIntegration;
+use crate::integrations::Integration;
 
 #[derive(Debug, Subcommand)]
 pub enum SshSubcommand {

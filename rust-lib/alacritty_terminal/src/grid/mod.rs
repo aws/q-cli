@@ -1,13 +1,36 @@
 //! A specialized 2D grid implementation optimized for use in a terminal.
 
-use std::cmp::{max, min};
-use std::ops::{Bound, Deref, Index, IndexMut, Range, RangeBounds};
+use std::cmp::{
+    max,
+    min,
+};
+use std::ops::{
+    Bound,
+    Deref,
+    Index,
+    IndexMut,
+    Range,
+    RangeBounds,
+};
 
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
-use crate::ansi::{CharsetIndex, StandardCharset};
-use crate::index::{Column, Line, Point};
-use crate::term::cell::{ResetDiscriminant, ShellFlags};
+use crate::ansi::{
+    CharsetIndex,
+    StandardCharset,
+};
+use crate::index::{
+    Column,
+    Line,
+    Point,
+};
+use crate::term::cell::{
+    ResetDiscriminant,
+    ShellFlags,
+};
 
 pub mod resize;
 mod row;
@@ -406,21 +429,13 @@ impl<T> Grid<T> {
     #[inline]
     pub fn iter_from(&self, point: Point) -> GridIterator<'_, T> {
         let end = Point::new(self.bottommost_line(), self.last_column());
-        GridIterator {
-            grid: self,
-            point,
-            end,
-        }
+        GridIterator { grid: self, point, end }
     }
 
     /// Iterate over all cells in the grid starting at a specific point.
     #[inline]
     pub fn iter_from_to(&self, point: Point, end: Point) -> GridIterator<'_, T> {
-        GridIterator {
-            grid: self,
-            point,
-            end,
-        }
+        GridIterator { grid: self, point, end }
     }
 
     /// Iterate over all visible cells.
@@ -625,7 +640,7 @@ impl<'a, T> Iterator for GridIterator<'a, T> {
             Point { column, .. } if column == self.grid.last_column() => {
                 self.point.column = Column(0);
                 self.point.line += 1;
-            }
+            },
             _ => self.point.column += Column(1),
         }
 
@@ -654,12 +669,10 @@ impl<'a, T> BidirectionalIterator for GridIterator<'a, T> {
         }
 
         match self.point {
-            Point {
-                column: Column(0), ..
-            } => {
+            Point { column: Column(0), .. } => {
                 self.point.column = last_column;
                 self.point.line -= 1;
-            }
+            },
             _ => self.point.column -= Column(1),
         }
 

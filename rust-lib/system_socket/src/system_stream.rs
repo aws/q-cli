@@ -3,10 +3,15 @@ use std::path::Path;
 use std::pin::Pin;
 
 use pin_project::pin_project;
-use tokio::io::AsyncRead;
-use tokio::io::AsyncWrite;
+use tokio::io::{
+    AsyncRead,
+    AsyncWrite,
+};
 #[cfg(windows)]
-use tokio::net::windows::named_pipe::{NamedPipeClient, NamedPipeServer};
+use tokio::net::windows::named_pipe::{
+    NamedPipeClient,
+    NamedPipeServer,
+};
 #[cfg(unix)]
 use tokio::net::UnixStream;
 
@@ -40,6 +45,7 @@ impl SystemStream {
     #[cfg(windows)]
     pub async fn connect<P: AsRef<Path>>(path: P) -> io::Result<Self> {
         use std::time::Duration;
+
         use tokio::net::windows::named_pipe::ClientOptions;
         use winapi::shared::winerror;
 

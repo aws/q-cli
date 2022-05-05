@@ -1,24 +1,29 @@
-use tokio::process::Command;
-
-use crate::os::native::{SHELL, SHELL_ARGS};
+use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
-    PseudoterminalExecuteRequest, PseudoterminalExecuteResponse, PseudoterminalWriteRequest,
-    RunProcessRequest, RunProcessResponse,
+    PseudoterminalExecuteRequest,
+    PseudoterminalExecuteResponse,
+    RunProcessRequest,
+    RunProcessResponse,
+};
+use tokio::process::Command;
+
+use super::RequestResultImpl;
+use crate::api::RequestResult;
+use crate::native::{
+    SHELL,
+    SHELL_ARGS,
 };
 
-use super::{ResponseKind, ResponseResult};
-use crate::response_error;
-
 // TODO(mia): implement actual pseudoterminal stuff
-pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseResult {
+pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
     let mut cmd = Command::new(SHELL);
     cmd.args(SHELL_ARGS);
 
     cfg_if::cfg_if!(
         if #[cfg(target_os="windows")] {
             // account for weird behavior passing in commands containing && to WSL
-            cmd.args(request.command.split(" ").collect::<Vec<&str>>());
+            cmd.args(request.command.split(' ').collect::<Vec<&str>>());
         } else {
             cmd.arg(&request.command);
         }
@@ -32,13 +37,13 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
         cmd.env(var.key.clone(), var.value());
     }
 
-    let output = cmd.output().await.map_err(response_error!(
-        "Failed running command: {:?}",
-        request.command
-    ))?;
+    let output = cmd
+        .output()
+        .await
+        .map_err(|_| anyhow!("Failed running command: {:?}", request.command))?;
 
-    Ok(ResponseKind::Message(Box::new(
-        ServerOriginatedSubMessage::PseudoterminalExecuteResponse(PseudoterminalExecuteResponse {
+    RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
+        PseudoterminalExecuteResponse {
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: if output.stderr.is_empty() {
                 None
@@ -46,11 +51,11 @@ pub async fn execute(request: PseudoterminalExecuteRequest, _: i64) -> ResponseR
                 Some(String::from_utf8_lossy(&output.stderr).to_string())
             },
             exit_code: output.status.code(),
-        }),
+        },
     )))
 }
 
-pub async fn run(request: RunProcessRequest, _: i64) -> ResponseResult {
+pub async fn run(request: RunProcessRequest) -> RequestResult {
     let mut cmd = Command::new(&request.executable);
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);
@@ -64,22 +69,20 @@ pub async fn run(request: RunProcessRequest, _: i64) -> ResponseResult {
         cmd.env(var.key.clone(), var.value());
     }
 
-    let output = cmd.output().await.map_err(response_error!(
-        "Failed running command: {:?}",
-        request.executable
-    ))?;
+    let output = cmd
+        .output()
+        .await
+        .map_err(|_| anyhow!("Failed running command: {:?}", request.executable))?;
 
-    Ok(ResponseKind::Message(Box::new(
-        ServerOriginatedSubMessage::RunProcessResponse(RunProcessResponse {
+    RequestResult::Ok(Box::new(ServerOriginatedSubMessage::RunProcessResponse(
+        RunProcessResponse {
             stdout: String::from_utf8_lossy(&output.stdout).to_string(),
             stderr: String::from_utf8_lossy(&output.stderr).to_string(),
             exit_code: output.status.code().unwrap_or(0),
-        }),
+        },
     )))
 }
 
-pub async fn write(_: PseudoterminalWriteRequest, _: i64) -> ResponseResult {
-    Err(ResponseKind::Error(
-        "PseudoterminalWriteRequest is deprecated".to_string(),
-    ))
+pub async fn write() -> RequestResult {
+    RequestResult::error("PseudoterminalWriteRequest is deprecated".to_string())
 }

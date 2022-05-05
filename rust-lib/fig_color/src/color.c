@@ -1,5 +1,9 @@
 #include "color.h"
 
+#include <errno.h>
+#include <stdlib.h>
+#include <string.h>
+
 enum { COLOR_TYPE_NONE, COLOR_TYPE_NAMED, COLOR_TYPE_RGB };
 
 // Internal color representation, similar to fish representation and agnostic
@@ -437,7 +441,7 @@ SuggestionColor* parse_suggestion_color_zsh_autosuggest(const char* str, color_s
       if (color == NULL) {
         // custom zsh logic - try 256 indexed colors first.
         char* end;
-        int errno = 0;
+        extern int errno;
         long index = strtoul(color_name, &end, 10);
         bool index_supported = color_support == 0 ? index < 16 : index < 256;
         if (color_name != end && errno == 0 && index_supported) {

@@ -1,10 +1,16 @@
+use anyhow::anyhow;
 use fig_proto::fig::InsertTextRequest;
 
-use crate::{local::figterm::FigTermCommand, response_error, state::STATE};
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
+use crate::figterm::{
+    FigTermCommand,
+    FigtermState,
+};
 
-use super::{ResponseKind, ResponseResult};
-
-pub async fn insert_text(request: InsertTextRequest, _message_id: i64) -> ResponseResult {
+pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> RequestResult {
     let figterm_command = match request.r#type {
         Some(some) => match some {
             fig_proto::fig::insert_text_request::Type::Text(text) => FigTermCommand::InsertText {
@@ -13,26 +19,25 @@ pub async fn insert_text(request: InsertTextRequest, _message_id: i64) -> Respon
                 immediate: None,
                 offset: None,
             },
-            fig_proto::fig::insert_text_request::Type::Update(update) => {
-                FigTermCommand::InsertText {
-                    insertion: update.insertion,
-                    deletion: update.deletion,
-                    immediate: update.immediate,
-                    offset: update.offset,
-                }
-            }
+            fig_proto::fig::insert_text_request::Type::Update(update) => FigTermCommand::InsertText {
+                insertion: update.insertion,
+                deletion: update.deletion,
+                immediate: update.immediate,
+                offset: update.offset,
+            },
         },
         None => todo!(),
     };
 
-    if let Some(session) = STATE.figterm_state.most_recent_session() {
+    if let Some(session) = state.most_recent_session() {
         session
             .sender
             .send(figterm_command)
             .await
-            .map_err(response_error!("Failed sending command to figterm session"))?;
+            .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
     } else {
-        return Err(ResponseKind::Error("No figterm sessions".into()));
+        return RequestResult::error("No figterm sessions");
     }
-    Ok(ResponseKind::Success)
+
+    RequestResult::success()
 }

@@ -26,7 +26,7 @@
     "generate-requests": "npx ts-node -O '{\"module\":\"commonjs\"}' codegen/generate-requests.ts"
   },
   "name": "@withfig/api-bindings",
-  "author": "matt@fig.io",
+  "author": "The Fig Team",
   "devDependencies": {
     "ts-morph": "^12.0.0",
     "ts-node": "^10.3.0",

@@ -22,20 +22,38 @@ pub mod tweet;
 pub mod user;
 pub mod util;
 
-use crate::{
-    cli::util::dialoguer_theme,
-    daemon::{daemon, get_daemon},
-    integrations::shell::When,
-    util::{is_app_running, launch_fig, shell::Shell, LaunchOptions},
+use std::fs::File;
+use std::process::exit;
+use std::str::FromStr;
+
+use anyhow::{
+    Context,
+    Result,
 };
-
-use anyhow::{Context, Result};
 use cfg_if::cfg_if;
-use clap::{ArgEnum, IntoApp, Parser, Subcommand};
-use std::{fs::File, process::exit, str::FromStr};
-use tracing::{debug, level_filters::LevelFilter};
+use clap::{
+    ArgEnum,
+    IntoApp,
+    Parser,
+    Subcommand,
+};
+use tracing::debug;
+use tracing::level_filters::LevelFilter;
 
-use self::{app::AppSubcommand, plugins::PluginsSubcommands};
+use self::app::AppSubcommand;
+use self::plugins::PluginsSubcommands;
+use crate::cli::util::dialoguer_theme;
+use crate::daemon::{
+    daemon,
+    get_daemon,
+};
+use crate::integrations::shell::When;
+use crate::util::shell::Shell;
+use crate::util::{
+    is_app_running,
+    launch_fig,
+    LaunchOptions,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum OutputFormat {
@@ -246,7 +264,7 @@ impl Cli {
                     .with_max_level(env_level)
                     .with_line_number(true)
                     .init();
-            }
+            },
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
                 if env_level >= LevelFilter::DEBUG {
@@ -258,9 +276,7 @@ impl Cli {
                             std::fs::create_dir_all(log_path.parent().unwrap()).ok();
                         }
 
-                        if let Ok(log_file) =
-                            File::create(log_path).context("failed to create log file")
-                        {
+                        if let Ok(log_file) = File::create(log_path).context("failed to create log file") {
                             tracing_subscriber::fmt()
                                 .with_writer(log_file)
                                 .with_max_level(env_level)
@@ -271,7 +287,7 @@ impl Cli {
 
                     debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
                 }
-            }
+            },
         }
 
         let result = match self.subcommand {
@@ -294,43 +310,30 @@ impl Cli {
                     } else {
                         internal::install_cli_from_args(args)
                     }
-                }
+                },
                 CliRootCommands::Uninstall => uninstall_command().await,
-                CliRootCommands::Update { no_confirm } => {
-                    installation::update_cli(no_confirm).await
-                }
+                CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm).await,
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
                     let res = daemon().await;
                     if let Err(err) = &res {
                         std::fs::write(
-                            fig_directories::fig_dir()
-                                .unwrap()
-                                .join("logs")
-                                .join("daemon-exit.log"),
+                            fig_directories::fig_dir().unwrap().join("logs").join("daemon-exit.log"),
                             format!("{:?}", err),
                         )
                         .ok();
                     }
                     res
-                }
-                CliRootCommands::Diagnostic { format, force } => {
-                    diagnostics::diagnostics_cli(format, force).await
-                }
-                CliRootCommands::Init {
-                    shell,
-                    when,
-                    rcfile,
-                } => init::shell_init_cli(&shell, &when, rcfile).await,
+                },
+                CliRootCommands::Diagnostic { format, force } => diagnostics::diagnostics_cli(format, force).await,
+                CliRootCommands::Init { shell, when, rcfile } => init::shell_init_cli(&shell, &when, rcfile).await,
                 CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Team(team) => team.execute().await,
                 CliRootCommands::Teams(teams) => teams.execute().await,
-                CliRootCommands::Doctor { verbose, strict } => {
-                    doctor::doctor_cli(verbose, strict).await
-                }
+                CliRootCommands::Doctor { verbose, strict } => doctor::doctor_cli(verbose, strict).await,
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
@@ -340,49 +343,40 @@ impl Cli {
                         exit(1);
                     }
                     Ok(())
-                }
+                },
                 CliRootCommands::Theme { theme } => theme::theme_cli(theme).await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
-                CliRootCommands::Issue { force, description } => {
-                    issue::issue_cli(force, description).await
-                }
+                CliRootCommands::Issue { force, description } => issue::issue_cli(force, description).await,
                 CliRootCommands::Completion { shell } => {
-                    println!(
-                        "{}",
-                        match shell {
-                            Shells::Bash =>
-                                Cli::generation_completions(clap_complete::shells::Bash),
-                            Shells::Fish =>
-                                Cli::generation_completions(clap_complete::shells::Fish),
-                            Shells::Zsh => Cli::generation_completions(clap_complete::shells::Zsh),
-                            Shells::Fig => Cli::generation_completions(clap_complete_fig::Fig),
-                        }
-                    );
+                    println!("{}", match shell {
+                        Shells::Bash => Cli::generation_completions(clap_complete::shells::Bash),
+                        Shells::Fish => Cli::generation_completions(clap_complete::shells::Fish),
+                        Shells::Zsh => Cli::generation_completions(clap_complete::shells::Zsh),
+                        Shells::Fig => Cli::generation_completions(clap_complete_fig::Fig),
+                    });
                     Ok(())
-                }
-                CliRootCommands::Internal(internal_subcommand) => {
-                    internal_subcommand.execute().await
-                }
+                },
+                CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
                 CliRootCommands::Launch => {
                     let app_res = app::launch_fig_cli();
                     if let Ok(daemon) = get_daemon() {
                         daemon.start().ok();
                     }
                     app_res
-                }
+                },
                 CliRootCommands::Quit => {
                     let app_res = app::quit_fig().await;
                     if let Ok(daemon) = get_daemon() {
                         daemon.stop().ok();
                     }
                     app_res
-                }
+                },
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => {
                         get_daemon().and_then(|d| d.restart()).ok();
                         app::restart_fig().await
-                    }
+                    },
                     Processes::Daemon => get_daemon().and_then(|d| d.restart()),
                 },
                 CliRootCommands::Alpha => root_command().await,
@@ -392,7 +386,7 @@ impl Cli {
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
-                }
+                },
                 CliRootCommands::LegacyBgSsh => Ok(()),
             },
             // Root command

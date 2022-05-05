@@ -1,4 +1,7 @@
-use std::path::{Path, PathBuf};
+use std::path::{
+    Path,
+    PathBuf,
+};
 
 /// Get path to "$TMPDIR/fig/daemon.sock"
 pub fn get_daemon_socket_path() -> PathBuf {

@@ -1,15 +1,27 @@
-use crate::cli::util::open_url;
-
 use anyhow::Result;
 use crossterm::style::Stylize;
 use rand::prelude::*;
 use reqwest::Url;
 
+use crate::cli::util::open_url;
+
 const TWEET_OPTIONS: &[(&str, bool)] = &[
     ("I've added autocomplete to my terminal using @fig!\n\n🛠🆕👉️", true),
-    ("I've added autocomplete to my terminal using @fig! It's super fast and integrates with my existing terminal.\n\n🛠🆕👉️", true),
-    ("I just added autocomplete to my terminal using @fig! It supports 300+ CLI tools and fits into my workflow seamlessly!\n\n🛠🆕👉️", true),
-    ("I just added IDE-style autocomplete to my terminal using @fig. It supports 300+ CLI tools and works with my existing terminal! Try it out\n\n🛠🆕🔥", false),
+    (
+        "I've added autocomplete to my terminal using @fig! It's super fast and integrates with my existing \
+         terminal.\n\n🛠🆕👉️",
+        true,
+    ),
+    (
+        "I just added autocomplete to my terminal using @fig! It supports 300+ CLI tools and fits into my workflow \
+         seamlessly!\n\n🛠🆕👉️",
+        true,
+    ),
+    (
+        "I just added IDE-style autocomplete to my terminal using @fig. It supports 300+ CLI tools and works with my \
+         existing terminal! Try it out\n\n🛠🆕🔥",
+        false,
+    ),
 ];
 
 pub fn tweet_cli() -> Result<()> {

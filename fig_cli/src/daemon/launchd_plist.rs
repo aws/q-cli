@@ -51,7 +51,7 @@ impl LaunchdPlist {
         }
 
         macro_rules! push_key_val {
-            ($key:expr, String, $val:expr) => {{
+            ($key:expr,String, $val:expr) => {{
                 push_line!(&format!("<key>{}</key>", $key));
                 push_line!(&format!("<string>{}</string>", $val));
             }};
@@ -65,15 +65,15 @@ impl LaunchdPlist {
                 });
                 push_line!("</array>");
             }};
-            ($key:expr, bool, $val:expr) => {{
+            ($key:expr,bool, $val:expr) => {{
                 push_line!(&format!("<key>{}</key>", $key));
                 push_line!(if $val { "<true/>" } else { "<false/>" });
             }};
-            ($key:expr, i64, $val:expr) => {{
+            ($key:expr,i64, $val:expr) => {{
                 push_line!(&format!("<key>{}</key>", $key));
                 push_line!(&format!("<integer>{}</integer>", $val));
             }};
-            ($key:expr, HashMap<String, $t:tt>, $val:expr) => {{
+            ($key:expr,HashMap < String, $t:tt > , $val:expr) => {{
                 push_line!(&format!("<key>{}</key>", $key));
                 push_line!("<dict>");
                 indent_block!({
@@ -197,11 +197,10 @@ impl LaunchdPlist {
         match self.environment_variables {
             Some(ref mut env) => {
                 env.insert(key.into(), value.into());
-            }
+            },
             None => {
-                self.environment_variables =
-                    Some(BTreeMap::from_iter(vec![(key.into(), value.into())]));
-            }
+                self.environment_variables = Some(BTreeMap::from_iter(vec![(key.into(), value.into())]));
+            },
         };
         self
     }

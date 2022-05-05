@@ -1,11 +1,17 @@
 use std::ffi::OsString;
 
-use anyhow::{Context, Result};
-use tracing::{error, info};
-
-use crate::{dotfiles, plugins::download::update_git_repo_with_reference};
+use anyhow::{
+    Context,
+    Result,
+};
+use tracing::{
+    error,
+    info,
+};
 
 use self::download::plugin_data_dir;
+use crate::dotfiles;
+use crate::plugins::download::update_git_repo_with_reference;
 
 pub mod api;
 pub mod download;
@@ -33,20 +39,16 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
                         let mut cloned = false;
 
                         if let Some(github) = plugin.github {
-                            match download::clone_git_repo_with_reference(
-                                github.git_url(),
-                                &plugin_directory,
-                                None,
-                            )
-                            .await
+                            match download::clone_git_repo_with_reference(github.git_url(), &plugin_directory, None)
+                                .await
                             {
                                 Ok(_) => {
                                     info!("Cloned plugin {}", plugin.name);
                                     cloned = true;
-                                }
+                                },
                                 Err(err) => {
                                     error!("Error cloning {}: {}", plugin.name, err)
-                                }
+                                },
                             }
                         } else {
                             error!("No github url found for plugin {}", plugin.name);
@@ -57,7 +59,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
                                 Ok(_) => info!("Updated plugin {}", plugin.name),
                                 Err(err) => {
                                     error!("Error updating plugin {}: {}", plugin.name, err);
-                                }
+                                },
                             }
                         }
 
@@ -85,7 +87,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
                             }
                         }
                     }
-                }
+                },
                 Ok(Err(err)) => error!("Error fetching plugin: {}", err),
                 Err(err) => error!("Error fetching plugin: {}", err),
             }

@@ -1,14 +1,25 @@
 use std::time::Duration;
 
-use anyhow::{bail, Context, Result};
+use anyhow::{
+    bail,
+    Context,
+    Result,
+};
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_ipc::{connect_timeout, send_recv_message};
-use fig_proto::daemon::{
-    daemon_response::Response, sync_command::SyncType, sync_response::SyncStatus, DaemonResponse,
+use fig_ipc::{
+    connect_timeout,
+    send_recv_message,
 };
+use fig_proto::daemon::daemon_response::Response;
+use fig_proto::daemon::sync_command::SyncType;
+use fig_proto::daemon::sync_response::SyncStatus;
+use fig_proto::daemon::DaemonResponse;
 use fig_settings::api_host;
-use reqwest::{Client, Url};
+use reqwest::{
+    Client,
+    Url,
+};
 
 use super::OutputFormat;
 use crate::util::api::handle_fig_response;
@@ -44,8 +55,7 @@ impl PluginsSubcommands {
     pub async fn execute(&self) -> Result<()> {
         match self {
             PluginsSubcommands::Sync => {
-                let mut spinner =
-                    spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
+                let mut spinner = spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
 
                 // Get diagnostics from the daemon
                 let socket_path = fig_ipc::daemon::get_daemon_socket_path();
@@ -58,17 +68,16 @@ impl PluginsSubcommands {
                     Ok(connection) => connection,
                     Err(_) => {
                         bail!("Could not connect to daemon socket, run `fig doctor` to diagnose");
-                    }
+                    },
                 };
 
-                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> =
-                    send_recv_message(
-                        &mut conn,
-                        fig_proto::daemon::new_sync_message(SyncType::PluginClone),
-                        Duration::from_secs(10),
-                    )
-                    .await
-                    .context("Could not get diagnostics from daemon")?;
+                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> = send_recv_message(
+                    &mut conn,
+                    fig_proto::daemon::new_sync_message(SyncType::PluginClone),
+                    Duration::from_secs(10),
+                )
+                .await
+                .context("Could not get diagnostics from daemon")?;
 
                 match diagnostic_response_result {
                     Some(DaemonResponse {
@@ -76,31 +85,23 @@ impl PluginsSubcommands {
                         ..
                     }) => match sync_result.status() {
                         SyncStatus::Ok => {
-                            spinner.stop_with_message(format!(
-                                "{} Successfully synced plugins\n",
-                                "✔️".green()
-                            ));
-                        }
+                            spinner.stop_with_message(format!("{} Successfully synced plugins\n", "✔️".green()));
+                        },
                         SyncStatus::Error => {
-                            spinner.stop_with_message(format!(
-                                "{} Failed to sync plugins\n",
-                                "✖️".red()
-                            ));
+                            spinner.stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
                             bail!(sync_result.error().to_string());
-                        }
+                        },
                     },
                     _ => {
-                        spinner
-                            .stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
+                        spinner.stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
                         bail!("Could not get diagnostics from daemon");
-                    }
+                    },
                 }
 
                 Ok(())
-            }
+            },
             PluginsSubcommands::Update => {
-                let mut spinner =
-                    spinners::Spinner::new(spinners::Spinners::Dots, "Updating plugins".into());
+                let mut spinner = spinners::Spinner::new(spinners::Spinners::Dots, "Updating plugins".into());
 
                 // Get diagnostics from the daemon
                 let socket_path = fig_ipc::daemon::get_daemon_socket_path();
@@ -113,17 +114,16 @@ impl PluginsSubcommands {
                     Ok(connection) => connection,
                     Err(_) => {
                         bail!("Could not connect to daemon socket, run `fig doctor` to diagnose");
-                    }
+                    },
                 };
 
-                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> =
-                    send_recv_message(
-                        &mut conn,
-                        fig_proto::daemon::new_sync_message(SyncType::PluginUpdate),
-                        Duration::from_secs(10),
-                    )
-                    .await
-                    .context("Could not get diagnostics from daemon")?;
+                let diagnostic_response_result: Option<fig_proto::daemon::DaemonResponse> = send_recv_message(
+                    &mut conn,
+                    fig_proto::daemon::new_sync_message(SyncType::PluginUpdate),
+                    Duration::from_secs(10),
+                )
+                .await
+                .context("Could not get diagnostics from daemon")?;
 
                 match diagnostic_response_result {
                     Some(DaemonResponse {
@@ -131,35 +131,24 @@ impl PluginsSubcommands {
                         ..
                     }) => match sync_result.status() {
                         SyncStatus::Ok => {
-                            spinner.stop_with_message(format!(
-                                "{} Successfully updated plugins\n",
-                                "✔".green()
-                            ));
-                        }
+                            spinner.stop_with_message(format!("{} Successfully updated plugins\n", "✔".green()));
+                        },
                         SyncStatus::Error => {
-                            spinner.stop_with_message(format!(
-                                "{} Failed to updated plugins\n",
-                                "✖️".red()
-                            ));
+                            spinner.stop_with_message(format!("{} Failed to updated plugins\n", "✖️".red()));
                             bail!(sync_result.error().to_string());
-                        }
+                        },
                     },
                     _ => {
-                        spinner.stop_with_message(format!(
-                            "{} Failed to updated plugins\n",
-                            "✖️".red()
-                        ));
+                        spinner.stop_with_message(format!("{} Failed to updated plugins\n", "✖️".red()));
                         bail!("Could not get diagnostics from daemon");
-                    }
+                    },
                 }
 
                 Ok(())
-            }
+            },
             PluginsSubcommands::Add { plugin } => {
-                let mut spinner = spinners::Spinner::new(
-                    spinners::Spinners::Arc,
-                    format!("Installing plugin {}", plugin),
-                );
+                let mut spinner =
+                    spinners::Spinner::new(spinners::Spinners::Arc, format!("Installing plugin {}", plugin));
 
                 let api_host = api_host();
                 let url = Url::parse(&format!("{api_host}/dotfiles/plugins/add/{plugin}"))?;
@@ -175,30 +164,22 @@ impl PluginsSubcommands {
 
                 match handle_fig_response(response).await {
                     Ok(_) => {
-                        spinner.stop_with_message(format!(
-                            "{} Successfully installed plugin\n",
-                            "✔️".green()
-                        ));
+                        spinner.stop_with_message(format!("{} Successfully installed plugin\n", "✔️".green()));
                         println!(
                             "Run {} to start using the plugin in the current shell",
                             "fig source".magenta()
                         );
                         Ok(())
-                    }
+                    },
                     Err(err) => {
-                        spinner
-                            .stop_with_message(
-                                format!("{} Failed to install plugin\n", "✘".red(),),
-                            );
+                        spinner.stop_with_message(format!("{} Failed to install plugin\n", "✘".red(),));
                         Err(err)
-                    }
+                    },
                 }
-            }
+            },
             PluginsSubcommands::Remove { plugin } => {
-                let mut spinner = spinners::Spinner::new(
-                    spinners::Spinners::Arc,
-                    format!("Removing plugin {}", plugin),
-                );
+                let mut spinner =
+                    spinners::Spinner::new(spinners::Spinners::Arc, format!("Removing plugin {}", plugin));
 
                 let api_host = api_host();
                 let url = Url::parse(&format!("{api_host}/dotfiles/plugins/remove/{plugin}"))?;
@@ -214,23 +195,19 @@ impl PluginsSubcommands {
 
                 match handle_fig_response(response).await {
                     Ok(_) => {
-                        spinner.stop_with_message(format!(
-                            "{} Successfully removed plugin\n",
-                            "✔️".green()
-                        ));
+                        spinner.stop_with_message(format!("{} Successfully removed plugin\n", "✔️".green()));
                         println!(
                             "Run {} to stop using the plugin in the current shell",
                             "fig source".magenta()
                         );
                         Ok(())
-                    }
+                    },
                     Err(err) => {
-                        spinner
-                            .stop_with_message(format!("{} Failed to remove plugin\n", "✘".red(),));
+                        spinner.stop_with_message(format!("{} Failed to remove plugin\n", "✘".red(),));
                         Err(err)
-                    }
+                    },
                 }
-            }
+            },
             PluginsSubcommands::List { format, installed } => {
                 let api_host = api_host();
                 let url = match installed {
@@ -264,13 +241,13 @@ impl PluginsSubcommands {
                                                 }
                                             }
                                         }
-                                    }
+                                    },
                                     OutputFormat::Json => {
                                         println!("{}", serde_json::to_string(&json)?);
-                                    }
+                                    },
                                     OutputFormat::JsonPretty => {
                                         println!("{}", serde_json::to_string_pretty(&json)?)
-                                    }
+                                    },
                                 }
                                 Ok(())
                             } else {
@@ -280,10 +257,10 @@ impl PluginsSubcommands {
                             println!("{}", json);
                             bail!("Response is not an object");
                         }
-                    }
+                    },
                     Err(err) => Err(err),
                 }
-            }
+            },
         }
     }
 }

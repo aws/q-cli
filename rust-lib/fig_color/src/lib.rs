@@ -2,7 +2,8 @@
 
 mod color;
 
-use std::{ffi::CString, fmt::Debug};
+use std::ffi::CString;
+use std::fmt::Debug;
 
 use bitflags::bitflags;
 
@@ -103,9 +104,7 @@ pub fn parse_suggestion_color_zsh_autosuggest(
     color_support: ColorSupport,
 ) -> Option<SuggestionColor> {
     let c_str = CString::new(suggestion_str).unwrap();
-    let inner = unsafe {
-        color::parse_suggestion_color_zsh_autosuggest(c_str.as_ptr(), color_support.into())
-    };
+    let inner = unsafe { color::parse_suggestion_color_zsh_autosuggest(c_str.as_ptr(), color_support.into()) };
     match inner.is_null() {
         true => None,
         false => Some(SuggestionColor {

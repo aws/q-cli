@@ -1,26 +1,36 @@
 use core::pin::Pin;
-use core::task::{Context, Poll};
+use core::task::{
+    Context,
+    Poll,
+};
 use std::convert::TryInto;
 use std::io;
 use std::path::Path;
-use tokio::io::{AsyncRead, AsyncWrite, ReadBuf};
-use tracing::trace;
-use windows::{
-    core::{PCSTR, PSTR},
-    Win32::{
-        Foundation::CHAR,
-        Networking::WinSock::{self},
-        Storage::FileSystem,
-    },
+
+use tokio::io::{
+    AsyncRead,
+    AsyncWrite,
+    ReadBuf,
 };
+use tracing::trace;
+use windows::core::{
+    PCSTR,
+    PSTR,
+};
+use windows::Win32::Foundation::CHAR;
+use windows::Win32::Networking::WinSock::{
+    SEND_RECV_FLAGS,
+    {self,},
+};
+use windows::Win32::Storage::FileSystem;
 
 #[derive(Debug)]
-pub enum WindowsSocketError {
-    StartupError,
-    InitError(WinSock::WSA_ERROR),
-    BindError(WinSock::WSA_ERROR),
-    ListenError(WinSock::WSA_ERROR),
-    InvalidSocketError(WinSock::WSA_ERROR),
+pub enum WinSockError {
+    StartupFailed,
+    InitializationFailed(WinSock::WSA_ERROR),
+    BindingFailed(WinSock::WSA_ERROR),
+    ListeningFailed(WinSock::WSA_ERROR),
+    InvalidSocket(WinSock::WSA_ERROR),
 }
 
 pub struct WindowsStream {
@@ -28,17 +38,13 @@ pub struct WindowsStream {
 }
 
 impl AsyncRead for WindowsStream {
-    fn poll_read(
-        self: Pin<&mut Self>,
-        _cx: &mut Context<'_>,
-        buf: &mut ReadBuf<'_>,
-    ) -> Poll<io::Result<()>> {
+    fn poll_read(self: Pin<&mut Self>, _cx: &mut Context<'_>, buf: &mut ReadBuf<'_>) -> Poll<io::Result<()>> {
         let res = unsafe {
             WinSock::recv(
                 self.socket,
                 PSTR(&mut buf.initialize_unfilled_to(1024)[0] as *mut u8),
                 1024,
-                0,
+                SEND_RECV_FLAGS(0),
             )
         };
         if res == WinSock::SOCKET_ERROR {
@@ -50,11 +56,7 @@ impl AsyncRead for WindowsStream {
 }
 
 impl AsyncWrite for WindowsStream {
-    fn poll_write(
-        self: Pin<&mut Self>,
-        _cx: &mut Context<'_>,
-        _buf: &[u8],
-    ) -> Poll<Result<usize, io::Error>> {
+    fn poll_write(self: Pin<&mut Self>, _cx: &mut Context<'_>, _buf: &[u8]) -> Poll<Result<usize, io::Error>> {
         todo!()
     }
 
@@ -82,29 +84,25 @@ impl WindowsListener {
         path_char_arr
     }
 
-    pub fn bind(socket_path: &Path) -> Result<Self, WindowsSocketError> {
+    pub fn bind(socket_path: &Path) -> Result<Self, WinSockError> {
         const WINSOCK_VERSION: u16 = 0x0202; // Windows Socket version 2.2
 
         // TODO: Use tokio::fs
         unsafe {
-            FileSystem::DeleteFileA(PCSTR(
-                format!("{}\0", socket_path.to_str().unwrap()).as_ptr(),
-            ));
+            FileSystem::DeleteFileA(PCSTR(format!("{}\0", socket_path.to_str().unwrap()).as_ptr()));
         }
 
         // Windows socket startup
         let mut wsa_data: WinSock::WSAData = Default::default();
-        let mut ret: i32 =
-            unsafe { WinSock::WSAStartup(WINSOCK_VERSION, &mut wsa_data as *mut WinSock::WSAData) };
+        let mut ret: i32 = unsafe { WinSock::WSAStartup(WINSOCK_VERSION, &mut wsa_data as *mut WinSock::WSAData) };
         if ret != 0 {
-            return Err(WindowsSocketError::StartupError);
+            return Err(WinSockError::StartupFailed);
         }
 
         // create socket listener
-        let listen_socket =
-            unsafe { WinSock::socket(WinSock::AF_UNIX.into(), WinSock::SOCK_STREAM.into(), 0) };
+        let listen_socket = unsafe { WinSock::socket(WinSock::AF_UNIX.into(), WinSock::SOCK_STREAM.into(), 0) };
         if listen_socket == WinSock::INVALID_SOCKET {
-            return unsafe { Err(WindowsSocketError::InitError(WinSock::WSAGetLastError())) };
+            return unsafe { Err(WinSockError::InitializationFailed(WinSock::WSAGetLastError())) };
         }
 
         // construct unix socket address
@@ -120,29 +118,22 @@ impl WindowsListener {
         ret = unsafe {
             WinSock::bind(
                 listen_socket,
-                std::mem::transmute::<*const WinSock::sockaddr_un, *const WinSock::SOCKADDR>(
-                    &listener_addr,
-                ),
-                std::mem::size_of::<WinSock::sockaddr_un>()
-                    .try_into()
-                    .unwrap(),
+                std::mem::transmute::<*const WinSock::sockaddr_un, *const WinSock::SOCKADDR>(&listener_addr),
+                std::mem::size_of::<WinSock::sockaddr_un>().try_into().unwrap(),
             )
         };
         if ret == WinSock::SOCKET_ERROR {
-            return unsafe { Err(WindowsSocketError::BindError(WinSock::WSAGetLastError())) };
+            return unsafe { Err(WinSockError::BindingFailed(WinSock::WSAGetLastError())) };
         }
 
-        Ok(Self {
-            listen_socket: listen_socket,
-        })
+        Ok(Self { listen_socket })
     }
 
-    pub async fn accept(&self) -> Result<WindowsStream, WindowsSocketError> {
+    pub async fn accept(&self) -> Result<WindowsStream, WinSockError> {
         // listen on socket listener
-        let ret =
-            unsafe { WinSock::listen(self.listen_socket, WinSock::SOMAXCONN.try_into().unwrap()) };
+        let ret = unsafe { WinSock::listen(self.listen_socket, WinSock::SOMAXCONN.try_into().unwrap()) };
         if ret == WinSock::SOCKET_ERROR {
-            return unsafe { Err(WindowsSocketError::ListenError(WinSock::WSAGetLastError())) };
+            return unsafe { Err(WinSockError::ListeningFailed(WinSock::WSAGetLastError())) };
         }
 
         trace!("Accepting connections");
@@ -159,15 +150,9 @@ impl WindowsListener {
         };
 
         if client_socket == WinSock::INVALID_SOCKET {
-            return unsafe {
-                Err(WindowsSocketError::InvalidSocketError(
-                    WinSock::WSAGetLastError(),
-                ))
-            };
+            return unsafe { Err(WinSockError::InvalidSocket(WinSock::WSAGetLastError())) };
         }
 
-        Ok(WindowsStream {
-            socket: client_socket,
-        })
+        Ok(WindowsStream { socket: client_socket })
     }
 }

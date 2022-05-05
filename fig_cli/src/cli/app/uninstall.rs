@@ -1,17 +1,26 @@
+use std::path::{
+    Path,
+    PathBuf,
+};
+
 use clap::Args;
 use fig_directories::home_dir;
-use fig_telemetry::{TrackEvent, TrackSource};
-use std::path::{Path, PathBuf};
-use tokio::io::{AsyncReadExt, AsyncWriteExt};
+use fig_telemetry::{
+    TrackEvent,
+    TrackSource,
+};
+use tokio::io::{
+    AsyncReadExt,
+    AsyncWriteExt,
+};
 use tracing::warn;
 
-use crate::{
-    cli::{
-        installation::{uninstall_cli, InstallComponents},
-        util::open_url,
-    },
-    daemon::IS_RUNNING_DAEMON,
+use crate::cli::installation::{
+    uninstall_cli,
+    InstallComponents,
 };
+use crate::cli::util::open_url;
+use crate::daemon::IS_RUNNING_DAEMON;
 
 async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl Fn(&str) -> bool) {
     if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
@@ -74,10 +83,7 @@ pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
         // Open the uninstallation page
         let email = fig_auth::get_email().unwrap_or_default();
         let version = fig_auth::get_default("versionAtPreviousLaunch").unwrap_or_default();
-        open_url(format!(
-            "https://fig.io/uninstall?email={email}&version={version}",
-        ))
-        .ok();
+        open_url(format!("https://fig.io/uninstall?email={email}&version={version}",)).ok();
     }
 
     if uninstall_args.app_bundle {
@@ -183,10 +189,7 @@ async fn uninstall_user_data() {
 async fn uninstall_input_method() {
     if let Some(home) = fig_directories::home_dir() {
         // Remove the app
-        let fig_input_method_app = home
-            .join("Library")
-            .join("Input Methods")
-            .join("FigInputMethod.app");
+        let fig_input_method_app = home.join("Library").join("Input Methods").join("FigInputMethod.app");
 
         if fig_input_method_app.exists() {
             tokio::fs::remove_dir_all(fig_input_method_app)
@@ -241,24 +244,22 @@ async fn uninstall_terminal_integrations() {
                                 Ok(mut file) => {
                                     file.write_all(contents.as_bytes())
                                         .await
-                                        .map_err(|err| {
-                                            warn!("Could not write to Hyper config: {err}")
-                                        })
+                                        .map_err(|err| warn!("Could not write to Hyper config: {err}"))
                                         .ok();
-                                }
+                                },
                                 Err(err) => {
                                     warn!("Could not create Hyper config: {err}")
-                                }
+                                },
                             }
-                        }
+                        },
                         Err(err) => {
                             warn!("Could not read Hyper config: {err}");
-                        }
+                        },
                     }
-                }
+                },
                 Err(err) => {
                     warn!("Could not open Hyper config: {err}");
-                }
+                },
             }
         }
 
@@ -271,31 +272,28 @@ async fn uninstall_terminal_integrations() {
                     let mut contents = String::new();
                     match file.read_to_string(&mut contents).await {
                         Ok(_) => {
-                            contents = contents
-                                .replace("watcher ${HOME}/.fig/tools/kitty-integration.py", "");
+                            contents = contents.replace("watcher ${HOME}/.fig/tools/kitty-integration.py", "");
                             // Write the config file
                             match tokio::fs::File::create(&kitty_path).await {
                                 Ok(mut file) => {
                                     file.write_all(contents.as_bytes())
                                         .await
-                                        .map_err(|err| {
-                                            warn!("Could not write to Kitty config: {err}")
-                                        })
+                                        .map_err(|err| warn!("Could not write to Kitty config: {err}"))
                                         .ok();
-                                }
+                                },
                                 Err(err) => {
                                     warn!("Could not create Kitty config: {err}")
-                                }
+                                },
                             }
-                        }
+                        },
                         Err(err) => {
                             warn!("Could not read Kitty config: {err}");
-                        }
+                        },
                     }
-                }
+                },
                 Err(err) => {
                     warn!("Could not open Kitty config: {err}");
-                }
+                },
             }
         }
         // TODO: Add Jetbrains integration

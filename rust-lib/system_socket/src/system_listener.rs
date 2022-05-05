@@ -33,9 +33,7 @@ impl SystemListener {
         Ok(Self(
             {
                 use tokio::net::windows::named_pipe::ServerOptions;
-                ServerOptions::new()
-                    .first_pipe_instance(true)
-                    .create(path.as_ref())?
+                ServerOptions::new().first_pipe_instance(true).create(path.as_ref())?
             },
             path.as_ref().to_path_buf(),
         ))

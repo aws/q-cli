@@ -1,33 +1,40 @@
 use anyhow::Result;
-use clap::{ArgEnum, Args, Subcommand};
+use clap::{
+    ArgEnum,
+    Args,
+    Subcommand,
+};
 use crossterm::style::Stylize;
 use reqwest::Method;
-use serde::{Deserialize, Serialize};
-use serde_json::{json, Value};
-
-use crate::util::api::request;
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_json::{
+    json,
+    Value,
+};
 
 use super::OutputFormat;
+use crate::util::api::request;
 
-/*
-# List members on a team
-- fig team <team-name> members
-
-# Remove user from a team
-- fig team <team-name> remove <email>
-
-# Add user to a team and optionally assign a role
-fig team <team-name> add <email> [--role=admin|member]
-
-# List all teams that the user is part of
-fig teams
-
-# Delete an existing team
-fig teams delete <team>
-
-# Create a new team
-fig teams create <team>
-*/
+// # List members on a team
+// - fig team <team-name> members
+//
+// # Remove user from a team
+// - fig team <team-name> remove <email>
+//
+// # Add user to a team and optionally assign a role
+// fig team <team-name> add <email> [--role=admin|member]
+//
+// # List all teams that the user is part of
+// fig teams
+//
+// # Delete an existing team
+// fig teams delete <team>
+//
+// # Create a new team
+// fig teams create <team>
 
 #[derive(Debug, Subcommand)]
 pub enum TeamsSubcommand {
@@ -47,32 +54,28 @@ impl TeamsSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TeamsSubcommand::Create { team } => {
-                let _val: Value =
-                    request(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
+                let _val: Value = request(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
                 println!("Created team {}", team);
                 Ok(())
-            }
+            },
             TeamsSubcommand::Delete { team: _ } => {
                 todo!();
-            }
+            },
             TeamsSubcommand::List { format } => {
                 let teams: Value = request(Method::GET, "/teams", None, true).await?;
                 match format {
                     OutputFormat::Plain => {
                         if let Some(teams) = teams.as_array() {
                             for team in teams {
-                                println!(
-                                    "{}",
-                                    team["name"].as_str().unwrap_or_default(),
-                                );
+                                println!("{}", team["name"].as_str().unwrap_or_default(),);
                             }
                         }
-                    }
+                    },
                     OutputFormat::Json => println!("{}", serde_json::to_string(&teams)?),
                     OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&teams)?),
                 }
                 Ok(())
-            }
+            },
         }
     }
 }
@@ -119,8 +122,7 @@ impl TeamSubcommand {
     pub async fn execute(&self, team: &String) -> Result<()> {
         match self {
             TeamSubcommand::Members { format } => {
-                let val: Value =
-                    request(Method::GET, format!("/teams/{team}/users"), None, true).await?;
+                let val: Value = request(Method::GET, format!("/teams/{team}/users"), None, true).await?;
                 match format {
                     OutputFormat::Plain => {
                         if let Some(users) = val.as_array() {
@@ -133,12 +135,12 @@ impl TeamSubcommand {
                                 );
                             }
                         }
-                    }
+                    },
                     OutputFormat::Json => println!("{}", serde_json::to_string(&val)?),
                     OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&val)?),
                 }
                 Ok(())
-            }
+            },
             TeamSubcommand::Remove { email } => {
                 let _val: Value = request(
                     Method::DELETE,
@@ -149,7 +151,7 @@ impl TeamSubcommand {
                 .await?;
                 println!("Removed user {} from team {}", email, team);
                 Ok(())
-            }
+            },
             TeamSubcommand::Add { email, role } => {
                 let _val: Value = request(
                     Method::POST,
@@ -163,8 +165,7 @@ impl TeamSubcommand {
                 .await?;
                 println!("Added user {} to team {}", email, team);
                 Ok(())
-            }
+            },
         }
     }
 }
-

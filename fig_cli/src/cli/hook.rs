@@ -1,10 +1,14 @@
-use anyhow::{Context, Result};
+use std::fs::OpenOptions;
+use std::io::prelude::*;
+
+use anyhow::{
+    Context,
+    Result,
+};
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks;
-use std::fs::OpenOptions;
-use std::io::prelude::*;
 
 #[derive(Debug, Subcommand)]
 #[clap(hide = true)]
@@ -63,19 +67,16 @@ impl HookSubcommand {
                 cursor,
                 text,
             } => {
-                let context =
-                    hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
+                let context = hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
                 Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor))
-            }
+            },
             HookSubcommand::Event { event_name } => Ok(hooks::new_event_hook(event_name)),
             HookSubcommand::Hide => Ok(hooks::new_hide_hook()),
             HookSubcommand::Init { pid, tty } => {
                 let context = hooks::generate_shell_context(*pid, tty, None, None)?;
                 hooks::new_init_hook(context)
-            }
-            HookSubcommand::IntegrationReady { integration } => {
-                Ok(hooks::new_integration_ready_hook(integration))
-            }
+            },
+            HookSubcommand::IntegrationReady { integration } => Ok(hooks::new_integration_ready_hook(integration)),
             HookSubcommand::KeyboardFocusChanged {
                 app_identifier,
                 focused_session_id,
@@ -86,11 +87,11 @@ impl HookSubcommand {
             HookSubcommand::PreExec { pid, tty } => {
                 let context = hooks::generate_shell_context(*pid, tty, None, None)?;
                 Ok(hooks::new_preexec_hook(context))
-            }
+            },
             HookSubcommand::Prompt { pid, tty } => {
                 let context = hooks::generate_shell_context(*pid, tty, None, None)?;
                 Ok(hooks::new_prompt_hook(context))
-            }
+            },
             HookSubcommand::Ssh {
                 control_path,
                 pid,
@@ -112,12 +113,12 @@ impl HookSubcommand {
                     installed_hosts.read_to_string(&mut contents)?;
 
                     if !contents.contains(remote_dest) {
-                        println!("To install SSH support for {}, run the following on your remote machine\
-                                  \n\n  {} \n  source <(curl -Ls fig.io/install)\
-                                  \n\n  {} \n  curl -Ls fig.io/install | source\n",
-                                  "Fig".magenta(),
-                                  "For bash/zsh:".bold().underlined(),
-                                  "For Fish:".bold().underlined(),
+                        println!(
+                            "To install SSH support for {}, run the following on your remote machine\n\n  {} \n  \
+                             source <(curl -Ls fig.io/install)\n\n  {} \n  curl -Ls fig.io/install | source\n",
+                            "Fig".magenta(),
+                            "For bash/zsh:".bold().underlined(),
+                            "For Fish:".bold().underlined(),
                         );
                         let new_line = format!("\n{}", remote_dest);
                         installed_hosts.write_all(&new_line.into_bytes())?;
@@ -125,7 +126,7 @@ impl HookSubcommand {
                 }
                 let context = hooks::generate_shell_context(*pid, tty, None, None)?;
                 hooks::new_ssh_hook(context, control_path, remote_dest)
-            }
+            },
         };
 
         let hook = hook.context("Invalid input for hook")?;

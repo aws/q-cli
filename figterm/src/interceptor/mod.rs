@@ -1,13 +1,16 @@
 pub mod terminal_input_parser;
 
-use self::terminal_input_parser::{key_from_text, KeyCode, KeyModifiers};
-
 use anyhow::Result;
 use dashmap::DashMap;
-
 use fig_settings::keybindings::KeyBindings;
 pub use terminal_input_parser::parse_code;
 use tracing::trace;
+
+use self::terminal_input_parser::{
+    key_from_text,
+    KeyCode,
+    KeyModifiers,
+};
 
 #[derive(Debug, Clone, Default)]
 pub struct KeyInterceptor {

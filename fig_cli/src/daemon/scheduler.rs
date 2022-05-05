@@ -1,17 +1,25 @@
-use std::{borrow::Cow, collections::BinaryHeap, time::Duration};
+use std::borrow::Cow;
+use std::collections::BinaryHeap;
+use std::fmt::Debug;
+use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
 use flume::Sender;
-use rand::{distributions::Uniform, prelude::Distribution};
-use std::fmt::Debug;
-use tokio::{
-    task::JoinHandle,
-    time::{sleep_until, Instant},
+use rand::distributions::Uniform;
+use rand::prelude::Distribution;
+use tokio::task::JoinHandle;
+use tokio::time::{
+    sleep_until,
+    Instant,
 };
-use tracing::{error, info};
+use tracing::{
+    error,
+    info,
+};
 
-use crate::{dotfiles::download_and_notify, plugins::fetch_installed_plugins};
+use crate::dotfiles::download_and_notify;
+use crate::plugins::fetch_installed_plugins;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tag<'a>(Cow<'a, str>);
@@ -96,9 +104,7 @@ impl ScheduleHeap {
     }
 
     fn pop(&mut self) -> Option<(Tag<'static>, Box<dyn Task>)> {
-        self.heap
-            .pop()
-            .map(|ScheduledTask { tag, task, .. }| (tag, task))
+        self.heap.pop().map(|ScheduledTask { tag, task, .. }| (tag, task))
     }
 
     pub async fn next(&mut self) -> Option<(Tag<'static>, Box<dyn Task>)> {
