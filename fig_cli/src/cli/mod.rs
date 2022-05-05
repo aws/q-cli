@@ -167,8 +167,6 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     User(user::UserSubcommand),
     Team(team::TeamCommand),
-    #[clap(subcommand)]
-    Teams(team::TeamsSubcommand),
     /// Check Fig is properly configured
     Doctor {
         /// Run all doctor tests, with no fixes
@@ -332,7 +330,6 @@ impl Cli {
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Team(team) => team.execute().await,
-                CliRootCommands::Teams(teams) => teams.execute().await,
                 CliRootCommands::Doctor { verbose, strict } => doctor::doctor_cli(verbose, strict).await,
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),

@@ -36,13 +36,8 @@ pub async fn request<T: DeserializeOwned>(
     }
 
     let response = request.send().await?;
-
-    let text = response.text().await?;
-    println!("{:?}", text);
-
-    // let json = handle_fig_response(response).await?.json().await?;
-
-    Ok(serde_json::from_str(&text)?)
+    let json = handle_fig_response(response).await?.json().await?;
+    Ok(json)
 }
 
 pub async fn handle_fig_response(resp: Response) -> Result<Response> {

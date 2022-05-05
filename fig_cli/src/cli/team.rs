@@ -1,4 +1,7 @@
-use anyhow::Result;
+use anyhow::{
+    bail,
+    Result,
+};
 use clap::{
     ArgEnum,
     Args,
@@ -19,83 +22,85 @@ use super::OutputFormat;
 use crate::util::api::request;
 
 // # List members on a team
-// - fig team <team-name> members
+// - fig teams <team-name> members
 //
 // # Remove user from a team
-// - fig team <team-name> remove <email>
+// - fig teams <team-name> remove <email>
 //
 // # Add user to a team and optionally assign a role
-// fig team <team-name> add <email> [--role=admin|member]
+// fig teams <team-name> add <email> [--role=admin|member]
 //
 // # List all teams that the user is part of
-// fig teams
+// fig teams --list
 //
 // # Delete an existing team
-// fig teams delete <team>
+// fig teams --new <team-name>
 //
 // # Create a new team
-// fig teams create <team>
+// fig teams --delete <team-name>
 
-#[derive(Debug, Subcommand)]
-pub enum TeamsSubcommand {
-    /// Create a new team
-    Create { team: String },
-    /// Delete an existing team
-    #[clap(hide = true)]
-    Delete { team: String },
-    /// List all teams that the user is part of
-    List {
-        #[clap(short, long, arg_enum, default_value_t)]
-        format: OutputFormat,
-    },
-}
-
-impl TeamsSubcommand {
-    pub async fn execute(&self) -> Result<()> {
-        match self {
-            TeamsSubcommand::Create { team } => {
-                let _val: Value = request(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
-                println!("Created team {}", team);
-                Ok(())
-            },
-            TeamsSubcommand::Delete { team: _ } => {
-                todo!();
-            },
-            TeamsSubcommand::List { format } => {
-                let teams: Value = request(Method::GET, "/teams", None, true).await?;
-                match format {
-                    OutputFormat::Plain => {
-                        if let Some(teams) = teams.as_array() {
-                            for team in teams {
-                                println!("{}", team["name"].as_str().unwrap_or_default(),);
-                            }
-                        }
-                    },
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&teams)?),
-                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&teams)?),
-                }
-                Ok(())
-            },
-        }
-    }
+#[derive(Debug, Args)]
+pub struct TeamsArgs {
+    // List all teams that the user is part of
+    #[clap(long, conflicts_with_all = &["new", "delete"])]
+    list: bool,
+    // Create a new team
+    #[clap(long, conflicts_with_all = &["list", "delete"])]
+    new: bool,
+    // Delete an existing team
+    #[clap(long, conflicts_with_all = &["list", "new"])]
+    delete: bool,
+    // Format of output
+    #[clap(short, long, arg_enum, default_value_t)]
+    format: OutputFormat,
 }
 
 #[derive(Debug, Args)]
 pub struct TeamCommand {
-    pub team: String,
+    pub team: Option<String>,
     #[clap(subcommand)]
-    pub subcommand: TeamSubcommand,
+    pub subcommand: Option<TeamSubcommand>,
+    #[clap(flatten)]
+    pub args: TeamsArgs,
 }
 
 impl TeamCommand {
     pub async fn execute(&self) -> Result<()> {
-        self.subcommand.execute(&self.team).await
+        if self.args.list {
+            let teams: Value = request(Method::GET, "/teams", None, true).await?;
+            match self.args.format {
+                OutputFormat::Plain => {
+                    if let Some(teams) = teams.as_array() {
+                        for team in teams {
+                            println!("{}", team["name"].as_str().unwrap_or_default());
+                        }
+                    }
+                },
+                OutputFormat::Json => println!("{}", serde_json::to_string(&teams)?),
+                OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&teams)?),
+            }
+            Ok(())
+        } else if let Some(team) = &self.team {
+            if self.args.new {
+                let _val: Value = request(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
+                println!("Created team {}", team);
+                Ok(())
+            } else if self.args.delete {
+                todo!();
+            } else {
+                match &self.subcommand {
+                    Some(subcommand) => subcommand.execute(team, &self.args.format).await,
+                    None => bail!("No subcommand specified"),
+                }
+            }
+        } else {
+            bail!("No team specified");
+        }
     }
 }
 
 #[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
-#[clap(rename_all = "kebab-case")]
 pub enum Role {
     Admin,
     Member,
@@ -104,10 +109,7 @@ pub enum Role {
 #[derive(Debug, Subcommand)]
 pub enum TeamSubcommand {
     /// List all members on a team
-    Members {
-        #[clap(long, short, arg_enum, default_value_t)]
-        format: OutputFormat,
-    },
+    Members,
     /// Remove a member from a team
     Remove { email: String },
     /// Invite a member to a team
@@ -119,9 +121,9 @@ pub enum TeamSubcommand {
 }
 
 impl TeamSubcommand {
-    pub async fn execute(&self, team: &String) -> Result<()> {
+    pub async fn execute(&self, team: &String, format: &OutputFormat) -> Result<()> {
         match self {
-            TeamSubcommand::Members { format } => {
+            TeamSubcommand::Members => {
                 let val: Value = request(Method::GET, format!("/teams/{team}/users"), None, true).await?;
                 match format {
                     OutputFormat::Plain => {

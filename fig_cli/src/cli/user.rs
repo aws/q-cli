@@ -49,7 +49,7 @@ pub enum UserSubcommand {
     Root(RootUserSubcommand),
     Whoami,
     #[clap(subcommand)]
-    Token(TokenSubcommand),
+    Tokens(TokensSubcommand),
 }
 
 impl UserSubcommand {
@@ -57,19 +57,13 @@ impl UserSubcommand {
         match self {
             Self::Root(cmd) => cmd.execute().await,
             Self::Whoami => whoami_cli().await,
-            Self::Token(cmd) => cmd.execute().await,
+            Self::Tokens(cmd) => cmd.execute().await,
         }
     }
 }
 
-// fig user token new --name <name> --expires <date> [ --team <namespace> ]
-//
-// fig user token list [ --team <namespace> ]
-//
-// fig user token revoke <token-name> [ --team <namespace> ]
-
 #[derive(Subcommand, Debug)]
-pub enum TokenSubcommand {
+pub enum TokensSubcommand {
     New {
         /// The name of the token
         name: String,
@@ -96,7 +90,7 @@ pub enum TokenSubcommand {
     },
 }
 
-impl TokenSubcommand {
+impl TokensSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             Self::New { name, expires, team: _ } => {
