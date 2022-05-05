@@ -15,6 +15,7 @@ pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod ssh;
+pub mod team;
 pub mod theme;
 pub mod tips;
 pub mod tweet;
@@ -31,8 +32,6 @@ use crate::{
 use anyhow::{Context, Result};
 use cfg_if::cfg_if;
 use clap::{ArgEnum, IntoApp, Parser, Subcommand};
-use fig_ipc::command::open_ui_element;
-use fig_proto::local::UiElement;
 use std::{fs::File, process::exit, str::FromStr};
 use tracing::{debug, level_filters::LevelFilter};
 
@@ -130,7 +129,9 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
-    Theme { theme: Option<String> },
+    Theme {
+        theme: Option<String>,
+    },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -147,6 +148,9 @@ pub enum CliRootCommands {
     RootUser(user::RootUserSubcommand),
     #[clap(subcommand)]
     User(user::UserSubcommand),
+    Team(team::TeamCommand),
+    #[clap(subcommand)]
+    Teams(team::TeamsSubcommand),
     /// Check Fig is properly configured
     Doctor {
         /// Run all doctor tests, with no fixes
@@ -184,7 +188,9 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
     /// Open manual page
-    Man { command: Vec<String> },
+    Man {
+        command: Vec<String>,
+    },
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -275,6 +281,9 @@ impl Cli {
                     if input_method {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
+                                use fig_ipc::command::open_ui_element;
+                                use fig_proto::local::UiElement;
+
                                 open_ui_element(UiElement::InputMethodPrompt)
                                     .await
                                     .context("\nCould not launch fig\n")
@@ -317,6 +326,8 @@ impl Cli {
                 CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
+                CliRootCommands::Team(team) => team.execute().await,
+                CliRootCommands::Teams(teams) => teams.execute().await,
                 CliRootCommands::Doctor { verbose, strict } => {
                     doctor::doctor_cli(verbose, strict).await
                 }

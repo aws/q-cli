@@ -125,10 +125,7 @@ impl TokenSubcommand {
                     .send()
                     .await?;
 
-                let json: serde_json::Value = handle_fig_response(response)
-                    .await?
-                    .json()
-                    .await?;
+                let json: serde_json::Value = handle_fig_response(response).await?.json().await?;
 
                 match json.get("apiToken").and_then(|x| x.as_str()) {
                     Some(val) => {
@@ -154,25 +151,20 @@ impl TokenSubcommand {
                     .send()
                     .await?;
 
-                let json: serde_json::Value = handle_fig_response(response)
-                    .await?
-                    .json()
-                    .await?;
+                let json: serde_json::Value = handle_fig_response(response).await?.json().await?;
 
                 match json.get("apiTokens") {
-                    Some(val) => {
-                        match format {
-                            OutputFormat::Json => {
-                                println!("{}", serde_json::to_string(val).unwrap())
-                            }
-                            OutputFormat::JsonPretty => {
-                                println!("{}", serde_json::to_string_pretty(val).unwrap())
-                            }
-                            OutputFormat::Plain => {
-                                todo!();
-                            }
+                    Some(val) => match format {
+                        OutputFormat::Json => {
+                            println!("{}", serde_json::to_string(val).unwrap())
                         }
-                    }
+                        OutputFormat::JsonPretty => {
+                            println!("{}", serde_json::to_string_pretty(val).unwrap())
+                        }
+                        OutputFormat::Plain => {
+                            todo!();
+                        }
+                    },
                     None => {
                         eprintln!("Could not get API token");
                         exit(1);
@@ -194,7 +186,7 @@ impl TokenSubcommand {
                     .await?;
 
                 handle_fig_response(response).await?;
-                
+
                 println!("Revoked token: {name}");
                 Ok(())
             }

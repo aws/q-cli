@@ -1,6 +1,45 @@
-use anyhow::{bail, Result};
+use std::fmt::Display;
 
-pub async fn handle_fig_response(resp: reqwest::Response) -> Result<reqwest::Response> {
+use anyhow::{bail, Result};
+use fig_auth::get_token;
+use fig_settings::api_host;
+use reqwest::{Client, Method, Response, Url};
+use serde::de::DeserializeOwned;
+use serde_json::Value;
+
+pub async fn request<T: DeserializeOwned>(
+    method: Method,
+    endpoint: impl Display,
+    body: impl Into<Option<&Value>>,
+    auth: bool,
+) -> Result<T> {
+    let api_host = api_host();
+    let url = Url::parse(&format!("{api_host}{endpoint}"))?;
+
+    let mut request = Client::new()
+        .request(method, url)
+        .header("Accept", "application/json");
+
+    if auth {
+        let token = get_token().await?;
+        request = request.bearer_auth(token);
+    }
+
+    if let Some(body) = body.into() {
+        request = request.json(body);
+    }
+
+    let response = request.send().await?;
+
+    let text = response.text().await?;
+    println!("{:?}", text);
+
+    //let json = handle_fig_response(response).await?.json().await?;
+
+    Ok(serde_json::from_str(&text)?)
+}
+
+pub async fn handle_fig_response(resp: Response) -> Result<Response> {
     if resp.status().is_success() {
         Ok(resp)
     } else {
@@ -15,7 +54,7 @@ pub async fn handle_fig_response(resp: reqwest::Response) -> Result<reqwest::Res
         }
 
         match resp.text().await {
-            Ok(text) => match serde_json::from_str::<serde_json::Value>(&text) {
+            Ok(text) => match serde_json::from_str::<Value>(&text) {
                 Ok(json) => {
                     bail!(json
                         .get("error")
