@@ -57,6 +57,7 @@ pub async fn handle_fig_response(resp: Response) -> Result<Response> {
         match resp.text().await {
             Ok(text) => match serde_json::from_str::<Value>(&text) {
                 Ok(json) => {
+                    // println!("{}", json);
                     bail!(
                         json.get("error")
                             .and_then(|error| error.as_str())

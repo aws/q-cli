@@ -156,7 +156,13 @@ impl TokensSubcommand {
                             println!("{}", serde_json::to_string_pretty(val).unwrap())
                         },
                         OutputFormat::Plain => {
-                            todo!();
+                            if let Some(tokens) = val.as_array() {
+                                for token in tokens {
+                                    if let Some(name) = token.get("name").and_then(|x| x.as_str()) {
+                                        println!("{}", name);
+                                    }
+                                }
+                            }
                         },
                     },
                     None => {
@@ -271,36 +277,39 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
 // Logout from fig
 pub async fn logout_cli() -> Result<()> {
     let mut creds = Credentials::load_credentials()?;
-    creds.clear_cridentials();
+    creds.clear_credentials();
     creds.save_credentials()?;
 
-    let uuid = fig_auth::get_default("uuid").unwrap_or_default();
-    tokio::process::Command::new("defaults")
-        .args(["delete", "com.mschrage.fig"])
-        .output()
-        .await
-        .ok();
-    tokio::process::Command::new("defaults")
-        .args(["delete", "com.mschrage.fig.shared"])
-        .output()
-        .await
-        .ok();
-    tokio::process::Command::new("defaults")
-        .args(["write", "com.mschrage.fig", "uuid", &uuid])
-        .output()
-        .await
-        .ok();
+    #[cfg(target_os = "macos")]
+    {
+        let uuid = fig_auth::get_default("uuid").unwrap_or_default();
+        tokio::process::Command::new("defaults")
+            .args(["delete", "com.mschrage.fig"])
+            .output()
+            .await
+            .ok();
+        tokio::process::Command::new("defaults")
+            .args(["delete", "com.mschrage.fig.shared"])
+            .output()
+            .await
+            .ok();
+        tokio::process::Command::new("defaults")
+            .args(["write", "com.mschrage.fig", "uuid", &uuid])
+            .output()
+            .await
+            .ok();
+    }
 
     println!("Logged out");
-
     Ok(())
 }
 
 pub async fn whoami_cli() -> Result<()> {
     match fig_auth::get_email() {
-        Some(email) => println!("Logged in as {}", email),
+        Some(email) => {
+            println!("Logged in as {}", email);
+            Ok(())
+        },
         None => bail!("Not logged in"),
     }
-
-    Ok(())
 }

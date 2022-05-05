@@ -19,6 +19,7 @@ use serde_json::{
 };
 
 use super::OutputFormat;
+use crate::cli::util::dialoguer_theme;
 use crate::util::api::request;
 
 // # List members on a team
@@ -86,15 +87,23 @@ impl TeamCommand {
                 println!("Created team {}", team);
                 Ok(())
             } else if self.args.delete {
-                todo!();
+                println!("Type the team name again to confirm: ");
+                let confirmation = dialoguer::Input::<String>::with_theme(&dialoguer_theme()).interact()?;
+                if &confirmation == team {
+                    let _val: Value = request(Method::DELETE, &format!("/teams/{}", team), None, true).await?;
+                    println!("Deleted team {}", team);
+                    Ok(())
+                } else {
+                    bail!("Team name does not match");
+                }
             } else {
                 match &self.subcommand {
                     Some(subcommand) => subcommand.execute(team, &self.args.format).await,
-                    None => bail!("No subcommand specified"),
+                    None => bail!("No subcommand specified, run --help for usage"),
                 }
             }
         } else {
-            bail!("No team specified");
+            bail!("No team specified, run --help for usage");
         }
     }
 }
@@ -102,8 +111,20 @@ impl TeamCommand {
 #[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Role {
+    #[clap(hide = true)]
+    Owner,
     Admin,
     Member,
+}
+
+impl std::fmt::Display for Role {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Role::Owner => f.write_str("owner"),
+            Role::Admin => f.write_str("admin"),
+            Role::Member => f.write_str("member"),
+        }
+    }
 }
 
 #[derive(Debug, Subcommand)]
@@ -120,26 +141,26 @@ pub enum TeamSubcommand {
     },
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct User {
+    email: String,
+    role: Role,
+}
+
 impl TeamSubcommand {
     pub async fn execute(&self, team: &String, format: &OutputFormat) -> Result<()> {
         match self {
             TeamSubcommand::Members => {
-                let val: Value = request(Method::GET, format!("/teams/{team}/users"), None, true).await?;
+                let users: Vec<User> = request(Method::GET, format!("/teams/{team}/users"), None, true).await?;
                 match format {
                     OutputFormat::Plain => {
-                        if let Some(users) = val.as_array() {
-                            println!("{}", "Role     Email".bold());
-                            for user in users {
-                                println!(
-                                    "{:<6}   {}",
-                                    user["role"].as_str().unwrap_or_default(),
-                                    user["email"].as_str().unwrap_or_default(),
-                                );
-                            }
+                        println!("{}", "Role     Email".bold());
+                        for user in users {
+                            println!("{:<6}   {}", user.role, user.email);
                         }
                     },
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&val)?),
-                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&val)?),
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&users)?),
+                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&users)?),
                 }
                 Ok(())
             },
