@@ -39,6 +39,9 @@ tracing = "0.1.34"
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.36.1", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_UI_WindowsAndMessaging", "Win32_UI_Accessibility", "Win32_System_Ole", "Win32_Graphics_Gdi"] }
 
+[target.'cfg(target_os="linux")'.dependencies]
+x11rb = "0.9.0"
+
 [features]
 # by default Tauri runs in production mode
 # when `tauri dev` runs it is executed with `cargo run --no-default-features` if `devPath` is an URL
