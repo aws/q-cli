@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use anyhow::{
     bail,
     Result,
@@ -14,13 +12,16 @@ use fig_auth::cognito::{
     SignInInput,
     SignUpInput,
 };
-use fig_auth::get_token;
-use fig_settings::api_host;
-use serde_json::json;
+use reqwest::Method;
+use serde_json::{
+    json,
+    Value,
+};
+use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
 use crate::cli::util::dialoguer_theme;
-use crate::util::api::handle_fig_response;
+use crate::util::api::request;
 
 #[derive(Subcommand, Debug)]
 pub enum RootUserSubcommand {
@@ -67,17 +68,23 @@ pub enum TokensSubcommand {
     New {
         /// The name of the token
         name: String,
-        /// The expiration date of the token
-        #[clap(long, short)]
-        expires: Option<String>,
+        /// The expiration date of the token in RFC3339 format
+        #[clap(long, conflicts_with = "expires-in")]
+        expires_date: Option<String>,
+        /// The time till the token expires (e.g. "90d")
+        #[clap(long, conflicts_with = "expires-date")]
+        expires_in: Option<String>,
         /// The team namespace to create the token for
         #[clap(long, short)]
         team: Option<String>,
     },
     List {
         /// The team namespace to list the tokens for
-        #[clap(long, short)]
+        #[clap(long, short, conflicts_with = "personal")]
         team: Option<String>,
+        /// Only list tokens owned by the current user
+        #[clap(long, short, conflicts_with = "team")]
+        personal: bool,
         #[clap(long, short, arg_enum, default_value_t)]
         format: OutputFormat,
     },
@@ -93,61 +100,62 @@ pub enum TokensSubcommand {
 impl TokensSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            Self::New { name, expires, team: _ } => {
-                println!("Creating token \"{name}\"");
-
-                if let Some(expires) = expires {
-                    match time::OffsetDateTime::parse(&expires, &time::format_description::well_known::Rfc3339) {
+            Self::New {
+                name,
+                expires_date,
+                expires_in,
+                team,
+            } => {
+                let expires_at = match (expires_date, expires_in) {
+                    (Some(expires_date), None) => match time::OffsetDateTime::parse(&expires_date, &Rfc3339) {
                         Ok(date) => {
                             println!("{date}");
+                            Some(date)
                         },
                         Err(err) => {
-                            println!("Failed to parse date: {err}");
+                            bail!("Failed to parse date: {err}");
                         },
-                    }
+                    },
+                    (None, Some(expires_in)) => {
+                        let duration = humantime::parse_duration(&expires_in)?;
+                        Some(time::OffsetDateTime::now_utc() + duration)
+                    },
+                    (None, None) => None,
+                    (Some(_), Some(_)) => {
+                        bail!("You can only specify one of --expires-date or --expires-in");
+                    },
                 }
+                .and_then(|date| date.format(&Rfc3339).ok());
 
-                let api_host = api_host();
-                let token = get_token().await.unwrap();
+                let json: serde_json::Value = request(
+                    Method::POST,
+                    "/auth/tokens/new",
+                    Some(&json!({ "name": name, "team": team, "expiresAt": expires_at })),
+                    true,
+                )
+                .await?;
 
-                let url = reqwest::Url::parse(&format!("{api_host}/auth/tokens/new")).unwrap();
-                let response = reqwest::Client::new()
-                    .post(url)
-                    .bearer_auth(token)
-                    .header("Accept", "application/json")
-                    .json(&json!({ "name": name }))
-                    .send()
-                    .await?;
-
-                let json: serde_json::Value = handle_fig_response(response).await?.json().await?;
-
-                match json.get("apiToken").and_then(|x| x.as_str()) {
+                match json.get("token").and_then(|x| x.as_str()) {
                     Some(val) => {
                         eprintln!("API token:");
                         println!("{val}");
                     },
                     None => {
-                        eprintln!("Could not get API token");
-                        exit(1);
+                        bail!("Could not get tokens: {json}");
                     },
                 }
                 Ok(())
             },
-            Self::List { format, team: _ } => {
-                let api_host = api_host();
-                let token = get_token().await.unwrap();
+            Self::List { format, team, personal } => {
+                let json: Value = request(
+                    Method::GET,
+                    "/auth/tokens/list",
+                    Some(&json!({ "team": team, "personal": personal })),
+                    true,
+                )
+                .await?;
 
-                let url = reqwest::Url::parse(&format!("{api_host}/auth/tokens/list")).unwrap();
-                let response = reqwest::Client::new()
-                    .get(url)
-                    .bearer_auth(token)
-                    .header("Accept", "application/json")
-                    .send()
-                    .await?;
-
-                let json: serde_json::Value = handle_fig_response(response).await?.json().await?;
-
-                match json.get("apiTokens") {
+                match json.get("tokens") {
                     Some(val) => match format {
                         OutputFormat::Json => {
                             println!("{}", serde_json::to_string(val).unwrap())
@@ -157,37 +165,47 @@ impl TokensSubcommand {
                         },
                         OutputFormat::Plain => {
                             if let Some(tokens) = val.as_array() {
-                                for token in tokens {
-                                    if let Some(name) = token.get("name").and_then(|x| x.as_str()) {
-                                        println!("{}", name);
+                                if tokens.is_empty() {
+                                    eprintln!("No tokens");
+                                } else {
+                                    println!(
+                                        "{}",
+                                        format!("{name:<20}{namespace}", name = "Name", namespace = "Namespace").bold()
+                                    );
+                                    for token in tokens {
+                                        let name = token["name"].as_str().unwrap_or_default();
+                                        let namespace = token["namespace"]["username"].as_str().unwrap_or_default();
+                                        println!("{name:<20}{namespace}");
                                     }
                                 }
+                            } else {
+                                bail!("Tokens is not an array: {json}");
                             }
                         },
                     },
                     None => {
-                        eprintln!("Could not get API token");
-                        exit(1);
+                        bail!("Could not get tokens: {json}");
                     },
                 }
                 Ok(())
             },
-            Self::Revoke { name, team: _ } => {
-                let api_host = api_host();
-                let token = get_token().await.unwrap();
+            Self::Revoke { name, team } => {
+                let _json: Value = request(
+                    Method::POST,
+                    "/auth/tokens/revoke",
+                    Some(&json!({ "name": name, "team": team })),
+                    true,
+                )
+                .await?;
 
-                let url = reqwest::Url::parse(&format!("{api_host}/auth/tokens/revoke")).unwrap();
-                let response = reqwest::Client::new()
-                    .post(url)
-                    .bearer_auth(token)
-                    .header("Accept", "application/json")
-                    .json(&json!({ "name": name }))
-                    .send()
-                    .await?;
-
-                handle_fig_response(response).await?;
-
-                println!("Revoked token: {name}");
+                match team {
+                    Some(team) => {
+                        println!("Revoked token {name} for team {team}");
+                    },
+                    None => {
+                        println!("Revoked token {name}");
+                    },
+                }
                 Ok(())
             },
         }

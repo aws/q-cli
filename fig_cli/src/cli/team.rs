@@ -72,9 +72,15 @@ impl TeamCommand {
             match self.args.format {
                 OutputFormat::Plain => {
                     if let Some(teams) = teams.as_array() {
-                        for team in teams {
-                            println!("{}", team["name"].as_str().unwrap_or_default());
+                        if teams.is_empty() {
+                            eprintln!("You are not part of any teams.");
+                        } else {
+                            for team in teams {
+                                println!("{}", team["name"].as_str().unwrap_or_default());
+                            }
                         }
+                    } else {
+                        bail!("Unexpected response from server");
                     }
                 },
                 OutputFormat::Json => println!("{}", serde_json::to_string(&teams)?),

@@ -1615,6 +1615,7 @@ dependencies = [
  "futures",
  "git2",
  "globset",
+ "humantime",
  "native-dialog",
  "nix 0.24.1",
  "notify",
