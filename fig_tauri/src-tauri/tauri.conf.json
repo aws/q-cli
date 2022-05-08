@@ -53,8 +53,8 @@
     "windows": [
       {
         "label": "autocomplete",
-        "width": 1,
-        "height": 1,
+        "width": 400,
+        "height": 400,
         "resizable": false,
         "fullscreen": false,
         "decorations": false,

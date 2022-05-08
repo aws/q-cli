@@ -18,6 +18,7 @@ use x11rb::protocol::xproto::{
     EventMask,
     Property,
     PropertyNotifyEvent,
+    Window,
 };
 use x11rb::protocol::Event;
 use x11rb::rust_connection::RustConnection;
@@ -67,7 +68,7 @@ fn handle_x11(sender: UnboundedSender<WindowEvent>) {
 
     while let Ok(event) = conn.wait_for_event() {
         if let Event::PropertyNotify(event) = event {
-            if let Err(err) = handle_property_event(&conn, sender.clone(), event) {
+            if let Err(err) = handle_property_event(&conn, &sender, event) {
                 error!("error handling PropertyNotifyEvent: {err}");
             }
         }
@@ -76,7 +77,7 @@ fn handle_x11(sender: UnboundedSender<WindowEvent>) {
 
 fn handle_property_event(
     conn: &RustConnection,
-    sender: UnboundedSender<WindowEvent>,
+    sender: &UnboundedSender<WindowEvent>,
     event: PropertyNotifyEvent,
 ) -> anyhow::Result<()> {
     let PropertyNotifyEvent { atom, state, .. } = event;
@@ -87,30 +88,53 @@ fn handle_property_event(
         if property_name == b"_NET_ACTIVE_WINDOW" {
             trace!("active window changed");
             let focus = get_input_focus(conn)?.reply()?.focus;
-
-            if let Ok(wm_class) = WmClass::get(conn, focus)?.reply() {
-                let utf8 = String::from_utf8_lossy(wm_class.class());
-                info!("focus changed to {utf8}");
-            }
-
-            let mut frame = focus;
-            let query = query_tree(conn, focus)?.reply()?;
-            let root = query.root;
-            let mut parent = query.parent;
-
-            while parent != root {
-                frame = parent;
-                parent = query_tree(conn, frame)?.reply()?.parent;
-            }
-
-            let geometry = get_geometry(conn, frame)?.reply()?;
-
-            let _ = sender.send(WindowEvent::Reposition {
-                x: geometry.x as i32,
-                y: geometry.y as i32,
-            });
+            process_window(conn, sender, focus)?;
         }
     }
+
+    Ok(())
+}
+
+fn process_window(conn: &RustConnection, sender: &UnboundedSender<WindowEvent>, window: Window) -> anyhow::Result<()> {
+    let wm_class = match WmClass::get(conn, window)?.reply() {
+        Ok(class_raw) => String::from_utf8_lossy(class_raw.class()).into_owned(),
+        Err(_) => {
+            // hide if missing wm class
+            sender.send(WindowEvent::Hide)?;
+            return Ok(());
+        },
+    };
+
+    info!("focus changed to {wm_class}");
+
+    if wm_class.as_str() == "Fig_tauri" {
+        return Ok(());
+    }
+
+    if !WMCLASS_WHITELSIT.contains(&wm_class.as_str()) {
+        // hide if not a whitelisted wm class
+        sender.send(WindowEvent::Hide)?;
+        return Ok(());
+    }
+
+    let mut frame = window;
+    let query = query_tree(conn, window)?.reply()?;
+    let root = query.root;
+    let mut parent = query.parent;
+
+    while parent != root {
+        frame = parent;
+        parent = query_tree(conn, frame)?.reply()?.parent;
+    }
+
+    let geometry = get_geometry(conn, frame)?.reply()?;
+
+    // sender.send(WindowEvent::Reposition {
+    //     x: geometry.x as i32,
+    //     y: geometry.y as i32,
+    // })?;
+
+    sender.send(WindowEvent::Show)?;
 
     Ok(())
 }

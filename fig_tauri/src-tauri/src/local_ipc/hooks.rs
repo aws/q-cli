@@ -123,6 +123,8 @@ pub async fn caret_position(hook: CursorPositionHook, state: &WindowState) -> Re
         height: hook.height,
     });
 
+    // state.send_event(WindowEvent::Reanchor { x: hook.x, y: hook.y });
+
     Ok(())
 }
 
