@@ -122,7 +122,7 @@ jobs:
       - name: Install Protobuf tooling
         run:  |
           brew install protobuf swift-protobuf
-          yarn install
+          npm install
         working-directory: ./proto
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
