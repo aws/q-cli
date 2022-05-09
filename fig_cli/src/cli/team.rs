@@ -145,6 +145,10 @@ pub enum TeamSubcommand {
         #[clap(long, arg_enum)]
         role: Option<Role>,
     },
+    /// List pending invitations to a team
+    Invitations,
+    /// Revoke an invitation to a team
+    Revoke { email: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -178,7 +182,11 @@ impl TeamSubcommand {
                     true,
                 )
                 .await?;
-                println!("Removed user {} from team {}", email, team);
+                println!(
+                    "Removed user {} from team {}",
+                    email.clone().bold(),
+                    team.clone().bold()
+                );
                 Ok(())
             },
             TeamSubcommand::Add { email, role } => {
@@ -192,7 +200,32 @@ impl TeamSubcommand {
                     true,
                 )
                 .await?;
-                println!("Added user {} to team {}", email, team);
+                println!("Invited {} to team {}", email.clone().bold(), team.clone().bold());
+                Ok(())
+            },
+            TeamSubcommand::Invitations => {
+                let invitations: Vec<User> =
+                    request(Method::GET, format!("/teams/{team}/invitations"), None, true).await?;
+                match format {
+                    OutputFormat::Plain => {
+                        for invitation in invitations {
+                            println!("{}", invitation.email);
+                        }
+                    },
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&invitations)?),
+                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&invitations)?),
+                }
+                Ok(())
+            },
+            TeamSubcommand::Revoke { email } => {
+                let _val: Value = request(
+                    Method::DELETE,
+                    format!("/teams/{team}/invitations"),
+                    Some(&json!({ "emailToRevoke": email })),
+                    true,
+                )
+                .await?;
+                println!("Revoked invitation for {}", email.clone().bold());
                 Ok(())
             },
         }
