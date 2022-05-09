@@ -1,5 +1,8 @@
 use std::borrow::Cow;
+use std::path::Path;
 
+use anyhow::Result;
+use tokio::io::{AsyncWriteExt, AsyncReadExt};
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     error,
@@ -31,9 +34,62 @@ pub struct NativeState;
 
 impl NativeState {
     pub fn new(window_event_sender: UnboundedSender<WindowEvent>) -> Self {
-        tauri::async_runtime::spawn_blocking(move || handle_x11(window_event_sender));
+        match DisplayServer::detect() {
+            Ok(DisplayServer::X11) => {
+                info!("Detected X11 server");
+                tauri::async_runtime::spawn_blocking(move || handle_x11(window_event_sender));
+            },
+            Ok(DisplayServer::Wayland) => {
+                info!("Detected Wayland server");
+                if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
+                    info!("Using sway socket: {}", sway_socket);
+                    tauri::async_runtime::spawn(async { handle_sway(window_event_sender, sway_socket) });
+                } else {
+                    error!("Unknown wayland compositor");
+                }
+            },
+            Err(e) => {
+                error!("{}", e);
+            },
+        }
 
         Self
+    }
+}
+
+enum DisplayServer {
+    X11,
+    Wayland,
+}
+
+impl DisplayServer {
+    fn detect() -> Result<Self> {
+        match std::env::var("XDG_SESSION_TYPE") {
+            Ok(ref session_type) if session_type == "wayland" => Ok(Self::Wayland),
+            _ => Ok(Self::X11),
+        }
+    }
+}
+
+async fn handle_sway(window_event_sender: UnboundedSender<WindowEvent>, socket: impl AsRef<Path>) {
+    let mut conn = tokio::net::UnixStream::connect(socket).await.unwrap();
+
+
+    let payload = br#"["window"]"#;
+    let payload_len: u32 = payload.len() as u32;
+    let mut msg: Vec<u8> = vec![];
+
+    msg.extend_from_slice(b"i3-ipc");
+    msg.extend_from_slice(&payload_len.to_ne_bytes());
+    msg.extend_from_slice(&2u32.to_ne_bytes());
+    msg.extend_from_slice(payload);
+
+    conn.write_all(&msg).await.unwrap();
+    
+    loop {
+        let mut buf = bytes::BytesMut::new();
+        conn.read_buf(&mut buf).await.unwrap();
+        println!("{:?}", buf);
     }
 }
 

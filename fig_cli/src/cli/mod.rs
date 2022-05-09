@@ -293,8 +293,7 @@ impl Cli {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => {
-                    let internal::InstallArgs { input_method, .. } = args;
-                    if input_method {
+                    if let internal::InstallArgs { input_method: true, .. } = args {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
                                 open_ui_element(UiElement::InputMethodPrompt)
@@ -436,7 +435,6 @@ async fn uninstall_command() -> Result<()> {
 
 async fn root_command() -> Result<()> {
     // Launch fig if it is not running
-
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_auth::is_logged_in;
