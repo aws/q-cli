@@ -133,6 +133,12 @@ jobs:
 ############################################
 # Setup Rust build environment
 ############################################
+      - name: Install `jq`
+        run:  |
+          brew install jq
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
