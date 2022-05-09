@@ -1,7 +1,6 @@
 //! CLI functionality
 
 pub mod app;
-pub mod auth;
 pub mod debug;
 pub mod diagnostics;
 pub mod doctor;
@@ -16,9 +15,11 @@ pub mod plugins;
 pub mod settings;
 pub mod source;
 pub mod ssh;
+pub mod team;
 pub mod theme;
 pub mod tips;
 pub mod tweet;
+pub mod user;
 pub mod util;
 
 use std::fs::File;
@@ -36,8 +37,6 @@ use clap::{
     Parser,
     Subcommand,
 };
-use fig_ipc::command::open_ui_element;
-use fig_proto::local::UiElement;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
@@ -148,7 +147,9 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
-    Theme { theme: Option<String> },
+    Theme {
+        theme: Option<String>,
+    },
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -161,16 +162,11 @@ pub enum CliRootCommands {
         /// Issue description
         description: Vec<String>,
     },
-    /// Login to Fig
-    Login {
-        /// Manually refresh the auth token
-        #[clap(long, short)]
-        refresh: bool,
-    },
-    /// Logout of Fig
-    Logout,
-    /// Details about the current user
-    User,
+    #[clap(flatten)]
+    RootUser(user::RootUserSubcommand),
+    #[clap(subcommand)]
+    User(user::UserSubcommand),
+    Team(team::TeamCommand),
     /// Check Fig is properly configured
     Doctor {
         /// Run all doctor tests, with no fixes
@@ -208,7 +204,9 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
     /// Open manual page
-    Man { command: Vec<String> },
+    Man {
+        command: Vec<String>,
+    },
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -297,6 +295,9 @@ impl Cli {
                     if input_method {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
+                                use fig_ipc::command::open_ui_element;
+                                use fig_proto::local::UiElement;
+
                                 open_ui_element(UiElement::InputMethodPrompt)
                                     .await
                                     .context("\nCould not launch fig\n")
@@ -326,9 +327,9 @@ impl Cli {
                 CliRootCommands::Diagnostic { format, force } => diagnostics::diagnostics_cli(format, force).await,
                 CliRootCommands::Init { shell, when, rcfile } => init::shell_init_cli(&shell, &when, rcfile).await,
                 CliRootCommands::Source => source::source_cli().await,
-                CliRootCommands::Login { refresh } => auth::login_cli(refresh).await,
-                CliRootCommands::Logout => auth::logout_cli().await,
-                CliRootCommands::User => auth::user_info_cli().await,
+                CliRootCommands::User(user) => user.execute().await,
+                CliRootCommands::RootUser(root_user) => root_user.execute().await,
+                CliRootCommands::Team(team) => team.execute().await,
                 CliRootCommands::Doctor { verbose, strict } => doctor::doctor_cli(verbose, strict).await,
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
