@@ -1,3 +1,5 @@
+use std::process::exit;
+
 use anyhow::{
     bail,
     Result,
@@ -13,6 +15,10 @@ use fig_auth::cognito::{
     SignUpInput,
 };
 use reqwest::Method;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::{
     json,
     Value,
@@ -48,7 +54,15 @@ impl RootUserSubcommand {
 pub enum UserSubcommand {
     #[clap(flatten)]
     Root(RootUserSubcommand),
-    Whoami,
+    Whoami {
+        /// Output format to use
+        #[clap(short, long, arg_enum, default_value_t)]
+        format: OutputFormat,
+        /// Only print the user's email address, this is quicker since it doesn't require a network
+        /// request
+        #[clap(short = 'e', long)]
+        only_email: bool,
+    },
     #[clap(subcommand)]
     Tokens(TokensSubcommand),
 }
@@ -57,7 +71,7 @@ impl UserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             Self::Root(cmd) => cmd.execute().await,
-            Self::Whoami => whoami_cli().await,
+            Self::Whoami { format, only_email } => whoami_cli(format, only_email).await,
             Self::Tokens(cmd) => cmd.execute().await,
         }
     }
@@ -322,12 +336,45 @@ pub async fn logout_cli() -> Result<()> {
     Ok(())
 }
 
-pub async fn whoami_cli() -> Result<()> {
-    match fig_auth::get_email() {
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct WhoamiResponse {
+    email: String,
+    username: Option<String>,
+}
+
+pub async fn whoami_cli(format: OutputFormat, only_email: bool) -> Result<()> {
+    let email = fig_auth::get_email();
+
+    match email {
         Some(email) => {
-            println!("Logged in as {}", email);
+            if only_email {
+                match format {
+                    OutputFormat::Plain => println!("Email: {}", email),
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&json!({ "email": email }))?),
+                    OutputFormat::JsonPretty => {
+                        println!("{}", serde_json::to_string_pretty(&json!({ "email": email }))?)
+                    },
+                }
+            } else {
+                let response: WhoamiResponse = request(Method::GET, "/user/whoami", None, true).await?;
+                match format {
+                    OutputFormat::Plain => match response.username {
+                        Some(username) => println!("Email: {}\nUsername: {}", response.email, username),
+                        None => println!("Email: {}\nUsername is null", response.email),
+                    },
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&response)?),
+                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&response)?),
+                }
+            }
             Ok(())
         },
-        None => bail!("Not logged in"),
+        None => {
+            match format {
+                OutputFormat::Plain => println!("Not logged in"),
+                OutputFormat::Json => println!("{}", serde_json::to_string(&json!({ "email": null }))?),
+                OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&json!({ "email": null }))?),
+            }
+            exit(1);
+        },
     }
 }
