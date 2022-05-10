@@ -12,6 +12,7 @@ use tokio::sync::mpsc::{
     UnboundedReceiver,
     UnboundedSender,
 };
+use tracing::debug;
 
 #[derive(Debug)]
 pub enum WindowEvent {
@@ -67,10 +68,17 @@ pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEve
             WindowEvent::Reposition { x, y } => {
                 let anchor = state.anchor.read();
                 let caret_position = state.caret_position.read();
-                *state.position.write() = PhysicalPosition { x, y };
+                *state.position.write() = PhysicalPosition {
+                    x: caret_position.x,
+                    y: caret_position.y,
+                };
+                debug!(
+                    "x {x} y {y} anchor.x {} anchor.y {} caret_position.x {} caret_position.y {}",
+                    anchor.x, anchor.y, caret_position.x, caret_position.y
+                );
                 window.set_position(Position::Physical(PhysicalPosition {
-                    x: anchor.x + x + caret_position.x,
-                    y: anchor.y + y + caret_position.y,
+                    x: caret_position.x,
+                    y: caret_position.y,
                 }))
             },
             WindowEvent::UpdateCaret { x, y, width, height } => {
@@ -78,14 +86,11 @@ pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEve
                 let position = state.position.read();
                 *state.caret_position.write() = PhysicalPosition { x, y };
                 *state.caret_size.write() = PhysicalSize { width, height };
-                window.set_position(Position::Physical(PhysicalPosition {
-                    x: anchor.x + position.x + x,
-                    y: anchor.y + position.y + y,
-                }))
+                window.set_position(Position::Physical(PhysicalPosition { x, y }))
             },
             WindowEvent::Resize { width, height } => window.set_size(Size::Physical(PhysicalSize { width, height })),
             WindowEvent::Hide => window.hide(),
-            WindowEvent::Show => window.show(),
+            WindowEvent::Show => window.show().and_then(|_| window.set_always_on_top(true)),
             WindowEvent::Emit { event, payload } => window.emit(event, payload),
         }
         .expect("Failed to process window event");

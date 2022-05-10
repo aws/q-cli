@@ -63,9 +63,7 @@ pub async fn start_local_ipc(
             figterm_state.clone(),
             notification_state.clone(),
             window_state.clone(),
-        ))
-        .await
-        .expect("Failed to spawn ipc handler");
+        ));
     }
 }
 

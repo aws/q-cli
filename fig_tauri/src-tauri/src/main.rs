@@ -84,6 +84,7 @@ fn main() {
                 let window = app
                     .get_window("autocomplete")
                     .expect("Failed to acquire autocomplete window");
+                window.set_always_on_top(true).expect("Failed putting window on top");
                 let window_state = Arc::new(WindowState::new(&window, send));
                 app.manage(window_state.clone());
 

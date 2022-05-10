@@ -29,10 +29,10 @@ pub async fn position_window(request: PositionWindowRequest, state: &WindowState
         });
 
         // Workaround to nonapplicably zero sized windows
-        match size.width == 1.0 || size.height == 1.0 {
-            true => state.send_event(WindowEvent::Hide),
-            false => state.send_event(WindowEvent::Show),
-        }
+        // match size.width == 1.0 || size.height == 1.0 {
+        // true => state.send_event(WindowEvent::Hide),
+        // false => state.send_event(WindowEvent::Show),
+        // }
     }
 
     RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
