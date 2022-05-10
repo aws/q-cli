@@ -1,10 +1,14 @@
 use std::borrow::Cow;
+use std::io::Cursor;
+use std::mem::size_of;
 use std::path::Path;
 
 use anyhow::Result;
-use tokio::io::{AsyncWriteExt, AsyncReadExt};
+use bytes::Buf;
+use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
+    debug,
     error,
     info,
     trace,
@@ -43,7 +47,7 @@ impl NativeState {
                 info!("Detected Wayland server");
                 if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
                     info!("Using sway socket: {}", sway_socket);
-                    tauri::async_runtime::spawn(async { handle_sway(window_event_sender, sway_socket) });
+                    tauri::async_runtime::spawn(async { handle_sway(window_event_sender, sway_socket).await });
                 } else {
                     error!("Unknown wayland compositor");
                 }
@@ -71,13 +75,76 @@ impl DisplayServer {
     }
 }
 
-async fn handle_sway(window_event_sender: UnboundedSender<WindowEvent>, socket: impl AsRef<Path>) {
-    let mut conn = tokio::net::UnixStream::connect(socket).await.unwrap();
+struct Container {
+    app_id: String,
+}
 
+struct Window {
+    change: String,
+    container: Container,
+}
+
+struct I3Ipc {
+    payload_type: u32,
+    payload: serde_json::Value,
+}
+
+impl I3Ipc {
+    pub fn parse(src: &mut Cursor<&[u8]>) -> Result<(Self, usize), &'static str> {
+        use std::io::Read;
+
+        if src.remaining() < 6 {
+            return Err("Header too short");
+        }
+
+        let mut magic_string = [0; 6];
+
+        src.read_exact(&mut magic_string);
+
+        if &magic_string != b"i3-ipc" {
+            return Err("Header is not `i3-ipc`");
+        }
+
+        if src.remaining() < size_of::<u32>() {
+            return Err("Payload length too short");
+        }
+
+        let mut payload_length_buf = [0; size_of::<u32>()];
+        src.read_exact(&mut payload_length_buf);
+        let payload_length = u32::from_ne_bytes(payload_length_buf);
+
+        if src.remaining() < size_of::<u32>() {
+            return Err("Payload type too short");
+        }
+
+        let mut payload_type_buf = [0; size_of::<u32>()];
+        src.read_exact(&mut payload_type_buf);
+        let payload_type = u32::from_ne_bytes(payload_type_buf);
+
+        if src.remaining() < payload_length as usize {
+            return Err("Payload too short");
+        }
+
+        let mut payload_buf = vec![0; payload_length as usize];
+        src.read_exact(&mut payload_buf);
+
+        let payload = serde_json::from_slice(&payload_buf).unwrap();
+
+        Ok((
+            Self { payload_type, payload },
+            6 + size_of::<u32>() * 2 + payload_length as usize,
+        ))
+    }
+}
+
+async fn handle_sway(window_event_sender: UnboundedSender<WindowEvent>, socket: impl AsRef<Path>) {
+    use tokio::io::AsyncReadExt;
+
+    let mut conn = tokio::net::UnixStream::connect(socket).await.unwrap();
+    let mut msg = bytes::BytesMut::new();
 
     let payload = br#"["window"]"#;
     let payload_len: u32 = payload.len() as u32;
-    let mut msg: Vec<u8> = vec![];
 
     msg.extend_from_slice(b"i3-ipc");
     msg.extend_from_slice(&payload_len.to_ne_bytes());
@@ -85,11 +152,17 @@ async fn handle_sway(window_event_sender: UnboundedSender<WindowEvent>, socket: 
     msg.extend_from_slice(payload);
 
     conn.write_all(&msg).await.unwrap();
-    
+
+    let mut buf = bytes::BytesMut::new();
     loop {
-        let mut buf = bytes::BytesMut::new();
         conn.read_buf(&mut buf).await.unwrap();
-        println!("{:?}", buf);
+        match I3Ipc::parse(&mut Cursor::new(buf.as_ref())) {
+            Ok((ipc, size)) => {
+                buf.advance(size);
+                println!("{:?}", ipc.payload);
+            },
+            Err(err) => {},
+        }
     }
 }
 
