@@ -89,14 +89,14 @@ impl TeamCommand {
             Ok(())
         } else if let Some(team) = &self.team {
             if self.args.new {
-                let _val: Value = request(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
+                request::<Value, _, _>(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
                 println!("Created team {}", team);
                 Ok(())
             } else if self.args.delete {
                 println!("Type the team name again to confirm: ");
                 let confirmation = dialoguer::Input::<String>::with_theme(&dialoguer_theme()).interact()?;
                 if &confirmation == team {
-                    let _val: Value = request(Method::DELETE, &format!("/teams/{}", team), None, true).await?;
+                    request::<Value, _, _>(Method::DELETE, &format!("/teams/{}", team), None, true).await?;
                     println!("Deleted team {}", team);
                     Ok(())
                 } else {
@@ -175,7 +175,7 @@ impl TeamSubcommand {
                 Ok(())
             },
             TeamSubcommand::Remove { email } => {
-                let _val: Value = request(
+                request::<Value, _, _>(
                     Method::DELETE,
                     format!("/teams/{team}/users"),
                     Some(&json!({ "emailToRemove": email })),
@@ -190,7 +190,7 @@ impl TeamSubcommand {
                 Ok(())
             },
             TeamSubcommand::Add { email, role } => {
-                let _val: Value = request(
+                request::<Value, _, _>(
                     Method::POST,
                     format!("/teams/{team}/users"),
                     Some(&json!({
@@ -218,7 +218,7 @@ impl TeamSubcommand {
                 Ok(())
             },
             TeamSubcommand::Revoke { email } => {
-                let _val: Value = request(
+                request::<Value, _, _>(
                     Method::DELETE,
                     format!("/teams/{team}/invitations"),
                     Some(&json!({ "emailToRevoke": email })),
