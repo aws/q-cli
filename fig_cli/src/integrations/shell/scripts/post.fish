@@ -5,6 +5,7 @@ contains $HOME/.local/bin $fish_user_paths
 or set -a PATH $HOME/.local/bin
 
 if test "$FIG_DID_NOT_EXEC_FIGTERM" = 1
+    and test "$FIG_TERM" != 1
     set --erase FIG_DID_NOT_EXEC_FIGTERM
     exit
 end

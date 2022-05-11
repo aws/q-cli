@@ -19,6 +19,7 @@ if test "$TERM_PROGRAM" != WarpTerminal
     and test -z "$FIG_PTY"
     and command -v ~/.fig/bin/figterm 1>/dev/null 2>/dev/null
     and test -z "$FIG_TERM"
+    or test -z "$FIG_TERM_TMUX" -a -n "$TMUX"
 
     # Generated automatically by iTerm and Terminal But needs to be
     # explicitly set for VSCode and Hyper. This variable is inherited when
