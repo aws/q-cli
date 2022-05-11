@@ -9,6 +9,11 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
+if [ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 ]; then
+  unset FIG_DID_NOT_EXEC_FIGTERM
+  exit
+fi
+
 export TTY=$(tty)
 export FIG_PID="$$"
 
