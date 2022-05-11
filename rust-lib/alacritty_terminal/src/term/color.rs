@@ -1,10 +1,26 @@
-use std::fmt::{self, Display, Formatter};
-use std::ops::{Add, Index, IndexMut, Mul};
+use std::fmt::{
+    self,
+    Display,
+    Formatter,
+};
+use std::ops::{
+    Add,
+    Index,
+    IndexMut,
+    Mul,
+};
 use std::str::FromStr;
 
 use log::trace;
-use serde::de::{Error as _, Visitor};
-use serde::{Deserialize, Deserializer, Serialize};
+use serde::de::{
+    Error as _,
+    Visitor,
+};
+use serde::{
+    Deserialize,
+    Deserializer,
+    Serialize,
+};
 use serde_yaml::Value;
 
 use crate::ansi::NamedColor;
@@ -163,7 +179,7 @@ impl FromStr for Rgb {
                 color >>= 8;
                 let r = color as u8;
                 Ok(Rgb { r, g, b })
-            }
+            },
             Err(_) => Err(()),
         }
     }
@@ -219,18 +235,13 @@ impl<'de> Deserialize<'de> for CellRgb {
                     _ => (),
                 }
 
-                Rgb::from_str(value).map(CellRgb::Rgb).map_err(|_| {
-                    E::custom(format!(
-                        "failed to parse color {}; expected {}",
-                        value, EXPECTING
-                    ))
-                })
+                Rgb::from_str(value)
+                    .map(CellRgb::Rgb)
+                    .map_err(|_| E::custom(format!("failed to parse color {}; expected {}", value, EXPECTING)))
             }
         }
 
-        deserializer
-            .deserialize_str(CellRgbVisitor)
-            .map_err(D::Error::custom)
+        deserializer.deserialize_str(CellRgbVisitor).map_err(D::Error::custom)
     }
 }
 
@@ -290,9 +301,9 @@ impl IndexMut<NamedColor> for Colors {
 
 #[cfg(test)]
 mod tests {
-    use super::*;
-
     use std::f64::EPSILON;
+
+    use super::*;
 
     #[test]
     fn contrast() {

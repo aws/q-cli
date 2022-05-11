@@ -100,7 +100,7 @@ message Process {
 }
 
 message FilePath {
-  optional string path = 1;
+  string path = 1;
   optional string relative_to = 2;
   optional bool expand_tilde_in_path = 3;
 }
@@ -197,7 +197,7 @@ message PositionWindowResponse {
 }
 
 message ReadFileRequest {
-  optional FilePath path = 1;
+  FilePath path = 1;
   optional bool isBinaryFile = 2;
 }
 
@@ -571,7 +571,7 @@ message LocalStateChangedNotification {
 message Constants {
   optional string version = 1; // the current version of Fig
   optional string build = 2;  // the current build of Fig 
-  optional string cli = 3; // the path to the figcli executable
+  optional string cli = 3; // the path to the fig_cli executable
   optional string bundlePath = 4; // the filepath of the macOS bundle
   optional string remote = 5; // the remote URL where apps are loaded from
   optional string home = 6; // the user's home directory 
@@ -583,5 +583,3 @@ message Constants {
   optional string protoMessageHandler = 12;
   optional string themes = 13; // a comma-separated list of all themes
 }
-
-

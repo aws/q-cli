@@ -1,4 +1,6 @@
-use std::{fmt::Display, time::Duration};
+use std::fmt::Display;
+use std::time::Duration;
+
 use viuer::Config as ViuerConfig;
 
 pub struct Config<'a, D>
@@ -54,8 +56,8 @@ where
             ..Default::default()
         };
 
-        let frame_duration = frames_per_second
-            .map(|frames_per_second| Duration::from_secs_f32(1.0 / frames_per_second as f32));
+        let frame_duration =
+            frames_per_second.map(|frames_per_second| Duration::from_secs_f32(1.0 / frames_per_second as f32));
 
         Config {
             files,

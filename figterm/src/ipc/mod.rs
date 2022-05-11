@@ -1,11 +1,22 @@
 //! Utiities for IPC with Mac App
 
+use std::time::Duration;
+
 use anyhow::Result;
 use fig_proto::figterm::FigtermMessage;
-use flume::{unbounded, Receiver, Sender};
-use std::time::Duration;
-use tokio::{fs::remove_file, io::AsyncWriteExt, net::UnixListener};
-use tracing::{debug, error, trace};
+use flume::{
+    unbounded,
+    Receiver,
+    Sender,
+};
+use tokio::fs::remove_file;
+use tokio::io::AsyncWriteExt;
+use tokio::net::UnixListener;
+use tracing::{
+    debug,
+    error,
+    trace,
+};
 
 pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
@@ -37,21 +48,19 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
 
         while let Ok(message) = outgoing_rx.recv_async().await {
             match fig_ipc::connect_timeout(&socket, Duration::from_secs(1)).await {
-                Ok(mut unix_stream) => {
-                    match fig_ipc::send_message(&mut unix_stream, message).await {
-                        Ok(()) => {
-                            if let Err(e) = unix_stream.flush().await {
-                                error!("Failed to flush socket: {}", e);
-                            }
+                Ok(mut unix_stream) => match fig_ipc::send_message(&mut unix_stream, message).await {
+                    Ok(()) => {
+                        if let Err(e) = unix_stream.flush().await {
+                            error!("Failed to flush socket: {}", e);
                         }
-                        Err(e) => {
-                            error!("Failed to send message: {}", e);
-                        }
-                    }
-                }
+                    },
+                    Err(e) => {
+                        error!("Failed to send message: {}", e);
+                    },
+                },
                 Err(e) => {
                     error!("Error connecting to socket: {}", e);
-                }
+                },
             }
         }
     });
@@ -59,9 +68,7 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
     Ok(outgoing_tx)
 }
 
-pub async fn spawn_incoming_receiver(
-    session_id: impl AsRef<str>,
-) -> Result<Receiver<FigtermMessage>> {
+pub async fn spawn_incoming_receiver(session_id: impl AsRef<str>) -> Result<Receiver<FigtermMessage>> {
     trace!("Spawning incoming receiver");
 
     let socket_listener = create_socket_listen(session_id).await?;
@@ -78,15 +85,15 @@ pub async fn spawn_incoming_receiver(
                             Ok(Some(message)) => {
                                 debug!("Received message: {:?}", message);
                                 incomming_tx.clone().send_async(message).await.unwrap();
-                            }
+                            },
                             Ok(None) => {
                                 debug!("Received EOF");
                                 break;
-                            }
+                            },
                             Err(err) => {
                                 error!("Error receiving message: {}", err);
                                 break;
-                            }
+                            },
                         }
                     }
                 });

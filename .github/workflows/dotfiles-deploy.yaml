@@ -12,7 +12,7 @@ env:
 
 defaults:
   run:
-    working-directory: figcli 
+    working-directory: fig_cli 
 
 jobs:
   deploy:

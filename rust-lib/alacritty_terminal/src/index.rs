@@ -1,9 +1,20 @@
 //! Line and Column newtypes for strongly typed tty/grid/terminal APIs.
 
 /// Indexing types and implementations for Grid and Line.
-use std::cmp::{max, min, Ord, Ordering};
+use std::cmp::{
+    max,
+    min,
+    Ord,
+    Ordering,
+};
 use std::fmt;
-use std::ops::{Add, AddAssign, Deref, Sub, SubAssign};
+use std::ops::{
+    Add,
+    AddAssign,
+    Deref,
+    Sub,
+    SubAssign,
+};
 
 use crate::grid::Dimensions;
 
@@ -48,8 +59,7 @@ pub struct Rect {
 
 impl Rect {
     pub const fn size(&self) -> usize {
-        (self.end.column.0 - self.start.column.0) as usize
-            * (self.end.line.0 - self.start.line.0) as usize
+        (self.end.column.0 - self.start.column.0) as usize * (self.end.line.0 - self.start.line.0) as usize
     }
 }
 
@@ -112,11 +122,11 @@ impl Point {
             Boundary::Grid if self.line < topmost_line => Point::new(topmost_line, Column(0)),
             Boundary::Cursor | Boundary::Grid if self.line > bottommost_line => {
                 Point::new(bottommost_line, last_column)
-            }
+            },
             Boundary::None => {
                 self.line = self.line.grid_clamp(dimensions, boundary);
                 self
-            }
+            },
             _ => self,
         }
     }
@@ -151,7 +161,7 @@ impl Line {
                 let bottommost_line = dimensions.bottommost_line();
                 let topmost_line = dimensions.topmost_line();
                 max(topmost_line, min(bottommost_line, self))
-            }
+            },
             Boundary::None => {
                 let screen_lines = dimensions.screen_lines() as i32;
                 let total_lines = dimensions.total_lines() as i32;
@@ -165,7 +175,7 @@ impl Line {
                     let extra = (self.0 - screen_lines + 1) % total_lines;
                     bottommost_line + extra
                 }
-            }
+            },
         }
     }
 }

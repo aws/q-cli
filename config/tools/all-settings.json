@@ -25,11 +25,15 @@
       "system",
       "dark",
       "light",
+      "apple-dark",
+      "apple-light",
       "atlantic-night",
+      "aura-dark",
       "catppuccin",
       "cobalt",
       "cobalt2",
       "dracula",
+      "darkclown",
       "github-dark",
       "gruvbox",
       "monokai-dark",
@@ -42,8 +46,8 @@
       "the-unnamed",
       "tokyo-night",
       "synthwave-84",
-      "solarized-light",
-      "solarized-dark"
+      "solarized-dark",
+      "solarized-light"
     ],
     "default": "system",
     "category": "Appearance"

@@ -22,8 +22,7 @@ For any client, you must install the protobuf compiler:
 |Client|Command|
 |---|---|
 |swift|`brew install swift-protobuf`|
-|typescript|`npm install -g ts-proto`|
-|go|`go install google.golang.org/protobuf/cmd/protoc-gen-go@latest`|
+|typescript|`yarn install`|
 |rust|N/A*|
 
 \* The rust build process handles the installation of the proto toolchain.
@@ -48,3 +47,4 @@ Edit the Makefile:
 1. Define a new destination environment variable (eg. `TYPESCRIPT_API_BINDINGS=$(ROOT)/../typescript-api-bindings/src`)
 2. Add to DESTINATIONS list
 3. Go to relevant project task (eg. `api:`) and copy compiled artifact to new destination
+

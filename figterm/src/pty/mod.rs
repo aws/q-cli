@@ -1,13 +1,41 @@
 pub mod async_pty;
 
-use anyhow::{Context, Result};
-use nix::fcntl::{open, OFlag};
-use nix::libc::{self, TIOCSCTTY};
-use nix::pty::{grantpt, posix_openpt, ptsname, unlockpt, PtyMaster, Winsize};
-use nix::sys::stat::Mode;
-use nix::sys::termios::{tcsetattr, SetArg, Termios};
-use nix::unistd::{close, dup2, fork, setsid, ForkResult, Pid};
 use std::path::Path;
+
+use anyhow::{
+    Context,
+    Result,
+};
+use nix::fcntl::{
+    open,
+    OFlag,
+};
+use nix::libc::{
+    self,
+    TIOCSCTTY,
+};
+use nix::pty::{
+    grantpt,
+    posix_openpt,
+    ptsname,
+    unlockpt,
+    PtyMaster,
+    Winsize,
+};
+use nix::sys::stat::Mode;
+use nix::sys::termios::{
+    tcsetattr,
+    SetArg,
+    Termios,
+};
+use nix::unistd::{
+    close,
+    dup2,
+    fork,
+    setsid,
+    ForkResult,
+    Pid,
+};
 
 nix::ioctl_write_int_bad!(ioctl_tiocsctty, TIOCSCTTY);
 nix::ioctl_write_ptr_bad!(ioctl_tiocswinsz, libc::TIOCSWINSZ, Winsize);
@@ -63,11 +91,7 @@ pub fn fork_pty(termios: &Termios, winsize: &Winsize) -> Result<PtyForkResult> {
 
             setsid()?;
 
-            let pty_fd = open(
-                Path::new(&pty_details.pty_name),
-                OFlag::O_RDWR,
-                Mode::empty(),
-            )?;
+            let pty_fd = open(Path::new(&pty_details.pty_name), OFlag::O_RDWR, Mode::empty())?;
 
             #[cfg(target_os = "macos")]
             unsafe { ioctl_tiocsctty(pty_fd, 0) }?;
@@ -84,6 +108,6 @@ pub fn fork_pty(termios: &Termios, winsize: &Winsize) -> Result<PtyForkResult> {
             }
 
             Ok(PtyForkResult::Child)
-        }
+        },
     }
 }
