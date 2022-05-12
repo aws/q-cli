@@ -141,7 +141,7 @@ impl TokensSubcommand {
                 }
                 .and_then(|date| date.format(&Rfc3339).ok());
 
-                let json: serde_json::Value = request(
+                let json: Value = request(
                     Method::POST,
                     "/auth/tokens/new",
                     Some(&json!({ "name": name, "team": team, "expiresAt": expires_at })),
@@ -204,7 +204,7 @@ impl TokensSubcommand {
                 Ok(())
             },
             Self::Revoke { name, team } => {
-                let _json: Value = request(
+                request::<Value, _, _>(
                     Method::POST,
                     "/auth/tokens/revoke",
                     Some(&json!({ "name": name, "team": team })),
@@ -287,6 +287,7 @@ pub async fn login_cli(refresh: bool) -> Result<()> {
         match sign_in_output.confirm(login_code.trim()).await {
             Ok(creds) => {
                 creds.save_credentials()?;
+                request::<Value, _, _>(Method::POST, "/user/login", None, true).await?;
                 println!("Login successful!");
                 return Ok(());
             },

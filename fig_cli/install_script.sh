@@ -113,14 +113,9 @@ function install_directory() {
 # The directory where the binary is downloaded to
 download_dir="$(mktemp -d)"
 
-# Download the latest binary
 download_file "${DOWNLOAD_URL}" "${download_dir}/fig"
 
-# Check the files is a valid binary
-if file "${download_dir}/fig" | grep -q "executable"; then
-    # Make the binary executable
-    chmod +x "${download_dir}/fig"
-else
+if ! chmod +x "${download_dir}/fig"; then
     abort "Your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
 fi
 
