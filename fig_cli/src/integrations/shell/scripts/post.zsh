@@ -9,7 +9,7 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
-if [ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 ] && [ "$FIG_TERM" != 1]; then
+if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1]] || [ "$INSIDE_EMACS" = 1 ]; then
   unset FIG_DID_NOT_EXEC_FIGTERM
   exit
 fi
