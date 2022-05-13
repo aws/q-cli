@@ -7,7 +7,7 @@
     <license></license>
     <author>Fig</author>
     <homepage>https://fig.io</homepage>
-    <exec>/home/mia/Fig/macos/target/debug/fig_ibus_engine</exec>
+    <exec>/home/grant/fig/macos/target/debug/fig_ibus_engine</exec>
     <textdomain></textdomain>
     <engines>
         <engine>

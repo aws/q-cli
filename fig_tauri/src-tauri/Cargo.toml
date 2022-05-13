@@ -29,12 +29,14 @@ hashbrown = "0.12.0"
 once_cell = "1.10.0"
 parking_lot = "0.12.0"
 url = "2.2.2"
+percent-encoding = "2.1.0"
 serde_json = "1.0.79"
 serde = { version = "1.0.136", features = ["derive"] }
 shellexpand = "2.1.0"
-tauri = { version = "1.0.0-rc.8", features = ["api-all", "devtools", "gtk-tray", "macos-private-api", "system-tray"] }
+tauri = { version = "1.0.0-rc.8", features = ["api-all", "devtools", "ayatana-tray", "macos-private-api", "system-tray"] }
 tokio = { version = "1.18.0", features = [ "rt", "rt-multi-thread", "sync", "fs", "io-util" ] } # same version as tauri
 tracing = "0.1.34"
+wry = "0.16.2"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.36.1", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_UI_WindowsAndMessaging", "Win32_UI_Accessibility", "Win32_System_Ole", "Win32_Graphics_Gdi"] }

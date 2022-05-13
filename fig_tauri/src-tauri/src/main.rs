@@ -23,9 +23,14 @@ use tauri::plugin::{
 use tauri::{
     Manager,
     Runtime,
+    Window,
+    WindowUrl,
 };
 use tokio::sync::mpsc;
+use url::Url;
 use window::WindowState;
+use wry::application::dpi::PhysicalSize;
+use wry::http::{Response, ResponseBuilder};
 
 const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 // TODO: Add constants
@@ -64,8 +69,55 @@ fn constants_plugin<R: Runtime>() -> TauriPlugin<R> {
         .build()
 }
 
+fn spawn_mission_control() -> wry::Result<()> {
+    use wry::application::event::{
+        Event,
+        StartCause,
+        WindowEvent,
+    };
+    use wry::application::event_loop::{
+        ControlFlow,
+        EventLoop,
+    };
+    use wry::application::window::WindowBuilder;
+    use wry::webview::WebViewBuilder;
+
+    let event_loop = EventLoop::new();
+
+    let window = WindowBuilder::new()
+        .with_title("Fig Mission Control")
+        .with_always_on_top(true)
+        .build(&event_loop)?;
+
+
+    let _webview = WebViewBuilder::new(window)?
+        .with_url("https://app.fig.io")?
+        .with_devtools(true)
+        .with_custom_protocol("figipc".into(), |request| {
+            println!("{:?}", request.headers().into_iter().collect::<Vec<_>>());
+            println!("{request:?}");
+            ResponseBuilder::new().status(200).body(b"OK".to_vec())
+        })
+        .build()?;
+
+    event_loop.run(move |event, _, control_flow| {
+        *control_flow = ControlFlow::Wait;
+
+        match event {
+            Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
+            Event::WindowEvent {
+                event: WindowEvent::CloseRequested,
+                ..
+            } => *control_flow = ControlFlow::Exit,
+            _ => (),
+        }
+    });
+}
+
 fn main() {
     fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
+
+    spawn_mission_control().unwrap();
 
     let (send, recv) = mpsc::unbounded_channel();
 
@@ -84,6 +136,15 @@ fn main() {
                 let window = app
                     .get_window("autocomplete")
                     .expect("Failed to acquire autocomplete window");
+
+                // Window::builder(
+                //    app,
+                //    "mission-control",
+                //    WindowUrl::External(Url::parse("https://app.fig.io").unwrap()),
+                //)
+                //.build()
+                //.unwrap();
+
                 window.set_always_on_top(true).expect("Failed putting window on top");
                 let window_state = Arc::new(WindowState::new(&window, send));
                 app.manage(window_state.clone());

@@ -70,6 +70,13 @@ mod imp {
 
     fn send_hook(imp: &FigIBusEngine, hook: fig_proto::local::Hook) {
         use fig_proto::local::*;
+
+        g_log!(
+            "Fig",
+            LogLevel::Debug, 
+            "Sending hook: {hook:?}"
+        );
+
         if let Some(mut handle) = imp.socket_connection.try_lock() {
             if match &*handle {
                 Some(Err(time)) => {
@@ -98,8 +105,7 @@ mod imp {
                     g_log!(
                         "Fig",
                         LogLevel::Warning,
-                        "Failed sending message: {:?}",
-                        err
+                        "Failed sending message: {err:?}",
                     );
                 }
             }
@@ -111,8 +117,7 @@ mod imp {
             g_log!(
                 "Fig",
                 LogLevel::Warning,
-                "Failed connecting to socket: {:?}",
-                err
+                "Failed connecting to socket: {err:?}",
             );
             Instant::now()
         })

@@ -14,6 +14,7 @@ use fig_proto::fig::{
 use fig_proto::local::{
     CursorPositionHook,
     EditBufferHook,
+    FileChangedHook,
     FocusChangeHook,
     InterceptedKeyHook,
     PreExecHook,
@@ -123,7 +124,7 @@ pub async fn caret_position(hook: CursorPositionHook, state: &WindowState) -> Re
         height: hook.height,
     });
 
-    // state.send_event(WindowEvent::Reanchor { x: hook.x, y: hook.y });
+    state.send_event(WindowEvent::Reanchor { x: hook.x, y: hook.y });
 
     Ok(())
 }
@@ -166,5 +167,9 @@ pub async fn intercepted_key(
     .await
     .unwrap();
 
+    Ok(())
+}
+
+pub async fn file_changed(file_changed_hook: FileChangedHook) -> Result<()> {
     Ok(())
 }
