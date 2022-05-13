@@ -160,7 +160,9 @@ impl Shell {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
                     include_str!("../integrations/shell/scripts/bash-preexec.sh"),
-                    "\n}\n__fig_source_bash_preexec\nfunction __bp_adjust_histcontrol() { :; }\n",
+                    "}\n",
+                    "__fig_source_bash_preexec\n",
+                    "function __bp_adjust_histcontrol() { :; }\n",
                     include_str!("../integrations/shell/scripts/pre.sh")
                 )
             },
@@ -168,7 +170,9 @@ impl Shell {
                 concat!(
                     "function __fig_source_bash_preexec() {\n",
                     include_str!("../integrations/shell/scripts/bash-preexec.sh"),
-                    "\n}\n__fig_source_bash_preexec\nfunction __bp_adjust_histcontrol() { :; }\n",
+                    "}\n",
+                    "__fig_source_bash_preexec\n",
+                    "function __bp_adjust_histcontrol() { :; }\n",
                     include_str!("../integrations/shell/scripts/post.bash")
                 )
             },
