@@ -1,14 +1,14 @@
 syntax = "proto3";
 package daemon;
 
-// 
+//
 // Commands
 //
 
 // Message type used to send a command to daemon
 message DaemonMessage {
     optional int64 id = 1;
-	optional bool no_response = 2;
+    optional bool no_response = 2;
 
     oneof command {
         // A request to get diagnostic information from the daemon
@@ -22,16 +22,16 @@ message DaemonMessage {
 
 // Response message type used to send a response to a command
 message DaemonResponse {
-	optional int64 id = 1;
+    optional int64 id = 1;
 
-	oneof response {
+    oneof response {
         // A response to a diagnostic command
         DiagnosticResponse diagnostic = 101;
         // A response to a self-update command
         SelfUpdateResponse self_update = 102;
         // A response to a sync command
         SyncResponse sync = 103;
-	}
+    }
 }
 
 // Command to get diagnostics
@@ -41,7 +41,7 @@ message DiagnosticCommand {
         TIME_STARTED_EPOCH = 0;
         SETTINGS_WATCHER_STATUS = 1;
         WEBSOCKET_STATUS = 2;
-        UNIX_SOCKET_STATUS = 3;
+        SYSTEM_SOCKET_STATUS = 3;
     }
 
     // If set only get the diagnostic part specified
@@ -60,7 +60,7 @@ message DiagnosticResponse {
         Status status = 1;
         optional string error = 2;
     }
-    
+
     // Status of the websocket
     message WebsocketStatus {
         enum Status {
@@ -70,15 +70,15 @@ message DiagnosticResponse {
     
         Status status = 1;
         optional string error = 2;
-    }    
+    }
 
-    // Status of the unix socket
-    message UnixSocketStatus {
+    // Status of the system socket
+    message SystemSocketStatus {
         enum Status {
             OK = 0;
             ERROR = 1;
         }
-    
+
         Status status = 1;
         optional string error = 2;
     }
@@ -89,8 +89,8 @@ message DiagnosticResponse {
     optional SettingsWatcherStatus settings_watcher_status = 2;
     // The status of the websocket
     optional WebsocketStatus websocket_status = 3;
-    // The status of the unix socket
-    optional UnixSocketStatus unix_socket_status = 4;
+    // The status of the system socket
+    optional SystemSocketStatus system_socket_status = 4;
 }
 
 // Command to tigger the daemon to attempt to self-update Fig if possible

@@ -23,12 +23,12 @@ export function setHandlerForId(handler: APIResponseHandler, id: number) {
 }
 
 export function sendMessage(
-  message: ClientOriginatedMessage['submessage'],
+  message: ClientOriginatedMessage["submessage"],
   handler?: APIResponseHandler
 ) {
   const request: ClientOriginatedMessage = {
-    id: messageId += 1,
-    submessage: message
+    id: (messageId += 1),
+    submessage: message,
   };
 
   if (handler && request.id) {
@@ -40,24 +40,32 @@ export function sendMessage(
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  if (!window.webkit) {
+  if (window.__TAURI__ && window.__TAURI__.invoke) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.__TAURI__.invoke("handle_api_request", {
+      clientOriginatedMessageB64: b64,
+    });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+  } else if (window.webkit) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    if (!window.webkit.messageHandlers.proto) {
+      console.error(
+        "This version of Fig does not support using protocol buffers. Please update."
+      );
+      return;
+    }
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.webkit.messageHandlers.proto.postMessage(b64);
+  } else {
     console.warn(
-      'Cannot send request. Fig.js is not supported in this browser.'
+      "Cannot send request. Fig.js is not supported in this browser."
     );
     return;
   }
-
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  if (!window.webkit.messageHandlers.proto) {
-    console.error(
-      'This version of Fig does not support using protocol buffers. Please update.'
-    );
-    return;
-  }
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  window.webkit.messageHandlers.proto.postMessage(b64);
 }
 
 const recievedMessage = (response: ServerOriginatedMessage): void => {
@@ -95,6 +103,28 @@ const setupEventListeners = (): void => {
   });
 };
 
+async function setupTauriEventListeners() {
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
+    const response = { error: event.payload } as GlobalAPIError;
+    console.error(response);
+  });
+
+  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  // @ts-ignore
+  await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
+    const raw = event.payload as string;
+
+    const bytes = b64ToBytes(raw);
+
+    const message = ServerOriginatedMessage.decode(bytes);
+
+    recievedMessage(message);
+  });
+}
+
 // We want this to be run automatically
 console.log('[fig] setting up event listeners...');
 setupEventListeners();
+setupTauriEventListeners();

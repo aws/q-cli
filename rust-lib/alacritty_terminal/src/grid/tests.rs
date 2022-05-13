@@ -1,7 +1,6 @@
 //! Tests for the Grid.
 
 use super::*;
-
 use crate::term::cell::Cell;
 
 impl GridCell for usize {

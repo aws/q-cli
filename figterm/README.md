@@ -12,7 +12,7 @@ changes, prompts (precmd), and right before a command is executed (preexec)
 
 ## Installation/Usage
 
-First, make sure shell integrations are installed. You can use the `figcli` to do
+First, make sure shell integrations are installed. You can use the `fig_cli` to do
 this:
 ```
 fig _ install --dotfiles
@@ -33,10 +33,10 @@ with a child `zsh` process.
 When you spin up a terminal emulator like iTerm, it launches a shell. If
 our
 [shell
-integrations](https://github.com/withfig/macos/blob/develop/figcli/src/integrations/shell)
+integrations](https://github.com/withfig/macos/blob/develop/fig_cli/src/integrations/shell)
 are properly installed into a user's dotfiles (.zshrc, .bashrc, etc.) then
 the shell will source the `pre` integration to
-[exec](https://github.com/withfig/macos/blob/develop/figcli/src/integrations/shell/pre.sh#L61)
+[exec](https://github.com/withfig/macos/blob/develop/fig_cli/src/integrations/shell/pre.sh#L61)
 the figterm binary.
 
 Figterm launches a PTY, or pseudoterminal, (see
@@ -78,7 +78,7 @@ This lives in `rust-lib/alacritty_terminal/`.
 
 Our `post`
 [shell
-integrations](https://github.com/withfig/macos/blob/develop/figcli/src/integrations/shell)
+integrations](https://github.com/withfig/macos/blob/develop/fig_cli/src/integrations/shell)
 add hooks that print custom OSC ANSI escape codes that `figterm` also
 parses. This is our mechanism for sending information from the shell to
 `figterm`. We send these codes to `figterm` to:

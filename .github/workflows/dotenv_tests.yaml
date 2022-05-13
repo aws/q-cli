@@ -6,7 +6,7 @@ on:
       - proto/**
       - config/**
       - figterm/**
-      - figcli/**
+      - fig_cli/**
   workflow_dispatch:
   push:
     paths:
@@ -14,7 +14,7 @@ on:
       - proto/**
       - config/**
       - figterm/**
-      - figcli/**
+      - fig_cli/**
 defaults:
   run:
     working-directory: ./dotenv

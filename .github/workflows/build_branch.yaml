@@ -122,7 +122,8 @@ jobs:
       - name: Install Protobuf tooling
         run:  |
           brew install protobuf swift-protobuf
-          npm install -g ts-proto
+          npm install
+        working-directory: ./proto
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
 
@@ -133,6 +134,12 @@ jobs:
 ############################################
 # Setup Rust build environment
 ############################################
+      - name: Install `jq`
+        run:  |
+          brew install jq
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
+
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -168,12 +175,12 @@ jobs:
         run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
 
       - name: Build figterm
-        run: make figterm
+        run: make macos
         working-directory: ./figterm
 
-      - name: Build figcli
+      - name: Build fig_cli
         run: make macos
-        working-directory: ./figcli
+        working-directory: ./fig_cli
           
 ############################################
 # Build, Archive & Export 

@@ -1,22 +1,31 @@
-use anyhow::{Context, Result};
-use nix::{
-    fcntl::{self, FcntlArg, OFlag},
-    pty::PtyMaster,
+use std::io::{
+    Read,
+    Write,
 };
-use std::{
-    io::{Read, Write},
-    os::unix::prelude::{AsRawFd, RawFd},
+use std::os::unix::prelude::{
+    AsRawFd,
+    RawFd,
 };
-use tokio::io::{self, unix::AsyncFd};
+
+use anyhow::{
+    Context,
+    Result,
+};
+use nix::fcntl::{
+    self,
+    FcntlArg,
+    OFlag,
+};
+use nix::pty::PtyMaster;
+use tokio::io::unix::AsyncFd;
+use tokio::io::{self,};
 
 /// An async wrapper over `PtyMaster`
 pub struct AsyncPtyMaster(AsyncFd<PtyMaster>);
 
 impl AsyncPtyMaster {
     pub fn new(pty_master: PtyMaster) -> Result<Self> {
-        Ok(Self(
-            AsyncFd::new(pty_master).context("Failed to create AsyncFd")?,
-        ))
+        Ok(Self(AsyncFd::new(pty_master).context("Failed to create AsyncFd")?))
     }
 
     pub async fn read(&mut self, buff: &mut [u8]) -> io::Result<usize> {
@@ -50,8 +59,8 @@ impl AsRawFd for AsyncPtyMaster {
 
 /// Set `fd` into non-blocking mode using `O_NONBLOCKING`
 fn _set_nonblocking(fd: RawFd) -> Result<()> {
-    let old_oflag_c_int = fcntl::fcntl(fd, FcntlArg::F_GETFL)
-        .with_context(|| format!("Failed to get flags for fd {:?}", fd))?;
+    let old_oflag_c_int =
+        fcntl::fcntl(fd, FcntlArg::F_GETFL).with_context(|| format!("Failed to get flags for fd {:?}", fd))?;
 
     let old_oflag = OFlag::from_bits_truncate(old_oflag_c_int);
     // .with_context(|| format!("Failed to convert c_int {:?} to OFlag", old_oflag_c_int))?;

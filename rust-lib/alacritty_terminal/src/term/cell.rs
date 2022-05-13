@@ -1,10 +1,19 @@
 use std::boxed::Box;
 
 use bitflags::bitflags;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
-use crate::ansi::{Color, NamedColor};
-use crate::grid::{self, GridCell};
+use crate::ansi::{
+    Color,
+    NamedColor,
+};
+use crate::grid::{
+    self,
+    GridCell,
+};
 use crate::index::Column;
 
 bitflags! {
@@ -99,10 +108,7 @@ impl Cell {
     /// Write a new zerowidth character to this cell.
     #[inline]
     pub fn push_zerowidth(&mut self, c: char) {
-        self.extra
-            .get_or_insert_with(Default::default)
-            .zerowidth
-            .push(c);
+        self.extra.get_or_insert_with(Default::default).zerowidth.push(c);
     }
 
     /// Free all dynamically allocated cell storage.
@@ -179,17 +185,12 @@ impl LineLength for grid::Row<Cell> {
     fn line_length(&self) -> Column {
         let mut length = Column(0);
 
-        if self[Column(self.len() - 1)]
-            .shell_flags
-            .contains(ShellFlags::WRAPLINE)
-        {
+        if self[Column(self.len() - 1)].shell_flags.contains(ShellFlags::WRAPLINE) {
             return Column(self.len());
         }
 
         for (index, cell) in self[..].iter().rev().enumerate() {
-            if cell.c != ' '
-                || cell.extra.as_ref().map(|extra| extra.zerowidth.is_empty()) == Some(false)
-            {
+            if cell.c != ' ' || cell.extra.as_ref().map(|extra| extra.zerowidth.is_empty()) == Some(false) {
                 length = Column(self.len() - index);
                 break;
             }
@@ -201,8 +202,10 @@ impl LineLength for grid::Row<Cell> {
 
 #[cfg(test)]
 mod tests {
-    use super::{Cell, LineLength};
-
+    use super::{
+        Cell,
+        LineLength,
+    };
     use crate::grid::Row;
     use crate::index::Column;
 
@@ -217,9 +220,7 @@ mod tests {
     #[test]
     fn line_length_works_with_wrapline() {
         let mut row = Row::<Cell>::new(10);
-        row[Column(9)]
-            .shell_flags
-            .insert(super::ShellFlags::WRAPLINE);
+        row[Column(9)].shell_flags.insert(super::ShellFlags::WRAPLINE);
 
         assert_eq!(row.line_length(), Column(10));
     }

@@ -1,13 +1,18 @@
-use crate::term::{CommandInfo, ShellState, SizeInfo};
+use crate::term::{
+    CommandInfo,
+    ShellState,
+    SizeInfo,
+};
 
 /// Terminal event.
 ///
-/// These events instruct the TODO socket over changes that can't be handled by the terminal emulation layer
-/// itself.
+/// These events instruct the TODO socket over changes that can't be handled by the terminal
+/// emulation layer itself.
 #[derive(Debug, Clone)]
 pub enum Event<'a> {
     Prompt,
     PreExec,
+    ShellChanged,
     CommandInfo(&'a CommandInfo),
 }
 

@@ -1,7 +1,7 @@
 name: 'Publish fig-cli spec version'
 on:
   push:
-    paths: figcli/**
+    paths: fig_cli/**
     branches:
       - master
   workflow_dispatch:
@@ -11,7 +11,7 @@ jobs:
     runs-on: macos-latest
     defaults:
       run:
-        working-directory: figcli 
+        working-directory: fig_cli
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v2
@@ -33,7 +33,7 @@ jobs:
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
           autocomplete-spec-name: 'fig'
-          spec-path: figcli/spec.ts
+          spec-path: fig_cli/spec.ts
           integration: clap
           diff-based-versioning: true
           new-spec-version: ${{ steps.cli-version.outputs.VERSION }}

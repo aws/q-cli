@@ -10,7 +10,8 @@
   },
   "workspaces": [
     "typescript-api-bindings",
-    "dotenv"
+    "dotenv",
+    "proto"
   ],
   "scripts": {
     "prepare": "husky install",
