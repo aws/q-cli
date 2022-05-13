@@ -33,7 +33,7 @@ jobs:
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
           autocomplete-spec-name: 'fig'
-          spec-path: figcli/spec.ts
+          spec-path: fig_cli/spec.ts
           integration: clap
           diff-based-versioning: true
           new-spec-version: ${{ steps.cli-version.outputs.VERSION }}
