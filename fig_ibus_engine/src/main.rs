@@ -1,13 +1,27 @@
-use glib::{g_log, LogLevel, StaticType};
-use ibus::traits::{BusExt, FactoryExt};
+use glib::{
+    g_log,
+    LogLevel,
+    StaticType,
+};
+use ibus::traits::{
+    BusExt,
+    FactoryExt,
+};
 
 mod imp {
+    use std::os::unix::net::UnixStream;
+    use std::time::{
+        Duration,
+        Instant,
+    };
+
     use glib::subclass::prelude::*;
-    use glib::{g_log, LogLevel};
+    use glib::{
+        g_log,
+        LogLevel,
+    };
     use ibus::traits::EngineExt;
     use parking_lot::Mutex;
-    use std::os::unix::net::UnixStream;
-    use std::time::{Duration, Instant};
 
     pub struct FigIBusEngine {
         cursor_position: Mutex<(i32, i32, i32, i32)>,
@@ -16,9 +30,10 @@ mod imp {
 
     #[glib::object_subclass]
     impl ObjectSubclass for FigIBusEngine {
-        const NAME: &'static str = "FigIBusEngine";
-        type Type = super::FigIBusEngine;
         type ParentType = ibus::Engine;
+        type Type = super::FigIBusEngine;
+
+        const NAME: &'static str = "FigIBusEngine";
 
         fn new() -> Self {
             Self {
@@ -39,17 +54,14 @@ mod imp {
                 use fig_proto::local::*;
                 let imp = engine.imp();
                 let cursor_position = *imp.cursor_position.lock();
-                send_hook(
-                    imp,
-                    Hook {
-                        hook: Some(hook::Hook::CursorPosition(CursorPositionHook {
-                            x: cursor_position.0,
-                            y: cursor_position.1,
-                            width: cursor_position.2,
-                            height: cursor_position.3,
-                        })),
-                    },
-                );
+                send_hook(imp, Hook {
+                    hook: Some(hook::Hook::CursorPosition(CursorPositionHook {
+                        x: cursor_position.0,
+                        y: cursor_position.1,
+                        width: cursor_position.2,
+                        height: cursor_position.3,
+                    })),
+                });
 
                 false
             });
@@ -60,22 +72,15 @@ mod imp {
 
     fn handle_focus_change(engine: &super::FigIBusEngine) {
         use fig_proto::local::*;
-        send_hook(
-            engine.imp(),
-            Hook {
-                hook: Some(hook::Hook::FocusChange(FocusChangeHook {})),
-            },
-        );
+        send_hook(engine.imp(), Hook {
+            hook: Some(hook::Hook::FocusChange(FocusChangeHook {})),
+        });
     }
 
     fn send_hook(imp: &FigIBusEngine, hook: fig_proto::local::Hook) {
         use fig_proto::local::*;
 
-        g_log!(
-            "Fig",
-            LogLevel::Debug, 
-            "Sending hook: {hook:?}"
-        );
+        g_log!("Fig", LogLevel::Debug, "Sending hook: {hook:?}");
 
         if let Some(mut handle) = imp.socket_connection.try_lock() {
             if match &*handle {
@@ -86,27 +91,20 @@ mod imp {
                     } else {
                         false
                     }
-                }
+                },
                 None => {
                     *handle = Some(get_stream());
                     true
-                }
+                },
                 _ => true,
             } {}
 
             if let Some(Ok(stream)) = &mut *handle {
-                if let Err(err) = fig_ipc::send_message_sync(
-                    stream,
-                    LocalMessage {
-                        r#type: Some(local_message::Type::Hook(hook)),
-                    },
-                ) {
+                if let Err(err) = fig_ipc::send_message_sync(stream, LocalMessage {
+                    r#type: Some(local_message::Type::Hook(hook)),
+                }) {
                     *handle = None;
-                    g_log!(
-                        "Fig",
-                        LogLevel::Warning,
-                        "Failed sending message: {err:?}",
-                    );
+                    g_log!("Fig", LogLevel::Warning, "Failed sending message: {err:?}",);
                 }
             }
         };
@@ -114,11 +112,7 @@ mod imp {
 
     fn get_stream() -> Result<UnixStream, Instant> {
         fig_ipc::connect_sync(fig_ipc::get_fig_socket_path()).map_err(|err| {
-            g_log!(
-                "Fig",
-                LogLevel::Warning,
-                "Failed connecting to socket: {err:?}",
-            );
+            g_log!("Fig", LogLevel::Warning, "Failed connecting to socket: {err:?}",);
             Instant::now()
         })
     }

@@ -30,7 +30,10 @@ use tokio::sync::mpsc;
 use url::Url;
 use window::WindowState;
 use wry::application::dpi::PhysicalSize;
-use wry::http::{Response, ResponseBuilder};
+use wry::http::{
+    Response,
+    ResponseBuilder,
+};
 
 const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 // TODO: Add constants
@@ -88,7 +91,6 @@ fn spawn_mission_control() -> wry::Result<()> {
         .with_title("Fig Mission Control")
         .with_always_on_top(true)
         .build(&event_loop)?;
-
 
     let _webview = WebViewBuilder::new(window)?
         .with_url("https://app.fig.io")?

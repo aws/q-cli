@@ -177,9 +177,11 @@ impl InternalSubcommand {
                 let xml = format!(
                     "<?xml version=\"1.0\" encoding=\"utf-8\" ?>
 <component>
-    <name>org.freedesktop.IBus.FigIBusEngine</name>
+    <name>org.freedesktop.IBus.FigIBusEngine</name>\
+                     
     <description>Fig integration for the IBus input method</description>
-    <version>0.1.0</version>
+    <version>0.1.0</version>\
+                     
     <license></license>
     <author>Fig</author>
     <homepage>https://fig.io</homepage>
