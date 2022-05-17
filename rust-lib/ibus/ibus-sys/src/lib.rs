@@ -12,13 +12,31 @@
 #![cfg_attr(feature = "dox", feature(doc_cfg))]
 
 #[allow(unused_imports)]
-use libc::{
-    c_char, c_double, c_float, c_int, c_long, c_short, c_uchar, c_uint, c_ulong, c_ushort, c_void,
-    intptr_t, size_t, ssize_t, uintptr_t, FILE,
+use glib::{
+    gboolean,
+    gconstpointer,
+    gpointer,
+    GType,
 };
-
 #[allow(unused_imports)]
-use glib::{gboolean, gconstpointer, gpointer, GType};
+use libc::{
+    c_char,
+    c_double,
+    c_float,
+    c_int,
+    c_long,
+    c_short,
+    c_uchar,
+    c_uint,
+    c_ulong,
+    c_ushort,
+    c_void,
+    intptr_t,
+    size_t,
+    ssize_t,
+    uintptr_t,
+    FILE,
+};
 
 // Enums
 pub type IBusAttrType = c_int;
@@ -779,22 +797,16 @@ pub const IBUS_Hstroke: c_int = 673;
 pub const IBUS_Hyper_L: c_int = 65517;
 pub const IBUS_Hyper_R: c_int = 65518;
 pub const IBUS_I: c_int = 73;
-pub const IBUS_INTERFACE_CONFIG: *const c_char =
-    b"org.freedesktop.IBus.Config\0" as *const u8 as *const c_char;
-pub const IBUS_INTERFACE_ENGINE: *const c_char =
-    b"org.freedesktop.IBus.Engine\0" as *const u8 as *const c_char;
-pub const IBUS_INTERFACE_FACTORY: *const c_char =
-    b"org.freedesktop.IBus.Factory\0" as *const u8 as *const c_char;
-pub const IBUS_INTERFACE_IBUS: *const c_char =
-    b"org.freedesktop.IBus\0" as *const u8 as *const c_char;
+pub const IBUS_INTERFACE_CONFIG: *const c_char = b"org.freedesktop.IBus.Config\0" as *const u8 as *const c_char;
+pub const IBUS_INTERFACE_ENGINE: *const c_char = b"org.freedesktop.IBus.Engine\0" as *const u8 as *const c_char;
+pub const IBUS_INTERFACE_FACTORY: *const c_char = b"org.freedesktop.IBus.Factory\0" as *const u8 as *const c_char;
+pub const IBUS_INTERFACE_IBUS: *const c_char = b"org.freedesktop.IBus\0" as *const u8 as *const c_char;
 pub const IBUS_INTERFACE_INPUT_CONTEXT: *const c_char =
     b"org.freedesktop.IBus.InputContext\0" as *const u8 as *const c_char;
 pub const IBUS_INTERFACE_NOTIFICATIONS: *const c_char =
     b"org.freedesktop.IBus.Notifications\0" as *const u8 as *const c_char;
-pub const IBUS_INTERFACE_PANEL: *const c_char =
-    b"org.freedesktop.IBus.Panel\0" as *const u8 as *const c_char;
-pub const IBUS_INTERFACE_PORTAL: *const c_char =
-    b"org.freedesktop.IBus.Portal\0" as *const u8 as *const c_char;
+pub const IBUS_INTERFACE_PANEL: *const c_char = b"org.freedesktop.IBus.Panel\0" as *const u8 as *const c_char;
+pub const IBUS_INTERFACE_PORTAL: *const c_char = b"org.freedesktop.IBus.Portal\0" as *const u8 as *const c_char;
 pub const IBUS_ISO_Center_Object: c_int = 65075;
 pub const IBUS_ISO_Continuous_Underline: c_int = 65072;
 pub const IBUS_ISO_Discontinuous_Underline: c_int = 65073;
@@ -3255,17 +3267,14 @@ pub const IBUS_Otilde: c_int = 213;
 pub const IBUS_Overlay1_Enable: c_int = 65144;
 pub const IBUS_Overlay2_Enable: c_int = 65145;
 pub const IBUS_P: c_int = 80;
-pub const IBUS_PATH_CONFIG: *const c_char =
-    b"/org/freedesktop/IBus/Config\0" as *const u8 as *const c_char;
-pub const IBUS_PATH_FACTORY: *const c_char =
-    b"/org/freedesktop/IBus/Factory\0" as *const u8 as *const c_char;
+pub const IBUS_PATH_CONFIG: *const c_char = b"/org/freedesktop/IBus/Config\0" as *const u8 as *const c_char;
+pub const IBUS_PATH_FACTORY: *const c_char = b"/org/freedesktop/IBus/Factory\0" as *const u8 as *const c_char;
 pub const IBUS_PATH_IBUS: *const c_char = b"/org/freedesktop/IBus\0" as *const u8 as *const c_char;
 pub const IBUS_PATH_INPUT_CONTEXT: *const c_char =
     b"/org/freedesktop/IBus/InputContext_%d\0" as *const u8 as *const c_char;
 pub const IBUS_PATH_NOTIFICATIONS: *const c_char =
     b"/org/freedesktop/IBus/Notifications\0" as *const u8 as *const c_char;
-pub const IBUS_PATH_PANEL: *const c_char =
-    b"/org/freedesktop/IBus/Panel\0" as *const u8 as *const c_char;
+pub const IBUS_PATH_PANEL: *const c_char = b"/org/freedesktop/IBus/Panel\0" as *const u8 as *const c_char;
 pub const IBUS_PATH_PANEL_EXTENSION_EMOJI: *const c_char =
     b"/org/freedesktop/IBus/Panel/Extension/Emoji\0" as *const u8 as *const c_char;
 pub const IBUS_Pabovedot: c_int = 16784982;
@@ -3335,20 +3344,16 @@ pub const IBUS_Romaji: c_int = 65316;
 pub const IBUS_RupeeSign: c_int = 16785576;
 pub const IBUS_S: c_int = 83;
 pub const IBUS_SCHWA: c_int = 16777615;
-pub const IBUS_SERVICE_CONFIG: *const c_char =
-    b"org.freedesktop.IBus.Config\0" as *const u8 as *const c_char;
-pub const IBUS_SERVICE_IBUS: *const c_char =
-    b"org.freedesktop.IBus\0" as *const u8 as *const c_char;
+pub const IBUS_SERVICE_CONFIG: *const c_char = b"org.freedesktop.IBus.Config\0" as *const u8 as *const c_char;
+pub const IBUS_SERVICE_IBUS: *const c_char = b"org.freedesktop.IBus\0" as *const u8 as *const c_char;
 pub const IBUS_SERVICE_NOTIFICATIONS: *const c_char =
     b"org.freedesktop.IBus.Notifications\0" as *const u8 as *const c_char;
-pub const IBUS_SERVICE_PANEL: *const c_char =
-    b"org.freedesktop.IBus.Panel\0" as *const u8 as *const c_char;
+pub const IBUS_SERVICE_PANEL: *const c_char = b"org.freedesktop.IBus.Panel\0" as *const u8 as *const c_char;
 pub const IBUS_SERVICE_PANEL_EXTENSION: *const c_char =
     b"org.freedesktop.IBus.Panel.Extension\0" as *const u8 as *const c_char;
 pub const IBUS_SERVICE_PANEL_EXTENSION_EMOJI: *const c_char =
     b"org.freedesktop.IBus.Panel.Extension.Emoji\0" as *const u8 as *const c_char;
-pub const IBUS_SERVICE_PORTAL: *const c_char =
-    b"org.freedesktop.portal.IBus\0" as *const u8 as *const c_char;
+pub const IBUS_SERVICE_PORTAL: *const c_char = b"org.freedesktop.portal.IBus\0" as *const u8 as *const c_char;
 pub const IBUS_Sabovedot: c_int = 16784992;
 pub const IBUS_Sacute: c_int = 422;
 pub const IBUS_Scaron: c_int = 425;
@@ -4554,8 +4559,7 @@ pub struct IBusConfigClass {
 
 impl ::std::fmt::Debug for IBusConfigClass {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusConfigClass @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusConfigClass @ {:p}", self)).finish()
     }
 }
 
@@ -4589,19 +4593,10 @@ pub struct IBusConfigServiceClass {
         ) -> *mut glib::GVariant,
     >,
     pub unset_value: Option<
-        unsafe extern "C" fn(
-            *mut IBusConfigService,
-            *const c_char,
-            *const c_char,
-            *mut *mut glib::GError,
-        ) -> gboolean,
+        unsafe extern "C" fn(*mut IBusConfigService, *const c_char, *const c_char, *mut *mut glib::GError) -> gboolean,
     >,
     pub get_values: Option<
-        unsafe extern "C" fn(
-            *mut IBusConfigService,
-            *const c_char,
-            *mut *mut glib::GError,
-        ) -> *mut glib::GVariant,
+        unsafe extern "C" fn(*mut IBusConfigService, *const c_char, *mut *mut glib::GError) -> *mut glib::GVariant,
     >,
     pub pdummy: [gpointer; 12],
 }
@@ -4643,15 +4638,13 @@ pub type IBusEmojiDataPrivate = *mut _IBusEmojiDataPrivate;
 #[repr(C)]
 pub struct IBusEngineClass {
     pub parent: IBusServiceClass,
-    pub process_key_event:
-        Option<unsafe extern "C" fn(*mut IBusEngine, c_uint, c_uint, c_uint) -> gboolean>,
+    pub process_key_event: Option<unsafe extern "C" fn(*mut IBusEngine, c_uint, c_uint, c_uint) -> gboolean>,
     pub focus_in: Option<unsafe extern "C" fn(*mut IBusEngine)>,
     pub focus_out: Option<unsafe extern "C" fn(*mut IBusEngine)>,
     pub reset: Option<unsafe extern "C" fn(*mut IBusEngine)>,
     pub enable: Option<unsafe extern "C" fn(*mut IBusEngine)>,
     pub disable: Option<unsafe extern "C" fn(*mut IBusEngine)>,
-    pub set_cursor_location:
-        Option<unsafe extern "C" fn(*mut IBusEngine, c_int, c_int, c_int, c_int)>,
+    pub set_cursor_location: Option<unsafe extern "C" fn(*mut IBusEngine, c_int, c_int, c_int, c_int)>,
     pub set_capabilities: Option<unsafe extern "C" fn(*mut IBusEngine, c_uint)>,
     pub page_up: Option<unsafe extern "C" fn(*mut IBusEngine)>,
     pub page_down: Option<unsafe extern "C" fn(*mut IBusEngine)>,
@@ -4661,10 +4654,8 @@ pub struct IBusEngineClass {
     pub property_show: Option<unsafe extern "C" fn(*mut IBusEngine, *const c_char)>,
     pub property_hide: Option<unsafe extern "C" fn(*mut IBusEngine, *const c_char)>,
     pub candidate_clicked: Option<unsafe extern "C" fn(*mut IBusEngine, c_uint, c_uint, c_uint)>,
-    pub set_surrounding_text:
-        Option<unsafe extern "C" fn(*mut IBusEngine, *mut IBusText, c_uint, c_uint)>,
-    pub process_hand_writing_event:
-        Option<unsafe extern "C" fn(*mut IBusEngine, *const c_double, c_uint)>,
+    pub set_surrounding_text: Option<unsafe extern "C" fn(*mut IBusEngine, *mut IBusText, c_uint, c_uint)>,
+    pub process_hand_writing_event: Option<unsafe extern "C" fn(*mut IBusEngine, *const c_double, c_uint)>,
     pub cancel_hand_writing: Option<unsafe extern "C" fn(*mut IBusEngine, c_uint)>,
     pub set_content_type: Option<unsafe extern "C" fn(*mut IBusEngine, c_uint, c_uint)>,
     pub pdummy: [gpointer; 4],
@@ -4690,10 +4681,7 @@ impl ::std::fmt::Debug for IBusEngineClass {
             .field("property_hide", &self.property_hide)
             .field("candidate_clicked", &self.candidate_clicked)
             .field("set_surrounding_text", &self.set_surrounding_text)
-            .field(
-                "process_hand_writing_event",
-                &self.process_hand_writing_event,
-            )
+            .field("process_hand_writing_event", &self.process_hand_writing_event)
             .field("cancel_hand_writing", &self.cancel_hand_writing)
             .field("set_content_type", &self.set_content_type)
             .finish()
@@ -4739,8 +4727,7 @@ pub struct IBusEngineSimpleClass {
 
 impl ::std::fmt::Debug for IBusEngineSimpleClass {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusEngineSimpleClass @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusEngineSimpleClass @ {:p}", self)).finish()
     }
 }
 
@@ -4778,8 +4765,7 @@ pub type IBusExtensionEventPrivate = *mut _IBusExtensionEventPrivate;
 #[repr(C)]
 pub struct IBusFactoryClass {
     pub parent: IBusServiceClass,
-    pub create_engine:
-        Option<unsafe extern "C" fn(*mut IBusFactory, *const c_char) -> *mut IBusEngine>,
+    pub create_engine: Option<unsafe extern "C" fn(*mut IBusFactory, *const c_char) -> *mut IBusEngine>,
     pub pdummy: [gpointer; 7],
 }
 
@@ -4904,14 +4890,10 @@ pub struct IBusPanelServiceClass {
     pub focus_in: Option<unsafe extern "C" fn(*mut IBusPanelService, *const c_char)>,
     pub focus_out: Option<unsafe extern "C" fn(*mut IBusPanelService, *const c_char)>,
     pub register_properties: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusPropList)>,
-    pub set_cursor_location:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, c_int, c_int, c_int, c_int)>,
-    pub update_auxiliary_text:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusText, gboolean)>,
-    pub update_lookup_table:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusLookupTable, gboolean)>,
-    pub update_preedit_text:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusText, c_uint, gboolean)>,
+    pub set_cursor_location: Option<unsafe extern "C" fn(*mut IBusPanelService, c_int, c_int, c_int, c_int)>,
+    pub update_auxiliary_text: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusText, gboolean)>,
+    pub update_lookup_table: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusLookupTable, gboolean)>,
+    pub update_preedit_text: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusText, c_uint, gboolean)>,
     pub update_property: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusProperty)>,
     pub cursor_down_lookup_table: Option<unsafe extern "C" fn(*mut IBusPanelService)>,
     pub cursor_up_lookup_table: Option<unsafe extern "C" fn(*mut IBusPanelService)>,
@@ -4930,15 +4912,11 @@ pub struct IBusPanelServiceClass {
     pub state_changed: Option<unsafe extern "C" fn(*mut IBusPanelService)>,
     pub destroy_context: Option<unsafe extern "C" fn(*mut IBusPanelService, *const c_char)>,
     pub set_content_type: Option<unsafe extern "C" fn(*mut IBusPanelService, c_uint, c_uint)>,
-    pub set_cursor_location_relative:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, c_int, c_int, c_int, c_int)>,
-    pub panel_extension_received:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusExtensionEvent)>,
-    pub process_key_event:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, c_uint, c_uint, c_uint) -> gboolean>,
+    pub set_cursor_location_relative: Option<unsafe extern "C" fn(*mut IBusPanelService, c_int, c_int, c_int, c_int)>,
+    pub panel_extension_received: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusExtensionEvent)>,
+    pub process_key_event: Option<unsafe extern "C" fn(*mut IBusPanelService, c_uint, c_uint, c_uint) -> gboolean>,
     pub commit_text_received: Option<unsafe extern "C" fn(*mut IBusPanelService, *mut IBusText)>,
-    pub candidate_clicked_lookup_table:
-        Option<unsafe extern "C" fn(*mut IBusPanelService, c_uint, c_uint, c_uint)>,
+    pub candidate_clicked_lookup_table: Option<unsafe extern "C" fn(*mut IBusPanelService, c_uint, c_uint, c_uint)>,
     pub pdummy: [gpointer; 2],
 }
 
@@ -4971,17 +4949,11 @@ impl ::std::fmt::Debug for IBusPanelServiceClass {
             .field("state_changed", &self.state_changed)
             .field("destroy_context", &self.destroy_context)
             .field("set_content_type", &self.set_content_type)
-            .field(
-                "set_cursor_location_relative",
-                &self.set_cursor_location_relative,
-            )
+            .field("set_cursor_location_relative", &self.set_cursor_location_relative)
             .field("panel_extension_received", &self.panel_extension_received)
             .field("process_key_event", &self.process_key_event)
             .field("commit_text_received", &self.commit_text_received)
-            .field(
-                "candidate_clicked_lookup_table",
-                &self.candidate_clicked_lookup_table,
-            )
+            .field("candidate_clicked_lookup_table", &self.candidate_clicked_lookup_table)
             .finish()
     }
 }
@@ -5085,8 +5057,7 @@ pub struct IBusRegistryClass {
 
 impl ::std::fmt::Debug for IBusRegistryClass {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusRegistryClass @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusRegistryClass @ {:p}", self)).finish()
     }
 }
 
@@ -5102,12 +5073,9 @@ pub type IBusRegistryPrivate = *mut _IBusRegistryPrivate;
 #[repr(C)]
 pub struct IBusSerializableClass {
     pub parent: IBusObjectClass,
-    pub serialize:
-        Option<unsafe extern "C" fn(*mut IBusSerializable, *mut glib::GVariantBuilder) -> gboolean>,
-    pub deserialize:
-        Option<unsafe extern "C" fn(*mut IBusSerializable, *mut glib::GVariant) -> c_int>,
-    pub copy:
-        Option<unsafe extern "C" fn(*mut IBusSerializable, *const IBusSerializable) -> gboolean>,
+    pub serialize: Option<unsafe extern "C" fn(*mut IBusSerializable, *mut glib::GVariantBuilder) -> gboolean>,
+    pub deserialize: Option<unsafe extern "C" fn(*mut IBusSerializable, *mut glib::GVariant) -> c_int>,
+    pub copy: Option<unsafe extern "C" fn(*mut IBusSerializable, *const IBusSerializable) -> gboolean>,
     pub pdummy: [gpointer; 5],
 }
 
@@ -5257,8 +5225,7 @@ pub struct IBusXEventClass {
 
 impl ::std::fmt::Debug for IBusXEventClass {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusXEventClass @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusXEventClass @ {:p}", self)).finish()
     }
 }
 
@@ -5355,8 +5322,7 @@ pub struct IBusComponent {
 
 impl ::std::fmt::Debug for IBusComponent {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusComponent @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusComponent @ {:p}", self)).finish()
     }
 }
 
@@ -5381,8 +5347,7 @@ pub struct IBusConfigService {
 
 impl ::std::fmt::Debug for IBusConfigService {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusConfigService @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusConfigService @ {:p}", self)).finish()
     }
 }
 
@@ -5447,8 +5412,7 @@ pub struct IBusEngineSimple {
 
 impl ::std::fmt::Debug for IBusEngineSimple {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusEngineSimple @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusEngineSimple @ {:p}", self)).finish()
     }
 }
 
@@ -5461,8 +5425,7 @@ pub struct IBusExtensionEvent {
 
 impl ::std::fmt::Debug for IBusExtensionEvent {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusExtensionEvent @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusExtensionEvent @ {:p}", self)).finish()
     }
 }
 
@@ -5475,8 +5438,7 @@ pub struct IBusFactory {
 
 impl ::std::fmt::Debug for IBusFactory {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusFactory @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusFactory @ {:p}", self)).finish()
     }
 }
 
@@ -5632,8 +5594,7 @@ pub struct IBusProperty {
 
 impl ::std::fmt::Debug for IBusProperty {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusProperty @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusProperty @ {:p}", self)).finish()
     }
 }
 
@@ -5664,8 +5625,7 @@ pub struct IBusRegistry {
 
 impl ::std::fmt::Debug for IBusRegistry {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusRegistry @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusRegistry @ {:p}", self)).finish()
     }
 }
 
@@ -5678,8 +5638,7 @@ pub struct IBusSerializable {
 
 impl ::std::fmt::Debug for IBusSerializable {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusSerializable @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusSerializable @ {:p}", self)).finish()
     }
 }
 
@@ -5692,8 +5651,7 @@ pub struct IBusService {
 
 impl ::std::fmt::Debug for IBusService {
     fn fmt(&self, f: &mut ::std::fmt::Formatter) -> ::std::fmt::Result {
-        f.debug_struct(&format!("IBusService @ {:p}", self))
-            .finish()
+        f.debug_struct(&format!("IBusService @ {:p}", self)).finish()
     }
 }
 
@@ -5865,10 +5823,7 @@ extern "C" {
     //=========================================================================
     // IBusServiceClass
     //=========================================================================
-    pub fn ibus_service_class_add_interfaces(
-        klass: *mut IBusServiceClass,
-        xml_data: *const c_char,
-    ) -> gboolean;
+    pub fn ibus_service_class_add_interfaces(klass: *mut IBusServiceClass, xml_data: *const c_char) -> gboolean;
 
     //=========================================================================
     // IBusXML
@@ -5924,10 +5879,7 @@ extern "C" {
         res: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> gboolean;
-    pub fn ibus_bus_create_input_context(
-        bus: *mut IBusBus,
-        client_name: *const c_char,
-    ) -> *mut IBusInputContext;
+    pub fn ibus_bus_create_input_context(bus: *mut IBusBus, client_name: *const c_char) -> *mut IBusInputContext;
     pub fn ibus_bus_create_input_context_async(
         bus: *mut IBusBus,
         client_name: *const c_char,
@@ -5970,10 +5922,7 @@ extern "C" {
     ) -> gboolean;
     pub fn ibus_bus_get_config(bus: *mut IBusBus) -> *mut IBusConfig;
     pub fn ibus_bus_get_connection(bus: *mut IBusBus) -> *mut gio::GDBusConnection;
-    pub fn ibus_bus_get_engines_by_names(
-        bus: *mut IBusBus,
-        names: *const *const c_char,
-    ) -> *mut *mut IBusEngineDesc;
+    pub fn ibus_bus_get_engines_by_names(bus: *mut IBusBus, names: *const *const c_char) -> *mut *mut IBusEngineDesc;
     pub fn ibus_bus_get_global_engine(bus: *mut IBusBus) -> *mut IBusEngineDesc;
     pub fn ibus_bus_get_global_engine_async(
         bus: *mut IBusBus,
@@ -5987,10 +5936,7 @@ extern "C" {
         res: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> *mut IBusEngineDesc;
-    pub fn ibus_bus_get_ibus_property(
-        bus: *mut IBusBus,
-        property_name: *const c_char,
-    ) -> *mut glib::GVariant;
+    pub fn ibus_bus_get_ibus_property(bus: *mut IBusBus, property_name: *const c_char) -> *mut glib::GVariant;
     pub fn ibus_bus_get_ibus_property_async(
         bus: *mut IBusBus,
         property_name: *const c_char,
@@ -6116,10 +6062,7 @@ extern "C" {
         res: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> gboolean;
-    pub fn ibus_bus_register_component(
-        bus: *mut IBusBus,
-        component: *mut IBusComponent,
-    ) -> gboolean;
+    pub fn ibus_bus_register_component(bus: *mut IBusBus, component: *mut IBusComponent) -> gboolean;
     pub fn ibus_bus_register_component_async(
         bus: *mut IBusBus,
         component: *mut IBusComponent,
@@ -6190,11 +6133,7 @@ extern "C" {
         res: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> gboolean;
-    pub fn ibus_bus_set_ibus_property(
-        bus: *mut IBusBus,
-        property_name: *const c_char,
-        value: *mut glib::GVariant,
-    );
+    pub fn ibus_bus_set_ibus_property(bus: *mut IBusBus, property_name: *const c_char, value: *mut glib::GVariant);
     pub fn ibus_bus_set_ibus_property_async(
         bus: *mut IBusBus,
         property_name: *const c_char,
@@ -6228,16 +6167,9 @@ extern "C" {
     ) -> *mut IBusComponent;
     pub fn ibus_component_new_from_file(filename: *const c_char) -> *mut IBusComponent;
     pub fn ibus_component_new_from_xml_node(node: *mut IBusXML) -> *mut IBusComponent;
-    pub fn ibus_component_new_varargs(
-        first_property_name: *const c_char,
-        ...
-    ) -> *mut IBusComponent;
+    pub fn ibus_component_new_varargs(first_property_name: *const c_char, ...) -> *mut IBusComponent;
     pub fn ibus_component_add_engine(component: *mut IBusComponent, engine: *mut IBusEngineDesc);
-    pub fn ibus_component_add_observed_path(
-        component: *mut IBusComponent,
-        path: *const c_char,
-        access_fs: gboolean,
-    );
+    pub fn ibus_component_add_observed_path(component: *mut IBusComponent, path: *const c_char, access_fs: gboolean);
     pub fn ibus_component_check_modification(component: *mut IBusComponent) -> gboolean;
     pub fn ibus_component_get_author(component: *mut IBusComponent) -> *const c_char;
     pub fn ibus_component_get_description(component: *mut IBusComponent) -> *const c_char;
@@ -6249,16 +6181,8 @@ extern "C" {
     pub fn ibus_component_get_observed_paths(component: *mut IBusComponent) -> *mut glib::GList;
     pub fn ibus_component_get_textdomain(component: *mut IBusComponent) -> *const c_char;
     pub fn ibus_component_get_version(component: *mut IBusComponent) -> *const c_char;
-    pub fn ibus_component_output(
-        component: *mut IBusComponent,
-        output: *mut glib::GString,
-        indent: c_int,
-    );
-    pub fn ibus_component_output_engines(
-        component: *mut IBusComponent,
-        output: *mut glib::GString,
-        indent: c_int,
-    );
+    pub fn ibus_component_output(component: *mut IBusComponent, output: *mut glib::GString, indent: c_int);
+    pub fn ibus_component_output_engines(component: *mut IBusComponent, output: *mut glib::GString, indent: c_int);
 
     //=========================================================================
     // IBusConfig
@@ -6269,10 +6193,7 @@ extern "C" {
         cancellable: *mut gio::GCancellable,
         error: *mut *mut glib::GError,
     ) -> *mut IBusConfig;
-    pub fn ibus_config_new_async_finish(
-        res: *mut gio::GAsyncResult,
-        error: *mut *mut glib::GError,
-    ) -> *mut IBusConfig;
+    pub fn ibus_config_new_async_finish(res: *mut gio::GAsyncResult, error: *mut *mut glib::GError) -> *mut IBusConfig;
     pub fn ibus_config_new_async(
         connection: *mut gio::GDBusConnection,
         cancellable: *mut gio::GCancellable,
@@ -6298,10 +6219,7 @@ extern "C" {
         result: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> *mut glib::GVariant;
-    pub fn ibus_config_get_values(
-        config: *mut IBusConfig,
-        section: *const c_char,
-    ) -> *mut glib::GVariant;
+    pub fn ibus_config_get_values(config: *mut IBusConfig, section: *const c_char) -> *mut glib::GVariant;
     pub fn ibus_config_get_values_async(
         config: *mut IBusConfig,
         section: *const c_char,
@@ -6336,28 +6254,15 @@ extern "C" {
         result: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> gboolean;
-    pub fn ibus_config_unset(
-        config: *mut IBusConfig,
-        section: *const c_char,
-        name: *const c_char,
-    ) -> gboolean;
-    pub fn ibus_config_unwatch(
-        config: *mut IBusConfig,
-        section: *const c_char,
-        name: *const c_char,
-    ) -> gboolean;
-    pub fn ibus_config_watch(
-        config: *mut IBusConfig,
-        section: *const c_char,
-        name: *const c_char,
-    ) -> gboolean;
+    pub fn ibus_config_unset(config: *mut IBusConfig, section: *const c_char, name: *const c_char) -> gboolean;
+    pub fn ibus_config_unwatch(config: *mut IBusConfig, section: *const c_char, name: *const c_char) -> gboolean;
+    pub fn ibus_config_watch(config: *mut IBusConfig, section: *const c_char, name: *const c_char) -> gboolean;
 
     //=========================================================================
     // IBusConfigService
     //=========================================================================
     pub fn ibus_config_service_get_type() -> GType;
-    pub fn ibus_config_service_new(connection: *mut gio::GDBusConnection)
-        -> *mut IBusConfigService;
+    pub fn ibus_config_service_new(connection: *mut gio::GDBusConnection) -> *mut IBusConfigService;
     pub fn ibus_config_service_value_changed(
         config: *mut IBusConfigService,
         section: *const c_char,
@@ -6376,10 +6281,7 @@ extern "C" {
     pub fn ibus_emoji_data_get_category(emoji: *mut IBusEmojiData) -> *const c_char;
     pub fn ibus_emoji_data_get_description(emoji: *mut IBusEmojiData) -> *const c_char;
     pub fn ibus_emoji_data_get_emoji(emoji: *mut IBusEmojiData) -> *const c_char;
-    pub fn ibus_emoji_data_set_annotations(
-        emoji: *mut IBusEmojiData,
-        annotations: *mut glib::GSList,
-    );
+    pub fn ibus_emoji_data_set_annotations(emoji: *mut IBusEmojiData, annotations: *mut glib::GSList);
     pub fn ibus_emoji_data_set_description(emoji: *mut IBusEmojiData, description: *const c_char);
 
     //=========================================================================
@@ -6398,22 +6300,9 @@ extern "C" {
         connection: *mut gio::GDBusConnection,
     ) -> *mut IBusEngine;
     pub fn ibus_engine_commit_text(engine: *mut IBusEngine, text: *mut IBusText);
-    pub fn ibus_engine_delete_surrounding_text(
-        engine: *mut IBusEngine,
-        offset: c_int,
-        nchars: c_uint,
-    );
-    pub fn ibus_engine_forward_key_event(
-        engine: *mut IBusEngine,
-        keyval: c_uint,
-        keycode: c_uint,
-        state: c_uint,
-    );
-    pub fn ibus_engine_get_content_type(
-        engine: *mut IBusEngine,
-        purpose: *mut c_uint,
-        hints: *mut c_uint,
-    );
+    pub fn ibus_engine_delete_surrounding_text(engine: *mut IBusEngine, offset: c_int, nchars: c_uint);
+    pub fn ibus_engine_forward_key_event(engine: *mut IBusEngine, keyval: c_uint, keycode: c_uint, state: c_uint);
+    pub fn ibus_engine_get_content_type(engine: *mut IBusEngine, purpose: *mut c_uint, hints: *mut c_uint);
     pub fn ibus_engine_get_name(engine: *mut IBusEngine) -> *const c_char;
     pub fn ibus_engine_get_surrounding_text(
         engine: *mut IBusEngine,
@@ -6428,11 +6317,7 @@ extern "C" {
     pub fn ibus_engine_show_auxiliary_text(engine: *mut IBusEngine);
     pub fn ibus_engine_show_lookup_table(engine: *mut IBusEngine);
     pub fn ibus_engine_show_preedit_text(engine: *mut IBusEngine);
-    pub fn ibus_engine_update_auxiliary_text(
-        engine: *mut IBusEngine,
-        text: *mut IBusText,
-        visible: gboolean,
-    );
+    pub fn ibus_engine_update_auxiliary_text(engine: *mut IBusEngine, text: *mut IBusText, visible: gboolean);
     pub fn ibus_engine_update_lookup_table(
         engine: *mut IBusEngine,
         lookup_table: *mut IBusLookupTable,
@@ -6473,10 +6358,7 @@ extern "C" {
         layout: *const c_char,
     ) -> *mut IBusEngineDesc;
     pub fn ibus_engine_desc_new_from_xml_node(node: *mut IBusXML) -> *mut IBusEngineDesc;
-    pub fn ibus_engine_desc_new_varargs(
-        first_property_name: *const c_char,
-        ...
-    ) -> *mut IBusEngineDesc;
+    pub fn ibus_engine_desc_new_varargs(first_property_name: *const c_char, ...) -> *mut IBusEngineDesc;
     pub fn ibus_engine_desc_get_author(info: *mut IBusEngineDesc) -> *const c_char;
     pub fn ibus_engine_desc_get_description(info: *mut IBusEngineDesc) -> *const c_char;
     pub fn ibus_engine_desc_get_hotkeys(info: *mut IBusEngineDesc) -> *const c_char;
@@ -6494,39 +6376,26 @@ extern "C" {
     pub fn ibus_engine_desc_get_symbol(info: *mut IBusEngineDesc) -> *const c_char;
     pub fn ibus_engine_desc_get_textdomain(info: *mut IBusEngineDesc) -> *const c_char;
     pub fn ibus_engine_desc_get_version(info: *mut IBusEngineDesc) -> *const c_char;
-    pub fn ibus_engine_desc_output(
-        info: *mut IBusEngineDesc,
-        output: *mut glib::GString,
-        indent: c_int,
-    );
+    pub fn ibus_engine_desc_output(info: *mut IBusEngineDesc, output: *mut glib::GString, indent: c_int);
 
     //=========================================================================
     // IBusEngineSimple
     //=========================================================================
     pub fn ibus_engine_simple_get_type() -> GType;
-    pub fn ibus_engine_simple_add_compose_file(
-        simple: *mut IBusEngineSimple,
-        file: *const c_char,
-    ) -> gboolean;
+    pub fn ibus_engine_simple_add_compose_file(simple: *mut IBusEngineSimple, file: *const c_char) -> gboolean;
     pub fn ibus_engine_simple_add_table(
         simple: *mut IBusEngineSimple,
         data: *const u16,
         max_seq_len: c_int,
         n_seqs: c_int,
     );
-    pub fn ibus_engine_simple_add_table_by_locale(
-        simple: *mut IBusEngineSimple,
-        locale: *const c_char,
-    ) -> gboolean;
+    pub fn ibus_engine_simple_add_table_by_locale(simple: *mut IBusEngineSimple, locale: *const c_char) -> gboolean;
 
     //=========================================================================
     // IBusExtensionEvent
     //=========================================================================
     pub fn ibus_extension_event_get_type() -> GType;
-    pub fn ibus_extension_event_new(
-        first_property_name: *const c_char,
-        ...
-    ) -> *mut IBusExtensionEvent;
+    pub fn ibus_extension_event_new(first_property_name: *const c_char, ...) -> *mut IBusExtensionEvent;
     pub fn ibus_extension_event_get_name(event: *mut IBusExtensionEvent) -> *const c_char;
     pub fn ibus_extension_event_get_params(event: *mut IBusExtensionEvent) -> *const c_char;
     pub fn ibus_extension_event_get_version(event: *mut IBusExtensionEvent) -> c_uint;
@@ -6538,15 +6407,8 @@ extern "C" {
     //=========================================================================
     pub fn ibus_factory_get_type() -> GType;
     pub fn ibus_factory_new(connection: *mut gio::GDBusConnection) -> *mut IBusFactory;
-    pub fn ibus_factory_add_engine(
-        factory: *mut IBusFactory,
-        engine_name: *const c_char,
-        engine_type: GType,
-    );
-    pub fn ibus_factory_create_engine(
-        factory: *mut IBusFactory,
-        engine_name: *const c_char,
-    ) -> *mut IBusEngine;
+    pub fn ibus_factory_add_engine(factory: *mut IBusFactory, engine_name: *const c_char, engine_type: GType);
+    pub fn ibus_factory_create_engine(factory: *mut IBusFactory, engine_name: *const c_char) -> *mut IBusEngine;
 
     //=========================================================================
     // IBusHotkeyProfile
@@ -6582,10 +6444,8 @@ extern "C" {
         keyval: c_uint,
         modifiers: c_uint,
     ) -> gboolean;
-    pub fn ibus_hotkey_profile_remove_hotkey_by_event(
-        profile: *mut IBusHotkeyProfile,
-        event: glib::GQuark,
-    ) -> gboolean;
+    pub fn ibus_hotkey_profile_remove_hotkey_by_event(profile: *mut IBusHotkeyProfile, event: glib::GQuark)
+    -> gboolean;
 
     //=========================================================================
     // IBusInputContext
@@ -6623,10 +6483,7 @@ extern "C" {
         callback: gio::GAsyncReadyCallback,
         user_data: gpointer,
     );
-    pub fn ibus_input_context_cancel_hand_writing(
-        context: *mut IBusInputContext,
-        n_strokes: c_uint,
-    );
+    pub fn ibus_input_context_cancel_hand_writing(context: *mut IBusInputContext, n_strokes: c_uint);
     pub fn ibus_input_context_focus_in(context: *mut IBusInputContext);
     pub fn ibus_input_context_focus_out(context: *mut IBusInputContext);
     pub fn ibus_input_context_get_engine(context: *mut IBusInputContext) -> *mut IBusEngineDesc;
@@ -6669,29 +6526,12 @@ extern "C" {
         res: *mut gio::GAsyncResult,
         error: *mut *mut glib::GError,
     ) -> gboolean;
-    pub fn ibus_input_context_property_activate(
-        context: *mut IBusInputContext,
-        prop_name: *const c_char,
-        state: u32,
-    );
+    pub fn ibus_input_context_property_activate(context: *mut IBusInputContext, prop_name: *const c_char, state: u32);
     pub fn ibus_input_context_reset(context: *mut IBusInputContext);
     pub fn ibus_input_context_set_capabilities(context: *mut IBusInputContext, capabilities: u32);
-    pub fn ibus_input_context_set_client_commit_preedit(
-        context: *mut IBusInputContext,
-        client_commit: gboolean,
-    );
-    pub fn ibus_input_context_set_content_type(
-        context: *mut IBusInputContext,
-        purpose: c_uint,
-        hints: c_uint,
-    );
-    pub fn ibus_input_context_set_cursor_location(
-        context: *mut IBusInputContext,
-        x: i32,
-        y: i32,
-        w: i32,
-        h: i32,
-    );
+    pub fn ibus_input_context_set_client_commit_preedit(context: *mut IBusInputContext, client_commit: gboolean);
+    pub fn ibus_input_context_set_content_type(context: *mut IBusInputContext, purpose: c_uint, hints: c_uint);
+    pub fn ibus_input_context_set_cursor_location(context: *mut IBusInputContext, x: i32, y: i32, w: i32, h: i32);
     pub fn ibus_input_context_set_cursor_location_relative(
         context: *mut IBusInputContext,
         x: i32,
@@ -6730,14 +6570,10 @@ extern "C" {
     pub fn ibus_lookup_table_clear(table: *mut IBusLookupTable);
     pub fn ibus_lookup_table_cursor_down(table: *mut IBusLookupTable) -> gboolean;
     pub fn ibus_lookup_table_cursor_up(table: *mut IBusLookupTable) -> gboolean;
-    pub fn ibus_lookup_table_get_candidate(
-        table: *mut IBusLookupTable,
-        index: c_uint,
-    ) -> *mut IBusText;
+    pub fn ibus_lookup_table_get_candidate(table: *mut IBusLookupTable, index: c_uint) -> *mut IBusText;
     pub fn ibus_lookup_table_get_cursor_in_page(table: *mut IBusLookupTable) -> c_uint;
     pub fn ibus_lookup_table_get_cursor_pos(table: *mut IBusLookupTable) -> c_uint;
-    pub fn ibus_lookup_table_get_label(table: *mut IBusLookupTable, index: c_uint)
-        -> *mut IBusText;
+    pub fn ibus_lookup_table_get_label(table: *mut IBusLookupTable, index: c_uint) -> *mut IBusText;
     pub fn ibus_lookup_table_get_number_of_candidates(table: *mut IBusLookupTable) -> c_uint;
     pub fn ibus_lookup_table_get_orientation(table: *mut IBusLookupTable) -> c_int;
     pub fn ibus_lookup_table_get_page_size(table: *mut IBusLookupTable) -> c_uint;
@@ -6747,11 +6583,7 @@ extern "C" {
     pub fn ibus_lookup_table_page_up(table: *mut IBusLookupTable) -> gboolean;
     pub fn ibus_lookup_table_set_cursor_pos(table: *mut IBusLookupTable, cursor_pos: c_uint);
     pub fn ibus_lookup_table_set_cursor_visible(table: *mut IBusLookupTable, visible: gboolean);
-    pub fn ibus_lookup_table_set_label(
-        table: *mut IBusLookupTable,
-        index: c_uint,
-        text: *mut IBusText,
-    );
+    pub fn ibus_lookup_table_set_label(table: *mut IBusLookupTable, index: c_uint, text: *mut IBusText);
     pub fn ibus_lookup_table_set_orientation(table: *mut IBusLookupTable, orientation: c_int);
     pub fn ibus_lookup_table_set_page_size(table: *mut IBusLookupTable, page_size: c_uint);
     pub fn ibus_lookup_table_set_round(table: *mut IBusLookupTable, round: gboolean);
@@ -6767,24 +6599,11 @@ extern "C" {
     // IBusObservedPath
     //=========================================================================
     pub fn ibus_observed_path_get_type() -> GType;
-    pub fn ibus_observed_path_new(
-        path: *const c_char,
-        fill_stat: gboolean,
-    ) -> *mut IBusObservedPath;
-    pub fn ibus_observed_path_new_from_xml_node(
-        node: *mut IBusXML,
-        fill_stat: gboolean,
-    ) -> *mut IBusObservedPath;
+    pub fn ibus_observed_path_new(path: *const c_char, fill_stat: gboolean) -> *mut IBusObservedPath;
+    pub fn ibus_observed_path_new_from_xml_node(node: *mut IBusXML, fill_stat: gboolean) -> *mut IBusObservedPath;
     pub fn ibus_observed_path_check_modification(path: *mut IBusObservedPath) -> gboolean;
-    pub fn ibus_observed_path_output(
-        path: *mut IBusObservedPath,
-        output: *mut glib::GString,
-        indent: c_int,
-    );
-    pub fn ibus_observed_path_traverse(
-        path: *mut IBusObservedPath,
-        dir_only: gboolean,
-    ) -> *mut glib::GList;
+    pub fn ibus_observed_path_output(path: *mut IBusObservedPath, output: *mut glib::GString, indent: c_int);
+    pub fn ibus_observed_path_traverse(path: *mut IBusObservedPath, dir_only: gboolean) -> *mut glib::GList;
 
     //=========================================================================
     // IBusPanelService
@@ -6803,10 +6622,7 @@ extern "C" {
     pub fn ibus_panel_service_hide_preedit_text_received(panel: *mut IBusPanelService);
     pub fn ibus_panel_service_page_down(panel: *mut IBusPanelService);
     pub fn ibus_panel_service_page_up(panel: *mut IBusPanelService);
-    pub fn ibus_panel_service_panel_extension(
-        panel: *mut IBusPanelService,
-        event: *mut IBusExtensionEvent,
-    );
+    pub fn ibus_panel_service_panel_extension(panel: *mut IBusPanelService, event: *mut IBusExtensionEvent);
     pub fn ibus_panel_service_panel_extension_register_keys(
         panel: *mut IBusPanelService,
         first_property_name: *const c_char,
@@ -6844,10 +6660,7 @@ extern "C" {
     pub fn ibus_prop_list_new() -> *mut IBusPropList;
     pub fn ibus_prop_list_append(prop_list: *mut IBusPropList, prop: *mut IBusProperty);
     pub fn ibus_prop_list_get(prop_list: *mut IBusPropList, index: c_uint) -> *mut IBusProperty;
-    pub fn ibus_prop_list_update_property(
-        prop_list: *mut IBusPropList,
-        prop: *mut IBusProperty,
-    ) -> gboolean;
+    pub fn ibus_prop_list_update_property(prop_list: *mut IBusPropList, prop: *mut IBusProperty) -> gboolean;
 
     //=========================================================================
     // IBusProperty
@@ -6883,10 +6696,7 @@ extern "C" {
     pub fn ibus_property_set_symbol(prop: *mut IBusProperty, symbol: *mut IBusText);
     pub fn ibus_property_set_tooltip(prop: *mut IBusProperty, tooltip: *mut IBusText);
     pub fn ibus_property_set_visible(prop: *mut IBusProperty, visible: gboolean);
-    pub fn ibus_property_update(
-        prop: *mut IBusProperty,
-        prop_update: *mut IBusProperty,
-    ) -> gboolean;
+    pub fn ibus_property_update(prop: *mut IBusProperty, prop_update: *mut IBusProperty) -> gboolean;
 
     //=========================================================================
     // IBusProxy
@@ -6904,21 +6714,11 @@ extern "C" {
     pub fn ibus_registry_get_observed_paths(registry: *mut IBusRegistry) -> *mut glib::GList;
     pub fn ibus_registry_load(registry: *mut IBusRegistry);
     pub fn ibus_registry_load_cache(registry: *mut IBusRegistry, is_user: gboolean) -> gboolean;
-    pub fn ibus_registry_load_cache_file(
-        registry: *mut IBusRegistry,
-        filename: *const c_char,
-    ) -> gboolean;
+    pub fn ibus_registry_load_cache_file(registry: *mut IBusRegistry, filename: *const c_char) -> gboolean;
     pub fn ibus_registry_load_in_dir(registry: *mut IBusRegistry, dirname: *const c_char);
-    pub fn ibus_registry_output(
-        registry: *mut IBusRegistry,
-        output: *mut glib::GString,
-        indent: c_int,
-    );
+    pub fn ibus_registry_output(registry: *mut IBusRegistry, output: *mut glib::GString, indent: c_int);
     pub fn ibus_registry_save_cache(registry: *mut IBusRegistry, is_user: gboolean) -> gboolean;
-    pub fn ibus_registry_save_cache_file(
-        registry: *mut IBusRegistry,
-        filename: *const c_char,
-    ) -> gboolean;
+    pub fn ibus_registry_save_cache_file(registry: *mut IBusRegistry, filename: *const c_char) -> gboolean;
     pub fn ibus_registry_start_monitor_changes(registry: *mut IBusRegistry);
 
     //=========================================================================
@@ -6926,21 +6726,14 @@ extern "C" {
     //=========================================================================
     pub fn ibus_serializable_get_type() -> GType;
     pub fn ibus_serializable_new() -> *mut IBusSerializable;
-    pub fn ibus_serializable_deserialize_object(
-        variant: *mut glib::GVariant,
-    ) -> *mut IBusSerializable;
+    pub fn ibus_serializable_deserialize_object(variant: *mut glib::GVariant) -> *mut IBusSerializable;
     pub fn ibus_serializable_copy(serializable: *mut IBusSerializable) -> *mut IBusSerializable;
     pub fn ibus_serializable_get_qattachment(
         serializable: *mut IBusSerializable,
         key: glib::GQuark,
     ) -> *mut glib::GVariant;
-    pub fn ibus_serializable_remove_qattachment(
-        serializable: *mut IBusSerializable,
-        key: glib::GQuark,
-    );
-    pub fn ibus_serializable_serialize_object(
-        serializable: *mut IBusSerializable,
-    ) -> *mut glib::GVariant;
+    pub fn ibus_serializable_remove_qattachment(serializable: *mut IBusSerializable, key: glib::GQuark);
+    pub fn ibus_serializable_serialize_object(serializable: *mut IBusSerializable) -> *mut glib::GVariant;
     pub fn ibus_serializable_set_qattachment(
         serializable: *mut IBusSerializable,
         key: glib::GQuark,
@@ -6951,10 +6744,7 @@ extern "C" {
     // IBusService
     //=========================================================================
     pub fn ibus_service_get_type() -> GType;
-    pub fn ibus_service_new(
-        connection: *mut gio::GDBusConnection,
-        path: *const c_char,
-    ) -> *mut IBusService;
+    pub fn ibus_service_new(connection: *mut gio::GDBusConnection, path: *const c_char) -> *mut IBusService;
     pub fn ibus_service_emit_signal(
         service: *mut IBusService,
         dest_bus_name: *const c_char,
@@ -6970,10 +6760,7 @@ extern "C" {
         connection: *mut gio::GDBusConnection,
         error: *mut *mut glib::GError,
     ) -> gboolean;
-    pub fn ibus_service_unregister(
-        service: *mut IBusService,
-        connection: *mut gio::GDBusConnection,
-    );
+    pub fn ibus_service_unregister(service: *mut IBusService, connection: *mut gio::GDBusConnection);
 
     //=========================================================================
     // IBusText
@@ -7001,8 +6788,7 @@ extern "C" {
     // IBusUnicodeBlock
     //=========================================================================
     pub fn ibus_unicode_block_get_type() -> GType;
-    pub fn ibus_unicode_block_new(first_property_name: *const c_char, ...)
-        -> *mut IBusUnicodeBlock;
+    pub fn ibus_unicode_block_new(first_property_name: *const c_char, ...) -> *mut IBusUnicodeBlock;
     pub fn ibus_unicode_block_load(path: *const c_char) -> *mut glib::GSList;
     pub fn ibus_unicode_block_save(path: *const c_char, list: *mut glib::GSList);
     pub fn ibus_unicode_block_get_end(block: *mut IBusUnicodeBlock) -> u32;
@@ -7014,10 +6800,7 @@ extern "C" {
     //=========================================================================
     pub fn ibus_unicode_data_get_type() -> GType;
     pub fn ibus_unicode_data_new(first_property_name: *const c_char, ...) -> *mut IBusUnicodeData;
-    pub fn ibus_unicode_data_load(
-        path: *const c_char,
-        object: *mut gobject::GObject,
-    ) -> *mut glib::GSList;
+    pub fn ibus_unicode_data_load(path: *const c_char, object: *mut gobject::GObject) -> *mut glib::GSList;
     pub fn ibus_unicode_data_load_async(
         path: *const c_char,
         object: *mut gobject::GObject,
@@ -7030,10 +6813,7 @@ extern "C" {
     pub fn ibus_unicode_data_get_block_name(unicode: *mut IBusUnicodeData) -> *const c_char;
     pub fn ibus_unicode_data_get_code(unicode: *mut IBusUnicodeData) -> u32;
     pub fn ibus_unicode_data_get_name(unicode: *mut IBusUnicodeData) -> *const c_char;
-    pub fn ibus_unicode_data_set_block_name(
-        unicode: *mut IBusUnicodeData,
-        block_name: *const c_char,
-    );
+    pub fn ibus_unicode_data_set_block_name(unicode: *mut IBusUnicodeData, block_name: *const c_char);
 
     //=========================================================================
     // IBusXEvent
@@ -7065,10 +6845,7 @@ extern "C" {
     //=========================================================================
     // Other functions
     //=========================================================================
-    pub fn ibus_accelerator_name(
-        accelerator_key: c_uint,
-        accelerator_mods: IBusModifierType,
-    ) -> *mut c_char;
+    pub fn ibus_accelerator_name(accelerator_key: c_uint, accelerator_mods: IBusModifierType) -> *mut c_char;
     #[cfg(any(feature = "v1_5_18", feature = "dox"))]
     #[cfg_attr(feature = "dox", doc(cfg(feature = "v1_5_18")))]
     pub fn ibus_accelerator_parse(
@@ -7077,21 +6854,10 @@ extern "C" {
         accelerator_mods: *mut IBusModifierType,
     );
     pub fn ibus_accelerator_valid(keyval: c_uint, modifiers: IBusModifierType) -> gboolean;
-    pub fn ibus_attr_background_new(
-        color: c_uint,
-        start_index: c_uint,
-        end_index: c_uint,
-    ) -> *mut IBusAttribute;
-    pub fn ibus_attr_foreground_new(
-        color: c_uint,
-        start_index: c_uint,
-        end_index: c_uint,
-    ) -> *mut IBusAttribute;
+    pub fn ibus_attr_background_new(color: c_uint, start_index: c_uint, end_index: c_uint) -> *mut IBusAttribute;
+    pub fn ibus_attr_foreground_new(color: c_uint, start_index: c_uint, end_index: c_uint) -> *mut IBusAttribute;
     pub fn ibus_emoji_dict_load(path: *const c_char) -> *mut glib::GHashTable;
-    pub fn ibus_emoji_dict_lookup(
-        dict: *mut glib::GHashTable,
-        emoji: *const c_char,
-    ) -> *mut IBusEmojiData;
+    pub fn ibus_emoji_dict_lookup(dict: *mut glib::GHashTable, emoji: *const c_char) -> *mut IBusEmojiData;
     pub fn ibus_emoji_dict_save(path: *const c_char, dict: *mut glib::GHashTable);
     pub fn ibus_free_strv(strv: *mut *mut c_char);
     pub fn ibus_get_address() -> *const c_char;
@@ -7103,11 +6869,7 @@ extern "C" {
     pub fn ibus_get_untranslated_language_name(_locale: *const c_char) -> *mut c_char;
     pub fn ibus_get_user_name() -> *const c_char;
     pub fn ibus_init();
-    pub fn ibus_key_event_from_string(
-        string: *const c_char,
-        keyval: *mut c_uint,
-        modifiers: *mut c_uint,
-    ) -> gboolean;
+    pub fn ibus_key_event_from_string(string: *const c_char, keyval: *mut c_uint, modifiers: *mut c_uint) -> gboolean;
     pub fn ibus_key_event_to_string(keyval: c_uint, modifiers: c_uint) -> *mut c_char;
     pub fn ibus_keyval_convert_case(symbol: c_uint, lower: *mut c_uint, upper: *mut c_uint);
     pub fn ibus_keyval_from_name(keyval_name: *const c_char) -> c_uint;

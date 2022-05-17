@@ -54,7 +54,6 @@ use fig_proto::local::{
     LocalMessage,
 };
 use fig_settings::state;
-use fig_util::Terminal;
 use flume::Sender;
 use nix::libc::STDIN_FILENO;
 use nix::sys::termios::{

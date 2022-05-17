@@ -36,8 +36,6 @@ use clap::{
     Parser,
     Subcommand,
 };
-use fig_ipc::command::open_ui_element;
-use fig_proto::local::UiElement;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 

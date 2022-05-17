@@ -2,12 +2,17 @@
 // from gir-files
 // DO NOT EDIT
 
-use glib::object::Cast;
-use glib::object::IsA;
-use glib::translate::*;
-use glib::StaticType;
-use glib::ToValue;
 use std::fmt;
+
+use glib::object::{
+    Cast,
+    IsA,
+};
+use glib::translate::*;
+use glib::{
+    StaticType,
+    ToValue,
+};
 
 glib::wrapper! {
     #[doc(alias = "IBusComponent")]
@@ -54,19 +59,21 @@ impl Component {
 
     //#[doc(alias = "ibus_component_new_from_xml_node")]
     //#[doc(alias = "new_from_xml_node")]
-    //pub fn from_xml_node(node: /*Ignored*/&mut XML) -> Component {
+    // pub fn from_xml_node(node: /*Ignored*/&mut XML) -> Component {
     //    unsafe { TODO: call ffi:ibus_component_new_from_xml_node() }
     //}
 
     //#[doc(alias = "ibus_component_new_varargs")]
-    //pub fn new_varargs(first_property_name: &str, : /*Unknown conversion*//*Unimplemented*/Fundamental: VarArgs) -> Component {
-    //    unsafe { TODO: call ffi:ibus_component_new_varargs() }
+    // pub fn new_varargs(first_property_name: &str, : /*Unknown
+    // conversion*//*Unimplemented*/Fundamental: VarArgs) -> Component {    unsafe { TODO: call
+    // ffi:ibus_component_new_varargs() }
     //}
 
     // rustdoc-stripper-ignore-next
     /// Creates a new builder-pattern struct instance to construct [`Component`] objects.
     ///
-    /// This method returns an instance of [`ComponentBuilder`](crate::builders::ComponentBuilder) which can be used to create [`Component`] objects.
+    /// This method returns an instance of [`ComponentBuilder`](crate::builders::ComponentBuilder)
+    /// which can be used to create [`Component`] objects.
     pub fn builder() -> ComponentBuilder {
         ComponentBuilder::default()
     }
@@ -74,8 +81,7 @@ impl Component {
 
 impl Default for Component {
     fn default() -> Self {
-        glib::object::Object::new::<Self>(&[])
-            .expect("Can't construct Component object with default parameters")
+        glib::object::Object::new::<Self>(&[]).expect("Can't construct Component object with default parameters")
     }
 }
 
@@ -132,8 +138,7 @@ impl ComponentBuilder {
         if let Some(ref version) = self.version {
             properties.push(("version", version));
         }
-        glib::Object::new::<Component>(&properties)
-            .expect("Failed to create an instance of Component")
+        glib::Object::new::<Component>(&properties).expect("Failed to create an instance of Component")
     }
 
     pub fn author(mut self, author: &str) -> Self {
@@ -179,7 +184,7 @@ impl ComponentBuilder {
 
 pub trait ComponentExt: 'static {
     //#[doc(alias = "ibus_component_add_engine")]
-    //fn add_engine(&self, engine: /*Ignored*/&EngineDesc);
+    // fn add_engine(&self, engine: /*Ignored*/&EngineDesc);
 
     #[doc(alias = "ibus_component_add_observed_path")]
     fn add_observed_path(&self, path: &str, access_fs: bool);
@@ -197,7 +202,7 @@ pub trait ComponentExt: 'static {
 
     //#[doc(alias = "ibus_component_get_engines")]
     //#[doc(alias = "get_engines")]
-    //fn engines(&self) -> /*Ignored*/Vec<EngineDesc>;
+    // fn engines(&self) -> /*Ignored*/Vec<EngineDesc>;
 
     #[doc(alias = "ibus_component_get_exec")]
     #[doc(alias = "get_exec")]
@@ -217,7 +222,7 @@ pub trait ComponentExt: 'static {
 
     //#[doc(alias = "ibus_component_get_observed_paths")]
     //#[doc(alias = "get_observed_paths")]
-    //fn observed_paths(&self) -> /*Ignored*/Vec<ObservedPath>;
+    // fn observed_paths(&self) -> /*Ignored*/Vec<ObservedPath>;
 
     #[doc(alias = "ibus_component_get_textdomain")]
     #[doc(alias = "get_textdomain")]
@@ -228,17 +233,17 @@ pub trait ComponentExt: 'static {
     fn version(&self) -> Option<glib::GString>;
 
     //#[doc(alias = "ibus_component_output")]
-    //fn output(&self, output: /*Ignored*/&mut glib::String, indent: i32);
+    // fn output(&self, output: /*Ignored*/&mut glib::String, indent: i32);
 
     //#[doc(alias = "ibus_component_output_engines")]
-    //fn output_engines(&self, output: /*Ignored*/&mut glib::String, indent: i32);
+    // fn output_engines(&self, output: /*Ignored*/&mut glib::String, indent: i32);
 
     #[doc(alias = "command-line")]
     fn command_line(&self) -> Option<glib::GString>;
 }
 
 impl<O: IsA<Component>> ComponentExt for O {
-    //fn add_engine(&self, engine: /*Ignored*/&EngineDesc) {
+    // fn add_engine(&self, engine: /*Ignored*/&EngineDesc) {
     //    unsafe { TODO: call ffi:ibus_component_add_engine() }
     //}
 
@@ -253,30 +258,18 @@ impl<O: IsA<Component>> ComponentExt for O {
     }
 
     fn check_modification(&self) -> bool {
-        unsafe {
-            from_glib(ffi::ibus_component_check_modification(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib(ffi::ibus_component_check_modification(self.as_ref().to_glib_none().0)) }
     }
 
     fn author(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_component_get_author(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_component_get_author(self.as_ref().to_glib_none().0)) }
     }
 
     fn description(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_component_get_description(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_component_get_description(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn engines(&self) -> /*Ignored*/Vec<EngineDesc> {
+    // fn engines(&self) -> /*Ignored*/Vec<EngineDesc> {
     //    unsafe { TODO: call ffi:ibus_component_get_engines() }
     //}
 
@@ -285,50 +278,34 @@ impl<O: IsA<Component>> ComponentExt for O {
     }
 
     fn homepage(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_component_get_homepage(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_component_get_homepage(self.as_ref().to_glib_none().0)) }
     }
 
     fn license(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_component_get_license(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_component_get_license(self.as_ref().to_glib_none().0)) }
     }
 
     fn name(&self) -> Option<glib::GString> {
         unsafe { from_glib_none(ffi::ibus_component_get_name(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn observed_paths(&self) -> /*Ignored*/Vec<ObservedPath> {
+    // fn observed_paths(&self) -> /*Ignored*/Vec<ObservedPath> {
     //    unsafe { TODO: call ffi:ibus_component_get_observed_paths() }
     //}
 
     fn textdomain(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_component_get_textdomain(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_component_get_textdomain(self.as_ref().to_glib_none().0)) }
     }
 
     fn version(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_component_get_version(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_component_get_version(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn output(&self, output: /*Ignored*/&mut glib::String, indent: i32) {
+    // fn output(&self, output: /*Ignored*/&mut glib::String, indent: i32) {
     //    unsafe { TODO: call ffi:ibus_component_output() }
     //}
 
-    //fn output_engines(&self, output: /*Ignored*/&mut glib::String, indent: i32) {
+    // fn output_engines(&self, output: /*Ignored*/&mut glib::String, indent: i32) {
     //    unsafe { TODO: call ffi:ibus_component_output_engines() }
     //}
 

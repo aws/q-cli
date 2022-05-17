@@ -2,17 +2,25 @@
 // from gir-files
 // DO NOT EDIT
 
-use crate::Component;
-use glib::object::Cast;
-use glib::object::IsA;
-use glib::signal::connect_raw;
-use glib::signal::SignalHandlerId;
-use glib::translate::*;
-use glib::StaticType;
-use glib::ToValue;
 use std::boxed::Box as Box_;
 use std::fmt;
 use std::mem::transmute;
+
+use glib::object::{
+    Cast,
+    IsA,
+};
+use glib::signal::{
+    connect_raw,
+    SignalHandlerId,
+};
+use glib::translate::*;
+use glib::{
+    StaticType,
+    ToValue,
+};
+
+use crate::Component;
 
 glib::wrapper! {
     #[doc(alias = "IBusBus")]
@@ -44,7 +52,8 @@ impl Bus {
     // rustdoc-stripper-ignore-next
     /// Creates a new builder-pattern struct instance to construct [`Bus`] objects.
     ///
-    /// This method returns an instance of [`BusBuilder`](crate::builders::BusBuilder) which can be used to create [`Bus`] objects.
+    /// This method returns an instance of [`BusBuilder`](crate::builders::BusBuilder) which can be
+    /// used to create [`Bus`] objects.
     pub fn builder() -> BusBuilder {
         BusBuilder::default()
     }
@@ -104,29 +113,33 @@ pub trait BusExt: 'static {
     fn add_match(&self, rule: &str) -> bool;
 
     //#[doc(alias = "ibus_bus_add_match_async")]
-    //fn add_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn add_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     //#[doc(alias = "ibus_bus_create_input_context")]
-    //fn create_input_context(&self, client_name: &str) -> /*Ignored*/Option<InputContext>;
+    // fn create_input_context(&self, client_name: &str) -> /*Ignored*/Option<InputContext>;
 
     //#[doc(alias = "ibus_bus_create_input_context_async")]
-    //fn create_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, client_name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn create_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, client_name:
+    // &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_current_input_context")]
     fn current_input_context(&self) -> Option<glib::GString>;
 
     //#[doc(alias = "ibus_bus_current_input_context_async")]
-    //fn current_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn current_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_exit")]
     fn exit(&self, restart: bool) -> bool;
 
     //#[doc(alias = "ibus_bus_exit_async")]
-    //fn exit_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, restart: bool, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn exit_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, restart: bool, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     //#[doc(alias = "ibus_bus_get_config")]
     //#[doc(alias = "get_config")]
-    //fn config(&self) -> /*Ignored*/Option<Config>;
+    // fn config(&self) -> /*Ignored*/Option<Config>;
 
     #[doc(alias = "ibus_bus_get_connection")]
     #[doc(alias = "get_connection")]
@@ -134,23 +147,25 @@ pub trait BusExt: 'static {
 
     //#[doc(alias = "ibus_bus_get_engines_by_names")]
     //#[doc(alias = "get_engines_by_names")]
-    //fn engines_by_names(&self, names: &[&str]) -> /*Ignored*/Vec<EngineDesc>;
+    // fn engines_by_names(&self, names: &[&str]) -> /*Ignored*/Vec<EngineDesc>;
 
     //#[doc(alias = "ibus_bus_get_global_engine")]
     //#[doc(alias = "get_global_engine")]
-    //fn global_engine(&self) -> /*Ignored*/Option<EngineDesc>;
+    // fn global_engine(&self) -> /*Ignored*/Option<EngineDesc>;
 
     //#[doc(alias = "ibus_bus_get_global_engine_async")]
     //#[doc(alias = "get_global_engine_async")]
-    //fn global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32,
+    // cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     //#[doc(alias = "ibus_bus_get_ibus_property")]
     //#[doc(alias = "get_ibus_property")]
-    //fn ibus_property(&self, property_name: &str) -> /*Ignored*/Option<glib::Variant>;
+    // fn ibus_property(&self, property_name: &str) -> /*Ignored*/Option<glib::Variant>;
 
     //#[doc(alias = "ibus_bus_get_ibus_property_async")]
     //#[doc(alias = "get_ibus_property_async")]
-    //fn ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_get_name_owner")]
     #[doc(alias = "get_name_owner")]
@@ -158,7 +173,8 @@ pub trait BusExt: 'static {
 
     //#[doc(alias = "ibus_bus_get_name_owner_async")]
     //#[doc(alias = "get_name_owner_async")]
-    //fn name_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn name_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_get_service_name")]
     #[doc(alias = "get_service_name")]
@@ -172,7 +188,8 @@ pub trait BusExt: 'static {
     //#[cfg_attr(feature = "v1_5_3", deprecated = "Since 1.5.3")]
     //#[doc(alias = "ibus_bus_get_use_global_engine_async")]
     //#[doc(alias = "get_use_global_engine_async")]
-    //fn use_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn use_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[cfg_attr(feature = "v1_5_3", deprecated = "Since 1.5.3")]
     #[doc(alias = "ibus_bus_get_use_sys_layout")]
@@ -182,7 +199,8 @@ pub trait BusExt: 'static {
     //#[cfg_attr(feature = "v1_5_3", deprecated = "Since 1.5.3")]
     //#[doc(alias = "ibus_bus_get_use_sys_layout_async")]
     //#[doc(alias = "get_use_sys_layout_async")]
-    //fn use_sys_layout_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn use_sys_layout_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32,
+    // cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_hello")]
     fn hello(&self) -> Option<glib::GString>;
@@ -196,21 +214,24 @@ pub trait BusExt: 'static {
 
     //#[cfg_attr(feature = "v1_5_3", deprecated = "Since 1.5.3")]
     //#[doc(alias = "ibus_bus_is_global_engine_enabled_async")]
-    //fn is_global_engine_enabled_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn is_global_engine_enabled_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     //#[cfg_attr(feature = "v1_5_3", deprecated = "Since 1.5.3")]
     //#[doc(alias = "ibus_bus_list_active_engines")]
-    //fn list_active_engines(&self) -> /*Ignored*/Vec<EngineDesc>;
+    // fn list_active_engines(&self) -> /*Ignored*/Vec<EngineDesc>;
 
     //#[cfg_attr(feature = "v1_5_3", deprecated = "Since 1.5.3")]
     //#[doc(alias = "ibus_bus_list_active_engines_async")]
-    //fn list_active_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn list_active_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     //#[doc(alias = "ibus_bus_list_engines")]
-    //fn list_engines(&self) -> /*Ignored*/Vec<EngineDesc>;
+    // fn list_engines(&self) -> /*Ignored*/Vec<EngineDesc>;
 
     //#[doc(alias = "ibus_bus_list_engines_async")]
-    //fn list_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn list_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32,
+    // cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_list_names")]
     fn list_names(&self) -> Vec<glib::GString>;
@@ -222,49 +243,59 @@ pub trait BusExt: 'static {
     fn name_has_owner(&self, name: &str) -> bool;
 
     //#[doc(alias = "ibus_bus_name_has_owner_async")]
-    //fn name_has_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn name_has_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_preload_engines")]
     fn preload_engines(&self, names: &[&str]) -> bool;
 
     //#[doc(alias = "ibus_bus_preload_engines_async")]
-    //fn preload_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, names: &[&str], timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn preload_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, names: &[&str],
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_register_component")]
     fn register_component(&self, component: &impl IsA<Component>) -> bool;
 
     //#[doc(alias = "ibus_bus_register_component_async")]
-    //fn register_component_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, component: &impl IsA<Component>, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn register_component_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, component: &impl
+    // IsA<Component>, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback:
+    // P);
 
     #[doc(alias = "ibus_bus_release_name")]
     fn release_name(&self, name: &str) -> u32;
 
     //#[doc(alias = "ibus_bus_release_name_async")]
-    //fn release_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn release_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_remove_match")]
     fn remove_match(&self, rule: &str) -> bool;
 
     //#[doc(alias = "ibus_bus_remove_match_async")]
-    //fn remove_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn remove_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_request_name")]
     fn request_name(&self, name: &str, flags: u32) -> u32;
 
     //#[doc(alias = "ibus_bus_request_name_async")]
-    //fn request_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, flags: u32, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn request_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, flags:
+    // u32, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_set_global_engine")]
     fn set_global_engine(&self, global_engine: &str) -> bool;
 
     //#[doc(alias = "ibus_bus_set_global_engine_async")]
-    //fn set_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, global_engine: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn set_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, global_engine:
+    // &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     //#[doc(alias = "ibus_bus_set_ibus_property")]
-    //fn set_ibus_property(&self, property_name: &str, value: /*Ignored*/&glib::Variant);
+    // fn set_ibus_property(&self, property_name: &str, value: /*Ignored*/&glib::Variant);
 
     //#[doc(alias = "ibus_bus_set_ibus_property_async")]
-    //fn set_ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name: &str, value: /*Ignored*/&glib::Variant, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P);
+    // fn set_ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name:
+    // &str, value: /*Ignored*/&glib::Variant, timeout_msec: i32, cancellable:
+    // /*Ignored*/Option<&gio::Cancellable>, callback: P);
 
     #[doc(alias = "ibus_bus_set_watch_dbus_signal")]
     fn set_watch_dbus_signal(&self, watch: bool);
@@ -288,10 +319,7 @@ pub trait BusExt: 'static {
     fn connect_global_engine_changed<F: Fn(&Self, &str) + 'static>(&self, f: F) -> SignalHandlerId;
 
     #[doc(alias = "name-owner-changed")]
-    fn connect_name_owner_changed<F: Fn(&Self, &str, &str, &str) + 'static>(
-        &self,
-        f: F,
-    ) -> SignalHandlerId;
+    fn connect_name_owner_changed<F: Fn(&Self, &str, &str, &str) + 'static>(&self, f: F) -> SignalHandlerId;
 }
 
 impl<O: IsA<Bus>> BusExt for O {
@@ -304,44 +332,39 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn add_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_add_match_async() }
+    // fn add_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_add_match_async() }
     //}
 
-    //fn create_input_context(&self, client_name: &str) -> /*Ignored*/Option<InputContext> {
+    // fn create_input_context(&self, client_name: &str) -> /*Ignored*/Option<InputContext> {
     //    unsafe { TODO: call ffi:ibus_bus_create_input_context() }
     //}
 
-    //fn create_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, client_name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn create_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, client_name:
+    // &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_create_input_context_async() }
     //}
 
     fn current_input_context(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_full(ffi::ibus_bus_current_input_context(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_full(ffi::ibus_bus_current_input_context(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn current_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_current_input_context_async() }
+    // fn current_input_context_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_current_input_context_async() }
     //}
 
     fn exit(&self, restart: bool) -> bool {
-        unsafe {
-            from_glib(ffi::ibus_bus_exit(
-                self.as_ref().to_glib_none().0,
-                restart.into_glib(),
-            ))
-        }
+        unsafe { from_glib(ffi::ibus_bus_exit(self.as_ref().to_glib_none().0, restart.into_glib())) }
     }
 
-    //fn exit_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, restart: bool, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_exit_async() }
+    // fn exit_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, restart: bool, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_exit_async() }
     //}
 
-    //fn config(&self) -> /*Ignored*/Option<Config> {
+    // fn config(&self) -> /*Ignored*/Option<Config> {
     //    unsafe { TODO: call ffi:ibus_bus_get_config() }
     //}
 
@@ -349,23 +372,25 @@ impl<O: IsA<Bus>> BusExt for O {
         unsafe { from_glib_none(ffi::ibus_bus_get_connection(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn engines_by_names(&self, names: &[&str]) -> /*Ignored*/Vec<EngineDesc> {
+    // fn engines_by_names(&self, names: &[&str]) -> /*Ignored*/Vec<EngineDesc> {
     //    unsafe { TODO: call ffi:ibus_bus_get_engines_by_names() }
     //}
 
-    //fn global_engine(&self) -> /*Ignored*/Option<EngineDesc> {
+    // fn global_engine(&self) -> /*Ignored*/Option<EngineDesc> {
     //    unsafe { TODO: call ffi:ibus_bus_get_global_engine() }
     //}
 
-    //fn global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_get_global_engine_async() }
+    // fn global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32,
+    // cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_get_global_engine_async() }
     //}
 
-    //fn ibus_property(&self, property_name: &str) -> /*Ignored*/Option<glib::Variant> {
+    // fn ibus_property(&self, property_name: &str) -> /*Ignored*/Option<glib::Variant> {
     //    unsafe { TODO: call ffi:ibus_bus_get_ibus_property() }
     //}
 
-    //fn ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_get_ibus_property_async() }
     //}
 
@@ -378,40 +403,31 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn name_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn name_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_get_name_owner_async() }
     //}
 
     fn service_name(&self) -> Option<glib::GString> {
-        unsafe {
-            from_glib_none(ffi::ibus_bus_get_service_name(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib_none(ffi::ibus_bus_get_service_name(self.as_ref().to_glib_none().0)) }
     }
 
     fn uses_global_engine(&self) -> bool {
-        unsafe {
-            from_glib(ffi::ibus_bus_get_use_global_engine(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib(ffi::ibus_bus_get_use_global_engine(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn use_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_get_use_global_engine_async() }
+    // fn use_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_get_use_global_engine_async() }
     //}
 
     fn uses_sys_layout(&self) -> bool {
-        unsafe {
-            from_glib(ffi::ibus_bus_get_use_sys_layout(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib(ffi::ibus_bus_get_use_sys_layout(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn use_sys_layout_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_get_use_sys_layout_async() }
+    // fn use_sys_layout_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32,
+    // cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_get_use_sys_layout_async() }
     //}
 
     fn hello(&self) -> Option<glib::GString> {
@@ -423,39 +439,34 @@ impl<O: IsA<Bus>> BusExt for O {
     }
 
     fn is_global_engine_enabled(&self) -> bool {
-        unsafe {
-            from_glib(ffi::ibus_bus_is_global_engine_enabled(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { from_glib(ffi::ibus_bus_is_global_engine_enabled(self.as_ref().to_glib_none().0)) }
     }
 
-    //fn is_global_engine_enabled_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn is_global_engine_enabled_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_is_global_engine_enabled_async() }
     //}
 
-    //fn list_active_engines(&self) -> /*Ignored*/Vec<EngineDesc> {
+    // fn list_active_engines(&self) -> /*Ignored*/Vec<EngineDesc> {
     //    unsafe { TODO: call ffi:ibus_bus_list_active_engines() }
     //}
 
-    //fn list_active_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_list_active_engines_async() }
+    // fn list_active_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec:
+    // i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_list_active_engines_async() }
     //}
 
-    //fn list_engines(&self) -> /*Ignored*/Vec<EngineDesc> {
+    // fn list_engines(&self) -> /*Ignored*/Vec<EngineDesc> {
     //    unsafe { TODO: call ffi:ibus_bus_list_engines() }
     //}
 
-    //fn list_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_list_engines_async() }
+    // fn list_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, timeout_msec: i32,
+    // cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_list_engines_async() }
     //}
 
     fn list_names(&self) -> Vec<glib::GString> {
-        unsafe {
-            FromGlibPtrContainer::from_glib_full(ffi::ibus_bus_list_names(
-                self.as_ref().to_glib_none().0,
-            ))
-        }
+        unsafe { FromGlibPtrContainer::from_glib_full(ffi::ibus_bus_list_names(self.as_ref().to_glib_none().0)) }
     }
 
     fn list_queued_owners(&self, name: &str) -> Vec<glib::GString> {
@@ -476,7 +487,8 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn name_has_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn name_has_owner_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_name_has_owner_async() }
     //}
 
@@ -489,7 +501,8 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn preload_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, names: &[&str], timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn preload_engines_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, names: &[&str],
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_preload_engines_async() }
     //}
 
@@ -502,15 +515,17 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn register_component_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, component: &impl IsA<Component>, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_register_component_async() }
+    // fn register_component_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, component: &impl
+    // IsA<Component>, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback:
+    // P) {    unsafe { TODO: call ffi:ibus_bus_register_component_async() }
     //}
 
     fn release_name(&self, name: &str) -> u32 {
         unsafe { ffi::ibus_bus_release_name(self.as_ref().to_glib_none().0, name.to_glib_none().0) }
     }
 
-    //fn release_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn release_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_release_name_async() }
     //}
 
@@ -523,17 +538,17 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn remove_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn remove_match_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, rule: &str,
+    // timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_remove_match_async() }
     //}
 
     fn request_name(&self, name: &str, flags: u32) -> u32 {
-        unsafe {
-            ffi::ibus_bus_request_name(self.as_ref().to_glib_none().0, name.to_glib_none().0, flags)
-        }
+        unsafe { ffi::ibus_bus_request_name(self.as_ref().to_glib_none().0, name.to_glib_none().0, flags) }
     }
 
-    //fn request_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, flags: u32, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn request_name_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, name: &str, flags:
+    // u32, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_request_name_async() }
     //}
 
@@ -546,16 +561,19 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    //fn set_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, global_engine: &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
+    // fn set_global_engine_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, global_engine:
+    // &str, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
     //    unsafe { TODO: call ffi:ibus_bus_set_global_engine_async() }
     //}
 
-    //fn set_ibus_property(&self, property_name: &str, value: /*Ignored*/&glib::Variant) {
+    // fn set_ibus_property(&self, property_name: &str, value: /*Ignored*/&glib::Variant) {
     //    unsafe { TODO: call ffi:ibus_bus_set_ibus_property() }
     //}
 
-    //fn set_ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name: &str, value: /*Ignored*/&glib::Variant, timeout_msec: i32, cancellable: /*Ignored*/Option<&gio::Cancellable>, callback: P) {
-    //    unsafe { TODO: call ffi:ibus_bus_set_ibus_property_async() }
+    // fn set_ibus_property_async<P: FnOnce(Result<(), glib::Error>) + 'static>(&self, property_name:
+    // &str, value: /*Ignored*/&glib::Variant, timeout_msec: i32, cancellable:
+    // /*Ignored*/Option<&gio::Cancellable>, callback: P) {    unsafe { TODO: call
+    // ffi:ibus_bus_set_ibus_property_async() }
     //}
 
     fn set_watch_dbus_signal(&self, watch: bool) {
@@ -621,10 +639,7 @@ impl<O: IsA<Bus>> BusExt for O {
     }
 
     fn connect_global_engine_changed<F: Fn(&Self, &str) + 'static>(&self, f: F) -> SignalHandlerId {
-        unsafe extern "C" fn global_engine_changed_trampoline<
-            P: IsA<Bus>,
-            F: Fn(&P, &str) + 'static,
-        >(
+        unsafe extern "C" fn global_engine_changed_trampoline<P: IsA<Bus>, F: Fn(&P, &str) + 'static>(
             this: *mut ffi::IBusBus,
             name: *mut libc::c_char,
             f: glib::ffi::gpointer,
@@ -648,14 +663,8 @@ impl<O: IsA<Bus>> BusExt for O {
         }
     }
 
-    fn connect_name_owner_changed<F: Fn(&Self, &str, &str, &str) + 'static>(
-        &self,
-        f: F,
-    ) -> SignalHandlerId {
-        unsafe extern "C" fn name_owner_changed_trampoline<
-            P: IsA<Bus>,
-            F: Fn(&P, &str, &str, &str) + 'static,
-        >(
+    fn connect_name_owner_changed<F: Fn(&Self, &str, &str, &str) + 'static>(&self, f: F) -> SignalHandlerId {
+        unsafe extern "C" fn name_owner_changed_trampoline<P: IsA<Bus>, F: Fn(&P, &str, &str, &str) + 'static>(
             this: *mut ffi::IBusBus,
             name: *mut libc::c_char,
             old_owner: *mut libc::c_char,

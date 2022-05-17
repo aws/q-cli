@@ -40,7 +40,13 @@ export function sendMessage(
 
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  if (window.__TAURI__ && window.__TAURI__.invoke) {
+  if (window.ipc && window.ipc.postMessage) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    window.ipc.postMessage(b64);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+  } else if (window?.__TAURI__?.invoke) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     window.__TAURI__.invoke("handle_api_request", {
@@ -94,11 +100,8 @@ const setupEventListeners = (): void => {
 
   document.addEventListener(FigProtoMessageRecieved, (event: Event) => {
     const raw = (event as CustomEvent).detail as string;
-
     const bytes = b64ToBytes(raw);
-
     const message = ServerOriginatedMessage.decode(bytes);
-
     recievedMessage(message);
   });
 };
@@ -106,22 +109,23 @@ const setupEventListeners = (): void => {
 async function setupTauriEventListeners() {
   // eslint-disable-next-line @typescript-eslint/ban-ts-comment
   // @ts-ignore
-  await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
-    const response = { error: event.payload } as GlobalAPIError;
-    console.error(response);
-  });
+  if (window?.__TAURI__?.event?.listen) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
+      const response = { error: event.payload } as GlobalAPIError;
+      console.error(response);
+    });
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
-    const raw = event.payload as string;
-
-    const bytes = b64ToBytes(raw);
-
-    const message = ServerOriginatedMessage.decode(bytes);
-
-    recievedMessage(message);
-  });
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+    // @ts-ignore
+    await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
+      const raw = event.payload as string;
+      const bytes = b64ToBytes(raw);
+      const message = ServerOriginatedMessage.decode(bytes);
+      recievedMessage(message);
+    });
+  }
 }
 
 // We want this to be run automatically

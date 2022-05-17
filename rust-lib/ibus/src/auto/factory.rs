@@ -2,15 +2,21 @@
 // from gir-files
 // DO NOT EDIT
 
-use crate::Engine;
-use glib::object::Cast;
-use glib::object::IsA;
-use glib::signal::connect_raw;
-use glib::signal::SignalHandlerId;
-use glib::translate::*;
 use std::boxed::Box as Box_;
 use std::fmt;
 use std::mem::transmute;
+
+use glib::object::{
+    Cast,
+    IsA,
+};
+use glib::signal::{
+    connect_raw,
+    SignalHandlerId,
+};
+use glib::translate::*;
+
+use crate::Engine;
 
 glib::wrapper! {
     #[doc(alias = "IBusFactory")]
@@ -38,10 +44,7 @@ pub trait FactoryExt: 'static {
     fn create_engine(&self, engine_name: &str) -> Option<Engine>;
 
     #[doc(alias = "create-engine")]
-    fn connect_create_engine<F: Fn(&Self, &str) -> Option<Engine> + 'static>(
-        &self,
-        f: F,
-    ) -> SignalHandlerId;
+    fn connect_create_engine<F: Fn(&Self, &str) -> Option<Engine> + 'static>(&self, f: F) -> SignalHandlerId;
 }
 
 impl<O: IsA<Factory>> FactoryExt for O {
@@ -64,14 +67,8 @@ impl<O: IsA<Factory>> FactoryExt for O {
         }
     }
 
-    fn connect_create_engine<F: Fn(&Self, &str) -> Option<Engine> + 'static>(
-        &self,
-        f: F,
-    ) -> SignalHandlerId {
-        unsafe extern "C" fn create_engine_trampoline<
-            P: IsA<Factory>,
-            F: Fn(&P, &str) -> Option<Engine> + 'static,
-        >(
+    fn connect_create_engine<F: Fn(&Self, &str) -> Option<Engine> + 'static>(&self, f: F) -> SignalHandlerId {
+        unsafe extern "C" fn create_engine_trampoline<P: IsA<Factory>, F: Fn(&P, &str) -> Option<Engine> + 'static>(
             this: *mut ffi::IBusFactory,
             engine_name: *mut libc::c_char,
             f: glib::ffi::gpointer,

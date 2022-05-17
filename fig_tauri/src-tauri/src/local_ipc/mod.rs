@@ -26,6 +26,7 @@ use crate::figterm::FigtermState;
 use crate::window::WindowState;
 use crate::{
     native,
+    GlobalState,
     NotificationsState,
 };
 
@@ -37,11 +38,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(
-    figterm_state: Arc<FigtermState>,
-    notification_state: Arc<NotificationsState>,
-    window_state: Arc<WindowState>,
-) {
+pub async fn start_local_ipc(global_state: Arc<GlobalState>) {
     let socket_path = fig_ipc::get_fig_socket_path();
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {

@@ -20,6 +20,7 @@ bytes = "1.1.0"
 cfg-if = "1.0.0"
 dashmap = "5.3.1"
 fnv = "1.0.7"
+fig_directories = { path = "../../rust-lib/fig_directories" }
 fig_ipc = { path = "../../rust-lib/fig_ipc" }
 fig_log = { path = "../../rust-lib/fig_log" }
 fig_proto = { path = "../../rust-lib/fig_proto" }

@@ -1,71 +1,37 @@
-use std::sync::Arc;
-
 use parking_lot::RwLock;
-use tauri::{
+use tracing::debug;
+use wry::application::dpi::{
     PhysicalPosition,
     PhysicalSize,
     Position,
-    Size,
-    Window,
 };
-use tokio::sync::mpsc::{
-    UnboundedReceiver,
-    UnboundedSender,
-};
-use tracing::debug;
+use wry::webview::WebView;
 
 #[derive(Debug)]
-pub enum WindowEvent {
+pub enum FigWindowEvent {
     Reanchor { x: i32, y: i32 },
     Reposition { x: i32, y: i32 },
     UpdateCaret { x: i32, y: i32, width: i32, height: i32 },
     Resize { width: u32, height: u32 },
     Hide,
     Show,
-    Emit { event: &'static str, payload: String },
+    Emit { event: String, payload: String },
+    Api { payload: String },
 }
 
-#[derive(Debug)]
-pub struct WindowState {
-    event_sender: RwLock<UnboundedSender<WindowEvent>>,
-    anchor: RwLock<PhysicalPosition<i32>>,
-    position: RwLock<PhysicalPosition<i32>>,
-    caret_position: RwLock<PhysicalPosition<i32>>,
-    caret_size: RwLock<PhysicalSize<i32>>,
-}
-
-impl WindowState {
-    pub fn new(window: &Window, event_sender: UnboundedSender<WindowEvent>) -> Self {
-        Self {
-            event_sender: RwLock::new(event_sender),
-            anchor: RwLock::new(PhysicalPosition::default()),
-            position: RwLock::new(window.inner_position().expect("Failed to acquire window position")),
-            caret_position: RwLock::new(PhysicalPosition::default()),
-            caret_size: RwLock::new(PhysicalSize::default()),
-        }
-    }
-
-    pub fn send_event(&self, event: WindowEvent) {
-        self.event_sender
-            .read()
-            .send(event)
-            .expect("Failed to send window event");
-    }
-}
-
-pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEvent>, state: Arc<WindowState>) {
-    while let Some(event) = recv.recv().await {
-        match event {
-            WindowEvent::Reanchor { x, y } => {
+impl FigWindowEvent {
+    pub fn handle(self, window: &WebView, state: &WindowState) {
+        match self {
+            FigWindowEvent::Reanchor { x, y } => {
                 let position = state.position.read();
                 let caret_position = state.caret_position.read();
                 *state.anchor.write() = PhysicalPosition { x, y };
-                window.set_position(Position::Physical(PhysicalPosition {
+                window.window().set_outer_position(Position::Physical(PhysicalPosition {
                     x: x + position.x + caret_position.x,
                     y: y + position.y + caret_position.y,
                 }))
             },
-            WindowEvent::Reposition { x, y } => {
+            FigWindowEvent::Reposition { x, y } => {
                 let anchor = state.anchor.read();
                 let caret_position = state.caret_position.read();
                 *state.position.write() = PhysicalPosition {
@@ -76,23 +42,61 @@ pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEve
                     "x {x} y {y} anchor.x {} anchor.y {} caret_position.x {} caret_position.y {}",
                     anchor.x, anchor.y, caret_position.x, caret_position.y
                 );
-                window.set_position(Position::Physical(PhysicalPosition {
+                window.window().set_outer_position(Position::Physical(PhysicalPosition {
                     x: caret_position.x,
                     y: caret_position.y,
                 }))
             },
-            WindowEvent::UpdateCaret { x, y, width, height } => {
+            FigWindowEvent::UpdateCaret { x, y, width, height } => {
                 let anchor = PhysicalPosition { x, y };
                 let position = state.position.read();
                 *state.caret_position.write() = PhysicalPosition { x, y };
                 *state.caret_size.write() = PhysicalSize { width, height };
-                window.set_position(Position::Physical(PhysicalPosition { x, y }))
+                window
+                    .window()
+                    .set_outer_position(Position::Physical(PhysicalPosition { x, y }))
             },
-            WindowEvent::Resize { width, height } => window.set_size(Size::Physical(PhysicalSize { width, height })),
-            WindowEvent::Hide => window.hide(),
-            WindowEvent::Show => window.show().and_then(|_| window.set_always_on_top(true)),
-            WindowEvent::Emit { event, payload } => window.emit(event, payload),
+            FigWindowEvent::Resize { width, height } => window.window().set_inner_size(PhysicalSize { width, height }),
+            FigWindowEvent::Hide => window.window().set_visible(false),
+            FigWindowEvent::Show => {
+                window.window().set_visible(true);
+                window.window().set_always_on_top(true);
+            },
+            FigWindowEvent::Emit { event, payload } => {
+                window
+                    .evaluate_script(&format!(
+                        "document.dispatchEvent(new CustomEvent('{event}', {{'detail': `{payload}`}}))"
+                    ))
+                    .unwrap();
+                window
+                    .evaluate_script(&format!("console.log('Executing {event}')"))
+                    .unwrap();
+            },
+            FigWindowEvent::Api { payload } => {},
         }
-        .expect("Failed to process window event");
+    }
+}
+
+#[derive(Debug)]
+pub struct WindowState {
+    anchor: RwLock<PhysicalPosition<i32>>,
+    position: RwLock<PhysicalPosition<i32>>,
+    caret_position: RwLock<PhysicalPosition<i32>>,
+    caret_size: RwLock<PhysicalSize<i32>>,
+}
+
+impl WindowState {
+    pub fn new(window: &WebView) -> Self {
+        Self {
+            anchor: RwLock::new(PhysicalPosition::default()),
+            position: RwLock::new(
+                window
+                    .window()
+                    .inner_position()
+                    .expect("Failed to acquire window position"),
+            ),
+            caret_position: RwLock::new(PhysicalPosition::default()),
+            caret_size: RwLock::new(PhysicalSize::default()),
+        }
     }
 }

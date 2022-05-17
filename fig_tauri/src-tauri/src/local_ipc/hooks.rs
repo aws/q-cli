@@ -43,25 +43,25 @@ pub async fn send_notification(
     notification_state: &NotificationsState,
     window_state: &WindowState,
 ) -> Result<()> {
-    let message_id = match notification_state.subscriptions.get(notification_type) {
-        Some(id) => *id,
-        None => {
-            return Ok(());
-        },
-    };
+    for sub in notification_state.subscriptions.iter() {
+        let message_id = match sub.get(notification_type) {
+            Some(id) => *id,
+            None => continue,
+        };
 
-    let message = ServerOriginatedMessage {
-        id: Some(message_id),
-        submessage: Some(ServerOriginatedSubMessage::Notification(notification)),
-    };
+        let message = ServerOriginatedMessage {
+            id: Some(message_id),
+            submessage: Some(ServerOriginatedSubMessage::Notification(notification.clone())),
+        };
 
-    let mut encoded = BytesMut::new();
-    message.encode(&mut encoded).unwrap();
+        let mut encoded = BytesMut::new();
+        message.encode(&mut encoded).unwrap();
 
-    window_state.send_event(WindowEvent::Emit {
-        event: FIG_PROTO_MESSAGE_RECIEVED,
-        payload: base64::encode(encoded),
-    });
+        window_state.send_event(WindowEvent::Emit {
+            event: FIG_PROTO_MESSAGE_RECIEVED,
+            payload: base64::encode(encoded),
+        });
+    }
 
     Ok(())
 }
@@ -81,37 +81,36 @@ pub async fn edit_buffer(
         session.context = hook.context.clone();
     });
 
-    let message_id = match notification_state
-        .subscriptions
-        .get(&NotificationType::NotifyOnEditbuffferChange)
-    {
-        Some(id) => *id,
-        None => {
-            return Ok(());
-        },
-    };
+    for sub in notification_state.subscriptions.iter() {
+        let message_id = match sub.get(&NotificationType::NotifyOnEditbuffferChange) {
+            Some(id) => *id,
+            None => continue,
+        };
 
-    let message = ServerOriginatedMessage {
-        id: Some(message_id),
-        submessage: Some(ServerOriginatedSubMessage::Notification(Notification {
-            r#type: Some(fig_proto::fig::notification::Type::EditBufferNotification(
-                EditBufferChangedNotification {
-                    context: hook.context,
-                    buffer: Some(hook.text),
-                    cursor: Some(hook.cursor.try_into().unwrap()),
-                    session_id: Some(session_id.0),
-                },
-            )),
-        })),
-    };
+        let hook = hook.clone();
+        let session_id = session_id.clone();
+        let message = ServerOriginatedMessage {
+            id: Some(message_id),
+            submessage: Some(ServerOriginatedSubMessage::Notification(Notification {
+                r#type: Some(fig_proto::fig::notification::Type::EditBufferNotification(
+                    EditBufferChangedNotification {
+                        context: hook.context,
+                        buffer: Some(hook.text),
+                        cursor: Some(hook.cursor.try_into().unwrap()),
+                        session_id: Some(session_id.0),
+                    },
+                )),
+            })),
+        };
 
-    let mut encoded = BytesMut::new();
-    message.encode(&mut encoded).unwrap();
+        let mut encoded = BytesMut::new();
+        message.encode(&mut encoded).unwrap();
 
-    window_state.send_event(WindowEvent::Emit {
-        event: FIG_PROTO_MESSAGE_RECIEVED,
-        payload: base64::encode(encoded),
-    });
+        window_state.send_event(WindowEvent::Emit {
+            event: FIG_PROTO_MESSAGE_RECIEVED,
+            payload: base64::encode(encoded),
+        });
+    }
 
     Ok(())
 }
