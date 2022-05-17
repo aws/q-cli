@@ -1,24 +1,10 @@
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
-use std::ffi::OsString;
 use std::fs;
-use std::path::{
-    Path,
-    PathBuf,
-};
 
 use bytes::Bytes;
 use once_cell::sync::Lazy;
 use percent_encoding::percent_decode_str;
-use tauri::http::status::StatusCode;
-use tauri::http::{
-    Request as HttpRequest,
-    Response as HttpResponse,
-};
-use tauri::{
-    AppHandle,
-    Runtime,
-};
 use tracing::{
     debug,
     trace,

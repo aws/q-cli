@@ -2,7 +2,7 @@
 
 mod api;
 mod figterm;
-mod icons;
+// mod icons;
 mod local_ipc;
 mod native;
 mod tray;
@@ -18,8 +18,10 @@ use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
 use parking_lot::RwLock;
-use tokio::sync::mpsc;
-use tracing::debug;
+use tracing::{
+    debug,
+    error,
+};
 use tray::create_tray;
 use window::{
     FigWindowEvent,
@@ -98,46 +100,36 @@ pub struct GlobalState {
     pub notifications_state: NotificationsState,
 }
 
-pub type WindowsState = DashMap<FigId, WindowState, FnvBuildHasher>;
-
-struct WindowData {}
-
 struct WebviewManager {
-    fig_id_map: DashMap<FigId, Arc<WebView>, FnvBuildHasher>,
-    window_id_map: DashMap<WindowId, Arc<WebView>, FnvBuildHasher>,
+    fig_id_map: DashMap<FigId, Arc<WindowState>, FnvBuildHasher>,
+    window_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
     event_loop: EventLoop<FigEvent>,
     global_state: Arc<GlobalState>,
-    window_state_map: WindowsState,
-}
-
-#[derive(Debug)]
-struct ApiRequest {
-    fig_id: FigId,
-    payload: String,
 }
 
 impl WebviewManager {
     fn new() -> Self {
-        let (send, recv) = mpsc::unbounded_channel();
+        let event_loop = EventLoop::with_user_event();
+        let proxy = event_loop.create_proxy();
         Self {
             fig_id_map: Default::default(),
             window_id_map: Default::default(),
-            event_loop: EventLoop::with_user_event(),
+            event_loop,
             global_state: Arc::new(GlobalState {
                 debug_state: DebugState::default(),
                 figterm_state: FigtermState::default(),
                 intercept_state: InterceptState::default(),
-                native_state: NativeState::new(send.clone()),
+                native_state: NativeState::new(proxy),
                 notifications_state: NotificationsState::default(),
             }),
-            window_state_map: Default::default(),
         }
     }
 
     fn insert_webview(&mut self, fig_id: FigId, webview: WebView) {
-        let webview_arc = Arc::new(webview);
+        let webview_arc = Arc::new(WindowState::new(fig_id.clone(), webview));
         self.fig_id_map.insert(fig_id, webview_arc.clone());
-        self.window_id_map.insert(webview_arc.window().id(), webview_arc);
+        self.window_id_map
+            .insert(webview_arc.webview.window().id(), webview_arc);
     }
 
     fn build_webview(
@@ -151,40 +143,35 @@ impl WebviewManager {
     }
 
     async fn run(self) -> wry::Result<()> {
-        let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<ApiRequest>();
-        let proxy = self.event_loop.create_proxy();
+        let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(FigId, String)>();
 
-        // tokio::spawn(figterm::clean_figterm_cache(self.global_state.figterm_state.clone()));
-
-        // let window_state = Arc::new(WindowState::new(&window, send));
+        tokio::spawn(figterm::clean_figterm_cache(self.global_state.clone()));
 
         tokio::spawn(local_ipc::start_local_ipc(
-            &self.global_state.figterm_state,
-            notifications_state,
-            window_state.clone(),
+            self.global_state.clone(),
+            self.event_loop.create_proxy(),
         ));
 
+        let proxy = self.event_loop.create_proxy();
+        let global_state = self.global_state.clone();
         tokio::spawn(async move {
-            while let Some(ApiRequest { fig_id, payload }) = api_handler_rx.recv().await {
+            while let Some((fig_id, payload)) = api_handler_rx.recv().await {
                 api_request(
-                    fig_id.clone(),
-                    |event: String, payload: String| {
-                        proxy
-                            .send_event(FigEvent::WindowEvent {
-                                fig_id,
-                                window_event: FigWindowEvent::Emit { event, payload },
-                            })
-                            .unwrap();
-                    },
+                    fig_id,
                     payload,
-                    &*self.global_state,
-                    self.window_state_map,
+                    &global_state,
+                    |event: FigEvent| {
+                        proxy.send_event(event).unwrap();
+                    },
+                    &proxy,
                 )
                 .await;
             }
         });
 
-        create_tray(&self.event_loop);
+        if let Err(err) = create_tray(&self.event_loop) {
+            error!("Failed to create tray: {err}");
+        }
 
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
@@ -196,14 +183,14 @@ impl WebviewManager {
                     window_id,
                     ..
                 } => {
-                    if let Some(webview) = self.window_id_map.get(&window_id) {
-                        webview.window().set_visible(false);
+                    if let Some(window_state) = self.window_id_map.get(&window_id) {
+                        window_state.webview.window().set_visible(false);
                     }
                 },
                 Event::UserEvent(event) => match event {
                     FigEvent::WindowEvent { fig_id, window_event } => match self.fig_id_map.get(&fig_id) {
-                        Some(window) => {
-                            window_event.handle(&window, state);
+                        Some(window_state) => {
+                            window_state.handle(window_event, &api_handler_tx);
                         },
                         None => todo!(),
                     },
@@ -227,8 +214,9 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
-        .with_url("http://localhost:3000")?
+        .with_url("http://localhost:3001")?
         .with_ipc_handler(move |_window, payload| {
+            debug!("{payload}");
             proxy
                 .send_event(FigEvent::WindowEvent {
                     fig_id: MISSION_CONTROL_ID.clone(),
@@ -263,6 +251,8 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
         })
         .with_devtools(true)
         .with_initialization_script(JAVASCRIPT_INIT)
+        .with_transparent(true)
+        .with_visible(true)
         .build()?;
 
     Ok(webview)
@@ -306,7 +296,7 @@ async fn main() {
     //                ));
     //
     //                tauri::async_runtime::spawn(window::handle_window(window, recv,
-    // window_state));
+    // window_state)); >>>>>
     //
     //                Ok(())
     //            }

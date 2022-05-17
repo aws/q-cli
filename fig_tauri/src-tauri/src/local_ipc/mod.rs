@@ -21,13 +21,12 @@ use tracing::{
     trace,
     warn,
 };
+use wry::application::event_loop::EventLoopProxy;
 
-use crate::figterm::FigtermState;
-use crate::window::WindowState;
 use crate::{
     native,
+    FigEvent,
     GlobalState,
-    NotificationsState,
 };
 
 pub enum LocalResponse {
@@ -38,7 +37,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(global_state: Arc<GlobalState>) {
+pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
     let socket_path = fig_ipc::get_fig_socket_path();
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -55,20 +54,14 @@ pub async fn start_local_ipc(global_state: Arc<GlobalState>) {
     let listener = native::Listener::bind(&socket_path);
 
     while let Ok(stream) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(
-            stream,
-            figterm_state.clone(),
-            notification_state.clone(),
-            window_state.clone(),
-        ));
+        tokio::spawn(handle_local_ipc(stream, global_state.clone(), proxy.clone()));
     }
 }
 
 async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
     mut stream: S,
-    figterm_state: Arc<FigtermState>,
-    notification_state: Arc<NotificationsState>,
-    window_state: Arc<WindowState>,
+    global_state: Arc<GlobalState>,
+    proxy: EventLoopProxy<FigEvent>,
 ) {
     while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
         .await
@@ -126,16 +119,12 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                 use fig_proto::local::hook::Hook;
 
                 match hook.hook {
-                    Some(Hook::EditBuffer(request)) => {
-                        hooks::edit_buffer(request, figterm_state.clone(), &notification_state, &window_state).await
-                    },
-                    Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &window_state).await,
+                    Some(Hook::EditBuffer(request)) => hooks::edit_buffer(request, global_state.clone(), &proxy).await,
+                    Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &proxy).await,
                     Some(Hook::Prompt(request)) => hooks::prompt(request).await,
                     Some(Hook::FocusChange(request)) => hooks::focus_change(request).await,
                     Some(Hook::PreExec(request)) => hooks::pre_exec(request).await,
-                    Some(Hook::InterceptedKey(request)) => {
-                        hooks::intercepted_key(request, &notification_state, &window_state).await
-                    },
+                    Some(Hook::InterceptedKey(request)) => hooks::intercepted_key(request, &global_state, &proxy).await,
                     Some(Hook::FileChanged(request)) => hooks::file_changed(request).await,
                     err => {
                         match &err {

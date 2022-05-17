@@ -14,13 +14,17 @@ use serde_json::{
 use tokio::io::AsyncWriteExt;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
-    debug,
     trace,
     warn,
 };
+use wry::application::event_loop::EventLoopProxy;
 
 use crate::utils::Rect;
-use crate::window::WindowEvent;
+use crate::window::FigWindowEvent;
+use crate::{
+    FigEvent,
+    AUTOCOMPLETE_ID,
+};
 
 struct I3Ipc {
     payload_type: u32,
@@ -80,7 +84,7 @@ impl I3Ipc {
     }
 }
 
-pub async fn handle_sway(sender: UnboundedSender<WindowEvent>, socket: impl AsRef<Path>) {
+pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Path>) {
     use tokio::io::AsyncReadExt;
 
     let mut conn = tokio::net::UnixStream::connect(socket).await.unwrap();
@@ -125,14 +129,27 @@ pub async fn handle_sway(sender: UnboundedSender<WindowEvent>, socket: impl AsRe
                                 let app_id = container.get("app_id").and_then(|x| x.as_str());
 
                                 if let Some("org.kde.konsole") = app_id {
-                                    sender.send(WindowEvent::Show).unwrap();
-                                    sender
-                                        .send(WindowEvent::Reposition {
-                                            x: geometey.unwrap().x as i32,
-                                            y: geometey.unwrap().y as i32,
+                                    proxy
+                                        .send_event(FigEvent::WindowEvent {
+                                            fig_id: AUTOCOMPLETE_ID.clone(),
+                                            window_event: FigWindowEvent::Show,
                                         })
                                         .unwrap();
-                                    sender.send(WindowEvent::Reanchor { x: 0, y: 0 }).unwrap();
+                                    // proxy
+                                    //    .send_event(FigEvent::WindowEvent {
+                                    //        fig_id: AUTOCOMPLETE_ID.clone(),
+                                    //        window_event: FigWindowEvent::Reposition {
+                                    //            x: geometey.unwrap().x as i32,
+                                    //            y: geometey.unwrap().y as i32,
+                                    //        },
+                                    //    })
+                                    //    .unwrap();
+                                    proxy
+                                        .send_event(FigEvent::WindowEvent {
+                                            fig_id: AUTOCOMPLETE_ID.clone(),
+                                            window_event: FigWindowEvent::Reanchor { x: 0, y: 0 },
+                                        })
+                                        .unwrap();
                                 }
                             }
                         },

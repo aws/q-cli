@@ -179,9 +179,8 @@ impl InternalSubcommand {
 <component>
     <name>org.freedesktop.IBus.FigIBusEngine</name><description>Fig \
                      integration for the IBus input method</description>
-    <version>0.1.0</version><license></license><author>Fig</author>\
+    <version>0.1.0</version><license></license><author>Fig</author><homepage>https://fig.io</homepage>\
                      
-    <homepage>https://fig.io</homepage>
     <exec>{fig_ibus_engine_location}</exec>
     <textdomain></textdomain>
     <engines>

@@ -1,26 +1,12 @@
-use std::sync::Arc;
-
-use tracing::{
-    trace,
-    warn,
-};
 use wry::application::event_loop::EventLoop;
 use wry::application::menu::{
     ContextMenu,
-    CustomMenuItem,
     MenuId,
     MenuItemAttributes,
 };
-use wry::application::system_tray::{
-    SystemTray,
-    SystemTrayBuilder,
-};
+use wry::application::system_tray::SystemTrayBuilder;
 
-use crate::figterm::FigtermState;
-use crate::{
-    DebugState,
-    FigEvent,
-};
+use crate::FigEvent;
 
 pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<()> {
     let mut tray_menu = ContextMenu::new();

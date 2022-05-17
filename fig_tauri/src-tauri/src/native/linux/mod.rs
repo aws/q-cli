@@ -2,29 +2,29 @@ mod sway;
 mod x11;
 
 use anyhow::Result;
-use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     error,
     info,
 };
+use wry::application::event_loop::EventLoopProxy;
 
-use crate::window::WindowEvent;
+use crate::FigEvent;
 
 #[derive(Debug)]
 pub struct NativeState;
 
 impl NativeState {
-    pub fn new(window_event_sender: UnboundedSender<WindowEvent>) -> Self {
+    pub fn new(proxy: EventLoopProxy<FigEvent>) -> Self {
         match DisplayServer::detect() {
             Ok(DisplayServer::X11) => {
                 info!("Detected X11 server");
-                tauri::async_runtime::spawn_blocking(move || x11::handle_x11(window_event_sender));
+                tokio::task::spawn_blocking(move || x11::handle_x11(proxy));
             },
             Ok(DisplayServer::Wayland) => {
                 info!("Detected Wayland server");
                 if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
                     info!("Using sway socket: {sway_socket}");
-                    tauri::async_runtime::spawn(async { sway::handle_sway(window_event_sender, sway_socket).await });
+                    tokio::spawn(async { sway::handle_sway(proxy, sway_socket).await });
                 } else {
                     error!("Unknown wayland compositor");
                 }
