@@ -442,6 +442,7 @@ SuggestionColor* parse_suggestion_color_zsh_autosuggest(const char* str, color_s
         // custom zsh logic - try 256 indexed colors first.
         char* end;
         extern int errno;
+        errno = 0;
         long index = strtoul(color_name, &end, 10);
         bool index_supported = color_support == 0 ? index < 16 : index < 256;
         if (color_name != end && errno == 0 && index_supported) {

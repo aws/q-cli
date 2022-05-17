@@ -572,7 +572,7 @@ impl Credentials {
     }
 
     /// Clear the values of the credentials
-    pub fn clear_cridentials(&mut self) {
+    pub fn clear_credentials(&mut self) {
         self.email = None;
         self.access_token = None;
         self.id_token = None;

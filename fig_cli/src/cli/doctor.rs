@@ -481,8 +481,8 @@ impl DoctorCheck for FigIntegrationsCheck {
                     reason: "Figterm is not running".into(),
                     info: vec![
                         format!(
-                            "FIG_INTEGRATION_VERISON={:?}",
-                            std::env::var_os("FIG_INTEGRATION_VERISON")
+                            "FIG_INTEGRATION_VERSION={:?}",
+                            std::env::var_os("FIG_INTEGRATION_VERSION")
                         )
                         .into(),
                     ],

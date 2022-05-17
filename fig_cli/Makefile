@@ -113,3 +113,6 @@ clean:
 	command -v cargo &>/dev/null && cargo clean
 	rm -rf $(BUILT_PRODUCTS_DIR)
 
+### Install for xcode
+install: all
+

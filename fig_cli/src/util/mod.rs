@@ -1,3 +1,4 @@
+pub mod api;
 pub mod backoff;
 pub mod checksum;
 pub mod shell;

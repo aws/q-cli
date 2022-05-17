@@ -24,7 +24,7 @@ else
 fi
 
 # Construct Operating System Command.
-function fig_osc { printf "\033]697;$1\007" "${@:2}" }
+function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
 
 function __fig_preexec() {
   fig_osc PreExec
@@ -80,11 +80,9 @@ function __fig_pre_prompt () {
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
 
   # Check if we have a new dotfiles to load
-  if command -v fig >/dev/null 2>&1; then
-    if fig _ prompt-dotfiles-changed; then
-      unset FIG_DOTFILES_SOURCED
-      exec bash
-    fi
+  if command -v fig >/dev/null 2>&1 && fig _ prompt-dotfiles-changed; then
+    unset FIG_DOTFILES_SOURCED
+    exec bash
   fi
 }
 
@@ -170,7 +168,7 @@ __fig_reset_hooks() {
 # We also need to ensure Warp is not running
 # since they expect any plugins to not include
 # it again
-if [[ ! "${TERM_PROGRAM}" = WarpTerminal ]]; then
+if [[ "${TERM_PROGRAM}" != "WarpTerminal" ]]; then
   __bp_install_after_session_init
 fi
 __fig_reset_hooks
