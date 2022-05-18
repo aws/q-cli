@@ -114,7 +114,7 @@ jobs:
 # Install Build Tools
 ############################################
       - name: Setup Node Environment
-        uses: actions/setup-node@v1
+        uses: actions/setup-node@v3
 
 ############################################
 # Generate Protobuf Artifacts
