@@ -12,7 +12,6 @@ use serde_json::{
     Value,
 };
 use tokio::io::AsyncWriteExt;
-use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     trace,
     warn,
@@ -109,7 +108,7 @@ pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Pat
                     0x80000003 => match payload.get("change") {
                         Some(Value::String(event)) if event == "focus" => {
                             if let Some(Value::Object(container)) = payload.get("container") {
-                                let geometey = match container.get("geometry") {
+                                let _geometey = match container.get("geometry") {
                                     Some(Value::Object(geometry)) => {
                                         let x = geometry.get("x").and_then(|x| x.as_i64());
                                         let y = geometry.get("y").and_then(|y| y.as_i64());

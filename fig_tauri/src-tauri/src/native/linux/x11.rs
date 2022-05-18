@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 
-use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     debug,
     error,
@@ -12,9 +11,7 @@ use x11rb::connection::Connection;
 use x11rb::properties::WmClass;
 use x11rb::protocol::xproto::{
     get_atom_name,
-    get_geometry,
     get_input_focus,
-    query_tree,
     ChangeWindowAttributesAux,
     ChangeWindowAttributesRequest,
     EventMask,
@@ -25,21 +22,17 @@ use x11rb::protocol::xproto::{
 use x11rb::protocol::Event;
 use x11rb::rust_connection::RustConnection;
 
-use crate::window::FigWindowEvent;
+use crate::window::{
+    CursorPositionKind,
+    FigWindowEvent,
+};
 use crate::{
     FigEvent,
     AUTOCOMPLETE_ID,
 };
 
-static WMCLASS_WHITELSIT: &[&str] = &[
-    "Gnome-terminal",
-    "konsole",
-    "Alacritty",
-    "kitty",
-    "code - insiders",
-    "Code - Insiders",
-    "jetbrains-idea-ce",
-];
+static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal"];
+pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
 pub fn handle_x11(proxy: EventLoopProxy<FigEvent>) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
@@ -127,17 +120,19 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, windo
         return Ok(());
     }
 
-    let mut frame = window;
-    let query = query_tree(conn, window)?.reply()?;
-    let root = query.root;
-    let mut parent = query.parent;
+    // TODO(mia): get the geometry and subscribe to changes
 
-    while parent != root {
-        frame = parent;
-        parent = query_tree(conn, frame)?.reply()?.parent;
-    }
+    // let mut frame = window;
+    // let query = query_tree(conn, window)?.reply()?;
+    // let root = query.root;
+    // let mut parent = query.parent;
 
-    let geometry = get_geometry(conn, frame)?.reply()?;
+    // while parent != root {
+    //     frame = parent;
+    //     parent = query_tree(conn, frame)?.reply()?.parent;
+    // }
+
+    // let geometry = get_geometry(conn, frame)?.reply()?;
 
     // proxy.send_event(FigEvent::WindowEvent {
     //    fig_id: AUTOCOMPLETE_ID.clone(),

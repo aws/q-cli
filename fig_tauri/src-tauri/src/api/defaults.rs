@@ -33,7 +33,7 @@ pub async fn get(request: GetDefaultsPropertyRequest) -> RequestResult {
             match value.get_mut(key).map(|v| v.take()).unwrap_or(Value::Null) {
                 Value::Null => Some(Type::Null(true)),
                 Value::Bool(b) => Some(Type::Boolean(b)),
-                Value::Number(i) => i.as_i64().map(|i| Type::Integer(i)),
+                Value::Number(i) => i.as_i64().map(Type::Integer),
                 Value::String(s) => Some(Type::String(s)),
                 _ => None,
             }

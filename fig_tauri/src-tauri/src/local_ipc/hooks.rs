@@ -21,7 +21,9 @@ use fig_proto::local::{
     PromptHook,
 };
 use fig_proto::prost::Message;
-use tracing::debug;
+use tracing::{
+    debug,
+};
 use wry::application::event_loop::EventLoopProxy;
 
 use crate::figterm::{
@@ -133,29 +135,29 @@ pub async fn caret_position(
     proxy
         .send_event(FigEvent::WindowEvent {
             fig_id: AUTOCOMPLETE_ID.clone(),
-            window_event: FigWindowEvent::UpdateCaret { x, y, width, height },
+            window_event: FigWindowEvent::Reanchor { x, y },
         })
         .unwrap();
 
-    // proxy
-    //    .send_event(FigEvent::WindowEvent {
-    //        fig_id: AUTOCOMPLETE_ID.clone(),
-    //        window_event: FigWindowEvent::Reanchor { x, y },
-    //    })
-    //    .unwrap();
+    Ok(())
+}
+
+pub async fn prompt(_hook: PromptHook) -> Result<()> {
+    Ok(())
+}
+
+pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy<FigEvent>) -> Result<()> {
+    proxy
+        .send_event(FigEvent::WindowEvent {
+            fig_id: AUTOCOMPLETE_ID.clone(),
+            window_event: FigWindowEvent::Hide,
+        })
+        .unwrap();
 
     Ok(())
 }
 
-pub async fn prompt(hook: PromptHook) -> Result<()> {
-    Ok(())
-}
-
-pub async fn focus_change(hook: FocusChangeHook) -> Result<()> {
-    Ok(())
-}
-
-pub async fn pre_exec(hook: PreExecHook) -> Result<()> {
+pub async fn pre_exec(_hook: PreExecHook) -> Result<()> {
     Ok(())
 }
 
@@ -188,6 +190,6 @@ pub async fn intercepted_key(
     Ok(())
 }
 
-pub async fn file_changed(file_changed_hook: FileChangedHook) -> Result<()> {
+pub async fn file_changed(_file_changed_hook: FileChangedHook) -> Result<()> {
     Ok(())
 }

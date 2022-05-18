@@ -27,6 +27,16 @@ pub async fn position_window(
         proxy
             .send_event(FigEvent::WindowEvent {
                 fig_id: fig_id.clone(),
+                window_event: FigWindowEvent::Resize {
+                    width: size.width as u32,
+                    height: size.height as u32,
+                },
+            })
+            .unwrap();
+
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id,
                 window_event: FigWindowEvent::Reanchor {
                     x: anchor.x as i32,
                     y: anchor.y as i32,
@@ -34,15 +44,7 @@ pub async fn position_window(
             })
             .unwrap();
 
-        proxy
-            .send_event(FigEvent::WindowEvent {
-                fig_id: fig_id.clone(),
-                window_event: FigWindowEvent::Resize {
-                    width: size.width as u32,
-                    height: size.height as u32,
-                },
-            })
-            .unwrap();
+        // NOTE(mia): this code never restores the window on linux
 
         // Workaround to nonapplicably zero sized windows
         // match size.width == 1.0 || size.height == 1.0 {

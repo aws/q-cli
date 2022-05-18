@@ -1,14 +1,23 @@
 use parking_lot::RwLock;
 use tokio::sync::mpsc::UnboundedSender;
-use tracing::debug;
 use wry::application::dpi::{
     PhysicalPosition,
     PhysicalSize,
     Position,
+    Size,
 };
 use wry::webview::WebView;
 
-use crate::FigId;
+use crate::{
+    native,
+    FigId,
+};
+
+#[allow(unused)]
+pub enum CursorPositionKind {
+    Absolute,
+    Relative,
+}
 
 #[derive(Debug)]
 pub enum FigWindowEvent {
@@ -54,44 +63,88 @@ impl WindowState {
                 let position = self.position.read();
                 let caret_position = self.caret_position.read();
                 *self.anchor.write() = PhysicalPosition { x, y };
-                self.webview
-                    .window()
-                    .set_outer_position(Position::Physical(PhysicalPosition {
-                        x: x + position.x + caret_position.x,
-                        y: y + position.y + caret_position.y,
-                    }))
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: caret_position.x + position.x,
+                                y: caret_position.y + position.y,
+                            }))
+                    },
+                    CursorPositionKind::Relative => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: x + caret_position.x + position.x,
+                                y: y + caret_position.y + position.y,
+                            }))
+                    },
+                }
             },
             FigWindowEvent::Reposition { x, y } => {
-                let anchor = self.anchor.read();
                 let caret_position = self.caret_position.read();
                 *self.position.write() = PhysicalPosition {
                     x: caret_position.x,
                     y: caret_position.y,
                 };
-                debug!(
-                    "x {x} y {y} anchor.x {} anchor.y {} caret_position.x {} caret_position.y {}",
-                    anchor.x, anchor.y, caret_position.x, caret_position.y
-                );
-                self.webview
-                    .window()
-                    .set_outer_position(Position::Physical(PhysicalPosition {
-                        x: caret_position.x,
-                        y: caret_position.y,
-                    }))
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: x + caret_position.x,
+                                y: y + caret_position.y,
+                            }))
+                    },
+                    CursorPositionKind::Relative => {
+                        let anchor = self.anchor.read();
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: anchor.x + caret_position.x + x,
+                                y: anchor.y + caret_position.y + y,
+                            }))
+                    },
+                }
             },
             FigWindowEvent::UpdateCaret { x, y, width, height } => {
-                let anchor = PhysicalPosition { x, y };
                 let position = self.position.read();
                 *self.caret_position.write() = PhysicalPosition { x, y };
                 *self.caret_size.write() = PhysicalSize { width, height };
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: x + position.x,
+                                y: y + position.y,
+                            }))
+                    },
+                    CursorPositionKind::Relative => {
+                        let anchor = PhysicalPosition { x, y };
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: anchor.x + x + position.x,
+                                y: anchor.y + y + position.y,
+                            }))
+                    },
+                }
+            },
+            FigWindowEvent::Resize { width, height } => self
+                .webview
+                .window()
+                .set_min_inner_size(Some(PhysicalSize { width, height })),
+            FigWindowEvent::Hide => {
+                self.webview.window().set_visible(false);
                 self.webview
                     .window()
-                    .set_outer_position(Position::Physical(PhysicalPosition { x, y }))
+                    .set_min_inner_size(Some(Size::Physical(PhysicalSize { width: 1, height: 1 })));
+                self.webview
+                    .window()
+                    .set_inner_size(Size::Physical(PhysicalSize { width: 1, height: 1 }));
             },
-            FigWindowEvent::Resize { width, height } => {
-                self.webview.window().set_inner_size(PhysicalSize { width, height })
-            },
-            FigWindowEvent::Hide => self.webview.window().set_visible(false),
             FigWindowEvent::Show => {
                 self.webview.window().set_visible(true);
                 self.webview.window().set_always_on_top(true);

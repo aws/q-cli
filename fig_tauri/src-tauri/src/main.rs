@@ -27,7 +27,6 @@ use window::{
     FigWindowEvent,
     WindowState,
 };
-use wry::application::dpi::PhysicalSize;
 use wry::application::event::{
     Event,
     StartCause,
@@ -211,7 +210,7 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
         .with_title("Fig Mission Control")
         .with_always_on_top(true)
         .with_visible(false)
-        .build(&event_loop)?;
+        .build(event_loop)?;
 
     let proxy = event_loop.create_proxy();
 
@@ -243,7 +242,7 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
         .with_resizable(false)
         .with_always_on_top(true)
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
-        .build(&event_loop)?;
+        .build(event_loop)?;
 
     let proxy = event_loop.create_proxy();
 
@@ -272,10 +271,10 @@ async fn main() {
 
     let mut webview_manager = WebviewManager::new();
     webview_manager
-        .build_webview(MISSION_CONTROL_ID.into(), build_mission_control)
+        .build_webview(MISSION_CONTROL_ID, build_mission_control)
         .unwrap();
     webview_manager
-        .build_webview(AUTOCOMPLETE_ID.into(), build_autocomplete)
+        .build_webview(AUTOCOMPLETE_ID, build_autocomplete)
         .unwrap();
 
     webview_manager.run().await.unwrap();

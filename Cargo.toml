@@ -4,8 +4,7 @@ members = [
     "fig_ibus_engine",
     "fig_tauri/src-tauri",
     "figterm",
-    "rust-lib/*",
-    "rust-lib/ibus/ibus-sys",
+    "rust-lib/*"
 ]
 
 default-members = [

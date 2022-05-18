@@ -63,13 +63,6 @@ pub fn get_fig_socket_path() -> PathBuf {
     }
 }
 
-/// Get path to "$TMPDIR/fig_linux.socket"
-pub fn get_fig_linux_socket_path() -> PathBuf {
-    [std::env::temp_dir().as_path(), Path::new("fig_linux.socket")]
-        .into_iter()
-        .collect()
-}
-
 /// Connect to a system socket with a timeout
 pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream> {
     let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket.as_ref())).await {

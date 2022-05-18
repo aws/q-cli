@@ -37,8 +37,7 @@ fn subscribe(
         return RequestResult::error("Cannot subscribe to 'all' notification type");
     }
 
-    let mut entry = state.subscriptions.entry(fig_id).or_default();
-
+    let entry = state.subscriptions.entry(fig_id).or_default();
     if entry.contains_key(&notification_type) {
         return RequestResult::error(format!("Already subscribed to notification type {notification_type:?}",));
     }

@@ -10,6 +10,8 @@ use wry::application::event_loop::EventLoopProxy;
 
 use crate::FigEvent;
 
+pub use x11::CURSOR_POSITION_KIND;
+
 #[derive(Debug)]
 pub struct NativeState;
 
