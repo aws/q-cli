@@ -31,7 +31,15 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal", "konsole", "Alacritty", "kitty", "code - insiders", "Code - Insiders","jetbrains-idea-ce"];
+static WMCLASS_WHITELSIT: &[&str] = &[
+    "Gnome-terminal",
+    "konsole",
+    "Alacritty",
+    "kitty",
+    "code - insiders",
+    "Code - Insiders",
+    "jetbrains-idea-ce",
+];
 
 pub fn handle_x11(proxy: EventLoopProxy<FigEvent>) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
