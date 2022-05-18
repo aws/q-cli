@@ -32,10 +32,14 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WINEVENT_SKIPOWNPROCESS,
 };
 
-use crate::window::WindowEvent;
+use crate::window::{
+    CursorPositionKind,
+    WindowEvent,
+};
 
 pub const SHELL: &str = "wsl";
 pub const SHELL_ARGS: [&str; 0] = [];
+pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relative;
 
 static UNMANAGED: Lazy<Unmanaged> = unsafe {
     Lazy::new(|| Unmanaged {

@@ -23,9 +23,13 @@ use x11rb::protocol::xproto::{
 use x11rb::protocol::Event;
 use x11rb::rust_connection::RustConnection;
 
-use crate::window::WindowEvent;
+use crate::window::{
+    CursorPositionKind,
+    WindowEvent,
+};
 
 static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal"];
+pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
 #[derive(Debug)]
 pub struct NativeState;
@@ -117,17 +121,19 @@ fn process_window(conn: &RustConnection, sender: &UnboundedSender<WindowEvent>, 
         return Ok(());
     }
 
-    let mut frame = window;
-    let query = query_tree(conn, window)?.reply()?;
-    let root = query.root;
-    let mut parent = query.parent;
+    // TODO(mia): get the geometry and subscribe to changes
 
-    while parent != root {
-        frame = parent;
-        parent = query_tree(conn, frame)?.reply()?.parent;
-    }
+    // let mut frame = window;
+    // let query = query_tree(conn, window)?.reply()?;
+    // let root = query.root;
+    // let mut parent = query.parent;
 
-    let geometry = get_geometry(conn, frame)?.reply()?;
+    // while parent != root {
+    //     frame = parent;
+    //     parent = query_tree(conn, frame)?.reply()?.parent;
+    // }
+
+    // let geometry = get_geometry(conn, frame)?.reply()?;
 
     // sender.send(WindowEvent::Reposition {
     //     x: geometry.x as i32,

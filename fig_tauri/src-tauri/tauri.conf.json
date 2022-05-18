@@ -53,9 +53,9 @@
     "windows": [
       {
         "label": "autocomplete",
-        "width": 400,
-        "height": 400,
-        "resizable": false,
+        "width": 1,
+        "height": 1,
+        "resizable": true,
         "fullscreen": false,
         "decorations": false,
         "skipTaskbar": true,

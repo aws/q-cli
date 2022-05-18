@@ -1,5 +1,7 @@
 use std::sync::Arc;
+use std::time::Duration;
 
+use gtk::traits::GtkWindowExt;
 use parking_lot::RwLock;
 use tauri::{
     PhysicalPosition,
@@ -12,7 +14,15 @@ use tokio::sync::mpsc::{
     UnboundedReceiver,
     UnboundedSender,
 };
-use tracing::debug;
+use tracing::info;
+
+use crate::native;
+
+#[allow(unused)]
+pub enum CursorPositionKind {
+    Absolute,
+    Relative,
+}
 
 #[derive(Debug)]
 pub enum WindowEvent {
@@ -60,35 +70,60 @@ pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEve
                 let position = state.position.read();
                 let caret_position = state.caret_position.read();
                 *state.anchor.write() = PhysicalPosition { x, y };
-                window.set_position(Position::Physical(PhysicalPosition {
-                    x: x + position.x + caret_position.x,
-                    y: y + position.y + caret_position.y,
-                }))
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => window.set_position(Position::Physical(PhysicalPosition {
+                        x: caret_position.x + position.x,
+                        y: caret_position.y + position.y,
+                    })),
+                    CursorPositionKind::Relative => window.set_position(Position::Physical(PhysicalPosition {
+                        x: x + caret_position.x + position.x,
+                        y: y + caret_position.y + position.y,
+                    })),
+                }
             },
             WindowEvent::Reposition { x, y } => {
-                let anchor = state.anchor.read();
                 let caret_position = state.caret_position.read();
                 *state.position.write() = PhysicalPosition {
                     x: caret_position.x,
                     y: caret_position.y,
                 };
-                debug!(
-                    "x {x} y {y} anchor.x {} anchor.y {} caret_position.x {} caret_position.y {}",
-                    anchor.x, anchor.y, caret_position.x, caret_position.y
-                );
-                window.set_position(Position::Physical(PhysicalPosition {
-                    x: caret_position.x,
-                    y: caret_position.y,
-                }))
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => window.set_position(Position::Physical(PhysicalPosition {
+                        x: x + caret_position.x,
+                        y: y + caret_position.y,
+                    })),
+                    CursorPositionKind::Relative => {
+                        let anchor = state.anchor.read();
+
+                        window.set_position(Position::Physical(PhysicalPosition {
+                            x: anchor.x + caret_position.x + x,
+                            y: anchor.y + caret_position.y + y,
+                        }))
+                    },
+                }
             },
             WindowEvent::UpdateCaret { x, y, width, height } => {
-                let anchor = PhysicalPosition { x, y };
                 let position = state.position.read();
                 *state.caret_position.write() = PhysicalPosition { x, y };
                 *state.caret_size.write() = PhysicalSize { width, height };
-                window.set_position(Position::Physical(PhysicalPosition { x, y }))
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => window.set_position(Position::Physical(PhysicalPosition {
+                        x: x + position.x,
+                        y: y + position.y,
+                    })),
+                    CursorPositionKind::Relative => {
+                        let anchor = PhysicalPosition { x, y };
+
+                        window.set_position(Position::Physical(PhysicalPosition {
+                            x: anchor.x + x + position.x,
+                            y: anchor.y + y + position.y,
+                        }))
+                    },
+                }
             },
-            WindowEvent::Resize { width, height } => window.set_size(Size::Physical(PhysicalSize { width, height })),
+            WindowEvent::Resize { width, height } => {
+                window.set_size(Size::Physical(PhysicalSize { width, height }))
+            },
             WindowEvent::Hide => window.hide(),
             WindowEvent::Show => window.show().and_then(|_| window.set_always_on_top(true)),
             WindowEvent::Emit { event, payload } => window.emit(event, payload),

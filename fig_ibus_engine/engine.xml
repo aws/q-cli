@@ -1,20 +1,20 @@
-<!-- This file will eventually be installed so that it will run the engine automatically. Make sure the installer sets the exec field correctly! -->
 <?xml version="1.0" encoding="utf-8" ?>
 <component>
-    <name>org.freedesktop.IBus.FigIBusEngine</name>
-    <description>Fig integration for the IBus input method</description>
+    <name>org.freedesktop.IBus.Fig</name>
+    <description>Fig IBus integration component</description>
     <version>0.1.0</version>
-    <license></license>
+    <license>MIT</license>
     <author>Fig</author>
     <homepage>https://fig.io</homepage>
-    <exec>/home/mia/Fig/macos/target/debug/fig_ibus_engine</exec>
+    <exec>~/.fig/bin/fig_ibus_engine</exec>
     <textdomain></textdomain>
     <engines>
         <engine>
-            <name>FigIBusEngine</name>
+            <name>fig</name>
             <longname>Fig IBus Engine</longname>
-            <description>Fig integration for the IBus input method</description>
+            <description>Fig IBus integration engine</description>
             <author>Fig</author>
+            <license>MIT</license>
         </engine>
     </engines>
 </component>

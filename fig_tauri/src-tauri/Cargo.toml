@@ -35,6 +35,7 @@ shellexpand = "2.1.0"
 tauri = { version = "1.0.0-rc.8", features = ["api-all", "devtools", "gtk-tray", "macos-private-api", "system-tray"] }
 tokio = { version = "1.18.0", features = [ "rt", "rt-multi-thread", "sync", "fs", "io-util" ] } # same version as tauri
 tracing = "0.1.34"
+gtk = { version = "0.15", features = [ "v3_22" ] }
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.36.1", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_UI_WindowsAndMessaging", "Win32_UI_Accessibility", "Win32_System_Ole", "Win32_Graphics_Gdi"] }

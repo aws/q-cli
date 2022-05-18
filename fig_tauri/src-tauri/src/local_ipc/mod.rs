@@ -128,13 +128,13 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
             Some(LocalMessageType::Hook(hook)) => {
                 use fig_proto::local::hook::Hook;
 
-                match hook.hook {
+                if let Err(err) = match hook.hook {
                     Some(Hook::EditBuffer(request)) => {
                         hooks::edit_buffer(request, figterm_state.clone(), &notification_state, &window_state).await
                     },
                     Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &window_state).await,
                     Some(Hook::Prompt(request)) => hooks::prompt(request).await,
-                    Some(Hook::FocusChange(request)) => hooks::focus_change(request).await,
+                    Some(Hook::FocusChange(request)) => hooks::focus_change(request, &window_state).await,
                     Some(Hook::PreExec(request)) => hooks::pre_exec(request).await,
                     Some(Hook::InterceptedKey(request)) => {
                         hooks::intercepted_key(request, &notification_state, &window_state).await
@@ -147,8 +147,9 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
 
                         Err(anyhow!("Failed to process hook {err:?}"))
                     },
+                } {
+                    error!("Error processing hook: {err:?}");
                 }
-                .unwrap();
             },
             None => warn!("Received empty local message"),
         }

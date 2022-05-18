@@ -18,15 +18,17 @@ pub async fn position_window(request: PositionWindowRequest, state: &WindowState
         let anchor = request.anchor.expect("Missing anchor field");
         let size = request.size.as_ref().expect("Missing size field");
 
+        state.send_event(WindowEvent::Resize {
+            width: size.width as u32,
+            height: size.height as u32,
+        });
+
         state.send_event(WindowEvent::Reanchor {
             x: anchor.x as i32,
             y: anchor.y as i32,
         });
 
-        state.send_event(WindowEvent::Resize {
-            width: size.width as u32,
-            height: size.height as u32,
-        });
+        // NOTE(mia): this code never restores the window on linux
 
         // Workaround to nonapplicably zero sized windows
         // match size.width == 1.0 || size.height == 1.0 {

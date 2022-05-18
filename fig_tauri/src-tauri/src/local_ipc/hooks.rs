@@ -20,7 +20,10 @@ use fig_proto::local::{
     PromptHook,
 };
 use fig_proto::prost::Message;
-use tracing::debug;
+use tracing::{
+    debug,
+    warn,
+};
 
 use crate::figterm::{
     ensure_figterm,
@@ -123,7 +126,7 @@ pub async fn caret_position(hook: CursorPositionHook, state: &WindowState) -> Re
         height: hook.height,
     });
 
-    // state.send_event(WindowEvent::Reanchor { x: hook.x, y: hook.y });
+    state.send_event(WindowEvent::Reanchor { x: hook.x, y: hook.y });
 
     Ok(())
 }
@@ -132,7 +135,9 @@ pub async fn prompt(hook: PromptHook) -> Result<()> {
     Ok(())
 }
 
-pub async fn focus_change(hook: FocusChangeHook) -> Result<()> {
+pub async fn focus_change(_: FocusChangeHook, state: &WindowState) -> Result<()> {
+    state.send_event(WindowEvent::Hide);
+
     Ok(())
 }
 
