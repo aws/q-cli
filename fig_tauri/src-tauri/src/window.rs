@@ -122,9 +122,11 @@ pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEve
                 }
             },
             WindowEvent::Resize { width, height } => {
-                window.set_size(Size::Physical(PhysicalSize { width, height }))
+                window.set_min_size(Some(Size::Physical(PhysicalSize { width, height })))
             },
-            WindowEvent::Hide => window.hide(),
+            WindowEvent::Hide => window
+                .hide()
+                .and_then(|_| window.set_min_size(Some(Size::Physical(PhysicalSize { width: 1, height: 1 })))),
             WindowEvent::Show => window.show().and_then(|_| window.set_always_on_top(true)),
             WindowEvent::Emit { event, payload } => window.emit(event, payload),
         }
