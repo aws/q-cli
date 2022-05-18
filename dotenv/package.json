@@ -31,7 +31,7 @@
     "@jest/globals": "^27.3.1",
     "@jest/reporters": "^27.3.1",
     "@jest/test-result": "^27.3.1",
-    "@jest/types": "^27.2.5",
+    "@jest/types": "^28.1.0",
     "@types/jest": "^27.0.2",
     "@types/js-yaml": "^4.0.4",
     "@types/long": "^4.0.1",
