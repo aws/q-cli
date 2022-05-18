@@ -462,12 +462,16 @@ async fn root_command() -> Result<()> {
             }
         } else {
             use crossterm::style::Stylize;
+            use fig_ipc::command::open_ui_element;
+            use fig_proto::local::UiElement;
 
             println!(
                 "\n→ Opening {}...\n",
                 "https://app.fig.io".magenta().underlined()
             );
-            util::open_url("https://app.fig.io").ok();
+                open_ui_element(UiElement::MissionControl)
+                    .await
+                    .context("\nCould not launch fig\n")?;
         }
     }
 

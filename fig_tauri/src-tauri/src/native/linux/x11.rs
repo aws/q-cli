@@ -2,6 +2,7 @@ use std::borrow::Cow;
 
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
+    debug,
     error,
     info,
     trace,
@@ -30,7 +31,7 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal"];
+static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal", "konsole", "Alacritty", "kitty", "code - insiders", "Code - Insiders","jetbrains-idea-ce"];
 
 pub fn handle_x11(proxy: EventLoopProxy<FigEvent>) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
@@ -92,12 +93,13 @@ fn handle_property_event(
 fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, window: Window) -> anyhow::Result<()> {
     let wm_class = match WmClass::get(conn, window)?.reply() {
         Ok(class_raw) => String::from_utf8_lossy(class_raw.class()).into_owned(),
-        Err(_) => {
+        Err(err) => {
+            debug!("No wm class {err:?}");
             // hide if missing wm class
-            proxy.send_event(FigEvent::WindowEvent {
-                fig_id: AUTOCOMPLETE_ID.clone(),
-                window_event: FigWindowEvent::Hide,
-            })?;
+            // proxy.send_event(FigEvent::WindowEvent {
+            //    fig_id: AUTOCOMPLETE_ID.clone(),
+            //    window_event: FigWindowEvent::Hide,
+            //})?;
             return Ok(());
         },
     };
@@ -129,10 +131,13 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, windo
 
     let geometry = get_geometry(conn, frame)?.reply()?;
 
-    // sender.send(WindowEvent::Reposition {
-    //     x: geometry.x as i32,
-    //     y: geometry.y as i32,
-    // })?;
+    // proxy.send_event(FigEvent::WindowEvent {
+    //    fig_id: AUTOCOMPLETE_ID.clone(),
+    //    window_event: FigWindowEvent::Reposition {
+    //        x: geometry.x as i32,
+    //        y: geometry.y as i32,
+    //    },
+    //})?;
 
     proxy.send_event(FigEvent::WindowEvent {
         fig_id: AUTOCOMPLETE_ID.clone(),

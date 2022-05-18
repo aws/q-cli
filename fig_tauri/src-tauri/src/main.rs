@@ -2,7 +2,7 @@
 
 mod api;
 mod figterm;
-// mod icons;
+mod icons;
 mod local_ipc;
 mod native;
 mod tray;
@@ -27,6 +27,7 @@ use window::{
     FigWindowEvent,
     WindowState,
 };
+use wry::application::dpi::PhysicalSize;
 use wry::application::event::{
     Event,
     StartCause,
@@ -36,6 +37,7 @@ use wry::application::event_loop::{
     ControlFlow,
     EventLoop,
 };
+use wry::application::platform::unix::WindowBuilderExtUnix;
 use wry::application::window::{
     WindowBuilder,
     WindowId,
@@ -187,18 +189,17 @@ impl WebviewManager {
                         window_state.webview.window().set_visible(false);
                     }
                 },
-                Event::UserEvent(event) => match event {
-                    FigEvent::WindowEvent { fig_id, window_event } => match self.fig_id_map.get(&fig_id) {
-                        Some(window_state) => {
-                            window_state.handle(window_event, &api_handler_tx);
+                Event::UserEvent(event) => {
+                    debug!("Executing user event: {event:?}");
+                    match event {
+                        FigEvent::WindowEvent { fig_id, window_event } => match self.fig_id_map.get(&fig_id) {
+                            Some(window_state) => {
+                                window_state.handle(window_event, &api_handler_tx);
+                            },
+                            None => todo!(),
                         },
-                        None => todo!(),
-                    },
+                    }
                 },
-
-                // match s {
-                //    FigEvent::Api { fig_id, b64 } => tx.send((fig_id, b64)).unwrap(),
-                //},
                 _ => (),
             }
         });
@@ -209,6 +210,7 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
     let window = WindowBuilder::new()
         .with_title("Fig Mission Control")
         .with_always_on_top(true)
+        .with_visible(false)
         .build(&event_loop)?;
 
     let proxy = event_loop.create_proxy();
@@ -225,6 +227,7 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
                 .unwrap();
         })
         .with_devtools(true)
+        .with_navigation_handler(|url| url.starts_with("http://localhost") || url.starts_with("https://app.fig.io"))
         .with_initialization_script(JAVASCRIPT_INIT)
         .build()?;
 
@@ -234,7 +237,12 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
 fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> {
     let window = WindowBuilder::new()
         .with_title("Fig Autocomplete")
+        .with_transparent(true)
+        .with_decorations(false)
+        .with_skip_taskbar(true)
+        .with_resizable(false)
         .with_always_on_top(true)
+        //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(&event_loop)?;
 
     let proxy = event_loop.create_proxy();
@@ -249,10 +257,10 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
                 })
                 .unwrap();
         })
+        .with_custom_protocol("fig".into(), icons::handle)
         .with_devtools(true)
         .with_initialization_script(JAVASCRIPT_INIT)
         .with_transparent(true)
-        .with_visible(true)
         .build()?;
 
     Ok(webview)

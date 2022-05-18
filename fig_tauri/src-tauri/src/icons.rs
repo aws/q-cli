@@ -10,6 +10,12 @@ use tracing::{
     trace,
 };
 use url::Url;
+use wry::http::status::StatusCode;
+use wry::http::{
+    Request,
+    Response,
+    ResponseBuilder,
+};
 
 static ASSETS: Lazy<HashMap<&str, Bytes>> = Lazy::new(|| {
     let mut map = HashMap::new();
@@ -34,39 +40,27 @@ static ASSETS: Lazy<HashMap<&str, Bytes>> = Lazy::new(|| {
     map
 });
 
-trait ResponseWith {
-    fn with_status(self, status: StatusCode) -> Self;
-    fn with_mimetype(self, mimetype: &'static str) -> Self;
-}
-
-impl ResponseWith for HttpResponse {
-    fn with_status(mut self, status: StatusCode) -> Self {
-        self.set_status(status);
-        self
-    }
-
-    fn with_mimetype(mut self, mimetype: &'static str) -> Self {
-        self.set_mimetype(Some(mimetype.to_string()));
-        self
-    }
-}
-
-fn build_asset(name: &str) -> HttpResponse {
+fn build_asset(name: &str) -> Response {
     trace!("building response for asset {}", name);
-    HttpResponse::new(
-        ASSETS
-            .get(name)
-            .unwrap_or_else(|| ASSETS.get("template").unwrap())
-            .to_vec(),
-    )
-    .with_mimetype("image/png")
+
+    ResponseBuilder::new()
+        .status(StatusCode::OK)
+        .mimetype("image/png")
+        .header("Access-Control-Allow-Origin", "*")
+        .body(
+            ASSETS
+                .get(name)
+                .unwrap_or_else(|| ASSETS.get("template").unwrap())
+                .to_vec(),
+        )
+        .unwrap()
 }
 
-fn build_default() -> HttpResponse {
+fn build_default() -> Response {
     build_asset("template")
 }
 
-pub fn handle<R: Runtime>(_: &AppHandle<R>, request: &HttpRequest) -> Result<HttpResponse, Box<dyn std::error::Error>> {
+pub fn handle(request: &Request) -> wry::Result<Response> {
     debug!("request for fig://{} over fig protocol", request.uri());
     let url = Url::parse(request.uri())?;
     let domain = url.domain();

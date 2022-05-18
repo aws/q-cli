@@ -57,13 +57,15 @@ pub async fn send_notification(
         let mut encoded = BytesMut::new();
         message.encode(&mut encoded).unwrap();
 
-        proxy.send_event(FigEvent::WindowEvent {
-            fig_id: sub.key().clone(),
-            window_event: FigWindowEvent::Emit {
-                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
-                payload: base64::encode(encoded),
-            },
-        });
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id: sub.key().clone(),
+                window_event: FigWindowEvent::Emit {
+                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    payload: base64::encode(encoded),
+                },
+            })
+            .unwrap()
     }
 
     Ok(())
@@ -108,13 +110,15 @@ pub async fn edit_buffer(
         let mut encoded = BytesMut::new();
         message.encode(&mut encoded).unwrap();
 
-        proxy.send_event(FigEvent::WindowEvent {
-            fig_id: sub.key().clone(),
-            window_event: FigWindowEvent::Emit {
-                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
-                payload: base64::encode(encoded),
-            },
-        });
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id: sub.key().clone(),
+                window_event: FigWindowEvent::Emit {
+                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    payload: base64::encode(encoded),
+                },
+            })
+            .unwrap();
     }
 
     Ok(())
@@ -124,15 +128,21 @@ pub async fn caret_position(
     CursorPositionHook { x, y, width, height }: CursorPositionHook,
     proxy: &EventLoopProxy<FigEvent>,
 ) -> Result<()> {
-    proxy.send_event(FigEvent::WindowEvent {
-        fig_id: AUTOCOMPLETE_ID.clone(),
-        window_event: FigWindowEvent::UpdateCaret { x, y, width, height },
-    });
+    debug!("Cursor Position: {x} {y} {width} {height}");
 
-    proxy.send_event(FigEvent::WindowEvent {
-        fig_id: AUTOCOMPLETE_ID.clone(),
-        window_event: FigWindowEvent::Reanchor { x, y },
-    });
+    proxy
+        .send_event(FigEvent::WindowEvent {
+            fig_id: AUTOCOMPLETE_ID.clone(),
+            window_event: FigWindowEvent::UpdateCaret { x, y, width, height },
+        })
+        .unwrap();
+
+    // proxy
+    //    .send_event(FigEvent::WindowEvent {
+    //        fig_id: AUTOCOMPLETE_ID.clone(),
+    //        window_event: FigWindowEvent::Reanchor { x, y },
+    //    })
+    //    .unwrap();
 
     Ok(())
 }

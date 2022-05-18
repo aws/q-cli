@@ -17,6 +17,7 @@ use tokio::io::{
     AsyncWrite,
 };
 use tracing::{
+    debug,
     error,
     trace,
     warn,
@@ -85,9 +86,15 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
 
                         match command {
                             DebugMode(command) => commands::debug(command).await.unwrap_or_else(|r| r),
-                            _ => LocalResponse::Error {
-                                code: None,
-                                message: Some("Unknown command".to_owned()),
+                            OpenUiElement(command) => {
+                                commands::open_ui_element(command, &proxy).await.unwrap_or_else(|r| r)
+                            },
+                            command => {
+                                debug!("Unhandled command: {command:?}");
+                                LocalResponse::Error {
+                                    code: None,
+                                    message: Some("Unknown command".to_owned()),
+                                }
                             },
                         }
                     },

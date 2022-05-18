@@ -11,7 +11,7 @@ use crate::FigEvent;
 pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<()> {
     let mut tray_menu = ContextMenu::new();
     create_tray_menu(&mut tray_menu);
-    SystemTrayBuilder::new("icons/128x128.png".into(), Some(tray_menu)).build(event_loop)?;
+    SystemTrayBuilder::new("icons/32x32.png".into(), Some(tray_menu)).build(event_loop)?;
     Ok(())
 }
 
