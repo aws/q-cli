@@ -61,7 +61,7 @@ jobs:
           echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_ENV
 
       - name: "Checkout Project"
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
         with:
           submodules: recursive
       - name: "SET: BUILT_PRODUCTS_DIR"
