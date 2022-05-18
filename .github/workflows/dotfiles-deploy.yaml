@@ -68,7 +68,7 @@ jobs:
         uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
 
       - name: Compile
-        run: make build-${{matrix.build}}
+        run: make ${BINARY_NAME}-${{matrix.build}}
 
       - name: List build artifacts
         run: ls build

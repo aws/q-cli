@@ -2,6 +2,7 @@ pub mod local_state;
 
 use std::fs;
 use std::io::{
+    stdout,
     Read,
     Write,
 };
@@ -362,7 +363,6 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     ctrlc::set_handler(move || {
         crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
         std::fs::write(&file_clone, "").ok();
-
         exit(1);
     })
     .ok();
@@ -384,10 +384,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     let exit_code = match TerminalNotification::from_str(&file_content) {
         Ok(TerminalNotification::Source) => {
-            println!();
-            println!("{}", "✅ Dotfiles sourced!".bold());
-            println!();
-
+            writeln!(stdout(), "\n{}\n", "✅ Dotfiles sourced!".bold()).ok();
             0
         },
         Ok(TerminalNotification::NewUpdates) => {
@@ -448,24 +445,24 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
             if source_updates {
                 if verbosity >= UpdatedVerbosity::Minimal {
-                    println!();
-                    println!("You just updated your dotfiles in {}!", "◧ Fig".bold());
-                    println!("Automatically applying changes in this terminal.");
-                    println!();
+                    writeln!(
+                        stdout(),
+                        "\nYou just updated your dotfiles in {}!\nAutomatically applying changes in this terminal.\n",
+                        "◧ Fig".bold()
+                    )
+                    .ok();
                 }
-
                 0
             } else {
                 if verbosity == UpdatedVerbosity::Full {
-                    println!();
-                    println!("You just updated your dotfiles in {}!", "◧ Fig".bold());
-                    println!(
-                        "To apply changes run {} or open a new terminal",
+                    writeln!(
+                        stdout(),
+                        "\nYou just updated your dotfiles in {}!\nTo apply changes run {} or open a new terminal",
+                        "◧ Fig".bold(),
                         "fig source".magenta().bold()
-                    );
-                    println!();
+                    )
+                    .ok();
                 }
-
                 1
             }
         },
