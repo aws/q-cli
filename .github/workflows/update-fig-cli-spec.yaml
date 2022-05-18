@@ -14,7 +14,7 @@ jobs:
         working-directory: fig_cli
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
       - name: Setup Rust stable
         uses: actions-rs/toolchain@v1
         with:
