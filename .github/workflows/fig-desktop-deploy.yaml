@@ -1,0 +1,46 @@
+name: Fig Desktop S3 Deploy
+
+on:
+  workflow_dispatch:
+  push:
+    branches:
+      - master
+
+jobs:
+  deploy:
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Set VERSION
+        run: |
+          VERSION='0.1.0'
+          echo VERSION=$VERSION >> $GITHUB_ENV
+          echo $VERSION
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+
+      - name: Make
+        run: make
+
+      - name: "Install AWS CLI"
+        uses: chrislennon/action-aws-cli@v1.1
+        env:
+          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+
+      - name: Upload to S3 Bucket
+        run: |
+          aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-$VERSION.tar.gz
+          aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-latest.tar.gz
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
+
