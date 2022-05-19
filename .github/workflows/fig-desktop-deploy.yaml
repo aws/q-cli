@@ -16,6 +16,7 @@ jobs:
           sudo apt install \
               build-essential \
               pkg-config \
+              jq \
               dpkg \
               curl \
               wget \
@@ -34,9 +35,9 @@ jobs:
 
       - name: Set VERSION
         run: |
-          VERSION='0.1.0'
+          VERSION="$(jq -r .FIG_VERSION bundle/bundle_info.json)"
           echo VERSION=$VERSION >> $GITHUB_ENV
-          echo $VERSION
+          echo "Version: $VERSION"
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
