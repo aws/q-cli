@@ -20,9 +20,10 @@ jobs:
               libssl-dev \
               libgtk-3-dev \
               libappindicator3-dev \
+              libayatana-appindicator3-dev \
               librsvg2-dev \
               libdbus-1-dev \
-              pkg-config
+              pkg-config 
     
       - name: Checkout repository
         uses: actions/checkout@v2
