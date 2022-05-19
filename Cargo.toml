@@ -23,3 +23,8 @@ default-members = [
     "rust-lib/fig_util",
     "rust-lib/system_socket",
 ]
+
+[profile.release]
+lto = true
+codegen-units = 1
+
