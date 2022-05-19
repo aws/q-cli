@@ -13,3 +13,4 @@ parking_lot = "0.12.0"
 
 [build-dependencies]
 cc = "1.0.73"
+pkg-config = "0.3.25"

@@ -26,7 +26,8 @@ jobs:
               libdbus-1-dev \
               libwebkit2gtk-4.0-dev \
               valac \
-              libibus-1.0-dev
+              libibus-1.0-dev \
+              libglib2.0-dev
     
       - name: Checkout repository
         uses: actions/checkout@v2

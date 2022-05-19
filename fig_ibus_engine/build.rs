@@ -28,17 +28,21 @@ fn main() {
         panic!("Vala compiler exited with code {}", exit.code().unwrap());
     }
 
+    let libs = ["ibus-1.0", "glib-2.0", "gobject-2.0"];
+
     cc::Build::new()
         .flag("-w")
-        .include("/usr/include/ibus-1.0")
-        .include("/usr/include/glib-2.0")
-        .include("/usr/lib64/glib-2.0/include")
+        .includes(
+            libs.iter()
+                .flat_map(|lib| pkg_config::probe_library(lib).unwrap().include_paths),
+        )
         .out_dir(&out_dir)
         .file(out_dir.join("engine.c"))
         .compile("engine");
 
     println!("cargo:rerun-if-changed={}", vala_file);
-    println!("cargo:rustc-link-lib=ibus-1.0");
-    println!("cargo:rustc-link-lib=glib-2.0");
-    println!("cargo:rustc-link-lib=gobject-2.0");
+
+    for lib in libs {
+        println!("cargo:rustc-link-lib={lib}");
+    }
 }
