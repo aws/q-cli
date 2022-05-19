@@ -37,7 +37,7 @@
     "@types/long": "^4.0.1",
     "@types/protobufjs": "^6.0.0",
     "@types/uuid": "^8.3.1",
-    "chalk": "^4.1.2",
+    "chalk": "^5.0.1",
     "fs": "^0.0.1-security",
     "js-yaml": "^4.1.0",
     "long": "^5.1.0",
