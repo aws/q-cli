@@ -8,6 +8,7 @@ on:
 
 jobs:
   deploy:
+    runs-on: ubuntu-18.04
     steps:
       - name: Checkout repository
         uses: actions/checkout@v2
