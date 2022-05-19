@@ -27,7 +27,7 @@
   },
   "homepage": "https://github.com/withfig/dotenv#readme",
   "dependencies": {
-    "@jest/console": "^27.3.1",
+    "@jest/console": "^28.1.0",
     "@jest/globals": "^28.1.0",
     "@jest/reporters": "^28.1.0",
     "@jest/test-result": "^27.3.1",
