@@ -133,7 +133,7 @@ pub async fn caret_position(
     proxy
         .send_event(FigEvent::WindowEvent {
             fig_id: AUTOCOMPLETE_ID.clone(),
-            window_event: FigWindowEvent::Reanchor { x, y },
+            window_event: FigWindowEvent::UpdateCaret { x, y, width, height },
         })
         .unwrap();
 
