@@ -232,7 +232,7 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
         .with_transparent(true)
         .with_decorations(false)
         .with_skip_taskbar(true)
-        .with_resizable(false)
+        .with_resizable(true)
         .with_always_on_top(true)
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(event_loop)?;
