@@ -11,7 +11,9 @@ archive: fig_desktop fig figterm fig_ibus_engine
 fig_desktop:
 	$(MAKE) -C $(MAKE_DIR)/fig_tauri/src-tauri
 
-fig:
+fig: fig_cli
+
+fig_cli:
 	$(MAKE) -C $(MAKE_DIR)/$@
 
 figterm:
@@ -20,4 +22,4 @@ figterm:
 fig_ibus_engine:
 	$(MAKE) -C $(MAKE_DIR)/$@
 
-.PHONY: all figterm fig_cli fig_ibus_engine
+.PHONY: all figterm fig fig_cli fig_ibus_engine

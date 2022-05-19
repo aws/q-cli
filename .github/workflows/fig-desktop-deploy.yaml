@@ -13,8 +13,9 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install libwebkit2gtk-4.0-dev \
+          sudo apt install 
               build-essential \
+              pkg-config \
               curl \
               wget \
               libssl-dev \
@@ -23,7 +24,9 @@ jobs:
               libayatana-appindicator3-dev \
               librsvg2-dev \
               libdbus-1-dev \
-              pkg-config 
+              libwebkit2gtk-4.0-dev \
+              valac \
+              libibus-1.0-dev
     
       - name: Checkout repository
         uses: actions/checkout@v2
