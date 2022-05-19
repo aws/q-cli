@@ -5,7 +5,7 @@ $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
 all: archive
 
-archive: fig_desktop fig figterm fig_ibus_engine
+archive: fig_ibus_engine fig_desktop fig figterm
 	cd $(BUILT_PRODUCTS_DIR) &&	tar cjf fig-x86_64-linux.tar.gz $^
 
 fig_desktop:
