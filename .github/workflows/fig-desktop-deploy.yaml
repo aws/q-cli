@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           sudo apt update
-          sudo apt install 
+          sudo apt install \
               build-essential \
               pkg-config \
               curl \
