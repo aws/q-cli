@@ -292,7 +292,7 @@ class IPC: UnixSocketServerDelegate {
     case .hide:
       Autocomplete.hide()
     case .event(let hook):
-      ShellHookManager.shared.eventHook(event: hook.eventName)
+      API.notifications.post(hook.eventNotification)
     case .fileChanged(let hook):
       if hook.fileChanged == Local_FileChangedHook.FileChanged.settings {
         Settings.shared.settingsUpdated()
