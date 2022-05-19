@@ -24,6 +24,8 @@ use globset::{
 use sysinfo::{
     get_current_pid,
     ProcessExt,
+    ProcessRefreshKind,
+    RefreshKind,
     System,
     SystemExt,
 };
@@ -181,6 +183,10 @@ pub fn is_app_running() -> bool {
                 Ok(result) => !result.trim().is_empty(),
                 Err(_) => false,
             }
+        } else if #[cfg(target_os = "linux")] {
+            let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+            let mut processes = s.processes_by_exact_name("fig_desktop");
+            processes.next().is_some()
         } else {
             false
         }
@@ -247,6 +253,18 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
                 std::thread::sleep(std::time::Duration::from_millis(500));
             }
             anyhow::bail!("\nUnable to finish launching Fig properly\n")
+        } else if #[cfg(target_os = "linux")] {
+            if is_app_running() {
+                return Ok(());
+            }
+
+            if opts.verbose {
+                println!("\n→ Launching Fig...\n");
+            }
+
+            std::process::Command::new("xdg-open").arg("fig.desktop").output().context("\nUnable to launch Fig\n")?;
+
+            Ok(())
         } else {
             let _opts = opts;
             anyhow::bail!("Fig desktop can not be launched on this platform")

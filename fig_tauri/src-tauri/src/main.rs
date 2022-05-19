@@ -18,7 +18,6 @@ use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
 use parking_lot::RwLock;
-use tauri::utils::platform::current_exe;
 use tracing::{
     debug,
     error,

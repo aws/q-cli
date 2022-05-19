@@ -28,6 +28,7 @@ pub enum FigWindowEvent {
     Hide,
     Show,
     Emit { event: String, payload: String },
+    Navigate { url: url::Url },
     Api { payload: String },
 }
 
@@ -148,6 +149,11 @@ impl WindowState {
             FigWindowEvent::Show => {
                 self.webview.window().set_visible(true);
                 self.webview.window().set_always_on_top(true);
+            },
+            FigWindowEvent::Navigate { url } => {
+                self.webview
+                    .evaluate_script(&format!("window.location.href = '{url}'"))
+                    .unwrap();
             },
             FigWindowEvent::Emit { event, payload } => {
                 self.webview

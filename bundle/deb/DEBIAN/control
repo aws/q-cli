@@ -1,0 +1,8 @@
+Package: fig
+Description: Fig Autocomplete for Linux
+Maintainer: Grant Gurvis <grant@fig.io>
+Homepage: https://fig.io
+Version: 0.1.0
+Architecture: amd64
+Depends: libwebkit2gtk-4.0-37, libgtk-3-0, libappindicator3-1
+

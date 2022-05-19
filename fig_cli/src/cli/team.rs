@@ -22,24 +22,6 @@ use super::OutputFormat;
 use crate::cli::util::dialoguer_theme;
 use crate::util::api::request;
 
-// # List members on a team
-// - fig teams <team-name> members
-//
-// # Remove user from a team
-// - fig teams <team-name> remove <email>
-//
-// # Add user to a team and optionally assign a role
-// fig teams <team-name> add <email> [--role=admin|member]
-//
-// # List all teams that the user is part of
-// fig teams --list
-//
-// # Delete an existing team
-// fig teams --new <team-name>
-//
-// # Create a new team
-// fig teams --delete <team-name>
-
 #[derive(Debug, Args)]
 pub struct TeamsArgs {
     // List all teams that the user is part of

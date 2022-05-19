@@ -16,6 +16,7 @@ jobs:
           sudo apt install \
               build-essential \
               pkg-config \
+              dpkg \
               curl \
               wget \
               libssl-dev \
@@ -59,6 +60,8 @@ jobs:
         run: |
           aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-$VERSION.tar.gz
           aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-latest.tar.gz
+          aws s3 cp ./build/fig-x86_64-linux.deb    s3://get-fig-io/desktop/linux-x86_64/fig-$VERSION.deb
+          aws s3 cp ./build/fig-x86_64-linux.deb    s3://get-fig-io/desktop/linux-x86_64/fig-latest.deb
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
