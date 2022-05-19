@@ -31,7 +31,7 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal"];
+static WMCLASS_WHITELSIT: &[&str] = &["Gnome-terminal", "konsole"];
 pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
 pub fn handle_x11(proxy: EventLoopProxy<FigEvent>) {

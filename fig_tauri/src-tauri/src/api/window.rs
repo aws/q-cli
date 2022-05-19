@@ -36,7 +36,7 @@ pub async fn position_window(
 
         proxy
             .send_event(FigEvent::WindowEvent {
-                fig_id,
+                fig_id: fig_id.clone(),
                 window_event: FigWindowEvent::Reanchor {
                     x: anchor.x as i32,
                     y: anchor.y as i32,
@@ -47,24 +47,24 @@ pub async fn position_window(
         // NOTE(mia): this code never restores the window on linux
 
         // Workaround to nonapplicably zero sized windows
-        // match size.width == 1.0 || size.height == 1.0 {
-        //    true => {
-        //        proxy
-        //            .send_event(FigEvent::WindowEvent {
-        //                fig_id,
-        //                window_event: FigWindowEvent::Hide,
-        //            })
-        //            .unwrap();
-        //    },
-        //    false => {
-        //        proxy
-        //            .send_event(FigEvent::WindowEvent {
-        //                fig_id,
-        //                window_event: FigWindowEvent::Show,
-        //            })
-        //            .unwrap();
-        //    },
-        //}
+        match size.width == 1.0 || size.height == 1.0 {
+            true => {
+                proxy
+                    .send_event(FigEvent::WindowEvent {
+                        fig_id,
+                        window_event: FigWindowEvent::Hide,
+                    })
+                    .unwrap();
+            },
+            false => {
+                proxy
+                    .send_event(FigEvent::WindowEvent {
+                        fig_id,
+                        window_event: FigWindowEvent::Show,
+                    })
+                    .unwrap();
+            },
+        }
     }
 
     RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(

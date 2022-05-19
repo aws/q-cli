@@ -57,7 +57,6 @@ pub async fn api_request(
     fig_id: FigId,
     client_originated_message_b64: String,
     global_state: &GlobalState,
-    event_handler: impl Fn(FigEvent),
     proxy: &EventLoopProxy<FigEvent>,
 ) {
     let data = base64::decode(client_originated_message_b64).unwrap();
@@ -66,13 +65,15 @@ pub async fn api_request(
         Ok(message) => message,
         Err(err) => {
             warn!("Failed to decode request: {err}");
-            event_handler(FigEvent::WindowEvent {
-                fig_id,
-                window_event: FigWindowEvent::Emit {
-                    event: FIG_GLOBAL_ERROR_OCCURRED.into(),
-                    payload: "Decode error".into(),
-                },
-            });
+            proxy
+                .send_event(FigEvent::WindowEvent {
+                    fig_id,
+                    window_event: FigWindowEvent::Emit {
+                        event: FIG_GLOBAL_ERROR_OCCURRED.into(),
+                        payload: "Decode error".into(),
+                    },
+                })
+                .unwrap();
             return;
         },
     };
@@ -158,20 +159,24 @@ pub async fn api_request(
 
     let mut encoded = BytesMut::new();
     if message.encode(&mut encoded).is_err() {
-        event_handler(FigEvent::WindowEvent {
-            fig_id,
-            window_event: FigWindowEvent::Emit {
-                event: FIG_GLOBAL_ERROR_OCCURRED.into(),
-                payload: "Encode error".into(),
-            },
-        });
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id,
+                window_event: FigWindowEvent::Emit {
+                    event: FIG_GLOBAL_ERROR_OCCURRED.into(),
+                    payload: "Encode error".into(),
+                },
+            })
+            .unwrap();
     } else {
-        event_handler(FigEvent::WindowEvent {
-            fig_id,
-            window_event: FigWindowEvent::Emit {
-                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
-                payload: base64::encode(encoded),
-            },
-        });
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id,
+                window_event: FigWindowEvent::Emit {
+                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    payload: base64::encode(encoded),
+                },
+            })
+            .unwrap();
     }
 }

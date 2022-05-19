@@ -1,6 +1,6 @@
 {
   "package": {
-    "productName": "Fig",
+    "productName": "Fig Desktop",
     "version": "0.1.0"
   },
   "build": {
@@ -21,7 +21,8 @@
       ],
       "resources": [],
       "externalBin": [
-          "../../target/release/figterm"
+          "../../build/fig",
+          "../../build/figterm"
       ],
       "copyright": "",
       "category": "DeveloperTool",

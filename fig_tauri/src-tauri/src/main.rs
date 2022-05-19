@@ -18,9 +18,11 @@ use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
 use parking_lot::RwLock;
+use tauri::utils::platform::current_exe;
 use tracing::{
     debug,
     error,
+    info,
 };
 use tray::create_tray;
 use window::{
@@ -157,16 +159,7 @@ impl WebviewManager {
         let global_state = self.global_state.clone();
         tokio::spawn(async move {
             while let Some((fig_id, payload)) = api_handler_rx.recv().await {
-                api_request(
-                    fig_id,
-                    payload,
-                    &global_state,
-                    |event: FigEvent| {
-                        proxy.send_event(event).unwrap();
-                    },
-                    &proxy,
-                )
-                .await;
+                api_request(fig_id, payload, &global_state, &proxy).await;
             }
         });
 
@@ -178,7 +171,7 @@ impl WebviewManager {
             *control_flow = ControlFlow::Wait;
 
             match event {
-                Event::NewEvents(StartCause::Init) => println!("Wry has started!"),
+                Event::NewEvents(StartCause::Init) => info!("Fig has started"),
                 Event::WindowEvent {
                     event: WindowEvent::CloseRequested,
                     window_id,
@@ -215,7 +208,7 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
-        .with_url("http://localhost:3001")?
+        .with_url("https://desktop.fig.io")?
         .with_ipc_handler(move |_window, payload| {
             debug!("{payload}");
             proxy
@@ -226,7 +219,7 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
                 .unwrap();
         })
         .with_devtools(true)
-        .with_navigation_handler(|url| url.starts_with("http://localhost") || url.starts_with("https://app.fig.io"))
+        .with_navigation_handler(|url| url.starts_with("http://localhost") || url.starts_with("https://desktop.fig.io"))
         .with_initialization_script(JAVASCRIPT_INIT)
         .build()?;
 
@@ -247,7 +240,7 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
-        .with_url("http://localhost:3124")?
+        .with_url("https://staging.withfig.com/autocomplete/v9")?
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(FigEvent::WindowEvent {
@@ -258,8 +251,13 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
         })
         .with_custom_protocol("fig".into(), icons::handle)
         .with_devtools(true)
-        .with_initialization_script(JAVASCRIPT_INIT)
         .with_transparent(true)
+        .with_initialization_script(JAVASCRIPT_INIT)
+        .with_navigation_handler(|url| {
+            url.starts_with("http://localhost")
+                || url.starts_with("https://staging.withfig.com/autocomplete")
+                || url.starts_with("https://app.withfig.com/autocomplete")
+        })
         .build()?;
 
     Ok(webview)
@@ -276,51 +274,5 @@ async fn main() {
     webview_manager
         .build_webview(AUTOCOMPLETE_ID, build_autocomplete)
         .unwrap();
-
     webview_manager.run().await.unwrap();
-
-    //    tauri::Builder::default()
-    //        .invoke_handler(tauri::generate_handler![api::handle_api_request])
-    //        .setup({
-    //            let figterm_state = figterm_state.clone();
-    //            let notifications_state = notifications_state.clone();
-    //            |app| {
-    //                let window = app
-    //                    .get_window("autocomplete")
-    //                    .expect("Failed to acquire autocomplete window");
-    //
-    //                window.set_always_on_top(true).expect("Failed putting window on top");
-    //                let window_state = Arc::new(WindowState::new(&window, send));
-    //                app.manage(window_state.clone());
-    //
-    //
-    // tauri::async_runtime::spawn(figterm::clean_figterm_cache(figterm_state.clone()));
-    //
-    //                tauri::async_runtime::spawn(local_ipc::start_local_ipc(
-    //                    figterm_state,
-    //                    notifications_state,
-    //                    window_state.clone(),
-    //                ));
-    //
-    //                tauri::async_runtime::spawn(window::handle_window(window, recv,
-    // window_state)); >>>>>
-    //
-    //                Ok(())
-    //            }
-    //        })
-    //        .plugin(constants_plugin())
-    //        .system_tray(tray::create_tray())
-    //        .on_system_tray_event({
-    //            let debug_state = debug_state.clone();
-    //            let figterm_state = figterm_state.clone();
-    //            move |app, event| tray::handle_tray_event(app, event, debug_state.clone(),
-    // figterm_state.clone())        })
-    //        .register_uri_scheme_protocol("fig", icons::handle)
-    //        .manage(debug_state)
-    //        .manage(figterm_state)
-    //        .manage(intercept_state)
-    //        .manage(native_state)
-    //        .manage(notifications_state)
-    //        .run(tauri::generate_context!())
-    //        .expect("error while running tauri application");
 }

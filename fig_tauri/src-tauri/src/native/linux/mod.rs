@@ -7,10 +7,9 @@ use tracing::{
     info,
 };
 use wry::application::event_loop::EventLoopProxy;
+pub use x11::CURSOR_POSITION_KIND;
 
 use crate::FigEvent;
-
-pub use x11::CURSOR_POSITION_KIND;
 
 #[derive(Debug)]
 pub struct NativeState;

@@ -21,9 +21,7 @@ use fig_proto::local::{
     PromptHook,
 };
 use fig_proto::prost::Message;
-use tracing::{
-    debug,
-};
+use tracing::debug;
 use wry::application::event_loop::EventLoopProxy;
 
 use crate::figterm::{
