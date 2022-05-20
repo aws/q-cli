@@ -15,6 +15,9 @@ archive: bin icons bundle
 deb: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-x86_64-linux
 	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-x86_64-linux
+	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/zsh\ \(figterm\)
+	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/bash\ \(figterm\)
+	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/fish\ \(figterm\)
 	cp -r $(MAKE_DIR)/bundle/deb/. $(BUILD_DIR)/fig-x86_64-linux
 	sed -i "s/^Version:.*/Version: $(VERSION)/" $(BUILD_DIR)/fig-x86_64-linux/DEBIAN/control
 	cd $(BUILD_DIR) && dpkg-deb --build --root-owner-group fig-x86_64-linux
