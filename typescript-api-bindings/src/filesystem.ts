@@ -22,7 +22,7 @@ export async function append(path: string, contents: string) {
 
 export async function read(path: string) {
   const response = await sendReadFileRequest({
-    path: { path, expandTildeInPath: true }, isBinaryFile: true
+    path: { path, expandTildeInPath: true }
   });
   if (response.type?.$case === 'text') {
     return response.type.text;

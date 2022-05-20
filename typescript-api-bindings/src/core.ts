@@ -28,7 +28,7 @@ export function sendMessage(
 ) {
   const request: ClientOriginatedMessage = {
     id: (messageId += 1),
-    submessage: message,
+    submessage: message
   };
 
   if (handler && request.id) {
@@ -38,18 +38,16 @@ export function sendMessage(
   const buffer = ClientOriginatedMessage.encode(request).finish();
   const b64 = bytesToBase64(buffer);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  /* eslint-disable @typescript-eslint/ban-ts-comment */
+  /* eslint-disable no-underscore-dangle */
   // @ts-ignore
   if (window.__TAURI__ && window.__TAURI__.invoke) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     window.__TAURI__.invoke("handle_api_request", {
-      clientOriginatedMessageB64: b64,
+      clientOriginatedMessageB64: b64
     });
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
   } else if (window.webkit) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     if (!window.webkit.messageHandlers.proto) {
       console.error(
@@ -57,15 +55,16 @@ export function sendMessage(
       );
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     window.webkit.messageHandlers.proto.postMessage(b64);
   } else {
     console.warn(
       "Cannot send request. Fig.js is not supported in this browser."
     );
-    return;
+    
   }
+  /* eslint-enable no-underscore-dangle */
+  /* eslint-enable @typescript-eslint/ban-ts-comment */
 }
 
 const recievedMessage = (response: ServerOriginatedMessage): void => {
@@ -104,24 +103,29 @@ const setupEventListeners = (): void => {
 };
 
 async function setupTauriEventListeners() {
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  /* eslint-disable @typescript-eslint/ban-ts-comment */
+  /* eslint-disable no-underscore-dangle */
   // @ts-ignore
-  await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
-    const response = { error: event.payload } as GlobalAPIError;
-    console.error(response);
-  });
+  if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
+    // @ts-ignore
+    await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
+      const response = { error: event.payload } as GlobalAPIError;
+      console.error(response);
+    });
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-  // @ts-ignore
-  await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
-    const raw = event.payload as string;
+    // @ts-ignore
+    await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
+      const raw = event.payload as string;
 
-    const bytes = b64ToBytes(raw);
+      const bytes = b64ToBytes(raw);
 
-    const message = ServerOriginatedMessage.decode(bytes);
+      const message = ServerOriginatedMessage.decode(bytes);
 
-    recievedMessage(message);
-  });
+      recievedMessage(message);
+    });
+  }
+  /* eslint-enable no-underscore-dangle */
+  /* eslint-enable @typescript-eslint/ban-ts-comment */
 }
 
 // We want this to be run automatically
