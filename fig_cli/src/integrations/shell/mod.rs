@@ -208,14 +208,35 @@ impl DotfileShellIntegration {
             regex::escape(&self.description(when)),
             regex::escape(&old_eval_source),
         );
-        Ok(vec![old_file_regex, Regex::new(&old_eval_regex)?])
+        let old_source_regex = format!(
+            r#"(?:{}\n)?{}\n{{0,2}}"#,
+            regex::escape(&self.description(when)),
+            regex::escape(&self.legacy_source_text(when)?),
+        );
+
+        Ok(vec![
+            old_file_regex,
+            Regex::new(&old_eval_regex)?,
+            Regex::new(&old_source_regex)?
+        ])
+    }
+
+    fn legacy_source_text(&self, when: When) -> Result<String> {
+        let home = fig_directories::home_dir().context("Could not get home dir")?;
+        let integration_path = self.script_integration(when)?.path;
+        let path = integration_path.strip_prefix(home)?;
+        Ok(format!(". \"$HOME/{}\"", path.display()))
     }
 
     fn source_text(&self, when: When) -> Result<String> {
         let home = fig_directories::home_dir().context("Could not get home dir")?;
         let integration_path = self.script_integration(when)?.path;
-        let path = integration_path.strip_prefix(home)?;
-        Ok(format!(". \"$HOME/{}\"", path.display()))
+        let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
+
+        match self.shell {
+            Shell::Fish => Ok(format!("if test -f {}; . {}; end", path, path)),
+            _ => Ok(format!("[[ -f {} ]] && . {}", path, path)),
+        }
     }
 
     fn source_regex(&self, when: When, constrain_position: bool) -> Result<Regex> {
