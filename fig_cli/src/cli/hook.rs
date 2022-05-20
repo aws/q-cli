@@ -22,9 +22,6 @@ pub enum HookSubcommand {
         cursor: i64,
         text: String,
     },
-    Event {
-        event_name: String,
-    },
     Hide,
     Init {
         pid: i32,
@@ -70,7 +67,6 @@ impl HookSubcommand {
                 let context = hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
                 Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor))
             },
-            HookSubcommand::Event { event_name } => Ok(hooks::new_event_hook(event_name)),
             HookSubcommand::Hide => Ok(hooks::new_hide_hook()),
             HookSubcommand::Init { pid, tty } => {
                 let context = hooks::generate_shell_context(*pid, tty, None, None)?;

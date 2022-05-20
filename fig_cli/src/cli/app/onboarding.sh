@@ -89,7 +89,6 @@ cat <<EOF
 EOF
 
   trap - SIGINT SIGTERM SIGQUIT # clear the trap
-  fig hook event "Quit Shell Onboarding" 2>&1 1>/dev/null
   exit 1
 }
 
@@ -205,7 +204,6 @@ cat <<EOF
 
 EOF
 
-fig hook event "Started Shell Onboarding" 2>&1 1>/dev/null
 press_enter_to_continue
 
 clear
@@ -417,9 +415,6 @@ else
 fi
 echo
 
-
-# Make sure we are using OSX sed rather than GNU version
-fig hook event "Completed Shell Onboarding" 2>&1 1>/dev/null
 
 echo
 press_enter_to_continue 'Press enter to finish'
