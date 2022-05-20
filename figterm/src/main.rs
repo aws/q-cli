@@ -93,6 +93,7 @@ use tracing::{
 };
 
 use crate::interceptor::KeyInterceptor;
+use crate::interceptor::terminal_input_parser::KeyCode;
 use crate::ipc::{
     remove_socket,
     spawn_incoming_receiver,
@@ -129,7 +130,7 @@ impl EventSender {
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     #[cfg(target_os = "macos")]
-    let terminal = Terminal::parent_terminal().map(|s| s.to_string());
+    let terminal = fig_util::Terminal::parent_terminal().map(|s| s.to_string());
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
 
@@ -515,12 +516,17 @@ fn figterm_main() -> Result<()> {
                                                 trace!("Read {} bytes from input: {:?}", size, s);
                                                 match interceptor::parse_code(s.as_bytes()) {
                                                     Some((key_code, modifier)) => {
-                                                        match key_interceptor.intercept_key(key_code, &modifier) {
+                                                        match key_interceptor.intercept_key(key_code.clone(), &modifier) {
                                                             Some(action) => {
                                                                 debug!("Action: {:?}", action);
                                                                 let hook =
                                                                     fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
                                                                 outgoing_sender.send(hook_to_message(hook)).unwrap();
+
+                                                                if key_code == KeyCode::Esc {
+                                                                    key_interceptor.reset();
+                                                                }
+
                                                                 continue 'select_loop;
                                                             }
                                                             None => {}
