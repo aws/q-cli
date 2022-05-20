@@ -238,8 +238,6 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(event_loop)?;
 
-    window.raw_window_handle();
-
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
