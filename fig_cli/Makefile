@@ -21,13 +21,6 @@ endif
 # Add cargo executables to PATH
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-# Check if cargo exists
-CARGO := $(shell command -v cargo 2> /dev/null)
-
-ifndef CARGO
-    $(error "cargo is not in PATH $(PATH)")
-endif
-
 MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 TARGET_DIR  ?= $(shell cargo metadata --format-version 1 | jq -r .target_directory)
 

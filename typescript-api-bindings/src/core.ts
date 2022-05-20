@@ -38,7 +38,8 @@ export function sendMessage(
   const buffer = ClientOriginatedMessage.encode(request).finish();
   const b64 = bytesToBase64(buffer);
 
-  // eslint-disable-next-line @typescript-eslint/ban-ts-comment
+  /* eslint-disable @typescript-eslint/ban-ts-comment */
+  /* eslint-disable no-underscore-dangle */
   // @ts-ignore
   if (window.ipc && window.ipc.postMessage) {
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -47,7 +48,6 @@ export function sendMessage(
     // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
   } else if (window.webkit) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     if (!window.webkit.messageHandlers.proto) {
       console.error(
@@ -55,7 +55,6 @@ export function sendMessage(
       );
       return;
     }
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
     window.webkit.messageHandlers.proto.postMessage(b64);
   } else {

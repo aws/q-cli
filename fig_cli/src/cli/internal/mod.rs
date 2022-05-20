@@ -2,6 +2,7 @@ pub mod local_state;
 
 use std::fs;
 use std::io::{
+    stdout,
     Read,
     Write,
 };
@@ -21,7 +22,7 @@ use clap::{
 use crossterm::style::Stylize;
 use fig_directories::fig_dir;
 use fig_ipc::hook::send_hook_to_socket;
-use fig_proto::hooks::new_callback_hook;
+use fig_proto::hooks::{new_callback_hook, new_event_hook};
 use native_dialog::{
     MessageDialog,
     MessageType,
@@ -141,6 +142,17 @@ pub enum InternalSubcommand {
     Animation(AnimationArgs),
     GetShell,
     Hostname,
+    Event {
+        /// Name of the event.
+        #[clap(long)]
+        name: String,
+        /// Payload of the event as a JSON string.
+        #[clap(long)]
+        payload: Option<String>,
+        /// Apps to send the event to.
+        #[clap(long)]
+        apps: Vec<String>,
+    }
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -361,6 +373,10 @@ impl InternalSubcommand {
                     exit(1);
                 }
             },
+            InternalSubcommand::Event { payload, apps, name } => {
+                let hook = new_event_hook(name, payload, apps);
+                send_hook_to_socket(hook).await?;
+            },
         }
 
         Ok(())
@@ -392,7 +408,6 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     ctrlc::set_handler(move || {
         crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
         std::fs::write(&file_clone, "").ok();
-
         exit(1);
     })
     .ok();
@@ -414,10 +429,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
     let exit_code = match TerminalNotification::from_str(&file_content) {
         Ok(TerminalNotification::Source) => {
-            println!();
-            println!("{}", "✅ Dotfiles sourced!".bold());
-            println!();
-
+            writeln!(stdout(), "\n{}\n", "✅ Dotfiles sourced!".bold()).ok();
             0
         },
         Ok(TerminalNotification::NewUpdates) => {
@@ -478,24 +490,24 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 
             if source_updates {
                 if verbosity >= UpdatedVerbosity::Minimal {
-                    println!();
-                    println!("You just updated your dotfiles in {}!", "◧ Fig".bold());
-                    println!("Automatically applying changes in this terminal.");
-                    println!();
+                    writeln!(
+                        stdout(),
+                        "\nYou just updated your dotfiles in {}!\nAutomatically applying changes in this terminal.\n",
+                        "◧ Fig".bold()
+                    )
+                    .ok();
                 }
-
                 0
             } else {
                 if verbosity == UpdatedVerbosity::Full {
-                    println!();
-                    println!("You just updated your dotfiles in {}!", "◧ Fig".bold());
-                    println!(
-                        "To apply changes run {} or open a new terminal",
+                    writeln!(
+                        stdout(),
+                        "\nYou just updated your dotfiles in {}!\nTo apply changes run {} or open a new terminal",
+                        "◧ Fig".bold(),
                         "fig source".magenta().bold()
-                    );
-                    println!();
+                    )
+                    .ok();
                 }
-
                 1
             }
         },

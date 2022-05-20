@@ -41,7 +41,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # If on Ubuntu, install dependencies
       - name: Install Ubuntu dependencies
@@ -55,7 +55,7 @@ jobs:
           profile: minimal
           override: true
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: target/
           key: rust-ci-build-and-test-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -111,7 +111,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -121,7 +121,7 @@ jobs:
           override: true
           components: clippy
 
-      - uses: actions/cache@v2
+      - uses: actions/cache@v3
         with:
           path: target/
           key: rust-ci-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
@@ -152,7 +152,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1

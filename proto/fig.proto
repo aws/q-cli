@@ -494,6 +494,7 @@ enum NotificationType {
   NOTIFY_ON_HISTORY_UPDATED = 8;
   NOTIFY_ON_APPLICATION_UPDATE_AVAILABLE = 9;
   NOTIFY_ON_LOCAL_STATE_CHANGED = 10;
+  NOTIFY_ON_EVENT = 11;
 }
 
 message Notification {
@@ -508,6 +509,7 @@ message Notification {
     HistoryUpdatedNotification history_updated_notification = 8;
     ApplicationUpdateAvailableNotification application_update_available_notification = 9;
     LocalStateChangedNotification local_state_changed_notification = 10;
+    EventNotification event_notification = 11;
   }
 }
 
@@ -564,6 +566,11 @@ message ApplicationUpdateAvailableNotification {
 
 message LocalStateChangedNotification {
   optional string jsonBlob = 1;
+}
+
+message EventNotification {
+  optional string event_name = 1;
+  optional string payload = 2;
 }
 
 /// Constants
