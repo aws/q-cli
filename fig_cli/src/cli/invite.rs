@@ -1,8 +1,5 @@
 use anyhow::Result;
-use copypasta::{
-    ClipboardContext,
-    ClipboardProvider,
-};
+use arboard::Clipboard;
 use crossterm::style::Stylize;
 use fig_auth::{
     get_email,
@@ -36,8 +33,8 @@ pub async fn invite_cli() -> Result<()> {
                 println!();
                 println!("> {}", link.clone().bold().magenta());
 
-                if let Ok(mut ctx) = ClipboardContext::new() {
-                    if ctx.set_contents(link).is_ok() {
+                if let Ok(mut clipboard) = Clipboard::new() {
+                    if clipboard.set_text(link).is_ok() {
                         println!("  Your referral link has been copied to the clipboard.");
                     }
                 }

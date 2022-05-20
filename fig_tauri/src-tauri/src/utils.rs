@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 
 use fig_proto::fig::FilePath;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 pub fn resolve_filepath(file_path: FilePath) -> PathBuf {
     let convert = |path: String| {
@@ -51,4 +55,12 @@ pub fn floor_char_boundary(string: &str, index: usize) -> usize {
         // SAFETY: we know that the character boundary will be within four bytes
         unsafe { lower_bound + new_index.unwrap_unchecked() }
     }
+}
+
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+pub struct Rect<U, V> {
+    pub x: U,
+    pub y: U,
+    pub width: V,
+    pub height: V,
 }

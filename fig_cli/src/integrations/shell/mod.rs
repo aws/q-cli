@@ -105,14 +105,8 @@ impl ShellScriptShellIntegration {
             None => "".into(),
         };
         match self.shell {
-            Shell::Fish => format!(
-                "eval (~/.local/bin/fig init {} {}{} | string split0)",
-                self.shell, self.when, rcfile
-            ),
-            _ => format!(
-                "eval \"$(~/.local/bin/fig init {} {}{})\"",
-                self.shell, self.when, rcfile
-            ),
+            Shell::Fish => format!("eval (fig init {} {}{} | string split0)", self.shell, self.when, rcfile),
+            _ => format!("eval \"$(fig init {} {}{})\"", self.shell, self.when, rcfile),
         }
     }
 }

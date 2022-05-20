@@ -26,9 +26,9 @@ export async function read(path: string) {
   });
   if (response.type?.$case === 'text') {
     return response.type.text;
-  } 
-    return null;
-  
+  }
+  return null;
+
 }
 
 export async function list(path: string) {

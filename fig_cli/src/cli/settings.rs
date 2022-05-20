@@ -1,3 +1,4 @@
+use std::ffi::OsString;
 use std::io::Write;
 use std::process::{
     exit,
@@ -22,12 +23,14 @@ use fig_ipc::command::{
 };
 use fig_proto::local::UiElement;
 use fig_settings::remote_settings::RemoteSettings;
+use fig_settings::settings::settings_path;
 use globset::Glob;
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
 
 use super::util::app_not_running_message;
 use super::OutputFormat;
+use crate::cli::util::open_url;
 use crate::util::{
     launch_fig,
     LaunchOptions,
@@ -97,29 +100,20 @@ impl SettingsArgs {
                 }
             },
             Some(SettingsSubcommands::Docs) => {
-                println!("→ Opening Fig docs...\n");
-
-                let success = Command::new("open")
-                    .arg("https://fig.io/docs/support/settings/")
-                    .status()?
-                    .success();
-
-                match success {
-                    true => Ok(()),
-                    false => Err(anyhow!("Could not open settings file")),
-                }
+                println!("→ Opening Fig docs...");
+                open_url("https://fig.io/docs/support/settings/")?;
+                Ok(())
             },
             Some(SettingsSubcommands::Open) => {
-                let path = fig_settings::settings::settings_path().context("Could not get settings path")?;
-                match Command::new("open").arg(path).status()?.success() {
-                    true => Ok(()),
-                    false => Err(anyhow!("Could not open settings file")),
-                }
+                let mut url = OsString::from("file://");
+                url.push(settings_path().context("Could not get settings path")?);
+                open_url(url)?;
+                Ok(())
             },
             Some(SettingsSubcommands::Sync) => {
                 let RemoteSettings { settings, updated_at } = fig_settings::remote_settings::get_settings().await?;
 
-                let path = fig_settings::settings::settings_path().context("Could not get settings path")?;
+                let path = settings_path().context("Could not get settings path")?;
 
                 let mut settings_file = std::fs::File::create(&path)?;
                 let settings_json = serde_json::to_string_pretty(&settings)?;

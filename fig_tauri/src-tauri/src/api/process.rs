@@ -1,3 +1,5 @@
+use std::process::Stdio;
+
 use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -19,6 +21,7 @@ use crate::native::{
 pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
     let mut cmd = Command::new(SHELL);
     cmd.args(SHELL_ARGS);
+    cmd.stdin(Stdio::inherit());
 
     cfg_if::cfg_if!(
         if #[cfg(target_os="windows")] {

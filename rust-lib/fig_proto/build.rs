@@ -14,6 +14,7 @@ fn main() -> Result<()> {
     }
 
     prost_build::compile_protos(PROTO_FILES, &["../../proto"])?;
+    prost_reflect_build::Builder::new().compile_protos(PROTO_FILES, &["../../proto"])?;
 
     Ok(())
 }

@@ -8,15 +8,36 @@ on:
 
 jobs:
   deploy:
+    runs-on: ubuntu-18.04
     steps:
+      - name: Install dependencies
+        run: |
+          sudo apt update
+          sudo apt install \
+              build-essential \
+              pkg-config \
+              jq \
+              dpkg \
+              curl \
+              wget \
+              libssl-dev \
+              libgtk-3-dev \
+              libappindicator3-dev \
+              librsvg2-dev \
+              libdbus-1-dev \
+              libwebkit2gtk-4.0-dev \
+              valac \
+              libibus-1.0-dev \
+              libglib2.0-dev
+    
       - name: Checkout repository
         uses: actions/checkout@v2
 
       - name: Set VERSION
         run: |
-          VERSION='0.1.0'
+          VERSION="$(jq -r .FIG_VERSION bundle/bundle_info.json)"
           echo VERSION=$VERSION >> $GITHUB_ENV
-          echo $VERSION
+          echo "Version: $VERSION"
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -40,6 +61,8 @@ jobs:
         run: |
           aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-$VERSION.tar.gz
           aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-latest.tar.gz
+          aws s3 cp ./build/fig-x86_64-linux.deb    s3://get-fig-io/desktop/linux-x86_64/fig-$VERSION.deb
+          aws s3 cp ./build/fig-x86_64-linux.deb    s3://get-fig-io/desktop/linux-x86_64/fig-latest.deb
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}

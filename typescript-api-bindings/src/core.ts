@@ -41,11 +41,11 @@ export function sendMessage(
   /* eslint-disable @typescript-eslint/ban-ts-comment */
   /* eslint-disable no-underscore-dangle */
   // @ts-ignore
-  if (window.__TAURI__ && window.__TAURI__.invoke) {
+  if (window.ipc && window.ipc.postMessage) {
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
-    window.__TAURI__.invoke("handle_api_request", {
-      clientOriginatedMessageB64: b64
-    });
+    window.ipc.postMessage(b64);
+    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
     // @ts-ignore
   } else if (window.webkit) {
     // @ts-ignore
@@ -63,8 +63,6 @@ export function sendMessage(
     );
     
   }
-  /* eslint-enable no-underscore-dangle */
-  /* eslint-enable @typescript-eslint/ban-ts-comment */
 }
 
 const recievedMessage = (response: ServerOriginatedMessage): void => {
@@ -93,42 +91,12 @@ const setupEventListeners = (): void => {
 
   document.addEventListener(FigProtoMessageRecieved, (event: Event) => {
     const raw = (event as CustomEvent).detail as string;
-
     const bytes = b64ToBytes(raw);
-
     const message = ServerOriginatedMessage.decode(bytes);
-
     recievedMessage(message);
   });
 };
 
-async function setupTauriEventListeners() {
-  /* eslint-disable @typescript-eslint/ban-ts-comment */
-  /* eslint-disable no-underscore-dangle */
-  // @ts-ignore
-  if (window.__TAURI__ && window.__TAURI__.event && window.__TAURI__.event.listen) {
-    // @ts-ignore
-    await window.__TAURI__.event.listen(FigGlobalErrorOccurred, (event: any) => {
-      const response = { error: event.payload } as GlobalAPIError;
-      console.error(response);
-    });
-
-    // @ts-ignore
-    await window.__TAURI__.event.listen(FigProtoMessageRecieved, (event: any) => {
-      const raw = event.payload as string;
-
-      const bytes = b64ToBytes(raw);
-
-      const message = ServerOriginatedMessage.decode(bytes);
-
-      recievedMessage(message);
-    });
-  }
-  /* eslint-enable no-underscore-dangle */
-  /* eslint-enable @typescript-eslint/ban-ts-comment */
-}
-
 // We want this to be run automatically
 console.log('[fig] setting up event listeners...');
 setupEventListeners();
-setupTauriEventListeners();

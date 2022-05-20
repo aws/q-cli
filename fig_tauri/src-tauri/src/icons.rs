@@ -4,17 +4,18 @@ use std::fs;
 
 use bytes::Bytes;
 use once_cell::sync::Lazy;
-use tauri::http::status::StatusCode;
-use tauri::http::{
-    Request as HttpRequest,
-    Response as HttpResponse,
+use percent_encoding::percent_decode_str;
+use tracing::{
+    debug,
+    trace,
 };
-use tauri::{
-    AppHandle,
-    Runtime,
-};
-use tracing::trace;
 use url::Url;
+use wry::http::status::StatusCode;
+use wry::http::{
+    Request,
+    Response,
+    ResponseBuilder,
+};
 
 static ASSETS: Lazy<HashMap<&str, Bytes>> = Lazy::new(|| {
     let mut map = HashMap::new();
@@ -39,40 +40,28 @@ static ASSETS: Lazy<HashMap<&str, Bytes>> = Lazy::new(|| {
     map
 });
 
-trait ResponseWith {
-    fn with_status(self, status: StatusCode) -> Self;
-    fn with_mimetype(self, mimetype: &'static str) -> Self;
-}
-
-impl ResponseWith for HttpResponse {
-    fn with_status(mut self, status: StatusCode) -> Self {
-        self.set_status(status);
-        self
-    }
-
-    fn with_mimetype(mut self, mimetype: &'static str) -> Self {
-        self.set_mimetype(Some(mimetype.to_string()));
-        self
-    }
-}
-
-fn build_asset(name: &str) -> HttpResponse {
+fn build_asset(name: &str) -> Response {
     trace!("building response for asset {}", name);
-    HttpResponse::new(
-        ASSETS
-            .get(name)
-            .unwrap_or_else(|| ASSETS.get("template").unwrap())
-            .to_vec(),
-    )
-    .with_mimetype("image/png")
+
+    ResponseBuilder::new()
+        .status(StatusCode::OK)
+        .mimetype("image/png")
+        .header("Access-Control-Allow-Origin", "*")
+        .body(
+            ASSETS
+                .get(name)
+                .unwrap_or_else(|| ASSETS.get("template").unwrap())
+                .to_vec(),
+        )
+        .unwrap()
 }
 
-fn build_default() -> HttpResponse {
+fn build_default() -> Response {
     build_asset("template")
 }
 
-pub fn handle<R: Runtime>(_: &AppHandle<R>, request: &HttpRequest) -> Result<HttpResponse, Box<dyn std::error::Error>> {
-    trace!("request for fig://{} over fig protocol", request.uri());
+pub fn handle(request: &Request) -> wry::Result<Response> {
+    debug!("request for fig://{} over fig protocol", request.uri());
     let url = Url::parse(request.uri())?;
     let domain = url.domain();
     // rust really doesn't like us not specifying RandomState here
@@ -87,7 +76,7 @@ pub fn handle<R: Runtime>(_: &AppHandle<R>, request: &HttpRequest) -> Result<Htt
             response.replace(build_asset(name));
         }
     } else if domain == None {
-        let meta = fs::metadata(url.path())?;
+        let meta = fs::metadata(&*percent_decode_str(url.path()).decode_utf8_lossy())?;
         if meta.is_dir() {
             response.replace(build_asset("folder"));
         } else if meta.is_file() {

@@ -291,8 +291,7 @@ impl Cli {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => {
-                    let internal::InstallArgs { input_method, .. } = args;
-                    if input_method {
+                    if let internal::InstallArgs { input_method: true, .. } = args {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
                                 use fig_ipc::command::open_ui_element;
@@ -437,7 +436,6 @@ async fn uninstall_command() -> Result<()> {
 
 async fn root_command() -> Result<()> {
     // Launch fig if it is not running
-
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_auth::is_logged_in;
@@ -464,12 +462,16 @@ async fn root_command() -> Result<()> {
             }
         } else {
             use crossterm::style::Stylize;
+            use fig_ipc::command::open_ui_element;
+            use fig_proto::local::UiElement;
 
             println!(
                 "\n→ Opening {}...\n",
                 "https://app.fig.io".magenta().underlined()
             );
-            util::open_url("https://app.fig.io").ok();
+                open_ui_element(UiElement::MissionControl)
+                    .await
+                    .context("\nCould not launch fig\n")?;
         }
     }
 
