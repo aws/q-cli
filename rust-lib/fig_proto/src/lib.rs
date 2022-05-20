@@ -20,13 +20,20 @@ use bytes::{
     Bytes,
     BytesMut,
 };
+use once_cell::sync::Lazy;
 pub use prost;
 use prost::Message;
+use prost_reflect::DescriptorPool;
 use thiserror::Error;
 
+static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
+    DescriptorPool::decode(include_bytes!(concat!(env!("OUT_DIR"), "/file_descriptor_set.bin")).as_ref()).unwrap()
+});
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum FigMessageType {
+pub enum FigMessageType {
     Protobuf,
+    Json,
 }
 
 /// A fig message
@@ -40,7 +47,7 @@ enum FigMessageType {
 #[derive(Debug, Clone)]
 pub struct FigMessage {
     pub inner: Bytes,
-    _message_type: FigMessageType,
+    pub message_type: FigMessageType,
 }
 
 #[derive(Debug, Error)]
@@ -68,12 +75,14 @@ impl FigMessage {
             return Err(FigMessageParseError::InvalidHeader);
         }
 
-        let mut message_type = [0; 8];
-        src.read_exact(&mut message_type)?;
+        let mut message_type_buf = [0; 8];
+        src.read_exact(&mut message_type_buf)?;
 
-        if &message_type != b"fig-pbuf" {
-            return Err(FigMessageParseError::InvalidMessageType(message_type));
-        }
+        let message_type = match &message_type_buf {
+            b"fig-pbuf" => FigMessageType::Protobuf,
+            b"fig-json" => FigMessageType::Json,
+            _ => return Err(FigMessageParseError::InvalidMessageType(message_type_buf)),
+        };
 
         if src.remaining() < size_of::<u64>() {
             return Err(FigMessageParseError::Incomplete);
@@ -90,7 +99,7 @@ impl FigMessage {
 
         Ok(FigMessage {
             inner: Bytes::from(inner),
-            _message_type: FigMessageType::Protobuf,
+            message_type,
         })
     }
 }
@@ -130,7 +139,7 @@ impl<T: Message> FigProtobufEncodable for T {
 
         Ok(FigMessage {
             inner: fig_pbuf.freeze(),
-            _message_type: FigMessageType::Protobuf,
+            message_type: FigMessageType::Protobuf,
         })
     }
 }
@@ -147,7 +156,7 @@ mod tests {
         assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"));
 
         assert_eq!(
-            message.encode_fig_protobuf().unwrap()._message_type,
+            message.encode_fig_protobuf().unwrap().message_type,
             FigMessageType::Protobuf
         );
     }

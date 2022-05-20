@@ -17,7 +17,7 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   && [ -t 1 ] \
   && [ -z "$PROCESS_LAUNCHED_BY_FIG" ] \
   && [ -z "$FIG_PTY" ] \
-  && command -v ~/.fig/bin/figterm 1>/dev/null 2>/dev/null \
+  && command -v figterm 1>/dev/null 2>/dev/null \
   && [ -z "$FIG_TERM" ] || [ -z "$FIG_TERM_TMUX" -a -n "$TMUX" ]
 
   # Generated automatically by iTerm and Terminal But needs to be
@@ -37,7 +37,7 @@ if   [ "$TERM_PROGRAM" != "WarpTerminal" ] \
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if status --is-interactive
     set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
-    set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
+    set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/$FIG_TERM_NAME")
 
     # Only copy figterm binary if it doesn't already exist
     # WARNING: copying file if it already exists results

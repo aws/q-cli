@@ -1624,8 +1624,12 @@ dependencies = [
  "anyhow",
  "bytes",
  "nix 0.24.1",
+ "once_cell",
  "prost",
  "prost-build",
+ "prost-reflect",
+ "prost-reflect-build",
+ "serde_json",
  "thiserror",
 ]
 
@@ -3621,9 +3625,9 @@ dependencies = [
 
 [[package]]
 name = "once_cell"
-version = "1.10.0"
+version = "1.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "87f3e037eac156d1775da914196f0f37741a274155e34a0b7e427c35d2a2ecb9"
+checksum = "7b10983b38c53aebdf33f542c6275b0f58a238129d00c4ae0e6fb59738d783ca"
 
 [[package]]
 name = "opaque-debug"
@@ -4155,6 +4159,38 @@ checksum = "7b670f45da57fb8542ebdbb6105a925fe571b67f9e7ed9f47a06a84e72b4e7cc"
 dependencies = [
  "anyhow",
  "itertools",
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "prost-reflect"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f6161bfd1ad78e134cbff696a85ec5c00d2b5d297ce6353b1945169dfeeb478"
+dependencies = [
+ "prost",
+ "prost-reflect-derive",
+ "prost-types",
+]
+
+[[package]]
+name = "prost-reflect-build"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d9ba636de3978d3a4aaafd5e3691ef3cd403c7ce0689987f11604f6317ff4664"
+dependencies = [
+ "prost-build",
+ "prost-reflect",
+]
+
+[[package]]
+name = "prost-reflect-derive"
+version = "0.8.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "b144e83776eb85a47eefeb686ddf59f9b2c6968b4f9115d8d6846332882ca5f4"
+dependencies = [
  "proc-macro2",
  "quote",
  "syn",

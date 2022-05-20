@@ -94,6 +94,8 @@ pub enum FigEvent {
     },
 }
 
+pub type FigEventLoop = EventLoop<FigEvent>;
+
 pub struct GlobalState {
     pub debug_state: DebugState,
     pub figterm_state: FigtermState,
@@ -105,7 +107,7 @@ pub struct GlobalState {
 struct WebviewManager {
     fig_id_map: DashMap<FigId, Arc<WindowState>, FnvBuildHasher>,
     window_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
-    event_loop: EventLoop<FigEvent>,
+    event_loop: FigEventLoop,
     global_state: Arc<GlobalState>,
 }
 
@@ -137,7 +139,7 @@ impl WebviewManager {
     fn build_webview(
         &mut self,
         fig_id: FigId,
-        builder: impl Fn(&EventLoop<FigEvent>) -> wry::Result<WebView>,
+        builder: impl Fn(&FigEventLoop) -> wry::Result<WebView>,
     ) -> wry::Result<()> {
         let webview = builder(&self.event_loop)?;
         self.insert_webview(fig_id, webview);
@@ -197,7 +199,7 @@ impl WebviewManager {
     }
 }
 
-fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> {
+fn build_mission_control(event_loop: &FigEventLoop) -> wry::Result<WebView> {
     let window = WindowBuilder::new()
         .with_title("Fig Mission Control")
         .with_always_on_top(true)
@@ -225,7 +227,7 @@ fn build_mission_control(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebVie
     Ok(webview)
 }
 
-fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> {
+fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
     let window = WindowBuilder::new()
         .with_title("Fig Autocomplete")
         .with_transparent(true)
@@ -235,6 +237,8 @@ fn build_autocomplete(event_loop: &EventLoop<FigEvent>) -> wry::Result<WebView> 
         .with_always_on_top(true)
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(event_loop)?;
+
+    window.raw_window_handle();
 
     let proxy = event_loop.create_proxy();
 
