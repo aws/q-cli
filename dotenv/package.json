@@ -30,7 +30,7 @@
     "@jest/console": "^28.1.0",
     "@jest/globals": "^28.1.0",
     "@jest/reporters": "^28.1.0",
-    "@jest/test-result": "^27.3.1",
+    "@jest/test-result": "^28.1.0",
     "@jest/types": "^28.1.0",
     "@types/jest": "^27.0.2",
     "@types/js-yaml": "^4.0.4",
