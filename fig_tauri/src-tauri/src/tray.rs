@@ -1,6 +1,9 @@
+use std::process::exit;
+
 use wry::application::event_loop::EventLoop;
 use wry::application::menu::{
     ContextMenu,
+    CustomMenuItem,
     MenuId,
     MenuItemAttributes,
 };
@@ -8,11 +11,25 @@ use wry::application::system_tray::SystemTrayBuilder;
 
 use crate::FigEvent;
 
-pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<()> {
+pub struct Tray {
+    elements: Vec<(CustomMenuItem, Box<dyn Fn()>)>,
+}
+
+impl Tray {
+    pub fn handle_event(&self, id: MenuId) {
+        for (element, func) in &self.elements {
+            if element.clone().id() == id {
+                func();
+            }
+        }
+    }
+}
+
+pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<Tray> {
     let mut tray_menu = ContextMenu::new();
-    create_tray_menu(&mut tray_menu);
-    SystemTrayBuilder::new("icons/32x32.png".into(), Some(tray_menu)).build(event_loop)?;
-    Ok(())
+    let elements = create_tray_menu(&mut tray_menu);
+    SystemTrayBuilder::new("/usr/share/icons/hicolor/32x32/apps/fig.png".into(), Some(tray_menu)).build(event_loop)?;
+    Ok(Tray { elements })
 }
 
 // pub fn handle_tray_event(
@@ -42,7 +59,7 @@ pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<()> {
 //    }
 //}
 
-fn create_tray_menu(tray_menu: &mut ContextMenu) {
+fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<(CustomMenuItem, Box<dyn Fn()>)> {
     // SystemTrayMenu::new()
     //    .add_submenu(SystemTraySubmenu::new(
     //        "Debugger",
@@ -66,7 +83,10 @@ fn create_tray_menu(tray_menu: &mut ContextMenu) {
     //    ))
     //    .add_native_item(SystemTrayMenuItem::Separator)
 
-    tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit")));
+    vec![(
+        tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit"))),
+        Box::new(|| exit(0)),
+    )]
 }
 
 // fn update_tray_menu(debug_state: &DebugState, figterm_state: &FigtermState) -> Result<(),

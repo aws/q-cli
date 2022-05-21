@@ -18,10 +18,17 @@ use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
 use parking_lot::RwLock;
+use sysinfo::{
+    ProcessRefreshKind,
+    RefreshKind,
+    System,
+    SystemExt,
+};
 use tracing::{
     debug,
     error,
     info,
+    warn,
 };
 use tray::create_tray;
 use window::{
@@ -37,6 +44,7 @@ use wry::application::event_loop::{
     ControlFlow,
     EventLoop,
 };
+use wry::application::menu::MenuType;
 use wry::application::platform::unix::WindowBuilderExtUnix;
 use wry::application::window::{
     WindowBuilder,
@@ -164,9 +172,7 @@ impl WebviewManager {
             }
         });
 
-        if let Err(err) = create_tray(&self.event_loop) {
-            error!("Failed to create tray: {err}");
-        }
+        let tray = create_tray(&self.event_loop).unwrap();
 
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
@@ -182,6 +188,13 @@ impl WebviewManager {
                         window_state.webview.window().set_visible(false);
                     }
                 },
+                Event::MenuEvent {
+                    menu_id,
+                    origin: MenuType::ContextMenu,
+                    ..
+                } => {
+                    tray.handle_event(menu_id);
+                },
                 Event::UserEvent(event) => {
                     debug!("Executing user event: {event:?}");
                     match event {
@@ -193,7 +206,7 @@ impl WebviewManager {
                         },
                     }
                 },
-                _ => (),
+                event => warn!("Unhandled event {event:?}"),
             }
         });
     }
@@ -202,7 +215,6 @@ impl WebviewManager {
 fn build_mission_control(event_loop: &FigEventLoop) -> wry::Result<WebView> {
     let window = WindowBuilder::new()
         .with_title("Fig Mission Control")
-        .with_always_on_top(true)
         .with_visible(false)
         .build(event_loop)?;
 
@@ -266,6 +278,13 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
 
 #[tokio::main]
 async fn main() {
+    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+    let mut processes = s.processes_by_exact_name("fig_desktop");
+    if processes.next().is_some() {
+        eprintln!("Fig is already running!");
+        return;
+    }
+
     fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
 
     let mut webview_manager = WebviewManager::new();

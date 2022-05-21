@@ -1657,6 +1657,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
+ "sysinfo",
  "tauri",
  "tauri-build",
  "tokio",
