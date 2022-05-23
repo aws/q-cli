@@ -253,8 +253,9 @@ impl DotfileShellIntegration {
     }
 
     fn remove_from_text(&self, text: impl Into<String>, when: When) -> Result<String> {
-        let mut regexes = self.legacy_regexes(when)?;
-        regexes.push(self.source_regex(when, false)?);
+        let source_regex = self.source_regex(when, false)?;
+        let mut regexes = vec![source_regex];
+        regexes.extend(self.legacy_regexes(when)?);
         Ok(regexes
             .iter()
             .fold::<String, _>(text.into(), |acc, reg| reg.replace_all(&acc, "").into()))
