@@ -58,8 +58,8 @@ enum FigWebsocketMessage {
     Event {
         event_name: String,
         payload: Option<serde_json::Value>,
-        apps: Option<Vec<String>>
-    }
+        apps: Option<Vec<String>>,
+    },
 }
 
 async fn get_ticket(reqwest_client: &reqwest::Client, url: Url, token: impl fmt::Display) -> Result<reqwest::Response> {
@@ -140,21 +140,19 @@ pub async fn process_websocket(
                                     fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
                                 }
                             },
-                            FigWebsocketMessage::Event { event_name, payload, apps } => {
-                                match payload.as_ref().map(serde_json::to_string).transpose() {
-                                    Err(e) => {
-                                        error!("Could not serialize event payload: {:?}", e);
-                                    },
-                                    Ok(payload_blob) => {
-                                        let hook = new_event_hook(
-                                            event_name,
-                                            payload_blob,
-                                            apps.unwrap_or_default(),
-                                        );
-                                        send_hook_to_socket(hook).await.ok();
-                                    }
-                                }
-                            }
+                            FigWebsocketMessage::Event {
+                                event_name,
+                                payload,
+                                apps,
+                            } => match payload.as_ref().map(serde_json::to_string).transpose() {
+                                Err(e) => {
+                                    error!("Could not serialize event payload: {:?}", e);
+                                },
+                                Ok(payload_blob) => {
+                                    let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
+                                    send_hook_to_socket(hook).await.ok();
+                                },
+                            },
                         },
                         Err(e) => {
                             error!("Could not parse json message: {:?}", e);

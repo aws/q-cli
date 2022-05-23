@@ -211,7 +211,7 @@ impl DotfileShellIntegration {
         Ok(vec![
             old_file_regex,
             Regex::new(&old_eval_regex)?,
-            Regex::new(&old_source_regex)?
+            Regex::new(&old_source_regex)?,
         ])
     }
 

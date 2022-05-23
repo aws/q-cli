@@ -463,12 +463,12 @@ impl DoctorCheck for FigIntegrationsCheck {
 
         // Check that ~/.fig/bin/figterm exists
         // TODO(grant): Check figterm exe exists
-        //let figterm_path = fig_directories::fig_dir()
+        // let figterm_path = fig_directories::fig_dir()
         //    .context("Could not find ~/.fig")?
         //    .join("bin")
         //    .join("figterm");
 
-        //if !figterm_path.exists() {
+        // if !figterm_path.exists() {
         //    return Err(DoctorError::Error {
         //        reason: "figterm does not exist".into(),
         //        info: vec![],
@@ -1688,7 +1688,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             config,
             &mut spinner,
         )
-        .await.ok();
+        .await
+        .ok();
 
         #[cfg(target_os = "macos")]
         {

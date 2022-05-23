@@ -22,7 +22,10 @@ use clap::{
 use crossterm::style::Stylize;
 use fig_directories::fig_dir;
 use fig_ipc::hook::send_hook_to_socket;
-use fig_proto::hooks::{new_callback_hook, new_event_hook};
+use fig_proto::hooks::{
+    new_callback_hook,
+    new_event_hook,
+};
 use native_dialog::{
     MessageDialog,
     MessageType,
@@ -152,7 +155,7 @@ pub enum InternalSubcommand {
         /// Apps to send the event to.
         #[clap(long)]
         apps: Vec<String>,
-    }
+    },
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {

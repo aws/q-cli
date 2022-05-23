@@ -92,8 +92,8 @@ use tracing::{
     warn,
 };
 
-use crate::interceptor::KeyInterceptor;
 use crate::interceptor::terminal_input_parser::KeyCode;
+use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
     remove_socket,
     spawn_incoming_receiver,

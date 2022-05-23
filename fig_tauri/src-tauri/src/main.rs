@@ -16,9 +16,12 @@ use dashmap::DashMap;
 use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
+use gtk::gdk::WindowTypeHint;
+use gtk::traits::GtkWindowExt;
 use native::NativeState;
 use parking_lot::RwLock;
 use sysinfo::{
+    ProcessExt,
     ProcessRefreshKind,
     RefreshKind,
     System,
@@ -26,7 +29,6 @@ use sysinfo::{
 };
 use tracing::{
     debug,
-    error,
     info,
     warn,
 };
@@ -45,7 +47,10 @@ use wry::application::event_loop::{
     EventLoop,
 };
 use wry::application::menu::MenuType;
-use wry::application::platform::unix::WindowBuilderExtUnix;
+use wry::application::platform::unix::{
+    WindowBuilderExtUnix,
+    WindowExtUnix,
+};
 use wry::application::window::{
     WindowBuilder,
     WindowId,
@@ -250,6 +255,8 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(event_loop)?;
 
+    window.gtk_window().set_type_hint(WindowTypeHint::Utility);
+
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
@@ -280,8 +287,10 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
 async fn main() {
     let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
     let mut processes = s.processes_by_exact_name("fig_desktop");
-    if processes.next().is_some() {
-        eprintln!("Fig is already running!");
+    if let Some(process) = processes.next() {
+        let pid = process.pid();
+        let exe = process.exe().display();
+        eprintln!("Fig is already running: {exe} ({pid})");
         return;
     }
 

@@ -141,7 +141,7 @@ pub fn new_hide_hook() -> Hook {
 pub fn new_event_hook(
     event_name: impl Into<String>,
     payload: impl Into<Option<String>>,
-    apps: impl Into<Vec<String>>
+    apps: impl Into<Vec<String>>,
 ) -> Hook {
     hook_enum_to_hook(hook::Hook::Event(EventHook {
         event_name: event_name.into(),
