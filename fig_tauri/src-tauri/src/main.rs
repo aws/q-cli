@@ -28,6 +28,7 @@ use sysinfo::{
     System,
     SystemExt,
 };
+use tokio::runtime::Runtime;
 use tracing::{
     debug,
     info,
@@ -284,8 +285,10 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
     Ok(webview)
 }
 
-#[tokio::main]
-async fn main() {
+fn main() {
+    let _sentry_guard =
+        fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
+
     match get_current_pid() {
         Ok(current_pid) => {
             let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
@@ -302,14 +305,17 @@ async fn main() {
         Err(err) => warn!("Failed to get pid: {err}"),
     }
 
-    fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async {
+        fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
 
-    let mut webview_manager = WebviewManager::new();
-    webview_manager
-        .build_webview(MISSION_CONTROL_ID, build_mission_control)
-        .unwrap();
-    webview_manager
-        .build_webview(AUTOCOMPLETE_ID, build_autocomplete)
-        .unwrap();
-    webview_manager.run().await.unwrap();
+        let mut webview_manager = WebviewManager::new();
+        webview_manager
+            .build_webview(MISSION_CONTROL_ID, build_mission_control)
+            .unwrap();
+        webview_manager
+            .build_webview(AUTOCOMPLETE_ID, build_autocomplete)
+            .unwrap();
+        webview_manager.run().await.unwrap();
+    });
 }
