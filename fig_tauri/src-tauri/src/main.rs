@@ -21,6 +21,7 @@ use gtk::traits::GtkWindowExt;
 use native::NativeState;
 use parking_lot::RwLock;
 use sysinfo::{
+    get_current_pid,
     ProcessExt,
     ProcessRefreshKind,
     RefreshKind,
@@ -285,13 +286,20 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
 
 #[tokio::main]
 async fn main() {
-    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-    let mut processes = s.processes_by_exact_name("fig_desktop");
-    if let Some(process) = processes.next() {
-        let pid = process.pid();
-        let exe = process.exe().display();
-        eprintln!("Fig is already running: {exe} ({pid})");
-        return;
+    match get_current_pid() {
+        Ok(current_pid) => {
+            let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+            let processes = system.processes_by_exact_name("fig_desktop");
+            for process in processes.into_iter() {
+                let pid = process.pid();
+                if current_pid != pid {
+                    let exe = process.exe().display();
+                    eprintln!("Fig is already running: {exe} ({pid})");
+                    return;
+                }
+            }
+        },
+        Err(err) => warn!("Failed to get pid: {err}"),
     }
 
     fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
