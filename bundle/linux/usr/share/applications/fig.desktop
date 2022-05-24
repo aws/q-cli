@@ -7,4 +7,5 @@ TryExec=fig_desktop
 Exec=fig_desktop
 Icon=fig
 Terminal=false
+Categories=Development;
 

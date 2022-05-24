@@ -43,7 +43,7 @@ static WMCLASS_WHITELSIT: &[&str] = &[
 ];
 pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
-pub fn handle_x11(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
+pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
 
     let setup = conn.setup();

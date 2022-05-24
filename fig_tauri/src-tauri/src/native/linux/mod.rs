@@ -38,7 +38,7 @@ impl NativeState {
         match DisplayServer::detect() {
             Ok(DisplayServer::X11) => {
                 info!("Detected X11 server");
-                tokio::task::spawn_blocking(move || x11::handle_x11(global_state, proxy));
+                tokio::spawn(async { x11::handle_x11(global_state, proxy).await });
             },
             Ok(DisplayServer::Wayland) => {
                 info!("Detected Wayland server");

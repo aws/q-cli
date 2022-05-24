@@ -1,4 +1,5 @@
 use parking_lot::RwLock;
+use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedSender;
 use wry::application::dpi::{
     PhysicalPosition,
@@ -11,7 +12,8 @@ use wry::webview::WebView;
 use crate::figterm::FigTermCommand;
 use crate::{
     native,
-    FigId, GlobalState,
+    FigId,
+    GlobalState,
 };
 
 #[allow(unused)]
@@ -146,7 +148,9 @@ impl WindowState {
                 .set_min_inner_size(Some(PhysicalSize { width, height })),
             FigWindowEvent::Hide => {
                 if let Some(session) = state.figterm_state.most_recent_session() {
-                    session.sender.blocking_send(FigTermCommand::ClearIntercept).unwrap();
+                    Handle::current().spawn(async move {
+                        session.sender.send(FigTermCommand::ClearIntercept).await.unwrap();
+                    });
                 }
                 self.webview.window().set_visible(false);
                 self.webview
