@@ -8,9 +8,10 @@ use wry::application::dpi::{
 };
 use wry::webview::WebView;
 
+use crate::figterm::FigTermCommand;
 use crate::{
     native,
-    FigId,
+    FigId, GlobalState,
 };
 
 #[allow(unused)]
@@ -58,7 +59,7 @@ impl WindowState {
         }
     }
 
-    pub fn handle(&self, event: FigWindowEvent, api_tx: &UnboundedSender<(FigId, String)>) {
+    pub fn handle(&self, event: FigWindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(FigId, String)>) {
         match event {
             FigWindowEvent::Reanchor { x, y } => {
                 let position = self.position.read();
@@ -141,6 +142,9 @@ impl WindowState {
                 .window()
                 .set_min_inner_size(Some(PhysicalSize { width, height })),
             FigWindowEvent::Hide => {
+                if let Some(session) = state.figterm_state.most_recent_session() {
+                    session.sender.blocking_send(FigTermCommand::ClearIntercept).unwrap();
+                }
                 self.webview.window().set_visible(false);
                 self.webview
                     .window()

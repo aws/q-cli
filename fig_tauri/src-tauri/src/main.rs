@@ -206,7 +206,7 @@ impl WebviewManager {
                     match event {
                         FigEvent::WindowEvent { fig_id, window_event } => match self.fig_id_map.get(&fig_id) {
                             Some(window_state) => {
-                                window_state.handle(window_event, &api_handler_tx);
+                                window_state.handle(window_event, &self.global_state, &api_handler_tx);
                             },
                             None => todo!(),
                         },
