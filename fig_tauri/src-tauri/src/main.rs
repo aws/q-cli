@@ -107,10 +107,12 @@ pub enum FigEvent {
         fig_id: FigId,
         window_event: FigWindowEvent,
     },
+    ControlFlow(ControlFlow),
 }
 
 pub type FigEventLoop = EventLoop<FigEvent>;
 
+#[derive(Debug, Default)]
 pub struct GlobalState {
     pub debug_state: DebugState,
     pub figterm_state: FigtermState,
@@ -134,13 +136,7 @@ impl WebviewManager {
             fig_id_map: Default::default(),
             window_id_map: Default::default(),
             event_loop,
-            global_state: Arc::new(GlobalState {
-                debug_state: DebugState::default(),
-                figterm_state: FigtermState::default(),
-                intercept_state: InterceptState::default(),
-                native_state: NativeState::new(proxy),
-                notifications_state: NotificationsState::default(),
-            }),
+            global_state: Arc::new(Default::default()),
         }
     }
 
@@ -163,6 +159,8 @@ impl WebviewManager {
 
     async fn run(self) -> wry::Result<()> {
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(FigId, String)>();
+
+        native::NativeState::execute(self.global_state.clone(), self.event_loop.create_proxy());
 
         tokio::spawn(figterm::clean_figterm_cache(self.global_state.clone()));
 
@@ -211,6 +209,9 @@ impl WebviewManager {
                             },
                             None => todo!(),
                         },
+                        FigEvent::ControlFlow(new_control_flow) => {
+                            *control_flow = new_control_flow;
+                        },
                     }
                 },
                 event => warn!("Unhandled event {event:?}"),
@@ -256,6 +257,8 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
         .with_always_on_top(true)
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(event_loop)?;
+
+    window.set_visible(false);
 
     window.gtk_window().set_type_hint(WindowTypeHint::Utility);
 

@@ -12,10 +12,12 @@ use std::path::{
 };
 
 use anyhow::{
+    bail,
     Context,
     Result,
 };
 use cfg_if::cfg_if;
+use fig_ipc::get_fig_socket_path;
 use globset::{
     Glob,
     GlobSet,
@@ -220,8 +222,6 @@ impl LaunchOptions {
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            use fig_ipc::get_fig_socket_path;
-
             if is_app_running() {
                 return Ok(());
             }
@@ -252,7 +252,8 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
                 // Sleep for a bit
                 std::thread::sleep(std::time::Duration::from_millis(500));
             }
-            anyhow::bail!("\nUnable to finish launching Fig properly\n")
+
+            bail!("\nUnable to finish launching Fig properly\n")
         } else if #[cfg(target_os = "linux")] {
             if is_app_running() {
                 return Ok(());
@@ -262,12 +263,38 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
                 println!("\n→ Launching Fig...\n");
             }
 
-            std::process::Command::new("xdg-open").arg("fig.desktop").output().context("\nUnable to launch Fig\n")?;
+            let process = std::process::Command::new("gtk-launch")
+                .arg("fig.desktop")
+                .output()
+                .context("\nUnable to launch Fig\n")?;
 
-            Ok(())
+            if !process.status.success() {
+                bail!("Failed to launch fig.desktop");
+            }
+
+
+            if !opts.wait_for_activation {
+                return Ok(());
+            }
+
+            if !is_app_running() {
+                anyhow::bail!("Unable to launch Fig");
+            }
+
+            // Wait for socket to exist
+            let path = get_fig_socket_path();
+            for _ in 0..9 {
+                if path.exists() {
+                    return Ok(());
+                }
+                // Sleep for a bit
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+
+            bail!("\nUnable to finish launching Fig properly\n")
         } else {
             let _opts = opts;
-            anyhow::bail!("Fig desktop can not be launched on this platform")
+            bail!("Fig desktop can not be launched on this platform")
         }
     }
 }

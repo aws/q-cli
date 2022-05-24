@@ -1,10 +1,14 @@
 use fig_proto::local::{
     DebugModeCommand,
     OpenUiElementCommand,
+    QuitCommand,
     UiElement,
 };
 use tracing::error;
-use wry::application::event_loop::EventLoopProxy;
+use wry::application::event_loop::{
+    ControlFlow,
+    EventLoopProxy,
+};
 
 use super::{
     LocalResponse,
@@ -18,6 +22,11 @@ use crate::{
 
 pub async fn debug(_command: DebugModeCommand) -> LocalResult {
     todo!()
+}
+
+pub async fn quit(command: QuitCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {
+    proxy.send_event(FigEvent::ControlFlow(ControlFlow::Exit));
+    Ok(LocalResponse::Success(None))
 }
 
 pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {

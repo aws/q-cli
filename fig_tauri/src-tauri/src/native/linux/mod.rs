@@ -1,7 +1,10 @@
 mod sway;
 mod x11;
 
+use std::sync::Arc;
+
 use anyhow::Result;
+use parking_lot::Mutex;
 use tracing::{
     error,
     info,
@@ -9,17 +12,26 @@ use tracing::{
 use wry::application::event_loop::EventLoopProxy;
 pub use x11::CURSOR_POSITION_KIND;
 
-use crate::FigEvent;
+use crate::{
+    FigEvent,
+    GlobalState,
+};
 
-#[derive(Debug)]
-pub struct NativeState;
+#[derive(Debug, Default)]
+pub struct NativeState {
+    active_window: Mutex<Option<String>>,
+}
 
 impl NativeState {
-    pub fn new(proxy: EventLoopProxy<FigEvent>) -> Self {
+    pub fn new() -> Self {
+        NativeState::default()
+    }
+
+    pub async fn execute(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
         match DisplayServer::detect() {
             Ok(DisplayServer::X11) => {
                 info!("Detected X11 server");
-                tokio::task::spawn_blocking(move || x11::handle_x11(proxy));
+                tokio::task::spawn_blocking(move || x11::handle_x11(global_state, proxy));
             },
             Ok(DisplayServer::Wayland) => {
                 info!("Detected Wayland server");
@@ -34,8 +46,6 @@ impl NativeState {
                 error!("{err}");
             },
         }
-
-        Self
     }
 }
 

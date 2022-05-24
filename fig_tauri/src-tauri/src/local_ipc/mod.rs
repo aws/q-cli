@@ -10,6 +10,7 @@ use fig_proto::local::{
     CommandResponse,
     ErrorResponse,
     LocalMessage,
+    QuitCommand,
     SuccessResponse,
 };
 use tokio::io::{
@@ -85,18 +86,18 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                         use fig_proto::local::command::Command::*;
 
                         match command {
-                            DebugMode(command) => commands::debug(command).await.unwrap_or_else(|r| r),
-                            OpenUiElement(command) => {
-                                commands::open_ui_element(command, &proxy).await.unwrap_or_else(|r| r)
-                            },
+                            DebugMode(command) => commands::debug(command).await,
+                            OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
+                            Quit(command) => commands::quit(command, &proxy).await,
                             command => {
                                 debug!("Unhandled command: {command:?}");
-                                LocalResponse::Error {
+                                Err(LocalResponse::Error {
                                     code: None,
                                     message: Some("Unknown command".to_owned()),
-                                }
+                                })
                             },
                         }
+                        .unwrap_or_else(|r| r)
                     },
                 };
 

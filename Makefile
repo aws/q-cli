@@ -41,11 +41,11 @@ fig_ibus_engine:
 	$(MAKE) -C $(MAKE_DIR)/$@
 
 icons:
-	install -Dm644 fig_tauri/src-tauri/icons/32x32.png      $(BUILD_DIR)/usr/share/icons/hicolor/32x32/apps/fig.png
-	install -Dm644 fig_tauri/src-tauri/icons/128x128.png    $(BUILD_DIR)/usr/share/icons/hicolor/128x128/apps/fig.png
-	install -Dm644 fig_tauri/src-tauri/icons/128x128@2x.png $(BUILD_DIR)/usr/share/icons/hicolor/256x256/apps/fig.png
-	install -Dm644 fig_tauri/src-tauri/icons/icon.png       $(BUILD_DIR)/usr/share/icons/hicolor/512x512/apps/fig.png
-	install -Dm644 fig_tauri/src-tauri/icons/icon.png       $(BUILD_DIR)/usr/share/pixmaps/fig.png
+	for res in 16 22 24 32 48 64 128 256 512; do \
+	  install -Dm644 "fig_tauri/src-tauri/icons/$${res}x$${res}.png" \
+			"$(BUILD_DIR)/usr/share/icons/hicolor/$${res}x$${res}/apps/fig.png" ; \
+	done
+	install -Dm644 fig_tauri/src-tauri/icons/512x512.png $(BUILD_DIR)/usr/share/pixmaps/fig.png
 
 bundle:
 	cp -r $(MAKE_DIR)/bundle/linux/. $(BUILD_DIR)

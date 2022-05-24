@@ -86,9 +86,19 @@ $(BINARY_NAME)-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(CRATE_NAME).exe $(OUT_DIR)/$@
 
+### Convert icons
+
+icons:
+	for res in 16 22 24 32 48 64 128 256 512; do \
+		convert -resize "$${res}x$${res}" "icons/icon.png" "icons/$${res}x$${res}.png" ; \
+	done
+
+
 ### Clean the project
 
 clean:
 	command -v cargo &>/dev/null && cargo clean
 	rm -rf $(BUILT_PRODUCTS_DIR)
+
+.PHONY: clean icons
 
