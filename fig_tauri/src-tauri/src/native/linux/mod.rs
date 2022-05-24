@@ -1,3 +1,4 @@
+pub mod icons;
 mod sway;
 mod x11;
 
@@ -16,6 +17,12 @@ use crate::{
     FigEvent,
     GlobalState,
 };
+
+pub fn init() -> Result<()> {
+    icons::init()?;
+
+    Ok(())
+}
 
 #[derive(Debug, Default)]
 pub struct NativeState {

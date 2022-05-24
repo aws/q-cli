@@ -1209,6 +1209,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "bd0c93bb4b0c6d9b77f4435b0ae98c24d17f1c45b2ff844c6151a07256ca923b"
 
 [[package]]
+name = "dlv-list"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0688c2a7f92e427f44895cd63841bff7b29f8d7a1648b9e7e07a4a365b2e1257"
+
+[[package]]
 name = "dtoa"
 version = "0.4.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1506,6 +1512,7 @@ dependencies = [
  "fig_settings",
  "fig_telemetry",
  "fnv",
+ "freedesktop-icons",
  "gtk",
  "hashbrown 0.12.1",
  "image 0.24.2",
@@ -1658,6 +1665,18 @@ checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
 dependencies = [
  "matches",
  "percent-encoding",
+]
+
+[[package]]
+name = "freedesktop-icons"
+version = "0.1.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "1cc39054f0dc1f5b876df12c9eaf8185c530d54be135d26d3cb53ce2671dc4b0"
+dependencies = [
+ "dirs",
+ "once_cell",
+ "rust-ini",
+ "thiserror",
 ]
 
 [[package]]
@@ -3346,6 +3365,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "ordered-multimap"
+version = "0.4.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ccd746e37177e1711c20dd619a1620f34f5c8b569c53590a72dedd5344d8924a"
+dependencies = [
+ "dlv-list",
+ "hashbrown 0.12.1",
+]
+
+[[package]]
 name = "os_str_bytes"
 version = "6.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -4078,6 +4107,16 @@ dependencies = [
  "libsqlite3-sys",
  "memchr 2.5.0",
  "smallvec",
+]
+
+[[package]]
+name = "rust-ini"
+version = "0.18.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "f6d5f2436026b4f6e79dc829837d467cc7e9a55ee40e750d716713540715a2df"
+dependencies = [
+ "cfg-if 1.0.0",
+ "ordered-multimap",
 ]
 
 [[package]]

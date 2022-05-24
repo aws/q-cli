@@ -215,6 +215,7 @@ impl WebviewManager {
                         },
                     }
                 },
+                Event::MainEventsCleared | Event::NewEvents(StartCause::WaitCancelled { .. }) => {},
                 event => warn!("Unhandled event {event:?}"),
             }
         });
@@ -311,6 +312,7 @@ fn main() {
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
         fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
+        native::init().expect("Failed to initialize native integrations");
 
         let mut webview_manager = WebviewManager::new();
         webview_manager

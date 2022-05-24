@@ -30,6 +30,7 @@ pub enum FigWindowEvent {
     Emit { event: String, payload: String },
     Navigate { url: url::Url },
     Api { payload: String },
+    Devtools,
 }
 
 pub struct WindowState {
@@ -63,13 +64,14 @@ impl WindowState {
             FigWindowEvent::Reanchor { x, y } => {
                 let position = self.position.read();
                 let caret_position = self.caret_position.read();
+                let caret_size = self.caret_size.read();
                 *self.anchor.write() = PhysicalPosition { x, y };
                 match native::CURSOR_POSITION_KIND {
                     CursorPositionKind::Absolute => {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: caret_position.x + position.x,
+                                x: caret_position.x + position.x + caret_size.width,
                                 y: caret_position.y + position.y,
                             }))
                     },
@@ -77,7 +79,7 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x + position.x,
+                                x: x + caret_position.x + position.x + caret_size.width,
                                 y: y + caret_position.y + position.y,
                             }))
                     },
@@ -85,6 +87,7 @@ impl WindowState {
             },
             FigWindowEvent::Reposition { x, y } => {
                 let caret_position = self.caret_position.read();
+                let caret_size = self.caret_size.read();
                 *self.position.write() = PhysicalPosition {
                     x: caret_position.x,
                     y: caret_position.y,
@@ -94,7 +97,7 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x,
+                                x: x + caret_position.x + caret_size.width,
                                 y: y + caret_position.y,
                             }))
                     },
@@ -103,7 +106,7 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + caret_position.x + x,
+                                x: anchor.x + caret_position.x + x + caret_size.width,
                                 y: anchor.y + caret_position.y + y,
                             }))
                     },
@@ -121,7 +124,7 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + position.x,
+                                x: x + position.x + width,
                                 y: y + position.y,
                             }))
                     },
@@ -130,7 +133,7 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + x + position.x,
+                                x: anchor.x + x + position.x + width,
                                 y: anchor.y + y + position.y,
                             }))
                     },
@@ -170,6 +173,13 @@ impl WindowState {
             },
             FigWindowEvent::Api { payload } => {
                 api_tx.send((self.fig_id.clone(), payload)).unwrap();
+            },
+            FigWindowEvent::Devtools => {
+                if self.webview.is_devtools_open() {
+                    self.webview.close_devtools();
+                } else {
+                    self.webview.open_devtools();
+                }
             },
         }
     }

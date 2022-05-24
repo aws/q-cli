@@ -8,7 +8,7 @@ use std::time::{
 
 use parking_lot::Mutex;
 
-static SOCKET_CONNECTION: Mutex<Option<Result<UnixStream, Instant>>> = Mutex::new(None);
+static SOCKET_CONNECTION: Mutex<Option<Result<UnixStream, Instant>>> = parking_lot::const_mutex(None);
 
 fn send_hook(hook: fig_proto::local::Hook) {
     use fig_proto::local::*;
