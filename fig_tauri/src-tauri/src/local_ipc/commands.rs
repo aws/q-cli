@@ -1,5 +1,10 @@
+use std::process::exit;
+
+use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::{
     DebugModeCommand,
+    DiagnosticsCommand,
+    DiagnosticsResponse,
     OpenUiElementCommand,
     QuitCommand,
     UiElement,
@@ -24,9 +29,18 @@ pub async fn debug(_command: DebugModeCommand) -> LocalResult {
     todo!()
 }
 
-pub async fn quit(command: QuitCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {
-    proxy.send_event(FigEvent::ControlFlow(ControlFlow::Exit));
-    Ok(LocalResponse::Success(None))
+pub async fn quit(_command: QuitCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {
+    proxy
+        .send_event(FigEvent::ControlFlow(ControlFlow::Exit))
+        .map(|_| LocalResponse::Success(None))
+        .map_err(|_| exit(0))
+}
+
+pub async fn diagnostic(_command: DiagnosticsCommand) -> LocalResult {
+    let response = DiagnosticsResponse { ..Default::default() };
+    Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
+        response,
+    ))))
 }
 
 pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {

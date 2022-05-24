@@ -6,13 +6,9 @@ use std::time::{
     Instant,
 };
 
-use parking_lot::lock_api::RawMutex as _;
-use parking_lot::{
-    Mutex,
-    RawMutex,
-};
+use parking_lot::Mutex;
 
-static SOCKET_CONNECTION: Mutex<Option<Result<UnixStream, Instant>>> = Mutex::const_new(RawMutex::INIT, None);
+static SOCKET_CONNECTION: Mutex<Option<Result<UnixStream, Instant>>> = Mutex::new(None);
 
 fn send_hook(hook: fig_proto::local::Hook) {
     use fig_proto::local::*;

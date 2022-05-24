@@ -1,12 +1,8 @@
 use std::ffi::OsString;
 use std::io::Write;
-use std::process::{
-    exit,
-    Command,
-};
+use std::process::exit;
 
 use anyhow::{
-    anyhow,
     Context,
     Result,
 };

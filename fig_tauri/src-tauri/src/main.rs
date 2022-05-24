@@ -160,7 +160,7 @@ impl WebviewManager {
     async fn run(self) -> wry::Result<()> {
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(FigId, String)>();
 
-        native::NativeState::execute(self.global_state.clone(), self.event_loop.create_proxy());
+        native::NativeState::execute(self.global_state.clone(), self.event_loop.create_proxy()).await;
 
         tokio::spawn(figterm::clean_figterm_cache(self.global_state.clone()));
 
@@ -178,6 +178,7 @@ impl WebviewManager {
         });
 
         let tray = create_tray(&self.event_loop).unwrap();
+        let proxy = self.event_loop.create_proxy();
 
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
@@ -198,7 +199,7 @@ impl WebviewManager {
                     origin: MenuType::ContextMenu,
                     ..
                 } => {
-                    tray.handle_event(menu_id);
+                    tray.handle_event(menu_id, &proxy);
                 },
                 Event::UserEvent(event) => {
                     debug!("Executing user event: {event:?}");
@@ -231,7 +232,6 @@ fn build_mission_control(event_loop: &FigEventLoop) -> wry::Result<WebView> {
     let webview = WebViewBuilder::new(window)?
         .with_url("https://desktop.fig.io")?
         .with_ipc_handler(move |_window, payload| {
-            debug!("{payload}");
             proxy
                 .send_event(FigEvent::WindowEvent {
                     fig_id: MISSION_CONTROL_ID.clone(),

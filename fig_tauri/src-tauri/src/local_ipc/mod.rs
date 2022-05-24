@@ -89,6 +89,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                             DebugMode(command) => commands::debug(command).await,
                             OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
                             Quit(command) => commands::quit(command, &proxy).await,
+                            Diagnostics(command) => commands::diagnostic(command).await,
                             command => {
                                 debug!("Unhandled command: {command:?}");
                                 Err(LocalResponse::Error {

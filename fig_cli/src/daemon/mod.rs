@@ -23,7 +23,6 @@ use futures::{
     SinkExt,
     StreamExt,
 };
-use parking_lot::lock_api::RawMutex;
 use parking_lot::{
     Mutex,
     RwLock,
@@ -298,7 +297,7 @@ impl LaunchService {
         let plist_path = homedir
             .join("Library")
             .join("LaunchAgents")
-            .join("io.fig.dotfiles-daemon.plist");
+            .join(format!("{}.plist", InitSystem::Launchd.daemon_name()));
 
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
@@ -331,7 +330,7 @@ impl LaunchService {
             .join(".config")
             .join("systemd")
             .join("user")
-            .join("fig-dotfiles-daemon.service");
+            .join(format!("{}.service", InitSystem::Systemd.daemon_name()));
 
         let executable_path = std::env::current_exe()?;
         let executable_path_str = executable_path.to_string_lossy();
@@ -339,7 +338,7 @@ impl LaunchService {
         let log_path = homedir.join(".fig").join("logs").join("daemon.log");
         let log_path_str = format!("file:{}", log_path.to_string_lossy());
 
-        let unit = SystemdUnit::new("Fig Dotfiles Daemon")
+        let unit = SystemdUnit::new("Fig Daemon")
             .exec_start(format!("{} daemon", executable_path_str))
             .restart("always")
             .restart_sec(5)
@@ -418,7 +417,7 @@ impl Default for DaemonStatus {
     }
 }
 
-pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, false);
+pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::new(false);
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 #[cfg(unix)]

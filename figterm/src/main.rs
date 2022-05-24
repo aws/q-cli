@@ -67,7 +67,6 @@ use nix::unistd::{
     isatty,
 };
 use once_cell::sync::Lazy;
-use parking_lot::lock_api::RawRwLock;
 use parking_lot::{
     Mutex,
     RwLock,
@@ -225,7 +224,7 @@ impl EventListener for EventSender {
     }
 }
 
-static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::const_new(RawRwLock::INIT, None);
+static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool

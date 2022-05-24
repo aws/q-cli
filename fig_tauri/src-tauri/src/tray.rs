@@ -1,25 +1,35 @@
 use std::process::exit;
 
-use wry::application::event_loop::EventLoop;
+use wry::application::event_loop::{
+    ControlFlow,
+    EventLoop,
+    EventLoopProxy,
+};
 use wry::application::menu::{
     ContextMenu,
     CustomMenuItem,
     MenuId,
+    MenuItem,
     MenuItemAttributes,
 };
 use wry::application::system_tray::SystemTrayBuilder;
 
 use crate::FigEvent;
 
+struct TrayElement {
+    item: CustomMenuItem,
+    event: Box<dyn Fn(&EventLoopProxy<FigEvent>)>,
+}
+
 pub struct Tray {
-    elements: Vec<(CustomMenuItem, Box<dyn Fn()>)>,
+    elements: Vec<TrayElement>,
 }
 
 impl Tray {
-    pub fn handle_event(&self, id: MenuId) {
-        for (element, func) in &self.elements {
-            if element.clone().id() == id {
-                func();
+    pub fn handle_event(&self, id: MenuId, proxy: &EventLoopProxy<FigEvent>) {
+        for TrayElement { item, event } in &self.elements {
+            if item.clone().id() == id {
+                event(proxy);
             }
         }
     }
@@ -59,38 +69,80 @@ pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<Tray> {
 //    }
 //}
 
-fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<(CustomMenuItem, Box<dyn Fn()>)> {
-    // SystemTrayMenu::new()
-    //    .add_submenu(SystemTraySubmenu::new(
-    //        "Debugger",
-    //        SystemTrayMenu::new()
-    //            .add_item(CustomMenuItem::new(
-    //                "debugger-status",
-    //                "Fig can't link your terminal window to the TTY",
-    //            ))
-    //            .add_native_item(SystemTrayMenuItem::Separator)
-    //            .add_item(CustomMenuItem::new("debugger-window", "window: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-tty", "tty: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-cwd", "cwd: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-pid", "pid: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-keybuffer", "keybuffer: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-hostname", "hostname: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-terminal", "terminal: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-process", "process: None").disabled())
-    //            .add_item(CustomMenuItem::new("debugger-api-message", "api-message: None").disabled())
-    //            .add_native_item(SystemTrayMenuItem::Separator)
-    //            .add_item(CustomMenuItem::new("debugger-refresh", "Manually Refresh Menu")),
-    //    ))
-    //    .add_native_item(SystemTrayMenuItem::Separator)
+fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<TrayElement> {
+    let mut v = vec![];
 
-    vec![(
-        tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit"))),
-        Box::new(|| exit(0)),
-    )]
+    let mut debugger_menu = ContextMenu::new();
+    debugger_menu.add_item(
+        MenuItemAttributes::new("Fig can't link your terminal window to the TTY")
+            .with_id(MenuId::new("debugger-status"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_native_item(MenuItem::Separator);
+    debugger_menu.add_item(
+        MenuItemAttributes::new("window: None")
+            .with_id(MenuId::new("debugger-window"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("tty: None")
+            .with_id(MenuId::new("debugger-tty"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("cwd: None")
+            .with_id(MenuId::new("debugger-cwd"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("pid: None")
+            .with_id(MenuId::new("debugger-pid"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("keybuffer: None")
+            .with_id(MenuId::new("debugger-keybuffer"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("hostname: None")
+            .with_id(MenuId::new("debugger-hostname"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("terminal: None")
+            .with_id(MenuId::new("debugger-terminal"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("process: None")
+            .with_id(MenuId::new("debugger-process"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_item(
+        MenuItemAttributes::new("api-message: None")
+            .with_id(MenuId::new("debugger-api-message"))
+            .with_enabled(false),
+    );
+    debugger_menu.add_native_item(MenuItem::Separator);
+    debugger_menu.add_item(MenuItemAttributes::new("Manually Refresh Menu").with_id(MenuId::new("debugger-refresh")));
+
+    tray_menu.add_submenu("Debugger", true, debugger_menu);
+
+    v.push(TrayElement {
+        item: tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit"))),
+        event: Box::new(|proxy| {
+            proxy.send_event(FigEvent::ControlFlow(ControlFlow::Exit)).ok();
+        }),
+    });
+
+    v
 }
 
 // fn update_tray_menu(debug_state: &DebugState, figterm_state: &FigtermState) -> Result<(),
-// tauri::Error> {    let figterm_session = figterm_state.most_recent_session();
+// tauri::Error> {
+//
+//    let figterm_session = figterm_state.most_recent_session();
 //
 //    match figterm_session {
 //        Some(_) => {
