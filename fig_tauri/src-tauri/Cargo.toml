@@ -28,7 +28,7 @@ fig_settings = { path = "../../rust-lib/fig_settings" }
 fig_telemetry = { version = "0.1.0", path = "../../rust-lib/fig_telemetry" }
 gtk = { version = "0.15", features = [ "v3_22" ] }
 hashbrown = "0.12.0"
-once_cell = "1.10.0"
+once_cell = "1.12.0"
 parking_lot = "0.12.0"
 url = "2.2.2"
 percent-encoding = "2.1.0"
