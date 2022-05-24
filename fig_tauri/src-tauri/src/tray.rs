@@ -14,7 +14,11 @@ use wry::application::menu::{
 };
 use wry::application::system_tray::SystemTrayBuilder;
 
-use crate::FigEvent;
+use crate::window::FigWindowEvent;
+use crate::{
+    FigEvent,
+    AUTOCOMPLETE_ID,
+};
 
 struct TrayElement {
     item: CustomMenuItem,
@@ -47,7 +51,7 @@ pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<Tray> {
 //    event: SystemTrayEvent,
 //    debug_state: Arc<DebugState>,
 //    figterm_state: Arc<FigtermState>,
-//) {
+// ) {
 //    match event {
 //        SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
 //            "debugger-refresh" => {
@@ -67,7 +71,7 @@ pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<Tray> {
 //        },
 //        _ => {},
 //    }
-//}
+// }
 
 fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<TrayElement> {
     let mut v = vec![];
@@ -130,9 +134,21 @@ fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<TrayElement> {
     tray_menu.add_submenu("Debugger", true, debugger_menu);
 
     v.push(TrayElement {
+        item: tray_menu.add_item(MenuItemAttributes::new("Toggle Devtools").with_id(MenuId::new("toggle-devtools"))),
+        event: Box::new(|proxy| {
+            proxy
+                .send_event(FigEvent::WindowEvent {
+                    fig_id: AUTOCOMPLETE_ID,
+                    window_event: FigWindowEvent::Devtools,
+                })
+                .unwrap();
+        }),
+    });
+
+    v.push(TrayElement {
         item: tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit"))),
         event: Box::new(|proxy| {
-            proxy.send_event(FigEvent::ControlFlow(ControlFlow::Exit)).ok();
+            proxy.send_event(FigEvent::ControlFlow(ControlFlow::Exit)).unwrap();
         }),
     });
 

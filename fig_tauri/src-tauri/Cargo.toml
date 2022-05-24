@@ -45,6 +45,7 @@ windows = { version = "0.37.0", features = ["Win32_Foundation", "Win32_Networkin
 
 [target.'cfg(target_os="linux")'.dependencies]
 x11rb = "0.9.0"
+freedesktop-icons = "0.1.1"
 
 [features]
 default = [ "custom-protocol" ]

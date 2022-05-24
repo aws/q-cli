@@ -17,6 +17,8 @@ use wry::http::{
     ResponseBuilder,
 };
 
+use crate::native;
+
 static ASSETS: Lazy<HashMap<&str, Bytes>> = Lazy::new(|| {
     let mut map = HashMap::new();
 
@@ -40,6 +42,15 @@ static ASSETS: Lazy<HashMap<&str, Bytes>> = Lazy::new(|| {
     map
 });
 
+fn resolve_asset(name: &str) -> Vec<u8> {
+    native::icons::lookup(name).unwrap_or_else(|| {
+        ASSETS
+            .get(name)
+            .unwrap_or_else(|| ASSETS.get("template").unwrap())
+            .to_vec()
+    })
+}
+
 fn build_asset(name: &str) -> Response {
     trace!("building response for asset {}", name);
 
@@ -47,12 +58,7 @@ fn build_asset(name: &str) -> Response {
         .status(StatusCode::OK)
         .mimetype("image/png")
         .header("Access-Control-Allow-Origin", "*")
-        .body(
-            ASSETS
-                .get(name)
-                .unwrap_or_else(|| ASSETS.get("template").unwrap())
-                .to_vec(),
-        )
+        .body(resolve_asset(name))
         .unwrap()
 }
 
