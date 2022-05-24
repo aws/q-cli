@@ -121,6 +121,11 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
+    proxy.send_event(FigEvent::WindowEvent {
+        fig_id: AUTOCOMPLETE_ID,
+        window_event: FigWindowEvent::Show,
+    })?;
+
     Ok(())
 }
 
