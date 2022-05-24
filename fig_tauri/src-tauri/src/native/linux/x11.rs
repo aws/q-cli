@@ -29,7 +29,8 @@ use crate::window::{
 };
 use crate::{
     FigEvent,
-    AUTOCOMPLETE_ID, GlobalState,
+    GlobalState,
+    AUTOCOMPLETE_ID,
 };
 
 static WMCLASS_WHITELSIT: &[&str] = &[
@@ -105,10 +106,10 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, windo
         Err(err) => {
             debug!("No wm class {err:?}");
             // hide if missing wm class
-            // proxy.send_event(FigEvent::WindowEvent {
-            //    fig_id: AUTOCOMPLETE_ID.clone(),
-            //    window_event: FigWindowEvent::Hide,
-            //})?;
+            proxy.send_event(FigEvent::WindowEvent {
+                fig_id: AUTOCOMPLETE_ID.clone(),
+                window_event: FigWindowEvent::Hide,
+            })?;
             return Ok(());
         },
     };
@@ -149,11 +150,6 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, windo
     //        y: geometry.y as i32,
     //    },
     //})?;
-
-    proxy.send_event(FigEvent::WindowEvent {
-        fig_id: AUTOCOMPLETE_ID.clone(),
-        window_event: FigWindowEvent::Show,
-    })?;
 
     Ok(())
 }

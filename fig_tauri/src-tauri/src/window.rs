@@ -113,6 +113,9 @@ impl WindowState {
                 let position = self.position.read();
                 *self.caret_position.write() = PhysicalPosition { x, y };
                 *self.caret_size.write() = PhysicalSize { width, height };
+                if x == 0 && y == 0 {
+                    self.webview.window().set_visible(false);
+                }
                 match native::CURSOR_POSITION_KIND {
                     CursorPositionKind::Absolute => {
                         self.webview
