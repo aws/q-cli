@@ -10,7 +10,7 @@ publish = false
 default-run = "fig_tauri"
 
 [build-dependencies]
-tauri-build = { version = "1.0.0-rc.10", features = [] }
+tauri-build = { version = "1.0.0-rc.11", features = [] }
 image = "0.24.2"
 
 [dependencies]
