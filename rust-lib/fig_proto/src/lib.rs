@@ -22,8 +22,20 @@ use bytes::{
 };
 use once_cell::sync::Lazy;
 pub use prost;
-use prost::Message;
-use prost_reflect::DescriptorPool;
+use prost::{
+    DecodeError,
+    Message,
+};
+use prost_reflect::{
+    DescriptorPool,
+    DynamicMessage,
+    ReflectMessage,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_json::Deserializer;
 use thiserror::Error;
 
 static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
@@ -60,6 +72,22 @@ pub enum FigMessageParseError {
     InvalidMessageType([u8; 8]),
     #[error("io error: {0}")]
     Io(#[from] std::io::Error),
+}
+
+#[derive(Debug, Error)]
+pub enum FigMessageDecodeError {
+    #[error("prost decode error: {0}")]
+    ProstDecode(#[from] DecodeError),
+    #[error("json decode error: {0}")]
+    JsonDecode(#[from] serde_json::Error),
+    #[error("name is a valid protobuf: {0}")]
+    NameNotValid(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FigJsonMessage {
+    name: String,
+    data: serde_json::Value,
 }
 
 impl FigMessage {
@@ -101,6 +129,20 @@ impl FigMessage {
             inner: Bytes::from(inner),
             message_type,
         })
+    }
+
+    pub fn decode<T>(self) -> Result<T, FigMessageDecodeError>
+    where
+        T: Message + ReflectMessage + Default,
+    {
+        match self.message_type {
+            FigMessageType::Protobuf => Ok(T::decode(self.inner)?),
+            FigMessageType::Json => Ok(DynamicMessage::deserialize(
+                T::default().descriptor(),
+                &mut Deserializer::from_slice(self.inner.as_ref()),
+            )?
+            .transcode_to()?),
+        }
     }
 }
 
@@ -148,10 +190,24 @@ impl<T: Message> FigProtobufEncodable for T {
 mod tests {
     use super::*;
 
+    fn test_message() -> local::LocalMessage {
+        let ctx = hooks::new_context(
+            Some(123),
+            Some("/dev/pty123".into()),
+            Some("/bin/bash".into()),
+            Some("/home/user".into()),
+            None,
+            None,
+            None,
+            None,
+        );
+        let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3);
+        hooks::hook_to_message(hook)
+    }
+
     #[test]
     fn test_to_fig_pbuf() {
-        let hook = hooks::new_edit_buffer_hook(None, "test", 0, 0);
-        let message = hooks::hook_to_message(hook);
+        let message = test_message();
 
         assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"));
 
@@ -159,5 +215,19 @@ mod tests {
             message.encode_fig_protobuf().unwrap().message_type,
             FigMessageType::Protobuf
         );
+    }
+
+    #[test]
+    fn json_decode() {
+        let message = test_message();
+        let json = serde_json::to_vec(&message.transcode_to_dynamic()).unwrap();
+
+        let msg = FigMessage {
+            inner: Bytes::from(json),
+            message_type: FigMessageType::Json,
+        };
+        let decoded_message: local::LocalMessage = msg.decode().unwrap();
+
+        assert_eq!(message, decoded_message);
     }
 }

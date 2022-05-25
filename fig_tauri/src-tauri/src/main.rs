@@ -1,6 +1,7 @@
 #![cfg_attr(all(not(debug_assertions), target_os = "windows"), windows_subsystem = "windows")]
 
 mod api;
+mod cli;
 mod figterm;
 mod icons;
 mod local_ipc;
@@ -12,6 +13,7 @@ mod window;
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use clap::Parser;
 use dashmap::DashMap;
 use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
@@ -147,12 +149,13 @@ impl WebviewManager {
             .insert(webview_arc.webview.window().id(), webview_arc);
     }
 
-    fn build_webview(
+    fn build_webview<T>(
         &mut self,
         fig_id: FigId,
-        builder: impl Fn(&FigEventLoop) -> wry::Result<WebView>,
+        builder: impl Fn(&FigEventLoop, T) -> wry::Result<WebView>,
+        options: T,
     ) -> wry::Result<()> {
-        let webview = builder(&self.event_loop)?;
+        let webview = builder(&self.event_loop, options)?;
         self.insert_webview(fig_id, webview);
         Ok(())
     }
@@ -222,10 +225,19 @@ impl WebviewManager {
     }
 }
 
-fn build_mission_control(event_loop: &FigEventLoop) -> wry::Result<WebView> {
+struct MissionControlOptions {
+    force_visable: bool,
+}
+
+fn build_mission_control(
+    event_loop: &FigEventLoop,
+    MissionControlOptions { force_visable }: MissionControlOptions,
+) -> wry::Result<WebView> {
+    let is_visable = !fig_auth::is_logged_in() || force_visable;
+
     let window = WindowBuilder::new()
         .with_title("Fig Mission Control")
-        .with_visible(false)
+        .with_visible(is_visable)
         .build(event_loop)?;
 
     let proxy = event_loop.create_proxy();
@@ -248,7 +260,9 @@ fn build_mission_control(event_loop: &FigEventLoop) -> wry::Result<WebView> {
     Ok(webview)
 }
 
-fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
+struct AutocompleteOptions {}
+
+fn build_autocomplete(event_loop: &FigEventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
     let window = WindowBuilder::new()
         .with_title("Fig Autocomplete")
         .with_transparent(true)
@@ -256,10 +270,9 @@ fn build_autocomplete(event_loop: &FigEventLoop) -> wry::Result<WebView> {
         .with_skip_taskbar(true)
         .with_resizable(true)
         .with_always_on_top(true)
+        .with_visible(false)
         //.with_inner_size(PhysicalSize { width: 1, height: 1 })
         .build(event_loop)?;
-
-    window.set_visible(false);
 
     window.gtk_window().set_type_hint(WindowTypeHint::Utility);
 
@@ -293,20 +306,30 @@ fn main() {
     let _sentry_guard =
         fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
 
-    match get_current_pid() {
-        Ok(current_pid) => {
-            let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let processes = system.processes_by_exact_name("fig_desktop");
-            for process in processes.into_iter() {
-                let pid = process.pid();
-                if current_pid != pid {
-                    let exe = process.exe().display();
-                    eprintln!("Fig is already running: {exe} ({pid})");
-                    return;
+    let cli = cli::Cli::parse();
+
+    if !cli.allow_multiple_instances {
+        match get_current_pid() {
+            Ok(current_pid) => {
+                let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+                let processes = system.processes_by_exact_name("fig_desktop");
+                for process in processes.into_iter() {
+                    let pid = process.pid();
+                    if current_pid != pid {
+                        if cli.kill_instance {
+                            process.kill();
+                            let exe = process.exe().display();
+                            eprintln!("Killing instance: {exe} ({pid})");
+                        } else {
+                            let exe = process.exe().display();
+                            eprintln!("Fig is already running: {exe} ({pid})");
+                            return;
+                        }
+                    }
                 }
-            }
-        },
-        Err(err) => warn!("Failed to get pid: {err}"),
+            },
+            Err(err) => warn!("Failed to get pid: {err}"),
+        }
     }
 
     let rt = Runtime::new().unwrap();
@@ -316,10 +339,12 @@ fn main() {
 
         let mut webview_manager = WebviewManager::new();
         webview_manager
-            .build_webview(MISSION_CONTROL_ID, build_mission_control)
+            .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
+                force_visable: cli.mission_control_open,
+            })
             .unwrap();
         webview_manager
-            .build_webview(AUTOCOMPLETE_ID, build_autocomplete)
+            .build_webview(AUTOCOMPLETE_ID, build_autocomplete, AutocompleteOptions {})
             .unwrap();
         webview_manager.run().await.unwrap();
     });

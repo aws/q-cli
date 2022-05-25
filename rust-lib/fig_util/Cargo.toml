@@ -13,7 +13,7 @@ fig_directories = { path = "../fig_directories" }
 fig_settings = { path = "../fig_settings" }
 serde = "1.0.136"
 sha2 = "0.10.2"
-sysinfo = "0.23.15"
+sysinfo = "0.23.13"
 thiserror = "1.0.30"
 
 [target.'cfg(windows)'.dependencies]
