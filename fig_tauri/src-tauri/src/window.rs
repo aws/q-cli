@@ -74,16 +74,16 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: caret_position.x + position.x + caret_size.width,
-                                y: caret_position.y + position.y,
+                                x: caret_position.x + position.x,
+                                y: caret_position.y + position.y + caret_size.height,
                             }))
                     },
                     CursorPositionKind::Relative => {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x + position.x + caret_size.width,
-                                y: y + caret_position.y + position.y,
+                                x: x + caret_position.x + position.x,
+                                y: y + caret_position.y + position.y + caret_size.height,
                             }))
                     },
                 }
@@ -100,8 +100,8 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x + caret_size.width,
-                                y: y + caret_position.y,
+                                x: x + caret_position.x,
+                                y: y + caret_position.y + caret_size.height,
                             }))
                     },
                     CursorPositionKind::Relative => {
@@ -109,8 +109,8 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + caret_position.x + x + caret_size.width,
-                                y: anchor.y + caret_position.y + y,
+                                x: anchor.x + caret_position.x + x,
+                                y: anchor.y + caret_position.y + y + caret_size.height,
                             }))
                     },
                 }
@@ -127,8 +127,8 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + position.x + width,
-                                y: y + position.y,
+                                x: x + position.x,
+                                y: y + position.y + height,
                             }))
                     },
                     CursorPositionKind::Relative => {
@@ -136,8 +136,8 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + x + position.x + width,
-                                y: anchor.y + y + position.y,
+                                x: anchor.x + x + position.x,
+                                y: anchor.y + y + position.y + height,
                             }))
                     },
                 }
