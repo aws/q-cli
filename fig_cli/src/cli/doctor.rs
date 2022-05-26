@@ -260,28 +260,29 @@ impl DoctorCheck for FigBinCheck {
     }
 }
 
-struct PathCheck;
+macro_rules! path_check {
+    ($name:ident, $path:expr) => {
+        struct $name;
 
-#[async_trait]
-impl DoctorCheck for PathCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "PATH contains ~/.local/bin and ~/.fig/bin".into()
-    }
+        #[async_trait]
+        impl DoctorCheck for $name {
+            fn name(&self) -> Cow<'static, str> {
+                concat!("PATH contains ~/", $path).into()
+            }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match std::env::var("PATH").map(|path| path.contains(".local/bin")) {
-            Ok(true) => {},
-            _ => return Err(anyhow!("Path does not contain ~/.local/bin").into()),
+            async fn check(&self, _: &()) -> Result<(), DoctorError> {
+                match std::env::var("PATH").map(|path| path.contains($path)) {
+                    Ok(true) => Ok(()),
+                    _ => return Err(anyhow!(concat!("Path does not contain ~/", $path)).into()),
+                }
+            }
         }
-
-        match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
-            Ok(true) => {},
-            _ => return Err(anyhow!("Path does not contain ~/.fig/bin").into()),
-        }
-
-        Ok(())
-    }
+    };
 }
+
+path_check!(LocalBinPathCheck, ".local/bin");
+#[cfg(target_os = "macos")]
+path_check!(FigBinPathCheck, ".fig/bin");
 
 struct AppRunningCheck;
 
@@ -461,18 +462,19 @@ impl DoctorCheck for FigIntegrationsCheck {
         }
 
         // Check that ~/.fig/bin/figterm exists
-        let figterm_path = fig_directories::fig_dir()
-            .context("Could not find ~/.fig")?
-            .join("bin")
-            .join("figterm");
+        // TODO(grant): Check figterm exe exists
+        // let figterm_path = fig_directories::fig_dir()
+        //    .context("Could not find ~/.fig")?
+        //    .join("bin")
+        //    .join("figterm");
 
-        if !figterm_path.exists() {
-            return Err(DoctorError::Error {
-                reason: "figterm does not exist".into(),
-                info: vec![],
-                fix: None,
-            });
-        }
+        // if !figterm_path.exists() {
+        //    return Err(DoctorError::Error {
+        //        reason: "figterm does not exist".into(),
+        //        info: vec![],
+        //        fix: None,
+        //    });
+        //}
 
         match std::env::var("FIG_TERM").as_deref() {
             Ok("1") => {},
@@ -481,8 +483,8 @@ impl DoctorCheck for FigIntegrationsCheck {
                     reason: "Figterm is not running".into(),
                     info: vec![
                         format!(
-                            "FIG_INTEGRATION_VERISON={:?}",
-                            std::env::var_os("FIG_INTEGRATION_VERISON")
+                            "FIG_INTEGRATION_VERSION={:?}",
+                            std::env::var_os("FIG_INTEGRATION_VERSION")
                         )
                         .into(),
                     ],
@@ -1662,7 +1664,9 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's make sure Fig is running...".into(),
             vec![
                 &FigBinCheck {},
-                &PathCheck {},
+                &LocalBinPathCheck {},
+                #[cfg(target_os = "macos")]
+                &FigBinPathCheck {},
                 &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
@@ -1684,7 +1688,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             config,
             &mut spinner,
         )
-        .await?;
+        .await
+        .ok();
 
         #[cfg(target_os = "macos")]
         {

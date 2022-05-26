@@ -8,8 +8,6 @@ use image::imageops::FilterType;
 
 fn main() {
     build_assets();
-
-    tauri_build::build();
 }
 
 fn build_assets() {

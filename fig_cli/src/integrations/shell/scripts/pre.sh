@@ -26,7 +26,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -t 1 ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
   && [[ -z "${FIG_PTY}" ]] \
-  && command -v ~/.fig/bin/figterm 2>&1 1>/dev/null \
+  && command -v figterm 2>&1 1>/dev/null \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
 
   # Generated automatically by iTerm and Terminal, but needs to be
@@ -50,11 +50,11 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
     FIG_TERM_NAME="${FIG_SHELL} (figterm)"
-    FIG_SHELL_PATH="${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)"
+    FIG_SHELL_PATH="$(command -v "$FIG_TERM_NAME" || echo "${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)")"
 
     # Only copy figterm binary if it doesn't already exist
     if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
-      cp -p ~/.fig/bin/figterm "${FIG_SHELL_PATH}"
+      cp -p "$(command -v figterm)" "${FIG_SHELL_PATH}"
     fi
 
     FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"

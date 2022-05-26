@@ -14,13 +14,13 @@ jobs:
         working-directory: fig_cli
     steps:
       - uses: actions/checkout@v3
-      - uses: actions/setup-node@v2
+      - uses: actions/setup-node@v3
       - name: Setup Rust stable
         uses: actions-rs/toolchain@v1
         with:
           profile: minimal
           toolchain: stable
-      - uses: Swatinem/rust-cache@v1
+      - uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c
       - name: Generate the spec
         run: |
           cargo run -- completion fig > spec.ts
@@ -33,7 +33,7 @@ jobs:
         with:
           token: ${{ secrets.FIG_BOT_TOKEN }}
           autocomplete-spec-name: 'fig'
-          spec-path: figcli/spec.ts
+          spec-path: fig_cli/spec.ts
           integration: clap
           diff-based-versioning: true
           new-spec-version: ${{ steps.cli-version.outputs.VERSION }}

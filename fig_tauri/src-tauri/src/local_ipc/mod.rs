@@ -10,6 +10,7 @@ use fig_proto::local::{
     CommandResponse,
     ErrorResponse,
     LocalMessage,
+    QuitCommand,
     SuccessResponse,
 };
 use tokio::io::{
@@ -17,16 +18,17 @@ use tokio::io::{
     AsyncWrite,
 };
 use tracing::{
+    debug,
     error,
     trace,
     warn,
 };
+use wry::application::event_loop::EventLoopProxy;
 
-use crate::figterm::FigtermState;
-use crate::window::WindowState;
 use crate::{
     native,
-    NotificationsState,
+    FigEvent,
+    GlobalState,
 };
 
 pub enum LocalResponse {
@@ -37,11 +39,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(
-    figterm_state: Arc<FigtermState>,
-    notification_state: Arc<NotificationsState>,
-    window_state: Arc<WindowState>,
-) {
+pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
     let socket_path = fig_ipc::get_fig_socket_path();
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -58,22 +56,14 @@ pub async fn start_local_ipc(
     let listener = native::Listener::bind(&socket_path);
 
     while let Ok(stream) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(
-            stream,
-            figterm_state.clone(),
-            notification_state.clone(),
-            window_state.clone(),
-        ))
-        .await
-        .expect("Failed to spawn ipc handler");
+        tokio::spawn(handle_local_ipc(stream, global_state.clone(), proxy.clone()));
     }
 }
 
 async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
     mut stream: S,
-    figterm_state: Arc<FigtermState>,
-    notification_state: Arc<NotificationsState>,
-    window_state: Arc<WindowState>,
+    global_state: Arc<GlobalState>,
+    proxy: EventLoopProxy<FigEvent>,
 ) {
     while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
         .await
@@ -96,12 +86,19 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                         use fig_proto::local::command::Command::*;
 
                         match command {
-                            DebugMode(command) => commands::debug(command).await.unwrap_or_else(|r| r),
-                            _ => LocalResponse::Error {
-                                code: None,
-                                message: Some("Unknown command".to_owned()),
+                            DebugMode(command) => commands::debug(command).await,
+                            OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
+                            Quit(command) => commands::quit(command, &proxy).await,
+                            Diagnostics(command) => commands::diagnostic(command).await,
+                            command => {
+                                debug!("Unhandled command: {command:?}");
+                                Err(LocalResponse::Error {
+                                    code: None,
+                                    message: Some("Unknown command".to_owned()),
+                                })
                             },
                         }
+                        .unwrap_or_else(|r| r)
                     },
                 };
 
@@ -130,17 +127,14 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
             Some(LocalMessageType::Hook(hook)) => {
                 use fig_proto::local::hook::Hook;
 
-                match hook.hook {
-                    Some(Hook::EditBuffer(request)) => {
-                        hooks::edit_buffer(request, figterm_state.clone(), &notification_state, &window_state).await
-                    },
-                    Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &window_state).await,
+                if let Err(err) = match hook.hook {
+                    Some(Hook::EditBuffer(request)) => hooks::edit_buffer(request, global_state.clone(), &proxy).await,
+                    Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &proxy).await,
                     Some(Hook::Prompt(request)) => hooks::prompt(request).await,
-                    Some(Hook::FocusChange(request)) => hooks::focus_change(request).await,
+                    Some(Hook::FocusChange(request)) => hooks::focus_change(request, &proxy).await,
                     Some(Hook::PreExec(request)) => hooks::pre_exec(request).await,
-                    Some(Hook::InterceptedKey(request)) => {
-                        hooks::intercepted_key(request, &notification_state, &window_state).await
-                    },
+                    Some(Hook::InterceptedKey(request)) => hooks::intercepted_key(request, &global_state, &proxy).await,
+                    Some(Hook::FileChanged(request)) => hooks::file_changed(request).await,
                     err => {
                         match &err {
                             Some(unknown) => error!("Unknown hook: {:?}", unknown),
@@ -149,8 +143,9 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
 
                         Err(anyhow!("Failed to process hook {err:?}"))
                     },
+                } {
+                    error!("Error processing hook: {err:?}");
                 }
-                .unwrap();
             },
             None => warn!("Received empty local message"),
         }

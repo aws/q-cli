@@ -54,7 +54,6 @@ use fig_proto::local::{
     LocalMessage,
 };
 use fig_settings::state;
-use fig_util::Terminal;
 use flume::Sender;
 use nix::libc::STDIN_FILENO;
 use nix::sys::termios::{
@@ -68,7 +67,6 @@ use nix::unistd::{
     isatty,
 };
 use once_cell::sync::Lazy;
-use parking_lot::lock_api::RawRwLock;
 use parking_lot::{
     Mutex,
     RwLock,
@@ -93,6 +91,7 @@ use tracing::{
     warn,
 };
 
+use crate::interceptor::terminal_input_parser::KeyCode;
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
     remove_socket,
@@ -130,7 +129,7 @@ impl EventSender {
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     #[cfg(target_os = "macos")]
-    let terminal = Terminal::parent_terminal().map(|s| s.to_string());
+    let terminal = fig_util::Terminal::parent_terminal().map(|s| s.to_string());
     #[cfg(not(target_os = "macos"))]
     let terminal = None;
 
@@ -225,7 +224,7 @@ impl EventListener for EventSender {
     }
 }
 
-static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::const_new(RawRwLock::INIT, None);
+static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
@@ -516,12 +515,17 @@ fn figterm_main() -> Result<()> {
                                                 trace!("Read {} bytes from input: {:?}", size, s);
                                                 match interceptor::parse_code(s.as_bytes()) {
                                                     Some((key_code, modifier)) => {
-                                                        match key_interceptor.intercept_key(key_code, &modifier) {
+                                                        match key_interceptor.intercept_key(key_code.clone(), &modifier) {
                                                             Some(action) => {
                                                                 debug!("Action: {:?}", action);
                                                                 let hook =
                                                                     fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
                                                                 outgoing_sender.send(hook_to_message(hook)).unwrap();
+
+                                                                if key_code == KeyCode::Esc {
+                                                                    key_interceptor.reset();
+                                                                }
+
                                                                 continue 'select_loop;
                                                             }
                                                             None => {}

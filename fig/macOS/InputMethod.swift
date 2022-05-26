@@ -519,7 +519,7 @@ extension TISInputSource {
 }
 
 extension InputMethod {
-  func handleAPIRequest(_ request: Fig_MacOSInputMethodRequest) throws -> Fig_MacOSInputMethodResponse {
+  func handleAPIRequest(_ request: Fig_MacosInputMethodRequest) throws -> Fig_MacosInputMethodResponse {
 
     var status: (message: String, code: Int)?
     switch request.action {
@@ -553,7 +553,7 @@ extension InputMethod {
       throw APIError.generic(message: "No status found")
     }
 
-    return Fig_MacOSInputMethodResponse.with { response in
+    return Fig_MacosInputMethodResponse.with { response in
       response.message = unwrappedStatus.message
       response.code = Int32(unwrappedStatus.code)
 

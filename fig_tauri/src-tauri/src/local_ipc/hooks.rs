@@ -14,6 +14,7 @@ use fig_proto::fig::{
 use fig_proto::local::{
     CursorPositionHook,
     EditBufferHook,
+    FileChangedHook,
     FocusChangeHook,
     InterceptedKeyHook,
     PreExecHook,
@@ -21,18 +22,18 @@ use fig_proto::local::{
 };
 use fig_proto::prost::Message;
 use tracing::debug;
+use wry::application::event_loop::EventLoopProxy;
 
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
-    FigtermState,
 };
-use crate::window::{
-    WindowEvent,
-    WindowState,
-};
+use crate::window::FigWindowEvent;
 use crate::{
+    FigEvent,
+    GlobalState,
     NotificationsState,
+    AUTOCOMPLETE_ID,
     FIG_PROTO_MESSAGE_RECIEVED,
 };
 
@@ -40,110 +41,135 @@ pub async fn send_notification(
     notification_type: &NotificationType,
     notification: Notification,
     notification_state: &NotificationsState,
-    window_state: &WindowState,
+    proxy: &EventLoopProxy<FigEvent>,
 ) -> Result<()> {
-    let message_id = match notification_state.subscriptions.get(notification_type) {
-        Some(id) => *id,
-        None => {
-            return Ok(());
-        },
-    };
+    for sub in notification_state.subscriptions.iter() {
+        let message_id = match sub.get(notification_type) {
+            Some(id) => *id,
+            None => continue,
+        };
 
-    let message = ServerOriginatedMessage {
-        id: Some(message_id),
-        submessage: Some(ServerOriginatedSubMessage::Notification(notification)),
-    };
+        let message = ServerOriginatedMessage {
+            id: Some(message_id),
+            submessage: Some(ServerOriginatedSubMessage::Notification(notification.clone())),
+        };
 
-    let mut encoded = BytesMut::new();
-    message.encode(&mut encoded).unwrap();
+        let mut encoded = BytesMut::new();
+        message.encode(&mut encoded).unwrap();
 
-    window_state.send_event(WindowEvent::Emit {
-        event: FIG_PROTO_MESSAGE_RECIEVED,
-        payload: base64::encode(encoded),
-    });
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id: sub.key().clone(),
+                window_event: FigWindowEvent::Emit {
+                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    payload: base64::encode(encoded),
+                },
+            })
+            .unwrap()
+    }
 
     Ok(())
 }
 
 pub async fn edit_buffer(
     hook: EditBufferHook,
-    figterm_state: Arc<FigtermState>,
-    notification_state: &NotificationsState,
-    window_state: &WindowState,
+    global_state: Arc<GlobalState>,
+    proxy: &EventLoopProxy<FigEvent>,
 ) -> Result<()> {
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
-    ensure_figterm(session_id.clone(), figterm_state.clone());
+    ensure_figterm(session_id.clone(), global_state.clone());
 
-    figterm_state.with_mut(session_id.clone(), |session| {
+    global_state.figterm_state.with_mut(session_id.clone(), |session| {
         session.edit_buffer.text = hook.text.clone();
         session.edit_buffer.cursor = hook.cursor;
         session.context = hook.context.clone();
     });
 
-    let message_id = match notification_state
-        .subscriptions
-        .get(&NotificationType::NotifyOnEditbuffferChange)
-    {
-        Some(id) => *id,
-        None => {
-            return Ok(());
-        },
-    };
+    for sub in global_state.notifications_state.subscriptions.iter() {
+        let message_id = match sub.get(&NotificationType::NotifyOnEditbuffferChange) {
+            Some(id) => *id,
+            None => continue,
+        };
 
-    let message = ServerOriginatedMessage {
-        id: Some(message_id),
-        submessage: Some(ServerOriginatedSubMessage::Notification(Notification {
-            r#type: Some(fig_proto::fig::notification::Type::EditBufferNotification(
-                EditBufferChangedNotification {
-                    context: hook.context,
-                    buffer: Some(hook.text),
-                    cursor: Some(hook.cursor.try_into().unwrap()),
-                    session_id: Some(session_id.0),
+        let hook = hook.clone();
+        let session_id = session_id.clone();
+        let message = ServerOriginatedMessage {
+            id: Some(message_id),
+            submessage: Some(ServerOriginatedSubMessage::Notification(Notification {
+                r#type: Some(fig_proto::fig::notification::Type::EditBufferNotification(
+                    EditBufferChangedNotification {
+                        context: hook.context,
+                        buffer: Some(hook.text),
+                        cursor: Some(hook.cursor.try_into().unwrap()),
+                        session_id: Some(session_id.0),
+                    },
+                )),
+            })),
+        };
+
+        let mut encoded = BytesMut::new();
+        message.encode(&mut encoded).unwrap();
+
+        proxy
+            .send_event(FigEvent::WindowEvent {
+                fig_id: sub.key().clone(),
+                window_event: FigWindowEvent::Emit {
+                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    payload: base64::encode(encoded),
                 },
-            )),
-        })),
-    };
+            })
+            .unwrap();
+    }
 
-    let mut encoded = BytesMut::new();
-    message.encode(&mut encoded).unwrap();
-
-    window_state.send_event(WindowEvent::Emit {
-        event: FIG_PROTO_MESSAGE_RECIEVED,
-        payload: base64::encode(encoded),
-    });
+    proxy.send_event(FigEvent::WindowEvent {
+        fig_id: AUTOCOMPLETE_ID,
+        window_event: FigWindowEvent::Show,
+    })?;
 
     Ok(())
 }
 
-pub async fn caret_position(hook: CursorPositionHook, state: &WindowState) -> Result<()> {
-    state.send_event(WindowEvent::UpdateCaret {
-        x: hook.x,
-        y: hook.y,
-        width: hook.width,
-        height: hook.height,
-    });
+pub async fn caret_position(
+    CursorPositionHook { x, y, width, height }: CursorPositionHook,
+    proxy: &EventLoopProxy<FigEvent>,
+) -> Result<()> {
+    debug!("Cursor Position: {x} {y} {width} {height}");
+
+    proxy
+        .send_event(FigEvent::WindowEvent {
+            fig_id: AUTOCOMPLETE_ID.clone(),
+            window_event: FigWindowEvent::UpdateCaret { x, y, width, height },
+        })
+        .unwrap();
 
     Ok(())
 }
 
-pub async fn prompt(hook: PromptHook) -> Result<()> {
+pub async fn prompt(_hook: PromptHook) -> Result<()> {
     Ok(())
 }
 
-pub async fn focus_change(hook: FocusChangeHook) -> Result<()> {
+pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy<FigEvent>) -> Result<()> {
+    proxy
+        .send_event(FigEvent::WindowEvent {
+            fig_id: AUTOCOMPLETE_ID.clone(),
+            window_event: FigWindowEvent::Hide,
+        })
+        .unwrap();
+
     Ok(())
 }
 
-pub async fn pre_exec(hook: PreExecHook) -> Result<()> {
+pub async fn pre_exec(_hook: PreExecHook) -> Result<()> {
     Ok(())
 }
 
 pub async fn intercepted_key(
-    intercepted_key_hook: InterceptedKeyHook,
-    notification_state: &NotificationsState,
-    window_state: &WindowState,
+    InterceptedKeyHook { key, action, .. }: InterceptedKeyHook,
+    global_state: &GlobalState,
+    proxy: &EventLoopProxy<FigEvent>,
 ) -> Result<()> {
-    debug!("Intercepted Key Action: {:?}", intercepted_key_hook.action);
+    debug!("Intercepted Key Action: {:?}", action);
 
     send_notification(
         &NotificationType::NotifyOnKeybindingPressed,
@@ -151,18 +177,22 @@ pub async fn intercepted_key(
             r#type: Some(fig_proto::fig::notification::Type::KeybindingPressedNotification(
                 KeybindingPressedNotification {
                     keypress: Some(KeyEvent {
-                        characters: Some(intercepted_key_hook.key),
+                        characters: Some(key),
                         ..Default::default()
                     }),
-                    action: Some(intercepted_key_hook.action),
+                    action: Some(action),
                 },
             )),
         },
-        notification_state,
-        window_state,
+        &global_state.notifications_state,
+        proxy,
     )
     .await
     .unwrap();
 
+    Ok(())
+}
+
+pub async fn file_changed(_file_changed_hook: FileChangedHook) -> Result<()> {
     Ok(())
 }

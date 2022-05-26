@@ -26,6 +26,7 @@ use fig_proto::{
     FigProtobufEncodable,
 };
 use prost::Message;
+use prost_reflect::ReflectMessage;
 use system_socket::SystemStream;
 use thiserror::Error;
 use tokio::io::{
@@ -61,13 +62,6 @@ pub fn get_fig_socket_path() -> PathBuf {
             compile_error!("Unsupported platform");
         }
     }
-}
-
-/// Get path to "$TMPDIR/fig_linux.socket"
-pub fn get_fig_linux_socket_path() -> PathBuf {
-    [std::env::temp_dir().as_path(), Path::new("fig_linux.socket")]
-        .into_iter()
-        .collect()
 }
 
 /// Connect to a system socket with a timeout
@@ -171,10 +165,10 @@ where
 pub enum RecvError {
     #[error("failed to read from stream: {0}")]
     Io(#[from] io::Error),
-    #[error("failed to decode message: {0}")]
-    Decode(#[from] prost::DecodeError),
     #[error("failed to parse message: {0}")]
     Parse(#[from] fig_proto::FigMessageParseError),
+    #[error("failed to decode message: {0}")]
+    Decode(#[from] fig_proto::FigMessageDecodeError),
 }
 
 impl RecvError {
@@ -189,7 +183,7 @@ impl RecvError {
 
 pub async fn recv_message<T, S>(stream: &mut S) -> Result<Option<T>, RecvError>
 where
-    T: Message + Default,
+    T: Message + ReflectMessage + Default,
     S: AsyncRead + Unpin,
 {
     let mut buffer = BytesMut::with_capacity(1024);
@@ -218,7 +212,7 @@ where
         let mut cursor = Cursor::new(buffer.as_ref());
         match FigMessage::parse(&mut cursor) {
             // If the parsed message is valid, return it
-            Ok(message) => return Ok(Some(T::decode(message.as_ref())?)),
+            Ok(message) => return Ok(Some(message.decode()?)),
             // If the message is incomplete, read more into the buffer
             Err(fig_proto::FigMessageParseError::Incomplete) => {
                 read_buffer!();
@@ -234,7 +228,7 @@ where
 pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<Option<R>>
 where
     M: Message + FigProtobufEncodable,
-    R: Message + Default,
+    R: Message + ReflectMessage + Default,
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
     send_message(stream, message).await?;

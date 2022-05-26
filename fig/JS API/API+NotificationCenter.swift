@@ -225,6 +225,8 @@ extension Fig_Notification {
       return .notifyOnApplicationUpdateAvailable
     case .localStateChangedNotification:
       return .notifyOnLocalStateChanged
+    case .eventNotification:
+      return .notifyOnEvent
     case .none:
       return nil
     }
@@ -289,6 +291,12 @@ extension APINotificationCenter {
   func post(_ notification: Fig_LocalStateChangedNotification) {
     var wrapper = Fig_Notification()
     wrapper.localStateChangedNotification = notification
+    self.post(notification: wrapper)
+  }
+  
+  func post(_ notification: Fig_EventNotification) {
+    var wrapper = Fig_Notification()
+    wrapper.eventNotification = notification
     self.post(notification: wrapper)
   }
 }

@@ -1,93 +1,194 @@
-use std::sync::Arc;
-
 use parking_lot::RwLock;
-use tauri::{
+use tokio::runtime::Handle;
+use tokio::sync::mpsc::UnboundedSender;
+use wry::application::dpi::{
     PhysicalPosition,
     PhysicalSize,
     Position,
     Size,
-    Window,
 };
-use tokio::sync::mpsc::{
-    UnboundedReceiver,
-    UnboundedSender,
+use wry::webview::WebView;
+
+use crate::figterm::FigTermCommand;
+use crate::{
+    native,
+    FigId,
+    GlobalState,
 };
 
+#[allow(unused)]
+pub enum CursorPositionKind {
+    Absolute,
+    Relative,
+}
+
 #[derive(Debug)]
-pub enum WindowEvent {
+pub enum FigWindowEvent {
     Reanchor { x: i32, y: i32 },
     Reposition { x: i32, y: i32 },
     UpdateCaret { x: i32, y: i32, width: i32, height: i32 },
     Resize { width: u32, height: u32 },
     Hide,
     Show,
-    Emit { event: &'static str, payload: String },
+    Emit { event: String, payload: String },
+    Navigate { url: url::Url },
+    Api { payload: String },
+    Devtools,
 }
 
-#[derive(Debug)]
 pub struct WindowState {
-    event_sender: RwLock<UnboundedSender<WindowEvent>>,
-    anchor: RwLock<PhysicalPosition<i32>>,
-    position: RwLock<PhysicalPosition<i32>>,
-    caret_position: RwLock<PhysicalPosition<i32>>,
-    caret_size: RwLock<PhysicalSize<i32>>,
+    pub webview: WebView,
+    pub fig_id: FigId,
+    pub anchor: RwLock<PhysicalPosition<i32>>,
+    pub position: RwLock<PhysicalPosition<i32>>,
+    pub caret_position: RwLock<PhysicalPosition<i32>>,
+    pub caret_size: RwLock<PhysicalSize<i32>>,
 }
 
 impl WindowState {
-    pub fn new(window: &Window, event_sender: UnboundedSender<WindowEvent>) -> Self {
+    pub fn new(fig_id: FigId, webview: WebView) -> Self {
+        let position = webview
+            .window()
+            .inner_position()
+            .expect("Failed to acquire window position");
+
         Self {
-            event_sender: RwLock::new(event_sender),
+            fig_id,
+            webview,
             anchor: RwLock::new(PhysicalPosition::default()),
-            position: RwLock::new(window.inner_position().expect("Failed to acquire window position")),
+            position: RwLock::new(position),
             caret_position: RwLock::new(PhysicalPosition::default()),
             caret_size: RwLock::new(PhysicalSize::default()),
         }
     }
 
-    pub fn send_event(&self, event: WindowEvent) {
-        self.event_sender
-            .read()
-            .send(event)
-            .expect("Failed to send window event");
-    }
-}
-
-pub async fn handle_window(window: Window, mut recv: UnboundedReceiver<WindowEvent>, state: Arc<WindowState>) {
-    while let Some(event) = recv.recv().await {
+    pub fn handle(&self, event: FigWindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(FigId, String)>) {
         match event {
-            WindowEvent::Reanchor { x, y } => {
-                let position = state.position.read();
-                let caret_position = state.caret_position.read();
-                *state.anchor.write() = PhysicalPosition { x, y };
-                window.set_position(Position::Physical(PhysicalPosition {
-                    x: x + position.x + caret_position.x,
-                    y: y + position.y + caret_position.y,
-                }))
+            FigWindowEvent::Reanchor { x, y } => {
+                let position = self.position.read();
+                let caret_position = self.caret_position.read();
+                let caret_size = self.caret_size.read();
+                *self.anchor.write() = PhysicalPosition { x, y };
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: caret_position.x + position.x + caret_size.width,
+                                y: caret_position.y + position.y,
+                            }))
+                    },
+                    CursorPositionKind::Relative => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: x + caret_position.x + position.x + caret_size.width,
+                                y: y + caret_position.y + position.y,
+                            }))
+                    },
+                }
             },
-            WindowEvent::Reposition { x, y } => {
-                let anchor = state.anchor.read();
-                let caret_position = state.caret_position.read();
-                *state.position.write() = PhysicalPosition { x, y };
-                window.set_position(Position::Physical(PhysicalPosition {
-                    x: anchor.x + x + caret_position.x,
-                    y: anchor.y + y + caret_position.y,
-                }))
+            FigWindowEvent::Reposition { x, y } => {
+                let caret_position = self.caret_position.read();
+                let caret_size = self.caret_size.read();
+                *self.position.write() = PhysicalPosition {
+                    x: caret_position.x,
+                    y: caret_position.y,
+                };
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: x + caret_position.x + caret_size.width,
+                                y: y + caret_position.y,
+                            }))
+                    },
+                    CursorPositionKind::Relative => {
+                        let anchor = self.anchor.read();
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: anchor.x + caret_position.x + x + caret_size.width,
+                                y: anchor.y + caret_position.y + y,
+                            }))
+                    },
+                }
             },
-            WindowEvent::UpdateCaret { x, y, width, height } => {
-                let anchor = PhysicalPosition { x, y };
-                let position = state.position.read();
-                *state.caret_position.write() = PhysicalPosition { x, y };
-                *state.caret_size.write() = PhysicalSize { width, height };
-                window.set_position(Position::Physical(PhysicalPosition {
-                    x: anchor.x + position.x + x,
-                    y: anchor.y + position.y + y,
-                }))
+            FigWindowEvent::UpdateCaret { x, y, width, height } => {
+                let position = self.position.read();
+                *self.caret_position.write() = PhysicalPosition { x, y };
+                *self.caret_size.write() = PhysicalSize { width, height };
+                if x == 0 && y == 0 {
+                    self.webview.window().set_visible(false);
+                }
+                match native::CURSOR_POSITION_KIND {
+                    CursorPositionKind::Absolute => {
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: x + position.x + width,
+                                y: y + position.y,
+                            }))
+                    },
+                    CursorPositionKind::Relative => {
+                        let anchor = PhysicalPosition { x, y };
+                        self.webview
+                            .window()
+                            .set_outer_position(Position::Physical(PhysicalPosition {
+                                x: anchor.x + x + position.x + width,
+                                y: anchor.y + y + position.y,
+                            }))
+                    },
+                }
             },
-            WindowEvent::Resize { width, height } => window.set_size(Size::Physical(PhysicalSize { width, height })),
-            WindowEvent::Hide => window.hide(),
-            WindowEvent::Show => window.show(),
-            WindowEvent::Emit { event, payload } => window.emit(event, payload),
+            FigWindowEvent::Resize { width, height } => self
+                .webview
+                .window()
+                .set_min_inner_size(Some(PhysicalSize { width, height })),
+            FigWindowEvent::Hide => {
+                if let Some(session) = state.figterm_state.most_recent_session() {
+                    Handle::current().spawn(async move {
+                        session.sender.send(FigTermCommand::ClearIntercept).await.unwrap();
+                    });
+                }
+                self.webview.window().set_visible(false);
+                self.webview
+                    .window()
+                    .set_min_inner_size(Some(Size::Physical(PhysicalSize { width: 1, height: 1 })));
+                self.webview
+                    .window()
+                    .set_inner_size(Size::Physical(PhysicalSize { width: 1, height: 1 }));
+            },
+            FigWindowEvent::Show => {
+                self.webview.window().set_visible(true);
+                self.webview.window().set_always_on_top(true);
+            },
+            FigWindowEvent::Navigate { url } => {
+                self.webview
+                    .evaluate_script(&format!("window.location.href = '{url}'"))
+                    .unwrap();
+            },
+            FigWindowEvent::Emit { event, payload } => {
+                self.webview
+                    .evaluate_script(&format!(
+                        "document.dispatchEvent(new CustomEvent('{event}', {{'detail': `{payload}`}}))"
+                    ))
+                    .unwrap();
+                self.webview
+                    .evaluate_script(&format!("console.log('Executing {event}')"))
+                    .unwrap();
+            },
+            FigWindowEvent::Api { payload } => {
+                api_tx.send((self.fig_id.clone(), payload)).unwrap();
+            },
+            FigWindowEvent::Devtools => {
+                if self.webview.is_devtools_open() {
+                    self.webview.close_devtools();
+                } else {
+                    self.webview.open_devtools();
+                }
+            },
         }
-        .expect("Failed to process window event");
     }
 }

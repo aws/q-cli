@@ -48,22 +48,30 @@ fn guard_source(
         Shell::Fish => format!("if test -z \"${guard_var}\"").into(),
     });
 
+    let shell_var = assign_shell_variable(shell, guard_var, export);
     match assignment {
         GuardAssignment::BeforeSourcing => {
             // If script may trigger rc file to be rerun, guard assignment must happen first to avoid recursion
-            output.push(assign_shell_variable(shell, guard_var, export).into());
-            output.push(source.into());
+            output.push(format!("  {shell_var}").into());
+            for line in source.into().lines() {
+                output.push(format!("  {line}").into());
+            }
         },
         GuardAssignment::AfterSourcing => {
-            output.push(source.into());
-            output.push(assign_shell_variable(shell, guard_var, export).into());
+            for line in source.into().lines() {
+                output.push(format!("  {line}").into());
+            }
+            output.push(format!("  {shell_var}").into());
         },
     }
 
-    output.push(match shell {
-        Shell::Bash | Shell::Zsh => "fi\n".into(),
-        Shell::Fish => "end\n".into(),
-    });
+    output.push(
+        match shell {
+            Shell::Bash | Shell::Zsh => "fi\n",
+            Shell::Fish => "end\n",
+        }
+        .into(),
+    );
 
     output.join("\n")
 }

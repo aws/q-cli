@@ -1,11 +1,10 @@
 [workspace]
 members = [
     "fig_cli",
-    #"fig_ibus_engine",
+    "fig_ibus_engine",
     "fig_tauri/src-tauri",
     "figterm",
-    #"rust-lib/*",
-    #"rust-lib/ibus/ibus-sys",
+    "rust-lib/*"
 ]
 
 default-members = [
@@ -24,3 +23,8 @@ default-members = [
     "rust-lib/fig_util",
     "rust-lib/system_socket",
 ]
+
+[profile.release]
+lto = true
+codegen-units = 1
+

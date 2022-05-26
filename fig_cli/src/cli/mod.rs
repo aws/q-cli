@@ -42,7 +42,10 @@ use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::plugins::PluginsSubcommands;
-use crate::cli::util::dialoguer_theme;
+use crate::cli::util::{
+    dialoguer_theme,
+    open_url,
+};
 use crate::daemon::{
     daemon,
     get_daemon,
@@ -291,8 +294,7 @@ impl Cli {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => {
-                    let internal::InstallArgs { input_method, .. } = args;
-                    if input_method {
+                    if let internal::InstallArgs { input_method: true, .. } = args {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
                                 use fig_ipc::command::open_ui_element;
@@ -355,25 +357,10 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => {
-                    let app_res = app::launch_fig_cli();
-                    if let Ok(daemon) = get_daemon() {
-                        daemon.start().ok();
-                    }
-                    app_res
-                },
-                CliRootCommands::Quit => {
-                    let app_res = app::quit_fig().await;
-                    if let Ok(daemon) = get_daemon() {
-                        daemon.stop().ok();
-                    }
-                    app_res
-                },
+                CliRootCommands::Launch => app::launch_fig_cli(),
+                CliRootCommands::Quit => app::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
-                    Processes::App => {
-                        get_daemon().and_then(|d| d.restart()).ok();
-                        app::restart_fig().await
-                    },
+                    Processes::App => app::restart_fig().await,
                     Processes::Daemon => get_daemon().and_then(|d| d.restart()),
                 },
                 CliRootCommands::Alpha => root_command().await,
@@ -437,7 +424,6 @@ async fn uninstall_command() -> Result<()> {
 
 async fn root_command() -> Result<()> {
     // Launch fig if it is not running
-
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_auth::is_logged_in;
@@ -464,12 +450,24 @@ async fn root_command() -> Result<()> {
             }
         } else {
             use crossterm::style::Stylize;
+            use fig_ipc::command::open_ui_element;
+            use fig_proto::local::UiElement;
 
-            println!(
-                "\n→ Opening {}...\n",
-                "https://app.fig.io".magenta().underlined()
-            );
-            util::open_url("https://app.fig.io").ok();
+            match launch_fig(LaunchOptions::new().wait_for_activation().verbose()) {
+                Ok(()) => {
+                    open_ui_element(UiElement::MissionControl)
+                        .await
+                        .context("\nCould not launch fig\n")?;
+                }
+                Err(_) => {
+                    println!(
+                        "\n→ Opening {}...\n",
+                        "https://app.fig.io".magenta().underlined()
+                    );
+                    open_url("https://app.fig.io")?;
+                }
+            }
+
         }
     }
 

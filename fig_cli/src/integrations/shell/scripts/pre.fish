@@ -17,7 +17,7 @@ if test "$TERM_PROGRAM" != WarpTerminal
     and test -t 1
     and test -z "$PROCESS_LAUNCHED_BY_FIG"
     and test -z "$FIG_PTY"
-    and command -v ~/.fig/bin/figterm 1>/dev/null 2>/dev/null
+    and command -v figterm 1>/dev/null 2>/dev/null
     and test -z "$FIG_TERM"
     or test -z "$FIG_TERM_TMUX" -a -n "$TMUX"
 
@@ -38,7 +38,7 @@ if test "$TERM_PROGRAM" != WarpTerminal
     # Do not launch figterm in non-interactive shells (like VSCode Tasks)
     if status --is-interactive
         set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
-        set FIG_SHELL_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
+        set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/$FIG_TERM_NAME")
 
         # Only copy figterm binary if it doesn't already exist
         # WARNING: copying file if it already exists results

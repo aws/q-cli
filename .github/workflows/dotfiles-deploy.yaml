@@ -43,7 +43,7 @@ jobs:
 
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       # If on Ubuntu, install dependencies
       - name: Install Ubuntu dependencies
@@ -65,10 +65,10 @@ jobs:
           target: ${{matrix.target}}
 
       - name: Cache Dependencies
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+        uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c
 
       - name: Compile
-        run: make build-${{matrix.build}}
+        run: make ${BINARY_NAME}-${{matrix.build}}
 
       - name: List build artifacts
         run: ls build
@@ -98,7 +98,7 @@ jobs:
     runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
-        uses: actions/checkout@v2
+        uses: actions/checkout@v3
 
       - name: "Install AWS CLI"
         uses: chrislennon/action-aws-cli@v1.1

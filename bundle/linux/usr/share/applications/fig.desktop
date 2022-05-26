@@ -1,0 +1,11 @@
+[Desktop Entry]
+Version=1.0
+Type=Application
+Name=Fig
+Comment=Autocomplete for the Terminal
+TryExec=fig_desktop
+Exec=fig_desktop
+Icon=fig
+Terminal=false
+Categories=Development;
+

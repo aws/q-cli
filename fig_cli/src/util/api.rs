@@ -15,12 +15,12 @@ use reqwest::{
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
-pub async fn request<T: DeserializeOwned>(
-    method: Method,
-    endpoint: impl Display,
-    body: impl Into<Option<&Value>>,
-    auth: bool,
-) -> Result<T> {
+pub async fn request<'a, T, D, B>(method: Method, endpoint: D, body: B, auth: bool) -> Result<T>
+where
+    T: DeserializeOwned,
+    D: Display,
+    B: Into<Option<&'a Value>>,
+{
     let api_host = api_host();
     let url = Url::parse(&format!("{api_host}{endpoint}"))?;
 
