@@ -28,7 +28,8 @@ extension API {
       let files = (try? FileManager.default.contentsOfDirectory(atPath: themesFolder.path)) ?? []
       let themes = ["dark", "light", "system"] + files.map { String($0.split(separator: ".")[0]) }.sorted()
       return themes.joined(separator: "\n")
-    }()
+    }(),
+    "os": "macos"
   ]
 
   // Must be included at top level and may have been renamed (eg. fig.KEY rather than fig.constants.KEY)

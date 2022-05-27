@@ -1,5 +1,3 @@
-use std::process::exit;
-
 use wry::application::event_loop::{
     ControlFlow,
     EventLoop,

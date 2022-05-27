@@ -15,6 +15,7 @@ image = "0.24.2"
 
 [dependencies]
 anyhow = "1.0.57"
+camino = "1.0.9"
 clap = "3.1.0"
 base64 = "0.13.0"
 bytes = "1.1.0"

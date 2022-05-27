@@ -13,6 +13,7 @@ mod window;
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use api::init::javascript_init;
 use clap::Parser;
 use dashmap::DashMap;
 use fig_proto::fig::NotificationType;
@@ -67,18 +68,6 @@ use wry::webview::{
 use crate::api::api_request;
 
 const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
-// TODO: Add constants
-const JAVASCRIPT_INIT: &str = r#"
-console.log("[fig] declaring constants...")
-
-if (!window.fig) {
-    window.fig = {}
-}
-
-if (!window.fig.constants) {
-    window.fig.constants = {}
-}
-"#;
 
 const MISSION_CONTROL_ID: FigId = FigId(Cow::Borrowed("mission-control"));
 const AUTOCOMPLETE_ID: FigId = FigId(Cow::Borrowed("autocomplete"));
@@ -130,16 +119,20 @@ struct WebviewManager {
     global_state: Arc<GlobalState>,
 }
 
-impl WebviewManager {
-    fn new() -> Self {
-        let event_loop = EventLoop::with_user_event();
-        let proxy = event_loop.create_proxy();
+impl Default for WebviewManager {
+    fn default() -> Self {
         Self {
             fig_id_map: Default::default(),
             window_id_map: Default::default(),
-            event_loop,
-            global_state: Arc::new(Default::default()),
+            event_loop: EventLoop::with_user_event(),
+            global_state: Default::default(),
         }
+    }
+}
+
+impl WebviewManager {
+    fn new() -> Self {
+        Self::default()
     }
 
     fn insert_webview(&mut self, fig_id: FigId, webview: WebView) {
@@ -254,7 +247,7 @@ fn build_mission_control(
         })
         .with_devtools(true)
         .with_navigation_handler(|url| url.starts_with("http://localhost") || url.starts_with("https://desktop.fig.io"))
-        .with_initialization_script(JAVASCRIPT_INIT)
+        .with_initialization_script(&javascript_init())
         .build()?;
 
     Ok(webview)
@@ -291,7 +284,7 @@ fn build_autocomplete(event_loop: &FigEventLoop, _autocomplete_options: Autocomp
         .with_custom_protocol("fig".into(), icons::handle)
         .with_devtools(true)
         .with_transparent(true)
-        .with_initialization_script(JAVASCRIPT_INIT)
+        .with_initialization_script(&javascript_init())
         .with_navigation_handler(|url| {
             url.starts_with("http://localhost")
                 || url.starts_with("https://staging.withfig.com/autocomplete")
@@ -305,6 +298,7 @@ fn build_autocomplete(event_loop: &FigEventLoop, _autocomplete_options: Autocomp
 fn main() {
     let _sentry_guard =
         fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
+    let _logger_guard = fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
 
     let cli = cli::Cli::parse();
 
@@ -313,7 +307,7 @@ fn main() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
                 let processes = system.processes_by_exact_name("fig_desktop");
-                for process in processes.into_iter() {
+                for process in processes {
                     let pid = process.pid();
                     if current_pid != pid {
                         if cli.kill_instance {
@@ -334,7 +328,6 @@ fn main() {
 
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
         native::init().expect("Failed to initialize native integrations");
 
         let mut webview_manager = WebviewManager::new();

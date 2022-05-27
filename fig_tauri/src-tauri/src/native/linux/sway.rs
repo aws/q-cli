@@ -158,7 +158,7 @@ pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Pat
                     _ => warn!("Unknown payload type: {payload_type}"),
                 }
             },
-            Err(_) => {},
+            Err(_) => continue,
         }
     }
 }
