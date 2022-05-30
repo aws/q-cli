@@ -1116,13 +1116,14 @@ dependencies = [
 
 [[package]]
 name = "dashmap"
-version = "5.3.3"
+version = "5.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "391b56fbd302e585b7a9494fb70e40949567b1cf9003a8e4a6041a1687c26573"
+checksum = "3495912c9c1ccf2e18976439f4443f3fee0fd61f424ff99fde6a66b15ecb448f"
 dependencies = [
  "cfg-if 1.0.0",
  "hashbrown 0.12.1",
  "lock_api",
+ "parking_lot_core 0.9.3",
 ]
 
 [[package]]
@@ -3853,9 +3854,9 @@ dependencies = [
 
 [[package]]
 name = "prost-reflect"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7f6161bfd1ad78e134cbff696a85ec5c00d2b5d297ce6353b1945169dfeeb478"
+checksum = "a9b5885b76f107151487927cb630854e7fd95ffa394a693116feaa84df1e0274"
 dependencies = [
  "base64",
  "prost",
