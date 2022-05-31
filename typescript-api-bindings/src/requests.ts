@@ -48,7 +48,7 @@ import {
   WindowFocusRequest,
   WriteFileRequest
 } from "./fig.pb";
-import { sendMessage } from "./core"
+import { sendMessage } from "./core";
 
 export async function sendPositionWindowRequest(
   request: PositionWindowRequest
@@ -67,7 +67,7 @@ export async function sendPositionWindowRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PositionWindowRequest'"
+                `Invalid response '${  response?.$case  }' for 'PositionWindowRequest'`
               )
             );
         }
@@ -93,7 +93,7 @@ export async function sendPseudoterminalExecuteRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PseudoterminalExecuteRequest'"
+                `Invalid response '${  response?.$case  }' for 'PseudoterminalExecuteRequest'`
               )
             );
         }
@@ -119,7 +119,7 @@ export async function sendReadFileRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'ReadFileRequest'"
+                `Invalid response '${  response?.$case  }' for 'ReadFileRequest'`
               )
             );
         }
@@ -145,7 +145,7 @@ export async function sendContentsOfDirectoryRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'ContentsOfDirectoryRequest'"
+                `Invalid response '${  response?.$case  }' for 'ContentsOfDirectoryRequest'`
               )
             );
         }
@@ -171,7 +171,7 @@ export async function sendGetSettingsPropertyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetSettingsPropertyRequest'"
+                `Invalid response '${  response?.$case  }' for 'GetSettingsPropertyRequest'`
               )
             );
         }
@@ -197,7 +197,7 @@ export async function sendDestinationOfSymbolicLinkRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'DestinationOfSymbolicLinkRequest'"
+                `Invalid response '${  response?.$case  }' for 'DestinationOfSymbolicLinkRequest'`
               )
             );
         }
@@ -223,7 +223,7 @@ export async function sendGetDefaultsPropertyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetDefaultsPropertyRequest'"
+                `Invalid response '${  response?.$case  }' for 'GetDefaultsPropertyRequest'`
               )
             );
         }
@@ -249,7 +249,7 @@ export async function sendGetConfigPropertyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetConfigPropertyRequest'"
+                `Invalid response '${  response?.$case  }' for 'GetConfigPropertyRequest'`
               )
             );
         }
@@ -275,7 +275,7 @@ export async function sendTerminalSessionInfoRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TerminalSessionInfoRequest'"
+                `Invalid response '${  response?.$case  }' for 'TerminalSessionInfoRequest'`
               )
             );
         }
@@ -301,7 +301,7 @@ export async function sendApplicationUpdateStatusRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'ApplicationUpdateStatusRequest'"
+                `Invalid response '${  response?.$case  }' for 'ApplicationUpdateStatusRequest'`
               )
             );
         }
@@ -327,7 +327,7 @@ export async function sendGetLocalStateRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'GetLocalStateRequest'"
+                `Invalid response '${  response?.$case  }' for 'GetLocalStateRequest'`
               )
             );
         }
@@ -353,7 +353,7 @@ export async function sendRunProcessRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'RunProcessRequest'"
+                `Invalid response '${  response?.$case  }' for 'RunProcessRequest'`
               )
             );
         }
@@ -379,7 +379,7 @@ export async function sendMacosInputMethodRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'MacosInputMethodRequest'"
+                `Invalid response '${  response?.$case  }' for 'MacosInputMethodRequest'`
               )
             );
         }
@@ -405,7 +405,7 @@ export async function sendPseudoterminalWriteRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PseudoterminalWriteRequest'"
+                `Invalid response '${  response?.$case  }' for 'PseudoterminalWriteRequest'`
               )
             );
         }
@@ -431,7 +431,7 @@ export async function sendWriteFileRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'WriteFileRequest'"
+                `Invalid response '${  response?.$case  }' for 'WriteFileRequest'`
               )
             );
         }
@@ -457,7 +457,7 @@ export async function sendUpdateSettingsPropertyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateSettingsPropertyRequest'"
+                `Invalid response '${  response?.$case  }' for 'UpdateSettingsPropertyRequest'`
               )
             );
         }
@@ -483,7 +483,7 @@ export async function sendInsertTextRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'InsertTextRequest'"
+                `Invalid response '${  response?.$case  }' for 'InsertTextRequest'`
               )
             );
         }
@@ -509,7 +509,7 @@ export async function sendUpdateApplicationPropertiesRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateApplicationPropertiesRequest'"
+                `Invalid response '${  response?.$case  }' for 'UpdateApplicationPropertiesRequest'`
               )
             );
         }
@@ -535,7 +535,7 @@ export async function sendUpdateDefaultsPropertyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateDefaultsPropertyRequest'"
+                `Invalid response '${  response?.$case  }' for 'UpdateDefaultsPropertyRequest'`
               )
             );
         }
@@ -561,7 +561,7 @@ export async function sendTelemetryAliasRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TelemetryAliasRequest'"
+                `Invalid response '${  response?.$case  }' for 'TelemetryAliasRequest'`
               )
             );
         }
@@ -587,7 +587,7 @@ export async function sendTelemetryIdentifyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TelemetryIdentifyRequest'"
+                `Invalid response '${  response?.$case  }' for 'TelemetryIdentifyRequest'`
               )
             );
         }
@@ -613,7 +613,7 @@ export async function sendTelemetryTrackRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'TelemetryTrackRequest'"
+                `Invalid response '${  response?.$case  }' for 'TelemetryTrackRequest'`
               )
             );
         }
@@ -639,7 +639,7 @@ export async function sendOnboardingRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'OnboardingRequest'"
+                `Invalid response '${  response?.$case  }' for 'OnboardingRequest'`
               )
             );
         }
@@ -665,7 +665,7 @@ export async function sendWindowFocusRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'WindowFocusRequest'"
+                `Invalid response '${  response?.$case  }' for 'WindowFocusRequest'`
               )
             );
         }
@@ -691,7 +691,7 @@ export async function sendOpenInExternalApplicationRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'OpenInExternalApplicationRequest'"
+                `Invalid response '${  response?.$case  }' for 'OpenInExternalApplicationRequest'`
               )
             );
         }
@@ -717,7 +717,7 @@ export async function sendUpdateConfigPropertyRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateConfigPropertyRequest'"
+                `Invalid response '${  response?.$case  }' for 'UpdateConfigPropertyRequest'`
               )
             );
         }
@@ -743,7 +743,7 @@ export async function sendPseudoterminalRestartRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'PseudoterminalRestartRequest'"
+                `Invalid response '${  response?.$case  }' for 'PseudoterminalRestartRequest'`
               )
             );
         }
@@ -769,7 +769,7 @@ export async function sendDebuggerUpdateRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'DebuggerUpdateRequest'"
+                `Invalid response '${  response?.$case  }' for 'DebuggerUpdateRequest'`
               )
             );
         }
@@ -795,7 +795,7 @@ export async function sendAppendToFileRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'AppendToFileRequest'"
+                `Invalid response '${  response?.$case  }' for 'AppendToFileRequest'`
               )
             );
         }
@@ -821,7 +821,7 @@ export async function sendUpdateLocalStateRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'UpdateLocalStateRequest'"
+                `Invalid response '${  response?.$case  }' for 'UpdateLocalStateRequest'`
               )
             );
         }
@@ -847,7 +847,7 @@ export async function sendCreateDirectoryRequest(
           default:
             reject(
               Error(
-                "Invalid response '" + response?.$case + "' for 'CreateDirectoryRequest'"
+                `Invalid response '${  response?.$case  }' for 'CreateDirectoryRequest'`
               )
             );
         }
