@@ -23,6 +23,7 @@ use fig_proto::fig::{
 use fig_proto::prost::Message;
 use tracing::{
     debug,
+    trace,
     warn,
 };
 use wry::application::event_loop::EventLoopProxy;
@@ -105,6 +106,7 @@ pub async fn api_request(
                 AppendToFileRequest(request) => fs::append_to_file(request).await,
                 DestinationOfSymbolicLinkRequest(request) => fs::destination_of_symbolic_link(request).await,
                 ContentsOfDirectoryRequest(request) => fs::contents_of_directory(request).await,
+                CreateDirectoryRequest(request) => fs::create_directory_request(request).await,
                 // notifications
                 NotificationRequest(request) => {
                     notifications::handle_request(
@@ -146,7 +148,7 @@ pub async fn api_request(
         },
     };
 
-    debug!("response: {response:?}");
+    trace!("response: {response:?}");
 
     let message = ServerOriginatedMessage {
         id: message.id,

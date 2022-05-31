@@ -175,9 +175,6 @@ impl WindowState {
                         "document.dispatchEvent(new CustomEvent('{event}', {{'detail': `{payload}`}}))"
                     ))
                     .unwrap();
-                self.webview
-                    .evaluate_script(&format!("console.log('Executing {event}')"))
-                    .unwrap();
             },
             FigWindowEvent::Api { payload } => {
                 api_tx.send((self.fig_id.clone(), payload)).unwrap();

@@ -11,6 +11,8 @@ pub async fn update(request: DebuggerUpdateRequest, state: &DebugState) -> Reque
     for message in &request.layout {
         if !message.is_empty() {
             info!("{}", message);
+        } else {
+            info!("Message cleared");
         }
     }
 

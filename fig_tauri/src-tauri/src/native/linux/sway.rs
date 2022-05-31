@@ -1,6 +1,10 @@
 use std::io::Cursor;
 use std::path::Path;
 
+use anyhow::{
+    anyhow,
+    Error,
+};
 use bytes::{
     Buf,
     BufMut,
@@ -13,6 +17,8 @@ use serde_json::{
 };
 use tokio::io::AsyncWriteExt;
 use tracing::{
+    error,
+    info,
     trace,
     warn,
 };
@@ -30,44 +36,48 @@ struct I3Ipc {
     payload: Value,
 }
 
+enum ParseResult {
+    Ok { i3ipc: I3Ipc, size: usize },
+    Incomplete,
+    Error(Error),
+}
+
 impl I3Ipc {
-    pub fn parse(src: &mut Cursor<&[u8]>) -> Result<(Self, usize), &'static str> {
-        if src.remaining() < 6 {
-            return Err("Header too short");
+    pub fn parse(src: &mut Cursor<&[u8]>) -> ParseResult {
+        if src.remaining() < 14 {
+            return ParseResult::Incomplete;
         }
 
         let mut magic_string = [0; 6];
         src.copy_to_slice(&mut magic_string);
         if &magic_string != b"i3-ipc" {
-            return Err("Header is not `i3-ipc`");
-        }
-
-        if src.remaining() < 4 {
-            return Err("Payload length too short");
+            return ParseResult::Error(anyhow!("header is not `i3-ipc`"));
         }
 
         let mut payload_length_buf = [0; 4];
         src.copy_to_slice(&mut payload_length_buf);
         let payload_length = u32::from_ne_bytes(payload_length_buf);
 
-        if src.remaining() < 4 {
-            return Err("Payload type too short");
-        }
-
         let mut payload_type_buf = [0; 4];
         src.copy_to_slice(&mut payload_type_buf);
         let payload_type = u32::from_ne_bytes(payload_type_buf);
 
         if src.remaining() < payload_length as usize {
-            return Err("Payload too short");
+            return ParseResult::Incomplete;
         }
 
         let mut payload_buf = vec![0; payload_length as usize];
         src.copy_to_slice(&mut payload_buf);
 
-        let payload = serde_json::from_slice(&payload_buf).unwrap();
+        let payload = match serde_json::from_slice(&payload_buf) {
+            Ok(payload) => payload,
+            Err(err) => return ParseResult::Error(err.into()),
+        };
 
-        Ok((Self { payload_type, payload }, 14 + payload_length as usize))
+        ParseResult::Ok {
+            i3ipc: Self { payload_type, payload },
+            size: 14 + payload_length as usize,
+        }
     }
 
     pub fn serialize(&self) -> Bytes {
@@ -99,12 +109,22 @@ pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Pat
     loop {
         conn.read_buf(&mut buf).await.unwrap();
         match I3Ipc::parse(&mut Cursor::new(buf.as_ref())) {
-            Ok((I3Ipc { payload, payload_type }, size)) => {
+            ParseResult::Ok {
+                i3ipc: I3Ipc { payload, payload_type },
+                size,
+            } => {
                 trace!("{payload_type} {payload:?}");
                 buf.advance(size);
 
                 // Handle the message
                 match payload_type {
+                    2 => {
+                        if let Some(Value::Bool(true)) = payload.get("success") {
+                            info!("Successfuly subscribed to sway events");
+                        } else {
+                            warn!("Failed to subscribe to sway events: {payload}");
+                        }
+                    },
                     0x80000003 => match payload.get("change") {
                         Some(Value::String(event)) if event == "focus" => {
                             if let Some(Value::Object(container)) = payload.get("container") {
@@ -152,13 +172,17 @@ pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Pat
                                 }
                             }
                         },
-                        Some(Value::String(event)) => warn!("Unknown event: {event}"),
-                        event => warn!("Unknown event: {event:?}"),
+                        Some(Value::String(event)) => trace!("Unknown event: {event}"),
+                        event => trace!("Unknown event: {event:?}"),
                     },
-                    _ => warn!("Unknown payload type: {payload_type}"),
+                    _ => trace!("Unknown payload type: {payload_type} {payload:?}"),
                 }
             },
-            Err(_) => continue,
+            ParseResult::Incomplete => continue,
+            ParseResult::Error(error) => {
+                error!("Failed to parse sway message: {error}");
+                break;
+            },
         }
     }
 }

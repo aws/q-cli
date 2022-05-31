@@ -10,7 +10,6 @@ use fig_proto::local::{
     CommandResponse,
     ErrorResponse,
     LocalMessage,
-    QuitCommand,
     SuccessResponse,
 };
 use tokio::io::{

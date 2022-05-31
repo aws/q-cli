@@ -11,6 +11,7 @@ mod utils;
 mod window;
 
 use std::borrow::Cow;
+use std::fmt::Display;
 use std::sync::Arc;
 
 use api::init::javascript_init;
@@ -23,6 +24,7 @@ use gtk::gdk::WindowTypeHint;
 use gtk::traits::GtkWindowExt;
 use native::NativeState;
 use parking_lot::RwLock;
+use regex::RegexSet;
 use sysinfo::{
     get_current_pid,
     ProcessExt,
@@ -35,9 +37,11 @@ use tokio::runtime::Runtime;
 use tracing::{
     debug,
     info,
+    trace,
     warn,
 };
 use tray::create_tray;
+use url::Url;
 use window::{
     FigWindowEvent,
     WindowState,
@@ -74,6 +78,12 @@ const AUTOCOMPLETE_ID: FigId = FigId(Cow::Borrowed("autocomplete"));
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct FigId(pub Cow<'static, str>);
+
+impl Display for FigId {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 #[derive(Debug, Default)]
 pub struct DebugState {
@@ -198,7 +208,7 @@ impl WebviewManager {
                     tray.handle_event(menu_id, &proxy);
                 },
                 Event::UserEvent(event) => {
-                    debug!("Executing user event: {event:?}");
+                    trace!("Executing user event: {event:?}");
                     match event {
                         FigEvent::WindowEvent { fig_id, window_event } => match self.fig_id_map.get(&fig_id) {
                             Some(window_state) => {
@@ -212,7 +222,7 @@ impl WebviewManager {
                     }
                 },
                 Event::MainEventsCleared | Event::NewEvents(StartCause::WaitCancelled { .. }) => {},
-                event => warn!("Unhandled event {event:?}"),
+                event => trace!("Unhandled event {event:?}"),
             }
         });
     }
@@ -246,7 +256,24 @@ fn build_mission_control(
                 .unwrap();
         })
         .with_devtools(true)
-        .with_navigation_handler(|url| url.starts_with("http://localhost") || url.starts_with("https://desktop.fig.io"))
+        .with_navigation_handler(|url| {
+            match Url::parse(&url).ok().and_then(|url| {
+                url.domain().and_then(|domain| {
+                    RegexSet::new(&[r"^localhost$", r"^desktop\.fig\.io$", r"-withfig\.vercel\.app$"])
+                        .ok()
+                        .map(|r| r.is_match(domain))
+                })
+            }) {
+                Some(true) => {
+                    trace!("{MISSION_CONTROL_ID} allowed url: {url}");
+                    true
+                },
+                Some(false) | None => {
+                    warn!("{MISSION_CONTROL_ID} denyed url: {url}");
+                    false
+                },
+            }
+        })
         .with_initialization_script(&javascript_init())
         .build()?;
 

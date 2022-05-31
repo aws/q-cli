@@ -38,7 +38,7 @@ message ClientOriginatedMessage {
       UpdateLocalStateRequest update_local_state_request = 129;
       RunProcessRequest run_process_request = 130;
       MacosInputMethodRequest macos_input_method_request = 131;
-
+      CreateDirectoryRequest create_directory_request = 132;
   }
 }
 
@@ -240,6 +240,11 @@ message DestinationOfSymbolicLinkRequest {
 
 message DestinationOfSymbolicLinkResponse {
     optional FilePath destination = 1;
+}
+
+message CreateDirectoryRequest {
+  FilePath path = 1;
+  optional bool recursive = 2;
 }
 
 /// Defaults
