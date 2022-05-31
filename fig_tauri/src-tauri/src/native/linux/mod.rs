@@ -18,42 +18,9 @@ use crate::{
     GlobalState,
 };
 
-pub fn init() -> Result<()> {
-    icons::init()?;
-
-    Ok(())
-}
-
 #[derive(Debug, Default)]
 pub struct NativeState {
     active_window: Mutex<Option<String>>,
-}
-
-impl NativeState {
-    pub fn new() -> Self {
-        NativeState::default()
-    }
-
-    pub async fn execute(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
-        match DisplayServer::detect() {
-            Ok(DisplayServer::X11) => {
-                info!("Detected X11 server");
-                tokio::spawn(async { x11::handle_x11(global_state, proxy).await });
-            },
-            Ok(DisplayServer::Wayland) => {
-                info!("Detected Wayland server");
-                if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
-                    info!("Using sway socket: {sway_socket}");
-                    tokio::spawn(async { sway::handle_sway(proxy, sway_socket).await });
-                } else {
-                    error!("Unknown wayland compositor");
-                }
-            },
-            Err(err) => {
-                error!("{err}");
-            },
-        }
-    }
 }
 
 enum DisplayServer {
@@ -68,4 +35,29 @@ impl DisplayServer {
             _ => Ok(Self::X11),
         }
     }
+}
+
+pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) -> Result<()> {
+    match DisplayServer::detect() {
+        Ok(DisplayServer::X11) => {
+            info!("Detected X11 server");
+            tokio::spawn(async { x11::handle_x11(global_state, proxy).await });
+        },
+        Ok(DisplayServer::Wayland) => {
+            info!("Detected Wayland server");
+            if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
+                info!("Using sway socket: {sway_socket}");
+                tokio::spawn(async { sway::handle_sway(proxy, sway_socket).await });
+            } else {
+                error!("Unknown wayland compositor");
+            }
+        },
+        Err(err) => {
+            error!("{err}");
+        },
+    }
+    
+    icons::init()?;
+
+    Ok(())
 }

@@ -12,15 +12,14 @@ use wry::application::menu::{
 };
 use wry::application::system_tray::SystemTrayBuilder;
 
-use crate::window::FigWindowEvent;
+use crate::event::{Event, WindowEvent};
 use crate::{
-    FigEvent,
     AUTOCOMPLETE_ID,
 };
 
 struct TrayElement {
     item: CustomMenuItem,
-    event: Box<dyn Fn(&EventLoopProxy<FigEvent>)>,
+    event: Box<dyn Fn(&EventLoopProxy<Event>)>,
 }
 
 pub struct Tray {
@@ -28,7 +27,7 @@ pub struct Tray {
 }
 
 impl Tray {
-    pub fn handle_event(&self, id: MenuId, proxy: &EventLoopProxy<FigEvent>) {
+    pub fn handle_event(&self, id: MenuId, proxy: &EventLoopProxy<Event>) {
         for TrayElement { item, event } in &self.elements {
             if item.clone().id() == id {
                 event(proxy);
@@ -37,7 +36,7 @@ impl Tray {
     }
 }
 
-pub fn create_tray(event_loop: &EventLoop<FigEvent>) -> wry::Result<Tray> {
+pub fn create_tray(event_loop: &EventLoop<Event>) -> wry::Result<Tray> {
     let mut tray_menu = ContextMenu::new();
     let elements = create_tray_menu(&mut tray_menu);
     SystemTrayBuilder::new("/usr/share/icons/hicolor/32x32/apps/fig.png".into(), Some(tray_menu)).build(event_loop)?;
@@ -135,9 +134,9 @@ fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<TrayElement> {
         item: tray_menu.add_item(MenuItemAttributes::new("Toggle Devtools").with_id(MenuId::new("toggle-devtools"))),
         event: Box::new(|proxy| {
             proxy
-                .send_event(FigEvent::WindowEvent {
-                    fig_id: AUTOCOMPLETE_ID,
-                    window_event: FigWindowEvent::Devtools,
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::Devtools,
                 })
                 .unwrap();
         }),
@@ -146,7 +145,7 @@ fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<TrayElement> {
     v.push(TrayElement {
         item: tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit"))),
         event: Box::new(|proxy| {
-            proxy.send_event(FigEvent::ControlFlow(ControlFlow::Exit)).unwrap();
+            proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
         }),
     });
 

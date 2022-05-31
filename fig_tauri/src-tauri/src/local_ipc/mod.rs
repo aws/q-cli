@@ -10,7 +10,6 @@ use fig_proto::local::{
     CommandResponse,
     ErrorResponse,
     LocalMessage,
-    QuitCommand,
     SuccessResponse,
 };
 use tokio::io::{
@@ -25,9 +24,9 @@ use tracing::{
 };
 use wry::application::event_loop::EventLoopProxy;
 
+use crate::event::Event;
 use crate::{
     native,
-    FigEvent,
     GlobalState,
 };
 
@@ -39,7 +38,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
+pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy<Event>) {
     let socket_path = fig_ipc::get_fig_socket_path();
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -63,7 +62,7 @@ pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopPro
 async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
     mut stream: S,
     global_state: Arc<GlobalState>,
-    proxy: EventLoopProxy<FigEvent>,
+    proxy: EventLoopProxy<Event>,
 ) {
     while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
         .await

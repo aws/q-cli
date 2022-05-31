@@ -24,13 +24,13 @@ use fig_proto::prost::Message;
 use tracing::debug;
 use wry::application::event_loop::EventLoopProxy;
 
+use crate::event::WindowEvent;
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
 };
-use crate::window::FigWindowEvent;
 use crate::{
-    FigEvent,
+    Event,
     GlobalState,
     NotificationsState,
     AUTOCOMPLETE_ID,
@@ -41,7 +41,7 @@ pub async fn send_notification(
     notification_type: &NotificationType,
     notification: Notification,
     notification_state: &NotificationsState,
-    proxy: &EventLoopProxy<FigEvent>,
+    proxy: &EventLoopProxy<Event>,
 ) -> Result<()> {
     for sub in notification_state.subscriptions.iter() {
         let message_id = match sub.get(notification_type) {
@@ -58,9 +58,9 @@ pub async fn send_notification(
         message.encode(&mut encoded).unwrap();
 
         proxy
-            .send_event(FigEvent::WindowEvent {
-                fig_id: sub.key().clone(),
-                window_event: FigWindowEvent::Emit {
+            .send_event(Event::WindowEvent {
+                window_id: sub.key().clone(),
+                window_event: WindowEvent::Emit {
                     event: FIG_PROTO_MESSAGE_RECIEVED.into(),
                     payload: base64::encode(encoded),
                 },
@@ -74,7 +74,7 @@ pub async fn send_notification(
 pub async fn edit_buffer(
     hook: EditBufferHook,
     global_state: Arc<GlobalState>,
-    proxy: &EventLoopProxy<FigEvent>,
+    proxy: &EventLoopProxy<Event>,
 ) -> Result<()> {
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
     ensure_figterm(session_id.clone(), global_state.clone());
@@ -111,9 +111,9 @@ pub async fn edit_buffer(
         message.encode(&mut encoded).unwrap();
 
         proxy
-            .send_event(FigEvent::WindowEvent {
-                fig_id: sub.key().clone(),
-                window_event: FigWindowEvent::Emit {
+            .send_event(Event::WindowEvent {
+                window_id: sub.key().clone(),
+                window_event: WindowEvent::Emit {
                     event: FIG_PROTO_MESSAGE_RECIEVED.into(),
                     payload: base64::encode(encoded),
                 },
@@ -121,9 +121,9 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
-    proxy.send_event(FigEvent::WindowEvent {
-        fig_id: AUTOCOMPLETE_ID,
-        window_event: FigWindowEvent::Show,
+    proxy.send_event(Event::WindowEvent {
+        window_id: AUTOCOMPLETE_ID,
+        window_event: WindowEvent::Show,
     })?;
 
     Ok(())
@@ -131,14 +131,14 @@ pub async fn edit_buffer(
 
 pub async fn caret_position(
     CursorPositionHook { x, y, width, height }: CursorPositionHook,
-    proxy: &EventLoopProxy<FigEvent>,
+    proxy: &EventLoopProxy<Event>,
 ) -> Result<()> {
     debug!("Cursor Position: {x} {y} {width} {height}");
 
     proxy
-        .send_event(FigEvent::WindowEvent {
-            fig_id: AUTOCOMPLETE_ID.clone(),
-            window_event: FigWindowEvent::UpdateCaret { x, y, width, height },
+        .send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID.clone(),
+            window_event: WindowEvent::UpdateCaret { x, y, width, height },
         })
         .unwrap();
 
@@ -149,11 +149,11 @@ pub async fn prompt(_hook: PromptHook) -> Result<()> {
     Ok(())
 }
 
-pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy<FigEvent>) -> Result<()> {
+pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy<Event>) -> Result<()> {
     proxy
-        .send_event(FigEvent::WindowEvent {
-            fig_id: AUTOCOMPLETE_ID.clone(),
-            window_event: FigWindowEvent::Hide,
+        .send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID.clone(),
+            window_event: WindowEvent::Hide,
         })
         .unwrap();
 
@@ -167,7 +167,7 @@ pub async fn pre_exec(_hook: PreExecHook) -> Result<()> {
 pub async fn intercepted_key(
     InterceptedKeyHook { key, action, .. }: InterceptedKeyHook,
     global_state: &GlobalState,
-    proxy: &EventLoopProxy<FigEvent>,
+    proxy: &EventLoopProxy<Event>,
 ) -> Result<()> {
     debug!("Intercepted Key Action: {:?}", action);
 

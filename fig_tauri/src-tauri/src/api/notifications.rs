@@ -8,27 +8,26 @@ use super::{
     RequestResultImpl,
 };
 use crate::{
-    FigId,
-    NotificationsState,
+    NotificationsState, window::WindowId,
 };
 
 pub async fn handle_request(
     request: NotificationRequest,
-    fig_id: FigId,
+    window_id: WindowId,
     message_id: i64,
     state: &NotificationsState,
 ) -> RequestResult {
     let notification_type = NotificationType::from_i32(request.r#type.unwrap()).unwrap();
 
     if request.subscribe.unwrap_or(true) {
-        subscribe(fig_id, message_id, notification_type, state)
+        subscribe(window_id, message_id, notification_type, state)
     } else {
-        unsubscribe(&fig_id, notification_type, state)
+        unsubscribe(&window_id, notification_type, state)
     }
 }
 
 fn subscribe(
-    fig_id: FigId,
+    window_id: WindowId,
     channel: i64,
     notification_type: NotificationType,
     state: &NotificationsState,
@@ -37,7 +36,7 @@ fn subscribe(
         return RequestResult::error("Cannot subscribe to 'all' notification type");
     }
 
-    let entry = state.subscriptions.entry(fig_id).or_default();
+    let entry = state.subscriptions.entry(window_id).or_default();
     if entry.contains_key(&notification_type) {
         return RequestResult::error(format!("Already subscribed to notification type {notification_type:?}",));
     }
@@ -47,12 +46,12 @@ fn subscribe(
     RequestResult::success()
 }
 
-fn unsubscribe(fig_id: &FigId, notification_type: NotificationType, state: &NotificationsState) -> RequestResult {
+fn unsubscribe(window_id: &WindowId, notification_type: NotificationType, state: &NotificationsState) -> RequestResult {
     if notification_type == NotificationType::All {
-        return unsubscribe_all(fig_id, state);
+        return unsubscribe_all(window_id, state);
     }
 
-    match state.subscriptions.get(fig_id) {
+    match state.subscriptions.get(window_id) {
         Some(subscriptions) if !subscriptions.contains_key(&notification_type) => {
             return RequestResult::error(format!("Not subscribed notification type {notification_type:?}",));
         },
@@ -67,8 +66,8 @@ fn unsubscribe(fig_id: &FigId, notification_type: NotificationType, state: &Noti
     RequestResult::success()
 }
 
-fn unsubscribe_all(fig_id: &FigId, state: &NotificationsState) -> RequestResult {
-    if let Some(subscriptions) = state.subscriptions.get(fig_id) {
+fn unsubscribe_all(window_id: &WindowId, state: &NotificationsState) -> RequestResult {
+    if let Some(subscriptions) = state.subscriptions.get(window_id) {
         subscriptions.clear();
     }
 

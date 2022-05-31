@@ -19,9 +19,8 @@ use super::{
     LocalResponse,
     LocalResult,
 };
-use crate::window::FigWindowEvent;
+use crate::event::{Event, WindowEvent};
 use crate::{
-    FigEvent,
     MISSION_CONTROL_ID,
 };
 
@@ -29,9 +28,9 @@ pub async fn debug(_command: DebugModeCommand) -> LocalResult {
     todo!()
 }
 
-pub async fn quit(_command: QuitCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {
+pub async fn quit(_command: QuitCommand, proxy: &EventLoopProxy<Event>) -> LocalResult {
     proxy
-        .send_event(FigEvent::ControlFlow(ControlFlow::Exit))
+        .send_event(Event::ControlFlow(ControlFlow::Exit))
         .map(|_| LocalResponse::Success(None))
         .map_err(|_| exit(0))
 }
@@ -43,28 +42,28 @@ pub async fn diagnostic(_command: DiagnosticsCommand) -> LocalResult {
     ))))
 }
 
-pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy<FigEvent>) -> LocalResult {
+pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy<Event>) -> LocalResult {
     match command.element() {
         UiElement::Settings => {
             proxy
-                .send_event(FigEvent::WindowEvent {
-                    fig_id: MISSION_CONTROL_ID.clone(),
-                    window_event: FigWindowEvent::Navigate {
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_event: WindowEvent::Navigate {
                         url: url::Url::parse("https://desktop.fig.io/settings/general/application").unwrap(),
                     },
                 })
                 .unwrap();
             proxy
-                .send_event(FigEvent::WindowEvent {
-                    fig_id: MISSION_CONTROL_ID.clone(),
-                    window_event: FigWindowEvent::Show,
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_event: WindowEvent::Show,
                 })
                 .unwrap();
         },
         UiElement::MissionControl => proxy
-            .send_event(FigEvent::WindowEvent {
-                fig_id: MISSION_CONTROL_ID.clone(),
-                window_event: FigWindowEvent::Show,
+            .send_event(Event::WindowEvent {
+                window_id: MISSION_CONTROL_ID.clone(),
+                window_event: WindowEvent::Show,
             })
             .unwrap(),
         UiElement::MenuBar => error!("Opening menu bar is unimplemented"),
