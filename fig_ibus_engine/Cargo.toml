@@ -9,7 +9,7 @@ publish = false
 [dependencies]
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }
-parking_lot = "0.12.0"
+parking_lot = "0.12.1"
 
 [build-dependencies]
 cc = "1.0.73"
