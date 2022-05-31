@@ -2,6 +2,7 @@
 
 mod api;
 mod cli;
+mod event;
 mod figterm;
 mod icons;
 mod local_ipc;
@@ -11,17 +12,16 @@ mod utils;
 mod window;
 
 use std::borrow::Cow;
-use std::fmt::Display;
 use std::sync::Arc;
 
 use api::init::javascript_init;
+use cfg_if::cfg_if;
 use clap::Parser;
 use dashmap::DashMap;
+use event::Event;
 use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
-use gtk::gdk::WindowTypeHint;
-use gtk::traits::GtkWindowExt;
 use native::NativeState;
 use parking_lot::RwLock;
 use regex::RegexSet;
@@ -35,7 +35,6 @@ use sysinfo::{
 };
 use tokio::runtime::Runtime;
 use tracing::{
-    debug,
     info,
     trace,
     warn,
@@ -43,26 +42,23 @@ use tracing::{
 use tray::create_tray;
 use url::Url;
 use window::{
-    FigWindowEvent,
+    WindowId,
     WindowState,
 };
 use wry::application::event::{
-    Event,
+    Event as WryEvent,
     StartCause,
-    WindowEvent,
+    WindowEvent as WryWindowEvent,
 };
 use wry::application::event_loop::{
     ControlFlow,
-    EventLoop,
+    EventLoop as WryEventLoop,
+    EventLoopProxy as WryEventLoopProxy,
 };
 use wry::application::menu::MenuType;
-use wry::application::platform::unix::{
-    WindowBuilderExtUnix,
-    WindowExtUnix,
-};
 use wry::application::window::{
     WindowBuilder,
-    WindowId,
+    WindowId as WryWindowId,
 };
 use wry::webview::{
     WebView,
@@ -70,20 +66,12 @@ use wry::webview::{
 };
 
 use crate::api::api_request;
+use crate::event::WindowEvent;
 
 const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 
-const MISSION_CONTROL_ID: FigId = FigId(Cow::Borrowed("mission-control"));
-const AUTOCOMPLETE_ID: FigId = FigId(Cow::Borrowed("autocomplete"));
-
-#[derive(Debug, Clone, PartialEq, Eq, Hash)]
-pub struct FigId(pub Cow<'static, str>);
-
-impl Display for FigId {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        f.write_str(&self.0)
-    }
-}
+const MISSION_CONTROL_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
+const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 
 #[derive(Debug, Default)]
 pub struct DebugState {
@@ -99,19 +87,11 @@ pub struct InterceptState {
 
 #[derive(Debug, Default)]
 pub struct NotificationsState {
-    subscriptions: DashMap<FigId, DashMap<NotificationType, i64, FnvBuildHasher>, FnvBuildHasher>,
+    subscriptions: DashMap<WindowId, DashMap<NotificationType, i64, FnvBuildHasher>, FnvBuildHasher>,
 }
 
-#[derive(Debug)]
-pub enum FigEvent {
-    WindowEvent {
-        fig_id: FigId,
-        window_event: FigWindowEvent,
-    },
-    ControlFlow(ControlFlow),
-}
-
-pub type FigEventLoop = EventLoop<FigEvent>;
+pub type EventLoop = WryEventLoop<Event>;
+pub type EventLoopProxy = WryEventLoopProxy<Event>;
 
 #[derive(Debug, Default)]
 pub struct GlobalState {
@@ -123,9 +103,9 @@ pub struct GlobalState {
 }
 
 struct WebviewManager {
-    fig_id_map: DashMap<FigId, Arc<WindowState>, FnvBuildHasher>,
-    window_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
-    event_loop: FigEventLoop,
+    fig_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
+    window_id_map: DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>,
+    event_loop: EventLoop,
     global_state: Arc<GlobalState>,
 }
 
@@ -134,7 +114,7 @@ impl Default for WebviewManager {
         Self {
             fig_id_map: Default::default(),
             window_id_map: Default::default(),
-            event_loop: EventLoop::with_user_event(),
+            event_loop: WryEventLoop::with_user_event(),
             global_state: Default::default(),
         }
     }
@@ -145,28 +125,30 @@ impl WebviewManager {
         Self::default()
     }
 
-    fn insert_webview(&mut self, fig_id: FigId, webview: WebView) {
-        let webview_arc = Arc::new(WindowState::new(fig_id.clone(), webview));
-        self.fig_id_map.insert(fig_id, webview_arc.clone());
+    fn insert_webview(&mut self, window_id: WindowId, webview: WebView) {
+        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview));
+        self.fig_id_map.insert(window_id, webview_arc.clone());
         self.window_id_map
             .insert(webview_arc.webview.window().id(), webview_arc);
     }
 
     fn build_webview<T>(
         &mut self,
-        fig_id: FigId,
-        builder: impl Fn(&FigEventLoop, T) -> wry::Result<WebView>,
+        window_id: WindowId,
+        builder: impl Fn(&EventLoop, T) -> wry::Result<WebView>,
         options: T,
     ) -> wry::Result<()> {
         let webview = builder(&self.event_loop, options)?;
-        self.insert_webview(fig_id, webview);
+        self.insert_webview(window_id, webview);
         Ok(())
     }
 
     async fn run(self) -> wry::Result<()> {
-        let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(FigId, String)>();
+        let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
 
-        native::NativeState::execute(self.global_state.clone(), self.event_loop.create_proxy()).await;
+        native::init(self.global_state.clone(), self.event_loop.create_proxy())
+            .await
+            .expect("Failed to initialize native integrations");
 
         tokio::spawn(figterm::clean_figterm_cache(self.global_state.clone()));
 
@@ -190,9 +172,9 @@ impl WebviewManager {
             *control_flow = ControlFlow::Wait;
 
             match event {
-                Event::NewEvents(StartCause::Init) => info!("Fig has started"),
-                Event::WindowEvent {
-                    event: WindowEvent::CloseRequested,
+                WryEvent::NewEvents(StartCause::Init) => info!("Fig has started"),
+                WryEvent::WindowEvent {
+                    event: WryWindowEvent::CloseRequested,
                     window_id,
                     ..
                 } => {
@@ -200,28 +182,31 @@ impl WebviewManager {
                         window_state.webview.window().set_visible(false);
                     }
                 },
-                Event::MenuEvent {
+                WryEvent::MenuEvent {
                     menu_id,
                     origin: MenuType::ContextMenu,
                     ..
                 } => {
                     tray.handle_event(menu_id, &proxy);
                 },
-                Event::UserEvent(event) => {
+                WryEvent::UserEvent(event) => {
                     trace!("Executing user event: {event:?}");
                     match event {
-                        FigEvent::WindowEvent { fig_id, window_event } => match self.fig_id_map.get(&fig_id) {
+                        Event::WindowEvent {
+                            window_id,
+                            window_event,
+                        } => match self.fig_id_map.get(&window_id) {
                             Some(window_state) => {
                                 window_state.handle(window_event, &self.global_state, &api_handler_tx);
                             },
                             None => todo!(),
                         },
-                        FigEvent::ControlFlow(new_control_flow) => {
+                        Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
                         },
                     }
                 },
-                Event::MainEventsCleared | Event::NewEvents(StartCause::WaitCancelled { .. }) => {},
+                WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
                 event => trace!("Unhandled event {event:?}"),
             }
         });
@@ -229,18 +214,19 @@ impl WebviewManager {
 }
 
 struct MissionControlOptions {
-    force_visable: bool,
+    force_visible: bool,
 }
 
 fn build_mission_control(
-    event_loop: &FigEventLoop,
-    MissionControlOptions { force_visable }: MissionControlOptions,
+    event_loop: &EventLoop,
+    MissionControlOptions { force_visible }: MissionControlOptions,
 ) -> wry::Result<WebView> {
-    let is_visable = !fig_auth::is_logged_in() || force_visable;
+    let is_visible = !fig_auth::is_logged_in() || force_visible;
 
     let window = WindowBuilder::new()
+        .with_resizable(true)
         .with_title("Fig Mission Control")
-        .with_visible(is_visable)
+        .with_visible(is_visible)
         .build(event_loop)?;
 
     let proxy = event_loop.create_proxy();
@@ -249,9 +235,9 @@ fn build_mission_control(
         .with_url("https://desktop.fig.io")?
         .with_ipc_handler(move |_window, payload| {
             proxy
-                .send_event(FigEvent::WindowEvent {
-                    fig_id: MISSION_CONTROL_ID.clone(),
-                    window_event: FigWindowEvent::Api { payload },
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_event: WindowEvent::Api { payload },
                 })
                 .unwrap();
         })
@@ -282,19 +268,37 @@ fn build_mission_control(
 
 struct AutocompleteOptions {}
 
-fn build_autocomplete(event_loop: &FigEventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
-    let window = WindowBuilder::new()
+fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
+    let mut window_builder = WindowBuilder::new()
         .with_title("Fig Autocomplete")
         .with_transparent(true)
         .with_decorations(false)
-        .with_skip_taskbar(true)
-        .with_resizable(true)
+        .with_resizable(false)
         .with_always_on_top(true)
-        .with_visible(false)
-        //.with_inner_size(PhysicalSize { width: 1, height: 1 })
-        .build(event_loop)?;
+        .with_visible(false);
 
-    window.gtk_window().set_type_hint(WindowTypeHint::Utility);
+    cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            use wry::application::platform::unix::WindowBuilderExtUnix;
+            window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
+        } else if #[cfg(target_os = "windows")] {
+            use wry::application::platform::windows::WindowBuilderExtWindows;
+            window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
+        } else {
+            window_builder = window_builder.with_resizable(false);
+        }
+    );
+
+    let window = window_builder.build(event_loop)?;
+
+    #[cfg(target_os = "linux")]
+    {
+        use gtk::gdk::WindowTypeHint;
+        use gtk::traits::GtkWindowExt;
+        use wry::application::platform::unix::WindowExtUnix;
+
+        window.gtk_window().set_type_hint(WindowTypeHint::Utility);
+    }
 
     let proxy = event_loop.create_proxy();
 
@@ -302,9 +306,9 @@ fn build_autocomplete(event_loop: &FigEventLoop, _autocomplete_options: Autocomp
         .with_url("https://staging.withfig.com/autocomplete/v9")?
         .with_ipc_handler(move |_window, payload| {
             proxy
-                .send_event(FigEvent::WindowEvent {
-                    fig_id: AUTOCOMPLETE_ID.clone(),
-                    window_event: FigWindowEvent::Api { payload },
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID.clone(),
+                    window_event: WindowEvent::Api { payload },
                 })
                 .unwrap();
         })
@@ -355,12 +359,10 @@ fn main() {
 
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
-        native::init().expect("Failed to initialize native integrations");
-
         let mut webview_manager = WebviewManager::new();
         webview_manager
             .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
-                force_visable: cli.mission_control_open,
+                force_visible: cli.mission_control_open,
             })
             .unwrap();
         webview_manager

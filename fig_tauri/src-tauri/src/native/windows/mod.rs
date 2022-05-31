@@ -2,15 +2,15 @@ mod ipc;
 
 use std::ffi::CStr;
 use std::path::Path;
+use std::sync::Arc;
 
+use anyhow::Result;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use tokio::sync::mpsc::UnboundedSender;
 use windows::Win32::Foundation::{
     HWND,
     RECT,
 };
-use windows::Win32::System::Com;
 use windows::Win32::UI::Accessibility::{
     SetWinEventHook,
     UnhookWinEvent,
@@ -23,8 +23,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
     CHILDID_SELF,
     EVENT_OBJECT_LOCATIONCHANGE,
     EVENT_SYSTEM_FOREGROUND,
-    EVENT_UIA_PROPID_END,
-    EVENT_UIA_PROPID_START,
     OBJECT_IDENTIFIER,
     OBJID_QUERYCLASSNAMEIDX,
     OBJID_WINDOW,
@@ -32,9 +30,15 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WINEVENT_SKIPOWNPROCESS,
 };
 
-use crate::window::{
-    CursorPositionKind,
+use crate::event::{
+    Event,
     WindowEvent,
+};
+use crate::window::CursorPositionKind;
+use crate::{
+    EventLoopProxy,
+    GlobalState,
+    AUTOCOMPLETE_ID,
 };
 
 pub const SHELL: &str = "wsl";
@@ -43,7 +47,7 @@ pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relativ
 
 static UNMANAGED: Lazy<Unmanaged> = unsafe {
     Lazy::new(|| Unmanaged {
-        event_sender: RwLock::new(None),
+        event_sender: RwLock::new(Option::<EventLoopProxy>::None),
         foreground_hook: RwLock::new(SetWinEventHook(
             EVENT_SYSTEM_FOREGROUND,
             EVENT_SYSTEM_FOREGROUND,
@@ -58,19 +62,12 @@ static UNMANAGED: Lazy<Unmanaged> = unsafe {
     })
 };
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct NativeState;
-
-impl NativeState {
-    pub fn new(window_event_sender: UnboundedSender<WindowEvent>) -> Self {
-        UNMANAGED.event_sender.write().replace(window_event_sender);
-        NativeState
-    }
-}
 
 #[allow(dead_code)]
 struct Unmanaged {
-    event_sender: RwLock<Option<UnboundedSender<WindowEvent>>>,
+    event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
     caret_hook: RwLock<Option<HWINEVENTHOOK>>,
@@ -82,7 +79,10 @@ impl Unmanaged {
             .read()
             .clone()
             .expect("Window event sender was none")
-            .send(event)
+            .send_event(Event::WindowEvent {
+                window_id: AUTOCOMPLETE_ID,
+                window_event: event,
+            })
             .expect("Failed to emit window event");
     }
 }
@@ -97,6 +97,20 @@ impl Listener {
     pub async fn accept(&self) -> Result<ipc::WindowsStream, ipc::WinSockError> {
         self.0.accept().await
     }
+}
+
+pub mod icons {
+    use crate::icons::ProcessedAsset;
+
+    pub fn lookup(name: &str) -> Option<ProcessedAsset> {
+        None
+    }
+}
+
+pub fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
+    UNMANAGED.event_sender.write().replace(proxy);
+
+    Ok(())
 }
 
 unsafe extern "system" fn win_event_proc(

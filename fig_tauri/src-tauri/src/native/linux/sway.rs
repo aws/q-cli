@@ -22,12 +22,14 @@ use tracing::{
     trace,
     warn,
 };
-use wry::application::event_loop::EventLoopProxy;
 
+use crate::event::{
+    Event,
+    WindowEvent,
+};
 use crate::utils::Rect;
-use crate::window::FigWindowEvent;
 use crate::{
-    FigEvent,
+    EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
 
@@ -93,7 +95,7 @@ impl I3Ipc {
     }
 }
 
-pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Path>) {
+pub async fn handle_sway(proxy: EventLoopProxy, socket: impl AsRef<Path>) {
     use tokio::io::AsyncReadExt;
 
     let mut conn = tokio::net::UnixStream::connect(socket).await.unwrap();
@@ -149,9 +151,9 @@ pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Pat
 
                                 if let Some("org.kde.konsole") = app_id {
                                     proxy
-                                        .send_event(FigEvent::WindowEvent {
-                                            fig_id: AUTOCOMPLETE_ID.clone(),
-                                            window_event: FigWindowEvent::Show,
+                                        .send_event(Event::WindowEvent {
+                                            window_id: AUTOCOMPLETE_ID.clone(),
+                                            window_event: WindowEvent::Show,
                                         })
                                         .unwrap();
                                     // proxy
@@ -164,9 +166,9 @@ pub async fn handle_sway(proxy: EventLoopProxy<FigEvent>, socket: impl AsRef<Pat
                                     //    })
                                     //    .unwrap();
                                     proxy
-                                        .send_event(FigEvent::WindowEvent {
-                                            fig_id: AUTOCOMPLETE_ID.clone(),
-                                            window_event: FigWindowEvent::Reanchor { x: 0, y: 0 },
+                                        .send_event(Event::WindowEvent {
+                                            window_id: AUTOCOMPLETE_ID.clone(),
+                                            window_event: WindowEvent::Reanchor { x: 0, y: 0 },
                                         })
                                         .unwrap();
                                 }
