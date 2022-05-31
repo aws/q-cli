@@ -15,6 +15,7 @@ use std::borrow::Cow;
 use std::sync::Arc;
 
 use api::init::javascript_init;
+use cfg_if::cfg_if;
 use clap::Parser;
 use dashmap::DashMap;
 use event::Event;
@@ -268,28 +269,27 @@ fn build_mission_control(
 struct AutocompleteOptions {}
 
 fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
-    #[cfg(target_os = "linux")]
-    use wry::application::platform::unix::WindowBuilderExtUnix;
-    #[cfg(windows)]
-    use wry::application::platform::windows::WindowBuilderExtWindows;
-
-    #[allow(unused_mut)]
-    let mut window = WindowBuilder::new()
+    let mut window_builder = WindowBuilder::new()
         .with_title("Fig Autocomplete")
         .with_transparent(true)
         .with_decorations(false)
-        .with_skip_taskbar(true)
         .with_resizable(false)
         .with_always_on_top(true)
         .with_visible(false);
-    //.with_inner_size(PhysicalSize { width: 1, height: 1 })
 
-    #[cfg(target_os = "macos")]
-    {
-        window = window.with_resizable(true);
-    }
+    cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            use wry::application::platform::unix::WindowBuilderExtUnix;
+            window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
+        } else if #[cfg(target_os = "windows")] {
+            use wry::application::platform::windows::WindowBuilderExtWindows;
+            window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
+        } else {
+            window_builder = window_builder.with_resizable(false);
+        }
+    );
 
-    let window = window.build(event_loop)?;
+    let window = window_builder.build(event_loop)?;
 
     #[cfg(target_os = "linux")]
     {
