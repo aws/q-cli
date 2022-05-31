@@ -1536,7 +1536,7 @@ dependencies = [
 
 [[package]]
 name = "fig_tauri"
-version = "0.1.1"
+version = "2.0.0"
 dependencies = [
  "anyhow",
  "base64",
@@ -1561,6 +1561,7 @@ dependencies = [
  "once_cell",
  "parking_lot 0.12.0",
  "percent-encoding",
+ "regex 1.5.6",
  "serde",
  "serde_json",
  "shellexpand",
@@ -1569,6 +1570,7 @@ dependencies = [
  "tokio",
  "tracing",
  "url",
+ "whoami",
  "windows",
  "wry",
  "x11rb",

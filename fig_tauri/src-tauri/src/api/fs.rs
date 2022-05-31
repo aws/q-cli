@@ -24,18 +24,19 @@ use crate::utils::{
 
 pub async fn read_file(request: ReadFileRequest) -> RequestResult {
     use fig_proto::fig::read_file_response::Type;
-    let file_path = resolve_filepath(request.path.unwrap());
-    let kind = if request.is_binary_file.unwrap_or(false) {
+    let path = request.path.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
+    let resolved_path = resolve_filepath(path);
+    let kind = if request.is_binary_file() {
         Type::Data(
-            tokio::fs::read(&file_path)
+            tokio::fs::read(&*resolved_path)
                 .await
-                .map_err(|_| anyhow!("Failed reading file: {file_path:?}"))?,
+                .map_err(|_| anyhow!("Failed reading file: {resolved_path}"))?,
         )
     } else {
         Type::Text(
-            tokio::fs::read_to_string(&file_path)
+            tokio::fs::read_to_string(&*resolved_path)
                 .await
-                .map_err(|_| anyhow!("Failed reading file: {file_path:?}"))?,
+                .map_err(|_| anyhow!("Failed reading file: {resolved_path}"))?,
         )
     };
     let response = ServerOriginatedSubMessage::ReadFileResponse(ReadFileResponse { r#type: Some(kind) });
@@ -45,14 +46,15 @@ pub async fn read_file(request: ReadFileRequest) -> RequestResult {
 
 pub async fn write_file(request: WriteFileRequest) -> RequestResult {
     use fig_proto::fig::write_file_request::Data;
-    let file_path = resolve_filepath(request.path.unwrap());
+    let path = request.path.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
+    let resolved_path = resolve_filepath(path);
     match request.data.unwrap() {
-        Data::Binary(data) => tokio::fs::write(&file_path, data)
+        Data::Binary(data) => tokio::fs::write(&*resolved_path, data)
             .await
-            .map_err(|_| anyhow!("Failed writing to file: {file_path:?}"))?,
-        Data::Text(data) => tokio::fs::write(&file_path, data.as_bytes())
+            .map_err(|_| anyhow!("Failed writing to file: {resolved_path}"))?,
+        Data::Text(data) => tokio::fs::write(&*resolved_path, data.as_bytes())
             .await
-            .map_err(|_| anyhow!("Failed writing to file: {file_path:?}"))?,
+            .map_err(|_| anyhow!("Failed writing to file: {resolved_path}"))?,
     }
 
     RequestResult::success()
@@ -60,32 +62,34 @@ pub async fn write_file(request: WriteFileRequest) -> RequestResult {
 
 pub async fn append_to_file(request: AppendToFileRequest) -> RequestResult {
     use fig_proto::fig::append_to_file_request::Data;
-    let file_path = resolve_filepath(request.path.unwrap());
+    let path = request.path.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
+    let resolved_path = resolve_filepath(path);
     let mut file = OpenOptions::new()
         .append(true)
-        .open(&file_path)
+        .open(&*resolved_path)
         .await
-        .map_err(|_| anyhow!("Failed opening file: {file_path:?}"))?;
+        .map_err(|_| anyhow!("Failed opening file: {resolved_path}"))?;
 
     match request.data.unwrap() {
         Data::Binary(data) => file
             .write(&data)
             .await
-            .map_err(|_| anyhow!("Failed writing to file: {file_path:?}"))?,
+            .map_err(|_| anyhow!("Failed writing to file: {resolved_path}"))?,
         Data::Text(data) => file
             .write(data.as_bytes())
             .await
-            .map_err(|_| anyhow!("Failed writing to file: {file_path:?}"))?,
+            .map_err(|_| anyhow!("Failed writing to file: {resolved_path}"))?,
     };
 
     RequestResult::success()
 }
 
 pub async fn destination_of_symbolic_link(request: DestinationOfSymbolicLinkRequest) -> RequestResult {
-    let file_path = resolve_filepath(request.path.unwrap());
-    let real_path = tokio::fs::canonicalize(&file_path)
+    let path = request.path.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
+    let resolved_path = resolve_filepath(path);
+    let real_path = tokio::fs::canonicalize(&*resolved_path)
         .await
-        .map_err(|_| anyhow!("Failed resolving symlink: {file_path:?}"))?;
+        .map_err(|_| anyhow!("Failed resolving symlink: {resolved_path}"))?;
 
     let response = ServerOriginatedSubMessage::DestinationOfSymbolicLinkResponse(DestinationOfSymbolicLinkResponse {
         destination: Some(build_filepath(real_path)),
@@ -95,16 +99,17 @@ pub async fn destination_of_symbolic_link(request: DestinationOfSymbolicLinkRequ
 }
 
 pub async fn contents_of_directory(request: ContentsOfDirectoryRequest) -> RequestResult {
-    let file_path = resolve_filepath(request.directory.unwrap());
-    let mut stream = tokio::fs::read_dir(&file_path)
+    let path = request.directory.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
+    let resolved_path = resolve_filepath(path);
+    let mut stream = tokio::fs::read_dir(&*resolved_path)
         .await
-        .map_err(|_| anyhow!("Failed listing directory: {file_path:?}"))?;
+        .map_err(|_| anyhow!("Failed listing directory: {resolved_path}"))?;
 
     let mut contents = Vec::new();
     while let Some(item) = stream
         .next_entry()
         .await
-        .map_err(|_| anyhow!("Failed listing directory entries {file_path:?}"))?
+        .map_err(|_| anyhow!("Failed listing directory entries: {resolved_path}"))?
     {
         contents.push(item.file_name().to_string_lossy().to_string());
     }
@@ -113,4 +118,20 @@ pub async fn contents_of_directory(request: ContentsOfDirectoryRequest) -> Reque
         ServerOriginatedSubMessage::ContentsOfDirectoryResponse(ContentsOfDirectoryResponse { file_names: contents });
 
     Ok(response.into())
+}
+
+pub async fn create_directory_request(request: fig_proto::fig::CreateDirectoryRequest) -> RequestResult {
+    let path = request.path.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
+    let resolved_path = resolve_filepath(path);
+    if request.recursive() {
+        tokio::fs::create_dir_all(&*resolved_path)
+            .await
+            .map_err(|_| anyhow!("Error"))?;
+    } else {
+        tokio::fs::create_dir(&*resolved_path)
+            .await
+            .map_err(|_| anyhow!("Error"))?;
+    }
+
+    RequestResult::success()
 }
