@@ -23,16 +23,46 @@ use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
 use parking_lot::RwLock;
-use sysinfo::{get_current_pid, ProcessExt, ProcessRefreshKind, RefreshKind, System, SystemExt};
+use regex::RegexSet;
+use sysinfo::{
+    get_current_pid,
+    ProcessExt,
+    ProcessRefreshKind,
+    RefreshKind,
+    System,
+    SystemExt,
+};
 use tokio::runtime::Runtime;
-use tracing::{debug, info, trace, warn};
+use tracing::{
+    info,
+    trace,
+    warn,
+};
 use tray::create_tray;
-use window::{WindowState, WindowId};
-use wry::application::event::{Event as WryEvent, StartCause, WindowEvent as WryWindowEvent};
-use wry::application::event_loop::{ControlFlow, EventLoop as WryEventLoop};
+use url::Url;
+use window::{
+    WindowId,
+    WindowState,
+};
+use wry::application::event::{
+    Event as WryEvent,
+    StartCause,
+    WindowEvent as WryWindowEvent,
+};
+use wry::application::event_loop::{
+    ControlFlow,
+    EventLoop as WryEventLoop,
+    EventLoopProxy as WryEventLoopProxy,
+};
 use wry::application::menu::MenuType;
-use wry::application::window::{WindowBuilder, WindowId as WryWindowId};
-use wry::webview::{WebView, WebViewBuilder};
+use wry::application::window::{
+    WindowBuilder,
+    WindowId as WryWindowId,
+};
+use wry::webview::{
+    WebView,
+    WebViewBuilder,
+};
 
 use crate::api::api_request;
 use crate::event::WindowEvent;
@@ -60,6 +90,7 @@ pub struct NotificationsState {
 }
 
 pub type EventLoop = WryEventLoop<Event>;
+pub type EventLoopProxy = WryEventLoopProxy<Event>;
 
 #[derive(Debug, Default)]
 pub struct GlobalState {
@@ -115,6 +146,7 @@ impl WebviewManager {
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
 
         native::init(self.global_state.clone(), self.event_loop.create_proxy())
+            .await
             .expect("Failed to initialize native integrations");
 
         tokio::spawn(figterm::clean_figterm_cache(self.global_state.clone()));
@@ -157,9 +189,12 @@ impl WebviewManager {
                     tray.handle_event(menu_id, &proxy);
                 },
                 WryEvent::UserEvent(event) => {
-                    debug!("Executing user event: {event:?}");
+                    trace!("Executing user event: {event:?}");
                     match event {
-                        Event::WindowEvent { window_id, window_event } => match self.fig_id_map.get(&window_id) {
+                        Event::WindowEvent {
+                            window_id,
+                            window_event,
+                        } => match self.fig_id_map.get(&window_id) {
                             Some(window_state) => {
                                 window_state.handle(window_event, &self.global_state, &api_handler_tx);
                             },
@@ -206,7 +241,24 @@ fn build_mission_control(
                 .unwrap();
         })
         .with_devtools(true)
-        .with_navigation_handler(|url| url.starts_with("http://localhost") || url.starts_with("https://desktop.fig.io"))
+        .with_navigation_handler(|url| {
+            match Url::parse(&url).ok().and_then(|url| {
+                url.domain().and_then(|domain| {
+                    RegexSet::new(&[r"^localhost$", r"^desktop\.fig\.io$", r"-withfig\.vercel\.app$"])
+                        .ok()
+                        .map(|r| r.is_match(domain))
+                })
+            }) {
+                Some(true) => {
+                    trace!("{MISSION_CONTROL_ID} allowed url: {url}");
+                    true
+                },
+                Some(false) | None => {
+                    warn!("{MISSION_CONTROL_ID} denyed url: {url}");
+                    false
+                },
+            }
+        })
         .with_initialization_script(&javascript_init())
         .build()?;
 
@@ -230,7 +282,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         .with_resizable(false)
         .with_always_on_top(true)
         .with_visible(false);
-        //.with_inner_size(PhysicalSize { width: 1, height: 1 })
+    //.with_inner_size(PhysicalSize { width: 1, height: 1 })
 
     #[cfg(target_os = "macos")]
     {
@@ -309,13 +361,9 @@ fn main() {
     rt.block_on(async {
         let mut webview_manager = WebviewManager::new();
         webview_manager
-            .build_webview(
-                MISSION_CONTROL_ID,
-                build_mission_control,
-                MissionControlOptions {
-                    force_visible: cli.mission_control_open,
-                },
-            )
+            .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
+                force_visible: cli.mission_control_open,
+            })
             .unwrap();
         webview_manager
             .build_webview(AUTOCOMPLETE_ID, build_autocomplete, AutocompleteOptions {})

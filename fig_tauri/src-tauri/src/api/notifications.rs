@@ -7,9 +7,8 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::{
-    NotificationsState, window::WindowId,
-};
+use crate::window::WindowId;
+use crate::NotificationsState;
 
 pub async fn handle_request(
     request: NotificationRequest,

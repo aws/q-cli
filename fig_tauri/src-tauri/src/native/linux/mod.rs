@@ -10,11 +10,11 @@ use tracing::{
     error,
     info,
 };
-use wry::application::event_loop::EventLoopProxy;
 pub use x11::CURSOR_POSITION_KIND;
 
+use crate::event::Event;
 use crate::{
-    FigEvent,
+    EventLoopProxy,
     GlobalState,
 };
 
@@ -37,7 +37,7 @@ impl DisplayServer {
     }
 }
 
-pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) -> Result<()> {
+pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     match DisplayServer::detect() {
         Ok(DisplayServer::X11) => {
             info!("Detected X11 server");
@@ -56,7 +56,7 @@ pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent
             error!("{err}");
         },
     }
-    
+
     icons::init()?;
 
     Ok(())

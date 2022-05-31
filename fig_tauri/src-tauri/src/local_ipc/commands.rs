@@ -10,17 +10,18 @@ use fig_proto::local::{
     UiElement,
 };
 use tracing::error;
-use wry::application::event_loop::{
-    ControlFlow,
-    EventLoopProxy,
-};
+use wry::application::event_loop::ControlFlow;
 
 use super::{
     LocalResponse,
     LocalResult,
 };
-use crate::event::{Event, WindowEvent};
+use crate::event::{
+    Event,
+    WindowEvent,
+};
 use crate::{
+    EventLoopProxy,
     MISSION_CONTROL_ID,
 };
 
@@ -28,7 +29,7 @@ pub async fn debug(_command: DebugModeCommand) -> LocalResult {
     todo!()
 }
 
-pub async fn quit(_command: QuitCommand, proxy: &EventLoopProxy<Event>) -> LocalResult {
+pub async fn quit(_command: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::ControlFlow(ControlFlow::Exit))
         .map(|_| LocalResponse::Success(None))
@@ -42,7 +43,7 @@ pub async fn diagnostic(_command: DiagnosticsCommand) -> LocalResult {
     ))))
 }
 
-pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy<Event>) -> LocalResult {
+pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy) -> LocalResult {
     match command.element() {
         UiElement::Settings => {
             proxy

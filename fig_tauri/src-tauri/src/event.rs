@@ -4,7 +4,10 @@ use crate::window::WindowId;
 
 #[derive(Debug)]
 pub enum Event {
-    WindowEvent { window_id: WindowId, window_event: WindowEvent },
+    WindowEvent {
+        window_id: WindowId,
+        window_event: WindowEvent,
+    },
     ControlFlow(ControlFlow),
 }
 

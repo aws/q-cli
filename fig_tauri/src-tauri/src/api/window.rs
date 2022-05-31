@@ -3,18 +3,20 @@ use fig_proto::fig::{
     PositionWindowRequest,
     PositionWindowResponse,
 };
-use wry::application::event_loop::EventLoopProxy;
-
-use crate::event::{Event, WindowEvent};
-use crate::window::WindowId;
 
 use super::RequestResult;
+use crate::event::{
+    Event,
+    WindowEvent,
+};
+use crate::window::WindowId;
+use crate::EventLoopProxy;
 
 /// TODO(vikram): implement is_above, is_clipped and corresponding window behavior
 pub async fn position_window(
     request: PositionWindowRequest,
     window_id: WindowId,
-    proxy: &EventLoopProxy<Event>,
+    proxy: &EventLoopProxy,
 ) -> RequestResult {
     let dryrun = request.dryrun.unwrap_or(false);
 
@@ -57,7 +59,7 @@ pub async fn position_window(
             false => {
                 proxy
                     .send_event(Event::WindowEvent {
-                        window_id: window_id,
+                        window_id,
                         window_event: WindowEvent::Show,
                     })
                     .unwrap();

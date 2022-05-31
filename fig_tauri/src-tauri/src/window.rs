@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt;
 
 use parking_lot::RwLock;
 use tokio::runtime::Handle;
@@ -26,6 +27,12 @@ pub enum CursorPositionKind {
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WindowId(pub Cow<'static, str>);
+
+impl fmt::Display for WindowId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
+}
 
 pub struct WindowState {
     pub webview: WebView,
@@ -165,9 +172,6 @@ impl WindowState {
                     .evaluate_script(&format!(
                         "document.dispatchEvent(new CustomEvent('{event}', {{'detail': `{payload}`}}))"
                     ))
-                    .unwrap();
-                self.webview
-                    .evaluate_script(&format!("console.log('Executing {event}')"))
                     .unwrap();
             },
             WindowEvent::Api { payload } => {

@@ -22,7 +22,6 @@ use fig_proto::local::{
 };
 use fig_proto::prost::Message;
 use tracing::debug;
-use wry::application::event_loop::EventLoopProxy;
 
 use crate::event::WindowEvent;
 use crate::figterm::{
@@ -31,6 +30,7 @@ use crate::figterm::{
 };
 use crate::{
     Event,
+    EventLoopProxy,
     GlobalState,
     NotificationsState,
     AUTOCOMPLETE_ID,
@@ -41,7 +41,7 @@ pub async fn send_notification(
     notification_type: &NotificationType,
     notification: Notification,
     notification_state: &NotificationsState,
-    proxy: &EventLoopProxy<Event>,
+    proxy: &EventLoopProxy,
 ) -> Result<()> {
     for sub in notification_state.subscriptions.iter() {
         let message_id = match sub.get(notification_type) {
@@ -71,11 +71,7 @@ pub async fn send_notification(
     Ok(())
 }
 
-pub async fn edit_buffer(
-    hook: EditBufferHook,
-    global_state: Arc<GlobalState>,
-    proxy: &EventLoopProxy<Event>,
-) -> Result<()> {
+pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, proxy: &EventLoopProxy) -> Result<()> {
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
     ensure_figterm(session_id.clone(), global_state.clone());
 
@@ -131,7 +127,7 @@ pub async fn edit_buffer(
 
 pub async fn caret_position(
     CursorPositionHook { x, y, width, height }: CursorPositionHook,
-    proxy: &EventLoopProxy<Event>,
+    proxy: &EventLoopProxy,
 ) -> Result<()> {
     debug!("Cursor Position: {x} {y} {width} {height}");
 
@@ -149,7 +145,7 @@ pub async fn prompt(_hook: PromptHook) -> Result<()> {
     Ok(())
 }
 
-pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy<Event>) -> Result<()> {
+pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<()> {
     proxy
         .send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),
@@ -167,7 +163,7 @@ pub async fn pre_exec(_hook: PreExecHook) -> Result<()> {
 pub async fn intercepted_key(
     InterceptedKeyHook { key, action, .. }: InterceptedKeyHook,
     global_state: &GlobalState,
-    proxy: &EventLoopProxy<Event>,
+    proxy: &EventLoopProxy,
 ) -> Result<()> {
     debug!("Intercepted Key Action: {:?}", action);
 

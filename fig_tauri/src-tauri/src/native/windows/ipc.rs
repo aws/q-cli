@@ -19,8 +19,8 @@ use windows::core::{
 };
 use windows::Win32::Foundation::CHAR;
 use windows::Win32::Networking::WinSock::{
+    self,
     SEND_RECV_FLAGS,
-    {self,},
 };
 use windows::Win32::Storage::FileSystem;
 

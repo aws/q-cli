@@ -23,14 +23,18 @@ use fig_proto::fig::{
 use fig_proto::prost::Message;
 use tracing::{
     debug,
+    trace,
     warn,
 };
-use wry::application::event_loop::EventLoopProxy;
 
-use crate::event::{Event, WindowEvent};
+use crate::event::{
+    Event,
+    WindowEvent,
+};
 use crate::utils::truncate_string;
 use crate::window::WindowId;
 use crate::{
+    EventLoopProxy,
     GlobalState,
     FIG_PROTO_MESSAGE_RECIEVED,
 };
@@ -58,7 +62,7 @@ pub async fn api_request(
     window_id: WindowId,
     client_originated_message_b64: String,
     global_state: &GlobalState,
-    proxy: &EventLoopProxy<Event>,
+    proxy: &EventLoopProxy,
 ) {
     let data = base64::decode(client_originated_message_b64).unwrap();
 
@@ -68,7 +72,7 @@ pub async fn api_request(
             warn!("Failed to decode request: {err}");
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: window_id,
+                    window_id,
                     window_event: WindowEvent::Emit {
                         event: FIG_GLOBAL_ERROR_OCCURRED.into(),
                         payload: "Decode error".into(),
@@ -104,6 +108,7 @@ pub async fn api_request(
                 AppendToFileRequest(request) => fs::append_to_file(request).await,
                 DestinationOfSymbolicLinkRequest(request) => fs::destination_of_symbolic_link(request).await,
                 ContentsOfDirectoryRequest(request) => fs::contents_of_directory(request).await,
+                CreateDirectoryRequest(request) => fs::create_directory_request(request).await,
                 // notifications
                 NotificationRequest(request) => {
                     notifications::handle_request(
@@ -145,7 +150,7 @@ pub async fn api_request(
         },
     };
 
-    debug!("response: {response:?}");
+    trace!("response: {response:?}");
 
     let message = ServerOriginatedMessage {
         id: message.id,
@@ -162,7 +167,7 @@ pub async fn api_request(
     if message.encode(&mut encoded).is_err() {
         proxy
             .send_event(Event::WindowEvent {
-                window_id: window_id,
+                window_id,
                 window_event: WindowEvent::Emit {
                     event: FIG_GLOBAL_ERROR_OCCURRED.into(),
                     payload: "Encode error".into(),
@@ -172,7 +177,7 @@ pub async fn api_request(
     } else {
         proxy
             .send_event(Event::WindowEvent {
-                window_id: window_id,
+                window_id,
                 window_event: WindowEvent::Emit {
                     event: FIG_PROTO_MESSAGE_RECIEVED.into(),
                     payload: base64::encode(encoded),

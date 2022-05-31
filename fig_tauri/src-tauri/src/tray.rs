@@ -1,8 +1,5 @@
-use wry::application::event_loop::{
-    ControlFlow,
-    EventLoop,
-    EventLoopProxy,
-};
+use cfg_if::cfg_if;
+use wry::application::event_loop::ControlFlow;
 use wry::application::menu::{
     ContextMenu,
     CustomMenuItem,
@@ -12,14 +9,19 @@ use wry::application::menu::{
 };
 use wry::application::system_tray::SystemTrayBuilder;
 
-use crate::event::{Event, WindowEvent};
+use crate::event::{
+    Event,
+    WindowEvent,
+};
 use crate::{
+    EventLoop,
+    EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
 
 struct TrayElement {
     item: CustomMenuItem,
-    event: Box<dyn Fn(&EventLoopProxy<Event>)>,
+    event: Box<dyn Fn(&EventLoopProxy)>,
 }
 
 pub struct Tray {
@@ -27,7 +29,7 @@ pub struct Tray {
 }
 
 impl Tray {
-    pub fn handle_event(&self, id: MenuId, proxy: &EventLoopProxy<Event>) {
+    pub fn handle_event(&self, id: MenuId, proxy: &EventLoopProxy) {
         for TrayElement { item, event } in &self.elements {
             if item.clone().id() == id {
                 event(proxy);
@@ -36,10 +38,24 @@ impl Tray {
     }
 }
 
-pub fn create_tray(event_loop: &EventLoop<Event>) -> wry::Result<Tray> {
+pub fn create_tray(event_loop: &EventLoop) -> wry::Result<Tray> {
     let mut tray_menu = ContextMenu::new();
     let elements = create_tray_menu(&mut tray_menu);
-    SystemTrayBuilder::new("/usr/share/icons/hicolor/32x32/apps/fig.png".into(), Some(tray_menu)).build(event_loop)?;
+
+    cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            let icon = "/usr/share/icons/hicolor/32x32/apps/fig.png".into();
+        } else if #[cfg(target_os = "macos")] {
+            // TODO: use transparent white icon
+            let icon = include_bytes!("../icons/32x32.png").into();
+        } else if #[cfg(target_os = "windows")] {
+            let icon = include_bytes!("../icons/32x32.png").into();
+        } else {
+            compile_error!("Unsupported platform");
+        }
+    );
+
+    SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?;
     Ok(Tray { elements })
 }
 

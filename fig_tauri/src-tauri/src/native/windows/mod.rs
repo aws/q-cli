@@ -29,12 +29,16 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
 };
-use wry::application::event_loop::EventLoopProxy;
 
-use crate::event::{Event, WindowEvent};
-use crate::{GlobalState, AUTOCOMPLETE_ID};
-use crate::window::{
-    CursorPositionKind,
+use crate::event::{
+    Event,
+    WindowEvent,
+};
+use crate::window::CursorPositionKind;
+use crate::{
+    EventLoopProxy,
+    GlobalState,
+    AUTOCOMPLETE_ID,
 };
 
 pub const SHELL: &str = "wsl";
@@ -43,7 +47,7 @@ pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relativ
 
 static UNMANAGED: Lazy<Unmanaged> = unsafe {
     Lazy::new(|| Unmanaged {
-        event_sender: RwLock::new(Option::<EventLoopProxy<Event>>::None),
+        event_sender: RwLock::new(Option::<EventLoopProxy>::None),
         foreground_hook: RwLock::new(SetWinEventHook(
             EVENT_SYSTEM_FOREGROUND,
             EVENT_SYSTEM_FOREGROUND,
@@ -63,7 +67,7 @@ pub struct NativeState;
 
 #[allow(dead_code)]
 struct Unmanaged {
-    event_sender: RwLock<Option<EventLoopProxy<Event>>>,
+    event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
     caret_hook: RwLock<Option<HWINEVENTHOOK>>,
@@ -75,7 +79,10 @@ impl Unmanaged {
             .read()
             .clone()
             .expect("Window event sender was none")
-            .send_event(Event::WindowEvent { window_id: AUTOCOMPLETE_ID, window_event: event })
+            .send_event(Event::WindowEvent {
+                window_id: AUTOCOMPLETE_ID,
+                window_event: event,
+            })
             .expect("Failed to emit window event");
     }
 }
@@ -100,7 +107,7 @@ pub mod icons {
     }
 }
 
-pub fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy<Event>) -> Result<()> {
+pub fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     UNMANAGED.event_sender.write().replace(proxy);
 
     Ok(())
