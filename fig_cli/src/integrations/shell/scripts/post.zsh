@@ -9,9 +9,9 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
-if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1]] || [ "$INSIDE_EMACS" = 1 ]; then
+if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
   unset FIG_DID_NOT_EXEC_FIGTERM
-  exit
+  return
 fi
 
 export TTY=$(tty)
@@ -143,9 +143,9 @@ fig_precmd() {
   else
     RPS2="%{$START_PROMPT%}$RPS2%{$END_PROMPT%}"
   fi
-  
+
   FIG_HAS_SET_PROMPT=1
-  
+
   # Check if we have a new dotfiles to load
   if command -v fig >/dev/null 2>&1; then
     if fig _ prompt-dotfiles-changed; then

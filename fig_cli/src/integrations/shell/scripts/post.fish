@@ -6,7 +6,7 @@ or set -a PATH $HOME/.local/bin
 
 if test "$FIG_DID_NOT_EXEC_FIGTERM" = 1
     and test "$FIG_TERM" != 1
-    or test "$INSIDE_EMACS" = 1
+    or set --query INSIDE_EMACS
     set --erase FIG_DID_NOT_EXEC_FIGTERM
     exit
 end
