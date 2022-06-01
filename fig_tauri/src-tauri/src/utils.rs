@@ -1,28 +1,34 @@
+use std::borrow::Cow;
 use std::path::PathBuf;
 
+use camino::{
+    Utf8Path,
+    Utf8PathBuf,
+};
 use fig_proto::fig::FilePath;
 use serde::{
     Deserialize,
     Serialize,
 };
 
-pub fn resolve_filepath(file_path: FilePath) -> PathBuf {
-    let convert = |path: String| {
-        if file_path.expand_tilde_in_path.unwrap_or(false) {
-            shellexpand::tilde(&path).into_owned()
+pub fn resolve_filepath<'a>(file_path: &'a FilePath) -> Cow<'a, Utf8Path> {
+    let convert = |path: &'a str| -> Cow<str> {
+        if file_path.expand_tilde_in_path() {
+            shellexpand::tilde(path)
         } else {
-            path
+            path.into()
         }
     };
-    let mut relative_to = file_path
-        .relative_to
-        .map(convert)
-        .map(PathBuf::from)
-        .unwrap_or_else(PathBuf::new);
-    let path = PathBuf::from(convert(file_path.path));
-    relative_to.push(path);
 
-    relative_to
+    match file_path.relative_to {
+        Some(ref relative_to) => Utf8Path::new(&convert(relative_to))
+            .join(&*convert(&file_path.path))
+            .into(),
+        None => match convert(&file_path.path) {
+            Cow::Borrowed(path) => Utf8Path::new(path).into(),
+            Cow::Owned(path) => Utf8PathBuf::from(path).into(),
+        },
+    }
 }
 
 pub fn build_filepath(path: PathBuf) -> FilePath {

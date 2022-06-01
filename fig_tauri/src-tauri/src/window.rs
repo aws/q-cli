@@ -1,3 +1,6 @@
+use std::borrow::Cow;
+use std::fmt;
+
 use parking_lot::RwLock;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedSender;
@@ -9,10 +12,10 @@ use wry::application::dpi::{
 };
 use wry::webview::WebView;
 
+use crate::event::WindowEvent;
 use crate::figterm::FigTermCommand;
 use crate::{
     native,
-    FigId,
     GlobalState,
 };
 
@@ -22,23 +25,18 @@ pub enum CursorPositionKind {
     Relative,
 }
 
-#[derive(Debug)]
-pub enum FigWindowEvent {
-    Reanchor { x: i32, y: i32 },
-    Reposition { x: i32, y: i32 },
-    UpdateCaret { x: i32, y: i32, width: i32, height: i32 },
-    Resize { width: u32, height: u32 },
-    Hide,
-    Show,
-    Emit { event: String, payload: String },
-    Navigate { url: url::Url },
-    Api { payload: String },
-    Devtools,
+#[derive(Debug, Clone, PartialEq, Eq, Hash)]
+pub struct WindowId(pub Cow<'static, str>);
+
+impl fmt::Display for WindowId {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        f.write_str(&self.0)
+    }
 }
 
 pub struct WindowState {
     pub webview: WebView,
-    pub fig_id: FigId,
+    pub window_id: WindowId,
     pub anchor: RwLock<PhysicalPosition<i32>>,
     pub position: RwLock<PhysicalPosition<i32>>,
     pub caret_position: RwLock<PhysicalPosition<i32>>,
@@ -46,14 +44,14 @@ pub struct WindowState {
 }
 
 impl WindowState {
-    pub fn new(fig_id: FigId, webview: WebView) -> Self {
+    pub fn new(window_id: WindowId, webview: WebView) -> Self {
         let position = webview
             .window()
             .inner_position()
             .expect("Failed to acquire window position");
 
         Self {
-            fig_id,
+            window_id,
             webview,
             anchor: RwLock::new(PhysicalPosition::default()),
             position: RwLock::new(position),
@@ -62,9 +60,9 @@ impl WindowState {
         }
     }
 
-    pub fn handle(&self, event: FigWindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(FigId, String)>) {
+    pub fn handle(&self, event: WindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(WindowId, String)>) {
         match event {
-            FigWindowEvent::Reanchor { x, y } => {
+            WindowEvent::Reanchor { x, y } => {
                 let position = self.position.read();
                 let caret_position = self.caret_position.read();
                 let caret_size = self.caret_size.read();
@@ -74,21 +72,21 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: caret_position.x + position.x + caret_size.width,
-                                y: caret_position.y + position.y,
+                                x: caret_position.x + position.x,
+                                y: caret_position.y + position.y + caret_size.height,
                             }))
                     },
                     CursorPositionKind::Relative => {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x + position.x + caret_size.width,
-                                y: y + caret_position.y + position.y,
+                                x: x + caret_position.x + position.x,
+                                y: y + caret_position.y + position.y + caret_size.height,
                             }))
                     },
                 }
             },
-            FigWindowEvent::Reposition { x, y } => {
+            WindowEvent::Reposition { x, y } => {
                 let caret_position = self.caret_position.read();
                 let caret_size = self.caret_size.read();
                 *self.position.write() = PhysicalPosition {
@@ -100,8 +98,8 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x + caret_size.width,
-                                y: y + caret_position.y,
+                                x: x + caret_position.x,
+                                y: y + caret_position.y + caret_size.height,
                             }))
                     },
                     CursorPositionKind::Relative => {
@@ -109,13 +107,13 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + caret_position.x + x + caret_size.width,
-                                y: anchor.y + caret_position.y + y,
+                                x: anchor.x + caret_position.x + x,
+                                y: anchor.y + caret_position.y + y + caret_size.height,
                             }))
                     },
                 }
             },
-            FigWindowEvent::UpdateCaret { x, y, width, height } => {
+            WindowEvent::UpdateCaret { x, y, width, height } => {
                 let position = self.position.read();
                 *self.caret_position.write() = PhysicalPosition { x, y };
                 *self.caret_size.write() = PhysicalSize { width, height };
@@ -127,8 +125,8 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + position.x + width,
-                                y: y + position.y,
+                                x: x + position.x,
+                                y: y + position.y + height,
                             }))
                     },
                     CursorPositionKind::Relative => {
@@ -136,17 +134,17 @@ impl WindowState {
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + x + position.x + width,
-                                y: anchor.y + y + position.y,
+                                x: anchor.x + x + position.x,
+                                y: anchor.y + y + position.y + height,
                             }))
                     },
                 }
             },
-            FigWindowEvent::Resize { width, height } => self
+            WindowEvent::Resize { width, height } => self
                 .webview
                 .window()
                 .set_min_inner_size(Some(PhysicalSize { width, height })),
-            FigWindowEvent::Hide => {
+            WindowEvent::Hide => {
                 if let Some(session) = state.figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
                         session.sender.send(FigTermCommand::ClearIntercept).await.unwrap();
@@ -160,29 +158,26 @@ impl WindowState {
                     .window()
                     .set_inner_size(Size::Physical(PhysicalSize { width: 1, height: 1 }));
             },
-            FigWindowEvent::Show => {
+            WindowEvent::Show => {
                 self.webview.window().set_visible(true);
                 self.webview.window().set_always_on_top(true);
             },
-            FigWindowEvent::Navigate { url } => {
+            WindowEvent::Navigate { url } => {
                 self.webview
                     .evaluate_script(&format!("window.location.href = '{url}'"))
                     .unwrap();
             },
-            FigWindowEvent::Emit { event, payload } => {
+            WindowEvent::Emit { event, payload } => {
                 self.webview
                     .evaluate_script(&format!(
                         "document.dispatchEvent(new CustomEvent('{event}', {{'detail': `{payload}`}}))"
                     ))
                     .unwrap();
-                self.webview
-                    .evaluate_script(&format!("console.log('Executing {event}')"))
-                    .unwrap();
             },
-            FigWindowEvent::Api { payload } => {
-                api_tx.send((self.fig_id.clone(), payload)).unwrap();
+            WindowEvent::Api { payload } => {
+                api_tx.send((self.window_id.clone(), payload)).unwrap();
             },
-            FigWindowEvent::Devtools => {
+            WindowEvent::Devtools => {
                 if self.webview.is_devtools_open() {
                     self.webview.close_devtools();
                 } else {

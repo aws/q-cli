@@ -7,7 +7,6 @@ use tracing::{
     info,
     trace,
 };
-use wry::application::event_loop::EventLoopProxy;
 use x11rb::connection::Connection;
 use x11rb::properties::WmClass;
 use x11rb::protocol::xproto::{
@@ -20,15 +19,14 @@ use x11rb::protocol::xproto::{
     PropertyNotifyEvent,
     Window,
 };
-use x11rb::protocol::Event;
+use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
-use crate::window::{
-    CursorPositionKind,
-    FigWindowEvent,
-};
+use crate::event::WindowEvent;
+use crate::window::CursorPositionKind;
 use crate::{
-    FigEvent,
+    Event,
+    EventLoopProxy,
     GlobalState,
     AUTOCOMPLETE_ID,
 };
@@ -43,7 +41,7 @@ static WMCLASS_WHITELSIT: &[&str] = &[
 ];
 pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
-pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy<FigEvent>) {
+pub async fn handle_x11(global_state: Arc<GlobalState>, proxy: EventLoopProxy) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
 
     let setup = conn.setup();
@@ -72,7 +70,7 @@ pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy<F
         .expect("Failed changing event mask");
 
     while let Ok(event) = conn.wait_for_event() {
-        if let Event::PropertyNotify(event) = event {
+        if let X11Event::PropertyNotify(event) = event {
             if let Err(err) = handle_property_event(&conn, &proxy, event) {
                 error!("error handling PropertyNotifyEvent: {err}");
             }
@@ -82,7 +80,7 @@ pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy<F
 
 fn handle_property_event(
     conn: &RustConnection,
-    proxy: &EventLoopProxy<FigEvent>,
+    proxy: &EventLoopProxy,
     event: PropertyNotifyEvent,
 ) -> anyhow::Result<()> {
     let PropertyNotifyEvent { atom, state, .. } = event;
@@ -100,15 +98,15 @@ fn handle_property_event(
     Ok(())
 }
 
-fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, window: Window) -> anyhow::Result<()> {
+fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window) -> anyhow::Result<()> {
     let wm_class = match WmClass::get(conn, window)?.reply() {
         Ok(class_raw) => String::from_utf8_lossy(class_raw.class()).into_owned(),
         Err(err) => {
             debug!("No wm class {err:?}");
             // hide if missing wm class
-            proxy.send_event(FigEvent::WindowEvent {
-                fig_id: AUTOCOMPLETE_ID.clone(),
-                window_event: FigWindowEvent::Hide,
+            proxy.send_event(Event::WindowEvent {
+                window_id: AUTOCOMPLETE_ID.clone(),
+                window_event: WindowEvent::Hide,
             })?;
             return Ok(());
         },
@@ -122,9 +120,9 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy<FigEvent>, windo
 
     if !WMCLASS_WHITELSIT.contains(&wm_class.as_str()) {
         // hide if not a whitelisted wm class
-        proxy.send_event(FigEvent::WindowEvent {
-            fig_id: AUTOCOMPLETE_ID.clone(),
-            window_event: FigWindowEvent::Hide,
+        proxy.send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID.clone(),
+            window_event: WindowEvent::Hide,
         })?;
         return Ok(());
     }

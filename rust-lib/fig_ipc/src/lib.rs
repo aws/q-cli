@@ -66,15 +66,16 @@ pub fn get_fig_socket_path() -> PathBuf {
 
 /// Connect to a system socket with a timeout
 pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream> {
-    let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket.as_ref())).await {
+    let socket = socket.as_ref();
+    let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket)).await {
         Ok(Ok(conn)) => conn,
         Ok(Err(err)) => {
-            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+            error!("Failed to connect to {socket:?}: {err}");
+            bail!("Failed to connect to {socket:?}: {err}");
         },
         Err(_) => {
-            error!("Timeout while connecting to {:?}", socket.as_ref());
-            bail!("Timeout while connecting to {:?}", socket.as_ref());
+            error!("Timeout while connecting to {socket:?}");
+            bail!("Timeout while connecting to {socket:?}");
         },
     };
 
@@ -83,7 +84,7 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
     // Not sure why, so this is a workaround
     tokio::time::sleep(Duration::from_millis(2)).await;
 
-    trace!("Connected to {:?}", socket.as_ref());
+    trace!("Connected to {socket:?}");
 
     Ok(conn)
 }
@@ -91,15 +92,16 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 /// Connect to `socket` synchronously without a timeout
 #[cfg(unix)]
 pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
-    let conn = match SyncUnixStream::connect(socket.as_ref()) {
+    let socket = socket.as_ref();
+    let conn = match SyncUnixStream::connect(socket) {
         Ok(conn) => conn,
         Err(err) => {
-            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+            error!("Failed to connect to {socket:?}: {err}");
+            bail!("Failed to connect to {socket:?}: {err}");
         },
     };
 
-    trace!("Connected to {:?}", socket.as_ref());
+    trace!("Connected to {socket:?}");
 
     // When on macOS after the socket connection is made a brief delay is required
     // Not sure why, but this is a workaround
@@ -117,18 +119,18 @@ where
     let encoded_message = match message.encode_fig_protobuf() {
         Ok(encoded_message) => encoded_message,
         Err(err) => {
-            error!("Failed to encode message: {}", err);
-            bail!("Failed to encode message: {}", err);
+            error!("Failed to encode message: {err}");
+            bail!("Failed to encode message: {err}");
         },
     };
 
     match stream.write_all(&encoded_message).await {
         Ok(()) => {
-            trace!("Sent message: {:?}", message);
+            trace!("Sent message: {message:?}");
         },
         Err(err) => {
-            error!("Failed to write message: {}", err);
-            bail!("Failed to write message: {}", err);
+            error!("Failed to write message: {err}");
+            bail!("Failed to write message: {err}");
         },
     };
 
@@ -143,18 +145,18 @@ where
     let encoded_message = match message.encode_fig_protobuf() {
         Ok(encoded_message) => encoded_message,
         Err(err) => {
-            error!("Failed to encode message: {}", err);
-            bail!("Failed to encode message: {}", err);
+            error!("Failed to encode message: {err}");
+            bail!("Failed to encode message: {err}");
         },
     };
 
     match stream.write_all(&encoded_message) {
         Ok(()) => {
-            trace!("Sent message: {:?}", message);
+            trace!("Sent message: {message:?}");
         },
         Err(err) => {
-            error!("Failed to write message: {}", err);
-            bail!("Failed to write message: {}", err);
+            error!("Failed to write message: {err}");
+            bail!("Failed to write message: {err}");
         },
     };
 

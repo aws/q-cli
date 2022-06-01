@@ -63,8 +63,7 @@ impl Terminal {
             Some("Nova") => Some(Terminal::Nova),
             Some("WezTerm") => Some(Terminal::WezTerm),
             _ => match std::env::var("__CFBundleIdentifier").ok().as_deref() {
-                // Add support for Jetbrain Terminals
-                // Some(v) if v.contains("com.jetbrains.") => Some(Terminal::JediTerm),
+                Some(v) if v.contains("com.jetbrains.") => Some(Terminal::JediTerm(v.into())),
                 _ => None,
             },
         }
