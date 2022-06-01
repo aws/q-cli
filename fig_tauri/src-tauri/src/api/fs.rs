@@ -1,4 +1,5 @@
 use anyhow::anyhow;
+use camino::Utf8PathBuf;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     AppendToFileRequest,
@@ -87,9 +88,10 @@ pub async fn append_to_file(request: AppendToFileRequest) -> RequestResult {
 pub async fn destination_of_symbolic_link(request: DestinationOfSymbolicLinkRequest) -> RequestResult {
     let path = request.path.as_ref().ok_or_else(|| anyhow!("No path provided"))?;
     let resolved_path = resolve_filepath(path);
-    let real_path = tokio::fs::canonicalize(&*resolved_path)
+    let real_path: Utf8PathBuf = tokio::fs::canonicalize(&*resolved_path)
         .await
-        .map_err(|_| anyhow!("Failed resolving symlink: {resolved_path}"))?;
+        .map_err(|_| anyhow!("Failed resolving symlink: {resolved_path}"))?
+        .try_into()?;
 
     let response = ServerOriginatedSubMessage::DestinationOfSymbolicLinkResponse(DestinationOfSymbolicLinkResponse {
         destination: Some(build_filepath(real_path)),

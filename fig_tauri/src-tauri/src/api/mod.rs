@@ -5,6 +5,7 @@ mod figterm;
 mod fs;
 pub mod init;
 mod notifications;
+mod onboarding;
 mod process;
 mod properties;
 mod settings;
@@ -142,6 +143,8 @@ pub async fn api_request(
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 // window
                 PositionWindowRequest(request) => window::position_window(request, window_id.clone(), proxy).await,
+                // onboarding
+                OnboardingRequest(request) => onboarding::onboarding(request).await,
                 unknown => {
                     warn!("Missing handler: {unknown:?}");
                     RequestResult::error(format!("Unknown submessage {unknown:?}"))

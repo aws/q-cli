@@ -31,9 +31,9 @@ pub fn resolve_filepath<'a>(file_path: &'a FilePath) -> Cow<'a, Utf8Path> {
     }
 }
 
-pub fn build_filepath(path: PathBuf) -> FilePath {
+pub fn build_filepath(path: impl Into<String>) -> FilePath {
     FilePath {
-        path: path.to_string_lossy().to_string(),
+        path: path.into(),
         relative_to: None,
         expand_tilde_in_path: Some(false),
     }
@@ -58,8 +58,8 @@ pub fn floor_char_boundary(string: &str, index: usize) -> usize {
             .iter()
             .rposition(|b| (*b as i8) >= -0x40);
 
-        // SAFETY: we know that the character boundary will be within four bytes
-        unsafe { lower_bound + new_index.unwrap_unchecked() }
+        // we know that the character boundary will be within four bytes
+        lower_bound + new_index.unwrap()
     }
 }
 

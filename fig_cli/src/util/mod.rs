@@ -263,8 +263,10 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
                 println!("\n→ Launching Fig...\n");
             }
 
-            let process = std::process::Command::new("gtk-launch")
-                .arg("fig.desktop")
+            std::fs::remove_file(get_fig_socket_path()).ok();
+
+            let process = std::process::Command::new("systemctl")
+                .args(&["--user", "start", "fig"])
                 .output()
                 .context("\nUnable to launch Fig\n")?;
 

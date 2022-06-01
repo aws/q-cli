@@ -65,7 +65,6 @@ message ServerOriginatedMessage {
 
     Notification notification = 1000;
   }
-    
 }
 
 
@@ -334,7 +333,6 @@ enum OnboardingAction {
   CLOSE_ACCESSIBILITY_PROMPT_WINDOW = 5;
   REQUEST_RESTART = 6;
   CLOSE_INPUT_METHOD_PROMPT_WINDOW = 7;
-
 }
 
 message OnboardingRequest {
@@ -562,7 +560,6 @@ message HistoryUpdatedNotification {
   optional string session_id = 4; // the value of $TERM_SESSION_ID
   optional string hostname = 5;
   optional int32 exit_code = 6; // the exit code of the command
-
 }
 
 message ApplicationUpdateAvailableNotification {
