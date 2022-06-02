@@ -19,7 +19,7 @@ use serde_json::{
 };
 
 use super::OutputFormat;
-use crate::cli::util::dialoguer_theme;
+use crate::cli::dialoguer_theme;
 use crate::util::api::request;
 
 #[derive(Debug, Args)]

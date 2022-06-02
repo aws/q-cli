@@ -41,7 +41,6 @@ use crate::daemon::scheduler::{
     Scheduler,
     SyncDotfiles,
 };
-use crate::util::get_machine_id;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -91,7 +90,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     .text()
     .await?;
 
-    let mut device_id = get_machine_id().context("Cound not get machine_id")?;
+    let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
         device_id.push(':');
         device_id.push_str(&email);

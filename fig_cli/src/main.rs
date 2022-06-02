@@ -4,7 +4,6 @@ extern crate cfg_if;
 pub mod cli;
 pub mod daemon;
 pub mod dotfiles;
-pub mod integrations;
 pub mod plugins;
 pub mod util;
 

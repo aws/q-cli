@@ -12,7 +12,6 @@ use tracing::{
 };
 pub use x11::CURSOR_POSITION_KIND;
 
-use crate::event::Event;
 use crate::{
     EventLoopProxy,
     GlobalState,
@@ -23,7 +22,7 @@ pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];
 
 #[derive(Debug, Default)]
 pub struct NativeState {
-    active_window: Mutex<Option<String>>,
+    _active_window: Mutex<Option<String>>,
 }
 
 enum DisplayServer {

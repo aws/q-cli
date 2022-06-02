@@ -24,12 +24,12 @@ use serde::{
     Serialize,
 };
 
-use crate::cli::util::OSVersion;
 use crate::cli::OutputFormat;
 use crate::util::{
     glob,
     glob_dir,
     is_app_running,
+    OSVersion,
 };
 
 pub trait Diagnostic {

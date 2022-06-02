@@ -26,6 +26,7 @@ use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
+use fig_util::get_parent_process_exe;
 use native_dialog::{
     MessageDialog,
     MessageType,
@@ -35,7 +36,10 @@ use rand::distributions::{
     DistString,
 };
 use rand::seq::IteratorRandom;
-use sysinfo::SystemExt;
+use sysinfo::{
+    System,
+    SystemExt,
+};
 use tracing::{
     debug,
     error,
@@ -52,7 +56,6 @@ use crate::cli::installation::{
     InstallComponents,
 };
 use crate::dotfiles::notify::TerminalNotification;
-use crate::util::get_parent_process_exe;
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -363,18 +366,20 @@ impl InternalSubcommand {
                 }
             },
             InternalSubcommand::GetShell => {
-                if let Ok(exe) = get_parent_process_exe() {
-                    print!("{}", exe.display())
-                } else {
-                    exit(1);
+                if let Some(exe) = get_parent_process_exe() {
+                    if write!(stdout(), "{}", exe.display()).is_ok() {
+                        return Ok(());
+                    }
                 }
+                exit(1);
             },
             InternalSubcommand::Hostname => {
-                if let Some(hostname) = sysinfo::System::new().host_name() {
-                    println!("{}", hostname);
-                } else {
-                    exit(1);
+                if let Some(hostname) = System::new().host_name() {
+                    if write!(stdout(), "{hostname}").is_ok() {
+                        return Ok(());
+                    }
                 }
+                exit(1);
             },
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);

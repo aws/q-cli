@@ -10,12 +10,17 @@ use anyhow::{
 use crossterm::style::Stylize;
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
-use fig_util::Terminal;
+use fig_integrations::shell::{
+    ShellExt,
+    When,
+};
+use fig_util::{
+    Shell,
+    Terminal,
+};
 
 use crate::dotfiles::api::DotfileData;
-use crate::integrations::shell::When;
 use crate::util::app_path_from_bundle_id;
-use crate::util::shell::Shell;
 
 #[derive(PartialEq)]
 enum GuardAssignment {

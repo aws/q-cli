@@ -9,6 +9,7 @@ publish = false
 
 [dependencies]
 clap = { version = "3.1.8", features = ["derive"] }
+cfg-if = "1.0.0"
 fig_directories = { path = "../fig_directories" }
 fig_settings = { path = "../fig_settings" }
 serde = "1.0.136"

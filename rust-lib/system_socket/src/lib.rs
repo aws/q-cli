@@ -1,7 +1,5 @@
 use std::fmt::Debug;
 use std::io;
-use std::io::Write;
-use std::net::SocketAddr;
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{
@@ -18,7 +16,6 @@ use tokio::io::{
 use tokio::net::UnixListener;
 #[cfg(unix)]
 use tokio::net::UnixStream;
-use tokio::sync::oneshot;
 #[cfg(windows)]
 use uds_windows::UnixListener;
 #[cfg(windows)]
@@ -129,6 +126,8 @@ impl AsyncWrite for SystemStream {
         #[cfg(unix)]
         return self.project().0.poll_shutdown(cx);
         #[cfg(windows)]
-        return Poll::Ready(tokio::task::block_in_place(|| self.0.shutdown(std::net::Shutdown::Both)));
+        return Poll::Ready(tokio::task::block_in_place(|| {
+            self.0.shutdown(std::net::Shutdown::Both)
+        }));
     }
 }

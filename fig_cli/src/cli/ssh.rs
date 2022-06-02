@@ -5,9 +5,8 @@ use anyhow::{
     Result,
 };
 use clap::Subcommand;
-
-use crate::integrations::ssh::SshIntegration;
-use crate::integrations::Integration;
+use fig_integrations::ssh::SshIntegration;
+use fig_integrations::Integration;
 
 #[derive(Debug, Subcommand)]
 pub enum SshSubcommand {

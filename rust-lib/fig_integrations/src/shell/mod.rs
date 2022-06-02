@@ -10,19 +10,22 @@ use anyhow::{
     Result,
 };
 use clap::ArgEnum;
-use regex::Regex;
+use fig_util::Shell;
+use regex::{
+    Regex,
+    RegexSet,
+};
 use serde::{
     Deserialize,
     Serialize,
 };
 
-use crate::integrations::{
+use crate::{
     backup_file,
     FileIntegration,
     InstallationError,
     Integration,
 };
-use crate::util::shell::Shell;
 
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
@@ -36,6 +39,102 @@ impl std::fmt::Display for When {
         match self {
             When::Pre => write!(f, "pre"),
             When::Post => write!(f, "post"),
+        }
+    }
+}
+
+pub trait ShellExt {
+    fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>>;
+    fn get_fig_integration_source(&self, when: &When) -> &'static str;
+}
+
+impl ShellExt for Shell {
+    fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>> {
+        let config_dir = self.get_config_directory().context("Failed to get base directories")?;
+
+        let integrations: Vec<Box<dyn ShellIntegration>> = match self {
+            Shell::Bash => {
+                let mut configs = vec![".bashrc"];
+                let other_configs = [".profile", ".bash_login", ".bash_profile"];
+
+                configs.extend(other_configs.into_iter().filter(|f| config_dir.join(f).exists()));
+
+                // Include .profile if none of [.profile, .bash_login, .bash_profile] exist.
+                if configs.len() == 1 {
+                    configs.push(other_configs[0]);
+                }
+
+                configs
+                    .into_iter()
+                    .map(|filename| {
+                        Box::new(DotfileShellIntegration {
+                            pre: true,
+                            post: true,
+                            shell: *self,
+                            dotfile_directory: config_dir.clone(),
+                            dotfile_name: filename,
+                        }) as Box<dyn ShellIntegration>
+                    })
+                    .collect()
+            },
+            Shell::Zsh => vec![".zshrc", ".zprofile"]
+                .into_iter()
+                .map(|filename| {
+                    Box::new(DotfileShellIntegration {
+                        pre: true,
+                        post: true,
+                        shell: *self,
+                        dotfile_directory: config_dir.clone(),
+                        dotfile_name: filename,
+                    }) as Box<dyn ShellIntegration>
+                })
+                .collect(),
+            Shell::Fish => {
+                let fish_config_dir = config_dir.join("conf.d");
+                vec![
+                    Box::new(ShellScriptShellIntegration {
+                        when: When::Pre,
+                        shell: *self,
+                        path: fish_config_dir.join("00_fig_pre.fish"),
+                    }),
+                    Box::new(ShellScriptShellIntegration {
+                        when: When::Post,
+                        shell: *self,
+                        path: fish_config_dir.join("99_fig_post.fish"),
+                    }),
+                ]
+            },
+        };
+
+        Ok(integrations)
+    }
+
+    fn get_fig_integration_source(&self, when: &When) -> &'static str {
+        match (self, when) {
+            (Shell::Fish, When::Pre) => include_str!("scripts/pre.fish"),
+            (Shell::Fish, When::Post) => include_str!("scripts/post.fish"),
+            (Shell::Zsh, When::Pre) => include_str!("scripts/pre.sh"),
+            (Shell::Zsh, When::Post) => include_str!("scripts/post.zsh"),
+            (Shell::Bash, When::Pre) => {
+                concat!(
+                    "function __fig_source_bash_preexec() {\n",
+                    include_str!("scripts/bash-preexec.sh"),
+                    "}\n",
+                    "__fig_source_bash_preexec\n",
+                    "function __bp_adjust_histcontrol() { :; }\n",
+                    include_str!("scripts/pre.sh")
+                )
+            },
+            (Shell::Bash, When::Post) => {
+                concat!(
+                    "function __fig_source_bash_preexec() {\n",
+                    include_str!("scripts/bash-preexec.sh"),
+                    "}\n",
+                    "__fig_source_bash_preexec\n",
+                    "function __bp_adjust_histcontrol() { :; }\n",
+                    include_str!("scripts/post.bash")
+                )
+            },
         }
     }
 }
@@ -100,13 +199,14 @@ impl ShellScriptShellIntegration {
     }
 
     fn get_contents(&self) -> String {
-        let rcfile = match self.path.file_name().and_then(|x| x.to_str()) {
+        let Self { shell, when, path } = self;
+        let rcfile = match path.file_name().and_then(|x| x.to_str()) {
             Some(name) => format!(" --rcfile {}", get_prefix(name)),
             None => "".into(),
         };
         match self.shell {
-            Shell::Fish => format!("eval (fig init {} {}{} | string split0)", self.shell, self.when, rcfile),
-            _ => format!("eval \"$(fig init {} {}{})\"", self.shell, self.when, rcfile),
+            Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
+            _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
         }
     }
 }
@@ -179,40 +279,38 @@ impl DotfileShellIntegration {
         }
     }
 
-    fn legacy_regexes(&self, when: When) -> Result<Vec<Regex>> {
-        let eval_line = match self.shell {
-            Shell::Fish => format!("eval (fig init {} {} | string split0)", self.shell, when),
-            _ => format!("eval \"$(fig init {} {})\"", self.shell, when),
+    fn legacy_regexes(&self, when: When) -> Result<RegexSet> {
+        let shell = self.shell;
+
+        let eval_line = match shell {
+            Shell::Fish => format!("eval (fig init {shell} {when} | string split0)"),
+            _ => format!("eval \"$(fig init {shell} {when})\""),
         };
 
         let old_eval_source = match when {
             When::Pre => match self.shell {
-                Shell::Fish => format!("set -Ua fish_user_paths $HOME/.local/bin\n{}", eval_line),
-                _ => format!("export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{}", eval_line),
+                Shell::Fish => format!("set -Ua fish_user_paths $HOME/.local/bin\n{eval_line}"),
+                _ => format!("export PATH=\"${{PATH}}:${{HOME}}/.local/bin\"\n{eval_line}"),
             },
             When::Post => eval_line,
         };
 
         let old_file_regex = match when {
-            When::Pre => Regex::new(r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?")?,
-            When::Post => Regex::new(r"\[ -s ~/\.fig/fig\.sh \] && source ~/\.fig/fig\.sh\n?")?,
+            When::Pre => r"\[ -s ~/\.fig/shell/pre\.sh \] && source ~/\.fig/shell/pre\.sh\n?",
+            When::Post => r"\[ -s ~/\.fig/fig\.sh \] && source ~/\.fig/fig\.sh\n?",
         };
         let old_eval_regex = format!(
-            r#"(?:{}\n)?{}\n{{0,2}}"#,
+            r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
             regex::escape(&self.description(when)),
             regex::escape(&old_eval_source),
         );
         let old_source_regex = format!(
-            r#"(?:{}\n)?{}\n{{0,2}}"#,
+            r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
             regex::escape(&self.description(when)),
             regex::escape(&self.legacy_source_text(when)?),
         );
 
-        Ok(vec![
-            old_file_regex,
-            Regex::new(&old_eval_regex)?,
-            Regex::new(&old_source_regex)?,
-        ])
+        Ok(RegexSet::new(&[old_file_regex, &old_eval_regex, &old_source_regex])?)
     }
 
     fn legacy_source_text(&self, when: When) -> Result<String> {
@@ -228,8 +326,8 @@ impl DotfileShellIntegration {
         let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
 
         match self.shell {
-            Shell::Fish => Ok(format!("if test -f {}; . {}; end", path, path)),
-            _ => Ok(format!("[[ -f {} ]] && . {}", path, path)),
+            Shell::Fish => Ok(format!("if test -f {path}; . {path}; end")),
+            _ => Ok(format!("[[ -f {path} ]] && . {path}")),
         }
     }
 
@@ -255,7 +353,12 @@ impl DotfileShellIntegration {
     fn remove_from_text(&self, text: impl Into<String>, when: When) -> Result<String> {
         let source_regex = self.source_regex(when, false)?;
         let mut regexes = vec![source_regex];
-        regexes.extend(self.legacy_regexes(when)?);
+        regexes.extend(
+            self.legacy_regexes(when)?
+                .patterns()
+                .iter()
+                .map(|r| Regex::new(r).unwrap()),
+        );
         Ok(regexes
             .iter()
             .fold::<String, _>(text.into(), |acc, reg| reg.replace_all(&acc, "").into()))
@@ -263,7 +366,7 @@ impl DotfileShellIntegration {
 
     fn matches_text(&self, text: &str, when: When) -> Result<(), InstallationError> {
         let dotfile = self.dotfile_path();
-        if self.legacy_regexes(when)?.iter().any(|r| r.is_match(text)) {
+        if self.legacy_regexes(when)?.is_match(text) {
             let message = format!("{} has legacy {} integration.", dotfile.display(), when);
             return Err(InstallationError::LegacyInstallation(message.into()));
         }
@@ -339,8 +442,7 @@ impl Integration for DotfileShellIntegration {
             // Remove comments and empty lines.
             Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
             _ => {
-                let message = format!("{} does not exist.", dotfile.display());
-                return Err(InstallationError::NotInstalled(message.into()));
+                return Err(InstallationError::FileDoesNotExist(dotfile.into()));
             },
         };
 
@@ -408,5 +510,70 @@ impl ShellIntegration for DotfileShellIntegration {
 
     fn file_name(&self) -> &str {
         self.dotfile_name
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use std::io::Write;
+    use std::process::{
+        Command,
+        Stdio,
+    };
+
+    use super::*;
+
+    fn check_script(shell: Shell, when: When) {
+        let shell_arg = format!("--shell=bash");
+        let mut child = Command::new("shellcheck")
+            .args(&[&shell_arg, "--color=always", "-"])
+            .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::piped())
+            .spawn()
+            .unwrap();
+
+        let mut stdin = child.stdin.take().unwrap();
+        std::thread::spawn(move || {
+            stdin
+                .write_all(shell.get_fig_integration_source(&when).as_bytes())
+                .unwrap();
+        });
+
+        let output = child.wait_with_output().unwrap();
+        if !output.status.success() {
+            let stdout = String::from_utf8(output.stdout).unwrap();
+            let stderr = String::from_utf8(output.stderr).unwrap();
+
+            if !stdout.is_empty() {
+                println!("{stdout}");
+            }
+
+            if !stderr.is_empty() {
+                eprintln!("{stderr}");
+            }
+
+            panic!();
+        }
+    }
+
+    #[test]
+    fn shellcheck_bash_pre() {
+        check_script(Shell::Bash, When::Pre);
+    }
+
+    #[test]
+    fn shellcheck_bash_post() {
+        check_script(Shell::Bash, When::Post);
+    }
+
+    #[test]
+    fn shellcheck_zsh_pre() {
+        check_script(Shell::Bash, When::Pre);
+    }
+
+    #[test]
+    fn shellcheck_zsh_post() {
+        check_script(Shell::Zsh, When::Post);
     }
 }
