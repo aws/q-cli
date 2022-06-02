@@ -3,7 +3,7 @@ mod hooks;
 
 use std::sync::Arc;
 
-use anyhow::anyhow;
+use anyhow::{anyhow, Result};
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::local_message::Type as LocalMessageType;
 use fig_proto::local::{
@@ -12,6 +12,7 @@ use fig_proto::local::{
     LocalMessage,
     SuccessResponse,
 };
+use system_socket::SystemListener;
 use tokio::io::{
     AsyncRead,
     AsyncWrite,
@@ -24,7 +25,6 @@ use tracing::{
 };
 
 use crate::{
-    native,
     EventLoopProxy,
     GlobalState,
 };
@@ -37,7 +37,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy) {
+pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     let socket_path = fig_ipc::get_fig_socket_path();
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -51,11 +51,13 @@ pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopPro
             .expect("Failed clearing socket path");
     }
 
-    let listener = native::Listener::bind(&socket_path);
+    let listener = SystemListener::bind(&socket_path)?;
 
     while let Ok(stream) = listener.accept().await {
         tokio::spawn(handle_local_ipc(stream, global_state.clone(), proxy.clone()));
     }
+
+    Ok(())
 }
 
 async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(

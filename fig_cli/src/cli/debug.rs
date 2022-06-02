@@ -96,8 +96,8 @@ pub enum DebugSubcommand {
     PromptAccessibility,
     /// Sample fig process
     Sample,
-    /// Debug fig unix sockets
-    UnixSocket,
+    /// Debug fig system sockets
+    SystemSocket,
     /// Debug fig codesign verification
     VerifyCodesign,
 
@@ -296,7 +296,7 @@ impl DebugSubcommand {
                 println!("Please send this file to the Fig Team");
                 println!("Or attach it to a Github issue (run '{}')", "fig issue".magenta());
             },
-            DebugSubcommand::UnixSocket => {
+            DebugSubcommand::SystemSocket => {
                 println!("Listening on /tmp/fig.socket...");
                 println!("Note: You will need to restart Fig afterwards");
                 let socket_path = "/tmp/fig.socket";

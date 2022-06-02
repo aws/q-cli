@@ -47,9 +47,9 @@ pub fn create_tray(event_loop: &EventLoop) -> wry::Result<Tray> {
             let icon = "/usr/share/icons/hicolor/32x32/apps/fig.png".into();
         } else if #[cfg(target_os = "macos")] {
             // TODO: use transparent white icon
-            let icon = include_bytes!("../icons/32x32.png").into();
+            let icon = include_bytes!("../icons/32x32.png").to_vec();
         } else if #[cfg(target_os = "windows")] {
-            let icon = include_bytes!("../icons/32x32.png").into();
+            let icon = include_bytes!("../icons/32x32.png").to_vec();
         } else {
             compile_error!("Unsupported platform");
         }

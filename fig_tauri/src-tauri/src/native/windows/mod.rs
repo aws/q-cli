@@ -1,7 +1,4 @@
-mod ipc;
-
 use std::ffi::CStr;
-use std::path::Path;
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -87,18 +84,6 @@ impl Unmanaged {
     }
 }
 
-pub struct Listener(ipc::WindowsListener);
-
-impl Listener {
-    pub fn bind(path: &Path) -> Self {
-        Self(ipc::WindowsListener::bind(path).expect("Failed to bind to socket"))
-    }
-
-    pub async fn accept(&self) -> Result<ipc::WindowsStream, ipc::WinSockError> {
-        self.0.accept().await
-    }
-}
-
 pub mod icons {
     use crate::icons::ProcessedAsset;
 
@@ -107,7 +92,7 @@ pub mod icons {
     }
 }
 
-pub fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
+pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     UNMANAGED.event_sender.write().replace(proxy);
 
     Ok(())
