@@ -9,6 +9,11 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
+if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
+  unset FIG_DID_NOT_EXEC_FIGTERM
+  return
+fi
+
 export TTY=$(tty)
 
 FIG_LAST_PS1="$PS1"
@@ -164,7 +169,7 @@ __fig_reset_hooks() {
 # Ensure that bash-preexec is installed
 # even if the user overrides COMMAND_PROMPT
 # https://github.com/withfig/fig/issues/888
-# 
+#
 # We also need to ensure Warp is not running
 # since they expect any plugins to not include
 # it again

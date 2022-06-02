@@ -28,7 +28,7 @@ BUILT_PRODUCTS_DIR ?= $(MAKE_DIR)/build
 OUT_DIR            := $(BUILT_PRODUCTS_DIR)
 $(shell mkdir -p $(OUT_DIR))
 
-SHELL := env PATH=$(PATH) /bin/bash
+SHELL := env "PATH=$(PATH)" /bin/bash
 
 CARGO_OPTIONS ?= --locked --release
 
