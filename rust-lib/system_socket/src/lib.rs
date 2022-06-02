@@ -1,7 +1,6 @@
 use std::fmt::Debug;
 use std::io;
 use std::io::Write;
-use std::net::SocketAddr;
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{
@@ -18,7 +17,6 @@ use tokio::io::{
 use tokio::net::UnixListener;
 #[cfg(unix)]
 use tokio::net::UnixStream;
-use tokio::sync::oneshot;
 #[cfg(windows)]
 use uds_windows::UnixListener;
 #[cfg(windows)]
@@ -84,6 +82,7 @@ impl From<UnixStream> for SystemStream {
     }
 }
 
+#[allow(unused_variables)]
 impl AsyncRead for SystemStream {
     #[cfg(unix)]
     fn poll_read(
@@ -110,6 +109,7 @@ impl AsyncRead for SystemStream {
     }
 }
 
+#[allow(unused_variables)]
 impl AsyncWrite for SystemStream {
     fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<Result<usize, std::io::Error>> {
         #[cfg(unix)]
