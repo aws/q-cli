@@ -32,7 +32,7 @@
     "@jest/reporters": "^28.1.0",
     "@jest/test-result": "^28.1.0",
     "@jest/types": "^28.1.0",
-    "@types/jest": "^27.0.2",
+    "@types/jest": "^28.1.0",
     "@types/js-yaml": "^4.0.4",
     "@types/long": "^4.0.1",
     "@types/protobufjs": "^6.0.0",
