@@ -81,6 +81,7 @@ impl From<UnixStream> for SystemStream {
     }
 }
 
+#[allow(unused_variables)]
 impl AsyncRead for SystemStream {
     #[cfg(unix)]
     fn poll_read(
@@ -107,6 +108,7 @@ impl AsyncRead for SystemStream {
     }
 }
 
+#[allow(unused_variables)]
 impl AsyncWrite for SystemStream {
     fn poll_write(self: Pin<&mut Self>, cx: &mut Context<'_>, buf: &[u8]) -> Poll<Result<usize, std::io::Error>> {
         #[cfg(unix)]
