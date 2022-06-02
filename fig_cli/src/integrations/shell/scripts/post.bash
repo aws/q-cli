@@ -29,7 +29,7 @@ else
 fi
 
 # Construct Operating System Command.
-function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
+function fig_osc { printf "\033]697;%s\007" "${@:2}"; }
 
 function __fig_preexec() {
   fig_osc PreExec

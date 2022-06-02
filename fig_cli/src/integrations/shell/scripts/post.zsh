@@ -25,7 +25,7 @@ else
   FIG_IN_DOCKER=0
 fi
 
-function fig_osc { printf "\033]697;$1\007" "${@:2}" }
+function fig_osc { printf "\033]697;%s\007" "${@:2}"; }
 
 FIG_HAS_SET_PROMPT=0
 
@@ -156,10 +156,10 @@ fig_precmd() {
 }
 
 fig_reset_hooks() {
-  if [[ $precmd_functions[-1] != fig_precmd ]]; then
+  if [[ "${precmd_functions[-1]}" != fig_precmd ]]; then
     precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
   fi
-  if [[ $preexec_functions[1] != fig_preexec ]]; then
+  if [[ "${preexec_functions[1]}" != fig_preexec ]]; then
     preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
   fi
 }

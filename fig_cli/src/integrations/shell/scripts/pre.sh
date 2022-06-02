@@ -9,7 +9,7 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
-if [[ ! -z "${FIG_NEW_SESSION}" ]]; then
+if [[ -n "${FIG_NEW_SESSION}" ]]; then
   unset TERM_SESSION_ID
   unset FIG_TERM
   unset FIG_ENV_VAR
@@ -26,7 +26,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -t 1 ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
   && [[ -z "${FIG_PTY}" ]] \
-  && command -v figterm 2>&1 1>/dev/null \
+  && command -v figterm 1>/dev/null 2>&1 \
   && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
 
   # Generated automatically by iTerm and Terminal, but needs to be
@@ -43,7 +43,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL:='0'}"
 
   if ([[ -n "$BASH" ]] && shopt -q login_shell) \
-    || ([[ -n "$ZSH_NAME" && -o login ]]); then
+    || [[ -n "$ZSH_NAME" && -o login ]]; then
     FIG_IS_LOGIN_SHELL=1
   fi
 
@@ -64,7 +64,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
     if [[ -z "${BASH}" || "${BASH_VERSINFO[0]}" -gt "3" ]]; then
       while read -t 0; do
         if [[ -n "${BASH}" ]]; then
-          read
+          read -r
         fi
         INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
       done
