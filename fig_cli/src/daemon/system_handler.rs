@@ -199,7 +199,7 @@ pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatu
     }
 
     // Bind the system socket
-    let mut system_socket = SystemListener::bind(&system_socket_path).context("Could not connect to system socket")?;
+    let system_socket = SystemListener::bind(&system_socket_path).context("Could not connect to system socket")?;
 
     Ok(tokio::spawn(async move {
         while let Ok(stream) = system_socket.accept().await {
