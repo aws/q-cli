@@ -92,6 +92,7 @@ icons:
 	for res in 16 22 24 32 48 64 128 256 512; do \
 		convert -resize "$${res}x$${res}" "icons/icon.png" "icons/$${res}x$${res}.png" ; \
 	done
+	convert -resize "32x32" "icons/icon.png" "icons/icon.ico"
 
 
 ### Clean the project

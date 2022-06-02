@@ -49,7 +49,7 @@ pub fn create_tray(event_loop: &EventLoop) -> wry::Result<Tray> {
             // TODO: use transparent white icon
             let icon = include_bytes!("../icons/32x32.png").to_vec();
         } else if #[cfg(target_os = "windows")] {
-            let icon = include_bytes!("../icons/32x32.png").to_vec();
+            let icon = include_bytes!("../icons/icon.ico").to_vec();
         } else {
             compile_error!("Unsupported platform");
         }
