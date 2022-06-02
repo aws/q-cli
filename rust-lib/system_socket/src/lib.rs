@@ -1,6 +1,7 @@
 use std::fmt::Debug;
 use std::io;
 use std::io::Write;
+use std::net::SocketAddr;
 use std::path::Path;
 use std::pin::Pin;
 use std::task::{
@@ -17,6 +18,7 @@ use tokio::io::{
 use tokio::net::UnixListener;
 #[cfg(unix)]
 use tokio::net::UnixStream;
+use tokio::sync::oneshot;
 #[cfg(windows)]
 use uds_windows::UnixListener;
 #[cfg(windows)]
@@ -42,19 +44,8 @@ impl SystemListener {
         #[cfg(unix)]
         let (stream, _) = self.0.accept().await?;
         #[cfg(windows)]
-        let (stream, _) = self.0.accept()?;
-        Ok(stream.into())
-    }
-
-    /// Waits for the listener to become writable.
-    ///
-    /// This function is equivalent to `ready(Interest::WRITABLE)` and is usually
-    /// paired with `try_write()`.
-    pub async fn writable(&self) -> io::Result<()> {
-        #[cfg(unix)]
-        return self.0.writable().await;
-        #[cfg(windows)]
-        return Ok(());
+        let (stream, _) = tokio::task::block_in_place(|| self.0.accept())?;
+        Ok(SystemStream::from(stream))
     }
 }
 
@@ -71,7 +62,7 @@ impl SystemStream {
         #[cfg(unix)]
         let stream = UnixStream::connect(path.as_ref()).await?;
         #[cfg(windows)]
-        let stream = UnixStream::connect(path.as_ref())?;
+        let stream = tokio::task::block_in_place(|| UnixStream::connect(path.as_ref()))?;
         Ok(Self(stream))
     }
 
@@ -112,7 +103,7 @@ impl AsyncRead for SystemStream {
         use std::io::Read;
 
         let mut read = vec![];
-        let len = self.project().0.read(&mut read)?;
+        let len = tokio::task::block_in_place(|| self.project().0.read(&mut read))?;
         buf.set_filled(len);
 
         Poll::Ready(Ok(()))
@@ -124,20 +115,20 @@ impl AsyncWrite for SystemStream {
         #[cfg(unix)]
         return self.project().0.poll_write(cx, buf);
         #[cfg(windows)]
-        return Poll::Ready(self.project().0.write(buf));
+        return Poll::Ready(tokio::task::block_in_place(|| self.project().0.write(buf)));
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
         #[cfg(unix)]
         return self.project().0.poll_flush(cx);
         #[cfg(windows)]
-        return Poll::Ready(self.project().0.flush());
+        return Poll::Ready(tokio::task::block_in_place(|| self.project().0.flush()));
     }
 
     fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
         #[cfg(unix)]
         return self.project().0.poll_shutdown(cx);
         #[cfg(windows)]
-        return Poll::Ready(self.0.shutdown(std::net::Shutdown::Both));
+        return Poll::Ready(tokio::task::block_in_place(|| self.0.shutdown(std::net::Shutdown::Both)));
     }
 }
