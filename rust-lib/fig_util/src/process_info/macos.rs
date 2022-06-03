@@ -1,3 +1,6 @@
+use std::ffi::OsStr;
+use std::mem::MaybeUninit;
+use std::os::unix::prelude::OsStrExt;
 use std::path::PathBuf;
 
 use super::{
@@ -11,17 +14,36 @@ impl PidExt for Pid {
     }
 
     fn parent(&self) -> Option<Pid> {
-        let mut buffer = [0u32; 1];
-        let buffer_ptr = buffer.as_mut_ptr() as *mut c_void;
-        let ret = unsafe { proc_listpids(6, 0, buffer_ptr, 1) };
-        if ret <= 0 { None } else { buffer[0].into() }
+        let pid = self.0;
+        let mut info = MaybeUninit::<nix::libc::proc_bsdinfo>::zeroed();
+        let ret = unsafe {
+            nix::libc::proc_pidinfo(
+                pid,
+                nix::libc::PROC_PIDTBSDINFO,
+                0,
+                &mut info as *mut _ as *mut _,
+                std::mem::size_of::<nix::libc::proc_bsdinfo>() as _,
+            )
+        };
+        if ret as usize != std::mem::size_of::<nix::libc::proc_bsdinfo>() {
+            return None;
+        }
+        let info = unsafe { info.assume_init() };
+        match info.pbi_ppid {
+            0 => None,
+            ppid => Some(Pid(ppid.try_into().ok()?)),
+        }
     }
 
     fn exe(&self) -> Option<PathBuf> {
         let mut buffer = [0u8; 4096];
+        let pid = self.0;
         let buffer_ptr = buffer.as_mut_ptr() as *mut std::ffi::c_void;
         let buffer_size = buffer.len() as u32;
-        let ret = unsafe { nix::libc::proc_pidpath(self, buffer_ptr, buffer_size) };
-        if ret <= 0 { None } else { PathBuf::from(buffer[..ret]) }
+        let ret = unsafe { nix::libc::proc_pidpath(pid, buffer_ptr, buffer_size) };
+        match ret {
+            0 => None,
+            len => Some(PathBuf::from(OsStr::from_bytes(&buffer[..len as usize]))),
+        }
     }
 }

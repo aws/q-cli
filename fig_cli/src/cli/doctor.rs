@@ -682,6 +682,7 @@ impl DoctorCheck for DaemonCheck {
                         std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                         Ok(())
                     })),
+                    error: None,
                 });
             }
 
@@ -703,6 +704,7 @@ impl DoctorCheck for DaemonCheck {
                     format!("Error: {err}").into(),
                 ],
                 fix: Some(Box::new(move || Ok(()))),
+                error: None,
             })?;
         }
 

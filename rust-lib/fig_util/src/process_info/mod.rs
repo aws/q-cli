@@ -83,7 +83,7 @@ cfg_if!(
 );
 
 pub fn get_parent_process_exe() -> Option<PathBuf> {
-    todo!()
+    Pid::current().parent()?.exe()
 }
 
 #[cfg(test)]

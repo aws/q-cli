@@ -64,6 +64,8 @@ impl OSVersion {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
                 use regex::Regex;
+                use std::process::Command;
+                use anyhow::Context;
 
                 let version_info = Command::new("sw_vers")
                     .output()
