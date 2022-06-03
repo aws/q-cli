@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use once_cell::sync::Lazy;
 use tracing::{
     debug,
     error,
@@ -31,14 +32,13 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-static WMCLASS_WHITELSIT: &[&str] = &[
-    "Gnome-terminal",
-    "konsole",
-    "Tilix",
-    "Alacritty",
-    "kitty",
-    "Xfce4-terminal",
-];
+static WMCLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
+    fig_util::terminal::LINUX_TERMINALS
+        .into_iter()
+        .filter_map(|t| t.wm_class())
+        .collect()
+});
+
 pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
 pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy) {
@@ -118,7 +118,7 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         return Ok(());
     }
 
-    if !WMCLASS_WHITELSIT.contains(&wm_class.as_str()) {
+    if !WMCLASS_WHITELSIT.iter().any(|w| w == &wm_class.as_str()) {
         // hide if not a whitelisted wm class
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),

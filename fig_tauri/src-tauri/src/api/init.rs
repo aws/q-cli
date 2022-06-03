@@ -1,21 +1,19 @@
-use super::constants::CONSTANTS_SCRIPT;
+use std::borrow::Cow;
+
+use super::constants::Constants;
 
 pub fn javascript_init() -> String {
-    let mut init = String::new();
-    init.push_str(
-        r#"
-console.log("[fig] declaring constants...")
-
-if (!window.fig) {
-    window.fig = {}
-}
-
-if (!window.fig.constants) {
-    window.fig.constants = {}
-}
-"#,
+    let mut init = Vec::<Cow<'static, str>>::new();
+    init.push(
+        "if (!window.fig) {\n\
+            window.fig = {}\n\
+        }\n\
+        if (!window.fig.constants) {\n\
+            fig.constants = {}\n\
+        }\n"
+        .into(),
     );
-    // TODO(grant): Reenable constants
-    //init.push_str(&CONSTANTS_SCRIPT);
-    init
+    init.push(Constants::default().script().into());
+    init.push(r#"console.log("[fig] declaring constants...");"#.into());
+    init.join("\n")
 }

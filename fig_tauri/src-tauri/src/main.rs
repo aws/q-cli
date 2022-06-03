@@ -14,11 +14,17 @@ mod window;
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use api::init::javascript_init;
+use api::{
+    api_request,
+    javascript_init,
+};
 use cfg_if::cfg_if;
 use clap::Parser;
 use dashmap::DashMap;
-use event::Event;
+use event::{
+    Event,
+    WindowEvent,
+};
 use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
@@ -64,9 +70,6 @@ use wry::webview::{
     WebView,
     WebViewBuilder,
 };
-
-use crate::api::api_request;
-use crate::event::WindowEvent;
 
 const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 

@@ -4,14 +4,11 @@ use std::env::{
 };
 
 use camino::Utf8PathBuf;
-use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
 };
 use serde_json::json;
-
-pub static CONSTANTS_SCRIPT: Lazy<String> = Lazy::new(|| Constants::default().script());
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Constants {
@@ -37,7 +34,7 @@ impl Default for Constants {
             home: fig_directories::home_dir().and_then(|dir| dir.try_into().ok()),
             user: whoami::username(),
             default_path: var("PATH").ok(),
-            themes: Some(vec!["light".into(), "dark".into()]),
+            themes: Some(vec!["light".into(), "dark".into(), "system".into()]),
             os: consts::OS,
             arch: consts::ARCH,
         }
@@ -46,6 +43,6 @@ impl Default for Constants {
 
 impl Constants {
     pub fn script(&self) -> String {
-        format!("fig.constants = {}", json!(self))
+        format!("fig.constants = {};", json!(self))
     }
 }
