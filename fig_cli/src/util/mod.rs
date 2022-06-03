@@ -1,7 +1,7 @@
 pub mod api;
 pub mod backoff;
 pub mod checksum;
-pub mod shell;
+pub mod os_version;
 pub mod sync;
 
 use std::env;
@@ -17,42 +17,24 @@ use anyhow::{
     Result,
 };
 use cfg_if::cfg_if;
+use crossterm::style::Stylize;
+use dialoguer::theme::ColorfulTheme;
 use fig_ipc::get_fig_socket_path;
 use globset::{
     Glob,
     GlobSet,
     GlobSetBuilder,
 };
+pub use os_version::{
+    OSVersion,
+    SupportLevel,
+};
 use sysinfo::{
-    get_current_pid,
-    ProcessExt,
     ProcessRefreshKind,
     RefreshKind,
     System,
     SystemExt,
 };
-
-pub fn get_parent_process_exe() -> Result<PathBuf> {
-    let mut system = System::new();
-    let current_pid = get_current_pid().map_err(|_| anyhow::anyhow!("Could not get current pid"))?;
-    if !system.refresh_process(current_pid) {
-        anyhow::bail!("Could not find current process info")
-    }
-    let current_process = system
-        .process(current_pid)
-        .context("Could not find current process info")?;
-
-    let parent_pid = current_process.parent().context("Could not get parent pid")?;
-
-    if !system.refresh_process(parent_pid) {
-        anyhow::bail!("Could not find parent process info")
-    }
-    let parent_process = system
-        .process(parent_pid)
-        .context("Could not find parent process info")?;
-
-    Ok(parent_process.exe().to_path_buf())
-}
 
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
@@ -133,37 +115,6 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
             Some(path.trim().split('\n').next()?.into())
         } else {
             let _bundle_id = bundle_id;
-            None
-        }
-    }
-}
-
-#[must_use]
-pub fn get_machine_id() -> Option<String> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            let output = std::process::Command::new("ioreg")
-                .args(&["-rd1", "-c", "IOPlatformExpertDevice"])
-                .output()
-                .ok()?;
-
-            let output = String::from_utf8_lossy(&output.stdout);
-
-            let machine_id = output
-                .lines()
-                .find(|line| line.contains("IOPlatformUUID"))?
-                .split('=')
-                .nth(1)?
-                .trim()
-                .trim_start_matches('"')
-                .trim_end_matches('"')
-                .into();
-
-            Some(machine_id)
-        } else if #[cfg(target_os = "linux")] {
-            // https://man7.org/linux/man-pages/man5/machine-id.5.html
-            std::fs::read_to_string("/var/lib/dbus/machine-id").ok()
-        } else {
             None
         }
     }
@@ -308,13 +259,54 @@ pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
     }
 }
 
-#[cfg(test)]
-mod tests {
-    use super::*;
+pub fn app_not_running_message() -> String {
+    format!(
+        "\n{}\nFig might not be running, to launch Fig run: {}\n",
+        "Unable to connect to Fig".bold(),
+        "fig launch".magenta()
+    )
+}
 
-    #[test]
-    fn test_get_machine_id() {
-        let machine_id = get_machine_id();
-        assert!(machine_id.is_some());
+pub fn login_message() -> String {
+    format!(
+        "\n{}\nLooks like you aren't logged in to fig, to login run: {}\n",
+        "Not logged in".bold(),
+        "fig login".magenta()
+    )
+}
+
+pub fn get_fig_version() -> Result<(String, String)> {
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            use regex::Regex;
+
+            let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;
+
+            let get_plist_field = |field: &str| -> Result<String> {
+                let regex =
+                    Regex::new(&format!("<key>{}</key>\\s*<\\S+>(\\S+)</\\S+>", field)).unwrap();
+                let value = regex
+                    .captures(&plist)
+                    .context(format!("Could not find {} in plist", field))?
+                    .get(1)
+                    .context(format!("Could not find {} in plist", field))?
+                    .as_str();
+
+                Ok(value.into())
+            };
+
+            let fig_version = get_plist_field("CFBundleShortVersionString")?;
+            let fig_build_number = get_plist_field("CFBundleVersion")?;
+            Ok((fig_version, fig_build_number))
+        } else {
+            Err(anyhow::anyhow!("Unsupported platform"))
+        }
+    }
+}
+
+pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
+    ColorfulTheme {
+        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
+        ..ColorfulTheme::default()
     }
 }

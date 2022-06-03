@@ -1,19 +1,16 @@
 use anyhow::Result;
 use crossterm::style::Stylize;
+use fig_util::get_parent_process_exe;
 use regex::Regex;
 
 use crate::cli::diagnostics::{
     Diagnostic,
     Diagnostics,
 };
-use crate::cli::util::{
-    get_fig_version,
-    open_url,
-    OSVersion,
-};
 use crate::util::{
-    get_parent_process_exe,
+    get_fig_version,
     is_app_running,
+    OSVersion,
 };
 
 pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
@@ -67,7 +64,7 @@ pub async fn issue_cli(force: bool, description: Vec<String>) -> Result<()> {
         ("body", &body),
     ])?;
 
-    if open_url(url.as_str()).is_err() {
+    if fig_util::open_url(url.as_str()).is_err() {
         println!("{}", url.as_str().underlined());
     }
 

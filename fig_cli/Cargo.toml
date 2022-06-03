@@ -56,6 +56,7 @@ validator = "0.15.0"
 native-dialog = "0.6.3"
 viu = { path = "../rust-lib/viu" }
 spinners = "4.0.0"
+fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"

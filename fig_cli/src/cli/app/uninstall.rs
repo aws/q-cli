@@ -19,7 +19,6 @@ use crate::cli::installation::{
     uninstall_cli,
     InstallComponents,
 };
-use crate::cli::util::open_url;
 use crate::daemon::IS_RUNNING_DAEMON;
 
 async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl Fn(&str) -> bool) {
@@ -83,7 +82,7 @@ pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
         // Open the uninstallation page
         let email = fig_auth::get_email().unwrap_or_default();
         let version = fig_auth::get_default("versionAtPreviousLaunch").unwrap_or_default();
-        open_url(format!("https://fig.io/uninstall?email={email}&version={version}",)).ok();
+        fig_util::open_url(format!("https://fig.io/uninstall?email={email}&version={version}",)).ok();
     }
 
     if uninstall_args.app_bundle {

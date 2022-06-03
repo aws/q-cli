@@ -1406,6 +1406,7 @@ dependencies = [
  "dialoguer",
  "fig_auth",
  "fig_directories",
+ "fig_integrations",
  "fig_ipc",
  "fig_proto",
  "fig_settings",
@@ -1470,6 +1471,20 @@ dependencies = [
  "fig_proto",
  "parking_lot 0.12.1",
  "pkg-config",
+]
+
+[[package]]
+name = "fig_integrations"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "clap 3.1.18",
+ "fig_directories",
+ "fig_util",
+ "regex 1.5.6",
+ "serde",
+ "thiserror",
+ "time",
 ]
 
 [[package]]
@@ -1596,6 +1611,7 @@ dependencies = [
 name = "fig_util"
 version = "0.1.0"
 dependencies = [
+ "cfg-if 1.0.0",
  "clap 3.1.18",
  "fig_directories",
  "fig_settings",

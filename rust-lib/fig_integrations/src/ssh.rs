@@ -11,7 +11,7 @@ use anyhow::{
 };
 use regex::Regex;
 
-use crate::integrations::{
+use crate::{
     backup_file,
     FileIntegration,
     InstallationError,

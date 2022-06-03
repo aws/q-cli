@@ -173,15 +173,13 @@ impl WebviewManager {
 
             match event {
                 WryEvent::NewEvents(StartCause::Init) => info!("Fig has started"),
-                WryEvent::WindowEvent {
-                    event,
-                    window_id,
-                    ..
-                } => if let Some(window_state) = self.window_id_map.get(&window_id) { 
-                    match event {
-                        WryWindowEvent::Resized(_) => window_state.webview.resize().unwrap(),
-                        WryWindowEvent::CloseRequested => window_state.webview.window().set_visible(false),
-                        _ => (),
+                WryEvent::WindowEvent { event, window_id, .. } => {
+                    if let Some(window_state) = self.window_id_map.get(&window_id) {
+                        match event {
+                            WryWindowEvent::Resized(_) => window_state.webview.resize().unwrap(),
+                            WryWindowEvent::CloseRequested => window_state.webview.window().set_visible(false),
+                            _ => (),
+                        }
                     }
                 },
                 WryEvent::MenuEvent {

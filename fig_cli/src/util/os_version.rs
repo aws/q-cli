@@ -1,49 +1,10 @@
-use std::ffi::OsStr;
-use std::fmt::Display;
-use std::process::Command;
+use std::fmt;
 
-use anyhow::{
-    Context,
-    Result,
-};
-use cfg_if::cfg_if;
-use crossterm::style::Stylize;
-use dialoguer::theme::ColorfulTheme;
+use anyhow::Result;
 use serde::{
     Deserialize,
     Serialize,
 };
-
-pub fn open_url(url: impl AsRef<OsStr>) -> Result<()> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            Command::new("open")
-                .arg(url)
-                .output()
-                .with_context(|| "Could not open url")?;
-
-            Ok(())
-        } else if #[cfg(target_os = "linux")] {
-            Command::new("xdg-open")
-                .arg(url)
-                .output()
-                .with_context(|| "Could not open url")?;
-
-            Ok(())
-        } else if #[cfg(windows)] {
-            Command::new("cmd")
-                .arg("/c")
-                .arg("start")
-                .arg(url)
-                .output()
-                .with_context(|| "Could not open url")?;
-
-            Ok(())
-        } else {
-            Err(anyhow!("Could not open url on this platform"))
-        }
-    }
-}
 
 /// The support level for different platforms
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -74,8 +35,8 @@ pub enum OSVersion {
     },
 }
 
-impl Display for OSVersion {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for OSVersion {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             OSVersion::MacOS {
                 major,
@@ -199,57 +160,5 @@ impl OSVersion {
             OSVersion::Linux { .. } => SupportLevel::InDevelopment,
             _ => SupportLevel::Unsupported,
         }
-    }
-}
-
-pub fn app_not_running_message() -> String {
-    format!(
-        "\n{}\nFig might not be running, to launch Fig run: {}\n",
-        "Unable to connect to Fig".bold(),
-        "fig launch".magenta()
-    )
-}
-
-pub fn login_message() -> String {
-    format!(
-        "\n{}\nLooks like you aren't logged in to fig, to login run: {}\n",
-        "Not logged in".bold(),
-        "fig login".magenta()
-    )
-}
-
-pub fn get_fig_version() -> Result<(String, String)> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            use regex::Regex;
-
-            let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;
-
-            let get_plist_field = |field: &str| -> Result<String> {
-                let regex =
-                    Regex::new(&format!("<key>{}</key>\\s*<\\S+>(\\S+)</\\S+>", field)).unwrap();
-                let value = regex
-                    .captures(&plist)
-                    .context(format!("Could not find {} in plist", field))?
-                    .get(1)
-                    .context(format!("Could not find {} in plist", field))?
-                    .as_str();
-
-                Ok(value.into())
-            };
-
-            let fig_version = get_plist_field("CFBundleShortVersionString")?;
-            let fig_build_number = get_plist_field("CFBundleVersion")?;
-            Ok((fig_version, fig_build_number))
-        } else {
-            Err(anyhow::anyhow!("Unsupported platform"))
-        }
-    }
-}
-
-pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
-    ColorfulTheme {
-        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
-        ..ColorfulTheme::default()
     }
 }

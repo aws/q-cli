@@ -28,6 +28,11 @@ use crossterm::{
     execute,
 };
 use fig_directories::home_dir;
+use fig_integrations::shell::{
+    ShellExt,
+    ShellIntegration,
+};
+use fig_integrations::InstallationError;
 use fig_ipc::{
     connect_timeout,
     get_fig_socket_path,
@@ -43,7 +48,11 @@ use fig_telemetry::{
     TrackEvent,
     TrackSource,
 };
-use fig_util::Terminal;
+use fig_util::{
+    get_parent_process_exe,
+    Shell,
+    Terminal,
+};
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -61,23 +70,19 @@ use tokio::io::{
     AsyncWriteExt,
 };
 
-use super::util::SupportLevel;
 use crate::cli::diagnostics::{
     dscl_read,
     verify_integration,
 };
-use crate::cli::util::OSVersion;
-use crate::integrations::shell::ShellIntegration;
-use crate::integrations::InstallationError;
-use crate::util::shell::Shell;
 use crate::util::{
     app_path_from_bundle_id,
-    get_parent_process_exe,
     glob,
     glob_dir,
     is_executable_in_path,
     launch_fig,
     LaunchOptions,
+    OSVersion,
+    SupportLevel,
 };
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
@@ -230,9 +235,10 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let version = String::from_utf8_lossy(&output.stdout);
     Version::parse(version.trim()).ok()
 }
-const CHECKMARK: &str = "✔";
-const DOT: &str = "●";
-const CROSS: &str = "✘";
+
+static CHECKMARK: &str = "✔";
+static DOT: &str = "●";
+static CROSS: &str = "✘";
 
 fn print_status_result(name: impl Display, status: &Result<(), DoctorError>, verbose: bool) {
     match status {
@@ -419,53 +425,6 @@ impl DoctorCheck for FigSocketCheck {
         }
     }
 }
-
-macro_rules! shell_config_exists_check {
-    ($check_name:ident, $file:expr, $shell:expr) => {
-        struct $check_name;
-
-        #[async_trait]
-        impl DoctorCheck<Option<Shell>> for $check_name {
-            fn name(&self) -> Cow<'static, str> {
-                format!("{} exists", $file).into()
-            }
-
-            async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
-                match $shell.get_config_directory() {
-                    Some(home_dir) => {
-                        let path = home_dir.join($file);
-                        if path.exists() {
-                            Ok(())
-                        } else {
-                            Err(DoctorError::Error {
-                                reason: format!("{} does not exist", $file).into(),
-                                info: vec![],
-                                fix: Some(Box::new(|| {
-                                    std::fs::write(path, "")?;
-                                    Ok(())
-                                })),
-                                error: None,
-                            })
-                        }
-                    },
-                    None => Err(DoctorError::Warning(
-                        format!("Could not determine {} config directory", $shell).into(),
-                    )),
-                }
-            }
-
-            fn get_type(&self, shell: &Option<Shell>, _platform: Platform) -> DoctorCheckType {
-                match shell {
-                    Some(shell) if shell == &$shell => DoctorCheckType::NormalCheck,
-                    _ => DoctorCheckType::SoftCheck,
-                }
-            }
-        }
-    };
-}
-
-shell_config_exists_check!(BashrcExistsCheck, ".bashrc", Shell::Bash);
-shell_config_exists_check!(ZshrcExistsCheck, ".zshrc", Shell::Zsh);
 
 struct FigIntegrationsCheck;
 
@@ -792,10 +751,13 @@ impl DoctorCheck for DaemonCheck {
 
         let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
             Ok(connection) => connection,
-            Err(_) => {
+            Err(err) => {
                 return Err(DoctorError::Error {
                     reason: "Daemon socket exists but could not connect".into(),
-                    info: vec![format!("Socket path: {}", socket_path.display()).into()],
+                    info: vec![
+                        format!("Socket path: {}", socket_path.display()).into(),
+                        format!("{err:?}").into(),
+                    ],
                     fix: daemon_fix!(),
                     error: None,
                 });
@@ -915,7 +877,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             Err(InstallationError::LegacyInstallation(msg)) => {
                 Err(DoctorError::Warning(format!("{msg} {fix_text}").into()))
             },
-            Err(InstallationError::NotInstalled(msg)) | Err(InstallationError::ImproperInstallation(msg)) => {
+            Err(InstallationError::NotInstalled(msg) | InstallationError::ImproperInstallation(msg)) => {
                 // Check permissions of the file
                 #[cfg(unix)]
                 {
@@ -946,6 +908,18 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                         Ok(())
                     })),
                     error: None,
+                })
+            },
+            Err(err @ InstallationError::FileDoesNotExist(_)) => {
+                let fix_integration = self.integration.clone();
+                Err(DoctorError::Error {
+                    reason: err.to_string().into(),
+                    info: vec![fix_text.into()],
+                    fix: Some(Box::new(move || {
+                        fix_integration.install(None)?;
+                        Ok(())
+                    })),
+                    error: Some(anyhow::Error::new(err)),
                 })
             },
         }
@@ -995,13 +969,13 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
         let default_shell_valid = default_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
 
         match (current_shell_valid, default_shell_valid) {
-            (Ok((current_shell, false)), _) => {
+            (Some((current_shell, false)), _) => {
                 return Err(doctor_error!("Current shell {current_shell} incompatible"));
             },
             (_, Ok((default_shell, false))) => {
                 return Err(doctor_error!("Default shell {default_shell} incompatible"));
             },
-            (Err(_), _) => return Err(doctor_error!("Could not get current shell")),
+            (None, _) => return Err(doctor_error!("Could not get current shell")),
             (_, Err(_)) => Err(doctor_warning!("Could not get default shell")),
             _ => Ok(()),
         }
@@ -1666,7 +1640,7 @@ where
 
             fig_telemetry::emit_track(TrackEvent::DoctorError, TrackSource::Cli, properties)
                 .await
-                .context(format!("Could not send doctor error telemetry: {err}"))?;
+                .ok();
         }
 
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
@@ -1797,8 +1771,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .map(|integration| DotfileCheck { integration })
         .collect();
 
-    let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> = vec![&BashrcExistsCheck {}, &ZshrcExistsCheck {}];
-
+    let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> = vec![];
     all_dotfile_checks.extend(shell_integrations.iter().map(|p| (&*p) as &dyn DoctorCheck<_>));
 
     let status = async {

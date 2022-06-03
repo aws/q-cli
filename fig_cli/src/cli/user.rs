@@ -26,7 +26,7 @@ use serde_json::{
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
-use crate::cli::util::dialoguer_theme;
+use crate::cli::dialoguer_theme;
 use crate::util::api::request;
 
 #[derive(Subcommand, Debug)]
@@ -108,6 +108,11 @@ pub enum TokensSubcommand {
         /// The team namespace to revoke the token for
         #[clap(long, short)]
         team: Option<String>,
+    },
+    /// Validate a token is valid
+    Validate {
+        /// The token to validate
+        token: String,
     },
 }
 
@@ -221,6 +226,22 @@ impl TokensSubcommand {
                     },
                 }
                 Ok(())
+            },
+            Self::Validate { token } => {
+                let valid: Value = request(
+                    Method::POST,
+                    "/auth/tokens/validate",
+                    Some(&json!({ "token": token })),
+                    true,
+                )
+                .await?;
+
+                if let Some(&Value::String(ref username)) = valid.get("username") {
+                    println!("{username}");
+                    Ok(())
+                } else {
+                    exit(1);
+                }
             },
         }
     }

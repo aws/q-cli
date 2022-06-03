@@ -7,15 +7,16 @@ use anyhow::{
     Result,
 };
 use crossterm::style::Stylize;
+use fig_integrations::shell::ShellExt;
+use fig_integrations::ssh::SshIntegration;
+use fig_integrations::Integration;
+use fig_util::Shell;
 use self_update::update::UpdateStatus;
 use time::OffsetDateTime;
 
 use crate::cli::ssh::get_ssh_config_path;
-use crate::cli::util::dialoguer_theme;
 use crate::daemon;
-use crate::integrations::ssh::SshIntegration;
-use crate::integrations::Integration;
-use crate::util::shell::Shell;
+use crate::util::dialoguer_theme;
 
 bitflags::bitflags! {
     /// The different components that can be installed.

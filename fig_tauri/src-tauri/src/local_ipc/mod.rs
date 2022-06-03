@@ -3,7 +3,10 @@ mod hooks;
 
 use std::sync::Arc;
 
-use anyhow::{anyhow, Result};
+use anyhow::{
+    anyhow,
+    Result,
+};
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::local_message::Type as LocalMessageType;
 use fig_proto::local::{

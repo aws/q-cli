@@ -20,7 +20,6 @@ pub mod theme;
 pub mod tips;
 pub mod tweet;
 pub mod user;
-pub mod util;
 
 use std::fs::File;
 use std::process::exit;
@@ -37,22 +36,19 @@ use clap::{
     Parser,
     Subcommand,
 };
+use fig_integrations::shell::When;
+use fig_util::Shell;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::plugins::PluginsSubcommands;
-use crate::cli::util::{
-    dialoguer_theme,
-    open_url,
-};
 use crate::daemon::{
     daemon,
     get_daemon,
 };
-use crate::integrations::shell::When;
-use crate::util::shell::Shell;
 use crate::util::{
+    dialoguer_theme,
     is_app_running,
     launch_fig,
     LaunchOptions,
@@ -464,7 +460,7 @@ async fn root_command() -> Result<()> {
                         "\n→ Opening {}...\n",
                         "https://app.fig.io".magenta().underlined()
                     );
-                    open_url("https://app.fig.io")?;
+                    fig_util::open_url("https://app.fig.io")?;
                 }
             }
 

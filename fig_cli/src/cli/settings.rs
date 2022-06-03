@@ -24,10 +24,9 @@ use globset::Glob;
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
 
-use super::util::app_not_running_message;
 use super::OutputFormat;
-use crate::cli::util::open_url;
 use crate::util::{
+    app_not_running_message,
     launch_fig,
     LaunchOptions,
 };
@@ -97,13 +96,13 @@ impl SettingsArgs {
             },
             Some(SettingsSubcommands::Docs) => {
                 println!("→ Opening Fig docs...");
-                open_url("https://fig.io/docs/support/settings/")?;
+                fig_util::open_url("https://fig.io/docs/support/settings/")?;
                 Ok(())
             },
             Some(SettingsSubcommands::Open) => {
                 let mut url = OsString::from("file://");
                 url.push(settings_path().context("Could not get settings path")?);
-                open_url(url)?;
+                fig_util::open_url(url)?;
                 Ok(())
             },
             Some(SettingsSubcommands::Sync) => {
