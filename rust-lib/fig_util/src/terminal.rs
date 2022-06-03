@@ -1,7 +1,19 @@
+use std::borrow::Cow;
+
 use serde::{
     Deserialize,
     Serialize,
 };
+
+pub const MACOS_TERMINALS: &[Terminal] = &[];
+pub const LINUX_TERMINALS: &[Terminal] = &[
+    Terminal::GnomeTerminal,
+    Terminal::Konsole,
+    Terminal::Tilix,
+    Terminal::Alacritty,
+    Terminal::Kitty,
+    Terminal::XfceTerminal,
+];
 
 /// Terminals supported by Fig
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -29,6 +41,14 @@ pub enum Terminal {
     WezTerm,
     /// Jetbrains Terminal
     JediTerm(String),
+    /// Gnome Terminal
+    GnomeTerminal,
+    /// KDE Konsole
+    Konsole,
+    /// Tilix
+    Tilix,
+    /// Xfce Terminal
+    XfceTerminal,
 }
 
 impl std::fmt::Display for Terminal {
@@ -45,6 +65,10 @@ impl std::fmt::Display for Terminal {
             Terminal::Nova => write!(f, "Nova"),
             Terminal::WezTerm => write!(f, "Wezterm"),
             Terminal::JediTerm(_) => write!(f, "Jetbrains"),
+            Terminal::GnomeTerminal => write!(f, "Gnome Terminal"),
+            Terminal::Konsole => write!(f, "Konsole"),
+            Terminal::Tilix => write!(f, "Tilix"),
+            Terminal::XfceTerminal => write!(f, "Xfce Terminal"),
         }
     }
 }
@@ -85,6 +109,10 @@ impl Terminal {
                 .trim_start_matches("com.jetbrains.")
                 .trim_start_matches("com.google.")
                 .to_string(),
+            Terminal::GnomeTerminal => "gnome-terminal".into(),
+            Terminal::Konsole => "konsole".into(),
+            Terminal::Tilix => "tilix".into(),
+            Terminal::XfceTerminal => "xfce-terminal".into(),
         }
     }
 
@@ -102,6 +130,34 @@ impl Terminal {
             Terminal::Nova => String::from("com.panic.Nova"),
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
             Terminal::JediTerm(id) => id.to_string(),
+            Terminal::GnomeTerminal => todo!(),
+            Terminal::Konsole => todo!(),
+            Terminal::Tilix => todo!(),
+            Terminal::XfceTerminal => todo!(),
+        }
+    }
+
+    pub fn executable_name(&self) -> Option<Cow<'static, str>> {
+        match self {
+            Terminal::Alacritty => Some("alacritty".into()),
+            Terminal::Kitty => Some("kitty".into()),
+            Terminal::GnomeTerminal => Some("gnome-terminal-server".into()),
+            Terminal::Konsole => Some("konsole".into()),
+            Terminal::Tilix => Some("tilix".into()),
+            Terminal::XfceTerminal => Some("xfce4-terminal".into()),
+            _ => None,
+        }
+    }
+
+    pub fn wm_class(&self) -> Option<Cow<'static, str>> {
+        match self {
+            Terminal::GnomeTerminal => Some("Gnome-terminal".into()),
+            Terminal::Konsole => Some("konsole".into()),
+            Terminal::Tilix => Some("Tilix".into()),
+            Terminal::Alacritty => Some("Alacritty".into()),
+            Terminal::Kitty => Some("kitty".into()),
+            Terminal::XfceTerminal => Some("Xfce4-terminal".into()),
+            _ => None,
         }
     }
 

@@ -32,7 +32,7 @@ impl From<anyhow::Error> for InstallationError {
     }
 }
 
-fn get_default_backup_dir() -> Result<PathBuf> {
+pub fn get_default_backup_dir() -> Result<PathBuf> {
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;
@@ -41,10 +41,7 @@ fn get_default_backup_dir() -> Result<PathBuf> {
         .context("Could not get home dir")
 }
 
-pub fn backup_file<P>(path: P, backup_dir: Option<&Path>) -> Result<()>
-where
-    P: AsRef<Path>,
-{
+pub fn backup_file(path: impl AsRef<Path>, backup_dir: Option<impl Into<PathBuf>>) -> Result<()> {
     let pathref = path.as_ref();
     if pathref.exists() {
         let name: String = pathref
@@ -53,7 +50,7 @@ where
             .to_string_lossy()
             .into_owned();
         let dir = backup_dir
-            .map(|dir| dir.to_path_buf())
+            .map(|dir| dir.into())
             .or_else(|| get_default_backup_dir().ok())
             .context("Could not get backup directory")?;
         std::fs::create_dir_all(&dir).context("Could not back up file")?;

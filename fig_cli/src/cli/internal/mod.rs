@@ -148,6 +148,7 @@ pub enum InternalSubcommand {
     Animation(AnimationArgs),
     GetShell,
     Hostname,
+    ShouldFigtermLaunch,
     Event {
         /// Name of the event.
         #[clap(long)]
@@ -380,6 +381,55 @@ impl InternalSubcommand {
                     }
                 }
                 exit(1);
+            },
+            InternalSubcommand::ShouldFigtermLaunch => {
+                // Exit code:
+                //   - 0 execute figterm
+                //   - 1 dont execute figterm
+                //   - 2 fallback to FIG_TERM env
+                cfg_if!(
+                    if #[cfg(target_os = "linux")] {
+                        use fig_util::process_info::PidExt;
+                        // TODO(grant): Improve perf here, sysinfo is REALLY slow
+                        let t = || {
+                            let current_pid = fig_util::process_info::Pid::current();
+
+                            let parent_pid = current_pid.parent()?;
+                            let parent_path = parent_pid.exe()?;
+                            let parent_name = parent_path.file_name()?.to_str()?;
+
+                            let valid_parent = ["zsh", "bash", "fish"].contains(&parent_name);
+
+                            let grandparent_pid = parent_pid.parent()?;
+                            let grandparent_path = grandparent_pid.exe()?;
+                            let grandparent_name = grandparent_path.file_name()?.to_str()?;
+
+                            let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
+                                .iter()
+                                .filter_map(|terminal| terminal.executable_name())
+                                .any(|bin_name| bin_name == grandparent_name);
+
+                            let ancestry = format!(
+                                "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
+                                if valid_grandparent { "✅" } else { "❌" },
+                                grandparent_path.display(),
+                                if valid_parent { "✅" } else { "❌" },
+                                parent_path.display(),
+                            );
+
+                            Some((valid_parent && valid_grandparent, ancestry))
+                        };
+                        match t() {
+                            Some((should_execute, ancestry)) => {
+                                writeln!(stdout(), "{ancestry}").ok();
+                                exit(if should_execute { 0 } else { 1 });
+                            },
+                            None => exit(1),
+                        }
+                    } else {
+                        exit(2);
+                    }
+                );
             },
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);

@@ -1,21 +1,16 @@
-use super::constants::CONSTANTS_SCRIPT;
+use super::constants::Constants;
 
 pub fn javascript_init() -> String {
-    let mut init = String::new();
-    init.push_str(
-        r#"
-console.log("[fig] declaring constants...")
-
-if (!window.fig) {
-    window.fig = {}
-}
-
-if (!window.fig.constants) {
-    window.fig.constants = {}
-}
-"#,
-    );
-    // TODO(grant): Reenable constants
-    //init.push_str(&CONSTANTS_SCRIPT);
-    init
+    vec![
+        "if (!window.fig) {\n\
+            window.fig = {}\n\
+        }\n\
+        if (!window.fig.constants) {\n\
+            fig.constants = {}\n\
+        }\n"
+        .into(),
+        Constants::default().script(),
+        r#"console.log("[fig] declaring constants...");"#.into(),
+    ]
+    .join("\n")
 }

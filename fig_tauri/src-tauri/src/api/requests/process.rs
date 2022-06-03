@@ -10,8 +10,10 @@ use fig_proto::fig::{
 };
 use tokio::process::Command;
 
-use super::RequestResultImpl;
-use crate::api::RequestResult;
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
 use crate::native::{
     SHELL,
     SHELL_ARGS,

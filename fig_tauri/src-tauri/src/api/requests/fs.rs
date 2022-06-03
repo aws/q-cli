@@ -14,7 +14,7 @@ use fig_proto::fig::{
 use tokio::fs::OpenOptions;
 use tokio::io::AsyncWriteExt;
 
-use crate::api::{
+use super::{
     RequestResult,
     RequestResultImpl,
 };

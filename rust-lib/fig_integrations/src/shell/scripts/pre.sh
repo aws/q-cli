@@ -16,6 +16,10 @@ if [[ -n "${FIG_NEW_SESSION}" ]]; then
   unset FIG_NEW_SESSION
 fi
 
+# 0 = Yes, 1 = No, 2 = Fallback to FIG_TERM
+fig _ should-figterm-launch 1>/dev/null 2>&1
+SHOULD_FIGTERM_LAUNCH=$?
+
 # Only launch figterm if current session is not already inside PTY and command exists.
 # PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
 # It is not necessary in Fish.
@@ -27,13 +31,12 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
   && [[ -z "${FIG_PTY}" ]] \
   && command -v figterm 1>/dev/null 2>&1 \
-  && [[ -z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}") ]]; then
+  && [[ "${SHOULD_FIGTERM_LAUNCH}" = 0 || "${SHOULD_FIGTERM_LAUNCH}" = 2 && (-z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}")) ]]; then
 
   # Generated automatically by iTerm and Terminal, but needs to be
   # explicitly set for VSCode and Hyper. This variable is inherited when
   # new ttys are created using Tmux of VSCode and must be explictly
   # overwritten.
-
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     export TERM_SESSION_ID="$(uuidgen)"
   fi

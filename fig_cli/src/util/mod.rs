@@ -29,12 +29,6 @@ pub use os_version::{
     OSVersion,
     SupportLevel,
 };
-use sysinfo::{
-    ProcessRefreshKind,
-    RefreshKind,
-    System,
-    SystemExt,
-};
 
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
@@ -137,6 +131,13 @@ pub fn is_app_running() -> bool {
                 Err(_) => false,
             }
         } else if #[cfg(target_os = "linux")] {
+            use sysinfo::{
+                ProcessRefreshKind,
+                RefreshKind,
+                System,
+                SystemExt,
+            };
+
             let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
             let mut processes = s.processes_by_exact_name("fig_desktop");
             processes.next().is_some()

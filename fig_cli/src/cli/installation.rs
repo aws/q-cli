@@ -9,10 +9,12 @@ use anyhow::{
 use crossterm::style::Stylize;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_integrations::Integration;
+use fig_integrations::{
+    get_default_backup_dir,
+    Integration,
+};
 use fig_util::Shell;
 use self_update::update::UpdateStatus;
-use time::OffsetDateTime;
 
 use crate::cli::ssh::get_ssh_config_path;
 use crate::daemon;
@@ -97,13 +99,7 @@ pub fn install_cli(install_components: InstallComponents, no_confirm: bool, forc
 }
 
 fn install_fig(_modify_files: bool) -> Result<()> {
-    let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
-        "[year]-[month]-[day]_[hour]-[minute]-[second]"
-    ))?;
-    let backup_dir = fig_directories::home_dir()
-        .context("Could not find home directory")?
-        .join(".fig.dotfiles.bak")
-        .join(now);
+    let backup_dir = get_default_backup_dir()?;
 
     let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
