@@ -37,10 +37,6 @@ use rand::distributions::{
 };
 use rand::seq::IteratorRandom;
 use sysinfo::{
-    get_current_pid,
-    ProcessExt,
-    ProcessRefreshKind,
-    RefreshKind,
     System,
     SystemExt,
 };
@@ -391,52 +387,49 @@ impl InternalSubcommand {
                 //   - 0 execute figterm
                 //   - 1 dont execute figterm
                 //   - 2 fallback to FIG_TERM env
-                if "linux" == std::env::consts::OS {
-                    // TODO(grant): Improve perf here, sysinfo is REALLY slow
-                    let t = || {
-                        let system =
-                            System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+                cfg_if!(
+                    if #[cfg(target_os = "linux")] {
+                        use fig_util::process_info::PidExt;
+                        // TODO(grant): Improve perf here, sysinfo is REALLY slow
+                        let t = || {
+                            let current_pid = fig_util::process_info::Pid::current();
 
-                        let current_pid = get_current_pid().ok()?;
-                        let current_process = system.process(current_pid)?;
+                            let parent_pid = current_pid.parent()?;
+                            let parent_path = parent_pid.exe()?;
+                            let parent_name = parent_path.file_name()?.to_str()?;
 
-                        let parent_pid = current_process.parent()?;
-                        let parent_process = system.process(parent_pid)?;
-                        let parent_path = parent_process.exe();
-                        let parent_name = parent_path.file_name()?.to_str()?;
+                            let valid_parent = ["zsh", "bash", "fish"].contains(&parent_name);
 
-                        let valid_parent = ["zsh", "bash", "fish"].contains(&parent_name);
+                            let grandparent_pid = parent_pid.parent()?;
+                            let grandparent_path = grandparent_pid.exe()?;
+                            let grandparent_name = grandparent_path.file_name()?.to_str()?;
 
-                        let grandparent_pid = parent_process.parent()?;
-                        let grandparent_process = system.process(grandparent_pid)?;
-                        let grandparent_path = grandparent_process.exe();
-                        let grandparent_name = grandparent_path.file_name()?.to_str()?;
+                            let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
+                                .iter()
+                                .filter_map(|terminal| terminal.executable_name())
+                                .any(|bin_name| bin_name == grandparent_name);
 
-                        let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
-                            .iter()
-                            .filter_map(|terminal| terminal.executable_name())
-                            .any(|bin_name| bin_name == grandparent_name);
+                            let ancestry = format!(
+                                "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
+                                if valid_grandparent { "✅" } else { "❌" },
+                                grandparent_path.display(),
+                                if valid_parent { "✅" } else { "❌" },
+                                parent_path.display(),
+                            );
 
-                        let ancestry = format!(
-                            "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
-                            if valid_grandparent { "✅" } else { "❌" },
-                            grandparent_path.display(),
-                            if valid_parent { "✅" } else { "❌" },
-                            parent_path.display(),
-                        );
-
-                        Some((valid_parent && valid_grandparent, ancestry))
-                    };
-                    match t() {
-                        Some((should_execute, ancestry)) => {
-                            writeln!(stdout(), "{ancestry}").ok();
-                            exit(if should_execute { 0 } else { 1 });
-                        },
-                        None => exit(1),
+                            Some((valid_parent && valid_grandparent, ancestry))
+                        };
+                        match t() {
+                            Some((should_execute, ancestry)) => {
+                                writeln!(stdout(), "{ancestry}").ok();
+                                exit(if should_execute { 0 } else { 1 });
+                            },
+                            None => exit(1),
+                        }
+                    } else {
+                        exit(2);
                     }
-                } else {
-                    exit(2);
-                }
+                );
             },
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);

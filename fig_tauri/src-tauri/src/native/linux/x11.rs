@@ -34,7 +34,7 @@ use crate::{
 
 static WMCLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
     fig_util::terminal::LINUX_TERMINALS
-        .into_iter()
+        .iter()
         .filter_map(|t| t.wm_class())
         .collect()
 });
@@ -118,7 +118,7 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         return Ok(());
     }
 
-    if !WMCLASS_WHITELSIT.iter().any(|w| w == &wm_class.as_str()) {
+    if !WMCLASS_WHITELSIT.iter().any(|w| w == wm_class.as_str()) {
         // hide if not a whitelisted wm class
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),

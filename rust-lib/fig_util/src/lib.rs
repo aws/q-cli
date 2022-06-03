@@ -1,6 +1,6 @@
 mod error;
 mod open;
-mod process_info;
+pub mod process_info;
 mod shell;
 mod system_info;
 pub mod terminal;
