@@ -15,6 +15,7 @@ if (!window.fig.constants) {
 }
 "#,
     );
-    init.push_str(&CONSTANTS_SCRIPT);
+    // TODO(grant): Reenable constants
+    //init.push_str(&CONSTANTS_SCRIPT);
     init
 }
