@@ -1,16 +1,12 @@
-use std::path::{
-    Path,
+use std::{path::{
     PathBuf,
-};
+}, fmt::Display};
 
 use wsl::is_wsl;
 
-pub fn get_figterm_socket_path(session_id: impl AsRef<str>) -> PathBuf {
-    // TODO: Good WSL socket path?
-    [
-        Path::new(if is_wsl() { "/mnt/c/fig" } else { "/tmp" }),
-        Path::new(&["figterm-", session_id.as_ref(), ".socket"].concat()),
-    ]
-    .into_iter()
-    .collect()
+pub fn get_figterm_socket_path(session_id: impl Display) -> PathBuf {
+    match is_wsl() {
+        true => PathBuf::from(format!("/mnt/c/fig/figterm-{session_id}.socket")),
+        false =>  PathBuf::from(format!("/tmp/figterm-{session_id}.socket")),
+    }
 }

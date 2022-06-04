@@ -1,8 +1,8 @@
 //! Utiities for IPC with Mac App
 
-use std::time::Duration;
+use std::{time::Duration, fmt::Display};
 
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use fig_proto::figterm::FigtermMessage;
 use flume::{
     unbounded,
@@ -18,7 +18,7 @@ use tracing::{
     trace,
 };
 
-pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
+pub async fn create_socket_listen(session_id: impl Display) -> Result<UnixListener> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
 
     // Remove the socket so we can create a new one
@@ -26,10 +26,10 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
         remove_file(&socket_path).await?
     }
 
-    Ok(UnixListener::bind(&socket_path)?)
+    Ok(dbg!(UnixListener::bind(&socket_path))?)
 }
 
-pub async fn remove_socket(session_id: impl AsRef<str>) -> Result<()> {
+pub async fn remove_socket(session_id: impl Display) -> Result<()> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
 
     if socket_path.exists() {
@@ -68,10 +68,12 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
     Ok(outgoing_tx)
 }
 
-pub async fn spawn_incoming_receiver(session_id: impl AsRef<str>) -> Result<Receiver<FigtermMessage>> {
+pub async fn spawn_incoming_receiver(session_id: impl Display) -> Result<Receiver<FigtermMessage>> {
     trace!("Spawning incoming receiver");
 
     let socket_listener = create_socket_listen(session_id).await?;
+    trace!("Created socket listener");
+
     let (incomming_tx, incomming_rx) = unbounded();
 
     tokio::spawn(async move {

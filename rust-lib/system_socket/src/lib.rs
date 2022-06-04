@@ -114,14 +114,20 @@ impl AsyncWrite for SystemStream {
         #[cfg(unix)]
         return self.project().0.poll_write(cx, buf);
         #[cfg(windows)]
-        return Poll::Ready(tokio::task::block_in_place(|| self.project().0.write(buf)));
+        {
+            use std::io::Write;
+            return Poll::Ready(tokio::task::block_in_place(|| self.project().0.write(buf)));
+        }
     }
 
     fn poll_flush(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
         #[cfg(unix)]
         return self.project().0.poll_flush(cx);
         #[cfg(windows)]
-        return Poll::Ready(tokio::task::block_in_place(|| self.project().0.flush()));
+        {
+            use std::io::Write;
+            return Poll::Ready(tokio::task::block_in_place(|| self.project().0.flush()));
+        }
     }
 
     fn poll_shutdown(self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<Result<(), std::io::Error>> {
