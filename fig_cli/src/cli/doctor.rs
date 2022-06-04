@@ -1546,7 +1546,8 @@ impl DoctorCheck for IbusCheck {
             .output()
             .map_err(anyhow::Error::new)?;
 
-        if ibus_engine_output.status.success() && b"fig" == ibus_engine_output.stdout.as_slice() {
+        let stdout = String::from_utf8_lossy(&ibus_engine_output.stdout);
+        if ibus_engine_output.status.success() && "fig" == stdout.trim() {
             Ok(())
         } else {
             Err(doctor_fix!({
