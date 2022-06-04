@@ -1733,9 +1733,9 @@ dependencies = [
 
 [[package]]
 name = "freedesktop-icons"
-version = "0.1.1"
+version = "0.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1cc39054f0dc1f5b876df12c9eaf8185c530d54be135d26d3cb53ce2671dc4b0"
+checksum = "420b2cb0cf0ab0d5f34c068830f3b5c17b378ab3c2acaf7ca4bfde671d70be51"
 dependencies = [
  "dirs",
  "once_cell",
@@ -5093,9 +5093,9 @@ checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 
 [[package]]
 name = "tao"
-version = "0.9.1"
+version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53da5dd98a3c605a3ca8fe967d7c50eba8a36072ff13e04e24402b2c492ac55a"
+checksum = "d2497feadd60f2a5a7f124572d7a44b2aba589a0ad2a65d3aaf2d073c327c3b8"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -5368,9 +5368,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.18.2"
+version = "1.19.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4903bf0427cf68dddd5aa6a93220756f8be0c34fcfa9f5e6191e103e15a31395"
+checksum = "0f392c8f16bda3456c0b00c6de39cb100449b98de55ac41c6cdd2bfcf53a1245"
 dependencies = [
  "bytes",
  "libc",
@@ -6347,9 +6347,9 @@ dependencies = [
 
 [[package]]
 name = "wry"
-version = "0.17.0"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "38425583b1f8c16c074fa4f962f7f0ddd5cb2f6b241a494a26db5eca3ccd4fd7"
+checksum = "434a873bb73c16365dc83ccc8a4d39f4b93344b82cdb90f76ffcfdf2bc76ca5b"
 dependencies = [
  "block",
  "cocoa",
