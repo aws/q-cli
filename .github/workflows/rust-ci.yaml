@@ -49,14 +49,16 @@ jobs:
           override: true
           components: clippy
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
-
   rust-build-and-test:
     name: Rust Build and Test
     runs-on: [self-hosted, linux, x64]
     needs: setup
     steps:
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72\
+        with:
+          sharedKey: rustCi
+
       - name: Compile
         shell: bash
         run: cargo test --no-run --locked
@@ -70,6 +72,11 @@ jobs:
     runs-on: [self-hosted, linux, x64]
     needs: setup
     steps:
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72\
+        with:
+          sharedKey: rustCi
+
       - name: Clippy Lint
         shell: bash
         run: cargo clippy --workspace -- -D warnings
@@ -79,5 +86,10 @@ jobs:
     runs-on: [self-hosted, linux, x64]
     needs: setup
     steps:
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72\
+        with:
+          sharedKey: rustCi
+
       - name: Fmt Lint
         run: cargo +nightly fmt -- --color always --check
