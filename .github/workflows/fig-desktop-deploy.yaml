@@ -13,7 +13,7 @@ jobs:
       - name: Install dependencies
         run: |
           apt update
-          apt install \
+          apt install -y \
               build-essential \
               pkg-config \
               jq \
