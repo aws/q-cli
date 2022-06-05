@@ -17,8 +17,8 @@ jobs:
     steps:
       - name: Install dependencies
         run: |
-          apt update
-          apt install -y \
+          sudo apt-get update
+          sudo apt-get install -y \
               build-essential \
               pkg-config \
               jq \
