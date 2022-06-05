@@ -19,16 +19,15 @@ on:
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
     branches:
-      - master
-      - staging
       - develop
 
 env:
   CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
 
 jobs:
-  setup:
-    name: Setup Workflow
+  lint:
+    name: Lint
     runs-on: [self-hosted, linux, x64]
     steps:
       - name: Checkout repository
@@ -49,47 +48,52 @@ jobs:
           override: true
           components: clippy
 
-  rust-build-and-test:
-    name: Rust Build and Test
-    runs-on: [self-hosted, linux, x64]
-    needs: setup
-    steps:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1
+        
+      - name: Fmt Lint
+        uses: actions-rs/cargo@v1
         with:
-          sharedKey: rustCi
-
-      - name: Compile
-        shell: bash
-        run: cargo test --no-run --locked
-
-      - name: Test
-        shell: bash
-        run: cargo test --no-default-features -- --nocapture --quiet
-
-  rust-clippy-lint:
-    name: Rust Clippy Lint
-    runs-on: [self-hosted, linux, x64]
-    needs: setup
-    steps:
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v1
-        with:
-          sharedKey: rustCi
+          command: fmt
+          toolchain: nightly
+          args: --check
 
       - name: Clippy Lint
-        shell: bash
-        run: cargo clippy --workspace -- -D warnings
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace
 
-  rust-fmt-lint:
-    name: Rust Fmt Lint
+  build:
+    name: Build and test
     runs-on: [self-hosted, linux, x64]
-    needs: setup
     steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        
+      - name: Install Stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1
+        
+      - name: Install latest nextest release
+        uses: taiki-e/install-action@nextest
+      - name: Test with latest nextest release
+        uses: actions-rs/cargo@v1
         with:
-          sharedKey: rustCi
+          command: nextest
+          args: run --all-features --profile ci
 
-      - name: Fmt Lint
-        run: cargo +nightly fmt -- --color always --check
+      - name: Install nextest 
+        uses: taiki-e/install-action@nextest
+        
+      - name: Test nextest
+        uses: actions-rs/cargo@v1
+        with:
+          command: nextest
+          args: run
