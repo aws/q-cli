@@ -81,14 +81,6 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1
         
-      - name: Install latest nextest release
-        uses: taiki-e/install-action@nextest
-      - name: Test with latest nextest release
-        uses: actions-rs/cargo@v1
-        with:
-          command: nextest
-          args: run --all-features --profile ci
-
       - name: Install nextest 
         uses: taiki-e/install-action@nextest
         
