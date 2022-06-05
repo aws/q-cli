@@ -8,7 +8,7 @@ on:
 
 jobs:
   deploy:
-    runs-on: ubuntu-18.04
+    runs-on: [self-hosted, macos, x64]
     steps:
       - name: Install dependencies
         run: |
