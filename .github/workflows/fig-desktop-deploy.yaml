@@ -2,6 +2,13 @@ name: Fig Desktop S3 Deploy
 
 on:
   workflow_dispatch:
+    inputs:
+      deployToS3:
+        description: 'Deploy the Build to S3'     
+        default: 'true'
+        options:
+          - 'true'
+          - 'false'
   push:
     branches:
       - master
@@ -20,6 +27,7 @@ jobs:
               dpkg \
               curl \
               wget \
+              cmake \
               libssl-dev \
               libgtk-3-dev \
               libayatana-appindicator3-dev \
@@ -53,11 +61,13 @@ jobs:
         run: make
 
       - name: "Install AWS CLI"
+        if: github.event.inputs.deployToS3 != 'false'
         uses: chrislennon/action-aws-cli@v1.1
         env:
           ACTIONS_ALLOW_UNSECURE_COMMANDS: true
 
       - name: Upload to S3 Bucket
+        if: github.event.inputs.deployToS3 != 'false'
         run: |
           aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-$VERSION.tar.gz
           aws s3 cp ./build/fig-x86_64-linux.tar.gz s3://get-fig-io/desktop/linux-x86_64/fig-latest.tar.gz
