@@ -88,4 +88,5 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: nextest
-          args: run
+          args: run --no-default-features
+
