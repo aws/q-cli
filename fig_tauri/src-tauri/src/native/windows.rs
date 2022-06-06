@@ -6,12 +6,16 @@ use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use windows::Win32::Foundation::{
     HWND,
-    RECT,
+    RECT, POINT,
 };
+use windows::Win32::Graphics::Gdi::ClientToScreen;
+use windows::Win32::System::Com::VARIANT;
+use windows::Win32::System::Console::{AttachConsole, FreeConsole};
+use windows::Win32::System::Threading::{GetCurrentThreadId, AttachThreadInput};
 use windows::Win32::UI::Accessibility::{
     SetWinEventHook,
     UnhookWinEvent,
-    HWINEVENTHOOK,
+    HWINEVENTHOOK, AccessibleObjectFromEvent,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetWindowRect,
@@ -24,7 +28,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     OBJID_QUERYCLASSNAMEIDX,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
-    WINEVENT_SKIPOWNPROCESS,
+    WINEVENT_SKIPOWNPROCESS, GetCaretPos, OBJID_CARET, EVENT_CONSOLE_CARET,
 };
 
 use crate::event::{
@@ -44,6 +48,8 @@ pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relativ
 
 static UNMANAGED: Lazy<Unmanaged> = unsafe {
     Lazy::new(|| Unmanaged {
+        main_thread: GetCurrentThreadId(),
+        previous_focus: RwLock::new(None),
         event_sender: RwLock::new(Option::<EventLoopProxy>::None),
         foreground_hook: RwLock::new(SetWinEventHook(
             EVENT_SYSTEM_FOREGROUND,
@@ -64,6 +70,8 @@ pub struct NativeState;
 
 #[allow(dead_code)]
 struct Unmanaged {
+    main_thread: u32,
+    previous_focus: RwLock<Option<u32>>,
     event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
@@ -107,70 +115,88 @@ unsafe extern "system" fn win_event_proc(
     _id_event_thread: u32,
     _time: u32,
 ) {
-    if id_child != CHILDID_SELF as i32 {
-        return;
-    }
-
     match event {
         // The focused app has been changed
         e if e == EVENT_SYSTEM_FOREGROUND => {
-            if OBJECT_IDENTIFIER(id_object) != OBJID_WINDOW {
+            if OBJECT_IDENTIFIER(id_object) != OBJID_WINDOW && id_child != CHILDID_SELF as i32 {
                 return;
             }
 
             if let Some(hook) = UNMANAGED.location_hook.write().take() {
                 UnhookWinEvent(hook);
             }
+            
+            // SAFETY: hwnd must be valid and process_id must point to allocated memory
+            let mut process_id: u32 = 0;
+            let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
+            FreeConsole();
+            match AttachConsole(process_id).as_bool() {
+                true => {
+                    UNMANAGED.location_hook.write().replace(SetWinEventHook(
+                        EVENT_CONSOLE_CARET,
+                        EVENT_CONSOLE_CARET,
+                        None,
+                        Some(win_event_proc),
+                        process_id,
+                        thread_id,
+                        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+                    ));
 
-            let mut class_name = vec![0; 256];
-            let len = GetWindowTextA(hwnd, &mut class_name) as usize;
-            class_name.truncate(len + 1);
-            let title = match CStr::from_bytes_with_nul(&class_name)
-                .expect("Missing null terminator")
-                .to_str()
-            {
-                Ok(title) => title,
-                // Window title is non-utf8, shouldn't be a terminal we care about
-                Err(_) => return,
-            };
+                    UNMANAGED.send_event(WindowEvent::Show);
+                },
+                false => {
+                    //let mut class_name = vec![0; 256];
+                    //let len = GetWindowTextA(hwnd, &mut class_name) as usize;
+                    //class_name.truncate(len + 1);
+                    //let title = match CStr::from_bytes_with_nul(&class_name)
+                    //    .expect("Missing null terminator")
+                    //    .to_str()
+                    //{
+                    //    Ok(title) => title,
+                    //    // Window title is non-utf8, shouldn't be a terminal we care about
+                    //    Err(_) => return,
+                    //};
 
-            if title == "Hyper" {
-                // SAFETY: hwnd must be valid and process_id must point to allocated memory
-                let mut process_id: u32 = 0;
-                let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
+                    //if title == "Hyper" {
+                        // SAFETY:
+                        // - eventmin and eventmax must be a valid range
+                        // - hmodwineventproc must be null when `WINEVENT_OUTOFCONTEXT` is specified
+                        // - pfnwineventproc must be a valid WINEVENTPROC function
+                        // - idprocess and idthread must be valid or 0
+                        UNMANAGED.location_hook.write().replace(SetWinEventHook(
+                            EVENT_OBJECT_LOCATIONCHANGE,
+                            EVENT_OBJECT_LOCATIONCHANGE,
+                            None,
+                            Some(win_event_proc),
+                            process_id,
+                            thread_id,
+                            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+                        ));
 
-                // SAFETY:
-                // - eventmin and eventmax must be a valid range
-                // - hmodwineventproc must be null when `WINEVENT_OUTOFCONTEXT` is specified
-                // - pfnwineventproc must be a valid WINEVENTPROC function
-                // - idprocess and idthread must be valid or 0
-                UNMANAGED.location_hook.write().replace(SetWinEventHook(
-                    EVENT_OBJECT_LOCATIONCHANGE,
-                    EVENT_OBJECT_LOCATIONCHANGE,
-                    None,
-                    Some(win_event_proc),
-                    process_id,
-                    thread_id,
-                    WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
-                ));
-
-                UNMANAGED.send_event(WindowEvent::Show);
-            } else {
-                UNMANAGED.send_event(WindowEvent::Hide);
+                        UNMANAGED.send_event(WindowEvent::Show);
+                    //} else {
+                    //    UNMANAGED.send_event(WindowEvent::Hide);
+                    //}
+                },
             }
         },
         // The focused app has moved
-        e if e == EVENT_OBJECT_LOCATIONCHANGE => {
-            let mut rect = RECT::default();
-            if OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW {
-                if GetWindowRect(hwnd, &mut rect).as_bool() {
-                    UNMANAGED.send_event(WindowEvent::Reposition {
-                        x: rect.left,
-                        y: rect.bottom,
-                    });
+        e if e == EVENT_OBJECT_LOCATIONCHANGE && OBJECT_IDENTIFIER(id_object) == OBJID_CARET => {
+            let mut acc = None;
+            let mut varchild = VARIANT::default();
+            if AccessibleObjectFromEvent(hwnd, id_object as u32, id_child as u32, &mut acc, &mut varchild).is_ok() {
+                if let Some(acc) = acc {
+                    let mut left = 0;
+                    let mut top = 0;
+                    let mut width = 0;
+                    let mut height = 0;
+                    if acc.accLocation(&mut left, &mut top, &mut width, &mut height, varchild).is_ok() {
+                        UNMANAGED.send_event(WindowEvent::Reposition {
+                            x: left,
+                            y: top,
+                        });
+                    }
                 }
-            } else if OBJECT_IDENTIFIER(id_object) == OBJID_QUERYCLASSNAMEIDX {
-                todo!();
             }
         },
         _ => (),
