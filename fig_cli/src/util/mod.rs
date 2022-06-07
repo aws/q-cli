@@ -13,13 +13,11 @@ use std::path::{
 
 use anyhow::{
     bail,
-    Context,
     Result,
 };
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use fig_ipc::get_fig_socket_path;
 use globset::{
     Glob,
     GlobSet,
@@ -174,6 +172,9 @@ impl LaunchOptions {
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
+            use anyhow::Context;
+            use fig_ipc::get_fig_socket_path;
+
             if is_app_running() {
                 return Ok(());
             }
@@ -207,6 +208,9 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
 
             bail!("\nUnable to finish launching Fig properly\n")
         } else if #[cfg(target_os = "linux")] {
+            use anyhow::Context;
+            use fig_ipc::get_fig_socket_path;
+
             if is_app_running() {
                 return Ok(());
             }
@@ -279,6 +283,7 @@ pub fn login_message() -> String {
 pub fn get_fig_version() -> Result<(String, String)> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
+            use anyhow::Context;
             use regex::Regex;
 
             let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;

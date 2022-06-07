@@ -49,8 +49,19 @@ url = "2.2.2"
 whoami = "1.2.1"
 wry = { version = "0.18.2", default-features = false, features = ["tray", "protocol", "devtools", "transparent"]}
 
-[target.'cfg(windows)'.dependencies]
-windows = { version = "0.37.0", features = ["Win32_Foundation", "Win32_Networking_WinSock", "Win32_Storage_FileSystem", "Win32_System_Com", "Win32_UI_WindowsAndMessaging", "Win32_UI_Accessibility", "Win32_System_Ole", "Win32_Graphics_Gdi"] }
+[target.'cfg(windows)'.dependencies.windows]
+version = "0.37.0"
+features = [
+    "Win32_Foundation",
+    "Win32_Graphics_Gdi",
+    "Win32_Networking_WinSock",
+    "Win32_Storage_FileSystem",
+    "Win32_System_Com",
+    "Win32_System_Console",
+    "Win32_System_Ole",
+    "Win32_UI_WindowsAndMessaging",
+    "Win32_UI_Accessibility",
+]
 
 [target.'cfg(target_os="linux")'.dependencies]
 freedesktop-icons = "0.2.1"
