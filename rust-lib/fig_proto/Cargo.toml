@@ -20,4 +20,4 @@ thiserror = "1.0.30"
 nix = "0.24.1"
 
 [build-dependencies]
-prost-reflect-build = "0.8.0"
+prost-reflect-build = "0.8.1"
