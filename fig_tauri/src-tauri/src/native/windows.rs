@@ -9,9 +9,7 @@ use windows::Win32::System::Console::{
     AttachConsole,
     FreeConsole,
 };
-use windows::Win32::System::Threading::{
-    GetCurrentThreadId,
-};
+use windows::Win32::System::Threading::GetCurrentThreadId;
 use windows::Win32::UI::Accessibility::{
     AccessibleObjectFromEvent,
     SetWinEventHook,

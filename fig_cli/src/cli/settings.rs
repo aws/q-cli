@@ -1,4 +1,3 @@
-use std::ffi::OsString;
 use std::io::Write;
 use std::process::exit;
 
@@ -100,9 +99,13 @@ impl SettingsArgs {
                 Ok(())
             },
             Some(SettingsSubcommands::Open) => {
-                let mut url = OsString::from("file://");
-                url.push(settings_path().context("Could not get settings path")?);
-                fig_util::open_url(url.to_string_lossy())?;
+                let mut url = String::from("file://");
+                url.push_str(
+                    &settings_path()
+                        .context("Could not get settings path")?
+                        .to_string_lossy(),
+                );
+                fig_util::open_url(url)?;
                 Ok(())
             },
             Some(SettingsSubcommands::Sync) => {
