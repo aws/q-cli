@@ -31,7 +31,8 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
   && [[ -z "${FIG_PTY}" ]] \
   && command -v figterm 1>/dev/null 2>&1 \
-  && [[ "${SHOULD_FIGTERM_LAUNCH}" = 0 || "${SHOULD_FIGTERM_LAUNCH}" = 2 && (-z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}")) ]]; then
+  && [[ ("${SHOULD_FIGTERM_LAUNCH}" -eq 0) || (("${SHOULD_FIGTERM_LAUNCH}" -eq 2) && (-z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}"))) ]]
+then
 
   # Generated automatically by iTerm and Terminal, but needs to be
   # explicitly set for VSCode and Hyper. This variable is inherited when

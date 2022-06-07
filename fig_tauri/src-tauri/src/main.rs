@@ -336,7 +336,7 @@ fn main() {
 
     let cli = cli::Cli::parse();
 
-    if !cli.allow_multiple_instances {
+    if !cli.allow_multiple {
         match get_current_pid() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
@@ -344,7 +344,7 @@ fn main() {
                 for process in processes {
                     let pid = process.pid();
                     if current_pid != pid {
-                        if cli.kill_instance {
+                        if cli.kill_old {
                             process.kill();
                             let exe = process.exe().display();
                             eprintln!("Killing instance: {exe} ({pid})");
@@ -365,7 +365,7 @@ fn main() {
         let mut webview_manager = WebviewManager::new();
         webview_manager
             .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
-                force_visible: cli.mission_control_open,
+                force_visible: cli.mission_control,
             })
             .unwrap();
         webview_manager

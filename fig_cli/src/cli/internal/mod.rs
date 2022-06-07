@@ -390,8 +390,7 @@ impl InternalSubcommand {
                 cfg_if!(
                     if #[cfg(target_os = "linux")] {
                         use fig_util::process_info::PidExt;
-                        // TODO(grant): Improve perf here, sysinfo is REALLY slow
-                        let t = || {
+                        match (|| {
                             let current_pid = fig_util::process_info::Pid::current();
 
                             let parent_pid = current_pid.parent()?;
@@ -418,8 +417,7 @@ impl InternalSubcommand {
                             );
 
                             Some((valid_parent && valid_grandparent, ancestry))
-                        };
-                        match t() {
+                        })() {
                             Some((should_execute, ancestry)) => {
                                 writeln!(stdout(), "{ancestry}").ok();
                                 exit(if should_execute { 0 } else { 1 });
