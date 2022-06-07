@@ -274,11 +274,11 @@ struct AutocompleteOptions {}
 fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
     let mut window_builder = WindowBuilder::new()
         .with_title("Fig Autocomplete")
-        .with_transparent(false)
+        .with_transparent(true)
         .with_decorations(false)
         .with_resizable(false)
         .with_always_on_top(true)
-        .with_visible(true);
+        .with_visible(false);
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
@@ -317,7 +317,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         })
         .with_custom_protocol("fig".into(), icons::handle)
         .with_devtools(true)
-        .with_transparent(false)
+        .with_transparent(true)
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(|url| {
             url.starts_with("http://localhost")
