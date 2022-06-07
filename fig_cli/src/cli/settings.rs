@@ -102,7 +102,7 @@ impl SettingsArgs {
             Some(SettingsSubcommands::Open) => {
                 let mut url = OsString::from("file://");
                 url.push(settings_path().context("Could not get settings path")?);
-                fig_util::open_url(url)?;
+                fig_util::open_url(url.to_string_lossy())?;
                 Ok(())
             },
             Some(SettingsSubcommands::Sync) => {

@@ -26,7 +26,7 @@ pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixLis
         remove_file(&socket_path).await?
     }
 
-    Ok(dbg!(UnixListener::bind(&socket_path))?)
+    Ok(UnixListener::bind(&socket_path)?)
 }
 
 pub async fn remove_socket(session_id: impl AsRef<str>) -> Result<()> {

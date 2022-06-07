@@ -30,6 +30,7 @@ bitflags::bitflags! {
     }
 }
 
+#[cfg_attr(windows, allow(unused_variables))]
 pub fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<()> {
     #[cfg(unix)]
     {

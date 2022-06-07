@@ -1,22 +1,15 @@
-use std::ffi::CStr;
 use std::sync::Arc;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use windows::Win32::Foundation::{
-    HWND,
-    POINT,
-    RECT,
-};
-use windows::Win32::Graphics::Gdi::ClientToScreen;
+use windows::Win32::Foundation::HWND;
 use windows::Win32::System::Com::VARIANT;
 use windows::Win32::System::Console::{
     AttachConsole,
     FreeConsole,
 };
 use windows::Win32::System::Threading::{
-    AttachThreadInput,
     GetCurrentThreadId,
 };
 use windows::Win32::UI::Accessibility::{
@@ -26,9 +19,6 @@ use windows::Win32::UI::Accessibility::{
     HWINEVENTHOOK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
-    GetCaretPos,
-    GetWindowRect,
-    GetWindowTextA,
     GetWindowThreadProcessId,
     CHILDID_SELF,
     EVENT_CONSOLE_CARET,
@@ -36,7 +26,6 @@ use windows::Win32::UI::WindowsAndMessaging::{
     EVENT_SYSTEM_FOREGROUND,
     OBJECT_IDENTIFIER,
     OBJID_CARET,
-    OBJID_QUERYCLASSNAMEIDX,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
@@ -106,11 +95,13 @@ impl Unmanaged {
 pub mod icons {
     use crate::icons::ProcessedAsset;
 
+    #[allow(unused_variables)]
     pub fn lookup(name: &str) -> Option<ProcessedAsset> {
         None
     }
 }
 
+#[allow(unused_variables)]
 pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     UNMANAGED.event_sender.write().replace(proxy);
 
