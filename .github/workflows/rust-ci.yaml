@@ -7,6 +7,7 @@ on:
       - "rust-lib/**"
       - "figterm/**"
       - "fig_cli/**"
+      - "fig_tauri/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
   push:
@@ -14,106 +15,32 @@ on:
       - "rust-lib/**"
       - "figterm/**"
       - "fig_cli/**"
+      - "fig_tauri/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
     branches:
-      - master
-      - staging
       - develop
 
 env:
   CARGO_TERM_COLOR: always
-  LINUX_CRATES: ( fig_cli figterm )
-  MACOS_CRATES: ( fig_cli figterm )
-  WIN_CRATES: ( fig_cli )
+  RUSTFLAGS: -D warnings
 
 jobs:
-  rust-build-and-test:
-    name: Rust Build and Test
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-
+  lint:
+    name: Lint
+    runs-on: [self-hosted, linux, x64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      # If on Ubuntu, install dependencies
-      - name: Install Ubuntu dependencies
-        if: ${{ matrix.os == 'ubuntu-latest' }}
-        run: sudo apt-get install -y libxcb1-dev libxcb-shape0-dev libxcb-xfixes0-dev
-
-      - name: Install Rust toolchain
+        
+      - name: Install Nightly Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
+          toolchain: nightly
           profile: minimal
-          override: true
+          components: rustfmt
 
-      - uses: actions/cache@v3
-        with:
-          path: target/
-          key: rust-ci-build-and-test-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            rust-ci-build-and-test-${{ runner.os }}-cargo-
-
-      - name: Compile
-        shell: bash
-        run: |
-          if ${{ matrix.os == 'ubuntu-latest' }}; then
-            crates=${{ env.LINUX_CRATES }}
-          elif ${{ matrix.os == 'macos-latest' }}; then
-            crates=${{ env.MACOS_CRATES }}
-          elif ${{ matrix.os == 'windows-latest' }}; then
-            crates=${{ env.WIN_CRATES }}
-          fi
-
-          for crate in ${crates[*]}
-          do
-            cd $crate
-            cargo test --no-run --locked
-            cd ..
-          done
-
-      - name: Test
-        shell: bash
-        run: |
-          if ${{ matrix.os == 'ubuntu-latest' }}; then
-            crates=${{ env.LINUX_CRATES }}
-          elif ${{ matrix.os == 'macos-latest' }}; then
-            crates=${{ env.MACOS_CRATES }}
-          elif ${{ matrix.os == 'windows-latest' }}; then
-            crates=${{ env.WIN_CRATES }}
-          fi
-
-          for crate in ${crates[*]}
-          do
-            cd $crate
-            cargo test --no-default-features -- --nocapture --quiet
-            cd ..
-          done
-
-  rust-clippy-lint:
-    name: Rust Clippy Lint
-    runs-on: ${{ matrix.os }}
-
-    strategy:
-      matrix:
-        os:
-          - ubuntu-latest
-          - macos-latest
-          - windows-latest
-
-    steps:
-      - name: Checkout repository
-        uses: actions/checkout@v3
-
-      - name: Install Rust toolchain
+      - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
@@ -121,46 +48,45 @@ jobs:
           override: true
           components: clippy
 
-      - uses: actions/cache@v3
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1
+        
+      - name: Fmt Lint
+        uses: actions-rs/cargo@v1
         with:
-          path: target/
-          key: rust-ci-${{ runner.os }}-cargo-${{ hashFiles('**/Cargo.lock') }}
-          restore-keys: |
-            rust-ci-${{ runner.os }}-cargo-
+          command: fmt
+          toolchain: nightly
+          args: --check
 
       - name: Clippy Lint
-        shell: bash
-        run: |
-          if ${{ matrix.os == 'ubuntu-latest' }}; then
-            crates=${{ env.LINUX_CRATES }}
-          elif ${{ matrix.os == 'macos-latest' }}; then
-            crates=${{ env.MACOS_CRATES }}
-          elif ${{ matrix.os == 'windows-latest' }}; then
-            crates=${{ env.WIN_CRATES }}
-          fi
+        uses: actions-rs/clippy-check@v1
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace
 
-          for crate in ${crates[*]}
-          do
-            cd $crate
-            cargo clippy --all-targets --all-features -- -D warnings
-            cd ..
-          done
-
-  rust-fmt-lint:
-    name: Rust Fmt Lint
-    runs-on: ubuntu-latest
-
+  build:
+    name: Build and test
+    runs-on: [self-hosted, linux, x64]
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-
-      - name: Install Rust toolchain
+        
+      - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
           profile: minimal
           override: true
-          components: rustfmt
 
-      - name: Fmt Lint
-        run: cargo fmt -- --color always --check
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@v1
+        
+      - name: Install nextest 
+        uses: taiki-e/install-action@nextest
+        
+      - name: Test nextest
+        uses: actions-rs/cargo@v1
+        with:
+          command: nextest
+          args: run --no-default-features
+

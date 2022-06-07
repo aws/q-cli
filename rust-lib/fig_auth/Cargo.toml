@@ -20,5 +20,5 @@ serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 thiserror = "1.0.30"
 time = { version = "0.3.7", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
-tokio = { version = "1.17.0", features = ["time"] }
+tokio = { version = "1.19.2", features = ["time"] }
 uuid = { version = "1.1.1", features = ["v4"] }

@@ -96,6 +96,7 @@ mod tests {
         let parent_pid = process_pid.parent().unwrap();
         let parent_exe = parent_pid.exe().unwrap();
         let parent_name = parent_exe.file_name().unwrap().to_str().unwrap();
-        assert_eq!(parent_name, "cargo");
+
+        assert!(parent_name.contains("cargo"));
     }
 }

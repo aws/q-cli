@@ -409,14 +409,14 @@ checksum = "904dfeac50f3cdaba28fc6f57fdcddb75f49ed61346676a78c4ffe55877802fd"
 
 [[package]]
 name = "bindgen"
-version = "0.59.2"
+version = "0.60.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2bd2a9a458e8f4304c52c43ebb0cfbd520289f8379a52e329a38afda99bf8eb8"
+checksum = "062dddbc1ba4aca46de6338e2bf87771414c335f7b2f2036e8f3e9befebf88e6"
 dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "clap 2.34.0",
+ "clap",
  "env_logger",
  "lazy_static 1.4.0",
  "lazycell",
@@ -645,21 +645,6 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "2.34.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a0610544180c38b88101fecf2dd634b174a62eef6946f84dfc6a7127512b381c"
-dependencies = [
- "ansi_term",
- "atty",
- "bitflags",
- "strsim 0.8.0",
- "textwrap 0.11.0",
- "unicode-width",
- "vec_map",
-]
-
-[[package]]
-name = "clap"
 version = "3.1.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d2dbdf4bdacb33466e854ce889eee8dfd5729abf7ccd7664d0a2d60cd384440b"
@@ -670,9 +655,9 @@ dependencies = [
  "clap_lex",
  "indexmap",
  "lazy_static 1.4.0",
- "strsim 0.10.0",
+ "strsim",
  "termcolor",
- "textwrap 0.15.0",
+ "textwrap",
 ]
 
 [[package]]
@@ -681,7 +666,7 @@ version = "3.1.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "da92e6facd8d73c22745a5d3cbb59bdf8e46e3235c923e516527d8e81eec14a4"
 dependencies = [
- "clap 3.1.18",
+ "clap",
 ]
 
 [[package]]
@@ -690,7 +675,7 @@ version = "3.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3918ed0e233c37ab6055a2dc4b2bad2e113d44f56675e0140936b9bd253e4505"
 dependencies = [
- "clap 3.1.18",
+ "clap",
  "clap_complete",
 ]
 
@@ -1099,7 +1084,7 @@ dependencies = [
  "ident_case",
  "proc-macro2",
  "quote",
- "strsim 0.10.0",
+ "strsim",
  "syn",
 ]
 
@@ -1398,7 +1383,7 @@ dependencies = [
  "async-trait",
  "bitflags",
  "cfg-if 1.0.0",
- "clap 3.1.18",
+ "clap",
  "clap_complete",
  "clap_complete_fig",
  "crossterm",
@@ -1478,7 +1463,7 @@ name = "fig_integrations"
 version = "0.1.0"
 dependencies = [
  "anyhow",
- "clap 3.1.18",
+ "clap",
  "fig_directories",
  "fig_util",
  "regex 1.5.6",
@@ -1559,7 +1544,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 3.1.18",
+ "clap",
  "dashmap",
  "fig_auth",
  "fig_directories",
@@ -1614,7 +1599,7 @@ name = "fig_util"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "clap 3.1.18",
+ "clap",
  "fig_directories",
  "fig_settings",
  "nix 0.24.1",
@@ -1634,7 +1619,7 @@ dependencies = [
  "anyhow",
  "bitflags",
  "bytes",
- "clap 3.1.18",
+ "clap",
  "crossbeam",
  "dashmap",
  "fig_auth",
@@ -3891,9 +3876,9 @@ dependencies = [
 
 [[package]]
 name = "prost-reflect-build"
-version = "0.8.0"
+version = "0.8.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d9ba636de3978d3a4aaafd5e3691ef3cd403c7ce0689987f11604f6317ff4664"
+checksum = "a24c777d3470654a9f594285a43a29f054a13f38c3408b2c7474fc5926647827"
 dependencies = [
  "prost-build",
  "prost-reflect",
@@ -4986,12 +4971,6 @@ dependencies = [
 
 [[package]]
 name = "strsim"
-version = "0.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ea5119cdb4c55b55d432abb513a0429384878c15dde60cc77b1c99de1a95a6a"
-
-[[package]]
-name = "strsim"
 version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "73473c0e59e6d5812c5dfe2a064a6444949f089e20eec9a2e5506596494e4623"
@@ -5234,15 +5213,6 @@ dependencies = [
 
 [[package]]
 name = "textwrap"
-version = "0.11.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d326610f408c7a4eb6f51c37c330e496b08506c9457c9d34287ecc38809fb060"
-dependencies = [
- "unicode-width",
-]
-
-[[package]]
-name = "textwrap"
 version = "0.15.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b1141d4d61095b28419e22cb0bbf02755f5e54e0526f97f1e3d1d160e60885fb"
@@ -5368,9 +5338,9 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 
 [[package]]
 name = "tokio"
-version = "1.19.0"
+version = "1.19.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0f392c8f16bda3456c0b00c6de39cb100449b98de55ac41c6cdd2bfcf53a1245"
+checksum = "c51a52ed6686dd62c320f9b89299e9dfb46f730c7a48e635c19f21d116cb1439"
 dependencies = [
  "bytes",
  "libc",
@@ -5803,12 +5773,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "accd4ea62f7bb7a82fe23066fb0957d48ef677f6eeb8215f372f52e48bb32426"
 
 [[package]]
-name = "vec_map"
-version = "0.8.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f1bddf1187be692e79c5ffeab891132dfb0f236ed36a43c7ed39f1165ee20191"
-
-[[package]]
 name = "version-compare"
 version = "0.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -5831,7 +5795,7 @@ name = "viu"
 version = "1.4.0"
 dependencies = [
  "anes",
- "clap 3.1.18",
+ "clap",
  "crossterm",
  "ctrlc",
  "image 0.24.2",
@@ -6347,9 +6311,9 @@ dependencies = [
 
 [[package]]
 name = "wry"
-version = "0.18.1"
+version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "434a873bb73c16365dc83ccc8a4d39f4b93344b82cdb90f76ffcfdf2bc76ca5b"
+checksum = "138e84a6f7f0ef90004a244a6dd4125b5fb78074b48c4369ab52b3cac68a863e"
 dependencies = [
  "block",
  "cocoa",

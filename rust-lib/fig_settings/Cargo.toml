@@ -15,6 +15,6 @@ reqwest = { version = "0.11.9", features = ["json"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 thiserror = "1.0.30"
-tokio = { version = "1.16.1", features = ["full"] }
+tokio = { version = "1.19.2", features = ["full"] }
 time = { version = "0.3.7", features = ["serde-well-known"] }
 url = "2.2.2"

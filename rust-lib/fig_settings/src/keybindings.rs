@@ -54,6 +54,7 @@ mod test {
 
     const TEST_JSON: &str = include_str!("test/actions.json");
 
+    #[ignore]
     #[test]
     fn test_load() {
         KeyBindings::load().unwrap();
