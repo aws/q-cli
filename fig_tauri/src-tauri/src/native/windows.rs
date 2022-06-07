@@ -6,29 +6,40 @@ use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use windows::Win32::Foundation::{
     HWND,
-    RECT, POINT,
+    POINT,
+    RECT,
 };
 use windows::Win32::Graphics::Gdi::ClientToScreen;
 use windows::Win32::System::Com::VARIANT;
-use windows::Win32::System::Console::{AttachConsole, FreeConsole};
-use windows::Win32::System::Threading::{GetCurrentThreadId, AttachThreadInput};
+use windows::Win32::System::Console::{
+    AttachConsole,
+    FreeConsole,
+};
+use windows::Win32::System::Threading::{
+    AttachThreadInput,
+    GetCurrentThreadId,
+};
 use windows::Win32::UI::Accessibility::{
+    AccessibleObjectFromEvent,
     SetWinEventHook,
     UnhookWinEvent,
-    HWINEVENTHOOK, AccessibleObjectFromEvent,
+    HWINEVENTHOOK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
+    GetCaretPos,
     GetWindowRect,
     GetWindowTextA,
     GetWindowThreadProcessId,
     CHILDID_SELF,
+    EVENT_CONSOLE_CARET,
     EVENT_OBJECT_LOCATIONCHANGE,
     EVENT_SYSTEM_FOREGROUND,
     OBJECT_IDENTIFIER,
+    OBJID_CARET,
     OBJID_QUERYCLASSNAMEIDX,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
-    WINEVENT_SKIPOWNPROCESS, GetCaretPos, OBJID_CARET, EVENT_CONSOLE_CARET,
+    WINEVENT_SKIPOWNPROCESS,
 };
 
 use crate::event::{
@@ -125,7 +136,7 @@ unsafe extern "system" fn win_event_proc(
             if let Some(hook) = UNMANAGED.location_hook.write().take() {
                 UnhookWinEvent(hook);
             }
-            
+
             // SAFETY: hwnd must be valid and process_id must point to allocated memory
             let mut process_id: u32 = 0;
             let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
@@ -145,10 +156,10 @@ unsafe extern "system" fn win_event_proc(
                     UNMANAGED.send_event(WindowEvent::Show);
                 },
                 false => {
-                    //let mut class_name = vec![0; 256];
-                    //let len = GetWindowTextA(hwnd, &mut class_name) as usize;
-                    //class_name.truncate(len + 1);
-                    //let title = match CStr::from_bytes_with_nul(&class_name)
+                    // let mut class_name = vec![0; 256];
+                    // let len = GetWindowTextA(hwnd, &mut class_name) as usize;
+                    // class_name.truncate(len + 1);
+                    // let title = match CStr::from_bytes_with_nul(&class_name)
                     //    .expect("Missing null terminator")
                     //    .to_str()
                     //{
@@ -157,23 +168,23 @@ unsafe extern "system" fn win_event_proc(
                     //    Err(_) => return,
                     //};
 
-                    //if title == "Hyper" {
-                        // SAFETY:
-                        // - eventmin and eventmax must be a valid range
-                        // - hmodwineventproc must be null when `WINEVENT_OUTOFCONTEXT` is specified
-                        // - pfnwineventproc must be a valid WINEVENTPROC function
-                        // - idprocess and idthread must be valid or 0
-                        UNMANAGED.location_hook.write().replace(SetWinEventHook(
-                            EVENT_OBJECT_LOCATIONCHANGE,
-                            EVENT_OBJECT_LOCATIONCHANGE,
-                            None,
-                            Some(win_event_proc),
-                            process_id,
-                            thread_id,
-                            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
-                        ));
+                    // if title == "Hyper" {
+                    // SAFETY:
+                    // - eventmin and eventmax must be a valid range
+                    // - hmodwineventproc must be null when `WINEVENT_OUTOFCONTEXT` is specified
+                    // - pfnwineventproc must be a valid WINEVENTPROC function
+                    // - idprocess and idthread must be valid or 0
+                    UNMANAGED.location_hook.write().replace(SetWinEventHook(
+                        EVENT_OBJECT_LOCATIONCHANGE,
+                        EVENT_OBJECT_LOCATIONCHANGE,
+                        None,
+                        Some(win_event_proc),
+                        process_id,
+                        thread_id,
+                        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+                    ));
 
-                        UNMANAGED.send_event(WindowEvent::Show);
+                    UNMANAGED.send_event(WindowEvent::Show);
                     //} else {
                     //    UNMANAGED.send_event(WindowEvent::Hide);
                     //}
@@ -190,11 +201,11 @@ unsafe extern "system" fn win_event_proc(
                     let mut top = 0;
                     let mut width = 0;
                     let mut height = 0;
-                    if acc.accLocation(&mut left, &mut top, &mut width, &mut height, varchild).is_ok() {
-                        UNMANAGED.send_event(WindowEvent::Reposition {
-                            x: left,
-                            y: top,
-                        });
+                    if acc
+                        .accLocation(&mut left, &mut top, &mut width, &mut height, varchild)
+                        .is_ok()
+                    {
+                        UNMANAGED.send_event(WindowEvent::Reposition { x: left, y: top });
                     }
                 }
             }

@@ -1,8 +1,8 @@
 //! Utiities for IPC with Mac App
 
-use std::{time::Duration, fmt::Display};
+use std::time::Duration;
 
-use anyhow::{anyhow, Result};
+use anyhow::Result;
 use fig_proto::figterm::FigtermMessage;
 use flume::{
     unbounded,
@@ -18,7 +18,7 @@ use tracing::{
     trace,
 };
 
-pub async fn create_socket_listen(session_id: impl Display) -> Result<UnixListener> {
+pub async fn create_socket_listen(session_id: impl AsRef<str>) -> Result<UnixListener> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
 
     // Remove the socket so we can create a new one
@@ -29,7 +29,7 @@ pub async fn create_socket_listen(session_id: impl Display) -> Result<UnixListen
     Ok(dbg!(UnixListener::bind(&socket_path))?)
 }
 
-pub async fn remove_socket(session_id: impl Display) -> Result<()> {
+pub async fn remove_socket(session_id: impl AsRef<str>) -> Result<()> {
     let socket_path = fig_ipc::figterm::get_figterm_socket_path(session_id);
 
     if socket_path.exists() {
@@ -68,25 +68,23 @@ pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMes
     Ok(outgoing_tx)
 }
 
-pub async fn spawn_incoming_receiver(session_id: impl Display) -> Result<Receiver<FigtermMessage>> {
+pub async fn spawn_incoming_receiver(session_id: impl AsRef<str>) -> Result<Receiver<FigtermMessage>> {
     trace!("Spawning incoming receiver");
 
     let socket_listener = create_socket_listen(session_id).await?;
-    trace!("Created socket listener");
-
-    let (incomming_tx, incomming_rx) = unbounded();
+    let (incoming_tx, incoming_rx) = unbounded();
 
     tokio::spawn(async move {
         loop {
             if let Ok((mut stream, addr)) = socket_listener.accept().await {
                 trace!("Accepted connection from {:?}", addr);
-                let incomming_tx = incomming_tx.clone();
+                let incoming_tx = incoming_tx.clone();
                 tokio::spawn(async move {
                     loop {
                         match fig_ipc::recv_message::<FigtermMessage, _>(&mut stream).await {
                             Ok(Some(message)) => {
                                 debug!("Received message: {:?}", message);
-                                incomming_tx.clone().send_async(message).await.unwrap();
+                                incoming_tx.clone().send_async(message).await.unwrap();
                             },
                             Ok(None) => {
                                 debug!("Received EOF");
@@ -103,5 +101,5 @@ pub async fn spawn_incoming_receiver(session_id: impl Display) -> Result<Receive
         }
     });
 
-    Ok(incomming_rx)
+    Ok(incoming_rx)
 }
