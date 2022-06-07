@@ -37,6 +37,6 @@ regex = "1.5.4"
 rusqlite = { version = "0.27.0", features = ["bundled"] }
 sentry = { version = "0.26.0", features = ["anyhow"] }
 signal-hook = "0.3.13"
-tokio = { version = "1.19.1", features = ["full"] }
+tokio = { version = "1.19.2", features = ["full"] }
 tracing = "0.1.31"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
