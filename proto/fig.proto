@@ -39,6 +39,7 @@ message ClientOriginatedMessage {
       RunProcessRequest run_process_request = 130;
       MacosInputMethodRequest macos_input_method_request = 131;
       CreateDirectoryRequest create_directory_request = 132;
+      InstallRequest install_request = 133;
   }
 }
 
@@ -62,7 +63,8 @@ message ServerOriginatedMessage {
     GetLocalStateResponse get_local_state_response = 110;
     RunProcessResponse run_process_response = 111;
     MacosInputMethodResponse macos_input_method_response = 112;
-
+    InstallResponse install_response = 113;
+    
     Notification notification = 1000;
   }
 }
@@ -337,6 +339,33 @@ enum OnboardingAction {
 
 message OnboardingRequest {
   OnboardingAction action = 1;
+}
+
+/// Installation
+
+enum InstallComponent {
+  DOTFILES = 0;
+  IBUS     = 1;
+}
+
+enum InstallAction {
+  INSTALL_ACTION   = 0;
+  UNINSTALL_ACTION = 1;
+  STATUS_ACTION    = 2;
+}
+
+message InstallRequest {
+  InstallComponent component = 1;
+  InstallAction    action    = 2;
+}
+
+message InstallResponse {
+  enum InstallationStatus {
+    INSTALL_INSTALLED     = 0;
+    INSTALL_NOT_INSTALLED = 1;
+  }
+
+  InstallationStatus installation_status = 1;
 }
 
 /// Window Focus

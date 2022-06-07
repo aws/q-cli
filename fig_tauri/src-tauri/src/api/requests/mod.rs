@@ -2,6 +2,7 @@ mod debug;
 mod defaults;
 mod figterm;
 mod fs;
+mod install;
 mod notifications;
 mod onboarding;
 mod other;
@@ -144,6 +145,8 @@ pub async fn api_request(
                 PositionWindowRequest(request) => window::position_window(request, window_id.clone(), proxy).await,
                 // onboarding
                 OnboardingRequest(request) => onboarding::onboarding(request).await,
+                // install
+                InstallRequest(request) => install::install(request).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
                 unknown => {
