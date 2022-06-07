@@ -6311,9 +6311,9 @@ dependencies = [
 
 [[package]]
 name = "wry"
-version = "0.18.1"
+version = "0.18.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "434a873bb73c16365dc83ccc8a4d39f4b93344b82cdb90f76ffcfdf2bc76ca5b"
+checksum = "138e84a6f7f0ef90004a244a6dd4125b5fb78074b48c4369ab52b3cac68a863e"
 dependencies = [
  "block",
  "cocoa",
