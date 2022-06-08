@@ -72,7 +72,7 @@ pub async fn api_request(
                     window_id,
                     window_event: WindowEvent::Emit {
                         event: FIG_GLOBAL_ERROR_OCCURRED.into(),
-                        payload: format!("Failed to decode base64: {err}").into(),
+                        payload: format!("Failed to decode base64: {err}"),
                     },
                 })
                 .unwrap();
@@ -89,7 +89,7 @@ pub async fn api_request(
                     window_id,
                     window_event: WindowEvent::Emit {
                         event: FIG_GLOBAL_ERROR_OCCURRED.into(),
-                        payload: format!("Failed to decode proto: {err}").into(),
+                        payload: format!("Failed to decode proto: {err}"),
                     },
                 })
                 .unwrap();
@@ -120,7 +120,7 @@ pub async fn api_request(
         None => {
             let truncated = truncate_string(format!("{message:?}"), 150);
             warn!("Missing submessage: {truncated}");
-            RequestResult::error(format!("Missing submessage"))
+            RequestResult::error("Missing submessage")
         },
         Some(submessage) => {
             use ClientOriginatedSubMessage::*;
