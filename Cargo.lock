@@ -1448,17 +1448,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fig_ibus_engine"
-version = "0.1.0"
-dependencies = [
- "cc",
- "fig_ipc",
- "fig_proto",
- "parking_lot 0.12.1",
- "pkg-config",
-]
-
-[[package]]
 name = "fig_integrations"
 version = "0.1.0"
 dependencies = [

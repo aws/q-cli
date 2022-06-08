@@ -1,25 +1,26 @@
 //! CLI functionality
 
 pub mod app;
-pub mod debug;
-pub mod diagnostics;
-pub mod doctor;
-pub mod hook;
-pub mod init;
-pub mod installation;
-pub mod internal;
-pub mod invite;
-pub mod issue;
-pub mod man;
-pub mod plugins;
-pub mod settings;
-pub mod source;
-pub mod ssh;
-pub mod team;
-pub mod theme;
-pub mod tips;
-pub mod tweet;
-pub mod user;
+mod debug;
+mod diagnostics;
+mod doctor;
+mod hook;
+mod init;
+mod installation;
+mod internal;
+mod invite;
+mod issue;
+mod man;
+mod plugins;
+mod settings;
+mod snippet;
+mod source;
+mod ssh;
+mod team;
+mod theme;
+mod tips;
+mod tweet;
+mod user;
 
 use std::fs::File;
 use std::process::exit;
