@@ -1,21 +1,20 @@
-use fuzzy_matcher::clangd::ClangdMatcher;
+use anyhow::Result;
 use reqwest::Method;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 
 use crate::util::api::request;
-use serde::{Serialize, Deserialize};
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[serde(rename_all = "camelCase")]
 enum Generator {
     #[serde(rename_all = "camelCase")]
-    Named {
-        name: String,
-    },
+    Named { name: String },
     #[serde(rename_all = "camelCase")]
-    Script {
-        script: String,
-    }
+    Script { script: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -28,9 +27,7 @@ enum ParameterType {
         false_value_substitution: String,
     },
     #[serde(rename_all = "camelCase")]
-    Text {
-        placeholder: Option<String>,
-    },
+    Text { placeholder: Option<String> },
     #[serde(rename_all = "camelCase")]
     Selector {
         placeholder: Option<String>,
@@ -46,7 +43,7 @@ struct Parameter {
     display_name: Option<String>,
     description: Option<String>,
     #[serde(flatten)]
-    parameter_type: ParameterType
+    parameter_type: ParameterType,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -59,7 +56,17 @@ struct Snippet {
     parameters: Vec<Parameter>,
 }
 
-#[tokio::test]
-pub async fn test() {
-    let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await.unwrap();
+pub async fn execute() -> Result<()> {
+    let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
+
+    let mut snippet_names = vec![];
+    snippets.iter().map(|snippet| snippet_names.push(&snippet.name));
+
+    let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+        .items(&snippet_names)
+        .default(0)
+        .interact()
+        .unwrap();
+
+    Ok(())
 }

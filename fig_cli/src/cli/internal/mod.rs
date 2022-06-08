@@ -437,7 +437,7 @@ impl InternalSubcommand {
             },
             InternalSubcommand::AuthToken => {
                 println!("{}", get_token().await?);
-            }
+            },
         }
 
         Ok(())
