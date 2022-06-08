@@ -332,7 +332,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
 fn main() {
     let _sentry_guard =
         fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
-    let _logger_guard = fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
+    let _logger_guard = fig_log::init_logger("fig_desktop.log").expect("Failed to initialize logger");
 
     let cli = cli::Cli::parse();
 

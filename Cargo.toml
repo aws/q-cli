@@ -2,14 +2,14 @@
 members = [
     "fig_cli",
     "fig_ibus_engine",
-    "fig_tauri/src-tauri",
+    "fig_desktop",
     "figterm",
     "rust-lib/*"
 ]
 
 default-members = [
     "fig_cli",
-    "fig_tauri/src-tauri",
+    "fig_desktop",
     "figterm",
     "rust-lib/*",
 ]

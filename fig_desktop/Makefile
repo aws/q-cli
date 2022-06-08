@@ -40,7 +40,7 @@ SHELL := env PATH=$(PATH) /bin/bash
 CARGO_OPTIONS ?= --locked --release
 
 BINARY_NAME ?= fig_desktop
-CRATE_NAME  ?= fig_tauri
+CRATE_NAME  ?= fig_desktop
 
 ### Build for each platform
 

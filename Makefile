@@ -27,7 +27,7 @@ bin: fig_ibus_engine fig_desktop fig figterm
 	rm -f $(BUILT_PRODUCTS_DIR)/*-x86_64-unknown-linux-gnu
 
 fig_desktop:
-	$(MAKE) -C $(MAKE_DIR)/fig_tauri/src-tauri
+	$(MAKE) -C $(MAKE_DIR)/$@
 
 fig: fig_cli
 
@@ -42,10 +42,10 @@ fig_ibus_engine:
 
 icons:
 	for res in 16 22 24 32 48 64 128 256 512; do \
-	  install -Dm644 "fig_tauri/src-tauri/icons/$${res}x$${res}.png" \
+	  install -Dm644 "fig_desktop/icons/$${res}x$${res}.png" \
 			"$(BUILD_DIR)/usr/share/icons/hicolor/$${res}x$${res}/apps/fig.png" ; \
 	done
-	install -Dm644 fig_tauri/src-tauri/icons/512x512.png $(BUILD_DIR)/usr/share/pixmaps/fig.png
+	install -Dm644 fig_desktop/icons/512x512.png $(BUILD_DIR)/usr/share/pixmaps/fig.png
 
 bundle:
 	cp -r $(MAKE_DIR)/bundle/linux/. $(BUILD_DIR)
