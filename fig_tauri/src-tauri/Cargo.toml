@@ -41,7 +41,7 @@ percent-encoding = "2.1.0"
 serde_json = "1.0.79"
 serde = { version = "1.0.136", features = ["derive"] }
 shellexpand = "2.1.0"
-sysinfo = "0.23.13"
+sysinfo = "0.24.2"
 system_socket = { path = "../../rust-lib/system_socket" }
 tokio = { version = "1", features = [ "full" ] }
 tracing = "0.1.34"
