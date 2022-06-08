@@ -1,3 +1,4 @@
+use fuzzy_matcher::clangd::ClangdMatcher;
 use reqwest::Method;
 
 use crate::util::api::request;
@@ -60,6 +61,5 @@ struct Snippet {
 
 #[tokio::test]
 pub async fn test() {
-    let result: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await.unwrap();
-    println!("{result:?}");
+    let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await.unwrap();
 }

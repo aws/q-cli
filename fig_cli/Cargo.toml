@@ -21,6 +21,7 @@ ctrlc = "3.2.1"
 dialoguer = "0.10.0"
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
+fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
@@ -31,6 +32,7 @@ futures = "0.3.21"
 git2 = { version = "0.14", features = ["vendored-openssl", "vendored-libgit2"] }
 globset = "0.4.8"
 humantime = "2.1.0"
+native-dialog = "0.6.3"
 notify = "4.0.17"
 parking_lot = "0.12.1"
 rand = "0.8.5"
@@ -42,6 +44,8 @@ sentry = { version = "0.26.0", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 serde_with = "1.14.0"
+skim = "0.9.4"
+spinners = "4.0.0"
 sysinfo = "0.23.13"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
@@ -53,10 +57,7 @@ toml = "0.5.8"
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
 validator = "0.15.0"
-native-dialog = "0.6.3"
 viu = { path = "../rust-lib/viu" }
-spinners = "4.0.0"
-fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"
