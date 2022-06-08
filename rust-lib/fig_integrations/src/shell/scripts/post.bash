@@ -9,10 +9,10 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
-if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
-  unset FIG_DID_NOT_EXEC_FIGTERM
-  return
-fi
+# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
+#   unset FIG_DID_NOT_EXEC_FIGTERM
+#   return
+# fi
 
 export TTY=$(tty)
 
@@ -29,7 +29,7 @@ else
 fi
 
 # Construct Operating System Command.
-function fig_osc { printf "\033]697;%s\007" "${@:2}"; }
+function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
 
 function __fig_preexec() {
   fig_osc PreExec
