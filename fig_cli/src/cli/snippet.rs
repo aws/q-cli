@@ -58,15 +58,15 @@ struct Snippet {
 
 pub async fn execute() -> Result<()> {
     let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
-
-    let mut snippet_names = vec![];
-    snippets.iter().map(|snippet| snippet_names.push(&snippet.name));
+    let snippet_names: Vec<&str> = snippets.iter().map(|snippet| snippet.name.as_ref()).collect();
 
     let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
         .items(&snippet_names)
         .default(0)
         .interact()
         .unwrap();
+
+    println!("{:?}", snippets[selection]);
 
     Ok(())
 }
