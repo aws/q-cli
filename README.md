@@ -6,21 +6,21 @@ and CLI. Several projects live here:
 - `proto/` - [protocol buffer](https://developers.google.com/protocol-buffers/) message specification for inter-process communication
 - `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the user’s terminal edit buffer.
 - `fig_cli/` - the fig CLI, allows users to interface with Fig from the command line
-- `fig_desktop/` - the Rust desktop app (currently working on Linux, with work being done on MacOS/Windows)
+- `fig_desktop/` - the Rust desktop app (currently working on Linux, with work being done on MacOS/Windows), uses [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/) for windowing/webviews
 - `rust-lib/` - Rust libraries
-    - `alacritty_terminal` - Our internal fork of the alacritty internal terminal implementation, used for figterm ansi parsing and screen tracking
+    - `alacritty_terminal` - Our internal fork of the [alacritty internal terminal implementation](https://github.com/alacritty/alacritty/tree/master/alacritty_terminal), used for figterm ansi parsing and screen tracking
     - `fig_auth` - AWS credential management, mostly used for fetching the current auth token
     - `fig_color` - Used for figterm to parse colors in terminal output
-    - `fig_directories` - A wrapper over `dirs` that provides standard locations for fig folders
+    - `fig_directories` - A wrapper over [`dirs`](https://docs.rs/dirs/latest/dirs/) that provides standard locations for fig folders
     - `fig_integrations` - Fig's system integrations (ssh, dotfiles, etc)
-    - `fig_ipc` - 
-    - `fig_log` - Defines standard ways to log errors using tracing
+    - `fig_ipc` - Defines the fig wire protocol and standard locations for sockets
+    - `fig_log` - Defines standard ways to log errors using [`tracing`](https://docs.rs/tracing/latest/tracing/)
     - `fig_proto` - The protocol buffer definitions compiled to Rust
     - `fig_settings` - Utilities for interacting with figs remote/local settings and local state
-    - `fig_telemetry` - Used to report telemetry 
+    - `fig_telemetry` - Used to report telemetry to segment and [`sentry`](https://docs.rs/sentry/latest/sentry/)
     - `fig_util` - Misc other utilites that are useful in mutiple projects (Terminal, Shell enums, etc)
-    - `system_socket` - A light wrapper over UnixSockets that allows them to be used in Windows projects as well
-    - `viu` - An internal fork of viu to provide displaying of images in the terminal
+    - `system_socket` - A light wrapper over `UnixSockets` that allows them to be used in Windows projects as well
+    - `viu` - An internal fork of [`viu`](https://github.com/atanunq/viu) to provide displaying of images in the terminal
 - `typescript-api-bindings/` - The protocol buffer bindings for typescript
 - `fig/` - Core logic for the legacy macOS desktop app
 
