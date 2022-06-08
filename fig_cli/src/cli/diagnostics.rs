@@ -105,7 +105,7 @@ impl HardwareInfo {
                     memory: match_regex(r"Memory: (.+)", &text),
                 })
             } else {
-                use sysinfo::{System, SystemExt, ProcessorExt};
+                use sysinfo::{System, SystemExt, CpuExt};
 
                 let mut sys = System::new();
                 sys.refresh_cpu();
@@ -122,7 +122,7 @@ impl HardwareInfo {
                     memory: Some(format!("{} KB", sys.total_memory())),
                 };
 
-                if let Some(processor) = sys.processors().first() {
+                if let Some(processor) = sys.cpus().first() {
                     hardware_info.model_name = Some(processor.name().into());
                     hardware_info.model_identifier = Some(processor.vendor_id().into());
                     hardware_info.chip = Some(processor.brand().into());
