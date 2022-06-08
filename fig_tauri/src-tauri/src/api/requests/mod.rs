@@ -14,7 +14,6 @@ mod telemetry;
 mod window;
 
 use anyhow::Result;
-use bytes::BytesMut;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -23,7 +22,6 @@ use fig_proto::fig::{
 };
 use fig_proto::prost::Message;
 use tracing::{
-    debug,
     trace,
     warn,
 };
@@ -65,18 +63,16 @@ pub async fn api_request(
     global_state: &GlobalState,
     proxy: &EventLoopProxy,
 ) {
-    let data = base64::decode(client_originated_message_b64).unwrap();
-
-    let message = match ClientOriginatedMessage::decode(data.as_slice()) {
-        Ok(message) => message,
+    let data = match base64::decode(client_originated_message_b64) {
+        Ok(data) => data,
         Err(err) => {
-            warn!("Failed to decode request: {err}");
+            warn!("Failed to decode base64 from {window_id}: {err}");
             proxy
                 .send_event(Event::WindowEvent {
                     window_id,
                     window_event: WindowEvent::Emit {
                         event: FIG_GLOBAL_ERROR_OCCURRED.into(),
-                        payload: "Decode error".into(),
+                        payload: format!("Failed to decode base64: {err}").into(),
                     },
                 })
                 .unwrap();
@@ -84,16 +80,47 @@ pub async fn api_request(
         },
     };
 
-    debug!("{message:?}");
+    let message = match ClientOriginatedMessage::decode(data.as_slice()) {
+        Ok(message) => message,
+        Err(err) => {
+            warn!("Failed to decode proto from {window_id}: {err}");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id,
+                    window_event: WindowEvent::Emit {
+                        event: FIG_GLOBAL_ERROR_OCCURRED.into(),
+                        payload: format!("Failed to decode proto: {err}").into(),
+                    },
+                })
+                .unwrap();
+            return;
+        },
+    };
 
-    // TODO: return error
-    let message_id = message.id.unwrap();
+    trace!("Recieved message from {window_id}: {message:?}");
+
+    let message_id = match message.id {
+        Some(message_id) => message_id,
+        None => {
+            warn!("No message_id provided from {window_id}");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id,
+                    window_event: WindowEvent::Emit {
+                        event: FIG_GLOBAL_ERROR_OCCURRED.into(),
+                        payload: "No message_id provided".into(),
+                    },
+                })
+                .unwrap();
+            return;
+        },
+    };
 
     let response = match message.submessage {
         None => {
             let truncated = truncate_string(format!("{message:?}"), 150);
             warn!("Missing submessage: {truncated}");
-            RequestResult::error(format!("Missing submessage {truncated}"))
+            RequestResult::error(format!("Missing submessage"))
         },
         Some(submessage) => {
             use ClientOriginatedSubMessage::*;
@@ -143,53 +170,44 @@ pub async fn api_request(
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 // window
                 PositionWindowRequest(request) => window::position_window(request, window_id.clone(), proxy).await,
+                WindowFocusRequest(request) => window::focus(request, window_id.clone(), proxy).await,
                 // onboarding
                 OnboardingRequest(request) => onboarding::onboarding(request).await,
                 // install
                 InstallRequest(request) => install::install(request).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
-                unknown => {
-                    warn!("Missing handler: {unknown:?}");
-                    RequestResult::error(format!("Unknown submessage {unknown:?}"))
-                },
+                // GetConfigPropertyRequest(_) => todo!(),
+                // UpdateConfigPropertyRequest(_) => todo!(),
+                // PseudoterminalRestartRequest(_) => todo!(),
+                // TerminalSessionInfoRequest(_) => todo!(),
+                // ApplicationUpdateStatusRequest(_) => todo!(),
+                // MacosInputMethodRequest(_) => todo!(),
+                unknown => RequestResult::error(format!("Unknown submessage {unknown:?}")),
             }
         },
     };
 
-    trace!("response: {response:?}");
+    trace!("Sending response to {window_id}: {response:?}");
 
     let message = ServerOriginatedMessage {
         id: message.id,
         submessage: Some(match response {
             Ok(msg) => *msg,
             Err(msg) => {
-                warn!("Send error response: {msg}");
+                warn!("Send error response for {window_id}: {msg}");
                 ServerOriginatedSubMessage::Error(msg.to_string())
             },
         }),
     };
 
-    let mut encoded = BytesMut::new();
-    if message.encode(&mut encoded).is_err() {
-        proxy
-            .send_event(Event::WindowEvent {
-                window_id,
-                window_event: WindowEvent::Emit {
-                    event: FIG_GLOBAL_ERROR_OCCURRED.into(),
-                    payload: "Encode error".into(),
-                },
-            })
-            .unwrap();
-    } else {
-        proxy
-            .send_event(Event::WindowEvent {
-                window_id,
-                window_event: WindowEvent::Emit {
-                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
-                    payload: base64::encode(encoded),
-                },
-            })
-            .unwrap();
-    }
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id,
+            window_event: WindowEvent::Emit {
+                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                payload: base64::encode(message.encode_to_vec()),
+            },
+        })
+        .unwrap();
 }

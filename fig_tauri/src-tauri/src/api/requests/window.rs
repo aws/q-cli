@@ -1,10 +1,15 @@
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
+    FocusAction,
     PositionWindowRequest,
     PositionWindowResponse,
+    WindowFocusRequest,
 };
 
-use super::RequestResult;
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
 use crate::event::{
     Event,
     WindowEvent,
@@ -73,4 +78,20 @@ pub async fn position_window(
             is_clipped: Some(false),
         },
     )))
+}
+
+pub async fn focus(request: WindowFocusRequest, window_id: WindowId, proxy: &EventLoopProxy) -> RequestResult {
+    match request.r#type() {
+        FocusAction::TakeFocus => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id,
+                    window_event: WindowEvent::Show,
+                })
+                .unwrap();
+        },
+        FocusAction::ReturnFocus => todo!(),
+    }
+
+    RequestResult::success()
 }
