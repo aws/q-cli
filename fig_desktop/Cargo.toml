@@ -21,7 +21,7 @@ cfg-if = "1.0.0"
 clap = "3.1.0"
 dashmap = "5.3.4"
 fnv = "1.0.7"
-fig_auth = { path = "../rust-lib/fig_auth/" }
+fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }

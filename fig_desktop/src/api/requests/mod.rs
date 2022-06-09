@@ -21,6 +21,7 @@ use fig_proto::fig::{
     ServerOriginatedMessage,
 };
 use fig_proto::prost::Message;
+use fig_proto::ReflectMessage;
 use tracing::{
     trace,
     warn,
@@ -45,6 +46,7 @@ type RequestResult = Result<Box<ServerOriginatedSubMessage>>;
 trait RequestResultImpl {
     fn success() -> Self;
     fn error(msg: impl Into<String>) -> Self;
+    fn deprecated(message: impl ReflectMessage) -> Self;
 }
 
 impl RequestResultImpl for RequestResult {
@@ -54,6 +56,10 @@ impl RequestResultImpl for RequestResult {
 
     fn error(msg: impl Into<String>) -> Self {
         RequestResult::Ok(Box::new(ServerOriginatedSubMessage::Error(msg.into())))
+    }
+
+    fn deprecated(message: impl ReflectMessage) -> Self {
+        RequestResult::error(format!("{} is deprecated", message.descriptor().name()))
     }
 }
 
@@ -117,11 +123,6 @@ pub async fn api_request(
     };
 
     let response = match message.submessage {
-        None => {
-            let truncated = truncate_string(format!("{message:?}"), 150);
-            warn!("Missing submessage: {truncated}");
-            RequestResult::error("Missing submessage")
-        },
         Some(submessage) => {
             use ClientOriginatedSubMessage::*;
 
@@ -177,14 +178,19 @@ pub async fn api_request(
                 InstallRequest(request) => install::install(request).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
-                // GetConfigPropertyRequest(_) => todo!(),
-                // UpdateConfigPropertyRequest(_) => todo!(),
-                // PseudoterminalRestartRequest(_) => todo!(),
-                // TerminalSessionInfoRequest(_) => todo!(),
-                // ApplicationUpdateStatusRequest(_) => todo!(),
-                // MacosInputMethodRequest(_) => todo!(),
-                unknown => RequestResult::error(format!("Unknown submessage {unknown:?}")),
+                // depercated
+                GetConfigPropertyRequest(request) => RequestResult::deprecated(request),
+                UpdateConfigPropertyRequest(request) => RequestResult::deprecated(request),
+                PseudoterminalRestartRequest(request) => RequestResult::deprecated(request),
+                TerminalSessionInfoRequest(request) => RequestResult::deprecated(request),
+                ApplicationUpdateStatusRequest(request) => RequestResult::deprecated(request),
+                MacosInputMethodRequest(request) => RequestResult::deprecated(request),
             }
+        },
+        None => {
+            let truncated = truncate_string(format!("{message:?}"), 150);
+            warn!("Missing submessage: {truncated}");
+            RequestResult::error("Missing submessage")
         },
     };
 

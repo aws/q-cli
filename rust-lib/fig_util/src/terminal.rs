@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::fmt;
 
 use serde::{
     Deserialize,
@@ -7,12 +8,15 @@ use serde::{
 
 pub const MACOS_TERMINALS: &[Terminal] = &[];
 pub const LINUX_TERMINALS: &[Terminal] = &[
+    Terminal::Vscode,
+    Terminal::VSCodeInsiders,
     Terminal::GnomeTerminal,
     Terminal::Konsole,
     Terminal::Tilix,
     Terminal::Alacritty,
     Terminal::Kitty,
     Terminal::XfceTerminal,
+    Terminal::Terminator,
 ];
 
 /// Terminals supported by Fig
@@ -49,10 +53,12 @@ pub enum Terminal {
     Tilix,
     /// Xfce Terminal
     XfceTerminal,
+    /// Terminator
+    Terminator,
 }
 
-impl std::fmt::Display for Terminal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Terminal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Terminal::Iterm => write!(f, "iTerm 2"),
             Terminal::TerminalApp => write!(f, "macOS"),
@@ -69,6 +75,7 @@ impl std::fmt::Display for Terminal {
             Terminal::Konsole => write!(f, "Konsole"),
             Terminal::Tilix => write!(f, "Tilix"),
             Terminal::XfceTerminal => write!(f, "Xfce Terminal"),
+            Terminal::Terminator => write!(f, "Terminator"),
         }
     }
 }
@@ -91,6 +98,7 @@ impl Terminal {
                 _ => None,
             },
         }
+        // TODO(grant): Improve this for Linux, it currently is not very accurate
     }
 
     pub fn internal_id(&self) -> String {
@@ -113,6 +121,7 @@ impl Terminal {
             Terminal::Konsole => "konsole".into(),
             Terminal::Tilix => "tilix".into(),
             Terminal::XfceTerminal => "xfce-terminal".into(),
+            Terminal::Terminator => "terminator".into(),
         }
     }
 
@@ -134,11 +143,14 @@ impl Terminal {
             Terminal::Konsole => todo!(),
             Terminal::Tilix => todo!(),
             Terminal::XfceTerminal => todo!(),
+            Terminal::Terminator => todo!(),
         }
     }
 
     pub fn executable_name(&self) -> Option<Cow<'static, str>> {
         match self {
+            Terminal::Vscode => Some("code".into()),
+            Terminal::VSCodeInsiders => Some("code-insiders".into()),
             Terminal::Alacritty => Some("alacritty".into()),
             Terminal::Kitty => Some("kitty".into()),
             Terminal::GnomeTerminal => Some("gnome-terminal-server".into()),
@@ -151,12 +163,15 @@ impl Terminal {
 
     pub fn wm_class(&self) -> Option<Cow<'static, str>> {
         match self {
+            Terminal::Vscode => Some("Code".into()),
+            Terminal::VSCodeInsiders => Some("Vscode-insiders".into()),
             Terminal::GnomeTerminal => Some("Gnome-terminal".into()),
             Terminal::Konsole => Some("konsole".into()),
             Terminal::Tilix => Some("Tilix".into()),
             Terminal::Alacritty => Some("Alacritty".into()),
             Terminal::Kitty => Some("kitty".into()),
             Terminal::XfceTerminal => Some("Xfce4-terminal".into()),
+            Terminal::Terminator => Some("Terminator".into()),
             _ => None,
         }
     }
