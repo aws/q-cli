@@ -2,6 +2,7 @@ use wry::application::event_loop::ControlFlow;
 
 use crate::window::WindowId;
 
+#[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
 pub enum Event {
     WindowEvent {
@@ -9,6 +10,7 @@ pub enum Event {
         window_event: WindowEvent,
     },
     ControlFlow(ControlFlow),
+    RefreshDebugger,
 }
 
 #[derive(Debug)]
