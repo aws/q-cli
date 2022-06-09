@@ -50,7 +50,7 @@ time = { version = "0.3.9", features = ["serde-human-readable", "local-offset", 
 tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 toml = "0.5.8"
-tracing = "0.1.32"
+tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
 validator = "0.15.0"
 native-dialog = "0.6.3"
