@@ -1,4 +1,4 @@
-use anyhow::Result;
+use anyhow::{anyhow, Result};
 use reqwest::Method;
 use serde::{
     Deserialize,
@@ -56,17 +56,32 @@ struct Snippet {
     parameters: Vec<Parameter>,
 }
 
-pub async fn execute() -> Result<()> {
+pub async fn execute(name: Option<String>) -> Result<()> {
     let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
-    let snippet_names: Vec<&str> = snippets.iter().map(|snippet| snippet.name.as_ref()).collect();
 
-    let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-        .items(&snippet_names)
-        .default(0)
-        .interact()
-        .unwrap();
+    let snippet = match name {
+        Some(name) => match snippets.iter().find(|snippet| snippet.name == name) {
+            Some(snippet) => snippet,
+            None => return Err(anyhow!("No snippet with name: {}", name)),
+        },
+        None => {
+            let snippet_names: Vec<&str> = snippets.iter().map(|snippet| snippet.name.as_ref()).collect();
+            let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+                .items(&snippet_names)
+                .default(0)
+                .interact()
+                .unwrap();
+            &snippets[selection]
+        }
+    };
 
-    println!("{:?}", snippets[selection]);
+    //for param in &snippet.parameters {
+    //    match &param.parameter_type {
+    //        ParameterType::Checkbox { true_value_substitution, false_value_substitution } => todo!(),
+    //        ParameterType::Text { placeholder } => todo!(),
+    //        ParameterType::Selector { placeholder, suggestions, generators } => todo!(),
+    //    }
+    //}
 
     Ok(())
 }

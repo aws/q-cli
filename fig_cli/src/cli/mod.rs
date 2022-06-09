@@ -207,7 +207,9 @@ pub enum CliRootCommands {
     Man {
         command: Vec<String>,
     },
-    Snippet,
+    Snippet { 
+        name: Option<String>,
+    },
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -365,7 +367,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Snippet => snippet::execute().await,
+                CliRootCommands::Snippet { name } => snippet::execute(name).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
