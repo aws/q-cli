@@ -65,25 +65,14 @@ fn main() -> Result<(), std::io::Error> {
                 .with_padding_left(1)
                 .with_padding_right(1),
         )
-        .with_style(
-            "label",
-            Style::new()
-                .with_color(Color::Cyan),
-        )
-        .with_style(
-            "select",
-            Style::new()
-        )
+        .with_style("label", Style::new().with_color(Color::Cyan))
+        .with_style("select", Style::new())
         .with_style("textfield", Style::default())
         .with_style(".my_border", Style::default());
 
     let mut message = TextField::new().with_hint("message");
     let mut remote = Select::new(&["origin"]);
-    let mut branch = Select::new(&[
-        "origin/main",
-        "origin/my-happy-branch",
-        "origin/the-carp-stands-up",
-    ]);
+    let mut branch = Select::new(&["origin/main", "origin/my-happy-branch", "origin/the-carp-stands-up"]);
 
     EventLoop::new()
         .with_style_sheet(&style_sheet)
@@ -91,10 +80,7 @@ fn main() -> Result<(), std::io::Error> {
             ControlFlow::Wait,
             DisplayMode::AlternateScreen,
             &mut Form::new([
-                &mut Container::new([
-                    &mut Label::new("commit message:"),
-                    &mut message,
-                ]),
+                &mut Container::new([&mut Label::new("commit message:"), &mut message]),
                 &mut Container::new([&mut Label::new("remote:"), &mut remote]),
                 &mut Container::new([&mut Label::new("branch:"), &mut branch]),
             ])

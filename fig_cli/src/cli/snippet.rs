@@ -1,4 +1,7 @@
-use anyhow::{anyhow, Result};
+use anyhow::{
+    anyhow,
+    Result,
+};
 use reqwest::Method;
 use serde::{
     Deserialize,
@@ -72,10 +75,10 @@ pub async fn execute(name: Option<String>) -> Result<()> {
                 .interact()
                 .unwrap();
             &snippets[selection]
-        }
+        },
     };
 
-    //for param in &snippet.parameters {
+    // for param in &snippet.parameters {
     //    match &param.parameter_type {
     //        ParameterType::Checkbox { true_value_substitution, false_value_substitution } => todo!(),
     //        ParameterType::Text { placeholder } => todo!(),

@@ -207,7 +207,7 @@ pub enum CliRootCommands {
     Man {
         command: Vec<String>,
     },
-    Snippet { 
+    Snippet {
         name: Option<String>,
     },
     /// (LEGACY) Old hook that was being used somewhere

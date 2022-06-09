@@ -69,7 +69,7 @@ fn main() -> Result<(), std::io::Error> {
     };
 
     let selection_border = BorderStyle::Ascii {
-        top_left: ' ',  
+        top_left: ' ',
         top: ' ',
         top_right: ' ',
         left: '▸',

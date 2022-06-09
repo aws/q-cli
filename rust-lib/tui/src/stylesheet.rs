@@ -1,6 +1,11 @@
 use std::collections::HashMap;
 use std::fmt;
-use crate::{Style, StyleContext, Component};
+
+use crate::{
+    Component,
+    Style,
+    StyleContext,
+};
 
 #[derive(Debug, Default)]
 pub struct StyleSheet(HashMap<String, Style>);
@@ -35,7 +40,6 @@ impl fmt::Display for PseudoElement {
     }
 }
 
-
 impl StyleSheet {
     pub fn new() -> Self {
         Self::default()
@@ -49,9 +53,12 @@ impl StyleSheet {
     }
 
     pub fn get_computed_style(&self, selector: impl AsRef<str>, context: StyleContext) -> Style {
-        let pseudo_class = if context.focused { Some(PseudoClass::Focus)} else { None };
-        let computed_selector = Style::selector_for(selector.as_ref(),
-            None, pseudo_class, None);
+        let pseudo_class = if context.focused {
+            Some(PseudoClass::Focus)
+        } else {
+            None
+        };
+        let computed_selector = Style::selector_for(selector.as_ref(), None, pseudo_class, None);
 
         match self.0.get(&computed_selector) {
             Some(style) => *style,
@@ -73,32 +80,25 @@ impl StyleSheet {
     // element.class:focus
 
     fn inherit_style_from(&self, mut elements: Vec<&str>, inline_style: Option<Style>, context: StyleContext) -> Style {
-       match elements.pop() {
-           Some(elm) => {
+        match elements.pop() {
+            Some(elm) => {
+                let mut style = self.inherit_style_from(elements, None, context);
 
-               let mut style = self.inherit_style_from(elements, None, context);
+                style = style.apply(self.get_style(elm));
 
-               style = style.apply(self.get_style(elm));
+                match inline_style {
+                    Some(inline_style) => style = style.apply(inline_style),
+                    None => (),
+                }
 
-               match inline_style {
-                   Some(inline_style) => {
-                       style = style.apply(inline_style)
-                   },
-                   None => {
-                       ()
-                   }
-               }
+                if context.focused {
+                    style = style.apply(self.get_style(Style::selector_for(elm, None, Some(PseudoClass::Focus), None)))
+                }
 
-               if context.focused {
-                   style = style.apply(self.get_style(Style::selector_for(elm,
-                                                        None, Some(PseudoClass::Focus), None)))
-               }
-
-               style
-               
-           },
-           None => Default::default()
-       }
+                style
+            },
+            None => Default::default(),
+        }
     }
 
     pub fn get_style_for_element(&self, element: &str, inline_style: Option<Style>, context: StyleContext) -> Style {
@@ -120,8 +120,17 @@ impl StyleSheet {
         self.get_style_for_element(component.class(), component.inline_style(), context)
     }
 
-    pub fn get_style_for_component_with_class(&self, component: &impl  Component, class: &str, context: StyleContext) -> Style {
-        let pseudo_class = if context.focused { Some(PseudoClass::Focus)} else { None };
+    pub fn get_style_for_component_with_class(
+        &self,
+        component: &impl Component,
+        class: &str,
+        context: StyleContext,
+    ) -> Style {
+        let pseudo_class = if context.focused {
+            Some(PseudoClass::Focus)
+        } else {
+            None
+        };
         let class_style = self.get_style(Style::selector_for(class, None, pseudo_class, None));
         self.get_style_for_component(component, context).apply(class_style)
     }

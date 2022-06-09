@@ -22,7 +22,7 @@ pub trait Component {
     fn class(&self) -> &str;
 
     fn inline_style(&self) -> Option<Style> {
-         None
+        None
     }
 
     fn style(&self, style_sheet: &StyleSheet, context: StyleContext) -> Style {
