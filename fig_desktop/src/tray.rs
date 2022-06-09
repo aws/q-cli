@@ -1,8 +1,8 @@
 use cfg_if::cfg_if;
+use tracing::trace;
 use wry::application::event_loop::ControlFlow;
 use wry::application::menu::{
     ContextMenu,
-    CustomMenuItem,
     MenuId,
     MenuItem,
     MenuItemAttributes,
@@ -16,47 +16,30 @@ use crate::event::{
 use crate::{
     EventLoop,
     EventLoopProxy,
+    GlobalState,
     AUTOCOMPLETE_ID,
 };
 
-struct TrayElement {
-    item: CustomMenuItem,
-    event: Box<dyn Fn(&EventLoopProxy)>,
-}
-
-pub struct Tray {
-    elements: Vec<TrayElement>,
-}
-
-impl Tray {
-    pub fn handle_event(&self, id: MenuId, proxy: &EventLoopProxy) {
-        for TrayElement { item, event } in &self.elements {
-            if item.clone().id() == id {
-                event(proxy);
-            }
-        }
+pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
+    match id {
+        id if id == MenuId::new("debugger-refresh") => {
+            proxy.send_event(Event::RefreshDebugger).unwrap();
+        },
+        id if id == MenuId::new("toggle-devtools") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::Devtools,
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("quit") => {
+            proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
+        },
+        id => {
+            trace!("Unhandled tray event: {id:?}");
+        },
     }
-}
-
-pub fn create_tray(event_loop: &EventLoop) -> wry::Result<Tray> {
-    let mut tray_menu = ContextMenu::new();
-    let elements = create_tray_menu(&mut tray_menu);
-
-    cfg_if!(
-        if #[cfg(target_os = "linux")] {
-            let icon = "/usr/share/icons/hicolor/32x32/apps/fig.png".into();
-        } else if #[cfg(target_os = "macos")] {
-            // TODO: use transparent white icon
-            let icon = include_bytes!("../icons/32x32.png").to_vec();
-        } else if #[cfg(target_os = "windows")] {
-            let icon = include_bytes!("../icons/icon.ico").to_vec();
-        } else {
-            compile_error!("Unsupported platform");
-        }
-    );
-
-    SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?;
-    Ok(Tray { elements })
 }
 
 // pub fn handle_tray_event(
@@ -86,152 +69,109 @@ pub fn create_tray(event_loop: &EventLoop) -> wry::Result<Tray> {
 //    }
 // }
 
-fn create_tray_menu(tray_menu: &mut ContextMenu) -> Vec<TrayElement> {
-    let mut v = vec![];
+pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Result<()> {
+    let mut tray_menu = ContextMenu::new();
+
+    create_tray_menu(&mut tray_menu, global_state);
+
+    cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            let icon = "/usr/share/icons/hicolor/32x32/apps/fig.png".into();
+        } else if #[cfg(target_os = "macos")] {
+            // TODO: use transparent white icon
+            let icon = include_bytes!("../icons/32x32.png").to_vec();
+        } else if #[cfg(target_os = "windows")] {
+            let icon = include_bytes!("../icons/icon.ico").to_vec();
+        } else {
+            compile_error!("Unsupported platform");
+        }
+    );
+
+    SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?;
+    Ok(())
+}
+
+fn create_tray_menu(tray_menu: &mut ContextMenu, global_state: &GlobalState) {
+    let figterm_session = global_state.figterm_state.most_recent_session();
+
+    // Debugger Menu
+
+    let debugger_status = match figterm_session {
+        Some(_) => "Fig is running as expected",
+        None => "Fig can't link your terminal window to the TTY",
+    };
 
     let mut debugger_menu = ContextMenu::new();
     debugger_menu.add_item(
-        MenuItemAttributes::new("Fig can't link your terminal window to the TTY")
+        MenuItemAttributes::new(debugger_status)
             .with_id(MenuId::new("debugger-status"))
             .with_enabled(false),
     );
+
     debugger_menu.add_native_item(MenuItem::Separator);
+
+    // Debugger Menu Elements
+
+    macro_rules! context_debugger {
+        ($menu_elem:expr, $fmt_str:expr, $func:ident) => {{
+            let tty_text = format!(
+                $fmt_str,
+                match figterm_session.as_ref().and_then(|session| session.context.as_ref()) {
+                    Some(context) => context.$func().to_string().trim().to_string(),
+                    None => "None".to_string(),
+                }
+            );
+
+            debugger_menu.add_item(
+                MenuItemAttributes::new(&tty_text)
+                    .with_id(MenuId::new($menu_elem.into()))
+                    .with_enabled(false),
+            );
+        }};
+    }
+
+    context_debugger!("debugger-tty", "tty: {}", ttys);
+    context_debugger!("debugger-cwd", "cwd: {}", current_working_directory);
+    context_debugger!("debugger-pid", "pid: {}", pid);
+
+    let keybuffer_text = format!("keybuffer: {}", match figterm_session.as_ref() {
+        Some(session) => {
+            let mut edit_buffer = session.edit_buffer.text.clone();
+            if let Ok(cursor) = session.edit_buffer.cursor.try_into() {
+                edit_buffer.insert(cursor, '|');
+            }
+            edit_buffer
+        },
+        None => "None".to_string(),
+    });
+
     debugger_menu.add_item(
-        MenuItemAttributes::new("window: None")
-            .with_id(MenuId::new("debugger-window"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("tty: None")
-            .with_id(MenuId::new("debugger-tty"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("cwd: None")
-            .with_id(MenuId::new("debugger-cwd"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("pid: None")
-            .with_id(MenuId::new("debugger-pid"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("keybuffer: None")
+        MenuItemAttributes::new(&keybuffer_text)
             .with_id(MenuId::new("debugger-keybuffer"))
             .with_enabled(false),
     );
+
+    context_debugger!("debugger-hostname", "hostname: {}", hostname);
+    context_debugger!("debugger-terminal", "terminal: {}", terminal);
+    context_debugger!("debugger-process", "process: {}", process_name);
+
+    let api_message = format!("api-message: {}", match &*global_state.debug_state.debug_lines.read() {
+        v if !v.is_empty() => v.join(" | "),
+        _ => "None".to_string(),
+    });
+
     debugger_menu.add_item(
-        MenuItemAttributes::new("hostname: None")
-            .with_id(MenuId::new("debugger-hostname"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("terminal: None")
-            .with_id(MenuId::new("debugger-terminal"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("process: None")
-            .with_id(MenuId::new("debugger-process"))
-            .with_enabled(false),
-    );
-    debugger_menu.add_item(
-        MenuItemAttributes::new("api-message: None")
+        MenuItemAttributes::new(&api_message)
             .with_id(MenuId::new("debugger-api-message"))
             .with_enabled(false),
     );
+
     debugger_menu.add_native_item(MenuItem::Separator);
     debugger_menu.add_item(MenuItemAttributes::new("Manually Refresh Menu").with_id(MenuId::new("debugger-refresh")));
 
     tray_menu.add_submenu("Debugger", true, debugger_menu);
 
-    v.push(TrayElement {
-        item: tray_menu.add_item(MenuItemAttributes::new("Toggle Devtools").with_id(MenuId::new("toggle-devtools"))),
-        event: Box::new(|proxy| {
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: AUTOCOMPLETE_ID,
-                    window_event: WindowEvent::Devtools,
-                })
-                .unwrap();
-        }),
-    });
+    tray_menu.add_item(MenuItemAttributes::new("Toggle Devtools").with_id(MenuId::new("toggle-devtools")));
 
-    v.push(TrayElement {
-        item: tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit"))),
-        event: Box::new(|proxy| {
-            proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
-        }),
-    });
-
-    v
+    tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit")));
 }
-
-// fn update_tray_menu(debug_state: &DebugState, figterm_state: &FigtermState) -> Result<(),
-// tauri::Error> {
-//
-//    let figterm_session = figterm_state.most_recent_session();
-//
-//    match figterm_session {
-//        Some(_) => {
-//            app.tray_handle()
-//                .get_item("debugger-status")
-//                .set_title("Fig is running as expected")?;
-//        },
-//        None => {
-//            app.tray_handle()
-//                .get_item("debugger-status")
-//                .set_title("Fig can't link your terminal window to the TTY")?;
-//        },
-//    }
-//
-//    macro_rules! context_debugger {
-//        ($menu_elem:expr, $fmt_str:expr, $func:ident) => {{
-//            let tty_text = format!(
-//                $fmt_str,
-//                match figterm_session.as_ref().and_then(|session| session.context.as_ref()) {
-//                    Some(context) => context.$func().to_string().trim().to_string(),
-//                    None => "None".to_string(),
-//                }
-//            );
-//
-//            app.tray_handle().get_item($menu_elem).set_title(tty_text)?;
-//        }};
-//    }
-//
-//    context_debugger!("debugger-tty", "tty: {}", ttys);
-//    context_debugger!("debugger-cwd", "cwd: {}", current_working_directory);
-//    context_debugger!("debugger-pid", "pid: {}", pid);
-//    context_debugger!("debugger-hostname", "hostname: {}", hostname);
-//    context_debugger!("debugger-terminal", "terminal: {}", terminal);
-//    context_debugger!("debugger-process", "process: {}", process_name);
-//
-//    let keybuffer_text = format!("keybuffer: {}", match figterm_session.as_ref() {
-//        Some(session) => {
-//            let mut edit_buffer = session.edit_buffer.text.clone();
-//            if let Ok(cursor) = session.edit_buffer.cursor.try_into() {
-//                edit_buffer.insert(cursor, '|');
-//            }
-//            edit_buffer
-//        },
-//        None => "None".to_string(),
-//    });
-//
-//    app.tray_handle()
-//        .get_item("debugger-keybuffer")
-//        .set_title(keybuffer_text)?;
-//
-//    let api_message = format!("api-message: {}", match &*debug_state.debug_lines.read() {
-//        v if !v.is_empty() => v.join(" | "),
-//        _ => "None".to_string(),
-//    });
-//
-//    app.tray_handle()
-//        .get_item("debugger-api-message")
-//        .set_title(api_message)?;
-//
-//    trace!("Updating tray menu");
-//
-//    Ok(())
-//}

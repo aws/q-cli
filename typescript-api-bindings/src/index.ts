@@ -13,6 +13,7 @@ import * as Config from './config';
 import * as Native from './native';
 import * as Debugger from './debugger';
 import * as State from './state';
+import * as Install from './install';
 
 import * as Fig from './fig.pb';
 import * as Internal from './requests';
@@ -33,7 +34,8 @@ const lib = {
   State,
   Telemetry,
   WindowPosition,
-  fs
+  fs,
+  Install
 };
 
 export {
@@ -53,7 +55,8 @@ export {
   State,
   Telemetry,
   WindowPosition,
-  fs
+  fs,
+  Install
 };
 
 declare global {

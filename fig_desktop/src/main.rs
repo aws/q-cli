@@ -45,7 +45,7 @@ use tracing::{
     trace,
     warn,
 };
-use tray::create_tray;
+use tray::build_tray;
 use url::Url;
 use window::{
     WindowId,
@@ -168,9 +168,9 @@ impl WebviewManager {
             }
         });
 
-        let tray = create_tray(&self.event_loop).unwrap();
-        let proxy = self.event_loop.create_proxy();
+        build_tray(&self.event_loop, &self.global_state).unwrap();
 
+        let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
 
@@ -189,9 +189,7 @@ impl WebviewManager {
                     menu_id,
                     origin: MenuType::ContextMenu,
                     ..
-                } => {
-                    tray.handle_event(menu_id, &proxy);
-                },
+                } => tray::handle_event(menu_id, &proxy),
                 WryEvent::UserEvent(event) => {
                     trace!("Executing user event: {event:?}");
                     match event {
@@ -206,6 +204,9 @@ impl WebviewManager {
                         },
                         Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
+                        },
+                        Event::RefreshDebugger => {
+                            // TODO(grant): Refresh the debugger
                         },
                     }
                 },

@@ -147,6 +147,16 @@ message Window {
   optional Screen current_screen = 5;
 }
 
+message Result {
+  enum ResultEnum {
+    RESULT_OK = 0;
+    RESULT_ERROR = 1;
+  }
+  
+  ResultEnum result = 1;
+  optional string error = 2;
+} 
+
 /// Requests
 
 message TextUpdate {
@@ -365,7 +375,10 @@ message InstallResponse {
     INSTALL_NOT_INSTALLED = 1;
   }
 
-  InstallationStatus installation_status = 1;
+  oneof response {
+    Result             result              = 1;
+    InstallationStatus installation_status = 2;
+  }
 }
 
 /// Window Focus
