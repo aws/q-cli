@@ -79,10 +79,10 @@ fn main() -> Result<(), std::io::Error> {
         .run::<std::io::Error, _>(
             ControlFlow::Wait,
             DisplayMode::AlternateScreen,
-            &mut Form::new([
-                &mut Container::new([&mut Label::new("commit message:"), &mut message]),
-                &mut Container::new([&mut Label::new("remote:"), &mut remote]),
-                &mut Container::new([&mut Label::new("branch:"), &mut branch]),
+            &mut Form::new(vec![
+                &mut Container::new(vec![&mut Label::new("commit message:"), &mut message]),
+                &mut Container::new(vec![&mut Label::new("remote:"), &mut remote]),
+                &mut Container::new(vec![&mut Label::new("branch:"), &mut branch]),
             ])
             .with_height(40),
         )?;

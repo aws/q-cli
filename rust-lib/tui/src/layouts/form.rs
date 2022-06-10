@@ -14,18 +14,18 @@ use crate::{
     StyleSheet,
 };
 
-pub struct Form<'a, const N: usize> {
+pub struct Form<'a> {
     cursor: usize,
-    components: [&'a mut dyn Component; N],
+    components: Vec<&'a mut dyn Component>,
     style: Style,
 }
 
-impl<'a, const N: usize> Form<'a, N> {
+impl<'a> Form<'a> {
     pub const STYLE_CLASS: &'static str = "div";
 
     stylable!();
 
-    pub fn new(components: [&'a mut dyn Component; N]) -> Self {
+    pub fn new(components: Vec<&'a mut dyn Component>) -> Self {
         Self {
             cursor: Default::default(),
             components,
@@ -34,7 +34,7 @@ impl<'a, const N: usize> Form<'a, N> {
     }
 }
 
-impl<const N: usize> Component for Form<'_, N> {
+impl Component for Form<'_> {
     fn update(
         &mut self,
         renderer: &mut DisplayState,
@@ -89,6 +89,7 @@ impl<const N: usize> Component for Form<'_, N> {
                 mut height,
             } => {
                 let style = self.style(style_sheet, ctx);
+
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
                 let mut acc = 0;
@@ -112,7 +113,7 @@ impl<const N: usize> Component for Form<'_, N> {
                 if self.interactive() {
                     match code {
                         newton::KeyCode::Esc => *control_flow = ControlFlow::Exit,
-                        newton::KeyCode::Tab | newton::KeyCode::Enter => loop {
+                        newton::KeyCode::Tab => loop {
                             let cursor = (self.cursor + 1) % self.components.len();
                             match self.components.get(cursor) {
                                 Some(component) => {
@@ -122,6 +123,21 @@ impl<const N: usize> Component for Form<'_, N> {
                                     }
                                 },
                                 None => break,
+                            }
+                        },
+                        newton::KeyCode::Enter => loop {
+                            let cursor = self.cursor + 1;
+                            match self.components.get(cursor) {
+                                Some(component) => {
+                                    self.cursor = cursor;
+                                    if component.interactive() {
+                                        break;
+                                    }
+                                },
+                                None => {
+                                    *control_flow = ControlFlow::Exit;
+                                    break;
+                                },
                             }
                         },
                         newton::KeyCode::BackTab => loop {

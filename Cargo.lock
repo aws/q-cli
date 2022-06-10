@@ -1494,6 +1494,7 @@ dependencies = [
  "toml",
  "tracing",
  "tracing-subscriber",
+ "tui",
  "validator",
  "viu",
  "windows",

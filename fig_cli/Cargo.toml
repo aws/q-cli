@@ -55,6 +55,7 @@ tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"]
 toml = "0.5.8"
 tracing = "0.1.32"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
+tui = { path = "../rust-lib/tui" }
 validator = "0.15.0"
 viu = { path = "../rust-lib/viu" }
 

@@ -120,8 +120,8 @@ impl<T: Component> Component for Disclosure<T> {
 
                 let chevron_style = style.apply(style_sheet.get_computed_style("disclosure.chevron", context));
 
-                style.height = Some(self.desired_height(style_sheet, context));
                 style.width = Some(self.desired_width(style_sheet, context));
+                style.height = Some(self.desired_height(style_sheet, context));
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
                 let chevron = self.chevron_icon(focused);
@@ -131,7 +131,7 @@ impl<T: Component> Component for Disclosure<T> {
                     .update(renderer, style_sheet, control_flow, focused, Event::Draw {
                         x: x + 2,
                         y,
-                        width: width - 2,
+                        width: self.summary.desired_width(style_sheet, context).min(width - 2),
                         height: self.summary.desired_height(style_sheet, context).min(height),
                     });
 
@@ -140,8 +140,8 @@ impl<T: Component> Component for Disclosure<T> {
                         .update(renderer, style_sheet, control_flow, focused, Event::Draw {
                             x: x + 2,
                             y: y + 1,
-                            width: self.details.desired_width(style_sheet, context).min(width) - 2,
-                            height: self.details.desired_height(style_sheet, context).min(height),
+                            width: self.details.desired_width(style_sheet, context).min(width - 2),
+                            height: self.details.desired_height(style_sheet, context).min(height - 1),
                         });
                 }
             },
@@ -170,8 +170,8 @@ impl<T: Component> Component for Disclosure<T> {
         self.style(style_sheet, context).spacing_horizontal()
             + 3
             + [
-                self.details.desired_width(style_sheet, context),
                 self.summary.desired_width(style_sheet, context),
+                self.details.desired_width(style_sheet, context),
             ]
             .iter()
             .fold(0, |acc, desired_width| acc.max(*desired_width))

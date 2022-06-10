@@ -14,18 +14,18 @@ use crate::{
     StyleSheet,
 };
 
-pub struct Container<'a, const N: usize> {
+pub struct Container<'a> {
     cursor: usize,
-    components: [&'a mut dyn Component; N],
+    components: Vec<&'a mut dyn Component>,
     style: Style,
 }
 
-impl<'a, const N: usize> Container<'a, N> {
+impl<'a> Container<'a> {
     pub const STYLE_CLASS: &'static str = "div";
 
     stylable!();
 
-    pub fn new(components: [&'a mut dyn Component; N]) -> Self {
+    pub fn new(components: Vec<&'a mut dyn Component>) -> Self {
         Self {
             cursor: Default::default(),
             components,
@@ -34,7 +34,7 @@ impl<'a, const N: usize> Container<'a, N> {
     }
 }
 
-impl<const N: usize> Component for Container<'_, N> {
+impl Component for Container<'_> {
     fn update(
         &mut self,
         renderer: &mut DisplayState,
