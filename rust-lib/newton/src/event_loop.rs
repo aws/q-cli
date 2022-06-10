@@ -47,6 +47,11 @@ pub enum ControlFlow {
 pub struct EventLoop {
     out: Stdout,
 }
+impl Default for EventLoop {
+    fn default() -> Self {
+        Self::new()
+    }
+}
 
 impl EventLoop {
     pub fn new() -> Self {
@@ -132,6 +137,7 @@ impl EventLoop {
 
         disable_raw_mode()?;
 
+        #[allow(clippy::single_match)]
         match display_mode {
             DisplayMode::AlternateScreen => {
                 self.out.queue(LeaveAlternateScreen)?;

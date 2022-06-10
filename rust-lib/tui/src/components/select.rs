@@ -59,19 +59,21 @@ impl<'a> Component for Select<'a> {
                 let style = self.style(style_sheet, context);
 
                 self.style = style
-                    .with_width(
-                        style.width.unwrap_or(
-                            self.options
-                                .iter()
-                                .fold(0, |acc, option| acc.max(u16::try_from(option.len()).unwrap())),
-                        ),
+                    .with_width(style.width.unwrap_or_else(|| {
+                        self.options
+                            .iter()
+                            .fold(0, |acc, option| acc.max(u16::try_from(option.len()).unwrap()))
+                    }))
+                    .with_height(
+                        style
+                            .height
+                            .unwrap_or_else(|| u16::try_from(self.options.len()).unwrap()),
                     )
-                    .with_height(style.height.unwrap_or(u16::try_from(self.options.len()).unwrap()))
                     .with_max_width(style.max_width.unwrap_or(128))
                     .with_max_height(
                         style
                             .max_height
-                            .unwrap_or(u16::try_from(self.options.len() * 2).unwrap()),
+                            .unwrap_or_else(|| u16::try_from(self.options.len() * 2).unwrap()),
                     );
             },
             Event::Draw {

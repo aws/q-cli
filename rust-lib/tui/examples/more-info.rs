@@ -4,10 +4,7 @@ use tui::components::{
     Label,
     TextField,
 };
-use tui::layouts::{
-    Container,
-    Form,
-};
+use tui::layouts::Container;
 use tui::{
     BorderStyle,
     Color,
@@ -19,16 +16,16 @@ use tui::{
 };
 
 fn main() -> Result<(), std::io::Error> {
-    let rounded_border = BorderStyle::Ascii {
-        top_left: '╭',
-        top: '─',
-        top_right: '╮',
-        left: '│',
-        right: '│',
-        bottom_left: '╰',
-        bottom: '─',
-        bottom_right: '╯',
-    };
+    // let rounded_border = BorderStyle::Ascii {
+    //     top_left: '╭',
+    //     top: '─',
+    //     top_right: '╮',
+    //     left: '│',
+    //     right: '│',
+    //     bottom_left: '╰',
+    //     bottom: '─',
+    //     bottom_right: '╯',
+    // };
 
     let thin_border = BorderStyle::Ascii {
         top_left: '┌',

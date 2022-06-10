@@ -72,7 +72,7 @@ impl DisplayState {
         foreground: Color,
         background: Color,
     ) -> &mut Self {
-        if string.as_ref().len() == 0 {
+        if string.as_ref().is_empty() {
             return self;
         }
 
@@ -83,6 +83,7 @@ impl DisplayState {
         self
     }
 
+    #[allow(clippy::too_many_arguments)]
     pub fn draw_rect(
         &mut self,
         symbol: char,
@@ -123,8 +124,10 @@ impl DisplayState {
         let new_width = usize::from(new_width);
         let new_height = usize::from(new_height);
 
-        let mut diff_cell = Cell::default();
-        diff_cell.symbol = '_';
+        let diff_cell = Cell {
+            symbol: '-',
+            ..Default::default()
+        };
 
         for y in 0..usize::from(self.height) {
             self.old_cells[y] = vec![diff_cell; new_width];

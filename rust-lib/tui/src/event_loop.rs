@@ -1,10 +1,6 @@
 use std::time::Instant;
 
-use newton::{
-    Color,
-    KeyCode,
-    KeyModifiers,
-};
+use newton::KeyCode;
 pub use newton::{
     ControlFlow,
     DisplayMode,
@@ -23,6 +19,12 @@ pub struct EventLoop<'a> {
     width: u16,
     height: u16,
     style_sheet: Option<&'a StyleSheet>,
+}
+
+impl<'a> Default for EventLoop<'a> {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl<'a> EventLoop<'a> {
@@ -97,7 +99,6 @@ impl<'a> EventLoop<'a> {
                             modifiers,
                         })
                     },
-                    _ => (),
                 }
                 Ok(())
             })

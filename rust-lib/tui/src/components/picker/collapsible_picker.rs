@@ -64,10 +64,7 @@ impl<'a, C: PickerComponent + Component> CollapsiblePicker<'a, C> {
     }
 
     pub fn selected_item(&self) -> Option<String> {
-        match self.selected_index() {
-            Some(index) => Some(self.options()[index].to_string()),
-            None => None,
-        }
+        self.selected_index().map(|index| self.options()[index].to_string())
     }
 }
 

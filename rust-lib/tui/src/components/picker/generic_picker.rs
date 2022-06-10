@@ -35,7 +35,7 @@ impl Picker {
 
     pub fn set_options(&mut self, options: Vec<String>) {
         self.options = options;
-        self.rows = self.options.iter().map(|option| Label::new(option)).collect()
+        self.rows = self.options.iter().map(Label::new).collect()
     }
 }
 
@@ -51,7 +51,7 @@ impl PickerComponent for Picker {
             selected: Default::default(),
             options: opts.clone(),
             style: Default::default(),
-            rows: opts.iter().map(|option| Label::new(option)).collect::<Vec<Label>>(),
+            rows: opts.iter().map(Label::new).collect::<Vec<Label>>(),
         }
     }
 
@@ -109,8 +109,8 @@ impl Component for Picker {
             Event::KeyPressed { code, .. } => {
                 if focused {
                     // prevent crashes if options are empty
-                    if self.options.len() == 0 {
-                        return ();
+                    if self.options.is_empty() {
+                        return;
                     }
 
                     match code {
@@ -121,7 +121,7 @@ impl Component for Picker {
                 }
             },
             _ => {
-                for (i, component) in self.rows.iter_mut().enumerate() {
+                for (_i, component) in self.rows.iter_mut().enumerate() {
                     component.update(renderer, style_sheet, control_flow, focused, event);
                 }
             },
@@ -136,11 +136,6 @@ impl Component for Picker {
     }
 
     fn desired_height(&self, style_sheet: &StyleSheet, context: StyleContext) -> u16 {
-        let style = style_sheet
-            .get_style("*")
-            .apply(style_sheet.get_style(Self::STYLE_CLASS))
-            .apply(self.style);
-
         self.style(style_sheet, context).spacing_vertical()
             + self
                 .rows

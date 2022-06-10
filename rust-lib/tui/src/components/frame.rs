@@ -80,9 +80,10 @@ impl Component for Frame<'_> {
                     style_sheet.get_style_for_component_with_class(&self.title_label, "frame.title", context);
 
                 let offset = title_style.margin_top() + title_style.border_top_width() + title_style.padding_top();
-                let y_orig = y.clone();
+                let y_orig = y;
 
-                style.draw_container(&mut x, &mut y, &mut width, &mut (height + offset), renderer);
+                height += offset;
+                style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
                 if self.has_title {
                     self.title_label.style = title_style;

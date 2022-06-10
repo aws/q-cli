@@ -1,10 +1,10 @@
 mod collapsible_picker;
 mod filterable_picker;
-mod picker;
+mod generic_picker;
 
 pub use collapsible_picker::CollapsiblePicker;
 pub use filterable_picker::FilterablePicker;
-pub use picker::Picker;
+pub use generic_picker::Picker;
 
 pub trait PickerComponent {
     fn new<I, T>(options: I) -> Self

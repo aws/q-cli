@@ -78,7 +78,7 @@ impl StyleSheet {
     // inline-style
     // element.class
     // element.class:focus
-
+    #[allow(dead_code)]
     fn inherit_style_from(&self, mut elements: Vec<&str>, inline_style: Option<Style>, context: StyleContext) -> Style {
         match elements.pop() {
             Some(elm) => {

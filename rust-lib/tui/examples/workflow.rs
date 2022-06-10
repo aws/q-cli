@@ -1,18 +1,12 @@
 use tui::components::{
+    Checkbox,
     CollapsiblePicker,
-    Disclosure,
     FilterablePicker,
     Frame,
-    Label,
-    Picker,
     PickerComponent,
-    Select,
     TextField,
 };
-use tui::layouts::{
-    Container,
-    Form,
-};
+use tui::layouts::Form;
 use tui::{
     BorderStyle,
     Color,
@@ -35,27 +29,27 @@ fn main() -> Result<(), std::io::Error> {
         bottom_right: '╯',
     };
 
-    let thin_border = BorderStyle::Ascii {
-        top_left: '┌',
-        top: '─',
-        top_right: '┐',
-        left: '│',
-        right: '│',
-        bottom_left: '└',
-        bottom: '─',
-        bottom_right: '┘',
-    };
+    // let thin_border = BorderStyle::Ascii {
+    //     top_left: '┌',
+    //     top: '─',
+    //     top_right: '┐',
+    //     left: '│',
+    //     right: '│',
+    //     bottom_left: '└',
+    //     bottom: '─',
+    //     bottom_right: '┘',
+    // };
 
-    let double_border = BorderStyle::Ascii {
-        top_left: '╔',
-        top: '═',
-        top_right: '╗',
-        left: '║',
-        right: '║',
-        bottom_left: '╚',
-        bottom: '═',
-        bottom_right: '╝',
-    };
+    // let double_border = BorderStyle::Ascii {
+    //     top_left: '╔',
+    //     top: '═',
+    //     top_right: '╗',
+    //     left: '║',
+    //     right: '║',
+    //     bottom_left: '╚',
+    //     bottom: '═',
+    //     bottom_right: '╝',
+    // };
 
     let thick_border = BorderStyle::Ascii {
         top_left: '┏',
@@ -68,16 +62,16 @@ fn main() -> Result<(), std::io::Error> {
         bottom_right: '┛',
     };
 
-    let selection_border = BorderStyle::Ascii {
-        top_left: ' ',
-        top: ' ',
-        top_right: ' ',
-        left: '▸',
-        right: ' ',
-        bottom_left: ' ',
-        bottom: ' ',
-        bottom_right: ' ',
-    };
+    // let selection_border = BorderStyle::Ascii {
+    //     top_left: ' ',
+    //     top: ' ',
+    //     top_right: ' ',
+    //     left: '▸',
+    //     right: ' ',
+    //     bottom_left: ' ',
+    //     bottom: ' ',
+    //     bottom_right: ' ',
+    // };
 
     let focus_style = Style::new()
         .with_border_left_color(Color::White)
@@ -150,7 +144,8 @@ fn main() -> Result<(), std::io::Error> {
                 .with_margin_left(2)
                 .with_background_color(Color::White)
                 .with_color(Color::DarkGrey),
-        );
+        )
+        .with_style("checkbox", Style::new().with_margin_left(1));
 
     let mut textfield = TextField::new().with_hint("fix: syntax error");
     let mut commit = Frame::new(&mut textfield).with_title("Commit message");
@@ -176,6 +171,9 @@ fn main() -> Result<(), std::io::Error> {
         FilterablePicker::new(vec!["matt@fig.io", "matthewschrage@gmail.com"]).with_placeholder("Search...");
     let mut git_author_picker = Frame::new(&mut git_author).with_title("Git Author");
 
+    let mut verbose = Checkbox::new(false).with_text("Enable verbose logging");
+    let mut vebose_element = Frame::new(&mut verbose).with_title("Verbosity");
+
     EventLoop::new().with_style_sheet(&stylesheet).run(
         ControlFlow::Wait,
         DisplayMode::AlternateScreen,
@@ -184,6 +182,7 @@ fn main() -> Result<(), std::io::Error> {
             &mut branch_picker,
             &mut remote_picker,
             &mut git_author_picker,
+            &mut vebose_element,
         ])
         .with_margin_top(1)
         .with_margin_left(2),

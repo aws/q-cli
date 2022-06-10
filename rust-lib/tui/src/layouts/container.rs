@@ -58,12 +58,16 @@ impl<const N: usize> Component for Container<'_, N> {
                 let style = self.style(style_sheet, ctx);
 
                 self.style = style
-                    .with_width(style.width.unwrap_or(self.components.iter().fold(0, |acc, component| {
-                        acc.max(component.style(style_sheet, ctx).total_width())
-                    })))
-                    .with_height(style.height.unwrap_or(self.components.iter().fold(0, |acc, component| {
-                        acc + component.style(style_sheet, ctx).total_height()
-                    })))
+                    .with_width(style.width.unwrap_or_else(|| {
+                        self.components.iter().fold(0, |acc, component| {
+                            acc.max(component.style(style_sheet, ctx).total_width())
+                        })
+                    }))
+                    .with_height(style.height.unwrap_or_else(|| {
+                        self.components.iter().fold(0, |acc, component| {
+                            acc + component.style(style_sheet, ctx).total_height()
+                        })
+                    }))
                     .with_max_width(style.max_width.unwrap_or(1024))
                     .with_max_height(style.max_height.unwrap_or(1024));
             },
@@ -77,9 +81,7 @@ impl<const N: usize> Component for Container<'_, N> {
                     return;
                 }
 
-                let mut style = self.style(style_sheet, ctx);
-                // style.height = Some(self.desired_height(style_sheet, ctx));
-                // style.width = Some(self.desired_width(style_sheet, ctx));
+                let style = self.style(style_sheet, ctx);
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
                 let mut row = 0;

@@ -16,6 +16,7 @@ use crate::{
     StyleSheet,
 };
 
+#[allow(dead_code)]
 #[derive(Clone, Copy, Debug)]
 pub enum ChevronType {
     None,
@@ -125,7 +126,7 @@ impl<T: Component> Component for Disclosure<T> {
 
                 let chevron = self.chevron_icon(focused);
                 renderer.draw_symbol(chevron, x, y, chevron_style.color(), chevron_style.background_color());
-                // self.summary.style = summary_style;
+                self.summary.style = summary_style;
                 self.summary
                     .update(renderer, style_sheet, control_flow, focused, Event::Draw {
                         x: x + 2,

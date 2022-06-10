@@ -1,3 +1,4 @@
+mod checkbox;
 mod disclosure;
 mod frame;
 mod interfaces;
@@ -6,6 +7,7 @@ mod picker;
 mod select;
 mod text_field;
 
+pub use checkbox::Checkbox;
 pub use disclosure::Disclosure;
 pub use frame::Frame;
 pub use interfaces::PickerComponent;
