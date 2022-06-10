@@ -2,7 +2,7 @@ mod alias;
 mod error;
 mod identify;
 mod install_method;
-mod sentry;
+pub mod sentry;
 mod track;
 mod util;
 

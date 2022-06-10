@@ -210,7 +210,7 @@ pub async fn clone_git_repo_with_reference(
 
     if !directory.exists() {
         if let Err(err) = clone_git_repo(url, &directory).await {
-            sentry::integrations::anyhow::capture_anyhow(&err);
+            fig_telemetry::sentry::capture_anyhow(&err);
             return Err(err);
         }
     } else {

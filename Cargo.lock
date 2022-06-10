@@ -1317,7 +1317,6 @@ dependencies = [
  "fig_util",
  "flume",
  "futures",
- "git2",
  "globset",
  "humantime",
  "native-dialog",
@@ -1418,6 +1417,30 @@ dependencies = [
  "fig_proto",
  "parking_lot 0.12.1",
  "pkg-config",
+]
+
+[[package]]
+name = "fig_install"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cfg-if 1.0.0",
+ "crossterm",
+ "fig_auth",
+ "fig_directories",
+ "fig_settings",
+ "fig_telemetry",
+ "fig_util",
+ "flume",
+ "git2",
+ "parking_lot 0.12.1",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]
@@ -1591,9 +1614,9 @@ dependencies = [
 
 [[package]]
 name = "flume"
-version = "0.10.12"
+version = "0.10.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "843c03199d0c0ca54bc1ea90ac0d507274c28abcc4f691ae8b4eaa375087c76a"
+checksum = "1ceeb589a3157cac0ab8cc585feb749bd2cea5cb55a6ee802ad72d9fd38303da"
 dependencies = [
  "futures-core",
  "futures-sink",
