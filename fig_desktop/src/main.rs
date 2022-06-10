@@ -41,6 +41,7 @@ use sysinfo::{
 };
 use tokio::runtime::Runtime;
 use tracing::{
+    error,
     info,
     trace,
     warn,
@@ -217,6 +218,33 @@ impl WebviewManager {
     }
 }
 
+fn navigation_handler<I, S>(window_id: WindowId, exprs: I) -> impl Fn(String) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let regex_set = RegexSet::new(exprs);
+
+    if let Err(ref err) = regex_set {
+        error!("Failed to compile regex: {err}");
+    }
+
+    move |url: String| match regex_set.as_ref().ok().and_then(|r| {
+        Url::parse(&url)
+            .ok()
+            .and_then(|url| url.domain().map(|domain| r.is_match(domain)))
+    }) {
+        Some(true) => {
+            trace!("{window_id} allowed url: {url}");
+            true
+        },
+        Some(false) | None => {
+            warn!("{window_id} denyed url: {url}");
+            false
+        },
+    }
+}
+
 struct MissionControlOptions {
     force_visible: bool,
 }
@@ -246,24 +274,11 @@ fn build_mission_control(
                 .unwrap();
         })
         .with_devtools(true)
-        .with_navigation_handler(|url| {
-            match Url::parse(&url).ok().and_then(|url| {
-                url.domain().and_then(|domain| {
-                    RegexSet::new(&[r"^localhost$", r"^desktop\.fig\.io$", r"-withfig\.vercel\.app$"])
-                        .ok()
-                        .map(|r| r.is_match(domain))
-                })
-            }) {
-                Some(true) => {
-                    trace!("{MISSION_CONTROL_ID} allowed url: {url}");
-                    true
-                },
-                Some(false) | None => {
-                    warn!("{MISSION_CONTROL_ID} denyed url: {url}");
-                    false
-                },
-            }
-        })
+        .with_navigation_handler(navigation_handler(MISSION_CONTROL_ID, &[
+            r"^localhost$",
+            r"^desktop\.fig\.io$",
+            r"-withfig\.vercel\.app$",
+        ]))
         .with_initialization_script(&javascript_init())
         .build()?;
 
@@ -320,11 +335,11 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         .with_devtools(true)
         .with_transparent(true)
         .with_initialization_script(&javascript_init())
-        .with_navigation_handler(|url| {
-            url.starts_with("http://localhost")
-                || url.starts_with("https://staging.withfig.com/autocomplete")
-                || url.starts_with("https://app.withfig.com/autocomplete")
-        })
+        .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
+            r"^localhost$",
+            r"^staging.withfig.com$",
+            r"^app.withfig.com$",
+        ]))
         .build()?;
 
     Ok(webview)
