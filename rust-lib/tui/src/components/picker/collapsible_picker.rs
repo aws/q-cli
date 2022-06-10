@@ -63,8 +63,8 @@ impl<'a, C: PickerComponent + Component> CollapsiblePicker<'a, C> {
         self.disclosure.details.options()
     }
 
-    pub fn selected_item(&self) -> Option<String> {
-        self.selected_index().map(|index| self.options()[index].to_string())
+    pub fn selected_item(&self) -> Option<&str> {
+        self.selected_index().map(|index| self.options()[index].as_str())
     }
 }
 
@@ -78,6 +78,8 @@ impl<'a, C: PickerComponent + Component> Component for CollapsiblePicker<'a, C> 
         event: Event,
     ) {
         let context = StyleContext { focused, hover: false };
+
+        self.disclosure.opened = focused;
 
         match event {
             Event::Draw {
@@ -94,8 +96,8 @@ impl<'a, C: PickerComponent + Component> Component for CollapsiblePicker<'a, C> 
 
                 self.disclosure.summary.label = match self.selected_item() {
                     Some(selection) => selection,
-                    None => self.placeholder.to_string(),
-                };
+                    None => self.placeholder,
+                }.to_string();
 
                 if !self.has_made_selection && focused {
                     self.has_made_selection = true
@@ -110,8 +112,6 @@ impl<'a, C: PickerComponent + Component> Component for CollapsiblePicker<'a, C> 
                     })
             },
             _ => {
-                self.disclosure.opened = focused;
-
                 self.disclosure
                     .update(renderer, style_sheet, control_flow, focused, event);
             },

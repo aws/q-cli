@@ -367,7 +367,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Snippet { name } => snippet::execute(name).await,
+                CliRootCommands::Snippet { name } => snippet::execute(name, None).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())

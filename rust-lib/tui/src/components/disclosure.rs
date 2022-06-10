@@ -129,18 +129,18 @@ impl<T: Component> Component for Disclosure<T> {
                 self.summary.style = summary_style;
                 self.summary
                     .update(renderer, style_sheet, control_flow, focused, Event::Draw {
-                        x: x + 2,
+                        x,
                         y,
-                        width: self.summary.desired_width(style_sheet, context).min(width - 2),
+                        width: self.summary.desired_width(style_sheet, context).min(width),
                         height: self.summary.desired_height(style_sheet, context).min(height),
                     });
 
                 if self.opened {
                     self.details
                         .update(renderer, style_sheet, control_flow, focused, Event::Draw {
-                            x: x + 2,
+                            x,
                             y: y + 1,
-                            width: self.details.desired_width(style_sheet, context).min(width - 2),
+                            width: self.details.desired_width(style_sheet, context).min(width),
                             height: self.details.desired_height(style_sheet, context).min(height - 1),
                         });
                 }
@@ -168,7 +168,7 @@ impl<T: Component> Component for Disclosure<T> {
 
     fn desired_width(&self, style_sheet: &StyleSheet, context: StyleContext) -> u16 {
         self.style(style_sheet, context).spacing_horizontal()
-            + 3
+            + 2
             + [
                 self.summary.desired_width(style_sheet, context),
                 self.details.desired_width(style_sheet, context),
