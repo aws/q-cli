@@ -62,7 +62,7 @@ struct Snippet {
 pub async fn execute(name: Option<String>) -> Result<()> {
     let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
 
-    let snippet = match name {
+    let _snippet = match name {
         Some(name) => match snippets.iter().find(|snippet| snippet.name == name) {
             Some(snippet) => snippet,
             None => return Err(anyhow!("No snippet with name: {}", name)),

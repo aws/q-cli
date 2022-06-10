@@ -53,18 +53,8 @@ impl Component for Label {
     ) {
         let ctx = StyleContext { focused, hover: false };
 
+        #[allow(clippy::single_match)]
         match event {
-            Event::Initialize => {
-                let len = u16::try_from(self.label.len()).unwrap();
-
-                let style = self.style(style_sheet, ctx);
-
-                // self.style = style
-                //    .with_width(style.width.unwrap_or(len))
-                //    .with_height(style.height.unwrap_or(1))
-                //    .with_max_width(style.max_width.unwrap_or(128))
-                //    .with_max_height(style.max_height.unwrap_or(1));
-            },
             Event::Draw {
                 mut x,
                 mut y,

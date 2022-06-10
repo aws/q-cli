@@ -68,7 +68,7 @@ impl PickerComponent for FilterablePicker {
     }
 
     fn selected(&self) -> Option<usize> {
-        if self.picker.options().len() > 0 {
+        if !self.picker.options().is_empty() {
             self.picker.selected()
         } else {
             None
@@ -105,8 +105,7 @@ impl Component for FilterablePicker {
 
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
-                let show_search_input = !self.only_show_search_input_when_focused
-                    || (self.only_show_search_input_when_focused && self.focused);
+                let show_search_input = !self.only_show_search_input_when_focused || self.focused;
                 if self.search_input_at_top {
                     if show_search_input {
                         self.input.update(renderer, style_sheet, control_flow, focused, event);
@@ -151,12 +150,12 @@ impl Component for FilterablePicker {
                         let filtered = self
                             .picker
                             .options()
-                            .into_iter()
+                            .iter()
                             .filter(|str| str.contains(&self.input.text))
                             .cloned()
                             .collect::<Vec<String>>();
 
-                        if self.input.text.len() != 0 {
+                        if !self.input.text.is_empty() {
                             self.picker.set_options(filtered);
                         } else {
                             self.picker.set_options((*self.options).to_vec());
@@ -183,8 +182,7 @@ impl Component for FilterablePicker {
     }
 
     fn desired_height(&self, style_sheet: &StyleSheet, context: StyleContext) -> u16 {
-        let show_search_input =
-            !self.only_show_search_input_when_focused || (self.only_show_search_input_when_focused && self.focused);
+        let show_search_input = !self.only_show_search_input_when_focused || self.focused;
 
         self.style(style_sheet, context).spacing_vertical()
             + if show_search_input {

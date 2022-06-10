@@ -6,4 +6,3 @@ edition = "2021"
 [dependencies]
 derive_builder = "0.11.2"
 newton = { path = "../newton" }
-parcel_css = { version = "1.0.0-alpha.25" }

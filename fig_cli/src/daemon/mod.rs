@@ -23,6 +23,7 @@ use futures::{
     SinkExt,
     StreamExt,
 };
+use parking_lot::lock_api::RawMutex;
 use parking_lot::{
     Mutex,
     RwLock,
@@ -417,7 +418,7 @@ impl Default for DaemonStatus {
     }
 }
 
-pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::new(false);
+pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, false);
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 #[cfg(unix)]

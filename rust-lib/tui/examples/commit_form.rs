@@ -18,27 +18,27 @@ use tui::{
 };
 
 fn main() -> Result<(), std::io::Error> {
-    let double_border = BorderStyle::Ascii {
-        top_left: '╔',
-        top: '═',
-        top_right: '╗',
-        left: '║',
-        right: '║',
-        bottom_left: '╚',
-        bottom: '═',
-        bottom_right: '╝',
-    };
+    // let double_border = BorderStyle::Ascii {
+    //     top_left: '╔',
+    //     top: '═',
+    //     top_right: '╗',
+    //     left: '║',
+    //     right: '║',
+    //     bottom_left: '╚',
+    //     bottom: '═',
+    //     bottom_right: '╝',
+    // };
 
-    let thin_border = BorderStyle::Ascii {
-        top_left: '┌',
-        top: '─',
-        top_right: '┐',
-        left: '│',
-        right: '│',
-        bottom_left: '└',
-        bottom: '─',
-        bottom_right: '┘',
-    };
+    // let thin_border = BorderStyle::Ascii {
+    //     top_left: '┌',
+    //     top: '─',
+    //     top_right: '┐',
+    //     left: '│',
+    //     right: '│',
+    //     bottom_left: '└',
+    //     bottom: '─',
+    //     bottom_right: '┘',
+    // };
 
     let rounded_border = BorderStyle::Ascii {
         top_left: '╭',

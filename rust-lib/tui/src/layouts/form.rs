@@ -69,20 +69,16 @@ impl<const N: usize> Component for Form<'_, N> {
                 let style = self.style(style_sheet, ctx);
 
                 self.style = style
-                    .with_width(
-                        style.width.unwrap_or(
-                            self.components
-                                .iter()
-                                .fold(0, |acc, component| acc.max(component.desired_width(style_sheet, ctx))),
-                        ),
-                    )
-                    .with_height(
-                        style.height.unwrap_or(
-                            self.components
-                                .iter()
-                                .fold(0, |acc, component| acc + component.desired_height(style_sheet, ctx)),
-                        ),
-                    )
+                    .with_width(style.width.unwrap_or_else(|| {
+                        self.components
+                            .iter()
+                            .fold(0, |acc, component| acc.max(component.desired_width(style_sheet, ctx)))
+                    }))
+                    .with_height(style.height.unwrap_or_else(|| {
+                        self.components
+                            .iter()
+                            .fold(0, |acc, component| acc + component.desired_height(style_sheet, ctx))
+                    }))
                     .with_max_width(1024)
                     .with_max_height(1024);
             },
@@ -92,9 +88,7 @@ impl<const N: usize> Component for Form<'_, N> {
                 mut width,
                 mut height,
             } => {
-                let mut style = self.style(style_sheet, ctx);
-                // style.height = Some(self.desired_height(style_sheet, ctx));
-                // style.width = Some(self.desired_width(style_sheet, ctx));
+                let style = self.style(style_sheet, ctx);
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
                 let mut acc = 0;
@@ -147,6 +141,7 @@ impl<const N: usize> Component for Form<'_, N> {
                                 Some(component) => {
                                     let cursor = (self.cursor + 1) % self.components.len();
 
+                                    #[allow(clippy::single_match)]
                                     match component.class() {
                                         "textfield" => {
                                             self.cursor = cursor;
@@ -173,6 +168,7 @@ impl<const N: usize> Component for Form<'_, N> {
                                 Some(component) => {
                                     let cursor = (self.cursor + self.components.len() - 1) % self.components.len();
 
+                                    #[allow(clippy::single_match)]
                                     match component.class() {
                                         "textfield" => {
                                             self.cursor = cursor;
