@@ -1,5 +1,5 @@
 use tui::components::{
-    Checkbox,
+    CheckBox,
     CollapsiblePicker,
     FilterablePicker,
     Frame,
@@ -171,7 +171,7 @@ fn main() -> Result<(), std::io::Error> {
         FilterablePicker::new(vec!["matt@fig.io", "matthewschrage@gmail.com"]).with_placeholder("Search...");
     let mut git_author_picker = Frame::new(&mut git_author).with_title("Git Author");
 
-    let mut verbose = Checkbox::new(false).with_text("Enable verbose logging");
+    let mut verbose = CheckBox::new(false).with_text("Enable verbose logging");
     let mut vebose_element = Frame::new(&mut verbose).with_title("Verbosity");
 
     EventLoop::new().with_style_sheet(&stylesheet).run(

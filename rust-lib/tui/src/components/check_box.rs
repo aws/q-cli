@@ -29,7 +29,7 @@ impl Default for CheckStyle {
 }
 
 #[derive(Debug, Default)]
-pub struct Checkbox {
+pub struct CheckBox {
     pub text: String,
     pub checked: bool,
     pub style: Style,
@@ -38,7 +38,7 @@ pub struct Checkbox {
     label: Label,
 }
 
-impl Checkbox {
+impl CheckBox {
     pub const STYLE_CLASS: &'static str = "checkbox";
 
     stylable!();
@@ -61,7 +61,7 @@ impl Checkbox {
     }
 }
 
-impl Component for Checkbox {
+impl Component for CheckBox {
     fn update(
         &mut self,
         renderer: &mut DisplayState,
@@ -112,8 +112,10 @@ impl Component for Checkbox {
                     });
             },
             Event::KeyPressed { code, .. } => {
-                if code == KeyCode::Enter {
-                    self.checked = !self.checked
+                if focused {
+                    if code == KeyCode::Char(' ') {
+                        self.checked = !self.checked
+                    }
                 }
             },
             _ => (),

@@ -14,7 +14,7 @@ use tui::components::{
     Frame,
     Label,
     Picker,
-    TextField,
+    TextField, CheckBox,
 };
 use tui::layouts::Form;
 use tui::{
@@ -80,7 +80,7 @@ struct Snippet {
 }
 
 enum SnippetComponent<'a> {
-    CheckBox(Label),
+    CheckBox(CheckBox),
     TextField(TextField),
     Picker(CollapsiblePicker<'a, Picker>),
 }
@@ -88,7 +88,7 @@ enum SnippetComponent<'a> {
 pub async fn execute(name: Option<String>) -> Result<()> {
     let snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
 
-    let _snippet = match name {
+    let snippet = match name {
         Some(name) => match snippets.iter().find(|snippet| snippet.name == name) {
             Some(snippet) => snippet,
             None => return Err(anyhow!("No snippet with name: {}", name)),
@@ -111,7 +111,7 @@ pub async fn execute(name: Option<String>) -> Result<()> {
             ParameterType::Checkbox {
                 true_value_substitution,
                 false_value_substitution,
-            } => SnippetComponent::CheckBox(Label::new("hello")),
+            } => SnippetComponent::CheckBox(CheckBox::new(false)),
             ParameterType::Text { placeholder } => match placeholder {
                 Some(hint) => SnippetComponent::TextField(TextField::new().with_hint(hint)),
                 None => SnippetComponent::TextField(TextField::new()),
