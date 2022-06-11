@@ -1,35 +1,13 @@
 use std::collections::HashMap;
 use std::process::Command;
 
-use anyhow::{
-    anyhow,
-    Result,
-};
-use dialoguer::Confirm;
+use anyhow::{anyhow, Result};
+use crossterm::style::Stylize;
 use reqwest::Method;
-use serde::{
-    Deserialize,
-    Serialize,
-};
-use tui::components::{
-    CheckBox,
-    CollapsiblePicker,
-    Frame,
-    Label,
-    Picker,
-    TextField,
-};
+use serde::{Deserialize, Serialize};
+use tui::components::{CheckBox, CollapsiblePicker, Frame, Label, TextField, FilterablePicker};
 use tui::layouts::Form;
-use tui::{
-    BorderStyle,
-    Color,
-    Component,
-    ControlFlow,
-    DisplayMode,
-    EventLoop,
-    Style,
-    StyleSheet,
-};
+use tui::{BorderStyle, Color, Component, ControlFlow, DisplayMode, EventLoop, Style, StyleSheet};
 
 use crate::util::api::request;
 
@@ -77,9 +55,7 @@ struct Parameter {
 #[serde(untagged)]
 enum TreeElement {
     String(String),
-    Token {
-        name: String,
-    },
+    Token { name: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -94,7 +70,7 @@ struct Snippet {
     tree: Vec<TreeElement>,
 }
 
-enum SnippetComponent<'a> {
+enum SnippetComponent {
     CheckBox {
         name: String,
         display_name: String,
@@ -110,33 +86,51 @@ enum SnippetComponent<'a> {
     Picker {
         name: String,
         display_name: String,
-        inner: CollapsiblePicker<'a, Picker>,
+        inner: CollapsiblePicker<FilterablePicker>,
     },
 }
 
-impl<'a> From<Parameter> for SnippetComponent<'a> {
-    fn from(from: Parameter) -> Self {
-        let display_name = from.display_name.unwrap_or_else(|| from.name.clone());
-        let name = from.name;
+pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Result<()> {
+    let snippet = match name {
+        Some(name) => match request(Method::GET, format!("/snippets/{name}"), None, true).await? {
+            Some(snippet) => snippet,
+            None => return Err(anyhow!("Snippet does not exist with name: {}", name)),
+        },
+        None => {
+            let mut snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
+            let snippet_names: Vec<&str> = snippets.iter().map(|snippet| snippet.name.as_ref()).collect();
+            let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+                .items(&snippet_names)
+                .default(0)
+                .interact()
+                .unwrap();
+            snippets.remove(selection)
+        },
+    };
 
-        match from.parameter_type {
+    let mut components: Vec<SnippetComponent> = vec![];
+    for parameter in snippet.parameters {
+        let display_name = parameter.display_name.unwrap_or_else(|| parameter.name.clone());
+        let name = parameter.name;
+
+        components.push(match parameter.parameter_type {
             ParameterType::Checkbox {
                 true_value_substitution,
                 false_value_substitution,
-            } => Self::CheckBox {
+            } => SnippetComponent::CheckBox {
+                inner: CheckBox::new(args.get(&name).map(|val| val == &true_value_substitution).unwrap_or(false)),
                 name,
                 display_name,
-                inner: CheckBox::new(false),
                 value_if_true: true_value_substitution,
                 value_if_false: false_value_substitution,
             },
-            ParameterType::Text { placeholder } => Self::TextField {
-                name,
-                display_name,
+            ParameterType::Text { placeholder } => SnippetComponent::TextField {
                 inner: match placeholder {
                     Some(hint) => TextField::new().with_hint(hint),
                     None => TextField::new(),
-                },
+                }.with_text(args.get(&name).unwrap_or(&String::new())),
+                name,
+                display_name,
             },
             ParameterType::Selector {
                 placeholder,
@@ -166,37 +160,28 @@ impl<'a> From<Parameter> for SnippetComponent<'a> {
                     }
                 }
 
-                Self::Picker {
+                let mut index = 0;
+                match args.get(&name) {
+                    Some(arg) => for i in 0..options.len() {
+                        if &options[i] == arg {
+                            index = i;
+                            break;
+                        }
+                    },
+                    _ => (),
+                };
+
+                SnippetComponent::Picker {
                     name,
                     display_name,
-                    inner: CollapsiblePicker::new(options),
+                    inner: match placeholder {
+                        Some(placeholder) => CollapsiblePicker::new(options).with_placeholder(placeholder),
+                        None => CollapsiblePicker::new(options),
+                    }.with_index(index),
                 }
             },
-        }
+        });
     }
-}
-
-pub async fn execute(name: Option<String>, args: Option<HashMap<String, String>>) -> Result<()> {
-    let snippet = match name {
-        Some(name) => match request(Method::GET, format!("/snippets/{name}"), None, true).await? {
-            Some(snippet) => snippet,
-            None => return Err(anyhow!("Snippet does not exist with name: {}", name)),
-        },
-        None => {
-            let mut snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
-            let snippet_names: Vec<&str> = snippets.iter().map(|snippet| snippet.name.as_ref()).collect();
-            let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-                .items(&snippet_names)
-                .default(0)
-                .interact()
-                .unwrap();
-            snippets.remove(selection)
-        },
-    };
-
-    let tree = snippet.tree;
-
-    let mut components: Vec<SnippetComponent> = snippet.parameters.into_iter().map(SnippetComponent::from).collect();
 
     let mut frames: Vec<Frame> = components
         .iter_mut()
@@ -333,8 +318,7 @@ pub async fn execute(name: Option<String>, args: Option<HashMap<String, String>>
         .with_style_sheet(&style_sheet)
         .run::<std::io::Error, _>(ControlFlow::Wait, DisplayMode::AlternateScreen, &mut Form::new(model))?;
 
-    let mut names: Vec<&str> = vec![];
-    let mut args: Vec<&str> = vec![];
+    let mut args: HashMap<&str, &str> = HashMap::new();
     for component in &components {
         match component {
             SnippetComponent::CheckBox {
@@ -343,33 +327,47 @@ pub async fn execute(name: Option<String>, args: Option<HashMap<String, String>>
                 value_if_true,
                 value_if_false,
                 ..
-            } => {
-                names.push(name);
-                args.push(match inner.checked {
+            } => args.insert(
+                name,
+                match inner.checked {
                     true => value_if_true,
                     false => value_if_false,
-                });
-            },
-            SnippetComponent::TextField { name, inner, .. } => {
-                names.push(name);
-                args.push(&inner.text);
-            },
-            SnippetComponent::Picker { name, inner, .. } => {
-                names.push(name);
-                args.push(match inner.selected_item() {
+                },
+            ),
+            SnippetComponent::TextField { name, inner, .. } => args.insert(name, &inner.text),
+            SnippetComponent::Picker { name, inner, .. } => args.insert(
+                name,
+                match inner.selected_item() {
                     Some(selected) => selected,
                     None => return Err(anyhow!("Missing entry for field: {name}")),
-                });
-            },
+                },
+            ),
+        };
+    }
+
+    let mut command = format!("fig snippet {}", snippet.name);
+    for (arg, val) in &args {
+        command.push_str(&format!(" --{arg} \"{}\"", val.escape_default()));
+    }
+
+    println!("{} {command}", "Executing:".bold().magenta());
+    execute_snippet(snippet.tree, args).await?;
+
+    Ok(())
+}
+
+async fn execute_snippet(tree: Vec<TreeElement>, args: HashMap<&str, &str>) -> Result<()> {
+    let mut command = Command::new("bash");
+    command.arg("-c");
+    command.arg(tree.into_iter().fold(String::new(), |mut acc, branch| {
+        match branch {
+            TreeElement::String(string) => acc.push_str(string.as_str()),
+            TreeElement::Token { name } => acc.push_str(args[name.as_str()]),
         }
-    }
 
-    let mut command = format!("fig snippet {} ", snippet.name);
-    for i in 0..args.len() {
-        command.push_str(&format!("{}=\"{}\" ", names[i], args[i]));
-    }
-
-    println!("\x1B[1;95mExecuting:\x1B[0m {command}");
+        acc
+    }));
+    command.status()?;
 
     Ok(())
 }

@@ -22,6 +22,7 @@ mod tips;
 mod tweet;
 mod user;
 
+use std::collections::HashMap;
 use std::fs::File;
 use std::process::exit;
 use std::str::FromStr;
@@ -367,7 +368,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Snippet { name } => snippet::execute(name, None).await,
+                CliRootCommands::Snippet { name } => snippet::execute(name, HashMap::new()).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())

@@ -42,6 +42,11 @@ impl TextField {
         self
     }
 
+    pub fn with_text(mut self, text: impl Into<String>) -> Self {
+        self.text = text.into();
+        self
+    }
+
     pub fn obfuscated(mut self, obfuscated: bool) -> Self {
         self.obfuscated = obfuscated;
         self

@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use newton::{
     Color,
     ControlFlow,
@@ -18,15 +20,15 @@ use crate::{
     StyleSheet,
 };
 
-pub struct CollapsiblePicker<'a, T: PickerComponent + Component> {
+pub struct CollapsiblePicker<T: PickerComponent + Component> {
     style: Style,
     disclosure: Disclosure<T>,
-    placeholder: &'a str,
+    placeholder: String,
     has_made_selection: bool,
     pub collapsed: bool,
 }
 
-impl<'a, C: PickerComponent + Component> CollapsiblePicker<'a, C> {
+impl<C: PickerComponent + Component> CollapsiblePicker<C> {
     pub const STYLE_CLASS: &'static str = "collapsible_picker";
 
     stylable!();
@@ -36,18 +38,22 @@ impl<'a, C: PickerComponent + Component> CollapsiblePicker<'a, C> {
         I: IntoIterator<Item = T>,
         T: Into<String>,
     {
-        let placeholder = "No option selected";
         Self {
             style: Default::default(),
-            placeholder,
-            disclosure: Disclosure::new(placeholder, C::new(options)),
+            placeholder: "No option selected".to_owned(),
+            disclosure: Disclosure::new("No option selected", C::new(options)),
             has_made_selection: false,
             collapsed: true,
         }
     }
 
-    pub fn with_placeholder(mut self, text: &'a str) -> Self {
-        self.placeholder = text;
+    pub fn with_placeholder(mut self, text: impl Display) -> Self {
+        self.placeholder = text.to_string();
+        self
+    }
+
+    pub fn with_index(mut self, text: usize) -> Self {
+        self.disclosure.details.set_index(text);
         self
     }
 
@@ -68,7 +74,7 @@ impl<'a, C: PickerComponent + Component> CollapsiblePicker<'a, C> {
     }
 }
 
-impl<'a, C: PickerComponent + Component> Component for CollapsiblePicker<'a, C> {
+impl<C: PickerComponent + Component> Component for CollapsiblePicker<C> {
     fn update(
         &mut self,
         renderer: &mut DisplayState,
@@ -96,7 +102,7 @@ impl<'a, C: PickerComponent + Component> Component for CollapsiblePicker<'a, C> 
 
                 self.disclosure.summary.label = match self.selected_item() {
                     Some(selection) => selection,
-                    None => self.placeholder,
+                    None => &self.placeholder,
                 }.to_string();
 
                 if !self.has_made_selection && focused {

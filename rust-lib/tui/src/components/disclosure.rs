@@ -129,18 +129,18 @@ impl<T: Component> Component for Disclosure<T> {
                 self.summary.style = summary_style;
                 self.summary
                     .update(renderer, style_sheet, control_flow, focused, Event::Draw {
-                        x,
+                        x: x + 2,
                         y,
-                        width: self.summary.desired_width(style_sheet, context).min(width),
+                        width: self.summary.desired_width(style_sheet, context).min(width - 2),
                         height: self.summary.desired_height(style_sheet, context).min(height),
                     });
 
                 if self.opened {
                     self.details
                         .update(renderer, style_sheet, control_flow, focused, Event::Draw {
-                            x,
+                            x: x + 2,
                             y: y + 1,
-                            width: self.details.desired_width(style_sheet, context).min(width),
+                            width: self.details.desired_width(style_sheet, context).min(width - 2),
                             height: self.details.desired_height(style_sheet, context).min(height - 1),
                         });
                 }

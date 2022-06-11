@@ -78,6 +78,10 @@ impl PickerComponent for FilterablePicker {
     fn options(&self) -> &Vec<String> {
         self.picker.options()
     }
+
+    fn set_index(&mut self, index: usize) {
+        self.picker.selected = index;
+    }
 }
 
 impl Component for FilterablePicker {

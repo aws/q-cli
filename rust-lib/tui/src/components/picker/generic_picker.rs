@@ -62,6 +62,10 @@ impl PickerComponent for Picker {
     fn options(&self) -> &Vec<String> {
         &self.options
     }
+
+    fn set_index(&mut self, index: usize) {
+        self.selected = index;
+    }
 }
 
 impl Component for Picker {
