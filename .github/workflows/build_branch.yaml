@@ -121,7 +121,7 @@ jobs:
 ############################################
       - name: Install Protobuf tooling
         run:  |
-          brew install protobuf swift-protobuf
+          brew install protobuf swift-protobuf node
           npm install
         working-directory: ./proto
         env:
