@@ -5,9 +5,8 @@ use anyhow::{
     Result,
 };
 use fig_auth::is_logged_in;
-
-use crate::dotfiles::download_and_notify;
-use crate::dotfiles::notify::{
+use fig_install::dotfiles::download_and_notify;
+use fig_install::dotfiles::notify::{
     notify_terminal,
     TerminalNotification,
 };

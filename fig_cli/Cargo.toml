@@ -22,6 +22,8 @@ dialoguer = "0.10.0"
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
+fig_integrations = { path = "../rust-lib/fig_integrations" }
+fig_install = { path = "../rust-lib/fig_install" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
@@ -55,7 +57,6 @@ validator = "0.15.0"
 native-dialog = "0.6.3"
 viu = { path = "../rust-lib/viu" }
 spinners = "4.0.0"
-fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"

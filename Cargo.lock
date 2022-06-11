@@ -1309,6 +1309,7 @@ dependencies = [
  "dialoguer",
  "fig_auth",
  "fig_directories",
+ "fig_install",
  "fig_integrations",
  "fig_ipc",
  "fig_proto",

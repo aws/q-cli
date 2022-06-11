@@ -1,6 +1,5 @@
 pub mod api;
 pub mod backoff;
-pub mod checksum;
 pub mod os_version;
 pub mod sync;
 

@@ -11,6 +11,7 @@ use clap::{
     Subcommand,
 };
 use crossterm::style::Stylize;
+use fig_install::dotfiles::download_and_notify;
 use fig_ipc::command::{
     input_method_command,
     prompt_accessibility_command,
@@ -24,7 +25,6 @@ use serde_json::json;
 use crate::cli::app::quit_fig;
 use crate::cli::diagnostics::get_diagnostics;
 use crate::cli::launch_fig;
-use crate::dotfiles::download_and_notify;
 use crate::util::{
     glob,
     glob_dir,

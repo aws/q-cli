@@ -54,7 +54,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     let token = get_token().await?;
 
     let device_uniqueid = fig_util::get_system_id().ok();
-    let plugins_directry = crate::plugins::download::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
+    let plugins_directry = crate::plugins::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
 
     let url: reqwest::Url = format!("{}/dotfiles/source/all", api_host()).parse()?;
 
