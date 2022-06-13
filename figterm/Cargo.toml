@@ -27,7 +27,7 @@ fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_util = { path = "../rust-lib/fig_util" }
-flume = "0.10.10"
+flume = "0.10.13"
 fnv = "1.0.7"
 heapless = "0.7.10"
 nix = "0.24.1"
