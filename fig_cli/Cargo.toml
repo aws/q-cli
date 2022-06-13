@@ -29,7 +29,7 @@ fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.12"
 futures = "0.3.21"
 git2 = { version = "0.14", features = ["vendored-openssl", "vendored-libgit2"] }
-globset = "0.4.8"
+globset = "0.4.9"
 humantime = "2.1.0"
 notify = "4.0.17"
 parking_lot = "0.12.1"
