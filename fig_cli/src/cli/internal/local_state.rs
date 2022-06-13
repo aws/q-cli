@@ -37,10 +37,10 @@ pub struct LocalStateArgs {
     #[clap(subcommand)]
     cmd: Option<LocalStateSubcommand>,
     /// Key of the state
-    #[clap(long, action)]
+    #[clap(value_parser)]
     key: Option<String>,
     /// Value of the state
-    #[clap(long, action)]
+    #[clap(value_parser)]
     value: Option<String>,
     #[clap(long, short, action)]
     /// Delete the state

@@ -87,7 +87,7 @@ pub enum DebugSubcommand {
     },
     /// Show fig debug logs
     Logs {
-        #[clap(long, value_parser)]
+        #[clap(value_parser)]
         files: Vec<String>,
     },
     /// Fig input method editor
