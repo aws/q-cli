@@ -68,7 +68,7 @@ enum TelemetryEvent: String {
 }
 
 class TelemetryProvider: TelemetryService {
-    static let shared = TelemetryProvider(defaults: Defaults.shared)
+  static let shared = TelemetryProvider(defaults: Defaults.shared)
 
   private var defaults: Defaults
 
@@ -106,7 +106,7 @@ class TelemetryProvider: TelemetryService {
 
     body = addDefaultProperties(to: body)
     body["event"] = event
-    body["userId"] = defaults.uuid
+    body["anonymousId"] = defaults.anonymousId
 
     if defaults.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
@@ -115,7 +115,7 @@ class TelemetryProvider: TelemetryService {
       }
 
       guard sendEvent else {
-        print("telemetry: not sending event because telemetry is diabled")
+        print("telemetry: not sending event because telemetry is disabled")
         completion?(nil, nil, nil)
         return
       }
@@ -137,10 +137,10 @@ class TelemetryProvider: TelemetryService {
       body = traits
     }
 
-    body["userId"] = defaults.uuid
+    body["anonymousId"] = defaults.anonymousId
 
     if defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
-      print("telemetry: not sending identification event because telemetry is diabled")
+      print("telemetry: not sending identification event because telemetry is disabled")
       return
     }
 
@@ -150,11 +150,11 @@ class TelemetryProvider: TelemetryService {
   func alias(userId: String?) {
 
     if defaults.telemetryDisabled {
-      print("telemetry: not sending identification event because telemetry is diabled")
+      print("telemetry: not sending identification event because telemetry is disabled")
       return
     }
 
-    upload(to: "alias", with: ["previousId": defaults.uuid, "userId": userId ?? ""])
+    upload(to: "alias", with: ["previousId": defaults.anonymousId, "userId": userId ?? ""])
   }
 
   func upload(
@@ -164,10 +164,16 @@ class TelemetryProvider: TelemetryService {
   ) {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
     print(json)
-    var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent(endpoint))
+
+    let url = Remote.API
+        .appendingPathComponent("telemetry")
+        .appendingPathComponent(endpoint)
+
+    var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = json
     request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+    try? Credentials.shared.authorizeRequest(request: &request)
 
     let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
       if let handler = completion {
