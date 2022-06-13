@@ -22,7 +22,6 @@ mod tweet;
 mod user;
 mod workflow;
 
-use std::collections::HashMap;
 use std::fs::File;
 use std::process::exit;
 use std::str::FromStr;
@@ -208,9 +207,8 @@ pub enum CliRootCommands {
     Man {
         command: Vec<String>,
     },
-    Workflow {
-        name: Option<String>,
-    },
+    #[clap(external_subcommand)]
+    Workflow(Vec<String>),
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -368,7 +366,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Workflow { name } => workflow::execute(name, HashMap::new()).await,
+                CliRootCommands::Workflow(args) => workflow::execute(args).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())

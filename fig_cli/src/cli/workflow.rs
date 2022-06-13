@@ -112,7 +112,44 @@ enum WorkflowComponent {
     },
 }
 
-pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Result<()> {
+pub async fn execute(args: Vec<String>) -> Result<()> {
+    // Parse args
+    let name = args.get(1).map(String::from);
+    let mut arg_pairs: HashMap<String, String> = HashMap::new();
+    let mut args = args.into_iter().skip(2);
+    let mut arg = None;
+    loop {
+        arg = match arg {
+            Some(arg) => match args.next() {
+                Some(value) => match value.strip_prefix("--") {
+                    Some(value) => {
+                        arg_pairs.insert(arg, "true".to_string());
+                        Some(value.to_string())
+                    },
+                    None => {
+                        arg_pairs.insert(arg, value);
+                        None
+                    },
+                },
+                None => {
+                    arg_pairs.insert(arg, "true".to_string());
+                    break;
+                },
+            },
+            None => match args.next() {
+                Some(new_arg) => match new_arg.strip_prefix("--") {
+                    Some(new_arg) => Some(new_arg.to_string()),
+                    None => anyhow::bail!("Unexpected argument: {}", new_arg),
+                },
+                None => break,
+            },
+        }
+    }
+    let args = arg_pairs;
+
+    println!("{name:?}");
+
+    // Get workflow
     let workflow = match name {
         Some(name) => match request(Method::GET, format!("/workflows/{name}"), None, true).await? {
             Some(workflow) => workflow,
@@ -174,12 +211,8 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 true_value_substitution,
                 false_value_substitution,
             } => WorkflowComponent::CheckBox {
-                inner: CheckBox::new(
-                    args.get(&name)
-                        .map(|val| val == &true_value_substitution)
-                        .unwrap_or(false),
-                )
-                .with_text(parameter.description.unwrap_or("Toggle".to_string())),
+                inner: CheckBox::new(args.get(&name).is_some())
+                    .with_text(parameter.description.unwrap_or("Toggle".to_string())),
                 name,
                 display_name,
                 value_if_true: true_value_substitution,
@@ -358,7 +391,7 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 .with_background_color(Color::White)
                 .with_color(Color::DarkGrey),
         )
-        .with_style("checkbox", Style::new().with_marging_left(1));
+        .with_style("checkbox", Style::new().with_margin_left(1));
 
     let mut model: Vec<&mut dyn Component> = vec![];
     let mut name = Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name));
