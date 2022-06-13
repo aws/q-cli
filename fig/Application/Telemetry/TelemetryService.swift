@@ -183,6 +183,9 @@ class TelemetryProvider: TelemetryService {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
     print(json)
 
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
+
     let url = Remote.API
         .appendingPathComponent("telemetry")
         .appendingPathComponent(endpoint)
