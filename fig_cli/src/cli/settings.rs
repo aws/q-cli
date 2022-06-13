@@ -192,6 +192,16 @@ impl SettingsArgs {
                                     eprintln!("Run {} to login", "fig login".magenta().bold());
                                     exit(1);
                                 },
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::ReqwestError(err),
+                                ) => match err.status() {
+                                    Some(status) if status == 401 => {
+                                        eprintln!("You are not logged in to Fig");
+                                        eprintln!("Run {} to login", "fig login".magenta().bold());
+                                        exit(1);
+                                    },
+                                    _ => Err(err.into()),
+                                },
                                 err => Err(err.into()),
                             },
                         }
