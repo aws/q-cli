@@ -9,6 +9,7 @@ use anyhow::{
     Context,
     Result,
 };
+use cfg_if::cfg_if;
 use clap::ArgEnum;
 use fig_util::Shell;
 use regex::{
@@ -204,10 +205,19 @@ impl ShellScriptShellIntegration {
             Some(name) => format!(" --rcfile {}", get_prefix(name)),
             None => "".into(),
         };
-        match self.shell {
-            Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
-            _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
-        }
+        cfg_if!(
+            if #[cfg(target_os = "linux")] {
+                return match self.shell {
+                    Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
+                    _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
+                }
+            } else {
+                return match self.shell {
+                    Shell::Fish => format!("eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
+                    _ => format!("eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
+                }
+            }
+        );
     }
 }
 

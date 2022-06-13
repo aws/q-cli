@@ -1300,6 +1300,7 @@ name = "fig_integrations"
 version = "0.1.0"
 dependencies = [
  "anyhow",
+ "cfg-if 1.0.0",
  "clap",
  "fig_directories",
  "fig_util",
