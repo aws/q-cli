@@ -145,7 +145,7 @@ impl<T: Component> Component for Disclosure<T> {
                         });
                 }
             },
-            Event::KeyPressed { code, .. } => match code {
+            Event::KeyPressed { code, .. } => if focused { match code {
                 KeyCode::Enter => {
                     if focused {
                         self.opened = !self.opened
@@ -158,7 +158,7 @@ impl<T: Component> Component for Disclosure<T> {
                     self.details
                         .update(renderer, style_sheet, control_flow, self.opened, event);
                 },
-            },
+            }},
             _ => {
                 self.details
                     .update(renderer, style_sheet, control_flow, self.opened, event);

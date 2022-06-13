@@ -143,7 +143,7 @@ impl Component for FilterablePicker {
                     }
                 }
             },
-            Event::KeyPressed { code, .. } => {
+            Event::KeyPressed { code, .. } => if focused {
                 match code {
                     KeyCode::Up | KeyCode::Down => {
                         self.picker.update(renderer, style_sheet, control_flow, focused, event);
