@@ -65,11 +65,11 @@ use crate::dotfiles::notify::TerminalNotification;
             .requires_all(&["filename", "exit-code"])
             ))]
 pub struct CallbackArgs {
-    #[clap(long, action)]
+    #[clap(value_parser)]
     handler_id: String,
-    #[clap(long, action, group = "output")]
+    #[clap(value_parser, group = "output")]
     filename: Option<String>,
-    #[clap(long, action, group = "output")]
+    #[clap(value_parser, group = "output")]
     exit_code: Option<i64>,
 }
 
@@ -98,19 +98,16 @@ pub struct InstallArgs {
 #[derive(Debug, Args)]
 pub struct AnimationArgs {
     // resource to play
-    #[clap(long, short, action)]
+    #[clap(long, short, value_parser)]
     filename: Option<String>,
-
     // framerate to play the GIF with
-    #[clap(long, short, action)]
+    #[clap(long, short, value_parser)]
     rate: Option<i32>,
-
     // text to print before GIF/img appears
-    #[clap(long, short, action)]
+    #[clap(long, short, value_parser)]
     before_text: Option<String>,
-
     // text to print before GIF/img disappears
-    #[clap(long, short, action)]
+    #[clap(long, short, value_parser)]
     after_text: Option<String>,
 }
 
@@ -127,7 +124,7 @@ pub enum InternalSubcommand {
     /// Install fig cli
     Install(InstallArgs),
     InstallIbus {
-        #[clap(long, action)]
+        #[clap(value_parser)]
         fig_ibus_engine_location: String,
     },
     /// Uninstall fig cli

@@ -77,22 +77,22 @@ pub enum DebugSubcommand {
     },
     /// Switch build
     Build {
-        #[clap(value_enum, action)]
+        #[clap(value_enum, value_parser)]
         build: Build,
     },
     /// Toggle/set autocomplete window debug mode
     AutocompleteWindow {
-        #[clap(value_enum, action)]
+        #[clap(value_enum, value_parser)]
         mode: Option<AutocompleteWindowDebug>,
     },
     /// Show fig debug logs
     Logs {
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         files: Vec<String>,
     },
     /// Fig input method editor
     Ime {
-        #[clap(value_enum, action)]
+        #[clap(value_enum, value_parser)]
         command: ImeCommand,
     },
     /// Prompt accessibility
@@ -106,7 +106,7 @@ pub enum DebugSubcommand {
 
     ///
     Accessibility {
-        #[clap(value_enum, action)]
+        #[clap(value_enum, value_parser)]
         action: Option<AccessibilityAction>,
     },
 }

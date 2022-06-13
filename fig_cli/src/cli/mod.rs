@@ -126,7 +126,7 @@ pub enum CliRootCommands {
     /// Run diagnostic tests
     Diagnostic {
         /// The format of the output
-        #[clap(long, short, value_enum, action, default_value_t)]
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
         /// Force limited diagnostic output
         #[clap(long, action)]
@@ -135,19 +135,19 @@ pub enum CliRootCommands {
     /// Generate the dotfiles for the given shell
     Init {
         /// The shell to generate the dotfiles for
-        #[clap(value_enum, action)]
+        #[clap(value_enum, value_parser)]
         shell: Shell,
         /// When to generate the dotfiles for
-        #[clap(value_enum, action)]
+        #[clap(value_enum, value_parser)]
         when: When,
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         rcfile: Option<String>,
     },
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
     Theme {
-        #[clap(long, action)]
+        #[clap(action)]
         theme: Option<String>,
     },
     /// Invite friends to Fig
@@ -160,7 +160,7 @@ pub enum CliRootCommands {
         #[clap(long, short = 'f', action)]
         force: bool,
         /// Issue description
-        #[clap(long, action)]
+        #[clap(value_parser)]
         description: Vec<String>,
     },
     #[clap(flatten)]
@@ -181,7 +181,7 @@ pub enum CliRootCommands {
     #[clap(hide = true)]
     Completion {
         /// Shell to generate the completion spec for
-        #[clap(value_enum, action, default_value_t = Shells::Zsh)]
+        #[clap(value_enum, value_parser, default_value_t = Shells::Zsh)]
         shell: Shells,
     },
     /// Internal subcommands used for Fig
@@ -206,7 +206,7 @@ pub enum CliRootCommands {
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man {
-        #[clap(long, action)]
+        #[clap(value_parser)]
         command: Vec<String>,
     },
     /// (LEGACY) Old hook that was being used somewhere

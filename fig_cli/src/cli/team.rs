@@ -34,13 +34,13 @@ pub struct TeamsArgs {
     #[clap(long, action, conflicts_with_all = &["list", "new"])]
     delete: bool,
     // Format of output
-    #[clap(long, short, value_enum, action, default_value_t)]
+    #[clap(long, short, value_enum, value_parser, default_value_t)]
     format: OutputFormat,
 }
 
 #[derive(Debug, Args)]
 pub struct TeamCommand {
-    #[clap(long, action)]
+    #[clap(value_parser)]
     pub team: Option<String>,
     #[clap(subcommand)]
     pub subcommand: Option<TeamSubcommand>,
@@ -122,21 +122,21 @@ pub enum TeamSubcommand {
     Members,
     /// Remove a member from a team
     Remove {
-        #[clap(long, action)]
+        #[clap(value_parser)]
         email: String,
     },
     /// Invite a member to a team
     Add {
-        #[clap(long, action)]
+        #[clap(value_parser)]
         email: String,
-        #[clap(long, value_enum, action)]
+        #[clap(long, value_enum, value_parser)]
         role: Option<Role>,
     },
     /// List pending invitations to a team
     Invitations,
     /// Revoke an invitation to a team
     Revoke {
-        #[clap(long, action)]
+        #[clap(value_parser)]
         email: String,
     },
 }
