@@ -147,8 +147,6 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
     let args = arg_pairs;
 
-    println!("{name:?}");
-
     // Get workflow
     let workflow = match name {
         Some(name) => match request(Method::GET, format!("/workflows/{name}"), None, true).await? {
@@ -413,13 +411,17 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         model.push(frame as &mut dyn Component);
     }
 
-    EventLoop::new()
+    if EventLoop::new()
         .with_style_sheet(&style_sheet)
         .run::<std::io::Error, _>(
             ControlFlow::Wait,
             DisplayMode::AlternateScreen,
             &mut Form::new(model).with_margin_top(1).with_margin_left(2),
-        )?;
+        )?
+        > 0
+    {
+        return Ok(());
+    }
 
     let mut args: HashMap<&str, &str> = HashMap::new();
     for component in &components {
