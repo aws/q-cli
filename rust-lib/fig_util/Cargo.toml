@@ -14,7 +14,7 @@ fig_directories = { path = "../fig_directories" }
 fig_settings = { path = "../fig_settings" }
 serde = "1.0.136"
 sha2 = "0.10.2"
-sysinfo = "0.24.2"
+sysinfo = "0.24.3"
 thiserror = "1.0.30"
 tokio = { version = "1", features = ["process"] }
 
