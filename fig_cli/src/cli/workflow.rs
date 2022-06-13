@@ -82,7 +82,7 @@ enum TreeElement {
 
 #[derive(Debug, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct Snippet {
+struct Workflow {
     name: String,
     display_name: Option<String>,
     description: Option<String>,
@@ -92,7 +92,7 @@ struct Snippet {
     tree: Vec<TreeElement>,
 }
 
-enum SnippetComponent {
+enum WorkflowComponent {
     CheckBox {
         name: String,
         display_name: String,
@@ -113,34 +113,59 @@ enum SnippetComponent {
 }
 
 pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Result<()> {
-    let snippet = match name {
-        Some(name) => match request(Method::GET, format!("/snippets/{name}"), None, true).await? {
-            Some(snippet) => snippet,
-            None => return Err(anyhow!("Snippet does not exist with name: {}", name)),
+    let workflow = match name {
+        Some(name) => match request(Method::GET, format!("/workflows/{name}"), None, true).await? {
+            Some(workflow) => workflow,
+            None => return Err(anyhow!("Workflow does not exist with name: {}", name)),
         },
         None => {
-            let mut snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
-            let snippet_names: Vec<String> = snippets
+            let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+            let workflow_names: Vec<String> = workflows
                 .iter()
-                .map(|snippet| {
-                    snippet
-                        .display_name
-                        .as_ref()
-                        .cloned()
-                        .unwrap_or_else(|| snippet.name.clone())
-                })
+                .map(|workflow| workflow.display_name.clone().unwrap_or(workflow.name.clone()))
                 .collect();
+            #[cfg(unix)]
+            let selection = {
+                use std::io::Cursor;
+
+                use skim::prelude::*;
+
+                let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
+                    acc.push_str(name);
+                    acc.push('\n');
+                    acc
+                });
+                let item_reader = SkimItemReader::default();
+                let items = item_reader.of_bufread(Cursor::new(input));
+                let name = Skim::run_with(
+                    &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
+                    Some(items),
+                )
+                .map(|out| out.selected_items[0].text().to_string())
+                .unwrap();
+
+                let mut index = 0;
+                for (i, workflow) in workflows.iter().enumerate() {
+                    if workflow.name == name {
+                        index = i;
+                        break;
+                    }
+                }
+
+                index
+            };
+            #[cfg(windows)]
             let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-                .items(&snippet_names)
+                .items(&workflow_names)
                 .default(0)
                 .interact()
                 .unwrap();
-            snippets.remove(selection)
+            workflows.remove(selection)
         },
     };
 
-    let mut components: Vec<SnippetComponent> = vec![];
-    for parameter in snippet.parameters {
+    let mut components: Vec<WorkflowComponent> = vec![];
+    for parameter in workflow.parameters {
         let display_name = parameter.display_name.unwrap_or_else(|| parameter.name.clone());
         let name = parameter.name;
 
@@ -148,7 +173,7 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
             ParameterType::Checkbox {
                 true_value_substitution,
                 false_value_substitution,
-            } => SnippetComponent::CheckBox {
+            } => WorkflowComponent::CheckBox {
                 inner: CheckBox::new(
                     args.get(&name)
                         .map(|val| val == &true_value_substitution)
@@ -160,7 +185,7 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 value_if_true: true_value_substitution,
                 value_if_false: false_value_substitution,
             },
-            ParameterType::Text { placeholder } => SnippetComponent::TextField {
+            ParameterType::Text { placeholder } => WorkflowComponent::TextField {
                 inner: match placeholder {
                     Some(hint) => TextField::new().with_hint(hint),
                     None => TextField::new(),
@@ -210,7 +235,7 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                     _ => (),
                 };
 
-                SnippetComponent::Picker {
+                WorkflowComponent::Picker {
                     name,
                     display_name,
                     inner: match placeholder {
@@ -226,13 +251,13 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
     let mut frames: Vec<Frame> = components
         .iter_mut()
         .map(|component| match component {
-            SnippetComponent::CheckBox {
+            WorkflowComponent::CheckBox {
                 display_name, inner, ..
             } => Frame::new(inner as &mut dyn Component).with_title(display_name.to_owned()),
-            SnippetComponent::TextField {
+            WorkflowComponent::TextField {
                 display_name, inner, ..
             } => Frame::new(inner as &mut dyn Component).with_title(display_name.to_owned()),
-            SnippetComponent::Picker {
+            WorkflowComponent::Picker {
                 display_name, inner, ..
             } => Frame::new(inner as &mut dyn Component).with_title(display_name.to_owned()),
         })
@@ -333,11 +358,11 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 .with_background_color(Color::White)
                 .with_color(Color::DarkGrey),
         )
-        .with_style("checkbox", Style::new().with_margin_left(1));
+        .with_style("checkbox", Style::new().with_marging_left(1));
 
     let mut model: Vec<&mut dyn Component> = vec![];
-    let mut name = Label::new(snippet.display_name.as_ref().unwrap_or(&snippet.name));
-    let mut description = snippet
+    let mut name = Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name));
+    let mut description = workflow
         .description
         .as_ref()
         .map(|description| Label::new(description).with_margin_bottom(1));
@@ -366,7 +391,7 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
     let mut args: HashMap<&str, &str> = HashMap::new();
     for component in &components {
         match component {
-            SnippetComponent::CheckBox {
+            WorkflowComponent::CheckBox {
                 name,
                 inner,
                 value_if_true,
@@ -376,26 +401,26 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 true => value_if_true,
                 false => value_if_false,
             }),
-            SnippetComponent::TextField { name, inner, .. } => args.insert(name, &inner.text),
-            SnippetComponent::Picker { name, inner, .. } => args.insert(name, match inner.selected_item() {
+            WorkflowComponent::TextField { name, inner, .. } => args.insert(name, &inner.text),
+            WorkflowComponent::Picker { name, inner, .. } => args.insert(name, match inner.selected_item() {
                 Some(selected) => selected,
                 None => return Err(anyhow!("Missing entry for field: {name}")),
             }),
         };
     }
 
-    let mut command = format!("fig snippet {}", snippet.name);
+    let mut command = format!("fig workflow {}", workflow.name);
     for (arg, val) in &args {
         command.push_str(&format!(" --{arg} \"{}\"", val.escape_default()));
     }
 
     println!("{} {command}", "Executing:".bold().magenta());
-    execute_snippet(snippet.tree, args).await?;
+    execute_workflow(workflow.tree, args).await?;
 
     Ok(())
 }
 
-async fn execute_snippet(tree: Vec<TreeElement>, args: HashMap<&str, &str>) -> Result<()> {
+async fn execute_workflow(tree: Vec<TreeElement>, args: HashMap<&str, &str>) -> Result<()> {
     let mut command = Command::new("bash");
     command.arg("-c");
     command.arg(tree.into_iter().fold(String::new(), |mut acc, branch| {

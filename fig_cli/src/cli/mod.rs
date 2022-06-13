@@ -13,7 +13,6 @@ mod issue;
 mod man;
 mod plugins;
 mod settings;
-mod snippet;
 mod source;
 mod ssh;
 mod team;
@@ -21,6 +20,7 @@ mod theme;
 mod tips;
 mod tweet;
 mod user;
+mod workflow;
 
 use std::collections::HashMap;
 use std::fs::File;
@@ -208,7 +208,7 @@ pub enum CliRootCommands {
     Man {
         command: Vec<String>,
     },
-    Snippet {
+    Workflow {
         name: Option<String>,
     },
     /// (LEGACY) Old hook that was being used somewhere
@@ -368,7 +368,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Snippet { name } => snippet::execute(name, HashMap::new()).await,
+                CliRootCommands::Workflow { name } => workflow::execute(name, HashMap::new()).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
