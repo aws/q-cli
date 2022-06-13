@@ -158,6 +158,13 @@ impl WindowState {
                     .window()
                     .set_inner_size(Size::Physical(PhysicalSize { width: 1, height: 1 }));
             },
+            WindowEvent::HideSoft => {
+                if let Some(session) = state.figterm_state.most_recent_session() {
+                    Handle::current().spawn(async move {
+                        session.sender.send(FigTermCommand::ClearIntercept).await.unwrap();
+                    });
+                }
+            },
             WindowEvent::Show => {
                 self.webview.window().set_visible(true);
                 self.webview.window().set_always_on_top(true);

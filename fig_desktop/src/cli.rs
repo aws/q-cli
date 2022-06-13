@@ -12,6 +12,9 @@ pub struct Cli {
     /// Allow launching multiple instances of `fig_desktop`
     #[clap(long, action)]
     pub allow_multiple: bool,
+    /// Url to open
+    #[clap(value_parser)]
+    url_link: Option<String>,
 }
 
 #[cfg(test)]
