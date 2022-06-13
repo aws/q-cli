@@ -34,7 +34,7 @@ pub enum RootUserSubcommand {
     /// Login to Fig
     Login {
         /// Manually refresh the auth token
-        #[clap(long, short)]
+        #[clap(long, short, action)]
         refresh: bool,
     },
     /// Logout of Fig
@@ -56,11 +56,11 @@ pub enum UserSubcommand {
     Root(RootUserSubcommand),
     Whoami {
         /// Output format to use
-        #[clap(short, long, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, action, default_value_t)]
         format: OutputFormat,
         /// Only print the user's email address, this is quicker since it doesn't require a network
         /// request
-        #[clap(short = 'e', long)]
+        #[clap(long, short = 'e', action)]
         only_email: bool,
     },
     #[clap(subcommand)]
@@ -81,37 +81,40 @@ impl UserSubcommand {
 pub enum TokensSubcommand {
     New {
         /// The name of the token
+        #[clap(long, action)]
         name: String,
         /// The expiration date of the token in RFC3339 format
-        #[clap(long, conflicts_with = "expires-in")]
+        #[clap(long, action, conflicts_with = "expires-in")]
         expires_date: Option<String>,
         /// The time till the token expires (e.g. "90d")
-        #[clap(long, conflicts_with = "expires-date")]
+        #[clap(long, action, conflicts_with = "expires-date")]
         expires_in: Option<String>,
         /// The team namespace to create the token for
-        #[clap(long, short)]
+        #[clap(long, short, action)]
         team: Option<String>,
     },
     List {
         /// The team namespace to list the tokens for
-        #[clap(long, short, conflicts_with = "personal")]
+        #[clap(long, short, action, conflicts_with = "personal")]
         team: Option<String>,
         /// Only list tokens owned by the current user
-        #[clap(long, short, conflicts_with = "team")]
+        #[clap(long, short, action, conflicts_with = "team")]
         personal: bool,
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, action, default_value_t)]
         format: OutputFormat,
     },
     Revoke {
         /// The name of the token to revoke
+        #[clap(long, action)]
         name: String,
         /// The team namespace to revoke the token for
-        #[clap(long, short)]
+        #[clap(long, short, action)]
         team: Option<String>,
     },
     /// Validate a token is valid
     Validate {
         /// The token to validate
+        #[clap(long, action)]
         token: String,
     },
 }

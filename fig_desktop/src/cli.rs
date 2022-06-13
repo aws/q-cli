@@ -4,13 +4,13 @@ use clap::Parser;
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
     /// Force Mission Control to be open on launch
-    #[clap(long)]
+    #[clap(long, action)]
     pub mission_control: bool,
     /// Kill old instances of `fig_desktop`
-    #[clap(long)]
+    #[clap(long, action)]
     pub kill_old: bool,
     /// Allow launching multiple instances of `fig_desktop`
-    #[clap(long)]
+    #[clap(long, action)]
     pub allow_multiple: bool,
 }
 

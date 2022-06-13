@@ -14,40 +14,60 @@ use fig_proto::hooks;
 #[clap(hide = true)]
 pub enum HookSubcommand {
     Editbuffer {
+        #[clap(long, action)]
         session_id: String,
+        #[clap(long, action)]
         integration: i32,
+        #[clap(long, action)]
         tty: String,
+        #[clap(long, action)]
         pid: i32,
+        #[clap(long, action)]
         histno: i64,
+        #[clap(long, action)]
         cursor: i64,
+        #[clap(long, action)]
         text: String,
     },
     Hide,
     Init {
+        #[clap(long, action)]
         pid: i32,
+        #[clap(long, action)]
         tty: String,
     },
     IntegrationReady {
+        #[clap(long, action)]
         integration: String,
     },
     KeyboardFocusChanged {
+        #[clap(long, action)]
         app_identifier: String,
+        #[clap(long, action)]
         focused_session_id: String,
     },
     PreExec {
+        #[clap(long, action)]
         pid: i32,
+        #[clap(long, action)]
         tty: String,
     },
     Prompt {
+        #[clap(long, action)]
         pid: i32,
+        #[clap(long, action)]
         tty: String,
     },
     Ssh {
+        #[clap(long, action)]
         pid: i32,
+        #[clap(long, action)]
         tty: String,
+        #[clap(long, action)]
         control_path: String,
+        #[clap(long, action)]
         remote_dest: String,
-        #[clap(long)]
+        #[clap(long, action)]
         prompt: bool,
     },
 }

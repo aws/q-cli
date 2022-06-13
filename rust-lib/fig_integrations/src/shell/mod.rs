@@ -10,7 +10,7 @@ use anyhow::{
     Result,
 };
 use cfg_if::cfg_if;
-use clap::ArgEnum;
+use clap::ValueEnum;
 use fig_util::Shell;
 use regex::{
     Regex,
@@ -28,7 +28,7 @@ use crate::{
     Integration,
 };
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
     Pre,
@@ -534,9 +534,9 @@ mod test {
     use super::*;
 
     fn check_script(shell: Shell, when: When) {
-        let shell_arg = format!("--shell=bash");
+        let shell_arg = "--shell=bash";
         let mut child = Command::new("shellcheck")
-            .args(&[&shell_arg, "--color=always", "-"])
+            .args(&[shell_arg, "--color=always", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

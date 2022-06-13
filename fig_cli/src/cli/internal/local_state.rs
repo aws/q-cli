@@ -24,7 +24,7 @@ pub enum LocalStateSubcommand {
     Open,
     /// List all the settings
     All {
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, action, default_value_t)]
         format: OutputFormat,
     },
 }
@@ -37,13 +37,15 @@ pub struct LocalStateArgs {
     #[clap(subcommand)]
     cmd: Option<LocalStateSubcommand>,
     /// Key of the state
+    #[clap(long, action)]
     key: Option<String>,
     /// Value of the state
+    #[clap(long, action)]
     value: Option<String>,
-    #[clap(long, short)]
+    #[clap(long, short, action)]
     /// Delete the state
     delete: bool,
-    #[clap(long, short, arg_enum, default_value_t)]
+    #[clap(long, short, value_enum, action, default_value_t)]
     /// Format of the output
     format: OutputFormat,
 }

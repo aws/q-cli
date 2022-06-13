@@ -33,20 +33,22 @@ pub enum PluginsSubcommands {
     /// Install a specific plugin from the plugin store
     Add {
         /// The plugin to install
+        #[clap(long, action)]
         plugin: String,
     },
     /// Uninstall a specific plugin
     Remove {
         /// The plugin to uninstall
+        #[clap(long, action)]
         plugin: String,
     },
     /// List all plugins available in the plugin store
     List {
         /// The output format
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, action, default_value_t)]
         format: OutputFormat,
         /// Only list plugins that are installed
-        #[clap(long, short)]
+        #[clap(long, short, action)]
         installed: bool,
     },
 }

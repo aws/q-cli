@@ -7,8 +7,8 @@ use anyhow::{
     Result,
 };
 use clap::{
-    ArgEnum,
     Subcommand,
+    ValueEnum,
 };
 use crossterm::style::Stylize;
 use fig_ipc::command::{
@@ -31,14 +31,14 @@ use crate::util::{
     LaunchOptions,
 };
 
-#[derive(Debug, ArgEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone)]
 pub enum Build {
     Dev,
     Prod,
     Staging,
 }
 
-#[derive(Debug, ArgEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone)]
 pub enum ImeCommand {
     Install,
     Uninstall,
@@ -50,13 +50,13 @@ pub enum ImeCommand {
     Register,
 }
 
-#[derive(Debug, ArgEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone)]
 pub enum AutocompleteWindowDebug {
     On,
     Off,
 }
 
-#[derive(Debug, ArgEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone)]
 pub enum AccessibilityAction {
     Refresh,
     Reset,
@@ -72,24 +72,27 @@ pub enum DebugSubcommand {
     /// Debug dotfiles
     Dotfiles {
         /// Disable debug mode
-        #[clap(long)]
+        #[clap(long, action)]
         disable: bool,
     },
     /// Switch build
     Build {
-        #[clap(arg_enum)]
+        #[clap(value_enum, action)]
         build: Build,
     },
     /// Toggle/set autocomplete window debug mode
     AutocompleteWindow {
-        #[clap(arg_enum)]
+        #[clap(value_enum, action)]
         mode: Option<AutocompleteWindowDebug>,
     },
     /// Show fig debug logs
-    Logs { files: Vec<String> },
+    Logs {
+        #[clap(long, action)]
+        files: Vec<String>,
+    },
     /// Fig input method editor
     Ime {
-        #[clap(arg_enum)]
+        #[clap(value_enum, action)]
         command: ImeCommand,
     },
     /// Prompt accessibility
@@ -103,7 +106,7 @@ pub enum DebugSubcommand {
 
     ///
     Accessibility {
-        #[clap(arg_enum)]
+        #[clap(value_enum, action)]
         action: Option<AccessibilityAction>,
     },
 }
