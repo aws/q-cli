@@ -74,6 +74,20 @@ class TelemetryProvider: TelemetryService {
 
   private var terminalObserver: TerminalUsageObserver?
 
+  private var deviceId: String? {
+    let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice") )
+
+    guard platformExpert > 0 else {
+      return nil
+    }
+
+    let deviceId = IORegistryEntryCreateCFProperty(platformExpert, kIOPlatformUUIDKey as CFString, kCFAllocatorDefault, 0).takeUnretainedValue() as? String
+
+    IOObjectRelease(platformExpert)
+
+    return deviceId
+  }
+
   init(defaults: Defaults) {
     self.defaults = defaults
   }
@@ -120,6 +134,10 @@ class TelemetryProvider: TelemetryService {
         return
       }
 
+    }
+
+    if deviceId != nil {
+      body["prop_device_id"] = deviceId
     }
 
     upload(to: "track", with: body, completion: completion)

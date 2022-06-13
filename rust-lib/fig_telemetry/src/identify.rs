@@ -18,12 +18,12 @@ where
         return Err(Error::TelemetryDisabled);
     }
 
-    let mut identify = HashMap::from([("anonymousId".into(), fig_auth::get_default("anonymousId")?)]);
+    let mut identify = HashMap::new();
 
     for kv in traits.into_iter() {
         let (key, value) = kv.into();
         identify.insert(format!("prop_{key}"), value.into());
     }
 
-    make_telemetry_request(IDENTIFY_SUBDOMAIN, &identify).await
+    make_telemetry_request(IDENTIFY_SUBDOMAIN, identify).await
 }

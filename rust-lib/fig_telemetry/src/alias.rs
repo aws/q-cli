@@ -15,9 +15,9 @@ pub async fn emit_alias(user_id: String) -> Result<(), Error> {
     }
 
     let alias = HashMap::from([
-        ("previousId", fig_auth::get_default("anonymousId")?),
-        ("userId", user_id),
+        ("previousId".into(), fig_auth::get_default("anonymousId")?),
+        ("userId".into(), user_id),
     ]);
 
-    make_telemetry_request(ALIAS_SUBDOMAIN, &alias).await
+    make_telemetry_request(ALIAS_SUBDOMAIN, alias).await
 }
