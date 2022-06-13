@@ -112,10 +112,8 @@ impl Component for CheckBox {
                     });
             },
             Event::KeyPressed { code, .. } => {
-                if focused {
-                    if code == KeyCode::Char(' ') {
-                        self.checked = !self.checked
-                    }
+                if focused && code == KeyCode::Char(' ') {
+                    self.checked = !self.checked
                 }
             },
             _ => (),

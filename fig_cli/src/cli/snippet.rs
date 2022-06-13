@@ -1,13 +1,35 @@
 use std::collections::HashMap;
 use std::process::Command;
 
-use anyhow::{anyhow, Result};
+use anyhow::{
+    anyhow,
+    Result,
+};
 use crossterm::style::Stylize;
 use reqwest::Method;
-use serde::{Deserialize, Serialize};
-use tui::components::{CheckBox, CollapsiblePicker, Frame, Label, TextField, FilterablePicker};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use tui::components::{
+    CheckBox,
+    CollapsiblePicker,
+    FilterablePicker,
+    Frame,
+    Label,
+    TextField,
+};
 use tui::layouts::Form;
-use tui::{BorderStyle, Color, Component, ControlFlow, DisplayMode, EventLoop, Style, StyleSheet};
+use tui::{
+    BorderStyle,
+    Color,
+    Component,
+    ControlFlow,
+    DisplayMode,
+    EventLoop,
+    Style,
+    StyleSheet,
+};
 
 use crate::util::api::request;
 
@@ -98,7 +120,16 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
         },
         None => {
             let mut snippets: Vec<Snippet> = request(Method::GET, "/snippets", None, true).await?;
-            let snippet_names: Vec<&str> = snippets.iter().map(|snippet| snippet.name.as_ref()).collect();
+            let snippet_names: Vec<String> = snippets
+                .iter()
+                .map(|snippet| {
+                    snippet
+                        .display_name
+                        .as_ref()
+                        .cloned()
+                        .unwrap_or_else(|| snippet.name.clone())
+                })
+                .collect();
             let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
                 .items(&snippet_names)
                 .default(0)
@@ -118,7 +149,12 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 true_value_substitution,
                 false_value_substitution,
             } => SnippetComponent::CheckBox {
-                inner: CheckBox::new(args.get(&name).map(|val| val == &true_value_substitution).unwrap_or(false)),
+                inner: CheckBox::new(
+                    args.get(&name)
+                        .map(|val| val == &true_value_substitution)
+                        .unwrap_or(false),
+                )
+                .with_text(parameter.description.unwrap_or("Toggle".to_string())),
                 name,
                 display_name,
                 value_if_true: true_value_substitution,
@@ -128,7 +164,8 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 inner: match placeholder {
                     Some(hint) => TextField::new().with_hint(hint),
                     None => TextField::new(),
-                }.with_text(args.get(&name).unwrap_or(&String::new())),
+                }
+                .with_text(args.get(&name).unwrap_or(&String::new())),
                 name,
                 display_name,
             },
@@ -162,10 +199,12 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
 
                 let mut index = 0;
                 match args.get(&name) {
-                    Some(arg) => for i in 0..options.len() {
-                        if &options[i] == arg {
-                            index = i;
-                            break;
+                    Some(arg) => {
+                        for i in 0..options.len() {
+                            if &options[i] == arg {
+                                index = i;
+                                break;
+                            }
                         }
                     },
                     _ => (),
@@ -177,7 +216,8 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                     inner: match placeholder {
                         Some(placeholder) => CollapsiblePicker::new(options).with_placeholder(placeholder),
                         None => CollapsiblePicker::new(options),
-                    }.with_index(index),
+                    }
+                    .with_index(index),
                 }
             },
         });
@@ -270,7 +310,7 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
         .with_style("textfield", Style::new().with_padding_left(2).with_color(Color::Grey))
         .with_style("textfield:focus", focus_style.with_color(Color::White))
         .with_style("disclosure.summary:focus", Style::new().with_color(Color::White))
-        .with_style("disclosure.summary", Style::new().with_color(Color::Cyan))
+        .with_style("disclosure.summary", Style::new().with_color(Color::Grey))
         .with_style(
             "picker.item",
             Style::new().with_padding_left(2).with_color(Color::DarkGrey),
@@ -292,7 +332,8 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 .with_margin_left(2)
                 .with_background_color(Color::White)
                 .with_color(Color::DarkGrey),
-        );
+        )
+        .with_style("checkbox", Style::new().with_margin_left(1));
 
     let mut model: Vec<&mut dyn Component> = vec![];
     let mut name = Label::new(snippet.display_name.as_ref().unwrap_or(&snippet.name));
@@ -316,7 +357,11 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
 
     EventLoop::new()
         .with_style_sheet(&style_sheet)
-        .run::<std::io::Error, _>(ControlFlow::Wait, DisplayMode::AlternateScreen, &mut Form::new(model))?;
+        .run::<std::io::Error, _>(
+            ControlFlow::Wait,
+            DisplayMode::AlternateScreen,
+            &mut Form::new(model).with_margin_top(1).with_margin_left(2),
+        )?;
 
     let mut args: HashMap<&str, &str> = HashMap::new();
     for component in &components {
@@ -327,21 +372,15 @@ pub async fn execute(name: Option<String>, args: HashMap<String, String>) -> Res
                 value_if_true,
                 value_if_false,
                 ..
-            } => args.insert(
-                name,
-                match inner.checked {
-                    true => value_if_true,
-                    false => value_if_false,
-                },
-            ),
+            } => args.insert(name, match inner.checked {
+                true => value_if_true,
+                false => value_if_false,
+            }),
             SnippetComponent::TextField { name, inner, .. } => args.insert(name, &inner.text),
-            SnippetComponent::Picker { name, inner, .. } => args.insert(
-                name,
-                match inner.selected_item() {
-                    Some(selected) => selected,
-                    None => return Err(anyhow!("Missing entry for field: {name}")),
-                },
-            ),
+            SnippetComponent::Picker { name, inner, .. } => args.insert(name, match inner.selected_item() {
+                Some(selected) => selected,
+                None => return Err(anyhow!("Missing entry for field: {name}")),
+            }),
         };
     }
 

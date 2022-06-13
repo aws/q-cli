@@ -103,7 +103,8 @@ impl<C: PickerComponent + Component> Component for CollapsiblePicker<C> {
                 self.disclosure.summary.label = match self.selected_item() {
                     Some(selection) => selection,
                     None => &self.placeholder,
-                }.to_string();
+                }
+                .to_string();
 
                 if !self.has_made_selection && focused {
                     self.has_made_selection = true
