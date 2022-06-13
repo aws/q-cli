@@ -144,6 +144,9 @@ where
         track.insert("prop_device_id".into(), device_id);
     }
 
+    track.insert("prop_device_os".into(), std::env::consts::OS.into());
+    track.insert("prop_device_arch".into(), std::env::consts::ARCH.into());
+
     // Given properties
     for kv in properties.into_iter() {
         let (key, value) = kv.into();
