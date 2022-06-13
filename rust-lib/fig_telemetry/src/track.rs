@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
+use crate::util::{
+    make_telemetry_request,
+    telemetry_is_disabled,
+};
 use crate::{
     Error,
-    API_DOMAIN,
     TRACK_SUBDOMAIN,
 };
 
@@ -106,17 +109,13 @@ where
 {
     let event: TrackEvent = event.into();
 
-    if fig_settings::settings::get_bool("telemetry.disabled")
-        .ok()
-        .flatten()
-        .unwrap_or(false)
-    {
+    if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
     // Initial properties
     let mut track = HashMap::from([
-        ("userId".into(), fig_auth::get_default("uuid")?),
+        ("anonymousId".into(), fig_auth::get_default("anonymousId")?),
         ("event".into(), (event.to_string())),
     ]);
 
@@ -148,13 +147,5 @@ where
         track.insert(format!("prop_{key}"), value.into());
     }
 
-    // Emit it!
-    reqwest::Client::new()
-        .post(format!("{}{}", API_DOMAIN, TRACK_SUBDOMAIN))
-        .header("Content-Type", "application/json")
-        .json(&track)
-        .send()
-        .await?;
-
-    Ok(())
+    make_telemetry_request(TRACK_SUBDOMAIN, &track).await
 }
