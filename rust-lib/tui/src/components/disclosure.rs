@@ -145,20 +145,24 @@ impl<T: Component> Component for Disclosure<T> {
                         });
                 }
             },
-            Event::KeyPressed { code, .. } => if focused { match code {
-                KeyCode::Enter => {
-                    if focused {
-                        self.opened = !self.opened
+            Event::KeyPressed { code, .. } => {
+                if focused {
+                    match code {
+                        KeyCode::Enter => {
+                            if focused {
+                                self.opened = !self.opened
+                            }
+                        },
+                        KeyCode::Esc => {
+                            *control_flow = ControlFlow::Exit;
+                        },
+                        _ => {
+                            self.details
+                                .update(renderer, style_sheet, control_flow, self.opened, event);
+                        },
                     }
-                },
-                KeyCode::Esc => {
-                    *control_flow = ControlFlow::Exit;
-                },
-                _ => {
-                    self.details
-                        .update(renderer, style_sheet, control_flow, self.opened, event);
-                },
-            }},
+                }
+            },
             _ => {
                 self.details
                     .update(renderer, style_sheet, control_flow, self.opened, event);

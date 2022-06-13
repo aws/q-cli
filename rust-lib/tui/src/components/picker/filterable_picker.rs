@@ -143,34 +143,36 @@ impl Component for FilterablePicker {
                     }
                 }
             },
-            Event::KeyPressed { code, .. } => if focused {
-                match code {
-                    KeyCode::Up | KeyCode::Down => {
-                        self.picker.update(renderer, style_sheet, control_flow, focused, event);
-                    },
-                    _ => {
-                        self.input.update(renderer, style_sheet, control_flow, focused, event);
+            Event::KeyPressed { code, .. } => {
+                if focused {
+                    match code {
+                        KeyCode::Up | KeyCode::Down => {
+                            self.picker.update(renderer, style_sheet, control_flow, focused, event);
+                        },
+                        _ => {
+                            self.input.update(renderer, style_sheet, control_flow, focused, event);
 
-                        let filtered = self
-                            .picker
-                            .options()
-                            .iter()
-                            .filter(|str| str.contains(&self.input.text))
-                            .cloned()
-                            .collect::<Vec<String>>();
+                            let filtered = self
+                                .picker
+                                .options()
+                                .iter()
+                                .filter(|str| str.contains(&self.input.text))
+                                .cloned()
+                                .collect::<Vec<String>>();
 
-                        if !self.input.text.is_empty() {
-                            self.picker.set_options(filtered);
-                        } else {
-                            self.picker.set_options((*self.options).to_vec());
-                        }
+                            if !self.input.text.is_empty() {
+                                self.picker.set_options(filtered);
+                            } else {
+                                self.picker.set_options((*self.options).to_vec());
+                            }
 
-                        // ensure selection persists after filtering
-                        match (self.picker.selected(), self.picker.options().len()) {
-                            (None, _) | (_, 0) => self.picker.selected = 0,
-                            (Some(_index), _) => self.picker.selected = self.picker.options().len() - 1,
-                        }
-                    },
+                            // ensure selection persists after filtering
+                            match (self.picker.selected(), self.picker.options().len()) {
+                                (None, _) | (_, 0) => self.picker.selected = 0,
+                                (Some(_index), _) => self.picker.selected = self.picker.options().len() - 1,
+                            }
+                        },
+                    }
                 }
             },
             _ => (),
