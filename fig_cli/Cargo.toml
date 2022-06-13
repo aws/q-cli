@@ -8,19 +8,20 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
-arboard = "2.1.0"
 anyhow = "1.0.56"
+arboard = "2.1.0"
 async-trait = "0.1.56"
 bitflags = "1.3.2"
+cfg-if = "1.0.0"
 clap = { version = "3.1.6", features = ["derive"] }
 clap_complete = "3.1.1"
 clap_complete_fig = "3.1.4"
-cfg-if = "1.0.0"
 crossterm = "0.23.1"
 ctrlc = "3.2.1"
 dialoguer = "0.10.0"
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
+fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
@@ -31,6 +32,7 @@ futures = "0.3.21"
 git2 = { version = "0.14", features = ["vendored-openssl", "vendored-libgit2"] }
 globset = "0.4.9"
 humantime = "2.1.0"
+native-dialog = "0.6.3"
 notify = "4.0.17"
 parking_lot = "0.12.1"
 rand = "0.8.5"
@@ -41,7 +43,7 @@ semver = "1.0.10"
 sentry = { version = "0.26.0", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
-serde_with = "1.14.0"
+spinners = "4.0.0"
 sysinfo = "0.24.3"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
@@ -49,14 +51,10 @@ thiserror = "1.0.30"
 time = { version = "0.3.9", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
-toml = "0.5.8"
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
 validator = "0.15.0"
-native-dialog = "0.6.3"
 viu = { path = "../rust-lib/viu" }
-spinners = "4.0.0"
-fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"

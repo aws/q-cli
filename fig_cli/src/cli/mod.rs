@@ -72,7 +72,7 @@ impl Default for OutputFormat {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
 pub enum Shells {
-    /// Bash shell compleations
+    /// Bash shell completions
     Bash,
     /// Fish shell completions
     Fish,
