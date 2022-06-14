@@ -7,6 +7,6 @@ pub trait PickerComponent {
     fn set_selected(&mut self, index: usize);
     fn options(&self) -> &Vec<String>;
     fn selected_item(&self) -> Option<&String> {
-        self.selected().map(|index| &self.options()[index])
+        self.selected().and_then(|index| self.options().get(index))
     }
 }

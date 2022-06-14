@@ -16,7 +16,7 @@ use crate::{
     StyleSheet,
 };
 
-#[derive(Debug, Default)]
+#[derive(Debug, Clone, Default)]
 pub struct Label {
     pub label: String,
     pub style: Style,

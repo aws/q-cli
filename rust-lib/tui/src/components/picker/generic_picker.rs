@@ -48,7 +48,7 @@ impl Picker {
             None => self.options.len(),
         };
 
-        self.rows = (0..num_rows).map(|_| Label::new("")).collect::<Vec<Label>>();
+        self.rows = vec![Label::default(); num_rows];
 
         // ensure selection persists after filtering
         self.selected = match (prev, self.options().len()) {
@@ -80,7 +80,7 @@ impl PickerComponent for Picker {
             Some(max) => max.min(opts.len()),
             None => opts.len(),
         };
-        let rows: Vec<Label> = (0..num_rows).map(|_| Label::new("")).collect::<Vec<Label>>();
+        let rows: Vec<Label> = vec![Label::default(); num_rows];
         Self {
             selected: Default::default(),
             options: opts,
