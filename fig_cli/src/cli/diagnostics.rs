@@ -66,17 +66,6 @@ fn get_local_specs() -> Result<Vec<PathBuf>> {
     glob_dir(&glob, specs_location)
 }
 
-pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
-    Some(
-        Regex::new(regex.as_ref())
-            .unwrap()
-            .captures(input.as_ref())?
-            .get(1)?
-            .as_str()
-            .into(),
-    )
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct HardwareInfo {
     model_name: Option<String>,
@@ -90,6 +79,8 @@ impl HardwareInfo {
     fn new() -> Result<HardwareInfo> {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
+                use crate::util::match_regex;
+
                 let result = Command::new("system_profiler")
                     .arg("SPHardwareDataType")
                     .output()

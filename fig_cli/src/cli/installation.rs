@@ -195,7 +195,6 @@ fn uninstall_fig() -> Result<()> {
 pub enum UpdateType {
     Confirm,
     NoConfirm,
-    NoProgress,
 }
 
 /// Self-update the fig binary
@@ -227,13 +226,11 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
             let _confirm = match update_type {
                 UpdateType::Confirm => true,
                 UpdateType::NoConfirm => false,
-                UpdateType::NoProgress => false,
             };
 
             let progress_output = match update_type {
                 UpdateType::Confirm => true,
                 UpdateType::NoConfirm => true,
-                UpdateType::NoProgress => false,
             };
 
             tokio::task::block_in_place(move || {
@@ -261,13 +258,11 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                 let confirm = match update_type {
                     UpdateType::Confirm => true,
                     UpdateType::NoConfirm => false,
-                    UpdateType::NoProgress => false,
                 };
 
                 let progress_output = match update_type {
                     UpdateType::Confirm => true,
                     UpdateType::NoConfirm => true,
-                    UpdateType::NoProgress => false,
                 };
 
                 tokio::task::block_in_place(move || {

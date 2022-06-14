@@ -21,4 +21,3 @@ winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"
-

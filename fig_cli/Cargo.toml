@@ -18,7 +18,7 @@ clap_complete = "3.1.1"
 clap_complete_fig = "3.1.4"
 crossterm = "0.23.1"
 ctrlc = "3.2.1"
-dialoguer = "0.10.0"
+dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
 fig_install = { path = "../rust-lib/fig_install" }
@@ -53,11 +53,13 @@ tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
+tui = { path = "../rust-lib/tui" }
 validator = "0.15.0"
 viu = { path = "../rust-lib/viu" }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"
+skim = "0.9.4"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.37.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
