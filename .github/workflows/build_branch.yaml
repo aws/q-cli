@@ -113,20 +113,16 @@ jobs:
 ############################################
 # Install Build Tools
 ############################################
-      - name: Setup Node Environment
-        uses: actions/setup-node@v3
+      - name: Install needed tools
+        run:  |
+          brew install protobuf swift-protobuf node yarn
+          yarn
+        env:
+          HOMEBREW_NO_AUTO_UPDATE: 1
 
 ############################################
 # Generate Protobuf Artifacts
 ############################################
-      - name: Install Protobuf tooling
-        run:  |
-          brew install protobuf swift-protobuf
-          npm install
-        working-directory: ./proto
-        env:
-          HOMEBREW_NO_AUTO_UPDATE: 1
-
       - name: Generate Protobuf Artifacts
         run: make
         working-directory: ./proto

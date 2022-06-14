@@ -54,6 +54,7 @@ use fig_proto::local::{
     LocalMessage,
 };
 use fig_settings::state;
+use fig_util::Terminal;
 use flume::Sender;
 use nix::libc::STDIN_FILENO;
 use nix::sys::termios::{
@@ -129,10 +130,7 @@ impl EventSender {
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
-    #[cfg(target_os = "macos")]
-    let terminal = fig_util::Terminal::parent_terminal().map(|s| s.to_string());
-    #[cfg(not(target_os = "macos"))]
-    let terminal = None;
+    let terminal = Terminal::parent_terminal().map(|s| s.to_string());
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())

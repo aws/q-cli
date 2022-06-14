@@ -26,10 +26,10 @@ use prost::{
     DecodeError,
     Message,
 };
+pub use prost_reflect::ReflectMessage;
 use prost_reflect::{
     DescriptorPool,
     DynamicMessage,
-    ReflectMessage,
 };
 use serde::{
     Deserialize,

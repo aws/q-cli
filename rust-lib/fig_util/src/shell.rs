@@ -2,7 +2,7 @@ use std::fmt::Display;
 use std::path::PathBuf;
 use std::str::FromStr;
 
-use clap::ArgEnum;
+use clap::ValueEnum;
 use serde::{
     Deserialize,
     Serialize,
@@ -11,7 +11,7 @@ use serde::{
 use crate::process_info::get_parent_process_exe;
 
 /// Shells supported by Fig
-#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ArgEnum)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
 #[serde(rename_all = "camelCase")]
 pub enum Shell {
     /// Bash shell

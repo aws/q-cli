@@ -41,11 +41,12 @@ use sysinfo::{
 };
 use tokio::runtime::Runtime;
 use tracing::{
+    error,
     info,
     trace,
     warn,
 };
-use tray::create_tray;
+use tray::build_tray;
 use url::Url;
 use window::{
     WindowId,
@@ -168,9 +169,9 @@ impl WebviewManager {
             }
         });
 
-        let tray = create_tray(&self.event_loop).unwrap();
-        let proxy = self.event_loop.create_proxy();
+        build_tray(&self.event_loop, &self.global_state).unwrap();
 
+        let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, _, control_flow| {
             *control_flow = ControlFlow::Wait;
 
@@ -189,9 +190,7 @@ impl WebviewManager {
                     menu_id,
                     origin: MenuType::ContextMenu,
                     ..
-                } => {
-                    tray.handle_event(menu_id, &proxy);
-                },
+                } => tray::handle_event(menu_id, &proxy),
                 WryEvent::UserEvent(event) => {
                     trace!("Executing user event: {event:?}");
                     match event {
@@ -207,12 +206,42 @@ impl WebviewManager {
                         Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
                         },
+                        Event::RefreshDebugger => {
+                            // TODO(grant): Refresh the debugger
+                        },
                     }
                 },
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
                 event => trace!("Unhandled event {event:?}"),
             }
         });
+    }
+}
+
+fn navigation_handler<I, S>(window_id: WindowId, exprs: I) -> impl Fn(String) -> bool
+where
+    I: IntoIterator<Item = S>,
+    S: AsRef<str>,
+{
+    let regex_set = RegexSet::new(exprs);
+
+    if let Err(ref err) = regex_set {
+        error!("Failed to compile regex: {err}");
+    }
+
+    move |url: String| match regex_set.as_ref().ok().and_then(|r| {
+        Url::parse(&url)
+            .ok()
+            .and_then(|url| url.domain().map(|domain| r.is_match(domain)))
+    }) {
+        Some(true) => {
+            trace!("{window_id} allowed url: {url}");
+            true
+        },
+        Some(false) | None => {
+            warn!("{window_id} denyed url: {url}");
+            false
+        },
     }
 }
 
@@ -245,24 +274,11 @@ fn build_mission_control(
                 .unwrap();
         })
         .with_devtools(true)
-        .with_navigation_handler(|url| {
-            match Url::parse(&url).ok().and_then(|url| {
-                url.domain().and_then(|domain| {
-                    RegexSet::new(&[r"^localhost$", r"^desktop\.fig\.io$", r"-withfig\.vercel\.app$"])
-                        .ok()
-                        .map(|r| r.is_match(domain))
-                })
-            }) {
-                Some(true) => {
-                    trace!("{MISSION_CONTROL_ID} allowed url: {url}");
-                    true
-                },
-                Some(false) | None => {
-                    warn!("{MISSION_CONTROL_ID} denyed url: {url}");
-                    false
-                },
-            }
-        })
+        .with_navigation_handler(navigation_handler(MISSION_CONTROL_ID, &[
+            r"^localhost$",
+            r"^desktop\.fig\.io$",
+            r"-withfig\.vercel\.app$",
+        ]))
         .with_initialization_script(&javascript_init())
         .build()?;
 
@@ -319,11 +335,11 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         .with_devtools(true)
         .with_transparent(true)
         .with_initialization_script(&javascript_init())
-        .with_navigation_handler(|url| {
-            url.starts_with("http://localhost")
-                || url.starts_with("https://staging.withfig.com/autocomplete")
-                || url.starts_with("https://app.withfig.com/autocomplete")
-        })
+        .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
+            r"^localhost$",
+            r"^staging.withfig.com$",
+            r"^app.withfig.com$",
+        ]))
         .build()?;
 
     Ok(webview)
@@ -332,7 +348,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
 fn main() {
     let _sentry_guard =
         fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
-    let _logger_guard = fig_log::init_logger("fig_tauri.log").expect("Failed to initialize logger");
+    let _logger_guard = fig_log::init_logger("fig_desktop.log").expect("Failed to initialize logger");
 
     let cli = cli::Cli::parse();
 

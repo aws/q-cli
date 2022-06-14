@@ -1,29 +1,23 @@
 use std::collections::HashMap;
 
+use crate::util::{
+    make_telemetry_request,
+    telemetry_is_disabled,
+};
 use crate::{
     Error,
     ALIAS_SUBDOMAIN,
-    API_DOMAIN,
 };
 
 pub async fn emit_alias(user_id: String) -> Result<(), Error> {
-    if fig_settings::settings::get_bool("telemetry.disabled")
-        .ok()
-        .flatten()
-        .unwrap_or(false)
-    {
+    if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
-    let alias = HashMap::from([("previousId", fig_auth::get_default("uuid")?), ("userId", user_id)]);
+    let alias = HashMap::from([
+        ("previousId".into(), fig_auth::get_default("anonymousId")?),
+        ("userId".into(), user_id),
+    ]);
 
-    // Emit it!
-    reqwest::Client::new()
-        .post(format!("{}{}", API_DOMAIN, ALIAS_SUBDOMAIN))
-        .header("Content-Type", "application/json")
-        .json(&alias)
-        .send()
-        .await?;
-
-    Ok(())
+    make_telemetry_request(ALIAS_SUBDOMAIN, alias).await
 }

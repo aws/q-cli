@@ -21,7 +21,9 @@ package-lock.json
 dotenv/docker-compose.yaml
 
 # Ignore all compiled protobuf artifacts
-**/*.pb.*
+**/*.pb.ts
+**/*.pb.swift
 
 target/
 build/
+

@@ -7,11 +7,11 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
+anyhow = "1.0.56"
 fig_auth = { path = "../fig_auth" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-serde = "1.0.136"
-sentry = { version = "0.26.0", features = ["anyhow"] }
 reqwest = { version = "0.11.9", features = ["json"] }
+sentry = { version = "0.26.0", features = ["anyhow"] }
+serde = "1.0.136"
 thiserror = "1.0.30"
-anyhow = "1.0.56"

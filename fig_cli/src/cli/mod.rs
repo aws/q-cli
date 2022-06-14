@@ -32,10 +32,10 @@ use anyhow::{
 };
 use cfg_if::cfg_if;
 use clap::{
-    ArgEnum,
     IntoApp,
     Parser,
     Subcommand,
+    ValueEnum,
 };
 use fig_integrations::shell::When;
 use fig_util::Shell;
@@ -55,7 +55,7 @@ use crate::util::{
     LaunchOptions,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
     /// Outputs the results as markdown
     Plain,
@@ -71,9 +71,9 @@ impl Default for OutputFormat {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Shells {
-    /// Bash shell compleations
+    /// Bash shell completions
     Bash,
     /// Fish shell completions
     Fish,
@@ -83,7 +83,7 @@ pub enum Shells {
     Fig,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Processes {
     /// Daemon process
     Daemon,
@@ -118,7 +118,7 @@ pub enum CliRootCommands {
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short = 'y')]
+        #[clap(long, short = 'y', action)]
         no_confirm: bool,
     },
     /// Run the daemon
@@ -127,27 +127,28 @@ pub enum CliRootCommands {
     /// Run diagnostic tests
     Diagnostic {
         /// The format of the output
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
         /// Force limited diagnostic output
-        #[clap(long)]
+        #[clap(long, action)]
         force: bool,
     },
     /// Generate the dotfiles for the given shell
     Init {
         /// The shell to generate the dotfiles for
-        #[clap(arg_enum)]
+        #[clap(value_enum, value_parser)]
         shell: Shell,
         /// When to generate the dotfiles for
-        #[clap(arg_enum)]
+        #[clap(value_enum, value_parser)]
         when: When,
-        #[clap(long)]
+        #[clap(long, value_parser)]
         rcfile: Option<String>,
     },
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
     Theme {
+        #[clap(action)]
         theme: Option<String>,
     },
     /// Invite friends to Fig
@@ -157,9 +158,10 @@ pub enum CliRootCommands {
     /// Create a new Github issue
     Issue {
         /// Force issue creation
-        #[clap(long, short = 'f')]
+        #[clap(long, short = 'f', action)]
         force: bool,
         /// Issue description
+        #[clap(value_parser)]
         description: Vec<String>,
     },
     #[clap(flatten)]
@@ -170,17 +172,17 @@ pub enum CliRootCommands {
     /// Check Fig is properly configured
     Doctor {
         /// Run all doctor tests, with no fixes
-        #[clap(long)]
+        #[clap(long, action)]
         verbose: bool,
         /// Error on warnings
-        #[clap(long)]
+        #[clap(long, action)]
         strict: bool,
     },
     /// Generate the completion spec for Fig
     #[clap(hide = true)]
     Completion {
         /// Shell to generate the completion spec for
-        #[clap(arg_enum, default_value_t = Shells::Zsh)]
+        #[clap(value_enum, value_parser, default_value_t = Shells::Zsh)]
         shell: Shells,
     },
     /// Internal subcommands used for Fig
@@ -193,7 +195,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(arg_enum, default_value_t = Processes::App, hide = true)]
+        #[clap(value_enum, action, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     #[clap(hide = true)]
@@ -205,6 +207,7 @@ pub enum CliRootCommands {
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man {
+        #[clap(value_parser)]
         command: Vec<String>,
     },
     #[clap(external_subcommand)]
