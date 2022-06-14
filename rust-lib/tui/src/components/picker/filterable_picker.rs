@@ -79,8 +79,8 @@ impl PickerComponent for FilterablePicker {
         self.picker.options()
     }
 
-    fn set_index(&mut self, index: usize) {
-        self.picker.set_index(index);
+    fn set_selected(&mut self, index: usize) {
+        self.picker.set_selected(index);
     }
 }
 

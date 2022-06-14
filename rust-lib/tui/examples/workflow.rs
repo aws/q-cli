@@ -3,9 +3,9 @@ use tui::components::{
     CollapsiblePicker,
     FilterablePicker,
     Frame,
+    Picker,
     PickerComponent,
     TextField,
-    Picker,
 };
 use tui::layouts::Form;
 use tui::{

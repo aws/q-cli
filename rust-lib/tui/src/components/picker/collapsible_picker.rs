@@ -53,7 +53,7 @@ impl<C: PickerComponent + Component> CollapsiblePicker<C> {
     }
 
     pub fn with_index(mut self, text: usize) -> Self {
-        self.disclosure.details.set_index(text);
+        self.disclosure.details.set_selected(text);
         self.has_made_selection = true;
         self
     }
@@ -70,8 +70,8 @@ impl<C: PickerComponent + Component> CollapsiblePicker<C> {
         self.disclosure.details.options()
     }
 
-    pub fn selected_item(&self) -> Option<&str> {
-        self.selected_index().map(|index| self.options()[index].as_str())
+    pub fn selected_item(&self) -> Option<&String> {
+        self.disclosure.details.selected_item()
     }
 }
 
@@ -101,11 +101,10 @@ impl<C: PickerComponent + Component> Component for CollapsiblePicker<C> {
 
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
-                self.disclosure.summary.label = match self.selected_item() {
-                    Some(selection) => selection,
-                    None => &self.placeholder,
-                }
-                .to_string();
+                self.disclosure.summary.label = match self.disclosure.details.selected_item() {
+                    Some(selection) => selection.clone(),
+                    None => self.placeholder.clone(),
+                };
 
                 if !self.has_made_selection && focused {
                     self.has_made_selection = true

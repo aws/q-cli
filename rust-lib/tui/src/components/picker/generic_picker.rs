@@ -29,7 +29,6 @@ pub struct Picker {
 
     max_suggestions: Option<usize>,
     cursor_offset: usize,
-
 }
 
 impl Picker {
@@ -38,35 +37,31 @@ impl Picker {
     stylable!();
 
     pub fn set_options(&mut self, options: Vec<String>) {
-
-        let prev = self.selected_item();
+        let prev = self.selected();
 
         self.options = options;
 
         // determine number of Labels to initialize
         let num_rows = match self.max_suggestions {
             Some(max) => max.min(self.options.len()),
-            None => self.options.len()
+            None => self.options.len(),
         };
 
-        self.rows = (0..num_rows).map(|_|Label::new("")).collect::<Vec<Label>>();
+        self.rows = (0..num_rows).map(|_| Label::new("")).collect::<Vec<Label>>();
 
         // ensure selection persists after filtering
-        self.selected = match (self.selected(), self.options().len()) {
+        self.selected = match (prev, self.options().len()) {
             (None, _) | (_, 0) => 0,
-            (Some(_index), _) => {
-                let bottom_most_option = self.max_suggestions.unwrap_or(usize::max_value()).min(self.options().len()) - 1;
-                match prev {
-                    Some(prev) => self.options().iter().position(|x| x == &prev).unwrap_or(bottom_most_option),
-                    None => self.selected.min(bottom_most_option),
+            (Some(index), len) => {
+                if self.selected >= len {
+                    len - 1
+                } else {
+                    index
                 }
-                
-            }
+            },
         };
 
-
         self.cursor_offset = 0;
-
     }
 }
 
@@ -81,12 +76,12 @@ impl PickerComponent for Picker {
 
         let num_rows = match max_suggestions {
             Some(max) => max.min(opts.len()),
-            None => opts.len()
+            None => opts.len(),
         };
-        let rows: Vec<Label> = (0..num_rows).map(|_|Label::new("")).collect::<Vec<Label>>();
+        let rows: Vec<Label> = (0..num_rows).map(|_| Label::new("")).collect::<Vec<Label>>();
         Self {
             selected: Default::default(),
-            options: opts.clone(),
+            options: opts,
             style: Default::default(),
             rows,
             max_suggestions,
@@ -95,7 +90,7 @@ impl PickerComponent for Picker {
     }
 
     fn selected(&self) -> Option<usize> {
-        if self.options().len() > self.selected && self.options().len() != 0 {
+        if self.options().len() > self.selected && !self.options().is_empty() {
             Some(self.selected)
         } else {
             None
@@ -106,11 +101,10 @@ impl PickerComponent for Picker {
         &self.options
     }
 
-    fn set_index(&mut self, index: usize) {
+    fn set_selected(&mut self, index: usize) {
         self.selected = index;
     }
 }
-
 
 impl Component for Picker {
     fn update(
@@ -124,9 +118,6 @@ impl Component for Picker {
         let context = StyleContext { focused, hover: false };
 
         match event {
-            Event::Initialize => {
-                // self.update();
-            },
             Event::Draw {
                 mut x,
                 mut y,
@@ -143,16 +134,20 @@ impl Component for Picker {
                 style.width = Some(self.desired_width(style_sheet, context));
 
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
-                
+
                 let mut acc = 0;
                 for (i, row) in self.rows.iter_mut().enumerate() {
                     let idx = match self.max_suggestions {
                         Some(_) => self.cursor_offset + i,
-                        None => i
+                        None => i,
                     };
-// //  
-                    row.label = self.options[idx].clone();//format!("{}/{}/{}/{}", self.cursor_offset, idx, self.options.len(), self.selected);//
-                    row.style = if idx == self.selected { selected_style } else { row_style };
+
+                    row.label = self.options[idx].clone();
+                    row.style = if idx == self.selected {
+                        selected_style
+                    } else {
+                        row_style
+                    };
                     row.update(renderer, style_sheet, control_flow, focused, Event::Draw {
                         x,
                         y: y + acc,
@@ -170,24 +165,21 @@ impl Component for Picker {
                         return;
                     }
 
+                    // update selected index with wrap around
                     match code {
                         KeyCode::Up => self.selected = (self.selected + self.options.len() - 1) % self.options.len(),
                         KeyCode::Down => self.selected = (self.selected + 1) % self.options.len(),
                         _ => (),
                     }
-                    
+
+                    // move offset if selected index is outside of view
                     if let Some(max) = self.max_suggestions {
                         if self.selected > self.cursor_offset + (max - 1) {
                             self.cursor_offset = self.selected - (max - 1);
                         } else if self.selected < self.cursor_offset {
                             self.cursor_offset = self.selected;
-                        } else {
-                            // println!("sel:{} o:{} max:{}", self.selected, self.cursor_offset, max)
                         }
                     }
-
-                    // self.update();
-                    // need to refresh `desired_width` before redraw
                 }
             },
             _ => {
