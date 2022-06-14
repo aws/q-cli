@@ -164,6 +164,8 @@ message TextUpdate {
     optional int64 deletion = 2; 
     optional int64 offset = 3;
     optional bool immediate = 4;
+    // client buffer at the time of the insertion request (prior to insertion)
+    optional string insertion_buffer = 5;
 }
 
 message InsertTextRequest {
