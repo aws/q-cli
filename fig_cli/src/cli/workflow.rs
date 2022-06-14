@@ -470,13 +470,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     println!("{} {command}", "Executing:".bold().magenta());
-    execute_workflow(workflow.tree, args).await?;
-    fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
-        "name",
-        workflow.name.as_str(),
-    )])
-    .await
-    .ok();
+    tokio::join! { 
+        execute_workflow(workflow.tree, args),
+        fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
+            "name",
+            workflow.name.as_str(),
+        )])   
+    }.0?;
 
     Ok(())
 }
