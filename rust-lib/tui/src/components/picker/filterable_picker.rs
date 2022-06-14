@@ -80,7 +80,7 @@ impl PickerComponent for FilterablePicker {
     }
 
     fn set_index(&mut self, index: usize) {
-        self.picker.selected = index;
+        self.picker.set_index(index);
     }
 }
 
@@ -162,13 +162,7 @@ impl Component for FilterablePicker {
                         if !self.input.text.is_empty() {
                             self.picker.set_options(filtered);
                         } else {
-                            self.picker.set_options((*self.options).to_vec());
-                        }
-
-                        // ensure selection persists after filtering
-                        match (self.picker.selected(), self.picker.options().len()) {
-                            (None, _) | (_, 0) => self.picker.selected = 0,
-                            (Some(_index), _) => self.picker.selected = self.picker.options().len() - 1,
+                            self.picker.set_options(self.options.clone());
                         }
                     },
                 }

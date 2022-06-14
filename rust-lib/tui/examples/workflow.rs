@@ -5,6 +5,7 @@ use tui::components::{
     Frame,
     PickerComponent,
     TextField,
+    Picker,
 };
 use tui::layouts::Form;
 use tui::{
@@ -162,8 +163,8 @@ fn main() -> Result<(), std::io::Error> {
         "node",
         "vercel",
         "git.fig.io",
-    ])
-    .with_placeholder("Select a remote...");
+    ]);
+    // .with_placeholder("Select a remote...");
 
     let mut remote_picker = Frame::new(&mut remote).with_title("Remote");
 
@@ -177,7 +178,7 @@ fn main() -> Result<(), std::io::Error> {
     EventLoop::new().with_style_sheet(&stylesheet).run(
         ControlFlow::Wait,
         DisplayMode::AlternateScreen,
-        &mut Form::new([
+        &mut Form::new(vec![
             &mut commit,
             &mut branch_picker,
             &mut remote_picker,
