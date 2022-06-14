@@ -440,7 +440,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         model.push(frame as &mut dyn Component);
     }
 
-    if EventLoop::new()
+    if workflow.parameters.len() > 0 && EventLoop::new()
         .with_style_sheet(&style_sheet)
         .run::<std::io::Error, _>(
             ControlFlow::Wait,
