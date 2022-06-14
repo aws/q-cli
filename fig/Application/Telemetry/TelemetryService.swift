@@ -140,6 +140,9 @@ class TelemetryProvider: TelemetryService {
       body["prop_device_id"] = deviceId
     }
 
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
+
     upload(to: "track", with: body, completion: completion)
   }
 
@@ -162,6 +165,9 @@ class TelemetryProvider: TelemetryService {
       return
     }
 
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
+
     upload(to: "identify", with: body)
   }
 
@@ -171,6 +177,9 @@ class TelemetryProvider: TelemetryService {
       print("telemetry: not sending identification event because telemetry is disabled")
       return
     }
+
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
 
     upload(to: "alias", with: ["previousId": defaults.anonymousId, "userId": userId ?? ""])
   }
@@ -182,9 +191,6 @@ class TelemetryProvider: TelemetryService {
   ) {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
     print(json)
-
-    // Ensure old uuid is aliased before making request.
-    Defaults.shared.migrateUUID()
 
     let url = Remote.API
         .appendingPathComponent("telemetry")
