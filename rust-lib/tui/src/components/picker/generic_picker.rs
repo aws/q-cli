@@ -32,6 +32,7 @@ pub struct Picker {
 }
 
 impl Picker {
+    const MAX_SUGGESTIONS: Option<usize> = Some(4);
     const STYLE_CLASS: &'static str = "picker";
 
     stylable!();
@@ -72,7 +73,8 @@ impl PickerComponent for Picker {
         T: Into<String>,
     {
         let opts: Vec<String> = options.into_iter().map(|i| i.into()).collect();
-        let max_suggestions = Some(5);
+        // todo: expose max_suggestions configuration
+        let max_suggestions = Self::MAX_SUGGESTIONS;
 
         let num_rows = match max_suggestions {
             Some(max) => max.min(opts.len()),
