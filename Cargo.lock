@@ -117,7 +117,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "thiserror",
  "winapi 0.3.9",
- "x11rb",
+ "x11rb 0.9.0",
 ]
 
 [[package]]
@@ -1519,7 +1519,7 @@ dependencies = [
  "whoami",
  "windows",
  "wry",
- "x11rb",
+ "x11rb 0.10.0",
 ]
 
 [[package]]
@@ -6250,6 +6250,28 @@ dependencies = [
  "nix 0.22.3",
  "winapi 0.3.9",
  "winapi-wsapoll",
+]
+
+[[package]]
+name = "x11rb"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "dd6f76eafe9aaf10d0a27525bb0a27ece2969d8b2e447d328e319b35e92c76e3"
+dependencies = [
+ "gethostname",
+ "nix 0.24.1",
+ "winapi 0.3.9",
+ "winapi-wsapoll",
+ "x11rb-protocol",
+]
+
+[[package]]
+name = "x11rb-protocol"
+version = "0.10.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "56b245751c0ac9db0e006dc812031482784e434630205a93c73cfefcaabeac67"
+dependencies = [
+ "nix 0.24.1",
 ]
 
 [[package]]
