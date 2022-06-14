@@ -232,6 +232,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     });
 
     let mut components: Vec<WorkflowComponent> = vec![];
+    let parameter_count = workflow.parameters.len();
     for parameter in workflow.parameters {
         let display_name = parameter.display_name.unwrap_or_else(|| parameter.name.clone());
         let name = parameter.name;
@@ -440,7 +441,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         model.push(frame as &mut dyn Component);
     }
 
-    if workflow.parameters.len() > 0 && EventLoop::new()
+    if parameter_count > 0 && EventLoop::new()
         .with_style_sheet(&style_sheet)
         .run::<std::io::Error, _>(
             ControlFlow::Wait,
