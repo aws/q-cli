@@ -27,6 +27,7 @@ pub use os_version::{
     OSVersion,
     SupportLevel,
 };
+use regex::Regex;
 
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
@@ -315,4 +316,15 @@ pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
         prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
         ..ColorfulTheme::default()
     }
+}
+
+pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
+    Some(
+        Regex::new(regex.as_ref())
+            .unwrap()
+            .captures(input.as_ref())?
+            .get(1)?
+            .as_str()
+            .into(),
+    )
 }

@@ -163,7 +163,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
             let workflow_names: Vec<String> = workflows
                 .iter()
-                .map(|workflow| workflow.display_name.clone().unwrap_or(workflow.name.clone()))
+                .map(|workflow| workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone()))
                 .collect();
 
             let track_search = tokio::task::spawn(async move {
@@ -173,42 +173,45 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .ok();
             });
 
-            #[cfg(unix)]
-            let selection = {
-                use std::io::Cursor;
+            cfg_if::cfg_if! {
+                if #[cfg(unix)] {
+                    let selection = {
+                        use std::io::Cursor;
 
-                use skim::prelude::*;
+                        use skim::prelude::*;
 
-                let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
-                    acc.push_str(name);
-                    acc.push('\n');
-                    acc
-                });
-                let item_reader = SkimItemReader::default();
-                let items = item_reader.of_bufread(Cursor::new(input));
-                let name = Skim::run_with(
-                    &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
-                    Some(items),
-                )
-                .map(|out| out.selected_items[0].text().to_string())
-                .unwrap();
+                        let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
+                            acc.push_str(name);
+                            acc.push('\n');
+                            acc
+                        });
+                        let item_reader = SkimItemReader::default();
+                        let items = item_reader.of_bufread(Cursor::new(input));
+                        let name = Skim::run_with(
+                            &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
+                            Some(items),
+                        )
+                        .map(|out| out.selected_items[0].text().to_string())
+                        .unwrap();
 
-                let mut index = 0;
-                for (i, workflow) in workflows.iter().enumerate() {
-                    if workflow.name == name {
-                        index = i;
-                        break;
-                    }
+                        let mut index = 0;
+                        for (i, workflow) in workflows.iter().enumerate() {
+                            if workflow.name == name {
+                                index = i;
+                                break;
+                            }
+                        }
+
+                        index
+                    };
+                } else if #[cfg(windows)] {
+                    let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+                        .items(&workflow_names)
+                        .default(0)
+                        .interact()
+                        .unwrap();
                 }
-
-                index
             };
-            #[cfg(windows)]
-            let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-                .items(&workflow_names)
-                .default(0)
-                .interact()
-                .unwrap();
 
             track_search.await.ok();
             workflows.remove(selection)
@@ -226,7 +229,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 false_value_substitution,
             } => WorkflowComponent::CheckBox {
                 inner: CheckBox::new(args.get(&name).is_some())
-                    .with_text(parameter.description.unwrap_or("Toggle".to_string())),
+                    .with_text(parameter.description.unwrap_or_else(|| "Toggle".to_string())),
                 name,
                 display_name,
                 value_if_true: true_value_substitution,
@@ -255,7 +258,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 if let Some(generators) = generators {
                     for generator in generators {
                         match generator {
-                            Generator::Named { name } => todo!(),
+                            Generator::Named { .. } => todo!(),
                             Generator::Script { script } => {
                                 if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
                                     for option in String::from_utf8_lossy(&output.stdout).split('\n') {
