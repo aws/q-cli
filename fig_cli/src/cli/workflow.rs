@@ -223,12 +223,15 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     };
 
     let track_execution = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [("execution_method", match name {
-            Some(_) => "invoke",
-            None => "search",
-        })])
-            .await
-            .ok();
+        fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
+            "execution_method",
+            match name {
+                Some(_) => "invoke",
+                None => "search",
+            },
+        )])
+        .await
+        .ok();
     });
 
     let mut components: Vec<WorkflowComponent> = vec![];
@@ -441,14 +444,15 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         model.push(frame as &mut dyn Component);
     }
 
-    if parameter_count > 0 && EventLoop::new()
-        .with_style_sheet(&style_sheet)
-        .run::<std::io::Error, _>(
-            ControlFlow::Wait,
-            DisplayMode::AlternateScreen,
-            &mut Form::new(model).with_margin_top(1).with_margin_left(2),
-        )?
-        > 0
+    if parameter_count > 0
+        && EventLoop::new()
+            .with_style_sheet(&style_sheet)
+            .run::<std::io::Error, _>(
+                ControlFlow::Wait,
+                DisplayMode::AlternateScreen,
+                &mut Form::new(model).with_margin_top(1).with_margin_left(2),
+            )?
+            > 0
     {
         // TODO: Add telemetry
         return Ok(());
@@ -481,7 +485,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     println!("{} {command}", "Executing:".bold().magenta());
-    // TODO: 
+    // TODO:
     tokio::join! {
         execute_workflow(workflow.tree, args),
         track_execution,
