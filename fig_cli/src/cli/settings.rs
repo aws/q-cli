@@ -43,10 +43,10 @@ pub enum SettingsSubcommands {
     /// List all the settings
     All {
         /// List the remote settings
-        #[clap(short, long)]
+        #[clap(long, short, action)]
         remote: bool,
         /// Format of the output
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
     },
 }
@@ -59,14 +59,16 @@ pub struct SettingsArgs {
     #[clap(subcommand)]
     cmd: Option<SettingsSubcommands>,
     /// key
+    #[clap(value_parser)]
     key: Option<String>,
     /// value
+    #[clap(value_parser)]
     value: Option<String>,
-    #[clap(long, short)]
     /// Delete a value
+    #[clap(long, short, action)]
     delete: bool,
-    #[clap(long, short, arg_enum, default_value_t)]
     /// Format of the output
+    #[clap(long, short, value_enum, action, default_value_t)]
     format: OutputFormat,
 }
 
@@ -189,6 +191,16 @@ impl SettingsArgs {
                                     eprintln!("You are not logged in to Fig");
                                     eprintln!("Run {} to login", "fig login".magenta().bold());
                                     exit(1);
+                                },
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::ReqwestError(err),
+                                ) => match err.status() {
+                                    Some(status) if status == 401 => {
+                                        eprintln!("You are not logged in to Fig");
+                                        eprintln!("Run {} to login", "fig login".magenta().bold());
+                                        exit(1);
+                                    },
+                                    _ => Err(err.into()),
                                 },
                                 err => Err(err.into()),
                             },

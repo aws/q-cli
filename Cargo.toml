@@ -1,8 +1,8 @@
 [workspace]
 members = [
     "fig_cli",
-    "fig_ibus_engine",
     "fig_desktop",
+    "fig_ibus_engine",
     "figterm",
     "rust-lib/*"
 ]

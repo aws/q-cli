@@ -57,7 +57,7 @@ pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathB
     Ok(files)
 }
 
-/// Glob patterns agains the file name
+/// Glob patterns against the file name
 pub fn glob_files(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 

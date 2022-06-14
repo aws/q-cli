@@ -6,6 +6,12 @@ export BUILT_PRODUCTS_DIR = $(BUILD_DIR)/usr/bin
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
 VERSION = $(shell jq -r .FIG_VERSION $(MAKE_DIR)/bundle/bundle_info.json)
+NUMERIC = $(shell echo ${VERSION} | cut -f1 -d-)
+FLAVOR = $(shell echo ${VERSION} | cut -f2 -d-)
+
+ifeq (${NUMERIC}, ${FLAVOR})
+	FLAVOR = 1
+endif
 
 all: archive deb
 
@@ -22,6 +28,16 @@ deb: bin icons bundle
 	sed -i "s/^Version:.*/Version: $(VERSION)/" $(BUILD_DIR)/fig-x86_64-linux/DEBIAN/control
 	cd $(BUILD_DIR) && dpkg-deb --build --root-owner-group fig-x86_64-linux
 	dpkg-deb --info $(BUILD_DIR)/fig-x86_64-linux.deb
+
+rpm: bin icons bundle
+	rpmdev-setuptree
+	cp $(MAKE_DIR)/bundle/rpm/fig.spec ~/rpmbuild/SPECS/
+	sed -i "s/^Version:.*/Version: ${NUMERIC}/" ~/rpmbuild/SPECS/fig.spec
+	sed -i "s/^Release:.*/Release: ${FLAVOR}/" ~/rpmbuild/SPECS/fig.spec
+	mkdir -p ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
+	cp -r $(BUILD_DIR)/usr ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
+	rpmbuild -bb ~/rpmbuild/SPECS/fig.spec
+	cp ~/rpmbuild/RPMS/x86_64/fig-${NUMERIC}-${FLAVOR}.x86_64.rpm $(BUILD_DIR)/fig-x86_64-linux.rpm
 
 bin: fig_ibus_engine fig_desktop fig figterm
 	rm -f $(BUILT_PRODUCTS_DIR)/*-x86_64-unknown-linux-gnu

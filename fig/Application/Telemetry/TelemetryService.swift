@@ -68,11 +68,25 @@ enum TelemetryEvent: String {
 }
 
 class TelemetryProvider: TelemetryService {
-    static let shared = TelemetryProvider(defaults: Defaults.shared)
+  static let shared = TelemetryProvider(defaults: Defaults.shared)
 
   private var defaults: Defaults
 
   private var terminalObserver: TerminalUsageObserver?
+
+  private var deviceId: String? {
+    let platformExpert = IOServiceGetMatchingService(kIOMasterPortDefault, IOServiceMatching("IOPlatformExpertDevice") )
+
+    guard platformExpert > 0 else {
+      return nil
+    }
+
+    let deviceId = IORegistryEntryCreateCFProperty(platformExpert, kIOPlatformUUIDKey as CFString, kCFAllocatorDefault, 0).takeUnretainedValue() as? String
+
+    IOObjectRelease(platformExpert)
+
+    return deviceId
+  }
 
   init(defaults: Defaults) {
     self.defaults = defaults
@@ -106,7 +120,7 @@ class TelemetryProvider: TelemetryService {
 
     body = addDefaultProperties(to: body)
     body["event"] = event
-    body["userId"] = defaults.uuid
+    body["anonymousId"] = defaults.anonymousId
 
     if defaults.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
@@ -115,12 +129,19 @@ class TelemetryProvider: TelemetryService {
       }
 
       guard sendEvent else {
-        print("telemetry: not sending event because telemetry is diabled")
+        print("telemetry: not sending event because telemetry is disabled")
         completion?(nil, nil, nil)
         return
       }
 
     }
+
+    if deviceId != nil {
+      body["prop_device_id"] = deviceId
+    }
+
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
 
     upload(to: "track", with: body, completion: completion)
   }
@@ -137,12 +158,15 @@ class TelemetryProvider: TelemetryService {
       body = traits
     }
 
-    body["userId"] = defaults.uuid
+    body["anonymousId"] = defaults.anonymousId
 
     if defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
-      print("telemetry: not sending identification event because telemetry is diabled")
+      print("telemetry: not sending identification event because telemetry is disabled")
       return
     }
+
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
 
     upload(to: "identify", with: body)
   }
@@ -150,11 +174,14 @@ class TelemetryProvider: TelemetryService {
   func alias(userId: String?) {
 
     if defaults.telemetryDisabled {
-      print("telemetry: not sending identification event because telemetry is diabled")
+      print("telemetry: not sending identification event because telemetry is disabled")
       return
     }
 
-    upload(to: "alias", with: ["previousId": defaults.uuid, "userId": userId ?? ""])
+    // Ensure old uuid is aliased before making request.
+    Defaults.shared.migrateUUID()
+
+    upload(to: "alias", with: ["previousId": defaults.anonymousId, "userId": userId ?? ""])
   }
 
   func upload(
@@ -164,10 +191,16 @@ class TelemetryProvider: TelemetryService {
   ) {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
     print(json)
-    var request = URLRequest(url: Remote.telemetryURL.appendingPathComponent(endpoint))
+
+    let url = Remote.API
+        .appendingPathComponent("telemetry")
+        .appendingPathComponent(endpoint)
+
+    var request = URLRequest(url: url)
     request.httpMethod = "POST"
     request.httpBody = json
     request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
+    try? Credentials.shared.authorizeRequest(request: &request)
 
     let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
       if let handler = completion {

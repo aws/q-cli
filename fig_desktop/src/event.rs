@@ -15,14 +15,38 @@ pub enum Event {
 
 #[derive(Debug)]
 pub enum WindowEvent {
-    Reanchor { x: i32, y: i32 },
-    Reposition { x: i32, y: i32 },
-    UpdateCaret { x: i32, y: i32, width: i32, height: i32 },
-    Resize { width: u32, height: u32 },
+    Reanchor {
+        x: i32,
+        y: i32,
+    },
+    Reposition {
+        x: i32,
+        y: i32,
+    },
+    UpdateCaret {
+        x: i32,
+        y: i32,
+        width: i32,
+        height: i32,
+    },
+    Resize {
+        width: u32,
+        height: u32,
+    },
+    /// Hides the window
     Hide,
+    /// Request to hide the window, may not be respected
+    HideSoft,
     Show,
-    Emit { event: String, payload: String },
-    Navigate { url: url::Url },
-    Api { payload: String },
+    Emit {
+        event: String,
+        payload: String,
+    },
+    Navigate {
+        url: url::Url,
+    },
+    Api {
+        payload: String,
+    },
     Devtools,
 }

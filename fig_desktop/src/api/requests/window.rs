@@ -54,12 +54,12 @@ pub async fn position_window(
         // Workaround to nonapplicably zero sized windows
         match size.width == 1.0 || size.height == 1.0 {
             true => {
-                // proxy
-                //     .send_event(FigEvent::WindowEvent {
-                //         fig_id,
-                //         window_event: FigWindowEvent::Hide,
-                //     })
-                //     .unwrap();
+                proxy
+                    .send_event(Event::WindowEvent {
+                        window_id,
+                        window_event: WindowEvent::HideSoft,
+                    })
+                    .unwrap();
             },
             false => {
                 proxy

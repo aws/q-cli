@@ -37,28 +37,28 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 #[derive(Debug, Args)]
 pub struct UninstallArgs {
     /// Remove configuration and data files
-    #[clap(long)]
+    #[clap(long, action)]
     pub user_data: bool,
     /// Remove executable and
-    #[clap(long)]
+    #[clap(long, action)]
     pub app_bundle: bool,
     /// Remove input method
-    #[clap(long)]
+    #[clap(long, action)]
     pub input_method: bool,
     /// Remove terminal integrations (i.e. VSCode, iTerm2, etc.)
-    #[clap(long)]
+    #[clap(long, action)]
     pub terminal_integrations: bool,
     /// Remove Fig daemon
-    #[clap(long)]
+    #[clap(long, action)]
     pub daemon: bool,
     /// Remove dotfile shell integration
-    #[clap(long)]
+    #[clap(long, action)]
     pub dotfiles: bool,
     /// Remove SSH integration
-    #[clap(long)]
+    #[clap(long, action)]
     pub ssh: bool,
     /// Do not open the uninstallation page
-    #[clap(long)]
+    #[clap(long, action)]
     pub no_open: bool,
 }
 
@@ -143,24 +143,11 @@ async fn uninstall_user_data() {
     // Delete Fig defaults on macOS
     #[cfg(target_os = "macos")]
     {
-        let uuid = fig_auth::get_default("uuid").unwrap_or_default();
-        tokio::process::Command::new("defaults")
-            .args(["delete", "com.mschrage.fig"])
-            .output()
-            .await
-            .map_err(|err| warn!("Failed to delete defaults: {err}"))
-            .ok();
         tokio::process::Command::new("defaults")
             .args(["delete", "com.mschrage.fig.shared"])
             .output()
             .await
             .map_err(|err| warn!("Failed to delete defaults: {err}"))
-            .ok();
-        tokio::process::Command::new("defaults")
-            .args(["write", "com.mschrage.fig", "uuid", &uuid])
-            .output()
-            .await
-            .map_err(|err| warn!("Failed to write defaults: {err}"))
             .ok();
     }
 
