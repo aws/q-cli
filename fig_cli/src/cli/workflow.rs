@@ -154,7 +154,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     let args = arg_pairs;
 
     // Get workflow
-    let workflow = match name {
+    let workflow = match &name {
         Some(name) => match request(Method::GET, format!("/workflows/{name}"), None, true).await? {
             Some(workflow) => workflow,
             None => return Err(anyhow!("Workflow does not exist with name: {}", name)),
@@ -173,60 +173,63 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .ok();
             });
 
-            // cfg_if::cfg_if! {
-            //    if #[cfg(unix)] {
-            //        let selection = {
-            //            use std::io::Cursor;
-            //
-            //            use skim::prelude::*;
-            //
-            //            let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
-            //                acc.push_str(name);
-            //                acc.push('\n');
-            //                acc
-            //            });
-            //            let item_reader = SkimItemReader::default();
-            //            let items = item_reader.of_bufread(Cursor::new(input));
-            //            let output = Skim::run_with(
-            //                &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
-            //                Some(items),
-            //            );
-            //
-            //            if output.is_abort {
-            //                return Ok(());
-            //            }
-            //
-            //            let name = output.selected_items[0].text().to_string();
-            //
-            //            let mut index = 0;
-            //            for (i, workflow) in workflows.iter().enumerate() {
-            //                if workflow.name == name {
-            //                    index = i;
-            //                    break;
-            //                }
-            //            }
-            //
-            //            index
-            //        };
-            //    } else if #[cfg(windows)] {
-            //        let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-            //            .items(&workflow_names)
-            //            .default(0)
-            //            .interact()
-            //            .unwrap();
-            //    }
-            //};
+            cfg_if::cfg_if! {
+                if #[cfg(unix)] {
+                    let selection = {
+                        use std::io::Cursor;
 
-            let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-                .items(&workflow_names)
-                .default(0)
-                .interact()
-                .unwrap();
+                        use skim::prelude::*;
 
-            track_search.await.ok();
+                        let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
+                            acc.push_str(name);
+                            acc.push('\n');
+                            acc
+                        });
+                        let item_reader = SkimItemReader::default();
+                        let items = item_reader.of_bufread(Cursor::new(input));
+                        let output = Skim::run_with(
+                            &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
+                            Some(items),
+                        ).unwrap();
+
+                        if output.is_abort {
+                            return Ok(());
+                        }
+
+                        let name = output.selected_items[0].text().to_string();
+
+                        let mut index = 0;
+                        for (i, workflow) in workflow_names.iter().enumerate() {
+                            if workflow == &name {
+                                index = i;
+                                break;
+                            }
+                        }
+
+                        index
+                    };
+                } else if #[cfg(windows)] {
+                    let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+                        .items(&workflow_names)
+                        .default(0)
+                        .interact()
+                        .unwrap();
+                }
+            };
+
+            track_search.await?;
             workflows.remove(selection)
         },
     };
+
+    let track_execution = tokio::task::spawn(async move {
+        fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [("execution_method", match name {
+            Some(_) => "invoke",
+            None => "search",
+        })])
+            .await
+            .ok();
+    });
 
     let mut components: Vec<WorkflowComponent> = vec![];
     for parameter in workflow.parameters {
@@ -446,12 +449,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         )?
         > 0
     {
-        fig_telemetry::emit_track(TrackEvent::Other("workflows.cancelled".into()), TrackSource::Cli, [(
-            "name",
-            workflow.name.as_str(),
-        )])
-        .await
-        .ok();
+        // TODO: Add telemetry
         return Ok(());
     }
 
@@ -482,12 +480,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     println!("{} {command}", "Executing:".bold().magenta());
+    // TODO: 
     tokio::join! {
         execute_workflow(workflow.tree, args),
-        fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
-            "name",
-            workflow.name.as_str(),
-        )])
+        track_execution,
     }
     .0?;
 
