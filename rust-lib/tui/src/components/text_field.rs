@@ -123,7 +123,7 @@ impl Component for TextField {
 
                         if focused {
                             renderer.draw_symbol(
-                                self.text.chars().skip(self.cursor).next().unwrap_or(' '),
+                                self.text.chars().nth(self.cursor).unwrap_or(' '),
                                 x + u16::try_from(self.cursor).unwrap() - u16::try_from(self.offset).unwrap(),
                                 y,
                                 style.background_color(),

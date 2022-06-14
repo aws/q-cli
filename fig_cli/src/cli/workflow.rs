@@ -268,16 +268,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 }
 
                 let mut index = 0;
-                match args.get(&name) {
-                    Some(arg) => {
-                        for i in 0..options.len() {
-                            if &options[i] == arg {
-                                index = i;
-                                break;
-                            }
+                if let Some(arg) = args.get(&name) {
+                    for (i, option) in options.iter().enumerate() {
+                        if option == arg {
+                            index = i;
+                            break;
                         }
-                    },
-                    _ => (),
+                    }
                 };
 
                 WorkflowComponent::Picker {
@@ -470,13 +467,14 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     println!("{} {command}", "Executing:".bold().magenta());
-    tokio::join! { 
+    tokio::join! {
         execute_workflow(workflow.tree, args),
         fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
             "name",
             workflow.name.as_str(),
-        )])   
-    }.0?;
+        )])
+    }
+    .0?;
 
     Ok(())
 }

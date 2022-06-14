@@ -152,19 +152,12 @@ impl Component for FilterablePicker {
                         _ => {
                             self.input.update(renderer, style_sheet, control_flow, focused, event);
 
-                            let filtered = self
-                                .picker
-                                .options()
+                            self.picker.set_options(self
+                                .options
                                 .iter()
                                 .filter(|str| str.contains(&self.input.text))
                                 .cloned()
-                                .collect::<Vec<String>>();
-
-                            if !self.input.text.is_empty() {
-                                self.picker.set_options(filtered);
-                            } else {
-                                self.picker.set_options((*self.options).to_vec());
-                            }
+                                .collect::<Vec<String>>());
 
                             // ensure selection persists after filtering
                             match (self.picker.selected(), self.picker.options().len()) {
