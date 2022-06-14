@@ -3,7 +3,6 @@ use tui::components::{
     CollapsiblePicker,
     FilterablePicker,
     Frame,
-    Picker,
     PickerComponent,
     TextField,
 };
