@@ -163,8 +163,8 @@ fn main() -> Result<(), std::io::Error> {
         "node",
         "vercel",
         "git.fig.io",
-    ]);
-    // .with_placeholder("Select a remote...");
+    ])
+    .with_placeholder("Select a remote...");
 
     let mut remote_picker = Frame::new(&mut remote).with_title("Remote");
 
