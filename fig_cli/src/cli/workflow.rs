@@ -173,45 +173,55 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .ok();
             });
 
-            cfg_if::cfg_if! {
-                if #[cfg(unix)] {
-                    let selection = {
-                        use std::io::Cursor;
+            // cfg_if::cfg_if! {
+            //    if #[cfg(unix)] {
+            //        let selection = {
+            //            use std::io::Cursor;
+            //
+            //            use skim::prelude::*;
+            //
+            //            let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
+            //                acc.push_str(name);
+            //                acc.push('\n');
+            //                acc
+            //            });
+            //            let item_reader = SkimItemReader::default();
+            //            let items = item_reader.of_bufread(Cursor::new(input));
+            //            let output = Skim::run_with(
+            //                &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
+            //                Some(items),
+            //            );
+            //
+            //            if output.is_abort {
+            //                return Ok(());
+            //            }
+            //
+            //            let name = output.selected_items[0].text().to_string();
+            //
+            //            let mut index = 0;
+            //            for (i, workflow) in workflows.iter().enumerate() {
+            //                if workflow.name == name {
+            //                    index = i;
+            //                    break;
+            //                }
+            //            }
+            //
+            //            index
+            //        };
+            //    } else if #[cfg(windows)] {
+            //        let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+            //            .items(&workflow_names)
+            //            .default(0)
+            //            .interact()
+            //            .unwrap();
+            //    }
+            //};
 
-                        use skim::prelude::*;
-
-                        let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
-                            acc.push_str(name);
-                            acc.push('\n');
-                            acc
-                        });
-                        let item_reader = SkimItemReader::default();
-                        let items = item_reader.of_bufread(Cursor::new(input));
-                        let name = Skim::run_with(
-                            &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
-                            Some(items),
-                        )
-                        .map(|out| out.selected_items[0].text().to_string())
-                        .unwrap();
-
-                        let mut index = 0;
-                        for (i, workflow) in workflows.iter().enumerate() {
-                            if workflow.name == name {
-                                index = i;
-                                break;
-                            }
-                        }
-
-                        index
-                    };
-                } else if #[cfg(windows)] {
-                    let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-                        .items(&workflow_names)
-                        .default(0)
-                        .interact()
-                        .unwrap();
-                }
-            };
+            let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
+                .items(&workflow_names)
+                .default(0)
+                .interact()
+                .unwrap();
 
             track_search.await.ok();
             workflows.remove(selection)
