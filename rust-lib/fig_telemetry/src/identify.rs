@@ -1,8 +1,11 @@
 use std::collections::HashMap;
 
+use crate::util::{
+    make_telemetry_request,
+    telemetry_is_disabled,
+};
 use crate::{
     Error,
-    API_DOMAIN,
     IDENTIFY_SUBDOMAIN,
 };
 
@@ -11,28 +14,16 @@ where
     I: IntoIterator<Item = T>,
     T: Into<(&'a str, &'a str)>,
 {
-    if fig_settings::settings::get_bool("telemetry.disabled")
-        .ok()
-        .flatten()
-        .unwrap_or(false)
-    {
+    if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
-    let mut identify = HashMap::from([("userId".into(), fig_auth::get_default("uuid")?)]);
+    let mut identify = HashMap::new();
 
     for kv in traits.into_iter() {
         let (key, value) = kv.into();
         identify.insert(format!("prop_{key}"), value.into());
     }
 
-    // Emit it!
-    reqwest::Client::new()
-        .post(format!("{}{}", API_DOMAIN, IDENTIFY_SUBDOMAIN))
-        .header("Content-Type", "application/json")
-        .json(&identify)
-        .send()
-        .await?;
-
-    Ok(())
+    make_telemetry_request(IDENTIFY_SUBDOMAIN, identify).await
 }

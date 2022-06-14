@@ -27,6 +27,7 @@ pub use os_version::{
     OSVersion,
     SupportLevel,
 };
+use regex::Regex;
 
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
@@ -58,7 +59,7 @@ pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathB
     Ok(files)
 }
 
-/// Glob patterns agains the file name
+/// Glob patterns against the file name
 pub fn glob_files(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();
 
@@ -315,4 +316,15 @@ pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
         prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
         ..ColorfulTheme::default()
     }
+}
+
+pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
+    Some(
+        Regex::new(regex.as_ref())
+            .unwrap()
+            .captures(input.as_ref())?
+            .get(1)?
+            .as_str()
+            .into(),
+    )
 }

@@ -8,6 +8,10 @@
 
 import Foundation
 
+enum CredentialsError: Error {
+    case authorizationError(String)
+}
+
 class Credentials {
   static let shared = Credentials(fileURL:
                                   URL.dataDirectory.appendingPathComponent("credentials.json"))
@@ -38,5 +42,28 @@ class Credentials {
 
   func isLoggedIn() -> Bool {
     return getEmail() != nil
+  }
+
+  func authorizeRequest(request: inout URLRequest) throws {
+    // Try to refresh access/id token.
+    let cli = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")!
+
+    Process.run(command: cli, args: ["login", "-r"])
+    let accessToken = self.backing.getValue(forKey: "access_token") as? String
+    let idToken = self.backing.getValue(forKey: "id_token") as? String
+
+    if accessToken != nil, idToken != nil {
+      if let authToken = (try? JSONSerialization.data(withJSONObject: [
+        "idToken": idToken,
+        "accessToken": accessToken
+      ])) {
+        request.setValue(
+          "Bearer \(authToken.base64EncodedString())",
+          forHTTPHeaderField: "Authorization"
+        )
+        return
+      }
+    }
+    throw CredentialsError.authorizationError("Could not authorize request.")
   }
 }

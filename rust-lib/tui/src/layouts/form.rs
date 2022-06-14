@@ -112,7 +112,7 @@ impl Component for Form<'_> {
             Event::KeyPressed { code, .. } => {
                 if self.interactive() {
                     match code {
-                        newton::KeyCode::Esc => *control_flow = ControlFlow::Exit,
+                        newton::KeyCode::Esc => *control_flow = ControlFlow::Return(1),
                         newton::KeyCode::Tab => loop {
                             let cursor = (self.cursor + 1) % self.components.len();
                             match self.components.get(cursor) {

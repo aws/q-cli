@@ -114,7 +114,7 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
 
     info!("focus changed to {wm_class}");
 
-    if wm_class.as_str() == "Fig_tauri" {
+    if wm_class.as_str() == "Fig_desktop" {
         return Ok(());
     }
 

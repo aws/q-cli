@@ -94,7 +94,7 @@ pub async fn update(request: UpdateDefaultsPropertyRequest) -> RequestResult {
                     Some(parent) if !parent.exists() => fs::create_dir_all(parent).await?,
                     _ => {},
                 }
-                fs::write(&path, b"{}").await?;
+                fs::write(&path, "{}").await?;
             }
             let file = fs::read(&path).await?;
             let mut object: Value = serde_json::from_slice(&file)?;

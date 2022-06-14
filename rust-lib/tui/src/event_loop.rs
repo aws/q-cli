@@ -48,7 +48,7 @@ impl<'a> EventLoop<'a> {
         control_flow: ControlFlow,
         display_mode: DisplayMode,
         component: &mut C,
-    ) -> Result<(), E>
+    ) -> Result<u32, E>
     where
         C: Component,
         E: From<std::io::Error>,
@@ -100,6 +100,7 @@ impl<'a> EventLoop<'a> {
                         })
                     },
                 }
+
                 Ok(())
             })
     }

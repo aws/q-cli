@@ -39,14 +39,11 @@ fn main() -> Result<(), std::io::Error> {
     let mut label = Label::new("Hello world");
     let mut frame = Frame::new(&mut label);
     println!("{:#?}", style_sheet.get_style_for_component(&frame, context));
-    let mut form = Form::new([&mut frame]);
-
-    // println!("{:#?}",s);
-    // println!("{:#?} {:#?}",frame.desired_height(&stylesheet, context),
-    // frame.desired_width(&stylesheet, context)); println!("{:#?}",frame.style(&stylesheet,
-    // context).border_style());
+    let mut form = Form::new(vec![&mut frame]);
 
     EventLoop::new()
         .with_style_sheet(&style_sheet)
-        .run(ControlFlow::Wait, DisplayMode::AlternateScreen, &mut form)
+        .run::<std::io::Error, _>(ControlFlow::Wait, DisplayMode::AlternateScreen, &mut form)?;
+
+    Ok(())
 }

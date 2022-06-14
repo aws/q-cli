@@ -42,6 +42,7 @@ pub enum ControlFlow {
     Poll,
     Wait,
     Exit,
+    Return(u32),
 }
 
 pub struct EventLoop {
@@ -58,7 +59,7 @@ impl EventLoop {
         Self { out: stdout() }
     }
 
-    pub fn run<F, E>(&mut self, mut control_flow: ControlFlow, display_mode: DisplayMode, mut func: F) -> Result<(), E>
+    pub fn run<F, E>(&mut self, mut control_flow: ControlFlow, display_mode: DisplayMode, mut func: F) -> Result<u32, E>
     where
         F: FnMut(Event, &mut DisplayState, &mut ControlFlow) -> Result<(), E>,
         E: From<std::io::Error>,
@@ -89,6 +90,7 @@ impl EventLoop {
         func(Event::Draw, &mut display_state, &mut control_flow)?;
         display_state.write_diff(&mut self.out)?;
 
+        let mut exit_code = 0;
         loop {
             match control_flow {
                 ControlFlow::Poll => {
@@ -128,6 +130,10 @@ impl EventLoop {
                     }
                 },
                 ControlFlow::Exit => break,
+                ControlFlow::Return(code) => {
+                    exit_code = code;
+                    break;
+                },
             }
 
             func(Event::Update, &mut display_state, &mut control_flow)?;
@@ -150,6 +156,6 @@ impl EventLoop {
             .queue(SetColors(Colors::new(Color::Reset, Color::Reset)))?
             .flush()?;
 
-        Ok(())
+        Ok(exit_code)
     }
 }

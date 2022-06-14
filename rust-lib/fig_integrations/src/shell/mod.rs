@@ -9,7 +9,8 @@ use anyhow::{
     Context,
     Result,
 };
-use clap::ArgEnum;
+use cfg_if::cfg_if;
+use clap::ValueEnum;
 use fig_util::Shell;
 use regex::{
     Regex,
@@ -27,7 +28,7 @@ use crate::{
     Integration,
 };
 
-#[derive(Debug, Copy, Clone, PartialEq, Eq, ArgEnum, Serialize, Deserialize)]
+#[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {
     Pre,
@@ -204,10 +205,19 @@ impl ShellScriptShellIntegration {
             Some(name) => format!(" --rcfile {}", get_prefix(name)),
             None => "".into(),
         };
-        match self.shell {
-            Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
-            _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
-        }
+        cfg_if!(
+            if #[cfg(target_os = "linux")] {
+                return match self.shell {
+                    Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
+                    _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
+                }
+            } else {
+                return match self.shell {
+                    Shell::Fish => format!("eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
+                    _ => format!("eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
+                }
+            }
+        );
     }
 }
 
@@ -524,9 +534,9 @@ mod test {
     use super::*;
 
     fn check_script(shell: Shell, when: When) {
-        let shell_arg = format!("--shell=bash");
+        let shell_arg = "--shell=bash";
         let mut child = Command::new("shellcheck")
-            .args(&[&shell_arg, "--color=always", "-"])
+            .args(&[shell_arg, "--color=always", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

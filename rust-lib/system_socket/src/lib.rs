@@ -116,7 +116,7 @@ impl AsyncWrite for SystemStream {
         #[cfg(windows)]
         {
             use std::io::Write;
-            return Poll::Ready(tokio::task::block_in_place(|| self.project().0.write(buf)));
+            Poll::Ready(tokio::task::block_in_place(|| self.project().0.write(buf)))
         }
     }
 
@@ -126,7 +126,7 @@ impl AsyncWrite for SystemStream {
         #[cfg(windows)]
         {
             use std::io::Write;
-            return Poll::Ready(tokio::task::block_in_place(|| self.project().0.flush()));
+            Poll::Ready(tokio::task::block_in_place(|| self.project().0.flush()))
         }
     }
 

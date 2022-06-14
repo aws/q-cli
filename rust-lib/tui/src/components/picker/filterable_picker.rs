@@ -144,27 +144,23 @@ impl Component for FilterablePicker {
                 }
             },
             Event::KeyPressed { code, .. } => {
-                match code {
-                    KeyCode::Up | KeyCode::Down => {
-                        self.picker.update(renderer, style_sheet, control_flow, focused, event);
-                    },
-                    _ => {
-                        self.input.update(renderer, style_sheet, control_flow, focused, event);
+                if focused {
+                    match code {
+                        KeyCode::Up | KeyCode::Down => {
+                            self.picker.update(renderer, style_sheet, control_flow, focused, event);
+                        },
+                        _ => {
+                            self.input.update(renderer, style_sheet, control_flow, focused, event);
 
-                        let filtered = self
-                            .picker
-                            .options()
-                            .iter()
-                            .filter(|str| str.contains(&self.input.text))
-                            .cloned()
-                            .collect::<Vec<String>>();
-
-                        if !self.input.text.is_empty() {
-                            self.picker.set_options(filtered);
-                        } else {
-                            self.picker.set_options(self.options.clone());
-                        }
-                    },
+                            self.picker.set_options(
+                                self.options
+                                    .iter()
+                                    .filter(|str| str.contains(&self.input.text))
+                                    .cloned()
+                                    .collect::<Vec<String>>(),
+                            );
+                        },
+                    }
                 }
             },
             _ => (),

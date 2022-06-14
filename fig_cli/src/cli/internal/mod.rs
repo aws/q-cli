@@ -66,51 +66,49 @@ use crate::dotfiles::notify::TerminalNotification;
             .requires_all(&["filename", "exit-code"])
             ))]
 pub struct CallbackArgs {
+    #[clap(value_parser)]
     handler_id: String,
-    #[clap(group = "output")]
+    #[clap(value_parser, group = "output")]
     filename: Option<String>,
-    #[clap(group = "output")]
+    #[clap(value_parser, group = "output")]
     exit_code: Option<i64>,
 }
 
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, conflicts_with_all = &["input-method"])]
+    #[clap(long, action, conflicts_with_all = &["input-method"])]
     pub daemon: bool,
     /// Install only the shell integrations
-    #[clap(long, conflicts_with_all = &["input-method"])]
+    #[clap(long, action, conflicts_with_all = &["input-method"])]
     pub dotfiles: bool,
     /// Prompt input method installation
-    #[clap(long, conflicts_with_all = &["daemon", "dotfiles"])]
+    #[clap(long, action, conflicts_with_all = &["daemon", "dotfiles"])]
     pub input_method: bool,
     /// Don't confirm automatic installation.
-    #[clap(long)]
+    #[clap(long, action)]
     pub no_confirm: bool,
     /// Force installation of fig
-    #[clap(long)]
+    #[clap(long, action)]
     pub force: bool,
     /// Install only the ssh integration.
-    #[clap(long)]
+    #[clap(long, action)]
     pub ssh: bool,
 }
 
 #[derive(Debug, Args)]
 pub struct AnimationArgs {
     // resource to play
-    #[clap(short, long)]
+    #[clap(long, short, value_parser)]
     filename: Option<String>,
-
     // framerate to play the GIF with
-    #[clap(short, long)]
+    #[clap(long, short, value_parser)]
     rate: Option<i32>,
-
     // text to print before GIF/img appears
-    #[clap(short, long)]
+    #[clap(long, short, value_parser)]
     before_text: Option<String>,
-
     // text to print before GIF/img disappears
-    #[clap(short, long)]
+    #[clap(long, short, value_parser)]
     after_text: Option<String>,
 }
 
@@ -127,21 +125,22 @@ pub enum InternalSubcommand {
     /// Install fig cli
     Install(InstallArgs),
     InstallIbus {
+        #[clap(value_parser)]
         fig_ibus_engine_location: String,
     },
     /// Uninstall fig cli
     Uninstall {
         /// Uninstall only the daemon
-        #[clap(long)]
+        #[clap(long, action)]
         daemon: bool,
         /// Uninstall only the shell integrations
-        #[clap(long)]
+        #[clap(long, action)]
         dotfiles: bool,
         /// Uninstall only the binary
-        #[clap(long)]
+        #[clap(long, action)]
         binary: bool,
         /// Uninstall only the ssh integration
-        #[clap(long)]
+        #[clap(long, action)]
         ssh: bool,
     },
     /// Notify the user that they are uninstalling incorrectly
@@ -152,13 +151,13 @@ pub enum InternalSubcommand {
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
-        #[clap(long)]
+        #[clap(long, action)]
         name: String,
         /// Payload of the event as a JSON string.
-        #[clap(long)]
+        #[clap(long, action)]
         payload: Option<String>,
         /// Apps to send the event to.
-        #[clap(long)]
+        #[clap(long, action)]
         apps: Vec<String>,
     },
     AuthToken,

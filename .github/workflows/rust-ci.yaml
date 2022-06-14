@@ -7,7 +7,7 @@ on:
       - "rust-lib/**"
       - "figterm/**"
       - "fig_cli/**"
-      - "fig_tauri/**"
+      - "fig_desktop/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
   push:
@@ -15,7 +15,7 @@ on:
       - "rust-lib/**"
       - "figterm/**"
       - "fig_cli/**"
-      - "fig_tauri/**"
+      - "fig_desktop/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
     branches:
