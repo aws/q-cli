@@ -20,6 +20,7 @@ use clap::{
     Subcommand,
 };
 use crossterm::style::Stylize;
+use fig_auth::get_token;
 use fig_directories::fig_dir;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::{
@@ -159,6 +160,7 @@ pub enum InternalSubcommand {
         #[clap(long, action)]
         apps: Vec<String>,
     },
+    AuthToken,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -431,6 +433,9 @@ impl InternalSubcommand {
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;
+            },
+            InternalSubcommand::AuthToken => {
+                println!("{}", get_token().await?);
             },
         }
 

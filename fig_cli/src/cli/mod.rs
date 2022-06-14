@@ -1,25 +1,26 @@
 //! CLI functionality
 
 pub mod app;
-pub mod debug;
-pub mod diagnostics;
-pub mod doctor;
-pub mod hook;
-pub mod init;
-pub mod installation;
-pub mod internal;
-pub mod invite;
-pub mod issue;
-pub mod man;
-pub mod plugins;
-pub mod settings;
-pub mod source;
-pub mod ssh;
-pub mod team;
-pub mod theme;
-pub mod tips;
-pub mod tweet;
-pub mod user;
+mod debug;
+mod diagnostics;
+mod doctor;
+mod hook;
+mod init;
+mod installation;
+mod internal;
+mod invite;
+mod issue;
+mod man;
+mod plugins;
+mod settings;
+mod source;
+mod ssh;
+mod team;
+mod theme;
+mod tips;
+mod tweet;
+mod user;
+mod workflow;
 
 use std::fs::File;
 use std::process::exit;
@@ -209,6 +210,8 @@ pub enum CliRootCommands {
         #[clap(value_parser)]
         command: Vec<String>,
     },
+    #[clap(external_subcommand)]
+    Workflow(Vec<String>),
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -366,6 +369,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
+                CliRootCommands::Workflow(args) => workflow::execute(args).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
