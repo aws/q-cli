@@ -79,8 +79,8 @@ impl PickerComponent for FilterablePicker {
         self.picker.options()
     }
 
-    fn set_index(&mut self, index: usize) {
-        self.picker.selected = index;
+    fn set_selected(&mut self, index: usize) {
+        self.picker.set_selected(index);
     }
 }
 
@@ -159,12 +159,6 @@ impl Component for FilterablePicker {
                                     .cloned()
                                     .collect::<Vec<String>>(),
                             );
-
-                            // ensure selection persists after filtering
-                            match (self.picker.selected(), self.picker.options().len()) {
-                                (None, _) | (_, 0) => self.picker.selected = 0,
-                                (Some(_index), _) => self.picker.selected = self.picker.options().len() - 1,
-                            }
                         },
                     }
                 }
