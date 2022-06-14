@@ -96,6 +96,8 @@ struct Workflow {
     tree: Vec<TreeElement>,
 }
 
+// Chay makes very large structs, Grant can't handle large structs
+#[allow(clippy::large_enum_variant)]
 enum WorkflowComponent {
     CheckBox {
         name: String,
