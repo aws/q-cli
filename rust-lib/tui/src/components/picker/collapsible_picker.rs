@@ -54,6 +54,7 @@ impl<C: PickerComponent + Component> CollapsiblePicker<C> {
 
     pub fn with_index(mut self, text: usize) -> Self {
         self.disclosure.details.set_index(text);
+        self.has_made_selection = true;
         self
     }
 

@@ -281,10 +281,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 };
 
                 WorkflowComponent::Picker {
-                    name,
+                    name: name.clone(),
                     display_name,
                     inner: match placeholder {
-                        Some(placeholder) => CollapsiblePicker::new(options).with_placeholder(placeholder),
+                        Some(placeholder) => CollapsiblePicker::new(options).with_placeholder(&placeholder),
                         None => CollapsiblePicker::new(options),
                     }
                     .with_index(index),
