@@ -1363,6 +1363,7 @@ dependencies = [
  "bitflags",
  "fig_auth",
  "fig_directories",
+ "regex 1.5.6",
  "reqwest",
  "serde",
  "serde_json",
