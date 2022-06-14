@@ -11,10 +11,10 @@ use tracing::{
 use x11rb::connection::Connection;
 use x11rb::properties::WmClass;
 use x11rb::protocol::xproto::{
+    change_window_attributes,
     get_atom_name,
     get_input_focus,
     ChangeWindowAttributesAux,
-    ChangeWindowAttributesRequest,
     EventMask,
     Property,
     PropertyNotifyEvent,
@@ -55,19 +55,13 @@ pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy) 
 
     let screen = &setup.roots[screen_num];
 
-    let request = ChangeWindowAttributesRequest {
-        window: screen.root,
-        value_list: Cow::Owned(ChangeWindowAttributesAux {
-            event_mask: Some(u32::from(EventMask::PROPERTY_CHANGE)),
-            ..Default::default()
-        }),
-    };
-
-    request
-        .send(&conn)
-        .expect("Failed sending event mask update")
-        .check()
-        .expect("Failed changing event mask");
+    change_window_attributes(&conn, screen.root, &ChangeWindowAttributesAux {
+        event_mask: Some(u32::from(EventMask::PROPERTY_CHANGE)),
+        ..Default::default()
+    })
+    .expect("Failed sending event mask update")
+    .check()
+    .expect("Failed changing event mask");
 
     while let Ok(event) = conn.wait_for_event() {
         if let X11Event::PropertyNotify(event) = event {
