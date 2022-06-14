@@ -7,10 +7,10 @@ pub mod pty;
 pub mod term;
 
 use std::ffi::CString;
+use std::iter::repeat;
 use std::os::unix::prelude::AsRawFd;
 use std::process::exit;
 use std::str::FromStr;
-use std::iter::repeat;
 use std::time::{
     Duration,
     SystemTime,
