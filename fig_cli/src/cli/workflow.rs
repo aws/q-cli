@@ -6,6 +6,10 @@ use anyhow::{
     Result,
 };
 use crossterm::style::Stylize;
+use fig_telemetry::{
+    TrackEvent,
+    TrackSource,
+};
 use reqwest::Method;
 use serde::{
     Deserialize,
@@ -159,6 +163,14 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 .iter()
                 .map(|workflow| workflow.display_name.clone().unwrap_or(workflow.name.clone()))
                 .collect();
+
+            let track_search = tokio::task::spawn(async move {
+                let a: [(&'static str, &'static str); 0] = []; // dumb
+                fig_telemetry::emit_track(TrackEvent::Other("workflows.search".into()), TrackSource::Cli, a)
+                    .await
+                    .ok();
+            });
+
             #[cfg(unix)]
             let selection = {
                 use std::io::Cursor;
@@ -195,6 +207,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 .default(0)
                 .interact()
                 .unwrap();
+
+            track_search.await.ok();
             workflows.remove(selection)
         },
     };
@@ -420,6 +434,12 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         )?
         > 0
     {
+        fig_telemetry::emit_track(TrackEvent::Other("workflows.cancelled".into()), TrackSource::Cli, [(
+            "name",
+            workflow.name.as_str(),
+        )])
+        .await
+        .ok();
         return Ok(());
     }
 
@@ -451,6 +471,12 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     println!("{} {command}", "Executing:".bold().magenta());
     execute_workflow(workflow.tree, args).await?;
+    fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
+        "name",
+        workflow.name.as_str(),
+    )])
+    .await
+    .ok();
 
     Ok(())
 }
