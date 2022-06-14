@@ -70,6 +70,7 @@ pub enum FigTermCommand {
         deletion: Option<i64>,
         offset: Option<i64>,
         immediate: Option<bool>,
+        insertion_buffer: Option<String>,
     },
     SetBuffer {
         text: String,
@@ -202,11 +203,13 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
                     deletion,
                     offset,
                     immediate,
+                    insertion_buffer,
                 } => Command::InsertTextCommand(InsertTextCommand {
                     insertion,
                     deletion: deletion.map(|x| x as u64),
                     offset,
                     immediate,
+                    insertion_buffer,
                 }),
                 FigTermCommand::SetBuffer { text, cursor_position } => {
                     Command::SetBufferCommand(SetBufferCommand { text, cursor_position })
