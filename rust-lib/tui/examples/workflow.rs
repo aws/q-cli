@@ -174,17 +174,21 @@ fn main() -> Result<(), std::io::Error> {
     let mut verbose = CheckBox::new(false).with_text("Enable verbose logging");
     let mut vebose_element = Frame::new(&mut verbose).with_title("Verbosity");
 
-    EventLoop::new().with_style_sheet(&stylesheet).run(
-        ControlFlow::Wait,
-        DisplayMode::AlternateScreen,
-        &mut Form::new([
-            &mut commit,
-            &mut branch_picker,
-            &mut remote_picker,
-            &mut git_author_picker,
-            &mut vebose_element,
-        ])
-        .with_margin_top(1)
-        .with_margin_left(2),
-    )
+    EventLoop::new()
+        .with_style_sheet(&stylesheet)
+        .run::<std::io::Error, _>(
+            ControlFlow::Wait,
+            DisplayMode::AlternateScreen,
+            &mut Form::new(vec![
+                &mut commit,
+                &mut branch_picker,
+                &mut remote_picker,
+                &mut git_author_picker,
+                &mut vebose_element,
+            ])
+            .with_margin_top(1)
+            .with_margin_left(2),
+        )?;
+
+    Ok(())
 }

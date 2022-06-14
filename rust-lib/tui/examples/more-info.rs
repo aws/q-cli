@@ -79,7 +79,7 @@ fn main() -> Result<(), std::io::Error> {
         .with_color(Color::DarkGrey)
         .with_margin_bottom(1);
 
-    let mut container = Container::new([todo1, todo2, todo3, todo4]);
+    let mut container = Container::new(vec![todo1, todo2, todo3, todo4]);
 
     // .with_border_left_width(1)
     // .with_border_top_width(1)
@@ -130,8 +130,6 @@ fn main() -> Result<(), std::io::Error> {
         .with_padding_left(2)
         .with_margin_bottom(3);
 
-    // let mut details =
-    // Disclosure::new("This is the summary!", &mut detail_view);
     let mut name = TextField::new()
         .with_hint("user@email.com")
         .with_border_left_width(1)
@@ -146,12 +144,16 @@ fn main() -> Result<(), std::io::Error> {
         .with_padding_left(1)
         .with_margin_top(1);
 
-    EventLoop::new().with_style_sheet(&stylesheet).run(
-        ControlFlow::Wait,
-        DisplayMode::AlternateScreen,
-        &mut Disclosure::new(
-            "This is the summary!",
-            Container::new([&mut label1, &mut label2, &mut frame, &mut name]),
-        ),
-    )
+    EventLoop::new()
+        .with_style_sheet(&stylesheet)
+        .run::<std::io::Error, _>(
+            ControlFlow::Wait,
+            DisplayMode::AlternateScreen,
+            &mut Disclosure::new(
+                "This is the summary!",
+                Container::new(vec![&mut label1, &mut label2, &mut frame, &mut name]),
+            ),
+        )?;
+
+    Ok(())
 }
