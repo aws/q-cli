@@ -11,6 +11,7 @@ use serde::{
 use serde_json::json;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct Constants {
     version: &'static str,
     cli: Option<Utf8PathBuf>,
@@ -19,6 +20,7 @@ pub struct Constants {
     home: Option<Utf8PathBuf>,
     user: String,
     default_path: Option<String>,
+    themes_folder: Option<Utf8PathBuf>,
     themes: Option<Vec<String>>,
     os: &'static str,
     arch: &'static str,
@@ -34,6 +36,7 @@ impl Default for Constants {
             home: fig_directories::home_dir().and_then(|dir| dir.try_into().ok()),
             user: whoami::username(),
             default_path: var("PATH").ok(),
+            themes_folder: fig_install::themes::themes_directory().and_then(|dir| Utf8PathBuf::try_from(dir).ok()),
             themes: Some(vec!["light".into(), "dark".into(), "system".into()]),
             os: consts::OS,
             arch: consts::ARCH,

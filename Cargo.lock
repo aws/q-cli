@@ -1429,6 +1429,7 @@ dependencies = [
  "dialoguer",
  "fig_auth",
  "fig_directories",
+ "fig_install",
  "fig_integrations",
  "fig_ipc",
  "fig_proto",
@@ -1437,7 +1438,6 @@ dependencies = [
  "fig_util",
  "flume",
  "futures",
- "git2",
  "globset",
  "humantime",
  "native-dialog",
@@ -1491,6 +1491,7 @@ dependencies = [
  "dashmap",
  "fig_auth",
  "fig_directories",
+ "fig_install",
  "fig_integrations",
  "fig_ipc",
  "fig_log",
@@ -1508,6 +1509,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "percent-encoding",
  "regex 1.5.6",
+ "semver 1.0.10",
  "serde",
  "serde_json",
  "shellexpand",
@@ -1538,6 +1540,30 @@ dependencies = [
  "fig_proto",
  "parking_lot 0.12.1",
  "pkg-config",
+]
+
+[[package]]
+name = "fig_install"
+version = "0.1.0"
+dependencies = [
+ "anyhow",
+ "cfg-if 1.0.0",
+ "crossterm",
+ "fig_auth",
+ "fig_directories",
+ "fig_settings",
+ "fig_telemetry",
+ "fig_util",
+ "flume",
+ "git2",
+ "parking_lot 0.12.1",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "time 0.3.9",
+ "tokio",
+ "tracing",
 ]
 
 [[package]]

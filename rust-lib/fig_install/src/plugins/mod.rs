@@ -1,4 +1,5 @@
 use std::ffi::OsString;
+use std::path::PathBuf;
 
 use anyhow::{
     Context,
@@ -9,13 +10,24 @@ use tracing::{
     info,
 };
 
-use self::download::plugin_data_dir;
-use crate::dotfiles;
-use crate::plugins::download::update_git_repo_with_reference;
+use crate::download::update_git_repo_with_reference;
+use crate::{
+    dotfiles,
+    download,
+};
 
 pub mod api;
-pub mod download;
 pub mod manifest;
+
+pub fn plugin_data_dir() -> Option<PathBuf> {
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            fig_directories::home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
+        } else {
+            fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
+        }
+    }
+}
 
 pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
     let dotfiles_path = dotfiles::api::all_file_path().context("Could not read all file")?;

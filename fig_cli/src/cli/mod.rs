@@ -147,10 +147,7 @@ pub enum CliRootCommands {
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
-    Theme {
-        #[clap(action)]
-        theme: Option<String>,
-    },
+    Theme(theme::ThemeArgs),
     /// Invite friends to Fig
     Invite,
     /// Tweet about Fig
@@ -345,7 +342,7 @@ impl Cli {
                     }
                     Ok(())
                 },
-                CliRootCommands::Theme { theme } => theme::theme_cli(theme).await,
+                CliRootCommands::Theme(theme_args) => theme_args.execute().await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
                 CliRootCommands::Issue { force, description } => issue::issue_cli(force, description).await,

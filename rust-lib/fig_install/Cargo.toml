@@ -1,0 +1,25 @@
+[package]
+name = "fig_install"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+anyhow = "1.0.57"
+cfg-if = "1.0.0"
+crossterm = "0.23.2"
+fig_auth = { version = "0.1.0", path = "../fig_auth" }
+fig_directories = { path = "../fig_directories" }
+fig_settings = { path = "../fig_settings" }
+fig_telemetry = { path = "../fig_telemetry" }
+fig_util = { version = "0.1.0", path = "../fig_util" }
+flume = "0.10.13"
+git2 = { version = "0.14.4", features = ["vendored-openssl", "vendored-libgit2"] }
+parking_lot = "0.12.1"
+reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots"] }
+serde = { version = "1.0.137", features = ["derive"] }
+serde_json = "1.0.81"
+tempfile = "3.3.0"
+time = { version = "0.3.9", features = ["serde-human-readable"] }
+tokio = "1.19.2"
+tracing = "0.1.35"
