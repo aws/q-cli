@@ -32,6 +32,9 @@ SHELL := env PATH=$(PATH) /bin/bash
 
 ifneq "$(CONFIGURATION)" "Debug"
 CARGO_OPTIONS ?= --locked --release
+CARGO_BUILD := "release"
+else
+CARGO_BUILD := "debug"
 endif
 
 BINARY_NAME ?= figterm
@@ -54,11 +57,11 @@ macos: $(BINARY_NAME)-darwin-universal
 
 $(BINARY_NAME)-x86_64-apple-darwin:
 	cargo build --target=x86_64-apple-darwin $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/x86_64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
+	install $(TARGET_DIR)/x86_64-apple-darwin/$(CARGO_BUILD)/$(CRATE_NAME) $(OUT_DIR)/$@
 
 $(BINARY_NAME)-aarch64-apple-darwin:
 	cargo build --target=aarch64-apple-darwin $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/aarch64-apple-darwin/release/$(CRATE_NAME) $(OUT_DIR)/$@
+	install $(TARGET_DIR)/aarch64-apple-darwin/$(CARGO_BUILD)/$(CRATE_NAME) $(OUT_DIR)/$@
 
 $(BINARY_NAME)-darwin-universal: $(BINARY_NAME)-x86_64-apple-darwin $(BINARY_NAME)-aarch64-apple-darwin
 	lipo -create -output $(OUT_DIR)/$@ $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(OUT_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
@@ -68,18 +71,18 @@ linux: $(BINARY_NAME)-x86_64-unknown-linux-gnu
 
 $(BINARY_NAME)-x86_64-unknown-linux-gnu:
 	cargo build --target=x86_64-unknown-linux-gnu $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/release/$(CRATE_NAME) $(OUT_DIR)/$@
+	install $(TARGET_DIR)/x86_64-unknown-linux-gnu/$(CARGO_BUILD)/$(CRATE_NAME) $(OUT_DIR)/$@
 
 $(BINARY_NAME)-aarch64-unknown-linux-gnu:
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/release/$(CRATE_NAME) $(OUT_DIR)/$@
+	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/$(CARGO_BUILD)/$(CRATE_NAME) $(OUT_DIR)/$@
 
 windows: $(BINARY_NAME)-x86_64-pc-windows-gnu
 	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
 
 $(BINARY_NAME)-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
-	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(CRATE_NAME).exe $(OUT_DIR)/$@
+	install $(TARGET_DIR)/x86_64-pc-windows-gnu/$(CARGO_BUILD)/$(CRATE_NAME).exe $(OUT_DIR)/$@
 
 ### Build and Install for local dev
 
