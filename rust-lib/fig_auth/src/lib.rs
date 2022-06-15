@@ -63,16 +63,6 @@ pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
     Ok(())
 }
 
-fn create_anonymous_id() -> Result<String> {
-    let anonymous_id = uuid::Uuid::new_v4().as_hyphenated().to_string();
-    set_default("anonymousId", &anonymous_id)?;
-    Ok(anonymous_id)
-}
-
-pub fn get_or_create_anonymous_id() -> Result<String> {
-    get_default("anonymousId").or_else(|_| create_anonymous_id())
-}
-
 pub async fn get_token() -> Result<String> {
     if let Ok(mut creds) = Credentials::load_credentials() {
         if creds.is_expired() {
