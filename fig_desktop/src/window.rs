@@ -5,6 +5,7 @@ use parking_lot::RwLock;
 use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedSender;
 use wry::application::dpi::{
+    LogicalSize,
     PhysicalPosition,
     PhysicalSize,
     Position,
@@ -143,7 +144,7 @@ impl WindowState {
             WindowEvent::Resize { width, height } => self
                 .webview
                 .window()
-                .set_min_inner_size(Some(PhysicalSize { width, height })),
+                .set_min_inner_size(Some(LogicalSize { width, height })),
             WindowEvent::Hide => {
                 if let Some(session) = state.figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
