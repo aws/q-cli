@@ -418,8 +418,6 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         }
     };
 
-    // let style_sheet = StyleSheet::new()
-
     let mut model: Vec<&mut dyn Component> = vec![];
     let mut name = Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name));
     let mut description = workflow
