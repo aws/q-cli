@@ -323,7 +323,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
-        .with_url("https://staging.withfig.com/autocomplete/v9")?
+        .with_url("https://app.withfig.com/autocomplete/v9")?
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {
