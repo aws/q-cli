@@ -22,7 +22,7 @@ impl Integration for IbusIntegration {
             .status
             .success()
             .then(|| ())
-            .ok_or_else(|| anyhow!("Failed to install"))
+            .ok_or_else(|| anyhow!("Failed set IBus engine to Fig, IBus may not be running."))
     }
 
     fn uninstall(&self) -> Result<()> {

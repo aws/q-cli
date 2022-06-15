@@ -247,14 +247,18 @@ where
 }
 
 struct MissionControlOptions {
+    show_onboarding: bool,
     force_visible: bool,
 }
 
 fn build_mission_control(
     event_loop: &EventLoop,
-    MissionControlOptions { force_visible }: MissionControlOptions,
+    MissionControlOptions {
+        show_onboarding,
+        force_visible,
+    }: MissionControlOptions,
 ) -> wry::Result<WebView> {
-    let is_visible = !fig_auth::is_logged_in() || force_visible;
+    let is_visible = !fig_auth::is_logged_in() || force_visible || show_onboarding;
 
     let window = WindowBuilder::new()
         .with_resizable(true)
@@ -265,7 +269,11 @@ fn build_mission_control(
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
-        .with_url("https://desktop.fig.io")?
+        .with_url(if show_onboarding {
+            "https://desktop.fig.io/onboarding/1"
+        } else {
+            "https://desktop.fig.io"
+        })?
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {
@@ -381,9 +389,12 @@ fn main() {
     rt.block_on(async {
         install::run_install().await;
 
+        let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+
         let mut webview_manager = WebviewManager::new();
         webview_manager
             .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
+                show_onboarding,
                 force_visible: cli.mission_control,
             })
             .unwrap();
