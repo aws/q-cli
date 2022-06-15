@@ -1,6 +1,7 @@
 use newton::{
     Color,
     DisplayState,
+    KeyModifiers,
 };
 
 use crate::{
@@ -108,10 +109,17 @@ impl Component for Form<'_> {
                     acc += component.desired_height(style_sheet, ctx);
                 }
             },
-            Event::KeyPressed { code, .. } => {
+            Event::KeyPressed { code, modifiers } => {
                 if self.interactive() {
+                    match (code, modifiers) {
+                        (newton::KeyCode::Esc, _) | (newton::KeyCode::Char('c'), KeyModifiers::CONTROL) => {
+                            *control_flow = ControlFlow::Return(1);
+                            return;
+                        },
+                        (_, _) => (),
+                    }
+
                     match code {
-                        newton::KeyCode::Esc => *control_flow = ControlFlow::Return(1),
                         newton::KeyCode::Tab => loop {
                             let cursor = (self.cursor + 1) % self.components.len();
                             match self.components.get(cursor) {
