@@ -30,7 +30,9 @@ $(shell mkdir -p $(OUT_DIR))
 
 SHELL := env "PATH=$(PATH)" /bin/bash
 
+ifneq "$(CONFIGURATION)" "Debug"
 CARGO_OPTIONS ?= --locked --release
+endif
 
 BINARY_NAME ?= fig
 CRATE_NAME  ?= fig_cli
