@@ -168,7 +168,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
             let track_search = tokio::task::spawn(async move {
                 let a: [(&'static str, &'static str); 0] = []; // dumb
-                fig_telemetry::emit_track(TrackEvent::Other("workflows.search".into()), TrackSource::Cli, a)
+                fig_telemetry::emit_track(TrackEvent::Other("Workflow Searched".into()), TrackSource::Cli, a)
                     .await
                     .ok();
             });
@@ -223,7 +223,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     };
 
     let track_execution = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(TrackEvent::Other("workflows.execute".into()), TrackSource::Cli, [(
+        fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [(
             "execution_method",
             match name {
                 Some(_) => "invoke",
@@ -479,7 +479,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         };
     }
 
-    let mut command = format!("fig workflow {}", workflow.name);
+    let mut command = format!("fig run {}", workflow.name);
     for (arg, val) in &args {
         command.push_str(&format!(" --{arg} \"{}\"", val.escape_default()));
     }
