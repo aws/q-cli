@@ -7,6 +7,7 @@ use anyhow::{
 };
 use fig_auth::get_token;
 use fig_settings::api_host;
+use fig_util::Shell;
 use serde::{
     Deserialize,
     Serialize,
@@ -20,7 +21,6 @@ use tracing::{
 };
 
 use crate::plugins::api::PluginData;
-use crate::util::shell::Shell;
 
 /// The data for all the shells
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -53,7 +53,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     // Get the token
     let token = get_token().await?;
 
-    let device_uniqueid = crate::util::get_machine_id();
+    let device_uniqueid = fig_util::get_system_id().ok();
     let plugins_directry = crate::plugins::download::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
 
     let url: reqwest::Url = format!("{}/dotfiles/source/all", api_host()).parse()?;

@@ -13,7 +13,7 @@ fn main() -> Result<()> {
         println!("cargo:rerun-if-changed={}", file);
     }
 
-    prost_build::compile_protos(PROTO_FILES, &["../../proto"])?;
+    prost_reflect_build::Builder::new().compile_protos(PROTO_FILES, &["../../proto"])?;
 
     Ok(())
 }

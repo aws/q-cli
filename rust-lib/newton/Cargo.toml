@@ -1,0 +1,12 @@
+[package]
+name = "newton"
+version = "0.1.0"
+edition = "2021"
+
+[dependencies]
+crossterm = { version = "0.23.2", features = ["serde"] }
+unicode-segmentation = "1.9.0"
+
+[dev-dependencies]
+noise = "0.7.0"
+rand = { version = "0.8.5", features = ["std_rng"] }

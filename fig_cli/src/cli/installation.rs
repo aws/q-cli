@@ -7,15 +7,18 @@ use anyhow::{
     Result,
 };
 use crossterm::style::Stylize;
+use fig_integrations::shell::ShellExt;
+use fig_integrations::ssh::SshIntegration;
+use fig_integrations::{
+    get_default_backup_dir,
+    Integration,
+};
+use fig_util::Shell;
 use self_update::update::UpdateStatus;
-use time::OffsetDateTime;
 
 use crate::cli::ssh::get_ssh_config_path;
-use crate::cli::util::dialoguer_theme;
 use crate::daemon;
-use crate::integrations::ssh::SshIntegration;
-use crate::integrations::Integration;
-use crate::util::shell::Shell;
+use crate::util::dialoguer_theme;
 
 bitflags::bitflags! {
     /// The different components that can be installed.
@@ -27,6 +30,7 @@ bitflags::bitflags! {
     }
 }
 
+#[cfg_attr(windows, allow(unused_variables))]
 pub fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<()> {
     #[cfg(unix)]
     {
@@ -96,13 +100,7 @@ pub fn install_cli(install_components: InstallComponents, no_confirm: bool, forc
 }
 
 fn install_fig(_modify_files: bool) -> Result<()> {
-    let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
-        "[year]-[month]-[day]_[hour]-[minute]-[second]"
-    ))?;
-    let backup_dir = fig_directories::home_dir()
-        .context("Could not find home directory")?
-        .join(".fig.dotfiles.bak")
-        .join(now);
+    let backup_dir = get_default_backup_dir()?;
 
     let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
@@ -197,7 +195,6 @@ fn uninstall_fig() -> Result<()> {
 pub enum UpdateType {
     Confirm,
     NoConfirm,
-    NoProgress,
 }
 
 /// Self-update the fig binary
@@ -229,13 +226,11 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
             let _confirm = match update_type {
                 UpdateType::Confirm => true,
                 UpdateType::NoConfirm => false,
-                UpdateType::NoProgress => false,
             };
 
             let progress_output = match update_type {
                 UpdateType::Confirm => true,
                 UpdateType::NoConfirm => true,
-                UpdateType::NoProgress => false,
             };
 
             tokio::task::block_in_place(move || {
@@ -263,13 +258,11 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                 let confirm = match update_type {
                     UpdateType::Confirm => true,
                     UpdateType::NoConfirm => false,
-                    UpdateType::NoProgress => false,
                 };
 
                 let progress_output = match update_type {
                     UpdateType::Confirm => true,
                     UpdateType::NoConfirm => true,
-                    UpdateType::NoProgress => false,
                 };
 
                 tokio::task::block_in_place(move || {

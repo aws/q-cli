@@ -274,6 +274,7 @@ mod tests {
     use super::*;
     use crate::plugins::manifest::GitHub;
 
+    #[ignore]
     #[tokio::test]
     async fn test_download_remote_file_checksum_mismatch() {
         let url = "https://gist.githubusercontent.com/raw/916e80ae32717eeec18d2c7a50a13192";
@@ -284,6 +285,7 @@ mod tests {
         assert!(result.is_err());
     }
 
+    #[ignore]
     #[tokio::test]
     async fn test_download_remote_file_checksum_valid() {
         let url = "https://gist.githubusercontent.com/raw/916e80ae32717eeec18d2c7a50a13192";

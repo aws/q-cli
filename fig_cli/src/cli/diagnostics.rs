@@ -24,12 +24,12 @@ use serde::{
     Serialize,
 };
 
-use crate::cli::util::OSVersion;
 use crate::cli::OutputFormat;
 use crate::util::{
     glob,
     glob_dir,
     is_app_running,
+    OSVersion,
 };
 
 pub trait Diagnostic {
@@ -66,17 +66,6 @@ fn get_local_specs() -> Result<Vec<PathBuf>> {
     glob_dir(&glob, specs_location)
 }
 
-pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
-    Some(
-        Regex::new(regex.as_ref())
-            .unwrap()
-            .captures(input.as_ref())?
-            .get(1)?
-            .as_str()
-            .into(),
-    )
-}
-
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct HardwareInfo {
     model_name: Option<String>,
@@ -90,6 +79,8 @@ impl HardwareInfo {
     fn new() -> Result<HardwareInfo> {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
+                use crate::util::match_regex;
+
                 let result = Command::new("system_profiler")
                     .arg("SPHardwareDataType")
                     .output()
@@ -105,7 +96,7 @@ impl HardwareInfo {
                     memory: match_regex(r"Memory: (.+)", &text),
                 })
             } else {
-                use sysinfo::{System, SystemExt, ProcessorExt};
+                use sysinfo::{System, SystemExt, CpuExt};
 
                 let mut sys = System::new();
                 sys.refresh_cpu();
@@ -122,7 +113,7 @@ impl HardwareInfo {
                     memory: Some(format!("{} KB", sys.total_memory())),
                 };
 
-                if let Some(processor) = sys.processors().first() {
+                if let Some(processor) = sys.cpus().first() {
                     hardware_info.model_name = Some(processor.name().into());
                     hardware_info.model_identifier = Some(processor.vendor_id().into());
                     hardware_info.chip = Some(processor.brand().into());

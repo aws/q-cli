@@ -1,11 +1,8 @@
-//! logger
-
 use std::fs::{
     self,
     File,
 };
 use std::path::PathBuf;
-use std::str::FromStr;
 
 use anyhow::{
     Context,
@@ -13,25 +10,26 @@ use anyhow::{
 };
 use fig_directories::fig_dir;
 use once_cell::sync::Lazy;
-use parking_lot::RwLock;
 use tracing::level_filters::LevelFilter;
 use tracing::Level;
-use tracing_subscriber::filter::DynFilterFn;
-use tracing_subscriber::fmt;
+use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::prelude::*;
+use tracing_subscriber::{
+    fmt,
+    EnvFilter,
+};
 
-static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| {
-    RwLock::new(
-        std::env::var("FIG_LOG_LEVEL")
-            .ok()
-            .and_then(|level| LevelFilter::from_str(&level).ok())
-            .unwrap_or(LevelFilter::OFF),
-    )
-});
+fn filter_layer() -> EnvFilter {
+    EnvFilter::builder()
+        .with_default_directive(LevelFilter::ERROR.into())
+        .with_env_var("FIG_LOG_LEVEL")
+        .from_env_lossy()
+}
+
+static FIG_LOG_LEVEL: Lazy<LevelFilter> = Lazy::new(|| filter_layer().max_level_hint().unwrap_or(LevelFilter::ERROR));
 
 pub fn stdio_debug_log(s: impl AsRef<str>) {
-    let level = FIG_LOG_LEVEL.read();
-    if *level >= Level::DEBUG {
+    if *FIG_LOG_LEVEL >= Level::DEBUG {
         println!("{}", s.as_ref());
     }
 }
@@ -44,22 +42,17 @@ fn log_folder() -> Result<PathBuf> {
 
 fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
     let mut dir = log_folder()?;
-    dir.push(log_file_name.as_ref().replace('/', "_"));
+    dir.push(log_file_name.as_ref().replace('/', "_").replace('\\', "_"));
     Ok(dir)
 }
 
-pub fn set_log_level(level: LevelFilter) {
-    *FIG_LOG_LEVEL.write() = level;
-}
-
 #[must_use]
-pub fn get_log_level() -> LevelFilter {
-    *FIG_LOG_LEVEL.read()
+pub struct LoggerGuard<const N: usize> {
+    _guards: [WorkerGuard; N],
 }
 
-pub fn init_logger(log_file_name: impl AsRef<str>) -> Result<()> {
-    let filter_layer = DynFilterFn::new(|metadata, _ctx| metadata.level() <= &*FIG_LOG_LEVEL.read());
-
+pub fn init_logger(log_file_name: impl AsRef<str>) -> Result<LoggerGuard<2>> {
+    let filter_layer = filter_layer();
     let log_path = log_path(log_file_name)?;
 
     // Make folder if it doesn't exist
@@ -69,8 +62,11 @@ pub fn init_logger(log_file_name: impl AsRef<str>) -> Result<()> {
     }
 
     let file = File::create(log_path).context("failed to create log file")?;
-    let file_layer = fmt::layer().with_line_number(true).with_writer(file);
-    let stdout_layer = fmt::layer().with_line_number(true).with_writer(std::io::stdout);
+    let (non_blocking, guard1) = tracing_appender::non_blocking(file);
+    let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
+
+    let (non_blocking, guard2) = tracing_appender::non_blocking(std::io::stdout());
+    let stdout_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
 
     tracing_subscriber::registry()
         .with(filter_layer)
@@ -78,5 +74,7 @@ pub fn init_logger(log_file_name: impl AsRef<str>) -> Result<()> {
         .with(stdout_layer)
         .init();
 
-    Ok(())
+    Ok(LoggerGuard {
+        _guards: [guard1, guard2],
+    })
 }

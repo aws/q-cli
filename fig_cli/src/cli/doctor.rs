@@ -11,12 +11,11 @@ use std::process::Command;
 use std::time::Duration;
 
 use anyhow::{
-    anyhow,
+    bail,
     Context,
     Result,
 };
 use async_trait::async_trait;
-use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use crossterm::terminal::{
     disable_raw_mode,
@@ -29,6 +28,11 @@ use crossterm::{
     execute,
 };
 use fig_directories::home_dir;
+use fig_integrations::shell::{
+    ShellExt,
+    ShellIntegration,
+};
+use fig_integrations::InstallationError;
 use fig_ipc::{
     connect_timeout,
     get_fig_socket_path,
@@ -44,7 +48,11 @@ use fig_telemetry::{
     TrackEvent,
     TrackSource,
 };
-use fig_util::Terminal;
+use fig_util::{
+    get_parent_process_exe,
+    Shell,
+    Terminal,
+};
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -52,44 +60,40 @@ use spinners::{
     Spinner,
     Spinners,
 };
-use thiserror::Error;
+use sysinfo::{
+    ProcessRefreshKind,
+    RefreshKind,
+    SystemExt,
+};
 use tokio::io::{
     AsyncBufReadExt,
     AsyncWriteExt,
 };
-use tokio::{self,};
-use tracing::error;
 
-use super::util::SupportLevel;
 use crate::cli::diagnostics::{
     dscl_read,
     verify_integration,
 };
-use crate::cli::util::OSVersion;
-use crate::integrations::shell::ShellIntegration;
-use crate::integrations::InstallationError;
-use crate::util::shell::Shell;
 use crate::util::{
     app_path_from_bundle_id,
-    get_parent_process_exe,
     glob,
     glob_dir,
     is_executable_in_path,
     launch_fig,
     LaunchOptions,
+    OSVersion,
+    SupportLevel,
 };
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 
-#[derive(Error)]
 enum DoctorError {
-    #[error("Warning: {0}")]
     Warning(Cow<'static, str>),
-    #[error("Error: {reason}")]
     Error {
         reason: Cow<'static, str>,
         info: Vec<Cow<'static, str>>,
         fix: Option<DoctorFix>,
+        error: Option<anyhow::Error>,
     },
 }
 
@@ -106,15 +110,74 @@ impl std::fmt::Debug for DoctorError {
     }
 }
 
-impl From<anyhow::Error> for DoctorError {
-    fn from(e: anyhow::Error) -> DoctorError {
-        DoctorError::Error {
-            reason: format!("{e}").into(),
-            info: vec![],
-            fix: None,
+impl std::fmt::Display for DoctorError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            DoctorError::Warning(warning) => write!(f, "Warning: {warning}"),
+            DoctorError::Error { reason, .. } => write!(f, "Error: {reason}"),
         }
     }
 }
+
+impl From<anyhow::Error> for DoctorError {
+    fn from(err: anyhow::Error) -> Self {
+        DoctorError::Error {
+            reason: err.to_string().into(),
+            info: vec![],
+            fix: None,
+            error: Some(err),
+        }
+    }
+}
+
+impl DoctorError {
+    fn warning(reason: impl Into<Cow<'static, str>>) -> DoctorError {
+        DoctorError::Warning(reason.into())
+    }
+
+    fn error(reason: impl Into<Cow<'static, str>>) -> DoctorError {
+        DoctorError::Error {
+            reason: reason.into(),
+            info: vec![],
+            fix: None,
+            error: None,
+        }
+    }
+}
+
+macro_rules! doctor_warning {
+    ($($arg:tt)*) => {{
+        DoctorError::warning(format!($($arg)*))
+    }}
+}
+
+macro_rules! doctor_error {
+    ($($arg:tt)*) => {{
+        DoctorError::error(format!($($arg)*))
+    }}
+}
+
+macro_rules! doctor_fix {
+    ({ reason: $reason:expr,fix: $fix:expr }) => {
+        DoctorError::Error {
+            reason: format!($reason).into(),
+            info: vec![],
+            fix: Some(Box::new($fix)),
+            error: None,
+        }
+    };
+}
+
+// impl From<anyhow::Error> for DoctorError {
+//    fn from(err: anyhow::Error) -> Self {
+//        DoctorError::Error {
+//            reason: err.to_string().into(),
+//            info: vec![],
+//            fix: None,
+//            error: Some(Box::new(err)),
+//        }
+//    }
+//}
 
 fn check_file_exists(path: impl AsRef<Path>) -> Result<()> {
     if !path.as_ref().exists() {
@@ -172,11 +235,12 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let version = String::from_utf8_lossy(&output.stdout);
     Version::parse(version.trim()).ok()
 }
-const CHECKMARK: &str = "✔";
-const DOT: &str = "●";
-const CROSS: &str = "✘";
 
-fn print_status_result(name: impl Display, status: &Result<(), DoctorError>) {
+static CHECKMARK: &str = "✔";
+static DOT: &str = "●";
+static CROSS: &str = "✘";
+
+fn print_status_result(name: impl Display, status: &Result<(), DoctorError>, verbose: bool) {
     match status {
         Ok(()) => {
             println!("{} {name}", CHECKMARK.green());
@@ -184,10 +248,17 @@ fn print_status_result(name: impl Display, status: &Result<(), DoctorError>) {
         Err(DoctorError::Warning(msg)) => {
             println!("{} {msg}", DOT.yellow());
         },
-        Err(DoctorError::Error { reason, info, .. }) => {
+        Err(DoctorError::Error {
+            reason, info, error, ..
+        }) => {
             println!("{} {name}: {reason}", CROSS.red());
             for infoline in info {
                 println!("  {infoline}");
+            }
+            if let Some(error) = error {
+                if verbose {
+                    println!("  {error:?}")
+                }
             }
         },
     }
@@ -211,16 +282,11 @@ enum Platform {
 }
 
 fn get_platform() -> Platform {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            Platform::MacOs
-        } else if #[cfg(target_os = "linux")] {
-            Platform::Linux
-        } else if #[cfg(windows)] {
-            Platform::Windows
-        } else {
-            Platform::Other
-        }
+    match std::env::consts::OS {
+        "macos" => Platform::MacOs,
+        "linux" => Platform::Linux,
+        "windows" => Platform::Windows,
+        _ => Platform::Other,
     }
 }
 
@@ -260,28 +326,29 @@ impl DoctorCheck for FigBinCheck {
     }
 }
 
-struct PathCheck;
+macro_rules! path_check {
+    ($name:ident, $path:expr) => {
+        struct $name;
 
-#[async_trait]
-impl DoctorCheck for PathCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "PATH contains ~/.local/bin and ~/.fig/bin".into()
-    }
+        #[async_trait]
+        impl DoctorCheck for $name {
+            fn name(&self) -> Cow<'static, str> {
+                concat!("PATH contains ~/", $path).into()
+            }
 
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match std::env::var("PATH").map(|path| path.contains(".local/bin")) {
-            Ok(true) => {},
-            _ => return Err(anyhow!("Path does not contain ~/.local/bin").into()),
+            async fn check(&self, _: &()) -> Result<(), DoctorError> {
+                match std::env::var("PATH").map(|path| path.contains($path)) {
+                    Ok(true) => Ok(()),
+                    _ => return Err(doctor_error!(concat!("Path does not contain ~/", $path))),
+                }
+            }
         }
-
-        match std::env::var("PATH").map(|path| path.contains(".fig/bin")) {
-            Ok(true) => {},
-            _ => return Err(anyhow!("Path does not contain ~/.fig/bin").into()),
-        }
-
-        Ok(())
-    }
+    };
 }
+
+path_check!(LocalBinPathCheck, ".local/bin");
+#[cfg(target_os = "macos")]
+path_check!(FigBinPathCheck, ".fig/bin");
 
 struct AppRunningCheck;
 
@@ -308,6 +375,7 @@ impl DoctorCheck for AppRunningCheck {
             reason: "Fig app is not running".into(),
             info: vec![],
             fix: command_fix(vec!["fig", "launch"], Duration::from_secs(3)),
+            error: None,
         })
     }
 
@@ -341,6 +409,7 @@ impl DoctorCheck for FigSocketCheck {
                         std::fs::create_dir_all(parent)?;
                         Ok(())
                     })),
+                    error: None,
                 });
             }
         }
@@ -357,52 +426,6 @@ impl DoctorCheck for FigSocketCheck {
     }
 }
 
-macro_rules! shell_config_exists_check {
-    ($check_name:ident, $file:expr, $shell:expr) => {
-        struct $check_name;
-
-        #[async_trait]
-        impl DoctorCheck<Option<Shell>> for $check_name {
-            fn name(&self) -> Cow<'static, str> {
-                format!("{} exists", $file).into()
-            }
-
-            async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
-                match $shell.get_config_directory() {
-                    Some(home_dir) => {
-                        let path = home_dir.join($file);
-                        if path.exists() {
-                            Ok(())
-                        } else {
-                            Err(DoctorError::Error {
-                                reason: format!("{} does not exist", $file).into(),
-                                info: vec![],
-                                fix: Some(Box::new(|| {
-                                    std::fs::write(path, "")?;
-                                    Ok(())
-                                })),
-                            })
-                        }
-                    },
-                    None => Err(DoctorError::Warning(
-                        format!("Could not determine {} config directory", $shell).into(),
-                    )),
-                }
-            }
-
-            fn get_type(&self, shell: &Option<Shell>, _platform: Platform) -> DoctorCheckType {
-                match shell {
-                    Some(shell) if shell == &$shell => DoctorCheckType::NormalCheck,
-                    _ => DoctorCheckType::SoftCheck,
-                }
-            }
-        }
-    };
-}
-
-shell_config_exists_check!(BashrcExistsCheck, ".bashrc", Shell::Bash);
-shell_config_exists_check!(ZshrcExistsCheck, ".zshrc", Shell::Zsh);
-
 struct FigIntegrationsCheck;
 
 #[async_trait]
@@ -417,6 +440,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 reason: "WarpTerminal is not supported".into(),
                 info: vec![],
                 fix: None,
+                error: None,
             });
         }
 
@@ -425,6 +449,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 reason: "Powershell is not supported".into(),
                 info: vec![],
                 fix: None,
+                error: None,
             });
         }
 
@@ -433,6 +458,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 reason: "Emacs is not supported".into(),
                 info: vec![],
                 fix: None,
+                error: None,
             });
         }
 
@@ -441,6 +467,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 reason: "SecureCRT is not supported".into(),
                 info: vec![],
                 fix: None,
+                error: None,
             });
         }
 
@@ -449,6 +476,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                 reason: "Fig can not run in the Fig Pty".into(),
                 info: vec![],
                 fix: None,
+                error: None,
             });
         }
 
@@ -457,22 +485,24 @@ impl DoctorCheck for FigIntegrationsCheck {
                 reason: "Fig can not run in a process launched by Fig".into(),
                 info: vec![],
                 fix: None,
+                error: None,
             });
         }
 
         // Check that ~/.fig/bin/figterm exists
-        let figterm_path = fig_directories::fig_dir()
-            .context("Could not find ~/.fig")?
-            .join("bin")
-            .join("figterm");
+        // TODO(grant): Check figterm exe exists
+        // let figterm_path = fig_directories::fig_dir()
+        //    .context("Could not find ~/.fig")?
+        //    .join("bin")
+        //    .join("figterm");
 
-        if !figterm_path.exists() {
-            return Err(DoctorError::Error {
-                reason: "figterm does not exist".into(),
-                info: vec![],
-                fix: None,
-            });
-        }
+        // if !figterm_path.exists() {
+        //    return Err(DoctorError::Error {
+        //        reason: "figterm does not exist".into(),
+        //        info: vec![],
+        //        fix: None,
+        //    });
+        //}
 
         match std::env::var("FIG_TERM").as_deref() {
             Ok("1") => {},
@@ -487,6 +517,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                         .into(),
                     ],
                     fix: None,
+                    error: None,
                 });
             },
         };
@@ -506,19 +537,19 @@ impl DoctorCheck for FigtermSocketCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
 
-        let socket_path = PathBuf::from("/tmp").join(format!("figterm-{}.socket", term_session));
+        let socket_path = PathBuf::from("/tmp").join(format!("figterm-{term_session}.socket"));
 
         check_file_exists(&socket_path)?;
 
         let mut conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
-            Err(e) => return Err(anyhow!("Socket exists but could not connect: {}", e).into()),
+            Err(err) => return Err(doctor_error!("Socket exists but could not connect: {err}")),
         };
 
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
 
         let write_handle: tokio::task::JoinHandle<Result<(), DoctorError>> = tokio::spawn(async move {
-            conn.writable().await.map_err(|e| anyhow!("{}", e))?;
+            conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
             let message = fig_proto::figterm::FigtermMessage {
@@ -528,13 +559,14 @@ impl DoctorCheck for FigtermSocketCheck {
                         deletion: None,
                         offset: None,
                         immediate: Some(true),
+                        insertion_buffer: None,
                     },
                 )),
             };
 
             let fig_message = message.encode_fig_protobuf()?;
 
-            conn.write(&fig_message).await.map_err(|e| anyhow!("{}", e))?;
+            conn.write(&fig_message).await.map_err(|e| doctor_error!("{e}"))?;
 
             Ok(())
         });
@@ -560,16 +592,16 @@ impl DoctorCheck for FigtermSocketCheck {
                     ))
                 }
             },
-            Ok(Err(err)) => Err(anyhow!("Figterm socket err: {}", err).into()),
-            Err(_) => Err(anyhow!("Figterm socket write timed out after 1s").into()),
+            Ok(Err(err)) => Err(doctor_error!("Figterm socket err: {}", err)),
+            Err(_) => Err(doctor_error!("Figterm socket write timed out after 1s")),
         };
 
         disable_raw_mode().context("Failed to disable raw mode")?;
 
         match write_handle.await {
             Ok(Ok(_)) => {},
-            Ok(Err(e)) => return Err(anyhow!("Failed to write to figterm socket: {}", e).into()),
-            Err(e) => return Err(anyhow!("Failed to write to figterm socket: {}", e).into()),
+            Ok(Err(err)) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
+            Err(err) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
         }
 
         timeout_result?;
@@ -600,6 +632,7 @@ impl DoctorCheck for InsertionLockCheck {
                     std::fs::remove_file(&insetion_lock_path)?;
                     Ok(())
                 })),
+                error: None,
             });
         }
 
@@ -650,6 +683,7 @@ impl DoctorCheck for DaemonCheck {
                         std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                         Ok(())
                     })),
+                    error: None,
                 });
             }
 
@@ -671,6 +705,7 @@ impl DoctorCheck for DaemonCheck {
                     format!("Error: {err}").into(),
                 ],
                 fix: Some(Box::new(move || Ok(()))),
+                error: None,
             })?;
         }
 
@@ -694,12 +729,14 @@ impl DoctorCheck for DaemonCheck {
                         format!("Error message: {}", error_message.unwrap_or_default()).into(),
                     ],
                     fix: daemon_fix!(),
+                    error: None,
                 })
             },
             None => Err(DoctorError::Error {
                 reason: "Daemon is not running".into(),
                 info: vec![format!("Init system: {:?}", init_system).into()],
                 fix: daemon_fix!(),
+                error: None,
             }),
         }?;
 
@@ -711,16 +748,21 @@ impl DoctorCheck for DaemonCheck {
                 reason: "Daemon socket does not exist".into(),
                 info: vec![],
                 fix: daemon_fix!(),
+                error: None,
             });
         }
 
         let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
             Ok(connection) => connection,
-            Err(_) => {
+            Err(err) => {
                 return Err(DoctorError::Error {
                     reason: "Daemon socket exists but could not connect".into(),
-                    info: vec![format!("Socket path: {}", socket_path.display()).into()],
+                    info: vec![
+                        format!("Socket path: {}", socket_path.display()).into(),
+                        format!("{err:?}").into(),
+                    ],
                     fix: daemon_fix!(),
+                    error: None,
                 });
             },
         };
@@ -745,6 +787,7 @@ impl DoctorCheck for DaemonCheck {
                                         .into(),
                                     info: vec![],
                                     fix: daemon_fix!(),
+                                    error: None,
                                 });
                             }
                         }
@@ -755,6 +798,7 @@ impl DoctorCheck for DaemonCheck {
                                     reason: status.error.unwrap_or_else(|| "Daemon websocket error".into()).into(),
                                     info: vec![],
                                     fix: daemon_fix!(),
+                                    error: None,
                                 });
                             }
                         }
@@ -765,6 +809,7 @@ impl DoctorCheck for DaemonCheck {
                             reason: "Daemon responded with unexpected response type".into(),
                             info: vec![],
                             fix: daemon_fix!(),
+                            error: None,
                         });
                     },
                 },
@@ -773,6 +818,7 @@ impl DoctorCheck for DaemonCheck {
                         reason: "Daemon responded with no response type".into(),
                         info: vec![],
                         fix: daemon_fix!(),
+                        error: None,
                     });
                 },
             },
@@ -781,6 +827,7 @@ impl DoctorCheck for DaemonCheck {
                     reason: "Daemon accepted request but did not respond".into(),
                     info: vec![format!("Socket path: {}", socket_path.display()).into()],
                     fix: daemon_fix!(),
+                    error: None,
                 });
             },
         }
@@ -801,7 +848,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             .map(|path| format!("~/{}", path.display()))
             .unwrap_or_else(|| self.integration.path().display().to_string());
 
-        format!("{} contains valid fig hooks", path).into()
+        format!("{path} contains valid fig hooks").into()
     }
 
     fn analytics_event_name(&self) -> String {
@@ -831,9 +878,9 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
         match self.integration.is_installed() {
             Ok(()) => Ok(()),
             Err(InstallationError::LegacyInstallation(msg)) => {
-                Err(DoctorError::Warning(format!("{} {fix_text}", msg).into()))
+                Err(DoctorError::Warning(format!("{msg} {fix_text}").into()))
             },
-            Err(InstallationError::NotInstalled(msg)) | Err(InstallationError::ImproperInstallation(msg)) => {
+            Err(InstallationError::NotInstalled(msg) | InstallationError::ImproperInstallation(msg)) => {
                 // Check permissions of the file
                 #[cfg(unix)]
                 {
@@ -849,6 +896,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                                 reason: format!("{} is not accessible", path.display()).into(),
                                 info: vec![format!("Run `sudo chown $USER {}` to fix", path.display()).into()],
                                 fix: None,
+                                error: None,
                             }
                         })?;
                     }
@@ -862,6 +910,19 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                         fix_integration.install(None)?;
                         Ok(())
                     })),
+                    error: None,
+                })
+            },
+            Err(err @ InstallationError::FileDoesNotExist(_)) => {
+                let fix_integration = self.integration.clone();
+                Err(DoctorError::Error {
+                    reason: err.to_string().into(),
+                    info: vec![fix_text.into()],
+                    fix: Some(Box::new(move || {
+                        fix_integration.install(None)?;
+                        Ok(())
+                    })),
+                    error: Some(anyhow::Error::new(err)),
                 })
             },
         }
@@ -884,6 +945,7 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
                 reason: "Install script not run".into(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "app", "install"], None),
+                error: None,
             })
         }
     }
@@ -910,14 +972,14 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
         let default_shell_valid = default_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
 
         match (current_shell_valid, default_shell_valid) {
-            (Ok((current_shell, false)), _) => {
-                return Err(anyhow!("Current shell {} incompatible", current_shell).into());
+            (Some((current_shell, false)), _) => {
+                return Err(doctor_error!("Current shell {current_shell} incompatible"));
             },
             (_, Ok((default_shell, false))) => {
-                return Err(anyhow!("Default shell {} incompatible", default_shell).into());
+                return Err(doctor_error!("Default shell {default_shell} incompatible"));
             },
-            (Err(_), _) => return Err(anyhow!("Could not get current shell").into()),
-            (_, Err(_)) => Err(DoctorError::Warning("Could not get default shell".into())),
+            (None, _) => return Err(doctor_error!("Could not get current shell")),
+            (_, Err(_)) => Err(doctor_warning!("Could not get default shell")),
             _ => Ok(()),
         }
     }
@@ -948,6 +1010,7 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
                     "Remember to drag Fig into the Applications folder.".into(),
                 ],
                 fix: None,
+                error: None,
             })
         }
     }
@@ -969,6 +1032,7 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
                 reason: "Autocomplete disabled.".into(),
                 info: vec![format!("To fix run: {}", "fig settings autocomplete.disable false".magenta()).into()],
                 fix: None,
+                error: None,
             })
         }
     }
@@ -1036,7 +1100,11 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
                 "Running debug build in a non-standard location".into(),
             ))
         } else {
-            Err(anyhow!("Fig CLI ({}) must be in {}", path.display(), local_bin_path.display()).into())
+            Err(doctor_error!(
+                "Fig CLI ({}) must be in {}",
+                path.display(),
+                local_bin_path.display()
+            ))
         }
     }
 }
@@ -1055,6 +1123,7 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
                 reason: "Accessibility is disabled".into(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "debug", "prompt-accessibility"], Duration::from_secs(1)),
+                error: None,
             })
         } else {
             Ok(())
@@ -1074,8 +1143,9 @@ impl DoctorCheck for PseudoTerminalPathCheck {
         let pty_path = fig_settings::state::get_value("pty.path")
             .map_err(|e| DoctorError::Error {
                 reason: "Could not get PseudoTerminal PATH".into(),
-                info: vec![format!("{}", e).into()],
+                info: vec![e.to_string().into()],
                 fix: None,
+                error: None,
             })?
             .and_then(|s| s.as_str().map(str::to_string));
 
@@ -1084,6 +1154,7 @@ impl DoctorCheck for PseudoTerminalPathCheck {
                 reason: "paths do not match".into(),
                 info: vec![],
                 fix: command_fix(vec!["fig", "app", "set-path"], None),
+                error: None,
             })
         } else {
             Ok(())
@@ -1146,6 +1217,7 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
                                 "To fix: upgrade Bitwarden to the latest version".into(),
                             ],
                             fix: None,
+                            error: None,
                         });
                     }
                 },
@@ -1159,6 +1231,7 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
             reason: "Secure keyboard input is on".into(),
             info,
             fix: None,
+            error: None,
         })
     }
 }
@@ -1198,11 +1271,11 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
                 Ok(output) => {
                     let api_enabled = String::from_utf8_lossy(&output.stdout);
                     if api_enabled.trim() == "0" {
-                        return Err(anyhow!("iTerm API server is not enabled.").into());
+                        return Err(doctor_error!("iTerm API server is not enabled."));
                     }
                 },
                 Err(_) => {
-                    return Err(anyhow!("Could not get iTerm API status").into());
+                    return Err(doctor_error!("Could not get iTerm API status"));
                 },
             }
 
@@ -1210,17 +1283,17 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
                 .context("Could not get home dir")?
                 .join("Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt");
             if !integration_path.exists() {
-                return Err(anyhow!("fig-iterm-integration.scpt is missing.").into());
+                return Err(doctor_error!("fig-iterm-integration.scpt is missing."));
             }
 
-            return Err(anyhow!("Unknown error with iTerm integration").into());
+            return Err(doctor_error!("Unknown error with iTerm integration"));
         }
 
         if let Some(version) = app_version("com.googlecode.iterm2") {
             if version < Version::new(3, 4, 0) {
-                return Err(
-                    anyhow!("iTerm version is incompatible with Fig. Please update iTerm to latest version").into(),
-                );
+                return Err(doctor_error!(
+                    "iTerm version is incompatible with Fig. Please update iTerm to latest version"
+                ));
             }
         }
         Ok(())
@@ -1264,19 +1337,17 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
             Some(captures) => {
                 let version = captures.get(1).unwrap().as_str();
                 if Version::new(0, 4, 0) > Version::parse(version).unwrap() {
-                    return Err(anyhow!(
+                    return Err(doctor_error!(
                         "iTerm Bash Integration is out of date. Please update in iTerm's menu by selecting \"Install \
                          Shell Integration\"."
-                    )
-                    .into());
+                    ));
                 }
                 Ok(())
             },
-            None => Err(DoctorError::Warning(
+            None => Err(doctor_warning!(
                 "iTerm's Bash Integration is installed, but we could not check the version in \
                  ~/.iterm2_shell_integration.bash. Integration may be out of date. You can try updating in iTerm's \
-                 menu by selecting \"Install Shell Integration\""
-                    .into(),
+                 menu by selecting \"Install Shell Integration\"",
             )),
         }
     }
@@ -1313,7 +1384,7 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
                 .join(".hyper_plugins/local/fig-hyper-integration/index.js");
 
             if !integration_path.exists() {
-                return Err(anyhow!("fig-hyper-integration plugin is missing.").into());
+                return Err(doctor_error!("fig-hyper-integration plugin is missing."));
             }
 
             let config = read_to_string(
@@ -1324,9 +1395,11 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
             .context("Could not read ~/.hyper.js")?;
 
             if !config.contains("fig-hyper-integration") {
-                return Err(anyhow!("fig-hyper-integration plugin needs to be added to localPlugins!").into());
+                return Err(doctor_error!(
+                    "fig-hyper-integration plugin needs to be added to localPlugins!"
+                ));
             }
-            return Err(anyhow!("Unknown error with integration!").into());
+            return Err(doctor_error!("Unknown error with integration!"));
         }
 
         Ok(())
@@ -1349,7 +1422,7 @@ impl DoctorCheck for SystemVersionCheck {
                 format!("Fig's support for {os_version} is in development. It may not work properly on your system.")
                     .into(),
             )),
-            SupportLevel::Unsupported => Err(anyhow!("{os_version} is not supported").into()),
+            SupportLevel::Unsupported => Err(doctor_error!("{os_version} is not supported")),
         }
     }
 }
@@ -1403,9 +1476,9 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
             })?;
 
             if fig_extensions.is_empty() {
-                return Err(anyhow!("VSCode extension is missing!").into());
+                return Err(doctor_error!("VSCode extension is missing!"));
             }
-            return Err(anyhow!("Unknown error with integration!").into());
+            return Err(doctor_error!("Unknown error with integration!"));
         }
         Ok(())
     }
@@ -1434,7 +1507,62 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 reason: "Input Method is not enabled".into(),
                 info: vec!["Run `fig install --input-method` to enable it".into()],
                 fix: None,
+                error: None,
             })
+        }
+    }
+}
+
+struct IbusCheck;
+
+#[async_trait]
+impl DoctorCheck for IbusCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "IBus Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let system = sysinfo::System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+
+        if system.processes_by_exact_name("ibus-daemon").next().is_none() {
+            return Err(doctor_fix!({
+                reason: "ibus-daemon is not running",
+                fix: || {
+                    let output = Command::new("ibus-daemon").arg("-drxR").output()?;
+                    if !output.status.success() {
+                        let stdout = String::from_utf8_lossy(&output.stdout);
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+                    }
+                    Ok(())
+            }}));
+        }
+
+        let ibus_engine_output = Command::new("ibus")
+            .arg("engine")
+            .output()
+            .map_err(anyhow::Error::new)?;
+
+        let stdout = String::from_utf8_lossy(&ibus_engine_output.stdout);
+        if ibus_engine_output.status.success() && "fig" == stdout.trim() {
+            Ok(())
+        } else {
+            Err(doctor_fix!({
+                reason: "ibus-daemon engine is not fig",
+                fix: || {
+                    let output = Command::new("ibus").args(&["engine", "fig"]).output()?;
+                    if !output.status.success() {
+                        let stdout = String::from_utf8_lossy(&output.stdout);
+                        let stderr = String::from_utf8_lossy(&output.stderr);
+                        bail!("Setting ibus engine to fig failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+                    }
+                    Ok(())
+                }
+            }))
         }
     }
 }
@@ -1451,7 +1579,7 @@ impl DoctorCheck for LoginStatusCheck {
         // We reload the credentials here because we want to check if the user is logged in
         match fig_auth::refresh_credentals().await {
             Ok(_) => Ok(()),
-            Err(_) => Err(anyhow!("Not logged in. Run `fig login` to login.").into()),
+            Err(_) => Err(doctor_error!("Not logged in. Run `fig login` to login.")),
         }
     }
 }
@@ -1495,7 +1623,7 @@ where
 
         if config.verbose || matches!(result, Err(_)) {
             stop_spinner(spinner.take())?;
-            print_status_result(&name, &result);
+            print_status_result(&name, &result, config.verbose);
         }
 
         if config.verbose {
@@ -1516,14 +1644,14 @@ where
 
             fig_telemetry::emit_track(TrackEvent::DoctorError, TrackSource::Cli, properties)
                 .await
-                .context(format!("Could not send doctor error telemetry: {}", err))?;
+                .ok();
         }
 
-        if let Err(DoctorError::Error { reason, fix, .. }) = result {
+        if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
-                if let Err(e) = fixfn() {
-                    println!("Failed to fix: {e}");
+                if let Err(err) = fixfn() {
+                    println!("Failed to fix: {err}");
                 } else {
                     println!("Re-running check...");
                     println!();
@@ -1531,7 +1659,7 @@ where
                         context = new_context
                     }
                     let fix_result = check.check(&context).await;
-                    print_status_result(&name, &fix_result);
+                    print_status_result(&name, &fix_result, config.verbose);
                     match fix_result {
                         Err(DoctorError::Error { .. }) => {},
                         _ => {
@@ -1541,7 +1669,10 @@ where
                 }
             }
             println!();
-            anyhow::bail!(reason);
+            match error {
+                Some(err) => anyhow::bail!(err),
+                None => anyhow::bail!(reason),
+            }
         }
     }
 
@@ -1644,8 +1775,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .map(|integration| DotfileCheck { integration })
         .collect();
 
-    let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> = vec![&BashrcExistsCheck {}, &ZshrcExistsCheck {}];
-
+    let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> = vec![];
     all_dotfile_checks.extend(shell_integrations.iter().map(|p| (&*p) as &dyn DoctorCheck<_>));
 
     let status = async {
@@ -1662,7 +1792,9 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's make sure Fig is running...".into(),
             vec![
                 &FigBinCheck {},
-                &PathCheck {},
+                &LocalBinPathCheck {},
+                #[cfg(target_os = "macos")]
+                &FigBinPathCheck {},
                 &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
@@ -1684,7 +1816,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             config,
             &mut spinner,
         )
-        .await?;
+        .await
+        .ok();
 
         #[cfg(target_os = "macos")]
         {
@@ -1723,6 +1856,17 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             &mut spinner,
         )
         .await?;
+
+        #[cfg(target_os = "linux")]
+        {
+            run_checks(
+                "Let's check Linux integrations".into(),
+                vec![&IbusCheck {}],
+                config,
+                &mut spinner,
+            )
+            .await?;
+        }
 
         anyhow::Ok(())
     };

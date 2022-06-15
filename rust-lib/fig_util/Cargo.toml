@@ -8,13 +8,16 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
+cfg-if = "1.0.0"
 clap = { version = "3.1.8", features = ["derive"] }
 fig_directories = { path = "../fig_directories" }
-fig_settings = { path = "../fig_settings" }
 serde = "1.0.136"
 sha2 = "0.10.2"
-sysinfo = "0.23.9"
 thiserror = "1.0.30"
+tokio = { version = "1", features = ["process"] }
 
 [target.'cfg(windows)'.dependencies]
 winreg = "0.10.1"
+
+[target.'cfg(unix)'.dependencies]
+nix = "0.24.1"

@@ -2,6 +2,7 @@ import {
   NotificationType,
   ProcessChangedNotification,
   ShellPromptReturnedNotification,
+  TextUpdate,
   HistoryUpdatedNotification
 } from './fig.pb';
 import { sendInsertTextRequest } from './requests';
@@ -69,8 +70,11 @@ export const historyUpdated = {
   }
 };
 
-export async function insert(text: string) {
-  return sendInsertTextRequest({
-    type: { $case: 'text', text }
-  });
+export async function insert(text: string, request?: Omit<TextUpdate, "insertion">) {
+  if (request) {
+    return sendInsertTextRequest({
+      type: { $case: 'update', update: { ...request, insertion: text } }
+    });
+  }
+  return sendInsertTextRequest({ type: { $case: 'text', text } });
 }

@@ -1,26 +1,26 @@
 //! CLI functionality
 
 pub mod app;
-pub mod debug;
-pub mod diagnostics;
-pub mod doctor;
-pub mod hook;
-pub mod init;
-pub mod installation;
-pub mod internal;
-pub mod invite;
-pub mod issue;
-pub mod man;
-pub mod plugins;
-pub mod settings;
-pub mod source;
-pub mod ssh;
-pub mod team;
-pub mod theme;
-pub mod tips;
-pub mod tweet;
-pub mod user;
-pub mod util;
+mod debug;
+mod diagnostics;
+mod doctor;
+mod hook;
+mod init;
+mod installation;
+mod internal;
+mod invite;
+mod issue;
+mod man;
+mod plugins;
+mod settings;
+mod source;
+mod ssh;
+mod team;
+mod theme;
+mod tips;
+mod tweet;
+mod user;
+mod workflow;
 
 use std::fs::File;
 use std::process::exit;
@@ -32,30 +32,30 @@ use anyhow::{
 };
 use cfg_if::cfg_if;
 use clap::{
-    ArgEnum,
     IntoApp,
     Parser,
     Subcommand,
+    ValueEnum,
 };
+use fig_integrations::shell::When;
+use fig_util::Shell;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::plugins::PluginsSubcommands;
-use crate::cli::util::dialoguer_theme;
 use crate::daemon::{
     daemon,
     get_daemon,
 };
-use crate::integrations::shell::When;
-use crate::util::shell::Shell;
 use crate::util::{
+    dialoguer_theme,
     is_app_running,
     launch_fig,
     LaunchOptions,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
     /// Outputs the results as markdown
     Plain,
@@ -71,9 +71,9 @@ impl Default for OutputFormat {
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Shells {
-    /// Bash shell compleations
+    /// Bash shell completions
     Bash,
     /// Fish shell completions
     Fish,
@@ -83,7 +83,7 @@ pub enum Shells {
     Fig,
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ArgEnum)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum Processes {
     /// Daemon process
     Daemon,
@@ -118,7 +118,7 @@ pub enum CliRootCommands {
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short = 'y')]
+        #[clap(long, short = 'y', action)]
         no_confirm: bool,
     },
     /// Run the daemon
@@ -127,27 +127,28 @@ pub enum CliRootCommands {
     /// Run diagnostic tests
     Diagnostic {
         /// The format of the output
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
         /// Force limited diagnostic output
-        #[clap(long)]
+        #[clap(long, action)]
         force: bool,
     },
     /// Generate the dotfiles for the given shell
     Init {
         /// The shell to generate the dotfiles for
-        #[clap(arg_enum)]
+        #[clap(value_enum, value_parser)]
         shell: Shell,
         /// When to generate the dotfiles for
-        #[clap(arg_enum)]
+        #[clap(value_enum, value_parser)]
         when: When,
-        #[clap(long)]
+        #[clap(long, value_parser)]
         rcfile: Option<String>,
     },
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
     Theme {
+        #[clap(action)]
         theme: Option<String>,
     },
     /// Invite friends to Fig
@@ -157,9 +158,10 @@ pub enum CliRootCommands {
     /// Create a new Github issue
     Issue {
         /// Force issue creation
-        #[clap(long, short = 'f')]
+        #[clap(long, short = 'f', action)]
         force: bool,
         /// Issue description
+        #[clap(value_parser)]
         description: Vec<String>,
     },
     #[clap(flatten)]
@@ -170,17 +172,17 @@ pub enum CliRootCommands {
     /// Check Fig is properly configured
     Doctor {
         /// Run all doctor tests, with no fixes
-        #[clap(long)]
+        #[clap(long, action)]
         verbose: bool,
         /// Error on warnings
-        #[clap(long)]
+        #[clap(long, action)]
         strict: bool,
     },
     /// Generate the completion spec for Fig
     #[clap(hide = true)]
     Completion {
         /// Shell to generate the completion spec for
-        #[clap(arg_enum, default_value_t = Shells::Zsh)]
+        #[clap(value_enum, value_parser, default_value_t = Shells::Zsh)]
         shell: Shells,
     },
     /// Internal subcommands used for Fig
@@ -193,7 +195,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(arg_enum, default_value_t = Processes::App, hide = true)]
+        #[clap(value_enum, action, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     #[clap(hide = true)]
@@ -205,8 +207,11 @@ pub enum CliRootCommands {
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man {
+        #[clap(value_parser)]
         command: Vec<String>,
     },
+    #[clap(external_subcommand)]
+    Workflow(Vec<String>),
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -291,8 +296,7 @@ impl Cli {
         let result = match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => {
-                    let internal::InstallArgs { input_method, .. } = args;
-                    if input_method {
+                    if let internal::InstallArgs { input_method: true, .. } = args {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
                                 use fig_ipc::command::open_ui_element;
@@ -355,31 +359,17 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => {
-                    let app_res = app::launch_fig_cli();
-                    if let Ok(daemon) = get_daemon() {
-                        daemon.start().ok();
-                    }
-                    app_res
-                },
-                CliRootCommands::Quit => {
-                    let app_res = app::quit_fig().await;
-                    if let Ok(daemon) = get_daemon() {
-                        daemon.stop().ok();
-                    }
-                    app_res
-                },
+                CliRootCommands::Launch => app::launch_fig_cli(),
+                CliRootCommands::Quit => app::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
-                    Processes::App => {
-                        get_daemon().and_then(|d| d.restart()).ok();
-                        app::restart_fig().await
-                    },
+                    Processes::App => app::restart_fig().await,
                     Processes::Daemon => get_daemon().and_then(|d| d.restart()),
                 },
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
+                CliRootCommands::Workflow(args) => workflow::execute(args).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
@@ -437,7 +427,6 @@ async fn uninstall_command() -> Result<()> {
 
 async fn root_command() -> Result<()> {
     // Launch fig if it is not running
-
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_auth::is_logged_in;
@@ -464,12 +453,24 @@ async fn root_command() -> Result<()> {
             }
         } else {
             use crossterm::style::Stylize;
+            use fig_ipc::command::open_ui_element;
+            use fig_proto::local::UiElement;
 
-            println!(
-                "\n→ Opening {}...\n",
-                "https://app.fig.io".magenta().underlined()
-            );
-            util::open_url("https://app.fig.io").ok();
+            match launch_fig(LaunchOptions::new().wait_for_activation().verbose()) {
+                Ok(()) => {
+                    open_ui_element(UiElement::MissionControl)
+                        .await
+                        .context("\nCould not launch fig\n")?;
+                }
+                Err(_) => {
+                    println!(
+                        "\n→ Opening {}...\n",
+                        "https://app.fig.io".magenta().underlined()
+                    );
+                    fig_util::open_url("https://app.fig.io")?;
+                }
+            }
+
         }
     }
 

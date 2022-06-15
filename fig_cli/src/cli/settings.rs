@@ -1,11 +1,7 @@
 use std::io::Write;
-use std::process::{
-    exit,
-    Command,
-};
+use std::process::exit;
 
 use anyhow::{
-    anyhow,
     Context,
     Result,
 };
@@ -22,13 +18,14 @@ use fig_ipc::command::{
 };
 use fig_proto::local::UiElement;
 use fig_settings::remote_settings::RemoteSettings;
+use fig_settings::settings::settings_path;
 use globset::Glob;
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
 
-use super::util::app_not_running_message;
 use super::OutputFormat;
 use crate::util::{
+    app_not_running_message,
     launch_fig,
     LaunchOptions,
 };
@@ -46,10 +43,10 @@ pub enum SettingsSubcommands {
     /// List all the settings
     All {
         /// List the remote settings
-        #[clap(short, long)]
+        #[clap(long, short, action)]
         remote: bool,
         /// Format of the output
-        #[clap(long, short, arg_enum, default_value_t)]
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
     },
 }
@@ -62,14 +59,16 @@ pub struct SettingsArgs {
     #[clap(subcommand)]
     cmd: Option<SettingsSubcommands>,
     /// key
+    #[clap(value_parser)]
     key: Option<String>,
     /// value
+    #[clap(value_parser)]
     value: Option<String>,
-    #[clap(long, short)]
     /// Delete a value
+    #[clap(long, short, action)]
     delete: bool,
-    #[clap(long, short, arg_enum, default_value_t)]
     /// Format of the output
+    #[clap(long, short, value_enum, action, default_value_t)]
     format: OutputFormat,
 }
 
@@ -97,29 +96,24 @@ impl SettingsArgs {
                 }
             },
             Some(SettingsSubcommands::Docs) => {
-                println!("→ Opening Fig docs...\n");
-
-                let success = Command::new("open")
-                    .arg("https://fig.io/docs/support/settings/")
-                    .status()?
-                    .success();
-
-                match success {
-                    true => Ok(()),
-                    false => Err(anyhow!("Could not open settings file")),
-                }
+                println!("→ Opening Fig docs...");
+                fig_util::open_url("https://fig.io/docs/support/settings/")?;
+                Ok(())
             },
             Some(SettingsSubcommands::Open) => {
-                let path = fig_settings::settings::settings_path().context("Could not get settings path")?;
-                match Command::new("open").arg(path).status()?.success() {
-                    true => Ok(()),
-                    false => Err(anyhow!("Could not open settings file")),
-                }
+                let mut url = String::from("file://");
+                url.push_str(
+                    &settings_path()
+                        .context("Could not get settings path")?
+                        .to_string_lossy(),
+                );
+                fig_util::open_url(url)?;
+                Ok(())
             },
             Some(SettingsSubcommands::Sync) => {
                 let RemoteSettings { settings, updated_at } = fig_settings::remote_settings::get_settings().await?;
 
-                let path = fig_settings::settings::settings_path().context("Could not get settings path")?;
+                let path = settings_path().context("Could not get settings path")?;
 
                 let mut settings_file = std::fs::File::create(&path)?;
                 let settings_json = serde_json::to_string_pretty(&settings)?;
@@ -197,6 +191,16 @@ impl SettingsArgs {
                                     eprintln!("You are not logged in to Fig");
                                     eprintln!("Run {} to login", "fig login".magenta().bold());
                                     exit(1);
+                                },
+                                fig_settings::Error::RemoteSettingsError(
+                                    fig_settings::remote_settings::Error::ReqwestError(err),
+                                ) => match err.status() {
+                                    Some(status) if status == 401 => {
+                                        eprintln!("You are not logged in to Fig");
+                                        eprintln!("Run {} to login", "fig login".magenta().bold());
+                                        exit(1);
+                                    },
+                                    _ => Err(err.into()),
                                 },
                                 err => Err(err.into()),
                             },

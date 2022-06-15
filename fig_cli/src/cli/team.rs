@@ -3,9 +3,9 @@ use anyhow::{
     Result,
 };
 use clap::{
-    ArgEnum,
     Args,
     Subcommand,
+    ValueEnum,
 };
 use crossterm::style::Stylize;
 use reqwest::Method;
@@ -19,45 +19,28 @@ use serde_json::{
 };
 
 use super::OutputFormat;
-use crate::cli::util::dialoguer_theme;
+use crate::cli::dialoguer_theme;
 use crate::util::api::request;
-
-// # List members on a team
-// - fig teams <team-name> members
-//
-// # Remove user from a team
-// - fig teams <team-name> remove <email>
-//
-// # Add user to a team and optionally assign a role
-// fig teams <team-name> add <email> [--role=admin|member]
-//
-// # List all teams that the user is part of
-// fig teams --list
-//
-// # Delete an existing team
-// fig teams --new <team-name>
-//
-// # Create a new team
-// fig teams --delete <team-name>
 
 #[derive(Debug, Args)]
 pub struct TeamsArgs {
     // List all teams that the user is part of
-    #[clap(long, conflicts_with_all = &["new", "delete"])]
+    #[clap(long, action, conflicts_with_all = &["new", "delete"])]
     list: bool,
     // Create a new team
-    #[clap(long, conflicts_with_all = &["list", "delete"])]
+    #[clap(long, action, conflicts_with_all = &["list", "delete"])]
     new: bool,
     // Delete an existing team
-    #[clap(long, conflicts_with_all = &["list", "new"])]
+    #[clap(long, action, conflicts_with_all = &["list", "new"])]
     delete: bool,
     // Format of output
-    #[clap(short, long, arg_enum, default_value_t)]
+    #[clap(long, short, value_enum, value_parser, default_value_t)]
     format: OutputFormat,
 }
 
 #[derive(Debug, Args)]
 pub struct TeamCommand {
+    #[clap(value_parser)]
     pub team: Option<String>,
     #[clap(subcommand)]
     pub subcommand: Option<TeamSubcommand>,
@@ -114,7 +97,7 @@ impl TeamCommand {
     }
 }
 
-#[derive(ArgEnum, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Role {
     #[clap(hide = true)]
@@ -138,17 +121,24 @@ pub enum TeamSubcommand {
     /// List all members on a team
     Members,
     /// Remove a member from a team
-    Remove { email: String },
+    Remove {
+        #[clap(value_parser)]
+        email: String,
+    },
     /// Invite a member to a team
     Add {
+        #[clap(value_parser)]
         email: String,
-        #[clap(long, arg_enum)]
+        #[clap(long, value_enum, value_parser)]
         role: Option<Role>,
     },
     /// List pending invitations to a team
     Invitations,
     /// Revoke an invitation to a team
-    Revoke { email: String },
+    Revoke {
+        #[clap(value_parser)]
+        email: String,
+    },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

@@ -7,6 +7,7 @@ pub mod pty;
 pub mod term;
 
 use std::ffi::CString;
+use std::iter::repeat;
 use std::os::unix::prelude::AsRawFd;
 use std::process::exit;
 use std::str::FromStr;
@@ -93,6 +94,7 @@ use tracing::{
     warn,
 };
 
+use crate::interceptor::terminal_input_parser::KeyCode;
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
     remove_socket,
@@ -129,10 +131,7 @@ impl EventSender {
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
-    #[cfg(target_os = "macos")]
     let terminal = Terminal::parent_terminal().map(|s| s.to_string());
-    #[cfg(not(target_os = "macos"))]
-    let terminal = None;
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())
@@ -305,10 +304,10 @@ async fn process_figterm_message(
 ) -> Result<()> {
     match figterm_message.command {
         Some(figterm_message::Command::InsertTextCommand(command)) => {
-            if let Some(ref text_to_insert) = command.insertion {
-                if let Some((buffer, Some(position))) =
-                    term.get_current_buffer().map(|buff| (buff.buffer, buff.cursor_idx))
-                {
+            let current_buffer = term.get_current_buffer().map(|buff| (buff.buffer, buff.cursor_idx));
+            let mut insertion_string = String::new();
+            if let Some((buffer, Some(position))) = current_buffer {
+                if let Some(ref text_to_insert) = command.insertion {
                     trace!("buffer: {:?}, cursor_position: {:?}", buffer, position);
 
                     // perform deletion
@@ -328,8 +327,20 @@ async fn process_figterm_message(
                     trace!("lock set, expected buffer: {:?}", expected);
                     *EXPECTED_BUFFER.lock() = expected;
                 }
+                if let Some(ref insertion_buffer) = command.insertion_buffer {
+                    if buffer.ne(insertion_buffer) {
+                        if buffer.starts_with(insertion_buffer) {
+                            if let Some(len_diff) = buffer.len().checked_sub(insertion_buffer.len()) {
+                                insertion_string.extend(repeat('\x08').take(len_diff));
+                            }
+                        } else if insertion_buffer.starts_with(&buffer) {
+                            insertion_string.push_str(&insertion_buffer[buffer.len()..]);
+                        }
+                    }
+                }
             }
-            pty_master.write(command.to_term_string().as_bytes()).await?;
+            insertion_string.push_str(&command.to_term_string());
+            pty_master.write(insertion_string.as_bytes()).await?;
         },
         Some(figterm_message::Command::InterceptCommand(command)) => {
             match command.intercept_command {
@@ -516,12 +527,17 @@ fn figterm_main() -> Result<()> {
                                                 trace!("Read {} bytes from input: {:?}", size, s);
                                                 match interceptor::parse_code(s.as_bytes()) {
                                                     Some((key_code, modifier)) => {
-                                                        match key_interceptor.intercept_key(key_code, &modifier) {
+                                                        match key_interceptor.intercept_key(key_code.clone(), &modifier) {
                                                             Some(action) => {
                                                                 debug!("Action: {:?}", action);
                                                                 let hook =
                                                                     fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
                                                                 outgoing_sender.send(hook_to_message(hook)).unwrap();
+
+                                                                if key_code == KeyCode::Esc {
+                                                                    key_interceptor.reset();
+                                                                }
+
                                                                 continue 'select_loop;
                                                             }
                                                             None => {}

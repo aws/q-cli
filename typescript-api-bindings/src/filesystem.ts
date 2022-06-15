@@ -3,7 +3,8 @@ import {
   sendReadFileRequest,
   sendDestinationOfSymbolicLinkRequest,
   sendContentsOfDirectoryRequest,
-  sendAppendToFileRequest
+  sendAppendToFileRequest,
+  sendCreateDirectoryRequest
 } from './requests';
 
 export async function write(path: string, contents: string) {
@@ -22,13 +23,13 @@ export async function append(path: string, contents: string) {
 
 export async function read(path: string) {
   const response = await sendReadFileRequest({
-    path: { path, expandTildeInPath: true }, isBinaryFile: true
+    path: { path, expandTildeInPath: true }
   });
   if (response.type?.$case === 'text') {
     return response.type.text;
-  } 
-    return null;
-  
+  }
+  return null;
+
 }
 
 export async function list(path: string) {
@@ -44,3 +45,10 @@ export async function destinationOfSymbolicLink(path: string) {
   });
   return response.destination?.path;
 }
+
+export async function createDirectory(path: string, recursive: boolean) {
+  return sendCreateDirectoryRequest({
+    path: { path, expandTildeInPath: true }, recursive
+  });
+}
+

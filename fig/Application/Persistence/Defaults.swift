@@ -43,15 +43,15 @@ class Defaults {
     }
   }
 
-  var uuid: String {
-    guard let uuid = defaults.string(forKey: "uuid") else {
-      let uuid = UUID().uuidString
-      defaults.set(uuid, forKey: "uuid")
+  var anonymousId: String {
+    guard let anonymousId = defaults.string(forKey: "anonymousId") else {
+      let anonymousId = UUID().uuidString
+      defaults.set(anonymousId, forKey: "anonymousId")
       defaults.synchronize()
-      return uuid
+      return anonymousId
     }
 
-    return uuid
+    return anonymousId
   }
 
   var showSidebar: Bool {
@@ -582,6 +582,18 @@ class Defaults {
 }
 
 extension Defaults {
+  func migrateUUID() {
+    if let deprecatedUUID = defaults.string(forKey: "uuid") {
+      defaults.set(deprecatedUUID, forKey: "deprecatedUUID")
+      // Alias previous UUID to userId
+      TelemetryProvider.shared.upload(to: "alias", with: ["previousId": deprecatedUUID])
+      // For already logged in users, make sure we alias anonymousId -> userId
+      TelemetryProvider.shared.upload(to: "alias", with: ["previousId": anonymousId])
+      defaults.removeObject(forKey: "uuid")
+      defaults.synchronize()
+    }
+  }
+
   func handleGetRequest(_ request: Fig_GetDefaultsPropertyRequest) throws -> Fig_GetDefaultsPropertyResponse {
     guard request.hasKey else {
       throw APIError.generic(message: "No key provided.")

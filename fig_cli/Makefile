@@ -21,13 +21,6 @@ endif
 # Add cargo executables to PATH
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-# Check if cargo exists
-CARGO := $(shell command -v cargo 2> /dev/null)
-
-ifndef CARGO
-    $(error "cargo is not in PATH $(PATH)")
-endif
-
 MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 TARGET_DIR  ?= $(shell cargo metadata --format-version 1 | jq -r .target_directory)
 
@@ -35,7 +28,7 @@ BUILT_PRODUCTS_DIR ?= $(MAKE_DIR)/build
 OUT_DIR            := $(BUILT_PRODUCTS_DIR)
 $(shell mkdir -p $(OUT_DIR))
 
-SHELL := env PATH=$(PATH) /bin/bash
+SHELL := env "PATH=$(PATH)" /bin/bash
 
 CARGO_OPTIONS ?= --locked --release
 
@@ -98,9 +91,15 @@ install-native: build-native
 	mkdir -p $(HOME)/.local/bin/
 	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
+install-native-usr: build-native
+	sudo install $(TARGET_DIR)/debug/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
+
 install-native-release: build-native-release
 	mkdir -p $(HOME)/.local/bin/
 	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
+
+install-native-release-usr: build-native-release
+	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
 
 ### Generate Fig compleation spec
 
