@@ -1,3 +1,5 @@
+pub extern crate paste;
+
 pub mod components;
 pub mod layouts;
 

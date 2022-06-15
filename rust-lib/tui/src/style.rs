@@ -9,6 +9,15 @@ use crate::{
 };
 
 #[macro_export]
+macro_rules! style {
+    ( $( $prop:ident: $val:expr; )* ) => {{
+        $crate::paste::paste! {
+            $crate::Style::new() $( .[<with_ $prop>]($val) )*
+        }
+    }};
+}
+
+#[macro_export]
 macro_rules! __export_style_with {
     ($i:ident, $k:ident, $v:ident) => {
         pub fn $i(mut self, $k: $v) -> Self {

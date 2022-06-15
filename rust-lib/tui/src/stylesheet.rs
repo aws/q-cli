@@ -7,6 +7,26 @@ use crate::{
     StyleContext,
 };
 
+#[macro_export]
+macro_rules! style_sheet {
+    ($( $class:expr => $val:tt ),*) => {{
+        $crate::StyleSheet::new() $( .with_style($class, $crate::style_sheet!( @internal $val )) )*
+    }};
+    ( @internal { $( $prop:ident: $val:expr; )* } ) => {{
+        $crate::paste::paste! {
+            $crate::Style::new() $( .[<with_ $prop>]($val) )*
+        }
+    }};
+    ( @internal { ..$parent:expr; $( $prop:ident: $val:expr; )* } ) => {{
+        $crate::paste::paste! {
+            $parent $( .[<with_ $prop>]($val) )*
+        }
+    }};
+    ( @internal $val:expr ) => {
+        $val
+    }
+}
+
 #[derive(Debug, Default)]
 pub struct StyleSheet(HashMap<String, Style>);
 
