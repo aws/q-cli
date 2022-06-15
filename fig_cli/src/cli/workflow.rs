@@ -86,6 +86,7 @@ enum TreeElement {
 #[serde(rename_all = "camelCase")]
 struct Workflow {
     name: String,
+    namespace: String,
     display_name: Option<String>,
     description: Option<String>,
     tags: Option<Vec<String>>,
@@ -119,6 +120,7 @@ enum WorkflowComponent {
 pub async fn execute(args: Vec<String>) -> Result<()> {
     // Parse args
     let name = args.get(1).map(String::from);
+
     let mut arg_pairs: HashMap<String, String> = HashMap::new();
     let mut args = args.into_iter().skip(2);
     let mut arg = None;
@@ -151,22 +153,53 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
     let args = arg_pairs;
 
+    let execution_method = match name.is_some() {
+        true => "invoke",
+        false => "search",
+    };
+
     // Get workflow
     let workflow = match &name {
-        Some(name) => match request(Method::GET, format!("/workflows/{name}"), None, true).await? {
-            Some(workflow) => workflow,
-            None => return Err(anyhow!("Workflow does not exist with name: {}", name)),
+        Some(name) => {
+            let (namespace, name) = match name.strip_prefix('@') {
+                Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
+                    [namespace, name] => (namespace, name),
+                    _ => return Err(anyhow!("Malformed workflow specifier: {}", name)),
+                },
+                None => return Err(anyhow!("Malformed workflow: {}", name)),
+            };
+
+            match request(
+                Method::GET,
+                format!("/workflows/{name}"),
+                Some(&serde_json::json!({
+                    "namespace": namespace,
+                })),
+                true,
+            )
+            .await?
+            {
+                Some(workflow) => workflow,
+                None => return Err(anyhow!("Workflow does not exist with name: {}", name)),
+            }
         },
         None => {
             let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
             let workflow_names: Vec<String> = workflows
                 .iter()
-                .map(|workflow| workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone()))
+                .map(|workflow| {
+                    format!(
+                        "{}\t{}/{}",
+                        workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone()),
+                        workflow.namespace.clone(),
+                        workflow.name.clone(),
+                    )
+                })
                 .collect();
 
             let track_search = tokio::task::spawn(async move {
                 let a: [(&'static str, &'static str); 0] = []; // dumb
-                fig_telemetry::emit_track(TrackEvent::Other("Workflow Searched".into()), TrackSource::Cli, a)
+                fig_telemetry::emit_track(TrackEvent::Other("Workflow Search Viewed".into()), TrackSource::Cli, a)
                     .await
                     .ok();
             });
@@ -215,10 +248,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     let track_execution = tokio::task::spawn(async move {
         fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [(
             "execution_method",
-            match name {
-                Some(_) => "invoke",
-                None => "search",
-            },
+            execution_method,
         )])
         .await
         .ok();
@@ -473,7 +503,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         };
     }
 
-    let mut command = format!("fig run {}", workflow.name);
+    let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
     for (arg, val) in &args {
         command.push_str(&format!(" --{arg} \"{}\"", val.escape_default()));
     }
