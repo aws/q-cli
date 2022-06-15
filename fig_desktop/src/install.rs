@@ -3,7 +3,7 @@ use tracing::error;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
-/// Runs one time per version
+/// Run items at launch
 pub async fn run_install() {
     tokio::spawn(async {
         if let Err(err) = fig_install::themes::clone_or_update().await {
@@ -25,10 +25,10 @@ pub async fn run_install() {
 
     if should_run_install_script() {
         // Add any items that are only once per version
+    }
 
-        if let Err(err) = set_previous_version(current_version()) {
-            error!("Failed to set previous version: {err}");
-        }
+    if let Err(err) = set_previous_version(current_version()) {
+        error!("Failed to set previous version: {err}");
     }
 }
 
@@ -39,7 +39,7 @@ fn should_run_install_script() -> bool {
         None => return true,
     };
 
-    previous_version < current_version
+    current_version > previous_version
 }
 
 /// The current version of the desktop app
