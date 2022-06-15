@@ -154,7 +154,6 @@ When publishing a new version (pushing to master) of the app, be sure to bump `f
     - e.g. `grant/bug-fix`
 - `develop` branch 
   - should be buildable and pass all lints
-- `staging` branch 
-  - used to deploy to beta/staging
+- `staging` branch is auto pushed to beta/staging
 - `master` branch is auto pushed to prod
-  - used to deploy to develop
+

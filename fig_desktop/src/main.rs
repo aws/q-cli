@@ -5,6 +5,7 @@ mod cli;
 mod event;
 mod figterm;
 mod icons;
+pub mod install;
 mod local_ipc;
 mod native;
 mod tray;
@@ -378,6 +379,8 @@ fn main() {
 
     let rt = Runtime::new().unwrap();
     rt.block_on(async {
+        install::run_install().await;
+
         let mut webview_manager = WebviewManager::new();
         webview_manager
             .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
