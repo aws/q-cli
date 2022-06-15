@@ -1,3 +1,4 @@
+#[doc(hidden)]
 pub extern crate paste;
 
 #[macro_use]
