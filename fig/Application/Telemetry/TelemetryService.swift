@@ -121,7 +121,7 @@ class TelemetryProvider: TelemetryService {
     body = addDefaultProperties(to: body)
     body["event"] = event
 
-    body["anonymousId"] = Defaults.shared.anonymousId
+    body["anonymousId"] = LocalState.shared.anonymousId
 
     if defaults.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
@@ -159,7 +159,7 @@ class TelemetryProvider: TelemetryService {
       body = traits
     }
 
-    body["anonymousId"] = Defaults.shared.anonymousId
+    body["anonymousId"] = LocalState.shared.anonymousId
 
     if defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
       print("telemetry: not sending identification event because telemetry is disabled")
@@ -183,7 +183,7 @@ class TelemetryProvider: TelemetryService {
     Defaults.shared.migrateUUID()
 
     upload(to: "alias", with: [
-      "previousId": Defaults.shared.anonymousId,
+      "previousId": LocalState.shared.anonymousId,
       "userId": userId ?? ""
     ])
   }
