@@ -133,9 +133,16 @@ class LocalState: JSONStore {
   func localStateUpdated() {
     self.backing.reload()
     NotificationCenter.default.post(Notification(name: LocalState.localStateUpdatedNotification))
-
   }
 
+  var anonymousId: String {
+    guard let anonymousId = LocalState.shared.getValue(forKey: "anonymousId") as? String else {
+      let anonymousId = UUID().uuidString
+      LocalState.shared.set(value: anonymousId, forKey: "anonymousId")
+      return anonymousId
+    }
+    return anonymousId
+  }
 }
 
 extension LocalState {

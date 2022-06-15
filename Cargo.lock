@@ -1630,6 +1630,7 @@ dependencies = [
  "sentry",
  "serde",
  "thiserror",
+ "uuid 1.1.2",
 ]
 
 [[package]]
