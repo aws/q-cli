@@ -11,7 +11,6 @@ use crate::components::{
     TextField,
 };
 use crate::{
-    stylable,
     BorderStyle,
     Component,
     Event,

@@ -31,8 +31,6 @@ use tui::{
     ControlFlow,
     DisplayMode,
     EventLoop,
-    Style,
-    StyleSheet,
 };
 
 use crate::util::api::request;
@@ -180,11 +178,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
                         use skim::prelude::*;
 
-                        let input = workflow_names.iter().fold(String::new(), |mut acc, name| {
-                            acc.push_str(name);
-                            acc.push('\n');
-                            acc
-                        });
+                        let input = workflow_names.join("\n");
                         let item_reader = SkimItemReader::default();
                         let items = item_reader.of_bufread(Cursor::new(input));
                         let output = Skim::run_with(
@@ -196,17 +190,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                             return Ok(());
                         }
 
-                        let name = output.selected_items[0].text().to_string();
-
-                        let mut index = 0;
-                        for (i, workflow) in workflow_names.iter().enumerate() {
-                            if workflow == &name {
-                                index = i;
-                                break;
-                            }
+                        match output.selected_items.get(0).and_then(|selected| {
+                            let name = selected.text();
+                            workflow_names.iter().enumerate().find(|(_, workflow)| workflow == &&name).map(|(i, _)| i)
+                        }) {
+                            Some(i) => i,
+                            None => return Ok(())
                         }
-
-                        index
                     };
                 } else if #[cfg(windows)] {
                     let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
@@ -349,80 +339,84 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         bottom_right: '┛',
     };
 
-    let focus_style = Style::new()
-        .with_border_left_color(Color::White)
-        .with_border_right_color(Color::White)
-        .with_border_top_color(Color::White)
-        .with_border_bottom_color(Color::White)
-        .with_border_style(thick_border);
+    let focus_style = tui::style! {
+        border_left_color: Color::White;
+        border_right_color: Color::White;
+        border_top_color: Color::White;
+        border_bottom_color: Color::White;
+        border_style: thick_border;
+    };
 
-    let unfocused_style = Style::new()
-        .with_border_left_width(1)
-        .with_border_top_width(1)
-        .with_border_bottom_width(1)
-        .with_border_right_width(1)
-        .with_border_left_color(Color::DarkGrey)
-        .with_border_right_color(Color::DarkGrey)
-        .with_border_top_color(Color::DarkGrey)
-        .with_border_bottom_color(Color::DarkGrey)
-        .with_border_style(thin_border);
+    let unfocused_style = tui::style! {
+        border_left_width: 1;
+        border_top_width: 1;
+        border_bottom_width: 1;
+        border_right_width: 1;
+        border_left_color: Color::DarkGrey;
+        border_right_color: Color::DarkGrey;
+        border_top_color: Color::DarkGrey;
+        border_bottom_color: Color::DarkGrey;
+        border_style: thin_border;
+    };
 
-    let style_sheet = StyleSheet::new()
-        .with_style(
-            "*",
-            Style::new()
-                .with_border_left_color(Color::Grey)
-                .with_border_right_color(Color::Grey)
-                .with_border_top_color(Color::Grey)
-                .with_border_bottom_color(Color::Grey),
-        )
-        .with_style("*:focus", focus_style)
-        .with_style("frame", unfocused_style)
-        .with_style(
-            "frame.title",
-            Style::new()
-                .with_color(Color::DarkGrey)
-                .with_padding_left(1)
-                .with_padding_right(1)
-                .with_margin_left(1),
-        )
-        .with_style(
-            "frame.title:focus",
-            Style::new()
-                .with_color(Color::White)
-                // .with_background_color(Color::White)
-                .with_padding_left(1)
-                .with_padding_right(1)
-                .with_margin_left(1),
-        )
-        .with_style("frame:focus", focus_style)
-        .with_style("textfield", Style::new().with_padding_left(2).with_color(Color::Grey))
-        .with_style("textfield:focus", focus_style.with_color(Color::White))
-        .with_style("disclosure.summary:focus", Style::new().with_color(Color::White))
-        .with_style("disclosure.summary", Style::new().with_color(Color::Grey))
-        .with_style(
-            "picker.item",
-            Style::new().with_padding_left(2).with_color(Color::DarkGrey),
-        )
-        .with_style(
-            "picker.item:focus",
-            Style::new().with_padding_left(2).with_color(Color::White),
-        )
-        .with_style(
-            "picker.selected",
-            Style::new()
-                .with_margin_left(2)
-                .with_background_color(Color::DarkGrey)
-                .with_color(Color::Grey),
-        )
-        .with_style(
-            "picker.selected:focus",
-            Style::new()
-                .with_margin_left(2)
-                .with_background_color(Color::White)
-                .with_color(Color::DarkGrey),
-        )
-        .with_style("checkbox", Style::new().with_margin_left(1));
+    let style_sheet = tui::style_sheet! {
+        "*" => {
+            border_left_color: Color::Grey;
+            border_right_color: Color::Grey;
+            border_top_color: Color::Grey;
+            border_bottom_color: Color::Grey;
+        },
+        "*:focus" => focus_style,
+        "frame" => unfocused_style,
+        "frame.title" => {
+            color: Color::DarkGrey;
+            padding_left: 1;
+            padding_right: 1;
+            margin_left: 1;
+        },
+        "frame.title:focus" => {
+            color: Color::White;
+            padding_left: 1;
+            padding_right: 1;
+            margin_left: 1;
+        },
+        "frame:focus" => focus_style,
+        "textfield" => {
+            padding_left: 2;
+            color: Color::Grey;
+        },
+        "textfield:focus" =>  {
+            ..focus_style;
+            color: Color::White;
+        },
+        "disclosure.summary:focus" => {
+            color: Color::White;
+        },
+        "disclosure.summary" => {
+            color: Color::Grey;
+        },
+        "picker.item" => {
+            padding_left: 0;
+            color: Color::DarkGrey;
+        },
+        "picker.item:focus" => {
+            padding_left: 0;
+            color: Color::White;
+        },
+        "picker.selected" => {
+            margin_left: 0;
+            background_color:Color::DarkGrey;
+            color:Color::Grey;
+        },
+        "picker.selected:focus" => {
+            margin_left: 0;
+            background_color: Color::White;
+            color: Color::DarkGrey;
+        },
+        "checkbox" => {
+            margin_left: 1;
+        }
+    };
 
     let mut model: Vec<&mut dyn Component> = vec![];
     let mut name = Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name));

@@ -5450,6 +5450,7 @@ version = "0.1.0"
 dependencies = [
  "derive_builder 0.11.2",
  "newton",
+ "paste",
 ]
 
 [[package]]

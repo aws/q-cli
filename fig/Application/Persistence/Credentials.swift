@@ -49,6 +49,7 @@ class Credentials {
     let cli = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")!
 
     Process.run(command: cli, args: ["login", "-r"])
+    self.backing.reload()
     let accessToken = self.backing.getValue(forKey: "access_token") as? String
     let idToken = self.backing.getValue(forKey: "id_token") as? String
 

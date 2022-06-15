@@ -1,10 +1,15 @@
+#[doc(hidden)]
+pub extern crate paste;
+
+#[macro_use]
+mod style;
+
 pub mod components;
 pub mod layouts;
 
 mod component;
 mod event;
 mod event_loop;
-mod style;
 mod stylesheet;
 
 pub use component::Component;

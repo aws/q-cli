@@ -9,7 +9,6 @@ use crate::components::{
     PickerComponent,
 };
 use crate::{
-    stylable,
     BorderStyle,
     Component,
     Event,

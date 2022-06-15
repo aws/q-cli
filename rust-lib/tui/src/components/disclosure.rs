@@ -7,7 +7,6 @@ use newton::{
 
 use super::Label;
 use crate::{
-    stylable,
     BorderStyle,
     Component,
     Event,

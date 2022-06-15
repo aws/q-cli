@@ -9,7 +9,20 @@ use crate::{
 };
 
 #[macro_export]
-macro_rules! __export_style_with {
+macro_rules! style {
+    ( $( $prop:ident: $val:expr; )* ) => {{
+        $crate::paste::paste! {
+            $crate::Style::new() $( .[<with_ $prop>]($val) )*
+        }
+    }};
+    ( ..$parent:expr; $( $prop:ident: $val:expr; )* ) => {{
+        $crate::paste::paste! {
+            $parent $( .[<with_ $prop>]($val) )*
+        }
+    }};
+}
+
+macro_rules! export_style_with {
     ($i:ident, $k:ident, $v:ident) => {
         pub fn $i(mut self, $k: $v) -> Self {
             self.style = self.style.$i($k);
@@ -18,34 +31,33 @@ macro_rules! __export_style_with {
     };
 }
 
-#[macro_export]
 macro_rules! stylable {
     () => {
-        $crate::__export_style_with!(with_color, color, Color);
-        $crate::__export_style_with!(with_background_color, background_color, Color);
-        $crate::__export_style_with!(with_margin_top, margin_top, u16);
-        $crate::__export_style_with!(with_margin_bottom, margin_bottom, u16);
-        $crate::__export_style_with!(with_margin_left, margin_left, u16);
-        $crate::__export_style_with!(with_margin_right, margin_right, u16);
-        $crate::__export_style_with!(with_border_top_width, border_top_width, u16);
-        $crate::__export_style_with!(with_border_bottom_width, border_bottom_width, u16);
-        $crate::__export_style_with!(with_border_left_width, border_left_width, u16);
-        $crate::__export_style_with!(with_border_right_width, border_right_width, u16);
-        $crate::__export_style_with!(with_border_style, border_style, BorderStyle);
-        $crate::__export_style_with!(with_border_top_color, border_top_color, Color);
-        $crate::__export_style_with!(with_border_bottom_color, border_bottom_color, Color);
-        $crate::__export_style_with!(with_border_left_color, border_left_color, Color);
-        $crate::__export_style_with!(with_border_right_color, border_right_color, Color);
-        $crate::__export_style_with!(with_height, height, u16);
-        $crate::__export_style_with!(with_max_height, max_height, u16);
-        $crate::__export_style_with!(with_max_width, max_width, u16);
-        $crate::__export_style_with!(with_min_height, min_height, u16);
-        $crate::__export_style_with!(with_min_width, min_width, u16);
-        $crate::__export_style_with!(with_padding_top, padding_top, u16);
-        $crate::__export_style_with!(with_padding_bottom, padding_bottom, u16);
-        $crate::__export_style_with!(with_padding_left, padding_left, u16);
-        $crate::__export_style_with!(with_padding_right, padding_right, u16);
-        $crate::__export_style_with!(with_width, width, u16);
+        export_style_with!(with_color, color, Color);
+        export_style_with!(with_background_color, background_color, Color);
+        export_style_with!(with_margin_top, margin_top, u16);
+        export_style_with!(with_margin_bottom, margin_bottom, u16);
+        export_style_with!(with_margin_left, margin_left, u16);
+        export_style_with!(with_margin_right, margin_right, u16);
+        export_style_with!(with_border_top_width, border_top_width, u16);
+        export_style_with!(with_border_bottom_width, border_bottom_width, u16);
+        export_style_with!(with_border_left_width, border_left_width, u16);
+        export_style_with!(with_border_right_width, border_right_width, u16);
+        export_style_with!(with_border_style, border_style, BorderStyle);
+        export_style_with!(with_border_top_color, border_top_color, Color);
+        export_style_with!(with_border_bottom_color, border_bottom_color, Color);
+        export_style_with!(with_border_left_color, border_left_color, Color);
+        export_style_with!(with_border_right_color, border_right_color, Color);
+        export_style_with!(with_height, height, u16);
+        export_style_with!(with_max_height, max_height, u16);
+        export_style_with!(with_max_width, max_width, u16);
+        export_style_with!(with_min_height, min_height, u16);
+        export_style_with!(with_min_width, min_width, u16);
+        export_style_with!(with_padding_top, padding_top, u16);
+        export_style_with!(with_padding_bottom, padding_bottom, u16);
+        export_style_with!(with_padding_left, padding_left, u16);
+        export_style_with!(with_padding_right, padding_right, u16);
+        export_style_with!(with_width, width, u16);
 
         pub fn with_style(mut self, style: Style) -> Self {
             self.style = style;

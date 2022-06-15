@@ -4,7 +4,6 @@ use newton::{
 };
 
 use crate::{
-    stylable,
     BorderStyle,
     Component,
     ControlFlow,
