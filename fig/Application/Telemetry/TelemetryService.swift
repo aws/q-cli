@@ -120,7 +120,8 @@ class TelemetryProvider: TelemetryService {
 
     body = addDefaultProperties(to: body)
     body["event"] = event
-    body["anonymousId"] = defaults.anonymousId
+
+    body["anonymousId"] = Defaults.shared.anonymousId
 
     if defaults.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
@@ -158,7 +159,7 @@ class TelemetryProvider: TelemetryService {
       body = traits
     }
 
-    body["anonymousId"] = defaults.anonymousId
+    body["anonymousId"] = Defaults.shared.anonymousId
 
     if defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
       print("telemetry: not sending identification event because telemetry is disabled")
@@ -181,7 +182,10 @@ class TelemetryProvider: TelemetryService {
     // Ensure old uuid is aliased before making request.
     Defaults.shared.migrateUUID()
 
-    upload(to: "alias", with: ["previousId": defaults.anonymousId, "userId": userId ?? ""])
+    upload(to: "alias", with: [
+      "previousId": Defaults.shared.anonymousId,
+      "userId": userId ?? ""
+    ])
   }
 
   func upload(

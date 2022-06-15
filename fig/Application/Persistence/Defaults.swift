@@ -44,8 +44,9 @@ class Defaults {
   }
 
   var anonymousId: String {
-    guard let anonymousId = defaults.string(forKey: "anonymousId") else {
+    guard let anonymousId = LocalState.shared.getValue(forKey: "anonymousId") as? String else {
       let anonymousId = UUID().uuidString
+      LocalState.shared.set(value: anonymousId, forKey: "anonymousId")
       defaults.set(anonymousId, forKey: "anonymousId")
       defaults.synchronize()
       return anonymousId
@@ -585,12 +586,22 @@ extension Defaults {
   func migrateUUID() {
     if let deprecatedUUID = defaults.string(forKey: "uuid") {
       defaults.set(deprecatedUUID, forKey: "deprecatedUUID")
+      LocalState.shared.set(value: deprecatedUUID, forKey: "deprecatedUUID")
       // Alias previous UUID to userId
       TelemetryProvider.shared.upload(to: "alias", with: ["previousId": deprecatedUUID])
       // For already logged in users, make sure we alias anonymousId -> userId
       TelemetryProvider.shared.upload(to: "alias", with: ["previousId": anonymousId])
       defaults.removeObject(forKey: "uuid")
       defaults.synchronize()
+    }
+
+    if let deprecatedUUID = LocalState.shared.getValue(forKey: "uuid") as? String {
+      LocalState.shared.set(value: deprecatedUUID, forKey: "deprecatedUUID")
+      // Alias previous UUID to userId
+      TelemetryProvider.shared.upload(to: "alias", with: ["previousId": deprecatedUUID])
+      // For already logged in users, make sure we alias anonymousId -> userId
+      TelemetryProvider.shared.upload(to: "alias", with: ["previousId": anonymousId])
+      LocalState.shared.set(value: nil, forKey: "uuid")
     }
   }
 
