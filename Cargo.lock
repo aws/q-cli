@@ -410,7 +410,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "clap 3.2.1",
+ "clap 3.2.4",
  "env_logger 0.9.0",
  "lazy_static 1.4.0",
  "lazycell",
@@ -650,16 +650,16 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.1"
+version = "3.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a836566fa5f52f7ddf909a8a2f9029b9f78ca584cd95cf7e87f8073110f4c5c9"
+checksum = "6d20de3739b4fb45a17837824f40aa1769cc7655d7a83e68739a77fe7b30c87a"
 dependencies = [
  "atty",
  "bitflags",
  "clap_derive",
  "clap_lex",
  "indexmap",
- "lazy_static 1.4.0",
+ "once_cell",
  "strsim 0.10.0",
  "termcolor",
  "textwrap 0.15.0",
@@ -671,7 +671,7 @@ version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f6ebaab5f25e4f0312dfa07cb30a755204b96e6531457c2cfdecfdf5f2adf40"
 dependencies = [
- "clap 3.2.1",
+ "clap 3.2.4",
 ]
 
 [[package]]
@@ -680,15 +680,15 @@ version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b699eac6317ff40f7126e1e32e670dd797f2452f2ea0b20821b74b9f71870c9"
 dependencies = [
- "clap 3.2.1",
+ "clap 3.2.4",
  "clap_complete",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "3.2.1"
+version = "3.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "986fd75d1dfd2c34eb8c9275ae38ad87ea9478c9b79e87f1801f7d866dfb1e37"
+checksum = "026baf08b89ffbd332836002ec9378ef0e69648cbfadd68af7cd398ca5bf98f7"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -1421,7 +1421,7 @@ dependencies = [
  "async-trait",
  "bitflags",
  "cfg-if 1.0.0",
- "clap 3.2.1",
+ "clap 3.2.4",
  "clap_complete",
  "clap_complete_fig",
  "crossterm",
@@ -1487,7 +1487,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 3.2.1",
+ "clap 3.2.4",
  "dashmap",
  "fig_auth",
  "fig_directories",
@@ -1546,7 +1546,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
- "clap 3.2.1",
+ "clap 3.2.4",
  "fig_directories",
  "fig_util",
  "regex 1.5.6",
@@ -1638,7 +1638,7 @@ name = "fig_util"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "clap 3.2.1",
+ "clap 3.2.4",
  "fig_directories",
  "nix 0.24.1",
  "serde",
@@ -1656,7 +1656,7 @@ dependencies = [
  "anyhow",
  "bitflags",
  "bytes",
- "clap 3.2.1",
+ "clap 3.2.4",
  "dashmap",
  "fig_auth",
  "fig_directories",
