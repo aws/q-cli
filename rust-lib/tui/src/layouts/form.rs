@@ -112,7 +112,9 @@ impl Component for Form<'_> {
             Event::KeyPressed { code, modifiers } => {
                 if self.interactive() {
                     match (code, modifiers) {
-                        (newton::KeyCode::Esc, _) | (newton::KeyCode::Char('c'), KeyModifiers::CONTROL) => {
+                        (newton::KeyCode::Esc, _)
+                        | (newton::KeyCode::Char('c'), KeyModifiers::CONTROL)
+                        | (newton::KeyCode::Char('d'), KeyModifiers::CONTROL) => {
                             *control_flow = ControlFlow::Return(1);
                             return;
                         },
