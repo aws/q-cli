@@ -556,6 +556,23 @@ class WebView: WKWebView {
   //
   //    }
 
+  // Workaround for beeping noise when editing workflow in Draft.js Editor
+  // https://linear.app/fig/issue/ENG-3230/suppress-beeping-noise-when-typing-into-window
+  override func performKeyEquivalent(with event: NSEvent) -> Bool {
+
+    guard !super.performKeyEquivalent(with: event) else {
+        return true
+    }
+
+    // Handle common text manipulation like copy, paste, select all, etc
+    guard !NSApp.mainMenu!.performKeyEquivalent(with: event) else {
+      return true
+    }
+
+    // Prevent propogation of uncaught events
+    return true
+  }
+
   static func deleteCache() {
     let websiteDataTypes = NSSet(array: [
       WKWebsiteDataTypeDiskCache,
