@@ -188,12 +188,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             let workflow_names: Vec<String> = workflows
                 .iter()
                 .map(|workflow| {
-                    format!(
-                        "{}\t{}/{}",
-                        workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone()),
-                        workflow.namespace.clone(),
-                        workflow.name.clone(),
-                    )
+                    workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone())
+                    // format!(
+                    //     "{}\t{}/{}",
+                    //     workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone()),
+                    //     workflow.namespace.clone(),
+                    //     workflow.name.clone(),
+                    // )
                 })
                 .collect();
 
