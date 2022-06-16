@@ -1521,7 +1521,7 @@ dependencies = [
  "whoami",
  "windows",
  "wry",
- "x11rb 0.10.0",
+ "x11rb 0.10.1",
 ]
 
 [[package]]
@@ -6282,9 +6282,9 @@ dependencies = [
 
 [[package]]
 name = "x11rb"
-version = "0.10.0"
+version = "0.10.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "dd6f76eafe9aaf10d0a27525bb0a27ece2969d8b2e447d328e319b35e92c76e3"
+checksum = "592b4883219f345e712b3209c62654ebda0bb50887f330cbd018d0f654bfd507"
 dependencies = [
  "gethostname",
  "nix 0.24.1",

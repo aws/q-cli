@@ -67,4 +67,4 @@ features = [
 [target.'cfg(target_os="linux")'.dependencies]
 freedesktop-icons = "0.2.1"
 gtk = { version = "0.15", features = [ "v3_22" ] }
-x11rb = "0.10.0"
+x11rb = "0.10.1"
