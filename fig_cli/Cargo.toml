@@ -13,7 +13,7 @@ arboard = "2.1.0"
 async-trait = "0.1.56"
 bitflags = "1.3.2"
 cfg-if = "1.0.0"
-clap = { version = "3.1.6", features = ["derive"] }
+clap = { version = "3.2.4", features = ["derive"] }
 clap_complete = "3.1.1"
 clap_complete_fig = "3.1.4"
 crossterm = "0.23.1"
@@ -21,7 +21,8 @@ ctrlc = "3.2.1"
 dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
-fig_integrations = { version = "0.1.0", path = "../rust-lib/fig_integrations" }
+fig_install = { path = "../rust-lib/fig_install" }
+fig_integrations = { path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
@@ -29,7 +30,6 @@ fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.13"
 futures = "0.3.21"
-git2 = { version = "0.14", features = ["vendored-openssl", "vendored-libgit2"] }
 globset = "0.4.9"
 humantime = "2.1.0"
 native-dialog = "0.6.3"

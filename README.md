@@ -145,3 +145,15 @@ This will build the project and copy it to the correct place.
 ## Publish 
 
 When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required bacause it is needed to automatically generate specs.
+
+
+## Git Branching Conventions
+
+- Feature branches
+    - `name/feature-name`
+    - e.g. `grant/bug-fix`
+- `develop` branch 
+  - should be buildable and pass all lints
+- `staging` branch is auto pushed to beta/staging
+- `master` branch is auto pushed to prod
+

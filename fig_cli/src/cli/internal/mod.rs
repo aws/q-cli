@@ -22,6 +22,7 @@ use clap::{
 use crossterm::style::Stylize;
 use fig_auth::get_token;
 use fig_directories::fig_dir;
+use fig_install::dotfiles::notify::TerminalNotification;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::{
     new_callback_hook,
@@ -56,7 +57,6 @@ use crate::cli::installation::{
     self,
     InstallComponents,
 };
-use crate::dotfiles::notify::TerminalNotification;
 
 #[derive(Debug, Args)]
 #[clap(group(

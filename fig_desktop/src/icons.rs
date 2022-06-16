@@ -125,7 +125,7 @@ fn build_default() -> Response {
 }
 
 pub fn handle(request: &Request) -> wry::Result<Response> {
-    debug!("request for fig://{} over fig protocol", request.uri());
+    debug!("request for '{}' over fig protocol", request.uri());
     let url = Url::parse(request.uri())?;
     let domain = url.domain();
     // rust really doesn't like us not specifying RandomState here

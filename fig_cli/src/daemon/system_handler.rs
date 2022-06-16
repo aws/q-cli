@@ -4,6 +4,8 @@ use anyhow::{
     Context,
     Result,
 };
+use fig_install::dotfiles::download_and_notify;
+use fig_install::plugins::fetch_installed_plugins;
 use fig_ipc::daemon::get_daemon_socket_path;
 use fig_ipc::{
     recv_message,
@@ -30,8 +32,6 @@ use tracing::{
 };
 
 use super::DaemonStatus;
-use crate::dotfiles::download_and_notify;
-use crate::plugins::fetch_installed_plugins;
 use crate::util::{
     launch_fig,
     LaunchOptions,

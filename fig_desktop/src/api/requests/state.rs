@@ -33,7 +33,10 @@ pub async fn get(request: GetLocalStateRequest) -> RequestResult {
 
 pub async fn update(request: UpdateLocalStateRequest) -> RequestResult {
     match (&request.key, request.value) {
-        (Some(key), Some(value)) => state::set_value(key, value).map_err(|_| anyhow!("Failed setting {key}"))?,
+        (Some(key), Some(value)) => {
+            let value = serde_json::from_str(&value).unwrap_or(serde_json::Value::String(value));
+            state::set_value(key, value).map_err(|_| anyhow!("Failed setting {key}"))?;
+        },
         (Some(key), None) => state::remove_value(key).map_err(|_| anyhow!("Failed removing {key}"))?,
         (None, _) => {
             return RequestResult::error("No key provided with request");

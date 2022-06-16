@@ -7,7 +7,6 @@ use serde::{
 
 /// A checksum for a plugin
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[must_use]
 pub struct Checksum(String);
 
 impl Checksum {
@@ -21,7 +20,6 @@ impl Checksum {
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
-#[must_use]
 pub struct GitChecksum(Checksum);
 
 impl GitChecksum {

@@ -38,17 +38,6 @@ pub enum DownloadMetadata {
     Local { path: PathBuf },
 }
 
-#[must_use]
-pub fn plugin_data_dir() -> Option<PathBuf> {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            fig_directories::home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
-        } else {
-            fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
-        }
-    }
-}
-
 pub async fn download_remote_file(
     url: impl IntoUrl,
     directory: impl AsRef<Path>,
@@ -64,6 +53,7 @@ pub async fn download_remote_file(
 
     Ok(())
 }
+
 struct GitProgress {
     total_objects: usize,
     received_objects: usize,
@@ -151,7 +141,7 @@ pub fn update_git_repo(repository: &Repository) -> Result<()> {
 }
 
 pub async fn clone_git_repo(url: impl IntoUrl, directory: impl AsRef<Path>) -> Result<GitChecksum> {
-    let temp_directory = tempfile::tempdir_in(plugin_data_dir().unwrap())?;
+    let temp_directory = tempfile::tempdir_in(directory.as_ref().parent().unwrap())?;
 
     let sha_id = {
         let (fetch_options, _, _) = git_fetch_options();
@@ -210,7 +200,7 @@ pub async fn clone_git_repo_with_reference(
 
     if !directory.exists() {
         if let Err(err) = clone_git_repo(url, &directory).await {
-            sentry::integrations::anyhow::capture_anyhow(&err);
+            fig_telemetry::sentry::capture_anyhow(&err);
             return Err(err);
         }
     } else {

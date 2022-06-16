@@ -10,6 +10,7 @@ use anyhow::{
 use crossterm::style::Stylize;
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
+use fig_install::dotfiles::api::DotfileData;
 use fig_integrations::shell::{
     ShellExt,
     When,
@@ -19,7 +20,6 @@ use fig_util::{
     Terminal,
 };
 
-use crate::dotfiles::api::DotfileData;
 use crate::util::app_path_from_bundle_id;
 
 #[derive(PartialEq)]
