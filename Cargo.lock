@@ -410,7 +410,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "clap 3.2.4",
+ "clap 3.2.5",
  "env_logger 0.9.0",
  "lazy_static 1.4.0",
  "lazycell",
@@ -650,9 +650,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.4"
+version = "3.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6d20de3739b4fb45a17837824f40aa1769cc7655d7a83e68739a77fe7b30c87a"
+checksum = "d53da17d37dba964b9b3ecb5c5a1f193a2762c700e6829201e645b9381c99dc7"
 dependencies = [
  "atty",
  "bitflags",
@@ -671,7 +671,7 @@ version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0f6ebaab5f25e4f0312dfa07cb30a755204b96e6531457c2cfdecfdf5f2adf40"
 dependencies = [
- "clap 3.2.4",
+ "clap 3.2.5",
 ]
 
 [[package]]
@@ -680,15 +680,15 @@ version = "3.2.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1b699eac6317ff40f7126e1e32e670dd797f2452f2ea0b20821b74b9f71870c9"
 dependencies = [
- "clap 3.2.4",
+ "clap 3.2.5",
  "clap_complete",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "3.2.4"
+version = "3.2.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "026baf08b89ffbd332836002ec9378ef0e69648cbfadd68af7cd398ca5bf98f7"
+checksum = "c11d40217d16aee8508cc8e5fde8b4ff24639758608e5374e731b53f85749fb9"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -1421,7 +1421,7 @@ dependencies = [
  "async-trait",
  "bitflags",
  "cfg-if 1.0.0",
- "clap 3.2.4",
+ "clap 3.2.5",
  "clap_complete",
  "clap_complete_fig",
  "crossterm",
@@ -1487,7 +1487,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 3.2.4",
+ "clap 3.2.5",
  "dashmap",
  "fig_auth",
  "fig_directories",
@@ -1572,7 +1572,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
- "clap 3.2.4",
+ "clap 3.2.5",
  "fig_directories",
  "fig_util",
  "regex 1.5.6",
@@ -1664,7 +1664,7 @@ name = "fig_util"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "clap 3.2.4",
+ "clap 3.2.5",
  "fig_directories",
  "nix 0.24.1",
  "serde",
@@ -1682,7 +1682,7 @@ dependencies = [
  "anyhow",
  "bitflags",
  "bytes",
- "clap 3.2.4",
+ "clap 3.2.5",
  "dashmap",
  "fig_auth",
  "fig_directories",

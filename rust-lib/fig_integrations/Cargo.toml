@@ -7,7 +7,7 @@ publish = false
 [dependencies]
 anyhow = "1.0.57"
 cfg-if = "1.0.0"
-clap = { version = "3.2.4", features = ["derive"] }
+clap = { version = "3.2.5", features = ["derive"] }
 fig_directories = { path = "../fig_directories" }
 fig_util = { path = "../fig_util" }
 regex = "1.5.6"

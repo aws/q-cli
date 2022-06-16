@@ -18,7 +18,7 @@ base64 = "0.13.0"
 bytes = "1.1.0"
 camino = "1.0.9"
 cfg-if = "1.0.0"
-clap = "3.2.4"
+clap = "3.2.5"
 dashmap = "5.3.4"
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
