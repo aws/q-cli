@@ -31,11 +31,17 @@ deb: bin icons bundle
 
 rpm: bin icons bundle
 	rpmdev-setuptree
+	mkdir -p $(BUILD_DIR)/fig-x86_64-linux
 	cp $(MAKE_DIR)/bundle/rpm/fig.spec ~/rpmbuild/SPECS/
+	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-x86_64-linux
+	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/zsh\ \(figterm\)
+	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/bash\ \(figterm\)
+	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/fish\ \(figterm\)
 	sed -i "s/^Version:.*/Version: ${NUMERIC}/" ~/rpmbuild/SPECS/fig.spec
 	sed -i "s/^Release:.*/Release: ${FLAVOR}/" ~/rpmbuild/SPECS/fig.spec
 	mkdir -p ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
-	cp -r $(BUILD_DIR)/usr ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
+	rm -r ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
+	cp -r $(BUILD_DIR)/fig-x86_64-linux ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
 	rpmbuild -bb ~/rpmbuild/SPECS/fig.spec
 	cp ~/rpmbuild/RPMS/x86_64/fig-${NUMERIC}-${FLAVOR}.x86_64.rpm $(BUILD_DIR)/fig-x86_64-linux.rpm
 

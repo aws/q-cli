@@ -504,6 +504,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         };
     }
 
+    if args.len() != parameter_count {
+        return Err(anyhow!("Missing execution args"));
+    }
+
     let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
     for (arg, val) in &args {
         command.push_str(&format!(" --{arg} \"{}\"", val.escape_default()));

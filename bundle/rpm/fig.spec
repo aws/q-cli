@@ -31,6 +31,9 @@ rm -rf %{buildroot}
 /usr/bin/fig
 /usr/bin/fig_desktop
 /usr/bin/fig_ibus_engine
+"/usr/bin/zsh (figterm)"
+"/usr/bin/bash (figterm)"
+"/usr/bin/fish (figterm)"
 /usr/bin/figterm
 /usr/lib/systemd/user/fig.service
 /usr/share/applications/fig.desktop
