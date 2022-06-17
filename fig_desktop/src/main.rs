@@ -26,6 +26,7 @@ use event::{
     Event,
     WindowEvent,
 };
+use fig_log::Logger;
 use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
@@ -355,9 +356,13 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
 }
 
 fn main() {
+    let _logger_guard = Logger::new()
+        .with_stdout()
+        .with_file("fig_desktop.log")
+        .init()
+        .expect("Failed to init logger");
     let _sentry_guard =
         fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
-    let _logger_guard = fig_log::init_logger("fig_desktop.log").expect("Failed to initialize logger");
 
     let cli = cli::Cli::parse();
 
@@ -386,6 +391,7 @@ fn main() {
     }
 
     let rt = Runtime::new().unwrap();
+    // rt.spawn(install::run_install());
     rt.block_on(async {
         install::run_install().await;
 

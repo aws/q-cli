@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.0.0-alpha.21"
+version = "2.0.0-alpha.22"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -9,8 +9,9 @@ homepage = "https://fig.io"
 publish = false
 default-run = "fig_desktop"
 
-[build-dependencies]
-image = "0.24.2"
+[features]
+default = []
+console = ["tokio/tracing", "fig_log/console"]
 
 [dependencies]
 anyhow = "1.0.57"
@@ -68,3 +69,7 @@ features = [
 freedesktop-icons = "0.2.1"
 gtk = { version = "0.15", features = [ "v3_22" ] }
 x11rb = "0.10.1"
+
+[build-dependencies]
+image = "0.24.2"
+
