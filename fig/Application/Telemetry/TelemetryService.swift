@@ -204,15 +204,20 @@ class TelemetryProvider: TelemetryService {
     request.httpMethod = "POST"
     request.httpBody = json
     request.setValue("application/json; charset=utf-8", forHTTPHeaderField: "Content-Type")
-    try? Credentials.shared.authorizeRequest(request: &request)
 
-    let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
-      if let handler = completion {
-        handler(data, res, err)
+    DispatchQueue.global(qos: .background).async {
+
+      try? Credentials.shared.authorizeRequest(request: &request)
+
+      let task = URLSession.shared.dataTask(with: request) { (data, res, err) in
+        if let handler = completion {
+          handler(data, res, err)
+        }
       }
+
+      task.resume()
     }
 
-    task.resume()
   }
 
   fileprivate func addPrefixToKeys(prefix: String, dict: [String: String]) -> [String: String] {
