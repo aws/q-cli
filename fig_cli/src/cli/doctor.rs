@@ -1776,7 +1776,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .collect();
 
     let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> = vec![];
-    all_dotfile_checks.extend(shell_integrations.iter().map(|p| (&*p) as &dyn DoctorCheck<_>));
+    all_dotfile_checks.extend(shell_integrations.iter().map(|p| p as &dyn DoctorCheck<_>));
 
     let status = async {
         run_checks_with_context(

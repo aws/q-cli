@@ -216,7 +216,10 @@ pub enum CliRootCommands {
     #[clap(name = "bg:ssh", hide = true)]
     LegacyBgSsh,
     #[clap(name = "bg:tmux", hide = true)]
-    LegacyBgTmux,
+    LegacyBgTmux {
+        #[clap(value_parser)]
+        args: Vec<String>,
+    },
 }
 
 #[derive(Debug, Parser)]
@@ -374,7 +377,7 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::LegacyBgSsh => Ok(()),
-                CliRootCommands::LegacyBgTmux => Ok(()),
+                CliRootCommands::LegacyBgTmux { .. } => Ok(()),
             },
             // Root command
             None => root_command().await,

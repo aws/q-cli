@@ -14,8 +14,8 @@ impl InsertTextCommand {
         let mut out = String::new();
 
         match &self.offset.map(|i| i.signum()) {
-            Some(1) => out.extend(repeat("\x1b[C").take(self.offset.unwrap_or(0).abs() as usize)),
-            Some(-1) => out.extend(repeat("\x1b[D").take(self.offset.unwrap_or(0).abs() as usize)),
+            Some(1) => out.extend(repeat("\x1b[C").take(self.offset.unwrap_or(0).unsigned_abs() as usize)),
+            Some(-1) => out.extend(repeat("\x1b[D").take(self.offset.unwrap_or(0).unsigned_abs() as usize)),
             _ => {},
         }
 
