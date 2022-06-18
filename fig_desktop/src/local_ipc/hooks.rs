@@ -23,7 +23,10 @@ use fig_proto::local::{
 use fig_proto::prost::Message;
 use tracing::debug;
 
-use crate::event::WindowEvent;
+use crate::event::{
+    NativeEvent,
+    WindowEvent,
+};
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
@@ -116,6 +119,8 @@ pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, p
             })
             .unwrap();
     }
+
+    proxy.send_event(Event::NativeEvent(NativeEvent::EditBufferChanged))?;
 
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,

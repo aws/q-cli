@@ -210,6 +210,9 @@ impl WebviewManager {
                         Event::RefreshDebugger => {
                             // TODO(grant): Refresh the debugger
                         },
+                        Event::NativeEvent(native_event) => {
+                            self.global_state.native_state.handle(native_event);
+                        },
                     }
                 },
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
@@ -299,21 +302,20 @@ struct AutocompleteOptions {}
 fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
     let mut window_builder = WindowBuilder::new()
         .with_title("Fig Autocomplete")
-        .with_transparent(true)
+        .with_transparent(false)
         .with_decorations(false)
-        .with_resizable(false)
         .with_always_on_top(true)
-        .with_visible(false);
+        .with_visible(true);
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
             use wry::application::platform::unix::WindowBuilderExtUnix;
             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(target_os = "macos")] {
+            window_builder = window_builder.with_resizable(false);
+        } else if #[cfg(windows)] {
             use wry::application::platform::windows::WindowBuilderExtWindows;
             window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
-        } else {
-            window_builder = window_builder.with_resizable(false);
         }
     );
 
@@ -342,7 +344,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         })
         .with_custom_protocol("fig".into(), icons::handle)
         .with_devtools(true)
-        .with_transparent(true)
+        .with_transparent(false)
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
             r"^localhost$",
