@@ -408,7 +408,7 @@ fn launch_shell() -> Result<()> {
             extra_args
                 .split_whitespace()
                 .filter(|arg| arg != &"--login")
-                .filter_map(|arg| CString::new(&*arg).ok()),
+                .filter_map(|arg| CString::new(arg).ok()),
         );
     }
 

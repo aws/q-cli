@@ -3,6 +3,7 @@ use std::process::Command;
 
 use anyhow::{
     anyhow,
+    bail,
     Result,
 };
 use crossterm::style::Stylize;
@@ -15,6 +16,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use skim::SkimItem;
 use tui::components::{
     CheckBox,
     CollapsiblePicker,
@@ -35,7 +37,7 @@ use tui::{
 
 use crate::util::api::request;
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
 #[serde(rename_all = "camelCase")]
 enum Generator {
@@ -45,7 +47,7 @@ enum Generator {
     Script { script: String },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "typeData")]
 #[serde(rename_all = "camelCase")]
 enum ParameterType {
@@ -64,7 +66,7 @@ enum ParameterType {
     },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Parameter {
     name: String,
@@ -74,7 +76,7 @@ struct Parameter {
     parameter_type: ParameterType,
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
 enum TreeElement {
@@ -82,7 +84,7 @@ enum TreeElement {
     Token { name: String },
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct Workflow {
     name: String,
@@ -93,6 +95,84 @@ struct Workflow {
     template: String,
     parameters: Vec<Parameter>,
     tree: Vec<TreeElement>,
+}
+
+// impl AsRef<str> for Workflow {
+//    fn as_ref(&self) -> &str {
+//        self.name.as_str()
+//    }
+//}
+
+impl SkimItem for Workflow {
+    fn text(&self) -> std::borrow::Cow<str> {
+        let tags = match &self.tags {
+            Some(tags) => tags.join(" "),
+            None => String::new(),
+        };
+
+        format!(
+            "{} {} @{}/{} {}",
+            self.display_name.as_deref().unwrap_or_default(),
+            self.name,
+            self.namespace,
+            self.name,
+            tags
+        )
+        .into()
+    }
+
+    fn display<'a>(&'a self, context: skim::DisplayContext<'a>) -> skim::AnsiString<'a> {
+        let tags = match &self.tags {
+            Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
+            _ => String::new(),
+        };
+        let tag_len = tags.len();
+        let namespace_name = format!("@{}/{}", self.namespace, self.name);
+        skim::AnsiString::parse(
+            match &self.display_name {
+                None => format!(
+                    "{}{}{}{}",
+                    self.name.clone().bold(),
+                    tags.dark_grey(),
+                    " ".repeat(context.container_width - self.name.len() - tag_len - namespace_name.len() - 1),
+                    namespace_name.dark_grey()
+                ),
+                Some(display_name) => {
+                    format!(
+                        "{}{}{}{}",
+                        display_name.clone().bold(),
+                        tags.dark_grey(),
+                        " ".repeat(context.container_width - display_name.len() - tag_len - namespace_name.len() - 1),
+                        namespace_name.dark_grey()
+                    )
+                },
+            }
+            .as_str(),
+        )
+    }
+
+    fn preview(&self, context: skim::PreviewContext) -> skim::ItemPreview {
+        let mut lines = vec![format!("@{}/{}", self.namespace, self.name)];
+
+        if let Some(description) = self.description.as_deref() {
+            if !description.is_empty() {
+                lines.push(description.to_owned());
+            }
+        }
+
+        lines.push("━".repeat(context.width).black().to_string());
+        lines.push(self.template.clone());
+
+        skim::ItemPreview::AnsiText(lines.join("\n"))
+    }
+
+    fn output(&self) -> std::borrow::Cow<str> {
+        self.name.clone().into()
+    }
+
+    fn get_matching_ranges(&self) -> Option<&[(usize, usize)]> {
+        None
+    }
 }
 
 // Chay makes very large structs, Grant can't handle large structs
@@ -119,10 +199,10 @@ enum WorkflowComponent {
 
 pub async fn execute(args: Vec<String>) -> Result<()> {
     // Parse args
-    let name = args.get(1).map(String::from);
+    let name = args.first().map(String::from);
 
     let mut arg_pairs: HashMap<String, String> = HashMap::new();
-    let mut args = args.into_iter().skip(2);
+    let mut args = args.into_iter().skip(1);
     let mut arg = None;
     loop {
         arg = match arg {
@@ -145,7 +225,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             None => match args.next() {
                 Some(new_arg) => match new_arg.strip_prefix("--") {
                     Some(new_arg) => Some(new_arg.to_string()),
-                    None => anyhow::bail!("Unexpected argument: {}", new_arg),
+                    None => bail!("Unexpected argument: {new_arg}"),
                 },
                 None => break,
             },
@@ -163,10 +243,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         Some(name) => {
             let (namespace, name) = match name.strip_prefix('@') {
                 Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
-                    [namespace, name] => (namespace, name),
-                    _ => return Err(anyhow!("Malformed workflow specifier: {}", name)),
+                    [namespace, name] => (Some(namespace), name),
+                    _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
                 },
-                None => return Err(anyhow!("Malformed workflow: {}", name)),
+                None => (None, name.as_ref()),
             };
 
             match request(
@@ -180,24 +260,16 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             .await?
             {
                 Some(workflow) => workflow,
-                None => return Err(anyhow!("Workflow does not exist with name: {}", name)),
+                None => {
+                    match namespace {
+                        Some(namespace) => bail!("Workflow does not exist: @{namespace}/{name}"),
+                        None => bail!("Workflow does not exist for user: {name}"),
+                    };
+                },
             }
         },
         None => {
-            let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
-            let workflow_names: Vec<String> = workflows
-                .iter()
-                .map(|workflow| {
-                    workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone())
-                    // format!(
-                    //     "{}\t{}/{}",
-                    //     workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone()),
-                    //     workflow.namespace.clone(),
-                    //     workflow.name.clone(),
-                    // )
-                })
-                .collect();
-
+            let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
             let track_search = tokio::task::spawn(async move {
                 let a: [(&'static str, &'static str); 0] = []; // dumb
                 fig_telemetry::emit_track(TrackEvent::Other("Workflow Search Viewed".into()), TrackSource::Cli, a)
@@ -207,42 +279,67 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    let selection = {
-                        use std::io::Cursor;
+                    use skim::prelude::*;
 
-                        use skim::prelude::*;
+                    let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
+                    for workflow in workflows.iter() {
+                        tx.send(Arc::new(workflow.clone())).ok();
+                    }
+                    drop(tx);
 
-                        let input = workflow_names.join("\n");
-                        let item_reader = SkimItemReader::default();
-                        let items = item_reader.of_bufread(Cursor::new(input));
-                        let output = Skim::run_with(
-                            &SkimOptionsBuilder::default().height(Some("50%")).build().unwrap(),
-                            Some(items),
-                        ).unwrap();
+                    let output = Skim::run_with(
+                        &SkimOptionsBuilder::default()
+                            .height(Some("50%"))
+                            // .preview(Some(""))
+                            // .preview_window(Some("down"))
+                            .reverse(true)
+                            .tac(true)
+                            .build()
+                            .unwrap(),
+                        Some(rx),
+                    );
 
-                        if output.is_abort {
-                            return Ok(());
-                        }
+                    let workflow = match output {
+                        Some(out) => {
+                            if out.is_abort {
+                                return Ok(());
+                            }
 
-                        match output.selected_items.get(0).and_then(|selected| {
-                            let name = selected.text();
-                            workflow_names.iter().enumerate().find(|(_, workflow)| workflow == &&name).map(|(i, _)| i)
-                        }) {
-                            Some(i) => i,
-                            None => return Ok(())
-                        }
+                            match out.selected_items.iter()
+                                .map(|selected_item|
+                                    (**selected_item)
+                                        .as_any()
+                                        .downcast_ref::<Workflow>()
+                                        .unwrap()
+                                        .to_owned()
+                                )
+                                .next() {
+                                Some(workflow) => workflow,
+                                None => return Ok(()),
+                            }
+                        },
+                        None => return Ok(()),
                     };
                 } else if #[cfg(windows)] {
+                    let workflow_names: Vec<String> = workflows
+                        .iter()
+                        .map(|workflow| {
+                            workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone())
+                        })
+                        .collect();
+
                     let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
                         .items(&workflow_names)
                         .default(0)
                         .interact()
                         .unwrap();
+
+                    let workflow = workflows.remove(selection);
                 }
             };
 
             track_search.await?;
-            workflows.remove(selection)
+            workflow
         },
     };
 

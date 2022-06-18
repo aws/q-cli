@@ -8,10 +8,7 @@ pub mod local;
 pub mod util;
 
 use std::fmt::Debug;
-use std::io::{
-    Cursor,
-    Read,
-};
+use std::io::Cursor;
 use std::mem::size_of;
 
 use anyhow::Result;
@@ -38,6 +35,8 @@ use serde::{
 use serde_json::Deserializer;
 use thiserror::Error;
 
+// This is not used explicitly, but it must be here for the derive
+// impls on the protos for dynamic message
 static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
     DescriptorPool::decode(include_bytes!(concat!(env!("OUT_DIR"), "/file_descriptor_set.bin")).as_ref()).unwrap()
 });
@@ -53,9 +52,9 @@ pub enum FigMessageType {
 /// The format of a fig message is:
 ///
 ///   - The header `\x1b@`
-///   - The type of the message, in this case `fig-pbuf`, this part is always 8 bytes
+///   - The type of the message, `fig-pbuf` or `fig-json`, this part is always 8 bytes
 ///   - The length of the remainder of the message encoded as a big endian u64
-///   - The message, in this case a protobuf message
+///   - The message, encoded as protobuf or json-protobuf
 #[derive(Debug, Clone)]
 pub struct FigMessage {
     pub inner: Bytes,
@@ -97,15 +96,13 @@ impl FigMessage {
         }
 
         let mut header = [0; 2];
-        src.read_exact(&mut header)?;
-
+        src.copy_to_slice(&mut header);
         if header[0] != b'\x1b' || header[1] != b'@' {
             return Err(FigMessageParseError::InvalidHeader);
         }
 
         let mut message_type_buf = [0; 8];
-        src.read_exact(&mut message_type_buf)?;
-
+        src.copy_to_slice(&mut message_type_buf);
         let message_type = match &message_type_buf {
             b"fig-pbuf" => FigMessageType::Protobuf,
             b"fig-json" => FigMessageType::Json,
@@ -123,7 +120,7 @@ impl FigMessage {
         }
 
         let mut inner = vec![0; len as usize];
-        src.read_exact(&mut inner)?;
+        src.copy_to_slice(&mut inner);
 
         Ok(FigMessage {
             inner: Bytes::from(inner),

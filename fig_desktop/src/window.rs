@@ -64,9 +64,9 @@ impl WindowState {
     pub fn handle(&self, event: WindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(WindowId, String)>) {
         match event {
             WindowEvent::Reanchor { x, y } => {
-                let position = self.position.read();
-                let caret_position = self.caret_position.read();
-                let caret_size = self.caret_size.read();
+                let position = *self.position.read();
+                let caret_position = *self.caret_position.read();
+                let caret_size = *self.caret_size.read();
                 *self.anchor.write() = PhysicalPosition { x, y };
                 match native::CURSOR_POSITION_KIND {
                     CursorPositionKind::Absolute => {
@@ -88,8 +88,8 @@ impl WindowState {
                 }
             },
             WindowEvent::Reposition { x, y } => {
-                let caret_position = self.caret_position.read();
-                let caret_size = self.caret_size.read();
+                let caret_position = *self.caret_position.read();
+                let caret_size = *self.caret_size.read();
                 *self.position.write() = PhysicalPosition {
                     x: caret_position.x,
                     y: caret_position.y,
@@ -104,7 +104,7 @@ impl WindowState {
                             }))
                     },
                     CursorPositionKind::Relative => {
-                        let anchor = self.anchor.read();
+                        let anchor = *self.anchor.read();
                         self.webview
                             .window()
                             .set_outer_position(Position::Physical(PhysicalPosition {
@@ -115,7 +115,7 @@ impl WindowState {
                 }
             },
             WindowEvent::UpdateCaret { x, y, width, height } => {
-                let position = self.position.read();
+                let position = *self.position.read();
                 *self.caret_position.write() = PhysicalPosition { x, y };
                 *self.caret_size.write() = PhysicalSize { width, height };
                 if x == 0 && y == 0 {

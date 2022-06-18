@@ -117,7 +117,7 @@ impl Default for TermMode {
 }
 
 /// Terminal size info.
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SizeInfo {
     /// Number of lines in the viewport.
     screen_lines: usize,

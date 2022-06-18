@@ -13,7 +13,7 @@ use fig_proto::figterm::{
     SetBufferCommand,
 };
 use fig_proto::local::ShellContext;
-use parking_lot::RwLock;
+use parking_lot::FairMutex;
 use tokio::sync::mpsc;
 use tokio::time::{
     sleep_until,
@@ -81,7 +81,7 @@ pub enum FigTermCommand {
 #[derive(Debug, Default)]
 pub struct FigtermState {
     /// The most recent `[FigtermSessionId]` to be used.
-    pub most_recent: RwLock<Option<FigtermSessionId>>,
+    most_recent: FairMutex<Option<FigtermSessionId>>,
     /// The list of `[FigtermSession]`s.
     pub sessions: DashMap<FigtermSessionId, FigTermSession, fnv::FnvBuildHasher>,
 }
@@ -91,7 +91,7 @@ impl FigtermState {
     fn set_most_recent_session(&self, session_id: impl Into<Option<FigtermSessionId>>) {
         let session_id = session_id.into();
         trace!("Most recent session set to {:?}", session_id);
-        *self.most_recent.write() = session_id;
+        *self.most_recent.lock() = session_id;
     }
 
     /// Inserts a new session id
@@ -102,7 +102,7 @@ impl FigtermState {
 
     /// Removes the given session id
     pub fn remove(&self, key: &FigtermSessionId) -> Option<(FigtermSessionId, FigTermSession)> {
-        if self.most_recent.read().as_ref() == Some(key) {
+        if self.most_recent.lock().as_ref() == Some(key) {
             self.set_most_recent_session(None);
         }
         self.sessions.remove(key)
@@ -127,7 +127,7 @@ impl FigtermState {
 
     pub fn most_recent_session(&self) -> Option<FigTermSession> {
         self.most_recent
-            .read()
+            .lock()
             .as_ref()
             .and_then(|key| self.sessions.get(key))
             .map(|session| session.value().clone())
