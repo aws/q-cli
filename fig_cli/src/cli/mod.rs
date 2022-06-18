@@ -207,14 +207,21 @@ pub enum CliRootCommands {
         #[clap(value_parser)]
         command: Vec<String>,
     },
-    #[clap(external_subcommand)]
-    Workflow(Vec<String>),
+    #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
+    Workflow {
+        // Flags can be added here
+        // #[clap(long, action)]
+        // execute: bool,
+        #[clap(value_parser, takes_value = true, allow_hyphen_values = true)]
+        args: Vec<String>,
+    },
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
     /// (LEGACY) Old ssh hook that might be in ~/.ssh/config
     #[clap(name = "bg:ssh", hide = true)]
     LegacyBgSsh,
+    /// (LEGACY) Old tmux hook that might be in ~/.tmux.conf
     #[clap(name = "bg:tmux", hide = true)]
     LegacyBgTmux {
         #[clap(value_parser)]
@@ -371,7 +378,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Workflow(args) => workflow::execute(args).await,
+                CliRootCommands::Workflow { args } => workflow::execute(args).await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
