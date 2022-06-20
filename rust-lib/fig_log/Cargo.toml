@@ -11,7 +11,7 @@ default = []
 console = ["console-subscriber"]
 
 [dependencies]
-anyhow = "1.0.56"
+anyhow = "1.0.58"
 console-subscriber = { version = "0.1.6", optional = true, features = ["parking_lot"] }
 fig_directories = { path = "../fig_directories" }
 once_cell = "1.12.0"
