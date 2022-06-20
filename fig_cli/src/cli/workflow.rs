@@ -16,6 +16,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+#[cfg(unix)]
 use skim::SkimItem;
 use tui::components::{
     CheckBox,
@@ -36,6 +37,8 @@ use tui::{
 };
 
 use crate::util::api::request;
+
+const SUPPORTED_SCHEMA_VERSION: u32 = 1;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -88,21 +91,17 @@ enum TreeElement {
 #[serde(rename_all = "camelCase")]
 struct Workflow {
     name: String,
-    namespace: String,
     display_name: Option<String>,
     description: Option<String>,
+    template_version: u32,
     tags: Option<Vec<String>>,
-    template: String,
     parameters: Vec<Parameter>,
+    namespace: String,
+    template: String,
     tree: Vec<TreeElement>,
 }
 
-// impl AsRef<str> for Workflow {
-//    fn as_ref(&self) -> &str {
-//        self.name.as_str()
-//    }
-//}
-
+#[cfg(unix)]
 impl SkimItem for Workflow {
     fn text(&self) -> std::borrow::Cow<str> {
         let tags = match &self.tags {
@@ -269,7 +268,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             }
         },
         None => {
-            let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+            let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
             let track_search = tokio::task::spawn(async move {
                 let a: [(&'static str, &'static str); 0] = []; // dumb
                 fig_telemetry::emit_track(TrackEvent::Other("Workflow Search Viewed".into()), TrackSource::Cli, a)
@@ -319,7 +318,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                             }
                         },
                         None => return Ok(()),
-                    };
+                    }
                 } else if #[cfg(windows)] {
                     let workflow_names: Vec<String> = workflows
                         .iter()
@@ -342,6 +341,16 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             workflow
         },
     };
+
+    if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
+        return Err(anyhow!(
+            "Could not execute @{}/{} since it requires features not available in this version of Fig.\n\
+            Please update to the latest version by running {} and try again.",
+            workflow.namespace,
+            workflow.name,
+            "fig update".magenta(),
+        ));
+    }
 
     let track_execution = tokio::task::spawn(async move {
         fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [(
@@ -393,7 +402,9 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 if let Some(generators) = generators {
                     for generator in generators {
                         match generator {
-                            Generator::Named { .. } => todo!(),
+                            Generator::Named { .. } => {
+                                return Err(anyhow!("Named generators aren't supported in workflows yet"));
+                            },
                             Generator::Script { script } => {
                                 if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
                                     for option in String::from_utf8_lossy(&output.stdout).split('\n') {
