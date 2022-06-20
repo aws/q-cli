@@ -44,7 +44,7 @@ sentry = { version = "0.26.0", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 spinners = "4.0.0"
-sysinfo = "0.24.4"
+sysinfo = "0.24.5"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
 thiserror = "1.0.30"
