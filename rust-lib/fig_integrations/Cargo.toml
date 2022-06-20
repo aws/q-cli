@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-anyhow = "1.0.57"
+anyhow = "1.0.58"
 cfg-if = "1.0.0"
 clap = { version = "3.2.5", features = ["derive"] }
 fig_directories = { path = "../fig_directories" }

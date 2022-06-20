@@ -14,7 +14,7 @@ default = []
 console = ["tokio/tracing", "fig_log/console"]
 
 [dependencies]
-anyhow = "1.0.57"
+anyhow = "1.0.58"
 base64 = "0.13.0"
 bytes = "1.1.0"
 camino = "1.0.9"
