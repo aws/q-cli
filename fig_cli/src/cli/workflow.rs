@@ -268,7 +268,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             }
         },
         None => {
-            let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+            let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
             let track_search = tokio::task::spawn(async move {
                 let a: [(&'static str, &'static str); 0] = []; // dumb
                 fig_telemetry::emit_track(TrackEvent::Other("Workflow Search Viewed".into()), TrackSource::Cli, a)
@@ -318,7 +318,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                             }
                         },
                         None => return Ok(()),
-                    }
+                    };
                 } else if #[cfg(windows)] {
                     let workflow_names: Vec<String> = workflows
                         .iter()
