@@ -48,7 +48,7 @@ sysinfo = "0.24.4"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
 thiserror = "1.0.30"
-time = { version = "0.3.9", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
+time = { version = "0.3.10", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
