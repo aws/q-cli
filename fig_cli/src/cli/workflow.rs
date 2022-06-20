@@ -134,7 +134,15 @@ impl SkimItem for Workflow {
                     "{}{}{}{}",
                     self.name.clone().bold(),
                     tags.dark_grey(),
-                    " ".repeat(context.container_width - self.name.len() - tag_len - namespace_name.len() - 1),
+                    " ".repeat(
+                        context
+                            .container_width
+                            .saturating_sub(self.name.len())
+                            .saturating_sub(tag_len)
+                            .saturating_sub(namespace_name.len())
+                            .saturating_sub(1)
+                            .max(1)
+                    ),
                     namespace_name.dark_grey()
                 ),
                 Some(display_name) => {
@@ -142,7 +150,15 @@ impl SkimItem for Workflow {
                         "{}{}{}{}",
                         display_name.clone().bold(),
                         tags.dark_grey(),
-                        " ".repeat(context.container_width - display_name.len() - tag_len - namespace_name.len() - 1),
+                        " ".repeat(
+                            context
+                                .container_width
+                                .saturating_sub(display_name.len())
+                                .saturating_sub(tag_len)
+                                .saturating_sub(namespace_name.len())
+                                .saturating_sub(1)
+                                .max(1)
+                        ),
                         namespace_name.dark_grey()
                     )
                 },
