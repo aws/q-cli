@@ -276,7 +276,7 @@ dependencies = [
  "percent-encoding",
  "regex 1.5.6",
  "ring",
- "time 0.3.9",
+ "time 0.3.10",
  "tracing",
 ]
 
@@ -370,7 +370,7 @@ dependencies = [
  "itoa",
  "num-integer",
  "ryu",
- "time 0.3.9",
+ "time 0.3.10",
 ]
 
 [[package]]
@@ -1508,7 +1508,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.10",
  "tokio",
  "uuid 1.1.2",
 ]
@@ -1559,7 +1559,7 @@ dependencies = [
  "system_socket",
  "tempfile",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.10",
  "tokio",
  "tokio-tungstenite",
  "tracing",
@@ -1662,7 +1662,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "time 0.3.9",
+ "time 0.3.10",
  "tokio",
  "tracing",
 ]
@@ -1679,7 +1679,7 @@ dependencies = [
  "regex 1.5.6",
  "serde",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.10",
 ]
 
 [[package]]
@@ -1741,7 +1741,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.10",
  "tokio",
  "url",
 ]
@@ -3883,7 +3883,7 @@ dependencies = [
  "prost-types",
  "serde",
  "serde-value",
- "time 0.3.9",
+ "time 0.3.10",
 ]
 
 [[package]]
@@ -4598,7 +4598,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.10",
  "url",
  "uuid 1.1.2",
 ]
@@ -5313,9 +5313,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.9"
+version = "0.3.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2702e08a7a860f005826c6815dcac101b19b5eb330c27fe4a5928fec1d20ddd"
+checksum = "82501a4c1c0330d640a6e176a3d6a204f5ec5237aca029029d21864a902e27b0"
 dependencies = [
  "itoa",
  "libc",
@@ -5616,7 +5616,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
 dependencies = [
  "crossbeam-channel 0.5.4",
- "time 0.3.9",
+ "time 0.3.10",
  "tracing-subscriber",
 ]
 
@@ -5676,7 +5676,7 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local 1.1.4",
- "time 0.3.9",
+ "time 0.3.10",
  "tracing",
  "tracing-core",
  "tracing-log",
