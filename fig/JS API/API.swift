@@ -163,6 +163,10 @@ class API {
         }
       case .macosInputMethodRequest(let request):
         response.macosInputMethodResponse = try InputMethod.default.handleAPIRequest(request)
+      case .createDirectoryRequest(_):
+        throw APIError.generic(message: "Not implmented on MacOS")
+      case .installRequest(_):
+        throw APIError.generic(message: "Not implmented on MacOS")
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")
       }

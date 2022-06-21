@@ -1,0 +1,8 @@
+[Unit]
+Description=Start Fig
+After=multi-user.target
+Wants=graphical.target
+
+[Service]
+ExecStart=/usr/bin/fig_desktop
+

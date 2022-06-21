@@ -250,15 +250,3 @@ fn try_print_gif<R: Read, D: Display>(conf: &Config<D>, input_stream: R, (tx, rx
     }
     Ok(())
 }
-
-#[cfg(test)]
-mod test {
-    use super::*;
-
-    #[test]
-    fn test_view_without_extension() {
-        let conf = Config::test_config();
-        let (tx, rx) = mpsc::channel();
-        view_file(&conf, "img/bfa", (&tx, &rx)).unwrap();
-    }
-}

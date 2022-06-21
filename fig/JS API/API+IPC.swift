@@ -21,3 +21,12 @@ extension Local_PostExecHook {
     }
   }
 }
+
+extension Local_EventHook {
+  var eventNotification: Fig_EventNotification {
+    return Fig_EventNotification.with { notification in
+      notification.eventName = self.eventName
+      notification.payload = self.payload
+    }
+  }
+}

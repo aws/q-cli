@@ -61,6 +61,8 @@ message InsertTextCommand {
     // execute editbuffer (if true, append \r)
     optional bool immediate = 4;
 
+    // client buffer at the time of the insertion request (prior to insertion)
+    optional string insertion_buffer = 5;
 }
 
 // Set buffer command

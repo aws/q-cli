@@ -1,6 +1,9 @@
 {
   "name": "proto",
   "version": "1.0.0",
+  "scripts": {
+    "precommit": "exit 0"
+  },
   "devDependencies": {
     "ts-proto": "^1.112.1"
   }

@@ -37,3 +37,7 @@ pub fn init_sentry(project: &str) -> Option<sentry::ClientInitGuard> {
         Some(guard)
     }
 }
+
+pub fn capture_anyhow(e: &anyhow::Error) {
+    sentry::integrations::anyhow::capture_anyhow(e);
+}

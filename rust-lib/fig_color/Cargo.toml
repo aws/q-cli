@@ -10,5 +10,5 @@ publish = false
 bitflags = "1"
 
 [build-dependencies]
-bindgen = "0.59"
+bindgen = "0.60"
 cc = "1"

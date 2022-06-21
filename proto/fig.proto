@@ -37,8 +37,9 @@ message ClientOriginatedMessage {
       GetLocalStateRequest get_local_state_request = 128;
       UpdateLocalStateRequest update_local_state_request = 129;
       RunProcessRequest run_process_request = 130;
-      MacOSInputMethodRequest macos_input_method_request = 131;
-
+      MacosInputMethodRequest macos_input_method_request = 131;
+      CreateDirectoryRequest create_directory_request = 132;
+      InstallRequest install_request = 133;
   }
 }
 
@@ -61,11 +62,11 @@ message ServerOriginatedMessage {
     ApplicationUpdateStatusResponse application_update_status_response = 109;
     GetLocalStateResponse get_local_state_response = 110;
     RunProcessResponse run_process_response = 111;
-    MacOSInputMethodResponse macos_input_method_response = 112;
-
+    MacosInputMethodResponse macos_input_method_response = 112;
+    InstallResponse install_response = 113;
+    
     Notification notification = 1000;
   }
-    
 }
 
 
@@ -146,6 +147,16 @@ message Window {
   optional Screen current_screen = 5;
 }
 
+message Result {
+  enum ResultEnum {
+    RESULT_OK = 0;
+    RESULT_ERROR = 1;
+  }
+  
+  ResultEnum result = 1;
+  optional string error = 2;
+} 
+
 /// Requests
 
 message TextUpdate {
@@ -153,6 +164,8 @@ message TextUpdate {
     optional int64 deletion = 2; 
     optional int64 offset = 3;
     optional bool immediate = 4;
+    // client buffer at the time of the insertion request (prior to insertion)
+    optional string insertion_buffer = 5;
 }
 
 message InsertTextRequest {
@@ -242,6 +255,11 @@ message DestinationOfSymbolicLinkResponse {
     optional FilePath destination = 1;
 }
 
+message CreateDirectoryRequest {
+  FilePath path = 1;
+  optional bool recursive = 2;
+}
+
 /// Defaults
 
 message DefaultsValue {
@@ -329,11 +347,40 @@ enum OnboardingAction {
   CLOSE_ACCESSIBILITY_PROMPT_WINDOW = 5;
   REQUEST_RESTART = 6;
   CLOSE_INPUT_METHOD_PROMPT_WINDOW = 7;
-
 }
 
 message OnboardingRequest {
   OnboardingAction action = 1;
+}
+
+/// Installation
+
+enum InstallComponent {
+  DOTFILES = 0;
+  IBUS     = 1;
+}
+
+enum InstallAction {
+  INSTALL_ACTION   = 0;
+  UNINSTALL_ACTION = 1;
+  STATUS_ACTION    = 2;
+}
+
+message InstallRequest {
+  InstallComponent component = 1;
+  InstallAction    action    = 2;
+}
+
+message InstallResponse {
+  enum InstallationStatus {
+    INSTALL_INSTALLED     = 0;
+    INSTALL_NOT_INSTALLED = 1;
+  }
+
+  oneof response {
+    Result             result              = 1;
+    InstallationStatus installation_status = 2;
+  }
 }
 
 /// Window Focus
@@ -445,7 +492,7 @@ message RunProcessResponse {
   int32 exitCode = 3; 
 }
 
-/// MacOS Input Method
+/// Macos Input Method
 
 enum InputMethodAction {
   REGISTER = 0;
@@ -463,11 +510,11 @@ enum InputMethodState {
   UNKNOWN = 3;
 }
 
-message MacOSInputMethodRequest {
+message MacosInputMethodRequest {
   InputMethodAction action = 1;
 }
 
-message MacOSInputMethodResponse {
+message MacosInputMethodResponse {
   string message = 1;
   int32 code = 2; 
   InputMethodState state = 3;
@@ -494,6 +541,7 @@ enum NotificationType {
   NOTIFY_ON_HISTORY_UPDATED = 8;
   NOTIFY_ON_APPLICATION_UPDATE_AVAILABLE = 9;
   NOTIFY_ON_LOCAL_STATE_CHANGED = 10;
+  NOTIFY_ON_EVENT = 11;
 }
 
 message Notification {
@@ -508,6 +556,7 @@ message Notification {
     HistoryUpdatedNotification history_updated_notification = 8;
     ApplicationUpdateAvailableNotification application_update_available_notification = 9;
     LocalStateChangedNotification local_state_changed_notification = 10;
+    EventNotification event_notification = 11;
   }
 }
 
@@ -555,7 +604,6 @@ message HistoryUpdatedNotification {
   optional string session_id = 4; // the value of $TERM_SESSION_ID
   optional string hostname = 5;
   optional int32 exit_code = 6; // the exit code of the command
-
 }
 
 message ApplicationUpdateAvailableNotification {
@@ -564,6 +612,11 @@ message ApplicationUpdateAvailableNotification {
 
 message LocalStateChangedNotification {
   optional string jsonBlob = 1;
+}
+
+message EventNotification {
+  optional string event_name = 1;
+  optional string payload = 2;
 }
 
 /// Constants

@@ -1,7 +1,23 @@
+use std::borrow::Cow;
+use std::fmt;
+
 use serde::{
     Deserialize,
     Serialize,
 };
+
+pub const MACOS_TERMINALS: &[Terminal] = &[];
+pub const LINUX_TERMINALS: &[Terminal] = &[
+    Terminal::Vscode,
+    Terminal::VSCodeInsiders,
+    Terminal::GnomeTerminal,
+    Terminal::Konsole,
+    Terminal::Tilix,
+    Terminal::Alacritty,
+    Terminal::Kitty,
+    Terminal::XfceTerminal,
+    Terminal::Terminator,
+];
 
 /// Terminals supported by Fig
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -29,10 +45,20 @@ pub enum Terminal {
     WezTerm,
     /// Jetbrains Terminal
     JediTerm(String),
+    /// Gnome Terminal
+    GnomeTerminal,
+    /// KDE Konsole
+    Konsole,
+    /// Tilix
+    Tilix,
+    /// Xfce Terminal
+    XfceTerminal,
+    /// Terminator
+    Terminator,
 }
 
-impl std::fmt::Display for Terminal {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+impl fmt::Display for Terminal {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
         match self {
             Terminal::Iterm => write!(f, "iTerm 2"),
             Terminal::TerminalApp => write!(f, "macOS"),
@@ -45,6 +71,11 @@ impl std::fmt::Display for Terminal {
             Terminal::Nova => write!(f, "Nova"),
             Terminal::WezTerm => write!(f, "Wezterm"),
             Terminal::JediTerm(_) => write!(f, "Jetbrains"),
+            Terminal::GnomeTerminal => write!(f, "Gnome Terminal"),
+            Terminal::Konsole => write!(f, "Konsole"),
+            Terminal::Tilix => write!(f, "Tilix"),
+            Terminal::XfceTerminal => write!(f, "Xfce Terminal"),
+            Terminal::Terminator => write!(f, "Terminator"),
         }
     }
 }
@@ -63,11 +94,11 @@ impl Terminal {
             Some("Nova") => Some(Terminal::Nova),
             Some("WezTerm") => Some(Terminal::WezTerm),
             _ => match std::env::var("__CFBundleIdentifier").ok().as_deref() {
-                // Add support for Jetbrain Terminals
-                // Some(v) if v.contains("com.jetbrains.") => Some(Terminal::JediTerm),
+                Some(v) if v.contains("com.jetbrains.") => Some(Terminal::JediTerm(v.into())),
                 _ => None,
             },
         }
+        // TODO(grant): Improve this for Linux, it currently is not very accurate
     }
 
     pub fn internal_id(&self) -> String {
@@ -86,6 +117,11 @@ impl Terminal {
                 .trim_start_matches("com.jetbrains.")
                 .trim_start_matches("com.google.")
                 .to_string(),
+            Terminal::GnomeTerminal => "gnome-terminal".into(),
+            Terminal::Konsole => "konsole".into(),
+            Terminal::Tilix => "tilix".into(),
+            Terminal::XfceTerminal => "xfce-terminal".into(),
+            Terminal::Terminator => "terminator".into(),
         }
     }
 
@@ -103,6 +139,40 @@ impl Terminal {
             Terminal::Nova => String::from("com.panic.Nova"),
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
             Terminal::JediTerm(id) => id.to_string(),
+            Terminal::GnomeTerminal => todo!(),
+            Terminal::Konsole => todo!(),
+            Terminal::Tilix => todo!(),
+            Terminal::XfceTerminal => todo!(),
+            Terminal::Terminator => todo!(),
+        }
+    }
+
+    pub fn executable_name(&self) -> Option<Cow<'static, str>> {
+        match self {
+            Terminal::Vscode => Some("code".into()),
+            Terminal::VSCodeInsiders => Some("code-insiders".into()),
+            Terminal::Alacritty => Some("alacritty".into()),
+            Terminal::Kitty => Some("kitty".into()),
+            Terminal::GnomeTerminal => Some("gnome-terminal-server".into()),
+            Terminal::Konsole => Some("konsole".into()),
+            Terminal::Tilix => Some("tilix".into()),
+            Terminal::XfceTerminal => Some("xfce4-terminal".into()),
+            _ => None,
+        }
+    }
+
+    pub fn wm_class(&self) -> Option<Cow<'static, str>> {
+        match self {
+            Terminal::Vscode => Some("Code".into()),
+            Terminal::VSCodeInsiders => Some("Vscode-insiders".into()),
+            Terminal::GnomeTerminal => Some("Gnome-terminal".into()),
+            Terminal::Konsole => Some("konsole".into()),
+            Terminal::Tilix => Some("Tilix".into()),
+            Terminal::Alacritty => Some("Alacritty".into()),
+            Terminal::Kitty => Some("kitty".into()),
+            Terminal::XfceTerminal => Some("Xfce4-terminal".into()),
+            Terminal::Terminator => Some("Terminator".into()),
+            _ => None,
         }
     }
 

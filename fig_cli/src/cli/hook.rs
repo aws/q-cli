@@ -14,43 +14,60 @@ use fig_proto::hooks;
 #[clap(hide = true)]
 pub enum HookSubcommand {
     Editbuffer {
+        #[clap(value_parser)]
         session_id: String,
+        #[clap(value_parser)]
         integration: i32,
+        #[clap(value_parser)]
         tty: String,
+        #[clap(value_parser)]
         pid: i32,
+        #[clap(value_parser)]
         histno: i64,
+        #[clap(value_parser)]
         cursor: i64,
+        #[clap(value_parser)]
         text: String,
-    },
-    Event {
-        event_name: String,
     },
     Hide,
     Init {
+        #[clap(value_parser)]
         pid: i32,
+        #[clap(value_parser)]
         tty: String,
     },
     IntegrationReady {
+        #[clap(value_parser)]
         integration: String,
     },
     KeyboardFocusChanged {
+        #[clap(value_parser)]
         app_identifier: String,
+        #[clap(value_parser)]
         focused_session_id: String,
     },
     PreExec {
+        #[clap(value_parser)]
         pid: i32,
+        #[clap(value_parser)]
         tty: String,
     },
     Prompt {
+        #[clap(value_parser)]
         pid: i32,
+        #[clap(value_parser)]
         tty: String,
     },
     Ssh {
+        #[clap(value_parser)]
         pid: i32,
+        #[clap(value_parser)]
         tty: String,
+        #[clap(value_parser)]
         control_path: String,
+        #[clap(value_parser)]
         remote_dest: String,
-        #[clap(long)]
+        #[clap(long, action)]
         prompt: bool,
     },
 }
@@ -70,7 +87,6 @@ impl HookSubcommand {
                 let context = hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
                 Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor))
             },
-            HookSubcommand::Event { event_name } => Ok(hooks::new_event_hook(event_name)),
             HookSubcommand::Hide => Ok(hooks::new_hide_hook()),
             HookSubcommand::Init { pid, tty } => {
                 let context = hooks::generate_shell_context(*pid, tty, None, None)?;

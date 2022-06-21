@@ -1,0 +1,20 @@
+<?xml version="1.0" encoding="utf-8" ?>
+<component>
+    <name>org.freedesktop.IBus.Fig</name>
+    <description>Fig IBus integration component</description>
+    <version>0.1.0</version>
+    <license>MIT</license>
+    <author>Fig</author>
+    <homepage>https://fig.io</homepage>
+    <exec>/usr/bin/fig_ibus_engine</exec>
+    <textdomain></textdomain>
+    <engines>
+        <engine>
+            <name>fig</name>
+            <longname>Fig IBus Engine</longname>
+            <description>Fig IBus integration engine</description>
+            <author>Fig</author>
+            <license>MIT</license>
+        </engine>
+    </engines>
+</component>

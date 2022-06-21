@@ -8,10 +8,7 @@ pub mod local;
 pub mod util;
 
 use std::fmt::Debug;
-use std::io::{
-    Cursor,
-    Read,
-};
+use std::io::Cursor;
 use std::mem::size_of;
 
 use anyhow::Result;
@@ -20,13 +17,34 @@ use bytes::{
     Bytes,
     BytesMut,
 };
+use once_cell::sync::Lazy;
 pub use prost;
-use prost::Message;
+use prost::{
+    DecodeError,
+    Message,
+};
+pub use prost_reflect::ReflectMessage;
+use prost_reflect::{
+    DescriptorPool,
+    DynamicMessage,
+};
+use serde::{
+    Deserialize,
+    Serialize,
+};
+use serde_json::Deserializer;
 use thiserror::Error;
 
+// This is not used explicitly, but it must be here for the derive
+// impls on the protos for dynamic message
+static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
+    DescriptorPool::decode(include_bytes!(concat!(env!("OUT_DIR"), "/file_descriptor_set.bin")).as_ref()).unwrap()
+});
+
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
-enum FigMessageType {
+pub enum FigMessageType {
     Protobuf,
+    Json,
 }
 
 /// A fig message
@@ -34,13 +52,13 @@ enum FigMessageType {
 /// The format of a fig message is:
 ///
 ///   - The header `\x1b@`
-///   - The type of the message, in this case `fig-pbuf`, this part is always 8 bytes
+///   - The type of the message, `fig-pbuf` or `fig-json`, this part is always 8 bytes
 ///   - The length of the remainder of the message encoded as a big endian u64
-///   - The message, in this case a protobuf message
+///   - The message, encoded as protobuf or json-protobuf
 #[derive(Debug, Clone)]
 pub struct FigMessage {
     pub inner: Bytes,
-    _message_type: FigMessageType,
+    pub message_type: FigMessageType,
 }
 
 #[derive(Debug, Error)]
@@ -55,6 +73,22 @@ pub enum FigMessageParseError {
     Io(#[from] std::io::Error),
 }
 
+#[derive(Debug, Error)]
+pub enum FigMessageDecodeError {
+    #[error("prost decode error: {0}")]
+    ProstDecode(#[from] DecodeError),
+    #[error("json decode error: {0}")]
+    JsonDecode(#[from] serde_json::Error),
+    #[error("name is a valid protobuf: {0}")]
+    NameNotValid(String),
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct FigJsonMessage {
+    name: String,
+    data: serde_json::Value,
+}
+
 impl FigMessage {
     pub fn parse(src: &mut Cursor<&[u8]>) -> Result<FigMessage, FigMessageParseError> {
         if src.remaining() < 10 {
@@ -62,18 +96,18 @@ impl FigMessage {
         }
 
         let mut header = [0; 2];
-        src.read_exact(&mut header)?;
-
+        src.copy_to_slice(&mut header);
         if header[0] != b'\x1b' || header[1] != b'@' {
             return Err(FigMessageParseError::InvalidHeader);
         }
 
-        let mut message_type = [0; 8];
-        src.read_exact(&mut message_type)?;
-
-        if &message_type != b"fig-pbuf" {
-            return Err(FigMessageParseError::InvalidMessageType(message_type));
-        }
+        let mut message_type_buf = [0; 8];
+        src.copy_to_slice(&mut message_type_buf);
+        let message_type = match &message_type_buf {
+            b"fig-pbuf" => FigMessageType::Protobuf,
+            b"fig-json" => FigMessageType::Json,
+            _ => return Err(FigMessageParseError::InvalidMessageType(message_type_buf)),
+        };
 
         if src.remaining() < size_of::<u64>() {
             return Err(FigMessageParseError::Incomplete);
@@ -86,12 +120,26 @@ impl FigMessage {
         }
 
         let mut inner = vec![0; len as usize];
-        src.read_exact(&mut inner)?;
+        src.copy_to_slice(&mut inner);
 
         Ok(FigMessage {
             inner: Bytes::from(inner),
-            _message_type: FigMessageType::Protobuf,
+            message_type,
         })
+    }
+
+    pub fn decode<T>(self) -> Result<T, FigMessageDecodeError>
+    where
+        T: Message + ReflectMessage + Default,
+    {
+        match self.message_type {
+            FigMessageType::Protobuf => Ok(T::decode(self.inner)?),
+            FigMessageType::Json => Ok(DynamicMessage::deserialize(
+                T::default().descriptor(),
+                &mut Deserializer::from_slice(self.inner.as_ref()),
+            )?
+            .transcode_to()?),
+        }
     }
 }
 
@@ -130,7 +178,7 @@ impl<T: Message> FigProtobufEncodable for T {
 
         Ok(FigMessage {
             inner: fig_pbuf.freeze(),
-            _message_type: FigMessageType::Protobuf,
+            message_type: FigMessageType::Protobuf,
         })
     }
 }
@@ -139,16 +187,44 @@ impl<T: Message> FigProtobufEncodable for T {
 mod tests {
     use super::*;
 
+    fn test_message() -> local::LocalMessage {
+        let ctx = hooks::new_context(
+            Some(123),
+            Some("/dev/pty123".into()),
+            Some("/bin/bash".into()),
+            Some("/home/user".into()),
+            None,
+            None,
+            None,
+            None,
+        );
+        let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3);
+        hooks::hook_to_message(hook)
+    }
+
     #[test]
     fn test_to_fig_pbuf() {
-        let hook = hooks::new_edit_buffer_hook(None, "test", 0, 0);
-        let message = hooks::hook_to_message(hook);
+        let message = test_message();
 
         assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"));
 
         assert_eq!(
-            message.encode_fig_protobuf().unwrap()._message_type,
+            message.encode_fig_protobuf().unwrap().message_type,
             FigMessageType::Protobuf
         );
+    }
+
+    #[test]
+    fn json_decode() {
+        let message = test_message();
+        let json = serde_json::to_vec(&message.transcode_to_dynamic()).unwrap();
+
+        let msg = FigMessage {
+            inner: Bytes::from(json),
+            message_type: FigMessageType::Json,
+        };
+        let decoded_message: local::LocalMessage = msg.decode().unwrap();
+
+        assert_eq!(message, decoded_message);
     }
 }

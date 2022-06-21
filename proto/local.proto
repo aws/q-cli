@@ -215,6 +215,8 @@ message HideHook { }
 
 message EventHook {
 	string event_name = 1;
+	optional string payload = 2;
+	repeated string apps = 3;
 }
 
 message FileChangedHook {

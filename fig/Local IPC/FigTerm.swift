@@ -34,10 +34,22 @@ class FigTerm {
 
       let figtermMessage = Figterm_FigtermMessage.with { msg in
         msg.insertTextCommand = Figterm_InsertTextCommand.with({ insert in
-          insert.deletion = UInt64(update.deletion)
-          insert.insertion = update.insertion
-          insert.offset = update.offset
-          insert.immediate = update.immediate
+          // Optional proto fields are not Swift optionals: https://github.com/apple/swift-protobuf/issues/644
+          if update.hasDeletion {
+            insert.deletion = UInt64(update.deletion)
+          }
+          if update.hasInsertion {
+            insert.insertion = update.insertion
+          }
+          if update.hasOffset {
+            insert.offset = update.offset
+          }
+          if update.hasImmediate {
+            insert.immediate = update.immediate
+          }
+          if update.hasInsertionBuffer {
+            insert.insertionBuffer = update.insertionBuffer
+          }
         })
       }
 
@@ -78,6 +90,7 @@ class FigTerm {
       update.insertion = text
       update.offset = 0
       update.immediate = false
+      update.clearInsertionBuffer()
     }), into: session, wrapWithFigMessage: wrapWithFigMessage,
                      figtermManagesInsertionLock: figtermManagesInsertionLock)
   }

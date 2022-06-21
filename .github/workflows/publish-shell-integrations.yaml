@@ -12,7 +12,7 @@ jobs:
     env:
       UPDATE_SITE_TOKEN: ${{ secrets.UPDATE_SITE_TOKEN }}
     steps:
-    - uses: actions/checkout@v2
+    - uses: actions/checkout@v3
     - name: Create tar file
       run: |
         tar -czvf shell-integration.tar.gz \

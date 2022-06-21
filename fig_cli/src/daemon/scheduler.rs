@@ -5,6 +5,8 @@ use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use fig_install::dotfiles::download_and_notify;
+use fig_install::plugins::fetch_installed_plugins;
 use flume::Sender;
 use rand::distributions::Uniform;
 use rand::prelude::Distribution;
@@ -17,9 +19,6 @@ use tracing::{
     error,
     info,
 };
-
-use crate::dotfiles::download_and_notify;
-use crate::plugins::fetch_installed_plugins;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tag<'a>(Cow<'a, str>);

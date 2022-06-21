@@ -51,6 +51,11 @@ impl KeyInterceptor {
         self.intercept_bind = intercept_bind;
     }
 
+    pub fn reset(&mut self) {
+        self.intercept_all = false;
+        self.intercept_bind = false;
+    }
+
     pub fn intercept_key<'a>(&self, key: KeyCode<'a>, modifiers: &KeyModifiers) -> Option<String> {
         trace!("Intercepting key: {:?} {:?}", key, modifiers);
         let owned_key = key.to_owned();

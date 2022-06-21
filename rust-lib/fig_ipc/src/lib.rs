@@ -26,6 +26,7 @@ use fig_proto::{
     FigProtobufEncodable,
 };
 use prost::Message;
+use prost_reflect::ReflectMessage;
 use system_socket::SystemStream;
 use thiserror::Error;
 use tokio::io::{
@@ -63,24 +64,18 @@ pub fn get_fig_socket_path() -> PathBuf {
     }
 }
 
-/// Get path to "$TMPDIR/fig_linux.socket"
-pub fn get_fig_linux_socket_path() -> PathBuf {
-    [std::env::temp_dir().as_path(), Path::new("fig_linux.socket")]
-        .into_iter()
-        .collect()
-}
-
 /// Connect to a system socket with a timeout
 pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream> {
-    let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket.as_ref())).await {
+    let socket = socket.as_ref();
+    let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket)).await {
         Ok(Ok(conn)) => conn,
         Ok(Err(err)) => {
-            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+            error!("Failed to connect to {socket:?}: {err}");
+            bail!("Failed to connect to {socket:?}: {err}");
         },
         Err(_) => {
-            error!("Timeout while connecting to {:?}", socket.as_ref());
-            bail!("Timeout while connecting to {:?}", socket.as_ref());
+            error!("Timeout while connecting to {socket:?}");
+            bail!("Timeout while connecting to {socket:?}");
         },
     };
 
@@ -89,7 +84,7 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
     // Not sure why, so this is a workaround
     tokio::time::sleep(Duration::from_millis(2)).await;
 
-    trace!("Connected to {:?}", socket.as_ref());
+    trace!("Connected to {socket:?}");
 
     Ok(conn)
 }
@@ -97,15 +92,16 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 /// Connect to `socket` synchronously without a timeout
 #[cfg(unix)]
 pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
-    let conn = match SyncUnixStream::connect(socket.as_ref()) {
+    let socket = socket.as_ref();
+    let conn = match SyncUnixStream::connect(socket) {
         Ok(conn) => conn,
         Err(err) => {
-            error!("Failed to connect to {:?}: {}", socket.as_ref(), err);
-            bail!("Failed to connect to {:?}: {}", socket.as_ref(), err);
+            error!("Failed to connect to {socket:?}: {err}");
+            bail!("Failed to connect to {socket:?}: {err}");
         },
     };
 
-    trace!("Connected to {:?}", socket.as_ref());
+    trace!("Connected to {socket:?}");
 
     // When on macOS after the socket connection is made a brief delay is required
     // Not sure why, but this is a workaround
@@ -123,18 +119,18 @@ where
     let encoded_message = match message.encode_fig_protobuf() {
         Ok(encoded_message) => encoded_message,
         Err(err) => {
-            error!("Failed to encode message: {}", err);
-            bail!("Failed to encode message: {}", err);
+            error!("Failed to encode message: {err}");
+            bail!("Failed to encode message: {err}");
         },
     };
 
     match stream.write_all(&encoded_message).await {
         Ok(()) => {
-            trace!("Sent message: {:?}", message);
+            trace!("Sent message: {message:?}");
         },
         Err(err) => {
-            error!("Failed to write message: {}", err);
-            bail!("Failed to write message: {}", err);
+            error!("Failed to write message: {err}");
+            bail!("Failed to write message: {err}");
         },
     };
 
@@ -149,18 +145,18 @@ where
     let encoded_message = match message.encode_fig_protobuf() {
         Ok(encoded_message) => encoded_message,
         Err(err) => {
-            error!("Failed to encode message: {}", err);
-            bail!("Failed to encode message: {}", err);
+            error!("Failed to encode message: {err}");
+            bail!("Failed to encode message: {err}");
         },
     };
 
     match stream.write_all(&encoded_message) {
         Ok(()) => {
-            trace!("Sent message: {:?}", message);
+            trace!("Sent message: {message:?}");
         },
         Err(err) => {
-            error!("Failed to write message: {}", err);
-            bail!("Failed to write message: {}", err);
+            error!("Failed to write message: {err}");
+            bail!("Failed to write message: {err}");
         },
     };
 
@@ -171,10 +167,10 @@ where
 pub enum RecvError {
     #[error("failed to read from stream: {0}")]
     Io(#[from] io::Error),
-    #[error("failed to decode message: {0}")]
-    Decode(#[from] prost::DecodeError),
     #[error("failed to parse message: {0}")]
     Parse(#[from] fig_proto::FigMessageParseError),
+    #[error("failed to decode message: {0}")]
+    Decode(#[from] fig_proto::FigMessageDecodeError),
 }
 
 impl RecvError {
@@ -189,7 +185,7 @@ impl RecvError {
 
 pub async fn recv_message<T, S>(stream: &mut S) -> Result<Option<T>, RecvError>
 where
-    T: Message + Default,
+    T: Message + ReflectMessage + Default,
     S: AsyncRead + Unpin,
 {
     let mut buffer = BytesMut::with_capacity(1024);
@@ -218,7 +214,7 @@ where
         let mut cursor = Cursor::new(buffer.as_ref());
         match FigMessage::parse(&mut cursor) {
             // If the parsed message is valid, return it
-            Ok(message) => return Ok(Some(T::decode(message.as_ref())?)),
+            Ok(message) => return Ok(Some(message.decode()?)),
             // If the message is incomplete, read more into the buffer
             Err(fig_proto::FigMessageParseError::Incomplete) => {
                 read_buffer!();
@@ -234,7 +230,7 @@ where
 pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<Option<R>>
 where
     M: Message + FigProtobufEncodable,
-    R: Message + Default,
+    R: Message + ReflectMessage + Default,
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
     send_message(stream, message).await?;

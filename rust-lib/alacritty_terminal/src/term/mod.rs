@@ -117,7 +117,7 @@ impl Default for TermMode {
 }
 
 /// Terminal size info.
-#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq)]
+#[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SizeInfo {
     /// Number of lines in the viewport.
     screen_lines: usize,
@@ -785,6 +785,10 @@ impl<T> Term<T> {
     {
         match self.shell_state().cmd_cursor {
             Some(cmd_cursor) => {
+                if self.topmost_line() > cmd_cursor.line {
+                    return None;
+                }
+
                 let start = Point::new(cmd_cursor.line, Column(0));
                 let end = Point::new(self.bottommost_line(), self.last_column());
 

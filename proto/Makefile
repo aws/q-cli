@@ -7,7 +7,7 @@ export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
 
 SHELL := env PATH=$(PATH) /bin/bash
 
-TS_PROTO = $(shell npm bin)/protoc-gen-ts_proto
+TS_PROTO = $(shell yarn bin)/protoc-gen-ts_proto
 
 # Flags
 FLAGS       = --experimental_allow_proto3_optional 

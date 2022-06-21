@@ -21,7 +21,7 @@ extension NSAppleScript {
 
 extension Process {
 
-  static func run(command: String,
+  @discardableResult static func run(command: String,
                   args: [String],
                   workingDirectory: String? = nil,
                   environment: [String: String]? = nil)

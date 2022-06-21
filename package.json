@@ -5,8 +5,8 @@
   "author": "Fig Team",
   "license": "MIT",
   "dependencies": {
-    "husky": "^7.0.4",
-    "lint-staged": "^12.1.2"
+    "husky": "^8.0.1",
+    "lint-staged": "^13.0.0"
   },
   "workspaces": [
     "typescript-api-bindings",

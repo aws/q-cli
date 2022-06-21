@@ -1,9 +1,11 @@
 use std::fs;
+use std::path::PathBuf;
 
 use anyhow::{
     Context,
     Result,
 };
+use clap::Args;
 use crossterm::style::{
     Color,
     Stylize,
@@ -31,73 +33,106 @@ struct Theme {
     version: Option<String>,
 }
 
-pub async fn theme_cli(theme_str: Option<String>) -> Result<()> {
-    match theme_str {
-        Some(theme_str) => {
-            // set theme
-            let path = format!(
-                "{}/.fig/themes/{}.json",
-                fig_directories::home_dir()
-                    .context("Could not get home directory")?
-                    .display(),
-                theme_str
-            );
-            match fs::read_to_string(path) {
-                Ok(theme_file) => {
-                    let theme: Theme = serde_json::from_str(&theme_file)?;
-                    let result = fig_settings::settings::set_value("autocomplete.theme", json!(theme_str)).await;
-                    let author = theme.author;
+fn theme_folder() -> Option<PathBuf> {
+    let new_theme_dir = fig_install::themes::themes_directory();
+    if new_theme_dir.as_ref().map(|dir| dir.exists()).unwrap_or(false) {
+        new_theme_dir
+    } else {
+        fig_directories::home_dir().map(|home| home.join(".fig").join("themes"))
+    }
+}
 
-                    println!();
+#[derive(Debug, Args)]
+pub struct ThemeArgs {
+    #[clap(long, action, conflicts_with_all = &["folder", "theme"])]
+    list: bool,
+    #[clap(long, action, conflicts_with_all = &["list", "theme"])]
+    folder: bool,
+    #[clap(value_parser, conflicts_with_all = &["list", "folder"])]
+    theme: Option<String>,
+}
 
-                    let mut theme_line = format!("› Switching to theme '{}'", theme_str.bold());
-                    match author {
-                        Some(Author { name, twitter, github }) => {
-                            if let Some(name) = name {
-                                theme_line.push_str(&format!(" by {}", name.bold()));
-                            }
+impl ThemeArgs {
+    pub async fn execute(&self) -> Result<()> {
+        let theme_dir = theme_folder().context("Could not get theme directory")?;
 
-                            println!("{}", theme_line);
+        if self.folder {
+            println!("{}", theme_dir.display());
+            return Ok(());
+        }
 
-                            if let Some(twitter) = twitter {
-                                println!("  🐦 {}", twitter.with(Color::Rgb { r: 29, g: 161, b: 242 }));
-                            }
-
-                            if let Some(github) = github {
-                                println!("  💻 {}", format!("github.com/{}", github).underlined());
-                            }
-                        },
-                        None => {
-                            println!("{}", theme_line);
-                        },
+        if self.list {
+            for theme_entry in std::fs::read_dir(&theme_dir)? {
+                if let Ok(theme_file_name) = theme_entry.map(|s| s.file_name()) {
+                    if let Some(theme) = theme_file_name.to_str() {
+                        println!("{}", theme.trim_end_matches(".json"));
                     }
-                    println!();
-                    result?;
-                    Ok(())
-                },
-                Err(_) => {
-                    if BUILT_IN_THEMES.contains(&theme_str.as_ref()) {
+                }
+            }
+            return Ok(());
+        }
+
+        match &self.theme {
+            Some(theme_str) => {
+                let theme_str = theme_str.as_str();
+                let theme_path = theme_dir.join(format!("{theme_str}.json"));
+                match fs::read_to_string(theme_path) {
+                    Ok(theme_file) => {
+                        let theme: Theme = serde_json::from_str(&theme_file)?;
                         let result = fig_settings::settings::set_value("autocomplete.theme", json!(theme_str)).await;
-                        println!("› Switching to theme '{}'", theme_str.bold());
+                        let author = theme.author;
+
+                        println!();
+
+                        let mut theme_line = format!("› Switching to theme '{}'", theme_str.bold());
+                        match author {
+                            Some(Author { name, twitter, github }) => {
+                                if let Some(name) = name {
+                                    theme_line.push_str(&format!(" by {}", name.bold()));
+                                }
+
+                                println!("{}", theme_line);
+
+                                if let Some(twitter) = twitter {
+                                    println!("  🐦 {}", twitter.with(Color::Rgb { r: 29, g: 161, b: 242 }));
+                                }
+
+                                if let Some(github) = github {
+                                    println!("  💻 {}", format!("github.com/{}", github).underlined());
+                                }
+                            },
+                            None => {
+                                println!("{}", theme_line);
+                            },
+                        }
+                        println!();
                         result?;
                         Ok(())
-                    } else {
-                        anyhow::bail!("'{}' does not exist in ~/.fig/themes/\n", theme_str)
-                    }
-                },
-            }
-        },
-        None => {
-            let theme =
-                fig_settings::settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!(DEFAULT_THEME));
+                    },
+                    Err(_) => {
+                        if BUILT_IN_THEMES.contains(&theme_str) {
+                            let result =
+                                fig_settings::settings::set_value("autocomplete.theme", json!(theme_str)).await;
+                            println!("› Switching to theme '{}'", theme_str.bold());
+                            result?;
+                            Ok(())
+                        } else {
+                            anyhow::bail!("'{theme_str}' does not exist in {}", theme_dir.display())
+                        }
+                    },
+                }
+            },
+            None => {
+                let theme =
+                    fig_settings::settings::get_value("autocomplete.theme")?.unwrap_or_else(|| json!(DEFAULT_THEME));
 
-            let theme_str = theme
-                .as_str()
-                .map(String::from)
-                .unwrap_or_else(|| serde_json::to_string_pretty(&theme).unwrap_or_else(|_| DEFAULT_THEME.to_string()));
+                let theme_str = theme.as_str().map(String::from).unwrap_or_else(|| {
+                    serde_json::to_string_pretty(&theme).unwrap_or_else(|_| DEFAULT_THEME.to_string())
+                });
 
-            println!("{}", theme_str);
-            Ok(())
-        },
+                println!("{}", theme_str);
+                Ok(())
+            },
+        }
     }
 }

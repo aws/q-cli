@@ -1,8 +1,6 @@
 //! ANSI Terminal Stream Parsing.
 
 use std::convert::TryFrom;
-use std::ffi::OsStr;
-use std::os::unix::prelude::OsStrExt;
 use std::path::Path;
 use std::time::{
     Duration,
@@ -1197,9 +1195,11 @@ where
                                 }
 
                                 match key {
-                                    b"Dir" => {
-                                        let path = Path::new(OsStr::from_bytes(val[1..].as_ref()));
-                                        self.handler.dir(path);
+                                    b"Dir" => match str::from_utf8(val[1..].as_ref()) {
+                                        Ok(path_str) => self.handler.dir(Path::new(path_str)),
+                                        Err(err) => {
+                                            log::error!("Failed to parse path: {err}")
+                                        },
                                     },
                                     b"ExitCode" => match str::from_utf8(&val[1..]) {
                                         Ok(code) => match code.parse::<i32>() {
@@ -1341,7 +1341,7 @@ where
             },
             ('h', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
-                    match Mode::from_primitive(intermediates.get(0), param) {
+                    match Mode::from_primitive(intermediates.first(), param) {
                         Some(mode) => handler.set_mode(mode),
                         None => unhandled!(),
                     }
@@ -1378,7 +1378,7 @@ where
             ('L', []) => handler.insert_blank_lines(next_param_or(1) as usize),
             ('l', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
-                    match Mode::from_primitive(intermediates.get(0), param) {
+                    match Mode::from_primitive(intermediates.first(), param) {
                         Some(mode) => handler.unset_mode(mode),
                         None => unhandled!(),
                     }

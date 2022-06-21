@@ -12,6 +12,8 @@ use fig_auth::{
     get_token,
     refresh_credentals,
 };
+use fig_ipc::hook::send_hook_to_socket;
+use fig_proto::hooks::new_event_hook;
 use fig_settings::{
     api_host,
     ws_host,
@@ -39,7 +41,6 @@ use crate::daemon::scheduler::{
     Scheduler,
     SyncDotfiles,
 };
-use crate::util::get_machine_id;
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -51,6 +52,12 @@ enum FigWebsocketMessage {
         settings: serde_json::Value,
         #[serde(with = "time::serde::rfc3339")]
         updated_at: time::OffsetDateTime,
+    },
+    #[serde(rename_all = "camelCase")]
+    Event {
+        event_name: String,
+        payload: Option<serde_json::Value>,
+        apps: Option<Vec<String>>,
     },
 }
 
@@ -83,7 +90,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     .text()
     .await?;
 
-    let mut device_id = get_machine_id().context("Cound not get machine_id")?;
+    let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
         device_id.push(':');
         device_id.push_str(&email);
@@ -131,6 +138,19 @@ pub async fn process_websocket(
                                 if let Ok(updated_at) = updated_at.format(&Rfc3339) {
                                     fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
                                 }
+                            },
+                            FigWebsocketMessage::Event {
+                                event_name,
+                                payload,
+                                apps,
+                            } => match payload.as_ref().map(serde_json::to_string).transpose() {
+                                Err(e) => {
+                                    error!("Could not serialize event payload: {:?}", e);
+                                },
+                                Ok(payload_blob) => {
+                                    let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
+                                    send_hook_to_socket(hook).await.ok();
+                                },
                             },
                         },
                         Err(e) => {

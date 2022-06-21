@@ -2,7 +2,7 @@ mod alias;
 mod error;
 mod identify;
 mod install_method;
-mod sentry;
+pub mod sentry;
 mod track;
 mod util;
 
@@ -17,7 +17,7 @@ pub use track::{
 
 pub use crate::sentry::init_sentry;
 
-const API_DOMAIN: &str = "https://tel.withfig.com/";
+const API_DOMAIN: &str = "https://api.fig.io/telemetry/";
 const ALIAS_SUBDOMAIN: &str = "alias";
 const IDENTIFY_SUBDOMAIN: &str = "identify";
 const TRACK_SUBDOMAIN: &str = "track";

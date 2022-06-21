@@ -6,22 +6,30 @@ pub mod state;
 use std::fs;
 use std::path::PathBuf;
 
+use regex::Regex;
 use thiserror::Error;
 
-pub fn api_host() -> String {
-    state::get_value("developer.fig_cli.apiHost")
+fn get_host_string(key: impl AsRef<str>) -> Option<String> {
+    state::get_value(key)
         .ok()
         .flatten()
         .and_then(|s| s.as_str().map(String::from))
+}
+
+pub fn api_host() -> String {
+    get_host_string("developer.apiHost")
+        .or_else(|| get_host_string("developer.cli.apiHost"))
         .unwrap_or_else(|| "https://api.fig.io".to_string())
 }
 
 pub fn ws_host() -> String {
-    state::get_value("developer.fig_cli.wsHost")
-        .ok()
-        .flatten()
-        .and_then(|s| s.as_str().map(String::from))
-        .unwrap_or_else(|| "wss://api.fig.io".to_string())
+    get_host_string("developer.wsHost")
+        .or_else(|| get_host_string("developer.cli.wsHost"))
+        .unwrap_or_else(|| {
+            let re = Regex::new(r"(\S+:|^)//").unwrap();
+            let host = api_host();
+            re.replace_all(&host, "wss://".to_string()).into()
+        })
 }
 
 pub struct LocalJson {

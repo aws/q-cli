@@ -1,8 +1,13 @@
 use std::collections::HashMap;
 
+use fig_util::get_system_id;
+
+use crate::util::{
+    make_telemetry_request,
+    telemetry_is_disabled,
+};
 use crate::{
     Error,
-    API_DOMAIN,
     TRACK_SUBDOMAIN,
 };
 
@@ -106,19 +111,12 @@ where
 {
     let event: TrackEvent = event.into();
 
-    if fig_settings::settings::get_bool("telemetry.disabled")
-        .ok()
-        .flatten()
-        .unwrap_or(false)
-    {
+    if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
     // Initial properties
-    let mut track = HashMap::from([
-        ("userId".into(), fig_auth::get_default("uuid")?),
-        ("event".into(), (event.to_string())),
-    ]);
+    let mut track = HashMap::from([("event".into(), (event.to_string()))]);
 
     // Default properties
     if let Some(email) = fig_auth::get_email() {
@@ -138,9 +136,16 @@ where
     track.insert("prop_source".into(), source.to_string());
 
     track.insert(
-        "install_method".into(),
+        "prop_install_method".into(),
         crate::install_method::get_install_method().to_string(),
     );
+
+    if let Ok(device_id) = get_system_id() {
+        track.insert("prop_device_id".into(), device_id);
+    }
+
+    track.insert("prop_device_os".into(), std::env::consts::OS.into());
+    track.insert("prop_device_arch".into(), std::env::consts::ARCH.into());
 
     // Given properties
     for kv in properties.into_iter() {
@@ -148,13 +153,5 @@ where
         track.insert(format!("prop_{key}"), value.into());
     }
 
-    // Emit it!
-    reqwest::Client::new()
-        .post(format!("{}{}", API_DOMAIN, TRACK_SUBDOMAIN))
-        .header("Content-Type", "application/json")
-        .json(&track)
-        .send()
-        .await?;
-
-    Ok(())
+    make_telemetry_request(TRACK_SUBDOMAIN, track).await
 }

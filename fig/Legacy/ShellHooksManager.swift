@@ -544,15 +544,6 @@ extension ShellHookManager {
     }
 
   }
-
-  func eventHook(event: String?) {
-    if let event = event {
-      TelemetryProvider.shared.track(event: event, with: [:])
-    } else {
-      print("No event")
-    }
-  }
-
 }
 
 extension ShellHookManager {
