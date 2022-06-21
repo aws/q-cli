@@ -22,7 +22,7 @@ use fig_util::{
 
 use crate::util::app_path_from_bundle_id;
 
-#[derive(PartialEq)]
+#[derive(PartialEq, Eq)]
 enum GuardAssignment {
     BeforeSourcing,
     AfterSourcing,

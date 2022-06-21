@@ -1341,7 +1341,7 @@ where
             },
             ('h', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
-                    match Mode::from_primitive(intermediates.get(0), param) {
+                    match Mode::from_primitive(intermediates.first(), param) {
                         Some(mode) => handler.set_mode(mode),
                         None => unhandled!(),
                     }
@@ -1378,7 +1378,7 @@ where
             ('L', []) => handler.insert_blank_lines(next_param_or(1) as usize),
             ('l', intermediates) => {
                 for param in params_iter.map(|param| param[0]) {
-                    match Mode::from_primitive(intermediates.get(0), param) {
+                    match Mode::from_primitive(intermediates.first(), param) {
                         Some(mode) => handler.unset_mode(mode),
                         None => unhandled!(),
                     }

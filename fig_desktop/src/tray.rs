@@ -1,3 +1,5 @@
+use std::path::Path;
+
 use cfg_if::cfg_if;
 use tracing::trace;
 use wry::application::event_loop::ControlFlow;
@@ -8,6 +10,7 @@ use wry::application::menu::{
     MenuItemAttributes,
 };
 use wry::application::system_tray::SystemTrayBuilder;
+use wry::application::window::Icon;
 
 use crate::event::{
     Event,
@@ -69,6 +72,16 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
 //    }
 // }
 
+fn load_icon(path: impl AsRef<Path>) -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open(path).expect("Failed to open icon path").into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+}
+
 pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Result<()> {
     let mut tray_menu = ContextMenu::new();
 
@@ -76,16 +89,18 @@ pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Re
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
-            let icon = "/usr/share/icons/hicolor/32x32/apps/fig.png".into();
+            let icon_path = "/usr/share/icons/hicolor/64x64/apps/fig.png";
         } else if #[cfg(target_os = "macos")] {
             // TODO: use transparent white icon
-            let icon = include_bytes!("../icons/32x32.png").to_vec();
+            let icon_path = ; // fix me!
         } else if #[cfg(target_os = "windows")] {
-            let icon = include_bytes!("../icons/icon.ico").to_vec();
+            let icon_path = ; // fix me!
         } else {
             compile_error!("Unsupported platform");
         }
     );
+
+    let icon = load_icon(icon_path);
 
     SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?;
     Ok(())

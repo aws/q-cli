@@ -72,18 +72,18 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
         .await
         .unwrap_or_else(|err| {
             if !err.is_disconnect() {
-                error!("Failed receiving local message: {}", err);
+                error!("Failed receiving local message: {err}");
             }
             None
         })
     {
-        trace!("Received local message: {:?}", message);
+        trace!("Received local message: {message:?}");
         match message.r#type {
             Some(LocalMessageType::Command(command)) => {
                 let response = match command.command {
                     None => LocalResponse::Error {
                         code: None,
-                        message: Some("Local ipc command was None".to_owned()),
+                        message: Some("Local ipc command was None".into()),
                     },
                     Some(command) => {
                         use fig_proto::local::command::Command::*;
@@ -123,7 +123,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
 
                 // TODO: implement AsyncWrite trait for Windows sockets
                 if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
-                    error!("Failed sending local response: {}", err);
+                    error!("Failed sending local response: {err}");
                     break;
                 }
             },
@@ -140,7 +140,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                     Some(Hook::FileChanged(request)) => hooks::file_changed(request).await,
                     err => {
                         match &err {
-                            Some(unknown) => error!("Unknown hook: {:?}", unknown),
+                            Some(unknown) => error!("Unknown hook: {unknown:?}"),
                             None => error!("Hook was none"),
                         }
 

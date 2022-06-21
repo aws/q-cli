@@ -29,7 +29,7 @@ fn main() {
                 for fg in 0..16 {
                     for bg in 0..16 {
                         display_state.draw_string(
-                            format!(" col "),
+                            " col ",
                             (fg * 5).into(),
                             (bg + 3).into(),
                             Color::AnsiValue(fg),

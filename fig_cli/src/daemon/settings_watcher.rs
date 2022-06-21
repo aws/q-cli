@@ -131,7 +131,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
             daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
         }
 
-        if let Err(err) = watcher.watch(&*application_path, RecursiveMode::NonRecursive) {
+        if let Err(err) = watcher.watch(application_path, RecursiveMode::NonRecursive) {
             error!("Could not watch {:?}: {err}", application_path);
         }
 
