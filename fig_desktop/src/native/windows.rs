@@ -4,19 +4,27 @@ use std::io::{
     stdin,
     stdout,
 };
+use std::mem::ManuallyDrop;
 use std::sync::Arc;
 
 use anyhow::Result;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use tracing::error;
 use windows::Win32::Foundation::{
     BOOL,
     HWND,
     POINT,
 };
 use windows::Win32::Graphics::Gdi::ClientToScreen;
-use windows::Win32::System::Com::{VARIANT, CoInitialize, CoCreateInstance, CLSCTX_INPROC_SERVER};
+use windows::Win32::System::Com::{
+    CoCreateInstance,
+    CoInitialize,
+    CLSCTX_INPROC_SERVER,
+    VARIANT,
+    VARIANT_0,
+    VARIANT_0_0,
+    VARIANT_0_0_0,
+};
 use windows::Win32::System::Console::{
     AttachConsole,
     FreeConsole,
@@ -28,13 +36,23 @@ use windows::Win32::System::Console::{
     CONSOLE_SCREEN_BUFFER_INFO,
     STD_OUTPUT_HANDLE,
 };
-use windows::Win32::System::ProcessStatus::{K32GetProcessImageFileNameA};
-use windows::Win32::System::Threading::{GetCurrentThreadId, OpenProcess, PROCESS_QUERY_LIMITED_INFORMATION};
+use windows::Win32::System::Ole::VT_I4;
+use windows::Win32::System::ProcessStatus::K32GetProcessImageFileNameA;
+use windows::Win32::System::Threading::{
+    GetCurrentThreadId,
+    OpenProcess,
+    PROCESS_QUERY_LIMITED_INFORMATION,
+};
 use windows::Win32::UI::Accessibility::{
     AccessibleObjectFromEvent,
+    CUIAutomation,
+    IUIAutomation,
     SetWinEventHook,
+    TreeScope_Descendants,
+    UIA_ControlTypePropertyId,
+    UIA_TextControlTypeId,
     UnhookWinEvent,
-    HWINEVENTHOOK, AccessibleObjectFromWindow, CUIAutomation, IUIAutomation, TreeScope_Descendants, UIA_ControlTypePropertyId, UIA_TextControlTypeId,
+    HWINEVENTHOOK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetParent,
@@ -43,11 +61,11 @@ use windows::Win32::UI::WindowsAndMessaging::{
     EVENT_OBJECT_LOCATIONCHANGE,
     EVENT_SYSTEM_FOREGROUND,
     OBJECT_IDENTIFIER,
+    OBJID_CARET,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
-    WINEVENT_SKIPOWNPROCESS, OBJID_CARET,
+    WINEVENT_SKIPOWNPROCESS,
 };
-use windows::core::GUID;
 
 use crate::event::{
     Event,
@@ -97,81 +115,10 @@ impl NativeState {
     }
 }
 
-unsafe fn update_caret_position() {
-    match *UNMANAGED.console_state.read() {
-        ConsoleState::None => (),
-        ConsoleState::Accessible { caret_position } => UNMANAGED.send_event(WindowEvent::Reposition {
-            x: caret_position.x,
-            y: caret_position.y,
-        }),
-        ConsoleState::Console { hwnd, process_id } => {
-            let _lock1 = stderr().lock();
-            let _lock2 = stdin().lock();
-            let _lock3 = stdout().lock();
-
-            FreeConsole();
-            AttachConsole(process_id);
-            let handle = GetStdHandle(STD_OUTPUT_HANDLE).unwrap();
-
-            let mut info = CONSOLE_SCREEN_BUFFER_INFO::default();
-            GetConsoleScreenBufferInfo(handle, &mut info);
-
-            let mut font = CONSOLE_FONT_INFO::default();
-            GetCurrentConsoleFont(handle, BOOL::from(false), &mut font);
-
-            let mut position = POINT {
-                x: ((info.dwCursorPosition.X - info.srWindow.Left) * font.dwFontSize.X) as i32,
-                y: ((info.dwCursorPosition.Y - info.srWindow.Top) * font.dwFontSize.Y) as i32,
-            };
-
-            if ClientToScreen(hwnd, &mut position).as_bool() {
-                UNMANAGED.send_event(WindowEvent::Reposition {
-                    x: position.x,
-                    y: position.y,
-                });
-            };
-
-            FreeConsole();
-            AttachConsole(ATTACH_PARENT_PROCESS);
-        },
-        ConsoleState::WindowsTerminal { hwnd, process_id } => {
-            let _lock1 = stderr().lock();
-            let _lock2 = stdin().lock();
-            let _lock3 = stdout().lock();
-
-            FreeConsole();
-            AttachConsole(process_id);
-            let handle = GetStdHandle(STD_OUTPUT_HANDLE).unwrap();
-
-            let mut info = CONSOLE_SCREEN_BUFFER_INFO::default();
-            GetConsoleScreenBufferInfo(handle, &mut info);
-
-            let mut font = CONSOLE_FONT_INFO::default();
-            GetCurrentConsoleFont(handle, BOOL::from(false), &mut font);
-
-            let mut position = POINT {
-                x: ((info.dwCursorPosition.X - info.srWindow.Left) * font.dwFontSize.X) as i32,
-                y: ((info.dwCursorPosition.Y - info.srWindow.Top) * font.dwFontSize.Y) as i32,
-            };
-
-            if ClientToScreen(hwnd, &mut position).as_bool() {
-                UNMANAGED.send_event(WindowEvent::Reposition {
-                    x: position.x,
-                    y: position.y,
-                });
-            };
-
-            FreeConsole();
-            AttachConsole(ATTACH_PARENT_PROCESS);
-        }
-    }
-}
-
 enum ConsoleState {
     None,
     Accessible { caret_position: POINT },
     Console { hwnd: HWND, process_id: u32 },
-    WindowsTerminal { hwnd: HWND, process_id: u32 },
 }
 
 #[allow(dead_code)]
@@ -214,6 +161,46 @@ pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Resu
     Ok(())
 }
 
+unsafe fn update_caret_position() {
+    match *UNMANAGED.console_state.read() {
+        ConsoleState::None => (),
+        ConsoleState::Accessible { caret_position } => UNMANAGED.send_event(WindowEvent::Reposition {
+            x: caret_position.x,
+            y: caret_position.y,
+        }),
+        ConsoleState::Console { hwnd, process_id } => {
+            let _lock1 = stderr().lock();
+            let _lock2 = stdin().lock();
+            let _lock3 = stdout().lock();
+
+            FreeConsole();
+            AttachConsole(process_id);
+            let handle = GetStdHandle(STD_OUTPUT_HANDLE).unwrap();
+
+            let mut info = CONSOLE_SCREEN_BUFFER_INFO::default();
+            GetConsoleScreenBufferInfo(handle, &mut info);
+
+            let mut font = CONSOLE_FONT_INFO::default();
+            GetCurrentConsoleFont(handle, BOOL::from(false), &mut font);
+
+            let mut position = POINT {
+                x: ((info.dwCursorPosition.X - info.srWindow.Left) * font.dwFontSize.X) as i32,
+                y: ((info.dwCursorPosition.Y - info.srWindow.Top) * font.dwFontSize.Y) as i32,
+            };
+
+            if ClientToScreen(hwnd, &mut position).as_bool() {
+                UNMANAGED.send_event(WindowEvent::Reposition {
+                    x: position.x,
+                    y: position.y,
+                });
+            };
+
+            FreeConsole();
+            AttachConsole(ATTACH_PARENT_PROCESS);
+        },
+    }
+}
+
 unsafe extern "system" fn win_event_proc(
     _hook: HWINEVENTHOOK,
     event: u32,
@@ -240,7 +227,10 @@ unsafe extern "system" fn win_event_proc(
             let mut process_name = vec![0; 256];
             let len = K32GetProcessImageFileNameA(process_handle, &mut process_name) as usize;
             process_name.truncate(len + 1);
-            let title = match CStr::from_bytes_with_nul(&process_name).expect("Missing null terminator").to_str() {
+            let title = match CStr::from_bytes_with_nul(&process_name)
+                .expect("Missing null terminator")
+                .to_str()
+            {
                 Ok(process_name) => match process_name.split('\\').last() {
                     Some(title) => match title.strip_suffix(".exe") {
                         Some(title) => title,
@@ -262,20 +252,43 @@ unsafe extern "system" fn win_event_proc(
                     *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
                 },
                 title if title == "WindowsTerminal" => {
-                    error!("We don't support this yet");
-                    //CoInitialize(std::ptr::null_mut()).unwrap();
-                    //let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
-                    //let window = automation.ElementFromHandle(hwnd).unwrap();
-//
-                    //let interest = automation.CreatePropertyCondition(UIA_ControlTypePropertyId, VARIANT::from(UIA_TextControlTypeId)).unwrap();
-//
-                    //if let Ok(terminal) = window.FindFirst(TreeScope_Descendants, &interest) {
-                    //    
-                    //}
-                    //
-                    //let mut process_id: u32 = 0;
-                    //GetWindowThreadProcessId(hwnd, &mut process_id);
-                    //*UNMANAGED.console_state.write() = ConsoleState::WindowsTerminal { hwnd, process_id }
+                    CoInitialize(std::ptr::null_mut()).unwrap();
+                    let automation: IUIAutomation =
+                        CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
+                    let window = automation.ElementFromHandle(hwnd).unwrap();
+
+                    let control_type_id = VARIANT {
+                        Anonymous: VARIANT_0 {
+                            Anonymous: ManuallyDrop::new(VARIANT_0_0 {
+                                vt: VT_I4.0 as u16,
+                                wReserved1: 0,
+                                wReserved2: 0,
+                                wReserved3: 0,
+                                Anonymous: VARIANT_0_0_0 {
+                                    lVal: UIA_TextControlTypeId,
+                                },
+                            }),
+                        },
+                    };
+
+                    let interest = automation
+                        .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)
+                        .unwrap();
+
+                    match window.FindFirst(TreeScope_Descendants, &interest) {
+                        Ok(terminal) => {
+                            let hwnd = match terminal.CurrentNativeWindowHandle() {
+                                Ok(hwnd) => hwnd,
+                                Err(_) => return,
+                            };
+                            let mut process_id: u32 = 0;
+                            GetWindowThreadProcessId(hwnd, &mut process_id);
+                            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
+                        },
+                        Err(_) => *UNMANAGED.console_state.write() = ConsoleState::None,
+                    }
+
+                    let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
                 },
                 _ => {
                     *UNMANAGED.console_state.write() = ConsoleState::None;
