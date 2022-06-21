@@ -40,7 +40,7 @@ regex = "1.5.6"
 reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots", "socks"] }
 self_update = "0.30.0"
 semver = "1.0.10"
-sentry = { version = "0.26.0", features = ["anyhow"] }
+sentry = { version = "0.27.0", features = ["anyhow"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 spinners = "4.1.0"
@@ -48,7 +48,7 @@ sysinfo = "0.24.5"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
 thiserror = "1.0.30"
-time = { version = "0.3.10", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
+time = { version = "=0.3.9", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
