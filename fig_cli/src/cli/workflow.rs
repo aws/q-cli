@@ -284,17 +284,18 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             }
         },
         None => {
-            let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
             let track_search = tokio::task::spawn(async move {
                 let a: [(&'static str, &'static str); 0] = []; // dumb
                 fig_telemetry::emit_track(TrackEvent::Other("Workflow Search Viewed".into()), TrackSource::Cli, a)
                     .await
                     .ok();
             });
-
+           
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     use skim::prelude::*;
+
+                    let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
                     for workflow in workflows.iter() {
@@ -336,6 +337,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                         None => return Ok(()),
                     };
                 } else if #[cfg(windows)] {
+                    let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+
                     let workflow_names: Vec<String> = workflows
                         .iter()
                         .map(|workflow| {
