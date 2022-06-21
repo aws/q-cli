@@ -785,7 +785,7 @@ impl<T> Term<T> {
     {
         match self.shell_state().cmd_cursor {
             Some(cmd_cursor) => {
-                let start = Point::new(cmd_cursor.line, Column(0));
+                let start = Point::new(cmd_cursor.line.max(self.grid().topmost_line()), Column(0));
                 let end = Point::new(self.bottommost_line(), self.last_column());
 
                 if start < end {
