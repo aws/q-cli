@@ -94,7 +94,7 @@ pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Re
             // TODO: use transparent white icon
             let icon_path = ; // fix me!
         } else if #[cfg(target_os = "windows")] {
-            let icon_path = ; // fix me!
+            let icon_path = "C:/Users/chayn/Desktop/prompt.png";
         } else {
             compile_error!("Unsupported platform");
         }

@@ -64,7 +64,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     OBJID_CARET,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
-    WINEVENT_SKIPOWNPROCESS,
+    WINEVENT_SKIPOWNPROCESS, GetForegroundWindow,
 };
 
 use crate::event::{
@@ -158,7 +158,104 @@ pub mod icons {
 pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     UNMANAGED.event_sender.write().replace(proxy);
 
+    unsafe {
+        update_focused_state(GetForegroundWindow());
+    }
+
     Ok(())
+}
+
+unsafe fn update_focused_state(hwnd: HWND) {
+    if let Some(hook) = UNMANAGED.location_hook.write().take() {
+        UnhookWinEvent(hook);
+    }
+
+    UNMANAGED.send_event(WindowEvent::Hide);
+
+    let mut process_id: u32 = 0;
+    let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
+    let process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).unwrap();
+    let mut process_name = vec![0; 256];
+    let len = K32GetProcessImageFileNameA(process_handle, &mut process_name) as usize;
+    process_name.truncate(len + 1);
+    let title = match CStr::from_bytes_with_nul(&process_name)
+        .expect("Missing null terminator")
+        .to_str()
+    {
+        Ok(process_name) => match process_name.split('\\').last() {
+            Some(title) => match title.strip_suffix(".exe") {
+                Some(title) => title,
+                None => return,
+            },
+            None => return,
+        },
+        Err(_) => return,
+    };
+
+    println!("{}", title);
+
+    match title {
+        title if ["Hyper", "Code"].contains(&title) => (),
+        title if ["cmd", "powershell"].contains(&title) => {
+            let hwnd = GetParent(hwnd);
+            let mut process_id: u32 = 0;
+            GetWindowThreadProcessId(hwnd, &mut process_id);
+            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
+        },
+        title if title == "WindowsTerminal" => {
+            CoInitialize(std::ptr::null_mut()).unwrap();
+            let automation: IUIAutomation =
+                CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
+            let window = automation.ElementFromHandle(hwnd).unwrap();
+
+            let control_type_id = VARIANT {
+                Anonymous: VARIANT_0 {
+                    Anonymous: ManuallyDrop::new(VARIANT_0_0 {
+                        vt: VT_I4.0 as u16,
+                        wReserved1: 0,
+                        wReserved2: 0,
+                        wReserved3: 0,
+                        Anonymous: VARIANT_0_0_0 {
+                            lVal: UIA_TextControlTypeId,
+                        },
+                    }),
+                },
+            };
+
+            let interest = automation
+                .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)
+                .unwrap();
+
+            match window.FindFirst(TreeScope_Descendants, &interest) {
+                Ok(terminal) => {
+                    let hwnd = match terminal.CurrentNativeWindowHandle() {
+                        Ok(hwnd) => hwnd,
+                        Err(_) => return,
+                    };
+                    let mut process_id: u32 = 0;
+                    GetWindowThreadProcessId(hwnd, &mut process_id);
+                    *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
+                },
+                Err(_) => *UNMANAGED.console_state.write() = ConsoleState::None,
+            }
+
+            let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
+        },
+        _ => {
+            *UNMANAGED.console_state.write() = ConsoleState::None;
+            return;
+        },
+    }
+
+    UNMANAGED.location_hook.write().replace(SetWinEventHook(
+        EVENT_OBJECT_LOCATIONCHANGE,
+        EVENT_OBJECT_LOCATIONCHANGE,
+        None,
+        Some(win_event_proc),
+        process_id,
+        thread_id,
+        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+    ));
 }
 
 unsafe fn update_caret_position() {
@@ -213,99 +310,7 @@ unsafe extern "system" fn win_event_proc(
     match event {
         e if e == EVENT_SYSTEM_FOREGROUND
             && OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW
-            && id_child == CHILDID_SELF as i32 =>
-        {
-            if let Some(hook) = UNMANAGED.location_hook.write().take() {
-                UnhookWinEvent(hook);
-            }
-
-            UNMANAGED.send_event(WindowEvent::Hide);
-
-            let mut process_id: u32 = 0;
-            let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
-            let process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).unwrap();
-            let mut process_name = vec![0; 256];
-            let len = K32GetProcessImageFileNameA(process_handle, &mut process_name) as usize;
-            process_name.truncate(len + 1);
-            let title = match CStr::from_bytes_with_nul(&process_name)
-                .expect("Missing null terminator")
-                .to_str()
-            {
-                Ok(process_name) => match process_name.split('\\').last() {
-                    Some(title) => match title.strip_suffix(".exe") {
-                        Some(title) => title,
-                        None => return,
-                    },
-                    None => return,
-                },
-                Err(_) => return,
-            };
-
-            println!("{}", title);
-
-            match title {
-                title if ["Hyper", "Code"].contains(&title) => (),
-                title if ["cmd", "powershell"].contains(&title) => {
-                    let hwnd = GetParent(hwnd);
-                    let mut process_id: u32 = 0;
-                    GetWindowThreadProcessId(hwnd, &mut process_id);
-                    *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
-                },
-                title if title == "WindowsTerminal" => {
-                    CoInitialize(std::ptr::null_mut()).unwrap();
-                    let automation: IUIAutomation =
-                        CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
-                    let window = automation.ElementFromHandle(hwnd).unwrap();
-
-                    let control_type_id = VARIANT {
-                        Anonymous: VARIANT_0 {
-                            Anonymous: ManuallyDrop::new(VARIANT_0_0 {
-                                vt: VT_I4.0 as u16,
-                                wReserved1: 0,
-                                wReserved2: 0,
-                                wReserved3: 0,
-                                Anonymous: VARIANT_0_0_0 {
-                                    lVal: UIA_TextControlTypeId,
-                                },
-                            }),
-                        },
-                    };
-
-                    let interest = automation
-                        .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)
-                        .unwrap();
-
-                    match window.FindFirst(TreeScope_Descendants, &interest) {
-                        Ok(terminal) => {
-                            let hwnd = match terminal.CurrentNativeWindowHandle() {
-                                Ok(hwnd) => hwnd,
-                                Err(_) => return,
-                            };
-                            let mut process_id: u32 = 0;
-                            GetWindowThreadProcessId(hwnd, &mut process_id);
-                            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
-                        },
-                        Err(_) => *UNMANAGED.console_state.write() = ConsoleState::None,
-                    }
-
-                    let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
-                },
-                _ => {
-                    *UNMANAGED.console_state.write() = ConsoleState::None;
-                    return;
-                },
-            }
-
-            UNMANAGED.location_hook.write().replace(SetWinEventHook(
-                EVENT_OBJECT_LOCATIONCHANGE,
-                EVENT_OBJECT_LOCATIONCHANGE,
-                None,
-                Some(win_event_proc),
-                process_id,
-                thread_id,
-                WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
-            ));
-        },
+            && id_child == CHILDID_SELF as i32 => update_focused_state(hwnd),
         e if e == EVENT_OBJECT_LOCATIONCHANGE
             && OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW
             && id_child == CHILDID_SELF as i32 =>
