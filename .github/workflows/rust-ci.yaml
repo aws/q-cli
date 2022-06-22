@@ -85,14 +85,11 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
         
-      - name: Install nextest 
-        uses: taiki-e/install-action@nextest
-        
       - name: Test & Codecov
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: --workspace --lcov --output-path lcov.info -- nextest run
+          args: --workspace --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
