@@ -9,8 +9,11 @@ use wry::application::menu::{
     MenuItem,
     MenuItemAttributes,
 };
-use wry::application::system_tray::SystemTrayBuilder;
-use wry::application::window::Icon;
+use wry::application::system_tray::{
+    Icon,
+    SystemTray,
+    SystemTrayBuilder,
+};
 
 use crate::event::{
     Event,
@@ -72,6 +75,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
 //    }
 // }
 
+#[cfg(target_os = "linux")]
 fn load_icon(path: impl AsRef<Path>) -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         let image = image::open(path).expect("Failed to open icon path").into_rgba8();
@@ -82,28 +86,35 @@ fn load_icon(path: impl AsRef<Path>) -> Icon {
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
 
-pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Result<()> {
+#[cfg(not(target_os = "linux"))]
+fn load_from_memory() -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        // TODO: Use diffrent per platform icons
+        let image = image::load_from_memory(include_bytes!("../icons/32x32.png"))
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+}
+
+pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Result<SystemTray> {
     let mut tray_menu = ContextMenu::new();
 
     create_tray_menu(&mut tray_menu, global_state);
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
-            let icon_path = "/usr/share/icons/hicolor/64x64/apps/fig.png";
-        } else if #[cfg(target_os = "macos")] {
-            // TODO: use transparent white icon
-            let icon_path = ; // fix me!
-        } else if #[cfg(target_os = "windows")] {
-            let icon_path = "C:/Users/chayn/Desktop/prompt.png";
+            let icon_path = "/usr/share/icons/hicolor/512x512/apps/fig.png";
+            let icon = load_icon(icon_path);
         } else {
-            compile_error!("Unsupported platform");
+            let icon = load_from_memory();
         }
     );
 
-    let icon = load_icon(icon_path);
-
-    SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?;
-    Ok(())
+    Ok(SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?)
 }
 
 fn create_tray_menu(tray_menu: &mut ContextMenu, global_state: &GlobalState) {
