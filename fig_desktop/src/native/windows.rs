@@ -192,8 +192,6 @@ unsafe fn update_focused_state(hwnd: HWND) {
         Err(_) => return,
     };
 
-    println!("{}", title);
-
     match title {
         title if ["Hyper", "Code"].contains(&title) => (),
         title if ["cmd", "powershell"].contains(&title) => {
