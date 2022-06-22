@@ -66,8 +66,8 @@ pub fn termios_to_raw(mut termios: Termios) -> Termios {
 
 #[cfg(test)]
 mod tests {
+    #[ignore]
     #[test]
-    #[cfg(feature = "desktop-tests")]
     fn to_raw_test() {
         use nix::libc::STDIN_FILENO;
         use nix::sys::termios::tcgetattr;
