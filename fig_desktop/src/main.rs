@@ -171,7 +171,7 @@ impl WebviewManager {
             }
         });
 
-        build_tray(&self.event_loop, &self.global_state).unwrap();
+        let _tray = build_tray(&self.event_loop, &self.global_state).unwrap();
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, _, control_flow| {
@@ -356,43 +356,52 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
 }
 
 fn main() {
-    let _logger_guard = Logger::new()
-        .with_stdout()
-        .with_file("fig_desktop.log")
-        .init()
-        .expect("Failed to init logger");
-    let _sentry_guard =
-        fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
+    let rt = Runtime::new().unwrap();
+    rt.block_on(async {
+        let _logger_guard = Logger::new()
+            .with_stdout()
+            .with_file("fig_desktop.log")
+            .init()
+            .expect("Failed to init logger");
+        let _sentry_guard =
+            fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
 
-    let cli = cli::Cli::parse();
+        let cli = cli::Cli::parse();
 
-    if !cli.allow_multiple {
-        match get_current_pid() {
-            Ok(current_pid) => {
-                let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                let processes = system.processes_by_exact_name("fig_desktop");
-                for process in processes {
-                    let pid = process.pid();
-                    if current_pid != pid {
-                        if cli.kill_old {
-                            process.kill();
-                            let exe = process.exe().display();
-                            eprintln!("Killing instance: {exe} ({pid})");
-                        } else {
-                            let exe = process.exe().display();
-                            eprintln!("Fig is already running: {exe} ({pid})");
-                            return;
+        if let Some(url) = cli.url_link {
+            println!("Opening {url}");
+            return;
+        }
+
+        if !cli.allow_multiple {
+            match get_current_pid() {
+                Ok(current_pid) => {
+                    let system =
+                        System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+                    let processes = system.processes_by_exact_name("fig_desktop");
+                    for process in processes {
+                        let pid = process.pid();
+                        if current_pid != pid {
+                            if cli.kill_old {
+                                process.kill();
+                                let exe = process.exe().display();
+                                eprintln!("Killing instance: {exe} ({pid})");
+                            } else {
+                                let exe = process.exe().display();
+                                eprintln!("Fig is already running: {exe} ({pid})");
+                                eprintln!("Opening Fig Window...");
+                                fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl)
+                                    .await
+                                    .unwrap();
+                                return;
+                            }
                         }
                     }
-                }
-            },
-            Err(err) => warn!("Failed to get pid: {err}"),
+                },
+                Err(err) => warn!("Failed to get pid: {err}"),
+            }
         }
-    }
 
-    let rt = Runtime::new().unwrap();
-    // rt.spawn(install::run_install());
-    rt.block_on(async {
         install::run_install().await;
 
         let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);

@@ -10,7 +10,7 @@ use crate::DebugState;
 pub async fn update(request: DebuggerUpdateRequest, state: &DebugState) -> RequestResult {
     for message in &request.layout {
         if !message.is_empty() {
-            info!("{}", message);
+            info!("{message}");
         } else {
             info!("Message cleared");
         }
