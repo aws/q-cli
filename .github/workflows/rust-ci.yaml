@@ -77,16 +77,27 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
+          components: llvm-tools-preview
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
         
       - name: Install nextest 
         uses: taiki-e/install-action@nextest
         
-      - name: Test nextest
+      - name: Test & Codecov
         uses: actions-rs/cargo@v1
         with:
-          command: nextest
-          args: run --no-default-features
+          command: llvm-cov
+          args: --workspace --lcov --output-path lcov.info -- nextest run
+
+      - name: Upload coverage to Codecov
+        uses: codecov/codecov-action@v3
+        with:
+          token: ${{ secrets.CODECOV_TOKEN }}
+          files: lcov.info
+          fail_ci_if_error: true
 
