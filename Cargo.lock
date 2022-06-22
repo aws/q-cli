@@ -276,7 +276,7 @@ dependencies = [
  "percent-encoding",
  "regex 1.5.6",
  "ring",
- "time 0.3.9",
+ "time 0.3.11",
  "tracing",
 ]
 
@@ -370,7 +370,7 @@ dependencies = [
  "itoa",
  "num-integer",
  "ryu",
- "time 0.3.9",
+ "time 0.3.11",
 ]
 
 [[package]]
@@ -740,9 +740,9 @@ dependencies = [
 
 [[package]]
 name = "clap_complete_fig"
-version = "3.2.1"
+version = "3.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1b699eac6317ff40f7126e1e32e670dd797f2452f2ea0b20821b74b9f71870c9"
+checksum = "b4fddf94bed77a3b977c7c30a67ba3e28ad8bb772fff81ae3bc4c48e6b525726"
 dependencies = [
  "clap 3.2.6",
  "clap_complete",
@@ -1508,7 +1508,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.11",
  "tokio",
  "uuid 1.1.2",
 ]
@@ -1559,7 +1559,7 @@ dependencies = [
  "system_socket",
  "tempfile",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.11",
  "tokio",
  "tokio-tungstenite",
  "tracing",
@@ -1662,7 +1662,7 @@ dependencies = [
  "serde",
  "serde_json",
  "tempfile",
- "time 0.3.9",
+ "time 0.3.11",
  "tokio",
  "tracing",
 ]
@@ -1679,7 +1679,7 @@ dependencies = [
  "regex 1.5.6",
  "serde",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.11",
 ]
 
 [[package]]
@@ -1741,7 +1741,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.11",
  "tokio",
  "url",
 ]
@@ -3883,7 +3883,7 @@ dependencies = [
  "prost-types",
  "serde",
  "serde-value",
- "time 0.3.9",
+ "time 0.3.11",
 ]
 
 [[package]]
@@ -4598,7 +4598,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.9",
+ "time 0.3.11",
  "url",
  "uuid 1.1.2",
 ]
@@ -5313,9 +5313,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.9"
+version = "0.3.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c2702e08a7a860f005826c6815dcac101b19b5eb330c27fe4a5928fec1d20ddd"
+checksum = "72c91f41dcb2f096c05f0873d667dceec1087ce5bcf984ec8ffb19acddbb3217"
 dependencies = [
  "itoa",
  "libc",
@@ -5616,7 +5616,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
 dependencies = [
  "crossbeam-channel 0.5.4",
- "time 0.3.9",
+ "time 0.3.11",
  "tracing-subscriber",
 ]
 
@@ -5676,7 +5676,7 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local 1.1.4",
- "time 0.3.9",
+ "time 0.3.11",
  "tracing",
  "tracing-core",
  "tracing-log",
