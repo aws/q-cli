@@ -345,7 +345,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         })
         .with_custom_protocol("fig".into(), icons::handle)
         .with_devtools(true)
-        .with_transparent(false)
+        .with_transparent(true)
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
             r"^localhost$",
