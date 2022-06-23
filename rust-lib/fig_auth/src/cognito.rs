@@ -3,7 +3,6 @@ use std::fs::{
     self,
     File,
 };
-use std::sync::Arc;
 
 use anyhow::Context;
 use aws_sdk_cognitoidentityprovider::error::{
@@ -25,14 +24,7 @@ use aws_sdk_cognitoidentityprovider::{
     Client,
     Config,
     Region,
-    RetryConfig,
 };
-use aws_smithy_async::rt::sleep::TokioSleep;
-use aws_smithy_client::erase::{
-    DynConnector,
-    DynMiddleware,
-};
-use aws_smithy_client::hyper_ext;
 use fig_directories::fig_data_dir;
 use jwt::{
     Header,
@@ -52,28 +44,44 @@ use crate::password::generate_password;
 use crate::CLIENT_ID;
 
 pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
-    let https = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
-        .https_or_http()
-        .enable_http1()
-        .build();
-
-    let hyper_connector = hyper_ext::Adapter::builder().build(https);
-
-    let mut client: aws_smithy_client::Client<DynConnector, DynMiddleware<DynConnector>> =
-        aws_smithy_client::Builder::new()
-            .connector(DynConnector::new(hyper_connector))
-            .middleware(DynMiddleware::new(
-                aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
-            ))
-            .sleep_impl(Some(Arc::new(TokioSleep::new())))
-            .build();
-
-    client.set_retry_config(RetryConfig::new().with_max_attempts(5).into());
-
     let config = Config::builder().region(Region::new("us-east-1")).build();
 
-    Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            use std::sync::Arc;
+
+            use aws_smithy_async::rt::sleep::TokioSleep;
+            use aws_smithy_client::erase::{
+                DynConnector,
+                DynMiddleware,
+            };
+            use aws_smithy_client::hyper_ext;
+            use aws_sdk_cognitoidentityprovider::RetryConfig;
+
+            let https = hyper_rustls::HttpsConnectorBuilder::new()
+                .with_webpki_roots();
+                .https_or_http()
+                .enable_http1()
+                .build();
+
+            let hyper_connector = hyper_ext::Adapter::builder().build(https);
+
+            let mut client: aws_smithy_client::Client<DynConnector, DynMiddleware<DynConnector>> =
+                aws_smithy_client::Builder::new()
+                    .connector(DynConnector::new(hyper_connector))
+                    .middleware(DynMiddleware::new(
+                        aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
+                    ))
+                    .sleep_impl(Some(Arc::new(TokioSleep::new())))
+                    .build();
+
+            client.set_retry_config(RetryConfig::new().with_max_attempts(5).into());
+
+            Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
+        } else {
+            Ok(aws_sdk_cognitoidentityprovider::Client::from_conf(config))
+        }
+    }
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -387,7 +395,7 @@ impl ChangeUsernameInput {
     }
 }
 
-#[derive(Debug, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Credentials {
     pub email: Option<String>,
     pub access_token: Option<String>,

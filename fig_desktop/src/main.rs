@@ -8,6 +8,7 @@ mod icons;
 pub mod install;
 mod local_ipc;
 mod native;
+mod settings;
 mod tray;
 mod utils;
 mod window;

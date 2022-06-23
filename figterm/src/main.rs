@@ -232,8 +232,8 @@ where
     T: EventListener,
 {
     let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
-    let shell_enabled =
-        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().get_context().shell.as_deref());
+    let shell_enabled = [Some("bash"), Some("zsh"), Some("fish"), Some("nu")]
+        .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
     let mut handle = INSERTION_LOCKED_AT.write();

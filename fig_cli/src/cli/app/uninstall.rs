@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports)]
+
 use std::path::{
     Path,
     PathBuf,
@@ -62,6 +64,7 @@ pub struct UninstallArgs {
     pub no_open: bool,
 }
 
+#[cfg(target_os = "macos")]
 pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async move {

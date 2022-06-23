@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::process::Command;
 
@@ -16,6 +17,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use serde_json::Value;
 #[cfg(unix)]
 use skim::SkimItem;
 use tui::components::{
@@ -121,49 +123,33 @@ impl SkimItem for Workflow {
     }
 
     fn display<'a>(&'a self, context: skim::DisplayContext<'a>) -> skim::AnsiString<'a> {
+        let name = self.display_name.clone().unwrap_or_else(|| self.name.clone());
+        let name_len = name.len();
+
         let tags = match &self.tags {
             Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
             _ => String::new(),
         };
         let tag_len = tags.len();
+
         let namespace_name = format!("@{}/{}", self.namespace, self.name);
-        skim::AnsiString::parse(
-            match &self.display_name {
-                None => format!(
-                    "{}{}{}{}",
-                    self.name.clone().bold(),
-                    tags.dark_grey(),
-                    " ".repeat(
-                        context
-                            .container_width
-                            .saturating_sub(self.name.len())
-                            .saturating_sub(tag_len)
-                            .saturating_sub(namespace_name.len())
-                            .saturating_sub(1)
-                            .max(1)
-                    ),
-                    namespace_name.dark_grey()
-                ),
-                Some(display_name) => {
-                    format!(
-                        "{}{}{}{}",
-                        display_name.clone().bold(),
-                        tags.dark_grey(),
-                        " ".repeat(
-                            context
-                                .container_width
-                                .saturating_sub(display_name.len())
-                                .saturating_sub(tag_len)
-                                .saturating_sub(namespace_name.len())
-                                .saturating_sub(1)
-                                .max(1)
-                        ),
-                        namespace_name.dark_grey()
-                    )
-                },
-            }
-            .as_str(),
-        )
+        let namespace_name_len = namespace_name.len();
+
+        skim::AnsiString::parse(&format!(
+            "{}{}{}{}",
+            name.bold(),
+            tags.dark_grey(),
+            " ".repeat(
+                context
+                    .container_width
+                    .saturating_sub(name_len)
+                    .saturating_sub(tag_len)
+                    .saturating_sub(namespace_name_len)
+                    .saturating_sub(1)
+                    .max(1)
+            ),
+            namespace_name.dark_grey()
+        ))
     }
 
     fn preview(&self, context: skim::PreviewContext) -> skim::ItemPreview {
@@ -197,8 +183,8 @@ enum WorkflowComponent {
         name: String,
         display_name: String,
         inner: CheckBox,
-        value_if_true: String,
-        value_if_false: String,
+        _value_if_true: String,
+        _value_if_false: String,
     },
     TextField {
         name: String,
@@ -216,7 +202,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     // Parse args
     let name = args.first().map(String::from);
 
-    let mut arg_pairs: HashMap<String, String> = HashMap::new();
+    let mut arg_pairs: HashMap<String, Value> = HashMap::new();
     let mut args = args.into_iter().skip(1);
     let mut arg = None;
     loop {
@@ -224,16 +210,16 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             Some(arg) => match args.next() {
                 Some(value) => match value.strip_prefix("--") {
                     Some(value) => {
-                        arg_pairs.insert(arg, "true".to_string());
+                        arg_pairs.insert(arg, Value::Bool(true));
                         Some(value.to_string())
                     },
                     None => {
-                        arg_pairs.insert(arg, value);
+                        arg_pairs.insert(arg, serde_json::from_str(&value).unwrap_or(Value::String(value)));
                         None
                     },
                 },
                 None => {
-                    arg_pairs.insert(arg, "true".to_string());
+                    arg_pairs.insert(arg, Value::Bool(true));
                     break;
                 },
             },
@@ -391,19 +377,19 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 true_value_substitution,
                 false_value_substitution,
             } => WorkflowComponent::CheckBox {
-                inner: CheckBox::new(args.get(&name).is_some())
+                inner: CheckBox::new(args.get(&name).and_then(|val| val.as_bool()).unwrap_or(false))
                     .with_text(parameter.description.unwrap_or_else(|| "Toggle".to_string())),
                 name,
                 display_name,
-                value_if_true: true_value_substitution,
-                value_if_false: false_value_substitution,
+                _value_if_true: true_value_substitution,
+                _value_if_false: false_value_substitution,
             },
             ParameterType::Text { placeholder } => WorkflowComponent::TextField {
                 inner: match placeholder {
                     Some(hint) => TextField::new().with_hint(hint),
                     None => TextField::new(),
                 }
-                .with_text(args.get(&name).unwrap_or(&String::new())),
+                .with_text(args.get(&name).and_then(|name| name.as_str()).unwrap_or("")),
                 name,
                 display_name,
             },
@@ -610,29 +596,29 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         return Ok(());
     }
 
-    let mut args: HashMap<&str, &str> = HashMap::new();
+    let mut args: HashMap<&str, Value> = HashMap::new();
     for component in &components {
         match component {
             WorkflowComponent::CheckBox {
                 name,
                 inner,
-                value_if_true,
-                value_if_false,
+                _value_if_true,
+                _value_if_false,
                 ..
             } => {
                 args.insert(name, match inner.checked {
-                    true => value_if_true,
-                    false => value_if_false,
+                    true => _value_if_true.clone().into(),
+                    false => _value_if_false.clone().into(),
                 });
             },
             WorkflowComponent::TextField { name, inner, .. } => {
                 if !inner.text.is_empty() {
-                    args.insert(name, &inner.text);
+                    args.insert(name, inner.text.to_string().into());
                 }
             },
             WorkflowComponent::Picker { name, inner, .. } => {
                 args.insert(name, match inner.selected_item() {
-                    Some(selected) => selected,
+                    Some(selected) => selected.to_string().into(),
                     None => return Err(anyhow!("Missing entry for field: {name}")),
                 });
             },
@@ -645,7 +631,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
     for (arg, val) in &args {
-        command.push_str(&format!(" --{arg} \"{}\"", val.escape_default()));
+        command.push_str(&format!(" --{arg} {}", escape(val.to_string().into())));
     }
 
     if parameter_count > 0 {
@@ -654,7 +640,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     // TODO:
     tokio::join! {
-        execute_workflow(workflow.tree, args),
+        execute_bash_workflow(workflow.tree, &args),
         track_execution,
     }
     .0?;
@@ -662,18 +648,142 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-async fn execute_workflow(tree: Vec<TreeElement>, args: HashMap<&str, &str>) -> Result<()> {
+async fn execute_bash_workflow(tree: Vec<TreeElement>, args: &HashMap<&str, Value>) -> Result<()> {
     let mut command = Command::new("bash");
     command.arg("-c");
     command.arg(tree.into_iter().fold(String::new(), |mut acc, branch| {
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
-            TreeElement::Token { name } => acc.push_str(args[name.as_str()]),
+            TreeElement::Token { name } => acc.push_str(&match args[name.as_str()].clone() {
+                Value::String(str) => str,
+                val => val.to_string(),
+            }),
         }
-
         acc
     }));
+    println!("{command:?}");
     command.status()?;
+    Ok(())
+}
+
+#[cfg(feature = "deno")]
+pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> Result<()> {
+    use std::rc::Rc;
+    use std::str::FromStr;
+    use std::sync::Arc;
+
+    use deno_core::error::AnyError;
+    use deno_runtime::deno_broadcast_channel::InMemoryBroadcastChannel;
+    use deno_runtime::deno_web::BlobStore;
+    use deno_runtime::permissions::Permissions;
+    use deno_runtime::worker::{
+        MainWorker,
+        WorkerOptions,
+    };
+    use deno_runtime::BootstrapOptions;
+
+    fn get_error_class_name(e: &AnyError) -> &'static str {
+        deno_runtime::errors::get_error_class_name(e).unwrap_or("Error")
+    }
+
+    let module_loader = Rc::new(deno_core::NoopModuleLoader);
+    let create_web_worker_cb = Arc::new(|_| {
+        todo!("Web workers are not supported in the example");
+    });
+    let web_worker_preload_module_cb = Arc::new(|_| {
+        todo!("Web workers are not supported in the example");
+    });
+
+    let options = WorkerOptions {
+        bootstrap: BootstrapOptions {
+            args: vec![],
+            cpu_count: 1,
+            debug_flag: false,
+            enable_testing_features: false,
+            location: None,
+            no_color: false,
+            is_tty: false,
+            runtime_version: "x".to_string(),
+            ts_version: "x".to_string(),
+            unstable: false,
+            user_agent: "hello_runtime".to_string(),
+        },
+        extensions: vec![],
+        unsafely_ignore_certificate_errors: None,
+        root_cert_store: None,
+        seed: None,
+        source_map_getter: None,
+        format_js_error_fn: None,
+        web_worker_preload_module_cb,
+        create_web_worker_cb,
+        maybe_inspector_server: None,
+        should_break_on_first_statement: false,
+        module_loader,
+        get_error_class_fn: Some(&get_error_class_name),
+        origin_storage_dir: None,
+        blob_store: BlobStore::default(),
+        broadcast_channel: InMemoryBroadcastChannel::default(),
+        shared_array_buffer_store: None,
+        compiled_wasm_module_store: None,
+        stdio: Default::default(),
+    };
+
+    let permissions = Permissions::allow_all();
+    let specificer = deno_core::ModuleSpecifier::from_str("https://fig.io/script").unwrap();
+
+    let mut worker = MainWorker::bootstrap_from_options(specificer, permissions, options);
+
+    for (key, value) in args {
+        worker
+            .execute_script("abc", &format!("const ${key} = {value};"))
+            .unwrap();
+    }
+
+    worker
+        .execute_script(
+            "Abc",
+            r#"
+console.log("Hello from js!");
+
+console.log($name);
+console.log($file);
+
+if ($something) {
+    console.log("Something is true yay");
+} else {
+    console.log("Something is false aww");
+}
+
+"#,
+        )
+        .unwrap();
+    worker.run_event_loop(false).await.unwrap();
 
     Ok(())
+}
+
+fn non_whitelisted(ch: char) -> bool {
+    !matches!(ch, 'a'..='z' | 'A'..='Z' | '0'..='9' | '-' | '_' | '=' | '/' | ',' | '.' | '+')
+}
+
+/// Escape characters that may have special meaning in a shell, including spaces.
+pub fn escape(s: Cow<str>) -> Cow<str> {
+    if !s.is_empty() && !s.contains(non_whitelisted) {
+        return s;
+    }
+
+    let mut es = String::with_capacity(s.len() + 2);
+    es.push('\'');
+    for ch in s.chars() {
+        match ch {
+            '\'' | '!' => {
+                es.push_str("'\\");
+                es.push(ch);
+                es.push('\'');
+            },
+            _ => es.push(ch),
+        }
+    }
+    es.push('\'');
+    es.into()
 }

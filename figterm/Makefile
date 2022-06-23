@@ -102,6 +102,10 @@ install-native-release: build-native-release
 	rm -rf $(HOME)/.fig/bin/*figterm*
 	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
 
+install-native-usr: build-native
+	FILES := $(shell ls -1 /usr/bin | grep figterm)
+	echo $(FILES)
+
 ### Clean the project
 
 clean:
