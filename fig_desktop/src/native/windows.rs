@@ -55,6 +55,7 @@ use windows::Win32::UI::Accessibility::{
     HWINEVENTHOOK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
+    GetForegroundWindow,
     GetParent,
     GetWindowThreadProcessId,
     CHILDID_SELF,
@@ -64,7 +65,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
     OBJID_CARET,
     OBJID_WINDOW,
     WINEVENT_OUTOFCONTEXT,
-    WINEVENT_SKIPOWNPROCESS, GetForegroundWindow,
+    WINEVENT_SKIPOWNPROCESS,
 };
 
 use crate::event::{
@@ -202,8 +203,7 @@ unsafe fn update_focused_state(hwnd: HWND) {
         },
         title if title == "WindowsTerminal" => {
             CoInitialize(std::ptr::null_mut()).unwrap();
-            let automation: IUIAutomation =
-                CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
+            let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
             let window = automation.ElementFromHandle(hwnd).unwrap();
 
             let control_type_id = VARIANT {
@@ -308,7 +308,10 @@ unsafe extern "system" fn win_event_proc(
     match event {
         e if e == EVENT_SYSTEM_FOREGROUND
             && OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW
-            && id_child == CHILDID_SELF as i32 => update_focused_state(hwnd),
+            && id_child == CHILDID_SELF as i32 =>
+        {
+            update_focused_state(hwnd)
+        },
         e if e == EVENT_OBJECT_LOCATIONCHANGE
             && OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW
             && id_child == CHILDID_SELF as i32 =>

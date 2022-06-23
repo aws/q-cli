@@ -290,7 +290,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .await
                     .ok();
             });
-           
+
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     use skim::prelude::*;
@@ -619,19 +619,23 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 value_if_true,
                 value_if_false,
                 ..
-            } => args.insert(name, match inner.checked {
-                true => value_if_true,
-                false => value_if_false,
-            }),
+            } => {
+                args.insert(name, match inner.checked {
+                    true => value_if_true,
+                    false => value_if_false,
+                });
+            },
             WorkflowComponent::TextField { name, inner, .. } => {
                 if !inner.text.is_empty() {
                     args.insert(name, &inner.text);
                 }
             },
-            WorkflowComponent::Picker { name, inner, .. } => args.insert(name, match inner.selected_item() {
-                Some(selected) => selected,
-                None => return Err(anyhow!("Missing entry for field: {name}")),
-            }),
+            WorkflowComponent::Picker { name, inner, .. } => {
+                args.insert(name, match inner.selected_item() {
+                    Some(selected) => selected,
+                    None => return Err(anyhow!("Missing entry for field: {name}")),
+                });
+            },
         };
     }
 
