@@ -1,5 +1,7 @@
 # Fig Monorepo
 
+[![codecov](https://codecov.io/gh/withfig/macos/branch/develop/graph/badge.svg?token=EFRYMRH32O)](https://codecov.io/gh/withfig/macos)
+
 The Fig monorepo houses most of the core Fig code for the Fig desktop app
 and CLI. Several projects live here:
 
