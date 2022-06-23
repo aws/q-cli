@@ -1,5 +1,5 @@
 [package]
-name = "fig"
+name = "fig_cli"
 version = "1.4.0"
 authors = ["fig developers"]
 edition = "2021"

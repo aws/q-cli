@@ -303,10 +303,10 @@ struct AutocompleteOptions {}
 fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
     let mut window_builder = WindowBuilder::new()
         .with_title("Fig Autocomplete")
-        .with_transparent(false)
+        .with_transparent(true)
         .with_decorations(false)
         .with_always_on_top(true)
-        .with_visible(true);
+        .with_visible(false);
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
@@ -314,7 +314,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
         } else if #[cfg(target_os = "macos")] {
             window_builder = window_builder.with_resizable(false);
-        } else if #[cfg(windows)] {
+        } else if #[cfg(target_os = "windows")] {
             use wry::application::platform::windows::WindowBuilderExtWindows;
             window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
         }

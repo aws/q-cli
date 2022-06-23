@@ -25,6 +25,10 @@ pub struct NativeState {
     _active_window: Mutex<Option<String>>,
 }
 
+impl NativeState {
+    pub fn handle(&self, event: NativeEvent) {}
+}
+
 enum DisplayServer {
     X11,
     Wayland,
