@@ -10,7 +10,7 @@ publish = false
 anyhow = "1.0.58"
 aws-sdk-cognitoidentityprovider = "0.14.0"
 aws-smithy-async = "0.44.0"
-aws-smithy-client = { version = "0.43.0", features = ["client-hyper"] }
+aws-smithy-client = { version = "0.44.0", features = ["client-hyper"] }
 base64 = "0.13.0"
 fig_directories = { path = "../fig_directories" }
 hyper-rustls = { version = "0.23.0", features = ["webpki-tokio"] }
