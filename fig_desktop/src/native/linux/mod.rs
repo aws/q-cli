@@ -12,6 +12,7 @@ use tracing::{
 };
 pub use x11::CURSOR_POSITION_KIND;
 
+use crate::event::NativeEvent;
 use crate::{
     EventLoopProxy,
     GlobalState,
