@@ -8,7 +8,7 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.58"
-aws-sdk-cognitoidentityprovider = "0.13.0"
+aws-sdk-cognitoidentityprovider = "0.14.0"
 aws-smithy-async = "0.44.0"
 aws-smithy-client = { version = "0.43.0", features = ["client-hyper"] }
 base64 = "0.13.0"
