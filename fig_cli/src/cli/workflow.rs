@@ -620,8 +620,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 true => value_if_true,
                 false => value_if_false,
             }),
-            WorkflowComponent::TextField { name, inner, .. } => if !inner.text.is_empty() {
-                args.insert(name, &inner.text);
+            WorkflowComponent::TextField { name, inner, .. } => {
+                if !inner.text.is_empty() {
+                    args.insert(name, &inner.text);
+                }
             },
             WorkflowComponent::Picker { name, inner, .. } => args.insert(name, match inner.selected_item() {
                 Some(selected) => selected,
