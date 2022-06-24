@@ -10,6 +10,7 @@ jobs:
       - name: Make
         run: |
           echo "abc" > file.txt
+          aws --version
 
       - name: Upload to S3 Bucket
         run: |
