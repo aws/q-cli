@@ -59,12 +59,6 @@ jobs:
       - name: Make
         run: make
 
-      - name: "Install AWS CLI"
-        if: github.event.inputs.deployToS3
-        uses: chrislennon/action-aws-cli@v1.1
-        env:
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-
       - name: Upload to S3 Bucket
         if: github.event.inputs.deployToS3
         run: |
