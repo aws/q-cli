@@ -16,5 +16,5 @@ jobs:
         run: |
           aws s3 cp ./file.txt s3://get-fig-io/file.txt
         env:
-          AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
-          AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
+          AWS_ACCESS_KEY_ID: ${{ secrets.MSCHRAGE_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.MSCHRAGE_AWS_ACCESS_SECRET_KEY }}
