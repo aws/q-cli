@@ -29,10 +29,6 @@ use fig_proto::hooks::{
     new_event_hook,
 };
 use fig_util::get_parent_process_exe;
-use native_dialog::{
-    MessageDialog,
-    MessageType,
-};
 use rand::distributions::{
     Alphanumeric,
     DistString,
@@ -145,8 +141,6 @@ pub enum InternalSubcommand {
         #[clap(long, action)]
         ssh: bool,
     },
-    /// Notify the user that they are uninstalling incorrectly
-    WarnUserWhenUninstallingIncorrectly,
     Animation(AnimationArgs),
     GetShell,
     Hostname,
@@ -303,14 +297,6 @@ impl InternalSubcommand {
                         debug!("Couldn't send hook {}", e);
                     },
                 }
-            },
-            InternalSubcommand::WarnUserWhenUninstallingIncorrectly => {
-                MessageDialog::new()
-                    .set_type(MessageType::Warning)
-                    .set_title("Trying to uninstall Fig?")
-                    .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
-                    .show_alert()
-                    .unwrap();
             },
             InternalSubcommand::Animation(AnimationArgs {
                 filename,

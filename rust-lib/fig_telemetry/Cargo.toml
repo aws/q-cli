@@ -11,8 +11,14 @@ anyhow = "1.0.58"
 fig_auth = { path = "../fig_auth" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-reqwest = { version = "0.11.9", features = ["json"] }
 sentry = { version = "0.27.0", features = ["anyhow"] }
 serde = "1.0.136"
 thiserror = "1.0.30"
 uuid = "1.1.2"
+
+[target.'cfg(not(target_os = "macos"))'.dependencies]
+reqwest = { version = "0.11.10", features = ["json"] }
+
+[target.'cfg(target_os = "macos")'.dependencies]
+reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots"] }
+

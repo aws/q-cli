@@ -197,7 +197,14 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Uninstall(args) => {
-                uninstall::uninstall_mac_app(args).await;
+                cfg_if! {
+                    if #[cfg(target_os = "macos")] {
+                        uninstall::uninstall_mac_app(args).await;
+                    } else {
+                        let _args = args;
+                        anyhow::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)
+                    }
+                }
             },
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
