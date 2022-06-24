@@ -38,6 +38,7 @@ use rand::distributions::{
     DistString,
 };
 use rand::seq::IteratorRandom;
+use serde_json::Value;
 use sysinfo::{
     System,
     SystemExt,
@@ -57,6 +58,7 @@ use crate::cli::installation::{
     self,
     InstallComponents,
 };
+use crate::util::api::request;
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -161,6 +163,14 @@ pub enum InternalSubcommand {
         apps: Vec<String>,
     },
     AuthToken,
+    Request {
+        #[clap(long, value_parser)]
+        route: String,
+        #[clap(long, value_parser)]
+        method: String,
+        #[clap(long, value_parser)]
+        body: Option<String>,
+    },
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -436,6 +446,15 @@ impl InternalSubcommand {
             },
             InternalSubcommand::AuthToken => {
                 println!("{}", get_token().await?);
+            },
+            InternalSubcommand::Request { route, method, body } => {
+                let body: Option<Value> = match body {
+                    Some(body) => Some(serde_json::from_str(&body)?),
+                    None => None,
+                };
+                let method = reqwest::Method::from_str(&method)?;
+                let value: Value = request(method, route, body.as_ref(), true).await?;
+                println!("{}", serde_json::to_string(&value)?);
             },
         }
 
