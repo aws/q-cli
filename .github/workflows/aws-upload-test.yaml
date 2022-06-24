@@ -8,7 +8,8 @@ jobs:
     runs-on: ubuntu-18.04
     steps:
       - name: Make
-        run: cat "abc" > file.txt
+        run: |
+          echo "abc" > file.txt
 
       - name: Upload to S3 Bucket
         run: |
