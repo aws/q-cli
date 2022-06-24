@@ -638,9 +638,17 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         println!("{} {command}", "Executing:".bold().magenta());
     }
 
+    cfg_if! {
+        if #[cfg(feature = "deno")] {
+            let execute = execute_js_workflow(&workflow.template, &args);
+        } else {
+            let execute = execute_bash_workflow(&workflow.tree, &args);
+        }
+    }
+
     // TODO:
     tokio::join! {
-        execute_bash_workflow(workflow.tree, &args),
+        execute,
         track_execution,
     }
     .0?;
@@ -648,10 +656,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-async fn execute_bash_workflow(tree: Vec<TreeElement>, args: &HashMap<&str, Value>) -> Result<()> {
+async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, Value>) -> Result<()> {
     let mut command = Command::new("bash");
     command.arg("-c");
-    command.arg(tree.into_iter().fold(String::new(), |mut acc, branch| {
+    command.arg(tree.iter().fold(String::new(), |mut acc, branch| {
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
             TreeElement::Token { name } => acc.push_str(&match args[name.as_str()].clone() {
@@ -669,7 +677,6 @@ async fn execute_bash_workflow(tree: Vec<TreeElement>, args: &HashMap<&str, Valu
 #[cfg(feature = "deno")]
 pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> Result<()> {
     use std::rc::Rc;
-    use std::str::FromStr;
     use std::sync::Arc;
 
     use deno_core::error::AnyError;
@@ -680,13 +687,16 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
         MainWorker,
         WorkerOptions,
     };
-    use deno_runtime::BootstrapOptions;
+    use deno_runtime::{
+        colors,
+        BootstrapOptions,
+    };
 
     fn get_error_class_name(e: &AnyError) -> &'static str {
         deno_runtime::errors::get_error_class_name(e).unwrap_or("Error")
     }
 
-    let module_loader = Rc::new(deno_core::NoopModuleLoader);
+    let module_loader = Rc::new(deno_core::FsModuleLoader);
     let create_web_worker_cb = Arc::new(|_| {
         todo!("Web workers are not supported in the example");
     });
@@ -697,16 +707,16 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
     let options = WorkerOptions {
         bootstrap: BootstrapOptions {
             args: vec![],
-            cpu_count: 1,
+            cpu_count: std::thread::available_parallelism().map(|p| p.get()).unwrap_or(1),
             debug_flag: false,
             enable_testing_features: false,
             location: None,
-            no_color: false,
-            is_tty: false,
+            no_color: !colors::use_color(),
+            is_tty: colors::is_tty(),
             runtime_version: "x".to_string(),
             ts_version: "x".to_string(),
             unstable: false,
-            user_agent: "hello_runtime".to_string(),
+            user_agent: "fig-cli/workflow".to_string(),
         },
         extensions: vec![],
         unsafely_ignore_certificate_errors: None,
@@ -729,34 +739,26 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
     };
 
     let permissions = Permissions::allow_all();
-    let specificer = deno_core::ModuleSpecifier::from_str("https://fig.io/script").unwrap();
 
-    let mut worker = MainWorker::bootstrap_from_options(specificer, permissions, options);
+    let dir = tempfile::tempdir().unwrap();
+    let file = dir.path().join("script.js");
+
+    tokio::fs::write(&file, script).await.unwrap();
+
+    let specificer = deno_core::ModuleSpecifier::from_file_path(file).unwrap();
+
+    let mut worker = MainWorker::bootstrap_from_options(specificer.clone(), permissions, options);
+
+    worker.execute_script("[fig-init]", "const args = {}").unwrap();
 
     for (key, value) in args {
         worker
-            .execute_script("abc", &format!("const ${key} = {value};"))
+            .execute_script("[fig-init]", &format!("args.{key}={value};const ${key}=args.{key};"))
             .unwrap();
     }
 
-    worker
-        .execute_script(
-            "Abc",
-            r#"
-console.log("Hello from js!");
+    worker.execute_main_module(&specificer).await.unwrap();
 
-console.log($name);
-console.log($file);
-
-if ($something) {
-    console.log("Something is true yay");
-} else {
-    console.log("Something is false aww");
-}
-
-"#,
-        )
-        .unwrap();
     worker.run_event_loop(false).await.unwrap();
 
     Ok(())

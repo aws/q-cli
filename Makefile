@@ -18,6 +18,8 @@ all: archive deb
 archive: bin icons bundle 
 	cd $(BUILD_DIR) && tar -cjf fig-x86_64-linux.tar.gz usr install.sh
 
+arch: archive
+
 deb: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-x86_64-linux
 	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-x86_64-linux
@@ -77,5 +79,5 @@ bundle:
 preview: archive
 	tar -tvf $(BUILD_DIR)/fig-x86_64-linux.tar.gz
 
-.PHONY: all archive deb bin fig_desktop figterm fig fig_cli fig_ibus_engine icons preview bundle
+.PHONY: all archive arch deb rpm bin fig_desktop figterm fig fig_cli fig_ibus_engine icons preview bundle
 
