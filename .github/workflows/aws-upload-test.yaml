@@ -1,0 +1,18 @@
+name: aws-upload-test
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-18.04
+    steps:
+      - name: Make
+        run: cat "abc" > file.txt
+
+      - name: Upload to S3 Bucket
+        run: |
+          aws s3 cp ./file.txt s3://get-fig-io/file.txt
+        env:
+          AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
+          AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}
