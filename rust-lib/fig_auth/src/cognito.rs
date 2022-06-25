@@ -59,7 +59,7 @@ pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
             use aws_sdk_cognitoidentityprovider::RetryConfig;
 
             let https = hyper_rustls::HttpsConnectorBuilder::new()
-                .with_webpki_roots();
+                .with_webpki_roots()
                 .https_or_http()
                 .enable_http1()
                 .build();

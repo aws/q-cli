@@ -516,32 +516,33 @@ pub async fn daemon() -> Result<()> {
         }
     });
 
-    #[cfg(target_os = "macos")]
-    {
-        // Spawn settings watcher
-        let daemon_status_clone = daemon_status.clone();
-        let settings_watcher_join = tokio::spawn(async move {
-            let daemon_status = daemon_status_clone;
-            let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
-            loop {
-                match spawn_settings_watcher(daemon_status.clone()).await {
-                    Ok(join_handle) => {
-                        daemon_status.write().settings_watcher_status = Ok(());
-                        backoff.reset();
-                        if let Err(err) = join_handle.await {
-                            error!("Error on settings watcher join: {:?}", err);
-                            daemon_status.write().settings_watcher_status = Err(err.into());
-                        }
-                        return;
-                    },
-                    Err(err) => {
-                        error!("Error spawning settings watcher: {:?}", err);
-                        daemon_status.write().settings_watcher_status = Err(err);
-                    },
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            // Spawn settings watcher
+            let daemon_status_clone = daemon_status.clone();
+            let settings_watcher_join = tokio::spawn(async move {
+                let daemon_status = daemon_status_clone;
+                let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+                loop {
+                    match spawn_settings_watcher(daemon_status.clone()).await {
+                        Ok(join_handle) => {
+                            daemon_status.write().settings_watcher_status = Ok(());
+                            backoff.reset();
+                            if let Err(err) = join_handle.await {
+                                error!("Error on settings watcher join: {:?}", err);
+                                daemon_status.write().settings_watcher_status = Err(err.into());
+                            }
+                            return;
+                        },
+                        Err(err) => {
+                            error!("Error spawning settings watcher: {:?}", err);
+                            daemon_status.write().settings_watcher_status = Err(err);
+                        },
+                    }
+                    backoff.sleep().await;
                 }
-                backoff.sleep().await;
-            }
-        });
+            });
+        }
     }
 
     info!("Daemon is now running");
