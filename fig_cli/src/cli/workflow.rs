@@ -152,17 +152,19 @@ impl SkimItem for Workflow {
         ))
     }
 
-    fn preview(&self, context: skim::PreviewContext) -> skim::ItemPreview {
-        let mut lines = vec![format!("@{}/{}", self.namespace, self.name)];
+    fn preview(&self, _context: skim::PreviewContext) -> skim::ItemPreview {
+        let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
 
         if let Some(description) = self.description.as_deref() {
             if !description.is_empty() {
-                lines.push(description.to_owned());
+                lines.push(format!("  {}", description.to_owned()));
+            } else {
+                lines.push("  No description".italic().grey().to_string())
             }
         }
 
-        lines.push("━".repeat(context.width).black().to_string());
-        lines.push(self.template.clone());
+        // lines.push("━".repeat(context.width).black().to_string());
+        // lines.push(self.template.clone());
 
         skim::ItemPreview::AnsiText(lines.join("\n"))
     }
@@ -292,9 +294,11 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
                             .height(Some("50%"))
-                            // .preview(Some(""))
-                            // .preview_window(Some("down"))
+                            .preview(Some(""))
+                            .prompt(Some("▸ "))
+                            .preview_window(Some("down:3"))
                             .reverse(true)
+                            .case(CaseMatching::Ignore)
                             .tac(true)
                             .build()
                             .unwrap(),
