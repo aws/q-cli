@@ -402,7 +402,6 @@ dependencies = [
  "http-body",
  "hyper",
  "hyper-rustls 0.22.1",
- "hyper-tls",
  "lazy_static 1.4.0",
  "pin-project",
  "pin-project-lite",

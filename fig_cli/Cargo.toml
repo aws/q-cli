@@ -42,6 +42,7 @@ notify = "4.0.17"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.5.6"
+reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots", "socks"] }
 self_update = "0.30.0"
 semver = "1.0.10"
 sentry = { version = "0.27.0", features = ["anyhow"] }
@@ -54,19 +55,12 @@ tempfile = "3.3.0"
 thiserror = "1.0.30"
 time = { version = "=0.3.11", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.19.2", features = ["full"] }
+tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
 tui = { path = "../rust-lib/tui" }
 validator = "0.15.0"
 viu = { path = "../rust-lib/viu" }
-
-[target.'cfg(not(target_os = "macos"))'.dependencies]
-reqwest = { version = "0.11.10", features = ["json", "socks"] }
-tokio-tungstenite = "0.17.1"
-
-[target.'cfg(target_os = "macos")'.dependencies]
-reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots", "socks"] }
-tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"

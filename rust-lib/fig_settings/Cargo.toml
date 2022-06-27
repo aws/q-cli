@@ -11,16 +11,11 @@ bitflags = "1.3.2"
 fig_auth = { path = "../fig_auth" }
 fig_directories = { path = "../fig_directories" }
 regex = "1.5.6"
+reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots"] }
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.79"
 thiserror = "1.0.30"
 time = { version = "0.3.11", features = ["serde-well-known"] }
 tokio = { version = "1.19.2", features = ["full"] }
 url = "2.2.2"
-
-[target.'cfg(not(target_os = "macos"))'.dependencies]
-reqwest = { version = "0.11.10", features = ["json"] }
-
-[target.'cfg(target_os = "macos")'.dependencies]
-reqwest = { version = "0.11.10", features = ["json", "rustls-tls-webpki-roots"] }
 
