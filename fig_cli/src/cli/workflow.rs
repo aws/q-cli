@@ -152,7 +152,7 @@ impl SkimItem for Workflow {
         ))
     }
 
-    fn preview(&self, context: skim::PreviewContext) -> skim::ItemPreview {
+    fn preview(&self, _context: skim::PreviewContext) -> skim::ItemPreview {
         let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
 
         if let Some(description) = self.description.as_deref() {
