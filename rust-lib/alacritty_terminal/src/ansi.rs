@@ -1,6 +1,7 @@
 //! ANSI Terminal Stream Parsing.
 
 use std::convert::TryFrom;
+use std::fmt::Write;
 use std::path::Path;
 use std::time::{
     Duration,
@@ -1062,7 +1063,7 @@ where
                     for items in params {
                         buf.push('[');
                         for item in *items {
-                            buf.push_str(&format!("{:?},", *item as char));
+                            write!(buf, "{:?},", *item as char).ok();
                         }
                         buf.push_str("],");
                     }

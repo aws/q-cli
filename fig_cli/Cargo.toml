@@ -20,7 +20,7 @@ cfg-if = "1.0.0"
 clap = { version = "3.2.6", features = ["derive"] }
 clap_complete = "3.2.2"
 clap_complete_fig = "3.2.2"
-crossterm = "0.23.1"
+crossterm = "0.23.2"
 ctrlc = "3.2.1"
 deno_core = { version = "0.140.0", optional = true }
 deno_runtime = { version = "0.66.0", optional = true }
@@ -64,7 +64,4 @@ viu = { path = "../rust-lib/viu" }
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"
 skim = "0.9.4"
-
-[target.'cfg(windows)'.dependencies]
-windows = { version = "0.38.0", features = ["Win32_Foundation", "Win32_Security", "Win32_System_Threading"] }
 

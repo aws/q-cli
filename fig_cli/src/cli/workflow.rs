@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::process::Command;
 
 use anyhow::{
@@ -7,6 +8,7 @@ use anyhow::{
     bail,
     Result,
 };
+use clap::Args;
 use crossterm::style::Stylize;
 use fig_telemetry::{
     TrackEvent,
@@ -41,6 +43,19 @@ use tui::{
 use crate::util::api::request;
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 1;
+
+#[derive(Debug, Args)]
+pub struct WorkflowArgs {
+    // Flags can be added here
+    #[clap(value_parser, takes_value = true, allow_hyphen_values = true)]
+    args: Vec<String>,
+}
+
+impl WorkflowArgs {
+    pub async fn execute(self) -> Result<()> {
+        execute(self.args).await
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -635,7 +650,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
     for (arg, val) in &args {
-        command.push_str(&format!(" --{arg} {}", escape(val.to_string().into())));
+        writeln!(command, " --{arg} {}", escape(val.to_string().into())).ok();
     }
 
     if parameter_count > 0 {

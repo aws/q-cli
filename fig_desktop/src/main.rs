@@ -269,6 +269,7 @@ fn build_mission_control(
         .with_resizable(true)
         .with_title("Fig Mission Control")
         .with_visible(is_visible)
+        .with_always_on_top(false)
         .build(event_loop)?;
 
     #[cfg(target_os = "linux")]

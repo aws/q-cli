@@ -1,3 +1,5 @@
+use std::fmt::Write;
+
 #[derive(Debug, Clone, Default)]
 pub struct SystemdUnit {
     unit: UnitUnit,
@@ -19,30 +21,30 @@ impl SystemdUnit {
         let mut unit = String::new();
 
         unit.push_str("[Unit]\n");
-        unit.push_str(&format!("Description={}\n", &self.unit.description));
+        writeln!(unit, "Description={}", &self.unit.description).ok();
 
         unit.push('\n');
 
         unit.push_str("[Service]\n");
 
         if let Some(exec_start) = &self.service.exec_start {
-            unit.push_str(&format!("ExecStart={}\n", exec_start));
+            writeln!(unit, "ExecStart={}", exec_start).ok();
         }
 
         if let Some(standard_output) = &self.service.standard_output {
-            unit.push_str(&format!("StandardOutput={}\n", standard_output));
+            writeln!(unit, "StandardOutput={}", standard_output).ok();
         }
 
         if let Some(standard_error) = &self.service.standard_error {
-            unit.push_str(&format!("StandardError={}\n", standard_error));
+            writeln!(unit, "StandardError={}", standard_error).ok();
         }
 
         if let Some(restart) = &self.service.restart {
-            unit.push_str(&format!("Restart={}\n", restart));
+            writeln!(unit, "Restart={}", restart).ok();
         }
 
         if let Some(restart_sec) = &self.service.restart_sec {
-            unit.push_str(&format!("RestartSec={}\n", restart_sec));
+            writeln!(unit, "RestartSec={}", restart_sec).ok();
         }
 
         unit.push('\n');
@@ -50,7 +52,7 @@ impl SystemdUnit {
         unit.push_str("[Install]\n");
 
         if let Some(wanted_by) = &self.install.wanted_by {
-            unit.push_str(&format!("WantedBy={}\n", wanted_by));
+            writeln!(unit, "WantedBy={}", wanted_by).ok();
         }
 
         unit

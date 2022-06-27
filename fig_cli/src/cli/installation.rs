@@ -148,20 +148,25 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
     };
 
     if install_components.contains(InstallComponents::BINARY) {
-        let local_path = fig_directories::home_dir()
-            .context("Could not find home directory")?
-            .join(".local")
-            .join("bin")
-            .join("fig");
-        let binary_paths = [Path::new("/usr/local/bin/fig"), local_path.as_path()];
+        cfg_if! {
+            if #[cfg(feature = "managed")] {
+                println!("Uninstall Fig via your package manager");
+            } else {
+                let local_path = fig_directories::home_dir()
+                    .context("Could not find home directory")?
+                    .join(".local")
+                    .join("bin")
+                    .join("fig");
+                let binary_paths = [Path::new("/usr/local/bin/fig"), local_path.as_path()];
 
-        for path in binary_paths {
-            if path.exists() {
-                std::fs::remove_file(path).with_context(|| format!("Could not delete {}", path.display()))?;
+                for path in binary_paths {
+                    if path.exists() {
+                        std::fs::remove_file(path).with_context(|| format!("Could not delete {}", path.display()))?;
+                    }
+                }
+                println!("\n{}\n", "Fig binary has been uninstalled".bold())
             }
         }
-
-        println!("\n{}\n", "Fig binary has been uninstalled".bold())
     }
 
     daemon_result.and(dotfiles_result).and(ssh_result)

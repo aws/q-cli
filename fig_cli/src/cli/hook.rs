@@ -1,5 +1,6 @@
 use std::fs::OpenOptions;
 use std::io::prelude::*;
+use std::process::exit;
 
 use anyhow::{
     Context,
@@ -74,6 +75,14 @@ pub enum HookSubcommand {
 
 impl HookSubcommand {
     pub async fn execute(&self) -> Result<()> {
+        // Hooks should exit silently on failure.
+        match self.execute_hook().await {
+            Ok(()) => Ok(()),
+            Err(_) => exit(1),
+        }
+    }
+
+    pub async fn execute_hook(&self) -> Result<()> {
         let hook = match self {
             HookSubcommand::Editbuffer {
                 session_id,

@@ -2282,7 +2282,6 @@ dependencies = [
  "tui",
  "validator",
  "viu",
- "windows 0.38.0",
 ]
 
 [[package]]
