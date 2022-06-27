@@ -48,8 +48,8 @@ jobs:
           override: true
           components: clippy
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v1
+      #- name: Rust Cache
+      #  uses: Swatinem/rust-cache@v1
         
       - name: Fmt Lint
         uses: actions-rs/cargo@v1
@@ -79,8 +79,8 @@ jobs:
           override: true
           components: llvm-tools-preview
 
-      - name: Rust Cache
-        uses: Swatinem/rust-cache@v1
+      #- name: Rust Cache
+      #  uses: Swatinem/rust-cache@v1
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
