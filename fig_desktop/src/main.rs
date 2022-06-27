@@ -271,6 +271,14 @@ fn build_mission_control(
         .with_visible(is_visible)
         .build(event_loop)?;
 
+    #[cfg(target_os = "linux")]
+    {
+        use gtk::traits::GtkWindowExt;
+        use wry::application::platform::unix::WindowExtUnix;
+
+        window.gtk_window().set_role("mission_control");
+    }
+
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
@@ -330,6 +338,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         use wry::application::platform::unix::WindowExtUnix;
 
         window.gtk_window().set_type_hint(WindowTypeHint::Utility);
+        window.gtk_window().set_role("autocomplete");
     }
 
     let proxy = event_loop.create_proxy();

@@ -14,6 +14,8 @@ use x11rb::protocol::xproto::{
     change_window_attributes,
     get_atom_name,
     get_input_focus,
+    get_property,
+    AtomEnum,
     ChangeWindowAttributesAux,
     EventMask,
     Property,
@@ -32,12 +34,33 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-static WMCLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
+static WM_CLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
     fig_util::terminal::LINUX_TERMINALS
         .iter()
         .filter_map(|t| t.wm_class())
         .collect()
 });
+
+mod atoms {
+    use once_cell::sync::OnceCell;
+    use x11rb::protocol::xproto::{
+        intern_atom,
+        Atom,
+    };
+    use x11rb::rust_connection::RustConnection;
+
+    static WM_ROLE: OnceCell<Atom> = OnceCell::new();
+
+    pub(super) fn wm_role(conn: &RustConnection) -> Atom {
+        *WM_ROLE.get_or_init(|| {
+            intern_atom(conn, false, "WM_ROLE".as_bytes())
+                .expect("Failed requesting WM_ROLE atom")
+                .reply()
+                .expect("Failed receiving WM_ROLE atom")
+                .atom
+        })
+    }
+}
 
 pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
@@ -93,12 +116,16 @@ fn handle_property_event(
 }
 
 fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window) -> anyhow::Result<()> {
-    if window == 0 {
-        // null window selected
+    let hide = || {
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),
             window_event: WindowEvent::Hide,
-        })?;
+        })
+    };
+
+    if window == 0 {
+        // null window selected
+        hide()?;
         return Ok(());
     }
 
@@ -107,10 +134,7 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         Err(err) => {
             debug!("No wm class {err:?}");
             // hide if missing wm class
-            proxy.send_event(Event::WindowEvent {
-                window_id: AUTOCOMPLETE_ID.clone(),
-                window_event: WindowEvent::Hide,
-            })?;
+            hide()?;
             return Ok(());
         },
     };
@@ -118,15 +142,20 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
     info!("focus changed to {wm_class}");
 
     if wm_class.as_str() == "Fig_desktop" {
+        // get wm_role
+        let reply = get_property(conn, false, window, atoms::wm_role(conn), AtomEnum::STRING, 0, 2048)?.reply()?;
+
+        if String::from_utf8_lossy(&reply.value) != "autocomplete" {
+            // hide if not an autocomplete window
+            hide()?;
+        }
+
         return Ok(());
     }
 
-    if !WMCLASS_WHITELSIT.iter().any(|w| w == wm_class.as_str()) {
+    if !WM_CLASS_WHITELSIT.iter().any(|w| w == wm_class.as_str()) {
         // hide if not a whitelisted wm class
-        proxy.send_event(Event::WindowEvent {
-            window_id: AUTOCOMPLETE_ID.clone(),
-            window_event: WindowEvent::Hide,
-        })?;
+        hide()?;
         return Ok(());
     }
 
