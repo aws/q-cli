@@ -93,6 +93,15 @@ fn handle_property_event(
 }
 
 fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window) -> anyhow::Result<()> {
+    if window == 0 {
+        // null window selected
+        proxy.send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID.clone(),
+            window_event: WindowEvent::Hide,
+        })?;
+        return Ok(());
+    }
+
     let wm_class = match WmClass::get(conn, window)?.reply() {
         Ok(class_raw) => String::from_utf8_lossy(class_raw.class()).into_owned(),
         Err(err) => {
