@@ -1,6 +1,8 @@
 use std::sync::Arc;
 
 use fig_util::Terminal;
+pub use sentry::configure_scope;
+pub use sentry::integrations::anyhow::capture_anyhow;
 
 use crate::util::telemetry_is_disabled;
 
@@ -36,8 +38,4 @@ pub fn init_sentry(project: &str) -> Option<sentry::ClientInitGuard> {
 
         Some(guard)
     }
-}
-
-pub fn capture_anyhow(e: &anyhow::Error) {
-    sentry::integrations::anyhow::capture_anyhow(e);
 }

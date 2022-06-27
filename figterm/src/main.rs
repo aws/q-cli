@@ -55,6 +55,10 @@ use fig_proto::local::{
     LocalMessage,
 };
 use fig_settings::state;
+use fig_telemetry::sentry::{
+    capture_anyhow,
+    configure_scope,
+};
 use fig_util::Terminal;
 use flume::Sender;
 use nix::libc::STDIN_FILENO;
@@ -74,7 +78,6 @@ use parking_lot::{
     Mutex,
     RwLock,
 };
-use sentry::integrations::anyhow::capture_anyhow;
 use tokio::io::{
     self,
     AsyncReadExt,
@@ -206,7 +209,7 @@ impl EventListener for EventSender {
                 } else {
                     shell_state.local_context.shell.as_ref()
                 };
-                sentry::configure_scope(|scope| {
+                configure_scope(|scope| {
                     if let Some(shell) = shell {
                         scope.set_tag("shell", shell);
                     }
