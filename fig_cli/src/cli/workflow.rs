@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::fmt::Write;
+use std::io::Write;
 use std::process::Command;
 
 use anyhow::{
@@ -8,6 +8,7 @@ use anyhow::{
     bail,
     Result,
 };
+use chrono::Utc;
 use clap::Args;
 use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
@@ -627,7 +628,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         model.push(frame as &mut dyn Component);
     }
 
-    spinner.stop();
+    spinner.stop_and_persist("🗸", "Loaded workflow".to_owned());
 
     if parameter_count > 0
         && EventLoop::new()
@@ -665,7 +666,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             },
             WorkflowComponent::Picker { name, inner, .. } => {
                 if !inner.text.is_empty() {
-                    args.insert(name,  (inner.text.clone().into(), inner.text.clone()));
+                    args.insert(name, (inner.text.clone().into(), inner.text.clone()));
                 }
             },
         };
@@ -677,6 +678,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
     for (arg, (val, _)) in &args {
+        use std::fmt::Write;
+
         match val {
             Value::Bool(b) => {
                 if *b {
@@ -702,7 +705,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             let execute = execute_js_workflow(&workflow.template, &map);
         } else {
             let map = args.into_iter().map(|(key, (_, s))| (key, s)).collect();
-            let execute = execute_bash_workflow(&workflow.tree, &map);
+            let execute = execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map);
         }
     }
 
@@ -716,7 +719,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, String>) -> Result<()> {
+async fn execute_bash_workflow(
+    name: &str,
+    namespace: &str,
+    tree: &[TreeElement],
+    args: &HashMap<&str, String>,
+) -> Result<()> {
+    let start_time = Utc::now();
     let mut command = Command::new("bash");
     command.arg("-c");
     command.arg(tree.iter().fold(String::new(), |mut acc, branch| {
@@ -726,7 +735,28 @@ async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, String
         }
         acc
     }));
-    command.status()?;
+
+    let output = command.output()?;
+    std::io::stdout().write_all(&output.stdout)?;
+    std::io::stdout().write_all(&output.stderr)?;
+
+    let command_stderr = String::from_utf8_lossy(&output.stderr);
+    let exit_code = output.status.code().unwrap_or(0);
+    let execution_start_time = start_time.to_rfc3339();
+
+    request::<serde_json::Value, _, _>(
+        Method::POST,
+        format!("/workflows/{}/invocations", name),
+        Some(&serde_json::json!({
+            "namespace": namespace,
+            "commandStderr": command_stderr.to_string(),
+            "exitCode": exit_code,
+            "executionStartTime": execution_start_time,
+            "executionDuration": Utc::now().signed_duration_since(start_time).num_nanoseconds().expect("duration over 300 years")
+        })),
+        true,
+    ).await?;
+
     Ok(())
 }
 
