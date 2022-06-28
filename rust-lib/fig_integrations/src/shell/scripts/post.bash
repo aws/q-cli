@@ -9,6 +9,14 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
+# Open workflows on keyboard shortcut
+if [[ -z "${FIG_WORKFLOWS_KEYBIND}" ]]
+then
+  export FIG_WORKFLOWS_KEYBIND='^f'
+fi
+
+bind "\"${FIG_WORKFLOWS_KEYBIND}\":\"fig run\n\""
+
 # if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
 #   unset FIG_DID_NOT_EXEC_FIGTERM
 #   return
