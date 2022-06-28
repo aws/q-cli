@@ -130,7 +130,7 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
     }
 
     let wm_class = match WmClass::get(conn, window)?.reply() {
-        Ok(class_raw) => String::from_utf8_lossy(class_raw.class()).into_owned(),
+        Ok(class_raw) => class_raw.class().to_owned(),
         Err(err) => {
             debug!("No wm class {err:?}");
             // hide if missing wm class
@@ -139,13 +139,13 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         },
     };
 
-    info!("focus changed to {wm_class}");
+    info!("focus changed to {}", wm_class.escape_ascii());
 
-    if wm_class.as_str() == "Fig_desktop" {
+    if wm_class == b"Fig_desktop" {
         // get wm_role
         let reply = get_property(conn, false, window, atoms::wm_role(conn), AtomEnum::STRING, 0, 2048)?.reply()?;
 
-        if String::from_utf8_lossy(&reply.value) != "autocomplete" {
+        if &reply.value != b"autocomplete" {
             // hide if not an autocomplete window
             hide()?;
         }
@@ -153,7 +153,7 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         return Ok(());
     }
 
-    if !WM_CLASS_WHITELSIT.iter().any(|w| w == wm_class.as_str()) {
+    if !WM_CLASS_WHITELSIT.iter().any(|w| w.as_bytes() == wm_class) {
         // hide if not a whitelisted wm class
         hide()?;
         return Ok(());
