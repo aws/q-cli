@@ -2,6 +2,7 @@ pub mod launchd_plist;
 pub mod scheduler;
 #[cfg(target_os = "macos")]
 pub mod settings_watcher;
+pub mod socket_server;
 pub mod system_handler;
 pub mod systemd_unit;
 pub mod websocket;
@@ -516,6 +517,12 @@ pub async fn daemon() -> Result<()> {
         }
     });
 
+    let websocket_listen_join = tokio::spawn(async {
+        if let Err(err) = socket_server::spawn_socket().await {
+            error!("Failed to spawn websocket server: {err}");
+        }
+    });
+
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             // Spawn settings watcher
@@ -549,12 +556,12 @@ pub async fn daemon() -> Result<()> {
 
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            match tokio::try_join!(scheduler_join, unix_join, websocket_join, settings_watcher_join) {
+            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err.into()),
             }
         } else {
-            match tokio::try_join!(scheduler_join, unix_join, websocket_join) {
+            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join) {
                 Ok(_) => Ok(()),
                 Err(err) => Err(err.into()),
             }
