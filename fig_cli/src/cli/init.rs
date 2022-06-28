@@ -7,7 +7,7 @@ use anyhow::{
     Context,
     Result,
 };
-use crossterm::style::Stylize;
+use clap::Args;
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
 use fig_install::dotfiles::api::DotfileData;
@@ -21,6 +21,30 @@ use fig_util::{
 };
 
 use crate::util::app_path_from_bundle_id;
+
+#[derive(Debug, Args)]
+pub struct InitArgs {
+    /// The shell to generate the dotfiles for
+    #[clap(value_enum, value_parser)]
+    shell: Shell,
+    /// When to generate the dotfiles for
+    #[clap(value_enum, value_parser)]
+    when: When,
+    #[clap(long, value_parser)]
+    rcfile: Option<String>,
+}
+
+impl InitArgs {
+    pub async fn execute(&self) -> Result<()> {
+        let InitArgs { shell, when, rcfile } = self;
+        println!("# {when} for {shell}");
+        match shell_init(shell, when, rcfile) {
+            Ok(source) => println!("{source}"),
+            Err(err) => println!("# Could not load source: {err}"),
+        }
+        Ok(())
+    }
+}
 
 #[derive(PartialEq, Eq)]
 enum GuardAssignment {
@@ -81,7 +105,7 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<String> {
+fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
     if !fig_settings::state::get_bool_or("shell-integrations.enabled", true) {
         return Ok(guard_source(
             shell,
@@ -195,10 +219,13 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
         }
     }
 
+    #[cfg(target_os = "macos")]
     if when == &When::Post
         && !fig_settings::state::get_bool_or("input-method.enabled", false)
         && !fig_settings::settings::get_bool_or("integrations.experimental", false)
     {
+        use crossterm::style::Stylize;
+
         if let Some(terminal) = Terminal::parent_terminal() {
             let prompt_state_key = format!("prompt.input-method.{}.count", terminal.internal_id());
             let prompt_count = fig_settings::state::get_int_or(&prompt_state_key, 0);
@@ -251,13 +278,4 @@ fn shell_init(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<Stri
     }
 
     Ok(to_source.join("\n"))
-}
-
-pub async fn shell_init_cli(shell: &Shell, when: &When, rcfile: Option<String>) -> Result<()> {
-    println!("# {when} for {shell}");
-    match shell_init(shell, when, rcfile) {
-        Ok(source) => println!("{source}"),
-        Err(err) => println!("# Could not load source: {err}"),
-    }
-    Ok(())
 }

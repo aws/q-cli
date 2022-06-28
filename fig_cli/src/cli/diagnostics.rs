@@ -8,6 +8,7 @@ use anyhow::{
     Context,
     Result,
 };
+use clap::Args;
 use crossterm::style::Stylize;
 use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::command_response::Response;
@@ -31,6 +32,39 @@ use crate::util::{
     is_app_running,
     OSVersion,
 };
+
+#[derive(Debug, Args)]
+pub struct DiagnosticArgs {
+    /// The format of the output
+    #[clap(long, short, value_enum, value_parser, default_value_t)]
+    format: OutputFormat,
+    /// Force limited diagnostic output
+    #[clap(long, action)]
+    force: bool,
+}
+
+impl DiagnosticArgs {
+    pub async fn execute(&self) -> Result<()> {
+        if !self.force && !is_app_running() {
+            println!(
+                "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to get limited diagnostics.",
+                "fig launch".magenta(),
+                "fig diagnostic --force".magenta()
+            );
+            return Ok(());
+        }
+
+        let diagnostics = Diagnostics::new().await?;
+
+        match self.format {
+            OutputFormat::Plain => println!("{}", diagnostics.user_readable()?.join("\n")),
+            OutputFormat::Json => println!("{}", serde_json::to_string(&diagnostics)?),
+            OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&diagnostics)?),
+        }
+
+        Ok(())
+    }
+}
 
 pub trait Diagnostic {
     fn user_readable(&self) -> Result<Vec<String>> {
@@ -597,25 +631,4 @@ impl Diagnostic for Diagnostics {
         }
         Ok(lines)
     }
-}
-
-pub async fn diagnostics_cli(format: OutputFormat, force: bool) -> Result<()> {
-    if !force && !is_app_running() {
-        println!(
-            "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to get limited diagnostics.",
-            "fig launch".magenta(),
-            "fig diagnostic --force".magenta()
-        );
-        return Ok(());
-    }
-
-    let diagnostics = Diagnostics::new().await?;
-
-    match format {
-        OutputFormat::Plain => println!("{}", diagnostics.user_readable()?.join("\n")),
-        OutputFormat::Json => println!("{}", serde_json::to_string(&diagnostics)?),
-        OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&diagnostics)?),
-    }
-
-    Ok(())
 }

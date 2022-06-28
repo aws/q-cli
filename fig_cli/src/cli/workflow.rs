@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::fmt::Write;
 use std::process::Command;
 
 use anyhow::{
@@ -7,6 +8,7 @@ use anyhow::{
     bail,
     Result,
 };
+use clap::Args;
 use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
@@ -50,6 +52,19 @@ use crate::util::{
 };
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 1;
+
+#[derive(Debug, Args)]
+pub struct WorkflowArgs {
+    // Flags can be added here
+    #[clap(value_parser, takes_value = true, allow_hyphen_values = true)]
+    args: Vec<String>,
+}
+
+impl WorkflowArgs {
+    pub async fn execute(self) -> Result<()> {
+        execute(self.args).await
+    }
+}
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -173,17 +188,19 @@ impl SkimItem for Workflow {
         ))
     }
 
-    fn preview(&self, context: skim::PreviewContext) -> skim::ItemPreview {
-        let mut lines = vec![format!("@{}/{}", self.namespace, self.name)];
+    fn preview(&self, _context: skim::PreviewContext) -> skim::ItemPreview {
+        let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
 
         if let Some(description) = self.description.as_deref() {
             if !description.is_empty() {
-                lines.push(description.to_owned());
+                lines.push(format!("  {}", description.to_owned()));
+            } else {
+                lines.push("  No description".italic().grey().to_string())
             }
         }
 
-        lines.push("━".repeat(context.width).black().to_string());
-        lines.push(self.template.clone());
+        // lines.push("━".repeat(context.width).black().to_string());
+        // lines.push(self.template.clone());
 
         skim::ItemPreview::AnsiText(lines.join("\n"))
     }
@@ -204,8 +221,8 @@ enum WorkflowComponent {
         name: String,
         display_name: String,
         inner: CheckBox,
-        _value_if_true: String,
-        _value_if_false: String,
+        value_if_true: String,
+        value_if_false: String,
     },
     TextField {
         name: String,
@@ -235,7 +252,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                         Some(value.to_string())
                     },
                     None => {
-                        arg_pairs.insert(arg, serde_json::from_str(&value).unwrap_or(Value::String(value)));
+                        arg_pairs.insert(arg, Value::String(value));
                         None
                     },
                 },
@@ -314,9 +331,11 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
                             .height(Some("50%"))
-                            // .preview(Some(""))
-                            // .preview_window(Some("down"))
+                            .preview(Some(""))
+                            .prompt(Some("▸ "))
+                            .preview_window(Some("down:3"))
                             .reverse(true)
+                            .case(CaseMatching::Ignore)
                             .tac(true)
                             .build()
                             .unwrap(),
@@ -415,8 +434,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .with_text(parameter.description.unwrap_or_else(|| "Toggle".to_string())),
                 name,
                 display_name,
-                _value_if_true: true_value_substitution,
-                _value_if_false: false_value_substitution,
+                value_if_true: true_value_substitution,
+                value_if_false: false_value_substitution,
             },
             ParameterType::Text { placeholder } => WorkflowComponent::TextField {
                 inner: match placeholder {
@@ -624,29 +643,29 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         return Ok(());
     }
 
-    let mut args: HashMap<&str, Value> = HashMap::new();
+    let mut args: HashMap<&str, (Value, String)> = HashMap::new();
     for component in &components {
         match component {
             WorkflowComponent::CheckBox {
                 name,
                 inner,
-                _value_if_true,
-                _value_if_false,
+                value_if_true,
+                value_if_false,
                 ..
             } => {
                 args.insert(name, match inner.checked {
-                    true => _value_if_true.clone().into(),
-                    false => _value_if_false.clone().into(),
+                    true => (true.into(), value_if_true.clone()),
+                    false => (false.into(), value_if_false.clone()),
                 });
             },
             WorkflowComponent::TextField { name, inner, .. } => {
                 if !inner.text.is_empty() {
-                    args.insert(name, inner.text.to_string().into());
+                    args.insert(name, (inner.text.clone().into(), inner.text.clone()));
                 }
             },
             WorkflowComponent::Picker { name, inner, .. } => {
                 if !inner.text.is_empty() {
-                    args.insert(name, inner.text.to_string().into());
+                    args.insert(name,  (inner.text.clone().into(), inner.text.clone()));
                 }
             },
         };
@@ -657,8 +676,20 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
-    for (arg, val) in &args {
-        command.push_str(&format!(" --{arg} {}", escape(val.to_string().into())));
+    for (arg, (val, _)) in &args {
+        match val {
+            Value::Bool(b) => {
+                if *b {
+                    write!(command, " --{arg}").ok();
+                }
+            },
+            Value::String(s) => {
+                write!(command, " --{arg} {}", escape(s.into())).ok();
+            },
+            other => {
+                write!(command, " --{arg} {}", escape(other.to_string().into())).ok();
+            },
+        }
     }
 
     if parameter_count > 0 {
@@ -667,9 +698,11 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     cfg_if! {
         if #[cfg(feature = "deno")] {
-            let execute = execute_js_workflow(&workflow.template, &args);
+            let map = args.into_iter().map(|(key, (v, _))| (key, v)).collect();
+            let execute = execute_js_workflow(&workflow.template, &map);
         } else {
-            let execute = execute_bash_workflow(&workflow.tree, &args);
+            let map = args.into_iter().map(|(key, (_, s))| (key, s)).collect();
+            let execute = execute_bash_workflow(&workflow.tree, &map);
         }
     }
 
@@ -683,20 +716,16 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, Value>) -> Result<()> {
+async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, String>) -> Result<()> {
     let mut command = Command::new("bash");
     command.arg("-c");
     command.arg(tree.iter().fold(String::new(), |mut acc, branch| {
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
-            TreeElement::Token { name } => acc.push_str(&match args[name.as_str()].clone() {
-                Value::String(str) => str,
-                val => val.to_string(),
-            }),
+            TreeElement::Token { name } => acc.push_str(&args[name.as_str()]),
         }
         acc
     }));
-    println!("{command:?}");
     command.status()?;
     Ok(())
 }

@@ -134,7 +134,7 @@ impl EventSender {
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
-    let terminal = Terminal::parent_terminal().map(|s| s.to_string());
+    let terminal = Terminal::parent_terminal().map(|s| s.internal_id());
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())

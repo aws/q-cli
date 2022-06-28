@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 
@@ -88,7 +89,7 @@ impl ThemeArgs {
                         match author {
                             Some(Author { name, twitter, github }) => {
                                 if let Some(name) = name {
-                                    theme_line.push_str(&format!(" by {}", name.bold()));
+                                    write!(theme_line, " by {}", name.bold()).ok();
                                 }
 
                                 println!("{}", theme_line);

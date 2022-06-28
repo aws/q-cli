@@ -34,8 +34,11 @@ pub enum RootUserSubcommand {
     /// Login to Fig
     Login {
         /// Manually refresh the auth token
-        #[clap(long, short, action)]
+        #[clap(long, short, value_parser)]
         refresh: bool,
+        /// Manually refresh the auth token
+        #[clap(long, value_parser)]
+        hard_refresh: bool,
     },
     /// Logout of Fig
     Logout,
@@ -44,7 +47,7 @@ pub enum RootUserSubcommand {
 impl RootUserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            Self::Login { refresh } => login_cli(refresh).await,
+            Self::Login { refresh, hard_refresh } => login_cli(refresh, hard_refresh).await,
             Self::Logout => logout_cli().await,
         }
     }
@@ -251,14 +254,16 @@ impl TokensSubcommand {
 }
 
 /// Login to fig
-pub async fn login_cli(refresh: bool) -> Result<()> {
+pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
     let client_id = "hkinciohdp1i7h0imdk63a4bv";
     let client = get_client()?;
 
-    if refresh {
+    if refresh || hard_refresh {
         let mut creds = Credentials::load_credentials()?;
-        creds.refresh_credentials(&client, client_id).await?;
-        creds.save_credentials()?;
+        if creds.is_expired() || hard_refresh {
+            creds.refresh_credentials(&client, client_id).await?;
+            creds.save_credentials()?;
+        }
         return Ok(());
     }
 
