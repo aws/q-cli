@@ -25,13 +25,13 @@ use crate::util::api::request;
 #[derive(Debug, Args)]
 pub struct TeamsArgs {
     // List all teams that the user is part of
-    #[clap(long, action, conflicts_with_all = &["new", "delete"])]
+    #[clap(long, value_parser, conflicts_with_all = &["new", "delete"])]
     list: bool,
     // Create a new team
-    #[clap(long, action, conflicts_with_all = &["list", "delete"])]
+    #[clap(long, value_parser, conflicts_with_all = &["list", "delete"])]
     new: bool,
     // Delete an existing team
-    #[clap(long, action, conflicts_with_all = &["list", "new"])]
+    #[clap(long, value_parser, conflicts_with_all = &["list", "new"])]
     delete: bool,
     // Format of output
     #[clap(long, short, value_enum, value_parser, default_value_t)]

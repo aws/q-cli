@@ -48,7 +48,7 @@ pub enum PluginsSubcommands {
         #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
         /// Only list plugins that are installed
-        #[clap(long, short, action)]
+        #[clap(long, short, value_parser)]
         installed: bool,
     },
 }

@@ -45,9 +45,9 @@ fn theme_folder() -> Option<PathBuf> {
 
 #[derive(Debug, Args)]
 pub struct ThemeArgs {
-    #[clap(long, action, conflicts_with_all = &["folder", "theme"])]
+    #[clap(long, value_parser, conflicts_with_all = &["folder", "theme"])]
     list: bool,
-    #[clap(long, action, conflicts_with_all = &["list", "theme"])]
+    #[clap(long, value_parser, conflicts_with_all = &["list", "theme"])]
     folder: bool,
     #[clap(value_parser, conflicts_with_all = &["list", "folder"])]
     theme: Option<String>,

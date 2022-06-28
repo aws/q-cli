@@ -39,7 +39,7 @@ pub struct DiagnosticArgs {
     #[clap(long, short, value_enum, value_parser, default_value_t)]
     format: OutputFormat,
     /// Force limited diagnostic output
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     force: bool,
 }
 

@@ -68,7 +68,7 @@ pub enum HookSubcommand {
         control_path: String,
         #[clap(value_parser)]
         remote_dest: String,
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         prompt: bool,
     },
 }

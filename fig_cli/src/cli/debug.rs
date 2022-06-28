@@ -72,7 +72,7 @@ pub enum DebugSubcommand {
     /// Debug dotfiles
     Dotfiles {
         /// Disable debug mode
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         disable: bool,
     },
     /// Switch build

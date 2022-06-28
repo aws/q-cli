@@ -63,7 +63,7 @@ pub enum UserSubcommand {
         format: OutputFormat,
         /// Only print the user's email address, this is quicker since it doesn't require a network
         /// request
-        #[clap(long, short = 'e', action)]
+        #[clap(long, short = 'e', value_parser)]
         only_email: bool,
     },
     #[clap(subcommand)]

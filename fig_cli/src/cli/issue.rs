@@ -19,7 +19,7 @@ use crate::util::{
 #[derive(Debug, Args)]
 pub struct IssueArgs {
     /// Force issue creation
-    #[clap(long, short = 'f', action)]
+    #[clap(long, short = 'f', value_parser)]
     force: bool,
     /// Issue description
     #[clap(value_parser)]

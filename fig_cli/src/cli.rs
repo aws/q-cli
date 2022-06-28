@@ -104,7 +104,7 @@ pub enum CliRootCommands {
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short = 'y', action)]
+        #[clap(long, short = 'y', value_parser)]
         no_confirm: bool,
     },
     /// Run the daemon
@@ -144,7 +144,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(value_enum, action, default_value_t = Processes::App, hide = true)]
+        #[clap(value_enum, value_parser, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     #[clap(hide = true)]

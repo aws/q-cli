@@ -68,22 +68,22 @@ pub struct CallbackArgs {
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, action, conflicts_with_all = &["input-method"])]
+    #[clap(long, value_parser, conflicts_with_all = &["input-method"])]
     pub daemon: bool,
     /// Install only the shell integrations
-    #[clap(long, action, conflicts_with_all = &["input-method"])]
+    #[clap(long, value_parser, conflicts_with_all = &["input-method"])]
     pub dotfiles: bool,
     /// Prompt input method installation
-    #[clap(long, action, conflicts_with_all = &["daemon", "dotfiles"])]
+    #[clap(long, value_parser, conflicts_with_all = &["daemon", "dotfiles"])]
     pub input_method: bool,
     /// Don't confirm automatic installation.
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub no_confirm: bool,
     /// Force installation of fig
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub force: bool,
     /// Install only the ssh integration.
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub ssh: bool,
 }
 
@@ -106,16 +106,16 @@ pub enum InternalSubcommand {
     /// Uninstall fig cli
     Uninstall {
         /// Uninstall only the daemon
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         daemon: bool,
         /// Uninstall only the shell integrations
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         dotfiles: bool,
         /// Uninstall only the binary
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         binary: bool,
         /// Uninstall only the ssh integration
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         ssh: bool,
     },
     GetShell,
@@ -123,13 +123,13 @@ pub enum InternalSubcommand {
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         name: String,
         /// Payload of the event as a JSON string.
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         payload: Option<String>,
         /// Apps to send the event to.
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         apps: Vec<String>,
     },
     AuthToken,
