@@ -12,11 +12,13 @@ use std::path::{
 
 use anyhow::{
     bail,
+    Context,
     Result,
 };
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
+use fig_ipc::get_fig_socket_path;
 use globset::{
     Glob,
     GlobSet,
@@ -170,91 +172,56 @@ impl LaunchOptions {
 }
 
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
+    if is_app_running() {
+        return Ok(());
+    }
+
+    if opts.verbose {
+        println!("\n→ Launching Fig...\n");
+    }
+
+    let fig_socket_path = get_fig_socket_path();
+    std::fs::remove_file(&fig_socket_path).ok();
+
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            use anyhow::Context;
-            use fig_ipc::get_fig_socket_path;
-
-            if is_app_running() {
-                return Ok(());
-            }
-
-            if opts.verbose {
-                println!("\n→ Launching Fig...\n");
-            }
-
             std::process::Command::new("open")
                 .args(["-g", "-b", "com.mschrage.fig"])
                 .output()
                 .context("\nUnable to launch Fig\n")?;
-
-            if !opts.wait_for_activation {
-                return Ok(());
-            }
-
-            if !is_app_running() {
-                anyhow::bail!("Unable to launch Fig");
-            }
-
-            // Wait for socket to exist
-            let path = get_fig_socket_path();
-            for _ in 0..9 {
-                if path.exists() {
-                    return Ok(());
-                }
-                // Sleep for a bit
-                std::thread::sleep(std::time::Duration::from_millis(500));
-            }
-
-            bail!("\nUnable to finish launching Fig properly\n")
         } else if #[cfg(target_os = "linux")] {
-            use anyhow::Context;
-            use fig_ipc::get_fig_socket_path;
-
-            if is_app_running() {
-                return Ok(());
-            }
-
-            if opts.verbose {
-                println!("\n→ Launching Fig...\n");
-            }
-
-            std::fs::remove_file(get_fig_socket_path()).ok();
-
-            let process = std::process::Command::new("systemctl")
+            std::process::Command::new("systemctl")
                 .args(&["--user", "start", "fig"])
                 .output()
                 .context("\nUnable to launch Fig\n")?;
-
-            if !process.status.success() {
-                bail!("Failed to launch fig.desktop");
-            }
-
-
-            if !opts.wait_for_activation {
-                return Ok(());
-            }
-
-            if !is_app_running() {
-                anyhow::bail!("Unable to launch Fig");
-            }
-
-            // Wait for socket to exist
-            let path = get_fig_socket_path();
-            for _ in 0..9 {
-                if path.exists() {
-                    return Ok(());
-                }
-                // Sleep for a bit
-                std::thread::sleep(std::time::Duration::from_millis(500));
-            }
-
-            bail!("\nUnable to finish launching Fig properly\n")
+        } else if #[cfg(target_os = "windows")] {
+            std::process::Command::new("fig_desktop")
+                .arg("--mission-control")
+                .output()
+                .context("\nUnable to launch Fig\n")?;
         } else {
-            let _opts = opts;
-            bail!("Fig desktop can not be launched on this platform")
+            compile_error!("unsupported platform")
         }
     }
+
+    if !opts.wait_for_activation {
+        return Ok(());
+    }
+
+    if !is_app_running() {
+        anyhow::bail!("Unable to launch Fig");
+    }
+
+    // Wait for socket to exist
+    for _ in 0..9 {
+        if fig_socket_path.exists() {
+            return Ok(());
+        }
+        // Sleep for a bit
+        std::thread::sleep(std::time::Duration::from_millis(500));
+    }
+
+    bail!("\nUnable to finish launching Fig properly\n")
 }
 
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {

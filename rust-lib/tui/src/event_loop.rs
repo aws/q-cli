@@ -82,7 +82,7 @@ impl<'a> EventLoop<'a> {
                         component.update(renderer, style_sheet, control_flow, true, Event::Draw {
                             x: 0,
                             y: 0,
-                            width: component.desired_width(style_sheet, ctx),
+                            width: component.desired_width(style_sheet, ctx).min(self.width - 1),
                             height: component.desired_height(style_sheet, ctx),
                         })
                     },

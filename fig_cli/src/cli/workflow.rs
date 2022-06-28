@@ -8,6 +8,8 @@ use anyhow::{
     Result,
 };
 use crossterm::style::Stylize;
+use fig_ipc::command::open_ui_element;
+use fig_proto::local::UiElement;
 use fig_telemetry::{
     TrackEvent,
     TrackSource,
@@ -20,12 +22,15 @@ use serde::{
 use serde_json::Value;
 #[cfg(unix)]
 use skim::SkimItem;
+use spinners::{
+    Spinner,
+    Spinners,
+};
 use tui::components::{
     CheckBox,
-    CollapsiblePicker,
-    FilterablePicker,
     Frame,
     Label,
+    Select,
     TextField,
 };
 use tui::layouts::Form;
@@ -39,6 +44,10 @@ use tui::{
 };
 
 use crate::util::api::request;
+use crate::util::{
+    launch_fig,
+    LaunchOptions,
+};
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 1;
 
@@ -89,7 +98,7 @@ enum TreeElement {
     Token { name: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Workflow {
     name: String,
@@ -101,6 +110,18 @@ struct Workflow {
     namespace: String,
     template: String,
     tree: Vec<TreeElement>,
+}
+
+impl Workflow {
+    // Hack
+    pub fn new_create_prompt() -> Self {
+        Self {
+            name: "create-new-workflow".to_owned(),
+            display_name: Some("Create new workflow".to_owned()),
+            namespace: "fig".to_owned(),
+            ..Default::default()
+        }
+    }
 }
 
 #[cfg(unix)]
@@ -194,7 +215,7 @@ enum WorkflowComponent {
     Picker {
         name: String,
         display_name: String,
-        inner: CollapsiblePicker<FilterablePicker>,
+        inner: Select,
     },
 }
 
@@ -277,11 +298,12 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .ok();
             });
 
+            let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+            workflows.push(Workflow::new_create_prompt());
+
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     use skim::prelude::*;
-
-                    let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
                     for workflow in workflows.iter() {
@@ -323,8 +345,6 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                         None => return Ok(()),
                     };
                 } else if #[cfg(windows)] {
-                    let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
-
                     let workflow_names: Vec<String> = workflows
                         .iter()
                         .map(|workflow| {
@@ -347,21 +367,35 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         },
     };
 
+    let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow... ".to_owned());
+
+    let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
+
+    if &workflow_name == "@fig/create-new-workflow" {
+        println!();
+        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+        println!();
+
+        return match open_ui_element(UiElement::MissionControl).await {
+            Ok(()) => Ok(()),
+            Err(err) => Err(err.context("Could not open fig")),
+        };
+    }
+
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
         return Err(anyhow!(
-            "Could not execute @{}/{} since it requires features not available in this version of Fig.\n\
+            "Could not execute {} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
-            workflow.namespace,
-            workflow.name,
+            workflow_name,
             "fig update".magenta(),
         ));
     }
 
     let track_execution = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [(
-            "execution_method",
-            execution_method,
-        )])
+        fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [
+            ("workflow", workflow_name.as_ref()),
+            ("execution_method", execution_method),
+        ])
         .await
         .ok();
     });
@@ -423,24 +457,19 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     }
                 }
 
-                let mut index = 0;
-                if let Some(arg) = args.get(&name) {
-                    for (i, option) in options.iter().enumerate() {
-                        if option == arg {
-                            index = i;
-                            break;
-                        }
-                    }
+                let mut select = match placeholder {
+                    Some(placeholder) => Select::new(options).with_hint(&placeholder),
+                    None => Select::new(options),
                 };
+
+                if let Some(arg) = args.get(&name) {
+                    select.text = arg.to_string();
+                }
 
                 WorkflowComponent::Picker {
                     name: name.clone(),
                     display_name,
-                    inner: match placeholder {
-                        Some(placeholder) => CollapsiblePicker::new(options).with_placeholder(&placeholder),
-                        None => CollapsiblePicker::new(options),
-                    }
-                    .with_index(index),
+                    inner: select,
                 }
             },
         });
@@ -573,14 +602,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             model.push(&mut name as &mut dyn Component);
             model.push(description as &mut dyn Component);
         },
-        None => {
-            name = name.with_margin_bottom(1);
-            model.push(&mut name as &mut dyn Component);
-        },
+        None => model.push(&mut name as &mut dyn Component),
     };
     for frame in &mut frames {
         model.push(frame as &mut dyn Component);
     }
+
+    spinner.stop();
 
     if parameter_count > 0
         && EventLoop::new()
@@ -617,10 +645,9 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 }
             },
             WorkflowComponent::Picker { name, inner, .. } => {
-                args.insert(name, match inner.selected_item() {
-                    Some(selected) => selected.to_string().into(),
-                    None => return Err(anyhow!("Missing entry for field: {name}")),
-                });
+                if !inner.text.is_empty() {
+                    args.insert(name, inner.text.to_string().into());
+                }
             },
         };
     }
