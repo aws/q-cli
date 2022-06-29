@@ -129,86 +129,97 @@ struct Workflow {
     tree: Vec<TreeElement>,
 }
 
-impl Workflow {
-    // Hack
-    pub fn new_create_prompt() -> Self {
-        Self {
-            name: "create-new-workflow".to_owned(),
-            display_name: Some("Create new workflow".to_owned()),
-            namespace: "fig".to_owned(),
-            ..Default::default()
-        }
-    }
+enum WorkflowAction {
+    Run(Workflow),
+    Create,
 }
 
 #[cfg(unix)]
-impl SkimItem for Workflow {
+impl SkimItem for WorkflowAction {
     fn text(&self) -> std::borrow::Cow<str> {
-        let tags = match &self.tags {
-            Some(tags) => tags.join(" "),
-            None => String::new(),
-        };
+        match self {
+            WorkflowAction::Run(workflow) => {
+                let tags = match &workflow.tags {
+                    Some(tags) => tags.join(" "),
+                    None => String::new(),
+                };
 
-        format!(
-            "{} {} @{}/{} {}",
-            self.display_name.as_deref().unwrap_or_default(),
-            self.name,
-            self.namespace,
-            self.name,
-            tags
-        )
-        .into()
+                format!(
+                    "{} {} @{}/{} {}",
+                    workflow.display_name.as_deref().unwrap_or_default(),
+                    workflow.name,
+                    workflow.namespace,
+                    workflow.name,
+                    tags
+                )
+                .into()
+            },
+            WorkflowAction::Create => "create new workflow".into(),
+        }
     }
 
     fn display<'a>(&'a self, context: skim::DisplayContext<'a>) -> skim::AnsiString<'a> {
-        let name = self.display_name.clone().unwrap_or_else(|| self.name.clone());
-        let name_len = name.len();
+        match self {
+            WorkflowAction::Run(workflow) => {
+                let name = workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone());
+                let name_len = name.len();
 
-        let tags = match &self.tags {
-            Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
-            _ => String::new(),
-        };
-        let tag_len = tags.len();
+                let tags = match &workflow.tags {
+                    Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
+                    _ => String::new(),
+                };
+                let tag_len = tags.len();
 
-        let namespace_name = format!("@{}/{}", self.namespace, self.name);
-        let namespace_name_len = namespace_name.len();
+                let namespace_name = format!("@{}/{}", workflow.namespace, workflow.name);
+                let namespace_name_len = namespace_name.len();
 
-        skim::AnsiString::parse(&format!(
-            "{}{}{}{}",
-            name.bold(),
-            tags.dark_grey(),
-            " ".repeat(
-                context
-                    .container_width
-                    .saturating_sub(name_len)
-                    .saturating_sub(tag_len)
-                    .saturating_sub(namespace_name_len)
-                    .saturating_sub(1)
-                    .max(1)
-            ),
-            namespace_name.dark_grey()
-        ))
+                skim::AnsiString::parse(&format!(
+                    "{}{}{}{}",
+                    name.bold(),
+                    tags.dark_grey(),
+                    " ".repeat(
+                        context
+                            .container_width
+                            .saturating_sub(name_len)
+                            .saturating_sub(tag_len)
+                            .saturating_sub(namespace_name_len)
+                            .saturating_sub(1)
+                            .max(1)
+                    ),
+                    namespace_name.dark_grey()
+                ))
+            },
+            WorkflowAction::Create => skim::AnsiString::parse(&"Create new Workflow...".bold().blue().to_string()),
+        }
     }
 
     fn preview(&self, _context: skim::PreviewContext) -> skim::ItemPreview {
-        let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
+        match self {
+            WorkflowAction::Run(workflow) => {
+                let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
 
-        if let Some(description) = self.description.as_deref() {
-            if !description.is_empty() {
-                lines.push(format!("  {}", description.to_owned()));
-            } else {
-                lines.push("  No description".italic().grey().to_string())
-            }
+                if let Some(description) = workflow.description.as_deref() {
+                    if !description.is_empty() {
+                        lines.push(format!("  {}", description.to_owned()));
+                    } else {
+                        lines.push("  No description".italic().grey().to_string())
+                    }
+                }
+
+                // lines.push("━".repeat(context.width).black().to_string());
+                // lines.push(self.template.clone());
+
+                skim::ItemPreview::AnsiText(lines.join("\n"))
+            },
+            WorkflowAction::Create => skim::ItemPreview::AnsiText("".to_string()),
         }
-
-        // lines.push("━".repeat(context.width).black().to_string());
-        // lines.push(self.template.clone());
-
-        skim::ItemPreview::AnsiText(lines.join("\n"))
     }
 
     fn output(&self) -> std::borrow::Cow<str> {
-        self.name.clone().into()
+        match self {
+            WorkflowAction::Run(workflow) => workflow.name.clone().into(),
+            WorkflowAction::Create => "".into(),
+        }
     }
 
     fn get_matching_ranges(&self) -> Option<&[(usize, usize)]> {
@@ -317,24 +328,35 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .ok();
             });
 
-            let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
-            if workflows.is_empty() {
-                workflows.push(Workflow::new_create_prompt());
-            }
-
+            let workflows: Vec<Workflow> = Vec::new();
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     use skim::prelude::*;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
-                    for workflow in workflows.iter() {
-                        tx.send(Arc::new(workflow.clone())).ok();
+
+                    if workflows.is_empty() {
+                        tx.send(Arc::new(WorkflowAction::Create)).ok();
+                    }
+
+                    for workflow in workflows.iter().rev() {
+                        tx.send(Arc::new(WorkflowAction::Run(workflow.clone()))).ok();
                     }
                     drop(tx);
 
+                    let terminal_size = crossterm::terminal::size();
+                    let cursor_position = crossterm::cursor::position();
+
+                    let height = match (terminal_size, cursor_position) {
+                        (Ok((_, term_height)), Ok((_, cursor_row))) => {
+                            (term_height - cursor_row).max(13).to_string()
+                        }
+                        _ => "100%".into()
+                    };
+
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
-                            .height(Some("50%"))
+                            .height(Some(&height))
                             .preview(Some(""))
                             .prompt(Some("▸ "))
                             .preview_window(Some("down:3"))
@@ -356,12 +378,25 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                                 .map(|selected_item|
                                     (**selected_item)
                                         .as_any()
-                                        .downcast_ref::<Workflow>()
+                                        .downcast_ref::<WorkflowAction>()
                                         .unwrap()
                                         .to_owned()
                                 )
                                 .next() {
-                                Some(workflow) => workflow,
+                                Some(workflow) => {
+                                    match workflow {
+                                        WorkflowAction::Run(workflow) => workflow.clone(),
+                                        WorkflowAction::Create => {
+                                            println!();
+                                            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                                            println!();
+                                            return match open_ui_element(UiElement::MissionControl).await {
+                                                Ok(()) => Ok(()),
+                                                Err(err) => Err(err.context("Could not open fig")),
+                                            };
+                                        },
+                                    }
+                                }
                                 None => return Ok(()),
                             }
                         },
@@ -394,18 +429,6 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow...".to_owned());
 
     let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
-
-    if &workflow_name == "@fig/create-new-workflow" {
-        println!();
-        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-        println!();
-
-        return match open_ui_element(UiElement::MissionControl).await {
-            Ok(()) => Ok(()),
-            Err(err) => Err(err.context("Could not open fig")),
-        };
-    }
-
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
         return Err(anyhow!(
             "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
