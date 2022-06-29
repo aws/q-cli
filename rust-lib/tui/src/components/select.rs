@@ -270,6 +270,7 @@ impl Component for Select {
                                 self.text = self.options[self.sorted_options[index]].to_string();
                                 self.cursor = self.text.len();
                                 self.index = None;
+                                self.index_offset = 0;
                             }
 
                             if self.validate && !self.options.contains(&self.text) {
