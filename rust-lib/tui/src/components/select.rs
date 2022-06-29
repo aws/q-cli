@@ -300,8 +300,8 @@ impl Component for Select {
                 .options
                 .iter()
                 .fold(0, |acc, option| acc.max(u16::try_from(option.len() + 2).unwrap()))
-                .min(32)
-                .min(u16::try_from(self.hint.as_ref().map(|hint| hint.len()).unwrap_or(0)).unwrap())
+                .max(32)
+                .max(u16::try_from(self.hint.as_ref().map(|hint| hint.len()).unwrap_or(0)).unwrap())
             + 2
     }
 

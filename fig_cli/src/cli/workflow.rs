@@ -132,6 +132,7 @@ struct Workflow {
     tree: Vec<TreeElement>,
 }
 
+#[cfg(Unix)]
 enum WorkflowAction {
     Run(Workflow),
     Create,
@@ -331,9 +332,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     .ok();
             });
 
-            let workflows: Vec<Workflow> = Vec::new();
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
+                    let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+
                     use skim::prelude::*;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
@@ -406,6 +408,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                         None => return Ok(()),
                     };
                 } else if #[cfg(windows)] {
+                    let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+
                     let workflow_names: Vec<String> = workflows
                         .iter()
                         .map(|workflow| {
