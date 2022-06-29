@@ -13,7 +13,9 @@ use crossterm::{
     cursor,
     execute,
 };
+#[cfg(unix)]
 use fig_ipc::command::open_ui_element;
+#[cfg(unix)]
 use fig_proto::local::UiElement;
 use fig_telemetry::{
     TrackEvent,
@@ -51,6 +53,7 @@ use tui::{
 };
 
 use crate::util::api::request;
+#[cfg(unix)]
 use crate::util::{
     launch_fig,
     LaunchOptions,
@@ -130,6 +133,7 @@ struct Workflow {
     namespace: String,
     template: String,
     tree: Vec<TreeElement>,
+    is_owned_by_user: Option<bool>,
 }
 
 #[cfg(unix)]
@@ -710,7 +714,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         return Err(anyhow!("Missing execution args"));
     }
 
-    let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
+    let mut command = format!("fig run {}", match workflow.is_owned_by_user.unwrap_or(false) {
+        true => workflow.name.clone(),
+        false => format!("@{}/{}", &workflow.namespace, &workflow.name),
+    });
     for (arg, (val, _)) in &args {
         use std::fmt::Write;
 
