@@ -50,7 +50,7 @@ namespace Fig {
                 "org.freedesktop.IBus.Fig", // name
                 "Fig IBus integration component", // description
                 "0.1.0", // version
-                "MIT", // version
+                "MIT", // license
                 "Fig", // author
                 "https://fig.io", // homepage
                 "", // command_line

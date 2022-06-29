@@ -65,7 +65,7 @@ pub enum AssetKind {
 
 pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     if let Some(asset) = ASSET_CACHE.get(&path) {
-        println!("cache hit");
+        trace!("icon cache hit");
         return Ok(asset);
     }
     trace!("cache miss processing asset for {path:?}");

@@ -1,6 +1,5 @@
 pub mod local_state;
 
-use std::fs;
 use std::io::{
     stdout,
     Read,
@@ -21,7 +20,6 @@ use clap::{
 };
 use crossterm::style::Stylize;
 use fig_auth::get_token;
-use fig_directories::fig_dir;
 use fig_install::dotfiles::notify::TerminalNotification;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::{
@@ -29,15 +27,11 @@ use fig_proto::hooks::{
     new_event_hook,
 };
 use fig_util::get_parent_process_exe;
-use native_dialog::{
-    MessageDialog,
-    MessageType,
-};
 use rand::distributions::{
     Alphanumeric,
     DistString,
 };
-use rand::seq::IteratorRandom;
+use serde_json::Value;
 use sysinfo::{
     System,
     SystemExt,
@@ -48,15 +42,12 @@ use tracing::{
     info,
     trace,
 };
-use viu::{
-    run,
-    Config,
-};
 
 use crate::cli::installation::{
     self,
     InstallComponents,
 };
+use crate::util::api::request;
 
 #[derive(Debug, Args)]
 #[clap(group(
@@ -77,39 +68,23 @@ pub struct CallbackArgs {
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, action, conflicts_with_all = &["input-method"])]
+    #[clap(long, value_parser, conflicts_with_all = &["input-method"])]
     pub daemon: bool,
     /// Install only the shell integrations
-    #[clap(long, action, conflicts_with_all = &["input-method"])]
+    #[clap(long, value_parser, conflicts_with_all = &["input-method"])]
     pub dotfiles: bool,
     /// Prompt input method installation
-    #[clap(long, action, conflicts_with_all = &["daemon", "dotfiles"])]
+    #[clap(long, value_parser, conflicts_with_all = &["daemon", "dotfiles"])]
     pub input_method: bool,
     /// Don't confirm automatic installation.
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub no_confirm: bool,
     /// Force installation of fig
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub force: bool,
     /// Install only the ssh integration.
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub ssh: bool,
-}
-
-#[derive(Debug, Args)]
-pub struct AnimationArgs {
-    // resource to play
-    #[clap(long, short, value_parser)]
-    filename: Option<String>,
-    // framerate to play the GIF with
-    #[clap(long, short, value_parser)]
-    rate: Option<i32>,
-    // text to print before GIF/img appears
-    #[clap(long, short, value_parser)]
-    before_text: Option<String>,
-    // text to print before GIF/img disappears
-    #[clap(long, short, value_parser)]
-    after_text: Option<String>,
 }
 
 #[derive(Debug, Subcommand)]
@@ -131,36 +106,41 @@ pub enum InternalSubcommand {
     /// Uninstall fig cli
     Uninstall {
         /// Uninstall only the daemon
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         daemon: bool,
         /// Uninstall only the shell integrations
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         dotfiles: bool,
         /// Uninstall only the binary
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         binary: bool,
         /// Uninstall only the ssh integration
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         ssh: bool,
     },
-    /// Notify the user that they are uninstalling incorrectly
-    WarnUserWhenUninstallingIncorrectly,
-    Animation(AnimationArgs),
     GetShell,
     Hostname,
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         name: String,
         /// Payload of the event as a JSON string.
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         payload: Option<String>,
         /// Apps to send the event to.
-        #[clap(long, action)]
+        #[clap(long, value_parser)]
         apps: Vec<String>,
     },
     AuthToken,
+    Request {
+        #[clap(long, value_parser)]
+        route: String,
+        #[clap(long, value_parser)]
+        method: String,
+        #[clap(long, value_parser)]
+        body: Option<String>,
+    },
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -294,79 +274,6 @@ impl InternalSubcommand {
                     },
                 }
             },
-            InternalSubcommand::WarnUserWhenUninstallingIncorrectly => {
-                MessageDialog::new()
-                    .set_type(MessageType::Warning)
-                    .set_title("Trying to uninstall Fig?")
-                    .set_text("Please run `fig uninstall` rather than moving the app to the Trash.")
-                    .show_alert()
-                    .unwrap();
-            },
-            InternalSubcommand::Animation(AnimationArgs {
-                filename,
-                rate,
-                before_text,
-                after_text,
-            }) => {
-                let path = match filename {
-                    Some(mut fname) => {
-                        let animations_folder = fig_dir().unwrap().join("animations");
-                        if fname == "random" {
-                            // pick a random animation file from animations folder
-                            let paths = fs::read_dir(&animations_folder).unwrap();
-                            match paths.choose(&mut rand::thread_rng()).unwrap() {
-                                Ok(p) => {
-                                    fname = p.file_name().into_string().unwrap();
-                                },
-                                Err(e) => {
-                                    eprintln!("{}", e);
-                                    std::process::exit(1);
-                                },
-                            }
-                        }
-
-                        animations_folder.join(fname).into_os_string().into_string().unwrap()
-                    },
-                    None => {
-                        eprintln!("filename cannot be empty");
-                        std::process::exit(1);
-                    },
-                };
-
-                let loading_message = match before_text {
-                    Some(t) => t.magenta(),
-                    None => String::new().reset(),
-                };
-
-                let cleanup_message = match after_text {
-                    Some(t) => t.magenta(),
-                    None => String::new().reset(),
-                };
-
-                // viu stuff to initialize
-                let files = vec![path.as_str()];
-
-                let conf = Config::new(
-                    None,
-                    None,
-                    Some(files),
-                    false,
-                    false,
-                    false,
-                    true,
-                    false,
-                    false,
-                    rate,
-                    &loading_message,
-                    &cleanup_message,
-                );
-
-                // run animation
-                if let Err(e) = run(conf).await {
-                    eprintln!("{:?}", e);
-                    std::process::exit(1);
-                }
-            },
             InternalSubcommand::GetShell => {
                 if let Some(exe) = get_parent_process_exe() {
                     if write!(stdout(), "{}", exe.display()).is_ok() {
@@ -436,6 +343,15 @@ impl InternalSubcommand {
             },
             InternalSubcommand::AuthToken => {
                 println!("{}", get_token().await?);
+            },
+            InternalSubcommand::Request { route, method, body } => {
+                let body: Option<Value> = match body {
+                    Some(body) => Some(serde_json::from_str(&body)?),
+                    None => None,
+                };
+                let method = reqwest::Method::from_str(&method)?;
+                let value: Value = request(method, route, body.as_ref(), true).await?;
+                println!("{}", serde_json::to_string(&value)?);
             },
         }
 

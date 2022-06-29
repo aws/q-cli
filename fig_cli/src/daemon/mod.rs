@@ -1,6 +1,8 @@
 pub mod launchd_plist;
 pub mod scheduler;
+#[cfg(target_os = "macos")]
 pub mod settings_watcher;
+pub mod socket_server;
 pub mod system_handler;
 pub mod systemd_unit;
 pub mod websocket;
@@ -39,6 +41,7 @@ use tracing::{
 };
 
 use crate::daemon::launchd_plist::LaunchdPlist;
+#[cfg(target_os = "macos")]
 use crate::daemon::settings_watcher::spawn_settings_watcher;
 use crate::daemon::systemd_unit::SystemdUnit;
 use crate::daemon::websocket::process_websocket;
@@ -514,36 +517,55 @@ pub async fn daemon() -> Result<()> {
         }
     });
 
-    // Spawn settings watcher
-    let daemon_status_clone = daemon_status.clone();
-    let settings_watcher_join = tokio::spawn(async move {
-        let daemon_status = daemon_status_clone;
-        let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
-        loop {
-            match spawn_settings_watcher(daemon_status.clone()).await {
-                Ok(join_handle) => {
-                    daemon_status.write().settings_watcher_status = Ok(());
-                    backoff.reset();
-                    if let Err(err) = join_handle.await {
-                        error!("Error on settings watcher join: {:?}", err);
-                        daemon_status.write().settings_watcher_status = Err(err.into());
-                    }
-                    return;
-                },
-                Err(err) => {
-                    error!("Error spawning settings watcher: {:?}", err);
-                    daemon_status.write().settings_watcher_status = Err(err);
-                },
-            }
-            backoff.sleep().await;
+    let websocket_listen_join = tokio::spawn(async {
+        if let Err(err) = socket_server::spawn_socket().await {
+            error!("Failed to spawn websocket server: {err}");
         }
     });
 
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            // Spawn settings watcher
+            let daemon_status_clone = daemon_status.clone();
+            let settings_watcher_join = tokio::spawn(async move {
+                let daemon_status = daemon_status_clone;
+                let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+                loop {
+                    match spawn_settings_watcher(daemon_status.clone()).await {
+                        Ok(join_handle) => {
+                            daemon_status.write().settings_watcher_status = Ok(());
+                            backoff.reset();
+                            if let Err(err) = join_handle.await {
+                                error!("Error on settings watcher join: {:?}", err);
+                                daemon_status.write().settings_watcher_status = Err(err.into());
+                            }
+                            return;
+                        },
+                        Err(err) => {
+                            error!("Error spawning settings watcher: {:?}", err);
+                            daemon_status.write().settings_watcher_status = Err(err);
+                        },
+                    }
+                    backoff.sleep().await;
+                }
+            });
+        }
+    }
+
     info!("Daemon is now running");
 
-    match tokio::try_join!(scheduler_join, unix_join, websocket_join, settings_watcher_join,) {
-        Ok(_) => Ok(()),
-        Err(err) => Err(err.into()),
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err.into()),
+            }
+        } else {
+            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join) {
+                Ok(_) => Ok(()),
+                Err(err) => Err(err.into()),
+            }
+        }
     }
 }
 

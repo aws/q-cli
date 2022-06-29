@@ -93,7 +93,19 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                             OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
                             Quit(command) => commands::quit(command, &proxy).await,
                             Diagnostics(command) => commands::diagnostic(command).await,
-                            command => {
+                            Logout(_)
+                            | TerminalIntegration(_)
+                            | ListTerminalIntegrations(_)
+                            | Restart(_)
+                            | Update(_)
+                            | ReportWindow(_)
+                            | RestartSettingsListener(_)
+                            | RunInstallScript(_)
+                            | Build(_)
+                            | ResetCache(_)
+                            | PromptAccessibility(_)
+                            | InputMethod(_)
+                            | Uninstall(_) => {
                                 debug!("Unhandled command: {command:?}");
                                 Err(LocalResponse::Error {
                                     code: None,
@@ -128,16 +140,16 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                 }
             },
             Some(LocalMessageType::Hook(hook)) => {
-                use fig_proto::local::hook::Hook;
+                use fig_proto::local::hook::Hook::*;
 
                 if let Err(err) = match hook.hook {
-                    Some(Hook::EditBuffer(request)) => hooks::edit_buffer(request, global_state.clone(), &proxy).await,
-                    Some(Hook::CursorPosition(request)) => hooks::caret_position(request, &proxy).await,
-                    Some(Hook::Prompt(request)) => hooks::prompt(request).await,
-                    Some(Hook::FocusChange(request)) => hooks::focus_change(request, &proxy).await,
-                    Some(Hook::PreExec(request)) => hooks::pre_exec(request).await,
-                    Some(Hook::InterceptedKey(request)) => hooks::intercepted_key(request, &global_state, &proxy).await,
-                    Some(Hook::FileChanged(request)) => hooks::file_changed(request).await,
+                    Some(EditBuffer(request)) => hooks::edit_buffer(request, global_state.clone(), &proxy).await,
+                    Some(CursorPosition(request)) => hooks::caret_position(request, &proxy).await,
+                    Some(Prompt(request)) => hooks::prompt(request, &global_state, &proxy).await,
+                    Some(FocusChange(request)) => hooks::focus_change(request, &proxy).await,
+                    Some(PreExec(request)) => hooks::pre_exec(request, &global_state, &proxy).await,
+                    Some(InterceptedKey(request)) => hooks::intercepted_key(request, &global_state, &proxy).await,
+                    Some(FileChanged(request)) => hooks::file_changed(request).await,
                     err => {
                         match &err {
                             Some(unknown) => error!("Unknown hook: {unknown:?}"),

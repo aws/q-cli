@@ -7,6 +7,7 @@
 	objects = {
 
 /* Begin PBXBuildFile section */
+                66EE5ACE28626F1F00CD546E /* DeepLink.swift in Sources */ = {isa = PBXBuildFile; fileRef = 66EE5ACD28626F1F00CD546E /* DeepLink.swift */; };
 		750BA10C2733590A00705E63 /* API+IPC.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750BA10B2733590A00705E63 /* API+IPC.swift */; };
 		750CF21826A1055F0094D76A /* Config.swift in Sources */ = {isa = PBXBuildFile; fileRef = 750CF21726A1055F0094D76A /* Config.swift */; };
 		7510F8BD24A9861E00E86F7C /* PrivateWindow.m in Sources */ = {isa = PBXBuildFile; fileRef = 7510F8BC24A9861E00E86F7C /* PrivateWindow.m */; };
@@ -295,6 +296,7 @@
 
 /* Begin PBXFileReference section */
 		1A63312025A4BE6D00CEA06A /* Keystroke.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Keystroke.swift; sourceTree = "<group>"; };
+                66EE5ACD28626F1F00CD546E /* DeepLink.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = DeepLink.swift; sourceTree = "<group>"; };
 		750BA10B2733590A00705E63 /* API+IPC.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = "API+IPC.swift"; sourceTree = "<group>"; };
 		750CF21726A1055F0094D76A /* Config.swift */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.swift; path = Config.swift; sourceTree = "<group>"; };
 		7510F8B924A9701000E86F7C /* Private.h */ = {isa = PBXFileReference; lastKnownFileType = sourcecode.c.h; path = Private.h; sourceTree = "<group>"; };
@@ -626,6 +628,7 @@
 				755D0DE1247EFAE10074AB5C /* Logging.swift */,
 				75AEF2E325C3C34A00D78431 /* Diagnostic.swift */,
 				7520D8112682AEB00034FE2B /* Throttler.swift */,
+                                66EE5ACD28626F1F00CD546E /* DeepLink.swift */,
 			);
 			path = Application;
 			sourceTree = "<group>";
@@ -1603,6 +1606,7 @@
 				75809B0E24BFA64D00BFFB3E /* TelemetryService.swift in Sources */,
 				75AA24DA25A7E8B000A51E9D /* lsof.m in Sources */,
 				75EB592B258D98A7002915E7 /* BiMap.swift in Sources */,
+                                66EE5ACE28626F1F00CD546E /* DeepLink.swift in Sources */,
 				751F7589246D090100E083C8 /* WebBridge.swift in Sources */,
 				75EDDC5B25D4BC54003AECC6 /* UnixSocketClient.swift in Sources */,
 				75AEF2E625C3DEAF00D78431 /* DockerIntegration.swift in Sources */,
@@ -1943,7 +1947,7 @@
 				CODE_SIGN_INJECT_BASE_ENTITLEMENTS = YES;
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 463;
+				CURRENT_PROJECT_VERSION = 464;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;
@@ -1979,7 +1983,7 @@
 				CODE_SIGN_IDENTITY = "Developer ID Application";
 				CODE_SIGN_STYLE = Manual;
 				COMBINE_HIDPI_IMAGES = YES;
-				CURRENT_PROJECT_VERSION = 463;
+				CURRENT_PROJECT_VERSION = 464;
 				DEVELOPMENT_ASSET_PATHS = "\"fig/Preview Content\"";
 				DEVELOPMENT_TEAM = B8PC799ZGU;
 				ENABLE_HARDENED_RUNTIME = YES;

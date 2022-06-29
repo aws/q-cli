@@ -22,11 +22,12 @@ pub fn get_or_create_anonymous_id() -> anyhow::Result<String> {
 }
 
 pub fn telemetry_is_disabled() -> bool {
-    fig_settings::settings::get_value("telemetry.disabled")
-        .ok()
-        .flatten()
-        .and_then(|v| v.as_bool())
-        .unwrap_or(false)
+    std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
+        || fig_settings::settings::get_value("telemetry.disabled")
+            .ok()
+            .flatten()
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
 }
 
 pub(crate) async fn make_telemetry_request(route: &str, mut body: HashMap<String, String>) -> Result<(), Error> {

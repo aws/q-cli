@@ -1,3 +1,4 @@
+use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 
@@ -44,9 +45,9 @@ fn theme_folder() -> Option<PathBuf> {
 
 #[derive(Debug, Args)]
 pub struct ThemeArgs {
-    #[clap(long, action, conflicts_with_all = &["folder", "theme"])]
+    #[clap(long, value_parser, conflicts_with_all = &["folder", "theme"])]
     list: bool,
-    #[clap(long, action, conflicts_with_all = &["list", "theme"])]
+    #[clap(long, value_parser, conflicts_with_all = &["list", "theme"])]
     folder: bool,
     #[clap(value_parser, conflicts_with_all = &["list", "folder"])]
     theme: Option<String>,
@@ -88,7 +89,7 @@ impl ThemeArgs {
                         match author {
                             Some(Author { name, twitter, github }) => {
                                 if let Some(name) = name {
-                                    theme_line.push_str(&format!(" by {}", name.bold()));
+                                    write!(theme_line, " by {}", name.bold()).ok();
                                 }
 
                                 println!("{}", theme_line);

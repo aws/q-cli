@@ -43,7 +43,7 @@ pub enum SettingsSubcommands {
     /// List all the settings
     All {
         /// List the remote settings
-        #[clap(long, short, action)]
+        #[clap(long, short, value_parser)]
         remote: bool,
         /// Format of the output
         #[clap(long, short, value_enum, value_parser, default_value_t)]
@@ -65,10 +65,10 @@ pub struct SettingsArgs {
     #[clap(value_parser)]
     value: Option<String>,
     /// Delete a value
-    #[clap(long, short, action)]
+    #[clap(long, short, value_parser)]
     delete: bool,
     /// Format of the output
-    #[clap(long, short, value_enum, action, default_value_t)]
+    #[clap(long, short, value_enum, value_parser, default_value_t)]
     format: OutputFormat,
 }
 

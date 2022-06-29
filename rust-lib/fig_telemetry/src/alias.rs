@@ -15,6 +15,7 @@ pub async fn emit_alias(user_id: String) -> Result<(), Error> {
     }
 
     let alias = HashMap::from([
+        #[cfg(target_os = "macos")]
         ("previousId".into(), fig_auth::get_default("anonymousId")?),
         ("userId".into(), user_id),
     ]);

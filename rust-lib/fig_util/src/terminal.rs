@@ -17,6 +17,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Kitty,
     Terminal::XfceTerminal,
     Terminal::Terminator,
+    Terminal::WezTerm,
 ];
 
 /// Terminals supported by Fig
@@ -55,6 +56,8 @@ pub enum Terminal {
     XfceTerminal,
     /// Terminator
     Terminator,
+    /// Terminology
+    Terminology,
 }
 
 impl fmt::Display for Terminal {
@@ -76,6 +79,7 @@ impl fmt::Display for Terminal {
             Terminal::Tilix => write!(f, "Tilix"),
             Terminal::XfceTerminal => write!(f, "Xfce Terminal"),
             Terminal::Terminator => write!(f, "Terminator"),
+            Terminal::Terminology => write!(f, "Terminology"),
         }
     }
 }
@@ -122,6 +126,7 @@ impl Terminal {
             Terminal::Tilix => "tilix".into(),
             Terminal::XfceTerminal => "xfce-terminal".into(),
             Terminal::Terminator => "terminator".into(),
+            Terminal::Terminology => "terminology".into(),
         }
     }
 
@@ -144,6 +149,7 @@ impl Terminal {
             Terminal::Tilix => todo!(),
             Terminal::XfceTerminal => todo!(),
             Terminal::Terminator => todo!(),
+            Terminal::Terminology => todo!(),
         }
     }
 
@@ -157,6 +163,8 @@ impl Terminal {
             Terminal::Konsole => Some("konsole".into()),
             Terminal::Tilix => Some("tilix".into()),
             Terminal::XfceTerminal => Some("xfce4-terminal".into()),
+            Terminal::Terminology => Some("terminology".into()),
+            Terminal::WezTerm => Some("wezterm".into()),
             _ => None,
         }
     }
@@ -172,10 +180,13 @@ impl Terminal {
             Terminal::Kitty => Some("kitty".into()),
             Terminal::XfceTerminal => Some("Xfce4-terminal".into()),
             Terminal::Terminator => Some("Terminator".into()),
+            Terminal::Terminology => Some("terminology".into()),
+            Terminal::WezTerm => Some("org.wezfurlong.wezterm".into()),
             _ => None,
         }
     }
 
+    /// (macos) do we need input method
     pub fn is_input_dependant(&self) -> bool {
         matches!(
             self,

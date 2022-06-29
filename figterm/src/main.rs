@@ -55,6 +55,10 @@ use fig_proto::local::{
     LocalMessage,
 };
 use fig_settings::state;
+use fig_telemetry::sentry::{
+    capture_anyhow,
+    configure_scope,
+};
 use fig_util::Terminal;
 use flume::Sender;
 use nix::libc::STDIN_FILENO;
@@ -74,7 +78,6 @@ use parking_lot::{
     Mutex,
     RwLock,
 };
-use sentry::integrations::anyhow::capture_anyhow;
 use tokio::io::{
     self,
     AsyncReadExt,
@@ -131,7 +134,7 @@ impl EventSender {
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
-    let terminal = Terminal::parent_terminal().map(|s| s.to_string());
+    let terminal = Terminal::parent_terminal().map(|s| s.internal_id());
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())
@@ -206,7 +209,7 @@ impl EventListener for EventSender {
                 } else {
                     shell_state.local_context.shell.as_ref()
                 };
-                sentry::configure_scope(|scope| {
+                configure_scope(|scope| {
                     if let Some(shell) = shell {
                         scope.set_tag("shell", shell);
                     }
@@ -232,8 +235,8 @@ where
     T: EventListener,
 {
     let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
-    let shell_enabled =
-        [Some("bash"), Some("zsh"), Some("fish")].contains(&term.shell_state().get_context().shell.as_deref());
+    let shell_enabled = [Some("bash"), Some("zsh"), Some("fish"), Some("nu")]
+        .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
 
     let mut handle = INSERTION_LOCKED_AT.write();

@@ -122,43 +122,61 @@ impl Component for Form<'_> {
                     }
 
                     match code {
-                        newton::KeyCode::Tab => loop {
-                            let cursor = (self.cursor + 1) % self.components.len();
-                            match self.components.get(cursor) {
-                                Some(component) => {
-                                    self.cursor = cursor;
-                                    if component.interactive() {
-                                        break;
-                                    }
-                                },
-                                None => break,
+                        newton::KeyCode::Tab => {
+                            if let Some(component) = self.components.get_mut(self.cursor) {
+                                component.update(renderer, style_sheet, control_flow, focused, event)
+                            }
+
+                            loop {
+                                let cursor = (self.cursor + 1) % self.components.len();
+                                match self.components.get(cursor) {
+                                    Some(component) => {
+                                        self.cursor = cursor;
+                                        if component.interactive() {
+                                            break;
+                                        }
+                                    },
+                                    None => break,
+                                }
                             }
                         },
-                        newton::KeyCode::Enter => loop {
-                            let cursor = self.cursor + 1;
-                            match self.components.get(cursor) {
-                                Some(component) => {
-                                    self.cursor = cursor;
-                                    if component.interactive() {
+                        newton::KeyCode::Enter => {
+                            if let Some(component) = self.components.get_mut(self.cursor) {
+                                component.update(renderer, style_sheet, control_flow, focused, event)
+                            }
+
+                            loop {
+                                let cursor = self.cursor + 1;
+                                match self.components.get(cursor) {
+                                    Some(component) => {
+                                        self.cursor = cursor;
+                                        if component.interactive() {
+                                            break;
+                                        }
+                                    },
+                                    None => {
+                                        *control_flow = ControlFlow::Exit;
                                         break;
-                                    }
-                                },
-                                None => {
-                                    *control_flow = ControlFlow::Exit;
-                                    break;
-                                },
+                                    },
+                                }
                             }
                         },
-                        newton::KeyCode::BackTab => loop {
-                            let cursor = (self.cursor + self.components.len() - 1) % self.components.len();
-                            match self.components.get(cursor) {
-                                Some(component) => {
-                                    self.cursor = cursor;
-                                    if component.interactive() {
-                                        break;
-                                    }
-                                },
-                                None => break,
+                        newton::KeyCode::BackTab => {
+                            if let Some(component) = self.components.get_mut(self.cursor) {
+                                component.update(renderer, style_sheet, control_flow, focused, event)
+                            }
+
+                            loop {
+                                let cursor = (self.cursor + self.components.len() - 1) % self.components.len();
+                                match self.components.get(cursor) {
+                                    Some(component) => {
+                                        self.cursor = cursor;
+                                        if component.interactive() {
+                                            break;
+                                        }
+                                    },
+                                    None => break,
+                                }
                             }
                         },
                         newton::KeyCode::Down => {
@@ -247,11 +265,12 @@ impl Component for Form<'_> {
         self.components.iter().any(|component| component.interactive())
     }
 
-    fn desired_width(&self, style_sheet: &StyleSheet, context: StyleContext) -> u16 {
-        self.style(style_sheet, context).spacing_horizontal()
-            + self.components.iter().fold(0, |acc, component| {
-                acc.max(component.desired_width(style_sheet, context))
-            })
+    fn desired_width(&self, _style_sheet: &StyleSheet, _context: StyleContext) -> u16 {
+        128
+        // self.style(style_sheet, context).spacing_horizontal()
+        //    + self.components.iter().fold(0, |acc, component| {
+        //        acc.max(component.desired_width(style_sheet, context))
+        //    })
     }
 
     fn desired_height(&self, style_sheet: &StyleSheet, context: StyleContext) -> u16 {

@@ -97,6 +97,7 @@ impl EventLoop {
                     while let true = poll(Duration::ZERO)? {
                         let event = match Event::from(read()?) {
                             event @ Event::Resized { width, height } => {
+                                self.out.queue(Clear(ClearType::All))?;
                                 display_state.resize(width, height);
                                 event
                             },

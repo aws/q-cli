@@ -1,6 +1,7 @@
 //! CLI functionality
 
 pub mod app;
+mod completion;
 mod debug;
 mod diagnostics;
 mod doctor;
@@ -32,13 +33,10 @@ use anyhow::{
 };
 use cfg_if::cfg_if;
 use clap::{
-    IntoApp,
     Parser,
     Subcommand,
     ValueEnum,
 };
-use fig_integrations::shell::When;
-use fig_util::Shell;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
@@ -69,18 +67,6 @@ impl Default for OutputFormat {
     fn default() -> Self {
         OutputFormat::Plain
     }
-}
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-pub enum Shells {
-    /// Bash shell completions
-    Bash,
-    /// Fish shell completions
-    Fish,
-    /// Zsh shell completions
-    Zsh,
-    /// Fig completion spec
-    Fig,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -118,32 +104,16 @@ pub enum CliRootCommands {
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short = 'y', action)]
+        #[clap(long, short = 'y', value_parser)]
         no_confirm: bool,
     },
     /// Run the daemon
     #[clap(hide = true)]
     Daemon,
     /// Run diagnostic tests
-    Diagnostic {
-        /// The format of the output
-        #[clap(long, short, value_enum, value_parser, default_value_t)]
-        format: OutputFormat,
-        /// Force limited diagnostic output
-        #[clap(long, action)]
-        force: bool,
-    },
+    Diagnostic(diagnostics::DiagnosticArgs),
     /// Generate the dotfiles for the given shell
-    Init {
-        /// The shell to generate the dotfiles for
-        #[clap(value_enum, value_parser)]
-        shell: Shell,
-        /// When to generate the dotfiles for
-        #[clap(value_enum, value_parser)]
-        when: When,
-        #[clap(long, value_parser)]
-        rcfile: Option<String>,
-    },
+    Init(init::InitArgs),
     /// Sync your latest dotfiles
     Source,
     /// Get or set theme
@@ -153,35 +123,17 @@ pub enum CliRootCommands {
     /// Tweet about Fig
     Tweet,
     /// Create a new Github issue
-    Issue {
-        /// Force issue creation
-        #[clap(long, short = 'f', action)]
-        force: bool,
-        /// Issue description
-        #[clap(value_parser)]
-        description: Vec<String>,
-    },
+    Issue(issue::IssueArgs),
     #[clap(flatten)]
     RootUser(user::RootUserSubcommand),
     #[clap(subcommand)]
     User(user::UserSubcommand),
     Team(team::TeamCommand),
     /// Check Fig is properly configured
-    Doctor {
-        /// Run all doctor tests, with no fixes
-        #[clap(long, action)]
-        verbose: bool,
-        /// Error on warnings
-        #[clap(long, action)]
-        strict: bool,
-    },
+    Doctor(doctor::DoctorArgs),
     /// Generate the completion spec for Fig
     #[clap(hide = true)]
-    Completion {
-        /// Shell to generate the completion spec for
-        #[clap(value_enum, value_parser, default_value_t = Shells::Zsh)]
-        shell: Shells,
-    },
+    Completion(completion::CompletionArgs),
     /// Internal subcommands used for Fig
     #[clap(subcommand, hide = true)]
     Internal(internal::InternalSubcommand),
@@ -192,7 +144,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(value_enum, action, default_value_t = Processes::App, hide = true)]
+        #[clap(value_enum, value_parser, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     #[clap(hide = true)]
@@ -203,18 +155,9 @@ pub enum CliRootCommands {
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
     /// Open manual page
-    Man {
-        #[clap(value_parser)]
-        command: Vec<String>,
-    },
+    Man(man::ManArgs),
     #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
-    Workflow {
-        // Flags can be added here
-        // #[clap(long, action)]
-        // execute: bool,
-        #[clap(value_parser, takes_value = true, allow_hyphen_values = true)]
-        args: Vec<String>,
-    },
+    Workflow(workflow::WorkflowArgs),
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -337,36 +280,22 @@ impl Cli {
                     }
                     res
                 },
-                CliRootCommands::Diagnostic { format, force } => diagnostics::diagnostics_cli(format, force).await,
-                CliRootCommands::Init { shell, when, rcfile } => init::shell_init_cli(&shell, &when, rcfile).await,
+                CliRootCommands::Diagnostic(args) => args.execute().await,
+                CliRootCommands::Init(args) => args.execute().await,
                 CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Team(team) => team.execute().await,
-                CliRootCommands::Doctor { verbose, strict } => doctor::doctor_cli(verbose, strict).await,
+                CliRootCommands::Doctor(args) => args.execute().await,
                 CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
-                CliRootCommands::Hook(hook_subcommand) => {
-                    // Hooks should exit silently on failure.
-                    if hook_subcommand.execute().await.is_err() {
-                        exit(1);
-                    }
-                    Ok(())
-                },
+                CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
                 CliRootCommands::Theme(theme_args) => theme_args.execute().await,
                 CliRootCommands::Settings(settings_args) => settings_args.execute().await,
                 CliRootCommands::Debug(debug_subcommand) => debug_subcommand.execute().await,
-                CliRootCommands::Issue { force, description } => issue::issue_cli(force, description).await,
-                CliRootCommands::Completion { shell } => {
-                    println!("{}", match shell {
-                        Shells::Bash => Cli::generation_completions(clap_complete::shells::Bash),
-                        Shells::Fish => Cli::generation_completions(clap_complete::shells::Fish),
-                        Shells::Zsh => Cli::generation_completions(clap_complete::shells::Zsh),
-                        Shells::Fig => Cli::generation_completions(clap_complete_fig::Fig),
-                    });
-                    Ok(())
-                },
+                CliRootCommands::Issue(args) => args.execute().await,
+                CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
                 CliRootCommands::Launch => app::launch_fig_cli(),
                 CliRootCommands::Quit => app::quit_fig().await,
@@ -377,8 +306,8 @@ impl Cli {
                 CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
-                CliRootCommands::Man { command } => man::man(&command),
-                CliRootCommands::Workflow { args } => workflow::execute(args).await,
+                CliRootCommands::Man(args) => args.execute(),
+                CliRootCommands::Workflow(args) => args.execute().await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
@@ -391,8 +320,6 @@ impl Cli {
         };
 
         if let Err(err) = result {
-            // sentry::integrations::anyhow::capture_anyhow(&err);
-
             if env_level > LevelFilter::INFO {
                 eprintln!("{err:?}");
             } else {
@@ -400,15 +327,6 @@ impl Cli {
             }
             exit(1);
         }
-    }
-
-    fn generation_completions(gen: impl clap_complete::Generator) -> String {
-        let mut cli = Cli::command();
-        let mut buffer = Vec::new();
-
-        clap_complete::generate(gen, &mut cli, env!("CARGO_PKG_NAME"), &mut buffer);
-
-        String::from_utf8_lossy(&buffer).into()
     }
 }
 
@@ -489,6 +407,8 @@ async fn root_command() -> Result<()> {
 
 #[cfg(test)]
 mod test {
+    use clap::IntoApp;
+
     use super::*;
 
     #[test]

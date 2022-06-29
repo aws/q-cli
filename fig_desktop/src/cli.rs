@@ -14,7 +14,7 @@ pub struct Cli {
     pub allow_multiple: bool,
     /// Url to open
     #[clap(value_parser)]
-    url_link: Option<String>,
+    pub url_link: Option<String>,
 }
 
 #[cfg(test)]

@@ -1,4 +1,5 @@
 use std::collections::BTreeMap;
+use std::fmt::Write;
 
 #[derive(Debug, Clone, Default)]
 pub struct LaunchdPlist {
@@ -41,40 +42,39 @@ impl LaunchdPlist {
         }
 
         macro_rules! push_line {
-            ($line:expr) => {{
+            ($($arg:tt)*) => {{
                 for _ in 0..indent_level {
                     plist.push_str(indent);
                 }
-                plist.push_str($line);
-                plist.push('\n');
+                writeln!(plist, $($arg)*).ok();
             }};
         }
 
         macro_rules! push_key_val {
             ($key:expr,String, $val:expr) => {{
-                push_line!(&format!("<key>{}</key>", $key));
-                push_line!(&format!("<string>{}</string>", $val));
+                push_line!("<key>{}</key>", $key);
+                push_line!("<string>{}</string>", $val);
             }};
             ($key:expr, &[String], $val:expr) => {{
-                push_line!(&format!("<key>{}</key>", $key));
+                push_line!("<key>{}</key>", $key);
                 push_line!("<array>");
                 indent_block!({
                     for s in $val.iter() {
-                        push_line!(&format!("<string>{}</string>", s));
+                        push_line!("<string>{}</string>", s);
                     }
                 });
                 push_line!("</array>");
             }};
             ($key:expr,bool, $val:expr) => {{
-                push_line!(&format!("<key>{}</key>", $key));
-                push_line!(if $val { "<true/>" } else { "<false/>" });
+                push_line!("<key>{}</key>", $key);
+                push_line!("{}", if $val { "<true/>" } else { "<false/>" });
             }};
             ($key:expr,i64, $val:expr) => {{
-                push_line!(&format!("<key>{}</key>", $key));
-                push_line!(&format!("<integer>{}</integer>", $val));
+                push_line!("<key>{}</key>", $key);
+                push_line!("<integer>{}</integer>", $val);
             }};
             ($key:expr,HashMap < String, $t:tt > , $val:expr) => {{
-                push_line!(&format!("<key>{}</key>", $key));
+                push_line!("<key>{}</key>", $key);
                 push_line!("<dict>");
                 indent_block!({
                     for (k, v) in $val.iter() {

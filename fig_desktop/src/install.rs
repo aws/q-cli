@@ -1,3 +1,4 @@
+use fig_integrations::Integration;
 use semver::Version;
 use tracing::error;
 
@@ -20,6 +21,13 @@ pub async fn run_install() {
     tokio::spawn(async {
         if let Err(err) = fig_install::dotfiles::download_and_notify().await {
             error!("Failed to fetch installed plugins: {err}");
+        }
+    });
+
+    tokio::spawn(async {
+        let ibus_integration = fig_integrations::ibus::IbusIntegration {};
+        if let Err(err) = ibus_integration.install(None) {
+            error!("Failed to enable IBus Integration: {err}");
         }
     });
 

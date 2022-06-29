@@ -9,7 +9,10 @@ use fig_proto::fig::{
     KeybindingPressedNotification,
     Notification,
     NotificationType,
+    Process,
+    ProcessChangedNotification,
     ServerOriginatedMessage,
+    ShellPromptReturnedNotification,
 };
 use fig_proto::local::{
     CursorPositionHook,
@@ -23,7 +26,10 @@ use fig_proto::local::{
 use fig_proto::prost::Message;
 use tracing::debug;
 
-use crate::event::WindowEvent;
+use crate::event::{
+    NativeEvent,
+    WindowEvent,
+};
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
@@ -117,6 +123,8 @@ pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, p
             .unwrap();
     }
 
+    proxy.send_event(Event::NativeEvent(NativeEvent::EditBufferChanged))?;
+
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,
         window_event: WindowEvent::Show,
@@ -141,7 +149,52 @@ pub async fn caret_position(
     Ok(())
 }
 
-pub async fn prompt(_hook: PromptHook) -> Result<()> {
+pub async fn prompt(hook: PromptHook, global_state: &GlobalState, proxy: &EventLoopProxy) -> Result<()> {
+    send_notification(
+        &NotificationType::NotifyOnPrompt,
+        Notification {
+            r#type: Some(fig_proto::fig::notification::Type::ShellPromptReturnedNotification(
+                ShellPromptReturnedNotification {
+                    session_id: hook.context.as_ref().and_then(|ctx| ctx.session_id.clone()),
+                    shell: hook.context.map(|ctx| Process {
+                        pid: ctx.pid,
+                        executable: ctx.process_name,
+                        directory: ctx.current_working_directory,
+                        env: vec![],
+                    }),
+                },
+            )),
+        },
+        &global_state.notifications_state,
+        proxy,
+    )
+    .await
+    .unwrap();
+    Ok(())
+}
+
+pub async fn pre_exec(hook: PreExecHook, global_state: &GlobalState, proxy: &EventLoopProxy) -> Result<()> {
+    send_notification(
+        &NotificationType::NotifyOnProcessChanged,
+        Notification {
+            r#type: Some(fig_proto::fig::notification::Type::ProcessChangeNotification(
+                ProcessChangedNotification {
+                    session_id: hook.context.as_ref().and_then(|ctx| ctx.session_id.clone()),
+                    new_process: // TODO: determine active application based on tty
+                    hook.context.map(|ctx| Process {
+                        pid: ctx.pid,
+                        executable: ctx.process_name,
+                        directory: ctx.current_working_directory,
+                        env: vec![],
+                    }),
+                },
+            )),
+        },
+        &global_state.notifications_state,
+        proxy,
+    )
+    .await
+    .unwrap();
     Ok(())
 }
 
@@ -153,10 +206,6 @@ pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<
         })
         .unwrap();
 
-    Ok(())
-}
-
-pub async fn pre_exec(_hook: PreExecHook) -> Result<()> {
     Ok(())
 }
 

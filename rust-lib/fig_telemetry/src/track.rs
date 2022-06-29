@@ -126,6 +126,7 @@ where
         track.insert("prop_email".into(), email);
     }
 
+    #[cfg(target_os = "macos")]
     if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
         if let Some((version, build)) = version.split_once(',') {
             track.insert("prop_version".into(), version.into());

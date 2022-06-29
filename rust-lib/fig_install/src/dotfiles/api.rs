@@ -141,3 +141,11 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
 pub fn all_file_path() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|dir| dir.join("shell").join("all.json"))
 }
+
+//#[cfg(test)]
+// mod test {
+//    #[test]
+//    fn test() {
+//        //panic!()
+//    }
+//}

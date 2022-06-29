@@ -16,6 +16,7 @@ use anyhow::{
     Result,
 };
 use async_trait::async_trait;
+use clap::Args;
 use crossterm::style::Stylize;
 use crossterm::terminal::{
     disable_raw_mode,
@@ -84,6 +85,22 @@ use crate::util::{
     OSVersion,
     SupportLevel,
 };
+
+#[derive(Debug, Args)]
+pub struct DoctorArgs {
+    /// Run all doctor tests, with no fixes
+    #[clap(long, value_parser)]
+    verbose: bool,
+    /// Error on warnings
+    #[clap(long, value_parser)]
+    strict: bool,
+}
+
+impl DoctorArgs {
+    pub async fn execute(self) -> Result<()> {
+        doctor_cli(self.verbose, self.strict).await
+    }
+}
 
 type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
 

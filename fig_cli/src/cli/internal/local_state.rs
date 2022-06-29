@@ -42,7 +42,7 @@ pub struct LocalStateArgs {
     /// Value of the state
     #[clap(value_parser)]
     value: Option<String>,
-    #[clap(long, short, action)]
+    #[clap(long, short, value_parser)]
     /// Delete the state
     delete: bool,
     #[clap(long, short, value_enum, value_parser, default_value_t)]

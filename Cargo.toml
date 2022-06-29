@@ -1,10 +1,11 @@
 [workspace]
+resolver = "2"
 members = [
     "fig_cli",
     "fig_desktop",
     "fig_ibus_engine",
     "figterm",
-    "rust-lib/*"
+    "rust-lib/*",
 ]
 
 default-members = [

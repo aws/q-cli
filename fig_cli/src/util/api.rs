@@ -15,6 +15,14 @@ use reqwest::{
 use serde::de::DeserializeOwned;
 use serde_json::Value;
 
+pub async fn request_json<'a, D, B>(method: Method, endpoint: D, body: B, auth: bool) -> Result<Value>
+where
+    D: Display,
+    B: Into<Option<&'a Value>>,
+{
+    request(method, endpoint, body, auth).await
+}
+
 pub async fn request<'a, T, D, B>(method: Method, endpoint: D, body: B, auth: bool) -> Result<T>
 where
     T: DeserializeOwned,
@@ -27,7 +35,10 @@ where
     let mut request = Client::new().request(method, url).header("Accept", "application/json");
 
     if auth {
-        let token = get_token().await?;
+        let token = match std::env::var("FIG_TOKEN") {
+            Ok(token) => token,
+            Err(_) => get_token().await?,
+        };
         request = request.bearer_auth(token);
     }
 

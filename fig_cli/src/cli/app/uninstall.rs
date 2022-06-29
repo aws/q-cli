@@ -1,3 +1,5 @@
+#![allow(dead_code, unused_imports)]
+
 use std::path::{
     Path,
     PathBuf,
@@ -37,31 +39,32 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 #[derive(Debug, Args)]
 pub struct UninstallArgs {
     /// Remove configuration and data files
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub user_data: bool,
     /// Remove executable and
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub app_bundle: bool,
     /// Remove input method
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub input_method: bool,
     /// Remove terminal integrations (i.e. VSCode, iTerm2, etc.)
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub terminal_integrations: bool,
     /// Remove Fig daemon
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub daemon: bool,
     /// Remove dotfile shell integration
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub dotfiles: bool,
     /// Remove SSH integration
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub ssh: bool,
     /// Do not open the uninstallation page
-    #[clap(long, action)]
+    #[clap(long, value_parser)]
     pub no_open: bool,
 }
 
+#[cfg(target_os = "macos")]
 pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async move {

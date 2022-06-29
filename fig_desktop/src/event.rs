@@ -11,6 +11,7 @@ pub enum Event {
     },
     ControlFlow(ControlFlow),
     RefreshDebugger,
+    NativeEvent(NativeEvent),
 }
 
 #[derive(Debug)]
@@ -49,4 +50,9 @@ pub enum WindowEvent {
         payload: String,
     },
     Devtools,
+}
+
+#[derive(Debug)]
+pub enum NativeEvent {
+    EditBufferChanged,
 }
