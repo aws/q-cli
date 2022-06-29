@@ -8,6 +8,7 @@ use anyhow::{
     Result,
 };
 use clap::Args;
+use crossterm::{execute, cursor};
 use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
@@ -389,6 +390,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         },
     };
 
+    execute!(std::io::stdout(), cursor::Hide)?;
     let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow...".to_owned());
 
     let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
@@ -630,6 +632,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     spinner.stop_with_message(String::new());
+    execute!(std::io::stdout(), cursor::Show)?;
 
     if parameter_count > 0
         && EventLoop::new()

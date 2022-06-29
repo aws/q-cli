@@ -1,5 +1,3 @@
-use std::char::MAX;
-
 use newton::{
     Color,
     ControlFlow,
