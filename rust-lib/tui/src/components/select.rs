@@ -177,7 +177,8 @@ impl Component for Select {
                     let mut background_color = style.background_color();
                     if let Some(index) = self.index {
                         if i == index - self.index_offset.min(index) {
-                            std::mem::swap(&mut color, &mut background_color);
+                            background_color = color;
+                            color = Color::Black;
                         }
                     }
 
