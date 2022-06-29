@@ -117,7 +117,7 @@ impl Component for Select {
 
                 let arrow = match focused {
                     true => '▾',
-                    false => '▸',
+                    false => '▹',
                 };
 
                 renderer.draw_symbol(arrow, x, y, style.color(), style.background_color());
