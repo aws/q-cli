@@ -317,7 +317,9 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             });
 
             let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
-            workflows.push(Workflow::new_create_prompt());
+            if workflows.is_empty() {
+                workflows.push(Workflow::new_create_prompt());
+            }
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
