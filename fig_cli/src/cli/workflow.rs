@@ -132,7 +132,7 @@ struct Workflow {
     tree: Vec<TreeElement>,
 }
 
-#[cfg(Unix)]
+#[cfg(unix)]
 enum WorkflowAction {
     Run(Workflow),
     Create,
