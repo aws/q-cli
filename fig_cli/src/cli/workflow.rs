@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::io::Write;
 use std::process::Command;
 
 use anyhow::{
@@ -8,7 +7,6 @@ use anyhow::{
     bail,
     Result,
 };
-use chrono::Utc;
 use clap::Args;
 use crossterm::style::Stylize;
 use fig_ipc::command::open_ui_element;
@@ -29,6 +27,8 @@ use spinners::{
     Spinner,
     Spinners,
 };
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 use tui::components::{
     CheckBox,
     Frame,
@@ -404,9 +404,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
         return Err(anyhow!(
-            "Could not execute {} since it requires features not available in this version of Fig.\n\
+            "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
-            workflow_name,
             "fig update".magenta(),
         ));
     }
@@ -725,7 +724,7 @@ async fn execute_bash_workflow(
     tree: &[TreeElement],
     args: &HashMap<&str, String>,
 ) -> Result<()> {
-    let start_time = Utc::now();
+    let start_time = time::OffsetDateTime::now_utc();
     let mut command = Command::new("bash");
     command.arg("-c");
     command.arg(tree.iter().fold(String::new(), |mut acc, branch| {
@@ -736,26 +735,27 @@ async fn execute_bash_workflow(
         acc
     }));
 
-    let output = command.output()?;
-    std::io::stdout().write_all(&output.stdout)?;
-    std::io::stdout().write_all(&output.stderr)?;
+    let output = command.status()?;
+    // std::io::stdout().write_all(&output.stdout)?;
+    // std::io::stdout().write_all(&output.stderr)?;
 
-    let command_stderr = String::from_utf8_lossy(&output.stderr);
-    let exit_code = output.status.code().unwrap_or(0);
-    let execution_start_time = start_time.to_rfc3339();
-
-    request::<serde_json::Value, _, _>(
-        Method::POST,
-        format!("/workflows/{}/invocations", name),
-        Some(&serde_json::json!({
-            "namespace": namespace,
-            "commandStderr": command_stderr.to_string(),
-            "exitCode": exit_code,
-            "executionStartTime": execution_start_time,
-            "executionDuration": Utc::now().signed_duration_since(start_time).num_nanoseconds().expect("duration over 300 years")
-        })),
-        true,
-    ).await?;
+    // let command_stderr = String::from_utf8_lossy(&output.stderr);
+    let exit_code = output.code();
+    if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
+        request::<serde_json::Value, _, _>(
+            Method::POST,
+            format!("/workflows/{}/invocations", name),
+            Some(&serde_json::json!({
+                "namespace": namespace,
+                "commandStderr": Value::Null,
+                "exitCode": exit_code,
+                "executionStartTime": execution_start_time,
+                "executionDuration": (OffsetDateTime::now_utc() - start_time).whole_nanoseconds()
+            })),
+            true,
+        )
+        .await?;
+    }
 
     Ok(())
 }
