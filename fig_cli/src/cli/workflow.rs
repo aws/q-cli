@@ -8,8 +8,11 @@ use anyhow::{
     Result,
 };
 use clap::Args;
-use crossterm::{execute, cursor};
 use crossterm::style::Stylize;
+use crossterm::{
+    cursor,
+    execute,
+};
 use fig_ipc::command::open_ui_element;
 use fig_proto::local::UiElement;
 use fig_telemetry::{
