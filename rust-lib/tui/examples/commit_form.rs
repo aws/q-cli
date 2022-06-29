@@ -71,12 +71,15 @@ fn main() -> Result<(), std::io::Error> {
         .with_style(".my_border", Style::default());
 
     let mut message = TextField::new().with_hint("message");
-    let mut remote = Select::new(vec!["origin".to_owned()]);
-    let mut branch = Select::new(vec![
-        "origin/main".to_owned(),
-        "origin/my-happy-branch".to_owned(),
-        "origin/the-carp-stands-up".to_owned(),
-    ]);
+    let mut remote = Select::new(vec!["origin".to_owned()], false);
+    let mut branch = Select::new(
+        vec![
+            "origin/main".to_owned(),
+            "origin/my-happy-branch".to_owned(),
+            "origin/the-carp-stands-up".to_owned(),
+        ],
+        true,
+    );
 
     EventLoop::new()
         .with_style_sheet(&style_sheet)
@@ -93,9 +96,7 @@ fn main() -> Result<(), std::io::Error> {
 
     println!(
         "git commit -m '{}'\ngit push {} {}",
-        message.text,
-        remote.text,
-        branch.text
+        message.text, remote.text, branch.text
     );
 
     Ok(())

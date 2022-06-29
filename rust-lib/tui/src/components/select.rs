@@ -1,3 +1,5 @@
+use std::char::MAX;
+
 use newton::{
     Color,
     ControlFlow,
@@ -18,19 +20,23 @@ pub struct Select {
     pub text: String,
     pub hint: Option<String>,
     cursor: usize,
-    offset: usize,
+    cursor_offset: usize,
     index: Option<usize>,
+    index_offset: usize,
     options: Vec<String>,
     sorted_options: Vec<usize>,
+    validate: bool,
     style: Style,
 }
+
+const MAX_ROWS: u16 = 6;
 
 impl Select {
     const STYLE_CLASS: &'static str = "select";
 
     stylable!();
 
-    pub fn new(options: Vec<String>) -> Self {
+    pub fn new(options: Vec<String>, validate: bool) -> Self {
         let sorted_options = vec![];
         // for i in 0..options.len() {
         //    sorted_options.push(i);
@@ -40,10 +46,12 @@ impl Select {
             text: Default::default(),
             hint: None,
             cursor: 0,
-            offset: 0,
+            cursor_offset: 0,
             index: Default::default(),
+            index_offset: 0,
             options,
             sorted_options,
+            validate,
             style: Default::default(),
         }
     }
@@ -112,11 +120,11 @@ impl Component for Select {
                 style.draw_container(&mut x, &mut y, &mut width, &mut height, renderer);
 
                 if self.cursor >= width.into() {
-                    self.offset = self.cursor - usize::from(width);
+                    self.cursor_offset = self.cursor - usize::from(width);
                 }
 
                 let arrow = match focused {
-                    true => '▾',
+                    true => '▿',
                     false => '▹',
                 };
 
@@ -126,7 +134,8 @@ impl Component for Select {
                     true => {
                         if let Some(hint) = &self.hint {
                             renderer.draw_string(
-                                &hint.as_str()[self.offset..hint.len().min(usize::from(width) + self.offset)],
+                                &hint.as_str()
+                                    [self.cursor_offset..hint.len().min(usize::from(width) + self.cursor_offset)],
                                 x + 2,
                                 y,
                                 Color::DarkGrey,
@@ -136,7 +145,8 @@ impl Component for Select {
                     },
                     false => {
                         renderer.draw_string(
-                            &self.text.as_str()[self.offset..self.text.len().min(usize::from(width) + self.offset)],
+                            &self.text.as_str()
+                                [self.cursor_offset..self.text.len().min(usize::from(width) + self.cursor_offset)],
                             x + 2,
                             y,
                             style.color(),
@@ -146,7 +156,8 @@ impl Component for Select {
                         if focused {
                             renderer.draw_symbol(
                                 self.text.chars().nth(self.cursor).unwrap_or(' '),
-                                x + 2 + u16::try_from(self.cursor).unwrap() - u16::try_from(self.offset).unwrap(),
+                                x + 2 + u16::try_from(self.cursor).unwrap()
+                                    - u16::try_from(self.cursor_offset).unwrap(),
                                 y,
                                 style.background_color(),
                                 style.color(),
@@ -155,16 +166,19 @@ impl Component for Select {
                     },
                 }
 
-                for (i, option) in self.sorted_options.iter().enumerate() {
+                for (i, option) in self.sorted_options
+                    [self.index_offset..self.sorted_options.len().min(self.index_offset + usize::from(MAX_ROWS))]
+                    .iter()
+                    .enumerate()
+                {
                     if i + 1 > usize::from(height) {
                         return;
                     }
 
                     let mut color = style.color();
                     let mut background_color = style.background_color();
-
                     if let Some(index) = self.index {
-                        if i == index {
+                        if i == index - self.index_offset.min(index) {
                             std::mem::swap(&mut color, &mut background_color);
                         }
                     }
@@ -186,16 +200,34 @@ impl Component for Select {
                             if !self.sorted_options.is_empty() {
                                 match self.index {
                                     Some(ref mut index) => {
-                                        *index = (*index + self.sorted_options.len() - 1) % self.sorted_options.len()
+                                        if *index == 0 {
+                                            self.index_offset = self.sorted_options.len()
+                                                - usize::from(MAX_ROWS).min(self.sorted_options.len());
+                                        } else if *index == self.index_offset {
+                                            self.index_offset -= 1;
+                                        }
+
+                                        *index = (*index + self.sorted_options.len() - 1) % self.sorted_options.len();
                                     },
-                                    None => self.index = Some(self.sorted_options.len() - 1),
+                                    None => {
+                                        self.index = Some(self.sorted_options.len() - 1);
+                                        self.index_offset = self.sorted_options.len()
+                                            - usize::from(MAX_ROWS).min(self.sorted_options.len());
+                                    },
                                 }
                             }
                         },
                         KeyCode::Down => {
                             if !self.sorted_options.is_empty() {
                                 match self.index {
-                                    Some(ref mut index) => *index = (*index + 1) % self.sorted_options.len(),
+                                    Some(ref mut index) => {
+                                        if *index == self.sorted_options.len() - 1 {
+                                            self.index_offset = 0;
+                                        } else if *index == self.index_offset + usize::from(MAX_ROWS - 1) {
+                                            self.index_offset += 1;
+                                        }
+                                        *index = (*index + 1) % self.sorted_options.len();
+                                    },
                                     None => self.index = Some(0),
                                 }
                             }
@@ -219,6 +251,7 @@ impl Component for Select {
                             };
 
                             self.index = None;
+                            self.index_offset = 0;
                             // self.sorted_options.clear();
                             // for i in 0..self.options.len() {
                             //    if self.options[i].contains(&self.text) {
@@ -230,6 +263,7 @@ impl Component for Select {
                             self.text.insert(self.cursor, c);
                             self.cursor += 1;
                             self.index = None;
+                            self.index_offset = 0;
                             // self.sorted_options
                             //    .retain(|option| self.options[*option].contains(&self.text));
                         },
@@ -239,6 +273,11 @@ impl Component for Select {
                                 self.cursor = self.text.len();
                                 self.index = None;
                             }
+
+                            if self.validate && !self.options.contains(&self.text) {
+                                self.text = String::new();
+                            }
+
                             self.sorted_options.clear();
                         },
                         _ => (),
@@ -264,10 +303,14 @@ impl Component for Select {
                 .iter()
                 .fold(0, |acc, option| acc.max(u16::try_from(option.len() + 2).unwrap()))
                 .min(32)
+                .min(u16::try_from(self.hint.as_ref().and_then(|hint| Some(hint.len())).unwrap_or(0)).unwrap())
+            + 2
     }
 
     fn desired_height(&self, style_sheet: &StyleSheet, context: StyleContext) -> u16 {
-        self.style(style_sheet, context).spacing_vertical() + u16::try_from(self.sorted_options.len()).unwrap() + 1
+        self.style(style_sheet, context).spacing_vertical()
+            + u16::try_from(self.sorted_options.len().min(MAX_ROWS.into())).unwrap()
+            + 1
     }
 
     fn class(&self) -> &str {

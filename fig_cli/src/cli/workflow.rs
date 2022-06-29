@@ -479,8 +479,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 }
 
                 let mut select = match placeholder {
-                    Some(placeholder) => Select::new(options).with_hint(&placeholder),
-                    None => Select::new(options),
+                    Some(placeholder) => Select::new(options, true).with_hint(&placeholder),
+                    None => Select::new(options, true).with_hint("Search..."),
                 };
 
                 if let Some(arg) = args.get(&name).and_then(|name| name.as_str()) {
