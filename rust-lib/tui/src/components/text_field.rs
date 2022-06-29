@@ -40,14 +40,14 @@ impl TextField {
         }
     }
 
-    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
-        self.hint = Some(hint.into());
-        self
-    }
-
     pub fn with_text(mut self, text: impl Into<String>) -> Self {
         self.text = text.into();
         self.cursor = self.text.len();
+        self
+    }
+
+    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
+        self.hint = Some(hint.into());
         self
     }
 

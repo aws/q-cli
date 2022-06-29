@@ -1,6 +1,5 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::fmt::Write;
 use std::process::Command;
 
 use anyhow::{
@@ -10,6 +9,14 @@ use anyhow::{
 };
 use clap::Args;
 use crossterm::style::Stylize;
+use crossterm::{
+    cursor,
+    execute,
+};
+#[cfg(unix)]
+use fig_ipc::command::open_ui_element;
+#[cfg(unix)]
+use fig_proto::local::UiElement;
 use fig_telemetry::{
     TrackEvent,
     TrackSource,
@@ -22,12 +29,17 @@ use serde::{
 use serde_json::Value;
 #[cfg(unix)]
 use skim::SkimItem;
+use spinners::{
+    Spinner,
+    Spinners,
+};
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
 use tui::components::{
     CheckBox,
-    CollapsiblePicker,
-    FilterablePicker,
     Frame,
     Label,
+    Select,
     TextField,
 };
 use tui::layouts::Form;
@@ -41,6 +53,11 @@ use tui::{
 };
 
 use crate::util::api::request;
+#[cfg(unix)]
+use crate::util::{
+    launch_fig,
+    LaunchOptions,
+};
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 1;
 
@@ -104,7 +121,7 @@ enum TreeElement {
     Token { name: String },
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 struct Workflow {
     name: String,
@@ -116,76 +133,101 @@ struct Workflow {
     namespace: String,
     template: String,
     tree: Vec<TreeElement>,
+    is_owned_by_user: Option<bool>,
 }
 
 #[cfg(unix)]
-impl SkimItem for Workflow {
-    fn text(&self) -> std::borrow::Cow<str> {
-        let tags = match &self.tags {
-            Some(tags) => tags.join(" "),
-            None => String::new(),
-        };
+enum WorkflowAction {
+    Run(Workflow),
+    Create,
+}
 
-        format!(
-            "{} {} @{}/{} {}",
-            self.display_name.as_deref().unwrap_or_default(),
-            self.name,
-            self.namespace,
-            self.name,
-            tags
-        )
-        .into()
+#[cfg(unix)]
+impl SkimItem for WorkflowAction {
+    fn text(&self) -> std::borrow::Cow<str> {
+        match self {
+            WorkflowAction::Run(workflow) => {
+                let tags = match &workflow.tags {
+                    Some(tags) => tags.join(" "),
+                    None => String::new(),
+                };
+
+                format!(
+                    "{} {} @{}/{} {}",
+                    workflow.display_name.as_deref().unwrap_or_default(),
+                    workflow.name,
+                    workflow.namespace,
+                    workflow.name,
+                    tags
+                )
+                .into()
+            },
+            WorkflowAction::Create => "create new workflow".into(),
+        }
     }
 
     fn display<'a>(&'a self, context: skim::DisplayContext<'a>) -> skim::AnsiString<'a> {
-        let name = self.display_name.clone().unwrap_or_else(|| self.name.clone());
-        let name_len = name.len();
+        match self {
+            WorkflowAction::Run(workflow) => {
+                let name = workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone());
+                let name_len = name.len();
 
-        let tags = match &self.tags {
-            Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
-            _ => String::new(),
-        };
-        let tag_len = tags.len();
+                let tags = match &workflow.tags {
+                    Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
+                    _ => String::new(),
+                };
+                let tag_len = tags.len();
 
-        let namespace_name = format!("@{}/{}", self.namespace, self.name);
-        let namespace_name_len = namespace_name.len();
+                let namespace_name = format!("@{}/{}", workflow.namespace, workflow.name);
+                let namespace_name_len = namespace_name.len();
 
-        skim::AnsiString::parse(&format!(
-            "{}{}{}{}",
-            name.bold(),
-            tags.dark_grey(),
-            " ".repeat(
-                context
-                    .container_width
-                    .saturating_sub(name_len)
-                    .saturating_sub(tag_len)
-                    .saturating_sub(namespace_name_len)
-                    .saturating_sub(1)
-                    .max(1)
-            ),
-            namespace_name.dark_grey()
-        ))
+                skim::AnsiString::parse(&format!(
+                    "{}{}{}{}",
+                    name.bold(),
+                    tags.dark_grey(),
+                    " ".repeat(
+                        context
+                            .container_width
+                            .saturating_sub(name_len)
+                            .saturating_sub(tag_len)
+                            .saturating_sub(namespace_name_len)
+                            .saturating_sub(1)
+                            .max(1)
+                    ),
+                    namespace_name.dark_grey()
+                ))
+            },
+            WorkflowAction::Create => skim::AnsiString::parse(&"Create new Workflow...".bold().blue().to_string()),
+        }
     }
 
     fn preview(&self, _context: skim::PreviewContext) -> skim::ItemPreview {
-        let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
+        match self {
+            WorkflowAction::Run(workflow) => {
+                let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
 
-        if let Some(description) = self.description.as_deref() {
-            if !description.is_empty() {
-                lines.push(format!("  {}", description.to_owned()));
-            } else {
-                lines.push("  No description".italic().grey().to_string())
-            }
+                if let Some(description) = workflow.description.as_deref() {
+                    if !description.is_empty() {
+                        lines.push(format!("  {}", description.to_owned()));
+                    } else {
+                        lines.push("  No description".italic().grey().to_string())
+                    }
+                }
+
+                // lines.push("━".repeat(context.width).black().to_string());
+                // lines.push(self.template.clone());
+
+                skim::ItemPreview::AnsiText(lines.join("\n"))
+            },
+            WorkflowAction::Create => skim::ItemPreview::AnsiText("".to_string()),
         }
-
-        // lines.push("━".repeat(context.width).black().to_string());
-        // lines.push(self.template.clone());
-
-        skim::ItemPreview::AnsiText(lines.join("\n"))
     }
 
     fn output(&self) -> std::borrow::Cow<str> {
-        self.name.clone().into()
+        match self {
+            WorkflowAction::Run(workflow) => workflow.name.clone().into(),
+            WorkflowAction::Create => "".into(),
+        }
     }
 
     fn get_matching_ranges(&self) -> Option<&[(usize, usize)]> {
@@ -211,7 +253,7 @@ enum WorkflowComponent {
     Picker {
         name: String,
         display_name: String,
-        inner: CollapsiblePicker<FilterablePicker>,
+        inner: Select,
     },
 }
 
@@ -296,19 +338,34 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    use skim::prelude::*;
-
                     let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
 
+                    use skim::prelude::*;
+
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
-                    for workflow in workflows.iter() {
-                        tx.send(Arc::new(workflow.clone())).ok();
+
+                    if workflows.is_empty() {
+                        tx.send(Arc::new(WorkflowAction::Create)).ok();
+                    }
+
+                    for workflow in workflows.iter().rev() {
+                        tx.send(Arc::new(WorkflowAction::Run(workflow.clone()))).ok();
                     }
                     drop(tx);
 
+                    let terminal_size = crossterm::terminal::size();
+                    let cursor_position = crossterm::cursor::position();
+
+                    let height = match (terminal_size, cursor_position) {
+                        (Ok((_, term_height)), Ok((_, cursor_row))) => {
+                            (term_height - cursor_row).max(13).to_string()
+                        }
+                        _ => "100%".into()
+                    };
+
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
-                            .height(Some("50%"))
+                            .height(Some(&height))
                             .preview(Some(""))
                             .prompt(Some("▸ "))
                             .preview_window(Some("down:3"))
@@ -330,12 +387,25 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                                 .map(|selected_item|
                                     (**selected_item)
                                         .as_any()
-                                        .downcast_ref::<Workflow>()
+                                        .downcast_ref::<WorkflowAction>()
                                         .unwrap()
                                         .to_owned()
                                 )
                                 .next() {
-                                Some(workflow) => workflow,
+                                Some(workflow) => {
+                                    match workflow {
+                                        WorkflowAction::Run(workflow) => workflow.clone(),
+                                        WorkflowAction::Create => {
+                                            println!();
+                                            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                                            println!();
+                                            return match open_ui_element(UiElement::MissionControl).await {
+                                                Ok(()) => Ok(()),
+                                                Err(err) => Err(err.context("Could not open fig")),
+                                            };
+                                        },
+                                    }
+                                }
                                 None => return Ok(()),
                             }
                         },
@@ -366,21 +436,23 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         },
     };
 
+    execute!(std::io::stdout(), cursor::Hide)?;
+    let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow...".to_owned());
+
+    let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
         return Err(anyhow!(
-            "Could not execute @{}/{} since it requires features not available in this version of Fig.\n\
+            "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
-            workflow.namespace,
-            workflow.name,
             "fig update".magenta(),
         ));
     }
 
     let track_execution = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [(
-            "execution_method",
-            execution_method,
-        )])
+        fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [
+            ("workflow", workflow_name.as_ref()),
+            ("execution_method", execution_method),
+        ])
         .await
         .ok();
     });
@@ -442,24 +514,19 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     }
                 }
 
-                let mut index = 0;
-                if let Some(arg) = args.get(&name) {
-                    for (i, option) in options.iter().enumerate() {
-                        if option == arg {
-                            index = i;
-                            break;
-                        }
-                    }
+                let mut select = match placeholder {
+                    Some(placeholder) => Select::new(options, true).with_hint(&placeholder),
+                    None => Select::new(options, true).with_hint("Search..."),
                 };
+
+                if let Some(arg) = args.get(&name).and_then(|name| name.as_str()) {
+                    select.text = arg.to_owned();
+                }
 
                 WorkflowComponent::Picker {
                     name: name.clone(),
                     display_name,
-                    inner: match placeholder {
-                        Some(placeholder) => CollapsiblePicker::new(options).with_placeholder(&placeholder),
-                        None => CollapsiblePicker::new(options),
-                    }
-                    .with_index(index),
+                    inner: select,
                 }
             },
         });
@@ -592,14 +659,14 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             model.push(&mut name as &mut dyn Component);
             model.push(description as &mut dyn Component);
         },
-        None => {
-            name = name.with_margin_bottom(1);
-            model.push(&mut name as &mut dyn Component);
-        },
+        None => model.push(&mut name as &mut dyn Component),
     };
     for frame in &mut frames {
         model.push(frame as &mut dyn Component);
     }
+
+    spinner.stop_with_message(String::new());
+    execute!(std::io::stdout(), cursor::Show)?;
 
     if parameter_count > 0
         && EventLoop::new()
@@ -636,10 +703,9 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 }
             },
             WorkflowComponent::Picker { name, inner, .. } => {
-                args.insert(name, match inner.selected_item() {
-                    Some(selected) => (selected.to_string().into(), selected.clone()),
-                    None => return Err(anyhow!("Missing entry for field: {name}")),
-                });
+                if !inner.text.is_empty() {
+                    args.insert(name, (inner.text.clone().into(), inner.text.clone()));
+                }
             },
         };
     }
@@ -648,8 +714,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         return Err(anyhow!("Missing execution args"));
     }
 
-    let mut command = format!("fig run @{}/{}", workflow.namespace, workflow.name);
+    let mut command = format!("fig run {}", match workflow.is_owned_by_user.unwrap_or(false) {
+        true => workflow.name.clone(),
+        false => format!("@{}/{}", &workflow.namespace, &workflow.name),
+    });
     for (arg, (val, _)) in &args {
+        use std::fmt::Write;
+
         match val {
             Value::Bool(b) => {
                 if *b {
@@ -675,7 +746,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             let execute = execute_js_workflow(&workflow.template, &map);
         } else {
             let map = args.into_iter().map(|(key, (_, s))| (key, s)).collect();
-            let execute = execute_bash_workflow(&workflow.tree, &map);
+            let execute = execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map);
         }
     }
 
@@ -689,7 +760,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     Ok(())
 }
 
-async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, String>) -> Result<()> {
+async fn execute_bash_workflow(
+    name: &str,
+    namespace: &str,
+    tree: &[TreeElement],
+    args: &HashMap<&str, String>,
+) -> Result<()> {
+    let start_time = time::OffsetDateTime::now_utc();
     let mut command = Command::new("bash");
     command.arg("-c");
     command.arg(tree.iter().fold(String::new(), |mut acc, branch| {
@@ -699,7 +776,31 @@ async fn execute_bash_workflow(tree: &[TreeElement], args: &HashMap<&str, String
         }
         acc
     }));
-    command.status()?;
+
+    let output = command.status()?;
+    // std::io::stdout().write_all(&output.stdout)?;
+    // std::io::stdout().write_all(&output.stderr)?;
+
+    // let command_stderr = String::from_utf8_lossy(&output.stderr);
+    let exit_code = output.code();
+    if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
+        if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
+            request::<serde_json::Value, _, _>(
+                Method::POST,
+                format!("/workflows/{}/invocations", name),
+                Some(&serde_json::json!({
+                    "namespace": namespace,
+                    "commandStderr": Value::Null,
+                    "exitCode": exit_code,
+                    "executionStartTime": execution_start_time,
+                    "executionDuration": execution_duration
+                })),
+                true,
+            )
+            .await?;
+        }
+    }
+
     Ok(())
 }
 
