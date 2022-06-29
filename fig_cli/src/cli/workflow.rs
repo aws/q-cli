@@ -389,7 +389,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         },
     };
 
-    let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow... ".to_owned());
+    let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow...".to_owned());
 
     let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
 
@@ -629,7 +629,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         model.push(frame as &mut dyn Component);
     }
 
-    spinner.stop_and_persist("🗸", "Loaded workflow".to_owned());
+    spinner.stop_with_message(String::new());
 
     if parameter_count > 0
         && EventLoop::new()
@@ -744,19 +744,21 @@ async fn execute_bash_workflow(
     // let command_stderr = String::from_utf8_lossy(&output.stderr);
     let exit_code = output.code();
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
-        request::<serde_json::Value, _, _>(
-            Method::POST,
-            format!("/workflows/{}/invocations", name),
-            Some(&serde_json::json!({
-                "namespace": namespace,
-                "commandStderr": Value::Null,
-                "exitCode": exit_code,
-                "executionStartTime": execution_start_time,
-                "executionDuration": (OffsetDateTime::now_utc() - start_time).whole_nanoseconds()
-            })),
-            true,
-        )
-        .await?;
+        if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
+            request::<serde_json::Value, _, _>(
+                Method::POST,
+                format!("/workflows/{}/invocations", name),
+                Some(&serde_json::json!({
+                    "namespace": namespace,
+                    "commandStderr": Value::Null,
+                    "exitCode": exit_code,
+                    "executionStartTime": execution_start_time,
+                    "executionDuration": execution_duration
+                })),
+                true,
+            )
+            .await?;
+        }
     }
 
     Ok(())
