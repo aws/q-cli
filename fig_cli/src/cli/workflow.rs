@@ -483,8 +483,8 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                     None => Select::new(options),
                 };
 
-                if let Some(arg) = args.get(&name) {
-                    select.text = arg.to_string();
+                if let Some(arg) = args.get(&name).and_then(|name| name.as_str()) {
+                    select.text = arg.to_owned();
                 }
 
                 WorkflowComponent::Picker {
