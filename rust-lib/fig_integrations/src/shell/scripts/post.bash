@@ -15,7 +15,9 @@ then
   export FIG_WORKFLOWS_KEYBIND='^f'
 fi
 
-bind "\"${FIG_WORKFLOWS_KEYBIND}\":\"fig run\n\""
+if [[ "$(set -o | grep 'emacs\|\bvi\b' | cut -f2 | tr '\n' ':')" != 'off:off:' ]]; then
+  bind "\"${FIG_WORKFLOWS_KEYBIND}\":\"fig run\n\""
+fi
 
 # if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
 #   unset FIG_DID_NOT_EXEC_FIGTERM
