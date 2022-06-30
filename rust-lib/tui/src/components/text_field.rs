@@ -153,6 +153,11 @@ impl Component for TextField {
                                 self.cursor -= 1.min(self.cursor);
                             },
                         },
+                        KeyCode::Delete => if self.text.len() == self.cursor + 1 {
+                            self.text.pop();
+                        } else if self.text.len() > self.cursor + 1 {
+                            self.text.remove(self.cursor);
+                        },
                         KeyCode::Char(c) => {
                             self.text.insert(self.cursor, c);
                             self.cursor += 1;
