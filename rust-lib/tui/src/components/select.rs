@@ -259,10 +259,14 @@ impl Component for Select {
                             //}
                         },
                         KeyCode::Delete => {
-                            if self.text.len() == self.cursor + 1 {
-                                self.text.pop();
-                            } else if self.text.len() > self.cursor + 1 {
-                                self.text.remove(self.cursor);
+                            match self.text.len() {
+                                len if len == self.cursor + 1 => {
+                                    self.text.pop();
+                                },
+                                len if len > self.cursor + 1 => {
+                                    self.text.remove(self.cursor);
+                                },
+                                _ => (),
                             }
 
                             self.index = None;
