@@ -8,9 +8,9 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.58"
-aws-sdk-cognitoidentityprovider = "0.14.0"
-aws-smithy-async = "0.44.0"
-aws-smithy-client = { version = "0.44.0", features = ["client-hyper"] }
+aws-sdk-cognitoidentityprovider = "0.15.0"
+aws-smithy-async = "0.45.0"
+aws-smithy-client = { version = "0.45.0", features = ["client-hyper"] }
 base64 = "0.13.0"
 cfg-if = "1.0.0"
 fig_directories = { path = "../fig_directories" }
