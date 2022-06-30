@@ -16,7 +16,7 @@ then
 fi
 
 fig-open-workflows() {
-    fig run
+    fig run < $TTY
     zle .kill-whole-line
     zle .accept-line
 }

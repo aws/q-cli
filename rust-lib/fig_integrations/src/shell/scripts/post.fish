@@ -13,14 +13,14 @@ or set -a PATH $HOME/.local/bin
 
 
 # Open workflows on keyboard shortcut
-set -q FIG_WORKFLOWS_KEYBIND && set FIG_WORKFLOWS_KEYBIND '^f'
+set -q FIG_WORKFLOWS_KEYBIND && set FIG_WORKFLOWS_KEYBIND '\cf'
 
 function fig-open-workflows
     fig run
     commandline -f repaint
 end
 
-bind $(printf $FIG_WORKFLOWS_KEYBIND) fig-open-workflows
+bind (string unescape $FIG_WORKFLOWS_KEYBIND) fig-open-workflows
 
 export TTY=(tty)
 export FIG_PID=$fish_pid
