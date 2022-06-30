@@ -19,6 +19,7 @@ archive: bin icons bundle
 	cd $(BUILD_DIR) && tar -cjf fig-x86_64-linux.tar.gz usr install.sh
 
 arch: archive
+	mv fig-x86_64-linux.tar.gz fig-x86_64-linux-archlinux-$(VERSION).tar.gz
 
 deb: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-x86_64-linux
