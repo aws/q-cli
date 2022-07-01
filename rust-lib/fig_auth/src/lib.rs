@@ -41,7 +41,6 @@ async fn get_credentials_file_token() -> Result<String> {
         tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID)).await??;
         creds.save_credentials()?;
     }
-
     Ok(creds.encode())
 }
 
