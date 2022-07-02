@@ -23,8 +23,8 @@ clap_complete = "3.2.2"
 clap_complete_fig = "3.2.2"
 crossterm = "0.23.2"
 ctrlc = "3.2.1"
-deno_core = { version = "0.140.0", optional = true }
-deno_runtime = { version = "0.66.0", optional = true }
+deno_core = { version = "0.141.0", optional = true }
+deno_runtime = { version = "0.67.0", optional = true }
 dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
@@ -45,7 +45,7 @@ rand = "0.8.5"
 regex = "1.5.6"
 reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks"] }
 self_update = { version = "0.30.0", default-features = false, features = ["rustls"] }
-semver = "1.0.11"
+semver = "1.0.12"
 serde = { version = "1.0.136", features = ["derive"] }
 serde_json = "1.0.82"
 spinners = "4.1.0"
@@ -57,7 +57,7 @@ time = { version = "=0.3.11", features = ["serde-human-readable", "local-offset"
 tokio = { version = "1.19.2", features = ["full"] }
 tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
-tracing-subscriber = { version = "0.3.9", features = ["fmt", "time", "parking_lot"] }
+tracing-subscriber = { version = "0.3.12", features = ["fmt", "time", "parking_lot"] }
 tui = { path = "../rust-lib/tui" }
 validator = "0.15.0"
 

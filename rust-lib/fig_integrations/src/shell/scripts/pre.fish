@@ -1,3 +1,5 @@
+mkdir -p ~/.fig/bin >/dev/null
+
 contains $HOME/.fig/bin $fish_user_paths
 or set -a PATH $HOME/.fig/bin
 
@@ -51,6 +53,6 @@ if test "$TERM_PROGRAM" != WarpTerminal
         # to set argv[0] and fish's exec doesn't have this option
         exec bash -c "FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
     end
-# else
-#     set -g FIG_DID_NOT_EXEC_FIGTERM 1
+    # else
+    #     set -g FIG_DID_NOT_EXEC_FIGTERM 1
 end

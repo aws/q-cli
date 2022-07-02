@@ -21,6 +21,7 @@ use aws_sdk_cognitoidentityprovider::model::{
 };
 use aws_sdk_cognitoidentityprovider::types::SdkError;
 use aws_sdk_cognitoidentityprovider::{
+    AppName,
     Client,
     Config,
     Region,
@@ -73,7 +74,10 @@ pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
 
     client.set_retry_config(RetryConfig::new().with_max_attempts(5).into());
 
-    let config = Config::builder().region(Region::new("us-east-1")).build();
+    let config = Config::builder()
+        .region(Region::new("us-east-1"))
+        .app_name(AppName::new("rust-client")?)
+        .build();
 
     Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
 }
@@ -540,10 +544,16 @@ impl Credentials {
     }
 
     pub async fn refresh_credentials(&mut self, client: &Client, client_id: &str) -> anyhow::Result<()> {
+        if let Some(expiration_time) = self.get_refresh_expiration_time() {
+            if expiration_time < time::OffsetDateTime::now_utc() {
+                return Err(anyhow::anyhow!("refresh token is expired"));
+            }
+        }
+
         let refresh_token = self
             .refresh_token
             .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("Refresh token is not set"))?;
+            .ok_or_else(|| anyhow::anyhow!("refresh token is not set"))?;
 
         let out = client
             .initiate_auth()
@@ -597,6 +607,12 @@ impl Credentials {
     pub fn get_expiration_time(&self) -> Option<time::OffsetDateTime> {
         let access_token = self.access_token.as_ref()?;
         let token: Token<Header, RegisteredClaims, _> = Token::parse_unverified(access_token).ok()?;
+        time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
+    }
+
+    pub fn get_refresh_expiration_time(&self) -> Option<time::OffsetDateTime> {
+        let refresh_token = self.refresh_token.as_ref()?;
+        let token: Token<Header, RegisteredClaims, _> = Token::parse_unverified(refresh_token).ok()?;
         time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
     }
 

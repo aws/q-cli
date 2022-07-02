@@ -1,5 +1,7 @@
 #!/usr/bin/env bash
 
+mkdir -p ~/.fig/bin > /dev/null
+
 pathadd() {
   if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
     PATH="${PATH:+"$PATH:"}$1"

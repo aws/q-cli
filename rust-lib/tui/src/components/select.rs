@@ -233,7 +233,7 @@ impl Component for Select {
                         },
                         KeyCode::Left => self.cursor -= 1.min(self.cursor),
                         KeyCode::Right => self.cursor += 1.min(self.text.len() - self.cursor),
-                        KeyCode::Backspace | KeyCode::Delete => {
+                        KeyCode::Backspace => {
                             match self.cursor == self.text.len() {
                                 true => {
                                     self.text.pop();
@@ -257,6 +257,20 @@ impl Component for Select {
                             //        self.sorted_options.push(i);
                             //    }
                             //}
+                        },
+                        KeyCode::Delete => {
+                            match self.text.len() {
+                                len if len == self.cursor + 1 => {
+                                    self.text.pop();
+                                },
+                                len if len > self.cursor + 1 => {
+                                    self.text.remove(self.cursor);
+                                },
+                                _ => (),
+                            }
+
+                            self.index = None;
+                            self.index_offset = 0;
                         },
                         KeyCode::Char(c) => {
                             self.text.insert(self.cursor, c);
