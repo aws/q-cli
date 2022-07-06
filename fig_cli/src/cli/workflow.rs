@@ -17,6 +17,7 @@ use crossterm::{
 use fig_ipc::command::open_ui_element;
 #[cfg(unix)]
 use fig_proto::local::UiElement;
+use fig_request::request;
 use fig_telemetry::{
     TrackEvent,
     TrackSource,
@@ -52,7 +53,6 @@ use tui::{
     EventLoop,
 };
 
-use crate::util::api::request;
 #[cfg(unix)]
 use crate::util::{
     launch_fig,

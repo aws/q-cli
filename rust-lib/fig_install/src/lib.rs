@@ -1,5 +1,5 @@
 pub mod dotfiles;
-pub mod download;
+pub mod git;
 pub mod plugins;
 pub mod themes;
 pub mod util;

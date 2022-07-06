@@ -26,6 +26,7 @@ use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
+use fig_request::request;
 use fig_util::get_parent_process_exe;
 use rand::distributions::{
     Alphanumeric,
@@ -47,7 +48,6 @@ use crate::cli::installation::{
     self,
     InstallComponents,
 };
-use crate::util::api::request;
 
 #[derive(Debug, Args)]
 #[clap(group(

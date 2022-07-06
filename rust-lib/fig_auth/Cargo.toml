@@ -7,7 +7,6 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
-anyhow = "1.0.58"
 aws-sdk-cognitoidentityprovider = "0.15.0"
 aws-smithy-async = "0.45.0"
 aws-smithy-client = { version = "0.45.0", features = ["client-hyper"] }

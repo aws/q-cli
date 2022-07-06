@@ -8,6 +8,7 @@ use clap::{
     ValueEnum,
 };
 use crossterm::style::Stylize;
+use fig_request::request;
 use reqwest::Method;
 use serde::{
     Deserialize,
@@ -20,7 +21,6 @@ use serde_json::{
 
 use super::OutputFormat;
 use crate::cli::dialoguer_theme;
-use crate::util::api::request;
 
 #[derive(Debug, Args)]
 pub struct TeamsArgs {

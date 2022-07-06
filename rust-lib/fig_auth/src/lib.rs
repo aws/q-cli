@@ -1,79 +1,64 @@
 pub mod cognito;
 pub mod password;
 
-#[cfg(target_os = "macos")]
 pub mod defaults;
 
 use std::time::Duration;
 
-use anyhow::Result;
 use cfg_if::cfg_if;
 use cognito::get_client;
 pub use cognito::Credentials;
-#[cfg(target_os = "macos")]
 pub use defaults::{
     get_default,
     remove_default,
     set_default,
 };
+pub use thiserror::Error;
 
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
 const TIMEOUT_DURATION: Duration = Duration::from_secs(10);
 
-pub async fn refresh_credentals() -> Result<Credentials> {
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    Cognito(#[from] cognito::Error),
+    #[error("no access token set")]
+    NoAccessToken,
+}
+
+pub async fn refresh_credentals() -> Result<Credentials, Error> {
     let mut creds = Credentials::load_credentials()?;
     let aws_client = get_client()?;
-    creds.refresh_credentials(&aws_client, CLIENT_ID).await?;
+    creds
+        .refresh_credentials(&aws_client, CLIENT_ID)
+        .await
+        .map_err(cognito::Error::from)?;
     creds.save_credentials()?;
     Ok(creds)
 }
 
-pub fn logout() -> Result<()> {
+pub fn logout() -> Result<(), Error> {
     let creds = Credentials::default();
     creds.save_credentials()?;
     Ok(())
 }
 
-async fn get_credentials_file_token() -> Result<String> {
+pub async fn get_token() -> Result<String, Error> {
     let mut creds = Credentials::load_credentials()?;
     if creds.is_expired() {
         let aws_client = get_client()?;
-        tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID)).await??;
+        tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID))
+            .await
+            .unwrap()
+            .map_err(cognito::Error::from)?;
         creds.save_credentials()?;
     }
 
-    Ok(creds.encode())
-}
-
-pub async fn get_token() -> Result<String> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            match get_credentials_file_token().await {
-                Ok(token) => Ok(token),
-                Err(_) => {
-                    let access_token = get_default("access_token")?;
-                    let refresh_token = get_default("refresh_token")?;
-                    let id_token = get_default("id_token")?;
-                    let email = get_default("userEmail")?;
-
-                    let mut creds = Credentials {
-                        email: Some(email),
-                        id_token: Some(id_token),
-                        access_token: Some(access_token),
-                        refresh_token: Some(refresh_token),
-                        expiration_time: None,
-                    };
-
-                    let aws_client = get_client()?;
-                    tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID)).await??;
-                    creds.save_credentials()?;
-
-                    Ok(creds.encode())
-                }
-            }
-        } else {
-            get_credentials_file_token().await
-        }
+    match (creds.get_access_token(), creds.get_refresh_token()) {
+        (None, _) => Err(Error::NoAccessToken),
+        // TODO: Migrate those with only `access_token`
+        (Some(_), None) => Ok(creds.encode()),
+        (Some(_), Some(_)) => Ok(creds.encode()),
     }
 }
 

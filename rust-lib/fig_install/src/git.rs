@@ -8,7 +8,6 @@ use std::path::{
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::Result;
 use flume::Receiver;
 use git2::build::RepoBuilder;
 use git2::{
@@ -25,10 +24,26 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use thiserror::Error;
 use tokio::io::AsyncWriteExt;
+use tokio::task::block_in_place;
 
 use crate::plugins::manifest::GitReference;
 use crate::util::checksum::GitChecksum;
+
+pub type Result<T, E = GitError> = std::result::Result<T, E>;
+
+#[derive(Debug, Error)]
+pub enum GitError {
+    #[error(transparent)]
+    Git2(#[from] git2::Error),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    #[error("directory already exists: {0:?}")]
+    DirectoryExists(PathBuf),
+}
 
 #[derive(Debug, Clone, Deserialize, Serialize)]
 #[serde(untagged)]
@@ -146,15 +161,15 @@ pub async fn clone_git_repo(url: impl IntoUrl, directory: impl AsRef<Path>) -> R
     let sha_id = {
         let (fetch_options, _, _) = git_fetch_options();
 
-        let repo = tokio::task::block_in_place(|| {
+        let repo = block_in_place(|| {
             RepoBuilder::new()
                 .fetch_options(fetch_options)
                 .clone(url.as_str(), temp_directory.path())
         })?;
 
-        let sha_id = repo.head()?.peel_to_commit()?.id().to_string();
-
-        sha_id
+        let head = repo.head()?;
+        let commit = head.peel_to_commit()?;
+        commit.id().to_string()
     };
 
     tokio::fs::rename(temp_directory.path(), directory.as_ref()).await?;
@@ -184,6 +199,10 @@ pub fn set_reference(repository: &Repository, reference: &GitReference) -> Resul
     Ok(())
 }
 
+pub async fn check_if_git_repo(directory: impl AsRef<Path>) -> bool {
+    directory.as_ref().exists() || block_in_place(|| Repository::open(directory.as_ref()).is_ok())
+}
+
 pub async fn clone_git_repo_with_reference(
     url: impl IntoUrl,
     directory: impl AsRef<Path>,
@@ -199,19 +218,13 @@ pub async fn clone_git_repo_with_reference(
     }
 
     if !directory.exists() {
-        if let Err(err) = clone_git_repo(url, &directory).await {
-            fig_telemetry::sentry::capture_anyhow(&err);
-            return Err(err);
-        }
+        clone_git_repo(url, &directory).await?;
     } else {
-        anyhow::bail!("{} already exists", directory.display());
+        return Err(GitError::DirectoryExists(directory.to_path_buf()));
     }
 
     if let Some(reference) = reference {
-        tokio::task::block_in_place(|| {
-            set_reference(&Repository::open(directory)?, reference)?;
-            anyhow::Ok(())
-        })?;
+        block_in_place(|| set_reference(&Repository::open(directory)?, reference))?;
     }
 
     Ok(())
@@ -223,18 +236,14 @@ pub async fn update_git_repo_with_reference(
 ) -> Result<()> {
     let directory = directory.as_ref();
     if directory.exists() {
-        tokio::task::block_in_place(|| {
+        block_in_place(|| {
             let repository = Repository::open(directory)?;
-            update_git_repo(&repository)?;
-            anyhow::Ok(())
+            update_git_repo(&repository)
         })?;
     }
 
     if let Some(reference) = reference {
-        tokio::task::block_in_place(|| {
-            set_reference(&Repository::open(directory)?, reference)?;
-            anyhow::Ok(())
-        })?;
+        block_in_place(|| set_reference(&Repository::open(directory)?, reference))?;
     }
 
     Ok(())

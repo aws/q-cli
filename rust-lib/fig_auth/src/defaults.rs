@@ -1,9 +1,19 @@
 use std::ffi::OsStr;
 use std::process::Command;
 
-use anyhow::Result;
+use thiserror::Error;
 
-pub fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
+#[derive(Debug, Error)]
+pub enum DefaultsError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error("defaults read failed")]
+    ReadFail,
+    #[error("defaults write failed")]
+    WriteFail,
+}
+
+pub fn get_default(key: impl AsRef<OsStr>) -> Result<String, DefaultsError> {
     let output = Command::new("defaults")
         .arg("read")
         .arg("com.mschrage.fig")
@@ -11,13 +21,13 @@ pub fn get_default(key: impl AsRef<OsStr>) -> Result<String> {
         .output()?;
 
     if !output.status.success() {
-        return Err(anyhow::anyhow!("defaults read failed"));
+        Err(DefaultsError::ReadFail)
+    } else {
+        Ok(String::from_utf8_lossy(&output.stdout).trim().into())
     }
-
-    Ok(String::from_utf8_lossy(&output.stdout).trim().into())
 }
 
-pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<()> {
+pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(), DefaultsError> {
     let output = Command::new("defaults")
         .arg("write")
         .arg("com.mschrage.fig")
@@ -26,13 +36,13 @@ pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(
         .output()?;
 
     if !output.status.success() {
-        return Err(anyhow::anyhow!("defaults write failed"));
+        Err(DefaultsError::WriteFail)
+    } else {
+        Ok(())
     }
-
-    Ok(())
 }
 
-pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
+pub fn remove_default(key: impl AsRef<OsStr>) -> Result<(), DefaultsError> {
     let output = Command::new("defaults")
         .arg("delete")
         .arg("com.mschrage.fig")
@@ -40,8 +50,8 @@ pub fn remove_default(key: impl AsRef<OsStr>) -> Result<()> {
         .output()?;
 
     if !output.status.success() {
-        return Err(anyhow::anyhow!("defaults write failed"));
+        Err(DefaultsError::WriteFail)
+    } else {
+        Ok(())
     }
-
-    Ok(())
 }

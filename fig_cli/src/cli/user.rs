@@ -14,6 +14,7 @@ use fig_auth::cognito::{
     SignInInput,
     SignUpInput,
 };
+use fig_request::request;
 use reqwest::Method;
 use serde::{
     Deserialize,
@@ -27,16 +28,15 @@ use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
 use crate::cli::dialoguer_theme;
-use crate::util::api::request;
 
 #[derive(Subcommand, Debug)]
 pub enum RootUserSubcommand {
     /// Login to Fig
     Login {
-        /// Manually refresh the auth token
+        /// Refresh the auth token if expired
         #[clap(long, short, value_parser)]
         refresh: bool,
-        /// Manually refresh the auth token
+        /// Force a refresh of the auth token
         #[clap(long, value_parser)]
         hard_refresh: bool,
     },

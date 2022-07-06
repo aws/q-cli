@@ -3,6 +3,7 @@ use anyhow::{
     Result,
 };
 use fig_settings::api_host;
+use fig_util::Shell;
 use reqwest::Url;
 use serde::{
     Deserialize,
@@ -24,10 +25,43 @@ pub enum ElementOrList<T> {
     List(Vec<T>),
 }
 
+impl<T> IntoIterator for ElementOrList<T> {
+    type IntoIter = std::vec::IntoIter<Self::Item>;
+    type Item = T;
+
+    fn into_iter(self) -> Self::IntoIter {
+        match self {
+            ElementOrList::Element(e) => vec![e].into_iter(),
+            ElementOrList::List(l) => l.into_iter(),
+        }
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct PluginInstallData {
     pub source_files: Option<ElementOrList<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnInstallData {
+    command: Option<ElementOrList<String>>,
+    check: Option<OnInstallCheckData>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnInstallCheckData {
+    command_exists: Option<ElementOrList<String>>,
+    file_exists: Option<ElementOrList<String>>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct OnUninstallData {
+    file: Option<ElementOrList<String>>,
+    command: Option<ElementOrList<String>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,6 +84,7 @@ pub struct PluginResponse {
 #[serde(rename_all = "camelCase")]
 struct InstalledPlugin {
     name: String,
+    shells: Option<ElementOrList<Shell>>,
     last_update: Option<u64>,
 }
 

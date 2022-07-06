@@ -269,7 +269,7 @@ fn build_mission_control(
 
     let window = WindowBuilder::new()
         .with_resizable(true)
-        .with_title("Fig Mission Control")
+        .with_title("Fig")
         .with_visible(is_visible)
         .with_always_on_top(false)
         .build(event_loop)?;
@@ -301,6 +301,7 @@ fn build_mission_control(
         .with_devtools(true)
         .with_navigation_handler(navigation_handler(MISSION_CONTROL_ID, &[
             r"^localhost$",
+            r"^127\.0\.0\.1$",
             r"^desktop\.fig\.io$",
             r"-withfig\.vercel\.app$",
         ]))
@@ -362,8 +363,10 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
             r"^localhost$",
-            r"^staging.withfig.com$",
-            r"^app.withfig.com$",
+            r"^127\.0\.0\.1$",
+            r"^staging\.withfig\.com$",
+            r"^app\.withfig\.com$",
+            r"-withfig\.vercel\.app$",
         ]))
         .build()?;
 
