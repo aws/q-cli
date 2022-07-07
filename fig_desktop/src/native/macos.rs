@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
+use crate::event::NativeEvent;
 use crate::window::CursorPositionKind;
 use crate::{
     EventLoopProxy,

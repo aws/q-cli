@@ -21,6 +21,10 @@ on:
     branches:
       - develop
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
@@ -77,9 +81,7 @@ jobs:
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
           profile: minimal
-          override: true
           components: clippy
 
       - name: Rust Cache
@@ -90,6 +92,7 @@ jobs:
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --workspace --locked -- -D warnings
+          name: Clippy ${{ matrix.os }} Report
 
   test-code-cov:
     strategy:
@@ -123,9 +126,7 @@ jobs:
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
-          toolchain: stable
           profile: minimal
-          override: true
           components: llvm-tools-preview
 
       - name: Rust Cache
