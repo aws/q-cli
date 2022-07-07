@@ -81,6 +81,7 @@ jobs:
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
+          toolchain: stable
           profile: minimal
           components: clippy
 
@@ -126,6 +127,7 @@ jobs:
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
+          toolchain: stable
           profile: minimal
           components: llvm-tools-preview
 
