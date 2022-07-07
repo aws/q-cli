@@ -83,6 +83,7 @@ jobs:
         with:
           toolchain: stable
           profile: minimal
+          override: true
           components: clippy
 
       - name: Rust Cache
@@ -128,6 +129,7 @@ jobs:
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
+          override: true
           profile: minimal
           components: llvm-tools-preview
 
