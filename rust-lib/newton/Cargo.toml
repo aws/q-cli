@@ -2,6 +2,7 @@
 name = "newton"
 version = "0.1.0"
 edition = "2021"
+publish = false
 
 [dependencies]
 crossterm = { version = "0.23.2", features = ["serde"] }
