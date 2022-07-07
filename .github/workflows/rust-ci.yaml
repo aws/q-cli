@@ -61,7 +61,7 @@ jobs:
         uses: actions/checkout@v3
       
       - name: Install Ubuntu dependencies
-        if: ${{ matrix.os }} == "ubuntu-latest"
+        if: startsWith(matrix.os,'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y \
@@ -113,7 +113,7 @@ jobs:
         uses: actions/checkout@v3
 
       - name: Install Ubuntu dependencies
-        if: ${{ matrix.os }} == "ubuntu-latest"
+        if: startsWith(matrix.os,'ubuntu')
         run: |
           sudo apt-get update
           sudo apt-get install -y \
