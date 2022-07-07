@@ -399,7 +399,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                                             println!();
                                             launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
                                             println!();
-                                            return match open_ui_element(UiElement::MissionControl).await {
+                                            return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
                                                 Ok(()) => Ok(()),
                                                 Err(err) => Err(err.context("Could not open fig")),
                                             };

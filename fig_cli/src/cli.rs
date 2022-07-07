@@ -254,7 +254,7 @@ impl Cli {
                                 use fig_ipc::command::open_ui_element;
                                 use fig_proto::local::UiElement;
 
-                                open_ui_element(UiElement::InputMethodPrompt)
+                                open_ui_element(UiElement::InputMethodPrompt, None)
                                     .await
                                     .context("\nCould not launch fig\n")
                             } else {
@@ -375,7 +375,7 @@ async fn root_command() -> Result<()> {
             launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
 
             if is_logged_in() {
-                open_ui_element(UiElement::MissionControl)
+                open_ui_element(UiElement::MissionControl, None)
                     .await
                     .context("\nCould not launch fig\n")?;
             }

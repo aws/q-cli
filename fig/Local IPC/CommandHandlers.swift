@@ -154,7 +154,7 @@ extension CommandHandlers {
     }
   }
 
-  static func openUiElement(uiElement: Local_UiElement) -> CommandResponse {
+  static func openUiElement(uiElement: Local_UiElement, route: String?) -> CommandResponse {
     switch uiElement {
     case .menuBar:
       DispatchQueue.main.async {
@@ -183,7 +183,7 @@ extension CommandHandlers {
       }
     case .missionControl:
       DispatchQueue.main.async {
-        MissionControl.openUI()
+        MissionControl.openUI(additionalPathComponent: route)
       }
 
       return CommandResponse.with { response in

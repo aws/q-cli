@@ -110,6 +110,7 @@ enum UiElement {
 
 message OpenUiElementCommand {
 	UiElement element = 1;
+	optional string route = 2;
 }
 
 message ResetCacheCommand {}
