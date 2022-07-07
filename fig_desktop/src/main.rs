@@ -408,7 +408,7 @@ fn main() {
                                 let exe = process.exe().display();
                                 eprintln!("Fig is already running: {exe} ({pid})");
                                 eprintln!("Opening Fig Window...");
-                                fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl)
+                                fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl, None)
                                     .await
                                     .unwrap();
                                 return;

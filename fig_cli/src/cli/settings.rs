@@ -260,7 +260,7 @@ impl SettingsArgs {
                     println!();
 
                     if is_logged_in() {
-                        match open_ui_element(UiElement::Settings).await {
+                        match open_ui_element(UiElement::Settings, None).await {
                             Ok(()) => Ok(()),
                             Err(err) => {
                                 print_connection_error!();

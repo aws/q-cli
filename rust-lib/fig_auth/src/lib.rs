@@ -24,6 +24,8 @@ pub enum Error {
     Cognito(#[from] cognito::Error),
     #[error("no access token set")]
     NoAccessToken,
+    #[error("could not read from defaults")]
+    Defaults(#[from] defaults::DefaultsError),
 }
 
 pub async fn refresh_credentals() -> Result<Credentials, Error> {
