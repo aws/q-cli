@@ -5,7 +5,7 @@ mod cli;
 mod event;
 mod figterm;
 mod icons;
-pub mod install;
+mod install;
 mod local_ipc;
 mod native;
 mod settings;

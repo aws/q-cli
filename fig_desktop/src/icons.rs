@@ -54,15 +54,18 @@ static ASSETS: Lazy<HashMap<&str, Arc<Vec<u8>>>> = Lazy::new(|| {
 
 pub type ProcessedAsset = (Arc<Vec<u8>>, AssetKind);
 
+#[cfg(target_os = "linux")]
 static ASSET_CACHE: Lazy<Cache<PathBuf, ProcessedAsset>> =
     Lazy::new(|| Cache::builder().time_to_live(Duration::from_secs(120)).build());
 
-#[derive(Clone)]
+#[derive(Debug, Clone)]
 pub enum AssetKind {
     Png,
+    #[cfg(target_os = "linux")]
     Svg,
 }
 
+#[cfg(target_os = "linux")]
 pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     if let Some(asset) = ASSET_CACHE.get(&path) {
         trace!("icon cache hit");
