@@ -27,11 +27,8 @@ env:
 
 jobs:
   fmt:
-    strategy:
-      matrix: 
-        os: [ubuntu-latest, windows-latest]  
-    name: Fmt ${{ matrix.os }}
-    runs-on: ${{ matrix.os }}
+    name: Fmt
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -53,7 +50,7 @@ jobs:
   clippy:
     strategy:
       matrix: 
-        os: [ubuntu-latest, windows-latest]    
+        os: [ubuntu-latest, macos-latest, windows-latest]    
     name: Clippy ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -67,22 +64,15 @@ jobs:
           sudo apt-get install -y \
               build-essential \
               pkg-config \
-              jq \
               dpkg \
-              curl \
-              wget \
               cmake \
               clang \
               libssl-dev \
               libgtk-3-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev \
-              libdbus-1-dev \
-              libwebkit2gtk-4.0-dev \
-              valac \
-              libibus-1.0-dev \
-              libglib2.0-dev
-        
+              libwebkit2gtk-4.0-dev
+
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -103,7 +93,7 @@ jobs:
   test-code-cov:
     strategy:
       matrix: 
-        os: [ubuntu-latest, windows-latest]    
+        os: [ubuntu-latest, macos-latest, windows-latest]    
     name: Test and Codecov ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
@@ -119,21 +109,14 @@ jobs:
           sudo apt-get install -y \
               build-essential \
               pkg-config \
-              jq \
               dpkg \
-              curl \
-              wget \
               cmake \
               clang \
               libssl-dev \
               libgtk-3-dev \
               libayatana-appindicator3-dev \
               librsvg2-dev \
-              libdbus-1-dev \
-              libwebkit2gtk-4.0-dev \
-              valac \
-              libibus-1.0-dev \
-              libglib2.0-dev
+              libwebkit2gtk-4.0-dev
         
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
