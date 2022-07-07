@@ -84,11 +84,17 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1
         
-      - name: Clippy
+      - name: Clippy (build)
+        uses: actions-rs/cargo@v1
+        with:
+          command: clippy
+          args: --workspace --locked -- -A clippy::all
+
+      - name: Clippy (lint)
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace
+          args: --workspace --locked -- -D warnings
 
   test-code-cov:
     strategy:
@@ -136,7 +142,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: --workspace --lcov --output-path lcov.info
+          args: --workspace --locked --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
