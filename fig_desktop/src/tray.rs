@@ -1,5 +1,3 @@
-use std::path::Path;
-
 use cfg_if::cfg_if;
 use tracing::trace;
 use wry::application::event_loop::ControlFlow;
@@ -76,7 +74,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
 // }
 
 #[cfg(target_os = "linux")]
-fn load_icon(path: impl AsRef<Path>) -> Icon {
+fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         let image = image::open(path).expect("Failed to open icon path").into_rgba8();
         let (width, height) = image.dimensions();

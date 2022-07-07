@@ -50,7 +50,7 @@ jobs:
   clippy:
     strategy:
       matrix: 
-        os: [ubuntu-latest, macos-latest, windows-latest]
+        os: [ubuntu-latest, macos-latest]
       fail-fast: false
     name: Clippy ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -94,7 +94,7 @@ jobs:
   test-code-cov:
     strategy:
       matrix: 
-        os: [ubuntu-latest, macos-latest, windows-latest]    
+        os: [ubuntu-latest, macos-latest]    
       fail-fast: false
     name: Test and Codecov ${{ matrix.os }}
     runs-on: ${{ matrix.os }}

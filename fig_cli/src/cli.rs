@@ -386,7 +386,7 @@ async fn root_command() -> Result<()> {
 
             match launch_fig(LaunchOptions::new().wait_for_activation().verbose()) {
                 Ok(()) => {
-                    open_ui_element(UiElement::MissionControl)
+                    open_ui_element(UiElement::MissionControl, None)
                         .await
                         .context("\nCould not launch fig\n")?;
                 }
