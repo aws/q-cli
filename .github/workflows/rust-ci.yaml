@@ -50,7 +50,8 @@ jobs:
   clippy:
     strategy:
       matrix: 
-        os: [ubuntu-latest, macos-latest, windows-latest]    
+        os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
     name: Clippy ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
@@ -83,14 +84,8 @@ jobs:
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@v1
-        
-      - name: Clippy (build)
-        uses: actions-rs/cargo@v1
-        with:
-          command: clippy
-          args: --workspace --locked -- -A clippy::all
 
-      - name: Clippy (lint)
+      - name: Clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
@@ -100,6 +95,7 @@ jobs:
     strategy:
       matrix: 
         os: [ubuntu-latest, macos-latest, windows-latest]    
+      fail-fast: false
     name: Test and Codecov ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     env:
