@@ -1,14 +1,14 @@
 name: 'Publish fig-cli spec version'
 on:
   push:
-    paths: fig_cli/**
+    paths: fig_cli/Cargo.toml
     branches:
       - master
   workflow_dispatch:
 
 jobs:    
   push-to-fig-autocomplete:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: fig_cli
