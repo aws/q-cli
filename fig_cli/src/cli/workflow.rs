@@ -180,21 +180,32 @@ impl SkimItem for WorkflowAction {
                 let namespace_name = format!("@{}/{}", workflow.namespace, workflow.name);
                 let namespace_name_len = namespace_name.len();
 
-                skim::AnsiString::parse(&format!(
-                    "{}{}{}{}",
-                    name.bold(),
-                    tags.dark_grey(),
-                    " ".repeat(
-                        context
-                            .container_width
-                            .saturating_sub(name_len)
-                            .saturating_sub(tag_len)
-                            .saturating_sub(namespace_name_len)
-                            .saturating_sub(1)
-                            .max(1)
-                    ),
-                    namespace_name.dark_grey()
-                ))
+                let terminal_size = crossterm::terminal::size();
+
+                let should_constrain_width = match terminal_size {
+                    Ok((term_width, _)) => term_width < 70,
+                    _ => false,
+                };
+
+                if should_constrain_width {
+                    skim::AnsiString::parse(&format!("{}{}", name, tags.dark_grey(),))
+                } else {
+                    skim::AnsiString::parse(&format!(
+                        "{}{}{}{}",
+                        name,
+                        tags.dark_grey(),
+                        " ".repeat(
+                            context
+                                .container_width
+                                .saturating_sub(name_len)
+                                .saturating_sub(tag_len)
+                                .saturating_sub(namespace_name_len)
+                                .saturating_sub(1)
+                                .max(1)
+                        ),
+                        namespace_name.dark_grey()
+                    ))
+                }
             },
             WorkflowAction::Create => skim::AnsiString::parse(&"Create new Workflow...".bold().blue().to_string()),
         }
@@ -368,7 +379,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                             .preview_window(Some("down:3"))
                             .reverse(true)
                             .case(CaseMatching::Ignore)
-                            .tac(true)
+                            .tac(false)
                             .build()
                             .unwrap(),
                         Some(rx),
