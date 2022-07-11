@@ -8,7 +8,10 @@ use reqwest::{
     Response,
 };
 use serde::de::DeserializeOwned;
-use serde::Serialize;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
 use thiserror::Error;
 
@@ -28,11 +31,42 @@ pub enum Error {
     #[error("{0}")]
     Fig(String),
     #[error(transparent)]
+    Graphql(#[from] GraphqlError),
+    #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
-    #[error("Unknown")]
-    Unknown,
     #[error(transparent)]
     Auth(#[from] fig_auth::Error),
+    #[error("Unknown")]
+    Unknown,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(transparent)]
+pub struct GraphqlError(Vec<serde_json::Map<String, serde_json::Value>>);
+
+impl std::fmt::Display for GraphqlError {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        for error in &self.0 {
+            if let Some(message) = error.get("message") {
+                match message.as_str() {
+                    Some(message) => write!(f, "{message}")?,
+                    None => write!(f, "{message}")?,
+                }
+            } else {
+                write!(f, "Unknown error")?;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl std::error::Error for GraphqlError {}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub enum GraphqlResponse<T> {
+    Data(T),
+    Errors(GraphqlError),
 }
 
 pub struct Request {
@@ -114,6 +148,15 @@ impl Request {
         let response = self.send().await?;
         let text = handle_fig_response(response).await?.text().await?;
         Ok(text)
+    }
+
+    pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
+        let response = self.send().await?;
+        match response.json::<GraphqlResponse<T>>().await {
+            Ok(GraphqlResponse::Data(data)) => Ok(data),
+            Ok(GraphqlResponse::Errors(err)) => Err(err.into()),
+            Err(err) => Err(err.into()),
+        }
     }
 }
 

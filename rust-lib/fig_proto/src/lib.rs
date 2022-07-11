@@ -32,7 +32,6 @@ use serde::{
     Deserialize,
     Serialize,
 };
-use serde_json::Deserializer;
 use thiserror::Error;
 
 // This is not used explicitly, but it must be here for the derive
@@ -45,6 +44,7 @@ static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {
 pub enum FigMessageType {
     Protobuf,
     Json,
+    MessagePack,
 }
 
 /// A fig message
@@ -52,9 +52,12 @@ pub enum FigMessageType {
 /// The format of a fig message is:
 ///
 ///   - The header `\x1b@`
-///   - The type of the message, `fig-pbuf` or `fig-json`, this part is always 8 bytes
+///   - The type of the message (must be 8 bytes)
+///     - `fig-pbuf` - Protocol Buffer
+///     - `fig-json` - Json
+///     - `fig-mpak` - MessagePack
 ///   - The length of the remainder of the message encoded as a big endian u64
-///   - The message, encoded as protobuf or json-protobuf
+///   - The message, encoded as protobuf, json-protobuf, or messagepack-protobuf
 #[derive(Debug, Clone)]
 pub struct FigMessage {
     pub inner: Bytes,
@@ -69,18 +72,20 @@ pub enum FigMessageParseError {
     InvalidHeader,
     #[error("invalid message type")]
     InvalidMessageType([u8; 8]),
-    #[error("io error: {0}")]
+    #[error(transparent)]
     Io(#[from] std::io::Error),
 }
 
 #[derive(Debug, Error)]
 pub enum FigMessageDecodeError {
-    #[error("prost decode error: {0}")]
-    ProstDecode(#[from] DecodeError),
-    #[error("json decode error: {0}")]
-    JsonDecode(#[from] serde_json::Error),
     #[error("name is a valid protobuf: {0}")]
     NameNotValid(String),
+    #[error(transparent)]
+    ProstDecode(#[from] DecodeError),
+    #[error(transparent)]
+    JsonDecode(#[from] serde_json::Error),
+    #[error(transparent)]
+    RmpDecode(#[from] rmp_serde::decode::Error),
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -106,6 +111,7 @@ impl FigMessage {
         let message_type = match &message_type_buf {
             b"fig-pbuf" => FigMessageType::Protobuf,
             b"fig-json" => FigMessageType::Json,
+            b"fig-mpak" => FigMessageType::MessagePack,
             _ => return Err(FigMessageParseError::InvalidMessageType(message_type_buf)),
         };
 
@@ -136,7 +142,12 @@ impl FigMessage {
             FigMessageType::Protobuf => Ok(T::decode(self.inner)?),
             FigMessageType::Json => Ok(DynamicMessage::deserialize(
                 T::default().descriptor(),
-                &mut Deserializer::from_slice(self.inner.as_ref()),
+                &mut serde_json::Deserializer::from_slice(self.inner.as_ref()),
+            )?
+            .transcode_to()?),
+            FigMessageType::MessagePack => Ok(DynamicMessage::deserialize(
+                T::default().descriptor(),
+                &mut rmp_serde::Deserializer::from_read_ref(self.inner.as_ref()),
             )?
             .transcode_to()?),
         }
@@ -215,13 +226,63 @@ mod tests {
     }
 
     #[test]
-    fn json_decode() {
+    fn json_round_trip() {
         let message = test_message();
         let json = serde_json::to_vec(&message.transcode_to_dynamic()).unwrap();
 
         let msg = FigMessage {
             inner: Bytes::from(json),
             message_type: FigMessageType::Json,
+        };
+        let decoded_message: local::LocalMessage = msg.decode().unwrap();
+
+        assert_eq!(message, decoded_message);
+    }
+
+    #[test]
+    fn json_decode() {
+        let msg = FigMessage {
+            inner: Bytes::from(
+                r#"{
+  "hook": {
+    "cursorPosition": {
+      "x": 123,
+      "y": 456,
+      "width": 34,
+      "height": 61
+    }
+  }
+}"#,
+            ),
+            message_type: FigMessageType::Json,
+        };
+
+        let decoded_message: local::LocalMessage = msg.decode().unwrap();
+
+        let hook = match decoded_message.r#type.unwrap() {
+            local::local_message::Type::Hook(hook) => hook,
+            _ => panic!(),
+        };
+
+        let cursor_position = match hook.hook.unwrap() {
+            local::hook::Hook::CursorPosition(cursor_position) => cursor_position,
+            _ => panic!(),
+        };
+
+        assert_eq!(cursor_position.x, 123);
+        assert_eq!(cursor_position.y, 456);
+        assert_eq!(cursor_position.width, 34);
+        assert_eq!(cursor_position.height, 61);
+    }
+
+    #[test]
+    fn rmp_round_trip() {
+        let message = test_message();
+        let json = rmp_serde::to_vec(&message.transcode_to_dynamic()).unwrap();
+
+        let msg = FigMessage {
+            inner: Bytes::from(json),
+            message_type: FigMessageType::MessagePack,
         };
         let decoded_message: local::LocalMessage = msg.decode().unwrap();
 

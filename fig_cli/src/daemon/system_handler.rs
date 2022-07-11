@@ -138,17 +138,17 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                                     fig_proto::daemon::sync_command::SyncType::PluginUpdate => true,
                                 };
 
-                                match download_and_notify().await {
+                                match download_and_notify(false).await {
                                     Ok(_) => match fetch_installed_plugins(update).await {
                                         Ok(()) => fig_proto::daemon::new_sync_response(Ok(())),
                                         Err(err) => {
-                                            error!("Failed to fetch installed plugins: {}", err);
+                                            error!("Failed to fetch installed plugins: {err}");
 
                                             fig_proto::daemon::new_sync_response(Err(err.to_string()))
                                         },
                                     },
                                     Err(err) => {
-                                        error!("Failed to fetch installed plugins: {}", err);
+                                        error!("Failed to fetch installed plugins: {err}");
 
                                         fig_proto::daemon::new_sync_response(Err(err.to_string()))
                                     },

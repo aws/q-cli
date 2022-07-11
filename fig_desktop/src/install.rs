@@ -19,7 +19,7 @@ pub async fn run_install() {
     });
 
     tokio::spawn(async {
-        if let Err(err) = fig_install::dotfiles::download_and_notify().await {
+        if let Err(err) = fig_install::dotfiles::download_and_notify(false).await {
             error!("Failed to fetch installed plugins: {err}");
         }
     });

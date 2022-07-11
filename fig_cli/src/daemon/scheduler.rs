@@ -266,7 +266,7 @@ pub struct SyncDotfiles;
 #[async_trait]
 impl Task for SyncDotfiles {
     async fn run(&self, sender: Sender<SchedulerMessages>) -> Result<()> {
-        download_and_notify().await?;
+        download_and_notify(false).await?;
         sender
             .send_async(SchedulerMessages::ScheduleTask(ScheduledTask {
                 time: Instant::now() + Duration::from_secs_f64(0.5),

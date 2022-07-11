@@ -1,14 +1,11 @@
-use anyhow::{
-    Context,
-    Result,
-};
-use fig_settings::api_host;
+use anyhow::Result;
+use fig_request::Request;
 use fig_util::Shell;
-use reqwest::Url;
 use serde::{
     Deserialize,
     Serialize,
 };
+use serde_json::json;
 
 use super::manifest::GitHub;
 
@@ -68,16 +65,11 @@ pub struct OnUninstallData {
 #[serde(rename_all = "camelCase")]
 pub struct PluginData {
     pub name: String,
+    pub display_name: Option<String>,
+    pub icon: Option<String>,
     pub github: Option<GitHub>,
     pub installation: Option<PluginInstallData>,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub struct PluginResponse {
-    pub success: bool,
-    pub plugin: Option<PluginData>,
-    pub message: Option<String>,
+    pub configuration: Option<Vec<serde_json::Value>>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -88,19 +80,80 @@ struct InstalledPlugin {
     last_update: Option<u64>,
 }
 
-pub async fn fetch_plugin(name: impl AsRef<str>) -> Result<PluginData> {
-    let api_host = api_host();
-    let name = name.as_ref();
+pub async fn fetch_plugin(name: impl std::fmt::Display) -> Result<PluginData> {
+    Ok(Request::get(format!("/plugins/name/{name}"))
+        .auth()
+        .deser_json()
+        .await?)
+}
 
-    let url = Url::parse(&format!("{api_host}/plugins/name/{name}"))?;
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ManyPlugins {
+    plugins: Vec<serde_json::Map<String, serde_json::Value>>,
+}
 
-    let body = reqwest::get(url).await?.error_for_status()?.text().await?;
+pub async fn all_plugins<F, I>(fields: F) -> Result<Vec<serde_json::Map<String, serde_json::Value>>>
+where
+    F: IntoIterator<Item = I>,
+    I: Into<String>,
+{
+    let query = format!(
+        "query {{ plugins {{ {} }} }}",
+        fields
+            .into_iter()
+            .map(|field| field.into())
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
 
-    let data: PluginResponse = serde_json::from_str(&body)?;
+    let many_plugins: ManyPlugins = Request::post("/graphql")
+        .body(json!({ "query": query }))
+        .graphql()
+        .await?;
 
-    if data.success {
-        Ok(data.plugin.context("Could not get plugin")?)
-    } else {
-        Err(anyhow::anyhow!("{}", data.message.unwrap()))
-    }
+    Ok(many_plugins.plugins)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct UniquePlugin {
+    plugin: serde_json::Map<String, serde_json::Value>,
+}
+
+pub async fn unique_plugin<N, F, I>(name: N, fields: F) -> Result<serde_json::Map<String, serde_json::Value>>
+where
+    N: std::fmt::Display,
+    F: IntoIterator<Item = I>,
+    I: Into<String>,
+{
+    let query = format!(
+        "query {{ plugin ( where: {{ name: \"{name}\" }} ) {{ {} }} }}",
+        fields
+            .into_iter()
+            .map(|field| field.into())
+            .collect::<Vec<_>>()
+            .join(" ")
+    );
+
+    let unique_plugin: UniquePlugin = Request::post("/graphql")
+        .body(json!({ "query": query }))
+        .graphql()
+        .await?;
+
+    Ok(unique_plugin.plugin)
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct InstalledPlugins {
+    plugins: Vec<serde_json::Map<String, serde_json::Value>>,
+}
+
+pub async fn installed_plugins<F, I>(_fields: F) -> Result<Vec<serde_json::Map<String, serde_json::Value>>>
+where
+    F: IntoIterator<Item = I>,
+    I: Into<String>,
+{
+    let installed_plugins: InstalledPlugins = Request::get("/dotfiles/plugins").auth().deser_json().await?;
+    Ok(installed_plugins.plugins)
 }

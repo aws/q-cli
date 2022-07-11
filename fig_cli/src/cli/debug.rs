@@ -187,7 +187,9 @@ impl DebugSubcommand {
                 } else {
                     fig_settings::state::set_value("developer.dotfiles.debug", json!(true))?;
                 }
-                download_and_notify().await.context("Could not sync remote dotfiles")?;
+                download_and_notify(true)
+                    .await
+                    .context("Could not sync remote dotfiles")?;
             },
             DebugSubcommand::AutocompleteWindow { mode } => {
                 let result = match mode {
