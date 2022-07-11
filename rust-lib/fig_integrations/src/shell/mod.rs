@@ -523,7 +523,7 @@ impl ShellIntegration for DotfileShellIntegration {
     }
 }
 
-#[cfg(test)]
+#[cfg(all(test, target_os = "linux"))]
 mod test {
     use std::io::Write;
     use std::process::{
