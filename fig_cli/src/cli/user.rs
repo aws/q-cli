@@ -14,8 +14,7 @@ use fig_auth::cognito::{
     SignInInput,
     SignUpInput,
 };
-use fig_request::request;
-use reqwest::Method;
+use fig_request::Request;
 use serde::{
     Deserialize,
     Serialize,
@@ -152,13 +151,11 @@ impl TokensSubcommand {
                 }
                 .and_then(|date| date.format(&Rfc3339).ok());
 
-                let json: Value = request(
-                    Method::POST,
-                    "/auth/tokens/new",
-                    Some(&json!({ "name": name, "team": team, "expiresAt": expires_at })),
-                    true,
-                )
-                .await?;
+                let json = Request::post("/auth/tokens/new")
+                    .auth()
+                    .body(json!({ "name": name, "team": team, "expiresAt": expires_at }))
+                    .json()
+                    .await?;
 
                 match json.get("token").and_then(|x| x.as_str()) {
                     Some(val) => {
@@ -172,13 +169,11 @@ impl TokensSubcommand {
                 Ok(())
             },
             Self::List { format, team, personal } => {
-                let json: Value = request(
-                    Method::GET,
-                    "/auth/tokens/list",
-                    Some(&json!({ "team": team, "personal": personal })),
-                    true,
-                )
-                .await?;
+                let json = Request::get("/auth/tokens/list")
+                    .auth()
+                    .body(json!({ "team": team, "personal": personal }))
+                    .json()
+                    .await?;
 
                 match json.get("tokens") {
                     Some(val) => match format {
@@ -215,13 +210,11 @@ impl TokensSubcommand {
                 Ok(())
             },
             Self::Revoke { name, team } => {
-                request::<Value, _, _>(
-                    Method::POST,
-                    "/auth/tokens/revoke",
-                    Some(&json!({ "name": name, "team": team })),
-                    true,
-                )
-                .await?;
+                Request::post("/auth/tokens/revoke")
+                    .auth()
+                    .body(json!({ "name": name, "team": team }))
+                    .send()
+                    .await?;
 
                 match team {
                     Some(team) => {
@@ -234,13 +227,11 @@ impl TokensSubcommand {
                 Ok(())
             },
             Self::Validate { token } => {
-                let valid: Value = request(
-                    Method::POST,
-                    "/auth/tokens/validate",
-                    Some(&json!({ "token": token })),
-                    true,
-                )
-                .await?;
+                let valid = Request::post("/auth/tokens/validate")
+                    .auth()
+                    .body(json!({ "token": token }))
+                    .json()
+                    .await?;
 
                 if let Some(&Value::String(ref username)) = valid.get("username") {
                     println!("{username}");
@@ -315,7 +306,7 @@ pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
         match sign_in_output.confirm(login_code.trim()).await {
             Ok(creds) => {
                 creds.save_credentials()?;
-                request::<Value, _, _>(Method::POST, "/user/login", None, true).await?;
+                Request::post("/user/login").auth().send().await?;
                 println!("Login successful!");
                 return Ok(());
             },
@@ -374,7 +365,7 @@ pub async fn whoami_cli(format: OutputFormat, only_email: bool) -> Result<()> {
                     },
                 }
             } else {
-                let response: WhoamiResponse = request(Method::GET, "/user/whoami", None, true).await?;
+                let response: WhoamiResponse = Request::get("/user/whoami").auth().deser_json().await?;
                 match format {
                     OutputFormat::Plain => match response.username {
                         Some(username) => println!("Email: {}\nUsername: {}", response.email, username),

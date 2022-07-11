@@ -80,7 +80,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         device_id.push_str(&email);
     }
 
-    let url = Url::parse_with_params(&ws_host(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
+    let url = Url::parse_with_params(ws_host().as_str(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
 
     let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
         .await

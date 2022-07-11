@@ -8,11 +8,12 @@ publish = false
 anyhow = "1.0.58"
 cfg-if = "1.0.0"
 crossterm = "0.23.2"
-fig_auth = { version = "0.1.0", path = "../fig_auth" }
+fig_auth = { path = "../fig_auth" }
 fig_directories = { path = "../fig_directories" }
+fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_telemetry = { path = "../fig_telemetry" }
-fig_util = { version = "0.1.0", path = "../fig_util" }
+fig_util = { path = "../fig_util" }
 flume = "0.10.13"
 futures = "0.3.21"
 git2 = { version = "0.14.4", features = ["vendored-openssl", "vendored-libgit2"] }

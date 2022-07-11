@@ -17,12 +17,11 @@ use crossterm::{
 use fig_ipc::command::open_ui_element;
 #[cfg(unix)]
 use fig_proto::local::UiElement;
-use fig_request::request;
+use fig_request::Request;
 use fig_telemetry::{
     TrackEvent,
     TrackSource,
 };
-use reqwest::Method;
 use serde::{
     Deserialize,
     Serialize,
@@ -309,15 +308,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 None => (None, name.as_ref()),
             };
 
-            match request(
-                Method::GET,
-                format!("/workflows/{name}"),
-                Some(&serde_json::json!({
+            match Request::get(format!("/workflows/{name}"))
+                .auth()
+                .body(serde_json::json!({
                     "namespace": namespace,
-                })),
-                true,
-            )
-            .await?
+                }))
+                .deser_json()
+                .await?
             {
                 Some(workflow) => workflow,
                 None => {
@@ -338,7 +335,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    let workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+                    let workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
 
                     use skim::prelude::*;
 
@@ -412,7 +409,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                         None => return Ok(()),
                     };
                 } else if #[cfg(windows)] {
-                    let mut workflows: Vec<Workflow> = request(Method::GET, "/workflows", None, true).await?;
+                    let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
 
                     let workflow_names: Vec<String> = workflows
                         .iter()
@@ -785,19 +782,17 @@ async fn execute_bash_workflow(
     let exit_code = output.code();
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
         if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
-            request::<serde_json::Value, _, _>(
-                Method::POST,
-                format!("/workflows/{}/invocations", name),
-                Some(&serde_json::json!({
+            Request::post(format!("/workflows/{name}/invocations"))
+                .body(serde_json::json!({
                     "namespace": namespace,
                     "commandStderr": Value::Null,
                     "exitCode": exit_code,
                     "executionStartTime": execution_start_time,
                     "executionDuration": execution_duration
-                })),
-                true,
-            )
-            .await?;
+                }))
+                .auth()
+                .send()
+                .await?;
         }
     }
 

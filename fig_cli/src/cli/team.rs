@@ -8,16 +8,12 @@ use clap::{
     ValueEnum,
 };
 use crossterm::style::Stylize;
-use fig_request::request;
-use reqwest::Method;
+use fig_request::Request;
 use serde::{
     Deserialize,
     Serialize,
 };
-use serde_json::{
-    json,
-    Value,
-};
+use serde_json::json;
 
 use super::OutputFormat;
 use crate::cli::dialoguer_theme;
@@ -51,7 +47,7 @@ pub struct TeamCommand {
 impl TeamCommand {
     pub async fn execute(&self) -> Result<()> {
         if self.args.list {
-            let teams: Value = request(Method::GET, "/teams", None, true).await?;
+            let teams = Request::get("/teams").auth().json().await?;
             match self.args.format {
                 OutputFormat::Plain => {
                     if let Some(teams) = teams.as_array() {
@@ -72,15 +68,19 @@ impl TeamCommand {
             Ok(())
         } else if let Some(team) = &self.team {
             if self.args.new {
-                request::<Value, _, _>(Method::POST, "/teams", Some(&json!({ "name": team })), true).await?;
-                println!("Created team {}", team);
+                Request::post("/teams")
+                    .auth()
+                    .body(json!({ "name": team }))
+                    .send()
+                    .await?;
+                println!("Created team {team}");
                 Ok(())
             } else if self.args.delete {
                 println!("Type the team name again to confirm: ");
                 let confirmation = dialoguer::Input::<String>::with_theme(&dialoguer_theme()).interact()?;
                 if &confirmation == team {
-                    request::<Value, _, _>(Method::DELETE, &format!("/teams/{}", team), None, true).await?;
-                    println!("Deleted team {}", team);
+                    Request::delete(format!("/teams/{team}")).auth().send().await?;
+                    println!("Deleted team {team}");
                     Ok(())
                 } else {
                     bail!("Team name does not match");
@@ -151,7 +151,7 @@ impl TeamSubcommand {
     pub async fn execute(&self, team: &String, format: &OutputFormat) -> Result<()> {
         match self {
             TeamSubcommand::Members => {
-                let users: Vec<User> = request(Method::GET, format!("/teams/{team}/users"), None, true).await?;
+                let users: Vec<User> = Request::get(format!("/teams/{team}/users")).auth().deser_json().await?;
                 match format {
                     OutputFormat::Plain => {
                         println!("{}", "Role     Email".bold());
@@ -165,13 +165,11 @@ impl TeamSubcommand {
                 Ok(())
             },
             TeamSubcommand::Remove { email } => {
-                request::<Value, _, _>(
-                    Method::DELETE,
-                    format!("/teams/{team}/users"),
-                    Some(&json!({ "emailToRemove": email })),
-                    true,
-                )
-                .await?;
+                Request::delete(format!("/teams/{team}/users"))
+                    .body(json!({ "emailToRemove": email }))
+                    .auth()
+                    .send()
+                    .await?;
                 println!(
                     "Removed user {} from team {}",
                     email.clone().bold(),
@@ -180,22 +178,22 @@ impl TeamSubcommand {
                 Ok(())
             },
             TeamSubcommand::Add { email, role } => {
-                request::<Value, _, _>(
-                    Method::POST,
-                    format!("/teams/{team}/users"),
-                    Some(&json!({
+                Request::post(format!("/teams/{team}/users"))
+                    .body(json!({
                         "emailToAdd": email,
                         "role": role.unwrap_or(Role::Member)
-                    })),
-                    true,
-                )
-                .await?;
+                    }))
+                    .auth()
+                    .send()
+                    .await?;
                 println!("Invited {} to team {}", email.clone().bold(), team.clone().bold());
                 Ok(())
             },
             TeamSubcommand::Invitations => {
-                let invitations: Vec<User> =
-                    request(Method::GET, format!("/teams/{team}/invitations"), None, true).await?;
+                let invitations: Vec<User> = Request::get(format!("/teams/{team}/invitations"))
+                    .auth()
+                    .deser_json()
+                    .await?;
                 match format {
                     OutputFormat::Plain => {
                         for invitation in invitations {
@@ -208,13 +206,11 @@ impl TeamSubcommand {
                 Ok(())
             },
             TeamSubcommand::Revoke { email } => {
-                request::<Value, _, _>(
-                    Method::DELETE,
-                    format!("/teams/{team}/invitations"),
-                    Some(&json!({ "emailToRevoke": email })),
-                    true,
-                )
-                .await?;
+                Request::delete(format!("/teams/{team}/invitations"))
+                    .body(json!({ "emailToRevoke": email }))
+                    .auth()
+                    .send()
+                    .await?;
                 println!("Revoked invitation for {}", email.clone().bold());
                 Ok(())
             },

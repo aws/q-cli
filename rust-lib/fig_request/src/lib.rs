@@ -1,16 +1,25 @@
-use std::fmt::Display;
-
 use fig_auth::get_token;
 use fig_settings::api_host;
+use once_cell::sync::Lazy;
 use reqwest::{
     Client,
     Method,
+    RequestBuilder,
     Response,
-    Url,
 };
 use serde::de::DeserializeOwned;
+use serde::Serialize;
 use serde_json::Value;
 use thiserror::Error;
+
+static CLIENT: Lazy<Client> = Lazy::new(|| {
+    Client::builder()
+        .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
+        .gzip(true)
+        .brotli(true)
+        .build()
+        .unwrap()
+});
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -18,50 +27,94 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 pub enum Error {
     #[error("{0}")]
     Fig(String),
-    #[error("Unknown")]
-    UnknownFig,
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
-    #[error(transparent)]
-    UrlParse(#[from] url::ParseError),
+    #[error("Unknown")]
+    Unknown,
     #[error(transparent)]
     Auth(#[from] fig_auth::Error),
 }
 
-pub async fn request_json<'a, D, B>(method: Method, endpoint: D, body: B, auth: bool) -> Result<Value>
-where
-    D: Display,
-    B: Into<Option<&'a Value>>,
-{
-    request(method, endpoint, body, auth).await
+pub struct Request {
+    builder: RequestBuilder,
+    auth: bool,
 }
 
-pub async fn request<'a, T, D, B>(method: Method, endpoint: D, body: B, auth: bool) -> Result<T>
-where
-    T: DeserializeOwned,
-    D: Display,
-    B: Into<Option<&'a Value>>,
-{
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}{endpoint}"))?;
+impl Request {
+    pub fn new(method: Method, endpoint: impl AsRef<str>) -> Self {
+        let mut url = api_host();
+        url.set_path(endpoint.as_ref());
 
-    let mut request = Client::new().request(method, url).header("Accept", "application/json");
+        Self {
+            builder: CLIENT.request(method, url).header("Accept", "application/json"),
+            auth: false,
+        }
+    }
 
-    if auth {
-        let token = match std::env::var("FIG_TOKEN") {
-            Ok(token) => token,
-            Err(_) => get_token().await?,
+    pub fn get(endpoint: impl AsRef<str>) -> Self {
+        Self::new(Method::GET, endpoint)
+    }
+
+    pub fn post(endpoint: impl AsRef<str>) -> Self {
+        Self::new(Method::POST, endpoint)
+    }
+
+    pub fn delete(endpoint: impl AsRef<str>) -> Self {
+        Self::new(Method::DELETE, endpoint)
+    }
+
+    pub fn body(self, body: impl Serialize) -> Self {
+        Self {
+            builder: self.builder.json(&body),
+            ..self
+        }
+    }
+
+    pub fn query<Q: Serialize + ?Sized>(self, query: &Q) -> Self {
+        Self {
+            builder: self.builder.query(query),
+            ..self
+        }
+    }
+
+    /// Adds fig auth to the request, this can be expensive if the token needs to be
+    /// refreshed so only use when needed.
+    pub fn auth(self) -> Self {
+        Self { auth: true, ..self }
+    }
+
+    pub async fn send(self) -> Result<Response> {
+        let builder = match self.auth {
+            true => {
+                let token = match std::env::var("FIG_TOKEN") {
+                    Ok(token) => token,
+                    Err(_) => get_token().await?,
+                };
+                self.builder.bearer_auth(token)
+            },
+            false => self.builder,
         };
-        request = request.bearer_auth(token);
+        Ok(builder.send().await?)
     }
 
-    if let Some(body) = body.into() {
-        request = request.json(body);
+    /// Deserialize json to `T: [DeserializeOwned]`
+    pub async fn deser_json<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
+        let response = self.send().await?;
+        let json = handle_fig_response(response).await?.json().await?;
+        Ok(json)
     }
 
-    let response = request.send().await?;
-    let json = handle_fig_response(response).await?.json().await?;
-    Ok(json)
+    /// Deserialize json to a [`serde_json::Value`]
+    pub async fn json(self) -> Result<Value> {
+        self.deser_json().await
+    }
+
+    /// Raw body text
+    pub async fn text(self) -> Result<String> {
+        let response = self.send().await?;
+        let text = handle_fig_response(response).await?.text().await?;
+        Ok(text)
+    }
 }
 
 pub async fn handle_fig_response(resp: Response) -> Result<Response> {
@@ -69,11 +122,11 @@ pub async fn handle_fig_response(resp: Response) -> Result<Response> {
         Ok(resp)
     } else {
         let err = resp.error_for_status_ref().err();
-        macro_rules! print_err {
+        macro_rules! status_err {
             () => {{
                 match err {
                     Some(err) => return Err(err.into()),
-                    None => return Err(Error::UnknownFig),
+                    None => return Err(Error::Unknown),
                 }
             }};
         }
@@ -82,17 +135,36 @@ pub async fn handle_fig_response(resp: Response) -> Result<Response> {
             Ok(text) => match serde_json::from_str::<Value>(&text) {
                 Ok(json) => Err(match json.get("error").and_then(|error| error.as_str()) {
                     Some(error) => Error::Fig(error.into()),
-                    None => Error::UnknownFig,
+                    None => status_err!(),
                 }),
                 Err(_) => {
                     if !text.is_empty() {
                         Err(Error::Fig(text))
                     } else {
-                        print_err!()
+                        status_err!()
                     }
                 },
             },
-            Err(_) => print_err!(),
+            Err(_) => status_err!(),
         }
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[tokio::test]
+    async fn text() {
+        let text = Request::get("/health").text().await.unwrap();
+        assert_eq!(&text, "OK");
+    }
+
+    #[ignore]
+    #[tokio::test]
+    async fn auth() {
+        let value = Request::get("/user/account").auth().json().await.unwrap();
+        assert!(value.get("email").is_some());
+        assert!(value.get("username").is_some());
     }
 }

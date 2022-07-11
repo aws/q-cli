@@ -15,7 +15,7 @@ pub fn local_settings() -> Result<LocalState, super::Error> {
 
 pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), super::Error> {
     let mut settings = local_settings()?;
-    settings.set(key, value)?;
+    settings.set(key, value);
     settings.save()?;
     Ok(())
 }
@@ -57,7 +57,7 @@ pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
 
 pub fn remove_value(key: impl AsRef<str>) -> Result<(), super::Error> {
     let mut settings = local_settings()?;
-    settings.remove(key)?;
+    settings.remove(key);
     settings.save()?;
     Ok(())
 }

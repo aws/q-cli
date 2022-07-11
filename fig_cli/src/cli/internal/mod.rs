@@ -26,13 +26,12 @@ use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
-use fig_request::request;
+use fig_request::Request;
 use fig_util::get_parent_process_exe;
 use rand::distributions::{
     Alphanumeric,
     DistString,
 };
-use serde_json::Value;
 use sysinfo::{
     System,
     SystemExt,
@@ -345,12 +344,12 @@ impl InternalSubcommand {
                 println!("{}", get_token().await?);
             },
             InternalSubcommand::Request { route, method, body } => {
-                let body: Option<Value> = match body {
-                    Some(body) => Some(serde_json::from_str(&body)?),
-                    None => None,
-                };
                 let method = reqwest::Method::from_str(&method)?;
-                let value: Value = request(method, route, body.as_ref(), true).await?;
+                let mut request = Request::new(method, route);
+                if let Some(body) = body {
+                    request = request.body(serde_json::from_str(&body)?);
+                }
+                let value = request.auth().json().await?;
                 println!("{}", serde_json::to_string(&value)?);
             },
         }

@@ -11,38 +11,36 @@ use crate::settings::LocalSettings;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Failed to parse URL {0}")]
+    #[error(transparent)]
     UrlParse(#[from] url::ParseError),
-    #[error("Failed to get token")]
-    AuthError,
-    #[error("Reqwest error: {0}")]
+    #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
+    #[error(transparent)]
+    AuthError(#[from] fig_auth::Error),
 }
 
 pub async fn update_remote_all_settings(settings: LocalSettings) -> Result<(), Error> {
-    if let Some(settings) = settings.get_setting() {
-        let token = get_token().await.map_err(|_| Error::AuthError)?;
-        let mut body = serde_json::Map::new();
-        body.insert("settings".into(), serde_json::json!(settings));
+    let token = get_token().await?;
+    let mut body = serde_json::Map::new();
+    body.insert("settings".into(), serde_json::json!(&settings.inner));
 
-        let api_host = api_host();
-        let url = Url::parse(&format!("{api_host}/settings/update"))?;
+    let api_host = api_host();
+    let url = Url::parse(&format!("{api_host}/settings/update"))?;
 
-        reqwest::Client::new()
-            .post(url)
-            .header("Content-Type", "application/json")
-            .json(&body)
-            .bearer_auth(token)
-            .send()
-            .await?
-            .error_for_status()?;
-    }
+    reqwest::Client::new()
+        .post(url)
+        .header("Content-Type", "application/json")
+        .json(&body)
+        .bearer_auth(token)
+        .send()
+        .await?
+        .error_for_status()?;
 
     Ok(())
 }
 
 pub async fn update_remote_setting(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<(), Error> {
-    let token = get_token().await.map_err(|_| Error::AuthError)?;
+    let token = get_token().await?;
 
     let mut body = serde_json::Map::new();
     body.insert("value".into(), value.into());
@@ -63,7 +61,7 @@ pub async fn update_remote_setting(key: impl AsRef<str>, value: impl Into<serde_
 }
 
 pub async fn delete_remote_setting(key: impl AsRef<str>) -> Result<(), Error> {
-    let token = get_token().await.map_err(|_| Error::AuthError)?;
+    let token = get_token().await?;
 
     let api_host = api_host();
     let url = Url::parse(&format!("{api_host}/settings/update/{}", key.as_ref()))?;
@@ -88,7 +86,7 @@ pub struct RemoteSettings {
 }
 
 pub async fn get_settings() -> Result<RemoteSettings, Error> {
-    let token = get_token().await.map_err(|_| Error::AuthError)?;
+    let token = get_token().await?;
 
     let api_host = api_host();
     let url = Url::parse(&format!("{api_host}/settings/"))?;

@@ -20,15 +20,15 @@ pub fn local_settings() -> Result<LocalSettings, super::Error> {
     LocalSettings::load(path)
 }
 
-pub fn get_map() -> Result<Option<serde_json::Map<String, serde_json::Value>>, super::Error> {
-    Ok(local_settings()?.to_inner().as_object().cloned())
+pub fn get_map() -> Result<serde_json::Map<String, serde_json::Value>, super::Error> {
+    Ok(local_settings()?.inner)
 }
 
 pub async fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), super::Error> {
     let key = key.into();
     let value = value.into();
     let mut settings = local_settings()?;
-    settings.set(&key, value.clone())?;
+    settings.set(&key, value.clone());
     settings.save()?;
     Ok(update_remote_setting(key, value).await?)
 }
@@ -71,7 +71,7 @@ pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
 
 pub async fn remove_value(key: impl AsRef<str>) -> Result<(), Error> {
     let mut settings = local_settings()?;
-    settings.remove(&key)?;
+    settings.remove(&key);
     settings.save()?;
     Ok(delete_remote_setting(&key).await?)
 }
