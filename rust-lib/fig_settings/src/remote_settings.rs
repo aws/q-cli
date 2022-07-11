@@ -1,5 +1,6 @@
+use std::fmt::Display;
+
 use fig_auth::get_token;
-use reqwest::Url;
 use serde::{
     Deserialize,
     Serialize,
@@ -21,11 +22,12 @@ pub enum Error {
 
 pub async fn update_remote_all_settings(settings: LocalSettings) -> Result<(), Error> {
     let token = get_token().await?;
+
     let mut body = serde_json::Map::new();
     body.insert("settings".into(), serde_json::json!(&settings.inner));
 
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/settings/update"))?;
+    let mut url = api_host();
+    url.set_path("/settings/update");
 
     reqwest::Client::new()
         .post(url)
@@ -39,14 +41,14 @@ pub async fn update_remote_all_settings(settings: LocalSettings) -> Result<(), E
     Ok(())
 }
 
-pub async fn update_remote_setting(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<(), Error> {
+pub async fn update_remote_setting(key: impl Display, value: impl Into<serde_json::Value>) -> Result<(), Error> {
     let token = get_token().await?;
 
     let mut body = serde_json::Map::new();
     body.insert("value".into(), value.into());
 
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/settings/update/{}", key.as_ref()))?;
+    let mut url = api_host();
+    url.set_path(&format!("/settings/update/{key}"));
 
     reqwest::Client::new()
         .post(url)
@@ -60,11 +62,11 @@ pub async fn update_remote_setting(key: impl AsRef<str>, value: impl Into<serde_
     Ok(())
 }
 
-pub async fn delete_remote_setting(key: impl AsRef<str>) -> Result<(), Error> {
+pub async fn delete_remote_setting(key: impl Display) -> Result<(), Error> {
     let token = get_token().await?;
 
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/settings/update/{}", key.as_ref()))?;
+    let mut url = api_host();
+    url.set_path(&format!("/settings/update/{key}"));
 
     reqwest::Client::new()
         .delete(url)
@@ -88,8 +90,8 @@ pub struct RemoteSettings {
 pub async fn get_settings() -> Result<RemoteSettings, Error> {
     let token = get_token().await?;
 
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/settings/"))?;
+    let mut url = api_host();
+    url.set_path("/settings");
 
     let res = reqwest::Client::new()
         .get(url)

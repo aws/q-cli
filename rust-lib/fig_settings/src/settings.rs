@@ -73,5 +73,5 @@ pub async fn remove_value(key: impl AsRef<str>) -> Result<(), Error> {
     let mut settings = local_settings()?;
     settings.remove(&key);
     settings.save()?;
-    Ok(delete_remote_setting(&key).await?)
+    Ok(delete_remote_setting(key.as_ref()).await?)
 }
