@@ -1,4 +1,3 @@
-use std::fmt;
 use std::io::Write;
 use std::time::Duration;
 
@@ -10,7 +9,6 @@ use anyhow::{
 use fig_auth::{
     get_email,
     get_token,
-    refresh_credentals,
 };
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
@@ -61,34 +59,20 @@ enum FigWebsocketMessage {
     },
 }
 
-async fn get_ticket(reqwest_client: &reqwest::Client, url: Url, token: impl fmt::Display) -> Result<reqwest::Response> {
-    Ok(tokio::time::timeout(
-        Duration::from_secs(30),
-        reqwest_client.get(url.clone()).bearer_auth(&token).send(),
-    )
-    .await??
-    .error_for_status()?)
-}
-
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
     let api_host = api_host();
     let url = Url::parse(&format!("{api_host}/authenticate/ticket"))?;
+    let token = get_token().await?;
 
-    let reqwest_client = reqwest::Client::new();
-    let ticket = match get_ticket(&reqwest_client, url.clone(), get_token().await?).await {
-        Ok(response) => response,
-        Err(_) => {
-            // Retry after manually refreshing the credentals
-            refresh_credentals().await?;
-            get_ticket(&reqwest_client, url.clone(), get_token().await?)
-                .await
-                .context("Failed to get ticket")?
-        },
-    }
-    .text()
-    .await?;
+    let request = reqwest::Client::new().get(url.clone()).bearer_auth(&token).send();
+
+    let ticket = tokio::time::timeout(Duration::from_secs(30), request)
+        .await??
+        .error_for_status()?
+        .text()
+        .await?;
 
     let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {

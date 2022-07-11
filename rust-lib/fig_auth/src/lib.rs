@@ -28,17 +28,6 @@ pub enum Error {
     Defaults(#[from] defaults::DefaultsError),
 }
 
-pub async fn refresh_credentals() -> Result<Credentials, Error> {
-    let mut creds = Credentials::load_credentials()?;
-    let aws_client = get_client()?;
-    creds
-        .refresh_credentials(&aws_client, CLIENT_ID)
-        .await
-        .map_err(cognito::Error::from)?;
-    creds.save_credentials()?;
-    Ok(creds)
-}
-
 pub fn logout() -> Result<(), Error> {
     let creds = Credentials::default();
     creds.save_credentials()?;
@@ -49,7 +38,7 @@ pub async fn get_token() -> Result<String, Error> {
     let mut creds = Credentials::load_credentials()?;
     if creds.is_expired() {
         let aws_client = get_client()?;
-        tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, CLIENT_ID))
+        tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, None))
             .await
             .unwrap()
             .map_err(cognito::Error::from)?;

@@ -1594,7 +1594,7 @@ impl DoctorCheck for LoginStatusCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // We reload the credentials here because we want to check if the user is logged in
-        match fig_auth::refresh_credentals().await {
+        match fig_auth::get_token().await {
             Ok(_) => Ok(()),
             Err(_) => Err(doctor_error!("Not logged in. Run `fig login` to login.")),
         }

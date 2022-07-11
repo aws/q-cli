@@ -165,7 +165,7 @@ fn parse_lambda_error(error: UserLambdaValidationException) -> Result<Validation
 
 pub struct SignInInput<'a> {
     client: &'a Client,
-    client_id: String,
+    client_id: Option<String>,
     username_or_email: String,
 }
 
@@ -186,7 +186,7 @@ pub enum SignInError {
 }
 
 impl<'a> SignInInput<'a> {
-    pub fn new(client: &'a Client, client_id: impl Into<String>, username_or_email: impl Into<String>) -> Self {
+    pub fn new(client: &'a Client, username_or_email: impl Into<String>, client_id: impl Into<Option<String>>) -> Self {
         Self {
             client,
             client_id: client_id.into(),
@@ -195,10 +195,12 @@ impl<'a> SignInInput<'a> {
     }
 
     pub async fn sign_in(&self) -> Result<SignInOutput<'a>, SignInError> {
+        let client_id = self.client_id.as_ref().map_or(CLIENT_ID, String::as_str);
+
         let initiate_auth_result = self
             .client
             .initiate_auth()
-            .client_id(&self.client_id)
+            .client_id(client_id)
             .auth_flow(AuthFlowType::CustomAuth)
             .auth_parameters("USERNAME", &self.username_or_email)
             .send()
@@ -223,7 +225,7 @@ impl<'a> SignInInput<'a> {
         let respond_to_auth_result = self
             .client
             .respond_to_auth_challenge()
-            .client_id(&self.client_id)
+            .client_id(client_id)
             .session(&session)
             .challenge_name(challenge_name)
             .challenge_responses("USERNAME", &self.username_or_email)
@@ -247,7 +249,7 @@ impl<'a> SignInInput<'a> {
 
         Ok(SignInOutput {
             client: self.client,
-            client_id: self.client_id.clone(),
+            client_id: client_id.into(),
             username_or_email: self.username_or_email.clone(),
             session,
             challenge_name,
@@ -333,7 +335,7 @@ impl<'a> SignInOutput<'a> {
 
 pub struct SignUpInput<'a> {
     client: &'a Client,
-    client_id: String,
+    client_id: Option<String>,
     email: String,
 }
 
@@ -346,7 +348,7 @@ pub enum SignUpError {
 }
 
 impl<'a> SignUpInput<'a> {
-    pub fn new(client: &'a Client, client_id: impl Into<String>, email: impl Into<String>) -> Self {
+    pub fn new(client: &'a Client, email: impl Into<String>, client_id: impl Into<Option<String>>) -> Self {
         Self {
             client,
             client_id: client_id.into(),
@@ -357,11 +359,12 @@ impl<'a> SignUpInput<'a> {
     pub async fn sign_up(self) -> Result<(), SignUpError> {
         let password = generate_password(32);
         let username = uuid::Uuid::new_v4().as_hyphenated().to_string();
+        let client_id = self.client_id.as_ref().map_or(CLIENT_ID, String::as_str);
 
         let sign_up_result = self
             .client
             .sign_up()
-            .client_id(&self.client_id)
+            .client_id(client_id)
             .username(username)
             .password(&password)
             .user_attributes(AttributeType::builder().name("email").value(&self.email).build())
@@ -579,7 +582,11 @@ impl Credentials {
         Ok(creds)
     }
 
-    pub async fn refresh_credentials(&mut self, client: &Client, client_id: &str) -> Result<(), RefreshError> {
+    pub async fn refresh_credentials(
+        &mut self,
+        client: &Client,
+        client_id: Option<String>,
+    ) -> Result<(), RefreshError> {
         if let Some(expiration_time) = self.get_refresh_expiration_time() {
             if expiration_time < time::OffsetDateTime::now_utc() {
                 return Err(RefreshError::RefreshTokenExpired);
@@ -587,6 +594,7 @@ impl Credentials {
         }
 
         let refresh_token = self.refresh_token.as_ref().ok_or(RefreshError::RefreshTokenNotSet)?;
+        let client_id = client_id.as_ref().map_or(CLIENT_ID, String::as_str);
 
         let out = client
             .initiate_auth()
@@ -607,13 +615,6 @@ impl Credentials {
             None => return Err(RefreshError::EmptyAuthResponse),
         }
 
-        Ok(())
-    }
-
-    // Refresh credentials with the default `client` and `client_id`
-    pub async fn refresh_credentials_default(&mut self) -> Result<()> {
-        let client = get_client()?;
-        self.refresh_credentials(&client, CLIENT_ID).await?;
         Ok(())
     }
 

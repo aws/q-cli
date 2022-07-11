@@ -255,13 +255,12 @@ impl TokensSubcommand {
 
 /// Login to fig
 pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
-    let client_id = "hkinciohdp1i7h0imdk63a4bv";
     let client = get_client()?;
 
     if refresh || hard_refresh {
         let mut creds = Credentials::load_credentials()?;
         if creds.is_expired() || hard_refresh {
-            creds.refresh_credentials(&client, client_id).await?;
+            creds.refresh_credentials(&client, None).await?;
             creds.save_credentials()?;
         }
         return Ok(());
@@ -284,7 +283,7 @@ pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
 
     let trimmed_email = email.trim();
 
-    let sign_in_input = SignInInput::new(&client, client_id, trimmed_email);
+    let sign_in_input = SignInInput::new(&client, trimmed_email, None);
 
     println!("Sending login code to {}...", trimmed_email);
     println!("Please check your email for the code");
@@ -293,7 +292,7 @@ pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
         Ok(out) => out,
         Err(err) => match err {
             SignInError::UserNotFound(_) => {
-                SignUpInput::new(&client, client_id, email).sign_up().await?;
+                SignUpInput::new(&client, email, None).sign_up().await?;
 
                 sign_in_input.sign_in().await?
             },
