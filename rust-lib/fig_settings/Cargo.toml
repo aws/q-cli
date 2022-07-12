@@ -13,7 +13,7 @@ fig_directories = { path = "../fig_directories" }
 once_cell = { version = "1.13.0", features = ["parking_lot"] }
 regex = "1.6.0"
 reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
-serde = { version = "1.0.138", features = ["derive"] }
+serde = { version = "1.0.139", features = ["derive"] }
 serde_json = "1.0.82"
 thiserror = "1.0.30"
 time = { version = "0.3.11", features = ["serde-well-known"] }

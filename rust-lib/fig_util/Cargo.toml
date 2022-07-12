@@ -11,7 +11,7 @@ publish = false
 cfg-if = "1.0.0"
 clap = { version = "3.2.8", features = ["derive"] }
 fig_directories = { path = "../fig_directories" }
-serde = "1.0.138"
+serde = "1.0.139"
 sha2 = "0.10.2"
 thiserror = "1.0.30"
 tokio = { version = "1", features = ["process"] }
