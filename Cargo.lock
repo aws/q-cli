@@ -1454,7 +1454,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "3495912c9c1ccf2e18976439f4443f3fee0fd61f424ff99fde6a66b15ecb448f"
 dependencies = [
  "cfg-if 1.0.0",
- "hashbrown 0.12.1",
+ "hashbrown 0.12.2",
  "lock_api",
  "parking_lot_core 0.9.3",
 ]
@@ -2300,7 +2300,7 @@ dependencies = [
  "fnv",
  "freedesktop-icons",
  "gtk",
- "hashbrown 0.12.1",
+ "hashbrown 0.12.2",
  "image 0.24.2",
  "moka",
  "notify 5.0.0-pre.15",
@@ -3205,9 +3205,9 @@ dependencies = [
 
 [[package]]
 name = "hashbrown"
-version = "0.12.1"
+version = "0.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "db0d4cf898abf0081f964436dc980e96670a0f36863e4b83aaacdb65c9d7ccc3"
+checksum = "607c8a29735385251a339424dd462993c0fed8fa09d378f259377df08c126022"
 dependencies = [
  "ahash",
 ]
@@ -3482,7 +3482,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "10a35a97730320ffe8e2d410b5d3b69279b98d2c14bdb8b70ea89ecf7888d41e"
 dependencies = [
  "autocfg",
- "hashbrown 0.12.1",
+ "hashbrown 0.12.2",
  "serde",
 ]
 
@@ -4579,7 +4579,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ccd746e37177e1711c20dd619a1620f34f5c8b569c53590a72dedd5344d8924a"
 dependencies = [
  "dlv-list",
- "hashbrown 0.12.1",
+ "hashbrown 0.12.2",
 ]
 
 [[package]]
