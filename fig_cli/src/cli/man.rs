@@ -1,6 +1,6 @@
 use anyhow::Result;
 use clap::Args;
-use reqwest::Url;
+use url::Url;
 
 #[derive(Debug, Args)]
 pub struct ManArgs {

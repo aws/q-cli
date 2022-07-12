@@ -40,11 +40,9 @@ flume = "0.10.13"
 futures = "0.3.21"
 globset = "0.4.9"
 humantime = "2.1.0"
-notify = "4.0.17"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.6.0"
-reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks"] }
 self_update = { version = "0.30.0", default-features = false, features = ["rustls"] }
 semver = "1.0.12"
 serde = { version = "1.0.139", features = ["derive"] }
@@ -60,9 +58,13 @@ tokio-tungstenite = { version = "0.17.1", features = ["rustls-tls-webpki-roots"]
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.14", features = ["fmt", "time", "parking_lot"] }
 tui = { path = "../rust-lib/tui" }
+url = "2.2.2"
 validator = "0.15.0"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.24.1"
 skim = "0.9.4"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+notify = "4.0.17"
 

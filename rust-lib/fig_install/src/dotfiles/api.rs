@@ -5,8 +5,6 @@ use anyhow::{
     Context,
     Result,
 };
-use fig_auth::get_token;
-use fig_settings::api_host;
 use fig_util::Shell;
 use serde::{
     Deserialize,
@@ -50,31 +48,22 @@ pub enum UpdateStatus {
 }
 
 pub async fn download_dotfiles() -> Result<UpdateStatus> {
-    // Get the token
-    let token = get_token().await?;
-
     let device_uniqueid = fig_util::get_system_id().ok();
     let plugins_directry = crate::plugins::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
-
-    let url: reqwest::Url = format!("{}/dotfiles/source/all", api_host()).parse()?;
 
     let debug_dotfiles = match fig_settings::state::get_value("developer.dotfiles.debug") {
         Ok(Some(serde_json::Value::Bool(true))) => Some("true"),
         _ => None,
     };
 
-    let download = reqwest::Client::new()
-        .get(url)
-        .bearer_auth(token)
+    let download = fig_request::Request::get("/dotfiles/source/all")
+        .auth()
         .query(&[
             ("os", Some(std::env::consts::OS)),
             ("device", device_uniqueid.as_deref()),
             ("debug", debug_dotfiles),
             ("pluginsDirectory", plugins_directry.as_deref()),
         ])
-        .send()
-        .await?
-        .error_for_status()?
         .text()
         .await?;
 

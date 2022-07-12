@@ -96,11 +96,9 @@ dependencies = [
 name = "alacritty_terminal"
 version = "0.15.1-dev"
 dependencies = [
- "base64 0.13.0",
  "bitflags",
  "fig_color",
  "log",
- "regex-automata",
  "serde",
  "serde_json",
  "serde_yaml",
@@ -1383,18 +1381,8 @@ version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d706e75d87e35569db781a9b5e2416cff1236a47ed380831f959382ccd5f858"
 dependencies = [
- "darling_core 0.10.2",
- "darling_macro 0.10.2",
-]
-
-[[package]]
-name = "darling"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4529658bdda7fd6769b8614be250cdcfc3aeb0ee72fe66f9e41e5e5eb73eac02"
-dependencies = [
- "darling_core 0.14.1",
- "darling_macro 0.14.1",
+ "darling_core",
+ "darling_macro",
 ]
 
 [[package]]
@@ -1412,37 +1400,12 @@ dependencies = [
 ]
 
 [[package]]
-name = "darling_core"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "649c91bc01e8b1eac09fb91e8dbc7d517684ca6be8ebc75bb9cafc894f9fdb6f"
-dependencies = [
- "fnv",
- "ident_case",
- "proc-macro2 1.0.40",
- "quote 1.0.20",
- "strsim 0.10.0",
- "syn 1.0.98",
-]
-
-[[package]]
 name = "darling_macro"
 version = "0.10.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d9b5a2f4ac4969822c62224815d069952656cadc7084fdca9751e6d959189b72"
 dependencies = [
- "darling_core 0.10.2",
- "quote 1.0.20",
- "syn 1.0.98",
-]
-
-[[package]]
-name = "darling_macro"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddfc69c5bfcbd2fc09a0f38451d2daf0e372e367986a83906d1b0dbc88134fb5"
-dependencies = [
- "darling_core 0.14.1",
+ "darling_core",
  "quote 1.0.20",
  "syn 1.0.98",
 ]
@@ -1838,20 +1801,11 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a2658621297f2cf68762a6f7dc0bb7e1ff2cfd6583daef8ee0fed6f7ec468ec0"
 dependencies = [
- "darling 0.10.2",
- "derive_builder_core 0.9.0",
+ "darling",
+ "derive_builder_core",
  "proc-macro2 1.0.40",
  "quote 1.0.20",
  "syn 1.0.98",
-]
-
-[[package]]
-name = "derive_builder"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d07adf7be193b71cc36b193d0f5fe60b918a3a9db4dad0449f57bcfd519704a3"
-dependencies = [
- "derive_builder_macro",
 ]
 
 [[package]]
@@ -1860,31 +1814,9 @@ version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2791ea3e372c8495c0bc2033991d76b512cd799d07491fbd6890124db9458bef"
 dependencies = [
- "darling 0.10.2",
+ "darling",
  "proc-macro2 1.0.40",
  "quote 1.0.20",
- "syn 1.0.98",
-]
-
-[[package]]
-name = "derive_builder_core"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1f91d4cfa921f1c05904dc3c57b4a32c38aed3340cce209f3a6fd1478babafc4"
-dependencies = [
- "darling 0.14.1",
- "proc-macro2 1.0.40",
- "quote 1.0.20",
- "syn 1.0.98",
-]
-
-[[package]]
-name = "derive_builder_macro"
-version = "0.11.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f0314b72bed045f3a68671b3c86328386762c93f82d98c65c3cb5e5f573dd68"
-dependencies = [
- "derive_builder_core 0.11.2",
  "syn 1.0.98",
 ]
 
@@ -2247,7 +2179,6 @@ dependencies = [
  "parking_lot 0.12.1",
  "rand 0.8.5",
  "regex",
- "reqwest",
  "self_update",
  "semver 1.0.12",
  "serde",
@@ -2264,6 +2195,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "tui",
+ "url",
  "validator",
 ]
 
@@ -2341,7 +2273,6 @@ dependencies = [
  "fig_directories",
  "fig_request",
  "fig_settings",
- "fig_telemetry",
  "fig_util",
  "flume",
  "futures",
@@ -2424,6 +2355,7 @@ dependencies = [
 name = "fig_request"
 version = "0.1.0"
 dependencies = [
+ "bytes",
  "fig_auth",
  "fig_settings",
  "once_cell",
@@ -2439,7 +2371,6 @@ dependencies = [
 name = "fig_settings"
 version = "0.1.0"
 dependencies = [
- "bitflags",
  "fig_auth",
  "fig_directories",
  "once_cell",
@@ -6053,7 +5984,7 @@ dependencies = [
  "clap 2.34.0",
  "crossbeam",
  "defer-drop",
- "derive_builder 0.9.0",
+ "derive_builder",
  "env_logger 0.8.4",
  "fuzzy-matcher",
  "lazy_static",
@@ -7026,7 +6957,6 @@ checksum = "59547bce71d9c38b83d9c0e92b6066c4253371f15005def0c30d9657f50c7642"
 name = "tui"
 version = "0.1.0"
 dependencies = [
- "derive_builder 0.11.2",
  "newton",
  "paste",
 ]

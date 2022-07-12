@@ -1,7 +1,7 @@
 use anyhow::Result;
 use crossterm::style::Stylize;
 use rand::prelude::*;
-use reqwest::Url;
+use url::Url;
 
 const TWEET_OPTIONS: &[(&str, bool)] = &[
     ("I've added autocomplete to my terminal using @fig!\n\n🛠🆕👉️", true),

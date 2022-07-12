@@ -344,13 +344,13 @@ impl InternalSubcommand {
                 println!("{}", get_token().await?);
             },
             InternalSubcommand::Request { route, method, body } => {
-                let method = reqwest::Method::from_str(&method)?;
+                let method = fig_request::Method::from_str(&method)?;
                 let mut request = Request::new(method, route);
                 if let Some(body) = body {
                     request = request.body(serde_json::from_str(&body)?);
                 }
                 let value = request.auth().json().await?;
-                println!("{}", serde_json::to_string(&value)?);
+                println!("{value}");
             },
         }
 

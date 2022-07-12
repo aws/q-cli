@@ -1,9 +1,9 @@
 use fig_auth::get_token;
 use fig_settings::api_host;
 use once_cell::sync::Lazy;
+pub use reqwest::Method;
 use reqwest::{
     Client,
-    Method,
     RequestBuilder,
     Response,
 };
@@ -148,6 +148,13 @@ impl Request {
         let response = self.send().await?;
         let text = handle_fig_response(response).await?.text().await?;
         Ok(text)
+    }
+
+    /// Raw body bytes
+    pub async fn bytes(self) -> Result<bytes::Bytes> {
+        let response = self.send().await?;
+        let bytes = handle_fig_response(response).await?.bytes().await?;
+        Ok(bytes)
     }
 
     pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
