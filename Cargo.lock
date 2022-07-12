@@ -2460,12 +2460,15 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "fig_auth",
+ "fig_ipc",
+ "fig_proto",
  "fig_settings",
  "fig_util",
  "reqwest",
  "sentry",
  "serde",
  "thiserror",
+ "tracing",
  "uuid 1.1.2",
 ]
 

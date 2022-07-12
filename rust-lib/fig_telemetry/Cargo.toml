@@ -9,11 +9,14 @@ publish = false
 [dependencies]
 anyhow = "1.0.58"
 fig_auth = { path = "../fig_auth" }
+fig_ipc = { path = "../fig_ipc" }
+fig_proto = { path = "../fig_proto" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
 sentry = { version = "0.27.0", default-features = false, features = ["backtrace", "contexts", "panic", "anyhow", "reqwest", "rustls"] }
 serde = "1.0.139"
 thiserror = "1.0.30"
+tracing = "0.1.35"
 uuid = "1.1.2"
 

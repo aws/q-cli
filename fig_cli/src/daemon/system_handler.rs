@@ -19,6 +19,7 @@ use fig_proto::daemon::diagnostic_response::{
     SystemSocketStatus,
     WebsocketStatus,
 };
+use fig_proto::daemon::telemetry_emit_track_command;
 use parking_lot::RwLock;
 use system_socket::{
     SystemListener,
@@ -126,7 +127,7 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                                         true
                                     },
                                     Err(err) => {
-                                        error!("Failed to update: {}", err);
+                                        error!("Failed to update: {err}");
                                         false
                                     },
                                 };
@@ -154,6 +155,30 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                                     },
                                 }
                             },
+                            fig_proto::daemon::daemon_message::Command::TelemetryEmitTrack(track_event) => {
+                                let properties: Vec<(_, _)> = track_event
+                                    .properties
+                                    .iter()
+                                    .map(|prop| (prop.key.as_ref(), prop.value.as_ref()))
+                                    .collect();
+
+                                let source = match track_event.source() {
+                                    telemetry_emit_track_command::Source::App => fig_telemetry::TrackSource::App,
+                                    telemetry_emit_track_command::Source::Cli => fig_telemetry::TrackSource::Cli,
+                                    telemetry_emit_track_command::Source::Daemon => fig_telemetry::TrackSource::Daemon,
+                                };
+
+                                if let Err(err) = fig_telemetry::emit_track(
+                                    fig_telemetry::TrackEvent::Other(track_event.event.clone()),
+                                    source,
+                                    properties,
+                                )
+                                .await
+                                {
+                                    error!("Failed to emit track: {err}")
+                                }
+                                continue;
+                            },
                         };
 
                         if !message.no_response() {
@@ -163,7 +188,7 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                             };
 
                             if let Err(err) = send_message(&mut stream, response).await {
-                                error!("Error sending message: {}", err);
+                                error!("Error sending message: {err}");
                             }
                         }
                     }
@@ -173,7 +198,7 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                     break;
                 },
                 Err(err) => {
-                    error!("Error while receiving message: {}", err);
+                    error!("Error while receiving message: {err}");
                     break;
                 },
             }
@@ -204,7 +229,7 @@ pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatu
     Ok(tokio::spawn(async move {
         while let Ok(stream) = system_socket.accept().await {
             if let Err(err) = spawn_system_handler(stream, daemon_status.clone()).await {
-                error!("Error while spawining unix socket connection handler: {}", err);
+                error!("Error while spawining unix socket connection handler: {err}");
             }
         }
     }))
