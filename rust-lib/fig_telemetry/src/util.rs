@@ -1,6 +1,8 @@
-use std::collections::HashMap;
-
 use fig_settings::state;
+use serde_json::{
+    Map,
+    Value,
+};
 
 use crate::{
     Error,
@@ -30,7 +32,7 @@ pub fn telemetry_is_disabled() -> bool {
             .unwrap_or(false)
 }
 
-pub(crate) async fn make_telemetry_request(route: &str, mut body: HashMap<String, String>) -> Result<(), Error> {
+pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
     // Emit it!
     let mut request = reqwest::Client::new().post(format!("{}{}", API_DOMAIN, route));
 
@@ -38,7 +40,7 @@ pub(crate) async fn make_telemetry_request(route: &str, mut body: HashMap<String
         request = request.bearer_auth(token);
     }
 
-    body.insert("anonymousId".into(), get_or_create_anonymous_id()?);
+    body.insert("anonymousId".into(), get_or_create_anonymous_id()?.into());
 
     request
         .header("Content-Type", "application/json")

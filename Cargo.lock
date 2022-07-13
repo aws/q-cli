@@ -2398,6 +2398,7 @@ dependencies = [
  "reqwest",
  "sentry",
  "serde",
+ "serde_json",
  "thiserror",
  "tracing",
  "uuid 1.1.2",

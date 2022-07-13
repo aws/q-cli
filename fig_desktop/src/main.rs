@@ -14,6 +14,7 @@ mod utils;
 mod window;
 
 use std::borrow::Cow;
+use std::iter::empty;
 use std::sync::Arc;
 
 use api::{
@@ -222,6 +223,16 @@ impl WebviewManager {
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
                 event => trace!("Unhandled event {event:?}"),
             }
+
+            if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
+                tokio::runtime::Handle::current()
+                    .block_on(fig_telemetry::dispatch_emit_track(
+                        fig_telemetry::TrackEvent::QuitApp,
+                        fig_telemetry::TrackSource::App,
+                        empty::<(&str, &str)>(),
+                    ))
+                    .ok();
+            }
         });
     }
 }
@@ -419,6 +430,16 @@ fn main() {
                 Err(err) => warn!("Failed to get pid: {err}"),
             }
         }
+
+        tokio::spawn(async {
+            fig_telemetry::emit_track(
+                fig_telemetry::TrackEvent::LaunchedApp,
+                fig_telemetry::TrackSource::App,
+                empty::<(&str, &str)>(),
+            )
+            .await
+            .ok();
+        });
 
         install::run_install().await;
 

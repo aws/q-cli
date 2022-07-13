@@ -1,4 +1,6 @@
-use std::collections::HashMap;
+use std::fmt::Display;
+
+use serde_json::Value;
 
 use crate::util::{
     make_telemetry_request,
@@ -9,21 +11,22 @@ use crate::{
     IDENTIFY_SUBDOMAIN,
 };
 
-pub async fn emit_identify<'a, I, T>(traits: I) -> Result<(), Error>
+pub async fn emit_identify<'a, I, K, V>(traits: I) -> Result<(), Error>
 where
-    I: IntoIterator<Item = T>,
-    T: Into<(&'a str, &'a str)>,
+    I: IntoIterator<Item = (K, V)>,
+    K: Display,
+    V: Into<Value>,
 {
     if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
-    let mut identify = HashMap::new();
-
-    for kv in traits.into_iter() {
-        let (key, value) = kv.into();
-        identify.insert(format!("prop_{key}"), value.into());
-    }
-
-    make_telemetry_request(IDENTIFY_SUBDOMAIN, identify).await
+    make_telemetry_request(
+        IDENTIFY_SUBDOMAIN,
+        traits
+            .into_iter()
+            .map(|(key, value)| (format!("prop_{key}"), value.into()))
+            .collect(),
+    )
+    .await
 }

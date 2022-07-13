@@ -1,15 +1,15 @@
+use std::fmt::Display;
 use std::time::Duration;
 
 use fig_proto::daemon::daemon_message::Command;
-use fig_proto::daemon::telemetry_emit_track_command::{
-    Property,
-    Source,
-};
+use fig_proto::daemon::telemetry_emit_track_command::Source;
 use fig_proto::daemon::{
     DaemonMessage,
     TelemetryEmitTrackCommand,
 };
+use serde_json::Value;
 
+use crate::util::telemetry_is_disabled;
 use crate::{
     Error,
     TrackEvent,
@@ -23,17 +23,15 @@ async fn send_daemon_message(message: DaemonMessage) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn dispatch_emit_track<'a, I, T>(
-    event: impl Into<TrackEvent>,
-    source: TrackSource,
-    properties: I,
-) -> Result<(), Error>
+pub async fn dispatch_emit_track<I, K, V>(event: TrackEvent, source: TrackSource, properties: I) -> Result<(), Error>
 where
-    I: IntoIterator<Item = T>,
-    T: Into<(&'a str, &'a str)>,
+    I: IntoIterator<Item = (K, V)> + Clone,
+    K: Display,
+    V: Into<Value>,
 {
-    let event = event.into();
-    let properties: Vec<(&'a str, &'a str)> = properties.into_iter().map(|prop| prop.into()).collect();
+    if telemetry_is_disabled() {
+        return Err(Error::TelemetryDisabled);
+    }
 
     let message = DaemonMessage {
         id: None,
@@ -41,11 +39,9 @@ where
         command: Some(Command::TelemetryEmitTrack(TelemetryEmitTrackCommand {
             event: event.to_string(),
             properties: properties
-                .iter()
-                .map(|(key, value)| Property {
-                    key: (*key).into(),
-                    value: (*value).into(),
-                })
+                .clone()
+                .into_iter()
+                .map(|(key, value)| (key.to_string(), value.into().into()))
                 .collect(),
             source: Some(
                 match source {

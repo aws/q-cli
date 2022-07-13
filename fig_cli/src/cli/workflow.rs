@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::collections::HashMap;
+use std::iter::empty;
 use std::process::Command;
 
 use anyhow::{
@@ -338,10 +339,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         },
         None => {
             let track_search = tokio::task::spawn(async move {
-                let a: [(&'static str, &'static str); 0] = []; // dumb
-                fig_telemetry::emit_track(TrackEvent::Other("Workflow Search Viewed".into()), TrackSource::Cli, a)
-                    .await
-                    .ok();
+                fig_telemetry::emit_track(
+                    TrackEvent::WorkflowSearchViewed,
+                    TrackSource::Cli,
+                    empty::<(&str, &str)>(),
+                )
+                .await
+                .ok();
             });
 
             cfg_if::cfg_if! {
@@ -457,7 +461,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     }
 
     let track_execution = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(TrackEvent::Other("Workflow Executed".into()), TrackSource::Cli, [
+        fig_telemetry::emit_track(TrackEvent::WorkflowExecuted, TrackSource::Cli, [
             ("workflow", workflow_name.as_ref()),
             ("execution_method", execution_method),
         ])
