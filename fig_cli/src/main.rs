@@ -29,7 +29,7 @@ async fn main() {
             Some(fig_telemetry::dispatch_emit_track(
                 fig_telemetry::TrackEvent::RanCommand,
                 fig_telemetry::TrackSource::Cli,
-                dbg!([
+                [
                     ("arguments", std::env::args().collect::<Vec<_>>().join(" ")),
                     (
                         "shell",
@@ -41,8 +41,8 @@ async fn main() {
                         fig_util::Terminal::parent_terminal()
                             .map_or_else(|| "<unknown>".into(), |terminal| terminal.internal_id()),
                     ),
-                    ("cli_version", env!("CARGO_PKG_VERSION").into())
-                ]),
+                    ("cli_version", env!("CARGO_PKG_VERSION").into()),
+                ],
             )),
         ),
     };
