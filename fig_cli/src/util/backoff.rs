@@ -2,8 +2,10 @@ use std::cmp;
 use std::future::Future;
 use std::time::Duration;
 
+use rand::Rng;
+
 pub struct Backoff {
-    current_duration: Duration,
+    attempt: u32,
     min_duration: Duration,
     max_duration: Duration,
 }
@@ -11,20 +13,25 @@ pub struct Backoff {
 impl Backoff {
     pub fn new(min_duration: Duration, max_duration: Duration) -> Self {
         Self {
-            current_duration: min_duration,
+            attempt: 0,
             min_duration,
             max_duration,
         }
     }
 
     pub fn reset(&mut self) {
-        self.current_duration = self.min_duration;
+        self.attempt = 0;
     }
 
+    /// The sleep uses the equal jitter algorithm as descibed
+    /// [here](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter)
     pub async fn sleep(&mut self) {
-        let duration = self.current_duration;
-        self.current_duration = cmp::min(self.current_duration * 2, self.max_duration);
-        tokio::time::sleep(duration).await;
+        let sleep = {
+            let mut rng = rand::thread_rng();
+            let temp = cmp::min(self.max_duration, self.min_duration * 2_u32.pow(self.attempt));
+            temp / 2 + rng.gen_range(Duration::ZERO..temp / 2)
+        };
+        tokio::time::sleep(sleep).await;
     }
 
     // This will execute the future with the backoff and should never return

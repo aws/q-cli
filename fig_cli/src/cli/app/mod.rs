@@ -1,5 +1,6 @@
 pub mod uninstall;
 
+use std::iter::empty;
 use std::process::Command;
 use std::time::Duration;
 
@@ -75,6 +76,16 @@ pub async fn quit_fig() -> Result<()> {
         return Ok(());
     }
 
+    let telem_join = tokio::spawn(async {
+        fig_telemetry::dispatch_emit_track(
+            fig_telemetry::TrackEvent::QuitApp,
+            fig_telemetry::TrackSource::App,
+            empty::<(&str, &str)>(),
+        )
+        .await
+        .ok();
+    });
+
     println!("\n→ Quitting Fig...\n");
     if quit_command().await.is_err() {
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -100,6 +111,9 @@ pub async fn quit_fig() -> Result<()> {
             return second_try;
         }
     }
+
+    telem_join.await.ok();
+
     Ok(())
 }
 

@@ -6,17 +6,10 @@ use anyhow::{
     Context,
     Result,
 };
-use fig_auth::{
-    get_email,
-    get_token,
-};
+use fig_auth::get_email;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
-use fig_settings::{
-    api_host,
-    ws_host,
-};
-use reqwest::Url;
+use fig_settings::ws_host;
 use serde::{
     Deserialize,
     Serialize,
@@ -34,6 +27,7 @@ use tracing::{
     error,
     info,
 };
+use url::Url;
 
 use crate::daemon::scheduler::{
     Scheduler,
@@ -62,17 +56,7 @@ enum FigWebsocketMessage {
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/authenticate/ticket"))?;
-    let token = get_token().await?;
-
-    let request = reqwest::Client::new().get(url.clone()).bearer_auth(&token).send();
-
-    let ticket = tokio::time::timeout(Duration::from_secs(30), request)
-        .await??
-        .error_for_status()?
-        .text()
-        .await?;
+    let ticket = fig_request::Request::get("/authenticate/ticket").auth().text().await?;
 
     let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {

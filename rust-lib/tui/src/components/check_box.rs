@@ -15,16 +15,14 @@ use crate::{
     StyleSheet,
 };
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum CheckStyle {
+    #[default]
     Classic,
-    Ascii { checked: char, unchecked: char },
-}
-
-impl Default for CheckStyle {
-    fn default() -> Self {
-        CheckStyle::Classic
-    }
+    Ascii {
+        checked: char,
+        unchecked: char,
+    },
 }
 
 #[derive(Debug, Default)]

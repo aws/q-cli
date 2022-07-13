@@ -1,3 +1,5 @@
+use std::iter::empty;
+
 use fig_integrations::Integration;
 use semver::Version;
 use tracing::error;
@@ -33,6 +35,16 @@ pub async fn run_install() {
 
     if should_run_install_script() {
         // Add any items that are only once per version
+
+        tokio::spawn(async {
+            fig_telemetry::emit_track(
+                fig_telemetry::TrackEvent::UpdatedApp,
+                fig_telemetry::TrackSource::App,
+                empty::<(&str, &str)>(),
+            )
+            .await
+            .ok()
+        });
     }
 
     if let Err(err) = set_previous_version(current_version()) {

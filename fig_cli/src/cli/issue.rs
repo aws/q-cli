@@ -74,7 +74,7 @@ impl IssueArgs {
 
         println!("\n→ Opening GitHub...\n");
 
-        let url = reqwest::Url::parse_with_params("https://github.com/withfig/fig/issues/new", &[
+        let url = url::Url::parse_with_params("https://github.com/withfig/fig/issues/new", &[
             ("assignees", &assignees.join(",")),
             ("body", &body),
         ])?;

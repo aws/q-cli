@@ -1,18 +1,17 @@
+use std::borrow::Cow;
 use std::path::PathBuf;
 
 use anyhow::{
     Context,
     Result,
 };
-use fig_auth::get_token;
-use reqwest::Url;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
 /// Sync from a url to a local file
 pub trait Sync {
     /// Source to sync from
-    fn source(&self) -> Result<Url>;
+    fn endpoint(&self) -> Cow<'static, str>;
     /// Destination to sync to
     fn location(&self) -> Result<PathBuf>;
     /// Data to write to the destination
@@ -22,8 +21,8 @@ pub trait Sync {
 pub struct Settings {}
 
 impl Sync for Settings {
-    fn source(&self) -> Result<Url> {
-        Ok(Url::parse("https://api.fig.io/settings")?)
+    fn endpoint(&self) -> Cow<'static, str> {
+        "/settings".into()
     }
 
     fn location(&self) -> Result<PathBuf> {
@@ -41,20 +40,8 @@ impl Sync for Settings {
 }
 
 pub async fn sync(sync: impl Sync) -> Result<()> {
-    // Get the token
-    let token = get_token().await?;
-
-    let download = reqwest::Client::new()
-        .get(sync.source()?)
-        .bearer_auth(token)
-        .send()
-        .await?
-        .error_for_status()?
-        .bytes()
-        .await?;
-
+    let download = fig_request::Request::get(sync.endpoint()).auth().bytes().await?;
     let mut file = File::create(sync.location()?).await?;
     file.write_all(&sync.data(&download)?).await?;
-
     Ok(())
 }

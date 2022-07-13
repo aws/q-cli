@@ -24,8 +24,6 @@ mod user;
 mod workflow;
 
 use std::fs::File;
-use std::process::exit;
-use std::str::FromStr;
 
 use anyhow::{
     Context,
@@ -53,20 +51,15 @@ use crate::util::{
     LaunchOptions,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
     /// Outputs the results as markdown
+    #[default]
     Plain,
     /// Outputs the results as JSON
     Json,
     /// Outputs the results as pretty print JSON
     JsonPretty,
-}
-
-impl Default for OutputFormat {
-    fn default() -> Self {
-        OutputFormat::Plain
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -148,8 +141,6 @@ pub enum CliRootCommands {
         process: Processes,
     },
     #[clap(hide = true)]
-    /// (LEGACY) Old way to launch mission control
-    Alpha,
     /// Run the Fig tutorial
     Onboarding,
     #[clap(subcommand)]
@@ -206,12 +197,7 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub async fn execute(self) {
-        let env_level = std::env::var("FIG_LOG_LEVEL")
-            .ok()
-            .and_then(|level| LevelFilter::from_str(&level).ok())
-            .unwrap_or(LevelFilter::INFO);
-
+    pub async fn execute(self, env_level: LevelFilter) -> Result<()> {
         match self.subcommand {
             Some(CliRootCommands::Daemon) => {
                 // The daemon prints all logs to stdout
@@ -245,7 +231,7 @@ impl Cli {
             },
         }
 
-        let result = match self.subcommand {
+        match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => {
                     if let internal::InstallArgs { input_method: true, .. } = args {
@@ -303,7 +289,6 @@ impl Cli {
                     Processes::App => app::restart_fig().await,
                     Processes::Daemon => get_daemon().and_then(|d| d.restart()),
                 },
-                CliRootCommands::Alpha => root_command().await,
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man(args) => args.execute(),
@@ -317,15 +302,6 @@ impl Cli {
             },
             // Root command
             None => root_command().await,
-        };
-
-        if let Err(err) = result {
-            if env_level > LevelFilter::INFO {
-                eprintln!("{err:?}");
-            } else {
-                eprintln!("{err}");
-            }
-            exit(1);
         }
     }
 }
