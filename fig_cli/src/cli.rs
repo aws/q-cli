@@ -53,20 +53,15 @@ use crate::util::{
     LaunchOptions,
 };
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+#[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
     /// Outputs the results as markdown
+    #[default]
     Plain,
     /// Outputs the results as JSON
     Json,
     /// Outputs the results as pretty print JSON
     JsonPretty,
-}
-
-impl Default for OutputFormat {
-    fn default() -> Self {
-        OutputFormat::Plain
-    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]

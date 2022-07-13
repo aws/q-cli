@@ -90,8 +90,9 @@ macro_rules! field {
     };
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Copy, Debug, Default)]
 pub enum BorderStyle {
+    #[default]
     None,
     Filled,
     Ascii {
@@ -104,12 +105,6 @@ pub enum BorderStyle {
         bottom: char,
         bottom_right: char,
     },
-}
-
-impl Default for BorderStyle {
-    fn default() -> Self {
-        Self::None
-    }
 }
 
 #[derive(Clone, Copy, Debug, Default)]
