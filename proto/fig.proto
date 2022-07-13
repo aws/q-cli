@@ -40,6 +40,7 @@ message ClientOriginatedMessage {
       MacosInputMethodRequest macos_input_method_request = 131;
       CreateDirectoryRequest create_directory_request = 132;
       InstallRequest install_request = 133;
+      TelemetryPageRequest telemetry_page_request = 134;
   }
 }
 
@@ -330,11 +331,19 @@ message TelemetryAliasRequest {
 
 message TelemetryTrackRequest {
   optional string event = 1;
-  repeated TelemetryProperty properties = 2;
+  repeated TelemetryProperty properties = 2 [deprecated=true];
+  optional string jsonBlob = 4;
 }
 
 message TelemetryIdentifyRequest {
-  repeated TelemetryProperty traits = 2;
+  repeated TelemetryProperty traits = 2 [deprecated=true];
+  optional string jsonBlob = 4;
+}
+
+message TelemetryPageRequest {
+  optional string category = 1;
+  optional string name = 2;
+  optional string jsonBlob = 3;
 }
 
 /// Onboarding

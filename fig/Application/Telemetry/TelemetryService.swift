@@ -96,6 +96,28 @@ class TelemetryProvider: TelemetryService {
     return String(input.map { $0.isLetter ? "x" : $0 }.map { $0.isNumber ? "0" : $0 })
   }
 
+  func page(
+    category: String,
+    name: String,
+    with properties: [String: Any]
+  ) {
+    var body: [String: Any] = [:]
+
+    body["properties"] = addDefaultProperties(to: properties)
+    body["category"] = category
+    body["name"] = name
+
+    body["anonymousId"] = LocalState.shared.anonymousId
+
+    guard !defaults.telemetryDisabled else {
+
+      Logger.log(message: "not sending page event because telemetry is disabled")
+      return
+    }
+
+    upload(to: "page", with: body, completion: nil)
+  }
+
   func track(
     event: TelemetryEvent,
     with properties: [String: String],
@@ -106,22 +128,15 @@ class TelemetryProvider: TelemetryService {
 
   func track(
     event: String,
-    with properties: [String: String],
-    needsPrefix prefix: String? = "prop_",
+    with properties: [String: Any],
     completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
   ) {
-    var body: [String: String] = [:]
+    var body: [String: Any] = [:]
 
-    if let prefix = prefix {
-      body = addPrefixToKeys(prefix: prefix, dict: properties)
-    } else {
-      body = properties
-    }
-
-    body = addDefaultProperties(to: body)
+    body["properties"] = addDefaultProperties(to: properties)
     body["event"] = event
-
     body["anonymousId"] = LocalState.shared.anonymousId
+    body["useUnprefixed"] = true
 
     if defaults.telemetryDisabled {
       let eventsToSendEvenWhenDisabled: [TelemetryEvent] = [.telemetryToggled]
@@ -137,10 +152,6 @@ class TelemetryProvider: TelemetryService {
 
     }
 
-    if deviceId != nil {
-      body["prop_device_id"] = deviceId
-    }
-
     // Ensure old uuid is aliased before making request.
     Defaults.shared.migrateUUID()
 
@@ -148,17 +159,14 @@ class TelemetryProvider: TelemetryService {
   }
 
   func identify(
-    with traits: [String: String],
+    with traits: [String: Any],
     needsPrefix prefix: String? = "trait_",
     shouldIgnoreTelemetryPreferences: Bool = false
   ) {
-    var body: [String: String] = [:]
-    if let prefix = prefix {
-      body = addPrefixToKeys(prefix: prefix, dict: traits)
-    } else {
-      body = traits
-    }
+    var body: [String: Any] = [:]
 
+    body["traits"] = traits
+    body["useUnprefixed"] = true
     body["anonymousId"] = LocalState.shared.anonymousId
 
     if defaults.telemetryDisabled && !shouldIgnoreTelemetryPreferences {
@@ -190,7 +198,7 @@ class TelemetryProvider: TelemetryService {
 
   func upload(
     to endpoint: String,
-    with body: [String: String],
+    with body: [String: Any],
     completion: ((Data?, URLResponse?, Error?) -> Void)? = nil
   ) {
     guard let json = try? JSONSerialization.data(withJSONObject: body, options: .sortedKeys) else { return }
@@ -231,21 +239,26 @@ class TelemetryProvider: TelemetryService {
   }
 
   fileprivate func addDefaultProperties(
-    to properties: [String: String],
-    prefixedWith prefix: String = "prop_"
-  ) -> [String: String] {
+    to properties: [String: Any]
+  ) -> [String: Any] {
     let email = defaults.email ?? ""
     let domain = String(email.split(separator: "@").last ?? "unregistered")
     // swiftlint:disable identifier_name
     let os = ProcessInfo.processInfo.operatingSystemVersion
 
-    return properties.merging([
-      "\(prefix)domain": domain,
-      "\(prefix)email": email,
-      "\(prefix)version": defaults.version,
-      "\(prefix)build": Diagnostic.build,
-      "\(prefix)os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
-    ]) { $1 }
+    var defaultsProperties = [
+      "domain": domain,
+      "email": email,
+      "version": defaults.version,
+      "build": Diagnostic.build,
+      "os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+    ]
+
+    if let deviceId = deviceId {
+      defaultsProperties["device_id"] = deviceId
+    }
+
+    return properties.merging(defaultsProperties) { $1 }
   }
 }
 
@@ -443,6 +456,17 @@ extension TelemetryProvider {
     let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))
 
     identify(with: payload)
+
+    return true
+  }
+
+  @discardableResult
+  func handlePageRequest(_ request: Fig_TelemetryPageRequest) throws -> Bool {
+    guard let json = request.jsonBlob.parseAsJSON(), request.hasJsonBlob else {
+      throw APIError.generic(message: "Properties dictionary was not passed or was not valid JSON.")
+    }
+
+    page(category: request.category, name: request.name, with: json)
 
     return true
   }
