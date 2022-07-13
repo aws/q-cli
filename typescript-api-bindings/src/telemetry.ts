@@ -20,10 +20,6 @@ export function track(event: string, properties: Record<string, Property>) {
   return sendTelemetryTrackRequest({ event, properties: props });
 }
 
-export function alias(userId: string) {
-  return sendTelemetryAliasRequest({ userId });
-}
-
 export function identify(traits: Record<string, Property>) {
   // convert to internal type 'TelemetryProperty'
   const props = Object.keys(traits).reduce((array, key) => {
