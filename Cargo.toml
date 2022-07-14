@@ -6,6 +6,9 @@ members = [
     "figterm",
     "rust-lib/*",
 ]
+exclude = [
+    "fig_ibus_engine",
+]
 
 [profile.release]
 lto = true
