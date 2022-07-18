@@ -127,6 +127,8 @@ class API {
         response.success = try TelemetryProvider.shared.handleIdentifyRequest(request)
       case .telemetryTrackRequest(let request):
         response.success = try TelemetryProvider.shared.handleTrackRequest(request)
+      case .telemetryPageRequest(let request):
+        response.success = try TelemetryProvider.shared.handlePageRequest(request)
       case .onboardingRequest(let request):
         isAsync = true
         Onboarding.handleRequest(request, in: webView) { output in
@@ -163,9 +165,9 @@ class API {
         }
       case .macosInputMethodRequest(let request):
         response.macosInputMethodResponse = try InputMethod.default.handleAPIRequest(request)
-      case .createDirectoryRequest(_):
+      case .createDirectoryRequest:
         throw APIError.generic(message: "Not implmented on MacOS")
-      case .installRequest(_):
+      case .installRequest:
         throw APIError.generic(message: "Not implmented on MacOS")
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")

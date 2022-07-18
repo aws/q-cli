@@ -12,7 +12,6 @@ class Remote {
   static var productionURL: URL = URL(string: "https://app.withfig.com")!
   static var stagingURL: URL = URL(string: "https://staging.withfig.com")!
   static var localhost: URL = URL(string: "http://localhost:3000")!
-  static var API: URL = URL(string: "https://api.fig.io")!
   static var missionControlURL: URL = URL(string: "https://desktop.fig.io")!
 
   static var baseURL: URL {
@@ -25,4 +24,19 @@ class Remote {
       return localhost
     }
   }
+
+  static var API: URL {
+    if let apiHost = LocalState.shared.getValue(forKey: "developer.desktop.apiHost") as? String,
+       let apiHostURL = URL(string: apiHost) {
+      return apiHostURL
+    }
+
+    if let apiHost = LocalState.shared.getValue(forKey: "developer.apiHost") as? String,
+       let apiHostURL = URL(string: apiHost) {
+      return apiHostURL
+    }
+
+    return URL(string: "https://api.fig.io")!
+  }
+
 }
