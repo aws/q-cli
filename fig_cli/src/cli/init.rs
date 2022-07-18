@@ -104,13 +104,8 @@ fn guard_source(
 }
 
 fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
-    // Do not print any shell integrations for "profile" files
-    if std::env::consts::OS == "linux"
-        && matches!(
-            rcfile.as_deref(),
-            Some("zprofile") | Some("bash_profile") | Some("profile")
-        )
-    {
+    // Do not print any shell integrations for `.profile` as it can cause issues on launch
+    if std::env::consts::OS == "linux" && matches!(rcfile.as_deref(), Some("profile")) {
         return Ok("".into());
     }
 
