@@ -20,4 +20,4 @@ tokio = { version = "1", features = ["process"] }
 winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.24.1"
+nix = "0.24.2"

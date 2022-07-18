@@ -1354,7 +1354,7 @@ version = "3.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b37feaa84e6861e00a1f5e5aa8da3ee56d605c9992d33e082786754828e20865"
 dependencies = [
- "nix 0.24.1",
+ "nix 0.24.2",
  "winapi 0.3.9",
 ]
 
@@ -2174,7 +2174,7 @@ dependencies = [
  "futures",
  "globset",
  "humantime",
- "nix 0.24.1",
+ "nix 0.24.2",
  "notify 4.0.17",
  "parking_lot 0.12.1",
  "rand 0.8.5",
@@ -2340,7 +2340,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "bytes",
- "nix 0.24.1",
+ "nix 0.24.2",
  "once_cell",
  "prost",
  "prost-reflect",
@@ -2411,7 +2411,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.10",
  "fig_directories",
- "nix 0.24.1",
+ "nix 0.24.2",
  "serde",
  "sha2",
  "thiserror",
@@ -2438,7 +2438,7 @@ dependencies = [
  "fig_util",
  "flume",
  "fnv",
- "nix 0.24.1",
+ "nix 0.24.2",
  "once_cell",
  "parking_lot 0.12.1",
  "regex",
@@ -4214,9 +4214,9 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.24.1"
+version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f17df307904acd05aa8e32e97bb20f2a0df1728bbc2d771ae8f9a90463441e9"
+checksum = "195cdbc1741b8134346d515b3a56a1c94b0912758009cfd53f99ea0f57b065fc"
 dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
@@ -6971,7 +6971,7 @@ dependencies = [
  "bitflags",
  "lazy_static",
  "log",
- "nix 0.24.1",
+ "nix 0.24.2",
  "term",
  "unicode-width",
 ]
@@ -7969,7 +7969,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "592b4883219f345e712b3209c62654ebda0bb50887f330cbd018d0f654bfd507"
 dependencies = [
  "gethostname",
- "nix 0.24.1",
+ "nix 0.24.2",
  "winapi 0.3.9",
  "winapi-wsapoll",
  "x11rb-protocol",
@@ -7981,7 +7981,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56b245751c0ac9db0e006dc812031482784e434630205a93c73cfefcaabeac67"
 dependencies = [
- "nix 0.24.1",
+ "nix 0.24.2",
 ]
 
 [[package]]
