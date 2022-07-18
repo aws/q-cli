@@ -54,7 +54,7 @@ jobs:
           override: true
 
       - name: Cache Dependencies
-        uses: Swatinem/rust-cache@ce325b60658c1b38465c06cc965b79baf32c1e72
+        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
       - name: Make
         run: make
