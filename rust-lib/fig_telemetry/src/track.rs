@@ -1,6 +1,3 @@
-use std::fmt::Display;
-
-use fig_util::get_system_id;
 use serde_json::{
     Map,
     Value,
@@ -66,51 +63,21 @@ impl std::fmt::Display for TrackSource {
 pub async fn emit_track<'a, I, K, V>(event: TrackEvent, source: TrackSource, properties: I) -> Result<(), Error>
 where
     I: IntoIterator<Item = (K, V)>,
-    K: Display,
+    K: Into<String>,
     V: Into<Value>,
 {
     if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
-    // Initial properties
-    let mut track: Map<String, Value> = Map::new();
-    track.insert("event".into(), event.to_string().into());
+    let mut props = crate::util::default_properties();
+    props.insert("source".into(), source.to_string().into());
+    props.extend(properties.into_iter().map(|(k, v)| (k.into(), v.into())));
 
-    // Default properties
-    if let Some(email) = fig_auth::get_email() {
-        if let Some(domain) = email.split('@').last() {
-            track.insert("prop_domain".into(), domain.into());
-        }
-        track.insert("prop_email".into(), email.into());
-    }
+    let mut body: Map<String, Value> = Map::new();
+    body.insert("event".into(), event.to_string().into());
+    body.insert("useUnprefixed".into(), true.into());
+    body.insert("properties".into(), props.into());
 
-    #[cfg(target_os = "macos")]
-    if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
-        if let Some((version, build)) = version.split_once(',') {
-            track.insert("prop_version".into(), version.into());
-            track.insert("prop_build".into(), build.into());
-        }
-    }
-
-    track.insert("prop_source".into(), source.to_string().into());
-
-    track.insert(
-        "prop_install_method".into(),
-        crate::install_method::get_install_method().to_string().into(),
-    );
-
-    if let Ok(device_id) = get_system_id() {
-        track.insert("prop_device_id".into(), device_id.into());
-    }
-
-    track.insert("prop_device_os".into(), std::env::consts::OS.into());
-    track.insert("prop_device_arch".into(), std::env::consts::ARCH.into());
-
-    // Given properties
-    for (key, value) in properties.into_iter() {
-        track.insert(format!("prop_{key}"), value.into());
-    }
-
-    make_telemetry_request(TRACK_SUBDOMAIN, track).await
+    make_telemetry_request(TRACK_SUBDOMAIN, body).await
 }

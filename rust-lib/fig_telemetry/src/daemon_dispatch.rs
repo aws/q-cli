@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::time::Duration;
 
 use fig_proto::daemon::daemon_message::Command;
@@ -26,7 +25,7 @@ async fn send_daemon_message(message: DaemonMessage) -> Result<(), Error> {
 pub async fn dispatch_emit_track<I, K, V>(event: TrackEvent, source: TrackSource, properties: I) -> Result<(), Error>
 where
     I: IntoIterator<Item = (K, V)> + Clone,
-    K: Display,
+    K: Into<String>,
     V: Into<Value>,
 {
     if telemetry_is_disabled() {
@@ -41,7 +40,7 @@ where
             properties: properties
                 .clone()
                 .into_iter()
-                .map(|(key, value)| (key.to_string(), value.into().into()))
+                .map(|(key, value)| (key.into(), value.into().into()))
                 .collect(),
             source: Some(
                 match source {
