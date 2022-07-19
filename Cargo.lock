@@ -2233,7 +2233,7 @@ dependencies = [
  "freedesktop-icons",
  "gtk",
  "hashbrown 0.12.3",
- "image 0.24.2",
+ "image 0.24.3",
  "moka",
  "notify 5.0.0-pre.15",
  "once_cell",
@@ -3396,9 +3396,9 @@ dependencies = [
 
 [[package]]
 name = "image"
-version = "0.24.2"
+version = "0.24.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "28edd9d7bc256be2502e325ac0628bde30b7001b9b52e0abe31a1a9dc2701212"
+checksum = "7e30ca2ecf7666107ff827a8e481de6a132a9b687ed3bb20bb1c144a36c00964"
 dependencies = [
  "bytemuck",
  "byteorder",
@@ -3406,7 +3406,6 @@ dependencies = [
  "exr",
  "gif",
  "jpeg-decoder 0.2.6",
- "num-iter",
  "num-rational 0.4.1",
  "num-traits",
  "png 0.17.5",
@@ -6353,7 +6352,7 @@ dependencies = [
  "glib",
  "glib-sys",
  "gtk",
- "image 0.24.2",
+ "image 0.24.3",
  "instant",
  "jni 0.19.0",
  "lazy_static",

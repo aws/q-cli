@@ -33,7 +33,7 @@ fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_util = { path = "../rust-lib/fig_util" }
 fnv = "1.0.7"
 hashbrown = "0.12.3"
-image = "0.24.2"
+image = "0.24.3"
 moka = "0.9.1"
 notify = "5.0.0-pre.15"
 once_cell = "1.13.0"
@@ -75,5 +75,5 @@ gtk = { version = "0.15", features = [ "v3_22" ] }
 x11rb = "0.10.1"
 
 [build-dependencies]
-image = "0.24.2"
+image = "0.24.3"
 
