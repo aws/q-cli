@@ -19,6 +19,7 @@ bytes = "1.1.0"
 clap = { version = "3.2.12", features = ["derive"] }
 dashmap = "5.3.4"
 fig_auth = { path = "../rust-lib/fig_auth" }
+fig_color = { path = "../rust-lib/fig_color" }
 fig_directories = { path = "../rust-lib/fig_directories" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }

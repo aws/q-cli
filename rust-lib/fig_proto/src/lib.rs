@@ -2,9 +2,11 @@
 
 pub mod daemon;
 pub mod fig;
+pub mod fig_common;
 pub mod figterm;
 pub mod hooks;
 pub mod local;
+pub(crate) mod proto;
 pub mod util;
 
 use std::fmt::Debug;

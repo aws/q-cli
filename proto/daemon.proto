@@ -1,31 +1,7 @@
 syntax = "proto3";
 package daemon;
 
-message Json {
-    message Null {}
-    message Number {
-      oneof int {
-          uint64 u64 = 1;
-          sint64 i64 = 2;
-          double f64 = 3;
-      }
-    }
-    message Array {
-        repeated Json array = 1;
-    }
-    message Object {
-        map<string, Json> map = 1;
-    }
-  
-    oneof value {
-        Null null = 1;
-        bool bool = 2;
-        Number number = 3;
-        string string = 4;
-        Array array = 5;
-        Object object = 6;
-    }
-}
+import "fig_common.proto";
 
 //
 // Commands
@@ -167,6 +143,6 @@ message TelemetryEmitTrackCommand {
     }
 
     string event = 1;  
-    map<string, Json> properties = 2;
+    map<string, fig_common.Json> properties = 2;
     optional Source source = 3;
 }

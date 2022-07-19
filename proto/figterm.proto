@@ -1,6 +1,8 @@
 syntax = "proto3";
 package figterm;
 
+import "fig_common.proto";
+
 // 
 // Commands
 //
@@ -11,7 +13,21 @@ message FigtermMessage {
         InterceptCommand intercept_command = 1;
         InsertTextCommand insert_text_command = 2;
         SetBufferCommand set_buffer_command = 3;
+        DiagnosticsCommand diagnostics_command = 4;
     }
+}
+
+message FigtermResponse {
+  oneof response {
+    DiagnosticsResponse diagnostics_response = 1;    
+  }
+}
+
+message Action {
+  // unique identifier for the action
+  string identifier = 1;   
+  // a quick summary of what the action will do
+  repeated string bindings = 2; 
 }
 
 // Intercept command
@@ -38,6 +54,12 @@ message InterceptCommand {
         repeated uint32 chars = 1;
     }
 
+    message SetFigjsIntercepts {
+      bool intercept_bound_keystrokes = 1;
+      bool intercept_global_keystrokes = 2;
+      repeated Action actions = 3;
+    }
+
     // The intercept command to execute
     oneof intercept_command {
         SetIntercept set_intercept = 1;
@@ -45,6 +67,7 @@ message InterceptCommand {
         AddIntercept add_intercept = 3;
         RemoveIntercept remove_intercept = 4;
         SetInterceptAll set_intercept_all = 5;
+        SetFigjsIntercepts set_figjs_intercepts = 6;
     }
 }
 
@@ -60,7 +83,6 @@ message InsertTextCommand {
     optional int64 offset = 3;
     // execute editbuffer (if true, append \r)
     optional bool immediate = 4;
-
     // client buffer at the time of the insertion request (prior to insertion)
     optional string insertion_buffer = 5;
 }
@@ -72,5 +94,40 @@ message SetBufferCommand {
     string text = 1;
     // The cursor position to set
     optional uint64 cursor_position = 2;
+}
+
+message DiagnosticsCommand { }
+
+message TermColor {
+  message Rgb {
+    int32 r = 1;
+    int32 b = 2;
+    int32 g = 3;
+  }
+
+  oneof color {
+    Rgb rgb = 1;
+    int32 indexed = 2;
+  }
+}
+
+message TermStyle {
+  // Background color of the terminal style
+  optional TermColor fg = 1;
+  // Foreground color of the terminal style
+  optional TermColor bg = 2;
+}
+
+message DiagnosticsResponse { 
+  // Current shell context of the figterm instance
+  optional fig_common.ShellContext shell_context = 1;
+  // Current suggestion style for fish
+  optional TermStyle fish_suggestion_style = 2;
+  // Current suggestion style for zsh autosuggestion
+  optional TermStyle zsh_autosuggestion_style = 3;
+  // The current edit buffer
+  optional string edit_buffer = 4;
+  // The current cursor cursor position
+  optional int32 cursor_position = 5;
 }
 

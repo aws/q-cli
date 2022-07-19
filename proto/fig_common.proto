@@ -1,18 +1,49 @@
 syntax = "proto3";
 package fig_common;
 
-// Ok result
-message Ok { }
-
-// Error result, can take an error message
-message Error {
-  optional string message = 1;
-}
-
-// A result of some operation, can be Ok or Error
-message Result {
-    oneof result {
-        Ok ok = 1;
-        Error error = 2;
+message Json {
+    message Null {}
+    message Number {
+      oneof int {
+          uint64 u64 = 1;
+          sint64 i64 = 2;
+          double f64 = 3;
+      }
+    }
+    message Array {
+        repeated Json array = 1;
+    }
+    message Object {
+        map<string, Json> map = 1;
+    }
+  
+    oneof value {
+        Null null = 1;
+        bool bool = 2;
+        Number number = 3;
+        string string = 4;
+        Array array = 5;
+        Object object = 6;
     }
 }
+
+message ShellContext {
+	optional int32 pid = 1;
+  // /dev/ttys## of terminal session
+	optional string ttys = 2; 
+  // the name of the process
+	optional string process_name = 3;
+  // the directory where the user ran the command
+  optional string current_working_directory = 4; 
+  // the value of $TERM_SESSION_ID
+	optional string session_id = 5; 	
+  // the integration version of figterm
+  optional int32 integration_version = 6;
+  // the parent terminal of figterm
+	optional string terminal = 7;
+  // the hostname of the computer figterm is running on
+	optional string hostname = 8;
+
+	optional ShellContext remote_context = 9;
+}
+

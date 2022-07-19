@@ -1,7 +1,8 @@
 syntax = "proto3";
 option objc_class_prefix = "FIG";
 package fig;
-import "local.proto";
+
+import "fig_common.proto";
 
 message ClientOriginatedMessage {
   optional int64 id = 1;
@@ -447,7 +448,7 @@ message TerminalSessionInfoRequest {
 }
 
 message TerminalSessionInfoResponse {
-  optional local.ShellContext context = 1;
+  optional fig_common.ShellContext context = 1;
   optional string buffer = 2;
   optional int64 cursor = 3;
 }
@@ -471,7 +472,7 @@ message ApplicationUpdateStatusResponse {
   optional string published = 4;
 }
 
-/// Local State
+/// L
 
 message GetLocalStateRequest {
   optional string key = 1;
@@ -573,7 +574,7 @@ message EditBufferChangedNotification {
     optional string session_id = 1;
     optional int32 cursor = 2;
     optional string buffer = 3;
-    optional local.ShellContext context = 4;
+    optional fig_common.ShellContext context = 4;
 }
 
 message SettingsChangedNotification {
