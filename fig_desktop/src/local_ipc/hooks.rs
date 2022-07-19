@@ -5,7 +5,6 @@ use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     EditBufferChangedNotification,
-    KeyEvent,
     KeybindingPressedNotification,
     Notification,
     NotificationType,
@@ -177,11 +176,11 @@ pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<
 }
 
 pub async fn intercepted_key(
-    InterceptedKeyHook { key, action, .. }: InterceptedKeyHook,
+    InterceptedKeyHook { action, .. }: InterceptedKeyHook,
     global_state: &GlobalState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
-    debug!("Intercepted Key Action: {:?}", action);
+    debug!("Intercepted Key Action: {action:?}");
 
     global_state
         .notifications_state
@@ -190,10 +189,7 @@ pub async fn intercepted_key(
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::KeybindingPressedNotification(
                     KeybindingPressedNotification {
-                        keypress: Some(KeyEvent {
-                            characters: Some(key),
-                            ..Default::default()
-                        }),
+                        keypress: None,
                         action: Some(action),
                     },
                 )),

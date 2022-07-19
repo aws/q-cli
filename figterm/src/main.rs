@@ -38,6 +38,7 @@ use anyhow::{
 };
 use clap::StructOpt;
 use cli::Cli;
+use fig_proto::figterm::intercept_command::SetFigjsIntercepts;
 use fig_proto::figterm::{
     self,
     figterm_message,
@@ -348,30 +349,25 @@ async fn process_figterm_message(
             insertion_string.push_str(&command.to_term_string());
             pty_master.write(insertion_string.as_bytes()).await?;
         },
-        Some(figterm_message::Command::InterceptCommand(command)) => {
-            match command.intercept_command {
-                Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
-                    debug!("Set intercept all");
-                    key_interceptor.set_intercept_all(true);
-                },
-                Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
-                    debug!("Clear intercept");
-                    key_interceptor.set_intercept_all(false);
-                },
-                Some(intercept_command::InterceptCommand::SetIntercept(_set_intercept)) => {
-                    debug!("Set intercept");
-                    // TODO: Rework this
-                },
-                Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
-                    debug!("{:?}", set_intercept.chars);
-                    // TODO: Rework this
-                },
-                Some(intercept_command::InterceptCommand::RemoveIntercept(set_intercept)) => {
-                    debug!("{:?}", set_intercept.chars);
-                    // TODO: Rework this
-                },
-                _ => {},
-            }
+        Some(figterm_message::Command::InterceptCommand(command)) => match command.intercept_command {
+            Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
+                debug!("Set intercept all");
+                key_interceptor.set_intercept_all(true);
+            },
+            Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
+                debug!("Clear intercept");
+                key_interceptor.set_intercept_all(false);
+            },
+            Some(intercept_command::InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
+                intercept_bound_keystrokes,
+                intercept_global_keystrokes,
+                actions,
+            })) => {
+                key_interceptor.set_intercept_all(intercept_global_keystrokes);
+                key_interceptor.set_intercept_bind(intercept_bound_keystrokes);
+                key_interceptor.set_actions(&actions);
+            },
+            None => {},
         },
         Some(figterm_message::Command::DiagnosticsCommand(_command)) => {
             let map_color = |color: &fig_color::VTermColor| -> figterm::TermColor {
@@ -384,7 +380,7 @@ async fn process_figterm_message(
                                 g: *g as i32,
                             })
                         },
-                        fig_color::VTermColor::Indexed(i) => figterm::term_color::Color::Indexed(*i as i32),
+                        fig_color::VTermColor::Indexed(i) => figterm::term_color::Color::Indexed(*i as u32),
                     }),
                 }
             };

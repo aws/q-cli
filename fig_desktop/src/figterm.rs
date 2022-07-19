@@ -60,11 +60,13 @@ impl Display for FigtermSessionId {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum FigTermCommand {
-    SetInterceptAll,
-    SetIntercept(Vec<char>),
-    ClearIntercept,
-    AddIntercept(Vec<char>),
-    RemoveIntercept(Vec<char>),
+    InterceptDefault,
+    InterceptClear,
+    InterceptFigJs {
+        intercept_bound_keystrokes: bool,
+        intercept_global_keystrokes: bool,
+        actions: Vec<fig_proto::figterm::Action>,
+    },
     InsertText {
         insertion: Option<String>,
         deletion: Option<i64>,
@@ -90,7 +92,7 @@ impl FigtermState {
     /// Set the most recent session.
     fn set_most_recent_session(&self, session_id: impl Into<Option<FigtermSessionId>>) {
         let session_id = session_id.into();
-        trace!("Most recent session set to {:?}", session_id);
+        trace!("Most recent session set to {session_id:?}");
         *self.most_recent.lock() = session_id;
     }
 
@@ -125,6 +127,10 @@ impl FigtermState {
         }
     }
 
+    pub fn most_recent_session_id(&self) -> Option<FigtermSessionId> {
+        self.most_recent.lock().as_ref().cloned()
+    }
+
     pub fn most_recent_session(&self) -> Option<FigTermSession> {
         self.most_recent
             .lock()
@@ -157,44 +163,36 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
         let mut stream = match fig_ipc::connect_timeout(socket.clone(), Duration::from_secs(1)).await {
             Ok(stream) => stream,
             Err(err) => {
-                error!("Error connecting to figterm socket at {:?}: {:?}", socket, err);
+                error!("Error connecting to figterm socket at {socket:?}: {err:?}");
                 return;
             },
         };
 
-        trace!("figterm session {} opened", session_id);
+        trace!("figterm session {session_id} opened");
 
         while let Some(command) = rx.recv().await {
             use figterm_message::Command;
             let message = match command {
-                FigTermCommand::SetInterceptAll => Command::InterceptCommand(InterceptCommand {
+                FigTermCommand::InterceptDefault => Command::InterceptCommand(InterceptCommand {
                     intercept_command: Some(intercept_command::InterceptCommand::SetInterceptAll(
                         intercept_command::SetInterceptAll {},
                     )),
                 }),
-                FigTermCommand::SetIntercept(chars) => Command::InterceptCommand(InterceptCommand {
-                    intercept_command: Some(intercept_command::InterceptCommand::SetIntercept(
-                        intercept_command::SetIntercept {
-                            chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
-                        },
-                    )),
-                }),
-                FigTermCommand::ClearIntercept => Command::InterceptCommand(InterceptCommand {
+                FigTermCommand::InterceptClear => Command::InterceptCommand(InterceptCommand {
                     intercept_command: Some(intercept_command::InterceptCommand::ClearIntercept(
                         intercept_command::ClearIntercept {},
                     )),
                 }),
-                FigTermCommand::AddIntercept(chars) => Command::InterceptCommand(InterceptCommand {
-                    intercept_command: Some(intercept_command::InterceptCommand::AddIntercept(
-                        intercept_command::AddIntercept {
-                            chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
-                        },
-                    )),
-                }),
-                FigTermCommand::RemoveIntercept(chars) => Command::InterceptCommand(InterceptCommand {
-                    intercept_command: Some(intercept_command::InterceptCommand::RemoveIntercept(
-                        intercept_command::RemoveIntercept {
-                            chars: chars.into_iter().map(|x| x as u32).collect::<Vec<u32>>(),
+                FigTermCommand::InterceptFigJs {
+                    intercept_bound_keystrokes,
+                    intercept_global_keystrokes,
+                    actions,
+                } => Command::InterceptCommand(InterceptCommand {
+                    intercept_command: Some(intercept_command::InterceptCommand::SetFigjsIntercepts(
+                        intercept_command::SetFigjsIntercepts {
+                            intercept_bound_keystrokes,
+                            intercept_global_keystrokes,
+                            actions,
                         },
                     )),
                 }),
@@ -217,7 +215,7 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
             };
 
             if let Err(err) = fig_ipc::send_message(&mut stream, FigtermMessage { command: Some(message) }).await {
-                error!("Failed sending message to figterm session {}: {:?}", session_id, err);
+                error!("Failed sending message to figterm session {session_id}: {err:?}");
                 break;
             }
 
@@ -229,7 +227,7 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
             }
         }
         // remove from cache
-        trace!("figterm session {} closed", session_id);
+        trace!("figterm session {session_id} closed");
         state.figterm_state.remove(&session_id);
     });
 }

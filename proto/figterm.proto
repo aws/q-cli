@@ -3,10 +3,6 @@ package figterm;
 
 import "fig_common.proto";
 
-// 
-// Commands
-//
-
 // Message type used to send a command to figterm
 message FigtermMessage {
     oneof command {
@@ -17,6 +13,7 @@ message FigtermMessage {
     }
 }
 
+// A response back from a command to figterm
 message FigtermResponse {
   oneof response {
     DiagnosticsResponse diagnostics_response = 1;    
@@ -26,46 +23,31 @@ message FigtermResponse {
 message Action {
   // unique identifier for the action
   string identifier = 1;   
-  // a quick summary of what the action will do
+  // the keys that are bound to the action
   repeated string bindings = 2; 
 }
 
 // Intercept command
 // Used to set which input is intercepted by figterm
 message InterceptCommand {
-    // Set figterm to intercept all input
+    // Set figterm to intercept default keys
     message SetInterceptAll { }
 
-    // Set the utf8 characters to intercept
-    message SetIntercept {
-        repeated uint32 chars = 1;
-    }
+    // Clear figterm intercepts
+    message ClearIntercept { }
 
-    // Clear the utf8 characters to intercept
-    message ClearIntercept {}
-
-    // Add utf8 characters to intercept
-    message AddIntercept {
-        repeated uint32 chars = 1;
-    }
-
-    // Remove utf8 characters to intercept
-    message RemoveIntercept {
-        repeated uint32 chars = 1;
-    }
-
+    // Set figterm to intercept keys according to the FigJs interface
     message SetFigjsIntercepts {
       bool intercept_bound_keystrokes = 1;
       bool intercept_global_keystrokes = 2;
       repeated Action actions = 3;
     }
 
+    reserved 1, 3, 4;
+
     // The intercept command to execute
     oneof intercept_command {
-        SetIntercept set_intercept = 1;
         ClearIntercept clear_intercept = 2;
-        AddIntercept add_intercept = 3;
-        RemoveIntercept remove_intercept = 4;
         SetInterceptAll set_intercept_all = 5;
         SetFigjsIntercepts set_figjs_intercepts = 6;
     }
@@ -107,7 +89,7 @@ message TermColor {
 
   oneof color {
     Rgb rgb = 1;
-    int32 indexed = 2;
+    uint32 indexed = 2;
   }
 }
 
@@ -128,6 +110,6 @@ message DiagnosticsResponse {
   // The current edit buffer
   optional string edit_buffer = 4;
   // The current cursor cursor position
-  optional int32 cursor_position = 5;
+  optional uint32 cursor_position = 5;
 }
 
