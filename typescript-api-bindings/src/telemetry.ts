@@ -42,4 +42,3 @@ export function page(category: string, name: string, properties: Record<string, 
 
   return sendTelemetryPageRequest({ category, name, jsonBlob: JSON.stringify(props) });
 }
-

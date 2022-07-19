@@ -46,5 +46,8 @@
   },
   "lint-staged": {
     "*.{ts,tsx}": "npx eslint --cache --fix"
+  },
+  "publishConfig": {
+    "registry": "https://registry.npmjs.org/"
   }
 }
