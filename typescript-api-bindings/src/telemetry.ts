@@ -1,6 +1,5 @@
 import { TelemetryProperty } from './fig.pb';
 import {
-  sendTelemetryAliasRequest,
   sendTelemetryIdentifyRequest,
   sendTelemetryPageRequest,
   sendTelemetryTrackRequest
