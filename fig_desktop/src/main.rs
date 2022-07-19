@@ -8,6 +8,7 @@ mod icons;
 mod install;
 mod local_ipc;
 mod native;
+mod notification;
 mod settings;
 mod tray;
 mod utils;
@@ -29,10 +30,10 @@ use event::{
     WindowEvent,
 };
 use fig_log::Logger;
-use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
+use notification::NotificationsState;
 use parking_lot::RwLock;
 use regex::RegexSet;
 use sysinfo::{
@@ -91,11 +92,6 @@ pub struct DebugState {
 pub struct InterceptState {
     pub intercept_bound_keystrokes: RwLock<bool>,
     pub intercept_global_keystrokes: RwLock<bool>,
-}
-
-#[derive(Debug, Default)]
-pub struct NotificationsState {
-    subscriptions: DashMap<WindowId, DashMap<NotificationType, i64, FnvBuildHasher>, FnvBuildHasher>,
 }
 
 pub type EventLoop = WryEventLoop<Event>;
@@ -172,6 +168,8 @@ impl WebviewManager {
                 api_request(fig_id, payload, &global_state, &proxy).await;
             }
         });
+
+        settings::settings_listener(self.global_state.clone(), self.event_loop.create_proxy()).await;
 
         let _tray = build_tray(&self.event_loop, &self.global_state).unwrap();
 

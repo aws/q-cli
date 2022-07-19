@@ -12,6 +12,58 @@ impl From<String> for Json {
     }
 }
 
+impl From<u64> for Json {
+    fn from(n: u64) -> Self {
+        Self {
+            value: Some(json::Value::Number(json::Number {
+                number: Some(json::number::Number::U64(n)),
+            })),
+        }
+    }
+}
+
+impl From<i64> for Json {
+    fn from(n: i64) -> Self {
+        Self {
+            value: Some(json::Value::Number(json::Number {
+                number: Some(json::number::Number::I64(n)),
+            })),
+        }
+    }
+}
+
+impl From<f64> for Json {
+    fn from(n: f64) -> Self {
+        Self {
+            value: Some(json::Value::Number(json::Number {
+                number: Some(json::number::Number::F64(n)),
+            })),
+        }
+    }
+}
+
+impl From<bool> for Json {
+    fn from(b: bool) -> Self {
+        Self {
+            value: Some(json::Value::Bool(b)),
+        }
+    }
+}
+
+impl<T> From<Option<T>> for Json
+where
+    T: Into<Json>,
+{
+    fn from(opt: Option<T>) -> Self {
+        match opt {
+            Some(v) => v.into(),
+            None => Self {
+                value: Some(json::Value::Null(json::Null {})),
+            },
+        }
+    }
+}
+
 impl<K, V> FromIterator<(K, V)> for Json
 where
     K: Into<String>,
@@ -46,11 +98,11 @@ impl From<Value> for Json {
                 Value::Null => json::Value::Null(json::Null {}),
                 Value::Bool(b) => json::Value::Bool(b),
                 Value::Number(n) => json::Value::Number(json::Number {
-                    int: n
+                    number: n
                         .as_i64()
-                        .map(json::number::Int::I64)
-                        .or_else(|| n.as_u64().map(json::number::Int::U64))
-                        .or_else(|| n.as_f64().map(json::number::Int::F64)),
+                        .map(json::number::Number::I64)
+                        .or_else(|| n.as_u64().map(json::number::Number::U64))
+                        .or_else(|| n.as_f64().map(json::number::Number::F64)),
                 }),
                 Value::String(s) => json::Value::String(s),
                 Value::Array(a) => json::Value::Array(json::Array {
@@ -69,10 +121,10 @@ impl From<Json> for Value {
         match json.value {
             Some(json::Value::Null(_)) => Value::Null,
             Some(json::Value::Bool(b)) => b.into(),
-            Some(json::Value::Number(n)) => match n.int {
-                Some(json::number::Int::I64(i)) => i.into(),
-                Some(json::number::Int::U64(u)) => u.into(),
-                Some(json::number::Int::F64(f)) => f.into(),
+            Some(json::Value::Number(n)) => match n.number {
+                Some(json::number::Number::I64(i)) => i.into(),
+                Some(json::number::Number::U64(u)) => u.into(),
+                Some(json::number::Number::F64(f)) => f.into(),
                 None => Value::Null,
             },
             Some(json::Value::String(s)) => s.into(),

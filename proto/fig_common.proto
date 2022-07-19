@@ -4,7 +4,7 @@ package fig_common;
 message Json {
     message Null {}
     message Number {
-      oneof int {
+      oneof number {
           uint64 u64 = 1;
           sint64 i64 = 2;
           double f64 = 3;
