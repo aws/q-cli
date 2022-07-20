@@ -16,7 +16,7 @@ alacritty_terminal = { path = "../rust-lib/alacritty_terminal" }
 anyhow = "1.0.58"
 bitflags = "1.3.2"
 bytes = "1.2.0"
-clap = { version = "3.2.12", features = ["derive"] }
+clap = { version = "3.2.13", features = ["derive"] }
 dashmap = "5.3.4"
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_color = { path = "../rust-lib/fig_color" }
