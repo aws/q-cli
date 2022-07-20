@@ -15,6 +15,7 @@ use fig_auth::cognito::{
     SignUpInput,
 };
 use fig_request::Request;
+use fig_settings::state;
 use serde::{
     Deserialize,
     Serialize,
@@ -306,7 +307,11 @@ pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
         match sign_in_output.confirm(login_code.trim()).await {
             Ok(creds) => {
                 creds.save_credentials()?;
-                Request::post("/user/login").auth().send().await?;
+                let body = match state::get_string("anonymousId") {
+                    Ok(Some(anonymous_id)) => json!({ "anonymousId": anonymous_id }),
+                    _ => json!({}),
+                };
+                Request::post("/user/login").auth().body(body).send().await?;
                 println!("Login successful!");
                 return Ok(());
             },
