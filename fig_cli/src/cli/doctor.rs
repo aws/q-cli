@@ -66,6 +66,7 @@ use sysinfo::{
     RefreshKind,
     SystemExt,
 };
+use system_socket::SystemStream;
 use tokio::io::{
     AsyncBufReadExt,
     AsyncWriteExt,
@@ -548,24 +549,26 @@ struct FigtermSocketCheck;
 #[async_trait]
 impl DoctorCheck for FigtermSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Figterm socket".into()
+        "Figterm".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        // Check that the socket exists
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
-
         let socket_path = PathBuf::from("/tmp").join(format!("figterm-{term_session}.socket"));
 
         check_file_exists(&socket_path)?;
 
+        // Connect to the socket
         let mut conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
             Err(err) => return Err(doctor_error!("Socket exists but could not connect: {err}")),
         };
 
+        // Try sending an insert event and ensure it inserts what is expected
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
 
-        let write_handle: tokio::task::JoinHandle<Result<(), DoctorError>> = tokio::spawn(async move {
+        let write_handle: tokio::task::JoinHandle<Result<SystemStream, DoctorError>> = tokio::spawn(async move {
             conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
@@ -585,7 +588,7 @@ impl DoctorCheck for FigtermSocketCheck {
 
             conn.write(&fig_message).await.map_err(|e| doctor_error!("{e}"))?;
 
-            Ok(())
+            Ok(conn)
         });
 
         let mut buffer = String::new();
@@ -615,13 +618,63 @@ impl DoctorCheck for FigtermSocketCheck {
 
         disable_raw_mode().context("Failed to disable raw mode")?;
 
-        match write_handle.await {
-            Ok(Ok(_)) => {},
+        let mut conn = match write_handle.await {
+            Ok(Ok(conn)) => conn,
             Ok(Err(err)) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
             Err(err) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
-        }
+        };
 
         timeout_result?;
+
+        // Figterm diagnostics
+
+        let message = fig_proto::figterm::FigtermMessage {
+            command: Some(fig_proto::figterm::figterm_message::Command::DiagnosticsCommand(
+                fig_proto::figterm::DiagnosticsCommand {},
+            )),
+        };
+
+        let response: Result<Option<fig_proto::figterm::FigtermResponse>> =
+            fig_ipc::send_recv_message(&mut conn, message, Duration::from_secs(1)).await;
+
+        match response {
+            Ok(Some(figterm_response)) => match figterm_response.response {
+                Some(fig_proto::figterm::figterm_response::Response::DiagnosticsResponse(
+                    fig_proto::figterm::DiagnosticsResponse {
+                        zsh_autosuggestion_style,
+                        fish_suggestion_style,
+                        ..
+                    },
+                )) => {
+                    if let Some(style) = zsh_autosuggestion_style {
+                        if let Some(fg) = style.fg {
+                            if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
+                                if i == 8 {
+                                    return Err(doctor_warning!(
+                                        "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE is set to the same style your text, Fig will not be able to detect what you have typed."
+                                    ));
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(style) = fish_suggestion_style {
+                        if let Some(fg) = style.fg {
+                            if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
+                                if i == 8 {
+                                    return Err(doctor_warning!(
+                                        "The Fish suggestion color is set to the same style your text, Fig will not be able to detect what you have typed."
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                },
+                _ => return Err(doctor_error!("Failed to recieve expected message from figterm")),
+            },
+            Ok(None) => return Err(doctor_error!("Recieved EOF when trying to recieve figterm diagnostics")),
+            Err(err) => return Err(doctor_error!("Failed to recieve figterm diagnostics: {err}")),
+        }
 
         Ok(())
     }
