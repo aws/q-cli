@@ -54,6 +54,7 @@ use fig_util::{
     Shell,
     Terminal,
 };
+use futures::future::BoxFuture;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -72,6 +73,7 @@ use tokio::io::{
     AsyncWriteExt,
 };
 
+use super::app::restart_fig;
 use crate::cli::diagnostics::{
     dscl_read,
     verify_integration,
@@ -103,7 +105,10 @@ impl DoctorArgs {
     }
 }
 
-type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
+enum DoctorFix {
+    Sync(Box<dyn FnOnce() -> Result<()> + Send>),
+    Async(BoxFuture<'static, Result<()>>),
+}
 
 enum DoctorError {
     Warning(Cow<'static, str>),
@@ -180,7 +185,18 @@ macro_rules! doctor_fix {
         DoctorError::Error {
             reason: format!($reason).into(),
             info: vec![],
-            fix: Some(Box::new($fix)),
+            fix: Some(DoctorFix::Sync(Box::new($fix))),
+            error: None,
+        }
+    };
+}
+
+macro_rules! doctor_fix_async {
+    ({ reason: $reason:expr,fix: $fix:expr }) => {
+        DoctorError::Error {
+            reason: format!($reason).into(),
+            info: vec![],
+            fix: Some(DoctorFix::Async(Box::pin($fix))),
             error: None,
         }
     };
@@ -212,7 +228,7 @@ where
 {
     let args = args.into_iter().collect::<Vec<_>>();
 
-    Some(Box::new(move || {
+    Some(DoctorFix::Sync(Box::new(move || {
         if let (Some(exe), Some(remaining)) = (args.first(), args.get(1..)) {
             if Command::new(exe).args(remaining).status()?.success() {
                 if let Some(duration) = sleep_duration.into() {
@@ -230,7 +246,7 @@ where
                 .collect::<Vec<_>>()
                 .join(" ")
         )
-    }))
+    })))
 }
 
 fn is_installed(app: impl AsRef<OsStr>) -> bool {
@@ -339,7 +355,7 @@ impl DoctorCheck for FigBinCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = fig_directories::fig_dir().context("~/.fig/bin/fig does not exist")?;
+        let path = fig_directories::fig_dir().context("couldn't get home directory")?;
         Ok(check_file_exists(&path)?)
     }
 }
@@ -423,16 +439,21 @@ impl DoctorCheck for FigSocketCheck {
                 return Err(DoctorError::Error {
                     reason: "Fig socket parent directory does not exist".into(),
                     info: vec![format!("Path: {}", fig_socket_path.display()).into()],
-                    fix: Some(Box::new(|| {
+                    fix: Some(DoctorFix::Sync(Box::new(|| {
                         std::fs::create_dir_all(parent)?;
                         Ok(())
-                    })),
+                    }))),
                     error: None,
                 });
             }
         }
 
-        Ok(check_file_exists(&get_fig_socket_path())?)
+        check_file_exists(&get_fig_socket_path()).map_err(|_| {
+            doctor_fix_async!({
+                reason: "Fig socket missing",
+                fix: restart_fig()
+            })
+        })
     }
 
     fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
@@ -698,10 +719,10 @@ impl DoctorCheck for InsertionLockCheck {
             return Err(DoctorError::Error {
                 reason: "Insertion lock exists".into(),
                 info: vec![],
-                fix: Some(Box::new(move || {
+                fix: Some(DoctorFix::Sync(Box::new(move || {
                     std::fs::remove_file(&insetion_lock_path)?;
                     Ok(())
-                })),
+                }))),
                 error: None,
             });
         }
@@ -726,12 +747,12 @@ impl DoctorCheck for DaemonCheck {
 
         macro_rules! daemon_fix {
             () => {
-                Some(Box::new(move || {
+                Some(DoctorFix::Sync(Box::new(move || {
                     crate::daemon::install_daemon()?;
                     // Sleep for a second to give the daemon time to install and start
                     std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                     Ok(())
-                }))
+                })))
             };
         }
 
@@ -747,12 +768,12 @@ impl DoctorCheck for DaemonCheck {
                 return Err(DoctorError::Error {
                     reason: format!("LaunchAgents directory does not exist at {:?}", launch_agents_path).into(),
                     info: vec![],
-                    fix: Some(Box::new(move || {
+                    fix: Some(DoctorFix::Sync(Box::new(move || {
                         std::fs::create_dir_all(&launch_agents_path)?;
                         crate::daemon::install_daemon()?;
                         std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                         Ok(())
-                    })),
+                    }))),
                     error: None,
                 });
             }
@@ -774,7 +795,7 @@ impl DoctorCheck for DaemonCheck {
                     format!("Path: {:?}", launch_agents_path).into(),
                     format!("Error: {err}").into(),
                 ],
-                fix: Some(Box::new(move || Ok(()))),
+                fix: Some(DoctorFix::Sync(Box::new(move || Ok(())))),
                 error: None,
             })?;
         }
@@ -976,10 +997,10 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 Err(DoctorError::Error {
                     reason: msg,
                     info: vec![fix_text.into()],
-                    fix: Some(Box::new(move || {
+                    fix: Some(DoctorFix::Sync(Box::new(move || {
                         fix_integration.install(None)?;
                         Ok(())
-                    })),
+                    }))),
                     error: None,
                 })
             },
@@ -988,10 +1009,10 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 Err(DoctorError::Error {
                     reason: err.to_string().into(),
                     info: vec![fix_text.into()],
-                    fix: Some(Box::new(move || {
+                    fix: Some(DoctorFix::Sync(Box::new(move || {
                         fix_integration.install(None)?;
                         Ok(())
-                    })),
+                    }))),
                     error: Some(anyhow::Error::new(err)),
                 })
             },
@@ -1720,7 +1741,10 @@ where
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
-                if let Err(err) = fixfn() {
+                if let Err(err) = match fixfn {
+                    DoctorFix::Sync(fixfn) => fixfn(),
+                    DoctorFix::Async(fixfn) => fixfn.await,
+                } {
                     println!("Failed to fix: {err}");
                 } else {
                     println!("Re-running check...");
