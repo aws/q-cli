@@ -7,7 +7,7 @@
 //
 
 import Cocoa
-import SwiftUI
+import FigAPIBindings
 
 class MissionControl {
   static let shared = MissionControl()
@@ -61,8 +61,19 @@ class MissionControl {
         NSApp.activate(ignoringOtherApps: true)
 
         if let controller = window.contentViewController as? WebViewController,
-           controller.webView?.url != url {
-          controller.webView?.navigate(to: url)
+           let currentURL = controller.webView?.url,
+           currentURL != url {
+
+          // If host is the same, use event to trigger page change without full refresh
+          if currentURL.host == url.host {
+            API.notifications.post(Fig_EventNotification.with({ event in
+              event.eventName = "mission-control.navigate"
+              event.payload = "{ \"path\": \"\(url.path)\" }"
+            }))
+          } else {
+            controller.webView?.navigate(to: url)
+          }
+
         }
         return
       } else {
