@@ -336,7 +336,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
   }
 }
 
-extension Local_ShellContext {
+extension FigCommon_ShellContext {
   var internalContext: ShellContext? {
     guard self.hasSessionID,
           self.hasPid else {
@@ -358,8 +358,8 @@ extension Local_ShellContext {
 }
 
 extension ShellContext {
-  var ipcContext: Local_ShellContext? {
-    return Local_ShellContext.with { context in
+  var ipcContext: FigCommon_ShellContext? {
+    return FigCommon_ShellContext.with { context in
       context.pid = self.processId
       context.processName = self.executablePath
       context.ttys = self.ttyDescriptor

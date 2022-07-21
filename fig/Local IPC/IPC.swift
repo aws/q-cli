@@ -316,13 +316,13 @@ class IPC: UnixSocketServerDelegate {
   }
 }
 
-extension Local_ShellContext {
-  func activeContext() -> Local_ShellContext {
+extension FigCommon_ShellContext {
+  func activeContext() -> FigCommon_ShellContext {
     guard self.hasRemoteContext else {
       return self
     }
 
-    return Local_ShellContext.with { context in
+    return FigCommon_ShellContext.with { context in
       // Do not update session id or integration version (should use local value)
       context.integrationVersion = self.integrationVersion
       context.sessionID = self.sessionID
