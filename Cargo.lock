@@ -2271,7 +2271,9 @@ dependencies = [
  "flume",
  "futures",
  "git2",
+ "once_cell",
  "parking_lot 0.12.1",
+ "regex",
  "reqwest",
  "serde",
  "serde_json",
@@ -2280,6 +2282,7 @@ dependencies = [
  "time 0.3.11",
  "tokio",
  "tracing",
+ "url",
 ]
 
 [[package]]
