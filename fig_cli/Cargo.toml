@@ -24,7 +24,7 @@ clap_complete_fig = "3.2.4"
 crossterm = "0.24.0"
 ctrlc = "3.2.1"
 deno_core = { version = "0.143.0", optional = true }
-deno_runtime = { version = "0.69.0", optional = true }
+deno_runtime = { version = "0.70.0", optional = true }
 dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
