@@ -94,15 +94,12 @@ pub enum TokensSubcommand {
         expires_in: Option<String>,
         /// The team namespace to create the token for
         #[clap(long, short, value_parser)]
-        team: Option<String>,
+        team: String,
     },
     List {
         /// The team namespace to list the tokens for
-        #[clap(long, short, value_parser, conflicts_with = "personal")]
-        team: Option<String>,
-        /// Only list tokens owned by the current user
-        #[clap(long, short, value_parser, conflicts_with = "team")]
-        personal: bool,
+        #[clap(long, short, value_parser)]
+        team: String,
         #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
     },
@@ -112,7 +109,7 @@ pub enum TokensSubcommand {
         name: String,
         /// The team namespace to revoke the token for
         #[clap(long, short, value_parser)]
-        team: Option<String>,
+        team: String,
     },
     /// Validate a token is valid
     Validate {
@@ -169,10 +166,10 @@ impl TokensSubcommand {
                 }
                 Ok(())
             },
-            Self::List { format, team, personal } => {
+            Self::List { format, team } => {
                 let json = Request::get("/auth/tokens/list")
                     .auth()
-                    .body(json!({ "team": team, "personal": personal }))
+                    .body(json!({ "namespace": team }))
                     .json()
                     .await?;
 
@@ -213,18 +210,12 @@ impl TokensSubcommand {
             Self::Revoke { name, team } => {
                 Request::post("/auth/tokens/revoke")
                     .auth()
-                    .body(json!({ "name": name, "team": team }))
+                    .body(json!({ "team": team }))
                     .send()
                     .await?;
 
-                match team {
-                    Some(team) => {
-                        println!("Revoked token {name} for team {team}");
-                    },
-                    None => {
-                        println!("Revoked token {name}");
-                    },
-                }
+                println!("Revoked token {name} for team {team}");
+
                 Ok(())
             },
             Self::Validate { token } => {
