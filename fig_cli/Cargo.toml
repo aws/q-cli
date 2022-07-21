@@ -56,7 +56,7 @@ time = { version = "=0.3.11", features = ["serde-human-readable", "local-offset"
 tokio = { version = "1.20.0", features = ["full"] }
 tokio-tungstenite = { version = "0.17.2", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
-tracing-subscriber = { version = "0.3.14", features = ["fmt", "time", "parking_lot"] }
+tracing-subscriber = { version = "0.3.15", features = ["fmt", "time", "parking_lot"] }
 tui = { path = "../rust-lib/tui" }
 url = "2.2.2"
 validator = "0.15.0"
