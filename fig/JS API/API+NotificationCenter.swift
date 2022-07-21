@@ -293,7 +293,7 @@ extension APINotificationCenter {
     wrapper.localStateChangedNotification = notification
     self.post(notification: wrapper)
   }
-  
+
   func post(_ notification: Fig_EventNotification) {
     var wrapper = Fig_Notification()
     wrapper.eventNotification = notification
@@ -302,7 +302,7 @@ extension APINotificationCenter {
 }
 
 extension APINotificationCenter {
-  func editbufferChanged(buffer: String, cursor: Int, session: SessionId, context: Local_ShellContext? = nil) {
+  func editbufferChanged(buffer: String, cursor: Int, session: SessionId, context: FigCommon_ShellContext? = nil) {
     Logger.log(message: "Buffer: \(buffer), Cursor: \(cursor)", subsystem: .autocomplete)
     API.notifications.post(
       Fig_EditBufferChangedNotification.with({ notification in
