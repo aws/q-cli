@@ -9,6 +9,7 @@ use serde::{
     Serialize,
 };
 use serde_json::json;
+use which::which;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -30,7 +31,7 @@ impl Default for Constants {
     fn default() -> Self {
         Self {
             version: env!("CARGO_PKG_VERSION"),
-            cli: Some("/usr/bin/fig".into()),
+            cli: which("fig").ok().and_then(|exe| Utf8PathBuf::try_from(exe).ok()),
             bundle_path: None,
             remote: None,
             home: fig_directories::home_dir().and_then(|dir| dir.try_into().ok()),

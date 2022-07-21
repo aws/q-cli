@@ -2243,6 +2243,7 @@ dependencies = [
  "tokio",
  "tracing",
  "url",
+ "which",
  "whoami",
  "windows 0.39.0",
  "wry",
