@@ -25,15 +25,12 @@ use prost::{
     DecodeError,
     Message,
 };
-pub use prost_reflect::ReflectMessage;
-use prost_reflect::{
-    DescriptorPool,
+use prost_reflect::DescriptorPool;
+pub use prost_reflect::{
     DynamicMessage,
+    ReflectMessage,
 };
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::Serialize;
 use thiserror::Error;
 
 // This is not used explicitly, but it must be here for the derive
@@ -47,6 +44,16 @@ pub enum FigMessageType {
     Protobuf,
     Json,
     MessagePack,
+}
+
+impl FigMessageType {
+    pub const fn header(&self) -> &'static [u8] {
+        match self {
+            FigMessageType::Protobuf => b"fig-pbuf",
+            FigMessageType::Json => b"fig-json",
+            FigMessageType::MessagePack => b"fig-mpak",
+        }
+    }
 }
 
 /// A fig message
@@ -90,13 +97,33 @@ pub enum FigMessageDecodeError {
     RmpDecode(#[from] rmp_serde::decode::Error),
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct FigJsonMessage {
-    name: String,
-    data: serde_json::Value,
-}
-
 impl FigMessage {
+    pub fn json(json: impl Serialize) -> Result<FigMessage> {
+        FigMessage::encode(FigMessageType::Json, &serde_json::to_vec(&json)?)
+    }
+
+    pub fn message_pack(message_pack: impl Serialize) -> Result<FigMessage> {
+        FigMessage::encode(FigMessageType::MessagePack, &rmp_serde::to_vec(&message_pack)?)
+    }
+
+    pub fn encode(message_type: FigMessageType, body: &[u8]) -> Result<FigMessage> {
+        let message_len: u64 = body.len().try_into()?;
+        let message_len_be = message_len.to_be_bytes();
+
+        let mut inner =
+            BytesMut::with_capacity(b"\x1b@".len() + message_type.header().len() + message_len_be.len() + body.len());
+
+        inner.extend_from_slice(b"\x1b@");
+        inner.extend_from_slice(message_type.header());
+        inner.extend_from_slice(&message_len_be);
+        inner.extend_from_slice(body);
+
+        Ok(FigMessage {
+            inner: inner.freeze(),
+            message_type: FigMessageType::Protobuf,
+        })
+    }
+
     pub fn parse(src: &mut Cursor<&[u8]>) -> Result<FigMessage, FigMessageParseError> {
         if src.remaining() < 10 {
             return Err(FigMessageParseError::Incomplete);
@@ -178,21 +205,7 @@ impl FigProtobufEncodable for FigMessage {
 
 impl<T: Message> FigProtobufEncodable for T {
     fn encode_fig_protobuf(&self) -> Result<FigMessage> {
-        let mut fig_pbuf = BytesMut::new();
-
-        let mut encoded_message = BytesMut::new();
-        self.encode(&mut encoded_message)?;
-
-        let message_len: u64 = encoded_message.len().try_into()?;
-
-        fig_pbuf.extend(b"\x1b@fig-pbuf");
-        fig_pbuf.extend(message_len.to_be_bytes());
-        fig_pbuf.extend(encoded_message);
-
-        Ok(FigMessage {
-            inner: fig_pbuf.freeze(),
-            message_type: FigMessageType::Protobuf,
-        })
+        FigMessage::encode(FigMessageType::Protobuf, &self.encode_to_vec())
     }
 }
 

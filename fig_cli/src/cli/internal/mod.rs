@@ -10,6 +10,7 @@ use std::process::exit;
 use std::str::FromStr;
 
 use anyhow::{
+    bail,
     Context,
     Result,
 };
@@ -26,6 +27,7 @@ use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
+use fig_proto::ReflectMessage;
 use fig_request::Request;
 use fig_util::get_parent_process_exe;
 use rand::distributions::{
@@ -139,6 +141,23 @@ pub enum InternalSubcommand {
         method: String,
         #[clap(long, value_parser)]
         body: Option<String>,
+    },
+    #[clap(group(
+        ArgGroup::new("target")
+            .multiple(false)
+            .required(true)
+    ))]
+    Ipc {
+        #[clap(long, value_parser, group = "target")]
+        app: bool,
+        #[clap(long, value_parser, group = "target")]
+        daemon: bool,
+        #[clap(long, value_parser, group = "target")]
+        figterm: Option<String>,
+        #[clap(long, value_parser)]
+        json: String,
+        #[clap(long, value_parser)]
+        recv: bool,
     },
 }
 
@@ -351,6 +370,52 @@ impl InternalSubcommand {
                 }
                 let value = request.auth().json().await?;
                 println!("{value}");
+            },
+            InternalSubcommand::Ipc {
+                app,
+                daemon,
+                figterm,
+                json,
+                recv,
+            } => {
+                let message = fig_proto::FigMessage::json(serde_json::from_str::<serde_json::Value>(&json)?)?;
+
+                let socket = if app {
+                    fig_ipc::get_fig_socket_path()
+                } else if daemon {
+                    fig_ipc::daemon::get_daemon_socket_path()
+                } else if let Some(ref figterm) = figterm {
+                    fig_ipc::figterm::get_figterm_socket_path(figterm)
+                } else {
+                    bail!("No destination for message");
+                };
+
+                let mut conn = fig_ipc::connect(socket).await?;
+
+                if recv {
+                    macro_rules! recv {
+                        ($abc:path) => {{
+                            let response: Option<$abc> = fig_ipc::send_recv_message(&mut conn, message).await?;
+                            match response {
+                                Some(response) => {
+                                    let message = response.transcode_to_dynamic();
+                                    println!("{}", serde_json::to_string(&message)?)
+                                },
+                                None => bail!("Recieved EOF while waiting for response"),
+                            }
+                        }};
+                    }
+
+                    if app {
+                        recv!(fig_proto::local::CommandResponse);
+                    } else if daemon {
+                        recv!(fig_proto::daemon::DaemonResponse);
+                    } else if figterm.is_some() {
+                        recv!(fig_proto::figterm::FigtermResponse);
+                    }
+                } else {
+                    fig_ipc::send_message(&mut conn, message).await?;
+                }
             },
         }
 

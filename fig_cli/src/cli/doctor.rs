@@ -37,7 +37,7 @@ use fig_integrations::InstallationError;
 use fig_ipc::{
     connect_timeout,
     get_fig_socket_path,
-    send_recv_message,
+    send_recv_message_timeout,
 };
 use fig_proto::daemon::diagnostic_response::{
     settings_watcher_status,
@@ -656,7 +656,7 @@ impl DoctorCheck for FigtermSocketCheck {
         };
 
         let response: Result<Option<fig_proto::figterm::FigtermResponse>> =
-            fig_ipc::send_recv_message(&mut conn, message, Duration::from_secs(1)).await;
+            fig_ipc::send_recv_message_timeout(&mut conn, message, Duration::from_secs(1)).await;
 
         match response {
             Ok(Some(figterm_response)) => match figterm_response.response {
@@ -858,7 +858,7 @@ impl DoctorCheck for DaemonCheck {
             },
         };
 
-        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = send_recv_message(
+        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = send_recv_message_timeout(
             &mut conn,
             fig_proto::daemon::new_diagnostic_message(),
             Duration::from_secs(1),

@@ -64,6 +64,26 @@ pub fn get_fig_socket_path() -> PathBuf {
     }
 }
 
+pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream> {
+    let socket = socket.as_ref();
+    let conn = match SystemStream::connect(socket).await {
+        Ok(conn) => conn,
+        Err(err) => {
+            error!("Failed to connect to {socket:?}: {err}");
+            bail!("Failed to connect to {socket:?}: {err}");
+        },
+    };
+
+    #[cfg(target_os = "macos")]
+    // When on macOS after the socket connection is made a brief delay is required
+    // Not sure why, so this is a workaround
+    tokio::time::sleep(Duration::from_millis(2)).await;
+
+    trace!("Connected to {socket:?}");
+
+    Ok(conn)
+}
+
 /// Connect to a system socket with a timeout
 pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream> {
     let socket = socket.as_ref();
@@ -227,9 +247,19 @@ where
     }
 }
 
-pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<Option<R>>
+pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M) -> Result<Option<R>>
 where
-    M: Message + FigProtobufEncodable,
+    M: FigProtobufEncodable,
+    R: Message + ReflectMessage + Default,
+    S: AsyncReadExt + AsyncWriteExt + Unpin,
+{
+    send_message(stream, message).await?;
+    Ok(recv_message(stream).await?)
+}
+
+pub async fn send_recv_message_timeout<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<Option<R>>
+where
+    M: FigProtobufEncodable,
     R: Message + ReflectMessage + Default,
     S: AsyncReadExt + AsyncWriteExt + Unpin,
 {
