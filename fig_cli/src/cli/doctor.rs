@@ -670,7 +670,7 @@ impl DoctorCheck for FigtermSocketCheck {
                     if let Some(style) = zsh_autosuggestion_style {
                         if let Some(fg) = style.fg {
                             if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
-                                if i == 8 {
+                                if i == 15 {
                                     return Err(doctor_warning!(
                                         "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE is set to the same style your text, Fig will not be able to detect what you have typed."
                                     ));
@@ -682,7 +682,7 @@ impl DoctorCheck for FigtermSocketCheck {
                     if let Some(style) = fish_suggestion_style {
                         if let Some(fg) = style.fg {
                             if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
-                                if i == 8 {
+                                if i == 15 {
                                     return Err(doctor_warning!(
                                         "The Fish suggestion color is set to the same style your text, Fig will not be able to detect what you have typed."
                                     ));
