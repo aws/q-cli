@@ -51,6 +51,10 @@ enum FigWebsocketMessage {
         payload: Option<serde_json::Value>,
         apps: Option<Vec<String>>,
     },
+    #[serde(rename_all = "camelCase")]
+    Update {
+        force: bool,
+    },
 }
 
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
@@ -119,6 +123,19 @@ pub async fn process_websocket(
                                     let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
                                     send_hook_to_socket(hook).await.ok();
                                 },
+                            },
+                            FigWebsocketMessage::Update { force } => {
+                                cfg_if! {
+                                    if #[cfg(target_os = "macos")] {
+                                        if let Err(err) = fig_ipc::command::update_command(force).await {
+                                            error!("Failed to update Fig: {err}");
+                                        }
+                                    } else {
+                                        let _force = force;
+                                        error!("Cannot trigger update on this platform");
+                                    }
+
+                                }
                             },
                         },
                         Err(e) => {
