@@ -13,7 +13,7 @@ fig_directories = { path = "../fig_directories" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-flume = "0.10.13"
+flume = "0.10.14"
 futures = "0.3.21"
 git2 = { version = "0.14.4", features = ["vendored-openssl", "vendored-libgit2"] }
 once_cell = { version = "1.13.0", features = ["parking_lot"] }

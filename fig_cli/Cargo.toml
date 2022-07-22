@@ -36,7 +36,7 @@ fig_request = { version = "0.1.0", path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_util = { path = "../rust-lib/fig_util" }
-flume = "0.10.13"
+flume = "0.10.14"
 futures = "0.3.21"
 globset = "0.4.9"
 humantime = "2.1.0"
