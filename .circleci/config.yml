@@ -1,26 +1,321 @@
-# Use the latest 2.1 version of CircleCI pipeline process engine.
-# See: https://circleci.com/docs/2.0/configuration-reference
+supports_mold: &supports_mold
+  or:
+    - equal: [ << parameters.platform >>, jammy ]
+    - equal: [ << parameters.platform >>, f36 ]
+
 version: 2.1
 
-# Define a job to be invoked later in a workflow.
-# See: https://circleci.com/docs/2.0/configuration-reference/#jobs
-jobs:
-  say-hello:
-    # Specify the execution environment. You can specify an image from Dockerhub or use one of our Convenience Images from CircleCI's Developer Hub.
-    # See: https://circleci.com/docs/2.0/configuration-reference/#docker-machine-macos-windows-executor
-    docker:
-      - image: cimg/base:stable
-    # Add steps to the job
-    # See: https://circleci.com/docs/2.0/configuration-reference/#steps
-    steps:
-      - checkout
-      - run:
-          name: "Say hello"
-          command: "echo Hello, World!"
+orbs:
+  rust: circleci/rust@1.6.0
 
-# Invoke jobs via workflows
-# See: https://circleci.com/docs/2.0/configuration-reference/#workflows
+parameters:
+  version:
+    type: string
+    default: ""
+  changelog:
+    type: string
+    default: ""
+  callback_url:
+    type: string
+    default: ""
+  id:
+    type: string
+    default: ""
+  checkout:
+    type: string
+    default: "develop"
+
+executors:
+  jammy:
+    docker:
+      - image: ubuntu:22.04
+  impish:
+    docker:
+      - image: ubuntu:21.10
+  focal:
+    docker:
+      - image: ubuntu:20.04
+  f36:
+    docker:
+      - image: fedora:36
+
 workflows:
-  say-hello-workflow:
+  version: 2
+  build:
+    when:
+      equal: [<< pipeline.trigger_source >>, api]
     jobs:
-      - say-hello
+      - update-version
+      - ubuntu:
+          requires: [update-version]
+          matrix:
+            parameters:
+              platform: [jammy, impish, focal]
+      - fedora:
+          requires: [update-version]
+          matrix:
+            parameters:
+              platform: [f36]
+  noop:
+    when:
+      not:
+        equal: [<< pipeline.trigger_source >>, api]
+    jobs:
+      - noop
+
+jobs:
+
+  # Builds packages for Ubuntu
+  ubuntu:
+    parameters:
+      platform:
+        type: string
+    executor: << parameters.platform >>
+    resource_class: large
+    steps:
+      - prepare-debian:
+          platform: << parameters.platform >>
+      - callback:
+          command: dependencies
+          args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus
+      - run:
+          name: Build
+          command: cd desktop && make archive && make deb
+      - store_artifacts:
+          path: desktop/build/fig-x86_64-linux.deb
+          destination: << parameters.platform >>/deb
+      - store_artifacts:
+          path: desktop/build/fig-x86_64-linux.tar.gz
+          destination: << parameters.platform >>/archive
+  
+  fedora:
+    parameters:
+      platform:
+        type: string
+    executor: << parameters.platform >>
+    resource_class: large
+    steps:
+      - prepare-fedora:
+          platform: << parameters.platform >>
+      - run:
+          name: Build
+          command: cd desktop && make archive && make rpm
+      - run:
+          name: Gather RPM metadata
+          command: |
+            rpm --query --requires desktop/build/fig-x86_64-linux.rpm > /tmp/requires.txt
+            rpm --query --provides desktop/build/fig-x86_64-linux.rpm > /tmp/provides.txt
+      - callback:
+          command: dependencies
+          args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
+      - callback:
+          command: rpm_requires
+          args: << parameters.platform >>;$(cat /tmp/requires.txt)
+      - callback:
+          command: rpm_provides
+          args: << parameters.platform >>;$(cat /tmp/provides.txt)
+      - store_artifacts:
+          path: desktop/build/fig-x86_64-linux.rpm
+          destination: << parameters.platform >>/rpm
+      - store_artifacts:
+          path: desktop/build/fig-x86_64-linux.tar.gz
+          destination: << parameters.platform >>/archive
+
+  # Creates tag on specified revision
+  update-version:
+    docker:
+      - image: ubuntu:22.04
+    resource_class: small
+    steps:
+      - configure-apt
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt install -y curl git jq python3-pip
+            python3 -m pip install semver
+      - checkout-desktop:
+          checkout: << pipeline.parameters.checkout >>
+      - run:
+          name: Resolve relative version
+          command: |
+            LAST_VERSION=`cat desktop/bundle/bundle_info.json | jq -r .FIG_VERSION`
+            PIPELINE_VERSION=<< pipeline.parameters.version >>
+            echo $PIPELINE_VERSION > version
+            if [[ $PIPELINE_VERSION == "major" ]] || [[ $PIPELINE_VERSION == "minor" ]] || [[ $PIPELINE_VERSION == "patch" ]]; then
+              echo "import sys, semver
+            ver = semver.VersionInfo.parse(sys.argv[1])
+            match sys.argv[2]:
+              case 'major':
+                ver = ver.bump_major()
+              case 'minor':
+                ver = ver.bump_minor()
+              case 'patch':
+                ver = ver.bump_patch()
+            print(str(ver))" > version_bump.py
+              python3 version_bump.py $LAST_VERSION $PIPELINE_VERSION > version
+            fi
+            curl -X POST << pipeline.parameters.callback_url >> -d "version;$(cat version)"
+      - run:
+          name: Update versions
+          command: |
+            NEW_VERSION=`cat version`
+            cd desktop
+            sed -i "0,/\"FIG_VERSION\": \"[^\"]*\"\$/s//\"FIG_VERSION\": \"$NEW_VERSION\"/" bundle/bundle_info.json
+            sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" fig_desktop/Cargo.toml
+      - run:
+          name: Push tagged release
+          command: |
+            NEW_VERSION=`cat version`
+            GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
+            cd desktop
+            git config user.name 'Fig Deploy'
+            git config user.email 'deploy@fig.io'
+            git add bundle/bundle_info.json fig_desktop/Cargo.toml
+            git checkout -B build-<< pipeline.parameters.id >>
+            printf "Version $NEW_VERSION [skip-ci]\n\n<< pipeline.parameters.changelog >>" > commit_message
+            git commit --allow-empty --file commit_message
+            git push  --set-upstream origin build-<< pipeline.parameters.id >>
+            git tag --annotate --force --message "<< pipeline.parameters.changelog >>" $NEW_VERSION
+            git push --tags --force
+            COMMIT_HASH=`git log -n 1 --pretty=format:"%H"`
+            curl -X POST << pipeline.parameters.callback_url >> -d "commit;$COMMIT_HASH"
+
+
+  # Does nothing. Prevents build errors. Ask Mia for more info.
+  noop:
+    docker:
+      - image: cimg/base:2022.06-22.04
+    resource_class: small
+    steps:
+      - run: echo noop
+
+commands:
+
+  callback:
+    parameters:
+      command:
+        type: string
+      args:
+        type: string
+        default: ""
+    steps:
+      - run: curl -X POST << pipeline.parameters.callback_url >> -d "<< parameters.command >>;<< parameters.args >>"
+  
+  prepare-post:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - checkout-desktop
+      - configure-rust:
+          platform: << parameters.platform >>
+
+  checkout-desktop:
+    parameters:
+      checkout:
+        type: string
+        default: build-<< pipeline.parameters.id >>
+    steps:
+      - add_ssh_keys:
+          fingerprints:
+            - "75:6e:33:0a:e8:7b:05:0e:75:56:73:4a:ad:3d:df:dd"
+      - checkout:
+          path: desktop
+      - run:
+          name: Checkout desktop
+          command: |
+            cd desktop && git reset --hard HEAD && git checkout << parameters.checkout >>
+
+  configure-rust:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - rust/install:
+          version: 1.62.0
+      - when:
+          condition: *supports_mold
+          steps:
+            - run:
+                name: Configure rust
+                command: printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-C", "link-arg=-fuse-ld=mold"]' > ~/.cargo/config.toml
+      - when:
+          condition:
+            not: *supports_mold
+          steps:
+            - run:
+                name: Configure rust
+                command: printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-C", "link-arg=-fuse-ld=lld"]' > ~/.cargo/config.toml
+
+  configure-apt:
+    steps:
+      - run:
+          name: Configure APT
+          command: |
+            cat \<<EOF >/tmp/preseed.txt
+            tzdata tzdata/Areas select America
+            tzdata tzdata/Zones/America select Los_Angeles
+            EOF
+            debconf-set-selections /tmp/preseed.txt
+            echo "export DEBIAN_FRONTEND=noninteractive" >> $BASH_ENV
+            echo "export DEBCONF_NONINTERACTIVE_SEEN=true" >> $BASH_ENV
+            sed -i 's#archive.ubuntu.com/ubuntu#mirror.pit.teraswitch.com/ubuntu#g' /etc/apt/sources.list
+            sed -i 's#security.ubuntu.com/ubuntu#mirror.pit.teraswitch.com/ubuntu#g' /etc/apt/sources.list
+
+  prepare-debian:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - configure-apt
+      - run:
+          name: Update
+          command: |
+            apt update
+            apt upgrade -y
+      - run:
+          name: Install dependencies
+          command: |
+            apt install -y \
+              clang cmake curl git jq libayatana-appindicator3-dev libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.0-dev valac
+      - when:
+          condition: *supports_mold
+          steps:
+            - run:
+                name: Install mold
+                command: apt install -y mold
+      - when:
+          condition:
+            not: *supports_mold
+          steps:
+            - run:
+                name: Install lld
+                command: apt install -y lld
+      - prepare-post:
+          platform: << parameters.platform >>
+  
+  prepare-fedora:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - run:
+          name: Configure DNF
+          command: |
+            printf \nfastestmirror=1 >>/etc/dnf/dnf.conf
+            dnf clean all
+      - run:
+          name: Update
+          command: dnf upgrade -y
+      - run:
+          name: Install dependencies
+          command: |
+            dnf install -y clang cmake curl gcc git gtk3-devel g++ ibus-devel jq libappindicator-gtk3-devel make mold \
+                           openssl-devel perl-FindBin rpmdevtools vala webkit2gtk3-devel
+      - run:
+          # this *should not* be necessary, but it doesn't appear to work without this
+          name: Configure git
+          command: git config --global --add safe.directory /tmp/_circleci_local_build_repo
+      - prepare-post:
+          platform: << parameters.platform >>
