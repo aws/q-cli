@@ -473,7 +473,7 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
     env::remove_var("FIG_EXECUTION_STRING");
 
-    execvp(&*args[0], &args).expect("Failed to execvp");
+    execvp(&args[0], &args).expect("Failed to execvp");
     unreachable!()
 }
 

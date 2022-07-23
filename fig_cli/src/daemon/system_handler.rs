@@ -66,7 +66,7 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
 
                                 let time_started_epoch = (parts.is_empty()
                                     || parts.contains(&DiagnosticPart::TimeStartedEpoch))
-                                .then(|| daemon_status.time_started);
+                                .then_some(daemon_status.time_started);
 
                                 let settings_watcher_status = (parts.is_empty()
                                     || parts.contains(&DiagnosticPart::SettingsWatcherStatus))

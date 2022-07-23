@@ -11,9 +11,9 @@ use newton::{
 use rand::Rng;
 
 struct SnowFlake {
-    pub x: u16,
-    pub y: f32,
-    pub speed: f32,
+    pub x: i32,
+    pub y: f64,
+    pub speed: f64,
 }
 
 struct State {
@@ -27,7 +27,7 @@ impl Default for State {
         for _ in 0..300 {
             snowflakes.push(SnowFlake {
                 x: rand::random(),
-                y: rand::thread_rng().gen_range(0.0..f32::from(u16::MAX)),
+                y: rand::thread_rng().gen_range(0.0..f64::from(u16::MAX)),
                 speed: rand::thread_rng().gen_range(1.0..8.0),
             })
         }
@@ -40,37 +40,33 @@ impl Default for State {
 }
 
 fn main() {
-    let mut event_loop = EventLoop::new();
+    let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen).unwrap();
     let mut state = State::default();
 
     event_loop
-        .run::<_, std::io::Error>(
-            ControlFlow::Poll,
-            DisplayMode::AlternateScreen,
-            move |event, display_state, control_flow| {
-                match event {
-                    Event::KeyPressed { code: KeyCode::Esc, .. } => *control_flow = ControlFlow::Exit,
-                    _ => (),
-                }
+        .run::<_, std::io::Error>(ControlFlow::Poll, move |event, display_state, control_flow| {
+            match event {
+                Event::KeyPressed { code: KeyCode::Esc, .. } => *control_flow = ControlFlow::Exit(0),
+                _ => (),
+            }
 
-                display_state.clear();
-                let delta = state.instant.elapsed().as_secs_f32();
-                state.instant = Instant::now();
+            display_state.clear();
+            let delta = state.instant.elapsed().as_secs_f64();
+            state.instant = Instant::now();
 
-                for star in &mut state.snowflakes {
-                    star.y += star.speed * delta;
-                    star.y %= f32::from(display_state.height());
-                    display_state.draw_symbol(
-                        '*',
-                        star.x % display_state.width(),
-                        star.y as u16,
-                        Color::Reset,
-                        Color::Reset,
-                    );
-                }
+            for star in &mut state.snowflakes {
+                star.y += star.speed * delta;
+                star.y %= f64::from(display_state.height());
+                display_state.draw_symbol(
+                    '*',
+                    star.x % display_state.width(),
+                    star.y as i32,
+                    Color::Reset,
+                    Color::Reset,
+                );
+            }
 
-                Ok(())
-            },
-        )
+            Ok(())
+        })
         .unwrap();
 }

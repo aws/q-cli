@@ -120,7 +120,7 @@ impl FigtermState {
         match self.sessions.get_mut(&key) {
             Some(mut session) => {
                 self.set_most_recent_session(key);
-                f(&mut *session);
+                f(&mut session);
                 true
             },
             None => false,

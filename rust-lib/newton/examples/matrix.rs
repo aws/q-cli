@@ -19,7 +19,7 @@ use rand::{
 };
 
 fn main() {
-    let mut event_loop = EventLoop::new();
+    let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen).unwrap();
     let noise = Perlin::new();
     let start = Instant::now();
     let mut chars = vec![];
@@ -33,38 +33,34 @@ fn main() {
     }
 
     event_loop
-        .run::<_, std::io::Error>(
-            ControlFlow::Poll,
-            DisplayMode::AlternateScreen,
-            move |event, display_state, control_flow| {
-                match event {
-                    Event::KeyPressed { code: KeyCode::Esc, .. } => *control_flow = ControlFlow::Exit,
-                    _ => (),
+        .run::<_, std::io::Error>(ControlFlow::Poll, move |event, display_state, control_flow| {
+            match event {
+                Event::KeyPressed { code: KeyCode::Esc, .. } => *control_flow = ControlFlow::Exit(0),
+                _ => (),
+            }
+
+            display_state.clear();
+
+            for x in 0..display_state.width() {
+                for y in 0..display_state.height() {
+                    display_state.draw_symbol(
+                        match noise.get([
+                            f64::from(x) / 16.0,
+                            f64::from(y) / 32.0 - start.elapsed().as_secs_f64() + f64::from(x) * 32.0,
+                        ]) < 0.15
+                        {
+                            true => chars[usize::try_from(y).unwrap() % 256][usize::try_from(x).unwrap() % 256],
+                            false => ' ',
+                        },
+                        x,
+                        y,
+                        Color::Green,
+                        Color::Reset,
+                    );
                 }
+            }
 
-                display_state.clear();
-
-                for x in 0..display_state.width() {
-                    for y in 0..display_state.height() {
-                        display_state.draw_symbol(
-                            match noise.get([
-                                f64::from(x) / 16.0,
-                                f64::from(y) / 32.0 - start.elapsed().as_secs_f64() + f64::from(x) * 32.0,
-                            ]) < 0.15
-                            {
-                                true => chars[usize::from(y) % 256][usize::from(x) % 256],
-                                false => ' ',
-                            },
-                            x,
-                            y,
-                            Color::Green,
-                            Color::Reset,
-                        );
-                    }
-                }
-
-                Ok(())
-            },
-        )
+            Ok(())
+        })
         .unwrap();
 }

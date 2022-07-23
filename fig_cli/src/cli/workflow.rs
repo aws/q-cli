@@ -1,7 +1,14 @@
 use std::borrow::Cow;
+use std::cell::RefCell;
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::hash::{
+    Hash,
+    Hasher,
+};
 use std::iter::empty;
 use std::process::Command;
+use std::rc::Rc;
 
 use anyhow::{
     anyhow,
@@ -36,21 +43,20 @@ use spinners::{
 };
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
-use tui::components::{
-    CheckBox,
-    Frame,
-    Label,
-    Select,
-    TextField,
-};
-use tui::layouts::Form;
 use tui::{
     BorderStyle,
+    CheckBox,
     Color,
     Component,
+    Container,
     ControlFlow,
     DisplayMode,
     EventLoop,
+    InputMethod,
+    Label,
+    Paragraph,
+    Select,
+    TextField,
 };
 
 #[cfg(unix)]
@@ -109,6 +115,7 @@ struct Parameter {
     name: String,
     display_name: Option<String>,
     description: Option<String>,
+    depends_on: Vec<String>,
     #[serde(flatten)]
     parameter_type: ParameterType,
 }
@@ -246,71 +253,12 @@ impl SkimItem for WorkflowAction {
     }
 }
 
-// Chay makes very large structs, Grant can't handle large structs
-#[allow(clippy::large_enum_variant)]
-enum WorkflowComponent {
-    CheckBox {
-        name: String,
-        display_name: String,
-        inner: CheckBox,
-        value_if_true: String,
-        value_if_false: String,
-    },
-    TextField {
-        name: String,
-        display_name: String,
-        inner: TextField,
-    },
-    Picker {
-        name: String,
-        display_name: String,
-        inner: Select,
-    },
-}
-
-pub async fn execute(args: Vec<String>) -> Result<()> {
+pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Parse args
-    let name = args.first().map(String::from);
-
-    let mut arg_pairs: HashMap<String, Value> = HashMap::new();
-    let mut args = args.into_iter().skip(1);
-    let mut arg = None;
-    loop {
-        arg = match arg {
-            Some(arg) => match args.next() {
-                Some(value) => match value.strip_prefix("--") {
-                    Some(value) => {
-                        arg_pairs.insert(arg, Value::Bool(true));
-                        Some(value.to_string())
-                    },
-                    None => {
-                        arg_pairs.insert(arg, Value::String(value));
-                        None
-                    },
-                },
-                None => {
-                    arg_pairs.insert(arg, Value::Bool(true));
-                    break;
-                },
-            },
-            None => match args.next() {
-                Some(new_arg) => match new_arg.strip_prefix("--") {
-                    Some(new_arg) => Some(new_arg.to_string()),
-                    None => bail!("Unexpected argument: {new_arg}"),
-                },
-                None => break,
-            },
-        }
-    }
-    let args = arg_pairs;
-
-    let execution_method = match name.is_some() {
-        true => "invoke",
-        false => "search",
-    };
+    let workflow_name = env_args.first().map(String::from);
 
     // Get workflow
-    let workflow = match &name {
+    let (workflow, execution_method) = match &workflow_name {
         Some(name) => {
             let (namespace, name) = match name.strip_prefix('@') {
                 Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
@@ -328,7 +276,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 .deser_json()
                 .await?
             {
-                Some(workflow) => workflow,
+                Some(workflow) => (workflow, "invoke"),
                 None => {
                     match namespace {
                         Some(namespace) => bail!("Workflow does not exist: @{namespace}/{name}"),
@@ -338,15 +286,13 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
             }
         },
         None => {
-            let track_search = tokio::task::spawn(async move {
-                fig_telemetry::emit_track(
-                    TrackEvent::WorkflowSearchViewed,
-                    TrackSource::Cli,
-                    empty::<(&str, &str)>(),
-                )
-                .await
-                .ok();
-            });
+            fig_telemetry::dispatch_emit_track(
+                TrackEvent::WorkflowSearchViewed,
+                TrackSource::Cli,
+                empty::<(&str, &str)>(),
+            )
+            .await
+            .ok();
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
@@ -443,10 +389,56 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
                 }
             };
 
-            track_search.await?;
-            workflow
+            (workflow, "search")
         },
     };
+
+    let mut env_args = env_args.into_iter().skip(1);
+    let args: Rc<RefCell<HashMap<String, String>>> = Rc::new(RefCell::new(HashMap::new()));
+    let mut arg = None;
+    loop {
+        arg = match arg {
+            Some(arg) => match env_args.next() {
+                Some(value) => match value.strip_prefix("--") {
+                    Some(value) => {
+                        if let Some(parameter) = workflow.parameters.iter().find(|p| p.name == arg) {
+                            match &parameter.parameter_type {
+                                ParameterType::Checkbox {
+                                    true_value_substitution,
+                                    ..
+                                } => args.borrow_mut().insert(arg, true_value_substitution.clone()),
+                                _ => args.borrow_mut().insert(arg, "true".to_string()),
+                            };
+                        }
+                        Some(value.to_string())
+                    },
+                    None => {
+                        args.borrow_mut().insert(arg, value);
+                        None
+                    },
+                },
+                None => {
+                    if let Some(parameter) = workflow.parameters.iter().find(|p| p.name == arg) {
+                        match &parameter.parameter_type {
+                            ParameterType::Checkbox {
+                                true_value_substitution,
+                                ..
+                            } => args.borrow_mut().insert(arg, true_value_substitution.clone()),
+                            _ => args.borrow_mut().insert(arg, "true".to_string()),
+                        };
+                    }
+                    break;
+                },
+            },
+            None => match env_args.next() {
+                Some(new_arg) => match new_arg.strip_prefix("--") {
+                    Some(new_arg) => Some(new_arg.to_string()),
+                    None => bail!("Unexpected argument: {new_arg}"),
+                },
+                None => break,
+            },
+        }
+    }
 
     execute!(std::io::stdout(), cursor::Hide)?;
     let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow...".to_owned());
@@ -460,314 +452,290 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         ));
     }
 
-    let track_execution = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(TrackEvent::WorkflowExecuted, TrackSource::Cli, [
-            ("workflow", workflow_name.as_ref()),
-            ("execution_method", execution_method),
-        ])
-        .await
-        .ok();
-    });
-
-    let mut components: Vec<WorkflowComponent> = vec![];
-    let parameter_count = workflow.parameters.len();
-    for parameter in workflow.parameters {
-        let display_name = parameter.display_name.unwrap_or_else(|| parameter.name.clone());
-        let name = parameter.name;
-
-        components.push(match parameter.parameter_type {
-            ParameterType::Checkbox {
-                true_value_substitution,
-                false_value_substitution,
-            } => WorkflowComponent::CheckBox {
-                inner: CheckBox::new(args.get(&name).and_then(|val| val.as_bool()).unwrap_or(false))
-                    .with_text(parameter.description.unwrap_or_else(|| "Toggle".to_string())),
-                name,
-                display_name,
-                value_if_true: true_value_substitution,
-                value_if_false: false_value_substitution,
-            },
-            ParameterType::Text { placeholder } => WorkflowComponent::TextField {
-                inner: match placeholder {
-                    Some(hint) => TextField::new().with_hint(hint),
-                    None => TextField::new(),
-                }
-                .with_text(args.get(&name).and_then(|name| name.as_str()).unwrap_or("")),
-                name,
-                display_name,
-            },
-            ParameterType::Selector {
-                placeholder,
-                suggestions,
-                generators,
-            } => {
-                let mut options = vec![];
-                if let Some(suggestions) = suggestions {
-                    for suggestion in suggestions {
-                        options.push(suggestion.clone());
-                    }
-                }
-                if let Some(generators) = generators {
-                    for generator in generators {
-                        match generator {
-                            Generator::Named { .. } => {
-                                return Err(anyhow!("Named generators aren't supported in workflows yet"));
-                            },
-                            Generator::Script { script } => {
-                                if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
-                                    for option in String::from_utf8_lossy(&output.stdout).split('\n') {
-                                        if !option.is_empty() {
-                                            options.push(option.to_owned());
-                                        }
-                                    }
-                                }
-                            },
-                        }
-                    }
-                }
-
-                let mut select = match placeholder {
-                    Some(placeholder) => Select::new(options, true).with_hint(&placeholder),
-                    None => Select::new(options, true).with_hint("Search..."),
-                };
-
-                if let Some(arg) = args.get(&name).and_then(|name| name.as_str()) {
-                    select.text = arg.to_owned();
-                }
-
-                WorkflowComponent::Picker {
-                    name: name.clone(),
-                    display_name,
-                    inner: select,
-                }
-            },
-        });
-    }
-
-    let mut frames: Vec<Frame> = components
-        .iter_mut()
-        .map(|component| match component {
-            WorkflowComponent::CheckBox {
-                display_name, inner, ..
-            } => Frame::new(inner as &mut dyn Component).with_title(display_name.to_owned()),
-            WorkflowComponent::TextField {
-                display_name, inner, ..
-            } => Frame::new(inner as &mut dyn Component).with_title(display_name.to_owned()),
-            WorkflowComponent::Picker {
-                display_name, inner, ..
-            } => Frame::new(inner as &mut dyn Component).with_title(display_name.to_owned()),
-        })
-        .collect();
-
-    let thin_border = BorderStyle::Ascii {
-        top_left: '┌',
-        top: '─',
-        top_right: '┐',
-        left: '│',
-        right: '│',
-        bottom_left: '└',
-        bottom: '─',
-        bottom_right: '┘',
-    };
-
-    let thick_border = BorderStyle::Ascii {
-        top_left: '┏',
-        top: '━',
-        top_right: '┓',
-        left: '┃',
-        right: '┃',
-        bottom_left: '┗',
-        bottom: '━',
-        bottom_right: '┛',
-    };
-
-    let focus_style = tui::style! {
-        border_left_color: Color::White;
-        border_right_color: Color::White;
-        border_top_color: Color::White;
-        border_bottom_color: Color::White;
-        border_style: thick_border;
-    };
-
-    let unfocused_style = tui::style! {
-        border_left_width: 1;
-        border_top_width: 1;
-        border_bottom_width: 1;
-        border_right_width: 1;
-        border_left_color: Color::DarkGrey;
-        border_right_color: Color::DarkGrey;
-        border_top_color: Color::DarkGrey;
-        border_bottom_color: Color::DarkGrey;
-        border_style: thin_border;
-    };
-
     let style_sheet = tui::style_sheet! {
         "*" => {
-            border_left_color: Color::Grey;
-            border_right_color: Color::Grey;
-            border_top_color: Color::Grey;
-            border_bottom_color: Color::Grey;
+            border_left_color: Color::DarkGrey;
+            border_right_color: Color::DarkGrey;
+            border_top_color: Color::DarkGrey;
+            border_bottom_color: Color::DarkGrey;
+            border_style: BorderStyle::Ascii {
+                top_left: '┌',
+                top: '─',
+                top_right: '┐',
+                left: '│',
+                right: '│',
+                bottom_left: '└',
+                bottom: '─',
+                bottom_right: '┘',
+            };
         },
-        "*:focus" => focus_style,
-        "frame" => unfocused_style,
-        "frame.title" => {
-            color: Color::DarkGrey;
+        "*:focus" => {
+            color: Color::White;
+            border_left_color: Color::White;
+            border_right_color: Color::White;
+            border_top_color: Color::White;
+            border_bottom_color: Color::White;
+            border_style: BorderStyle::Ascii {
+                top_left: '┏',
+                top: '━',
+                top_right: '┓',
+                left: '┃',
+                right: '┃',
+                bottom_left: '┗',
+                bottom: '━',
+                bottom_right: '┛',
+            };
+        },
+        "input:checkbox" => {
             padding_left: 1;
             padding_right: 1;
-            margin_left: 1;
         },
-        "frame.title:focus" => {
-            color: Color::White;
+        "div" => {
+            color: Color::DarkGrey;
+            width: 110;
+            padding_top: -1;
+            border_left_width: 1;
+            border_top_width: 1;
+            border_bottom_width: 1;
+            border_right_width: 1;
+        },
+        "h1" => {
+            margin_left: 1;
             padding_left: 1;
             padding_right: 1;
-            margin_left: 1;
         },
-        "frame:focus" => focus_style,
-        "textfield" => {
-            padding_left: 2;
-            color: Color::Grey;
+        "p" => {
+            padding_left: 1;
+            padding_right: 1;
         },
-        "textfield:focus" =>  {
-            ..focus_style;
-            color: Color::White;
+        "select" => {
+            padding_left: 1;
+            padding_right: 1;
         },
-        "disclosure.summary:focus" => {
-            color: Color::White;
-        },
-        "disclosure.summary" => {
-            color: Color::Grey;
-        },
-        "picker.item" => {
-            padding_left: 0;
-            color: Color::DarkGrey;
-        },
-        "picker.item:focus" => {
-            padding_left: 0;
-            color: Color::White;
-        },
-        "picker.selected" => {
-            margin_left: 0;
-            background_color:Color::DarkGrey;
-            color:Color::Grey;
-        },
-        "picker.selected:focus" => {
-            margin_left: 0;
-            background_color: Color::White;
-            color: Color::DarkGrey;
-        },
-        "checkbox" => {
-            margin_left: 1;
+        "input:text" => {
+            padding_left: 1;
+            padding_right: 1;
         }
     };
-
-    let mut model: Vec<&mut dyn Component> = vec![];
-    let mut name = Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name));
-    let mut description = workflow
-        .description
-        .as_ref()
-        .map(|description| Label::new(description).with_margin_bottom(1));
-    match description {
-        Some(ref mut description) => {
-            model.push(&mut name as &mut dyn Component);
-            model.push(description as &mut dyn Component);
-        },
-        None => model.push(&mut name as &mut dyn Component),
-    };
-    for frame in &mut frames {
-        model.push(frame as &mut dyn Component);
-    }
 
     spinner.stop_with_message(String::new());
     execute!(std::io::stdout(), cursor::Show)?;
 
-    if parameter_count > 0
-        && EventLoop::new()
-            .with_style_sheet(&style_sheet)
-            .run::<std::io::Error, _>(
-                ControlFlow::Wait,
-                DisplayMode::AlternateScreen,
-                &mut Form::new(model).with_margin_top(1).with_margin_left(2),
-            )?
-            > 0
-    {
-        // TODO: Add telemetry
-        return Ok(());
-    }
+    if !workflow.parameters.is_empty() {
+        let mut preview = false;
+        let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen)?;
 
-    let mut args: HashMap<&str, (Value, String)> = HashMap::new();
-    for component in &components {
-        match component {
-            WorkflowComponent::CheckBox {
-                name,
-                inner,
-                value_if_true,
-                value_if_false,
-                ..
-            } => {
-                args.insert(name, match inner.checked {
-                    true => (true.into(), value_if_true.clone()),
-                    false => (false.into(), value_if_false.clone()),
-                });
-            },
-            WorkflowComponent::TextField { name, inner, .. } => {
-                if !inner.text.is_empty() {
-                    args.insert(name, (inner.text.clone().into(), inner.text.clone()));
+        loop {
+            let mut components = vec![
+                Component::from(Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name)))
+                    .with_margin_left(0)
+                    .with_padding_left(0),
+            ];
+            if let Some(description) = &workflow.description {
+                if !description.is_empty() {
+                    components.push(
+                        Component::from(Label::new(description))
+                            .with_margin_bottom(1)
+                            .with_margin_left(0)
+                            .with_padding_left(0),
+                    );
                 }
-            },
-            WorkflowComponent::Picker { name, inner, .. } => {
-                if !inner.text.is_empty() {
-                    args.insert(name, (inner.text.clone().into(), inner.text.clone()));
-                }
-            },
-        };
-    }
+            }
+            let input_method;
+            match preview {
+                true => {
+                    input_method = InputMethod::None;
 
-    if args.len() != parameter_count {
-        return Err(anyhow!("Missing execution args"));
+                    let colors = [Color::Magenta, Color::Blue, Color::Cyan];
+                    let mut paragraph = Paragraph::new();
+                    for element in &workflow.tree {
+                        match element {
+                            TreeElement::String(s) => paragraph.push_text(s),
+                            TreeElement::Token { name } => {
+                                let mut hasher = DefaultHasher::new();
+                                name.hash(&mut hasher);
+                                let hash = hasher.finish() as usize;
+
+                                paragraph.push_styled_text(
+                                    match args.borrow().get(name.as_str()) {
+                                        Some(value) => value.to_string(),
+                                        None => format!("{{{{{name}}}}}"),
+                                    },
+                                    Some(colors[hash % colors.len()]),
+                                    None,
+                                );
+                            },
+                        }
+                    }
+
+                    components.push(Component::from(Container::new(vec![
+                        Component::from(Label::new("Preview")),
+                        Component::from(paragraph),
+                    ])));
+                },
+                false => {
+                    input_method = InputMethod::Form;
+
+                    for parameter in &workflow.parameters {
+                        let args = args.clone();
+                        let parameter_name = parameter.name.clone();
+                        let parameter_value = args.borrow().get(&parameter_name).unwrap_or(&String::default()).clone();
+
+                        components.push(Component::from(Container::new(vec![
+                            Component::from(Label::new(
+                                parameter.display_name.clone().unwrap_or_else(|| parameter.name.clone()),
+                            )),
+                            match &parameter.parameter_type {
+                                ParameterType::Checkbox {
+                                    true_value_substitution,
+                                    false_value_substitution,
+                                } => {
+                                    let true_value = true_value_substitution.clone();
+                                    let false_value = false_value_substitution.clone();
+                                    let checked = args
+                                        .borrow_mut()
+                                        .get(&parameter_name)
+                                        .map(|c| c == &true_value)
+                                        .unwrap_or(false);
+                                    Component::from(CheckBox::new(
+                                        parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
+                                        checked,
+                                        move |signal| {
+                                            args.borrow_mut().insert(parameter_name.clone(), match signal {
+                                                true => true_value.clone(),
+                                                false => false_value.clone(),
+                                            });
+                                        },
+                                    ))
+                                },
+                                ParameterType::Text { placeholder } => Component::from(
+                                    TextField::new(move |signal| {
+                                        args.borrow_mut().insert(parameter_name.clone(), signal);
+                                    })
+                                    .with_text(parameter_value)
+                                    .with_hint(placeholder.to_owned().unwrap_or_else(|| "".to_string())),
+                                ),
+                                ParameterType::Selector {
+                                    placeholder,
+                                    suggestions,
+                                    generators,
+                                } => {
+                                    let mut options = suggestions.to_owned().unwrap_or_default();
+                                    if let Some(generators) = generators {
+                                        for generator in generators {
+                                            match generator {
+                                                Generator::Named { .. } => {
+                                                    return Err(anyhow!(
+                                                        "Named generators aren't supported in workflows yet"
+                                                    ));
+                                                },
+                                                Generator::Script { script } => {
+                                                    if let Ok(output) =
+                                                        Command::new("bash").arg("-c").arg(script).output()
+                                                    {
+                                                        for suggestion in
+                                                            String::from_utf8_lossy(&output.stdout).split('\n')
+                                                        {
+                                                            if !suggestion.is_empty() {
+                                                                options.push(suggestion.to_owned());
+                                                            }
+                                                        }
+                                                    }
+                                                },
+                                            }
+                                        }
+                                    }
+
+                                    Component::from(
+                                        Select::new(options, true, move |signal| {
+                                            args.borrow_mut().insert(parameter_name.clone(), signal);
+                                        })
+                                        .with_text(parameter_value)
+                                        .with_hint(placeholder.as_deref().unwrap_or("Search...")),
+                                    )
+                                },
+                            },
+                        ])));
+                    }
+                },
+            };
+            components.push(
+                Component::from(Label::new("Toggle preview: CTRL+O"))
+                    .with_color(Color::DarkGrey)
+                    .with_background_color(Color::White)
+                    .with_margin_left(0)
+                    .with_width(110),
+            );
+
+            let mut view = Component::from(Container::new(components))
+                .with_border_style(BorderStyle::None)
+                .with_padding_top(0);
+
+            match event_loop.run(&mut view, &input_method, Some(&style_sheet), ControlFlow::Wait)? {
+                ControlFlow::Exit(0) => break,
+                ControlFlow::Exit(_) => {
+                    fig_telemetry::dispatch_emit_track(TrackEvent::WorkflowCancelled, TrackSource::Cli, [
+                        ("workflow", workflow_name.as_ref()),
+                        ("execution_method", execution_method),
+                    ])
+                    .await
+                    .ok();
+                    return Ok(());
+                },
+                ControlFlow::Reenter(_) => preview = !preview,
+                _ => (),
+            }
+        }
     }
 
     let mut command = format!("fig run {}", match workflow.is_owned_by_user.unwrap_or(false) {
         true => workflow.name.clone(),
         false => format!("@{}/{}", &workflow.namespace, &workflow.name),
     });
-    for (arg, (val, _)) in &args {
+    for (arg, val) in &*args.borrow() {
         use std::fmt::Write;
 
         match val {
-            Value::Bool(b) => {
-                if *b {
-                    write!(command, " --{arg}").ok();
-                }
-            },
-            Value::String(s) => {
-                write!(command, " --{arg} {}", escape(s.into())).ok();
-            },
-            other => {
-                write!(command, " --{arg} {}", escape(other.to_string().into())).ok();
-            },
-        }
+            val if val == "true" => write!(command, " --{arg}").ok(),
+            val => write!(command, " --{arg} {}", escape(val.into())).ok(),
+        };
     }
 
-    if parameter_count > 0 {
+    if !workflow.parameters.is_empty() {
         println!("{} {command}", "Executing:".bold().magenta());
     }
 
     cfg_if! {
         if #[cfg(feature = "deno")] {
             let map = args.into_iter().map(|(key, (v, _))| (key, v)).collect();
-            let execute = execute_js_workflow(&workflow.template, &map);
+            execute_js_workflow(&workflow.template, &map)?;
         } else {
-            let map = args.into_iter().map(|(key, (_, s))| (key, s)).collect();
-            let execute = execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map);
+            let mut map = HashMap::new();
+            for parameter in &workflow.parameters {
+                let args = args.borrow();
+                let value = args.get(&parameter.name);
+                map.insert(parameter.name.as_str(), match value {
+                    Some(value) => match &parameter.parameter_type {
+                        ParameterType::Checkbox { true_value_substitution, false_value_substitution } => match value {
+                            value if value == "true" => true_value_substitution.to_owned(),
+                            _ => false_value_substitution.to_owned(),
+                        },
+                        _ => value.to_owned(),
+                    },
+                    None => return Err(anyhow!("Missing execution args")),
+                });
+            }
+
+            execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map).await?;
         }
     }
 
-    // TODO:
-    tokio::join! {
-        execute,
-        track_execution,
-    }
-    .0?;
+    fig_telemetry::dispatch_emit_track(TrackEvent::WorkflowExecuted, TrackSource::Cli, [
+        ("workflow", workflow_name.as_ref()),
+        ("execution_method", execution_method),
+    ])
+    .await
+    .ok();
 
     Ok(())
 }
@@ -790,10 +758,7 @@ async fn execute_bash_workflow(
     }));
 
     let output = command.status()?;
-    // std::io::stdout().write_all(&output.stdout)?;
-    // std::io::stdout().write_all(&output.stderr)?;
 
-    // let command_stderr = String::from_utf8_lossy(&output.stderr);
     let exit_code = output.code();
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
         if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {

@@ -6,6 +6,21 @@ use std::{
 
 use cfg_if::cfg_if;
 
+cfg_if!(
+    if #[cfg(target_os = "linux")] {
+        mod linux;
+        pub use linux::*;
+    } else if #[cfg(target_os = "macos")] {
+        mod macos;
+        pub use macos::*;
+    } else if #[cfg(target_os = "windows")] {
+        mod windows;
+        pub use self::windows::*;
+    } else {
+        compile_error!("Unsupported platform");
+    }
+);
+
 macro_rules! pid_decl {
     ($typ:ty) => {
         #[derive(Clone, Copy, Debug, Hash, PartialEq, Eq, PartialOrd, Ord)]
@@ -55,7 +70,7 @@ cfg_if! {
             }
         }
     } else if #[cfg(target_os = "windows")] {
-        pid_decl!(usize);
+        pid_decl!(u32);
     } else {
         compile_error!("Unsupported platform");
     }
@@ -66,21 +81,6 @@ pub trait PidExt {
     fn parent(&self) -> Option<Pid>;
     fn exe(&self) -> Option<PathBuf>;
 }
-
-cfg_if!(
-    if #[cfg(target_os = "linux")] {
-        mod linux;
-        pub use linux::*;
-    } else if #[cfg(target_os = "macos")] {
-        mod macos;
-        pub use macos::*;
-    } else if #[cfg(target_os = "windows")] {
-        mod windows;
-        pub use windows::*;
-    } else {
-        compile_error!("Unsupported platform");
-    }
-);
 
 pub fn get_parent_process_exe() -> Option<PathBuf> {
     Pid::current().parent()?.exe()
