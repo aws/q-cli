@@ -38,10 +38,13 @@ use anyhow::{
 };
 use clap::StructOpt;
 use cli::Cli;
+use fig_proto::figterm::intercept_command::SetFigjsIntercepts;
 use fig_proto::figterm::{
+    self,
     figterm_message,
     intercept_command,
     FigtermMessage,
+    FigtermResponse,
 };
 use fig_proto::hooks::{
     hook_to_message,
@@ -179,8 +182,8 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
 
 impl EventListener for EventSender {
     fn send_event(&self, event: Event, shell_state: &ShellState) {
-        debug!("{:?}", event);
-        debug!("{:?}", shell_state);
+        debug!("{event:?}");
+        debug!("{shell_state:?}");
         match event {
             Event::Prompt => {
                 let context = shell_state_to_context(shell_state);
@@ -301,6 +304,7 @@ where
 
 async fn process_figterm_message(
     figterm_message: FigtermMessage,
+    response_tx: Sender<FigtermResponse>,
     term: &Term<EventSender>,
     pty_master: &mut AsyncPtyMaster,
     key_interceptor: &mut KeyInterceptor,
@@ -345,33 +349,74 @@ async fn process_figterm_message(
             insertion_string.push_str(&command.to_term_string());
             pty_master.write(insertion_string.as_bytes()).await?;
         },
-        Some(figterm_message::Command::InterceptCommand(command)) => {
-            match command.intercept_command {
-                Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
-                    debug!("Set intercept all");
-                    key_interceptor.set_intercept_all(true);
-                },
-                Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
-                    debug!("Clear intercept");
-                    key_interceptor.set_intercept_all(false);
-                },
-                Some(intercept_command::InterceptCommand::SetIntercept(_set_intercept)) => {
-                    debug!("Set intercept");
-                    // TODO: Rework this
-                },
-                Some(intercept_command::InterceptCommand::AddIntercept(set_intercept)) => {
-                    debug!("{:?}", set_intercept.chars);
-                    // TODO: Rework this
-                },
-                Some(intercept_command::InterceptCommand::RemoveIntercept(set_intercept)) => {
-                    debug!("{:?}", set_intercept.chars);
-                    // TODO: Rework this
-                },
-                _ => {},
-            }
+        Some(figterm_message::Command::InterceptCommand(command)) => match command.intercept_command {
+            Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
+                debug!("Set intercept all");
+                key_interceptor.set_intercept_all(true);
+            },
+            Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
+                debug!("Clear intercept");
+                key_interceptor.set_intercept_all(false);
+            },
+            Some(intercept_command::InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
+                intercept_bound_keystrokes,
+                intercept_global_keystrokes,
+                actions,
+            })) => {
+                key_interceptor.set_intercept_all(intercept_global_keystrokes);
+                key_interceptor.set_intercept_bind(intercept_bound_keystrokes);
+                key_interceptor.set_actions(&actions);
+            },
+            None => {},
         },
-        Some(figterm_message::Command::SetBufferCommand(_command)) => {
-            todo!();
+        Some(figterm_message::Command::DiagnosticsCommand(_command)) => {
+            let map_color = |color: &fig_color::VTermColor| -> figterm::TermColor {
+                figterm::TermColor {
+                    color: Some(match color {
+                        fig_color::VTermColor::Rgb(r, g, b) => {
+                            figterm::term_color::Color::Rgb(figterm::term_color::Rgb {
+                                r: *r as i32,
+                                b: *b as i32,
+                                g: *g as i32,
+                            })
+                        },
+                        fig_color::VTermColor::Indexed(i) => figterm::term_color::Color::Indexed(*i as u32),
+                    }),
+                }
+            };
+
+            let map_style = |style: &fig_color::SuggestionColor| -> figterm::TermStyle {
+                figterm::TermStyle {
+                    fg: style.fg().as_ref().map(map_color),
+                    bg: style.bg().as_ref().map(map_color),
+                }
+            };
+
+            let (edit_buffer, cursor_position) = term
+                .get_current_buffer()
+                .map(|buf| (Some(buf.buffer), buf.cursor_idx.and_then(|i| i.try_into().ok())))
+                .unwrap_or((None, None));
+
+            if let Err(err) = response_tx
+                .send_async(FigtermResponse {
+                    response: Some(figterm::figterm_response::Response::DiagnosticsResponse(
+                        figterm::DiagnosticsResponse {
+                            shell_context: Some(shell_state_to_context(term.shell_state())),
+                            fish_suggestion_style: term.shell_state().fish_suggestion_color.as_ref().map(map_style),
+                            zsh_autosuggestion_style: term
+                                .shell_state()
+                                .zsh_autosuggestion_color
+                                .as_ref()
+                                .map(map_style),
+                            edit_buffer,
+                            cursor_position,
+                        },
+                    )),
+                })
+                .await
+            {
+                error!("Failed to send response: {err}");
+            }
         },
         _ => {},
     }
@@ -428,7 +473,7 @@ fn launch_shell() -> Result<()> {
     env::remove_var("FIG_SHELL_EXTRA_ARGS");
     env::remove_var("FIG_EXECUTION_STRING");
 
-    execvp(&*args[0], &args).expect("Failed to execvp");
+    execvp(&args[0], &args).expect("Failed to execvp");
     unreachable!()
 }
 
@@ -608,9 +653,10 @@ fn figterm_main() -> Result<()> {
                             }
                             msg = incomming_receiver.recv_async() => {
                                 match msg {
-                                    Ok(buf) => {
+                                    Ok((buf, response_tx)) => {
                                         debug!("Received message from socket: {:?}", buf);
-                                        process_figterm_message(buf, &term, &mut master, &mut key_interceptor).await?;
+                                        process_figterm_message(
+                                            buf, response_tx, &term, &mut master, &mut key_interceptor).await?;
                                     }
                                     Err(err) => {
                                         error!("Failed to receive message from socket: {}", err);
@@ -674,28 +720,27 @@ fn figterm_main() -> Result<()> {
 }
 
 fn main() {
-    fig_telemetry::init_sentry("https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825");
+    let _guard =
+        fig_telemetry::init_sentry("https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825");
 
     Cli::parse();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
 
-    let should_launch_figterm = state::get_bool("figterm.enabled").ok().flatten().unwrap_or(true);
-
-    if !should_launch_figterm {
+    if !state::get_bool_or("figterm.enabled", true) {
         println!("[NOTE] figterm is disabled. Autocomplete will not work.");
         logger::stdio_debug_log("figterm is disabled. `figterm.enabled` == false");
         return;
     }
 
     if let Err(e) = figterm_main() {
-        println!("Fig had an Error!: {:?}", e);
+        println!("Fig had an Error!: {e:?}");
         capture_anyhow(&e);
 
         // Fallback to normal shell
         if let Err(e) = launch_shell() {
             capture_anyhow(&e);
-            logger::stdio_debug_log(format!("{}", e));
+            logger::stdio_debug_log(e.to_string());
         }
     }
 }

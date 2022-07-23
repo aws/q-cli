@@ -1,9 +1,4 @@
-mod proto {
-    #![allow(clippy::all)]
-    include!(concat!(env!("OUT_DIR"), "/daemon.rs"));
-}
-
-pub use proto::*;
+pub use crate::proto::daemon::*;
 
 pub fn new_diagnostic_message() -> DaemonMessage {
     DaemonMessage {

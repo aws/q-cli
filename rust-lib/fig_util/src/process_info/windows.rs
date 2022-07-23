@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use windows::Win32::System::Threading::GetCurrentProcessId;
+
 use super::{
     Pid,
     PidExt,
@@ -7,14 +9,14 @@ use super::{
 
 impl PidExt for Pid {
     fn current() -> Self {
-        todo!()
+        unsafe { Pid::from(GetCurrentProcessId()) }
     }
 
     fn parent(&self) -> Option<Pid> {
-        todo!()
+        None
     }
 
     fn exe(&self) -> Option<PathBuf> {
-        todo!()
+        None
     }
 }

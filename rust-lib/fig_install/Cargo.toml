@@ -7,20 +7,25 @@ publish = false
 [dependencies]
 anyhow = "1.0.58"
 cfg-if = "1.0.0"
-crossterm = "0.23.2"
-fig_auth = { version = "0.1.0", path = "../fig_auth" }
+crossterm = "0.24.0"
+fig_auth = { path = "../fig_auth" }
 fig_directories = { path = "../fig_directories" }
+fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
-fig_telemetry = { path = "../fig_telemetry" }
-fig_util = { version = "0.1.0", path = "../fig_util" }
-flume = "0.10.13"
+fig_util = { path = "../fig_util" }
+flume = "0.10.14"
+futures = "0.3.21"
 git2 = { version = "0.14.4", features = ["vendored-openssl", "vendored-libgit2"] }
+once_cell = { version = "1.13.0", features = ["parking_lot"] }
 parking_lot = "0.12.1"
+regex = "1.6.0"
 reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
-serde = { version = "1.0.138", features = ["derive"] }
+serde = { version = "1.0.140", features = ["derive"] }
 serde_json = "1.0.82"
 tempfile = "3.3.0"
+thiserror = "1.0.31"
 time = { version = "=0.3.11", features = ["serde-human-readable"] }
-tokio = "1.19.2"
+tokio = "1.20.0"
 tracing = "0.1.35"
+url = { version = "2.2.2", features = ["serde"] }
 

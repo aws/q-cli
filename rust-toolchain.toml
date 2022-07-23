@@ -1,0 +1,4 @@
+# For latest rust version see: https://www.whatrustisit.com
+[toolchain]
+channel = "1.62.1"
+components = [ "clippy" ]

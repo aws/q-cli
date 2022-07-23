@@ -6,48 +6,55 @@ pub mod state;
 use std::fs;
 use std::path::PathBuf;
 
+use once_cell::sync::Lazy;
 use regex::Regex;
+use reqwest::Url;
+use serde_json::Value;
 use thiserror::Error;
 
-fn get_host_string(key: impl AsRef<str>) -> Option<String> {
+fn get_host_string(key: impl AsRef<str>) -> Option<Url> {
     state::get_value(key)
         .ok()
         .flatten()
-        .and_then(|s| s.as_str().map(String::from))
+        .and_then(|v| v.as_str().and_then(|s| Url::parse(s).ok()))
 }
 
-pub fn api_host() -> String {
+pub fn api_host() -> Url {
     get_host_string("developer.apiHost")
         .or_else(|| get_host_string("developer.cli.apiHost"))
-        .unwrap_or_else(|| "https://api.fig.io".to_string())
+        .unwrap_or_else(|| Url::parse("https://api.fig.io").unwrap())
 }
 
-pub fn ws_host() -> String {
+static WS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\S+:|^)//").unwrap());
+
+pub fn ws_host() -> Url {
     get_host_string("developer.wsHost")
         .or_else(|| get_host_string("developer.cli.wsHost"))
         .unwrap_or_else(|| {
-            let re = Regex::new(r"(\S+:|^)//").unwrap();
             let host = api_host();
-            re.replace_all(&host, "wss://".to_string()).into()
+            Url::parse(&WS_REGEX.replace_all(host.as_str(), "wss://")).unwrap()
         })
 }
 
+pub type Map = serde_json::Map<String, Value>;
+
+#[derive(Debug, Clone)]
 pub struct LocalJson {
-    pub inner: serde_json::Value,
+    pub inner: Map,
     pub path: PathBuf,
 }
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("Remote settings error: {0}")]
+    #[error(transparent)]
     RemoteSettingsError(#[from] remote_settings::Error),
-    #[error("IO error: {0}")]
+    #[error(transparent)]
     IoError(#[from] std::io::Error),
-    #[error("JSON error: {0}")]
+    #[error(transparent)]
     JsonError(#[from] serde_json::Error),
-    #[error("Settings file is not a json object")]
+    #[error("settings file is not a json object")]
     SettingsNotObject,
-    #[error("Could not get path to settings file")]
+    #[error("could not get path to settings file")]
     SettingsPathNotFound,
 }
 
@@ -70,7 +77,16 @@ impl LocalJson {
         let file = fs::read_to_string(&path)?;
 
         Ok(Self {
-            inner: serde_json::from_str(&file).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new())),
+            inner: match serde_json::from_str(&file).or_else(|_| {
+                if file.is_empty() {
+                    Ok(serde_json::Value::Object(serde_json::Map::new()))
+                } else {
+                    Err(Error::SettingsNotObject)
+                }
+            })? {
+                Value::Object(val) => val,
+                _ => todo!(),
+            },
             path,
         })
     }
@@ -88,41 +104,70 @@ impl LocalJson {
         Ok(())
     }
 
-    pub fn set(&mut self, key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), Error> {
-        self.inner
-            .as_object_mut()
-            .ok_or(Error::SettingsNotObject)?
-            .insert(key.into(), value.into());
-
-        Ok(())
+    pub fn set(&mut self, key: impl Into<String>, value: impl Into<serde_json::Value>) {
+        self.inner.insert(key.into(), value.into());
     }
 
     pub fn get(&self, key: impl AsRef<str>) -> Option<&serde_json::Value> {
         self.inner.get(key.as_ref())
     }
 
-    pub fn remove(&mut self, key: impl AsRef<str>) -> Result<(), Error> {
-        self.inner
-            .as_object_mut()
-            .ok_or(Error::SettingsNotObject)?
-            .remove(key.as_ref());
-
-        Ok(())
+    pub fn remove(&mut self, key: impl AsRef<str>) -> Option<Value> {
+        self.inner.remove(key.as_ref())
     }
 
     pub fn get_mut(&mut self, key: impl Into<String>) -> Option<&mut serde_json::Value> {
-        self.inner.get_mut(key.into())
+        self.inner.get_mut(&key.into())
+    }
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn local_json() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_json_path = dir.path().join("local.json");
+
+        let mut local_json = LocalJson::load(&local_json_path).unwrap();
+
+        assert_eq!(fs::read_to_string(&local_json_path).unwrap(), "");
+        assert_eq!(local_json.inner, serde_json::Map::new());
+
+        local_json.save().unwrap();
+        assert_eq!(fs::read_to_string(&local_json_path).unwrap(), "{}");
+
+        local_json.set("a", 123);
+        local_json.set("b", "hello");
+        local_json.set("c", false);
+
+        local_json.save().unwrap();
+        assert_eq!(
+            fs::read_to_string(&local_json_path).unwrap(),
+            "{\n  \"a\": 123,\n  \"b\": \"hello\",\n  \"c\": false\n}"
+        );
+
+        local_json.remove("a").unwrap();
+
+        local_json.save().unwrap();
+        assert_eq!(
+            fs::read_to_string(&local_json_path).unwrap(),
+            "{\n  \"b\": \"hello\",\n  \"c\": false\n}"
+        );
+
+        assert_eq!(local_json.get("b").unwrap(), "hello");
     }
 
-    pub fn get_mut_settings(&mut self) -> Option<&mut serde_json::Map<String, serde_json::Value>> {
-        self.inner.as_object_mut()
-    }
+    #[test]
+    fn local_json_errors() {
+        let dir = tempfile::tempdir().unwrap();
+        let local_json_path = dir.path().join("local.json");
 
-    pub fn get_setting(&self) -> Option<&serde_json::Map<String, serde_json::Value>> {
-        self.inner.as_object()
-    }
-
-    pub fn to_inner(self) -> serde_json::Value {
-        self.inner
+        fs::write(&local_json_path, "hey").unwrap();
+        assert!(matches!(
+            LocalJson::load(&local_json_path).unwrap_err(),
+            Error::SettingsNotObject
+        ));
     }
 }

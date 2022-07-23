@@ -1,5 +1,3 @@
-use std::collections::HashMap;
-
 use crate::util::{
     make_telemetry_request,
     telemetry_is_disabled,
@@ -14,11 +12,13 @@ pub async fn emit_alias(user_id: String) -> Result<(), Error> {
         return Err(Error::TelemetryDisabled);
     }
 
-    let alias = HashMap::from([
+    let alias = [
         #[cfg(target_os = "macos")]
-        ("previousId".into(), fig_auth::get_default("anonymousId")?),
-        ("userId".into(), user_id),
-    ]);
+        ("previousId".into(), fig_auth::get_default("anonymousId")?.into()),
+        ("userId".into(), user_id.into()),
+    ]
+    .into_iter()
+    .collect();
 
     make_telemetry_request(ALIAS_SUBDOMAIN, alias).await
 }

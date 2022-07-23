@@ -3,16 +3,11 @@ resolver = "2"
 members = [
     "fig_cli",
     "fig_desktop",
-    "fig_ibus_engine",
     "figterm",
     "rust-lib/*",
 ]
-
-default-members = [
-    "fig_cli",
-    "fig_desktop",
-    "figterm",
-    "rust-lib/*",
+exclude = [
+    "fig_ibus_engine",
 ]
 
 [profile.release]

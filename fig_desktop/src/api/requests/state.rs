@@ -6,6 +6,7 @@ use fig_proto::fig::{
     UpdateLocalStateRequest,
 };
 use fig_settings::state;
+use serde_json::Value;
 
 use super::{
     RequestResult,
@@ -18,7 +19,7 @@ pub async fn get(request: GetLocalStateRequest) -> RequestResult {
             .map_err(|_| anyhow!("Failed getting settings value for {key}"))?
             .ok_or_else(|| anyhow!("No value for key"))?,
         None => state::local_settings()
-            .map(|s| s.inner)
+            .map(|s| Value::Object(s.inner))
             .map_err(|_| anyhow!("Failed getting settings"))?,
     };
 

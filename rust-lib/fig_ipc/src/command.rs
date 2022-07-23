@@ -31,9 +31,10 @@ pub async fn restart_settings_listener() -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn open_ui_element(element: UiElement) -> Result<()> {
+pub async fn open_ui_element(element: UiElement, route: Option<String>) -> Result<()> {
     let command = command::Command::OpenUiElement(OpenUiElementCommand {
         element: element.into(),
+        route,
     });
     send_command_to_socket(command).await
 }

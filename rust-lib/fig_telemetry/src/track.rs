@@ -1,6 +1,7 @@
-use std::collections::HashMap;
-
-use fig_util::get_system_id;
+use serde_json::{
+    Map,
+    Value,
+};
 
 use crate::util::{
     make_telemetry_request,
@@ -14,76 +15,33 @@ use crate::{
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum TrackEvent {
     RanCommand,
-    SelectedShortcut,
-    ViaJS,
-    UpdatedApp,
-    PromptedForAXPermission,
-    GrantedAXPermission,
-    ToggledAutocomplete,
-    ToggledSidebar,
-    QuitApp,
-    ViewDocs,
-    ViewSupportForum,
-    JoinSlack,
-    SendFeedback,
-    DailyAggregates,
-    FirstTimeUser,
-    ViaShell,
-    UninstallApp,
-    ITermSetup,
-    LaunchedApp,
-    FirstAutocompletePopup,
-    RestartForOnboarding,
-    NewWindowForOnboarding,
-    ITermSetupPrompted,
-    ShowSecureInputEnabledAlert,
-    OpenSecureInputSupportPage,
-    OpenedFigMenuIcon,
-    InviteAFriend,
-    RunInstallationScript,
-    TelemetryToggled,
-    OpenedSettingsPage,
     DoctorError,
+    WorkflowSearchViewed,
+    WorkflowExecuted,
+    WorkflowCancelled,
+    LaunchedApp,
+    QuitApp,
+    UninstallApp,
+    UpdatedApp,
+    /// Prefer not using this directly and instead define an enum value, this is only for
+    /// internal use by `fig_telemetry`
     Other(String),
 }
 
-impl ToString for TrackEvent {
-    fn to_string(&self) -> String {
-        match self {
+impl std::fmt::Display for TrackEvent {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
             Self::RanCommand => "Ran CLI command",
-            Self::SelectedShortcut => "Selected a Shortcut",
-            Self::ViaJS => "Event via JS",
-            Self::UpdatedApp => "Updated App",
-            Self::PromptedForAXPermission => "Prompted for AX permission",
-            Self::GrantedAXPermission => "Granted AX Permission",
-            Self::ToggledAutocomplete => "Toggled Autocomplete",
-            Self::ToggledSidebar => "Toggled Sidebar",
-            Self::QuitApp => "Quit App",
-            Self::ViewDocs => "View Docs",
-            Self::ViewSupportForum => "View Support Forum",
-            Self::JoinSlack => "Join Slack",
-            Self::SendFeedback => "Send Feedback",
-            Self::DailyAggregates => "Aggregates",
-            Self::FirstTimeUser => "First Time User",
-            Self::ViaShell => "Event via Shell",
-            Self::UninstallApp => "Uninstall App",
-            Self::ITermSetup => "iTerm Setup",
-            Self::LaunchedApp => "Launched App",
-            Self::FirstAutocompletePopup => "First Autocomplete Setup",
-            Self::RestartForOnboarding => "Restart for Shell Onboarding",
-            Self::NewWindowForOnboarding => "New Window for Shell Onboarding",
-            Self::ITermSetupPrompted => "Prompted iTerm Setup",
-            Self::ShowSecureInputEnabledAlert => "Show Secure Input Enabled Alert",
-            Self::OpenSecureInputSupportPage => "Open Secure Input Support Page",
-            Self::OpenedFigMenuIcon => "Opened Fig Menu Icon",
-            Self::InviteAFriend => "Prompt to Invite",
-            Self::RunInstallationScript => "Running Installation Script",
-            Self::TelemetryToggled => "Toggled Telemetry",
-            Self::OpenedSettingsPage => "Opened Settings Page",
             Self::DoctorError => "Doctor Error",
+            Self::WorkflowSearchViewed => "Workflow Search Viewed",
+            Self::WorkflowExecuted => "Workflow Executed",
+            Self::WorkflowCancelled => "Workflow Cancelled",
+            Self::LaunchedApp => "Launched App",
+            Self::QuitApp => "Quit App",
+            Self::UninstallApp => "Uninstall App",
+            Self::UpdatedApp => "Updated App",
             Self::Other(s) => s,
-        }
-        .to_string()
+        })
     }
 }
 
@@ -96,63 +54,32 @@ pub enum TrackSource {
 
 impl std::fmt::Display for TrackSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Self::App => write!(f, "app"),
-            Self::Cli => write!(f, "cli"),
-            Self::Daemon => write!(f, "daemon"),
-        }
+        f.write_str(match self {
+            Self::App => "app",
+            Self::Cli => "cli",
+            Self::Daemon => "daemon",
+        })
     }
 }
 
-pub async fn emit_track<'a, I, T>(event: impl Into<TrackEvent>, source: TrackSource, properties: I) -> Result<(), Error>
+pub async fn emit_track<'a, I, K, V>(event: TrackEvent, source: TrackSource, properties: I) -> Result<(), Error>
 where
-    I: IntoIterator<Item = T>,
-    T: Into<(&'a str, &'a str)>,
+    I: IntoIterator<Item = (K, V)>,
+    K: Into<String>,
+    V: Into<Value>,
 {
-    let event: TrackEvent = event.into();
-
     if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
-    // Initial properties
-    let mut track = HashMap::from([("event".into(), (event.to_string()))]);
+    let mut props = crate::util::default_properties();
+    props.insert("source".into(), source.to_string().into());
+    props.extend(properties.into_iter().map(|(k, v)| (k.into(), v.into())));
 
-    // Default properties
-    if let Some(email) = fig_auth::get_email() {
-        if let Some(domain) = email.split('@').last() {
-            track.insert("prop_domain".into(), domain.into());
-        }
-        track.insert("prop_email".into(), email);
-    }
+    let mut body: Map<String, Value> = Map::new();
+    body.insert("event".into(), event.to_string().into());
+    body.insert("useUnprefixed".into(), true.into());
+    body.insert("properties".into(), props.into());
 
-    #[cfg(target_os = "macos")]
-    if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
-        if let Some((version, build)) = version.split_once(',') {
-            track.insert("prop_version".into(), version.into());
-            track.insert("prop_build".into(), build.into());
-        }
-    }
-
-    track.insert("prop_source".into(), source.to_string());
-
-    track.insert(
-        "prop_install_method".into(),
-        crate::install_method::get_install_method().to_string(),
-    );
-
-    if let Ok(device_id) = get_system_id() {
-        track.insert("prop_device_id".into(), device_id);
-    }
-
-    track.insert("prop_device_os".into(), std::env::consts::OS.into());
-    track.insert("prop_device_arch".into(), std::env::consts::ARCH.into());
-
-    // Given properties
-    for kv in properties.into_iter() {
-        let (key, value) = kv.into();
-        track.insert(format!("prop_{key}"), value.into());
-    }
-
-    make_telemetry_request(TRACK_SUBDOMAIN, track).await
+    make_telemetry_request(TRACK_SUBDOMAIN, body).await
 }

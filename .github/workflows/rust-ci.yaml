@@ -21,14 +21,18 @@ on:
     branches:
       - develop
 
+concurrency:
+  group: ${{ github.ref }}
+  cancel-in-progress: true
+
 env:
   CARGO_TERM_COLOR: always
   RUSTFLAGS: -D warnings
 
 jobs:
-  lint:
-    name: Lint
-    runs-on: [self-hosted, linux, x64]
+  fmt:
+    name: Fmt
+    runs-on: ubuntu-latest
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -39,6 +43,41 @@ jobs:
           toolchain: nightly
           profile: minimal
           components: rustfmt
+      
+      - name: Fmt
+        uses: actions-rs/cargo@v1
+        with:
+          command: fmt
+          toolchain: nightly
+          args: --check
+
+  clippy:
+    strategy:
+      matrix: 
+        os: [ubuntu-latest, macos-latest]
+        # os: [ubuntu-latest, macos-latest, windows-latest]
+      fail-fast: false
+    name: Clippy ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+      
+      - name: Install Ubuntu dependencies
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              build-essential \
+              pkg-config \
+              dpkg \
+              cmake \
+              clang \
+              libssl-dev \
+              libgtk-3-dev \
+              libayatana-appindicator3-dev \
+              librsvg2-dev \
+              libwebkit2gtk-4.0-dev
 
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -48,39 +87,56 @@ jobs:
           override: true
           components: clippy
 
-      #- name: Rust Cache
-      #  uses: Swatinem/rust-cache@v1
-        
-      - name: Fmt Lint
-        uses: actions-rs/cargo@v1
-        with:
-          command: fmt
-          toolchain: nightly
-          args: --check
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
-      - name: Clippy Lint
+      - name: Clippy
         uses: actions-rs/clippy-check@v1
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace
+          args: --workspace --locked -- -D warnings
+          name: Clippy ${{ matrix.os }} Report
 
-  build:
-    name: Build and test
-    runs-on: [self-hosted, linux, x64]
+  test-code-cov:
+    strategy:
+      matrix: 
+        os: [ubuntu-latest, macos-latest]    
+        # os: [ubuntu-latest, macos-latest, windows-latest]    
+      fail-fast: false
+    name: Test and Codecov ${{ matrix.os }}
+    runs-on: ${{ matrix.os }}
+    env:
+      OS: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
+
+      - name: Install Ubuntu dependencies
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              build-essential \
+              pkg-config \
+              dpkg \
+              cmake \
+              clang \
+              libssl-dev \
+              libgtk-3-dev \
+              libayatana-appindicator3-dev \
+              librsvg2-dev \
+              libwebkit2gtk-4.0-dev
         
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: stable
-          profile: minimal
           override: true
+          profile: minimal
           components: llvm-tools-preview
 
-      #- name: Rust Cache
-      #  uses: Swatinem/rust-cache@v1
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
@@ -89,10 +145,11 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: --workspace --lcov --output-path lcov.info
+          args: --workspace --locked --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
+          env_vars: OS

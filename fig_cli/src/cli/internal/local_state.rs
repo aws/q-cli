@@ -81,21 +81,17 @@ impl LocalStateArgs {
                 }
             },
             Some(LocalStateSubcommand::All { format }) => {
-                let local_state = fig_settings::state::local_settings()?.to_inner();
+                let map = fig_settings::state::local_settings()?.inner;
 
                 match format {
                     OutputFormat::Plain => {
-                        if let Some(map) = local_state.as_object() {
-                            for (key, value) in map {
-                                println!("{} = {}", key, value);
-                            }
-                        } else {
-                            println!("Settings is empty");
+                        for (key, value) in map {
+                            println!("{key} = {value}");
                         }
                     },
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&local_state)?),
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&map)?),
                     OutputFormat::JsonPretty => {
-                        println!("{}", serde_json::to_string_pretty(&local_state)?)
+                        println!("{}", serde_json::to_string_pretty(&map)?)
                     },
                 }
 
@@ -107,20 +103,16 @@ impl LocalStateArgs {
                         Some(value) => {
                             match self.format {
                                 OutputFormat::Plain => match value.as_str() {
-                                    Some(value) => println!("{}", value),
-                                    None => println!("{:#}", value),
+                                    Some(value) => println!("{value}"),
+                                    None => println!("{value:#}"),
                                 },
-                                OutputFormat::Json => {
-                                    println!("{}", value)
-                                },
-                                OutputFormat::JsonPretty => {
-                                    println!("{:#}", value)
-                                },
+                                OutputFormat::Json => println!("{value}"),
+                                OutputFormat::JsonPretty => println!("{value:#}"),
                             }
                             Ok(())
                         },
                         None => match self.format {
-                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {}", key)),
+                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {key}")),
                             OutputFormat::Json | OutputFormat::JsonPretty => {
                                 println!("null");
                                 Ok(())

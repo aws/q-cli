@@ -1,6 +1,8 @@
-use std::collections::HashMap;
-
 use fig_settings::state;
+use serde_json::{
+    Map,
+    Value,
+};
 
 use crate::{
     Error,
@@ -30,15 +32,48 @@ pub fn telemetry_is_disabled() -> bool {
             .unwrap_or(false)
 }
 
-pub(crate) async fn make_telemetry_request(route: &str, mut body: HashMap<String, String>) -> Result<(), Error> {
+pub(crate) fn default_properties() -> Map<String, Value> {
+    let mut prop = Map::new();
+
+    if let Some(email) = fig_auth::get_email() {
+        if let Some(domain) = email.split('@').last() {
+            prop.insert("prop_domain".into(), domain.into());
+        }
+        prop.insert("prop_email".into(), email.into());
+    }
+
+    #[cfg(target_os = "macos")]
+    if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
+        if let Some((version, build)) = version.split_once(',') {
+            prop.insert("prop_version".into(), version.into());
+            prop.insert("prop_build".into(), build.into());
+        }
+    }
+
+    prop.insert(
+        "install_method".into(),
+        crate::install_method::get_install_method().to_string().into(),
+    );
+
+    if let Ok(device_id) = fig_util::get_system_id() {
+        prop.insert("device_id".into(), device_id.into());
+    }
+
+    prop.insert("device_os".into(), std::env::consts::OS.into());
+    prop.insert("device_arch".into(), std::env::consts::ARCH.into());
+
+    prop
+}
+
+pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
     // Emit it!
-    let mut request = reqwest::Client::new().post(format!("{}{}", API_DOMAIN, route));
+    let mut request = reqwest::Client::new().post(format!("{API_DOMAIN}{route}"));
 
     if let Ok(token) = fig_auth::get_token().await {
         request = request.bearer_auth(token);
     }
 
-    body.insert("anonymousId".into(), get_or_create_anonymous_id()?);
+    body.insert("anonymousId".into(), get_or_create_anonymous_id()?.into());
 
     request
         .header("Content-Type", "application/json")

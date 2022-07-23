@@ -2,6 +2,7 @@ use std::io::Write;
 use std::process::exit;
 
 use anyhow::{
+    bail,
     Context,
     Result,
 };
@@ -127,19 +128,18 @@ impl SettingsArgs {
             },
             Some(SettingsSubcommands::All { remote, format }) => {
                 let settings = if remote {
-                    fig_settings::remote_settings::get_settings().await?.settings
+                    match fig_settings::remote_settings::get_settings().await?.settings {
+                        serde_json::Value::Object(map) => map,
+                        val => bail!("Remote settings is not an object: {val}"),
+                    }
                 } else {
-                    fig_settings::settings::local_settings()?.to_inner()
+                    fig_settings::settings::local_settings()?.inner
                 };
 
                 match format {
                     OutputFormat::Plain => {
-                        if let Some(map) = settings.as_object() {
-                            for (key, value) in map {
-                                println!("{} = {}", key, value);
-                            }
-                        } else {
-                            println!("Settings is empty");
+                        for (key, value) in settings {
+                            println!("{key} = {value}");
                         }
                     },
                     OutputFormat::Json => println!("{}", serde_json::to_string(&settings)?),
@@ -156,20 +156,16 @@ impl SettingsArgs {
                         Some(value) => {
                             match self.format {
                                 OutputFormat::Plain => match value.as_str() {
-                                    Some(value) => println!("{}", value),
-                                    None => println!("{:#}", value),
+                                    Some(value) => println!("{value}"),
+                                    None => println!("{value:#}"),
                                 },
-                                OutputFormat::Json => {
-                                    println!("{}", value)
-                                },
-                                OutputFormat::JsonPretty => {
-                                    println!("{:#}", value)
-                                },
+                                OutputFormat::Json => println!("{value}"),
+                                OutputFormat::JsonPretty => println!("{value:#}"),
                             }
                             Ok(())
                         },
                         None => match self.format {
-                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {}", key)),
+                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {key}")),
                             OutputFormat::Json | OutputFormat::JsonPretty => {
                                 println!("null");
                                 Ok(())
@@ -186,7 +182,7 @@ impl SettingsArgs {
                             },
                             Err(err) => match err {
                                 fig_settings::Error::RemoteSettingsError(
-                                    fig_settings::remote_settings::Error::AuthError,
+                                    fig_settings::remote_settings::Error::AuthError(_),
                                 ) => {
                                     eprintln!("You are not logged in to Fig");
                                     eprintln!("Run {} to login", "fig login".magenta().bold());
@@ -208,17 +204,15 @@ impl SettingsArgs {
                     },
                     (None, true) => {
                         let glob = Glob::new(key).context("Could not create glob")?.compile_matcher();
-
-                        let map = fig_settings::settings::get_map()?.context("Could not get settings map")?;
-
+                        let map = fig_settings::settings::get_map()?;
                         let keys_to_remove = map.keys().filter(|key| glob.is_match(key)).collect::<Vec<_>>();
 
                         match keys_to_remove.len() {
                             0 => {
-                                return Err(anyhow::anyhow!("No settings found matching {}", key));
+                                return Err(anyhow::anyhow!("No settings found matching {key}"));
                             },
                             1 => {
-                                println!("Removing: {:?}", keys_to_remove[0]);
+                                println!("Removing {:?}", keys_to_remove[0]);
                             },
                             _ => {
                                 println!("Removing:");
@@ -239,7 +233,7 @@ impl SettingsArgs {
                             if let Err(err) = result {
                                 match err {
                                     fig_settings::Error::RemoteSettingsError(
-                                        fig_settings::remote_settings::Error::AuthError,
+                                        fig_settings::remote_settings::Error::AuthError(_),
                                     ) => {
                                         eprintln!("You are not logged in to Fig");
                                         eprintln!("Run {} to login", "fig login".magenta().bold());
@@ -260,7 +254,7 @@ impl SettingsArgs {
                     println!();
 
                     if is_logged_in() {
-                        match open_ui_element(UiElement::Settings).await {
+                        match open_ui_element(UiElement::Settings, None).await {
                             Ok(()) => Ok(()),
                             Err(err) => {
                                 print_connection_error!();

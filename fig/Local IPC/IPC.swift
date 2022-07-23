@@ -205,7 +205,8 @@ class IPC: UnixSocketServerDelegate {
     case .build(let request):
       response = CommandHandlers.buildCommand(build: request.branch)
     case .openUiElement(let request):
-      response = CommandHandlers.openUiElement(uiElement: request.element)
+      response = CommandHandlers.openUiElement(uiElement: request.element,
+                                               route: request.hasRoute ? request.route : nil)
     case .resetCache:
       response = CommandHandlers.resetCache()
     case .debugMode(let request):
@@ -315,13 +316,13 @@ class IPC: UnixSocketServerDelegate {
   }
 }
 
-extension Local_ShellContext {
-  func activeContext() -> Local_ShellContext {
+extension FigCommon_ShellContext {
+  func activeContext() -> FigCommon_ShellContext {
     guard self.hasRemoteContext else {
       return self
     }
 
-    return Local_ShellContext.with { context in
+    return FigCommon_ShellContext.with { context in
       // Do not update session id or integration version (should use local value)
       context.integrationVersion = self.integrationVersion
       context.sessionID = self.sessionID

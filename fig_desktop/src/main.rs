@@ -5,15 +5,17 @@ mod cli;
 mod event;
 mod figterm;
 mod icons;
-pub mod install;
+mod install;
 mod local_ipc;
 mod native;
+mod notification;
 mod settings;
 mod tray;
 mod utils;
 mod window;
 
 use std::borrow::Cow;
+use std::iter::empty;
 use std::sync::Arc;
 
 use api::{
@@ -28,10 +30,10 @@ use event::{
     WindowEvent,
 };
 use fig_log::Logger;
-use fig_proto::fig::NotificationType;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
+use notification::NotificationsState;
 use parking_lot::RwLock;
 use regex::RegexSet;
 use sysinfo::{
@@ -90,11 +92,6 @@ pub struct DebugState {
 pub struct InterceptState {
     pub intercept_bound_keystrokes: RwLock<bool>,
     pub intercept_global_keystrokes: RwLock<bool>,
-}
-
-#[derive(Debug, Default)]
-pub struct NotificationsState {
-    subscriptions: DashMap<WindowId, DashMap<NotificationType, i64, FnvBuildHasher>, FnvBuildHasher>,
 }
 
 pub type EventLoop = WryEventLoop<Event>;
@@ -172,6 +169,8 @@ impl WebviewManager {
             }
         });
 
+        settings::settings_listener(self.global_state.clone(), self.event_loop.create_proxy()).await;
+
         let _tray = build_tray(&self.event_loop, &self.global_state).unwrap();
 
         let proxy = self.event_loop.create_proxy();
@@ -222,6 +221,16 @@ impl WebviewManager {
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
                 event => trace!("Unhandled event {event:?}"),
             }
+
+            if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
+                tokio::runtime::Handle::current()
+                    .block_on(fig_telemetry::dispatch_emit_track(
+                        fig_telemetry::TrackEvent::QuitApp,
+                        fig_telemetry::TrackSource::App,
+                        empty::<(&str, &str)>(),
+                    ))
+                    .ok();
+            }
         });
     }
 }
@@ -269,7 +278,7 @@ fn build_mission_control(
 
     let window = WindowBuilder::new()
         .with_resizable(true)
-        .with_title("Fig Mission Control")
+        .with_title("Fig")
         .with_visible(is_visible)
         .with_always_on_top(false)
         .build(event_loop)?;
@@ -301,6 +310,7 @@ fn build_mission_control(
         .with_devtools(true)
         .with_navigation_handler(navigation_handler(MISSION_CONTROL_ID, &[
             r"^localhost$",
+            r"^127\.0\.0\.1$",
             r"^desktop\.fig\.io$",
             r"-withfig\.vercel\.app$",
         ]))
@@ -362,8 +372,10 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
             r"^localhost$",
-            r"^staging.withfig.com$",
-            r"^app.withfig.com$",
+            r"^127\.0\.0\.1$",
+            r"^staging\.withfig\.com$",
+            r"^app\.withfig\.com$",
+            r"-withfig\.vercel\.app$",
         ]))
         .build()?;
 
@@ -405,7 +417,7 @@ fn main() {
                                 let exe = process.exe().display();
                                 eprintln!("Fig is already running: {exe} ({pid})");
                                 eprintln!("Opening Fig Window...");
-                                fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl)
+                                fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl, None)
                                     .await
                                     .unwrap();
                                 return;
@@ -416,6 +428,16 @@ fn main() {
                 Err(err) => warn!("Failed to get pid: {err}"),
             }
         }
+
+        tokio::spawn(async {
+            fig_telemetry::emit_track(
+                fig_telemetry::TrackEvent::LaunchedApp,
+                fig_telemetry::TrackSource::App,
+                empty::<(&str, &str)>(),
+            )
+            .await
+            .ok();
+        });
 
         install::run_install().await;
 

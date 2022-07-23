@@ -10,7 +10,7 @@ jobs:
     runs-on: ubuntu-latest
     timeout-minutes: 10
     ## We only want to publish a package if it is on develop branch
-    if: github.ref == 'refs/heads/develop'
+    if: ${{ github.ref == 'refs/heads/develop' }}
     steps:
       - name: Checkout Project
         uses: actions/checkout@v3

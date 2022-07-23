@@ -9,15 +9,16 @@ publish = false
 
 [dependencies]
 cfg-if = "1.0.0"
-clap = { version = "3.2.8", features = ["derive"] }
+clap = { version = "3.2.14", features = ["derive"] }
 fig_directories = { path = "../fig_directories" }
-serde = "1.0.138"
+serde = "1.0.140"
 sha2 = "0.10.2"
 thiserror = "1.0.30"
 tokio = { version = "1", features = ["process"] }
 
 [target.'cfg(windows)'.dependencies]
+windows = { version = "0.38.0", features = ["Win32_Foundation", "Win32_System_Threading"] }
 winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.24.1"
+nix = "0.24.2"

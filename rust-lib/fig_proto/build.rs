@@ -1,10 +1,10 @@
 use std::io::Result;
 
 const PROTO_FILES: &[&str] = &[
+    "../../proto/fig_common.proto",
     "../../proto/local.proto",
     "../../proto/figterm.proto",
     "../../proto/daemon.proto",
-    "../../proto/fig_common.proto",
     "../../proto/fig.proto",
 ];
 

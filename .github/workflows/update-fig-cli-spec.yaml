@@ -1,14 +1,14 @@
 name: 'Publish fig-cli spec version'
 on:
   push:
-    paths: fig_cli/**
+    paths: fig_cli/Cargo.toml
     branches:
       - master
   workflow_dispatch:
 
 jobs:    
   push-to-fig-autocomplete:
-    runs-on: macos-latest
+    runs-on: ubuntu-latest
     defaults:
       run:
         working-directory: fig_cli
@@ -20,7 +20,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c
+      - uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
       - name: Generate the spec
         run: |
           cargo run -- completion fig > spec.ts

@@ -1,5 +1,6 @@
 pub mod uninstall;
 
+use std::iter::empty;
 use std::process::Command;
 use std::time::Duration;
 
@@ -11,7 +12,6 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::command::{
     quit_command,
-    restart_command,
     update_command,
 };
 use fig_settings::{
@@ -76,6 +76,16 @@ pub async fn quit_fig() -> Result<()> {
         return Ok(());
     }
 
+    let telem_join = tokio::spawn(async {
+        fig_telemetry::dispatch_emit_track(
+            fig_telemetry::TrackEvent::QuitApp,
+            fig_telemetry::TrackSource::App,
+            empty::<(&str, &str)>(),
+        )
+        .await
+        .ok();
+    });
+
     println!("\n→ Quitting Fig...\n");
     if quit_command().await.is_err() {
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -101,6 +111,9 @@ pub async fn quit_fig() -> Result<()> {
             return second_try;
         }
     }
+
+    telem_join.await.ok();
+
     Ok(())
 }
 
@@ -108,11 +121,20 @@ pub async fn restart_fig() -> Result<()> {
     if !is_app_running() {
         launch_fig_cli()
     } else {
-        println!("\n→ Restarting Fig...\n");
-        if restart_command().await.is_err() {
-            println!("\nUnable to restart Fig\n");
-        } else {
-            tokio::time::sleep(Duration::from_millis(1000)).await;
+        cfg_if! {
+            if #[cfg(target_os = "linux")] {
+                quit_fig().await?;
+                launch_fig(LaunchOptions { wait_for_activation: true, verbose: true })?;
+            } else {
+                use fig_ipc::command::restart_command;
+
+                println!("\n→ Restarting Fig...\n");
+                if restart_command().await.is_err() {
+                    println!("\nUnable to restart Fig\n");
+                } else {
+                    tokio::time::sleep(Duration::from_millis(1000)).await;
+                }
+            }
         }
         Ok(())
     }

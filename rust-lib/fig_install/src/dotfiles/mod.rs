@@ -17,17 +17,11 @@ pub enum SyncWhen {
 
 /// Download and notify terminals about new dotfiles updates bases on the
 /// user's settings
-pub async fn download_and_notify() -> Result<Option<api::UpdateStatus>> {
+pub async fn download_and_notify(always_download: bool) -> Result<Option<api::UpdateStatus>> {
     // Guard if the user has disabled immediate syncing
-    match fig_settings::settings::get_value("dotfiles.syncImmediately") {
-        Ok(Some(serde_json::Value::Bool(false))) => {
-            return Ok(None);
-        },
-        Ok(_) => {},
-        Err(err) => {
-            error!("Could not get dotfiles.syncImmediately: {}", err);
-        },
-    };
+    if always_download || !fig_settings::settings::get_bool_or("dotfiles.syncImmediately", true) {
+        return Ok(None);
+    }
 
     let res = api::download_dotfiles().await;
     match &res {
@@ -41,7 +35,7 @@ pub async fn download_and_notify() -> Result<Option<api::UpdateStatus>> {
         Ok(api::UpdateStatus::NotUpdated) => {
             info!("Dotfiles are up to date");
         },
-        Err(err) => error!("Could not sync dotfiles: {:?}", err),
+        Err(err) => error!("Could not sync dotfiles: {err:?}"),
     }
     res.map(Some)
 }

@@ -18,8 +18,8 @@ TS_FLAGS    = --plugin=$(TS_PROTO) \
 SWIFT_FLAGS = --swift_opt=Visibility=Public
 
 # Proto files
-LOCAL = "./local.proto"
-API   = "./fig.proto" "./local.proto"
+LOCAL = "./local.proto" "./fig_common.proto"
+API   = "./fig.proto" "./local.proto" "./fig_common.proto"
 FIGTERM = "./figterm.proto"
 
 # Destinations

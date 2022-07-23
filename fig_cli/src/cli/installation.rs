@@ -206,7 +206,9 @@ pub enum UpdateType {
 /// Update will exit the binary if the update was successful
 pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
+        if #[cfg(feature = "managed")] {
+            Err(anyhow::anyhow!("This installation of Fig is managed by a package manager, please use the built-in method of updating packages"))
+        } else if #[cfg(target_os = "macos")] {
             // Let desktop app handle updates on macOS
             use crate::util::{launch_fig, LaunchOptions};
             use fig_ipc::command::update_command;

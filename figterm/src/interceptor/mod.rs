@@ -2,6 +2,7 @@ pub mod terminal_input_parser;
 
 use anyhow::Result;
 use dashmap::DashMap;
+use fig_proto::figterm::Action;
 use fig_settings::keybindings::KeyBindings;
 pub use terminal_input_parser::parse_code;
 use tracing::trace;
@@ -42,13 +43,25 @@ impl KeyInterceptor {
     }
 
     pub fn set_intercept_all(&mut self, intercept_all: bool) {
-        trace!("Setting intercept all to {}", intercept_all);
+        trace!("Setting intercept all to {intercept_all}");
         self.intercept_all = intercept_all;
     }
 
     pub fn set_intercept_bind(&mut self, intercept_bind: bool) {
-        trace!("Setting intercept bind to {}", intercept_bind);
+        trace!("Setting intercept bind to {intercept_bind}");
         self.intercept_bind = intercept_bind;
+    }
+
+    pub fn set_actions(&mut self, actions: &[Action]) {
+        self.mappings.clear();
+
+        for Action { identifier, bindings } in actions {
+            for binding in bindings {
+                if let Some(binding) = key_from_text(binding) {
+                    self.mappings.insert(binding, identifier.clone());
+                }
+            }
+        }
     }
 
     pub fn reset(&mut self) {
@@ -57,7 +70,7 @@ impl KeyInterceptor {
     }
 
     pub fn intercept_key<'a>(&self, key: KeyCode<'a>, modifiers: &KeyModifiers) -> Option<String> {
-        trace!("Intercepting key: {:?} {:?}", key, modifiers);
+        trace!("Intercepting key: {key:?} {modifiers:?}");
         let owned_key = key.to_owned();
         if self.intercept_all || self.intercept_bind {
             if let Some(action) = self.mappings.get(&(owned_key, *modifiers)) {

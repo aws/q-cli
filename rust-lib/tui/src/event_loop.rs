@@ -1,107 +1,94 @@
 use std::time::Instant;
 
-use newton::KeyCode;
 pub use newton::{
     ControlFlow,
     DisplayMode,
+    Event as NewtonEvent,
 };
 
+use crate::component::Component;
+use crate::input::InputAction;
 use crate::{
-    Component,
-    Event,
-    StyleContext,
+    InputMethod,
     StyleSheet,
 };
 
-pub struct EventLoop<'a> {
+pub struct EventLoop {
     inner_loop: newton::EventLoop,
     last_instant: Instant,
-    width: u16,
-    height: u16,
-    style_sheet: Option<&'a StyleSheet>,
 }
 
-impl<'a> Default for EventLoop<'a> {
-    fn default() -> Self {
-        Self::new()
-    }
-}
+impl EventLoop {
+    pub fn new(display_mode: DisplayMode) -> Result<Self, std::io::Error> {
+        let event_loop = newton::EventLoop::new(display_mode)?;
 
-impl<'a> EventLoop<'a> {
-    pub fn new() -> Self {
-        Self {
-            inner_loop: newton::EventLoop::new(),
+        Ok(Self {
+            inner_loop: event_loop,
             last_instant: Instant::now(),
-            width: 0,
-            height: 0,
-            style_sheet: None,
-        }
+        })
     }
 
-    pub fn with_style_sheet(mut self, style_sheet: &'a StyleSheet) -> Self {
-        self.style_sheet = Some(style_sheet);
-        self
-    }
-
-    pub fn run<E, C>(
+    pub fn run(
         &mut self,
+        component: &mut Component,
+        input_method: &InputMethod,
+        style_sheet: Option<&StyleSheet>,
         control_flow: ControlFlow,
-        display_mode: DisplayMode,
-        component: &mut C,
-    ) -> Result<u32, E>
-    where
-        C: Component,
-        E: From<std::io::Error>,
-    {
+    ) -> Result<ControlFlow, std::io::Error> {
+        let mut width = self.inner_loop.width();
+        let mut height = self.inner_loop.height();
         let default_style = StyleSheet::default();
-        let style_sheet = match self.style_sheet {
+        let style_sheet = match style_sheet {
             Some(sheet) => sheet,
             None => &default_style,
         };
 
-        self.last_instant = Instant::now();
-        self.inner_loop
-            .run(control_flow, display_mode, |event, renderer, control_flow| {
-                let ctx = StyleContext {
-                    focused: true,
-                    hover: false,
-                };
-                match event {
-                    newton::Event::Initialize { width, height } => {
-                        self.width = width;
-                        self.height = height;
-                        component.update(renderer, style_sheet, control_flow, true, Event::Initialize)
-                    },
-                    newton::Event::Update => {
-                        let delta_time = self.last_instant.elapsed().as_secs_f32();
-                        self.last_instant = Instant::now();
-                        component.update(renderer, style_sheet, control_flow, true, Event::Update { delta_time })
-                    },
-                    newton::Event::Draw => {
-                        renderer.clear();
-                        component.update(renderer, style_sheet, control_flow, true, Event::Draw {
-                            x: 0,
-                            y: 0,
-                            width: component.desired_width(style_sheet, ctx).min(self.width - 1),
-                            height: component.desired_height(style_sheet, ctx),
-                        })
-                    },
-                    newton::Event::Resized { width, height } => {
-                        self.width = width;
-                        self.height = height;
-                    },
-                    newton::Event::KeyPressed { code, modifiers } => {
-                        if code == KeyCode::Esc {
-                            *control_flow = ControlFlow::Exit;
-                        }
-                        component.update(renderer, style_sheet, control_flow, true, Event::KeyPressed {
-                            code,
-                            modifiers,
-                        })
-                    },
-                }
+        component.initialize(style_sheet);
+        component.on_focus(style_sheet, true);
 
-                Ok(())
-            })
+        self.last_instant = Instant::now();
+        self.inner_loop.run(control_flow, |event, renderer, control_flow| {
+            match event {
+                NewtonEvent::Draw => {
+                    renderer.clear();
+                    component.draw(renderer, style_sheet, 0, 0, width, height, width, height);
+                },
+                NewtonEvent::Resized {
+                    width: new_width,
+                    height: new_height,
+                } => {
+                    width = new_width;
+                    height = new_height;
+                    component.on_resize(width, height);
+                },
+                NewtonEvent::KeyPressed { code, modifiers } => {
+                    for input_action in InputAction::from_key(input_method, code, modifiers) {
+                        match input_action {
+                            InputAction::Submit => {
+                                if component.next(style_sheet, false).is_none() {
+                                    *control_flow = ControlFlow::Exit(0);
+                                }
+                            },
+                            InputAction::Next => {
+                                if component.next(style_sheet, true).is_none() {
+                                    *control_flow = ControlFlow::Exit(0)
+                                }
+                            },
+                            InputAction::Previous => {
+                                component.prev(style_sheet, true);
+                            },
+                            InputAction::Exit => *control_flow = ControlFlow::Exit(1),
+                            InputAction::Reenter => {
+                                *control_flow = ControlFlow::Reenter(1);
+                            },
+                            _ => component.on_input_action(style_sheet, input_action),
+                        }
+                    }
+                },
+                _ => (),
+            }
+
+            Ok(())
+        })
     }
 }

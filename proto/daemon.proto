@@ -1,6 +1,8 @@
 syntax = "proto3";
 package daemon;
 
+import "fig_common.proto";
+
 //
 // Commands
 //
@@ -17,6 +19,8 @@ message DaemonMessage {
         SelfUpdateCommand self_update = 102;
         // A request for the daemon to sync data
         SyncCommand sync = 103;
+        // A request for the daemon to 
+        TelemetryEmitTrackCommand telemetry_emit_track = 104;
     }
 }
 
@@ -129,4 +133,16 @@ message SyncResponse {
 
     SyncStatus status = 1;
     optional string error = 2;
+}
+
+message TelemetryEmitTrackCommand {
+    enum Source {
+        APP = 0;
+        CLI = 1;
+        DAEMON = 2;
+    }
+
+    string event = 1;  
+    map<string, fig_common.Json> properties = 2;
+    optional Source source = 3;
 }

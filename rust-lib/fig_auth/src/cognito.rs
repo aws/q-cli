@@ -4,7 +4,6 @@ use std::fs::{
     File,
 };
 
-use anyhow::Context;
 use aws_sdk_cognitoidentityprovider::error::{
     InitiateAuthError,
     InitiateAuthErrorKind,
@@ -42,9 +41,34 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 
 use crate::password::generate_password;
-use crate::CLIENT_ID;
+use crate::{
+    defaults,
+    CLIENT_ID,
+};
 
-pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
+type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    Cognito(#[from] aws_sdk_cognitoidentityprovider::Error),
+    #[error(transparent)]
+    Refresh(#[from] RefreshError),
+    #[error(transparent)]
+    UserLambdaValidation(#[from] aws_sdk_cognitoidentityprovider::error::UserLambdaValidationException),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
+    #[error(transparent)]
+    Defaults(#[from] defaults::DefaultsError),
+    #[error("could not find dir")]
+    Dir,
+    #[error("credentials file does not exist")]
+    CredentialsFileNotExist,
+}
+
+pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     use std::sync::Arc;
 
     use aws_sdk_cognitoidentityprovider::RetryConfig;
@@ -76,7 +100,7 @@ pub fn get_client() -> anyhow::Result<aws_sdk_cognitoidentityprovider::Client> {
 
     let config = Config::builder()
         .region(Region::new("us-east-1"))
-        .app_name(AppName::new("rust-client")?)
+        .app_name(AppName::new("rust-client").unwrap())
         .build();
 
     Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
@@ -96,7 +120,7 @@ pub struct ValidationError {
     details: Vec<ValidationErrorDetail>,
 }
 
-fn parse_lambda_error(error: UserLambdaValidationException) -> anyhow::Result<ValidationError> {
+fn parse_lambda_error(error: UserLambdaValidationException) -> Result<ValidationError> {
     let lambda_triggers = [
         "PreSignUp",
         "PostConfirmation",
@@ -141,7 +165,7 @@ fn parse_lambda_error(error: UserLambdaValidationException) -> anyhow::Result<Va
 
 pub struct SignInInput<'a> {
     client: &'a Client,
-    client_id: String,
+    client_id: Option<String>,
     username_or_email: String,
 }
 
@@ -162,7 +186,7 @@ pub enum SignInError {
 }
 
 impl<'a> SignInInput<'a> {
-    pub fn new(client: &'a Client, client_id: impl Into<String>, username_or_email: impl Into<String>) -> Self {
+    pub fn new(client: &'a Client, username_or_email: impl Into<String>, client_id: impl Into<Option<String>>) -> Self {
         Self {
             client,
             client_id: client_id.into(),
@@ -171,10 +195,12 @@ impl<'a> SignInInput<'a> {
     }
 
     pub async fn sign_in(&self) -> Result<SignInOutput<'a>, SignInError> {
+        let client_id = self.client_id.as_ref().map_or(CLIENT_ID, String::as_str);
+
         let initiate_auth_result = self
             .client
             .initiate_auth()
-            .client_id(&self.client_id)
+            .client_id(client_id)
             .auth_flow(AuthFlowType::CustomAuth)
             .auth_parameters("USERNAME", &self.username_or_email)
             .send()
@@ -199,7 +225,7 @@ impl<'a> SignInInput<'a> {
         let respond_to_auth_result = self
             .client
             .respond_to_auth_challenge()
-            .client_id(&self.client_id)
+            .client_id(client_id)
             .session(&session)
             .challenge_name(challenge_name)
             .challenge_responses("USERNAME", &self.username_or_email)
@@ -223,7 +249,7 @@ impl<'a> SignInInput<'a> {
 
         Ok(SignInOutput {
             client: self.client,
-            client_id: self.client_id.clone(),
+            client_id: client_id.into(),
             username_or_email: self.username_or_email.clone(),
             session,
             challenge_name,
@@ -309,7 +335,7 @@ impl<'a> SignInOutput<'a> {
 
 pub struct SignUpInput<'a> {
     client: &'a Client,
-    client_id: String,
+    client_id: Option<String>,
     email: String,
 }
 
@@ -322,7 +348,7 @@ pub enum SignUpError {
 }
 
 impl<'a> SignUpInput<'a> {
-    pub fn new(client: &'a Client, client_id: impl Into<String>, email: impl Into<String>) -> Self {
+    pub fn new(client: &'a Client, email: impl Into<String>, client_id: impl Into<Option<String>>) -> Self {
         Self {
             client,
             client_id: client_id.into(),
@@ -333,11 +359,12 @@ impl<'a> SignUpInput<'a> {
     pub async fn sign_up(self) -> Result<(), SignUpError> {
         let password = generate_password(32);
         let username = uuid::Uuid::new_v4().as_hyphenated().to_string();
+        let client_id = self.client_id.as_ref().map_or(CLIENT_ID, String::as_str);
 
         let sign_up_result = self
             .client
             .sign_up()
-            .client_id(&self.client_id)
+            .client_id(client_id)
             .username(username)
             .password(&password)
             .user_attributes(AttributeType::builder().name("email").value(&self.email).build())
@@ -403,6 +430,18 @@ pub struct Credentials {
     pub expiration_time: Option<time::OffsetDateTime>,
 }
 
+#[derive(Debug, Error)]
+pub enum RefreshError {
+    #[error("sdk error")]
+    SdkError(#[from] Box<SdkError<aws_sdk_cognitoidentityprovider::error::InitiateAuthError>>),
+    #[error("refresh token expired")]
+    RefreshTokenExpired,
+    #[error("refresh token not set")]
+    RefreshTokenNotSet,
+    #[error("empty authentication response")]
+    EmptyAuthResponse,
+}
+
 impl Credentials {
     pub fn new(
         email: impl Into<String>,
@@ -420,8 +459,8 @@ impl Credentials {
         }
     }
 
-    pub fn save_credentials(&self) -> anyhow::Result<()> {
-        let data_dir = fig_data_dir().context("Could not find fig_data_dir")?;
+    pub fn save_credentials(&self) -> Result<()> {
+        let data_dir = fig_data_dir().ok_or(Error::Dir)?;
 
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
@@ -495,13 +534,13 @@ impl Credentials {
         Ok(())
     }
 
-    pub fn load_credentials() -> anyhow::Result<Credentials> {
-        let data_dir = fig_data_dir().context("Could not find fig_data_dir")?;
+    pub fn load_credentials() -> Result<Credentials> {
+        let data_dir = fig_data_dir().ok_or(Error::Dir)?;
 
         let creds_path = data_dir.join("credentials.json");
 
         if !creds_path.exists() {
-            return Err(anyhow::anyhow!("Could not find credentials file"));
+            return Err(Error::CredentialsFileNotExist);
         }
 
         let creds_file = File::open(data_dir.join("credentials.json"))?;
@@ -543,17 +582,19 @@ impl Credentials {
         Ok(creds)
     }
 
-    pub async fn refresh_credentials(&mut self, client: &Client, client_id: &str) -> anyhow::Result<()> {
+    pub async fn refresh_credentials(
+        &mut self,
+        client: &Client,
+        client_id: Option<String>,
+    ) -> Result<(), RefreshError> {
         if let Some(expiration_time) = self.get_refresh_expiration_time() {
             if expiration_time < time::OffsetDateTime::now_utc() {
-                return Err(anyhow::anyhow!("refresh token is expired"));
+                return Err(RefreshError::RefreshTokenExpired);
             }
         }
 
-        let refresh_token = self
-            .refresh_token
-            .as_ref()
-            .ok_or_else(|| anyhow::anyhow!("refresh token is not set"))?;
+        let refresh_token = self.refresh_token.as_ref().ok_or(RefreshError::RefreshTokenNotSet)?;
+        let client_id = client_id.as_ref().map_or(CLIENT_ID, String::as_str);
 
         let out = client
             .initiate_auth()
@@ -561,7 +602,8 @@ impl Credentials {
             .auth_flow(AuthFlowType::RefreshTokenAuth)
             .auth_parameters("REFRESH_TOKEN", refresh_token)
             .send()
-            .await?;
+            .await
+            .map_err(Box::new)?;
 
         match out.authentication_result {
             Some(auth_result) => {
@@ -570,16 +612,9 @@ impl Credentials {
                 self.expiration_time =
                     Some(time::OffsetDateTime::now_utc() + time::Duration::seconds(auth_result.expires_in.into()));
             },
-            None => return Err(anyhow::anyhow!("Could not refresh credentials")),
+            None => return Err(RefreshError::EmptyAuthResponse),
         }
 
-        Ok(())
-    }
-
-    // Refresh credentials with the default `client` and `client_id`
-    pub async fn refresh_credentials_default(&mut self) -> anyhow::Result<()> {
-        let client = get_client()?;
-        self.refresh_credentials(&client, CLIENT_ID).await?;
         Ok(())
     }
 

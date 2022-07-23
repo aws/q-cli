@@ -52,7 +52,6 @@ enum GuardAssignment {
     AfterSourcing,
 }
 
-#[must_use]
 fn assign_shell_variable(shell: &Shell, name: impl Display, exported: bool) -> String {
     match (shell, exported) {
         (Shell::Bash | Shell::Zsh, false) => format!("{name}=1"),
@@ -62,7 +61,6 @@ fn assign_shell_variable(shell: &Shell, name: impl Display, exported: bool) -> S
     }
 }
 
-#[must_use]
 fn guard_source(
     shell: &Shell,
     export: bool,
@@ -106,6 +104,11 @@ fn guard_source(
 }
 
 fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
+    // Do not print any shell integrations for `.profile` as it can cause issues on launch
+    if std::env::consts::OS == "linux" && matches!(rcfile.as_deref(), Some("profile")) {
+        return Ok("".into());
+    }
+
     if !fig_settings::state::get_bool_or("shell-integrations.enabled", true) {
         return Ok(guard_source(
             shell,

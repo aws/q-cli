@@ -19,6 +19,7 @@ use fig_proto::local::{
     IntegrationAction,
     TerminalIntegrationCommand,
 };
+use fig_util::Terminal;
 use regex::Regex;
 use serde::{
     Deserialize,
@@ -275,6 +276,7 @@ struct CurrentEnvironment {
     installed_via_brew: Option<bool>,
     current_window_id: Option<String>,
     current_process: Option<String>,
+    terminal: Option<Terminal>,
 }
 
 impl CurrentEnvironment {
@@ -293,6 +295,8 @@ impl CurrentEnvironment {
             .map(|path| path.to_string_lossy().into_owned())
             .unwrap_or_else(|_| "<unknown>".into());
 
+        let terminal = fig_util::terminal::Terminal::parent_terminal();
+
         CurrentEnvironment {
             user_shell,
             current_dir,
@@ -301,6 +305,7 @@ impl CurrentEnvironment {
             installed_via_brew: installed_via_brew().ok(),
             current_window_id: None,
             current_process: None,
+            terminal,
         }
     }
 
@@ -327,6 +332,14 @@ impl Diagnostic for CurrentEnvironment {
             format!(
                 "Active Process: {}",
                 self.current_process.as_deref().unwrap_or("<unknown>")
+            ),
+            format!(
+                "Terminal: {}",
+                self.terminal
+                    .as_ref()
+                    .map(|term| term.internal_id())
+                    .as_deref()
+                    .unwrap_or("<unknown>")
             ),
         ];
 
@@ -614,6 +627,7 @@ impl Diagnostic for Diagnostics {
         if let Some(version) = &self.version {
             lines.extend(print_indent(&version.user_readable()?, "  ", 1));
         }
+        #[cfg(target_os = "macos")]
         if let Some(details) = &self.fig_details {
             lines.extend(print_indent(&details.user_readable()?, "  ", 1));
         }

@@ -8,4 +8,6 @@ pub enum Error {
     ReqwestError(#[from] reqwest::Error),
     #[error("Error with the auth service")]
     AuthError(#[from] anyhow::Error),
+    #[error(transparent)]
+    DefaultsError(#[from] fig_auth::defaults::DefaultsError),
 }

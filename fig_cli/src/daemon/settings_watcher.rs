@@ -27,7 +27,6 @@ use super::DaemonStatus;
 use crate::cli::app::uninstall::UninstallArgs;
 use crate::util::fig_bundle;
 
-#[cfg(target_os = "macos")]
 pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<JoinHandle<()>> {
     // We need to spawn both a thread and a tokio task since the notify library does not
     // currently support async, this should be improved in the future, but currently this works fine

@@ -37,7 +37,7 @@ use fig_integrations::InstallationError;
 use fig_ipc::{
     connect_timeout,
     get_fig_socket_path,
-    send_recv_message,
+    send_recv_message_timeout,
 };
 use fig_proto::daemon::diagnostic_response::{
     settings_watcher_status,
@@ -54,6 +54,7 @@ use fig_util::{
     Shell,
     Terminal,
 };
+use futures::future::BoxFuture;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -66,11 +67,13 @@ use sysinfo::{
     RefreshKind,
     SystemExt,
 };
+use system_socket::SystemStream;
 use tokio::io::{
     AsyncBufReadExt,
     AsyncWriteExt,
 };
 
+use super::app::restart_fig;
 use crate::cli::diagnostics::{
     dscl_read,
     verify_integration,
@@ -102,7 +105,10 @@ impl DoctorArgs {
     }
 }
 
-type DoctorFix = Box<dyn FnOnce() -> Result<()> + Send>;
+enum DoctorFix {
+    Sync(Box<dyn FnOnce() -> Result<()> + Send>),
+    Async(BoxFuture<'static, Result<()>>),
+}
 
 enum DoctorError {
     Warning(Cow<'static, str>),
@@ -179,7 +185,18 @@ macro_rules! doctor_fix {
         DoctorError::Error {
             reason: format!($reason).into(),
             info: vec![],
-            fix: Some(Box::new($fix)),
+            fix: Some(DoctorFix::Sync(Box::new($fix))),
+            error: None,
+        }
+    };
+}
+
+macro_rules! doctor_fix_async {
+    ({ reason: $reason:expr,fix: $fix:expr }) => {
+        DoctorError::Error {
+            reason: format!($reason).into(),
+            info: vec![],
+            fix: Some(DoctorFix::Async(Box::pin($fix))),
             error: None,
         }
     };
@@ -211,7 +228,7 @@ where
 {
     let args = args.into_iter().collect::<Vec<_>>();
 
-    Some(Box::new(move || {
+    Some(DoctorFix::Sync(Box::new(move || {
         if let (Some(exe), Some(remaining)) = (args.first(), args.get(1..)) {
             if Command::new(exe).args(remaining).status()?.success() {
                 if let Some(duration) = sleep_duration.into() {
@@ -229,7 +246,7 @@ where
                 .collect::<Vec<_>>()
                 .join(" ")
         )
-    }))
+    })))
 }
 
 fn is_installed(app: impl AsRef<OsStr>) -> bool {
@@ -338,7 +355,7 @@ impl DoctorCheck for FigBinCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = fig_directories::fig_dir().context("~/.fig/bin/fig does not exist")?;
+        let path = fig_directories::fig_dir().context("couldn't get home directory")?;
         Ok(check_file_exists(&path)?)
     }
 }
@@ -422,16 +439,21 @@ impl DoctorCheck for FigSocketCheck {
                 return Err(DoctorError::Error {
                     reason: "Fig socket parent directory does not exist".into(),
                     info: vec![format!("Path: {}", fig_socket_path.display()).into()],
-                    fix: Some(Box::new(|| {
+                    fix: Some(DoctorFix::Sync(Box::new(|| {
                         std::fs::create_dir_all(parent)?;
                         Ok(())
-                    })),
+                    }))),
                     error: None,
                 });
             }
         }
 
-        Ok(check_file_exists(&get_fig_socket_path())?)
+        check_file_exists(&get_fig_socket_path()).map_err(|_| {
+            doctor_fix_async!({
+                reason: "Fig socket missing",
+                fix: restart_fig()
+            })
+        })
     }
 
     fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
@@ -548,24 +570,26 @@ struct FigtermSocketCheck;
 #[async_trait]
 impl DoctorCheck for FigtermSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Figterm socket".into()
+        "Figterm".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        // Check that the socket exists
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
-
         let socket_path = PathBuf::from("/tmp").join(format!("figterm-{term_session}.socket"));
 
         check_file_exists(&socket_path)?;
 
+        // Connect to the socket
         let mut conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
             Err(err) => return Err(doctor_error!("Socket exists but could not connect: {err}")),
         };
 
+        // Try sending an insert event and ensure it inserts what is expected
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
 
-        let write_handle: tokio::task::JoinHandle<Result<(), DoctorError>> = tokio::spawn(async move {
+        let write_handle: tokio::task::JoinHandle<Result<SystemStream, DoctorError>> = tokio::spawn(async move {
             conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
@@ -585,7 +609,7 @@ impl DoctorCheck for FigtermSocketCheck {
 
             conn.write(&fig_message).await.map_err(|e| doctor_error!("{e}"))?;
 
-            Ok(())
+            Ok(conn)
         });
 
         let mut buffer = String::new();
@@ -615,13 +639,63 @@ impl DoctorCheck for FigtermSocketCheck {
 
         disable_raw_mode().context("Failed to disable raw mode")?;
 
-        match write_handle.await {
-            Ok(Ok(_)) => {},
+        let mut conn = match write_handle.await {
+            Ok(Ok(conn)) => conn,
             Ok(Err(err)) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
             Err(err) => return Err(doctor_error!("Failed to write to figterm socket: {err}")),
-        }
+        };
 
         timeout_result?;
+
+        // Figterm diagnostics
+
+        let message = fig_proto::figterm::FigtermMessage {
+            command: Some(fig_proto::figterm::figterm_message::Command::DiagnosticsCommand(
+                fig_proto::figterm::DiagnosticsCommand {},
+            )),
+        };
+
+        let response: Result<Option<fig_proto::figterm::FigtermResponse>> =
+            fig_ipc::send_recv_message_timeout(&mut conn, message, Duration::from_secs(1)).await;
+
+        match response {
+            Ok(Some(figterm_response)) => match figterm_response.response {
+                Some(fig_proto::figterm::figterm_response::Response::DiagnosticsResponse(
+                    fig_proto::figterm::DiagnosticsResponse {
+                        zsh_autosuggestion_style,
+                        fish_suggestion_style,
+                        ..
+                    },
+                )) => {
+                    if let Some(style) = zsh_autosuggestion_style {
+                        if let Some(fg) = style.fg {
+                            if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
+                                if i == 15 {
+                                    return Err(doctor_warning!(
+                                        "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE is set to the same style your text, Fig will not be able to detect what you have typed."
+                                    ));
+                                }
+                            }
+                        }
+                    }
+
+                    if let Some(style) = fish_suggestion_style {
+                        if let Some(fg) = style.fg {
+                            if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
+                                if i == 15 {
+                                    return Err(doctor_warning!(
+                                        "The Fish suggestion color is set to the same style your text, Fig will not be able to detect what you have typed."
+                                    ));
+                                }
+                            }
+                        }
+                    }
+                },
+                _ => return Err(doctor_error!("Failed to recieve expected message from figterm")),
+            },
+            Ok(None) => return Err(doctor_error!("Recieved EOF when trying to recieve figterm diagnostics")),
+            Err(err) => return Err(doctor_error!("Failed to recieve figterm diagnostics: {err}")),
+        }
 
         Ok(())
     }
@@ -645,10 +719,10 @@ impl DoctorCheck for InsertionLockCheck {
             return Err(DoctorError::Error {
                 reason: "Insertion lock exists".into(),
                 info: vec![],
-                fix: Some(Box::new(move || {
+                fix: Some(DoctorFix::Sync(Box::new(move || {
                     std::fs::remove_file(&insetion_lock_path)?;
                     Ok(())
-                })),
+                }))),
                 error: None,
             });
         }
@@ -673,12 +747,12 @@ impl DoctorCheck for DaemonCheck {
 
         macro_rules! daemon_fix {
             () => {
-                Some(Box::new(move || {
+                Some(DoctorFix::Sync(Box::new(move || {
                     crate::daemon::install_daemon()?;
                     // Sleep for a second to give the daemon time to install and start
                     std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                     Ok(())
-                }))
+                })))
             };
         }
 
@@ -694,12 +768,12 @@ impl DoctorCheck for DaemonCheck {
                 return Err(DoctorError::Error {
                     reason: format!("LaunchAgents directory does not exist at {:?}", launch_agents_path).into(),
                     info: vec![],
-                    fix: Some(Box::new(move || {
+                    fix: Some(DoctorFix::Sync(Box::new(move || {
                         std::fs::create_dir_all(&launch_agents_path)?;
                         crate::daemon::install_daemon()?;
                         std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
                         Ok(())
-                    })),
+                    }))),
                     error: None,
                 });
             }
@@ -721,7 +795,7 @@ impl DoctorCheck for DaemonCheck {
                     format!("Path: {:?}", launch_agents_path).into(),
                     format!("Error: {err}").into(),
                 ],
-                fix: Some(Box::new(move || Ok(()))),
+                fix: Some(DoctorFix::Sync(Box::new(move || Ok(())))),
                 error: None,
             })?;
         }
@@ -784,7 +858,7 @@ impl DoctorCheck for DaemonCheck {
             },
         };
 
-        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = send_recv_message(
+        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = send_recv_message_timeout(
             &mut conn,
             fig_proto::daemon::new_diagnostic_message(),
             Duration::from_secs(1),
@@ -923,10 +997,10 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 Err(DoctorError::Error {
                     reason: msg,
                     info: vec![fix_text.into()],
-                    fix: Some(Box::new(move || {
+                    fix: Some(DoctorFix::Sync(Box::new(move || {
                         fix_integration.install(None)?;
                         Ok(())
-                    })),
+                    }))),
                     error: None,
                 })
             },
@@ -935,10 +1009,10 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 Err(DoctorError::Error {
                     reason: err.to_string().into(),
                     info: vec![fix_text.into()],
-                    fix: Some(Box::new(move || {
+                    fix: Some(DoctorFix::Sync(Box::new(move || {
                         fix_integration.install(None)?;
                         Ok(())
-                    })),
+                    }))),
                     error: Some(anyhow::Error::new(err)),
                 })
             },
@@ -1594,7 +1668,7 @@ impl DoctorCheck for LoginStatusCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // We reload the credentials here because we want to check if the user is logged in
-        match fig_auth::refresh_credentals().await {
+        match fig_auth::get_token().await {
             Ok(_) => Ok(()),
             Err(_) => Err(doctor_error!("Not logged in. Run `fig login` to login.")),
         }
@@ -1667,7 +1741,10 @@ where
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
             if let Some(fixfn) = fix {
                 println!("Attempting to fix automatically...");
-                if let Err(err) = fixfn() {
+                if let Err(err) = match fixfn {
+                    DoctorFix::Sync(fixfn) => fixfn(),
+                    DoctorFix::Async(fixfn) => fixfn.await,
+                } {
                     println!("Failed to fix: {err}");
                 } else {
                     println!("Re-running check...");

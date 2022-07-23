@@ -1,4 +1,3 @@
-use std::fmt;
 use std::io::Write;
 use std::time::Duration;
 
@@ -7,18 +6,10 @@ use anyhow::{
     Context,
     Result,
 };
-use fig_auth::{
-    get_email,
-    get_token,
-    refresh_credentals,
-};
+use fig_auth::get_email;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
-use fig_settings::{
-    api_host,
-    ws_host,
-};
-use reqwest::Url;
+use fig_settings::ws_host;
 use serde::{
     Deserialize,
     Serialize,
@@ -36,6 +27,7 @@ use tracing::{
     error,
     info,
 };
+use url::Url;
 
 use crate::daemon::scheduler::{
     Scheduler,
@@ -59,36 +51,16 @@ enum FigWebsocketMessage {
         payload: Option<serde_json::Value>,
         apps: Option<Vec<String>>,
     },
-}
-
-async fn get_ticket(reqwest_client: &reqwest::Client, url: Url, token: impl fmt::Display) -> Result<reqwest::Response> {
-    Ok(tokio::time::timeout(
-        Duration::from_secs(30),
-        reqwest_client.get(url.clone()).bearer_auth(&token).send(),
-    )
-    .await??
-    .error_for_status()?)
+    #[serde(rename_all = "camelCase")]
+    Update {
+        force: bool,
+    },
 }
 
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let api_host = api_host();
-    let url = Url::parse(&format!("{api_host}/authenticate/ticket"))?;
-
-    let reqwest_client = reqwest::Client::new();
-    let ticket = match get_ticket(&reqwest_client, url.clone(), get_token().await?).await {
-        Ok(response) => response,
-        Err(_) => {
-            // Retry after manually refreshing the credentals
-            refresh_credentals().await?;
-            get_ticket(&reqwest_client, url.clone(), get_token().await?)
-                .await
-                .context("Failed to get ticket")?
-        },
-    }
-    .text()
-    .await?;
+    let ticket = fig_request::Request::get("/authenticate/ticket").auth().text().await?;
 
     let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
@@ -96,7 +68,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         device_id.push_str(&email);
     }
 
-    let url = Url::parse_with_params(&ws_host(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
+    let url = Url::parse_with_params(ws_host().as_str(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
 
     let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
         .await
@@ -151,6 +123,19 @@ pub async fn process_websocket(
                                     let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
                                     send_hook_to_socket(hook).await.ok();
                                 },
+                            },
+                            FigWebsocketMessage::Update { force } => {
+                                cfg_if! {
+                                    if #[cfg(target_os = "macos")] {
+                                        if let Err(err) = fig_ipc::command::update_command(force).await {
+                                            error!("Failed to update Fig: {err}");
+                                        }
+                                    } else {
+                                        let _force = force;
+                                        error!("Cannot trigger update on this platform");
+                                    }
+
+                                }
                             },
                         },
                         Err(e) => {

@@ -1,13 +1,13 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
+use std::process::Command;
 
 use anyhow::{
     Context,
     Result,
 };
-use fig_auth::get_token;
-use fig_settings::api_host;
 use fig_util::Shell;
+use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
@@ -21,6 +21,31 @@ use tracing::{
 };
 
 use crate::plugins::api::PluginData;
+
+#[cfg(target_os = "linux")]
+static LINUX_KERNEL_VERSION: Lazy<Option<String>> = Lazy::new(|| {
+    Command::new("uname")
+        .arg("-r")
+        .output()
+        .ok()
+        .and_then(|output| std::str::from_utf8(&output.stdout).ok().map(|s| s.trim().to_owned()))
+});
+
+#[cfg(target_os = "macos")]
+static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
+    Command::new("sw_vers")
+        .output()
+        .ok()
+        .and_then(|output| -> Option<String> {
+            let version_info = std::str::from_utf8(&output.stdout).ok().map(|s| s.trim().to_owned())?;
+            let version_regex = regex::Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
+            let version = version_regex
+                .captures(&version_info)
+                .and_then(|c| c.get(1))
+                .map(|v| v.as_str().into());
+            version
+        })
+});
 
 /// The data for all the shells
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -50,31 +75,27 @@ pub enum UpdateStatus {
 }
 
 pub async fn download_dotfiles() -> Result<UpdateStatus> {
-    // Get the token
-    let token = get_token().await?;
-
     let device_uniqueid = fig_util::get_system_id().ok();
     let plugins_directry = crate::plugins::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
-
-    let url: reqwest::Url = format!("{}/dotfiles/source/all", api_host()).parse()?;
 
     let debug_dotfiles = match fig_settings::state::get_value("developer.dotfiles.debug") {
         Ok(Some(serde_json::Value::Bool(true))) => Some("true"),
         _ => None,
     };
 
-    let download = reqwest::Client::new()
-        .get(url)
-        .bearer_auth(token)
+    let download = fig_request::Request::get("/dotfiles/source/all")
+        .auth()
         .query(&[
             ("os", Some(std::env::consts::OS)),
+            ("architecture", Some(std::env::consts::ARCH)),
             ("device", device_uniqueid.as_deref()),
             ("debug", debug_dotfiles),
             ("pluginsDirectory", plugins_directry.as_deref()),
+            #[cfg(target_os = "linux")]
+            ("linuxKernelVersion", LINUX_KERNEL_VERSION.as_deref()),
+            #[cfg(target_os = "macos")]
+            ("macosVersion", MACOS_VERSION.as_deref()),
         ])
-        .send()
-        .await?
-        .error_for_status()?
         .text()
         .await?;
 
@@ -141,11 +162,3 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
 pub fn all_file_path() -> Option<PathBuf> {
     fig_directories::fig_data_dir().map(|dir| dir.join("shell").join("all.json"))
 }
-
-//#[cfg(test)]
-// mod test {
-//    #[test]
-//    fn test() {
-//        //panic!()
-//    }
-//}

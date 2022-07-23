@@ -1,9 +1,9 @@
 syntax = "proto3";
+package local;
 
 option objc_class_prefix = "FIG";
-option go_package = "fig_proto";
 
-package local;
+import "fig_common.proto";
 
 message LocalMessage {
 	oneof type {
@@ -110,6 +110,7 @@ enum UiElement {
 
 message OpenUiElementCommand {
 	UiElement element = 1;
+	optional string route = 2;
 }
 
 message ResetCacheCommand {}
@@ -138,21 +139,8 @@ message InputMethodCommand {
 message PromptAccessibilityCommand {}
 
 // == Hooks ==
-message ShellContext {
-	optional int32 pid = 1;
-	optional string ttys = 2; // /dev/ttys## of terminal session
-	optional string process_name = 3; // the name of the process
-	optional string current_working_directory = 4; // the directory where the user ran the command
-	optional string session_id = 5; // the value of $TERM_SESSION_ID
-	optional int32 integration_version = 6;
-	optional string terminal = 7;
-	optional string hostname = 8;
-
-	optional ShellContext remote_context = 9;
-}
-
 message EditBufferHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 
 	string text = 2;
 	int64 cursor = 3;
@@ -160,7 +148,7 @@ message EditBufferHook {
 }
 
 message InitHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 
 	bool called_direct = 2;
 	string bundle = 3;
@@ -169,17 +157,17 @@ message InitHook {
 }
 
 message PromptHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 }
 
 message PreExecHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 
 	optional string command = 2; // the full command that was run in the shell
 }
 
 message PostExecHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 
 	string command = 2; // the full command that was run in the shell
 	int32 exit_code = 3; // the exit code of the command
@@ -195,7 +183,7 @@ message TmuxPaneChangedHook {
 }
 
 message OpenedSSHConnectionHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 
 	string control_path = 2;
 	string remote_hostname = 3;
@@ -239,7 +227,7 @@ message CursorPositionHook {
 message FocusChangeHook {}
 
 message InterceptedKeyHook {
-	ShellContext context = 1;
+	fig_common.ShellContext context = 1;
 	string key = 2;
 	string action = 3;
 }

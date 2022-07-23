@@ -148,7 +148,7 @@ impl WindowState {
             WindowEvent::Hide => {
                 if let Some(session) = state.figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::ClearIntercept).await;
+                        let _ = session.sender.send(FigTermCommand::InterceptClear).await;
                     });
                 }
                 self.webview.window().set_visible(false);
@@ -162,7 +162,7 @@ impl WindowState {
             WindowEvent::HideSoft => {
                 if let Some(session) = state.figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::ClearIntercept).await;
+                        let _ = session.sender.send(FigTermCommand::InterceptClear).await;
                     });
                 }
             },

@@ -270,7 +270,7 @@ extension ShellHookManager {
     }
 
     shellPromptWillReturn(
-      context: Local_ShellContext.with({ ctx in
+      context: FigCommon_ShellContext.with({ ctx in
         ctx.ttys = ttyDescriptor
         ctx.pid = shellPid
         ctx.sessionID = sessionId
@@ -279,7 +279,7 @@ extension ShellHookManager {
       }))
   }
 
-  func shellPromptWillReturn(context: Local_ShellContext) {
+  func shellPromptWillReturn(context: FigCommon_ShellContext) {
     // try to find associated window, but don't necessarily link with the topmost window! (prompt can return when window
     // is in background)
     guard
@@ -339,7 +339,7 @@ extension ShellHookManager {
       return
     }
 
-    let ctx = Local_ShellContext.with { context in
+    let ctx = FigCommon_ShellContext.with { context in
       context.sessionID = sessionId
       context.ttys = ttyDescriptor
       context.pid = shellPid
@@ -360,7 +360,7 @@ extension ShellHookManager {
       context: ctx, calledDirect: calledDirect, bundle: bundle, env: envFilter)
   }
 
-  func startedNewTerminalSession(context: Local_ShellContext,
+  func startedNewTerminalSession(context: FigCommon_ShellContext,
                                  calledDirect: Bool,
                                  bundle: String?,
                                  env: [String: String]) {
@@ -381,7 +381,7 @@ extension ShellHookManager {
       return
     }
 
-    let context = Local_ShellContext.with { ctx in
+    let context = FigCommon_ShellContext.with { ctx in
       ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
       ctx.ttys = ttyDescriptor
       ctx.sessionID = sessionId
@@ -390,7 +390,7 @@ extension ShellHookManager {
     shellWillExecuteCommand(context: context)
   }
 
-  func shellWillExecuteCommand(context: Local_ShellContext) {
+  func shellWillExecuteCommand(context: FigCommon_ShellContext) {
     guard
       let hash = attemptToFindToAssociatedWindow(
         for: context.sessionID,
@@ -429,7 +429,7 @@ extension ShellHookManager {
   func updateKeybufferLegacy(_ info: ShellMessage) {
     if let (buffer, cursor, histno) = info.parseKeybuffer() {
       updateKeybuffer(
-        context: Local_ShellContext.with({ ctx in
+        context: FigCommon_ShellContext.with({ ctx in
           ctx.sessionID = info.session
           ctx.processName = info.shell ?? ""
           ctx.integrationVersion = Int32(info.shellIntegrationVersion ?? 0)
@@ -440,7 +440,7 @@ extension ShellHookManager {
     }
   }
 
-  func updateKeybuffer(context: Local_ShellContext, text: String, cursor: Int, histno: Int) {
+  func updateKeybuffer(context: FigCommon_ShellContext, text: String, cursor: Int, histno: Int) {
     // invariant: frontmost allowlisted window is assumed to host shell session which sent this edit buffer event.
     guard let window = AXWindowServer.shared.allowlistedWindow else {
       Logger.log(

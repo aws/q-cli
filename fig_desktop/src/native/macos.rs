@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 
+use crate::event::NativeEvent;
 use crate::window::CursorPositionKind;
 use crate::{
     EventLoopProxy,
@@ -14,6 +15,10 @@ pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relativ
 
 #[derive(Debug, Default)]
 pub struct NativeState {}
+
+impl NativeState {
+    pub fn handle(&self, _event: NativeEvent) {}
+}
 
 pub async fn init(_global_state: Arc<GlobalState>, _proxy: EventLoopProxy) -> Result<()> {
     Ok(())

@@ -65,7 +65,7 @@ jobs:
           target: ${{matrix.target}}
 
       - name: Cache Dependencies
-        uses: Swatinem/rust-cache@cb2cf0cc7c5198d3364b9630e2c3d457f160790c
+        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
       - name: Compile
         run: make ${BINARY_NAME}-${{matrix.build}}
