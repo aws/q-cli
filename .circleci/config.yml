@@ -105,6 +105,8 @@ jobs:
           command: |
             rpm --query --requires desktop/build/fig-x86_64-linux.rpm > /tmp/requires.txt
             rpm --query --provides desktop/build/fig-x86_64-linux.rpm > /tmp/provides.txt
+            rpm --query --info fig-x86_64-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/reported-size.txt
+            du --bytes fig-x86_64-linux.rpm | egrep -o '[0-9]*' | head -n 1 > /tmp/package-size.txt
       - callback:
           command: dependencies
           args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
