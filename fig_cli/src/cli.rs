@@ -24,6 +24,10 @@ mod user;
 mod workflow;
 
 use std::fs::File;
+use std::io::{
+    stdout,
+    Write,
+};
 
 use anyhow::{
     Context,
@@ -242,11 +246,13 @@ impl Cli {
 
                                 open_ui_element(UiElement::InputMethodPrompt, None)
                                     .await
-                                    .context("\nCould not launch fig\n")
+                                    .context("\nCould not launch fig\n")?;
                             } else {
-                                Err(anyhow::anyhow!("input method is only implemented on macOS"))
+                                Err(anyhow::anyhow!("input method is only implemented on macOS"))?;
                             }
                         }
+
+                        Ok(())
                     } else {
                         internal::install_cli_from_args(args)
                     }
@@ -367,10 +373,11 @@ async fn root_command() -> Result<()> {
                         .context("\nCould not launch fig\n")?;
                 }
                 Err(_) => {
-                    println!(
+                    writeln!(
+                        stdout(),
                         "\n→ Opening {}...\n",
                         "https://app.fig.io".magenta().underlined()
-                    );
+                    ).ok();
                     fig_util::open_url("https://app.fig.io")?;
                 }
             }

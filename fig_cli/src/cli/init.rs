@@ -1,7 +1,11 @@
 use std::borrow::Cow;
 use std::env;
 use std::fmt::Display;
-use std::io::stdin;
+use std::io::{
+    stdin,
+    stdout,
+    Write,
+};
 
 use anyhow::{
     Context,
@@ -37,11 +41,12 @@ pub struct InitArgs {
 impl InitArgs {
     pub async fn execute(&self) -> Result<()> {
         let InitArgs { shell, when, rcfile } = self;
-        println!("# {when} for {shell}");
+        writeln!(stdout(), "# {when} for {shell}").ok();
         match shell_init(shell, when, rcfile) {
-            Ok(source) => println!("{source}"),
-            Err(err) => println!("# Could not load source: {err}"),
+            Ok(source) => writeln!(stdout(), "{source}"),
+            Err(err) => writeln!(stdout(), "# Could not load source: {err}"),
         }
+        .ok();
         Ok(())
     }
 }
