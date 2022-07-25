@@ -24,10 +24,6 @@ mod user;
 mod workflow;
 
 use std::fs::File;
-use std::io::{
-    stdout,
-    Write,
-};
 
 use anyhow::{
     Context,
@@ -365,6 +361,10 @@ async fn root_command() -> Result<()> {
             use crossterm::style::Stylize;
             use fig_ipc::command::open_ui_element;
             use fig_proto::local::UiElement;
+            use std::io::{
+                stdout,
+                Write,
+            };
 
             match launch_fig(LaunchOptions::new().wait_for_activation().verbose()) {
                 Ok(()) => {
