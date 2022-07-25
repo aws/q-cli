@@ -556,17 +556,13 @@ pub async fn daemon() -> Result<()> {
 
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join) {
-                Ok(_) => Ok(()),
-                Err(err) => Err(err.into()),
-            }
+            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join)?;
         } else {
-            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join) {
-                Ok(_) => Ok(()),
-                Err(err) => Err(err.into()),
-            }
+            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
         }
     }
+
+    Ok(())
 }
 
 /// Spawn the daemon to listen for updates and dotfiles changes
