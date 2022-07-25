@@ -1,5 +1,6 @@
 supports_mold: &supports_mold
   or:
+    - equal: [ << parameters.platform >>, kinetic ]
     - equal: [ << parameters.platform >>, jammy ]
     - equal: [ << parameters.platform >>, f36 ]
 
@@ -26,12 +27,12 @@ parameters:
     default: "develop"
 
 executors:
+  kinetic:
+    docker:
+      - image: ubuntu:22.10
   jammy:
     docker:
       - image: ubuntu:22.04
-  impish:
-    docker:
-      - image: ubuntu:21.10
   focal:
     docker:
       - image: ubuntu:20.04
@@ -50,7 +51,7 @@ workflows:
           requires: [update-version]
           matrix:
             parameters:
-              platform: [jammy, impish, focal]
+              platform: [kinetic, jammy, focal]
       - fedora:
           requires: [update-version]
           matrix:
