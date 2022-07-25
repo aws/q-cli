@@ -242,11 +242,13 @@ impl Cli {
 
                                 open_ui_element(UiElement::InputMethodPrompt, None)
                                     .await
-                                    .context("\nCould not launch fig\n")
+                                    .context("\nCould not launch fig\n")?;
                             } else {
-                                Err(anyhow::anyhow!("input method is only implemented on macOS"))
+                                Err(anyhow::anyhow!("input method is only implemented on macOS"))?;
                             }
                         }
+
+                        Ok(())
                     } else {
                         internal::install_cli_from_args(args)
                     }
@@ -359,6 +361,10 @@ async fn root_command() -> Result<()> {
             use crossterm::style::Stylize;
             use fig_ipc::command::open_ui_element;
             use fig_proto::local::UiElement;
+            use std::io::{
+                stdout,
+                Write,
+            };
 
             match launch_fig(LaunchOptions::new().wait_for_activation().verbose()) {
                 Ok(()) => {
@@ -367,10 +373,11 @@ async fn root_command() -> Result<()> {
                         .context("\nCould not launch fig\n")?;
                 }
                 Err(_) => {
-                    println!(
+                    writeln!(
+                        stdout(),
                         "\n→ Opening {}...\n",
                         "https://app.fig.io".magenta().underlined()
-                    );
+                    ).ok();
                     fig_util::open_url("https://app.fig.io")?;
                 }
             }

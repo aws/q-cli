@@ -5,11 +5,18 @@ pub mod cli;
 pub mod daemon;
 pub mod util;
 
+use std::io::{
+    stderr,
+    Write,
+};
 use std::process::exit;
 use std::str::FromStr;
 
 use clap::StructOpt;
+use fig_telemetry::sentry::configure_scope;
 use tracing::level_filters::LevelFilter;
+
+const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
 
 #[tokio::main]
 async fn main() {
@@ -22,29 +29,38 @@ async fn main() {
     // user facing commands as performance is less important
     let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
         Some("init" | "_" | "internal" | "tips" | "completion" | "hook") => (None, None),
-        _ => (
-            Some(fig_telemetry::init_sentry(
-                "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837",
-            )),
-            Some(fig_telemetry::dispatch_emit_track(
-                fig_telemetry::TrackEvent::RanCommand,
-                fig_telemetry::TrackSource::Cli,
-                [
-                    ("arguments", std::env::args().collect::<Vec<_>>().join(" ")),
-                    (
-                        "shell",
-                        fig_util::get_parent_process_exe()
-                            .map_or_else(|| "<unknown>".into(), |path| path.display().to_string()),
-                    ),
-                    (
-                        "terminal",
-                        fig_util::Terminal::parent_terminal()
-                            .map_or_else(|| "<unknown>".into(), |terminal| terminal.internal_id()),
-                    ),
-                    ("cli_version", env!("CARGO_PKG_VERSION").into()),
-                ],
-            )),
-        ),
+        Some("daemon") => (Some(fig_telemetry::init_sentry(SENTRY_CLI_URL)), None),
+        _ => {
+            let sentry = fig_telemetry::init_sentry(SENTRY_CLI_URL);
+
+            let arguments = std::env::args().collect::<Vec<_>>().join(" ");
+            let shell = fig_util::get_parent_process_exe()
+                .map_or_else(|| "<unknown>".into(), |path| path.display().to_string());
+            let terminal = fig_util::Terminal::parent_terminal()
+                .map_or_else(|| "<unknown>".into(), |terminal| terminal.internal_id());
+            let cli_version = env!("CARGO_PKG_VERSION").into();
+
+            configure_scope(|scope| {
+                scope.set_tag("arguments", &arguments);
+                scope.set_tag("shell", &shell);
+                scope.set_tag("terminal", &terminal);
+                scope.set_tag("cli_version", &cli_version);
+            });
+
+            (
+                Some(sentry),
+                Some(fig_telemetry::dispatch_emit_track(
+                    fig_telemetry::TrackEvent::RanCommand,
+                    fig_telemetry::TrackSource::Cli,
+                    [
+                        ("arguments", arguments),
+                        ("shell", shell),
+                        ("terminal", terminal),
+                        ("cli_version", cli_version),
+                    ],
+                )),
+            )
+        },
     };
 
     let cli_join = cli::Cli::parse().execute(env_level);
@@ -56,9 +72,9 @@ async fn main() {
 
     if let Err(err) = result {
         if env_level > LevelFilter::INFO {
-            eprintln!("{err:?}");
+            writeln!(stderr(), "{err:?}").ok();
         } else {
-            eprintln!("{err}");
+            writeln!(stderr(), "{err}").ok();
         }
         exit(1);
     }
