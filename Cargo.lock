@@ -2148,7 +2148,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.4.2"
+version = "1.4.3"
 dependencies = [
  "anyhow",
  "arboard",
@@ -2397,7 +2397,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "anyhow",
  "fig_auth",
@@ -2434,7 +2434,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "4.4.1"
+version = "4.4.2"
 dependencies = [
  "alacritty_terminal",
  "anyhow",

@@ -1,6 +1,6 @@
 [package]
 name = "fig_telemetry"
-version = "0.1.0"
+version = "0.2.0"
 authors = ["fig developers"]
 edition = "2021"
 homepage = "https://fig.io"
