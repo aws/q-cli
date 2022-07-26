@@ -2,7 +2,12 @@ use anyhow::{
     anyhow,
     bail,
 };
+use fig_proto::fig::aggregate_session_metric_action_request::{
+    Action,
+    Increment,
+};
 use fig_proto::fig::{
+    AggregateSessionMetricActionRequest,
     TelemetryAliasRequest,
     TelemetryIdentifyRequest,
     TelemetryPageRequest,
@@ -14,6 +19,7 @@ use fig_telemetry::{
     emit_page,
     emit_track,
     TrackEvent,
+    TrackEventType,
     TrackSource,
 };
 use serde_json::{
@@ -25,6 +31,7 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
+use crate::figterm::FigtermState;
 
 pub async fn handle_alias_request(request: TelemetryAliasRequest) -> RequestResult {
     let user_id = request.user_id.ok_or_else(|| anyhow!("Empty user id"))?;
@@ -83,9 +90,13 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
         }
     }
 
-    emit_track(TrackEvent::Other(event), TrackSource::App, properties)
-        .await
-        .map_err(|e| anyhow!("Failed to emit track, {e}"))?;
+    emit_track(TrackEvent::new(
+        TrackEventType::Other(event),
+        TrackSource::App,
+        properties,
+    ))
+    .await
+    .map_err(|e| anyhow!("Failed to emit track, {e}"))?;
 
     RequestResult::success()
 }
@@ -110,6 +121,34 @@ pub async fn handle_page_request(request: TelemetryPageRequest) -> RequestResult
     )
     .await
     .map_err(|e| anyhow!("Failed to emit track, {e}"))?;
+
+    RequestResult::success()
+}
+
+pub async fn handle_aggregate_session_metric_action_request(
+    request: AggregateSessionMetricActionRequest,
+    state: &FigtermState,
+) -> RequestResult {
+    if let Some(session_id) = state.most_recent_session_id() {
+        if let Some(result) = state.with_mut(session_id, |session| {
+            if let Some(ref mut metrics) = session.current_session_metrics {
+                if let Some(action) = request.action {
+                    match action {
+                        Action::Increment(Increment { field, amount }) => {
+                            if field == "num_popups" {
+                                metrics.num_popups += amount.unwrap_or(1);
+                            } else {
+                                bail!("Unknown field {}", field);
+                            }
+                        },
+                    };
+                }
+            }
+            Ok(())
+        }) {
+            result?
+        };
+    }
 
     RequestResult::success()
 }

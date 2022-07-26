@@ -6,7 +6,6 @@ use fig_proto::daemon::{
     DaemonMessage,
     TelemetryEmitTrackCommand,
 };
-use serde_json::Value;
 
 use crate::util::telemetry_is_disabled;
 use crate::{
@@ -22,12 +21,7 @@ async fn send_daemon_message(message: DaemonMessage) -> Result<(), Error> {
     Ok(())
 }
 
-pub async fn dispatch_emit_track<I, K, V>(event: TrackEvent, source: TrackSource, properties: I) -> Result<(), Error>
-where
-    I: IntoIterator<Item = (K, V)> + Clone,
-    K: Into<String>,
-    V: Into<Value>,
-{
+pub async fn dispatch_emit_track(event: TrackEvent, enqueue: bool) -> Result<(), Error> {
     if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
@@ -36,20 +30,22 @@ where
         id: None,
         no_response: Some(true),
         command: Some(Command::TelemetryEmitTrack(TelemetryEmitTrackCommand {
-            event: event.to_string(),
-            properties: properties
+            event: event.event.to_string(),
+            properties: event
+                .properties
                 .clone()
                 .into_iter()
-                .map(|(key, value)| (key.into(), value.into().into()))
+                .map(|(key, value)| (key, value.into()))
                 .collect(),
             source: Some(
-                match source {
+                match event.source {
                     TrackSource::App => Source::App,
                     TrackSource::Cli => Source::Cli,
                     TrackSource::Daemon => Source::Daemon,
                 }
                 .into(),
             ),
+            enqueue: Some(enqueue),
         })),
     };
 
@@ -57,7 +53,7 @@ where
         Ok(()) => Ok(()),
         Err(err) => {
             tracing::error!("Failed to dispatch telemetry event to daemon: {err}");
-            crate::emit_track(event, source, properties).await?;
+            crate::emit_track(event).await?;
             Ok(())
         },
     }

@@ -37,11 +37,11 @@ pub async fn run_install() {
         // Add any items that are only once per version
 
         tokio::spawn(async {
-            fig_telemetry::emit_track(
-                fig_telemetry::TrackEvent::UpdatedApp,
+            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                fig_telemetry::TrackEventType::UpdatedApp,
                 fig_telemetry::TrackSource::App,
                 empty::<(&str, &str)>(),
-            )
+            ))
             .await
             .ok()
         });

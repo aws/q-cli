@@ -450,6 +450,28 @@ pub async fn daemon() -> Result<()> {
         None => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 60.),
     }
 
+    scheduler.schedule_random_delay(
+        scheduler::RecurringTask::new(
+            scheduler::SendQueuedTelemetryEvents,
+            Duration::from_secs(60 * 60 * 4),
+            None,
+        ),
+        0.,
+        60. * 60.,
+    );
+
+    // Send dotfiles line counts at least once per day (could happen more often
+    // if the daemon restarts)
+    scheduler.schedule_random_delay(
+        scheduler::RecurringTask::new(
+            scheduler::SendDotfilesLineCountTelemetry,
+            Duration::from_secs(60 * 60 * 24),
+            None,
+        ),
+        0.,
+        60.,
+    );
+
     // Spawn the incoming handler
     let daemon_status_clone = daemon_status.clone();
     let unix_join = tokio::spawn(async move {
@@ -556,17 +578,13 @@ pub async fn daemon() -> Result<()> {
 
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join) {
-                Ok(_) => Ok(()),
-                Err(err) => Err(err.into()),
-            }
+            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join)?;
         } else {
-            match tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join) {
-                Ok(_) => Ok(()),
-                Err(err) => Err(err.into()),
-            }
+            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
         }
     }
+
+    Ok(())
 }
 
 /// Spawn the daemon to listen for updates and dotfiles changes

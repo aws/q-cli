@@ -22,16 +22,11 @@ use fig_proto::daemon::diagnostic_response::{
     WebsocketStatus,
 };
 use fig_proto::daemon::sync_command::SyncType;
-use fig_proto::daemon::telemetry_emit_track_command::Source;
 use fig_proto::daemon::{
     DaemonMessage,
     DaemonResponse,
-    TelemetryEmitTrackCommand,
 };
-use fig_telemetry::{
-    TrackEvent,
-    TrackSource,
-};
+use fig_telemetry::TrackEvent;
 use parking_lot::RwLock;
 use system_socket::{
     SystemListener,
@@ -43,6 +38,7 @@ use tracing::{
     info,
     trace,
 };
+use yaque::Sender;
 
 use super::DaemonStatus;
 use crate::util::{
@@ -155,32 +151,22 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                                     },
                                 }
                             },
-                            Command::TelemetryEmitTrack(TelemetryEmitTrackCommand {
-                                event,
-                                properties,
-                                source,
-                            }) => {
-                                let event = event.clone();
-
-                                let properties: Vec<(String, serde_json::Value)> = properties
-                                    .iter()
-                                    .map(|(key, value)| (key.clone(), value.clone().into()))
-                                    .collect();
-
-                                let source = match Source::from_i32(source.unwrap_or_default()).unwrap_or_default() {
-                                    Source::App => TrackSource::App,
-                                    Source::Cli => TrackSource::Cli,
-                                    Source::Daemon => TrackSource::Daemon,
-                                };
-
+                            Command::TelemetryEmitTrack(command) => {
+                                let event: TrackEvent = command.into();
+                                if command.enqueue.unwrap_or(false) {
+                                    if let Ok(mut sender) = Sender::open("fig/telemetry-track-event-queue") {
+                                        if let Ok(buf) = serde_json::to_vec(&event) {
+                                            if sender.send(buf).await.is_ok() {
+                                                continue;
+                                            }
+                                        }
+                                    }
+                                }
                                 tokio::spawn(async move {
-                                    if let Err(err) =
-                                        fig_telemetry::emit_track(TrackEvent::Other(event), source, properties).await
-                                    {
+                                    if let Err(err) = fig_telemetry::emit_track(event).await {
                                         error!("Failed to emit track: {err}")
                                     }
                                 });
-
                                 continue;
                             },
                         };

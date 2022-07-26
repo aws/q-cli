@@ -1,24 +1,36 @@
 use std::borrow::Cow;
 use std::collections::BinaryHeap;
 use std::fmt::Debug;
+use std::future::Future;
+use std::pin::Pin;
+use std::task::{
+    Context,
+    Poll,
+};
 use std::time::Duration;
 
 use anyhow::Result;
 use async_trait::async_trait;
+use fig_install::dotfiles::api::DotfileData;
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;
+use fig_telemetry::TrackEvent;
+use fig_util::Shell;
 use flume::Sender;
 use rand::distributions::Uniform;
 use rand::prelude::Distribution;
+use serde_json::Map;
 use tokio::task::JoinHandle;
 use tokio::time::{
     sleep_until,
     Instant,
+    Sleep,
 };
 use tracing::{
     error,
     info,
 };
+use yaque::Receiver;
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct Tag<'a>(Cow<'a, str>);
@@ -292,6 +304,178 @@ impl Task for SyncPlugins {
 }
 
 impl TaggedTask for SyncPlugins {}
+
+trait CloneableTask: TaggedTask {
+    fn as_task(&self) -> &dyn TaggedTask;
+    fn box_clone(&self) -> Box<dyn CloneableTask>;
+}
+
+impl<T: TaggedTask + Clone + 'static> CloneableTask for T {
+    fn as_task(&self) -> &dyn TaggedTask {
+        self
+    }
+
+    fn box_clone(&self) -> Box<dyn CloneableTask> {
+        Box::new(self.clone())
+    }
+}
+
+impl Clone for Box<dyn CloneableTask> {
+    fn clone(&self) -> Self {
+        self.box_clone()
+    }
+}
+
+#[derive(Debug, Clone)]
+pub struct RecurringTask {
+    task: Box<dyn CloneableTask>,
+    interval: Duration,
+    max_iterations: Option<u64>,
+    current_iterations: u64,
+}
+
+impl RecurringTask {
+    pub fn new<T, B>(task: T, interval: Duration, max_iterations: Option<u64>) -> Self
+    where
+        T: Into<Box<B>>,
+        B: TaggedTask + Clone + 'static,
+    {
+        RecurringTask {
+            task: task.into(),
+            interval,
+            max_iterations,
+            current_iterations: 0,
+        }
+    }
+}
+
+#[async_trait]
+impl Task for RecurringTask {
+    async fn run(&self, sender: Sender<SchedulerMessages>) -> Result<()> {
+        let time = Instant::now() + self.interval;
+        if self
+            .max_iterations
+            .map(|n| n < self.current_iterations)
+            .unwrap_or(false)
+        {
+            sender
+                .send_async(SchedulerMessages::ScheduleTask(ScheduledTask {
+                    time,
+                    tag: self.task.as_task().tag(),
+                    task: Box::new(RecurringTask {
+                        task: self.task.clone(),
+                        interval: self.interval,
+                        max_iterations: self.max_iterations,
+                        current_iterations: self.current_iterations + 1,
+                    }),
+                }))
+                .await?;
+        }
+        self.task.run(sender).await?;
+        Ok(())
+    }
+}
+
+impl TaggedTask for RecurringTask {
+    fn tag(&self) -> Tag<'static> {
+        format!("{:?}", self.task.as_task().tag()).into()
+    }
+}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SendQueuedTelemetryEvents;
+
+struct HasSleep {
+    sleep: Pin<Box<Sleep>>,
+}
+
+impl Future for HasSleep {
+    type Output = ();
+
+    fn poll(mut self: Pin<&mut Self>, cx: &mut Context<'_>) -> Poll<()> {
+        self.sleep.as_mut().poll(cx)
+    }
+}
+
+#[async_trait]
+impl Task for SendQueuedTelemetryEvents {
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
+        let mut receiver = Receiver::open("fig/telemetry-track-event-queue")?;
+        loop {
+            let batch = receiver
+                .recv_batch_timeout(100, HasSleep {
+                    sleep: Box::pin(tokio::time::sleep(Duration::from_secs(10))),
+                })
+                .await?;
+            let tracks: Result<Vec<TrackEvent>> = batch
+                .iter()
+                .map(|event| -> Result<TrackEvent> { Ok(serde_json::from_slice::<TrackEvent>(event)?) })
+                .collect();
+            let tracks = tracks?;
+            let maybe_more = !tracks.is_empty();
+            fig_telemetry::emit_tracks(tracks).await?;
+
+            if !maybe_more {
+                break;
+            }
+        }
+        Ok(())
+    }
+}
+
+impl TaggedTask for SendQueuedTelemetryEvents {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SendDotfilesLineCountTelemetry;
+
+fn get_dotfile_line_count(contents: String) -> usize {
+    let lines = contents
+        .trim()
+        .split('\n')
+        .filter(|&x| !x.is_empty() && !x.starts_with('#'));
+    lines.count()
+}
+
+#[async_trait]
+impl Task for SendDotfilesLineCountTelemetry {
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
+        let mut stats = Map::new();
+        for shell in Shell::all() {
+            let (filename, property_name) = match shell {
+                Shell::Bash => (".bashrc", "bashrc_line_count"),
+                Shell::Zsh => (".zshrc", "zshrc_line_count"),
+                Shell::Fish => ("fish.config", "fish_config_line_count"),
+            };
+            let dotfile = shell.get_config_directory().and_then(|dir| {
+                let dotfile_path = dir.join(filename);
+                std::fs::read_to_string(&dotfile_path).ok()
+            });
+            if let Some(contents) = dotfile {
+                stats.insert(property_name.into(), get_dotfile_line_count(contents).into());
+            }
+
+            let dotfile_data: Option<DotfileData> = shell
+                .get_data_path()
+                .and_then(|path| std::fs::read_to_string(&path).ok())
+                .and_then(|contents| serde_json::from_str(&contents).ok());
+            if let Some(data) = dotfile_data {
+                stats.insert(
+                    format!("fig_{}_line_count", shell),
+                    get_dotfile_line_count(data.dotfile).into(),
+                );
+            }
+        }
+        fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+            fig_telemetry::TrackEventType::DotfileLineCountsRecorded,
+            fig_telemetry::TrackSource::Daemon,
+            stats,
+        ))
+        .await?;
+        Ok(())
+    }
+}
+
+impl TaggedTask for SendDotfilesLineCountTelemetry {}
 
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct NoopTask;

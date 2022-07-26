@@ -175,15 +175,17 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
 fn uninstall_daemon() -> Result<()> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            daemon::LaunchService::launchd()?.uninstall()
+            daemon::LaunchService::launchd()?.uninstall()?;
         } else if #[cfg(target_os = "linux")] {
-            daemon::LaunchService::systemd()?.uninstall()
+            daemon::LaunchService::systemd()?.uninstall()?;
         } else if #[cfg(windows)] {
-            daemon::LaunchService::scm()?.uninstall()
+            daemon::LaunchService::scm()?.uninstall()?;
         } else {
-            Err(anyhow::anyhow!("Unsupported platform"))
+            anyhow::bail!("Unsupported platform")
         }
     }
+
+    Ok(())
 }
 
 fn uninstall_fig() -> Result<()> {

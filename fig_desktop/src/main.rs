@@ -30,6 +30,7 @@ use event::{
     WindowEvent,
 };
 use fig_log::Logger;
+use fig_telemetry::sentry::release_name;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
@@ -225,9 +226,12 @@ impl WebviewManager {
             if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
                 tokio::runtime::Handle::current()
                     .block_on(fig_telemetry::dispatch_emit_track(
-                        fig_telemetry::TrackEvent::QuitApp,
-                        fig_telemetry::TrackSource::App,
-                        empty::<(&str, &str)>(),
+                        fig_telemetry::TrackEvent::new(
+                            fig_telemetry::TrackEventType::QuitApp,
+                            fig_telemetry::TrackSource::App,
+                            empty::<(&str, &str)>(),
+                        ),
+                        false,
                     ))
                     .ok();
             }
@@ -390,8 +394,11 @@ fn main() {
             .with_file("fig_desktop.log")
             .init()
             .expect("Failed to init logger");
-        let _sentry_guard =
-            fig_telemetry::init_sentry("https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682");
+
+        let _sentry_guard = fig_telemetry::init_sentry(
+            release_name!(),
+            "https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682",
+        );
 
         let cli = cli::Cli::parse();
 
@@ -430,11 +437,11 @@ fn main() {
         }
 
         tokio::spawn(async {
-            fig_telemetry::emit_track(
-                fig_telemetry::TrackEvent::LaunchedApp,
+            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                fig_telemetry::TrackEventType::LaunchedApp,
                 fig_telemetry::TrackSource::App,
                 empty::<(&str, &str)>(),
-            )
+            ))
             .await
             .ok();
         });

@@ -37,15 +37,35 @@ impl SshIntegration {
         })
     }
 
-    fn source_text(&self) -> Result<String> {
+    fn legacy_text(&self) -> Result<String> {
         let home = fig_directories::home_dir().context("Could not get home dir")?;
         let integration_path = self.get_integration_path()?;
         let path = integration_path.strip_prefix(home)?;
         Ok(format!("Include ~/{}", path.display()))
     }
 
+    fn legacy_regex(&self) -> Result<Regex> {
+        let regex = format!(r#"{}\n{{0,2}}"#, regex::escape(&self.legacy_text()?));
+        Regex::new(&regex).context("Invalid source regex")
+    }
+
+    fn description(&self) -> String {
+        "# Fig ssh integration. Keep at the bottom of this file.".into()
+    }
+
+    fn source_text(&self) -> Result<String> {
+        let home = fig_directories::home_dir().context("Could not get home dir")?;
+        let integration_path = self.get_integration_path()?;
+        let path = integration_path.strip_prefix(home)?;
+        Ok(format!("Match all\n  Include ~/{}", path.display()))
+    }
+
     fn source_regex(&self) -> Result<Regex> {
-        let regex = format!(r#"{}\n{{0,2}}"#, regex::escape(&self.source_text()?));
+        let regex = format!(
+            r#"(?:{}\n)?{}\n{{0,2}}"#,
+            regex::escape(&self.description()),
+            regex::escape(&self.source_text()?)
+        );
         Regex::new(&regex).context("Invalid source regex")
     }
 }
@@ -65,7 +85,7 @@ impl Integration for SshIntegration {
         };
 
         self.get_file_integration()?.install(backup_dir)?;
-        let new_contents = format!("{}\n{}\n", contents, self.source_text()?);
+        let new_contents = format!("{}\n{}\n{}\n", contents, self.description(), self.source_text()?);
         let mut file = File::create(&self.path)?;
         file.write_all(new_contents.as_bytes())?;
 
@@ -95,6 +115,7 @@ impl Integration for SshIntegration {
         if self.path.exists() {
             let mut contents = std::fs::read_to_string(&self.path)?;
             contents = self.source_regex()?.replace_all(&contents, "").into();
+            contents = self.legacy_regex()?.replace_all(&contents, "").into();
             contents = contents.trim().to_string();
             contents.push('\n');
             std::fs::write(&self.path, contents.as_bytes())?;

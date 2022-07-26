@@ -61,6 +61,7 @@ use fig_settings::state;
 use fig_telemetry::sentry::{
     capture_anyhow,
     configure_scope,
+    release_name,
 };
 use fig_util::Terminal;
 use flume::Sender;
@@ -720,8 +721,10 @@ fn figterm_main() -> Result<()> {
 }
 
 fn main() {
-    let _guard =
-        fig_telemetry::init_sentry("https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825");
+    let _guard = fig_telemetry::init_sentry(
+        release_name!(),
+        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+    );
 
     Cli::parse();
 

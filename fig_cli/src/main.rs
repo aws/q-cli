@@ -13,7 +13,10 @@ use std::process::exit;
 use std::str::FromStr;
 
 use clap::StructOpt;
-use fig_telemetry::sentry::configure_scope;
+use fig_telemetry::sentry::{
+    configure_scope,
+    release_name,
+};
 use tracing::level_filters::LevelFilter;
 
 const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
@@ -29,9 +32,9 @@ async fn main() {
     // user facing commands as performance is less important
     let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
         Some("init" | "_" | "internal" | "tips" | "completion" | "hook") => (None, None),
-        Some("daemon") => (Some(fig_telemetry::init_sentry(SENTRY_CLI_URL)), None),
+        Some("daemon") => (Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL)), None),
         _ => {
-            let sentry = fig_telemetry::init_sentry(SENTRY_CLI_URL);
+            let sentry = fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL);
 
             let arguments = std::env::args().collect::<Vec<_>>().join(" ");
             let shell = fig_util::get_parent_process_exe()
@@ -50,14 +53,17 @@ async fn main() {
             (
                 Some(sentry),
                 Some(fig_telemetry::dispatch_emit_track(
-                    fig_telemetry::TrackEvent::RanCommand,
-                    fig_telemetry::TrackSource::Cli,
-                    [
-                        ("arguments", arguments),
-                        ("shell", shell),
-                        ("terminal", terminal),
-                        ("cli_version", cli_version),
-                    ],
+                    fig_telemetry::TrackEvent::new(
+                        fig_telemetry::TrackEventType::RanCommand,
+                        fig_telemetry::TrackSource::Cli,
+                        [
+                            ("arguments", arguments),
+                            ("shell", shell),
+                            ("terminal", terminal),
+                            ("cli_version", cli_version),
+                        ],
+                    ),
+                    false,
                 )),
             )
         },

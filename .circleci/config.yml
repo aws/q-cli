@@ -1,7 +1,8 @@
 supports_mold: &supports_mold
   or:
-    - equal: [ << parameters.platform >>, jammy ]
-    - equal: [ << parameters.platform >>, f36 ]
+    - equal: [<< parameters.platform >>, kinetic]
+    - equal: [<< parameters.platform >>, jammy]
+    - equal: [<< parameters.platform >>, f36]
 
 version: 2.1
 
@@ -26,12 +27,12 @@ parameters:
     default: "develop"
 
 executors:
+  kinetic:
+    docker:
+      - image: ubuntu:22.10
   jammy:
     docker:
       - image: ubuntu:22.04
-  impish:
-    docker:
-      - image: ubuntu:21.10
   focal:
     docker:
       - image: ubuntu:20.04
@@ -50,7 +51,7 @@ workflows:
           requires: [update-version]
           matrix:
             parameters:
-              platform: [jammy, impish, focal]
+              platform: [kinetic, jammy, focal]
       - fedora:
           requires: [update-version]
           matrix:
@@ -64,7 +65,6 @@ workflows:
       - noop
 
 jobs:
-
   # Builds packages for Ubuntu
   ubuntu:
     parameters:
@@ -87,7 +87,7 @@ jobs:
       - store_artifacts:
           path: desktop/build/fig-x86_64-linux.tar.gz
           destination: << parameters.platform >>/archive
-  
+
   fedora:
     parameters:
       platform:
@@ -105,7 +105,7 @@ jobs:
           command: |
             rpm --query --requires desktop/build/fig-x86_64-linux.rpm > /tmp/requires.txt
             rpm --query --provides desktop/build/fig-x86_64-linux.rpm > /tmp/provides.txt
-            rpm --query --info fig-x86_64-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/installed-size.txt
+            rpm --query --info desktop/build/fig-x86_64-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/installed-size.txt
       - callback:
           command: dependencies
           args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
@@ -185,7 +185,6 @@ jobs:
             COMMIT_HASH=`git log -n 1 --pretty=format:"%H"`
             curl -X POST << pipeline.parameters.callback_url >> -d "commit;$COMMIT_HASH"
 
-
   # Does nothing. Prevents build errors. Ask Mia for more info.
   noop:
     docker:
@@ -195,7 +194,6 @@ jobs:
       - run: echo noop
 
 commands:
-
   callback:
     parameters:
       command:
@@ -205,7 +203,7 @@ commands:
         default: ""
     steps:
       - run: curl -X POST << pipeline.parameters.callback_url >> -d "<< parameters.command >>;<< parameters.args >>"
-  
+
   prepare-post:
     parameters:
       platform:
@@ -298,7 +296,7 @@ commands:
                 command: apt install -y lld
       - prepare-post:
           platform: << parameters.platform >>
-  
+
   prepare-fedora:
     parameters:
       platform:

@@ -28,6 +28,7 @@ use fig_proto::local::UiElement;
 use fig_request::Request;
 use fig_telemetry::{
     TrackEvent,
+    TrackEventType,
     TrackSource,
 };
 use serde::{
@@ -287,9 +288,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         },
         None => {
             fig_telemetry::dispatch_emit_track(
-                TrackEvent::WorkflowSearchViewed,
-                TrackSource::Cli,
-                empty::<(&str, &str)>(),
+                TrackEvent::new(
+                    TrackEventType::WorkflowSearchViewed,
+                    TrackSource::Cli,
+                    empty::<(&str, &str)>(),
+                ),
+                false,
             )
             .await
             .ok();
@@ -674,10 +678,13 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             match event_loop.run(&mut view, &input_method, Some(&style_sheet), ControlFlow::Wait)? {
                 ControlFlow::Exit(0) => break,
                 ControlFlow::Exit(_) => {
-                    fig_telemetry::dispatch_emit_track(TrackEvent::WorkflowCancelled, TrackSource::Cli, [
-                        ("workflow", workflow_name.as_ref()),
-                        ("execution_method", execution_method),
-                    ])
+                    fig_telemetry::dispatch_emit_track(
+                        TrackEvent::new(TrackEventType::WorkflowCancelled, TrackSource::Cli, [
+                            ("workflow", workflow_name.as_ref()),
+                            ("execution_method", execution_method),
+                        ]),
+                        false,
+                    )
                     .await
                     .ok();
                     return Ok(());
@@ -730,10 +737,13 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    fig_telemetry::dispatch_emit_track(TrackEvent::WorkflowExecuted, TrackSource::Cli, [
-        ("workflow", workflow_name.as_ref()),
-        ("execution_method", execution_method),
-    ])
+    fig_telemetry::dispatch_emit_track(
+        TrackEvent::new(TrackEventType::WorkflowExecuted, TrackSource::Cli, [
+            ("workflow", workflow_name.as_ref()),
+            ("execution_method", execution_method),
+        ]),
+        false,
+    )
     .await
     .ok();
 

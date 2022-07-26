@@ -14,6 +14,7 @@ use fig_proto::figterm::{
 };
 use fig_proto::local::ShellContext;
 use parking_lot::FairMutex;
+use time::OffsetDateTime;
 use tokio::sync::mpsc;
 use tokio::time::{
     sleep_until,
@@ -27,11 +28,31 @@ use tracing::{
 use crate::GlobalState;
 
 #[derive(Debug, Clone)]
+pub struct SessionMetrics {
+    pub start_time: OffsetDateTime,
+    pub end_time: OffsetDateTime,
+    pub num_insertions: i64,
+    pub num_popups: i64,
+}
+
+impl SessionMetrics {
+    pub fn new(start: OffsetDateTime) -> Self {
+        Self {
+            start_time: start,
+            end_time: start,
+            num_insertions: 0,
+            num_popups: 0,
+        }
+    }
+}
+
+#[derive(Debug, Clone)]
 pub struct FigTermSession {
     pub sender: mpsc::Sender<FigTermCommand>,
     pub last_receive: Instant,
     pub edit_buffer: EditBuffer,
     pub context: Option<ShellContext>,
+    pub current_session_metrics: Option<SessionMetrics>,
 }
 
 #[derive(Debug, Hash, Clone, PartialEq, Eq)]
@@ -116,14 +137,13 @@ impl FigtermState {
     }
 
     /// Gets mutable reference to the given session id and sets the most recent session id
-    pub fn with_mut(&self, key: FigtermSessionId, f: impl FnOnce(&mut FigTermSession)) -> bool {
+    pub fn with_mut<T>(&self, key: FigtermSessionId, f: impl FnOnce(&mut FigTermSession) -> T) -> Option<T> {
         match self.sessions.get_mut(&key) {
             Some(mut session) => {
                 self.set_most_recent_session(key);
-                f(&mut session);
-                true
+                Some(f(&mut *session))
             },
-            None => false,
+            None => None,
         }
     }
 
@@ -156,6 +176,7 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
         last_receive: Instant::now(),
         edit_buffer: EditBuffer::default(),
         context: None,
+        current_session_metrics: None,
     });
     tokio::spawn(async move {
         let socket = fig_ipc::figterm::get_figterm_socket_path(&*session_id);
@@ -214,14 +235,28 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
                 },
             };
 
-            if let Err(err) = fig_ipc::send_message(&mut stream, FigtermMessage { command: Some(message) }).await {
+            if let Err(err) = fig_ipc::send_message(&mut stream, FigtermMessage {
+                command: Some(message.clone()),
+            })
+            .await
+            {
                 error!("Failed sending message to figterm session {session_id}: {err:?}");
                 break;
             }
 
-            if !state
+            let update_metrics_for_insert = |session: &mut FigTermSession| {
+                if let Command::InsertTextCommand(_) = message {
+                    if let Some(ref mut metrics) = session.current_session_metrics {
+                        metrics.num_insertions += 1;
+                        metrics.end_time = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+                    }
+                }
+                session.last_receive = Instant::now();
+            };
+            if state
                 .figterm_state
-                .with_mut(session_id.clone(), |session| session.last_receive = Instant::now())
+                .with_mut(session_id.clone(), update_metrics_for_insert)
+                .is_none()
             {
                 break;
             }

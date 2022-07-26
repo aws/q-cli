@@ -9,6 +9,7 @@ use clap::Args;
 use fig_directories::home_dir;
 use fig_telemetry::{
     TrackEvent,
+    TrackEventType,
     TrackSource,
 };
 use tokio::io::{
@@ -68,15 +69,15 @@ pub struct UninstallArgs {
 pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async move {
-        fig_telemetry::emit_track(
-            TrackEvent::UninstallApp,
+        fig_telemetry::emit_track(TrackEvent::new(
+            TrackEventType::UninstallApp,
             if *IS_RUNNING_DAEMON.lock() {
                 TrackSource::Daemon
             } else {
                 TrackSource::Cli
             },
             [("source", "fig app uninstall")],
-        )
+        ))
         .await
         .ok();
     });

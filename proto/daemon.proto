@@ -1,6 +1,7 @@
 syntax = "proto3";
 package daemon;
 
+import "google/protobuf/timestamp.proto";
 import "fig_common.proto";
 
 //
@@ -145,4 +146,8 @@ message TelemetryEmitTrackCommand {
     string event = 1;  
     map<string, fig_common.Json> properties = 2;
     optional Source source = 3;
+
+    // Queue the event so that it is not dispatched immediately but rather
+    // is dispatched at a regularly scheduled interval by the daemon.
+    optional bool enqueue = 4;
 }
