@@ -16,4 +16,4 @@ thiserror = "1.0.31"
 url = "2.2.2"
 
 [dev-dependencies]
-tokio = { version = "1.20.0", features = ["full"] }
+tokio = { version = "1.20.1", features = ["full"] }
