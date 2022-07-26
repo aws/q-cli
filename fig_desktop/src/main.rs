@@ -225,9 +225,12 @@ impl WebviewManager {
             if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
                 tokio::runtime::Handle::current()
                     .block_on(fig_telemetry::dispatch_emit_track(
-                        fig_telemetry::TrackEvent::QuitApp,
-                        fig_telemetry::TrackSource::App,
-                        empty::<(&str, &str)>(),
+                        fig_telemetry::TrackEvent::new(
+                            fig_telemetry::TrackEventType::QuitApp,
+                            fig_telemetry::TrackSource::App,
+                            empty::<(&str, &str)>(),
+                        ),
+                        false,
                     ))
                     .ok();
             }
@@ -430,11 +433,11 @@ fn main() {
         }
 
         tokio::spawn(async {
-            fig_telemetry::emit_track(
-                fig_telemetry::TrackEvent::LaunchedApp,
+            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                fig_telemetry::TrackEventType::LaunchedApp,
                 fig_telemetry::TrackSource::App,
                 empty::<(&str, &str)>(),
-            )
+            ))
             .await
             .ok();
         });

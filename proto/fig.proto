@@ -42,6 +42,7 @@ message ClientOriginatedMessage {
       CreateDirectoryRequest create_directory_request = 132;
       InstallRequest install_request = 133;
       TelemetryPageRequest telemetry_page_request = 134;
+      AggregateSessionMetricActionRequest aggregate_session_metric_action_request = 135;
   }
 }
 
@@ -345,6 +346,17 @@ message TelemetryPageRequest {
   optional string category = 1;
   optional string name = 2;
   optional string jsonBlob = 3;
+}
+
+message AggregateSessionMetricActionRequest {
+  message Increment {
+    string field = 1;
+    optional int64 amount = 2;
+  }
+
+  oneof action {
+    Increment increment = 2;
+  }
 }
 
 /// Onboarding

@@ -1,4 +1,5 @@
 use std::sync::Arc;
+use std::time::Duration;
 
 use anyhow::Result;
 use bytes::BytesMut;
@@ -23,7 +24,12 @@ use fig_proto::local::{
     PromptHook,
 };
 use fig_proto::prost::Message;
-use tracing::debug;
+use time::format_description::well_known::Rfc3339;
+use time::OffsetDateTime;
+use tracing::{
+    debug,
+    warn,
+};
 
 use crate::event::{
     NativeEvent,
@@ -32,6 +38,7 @@ use crate::event::{
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
+    SessionMetrics,
 };
 use crate::{
     Event,
@@ -45,11 +52,56 @@ pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, p
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
     ensure_figterm(session_id.clone(), global_state.clone());
 
-    global_state.figterm_state.with_mut(session_id.clone(), |session| {
+    let old_metrics = global_state.figterm_state.with_mut(session_id.clone(), |session| {
         session.edit_buffer.text = hook.text.clone();
         session.edit_buffer.cursor = hook.cursor;
         session.context = hook.context.clone();
+
+        let received_at = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
+        let current_session_expired = session
+            .current_session_metrics
+            .as_ref()
+            .map(|metrics| received_at > metrics.end_time + Duration::from_secs(5))
+            .unwrap_or(true);
+
+        if current_session_expired {
+            let previous = session.current_session_metrics.clone();
+            session.current_session_metrics = Some(SessionMetrics::new(received_at));
+            previous
+        } else {
+            if let Some(ref mut metrics) = session.current_session_metrics {
+                metrics.end_time = received_at;
+            }
+            None
+        }
     });
+
+    if let Some(metrics) = old_metrics.flatten() {
+        if metrics.end_time > metrics.start_time {
+            let properties: Vec<(&str, serde_json::Value)> = vec![
+                ("start_time", metrics.start_time.format(&Rfc3339)?.into()),
+                ("end_time", metrics.end_time.format(&Rfc3339)?.into()),
+                (
+                    "duration",
+                    (metrics.start_time - metrics.end_time).whole_seconds().into(),
+                ),
+                ("num_insertions", metrics.num_insertions.into()),
+                ("num_popups", metrics.num_popups.into()),
+            ];
+            if let Err(e) = fig_telemetry::dispatch_emit_track(
+                fig_telemetry::TrackEvent::new(
+                    fig_telemetry::TrackEventType::TerminalSessionMetricsRecorded,
+                    fig_telemetry::TrackSource::App,
+                    properties,
+                ),
+                true,
+            )
+            .await
+            {
+                warn!("Failed to record terminal session metrics: {}", e);
+            }
+        }
+    }
 
     for sub in global_state.notifications_state.subscriptions.iter() {
         let message_id = match sub.get(&NotificationType::NotifyOnEditbuffferChange) {

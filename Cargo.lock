@@ -1945,6 +1945,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0688c2a7f92e427f44895cd63841bff7b29f8d7a1648b9e7e07a4a365b2e1257"
 
 [[package]]
+name = "doc-comment"
+version = "0.3.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "fea41bba32d969b513997752735605054bc0dfa92b4c56bf1189f2e174be7a10"
+
+[[package]]
 name = "dyn-clone"
 version = "1.0.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2182,7 +2188,7 @@ dependencies = [
  "serde_json",
  "skim",
  "spinners",
- "sysinfo",
+ "sysinfo 0.24.7",
  "system_socket",
  "tempfile",
  "thiserror",
@@ -2194,6 +2200,7 @@ dependencies = [
  "tui",
  "url",
  "validator",
+ "yaque",
 ]
 
 [[package]]
@@ -2241,8 +2248,9 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "sysinfo",
+ "sysinfo 0.24.7",
  "system_socket",
+ "time 0.3.11",
  "tokio",
  "tracing",
  "url",
@@ -6261,6 +6269,21 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
+version = "0.17.5"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e9d811a7fd68bad355ff84f7d8ad58b33415bccdfce499f98a9ce30471888e05"
+dependencies = [
+ "cfg-if 1.0.0",
+ "core-foundation-sys",
+ "doc-comment",
+ "libc",
+ "ntapi",
+ "once_cell",
+ "winapi 0.3.9",
+]
+
+[[package]]
+name = "sysinfo"
 version = "0.24.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "54cb4ebf3d49308b99e6e9dc95e989e2fdbdc210e4f67c39db0bb89ba927001c"
@@ -8024,6 +8047,21 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56c1936c4cc7a1c9ab21a1ebb602eb942ba868cbd44a99cb7cdc5892335e1c85"
 dependencies = [
  "linked-hash-map",
+]
+
+[[package]]
+name = "yaque"
+version = "0.6.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4bea1773be9b53ce7360df7871f61c36e8ae39a76a93e17254770816b87b5503"
+dependencies = [
+ "futures",
+ "lazy_static",
+ "log",
+ "notify 5.0.0-pre.15",
+ "rand 0.8.5",
+ "semver 0.11.0",
+ "sysinfo 0.17.5",
 ]
 
 [[package]]

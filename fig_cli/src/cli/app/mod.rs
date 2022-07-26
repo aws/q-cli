@@ -78,9 +78,12 @@ pub async fn quit_fig() -> Result<()> {
 
     let telem_join = tokio::spawn(async {
         fig_telemetry::dispatch_emit_track(
-            fig_telemetry::TrackEvent::QuitApp,
-            fig_telemetry::TrackSource::App,
-            empty::<(&str, &str)>(),
+            fig_telemetry::TrackEvent::new(
+                fig_telemetry::TrackEventType::QuitApp,
+                fig_telemetry::TrackSource::App,
+                empty::<(&str, &str)>(),
+            ),
+            false,
         )
         .await
         .ok();

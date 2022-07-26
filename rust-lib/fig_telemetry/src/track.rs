@@ -1,3 +1,9 @@
+use fig_proto::daemon::telemetry_emit_track_command::Source;
+use fig_proto::daemon::TelemetryEmitTrackCommand;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::{
     Map,
     Value,
@@ -12,8 +18,8 @@ use crate::{
     TRACK_SUBDOMAIN,
 };
 
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub enum TrackEvent {
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub enum TrackEventType {
     RanCommand,
     DoctorError,
     WorkflowSearchViewed,
@@ -23,12 +29,14 @@ pub enum TrackEvent {
     QuitApp,
     UninstallApp,
     UpdatedApp,
+    TerminalSessionMetricsRecorded,
+    DotfileLineCountsRecorded,
     /// Prefer not using this directly and instead define an enum value, this is only for
     /// internal use by `fig_telemetry`
     Other(String),
 }
 
-impl std::fmt::Display for TrackEvent {
+impl std::fmt::Display for TrackEventType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
             Self::RanCommand => "Ran CLI command",
@@ -40,12 +48,14 @@ impl std::fmt::Display for TrackEvent {
             Self::QuitApp => "Quit App",
             Self::UninstallApp => "Uninstall App",
             Self::UpdatedApp => "Updated App",
+            Self::TerminalSessionMetricsRecorded => "Terminal Session Metrics Recorded",
+            Self::DotfileLineCountsRecorded => "Dotfile Line Counts Recorded",
             Self::Other(s) => s,
         })
     }
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TrackSource {
     App,
     Cli,
@@ -62,24 +72,84 @@ impl std::fmt::Display for TrackSource {
     }
 }
 
-pub async fn emit_track<'a, I, K, V>(event: TrackEvent, source: TrackSource, properties: I) -> Result<(), Error>
-where
-    I: IntoIterator<Item = (K, V)>,
-    K: Into<String>,
-    V: Into<Value>,
-{
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+pub struct TrackEvent {
+    pub event: TrackEventType,
+    pub source: TrackSource,
+    pub properties: Map<String, Value>,
+}
+
+impl TrackEvent {
+    pub fn new<I, K, V>(event: TrackEventType, source: TrackSource, properties: I) -> Self
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<String>,
+        V: Into<Value>,
+    {
+        TrackEvent {
+            event,
+            source,
+            properties: properties.into_iter().map(|(k, v)| (k.into(), v.into())).collect(),
+        }
+    }
+
+    pub fn to_map(&self, props: &Map<String, Value>) -> Map<String, Value> {
+        let mut res: Map<String, Value> = Map::new();
+
+        let mut props = props.clone();
+        props.insert("source".into(), self.source.to_string().into());
+        props.extend(self.properties.clone());
+
+        res.insert("event".into(), self.event.to_string().into());
+        res.insert("properties".into(), props.into());
+
+        res
+    }
+}
+
+impl From<&TelemetryEmitTrackCommand> for TrackEvent {
+    fn from(command: &TelemetryEmitTrackCommand) -> Self {
+        let event = TrackEventType::Other(command.event.clone());
+
+        let properties: Vec<(String, serde_json::Value)> = command
+            .properties
+            .iter()
+            .map(|(key, value)| (key.clone(), value.clone().into()))
+            .collect();
+
+        let source = match Source::from_i32(command.source.unwrap_or_default()).unwrap_or_default() {
+            Source::App => TrackSource::App,
+            Source::Cli => TrackSource::Cli,
+            Source::Daemon => TrackSource::Daemon,
+        };
+
+        TrackEvent::new(event, source, properties)
+    }
+}
+
+pub async fn emit_track(event: TrackEvent) -> Result<(), Error> {
     if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
-    let mut props = crate::util::default_properties();
-    props.insert("source".into(), source.to_string().into());
-    props.extend(properties.into_iter().map(|(k, v)| (k.into(), v.into())));
+    let props = crate::util::default_properties();
+    let mut body = event.to_map(&props);
+    body.insert("useUnprefixed".into(), true.into());
+
+    make_telemetry_request(TRACK_SUBDOMAIN, body).await
+}
+
+pub async fn emit_tracks(events: Vec<TrackEvent>) -> Result<(), Error> {
+    if telemetry_is_disabled() {
+        return Err(Error::TelemetryDisabled);
+    }
+
+    let props = crate::util::default_properties();
+    let events: Vec<Value> = events.into_iter().map(|e| e.to_map(&props).into()).collect();
 
     let mut body: Map<String, Value> = Map::new();
-    body.insert("event".into(), event.to_string().into());
+    body.insert("events".into(), events.into());
     body.insert("useUnprefixed".into(), true.into());
-    body.insert("properties".into(), props.into());
 
     make_telemetry_request(TRACK_SUBDOMAIN, body).await
 }

@@ -15,7 +15,9 @@ pub use identify::emit_identify;
 pub use page::emit_page;
 pub use track::{
     emit_track,
+    emit_tracks,
     TrackEvent,
+    TrackEventType,
     TrackSource,
 };
 

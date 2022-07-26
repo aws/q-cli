@@ -170,6 +170,10 @@ pub async fn api_request(
                 TelemetryIdentifyRequest(request) => telemetry::handle_identify_request(request).await,
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 TelemetryPageRequest(request) => telemetry::handle_page_request(request).await,
+                AggregateSessionMetricActionRequest(request) => {
+                    telemetry::handle_aggregate_session_metric_action_request(request, &global_state.figterm_state)
+                        .await
+                },
                 // window
                 PositionWindowRequest(request) => window::position_window(request, window_id.clone(), proxy).await,
                 WindowFocusRequest(request) => window::focus(request, window_id.clone(), proxy).await,

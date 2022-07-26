@@ -50,14 +50,17 @@ async fn main() {
             (
                 Some(sentry),
                 Some(fig_telemetry::dispatch_emit_track(
-                    fig_telemetry::TrackEvent::RanCommand,
-                    fig_telemetry::TrackSource::Cli,
-                    [
-                        ("arguments", arguments),
-                        ("shell", shell),
-                        ("terminal", terminal),
-                        ("cli_version", cli_version),
-                    ],
+                    fig_telemetry::TrackEvent::new(
+                        fig_telemetry::TrackEventType::RanCommand,
+                        fig_telemetry::TrackSource::Cli,
+                        [
+                            ("arguments", arguments),
+                            ("shell", shell),
+                            ("terminal", terminal),
+                            ("cli_version", cli_version),
+                        ],
+                    ),
+                    false,
                 )),
             )
         },

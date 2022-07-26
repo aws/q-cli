@@ -46,7 +46,7 @@ use fig_proto::daemon::diagnostic_response::{
 use fig_proto::local::DiagnosticsResponse;
 use fig_proto::FigProtobufEncodable;
 use fig_telemetry::{
-    TrackEvent,
+    TrackEventType,
     TrackSource,
 };
 use fig_util::{
@@ -1733,9 +1733,13 @@ where
                 },
             }
 
-            fig_telemetry::emit_track(TrackEvent::DoctorError, TrackSource::Cli, properties)
-                .await
-                .ok();
+            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                TrackEventType::DoctorError,
+                TrackSource::Cli,
+                properties,
+            ))
+            .await
+            .ok();
         }
 
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
