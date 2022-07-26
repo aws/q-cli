@@ -10,7 +10,7 @@ NoSource: 0
 
 Requires: webkit2gtk3
 Requires: gtk3
-Requires: libappindicator-gtk3
+Requires: libappindicator-gtk3-devel
 Requires: ibus
 
 %description
