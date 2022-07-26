@@ -68,6 +68,7 @@ impl TextField {
                     y,
                     Color::DarkGrey,
                     style.background_color(),
+                    false,
                 ),
                 None => renderer,
             },
@@ -79,6 +80,7 @@ impl TextField {
                         y,
                         style.color(),
                         style.background_color(),
+                        false,
                     ),
                     false => renderer.draw_string(
                         &self.text.as_str()[self.offset..self.text.len().min(width + self.offset)],
@@ -86,6 +88,7 @@ impl TextField {
                         y,
                         style.color(),
                         style.background_color(),
+                        false,
                     ),
                 };
 
@@ -96,6 +99,7 @@ impl TextField {
                         y,
                         style.background_color(),
                         style.color(),
+                        false,
                     );
                 }
 

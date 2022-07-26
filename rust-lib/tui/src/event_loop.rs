@@ -77,7 +77,7 @@ impl EventLoop {
                             InputAction::Previous => {
                                 component.prev(style_sheet, true);
                             },
-                            InputAction::Exit => *control_flow = ControlFlow::Exit(1),
+                            InputAction::Exit(code) => *control_flow = ControlFlow::Exit(code),
                             InputAction::Reenter => {
                                 *control_flow = ControlFlow::Reenter(1);
                             },

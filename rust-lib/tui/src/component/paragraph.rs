@@ -89,6 +89,7 @@ impl Paragraph {
                             y,
                             color.unwrap_or(style.color()),
                             background_color.unwrap_or(style.background_color()),
+                            false,
                         );
                         x += 1;
 

@@ -527,14 +527,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
         loop {
             let mut components = vec![
-                Component::from(Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name)))
+                Component::from(Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name), true))
                     .with_margin_left(0)
                     .with_padding_left(0),
             ];
             if let Some(description) = &workflow.description {
                 if !description.is_empty() {
                     components.push(
-                        Component::from(Label::new(description))
+                        Component::from(Label::new(description, false))
                             .with_margin_bottom(1)
                             .with_margin_left(0)
                             .with_padding_left(0),
@@ -569,7 +569,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     }
 
                     components.push(Component::from(Container::new(vec![
-                        Component::from(Label::new("Preview")),
+                        Component::from(Label::new("Preview", false)),
                         Component::from(paragraph),
                     ])));
                 },
@@ -584,6 +584,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         components.push(Component::from(Container::new(vec![
                             Component::from(Label::new(
                                 parameter.display_name.clone().unwrap_or_else(|| parameter.name.clone()),
+                                false,
                             )),
                             match &parameter.parameter_type {
                                 ParameterType::Checkbox {
@@ -660,7 +661,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 },
             };
             components.push(
-                Component::from(Label::new("Toggle preview: CTRL+O"))
+                Component::from(Label::new("Preview: CTRL+O | Next: TAB | Prev: SHIFT+TAB | Select: SPACE | Execute: ENTER | Force: SHIFT+ENTER", false))
                     .with_color(Color::DarkGrey)
                     .with_background_color(Color::White)
                     .with_margin_left(0)
@@ -669,7 +670,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
             let mut view = Component::from(Container::new(components))
                 .with_border_style(BorderStyle::None)
-                .with_padding_top(0);
+                .with_padding_top(0)
+                .with_margin_left(2)
+                .with_margin_right(2);
 
             match event_loop.run(&mut view, &input_method, Some(&style_sheet), ControlFlow::Wait)? {
                 ControlFlow::Exit(0) => break,

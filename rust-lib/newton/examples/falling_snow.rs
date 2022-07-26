@@ -63,6 +63,7 @@ fn main() {
                     star.y as i32,
                     Color::Reset,
                     Color::Reset,
+                    false,
                 );
             }
 
