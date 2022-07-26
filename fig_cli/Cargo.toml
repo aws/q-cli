@@ -40,10 +40,13 @@ flume = "0.10.14"
 futures = "0.3.21"
 globset = "0.4.9"
 humantime = "2.1.0"
+once_cell = "1.13.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.6.0"
-self_update = { version = "0.30.0", default-features = false, features = ["rustls"] }
+self_update = { version = "0.30.0", default-features = false, features = [
+    "rustls",
+] }
 semver = "1.0.12"
 serde = { version = "1.0.140", features = ["derive"] }
 serde_json = "1.0.82"
@@ -56,7 +59,11 @@ time = { version = "=0.3.11", features = ["serde-human-readable", "local-offset"
 tokio = { version = "1.20.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.2", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
-tracing-subscriber = { version = "0.3.15", features = ["fmt", "time", "parking_lot"] }
+tracing-subscriber = { version = "0.3.15", features = [
+    "fmt",
+    "time",
+    "parking_lot",
+] }
 tui = { path = "../rust-lib/tui" }
 url = "2.2.2"
 validator = "0.16.0"
@@ -68,4 +75,3 @@ skim = "0.9.4"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 notify = "4.0.17"
-

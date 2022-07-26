@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::fmt;
 
+use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
@@ -19,6 +20,8 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Terminator,
     Terminal::WezTerm,
 ];
+
+pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
 
 /// Terminals supported by Fig
 #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
@@ -197,5 +200,9 @@ impl Terminal {
     pub fn is_jetbrains_terminal() -> bool {
         // Handles all official JetBrain IDEs + Android Studio
         matches!(std::env::var("TERMINAL_EMULATOR").ok(), Some(v) if v == "JetBrains-JediTerm")
+    }
+
+    pub fn supports_fancy_boxes(&self) -> bool {
+        !matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders)
     }
 }

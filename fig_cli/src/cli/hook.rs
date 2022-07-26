@@ -10,6 +10,8 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks;
+use fig_util::terminal::CURRENT_TERMINAL;
+use once_cell::sync::Lazy;
 
 #[derive(Debug, Subcommand)]
 #[clap(hide = true)]
@@ -73,6 +75,15 @@ pub enum HookSubcommand {
     },
 }
 
+static BASH_UNICODE: Lazy<String> = Lazy::new(|| {
+    if let Some(terminal) = &*CURRENT_TERMINAL {
+        if !terminal.supports_fancy_boxes() {
+            return "$_".to_string();
+        }
+    }
+    "\x1b[1m\x1b[3m$\x1b[0m\u{20de}\u{20de}\u{20de} ".to_string()
+});
+
 impl HookSubcommand {
     pub async fn execute(&self) -> Result<()> {
         // Hooks should exit silently on failure.
@@ -124,6 +135,15 @@ impl HookSubcommand {
                 remote_dest,
                 prompt,
             } => {
+                let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
+                println!(
+                    "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
+                    source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | source\n{bar}",
+                    "Fig".magenta(),
+                    *BASH_UNICODE,
+                    "Bash/zsh:".bold().underlined(),
+                    "Fish:".bold().underlined(),
+                );
                 if *prompt && !remote_dest.starts_with("git@") {
                     let installed_hosts_file = fig_directories::fig_dir()
                         .context("Can't get fig dir")?
@@ -139,11 +159,12 @@ impl HookSubcommand {
 
                     if !contents.contains(remote_dest) {
                         println!(
-                            "To install SSH support for {}, run the following on your remote machine\n\n  {} \n  \
-                             source <(curl -Ls fig.io/install)\n\n  {} \n  curl -Ls fig.io/install | source\n",
+                            "To install SSH support for {}, run the following on your remote machine\n\n  {} {} \n  \
+                             source <(curl -Ls fig.io/install)\n\n  🐟 {} \n  curl -Ls fig.io/install | source\n",
                             "Fig".magenta(),
-                            "For bash/zsh:".bold().underlined(),
-                            "For Fish:".bold().underlined(),
+                            *BASH_UNICODE,
+                            "Bash/zsh:".bold().underlined(),
+                            "Fish:".bold().underlined(),
                         );
                         let new_line = format!("\n{}", remote_dest);
                         installed_hosts.write_all(&new_line.into_bytes())?;
