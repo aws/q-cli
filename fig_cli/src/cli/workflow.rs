@@ -256,36 +256,39 @@ impl SkimItem for WorkflowAction {
 }
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
+    // Get workflows early
+    let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
+
     // Parse args
     let workflow_name = env_args.first().map(String::from);
+    let execution_method = match workflow_name {
+        Some(_) => "invoke",
+        None => "search",
+    };
 
-    // Get workflow
-    let (workflow, execution_method) = match &workflow_name {
-        Some(name) => {
-            let (namespace, name) = match name.strip_prefix('@') {
-                Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
-                    [namespace, name] => (Some(namespace), name),
-                    _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
-                },
-                None => (None, name.as_ref()),
-            };
+    // Get matching workflows
+    if let Some(workflow_name) = workflow_name {
+        let (namespace, name) = match workflow_name.strip_prefix('@') {
+            Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
+                [namespace, name] => (Some(namespace), name),
+                _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
+            },
+            None => (None, workflow_name.as_ref()),
+        };
 
-            match Request::get(format!("/workflows/{name}"))
-                .auth()
-                .body(serde_json::json!({
-                    "namespace": namespace,
-                }))
-                .deser_json::<Workflow>()
-                .await
-            {
-                Ok(workflow) => (workflow, "invoke"),
-                Err(_) => match namespace {
-                    Some(namespace) => bail!("Workflow does not exist: @{namespace}/{name}"),
-                    None => bail!("Workflow does not exist: {name}"),
-                },
-            }
-        },
-        None => {
+        workflows = workflows.into_iter().filter(|c| c.name == name && match namespace {
+            Some(namespace) => c.namespace == namespace,
+            None => true,
+        }).collect();
+
+        if workflows.is_empty() {
+            bail!("No matching workflows for {workflow_name}");
+        }
+    };
+
+    let workflow = match workflows.len() {
+        1 => workflows.pop().unwrap(),
+        _ => {
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::WorkflowSearchViewed,
                 TrackSource::Cli,
@@ -293,8 +296,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             )
             .await
             .ok();
-
-            let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
+        
             workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
                 (None, None) => Ordering::Equal,
                 (None, Some(_)) => Ordering::Greater,
@@ -304,32 +306,32 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     _ => Ordering::Equal,
                 },
             });
-
+        
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     use skim::prelude::*;
-
+        
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
-
+        
                     if workflows.is_empty() {
                         tx.send(Arc::new(WorkflowAction::Create)).ok();
                     }
-
+        
                     for workflow in workflows.iter().rev() {
                         tx.send(Arc::new(WorkflowAction::Run(workflow.clone()))).ok();
                     }
                     drop(tx);
-
+        
                     let terminal_size = crossterm::terminal::size();
                     let cursor_position = crossterm::cursor::position();
-
+        
                     let height = match (terminal_size, cursor_position) {
                         (Ok((_, term_height)), Ok((_, cursor_row))) => {
                             (term_height - cursor_row).max(13).to_string()
                         }
                         _ => "100%".into()
                     };
-
+        
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
                             .height(Some(&height))
@@ -344,12 +346,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         Some(rx),
                     );
 
-                    let workflow = match output {
+                    match output {
                         Some(out) => {
                             if out.is_abort {
                                 return Ok(());
                             }
-
+        
                             match out.selected_items.iter()
                                 .map(|selected_item|
                                     (**selected_item)
@@ -385,19 +387,17 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone())
                         })
                         .collect();
-
+        
                     let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
                         .items(&workflow_names)
                         .default(0)
                         .interact()
                         .unwrap();
-
-                    let workflow = workflows.remove(selection);
+        
+                    workflows.remove(selection)
                 }
-            };
-
-            (workflow, "search")
-        },
+            }
+        }
     };
 
     let mut env_args = env_args.into_iter().skip(1);
@@ -534,24 +534,16 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen)?;
 
         loop {
-            let mut components = vec![
-                Component::from(Label::new(
-                    workflow.display_name.as_ref().unwrap_or(&workflow.name),
-                    true,
-                ))
-                .with_margin_left(0)
-                .with_padding_left(0),
-            ];
+            let mut header = Paragraph::new();
+            header.push_styled_text(workflow.display_name.as_ref().unwrap_or(&workflow.name), None, None, true);
+            header.push_styled_text(format!(" | {}", workflow.namespace), Some(Color::DarkGrey), None, false);
+            header.push_line_break();
             if let Some(description) = &workflow.description {
-                if !description.is_empty() {
-                    components.push(
-                        Component::from(Label::new(description, false))
-                            .with_margin_bottom(1)
-                            .with_margin_left(0)
-                            .with_padding_left(0),
-                    );
-                }
+                header.push_text(description);
             }
+
+            let mut components = vec![Component::from(header).with_margin_bottom(1)];
+
             let input_method;
             match preview {
                 true => {
@@ -574,6 +566,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     },
                                     Some(colors[hash % colors.len()]),
                                     None,
+                                    false
                                 );
                             },
                         }
