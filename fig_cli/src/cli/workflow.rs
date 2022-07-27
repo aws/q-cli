@@ -276,10 +276,16 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             None => (None, workflow_name.as_ref()),
         };
 
-        workflows = workflows.into_iter().filter(|c| c.name == name && match namespace {
-            Some(namespace) => c.namespace == namespace,
-            None => true,
-        }).collect();
+        workflows = workflows
+            .into_iter()
+            .filter(|c| {
+                c.name == name
+                    && match namespace {
+                        Some(namespace) => c.namespace == namespace,
+                        None => true,
+                    }
+            })
+            .collect();
 
         if workflows.is_empty() {
             bail!("No matching workflows for {workflow_name}");
@@ -296,7 +302,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             )
             .await
             .ok();
-        
+
             workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
                 (None, None) => Ordering::Equal,
                 (None, Some(_)) => Ordering::Greater,
@@ -306,32 +312,32 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     _ => Ordering::Equal,
                 },
             });
-        
+
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
                     use skim::prelude::*;
-        
+
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
-        
+
                     if workflows.is_empty() {
                         tx.send(Arc::new(WorkflowAction::Create)).ok();
                     }
-        
+
                     for workflow in workflows.iter().rev() {
                         tx.send(Arc::new(WorkflowAction::Run(workflow.clone()))).ok();
                     }
                     drop(tx);
-        
+
                     let terminal_size = crossterm::terminal::size();
                     let cursor_position = crossterm::cursor::position();
-        
+
                     let height = match (terminal_size, cursor_position) {
                         (Ok((_, term_height)), Ok((_, cursor_row))) => {
                             (term_height - cursor_row).max(13).to_string()
                         }
                         _ => "100%".into()
                     };
-        
+
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
                             .height(Some(&height))
@@ -351,7 +357,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             if out.is_abort {
                                 return Ok(());
                             }
-        
+
                             match out.selected_items.iter()
                                 .map(|selected_item|
                                     (**selected_item)
@@ -387,17 +393,17 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone())
                         })
                         .collect();
-        
+
                     let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
                         .items(&workflow_names)
                         .default(0)
                         .interact()
                         .unwrap();
-        
+
                     workflows.remove(selection)
                 }
             }
-        }
+        },
     };
 
     let mut env_args = env_args.into_iter().skip(1);
@@ -535,7 +541,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
         loop {
             let mut header = Paragraph::new();
-            header.push_styled_text(workflow.display_name.as_ref().unwrap_or(&workflow.name), None, None, true);
+            header.push_styled_text(
+                workflow.display_name.as_ref().unwrap_or(&workflow.name),
+                None,
+                None,
+                true,
+            );
             header.push_styled_text(format!(" | {}", workflow.namespace), Some(Color::DarkGrey), None, false);
             header.push_line_break();
             if let Some(description) = &workflow.description {
@@ -566,7 +577,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     },
                                     Some(colors[hash % colors.len()]),
                                     None,
-                                    false
+                                    false,
                                 );
                             },
                         }

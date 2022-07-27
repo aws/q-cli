@@ -30,12 +30,18 @@ impl Paragraph {
         self.push_styled_text(text, None, None, false);
     }
 
-    pub fn push_styled_text(&mut self, text: impl Into<String>, color: Option<Color>, background_color: Option<Color>, bold: bool) {
+    pub fn push_styled_text(
+        &mut self,
+        text: impl Into<String>,
+        color: Option<Color>,
+        background_color: Option<Color>,
+        bold: bool,
+    ) {
         self.components.push(ParagraphComponent::Text {
             text: text.into().replace('\t', "    "),
             color,
             background_color,
-            bold
+            bold,
         })
     }
 
@@ -112,7 +118,5 @@ impl Paragraph {
         }
     }
 
-    pub(crate) fn on_resize(&mut self, width: i32, height: i32) {
-
-    }
+    pub(crate) fn on_resize(&mut self, width: i32, height: i32) {}
 }
