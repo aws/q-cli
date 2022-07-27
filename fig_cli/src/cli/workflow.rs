@@ -1,6 +1,6 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
-use std::cmp::Ordering;
+use std::cmp::Ordering as StdOrdering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{
@@ -304,12 +304,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .ok();
 
             workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
-                (None, None) => Ordering::Equal,
-                (None, Some(_)) => Ordering::Greater,
-                (Some(_), None) => Ordering::Less,
+                (None, None) => StdOrdering::Equal,
+                (None, Some(_)) => StdOrdering::Greater,
+                (Some(_), None) => StdOrdering::Less,
                 (Some(a), Some(b)) => match (OffsetDateTime::parse(a, &Rfc3339), OffsetDateTime::parse(b, &Rfc3339)) {
                     (Ok(a), Ok(b)) => b.cmp(&a),
-                    _ => Ordering::Equal,
+                    _ => StdOrdering::Equal,
                 },
             });
 
@@ -385,7 +385,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             }
                         },
                         None => return Ok(()),
-                    };
+                    }
                 } else if #[cfg(windows)] {
                     let workflow_names: Vec<String> = workflows
                         .iter()
