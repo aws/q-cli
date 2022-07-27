@@ -1,6 +1,9 @@
 //! Installation, uninstallation, and update of the CLI.
 
-use std::path::Path;
+use std::path::{
+    Path,
+    PathBuf,
+};
 
 use anyhow::{
     Context,
@@ -16,7 +19,6 @@ use fig_integrations::{
 use fig_util::Shell;
 use self_update::update::UpdateStatus;
 
-use crate::cli::ssh::get_ssh_config_path;
 use crate::daemon;
 use crate::util::dialoguer_theme;
 
@@ -28,6 +30,14 @@ bitflags::bitflags! {
         const BINARY   = 0b00000100;
         const SSH      = 0b00001000;
     }
+}
+
+// todo(mia): get rid of this function
+pub fn get_ssh_config_path() -> Result<PathBuf> {
+    Ok(fig_directories::home_dir()
+        .context("Could not get home directory")?
+        .join(".ssh")
+        .join("config"))
 }
 
 #[cfg_attr(windows, allow(unused_variables))]

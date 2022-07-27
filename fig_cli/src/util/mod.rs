@@ -18,17 +18,20 @@ use anyhow::{
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
+use dialoguer::FuzzySelect;
 use fig_ipc::get_fig_socket_path;
 use globset::{
     Glob,
     GlobSet,
     GlobSetBuilder,
 };
+use once_cell::sync::Lazy;
 pub use os_version::{
     OSVersion,
     SupportLevel,
 };
 use regex::Regex;
+use tracing::warn;
 
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
@@ -293,4 +296,23 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
             .as_str()
             .into(),
     )
+}
+
+static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var("TTY").is_ok());
+
+pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
+    if options.is_empty() {
+        bail!("no options passed to choose")
+    }
+
+    if !*IS_TTY {
+        warn!("choose called without TTY, choosing first option");
+        return Ok(0);
+    }
+
+    Ok(FuzzySelect::with_theme(&dialoguer_theme())
+        .items(&options)
+        .default(0)
+        .with_prompt(prompt)
+        .interact()?)
 }

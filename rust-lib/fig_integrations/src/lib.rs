@@ -16,6 +16,7 @@ pub use error::InstallationError;
 pub use file::FileIntegration;
 
 pub trait Integration {
+    fn describe(&self) -> String;
     fn install(&self, backup_dir: Option<&Path>) -> Result<()>;
     fn uninstall(&self) -> Result<()>;
     fn is_installed(&self) -> Result<(), InstallationError>;

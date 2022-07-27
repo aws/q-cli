@@ -115,6 +115,14 @@ impl Request {
         Self { auth: true, ..self }
     }
 
+    /// Adds namespace to request. Pass `None` to use the user namespace
+    pub fn namespace(self, namespace: Option<impl AsRef<str>>) -> Self {
+        if let Some(namespace) = namespace {
+            return self.query(&[("namespace", namespace.as_ref())]);
+        }
+        self
+    }
+
     pub async fn send(self) -> Result<Response> {
         let builder = match self.auth {
             true => {

@@ -27,7 +27,8 @@ fn filter_layer() -> EnvFilter {
         .from_env_lossy()
 }
 
-static FIG_LOG_LEVEL: Lazy<LevelFilter> = Lazy::new(|| filter_layer().max_level_hint().unwrap_or(LevelFilter::ERROR));
+pub static FIG_LOG_LEVEL: Lazy<LevelFilter> =
+    Lazy::new(|| filter_layer().max_level_hint().unwrap_or(LevelFilter::ERROR));
 
 pub fn stdio_debug_log(s: impl Display) {
     if *FIG_LOG_LEVEL >= Level::DEBUG {
