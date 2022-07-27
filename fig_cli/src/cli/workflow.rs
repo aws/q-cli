@@ -147,7 +147,7 @@ struct Workflow {
 
 #[cfg(unix)]
 enum WorkflowAction {
-    Run(Workflow),
+    Run(Box<Workflow>),
     Create,
 }
 
@@ -324,7 +324,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     }
 
                     for workflow in workflows.iter().rev() {
-                        tx.send(Arc::new(WorkflowAction::Run(workflow.clone()))).ok();
+                        tx.send(Arc::new(WorkflowAction::Run(Box::new(workflow.clone())))).ok();
                     }
                     drop(tx);
 
@@ -369,7 +369,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 .next() {
                                 Some(workflow) => {
                                     match workflow {
-                                        WorkflowAction::Run(workflow) => workflow.clone(),
+                                        WorkflowAction::Run(workflow) => *workflow.clone(),
                                         WorkflowAction::Create => {
                                             println!();
                                             launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
