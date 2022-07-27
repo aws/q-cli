@@ -345,7 +345,6 @@ impl Component {
     pub(crate) fn on_resize(&mut self, width: i32, height: i32) {
         match &mut self.inner {
             ComponentType::Container(c) => c.on_resize(width, height),
-            ComponentType::Paragraph(c) => c.on_resize(width, height),
             ComponentType::Select(c) => c.on_resize(width),
             ComponentType::TextField(c) => c.on_resize(width),
             _ => (),

@@ -258,7 +258,11 @@ impl SkimItem for WorkflowAction {
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Get workflows early
+    execute!(std::io::stdout(), cursor::Hide)?;
+    let mut spinner = Spinner::new(Spinners::Dots, "Getting workflows...".to_owned());
     let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
+    spinner.stop_with_message(String::new());
+    execute!(std::io::stdout(), cursor::Show)?;
 
     // Parse args
     let workflow_name = env_args.first().map(String::from);
@@ -457,9 +461,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    execute!(std::io::stdout(), cursor::Hide)?;
-    let mut spinner = Spinner::new(Spinners::Dots, "Loading workflow...".to_owned());
-
     let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
         return Err(anyhow!(
@@ -536,9 +537,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     };
 
-    spinner.stop_with_message(String::new());
-    execute!(std::io::stdout(), cursor::Show)?;
-
     if !workflow.parameters.is_empty() {
         let mut preview = false;
         let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen)?;
@@ -551,7 +549,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 None,
                 true,
             );
-            header.push_styled_text(format!(" | {}", workflow.namespace), Some(Color::DarkGrey), None, false);
+            header.push_styled_text(
+                format!(" | @{}", workflow.namespace),
+                Some(Color::DarkGrey),
+                None,
+                false,
+            );
             header.push_line_break();
             if let Some(description) = &workflow.description {
                 header.push_text(description);
@@ -617,6 +620,11 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                         .get(&parameter_name)
                                         .map(|c| c == &true_value)
                                         .unwrap_or(false);
+
+                                    if !checked {
+                                        args.borrow_mut().insert(parameter_name.clone(), false_value.clone());
+                                    }
+
                                     Component::from(CheckBox::new(
                                         parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
                                         checked,
@@ -733,6 +741,16 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         println!("{} {command}", "Executing:".bold().magenta());
     }
 
+    fig_telemetry::dispatch_emit_track(
+        TrackEvent::new(TrackEventType::WorkflowExecuted, TrackSource::Cli, [
+            ("workflow", workflow_name.as_ref()),
+            ("execution_method", execution_method),
+        ]),
+        false,
+    )
+    .await
+    .ok();
+
     cfg_if! {
         if #[cfg(feature = "deno")] {
             let map = args.into_iter().map(|(key, (v, _))| (key, v)).collect();
@@ -758,16 +776,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    fig_telemetry::dispatch_emit_track(
-        TrackEvent::new(TrackEventType::WorkflowExecuted, TrackSource::Cli, [
-            ("workflow", workflow_name.as_ref()),
-            ("execution_method", execution_method),
-        ]),
-        false,
-    )
-    .await
-    .ok();
-
     Ok(())
 }
 
@@ -788,9 +796,9 @@ async fn execute_bash_workflow(
         acc
     }));
 
-    let output = command.status()?;
+    let output = command.status();
 
-    let exit_code = output.code();
+    let exit_code = output.ok().and_then(|output| output.code());
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
         if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
             Request::post(format!("/workflows/{name}/invocations"))

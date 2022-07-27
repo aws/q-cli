@@ -145,7 +145,11 @@ impl EventLoop {
                     }
                 },
                 ControlFlow::Exit(_) => break,
-                ControlFlow::Reenter(_) => return Ok(control_flow),
+                ControlFlow::Reenter(_) => {
+                    self.display_state.clear();
+                    self.display_state.write_diff(&mut self.out)?;
+                    return Ok(control_flow);
+                },
             }
 
             func(Event::Update, &mut self.display_state, &mut control_flow)?;

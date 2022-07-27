@@ -117,6 +117,4 @@ impl Paragraph {
             }
         }
     }
-
-    pub(crate) fn on_resize(&mut self, _width: i32, _height: i32) {}
 }
