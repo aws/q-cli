@@ -238,7 +238,7 @@ impl TokensSubcommand {
 
 /// Login to fig
 pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
-    let client = get_client()?;
+    let client = get_client(5)?;
 
     if refresh || hard_refresh {
         let mut creds = Credentials::load_credentials()?;

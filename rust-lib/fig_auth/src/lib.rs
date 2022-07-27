@@ -37,7 +37,7 @@ pub fn logout() -> Result<(), Error> {
 pub async fn get_token() -> Result<String, Error> {
     let mut creds = Credentials::load_credentials()?;
     if creds.is_expired() {
-        let aws_client = get_client()?;
+        let aws_client = get_client(0)?;
         tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, None))
             .await
             .unwrap()

@@ -81,7 +81,7 @@ impl Select {
             false => '▹',
         };
 
-        renderer.draw_symbol(arrow, x, y, style.color(), style.background_color());
+        renderer.draw_symbol(arrow, x, y, style.color(), style.background_color(), false);
 
         match self.text.is_empty() {
             true => {
@@ -92,6 +92,7 @@ impl Select {
                         y,
                         Color::DarkGrey,
                         style.background_color(),
+                        false,
                     );
                 }
             },
@@ -102,6 +103,7 @@ impl Select {
                     y,
                     style.color(),
                     style.background_color(),
+                    false,
                 );
 
                 if self.focused {
@@ -111,6 +113,7 @@ impl Select {
                         y,
                         style.background_color(),
                         style.color(),
+                        false,
                     );
                 }
             },
@@ -144,6 +147,7 @@ impl Select {
                 y + i32::try_from(i).unwrap() + 1,
                 color,
                 background_color,
+                false,
             );
         }
     }

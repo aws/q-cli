@@ -20,6 +20,10 @@ pub struct FileIntegration {
 }
 
 impl Integration for FileIntegration {
+    fn describe(&self) -> String {
+        format!("File Integration @ {}", self.path.to_string_lossy())
+    }
+
     fn is_installed(&self) -> Result<(), InstallationError> {
         let current_contents =
             std::fs::read_to_string(&self.path).context(format!("{} does not exist.", self.path.display()))?;

@@ -65,6 +65,10 @@ pub fn install_daemon() -> Result<()> {
     get_daemon()?.install()
 }
 
+pub fn uninstall_daemon() -> Result<()> {
+    get_daemon()?.uninstall()
+}
+
 #[non_exhaustive]
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum InitSystem {
@@ -201,6 +205,7 @@ impl InitSystem {
             },
             InitSystem::Systemd => {
                 Command::new("systemctl")
+                    .arg("--user")
                     .arg("--now")
                     .arg("disable")
                     .arg(path.as_ref())

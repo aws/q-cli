@@ -233,6 +233,10 @@ impl Integration for ShellScriptShellIntegration {
     fn uninstall(&self) -> Result<()> {
         self.get_file_integration().uninstall()
     }
+
+    fn describe(&self) -> String {
+        format!("{} {}", self.shell, self.when)
+    }
 }
 
 impl ShellIntegration for ShellScriptShellIntegration {
@@ -446,29 +450,6 @@ impl Integration for DotfileShellIntegration {
         Ok(())
     }
 
-    fn is_installed(&self) -> Result<(), InstallationError> {
-        let dotfile = self.dotfile_path();
-        let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
-            // Remove comments and empty lines.
-            Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
-            _ => {
-                return Err(InstallationError::FileDoesNotExist(dotfile.into()));
-            },
-        };
-
-        if self.pre {
-            self.matches_text(&filtered_contents, When::Pre)?;
-            self.script_integration(When::Pre)?.is_installed()?;
-        }
-
-        if self.post {
-            self.matches_text(&filtered_contents, When::Post)?;
-            self.script_integration(When::Post)?.is_installed()?;
-        }
-
-        Ok(())
-    }
-
     fn uninstall(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
         if dotfile.exists() {
@@ -506,6 +487,39 @@ impl Integration for DotfileShellIntegration {
         }
 
         Ok(())
+    }
+
+    fn is_installed(&self) -> Result<(), InstallationError> {
+        let dotfile = self.dotfile_path();
+        let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
+            // Remove comments and empty lines.
+            Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
+            _ => {
+                return Err(InstallationError::FileDoesNotExist(dotfile.into()));
+            },
+        };
+
+        if self.pre {
+            self.matches_text(&filtered_contents, When::Pre)?;
+            self.script_integration(When::Pre)?.is_installed()?;
+        }
+
+        if self.post {
+            self.matches_text(&filtered_contents, When::Post)?;
+            self.script_integration(When::Post)?.is_installed()?;
+        }
+
+        Ok(())
+    }
+
+    fn describe(&self) -> String {
+        format!(
+            "{}{}{} into {}",
+            self.shell,
+            if self.pre { " pre" } else { "" },
+            if self.post { " post" } else { "" },
+            self.dotfile_name,
+        )
     }
 }
 

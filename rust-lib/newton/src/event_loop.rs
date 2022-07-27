@@ -112,7 +112,7 @@ impl EventLoop {
                     while let true = poll(Duration::ZERO)? {
                         let event = match Event::from(read()?) {
                             event @ Event::Resized { width, height } => {
-                                self.display_state.resize(&mut self.out, width + 1, height + 1)?;
+                                self.display_state.resize(width, height)?;
                                 event
                             },
                             event => event,
@@ -124,7 +124,7 @@ impl EventLoop {
                 ControlFlow::Wait => {
                     let event = match Event::from(read()?) {
                         event @ Event::Resized { width, height } => {
-                            self.display_state.resize(&mut self.out, width + 1, height + 1)?;
+                            self.display_state.resize(width, height)?;
                             event
                         },
                         event => event,
@@ -135,7 +135,7 @@ impl EventLoop {
                     while let true = poll(Duration::ZERO)? {
                         let event = match Event::from(read()?) {
                             event @ Event::Resized { width, height } => {
-                                self.display_state.resize(&mut self.out, width + 1, height + 1)?;
+                                self.display_state.resize(width, height)?;
                                 event
                             },
                             event => event,
@@ -145,7 +145,11 @@ impl EventLoop {
                     }
                 },
                 ControlFlow::Exit(_) => break,
-                ControlFlow::Reenter(_) => return Ok(control_flow),
+                ControlFlow::Reenter(_) => {
+                    self.display_state.clear();
+                    self.display_state.write_diff(&mut self.out)?;
+                    return Ok(control_flow);
+                },
             }
 
             func(Event::Update, &mut self.display_state, &mut control_flow)?;

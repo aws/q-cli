@@ -328,7 +328,7 @@ unsafe extern "system" fn win_event_proc(
                     let mut width = 0;
                     let mut height = 0;
                     if acc
-                        .accLocation(&mut left, &mut top, &mut width, &mut height, varchild)
+                        .accLocation(&mut left, &mut top, &mut width, &mut height, &varchild)
                         .is_ok()
                     {
                         *UNMANAGED.console_state.write() = ConsoleState::Accessible {

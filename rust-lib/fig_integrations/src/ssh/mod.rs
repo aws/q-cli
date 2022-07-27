@@ -71,6 +71,10 @@ impl SshIntegration {
 }
 
 impl Integration for SshIntegration {
+    fn describe(&self) -> String {
+        "SSH Integration".to_owned()
+    }
+
     fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
         if self.is_installed().is_ok() {
             return Ok(());
@@ -92,6 +96,21 @@ impl Integration for SshIntegration {
         Ok(())
     }
 
+    fn uninstall(&self) -> Result<()> {
+        if self.path.exists() {
+            let mut contents = std::fs::read_to_string(&self.path)?;
+            contents = self.source_regex()?.replace_all(&contents, "").into();
+            contents = self.legacy_regex()?.replace_all(&contents, "").into();
+            contents = contents.trim().to_string();
+            contents.push('\n');
+            std::fs::write(&self.path, contents.as_bytes())?;
+        }
+
+        self.get_file_integration()?.uninstall()?;
+
+        Ok(())
+    }
+
     fn is_installed(&self) -> Result<(), InstallationError> {
         let filtered_contents: String = match std::fs::read_to_string(&self.path) {
             // Remove comments and empty lines.
@@ -107,21 +126,6 @@ impl Integration for SshIntegration {
             let message = format!("{} does not source Fig's ssh integration", self.path.display());
             return Err(InstallationError::NotInstalled(message.into()));
         }
-
-        Ok(())
-    }
-
-    fn uninstall(&self) -> Result<()> {
-        if self.path.exists() {
-            let mut contents = std::fs::read_to_string(&self.path)?;
-            contents = self.source_regex()?.replace_all(&contents, "").into();
-            contents = self.legacy_regex()?.replace_all(&contents, "").into();
-            contents = contents.trim().to_string();
-            contents.push('\n');
-            std::fs::write(&self.path, contents.as_bytes())?;
-        }
-
-        self.get_file_integration()?.uninstall()?;
 
         Ok(())
     }

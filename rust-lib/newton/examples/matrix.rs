@@ -56,6 +56,7 @@ fn main() {
                         y,
                         Color::Green,
                         Color::Reset,
+                        false,
                     );
                 }
             }

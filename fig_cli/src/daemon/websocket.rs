@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::time::Duration;
 
 use anyhow::{
     anyhow,
@@ -70,9 +69,9 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     let url = Url::parse_with_params(ws_host().as_str(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
 
-    let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
+    let (websocket_stream, _) = tokio_tungstenite::connect_async(url)
         .await
-        .context("Failed to connect to websocket")??;
+        .context("Failed to connect to websocket")?;
 
     info!("Websocket connected");
 

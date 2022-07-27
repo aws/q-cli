@@ -11,6 +11,7 @@ pub enum ParagraphComponent {
         text: String,
         color: Option<Color>,
         background_color: Option<Color>,
+        bold: bool,
     },
     LineBreak,
 }
@@ -26,14 +27,21 @@ impl Paragraph {
     }
 
     pub fn push_text(&mut self, text: impl Into<String>) {
-        self.push_styled_text(text, None, None);
+        self.push_styled_text(text, None, None, false);
     }
 
-    pub fn push_styled_text(&mut self, text: impl Into<String>, color: Option<Color>, background_color: Option<Color>) {
+    pub fn push_styled_text(
+        &mut self,
+        text: impl Into<String>,
+        color: Option<Color>,
+        background_color: Option<Color>,
+        bold: bool,
+    ) {
         self.components.push(ParagraphComponent::Text {
-            text: text.into(),
+            text: text.into().replace('\t', "    "),
             color,
             background_color,
+            bold,
         })
     }
 
@@ -49,7 +57,7 @@ impl Paragraph {
                     acc + i32::try_from(text.chars().filter(|c| c == &'\n').count()).unwrap()
                 },
                 ParagraphComponent::LineBreak => acc + 1,
-            }) + 5;
+            });
         }
     }
 
@@ -74,6 +82,7 @@ impl Paragraph {
                     text,
                     color,
                     background_color,
+                    bold,
                 } => {
                     for char in text.chars() {
                         if char == '\n' {
@@ -89,6 +98,7 @@ impl Paragraph {
                             y,
                             color.unwrap_or(style.color()),
                             background_color.unwrap_or(style.background_color()),
+                            *bold,
                         );
                         x += 1;
 

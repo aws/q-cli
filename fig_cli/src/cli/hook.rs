@@ -81,7 +81,7 @@ static BASH_UNICODE: Lazy<String> = Lazy::new(|| {
             return "$_".to_string();
         }
     }
-    "\x1b[1m\x1b[3m$\x1b[0m\u{20de}\u{20de}\u{20de} ".to_string()
+    "\x1b[1m\x1b[3m$\x1b[0m\u{20de} ".to_string()
 });
 
 impl HookSubcommand {
@@ -135,16 +135,7 @@ impl HookSubcommand {
                 remote_dest,
                 prompt,
             } => {
-                let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
-                println!(
-                    "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
-                    source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | source\n{bar}",
-                    "Fig".magenta(),
-                    *BASH_UNICODE,
-                    "Bash/zsh:".bold().underlined(),
-                    "Fish:".bold().underlined(),
-                );
-                if *prompt && !remote_dest.starts_with("git@") {
+                if *prompt && !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
                     let installed_hosts_file = fig_directories::fig_dir()
                         .context("Can't get fig dir")?
                         .join("ssh_hostnames");
@@ -158,9 +149,10 @@ impl HookSubcommand {
                     installed_hosts.read_to_string(&mut contents)?;
 
                     if !contents.contains(remote_dest) {
+                        let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
                         println!(
-                            "To install SSH support for {}, run the following on your remote machine\n\n  {} {} \n  \
-                             source <(curl -Ls fig.io/install)\n\n  🐟 {} \n  curl -Ls fig.io/install | source\n",
+                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
+                            source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | source\n{bar}",
                             "Fig".magenta(),
                             *BASH_UNICODE,
                             "Bash/zsh:".bold().underlined(),

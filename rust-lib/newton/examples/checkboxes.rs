@@ -58,7 +58,14 @@ fn main() {
             display_state.clear();
 
             for (i, field) in choices.iter().enumerate() {
-                display_state.draw_string("Flags", 0, (i * 4).try_into().unwrap(), Color::Reset, Color::Reset);
+                display_state.draw_string(
+                    "Flags",
+                    0,
+                    (i * 4).try_into().unwrap(),
+                    Color::Reset,
+                    Color::Reset,
+                    false,
+                );
                 for (k, choice) in field.iter().enumerate() {
                     display_state.draw_string(
                         format!(
@@ -76,6 +83,7 @@ fn main() {
                         (i * 4 + k + 1).try_into().unwrap(),
                         Color::Reset,
                         Color::Reset,
+                        false,
                     );
                 }
             }

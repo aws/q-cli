@@ -16,6 +16,10 @@ fn ibus_engine_path() -> &'static Path {
 pub struct IbusIntegration {}
 
 impl Integration for IbusIntegration {
+    fn describe(&self) -> String {
+        "IBus Engine".to_owned()
+    }
+
     fn install(&self, _: Option<&Path>) -> Result<()> {
         let output = Command::new("ibus").args(&["engine", "fig"]).output()?;
         output

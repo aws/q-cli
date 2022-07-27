@@ -15,7 +15,7 @@ pub enum InputAction {
     Previous,
     Delete,
     Select,
-    Exit,
+    Exit(u32),
     Reenter,
     Insert(char, KeyModifiers),
 }
@@ -29,16 +29,19 @@ impl InputAction {
                         vec![InputAction::Reenter]
                     },
                     c if ['c', 'C', 'd', 'D'].contains(&c) && modifiers.contains(KeyModifiers::CONTROL) => {
-                        vec![InputAction::Exit]
+                        vec![InputAction::Exit(1)]
                     },
                     _ => vec![],
                 },
-                KeyCode::Esc => vec![InputAction::Exit],
+                KeyCode::Esc => vec![InputAction::Exit(1)],
                 _ => vec![],
             },
             InputMethod::Form => match code {
                 KeyCode::Backspace => vec![InputAction::Remove],
-                KeyCode::Enter => vec![InputAction::Submit],
+                KeyCode::Enter => match modifiers.contains(KeyModifiers::SHIFT) {
+                    true => vec![InputAction::Submit, InputAction::Exit(0)],
+                    false => vec![InputAction::Submit],
+                },
                 KeyCode::Left => vec![InputAction::Left],
                 KeyCode::Right => vec![InputAction::Right],
                 KeyCode::Up => vec![InputAction::Up],
@@ -52,11 +55,11 @@ impl InputAction {
                         vec![InputAction::Reenter]
                     },
                     c if ['c', 'C', 'd', 'D'].contains(&c) && modifiers.contains(KeyModifiers::CONTROL) => {
-                        vec![InputAction::Exit]
+                        vec![InputAction::Exit(1)]
                     },
                     _ => vec![InputAction::Insert(c, modifiers)],
                 },
-                KeyCode::Esc => vec![InputAction::Exit],
+                KeyCode::Esc => vec![InputAction::Exit(1)],
                 _ => vec![],
             },
         }

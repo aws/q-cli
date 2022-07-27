@@ -6,13 +6,15 @@ use crate::Style;
 
 #[derive(Debug, Clone, Default)]
 pub struct Label {
-    pub label: String,
+    label: String,
+    bold: bool,
 }
 
 impl Label {
-    pub fn new(label: impl Display) -> Self {
+    pub fn new(label: impl Display, bold: bool) -> Self {
         Self {
             label: label.to_string(),
+            bold,
         }
     }
 
@@ -33,6 +35,7 @@ impl Label {
                 y,
                 style.color(),
                 style.background_color(),
+                self.bold,
             );
         }
     }

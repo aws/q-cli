@@ -8,6 +8,7 @@ mod doctor;
 mod hook;
 mod init;
 mod installation;
+mod integrations;
 mod internal;
 mod invite;
 mod issue;
@@ -23,8 +24,6 @@ mod tweet;
 mod user;
 mod workflow;
 
-use std::fs::File;
-
 use anyhow::{
     Context,
     Result,
@@ -35,10 +34,11 @@ use clap::{
     Subcommand,
     ValueEnum,
 };
+use fig_log::Logger;
 use tracing::debug;
-use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
+use self::integrations::IntegrationsSubcommands;
 use self::plugins::PluginsSubcommands;
 use crate::daemon::{
     daemon,
@@ -88,7 +88,6 @@ pub enum CliRootCommands {
     Tips(tips::TipsSubcommand),
     /// Install fig cli components
     Install(internal::InstallArgs),
-    #[clap(subcommand)]
     /// Enable/disable fig SSH integration
     Ssh(ssh::SshSubcommand),
     /// Uninstall fig
@@ -149,6 +148,9 @@ pub enum CliRootCommands {
     Man(man::ManArgs),
     #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
     Workflow(workflow::WorkflowArgs),
+    /// Managed system integrations
+    #[clap(subcommand)]
+    Integrations(IntegrationsSubcommands),
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -197,39 +199,21 @@ pub struct Cli {
 }
 
 impl Cli {
-    pub async fn execute(self, env_level: LevelFilter) -> Result<()> {
+    pub async fn execute(self) -> Result<()> {
+        let mut logger = Logger::new();
         match self.subcommand {
             Some(CliRootCommands::Daemon) => {
                 // The daemon prints all logs to stdout
-                tracing_subscriber::fmt()
-                    .with_max_level(env_level)
-                    .with_line_number(true)
-                    .init();
+                logger = logger.with_stdout();
             },
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if env_level >= LevelFilter::DEBUG {
-                    if let Some(fig_dir) = fig_directories::fig_dir() {
-                        let log_path = fig_dir.join("logs").join("cli.log");
-
-                        // Create the log directory if it doesn't exist
-                        if !log_path.parent().unwrap().exists() {
-                            std::fs::create_dir_all(log_path.parent().unwrap()).ok();
-                        }
-
-                        if let Ok(log_file) = File::create(log_path).context("failed to create log file") {
-                            tracing_subscriber::fmt()
-                                .with_writer(log_file)
-                                .with_max_level(env_level)
-                                .with_line_number(true)
-                                .init();
-                        }
-                    }
-
-                    debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
-                }
+                logger = logger.with_stdout().with_file("cli.log");
+                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
             },
         }
+
+        let _logger_guard = logger.init().expect("Failed to init logger");
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
@@ -295,6 +279,7 @@ impl Cli {
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man(args) => args.execute(),
                 CliRootCommands::Workflow(args) => args.execute().await,
+                CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())

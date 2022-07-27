@@ -5,29 +5,20 @@ pub mod cli;
 pub mod daemon;
 pub mod util;
 
-use std::io::{
-    stderr,
-    Write,
-};
 use std::process::exit;
-use std::str::FromStr;
 
 use clap::StructOpt;
+use fig_log::FIG_LOG_LEVEL;
 use fig_telemetry::sentry::{
     configure_scope,
     release_name,
 };
-use tracing::level_filters::LevelFilter;
+use tracing::metadata::LevelFilter;
 
 const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
 
 #[tokio::main]
 async fn main() {
-    let env_level = std::env::var("FIG_LOG_LEVEL")
-        .ok()
-        .and_then(|level| LevelFilter::from_str(&level).ok())
-        .unwrap_or(LevelFilter::INFO);
-
     // Whitelist commands do not have sentry or telemetry, telemetry should only run on
     // user facing commands as performance is less important
     let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
@@ -69,7 +60,7 @@ async fn main() {
         },
     };
 
-    let cli_join = cli::Cli::parse().execute(env_level);
+    let cli_join = cli::Cli::parse().execute();
 
     let result = match track_join {
         Some(track_join) => tokio::join!(cli_join, track_join).0,
@@ -77,10 +68,10 @@ async fn main() {
     };
 
     if let Err(err) = result {
-        if env_level > LevelFilter::INFO {
-            writeln!(stderr(), "{err:?}").ok();
+        if *FIG_LOG_LEVEL > LevelFilter::INFO {
+            eprintln!("{err:?}");
         } else {
-            writeln!(stderr(), "{err}").ok();
+            eprintln!("{err}");
         }
         exit(1);
     }

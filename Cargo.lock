@@ -2168,6 +2168,7 @@ dependencies = [
  "fig_install",
  "fig_integrations",
  "fig_ipc",
+ "fig_log",
  "fig_proto",
  "fig_request",
  "fig_settings",

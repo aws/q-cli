@@ -68,7 +68,7 @@ pub enum Error {
     CredentialsFileNotExist,
 }
 
-pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
+pub fn get_client(retries: u32) -> Result<aws_sdk_cognitoidentityprovider::Client> {
     use std::sync::Arc;
 
     use aws_sdk_cognitoidentityprovider::RetryConfig;
@@ -96,7 +96,7 @@ pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
             .sleep_impl(Some(Arc::new(TokioSleep::new())))
             .build();
 
-    client.set_retry_config(RetryConfig::new().with_max_attempts(5).into());
+    client.set_retry_config(RetryConfig::new().with_max_attempts(retries).into());
 
     let config = Config::builder()
         .region(Region::new("us-east-1"))
