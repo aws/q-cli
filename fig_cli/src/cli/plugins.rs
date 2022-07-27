@@ -90,13 +90,13 @@ impl PluginsSubcommands {
                 match fetch_result {
                     Ok(_) => {
                         spinner.stop_with_message(format!("{} Successfully synced plugins\n", "✔️".green()));
+                        Ok(())
                     },
-                    Err(_) => {
+                    Err(err) => {
                         spinner.stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
+                        Err(err)
                     },
                 }
-
-                Ok(())
             },
             PluginsSubcommands::Update => {
                 let mut spinner = spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
@@ -106,12 +106,13 @@ impl PluginsSubcommands {
                 match fetch_result {
                     Ok(_) => {
                         spinner.stop_with_message(format!("{} Successfully update plugins\n", "✔️".green()));
+                        Ok(())
                     },
-                    Err(_) => {
+                    Err(err) => {
                         spinner.stop_with_message(format!("{} Failed to update plugins\n", "✖️".red()));
+                        Err(err)
                     },
                 }
-                Ok(())
             },
             PluginsSubcommands::Add { plugin } => {
                 let mut spinner =
