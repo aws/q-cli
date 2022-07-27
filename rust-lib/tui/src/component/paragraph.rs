@@ -31,7 +31,7 @@ impl Paragraph {
 
     pub fn push_styled_text(&mut self, text: impl Into<String>, color: Option<Color>, background_color: Option<Color>) {
         self.components.push(ParagraphComponent::Text {
-            text: text.into(),
+            text: text.into().replace('\t', "    "),
             color,
             background_color,
         })

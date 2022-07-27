@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::cmp::Ordering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{
@@ -135,6 +136,7 @@ struct Workflow {
     display_name: Option<String>,
     description: Option<String>,
     template_version: u32,
+    last_invoked_at: Option<String>,
     tags: Option<Vec<String>>,
     parameters: Vec<Parameter>,
     namespace: String,
@@ -273,15 +275,13 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 .body(serde_json::json!({
                     "namespace": namespace,
                 }))
-                .deser_json()
-                .await?
+                .deser_json::<Workflow>()
+                .await
             {
-                Some(workflow) => (workflow, "invoke"),
-                None => {
-                    match namespace {
-                        Some(namespace) => bail!("Workflow does not exist: @{namespace}/{name}"),
-                        None => bail!("Workflow does not exist for user: {name}"),
-                    };
+                Ok(workflow) => (workflow, "invoke"),
+                Err(_) => match namespace {
+                    Some(namespace) => bail!("Workflow does not exist: @{namespace}/{name}"),
+                    None => bail!("Workflow does not exist: {name}"),
                 },
             }
         },
@@ -294,10 +294,19 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
+            let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
+            workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
+                (None, None) => Ordering::Equal,
+                (None, Some(_)) => Ordering::Greater,
+                (Some(_), None) => Ordering::Less,
+                (Some(a), Some(b)) => match (OffsetDateTime::parse(a, &Rfc3339), OffsetDateTime::parse(b, &Rfc3339)) {
+                    (Ok(a), Ok(b)) => b.cmp(&a),
+                    _ => Ordering::Equal,
+                },
+            });
+
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    let workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
-
                     use skim::prelude::*;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
@@ -370,8 +379,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         None => return Ok(()),
                     };
                 } else if #[cfg(windows)] {
-                    let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
-
                     let workflow_names: Vec<String> = workflows
                         .iter()
                         .map(|workflow| {
@@ -513,8 +520,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             padding_right: 1;
         },
         "input:text" => {
+            width: 108;
             padding_left: 1;
-            padding_right: 1;
+            padding_right: 2;
         }
     };
 
@@ -527,9 +535,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
         loop {
             let mut components = vec![
-                Component::from(Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name), true))
-                    .with_margin_left(0)
-                    .with_padding_left(0),
+                Component::from(Label::new(
+                    workflow.display_name.as_ref().unwrap_or(&workflow.name),
+                    true,
+                ))
+                .with_margin_left(0)
+                .with_padding_left(0),
             ];
             if let Some(description) = &workflow.description {
                 if !description.is_empty() {
@@ -661,11 +672,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 },
             };
             components.push(
-                Component::from(Label::new("Preview: CTRL+O | Next: TAB | Prev: SHIFT+TAB | Select: SPACE | Execute: ENTER | Force: SHIFT+ENTER", false))
-                    .with_color(Color::DarkGrey)
-                    .with_background_color(Color::White)
-                    .with_margin_left(0)
-                    .with_width(110),
+                Component::from(Label::new(
+                    "Preview: CTRL+O | Next: TAB | Prev: SHIFT+TAB | Select: SPACE | Execute: ENTER",
+                    false,
+                ))
+                .with_color(Color::DarkGrey)
+                .with_background_color(Color::White)
+                .with_margin_left(0)
+                .with_width(110),
             );
 
             let mut view = Component::from(Container::new(components))

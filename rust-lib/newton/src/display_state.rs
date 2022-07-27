@@ -55,7 +55,7 @@ impl DisplayState {
 
     pub fn clear(&mut self) -> &mut Self {
         for row in &mut self.cells {
-            for cell in row {
+            for cell in row.iter_mut() {
                 *cell = Cell::default();
             }
         }
@@ -135,7 +135,7 @@ impl DisplayState {
         }
     }
 
-    pub(crate) fn resize(&mut self, buf: &mut impl Write, width: i32, height: i32) -> std::io::Result<()> {
+    pub(crate) fn resize(&mut self, width: i32, height: i32) -> std::io::Result<()> {
         for line in &mut self.lines {
             line.clear();
         }

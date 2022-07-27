@@ -112,7 +112,7 @@ impl EventLoop {
                     while let true = poll(Duration::ZERO)? {
                         let event = match Event::from(read()?) {
                             event @ Event::Resized { width, height } => {
-                                self.display_state.resize(&mut self.out, width, height)?;
+                                self.display_state.resize(width, height)?;
                                 event
                             },
                             event => event,
@@ -124,7 +124,7 @@ impl EventLoop {
                 ControlFlow::Wait => {
                     let event = match Event::from(read()?) {
                         event @ Event::Resized { width, height } => {
-                            self.display_state.resize(&mut self.out, width, height)?;
+                            self.display_state.resize(width, height)?;
                             event
                         },
                         event => event,
@@ -135,7 +135,7 @@ impl EventLoop {
                     while let true = poll(Duration::ZERO)? {
                         let event = match Event::from(read()?) {
                             event @ Event::Resized { width, height } => {
-                                self.display_state.resize(&mut self.out, width, height)?;
+                                self.display_state.resize(width, height)?;
                                 event
                             },
                             event => event,

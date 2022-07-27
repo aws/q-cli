@@ -55,9 +55,12 @@ impl TextField {
             return;
         }
 
-        let width = match usize::try_from(width) {
+        let width = match usize::try_from(match style.width() {
+            Some(width) => width,
+            None => width,
+        }) {
             Ok(width) => width,
-            _ => return,
+            Err(_) => return,
         };
 
         match self.text.is_empty() {
