@@ -135,15 +135,6 @@ impl HookSubcommand {
                 remote_dest,
                 prompt,
             } => {
-                let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
-                println!(
-                    "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
-                    source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | source\n{bar}",
-                    "Fig".magenta(),
-                    *BASH_UNICODE,
-                    "Bash/zsh:".bold().underlined(),
-                    "Fish:".bold().underlined(),
-                );
                 if *prompt && !remote_dest.starts_with("git@") {
                     let installed_hosts_file = fig_directories::fig_dir()
                         .context("Can't get fig dir")?
@@ -158,9 +149,10 @@ impl HookSubcommand {
                     installed_hosts.read_to_string(&mut contents)?;
 
                     if !contents.contains(remote_dest) {
+                        let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
                         println!(
-                            "To install SSH support for {}, run the following on your remote machine\n\n  {} {} \n  \
-                             source <(curl -Ls fig.io/install)\n\n  🐟 {} \n  curl -Ls fig.io/install | source\n",
+                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
+                            source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | source\n{bar}",
                             "Fig".magenta(),
                             *BASH_UNICODE,
                             "Bash/zsh:".bold().underlined(),
