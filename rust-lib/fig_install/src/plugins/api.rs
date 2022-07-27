@@ -63,6 +63,12 @@ pub struct OnUninstallData {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
+struct PluginDataResponse {
+    plugin: PluginData,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 pub struct PluginData {
     pub name: String,
     pub display_name: Option<String>,
@@ -81,10 +87,11 @@ struct InstalledPlugin {
 }
 
 pub async fn fetch_plugin(name: impl std::fmt::Display) -> Result<PluginData> {
-    Ok(Request::get(format!("/plugins/name/{name}"))
+    let plugin_data_reponse: PluginDataResponse = Request::get(format!("/plugins/name/{name}"))
         .auth()
         .deser_json()
-        .await?)
+        .await?;
+    Ok(plugin_data_reponse.plugin)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
