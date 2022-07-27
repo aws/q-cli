@@ -169,6 +169,9 @@ class API {
         throw APIError.generic(message: "Not implmented on MacOS")
       case .installRequest:
         throw APIError.generic(message: "Not implmented on MacOS")
+      case .aggregateSessionMetricActionRequest:
+        // todo(sean): Add aggergate request
+        throw APIError.generic(message: "Not implmented on MacOS")
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")
       }

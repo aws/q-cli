@@ -1,5 +1,6 @@
 pub mod local_state;
 
+use std::fmt::Display;
 use std::io::{
     stdout,
     Read,
@@ -18,6 +19,7 @@ use clap::{
     ArgGroup,
     Args,
     Subcommand,
+    ValueEnum,
 };
 use crossterm::style::Stylize;
 use fig_auth::get_token;
@@ -88,6 +90,36 @@ pub struct InstallArgs {
     pub ssh: bool,
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+#[clap(rename_all = "UPPER")]
+pub enum Method {
+    Get,
+    Post,
+    Put,
+    Delete,
+    Head,
+    Options,
+    Connect,
+    Patch,
+    Trace,
+}
+
+impl Display for Method {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Method::Get => "GET",
+            Method::Post => "POST",
+            Method::Put => "PUT",
+            Method::Delete => "DELETE",
+            Method::Head => "HEAD",
+            Method::Options => "OPTIONS",
+            Method::Connect => "CONNECT",
+            Method::Patch => "PATCH",
+            Method::Trace => "TRACE",
+        })
+    }
+}
+
 #[derive(Debug, Subcommand)]
 #[clap(hide = true, alias = "_")]
 pub enum InternalSubcommand {
@@ -137,8 +169,8 @@ pub enum InternalSubcommand {
     Request {
         #[clap(long, value_parser)]
         route: String,
-        #[clap(long, value_parser)]
-        method: String,
+        #[clap(long, value_parser, default_value_t = Method::Get)]
+        method: Method,
         #[clap(long, value_parser)]
         body: Option<String>,
     },
@@ -363,7 +395,7 @@ impl InternalSubcommand {
                 println!("{}", get_token().await?);
             },
             InternalSubcommand::Request { route, method, body } => {
-                let method = fig_request::Method::from_str(&method)?;
+                let method = fig_request::Method::from_str(&method.to_string())?;
                 let mut request = Request::new(method, route);
                 if let Some(body) = body {
                     request = request.body(serde_json::from_str(&body)?);
