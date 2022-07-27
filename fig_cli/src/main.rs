@@ -23,9 +23,7 @@ async fn main() {
     // user facing commands as performance is less important
     let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
         Some("init" | "_" | "internal" | "tips" | "completion" | "hook") => (None, None),
-        Some("daemon") => (Some(fig_telemetry::init_sentry(
-        
-        !(), SENTRY_CLI_URL)), None),
+        Some("daemon") => (Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL)), None),
         _ => {
             let sentry = fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL);
 
