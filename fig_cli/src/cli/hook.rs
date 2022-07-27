@@ -81,7 +81,7 @@ static BASH_UNICODE: Lazy<String> = Lazy::new(|| {
             return "$_".to_string();
         }
     }
-    "\x1b[1m\x1b[3m$\x1b[0m\u{20de}\u{20de}\u{20de} ".to_string()
+    "\x1b[1m\x1b[3m$\x1b[0m\u{20de} ".to_string()
 });
 
 impl HookSubcommand {
