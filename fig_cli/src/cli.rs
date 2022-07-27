@@ -148,7 +148,7 @@ pub enum CliRootCommands {
     Man(man::ManArgs),
     #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
     Workflow(workflow::WorkflowArgs),
-    /// Managed system integrations
+    /// Manage system integrations
     #[clap(subcommand)]
     Integrations(IntegrationsSubcommands),
     /// (LEGACY) Old hook that was being used somewhere
