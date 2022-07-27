@@ -5,13 +5,13 @@ import {
   sendTelemetryTrackRequest
 } from './requests';
 
-type Property = string | boolean | number;
+type Property = string | boolean | number | null;
 
 export function track(event: string, properties: Record<string, Property>) {
   // convert to internal type 'TelemetryProperty'
   const props = Object.keys(properties).reduce((array, key) => {
     const entry: TelemetryProperty = 
-      { key, value: JSON.stringify(JSON.stringify(properties[key])) };
+      { key, value: JSON.stringify(properties[key]) };
     array.push(entry);
     return array;
   }, ([] as unknown) as [TelemetryProperty]);
