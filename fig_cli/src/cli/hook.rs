@@ -135,7 +135,7 @@ impl HookSubcommand {
                 remote_dest,
                 prompt,
             } => {
-                if *prompt && !remote_dest.starts_with("git@") {
+                if *prompt && !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
                     let installed_hosts_file = fig_directories::fig_dir()
                         .context("Can't get fig dir")?
                         .join("ssh_hostnames");
