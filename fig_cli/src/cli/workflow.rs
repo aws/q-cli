@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::cell::RefCell;
+use std::cmp::Ordering as StdOrdering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{
@@ -136,6 +137,7 @@ struct Workflow {
     display_name: Option<String>,
     description: Option<String>,
     template_version: u32,
+    last_invoked_at: Option<String>,
     tags: Option<Vec<String>>,
     parameters: Vec<Parameter>,
     namespace: String,
@@ -146,7 +148,7 @@ struct Workflow {
 
 #[cfg(unix)]
 enum WorkflowAction {
-    Run(Workflow),
+    Run(Box<Workflow>),
     Create,
 }
 
@@ -255,38 +257,45 @@ impl SkimItem for WorkflowAction {
 }
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
+    // Get workflows early
+    let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
+
     // Parse args
     let workflow_name = env_args.first().map(String::from);
+    let execution_method = match workflow_name {
+        Some(_) => "invoke",
+        None => "search",
+    };
 
-    // Get workflow
-    let (workflow, execution_method) = match &workflow_name {
-        Some(name) => {
-            let (namespace, name) = match name.strip_prefix('@') {
-                Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
-                    [namespace, name] => (Some(namespace), name),
-                    _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
-                },
-                None => (None, name.as_ref()),
-            };
+    // Get matching workflows
+    if let Some(workflow_name) = workflow_name {
+        let (namespace, name) = match workflow_name.strip_prefix('@') {
+            Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
+                [namespace, name] => (Some(namespace), name),
+                _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
+            },
+            None => (None, workflow_name.as_ref()),
+        };
 
-            match Request::get(format!("/workflows/{name}"))
-                .auth()
-                .body(serde_json::json!({
-                    "namespace": namespace,
-                }))
-                .deser_json()
-                .await?
-            {
-                Some(workflow) => (workflow, "invoke"),
-                None => {
-                    match namespace {
-                        Some(namespace) => bail!("Workflow does not exist: @{namespace}/{name}"),
-                        None => bail!("Workflow does not exist for user: {name}"),
-                    };
-                },
-            }
-        },
-        None => {
+        workflows = workflows
+            .into_iter()
+            .filter(|c| {
+                c.name == name
+                    && match namespace {
+                        Some(namespace) => c.namespace == namespace,
+                        None => true,
+                    }
+            })
+            .collect();
+
+        if workflows.is_empty() {
+            bail!("No matching workflows for {workflow_name}");
+        }
+    };
+
+    let workflow = match workflows.len() {
+        1 => workflows.pop().unwrap(),
+        _ => {
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
                     TrackEventType::WorkflowSearchViewed,
@@ -298,10 +307,18 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
+            workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
+                (None, None) => StdOrdering::Equal,
+                (None, Some(_)) => StdOrdering::Greater,
+                (Some(_), None) => StdOrdering::Less,
+                (Some(a), Some(b)) => match (OffsetDateTime::parse(a, &Rfc3339), OffsetDateTime::parse(b, &Rfc3339)) {
+                    (Ok(a), Ok(b)) => b.cmp(&a),
+                    _ => StdOrdering::Equal,
+                },
+            });
+
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
-                    let workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
-
                     use skim::prelude::*;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
@@ -311,7 +328,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     }
 
                     for workflow in workflows.iter().rev() {
-                        tx.send(Arc::new(WorkflowAction::Run(workflow.clone()))).ok();
+                        tx.send(Arc::new(WorkflowAction::Run(Box::new(workflow.clone())))).ok();
                     }
                     drop(tx);
 
@@ -339,7 +356,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         Some(rx),
                     );
 
-                    let workflow = match output {
+                    match output {
                         Some(out) => {
                             if out.is_abort {
                                 return Ok(());
@@ -356,7 +373,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 .next() {
                                 Some(workflow) => {
                                     match workflow {
-                                        WorkflowAction::Run(workflow) => workflow.clone(),
+                                        WorkflowAction::Run(workflow) => *workflow.clone(),
                                         WorkflowAction::Create => {
                                             println!();
                                             launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
@@ -372,10 +389,8 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             }
                         },
                         None => return Ok(()),
-                    };
+                    }
                 } else if #[cfg(windows)] {
-                    let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
-
                     let workflow_names: Vec<String> = workflows
                         .iter()
                         .map(|workflow| {
@@ -389,11 +404,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         .interact()
                         .unwrap();
 
-                    let workflow = workflows.remove(selection);
+                    workflows.remove(selection)
                 }
-            };
-
-            (workflow, "search")
+            }
         },
     };
 
@@ -517,8 +530,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             padding_right: 1;
         },
         "input:text" => {
+            width: 108;
             padding_left: 1;
-            padding_right: 1;
+            padding_right: 2;
         }
     };
 
@@ -530,21 +544,21 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen)?;
 
         loop {
-            let mut components = vec![
-                Component::from(Label::new(workflow.display_name.as_ref().unwrap_or(&workflow.name)))
-                    .with_margin_left(0)
-                    .with_padding_left(0),
-            ];
+            let mut header = Paragraph::new();
+            header.push_styled_text(
+                workflow.display_name.as_ref().unwrap_or(&workflow.name),
+                None,
+                None,
+                true,
+            );
+            header.push_styled_text(format!(" | {}", workflow.namespace), Some(Color::DarkGrey), None, false);
+            header.push_line_break();
             if let Some(description) = &workflow.description {
-                if !description.is_empty() {
-                    components.push(
-                        Component::from(Label::new(description))
-                            .with_margin_bottom(1)
-                            .with_margin_left(0)
-                            .with_padding_left(0),
-                    );
-                }
+                header.push_text(description);
             }
+
+            let mut components = vec![Component::from(header).with_margin_bottom(1)];
+
             let input_method;
             match preview {
                 true => {
@@ -567,13 +581,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     },
                                     Some(colors[hash % colors.len()]),
                                     None,
+                                    false,
                                 );
                             },
                         }
                     }
 
                     components.push(Component::from(Container::new(vec![
-                        Component::from(Label::new("Preview")),
+                        Component::from(Label::new("Preview", false)),
                         Component::from(paragraph),
                     ])));
                 },
@@ -588,6 +603,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         components.push(Component::from(Container::new(vec![
                             Component::from(Label::new(
                                 parameter.display_name.clone().unwrap_or_else(|| parameter.name.clone()),
+                                false,
                             )),
                             match &parameter.parameter_type {
                                 ParameterType::Checkbox {
@@ -664,16 +680,21 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 },
             };
             components.push(
-                Component::from(Label::new("Toggle preview: CTRL+O"))
-                    .with_color(Color::DarkGrey)
-                    .with_background_color(Color::White)
-                    .with_margin_left(0)
-                    .with_width(110),
+                Component::from(Label::new(
+                    "Preview: CTRL+O | Next: TAB | Prev: SHIFT+TAB | Select: SPACE | Execute: ENTER",
+                    false,
+                ))
+                .with_color(Color::DarkGrey)
+                .with_background_color(Color::White)
+                .with_margin_left(0)
+                .with_width(110),
             );
 
             let mut view = Component::from(Container::new(components))
                 .with_border_style(BorderStyle::None)
-                .with_padding_top(0);
+                .with_padding_top(0)
+                .with_margin_left(2)
+                .with_margin_right(2);
 
             match event_loop.run(&mut view, &input_method, Some(&style_sheet), ControlFlow::Wait)? {
                 ControlFlow::Exit(0) => break,

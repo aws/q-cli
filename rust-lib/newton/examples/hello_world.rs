@@ -20,8 +20,8 @@ fn main() {
             display_state.clear();
 
             display_state
-                .draw_string("hello world! 🧙", 0, 0, Color::Reset, Color::Reset)
-                .draw_string("press escape to exit...", 0, 20, Color::Reset, Color::Reset);
+                .draw_string("hello world! 🧙", 0, 0, Color::Reset, Color::Reset, false)
+                .draw_string("press escape to exit...", 0, 20, Color::Reset, Color::Reset, false);
 
             for fg in 0..16 {
                 for bg in 0..16 {
@@ -31,6 +31,7 @@ fn main() {
                         (bg + 3).into(),
                         Color::AnsiValue(fg),
                         Color::AnsiValue(bg),
+                        false,
                     );
                 }
             }
@@ -45,6 +46,7 @@ fn main() {
                 1,
                 Color::Reset,
                 Color::Reset,
+                false,
             );
 
             Ok(())

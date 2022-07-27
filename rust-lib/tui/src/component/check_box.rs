@@ -38,6 +38,7 @@ impl CheckBox {
                 y,
                 style.color(),
                 style.background_color(),
+                false,
             );
         }
     }
