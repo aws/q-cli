@@ -39,12 +39,11 @@ use jwt::{
 };
 use serde::{
     Deserialize,
+    Deserializer,
     Serialize,
 };
 use serde_json::json;
 use thiserror::Error;
-use time::format_description::well_known::Rfc3339;
-use time::OffsetDateTime;
 
 use crate::password::generate_password;
 use crate::{
@@ -312,6 +311,7 @@ impl<'a> SignInOutput<'a> {
                 auth_result.id_token,
                 auth_result.refresh_token,
                 auth_result.expires_in,
+                false,
             )),
             None => match out.session {
                 Some(session) => {
@@ -417,15 +417,25 @@ impl ChangeUsernameInput {
     }
 }
 
+fn rfc3339_deserialize_ignore_error<'de, D>(d: D) -> Result<Option<time::OffsetDateTime>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Ok(time::serde::rfc3339::option::deserialize(d).ok().flatten())
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize)]
 pub struct Credentials {
     pub email: Option<String>,
     pub access_token: Option<String>,
     pub id_token: Option<String>,
     pub refresh_token: Option<String>,
-    #[serde(with = "time::serde::rfc3339::option")]
+    #[serde(
+        serialize_with = "time::serde::rfc3339::option::serialize",
+        deserialize_with = "rfc3339_deserialize_ignore_error"
+    )]
     pub expiration_time: Option<time::OffsetDateTime>,
-    pub refresh_token_is_expired: Option<bool>,
+    pub refresh_token_expired: Option<bool>,
 }
 
 #[derive(Debug, Error)]
@@ -447,6 +457,7 @@ impl Credentials {
         id_token: Option<String>,
         refresh_token: Option<String>,
         expires_in: i32,
+        refresh_token_expired: bool,
     ) -> Self {
         Self {
             email: Some(email.into()),
@@ -454,7 +465,7 @@ impl Credentials {
             id_token,
             refresh_token,
             expiration_time: Some(time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into())),
-            ..Default::default()
+            refresh_token_expired: Some(refresh_token_expired),
         }
     }
 
@@ -477,6 +488,8 @@ impl Credentials {
 
         #[cfg(target_os = "macos")]
         {
+            use time::format_description::well_known::Rfc3339;
+
             use crate::{
                 remove_default,
                 set_default,
@@ -544,46 +557,7 @@ impl Credentials {
 
         let creds_file = File::open(data_dir.join("credentials.json"))?;
 
-        // Load the values in one by one from the json
-        let json: serde_json::Value =
-            serde_json::from_reader(creds_file).unwrap_or_else(|_| serde_json::Value::Object(serde_json::Map::new()));
-
-        let email = json.get("email").and_then(serde_json::Value::as_str).map(String::from);
-
-        let access_token = json
-            .get("access_token")
-            .and_then(|access_token| access_token.as_str())
-            .map(String::from);
-
-        let id_token = json
-            .get("id_token")
-            .and_then(|id_token| id_token.as_str())
-            .map(String::from);
-
-        let refresh_token = json
-            .get("refresh_token")
-            .and_then(|refresh_token| refresh_token.as_str())
-            .map(String::from);
-
-        let expiration_time = json
-            .get("expiration_time")
-            .and_then(|expiration_time| expiration_time.as_str())
-            .and_then(|expiration_time| OffsetDateTime::parse(expiration_time, &Rfc3339).ok());
-
-        let refresh_token_is_expired = json
-            .get("refresh_token_is_expired")
-            .and_then(|refresh_token_is_expired| refresh_token_is_expired.as_bool());
-
-        let creds = Credentials {
-            email,
-            access_token,
-            id_token,
-            refresh_token,
-            expiration_time,
-            refresh_token_is_expired,
-        };
-
-        Ok(creds)
+        Ok(serde_json::from_reader(creds_file)?)
     }
 
     pub async fn refresh_credentials(
@@ -591,7 +565,7 @@ impl Credentials {
         client: &Client,
         client_id: Option<String>,
     ) -> Result<(), RefreshError> {
-        if let Some(true) = self.refresh_token_is_expired {
+        if let Some(true) = self.refresh_token_expired {
             return Err(RefreshError::RefreshTokenExpired);
         }
 
@@ -608,7 +582,7 @@ impl Credentials {
         {
             Ok(out) => out,
             Err(SdkError::ServiceError { err, .. }) if err.is_not_authorized_exception() => {
-                self.refresh_token_is_expired = Some(true);
+                self.refresh_token_expired = Some(true);
                 self.save_credentials().ok();
                 return Err(RefreshError::RefreshTokenExpired);
             },
@@ -621,6 +595,7 @@ impl Credentials {
                 self.id_token = auth_result.id_token;
                 self.expiration_time =
                     Some(time::OffsetDateTime::now_utc() + time::Duration::seconds(auth_result.expires_in.into()));
+                self.refresh_token_expired = Some(false);
             },
             None => return Err(RefreshError::EmptyAuthResponse),
         }

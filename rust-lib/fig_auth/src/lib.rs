@@ -14,6 +14,7 @@ pub use defaults::{
     set_default,
 };
 pub use thiserror::Error;
+use tokio::time::error::Elapsed;
 
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
 pub const REGION: &str = "us-east-1";
@@ -29,7 +30,7 @@ pub enum Error {
     #[error("could not read from defaults")]
     Defaults(#[from] defaults::DefaultsError),
     #[error("timeout")]
-    Timeout,
+    Timeout(#[from] Elapsed),
 }
 
 pub fn logout() -> Result<(), Error> {
@@ -43,8 +44,7 @@ pub async fn get_token() -> Result<String, Error> {
     if creds.is_expired() {
         let aws_client = get_client()?;
         tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, None))
-            .await
-            .map_err(|_| Error::Timeout)?
+            .await?
             .map_err(cognito::Error::from)?;
         creds.save_credentials()?;
     }
