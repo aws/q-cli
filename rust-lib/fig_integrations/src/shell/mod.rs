@@ -218,8 +218,8 @@ impl ShellScriptShellIntegration {
                     _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
                 };
                 let add_to_path_line = match self.shell {
-                    Shell::Fish => format!("contains $HOME/.local/bin $fish_user_paths or set -a PATH $HOME/.local/bin"),
-                    _ => format!("PATH=\"${PATH:+\"$PATH:\"}~/.local/bin\""),
+                    Shell::Fish => "contains $HOME/.local/bin $fish_user_paths or set -a PATH $HOME/.local/bin",
+                    _ => "PATH=\"${PATH:+\"$PATH:\"}~/.local/bin\"",
                 };
                 return format!("{add_to_path_line}\n{source_line}")
             }
