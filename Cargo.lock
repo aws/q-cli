@@ -5126,6 +5126,15 @@ dependencies = [
 ]
 
 [[package]]
+name = "raw-window-handle"
+version = "0.5.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ed7e3d950b66e19e0c372f3fa3fbbcf85b1746b571f74e0c2af6042a5c93420a"
+dependencies = [
+ "cty",
+]
+
+[[package]]
 name = "rayon"
 version = "1.5.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -6343,9 +6352,9 @@ checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 
 [[package]]
 name = "tao"
-version = "0.12.2"
+version = "0.13.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f6fd7725dc1e593e9ecabd9fe49c112a204c8c8694db4182e78b2a5af490b1ae"
+checksum = "e6b9e24ce8c3b52952209ad614fd978e2ca7bf49540a8d21a1d9069ee6999d21"
 dependencies = [
  "bitflags",
  "cairo-rs",
@@ -6379,7 +6388,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "paste",
  "png 0.17.5",
- "raw-window-handle",
+ "raw-window-handle 0.5.0",
  "scopeguard",
  "serde",
  "unicode-segmentation",
@@ -7609,7 +7618,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "profiling",
  "range-alloc",
- "raw-window-handle",
+ "raw-window-handle 0.4.3",
  "renderdoc-sys",
  "thiserror",
  "wasm-bindgen",
@@ -7942,9 +7951,9 @@ dependencies = [
 
 [[package]]
 name = "wry"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ce19dddbd3ce01dc8f14eb6d4c8f914123bf8379aaa838f6da4f981ff7104a3f"
+checksum = "8577a0d09cb80c5e0493694979a221d2328075b576238f1df1fff7e4e45934d8"
 dependencies = [
  "block",
  "cocoa",
