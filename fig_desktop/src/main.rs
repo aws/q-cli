@@ -318,6 +318,7 @@ fn build_mission_control(
             r"-withfig\.vercel\.app$",
         ]))
         .with_initialization_script(&javascript_init())
+        .with_clipboard(true)
         .build()?;
 
     Ok(webview)
@@ -380,6 +381,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
             r"^app\.withfig\.com$",
             r"-withfig\.vercel\.app$",
         ]))
+        .with_clipboard(true)
         .build()?;
 
     Ok(webview)
