@@ -488,6 +488,8 @@ impl Credentials {
 
         #[cfg(target_os = "macos")]
         {
+            use time::format_description::well_known::Rfc3339;
+
             use crate::{
                 remove_default,
                 set_default,
