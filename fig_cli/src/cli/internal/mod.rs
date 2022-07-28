@@ -173,6 +173,8 @@ pub enum InternalSubcommand {
         method: Method,
         #[clap(long, value_parser)]
         body: Option<String>,
+        #[clap(long, value_parser)]
+        namespace: Option<String>,
     },
     #[clap(group(
         ArgGroup::new("target")
@@ -394,9 +396,14 @@ impl InternalSubcommand {
             InternalSubcommand::AuthToken => {
                 println!("{}", get_token().await?);
             },
-            InternalSubcommand::Request { route, method, body } => {
+            InternalSubcommand::Request {
+                route,
+                method,
+                body,
+                namespace,
+            } => {
                 let method = fig_request::Method::from_str(&method.to_string())?;
-                let mut request = Request::new(method, route);
+                let mut request = Request::new(method, route).namespace(namespace);
                 if let Some(body) = body {
                     request = request.body(serde_json::from_str(&body)?);
                 }

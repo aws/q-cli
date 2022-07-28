@@ -1,4 +1,4 @@
-use std::ffi::CString;
+use std::ffi::CStr;
 use std::os::raw::c_char;
 use std::os::unix::net::UnixStream;
 use std::time::{
@@ -7,6 +7,13 @@ use std::time::{
 };
 
 use parking_lot::Mutex;
+use tracing::{
+    debug,
+    error,
+    info,
+    trace,
+    warn,
+};
 
 static SOCKET_CONNECTION: Mutex<Option<Result<UnixStream, Instant>>> = parking_lot::const_mutex(None);
 
@@ -34,7 +41,7 @@ fn send_hook(hook: fig_proto::local::Hook) {
                 r#type: Some(local_message::Type::Hook(hook)),
             }) {
                 *handle = None;
-                log_warning(format!("Failed sending message: {err:?}"));
+                warn!("Failed sending message: {err:?}");
             }
         }
     };
@@ -42,22 +49,17 @@ fn send_hook(hook: fig_proto::local::Hook) {
 
 fn get_stream() -> Result<UnixStream, Instant> {
     fig_ipc::connect_sync(fig_ipc::get_fig_socket_path()).map_err(|err| {
-        log_warning(format!("Failed connecting to socket: {err:?}"));
+        warn!("Failed connecting to socket: {err:?}");
         Instant::now()
     })
 }
 
 extern "C" {
-    fn fig_engine_main(started_by_ibus: bool, cursor_callback: extern "C" fn(i32, i32, i32, i32));
-
-    fn fig_log_warning(message: *const c_char);
-}
-
-fn log_warning(message: String) {
-    let cstring = CString::new(message).unwrap();
-    unsafe {
-        fig_log_warning(cstring.as_ptr());
-    }
+    fn fig_engine_main(
+        started_by_ibus: bool,
+        cursor_callback: extern "C" fn(i32, i32, i32, i32),
+        log_callback: extern "C" fn(u8, *const c_char),
+    );
 }
 
 extern "C" fn cursor_callback(x: i32, y: i32, w: i32, h: i32) {
@@ -72,8 +74,29 @@ extern "C" fn cursor_callback(x: i32, y: i32, w: i32, h: i32) {
     });
 }
 
+extern "C" fn log_warning(level: u8, message: *const c_char) {
+    // SAFETY: All the messages we recieve can be seen in `engine.vala`. They do not contain invalid
+    // characters and they properly end with a null byte (vala upholds this).
+    let message = unsafe { CStr::from_ptr(message as *mut i8) };
+    if let Ok(message) = message.to_str() {
+        match level {
+            0 => trace!("{message}"),
+            1 => debug!("{message}"),
+            2 => info!("{message}"),
+            3 => warn!("{message}"),
+            4 => error!("{message}"),
+            _ => panic!("invalid log level: {level}"),
+        };
+    }
+}
+
 fn main() {
+    let _guard = fig_log::Logger::new()
+        .with_file("ibus_engine.log")
+        .with_stdout()
+        .init()
+        .expect("Failed initializing logger");
     unsafe {
-        fig_engine_main(std::env::args().any(|x| x == "ibus"), cursor_callback);
+        fig_engine_main(std::env::args().any(|x| x == "ibus"), cursor_callback, log_warning);
     }
 }

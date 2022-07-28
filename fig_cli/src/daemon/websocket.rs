@@ -1,4 +1,5 @@
 use std::io::Write;
+use std::time::Duration;
 
 use anyhow::{
     anyhow,
@@ -8,6 +9,7 @@ use anyhow::{
 use fig_auth::get_email;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
+use fig_request::Request;
 use fig_settings::ws_host;
 use serde::{
     Deserialize,
@@ -59,7 +61,7 @@ enum FigWebsocketMessage {
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let ticket = fig_request::Request::get("/authenticate/ticket").auth().text().await?;
+    let ticket = Request::get("/authenticate/ticket").auth().text().await?;
 
     let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
@@ -69,8 +71,9 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     let url = Url::parse_with_params(ws_host().as_str(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
 
-    let (websocket_stream, _) = tokio_tungstenite::connect_async(url)
+    let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
         .await
+        .context("Websocket connection timedout")?
         .context("Failed to connect to websocket")?;
 
     info!("Websocket connected");
