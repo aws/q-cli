@@ -36,6 +36,7 @@ use clap::{
 };
 use fig_log::Logger;
 use tracing::debug;
+use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
@@ -208,12 +209,14 @@ impl Cli {
             },
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                logger = logger.with_stdout().with_file("cli.log");
-                debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
+                if *fig_log::FIG_LOG_LEVEL >= LevelFilter::DEBUG {
+                    logger = logger.with_stdout().with_file("cli.log");
+                }
             },
         }
 
         let _logger_guard = logger.init().expect("Failed to init logger");
+        debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
