@@ -724,6 +724,8 @@ fn main() {
     let _guard = fig_telemetry::init_sentry(
         release_name!(),
         "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+        1.0,
+        false,
     );
 
     Cli::parse();

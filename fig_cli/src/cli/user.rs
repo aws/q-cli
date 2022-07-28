@@ -238,7 +238,7 @@ impl TokensSubcommand {
 
 /// Login to fig
 pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
-    let client = get_client(5)?;
+    let client = get_client()?;
 
     if refresh || hard_refresh {
         let mut creds = Credentials::load_credentials()?;
@@ -268,7 +268,7 @@ pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
 
     let sign_in_input = SignInInput::new(&client, trimmed_email, None);
 
-    println!("Sending login code to {}...", trimmed_email);
+    println!("Sending login code to {trimmed_email}...");
     println!("Please check your email for the code");
 
     let mut sign_in_output = match sign_in_input.sign_in().await {
@@ -354,7 +354,7 @@ pub async fn whoami_cli(format: OutputFormat, only_email: bool) -> Result<()> {
         Some(email) => {
             if only_email {
                 match format {
-                    OutputFormat::Plain => println!("Email: {}", email),
+                    OutputFormat::Plain => println!("Email: {email}"),
                     OutputFormat::Json => println!("{}", serde_json::to_string(&json!({ "email": email }))?),
                     OutputFormat::JsonPretty => {
                         println!("{}", serde_json::to_string_pretty(&json!({ "email": email }))?)

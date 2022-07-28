@@ -1,6 +1,6 @@
 [package]
 name = "fig_cli"
-version = "1.4.5"
+version = "1.4.6"
 authors = ["fig developers"]
 edition = "2021"
 description = "The CLI for Fig"
@@ -58,7 +58,7 @@ tempfile = "3.3.0"
 thiserror = "1.0.30"
 time = { version = "=0.3.11", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.20.1", features = ["full"] }
-tokio-tungstenite = { version = "0.17.2", features = ["rustls-tls-webpki-roots"] }
+tokio-tungstenite = { version = "=0.17.1", features = ["rustls-tls-webpki-roots"] }
 tracing = "0.1.35"
 tracing-subscriber = { version = "0.3.15", features = [
     "fmt",

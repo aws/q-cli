@@ -24,7 +24,13 @@ use aws_sdk_cognitoidentityprovider::{
     Client,
     Config,
     Region,
+    RetryConfig,
 };
+use aws_smithy_client::erase::{
+    DynConnector,
+    DynMiddleware,
+};
+use aws_smithy_client::hyper_ext;
 use fig_directories::fig_data_dir;
 use jwt::{
     Header,
@@ -44,6 +50,7 @@ use crate::password::generate_password;
 use crate::{
     defaults,
     CLIENT_ID,
+    REGION,
 };
 
 type Result<T, E = Error> = std::result::Result<T, E>;
@@ -68,17 +75,10 @@ pub enum Error {
     CredentialsFileNotExist,
 }
 
-pub fn get_client(retries: u32) -> Result<aws_sdk_cognitoidentityprovider::Client> {
-    use aws_sdk_cognitoidentityprovider::RetryConfig;
-    use aws_smithy_client::erase::{
-        DynConnector,
-        DynMiddleware,
-    };
-    use aws_smithy_client::hyper_ext;
-
+pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     let https = hyper_rustls::HttpsConnectorBuilder::new()
         .with_webpki_roots()
-        .https_or_http()
+        .https_only()
         .enable_http1()
         .build();
 
@@ -92,10 +92,11 @@ pub fn get_client(retries: u32) -> Result<aws_sdk_cognitoidentityprovider::Clien
             ))
             .build();
 
-    client.set_retry_config(RetryConfig::new().with_max_attempts(retries).into());
+    client.set_sleep_impl(None);
+    client.set_retry_config(RetryConfig::disabled().into());
 
     let config = Config::builder()
-        .region(Region::new("us-east-1"))
+        .region(Region::new(REGION))
         .app_name(AppName::new("rust-client").unwrap())
         .build();
 

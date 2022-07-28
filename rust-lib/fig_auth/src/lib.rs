@@ -16,6 +16,8 @@ pub use defaults::{
 pub use thiserror::Error;
 
 pub const CLIENT_ID: &str = "hkinciohdp1i7h0imdk63a4bv";
+pub const REGION: &str = "us-east-1";
+
 const TIMEOUT_DURATION: Duration = Duration::from_secs(10);
 
 #[derive(Debug, Error)]
@@ -37,7 +39,7 @@ pub fn logout() -> Result<(), Error> {
 pub async fn get_token() -> Result<String, Error> {
     let mut creds = Credentials::load_credentials()?;
     if creds.is_expired() {
-        let aws_client = get_client(0)?;
+        let aws_client = get_client()?;
         tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, None))
             .await
             .unwrap()

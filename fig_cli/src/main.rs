@@ -23,9 +23,12 @@ async fn main() {
     // user facing commands as performance is less important
     let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
         Some("init" | "_" | "internal" | "tips" | "completion" | "hook") => (None, None),
-        Some("daemon") => (Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL)), None),
+        Some("daemon") => (
+            Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false)),
+            None,
+        ),
         _ => {
-            let sentry = fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL);
+            let sentry = fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false);
 
             let arguments = std::env::args().collect::<Vec<_>>().join(" ");
             let shell = fig_util::get_parent_process_exe()
