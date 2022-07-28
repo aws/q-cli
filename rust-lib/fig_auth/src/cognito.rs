@@ -69,10 +69,7 @@ pub enum Error {
 }
 
 pub fn get_client(retries: u32) -> Result<aws_sdk_cognitoidentityprovider::Client> {
-    use std::sync::Arc;
-
     use aws_sdk_cognitoidentityprovider::RetryConfig;
-    use aws_smithy_async::rt::sleep::TokioSleep;
     use aws_smithy_client::erase::{
         DynConnector,
         DynMiddleware,
@@ -93,7 +90,6 @@ pub fn get_client(retries: u32) -> Result<aws_sdk_cognitoidentityprovider::Clien
             .middleware(DynMiddleware::new(
                 aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
             ))
-            .sleep_impl(Some(Arc::new(TokioSleep::new())))
             .build();
 
     client.set_retry_config(RetryConfig::new().with_max_attempts(retries).into());

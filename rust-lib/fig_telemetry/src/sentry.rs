@@ -5,7 +5,9 @@ use fig_util::Terminal;
 pub use sentry::integrations::anyhow::capture_anyhow;
 pub use sentry::{
     configure_scope,
+    end_session,
     release_name,
+    start_session,
 };
 
 use crate::util::telemetry_is_disabled;
