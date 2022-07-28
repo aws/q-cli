@@ -212,10 +212,16 @@ impl ShellScriptShellIntegration {
                     _ => format!("eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
                 }
             } else {
-                return match self.shell {
+                let source_line = match self.shell {
                     Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
+                    Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$(fig init {shell} {when}{rcfile})\""),
                     _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
-                }
+                };
+                let add_to_path_line = match self.shell {
+                    Shell::Fish => "contains $HOME/.local/bin $fish_user_paths or set -a PATH $HOME/.local/bin",
+                    _ => "PATH=\"${PATH:+\"$PATH:\"}~/.local/bin\"",
+                };
+                return format!("{add_to_path_line}\n{source_line}")
             }
         );
     }
