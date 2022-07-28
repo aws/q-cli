@@ -209,8 +209,10 @@ impl Cli {
             },
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
-                if *fig_log::FIG_LOG_LEVEL >= LevelFilter::DEBUG {
-                    logger = logger.with_stdout().with_file("cli.log");
+                if std::env::var_os("FIG_LOG_STDOUT").is_some() {
+                    logger = logger.with_file("cli.log").with_stdout();
+                } else if *fig_log::FIG_LOG_LEVEL >= LevelFilter::DEBUG {
+                    logger = logger.with_file("cli.log");
                 }
             },
         }
