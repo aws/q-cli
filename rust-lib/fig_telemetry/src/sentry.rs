@@ -12,7 +12,12 @@ pub use sentry::{
 
 use crate::util::telemetry_is_disabled;
 
-pub fn init_sentry(release: Option<Cow<'static, str>>, project: &str) -> Option<sentry::ClientInitGuard> {
+pub fn init_sentry(
+    release: Option<Cow<'static, str>>,
+    project: &str,
+    sample_rate: f32,
+    session_tracking: bool,
+) -> Option<sentry::ClientInitGuard> {
     if std::env::var_os("FIG_DISABLE_SENTRY").is_some() {
         None
     } else {
@@ -23,6 +28,8 @@ pub fn init_sentry(release: Option<Cow<'static, str>>, project: &str) -> Option<
                     if telemetry_is_disabled() { None } else { Some(event) }
                 },
             )),
+            sample_rate,
+            auto_session_tracking: session_tracking,
             ..sentry::ClientOptions::default()
         }));
 

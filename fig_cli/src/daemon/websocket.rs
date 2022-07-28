@@ -87,20 +87,17 @@ pub async fn process_websocket(
             Ok(websocket_message) => match websocket_message {
                 Message::Text(text) => {
                     debug!("message: {:?}", text);
-
                     let websocket_message_result = serde_json::from_str::<FigWebsocketMessage>(text);
 
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message {
-                            FigWebsocketMessage::DotfilesUpdated => {
-                                scheduler.schedule_now(SyncDotfiles);
-                            },
+                            FigWebsocketMessage::DotfilesUpdated => scheduler.schedule_now(SyncDotfiles),
                             FigWebsocketMessage::SettingsUpdated { settings, updated_at } => {
                                 // Write settings to disk
                                 let path =
                                     fig_settings::settings::settings_path().context("Could not get settings path")?;
 
-                                info!("Settings updated: Writing settings to disk at {:?}", path);
+                                info!("Settings updated: Writing settings to disk at {path:?}");
 
                                 let mut settings_file = std::fs::File::create(&path)?;
                                 let settings_json = serde_json::to_string_pretty(&settings)?;
@@ -115,9 +112,7 @@ pub async fn process_websocket(
                                 payload,
                                 apps,
                             } => match payload.as_ref().map(serde_json::to_string).transpose() {
-                                Err(e) => {
-                                    error!("Could not serialize event payload: {:?}", e);
-                                },
+                                Err(e) => error!("Could not serialize event payload: {e:?}"),
                                 Ok(payload_blob) => {
                                     let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
                                     send_hook_to_socket(hook).await.ok();
@@ -137,16 +132,14 @@ pub async fn process_websocket(
                                 }
                             },
                         },
-                        Err(e) => {
-                            error!("Could not parse json message: {:?}", e);
-                        },
+                        Err(e) => error!("Could not parse json message: {e:?}"),
                     }
                     Ok(())
                 },
                 Message::Close(close_frame) => match close_frame {
                     Some(close_frame) => {
-                        info!("Websocket close frame: {:?}", close_frame);
-                        Err(anyhow!("Websocket close frame: {:?}", close_frame))
+                        info!("Websocket close frame: {close_frame:?}");
+                        Err(anyhow!("Websocket close frame: {close_frame:?}"))
                     },
                     None => {
                         info!("Websocket close frame");
@@ -162,13 +155,13 @@ pub async fn process_websocket(
                     Ok(())
                 },
                 unknown_message => {
-                    debug!("Unknown message: {:?}", unknown_message);
+                    debug!("Unknown message: {unknown_message:?}");
                     Ok(())
                 },
             },
             Err(err) => {
-                error!("Websock next error: {:?}", err);
-                Err(anyhow!("Websock next error: {:?}", err))
+                error!("Websock next error: {err:?}");
+                Err(anyhow!("Websock next error: {err:?}"))
             },
         },
         None => {
