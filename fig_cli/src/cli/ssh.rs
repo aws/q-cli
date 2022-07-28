@@ -1,10 +1,16 @@
 use anyhow::{
     bail,
+    Context,
     Result,
 };
 use clap::Parser;
 use fig_request::Request;
-use serde::Deserialize;
+use once_cell::sync::Lazy;
+use regex::Regex;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use tokio::process::Command;
 
 use crate::util::choose;
@@ -16,6 +22,8 @@ pub struct SshSubcommand {
     /// Identity to connect with
     #[clap(short = 'a', long = "auth")]
     auth: Option<String>,
+    #[clap(long, hide = true)]
+    get_identities: bool,
 }
 
 #[derive(Deserialize, Debug)]
@@ -24,7 +32,8 @@ struct Host {
     nick_name: String,
     ip: String,
     connections: Vec<Connection>,
-    namespace: String,
+    #[serde(default)]
+    namespace: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
@@ -34,7 +43,7 @@ enum Connection {
     Ssh { port: u16, identity_ids: Vec<String> },
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug)]
 #[serde(rename_all = "camelCase")]
 struct Identity {
     remote_id: u64,
@@ -57,12 +66,28 @@ impl Connection {
     }
 }
 
+static HOST_NAMESPACE_REGEX: Lazy<Regex> =
+    Lazy::new(|| Regex::new(r"^(?:@([^/]+)/)?(.+)$").expect("Failed compiling host namespace regex"));
+
 impl SshSubcommand {
     pub async fn execute(&self) -> Result<()> {
-        let hosts: Vec<Host> = Request::get("/access/hosts/all").auth().deser_json().await?;
+        let parsed = HOST_NAMESPACE_REGEX
+            .captures(&self.host)
+            .with_context(|| "invalid host")?;
+        let namespace = parsed.get(1).map(|c| c.as_str());
+        let host_name = parsed.get(2).unwrap().as_str();
+        let hosts: Vec<Host> = if let Some(namespace) = namespace {
+            Request::get("/access/hosts")
+                .auth()
+                .namespace(Some(namespace))
+                .deser_json()
+                .await?
+        } else {
+            Request::get("/access/hosts/all").auth().deser_json().await?
+        };
         let matching = hosts
             .into_iter()
-            .filter(|host| host.nick_name == self.host)
+            .filter(|host| host.nick_name == host_name)
             .collect::<Vec<Host>>();
         let host = match matching.len() {
             0 => {
@@ -74,7 +99,13 @@ impl SshSubcommand {
                     "select host",
                     matching
                         .iter()
-                        .map(|host| format!("{} ({})", host.nick_name, host.namespace))
+                        .map(|host| {
+                            if let Some(ns) = &host.namespace {
+                                format!("{} ({})", host.nick_name, ns)
+                            } else {
+                                host.nick_name.clone()
+                            }
+                        })
                         .collect(),
                 )?;
                 matching.into_iter().nth(chosen).unwrap()
@@ -99,6 +130,18 @@ impl SshSubcommand {
         }
         let selected_identity = if let Some(identity) = &self.auth {
             let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
+            if self.get_identities {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(
+                        &remote_identities
+                            .into_iter()
+                            .filter(|iden| identities.contains(&iden.remote_id.to_string()))
+                            .collect::<Vec<Identity>>()
+                    )?
+                );
+                return Ok(());
+            }
             let name_matches = remote_identities
                 .into_iter()
                 .filter(|iden| identities.contains(&iden.remote_id.to_string()))
@@ -122,6 +165,18 @@ impl SshSubcommand {
         } else {
             let id = identities.iter().next().unwrap();
             let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
+            if self.get_identities {
+                println!(
+                    "{}",
+                    serde_json::to_string_pretty(
+                        &remote_identities
+                            .into_iter()
+                            .filter(|iden| identities.contains(&iden.remote_id.to_string()))
+                            .collect::<Vec<Identity>>()
+                    )?
+                );
+                return Ok(());
+            }
             let id_matches = remote_identities
                 .into_iter()
                 .filter(|iden| &iden.remote_id.to_string() == id)
