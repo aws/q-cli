@@ -28,6 +28,8 @@ pub enum Error {
     NoAccessToken,
     #[error("could not read from defaults")]
     Defaults(#[from] defaults::DefaultsError),
+    #[error("timeout")]
+    Timeout,
 }
 
 pub fn logout() -> Result<(), Error> {
@@ -42,7 +44,7 @@ pub async fn get_token() -> Result<String, Error> {
         let aws_client = get_client()?;
         tokio::time::timeout(TIMEOUT_DURATION, creds.refresh_credentials(&aws_client, None))
             .await
-            .unwrap()
+            .map_err(|_| Error::Timeout)?
             .map_err(cognito::Error::from)?;
         creds.save_credentials()?;
     }

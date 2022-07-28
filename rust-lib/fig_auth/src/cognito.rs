@@ -176,9 +176,9 @@ pub enum SignInError {
     MissingChallengeName,
     #[error("missing challenge parameters")]
     MissingChallengeParameters,
-    #[error("sdk error")]
+    #[error(transparent)]
     SdkInitiateAuthError(#[from] Box<SdkError<InitiateAuthError>>),
-    #[error("sdk error")]
+    #[error(transparent)]
     SdkRespondToAuthChallengeError(#[from] Box<SdkError<RespondToAuthChallengeError>>),
 }
 
@@ -272,9 +272,9 @@ pub enum SignInConfirmError {
     NotAuthorized,
     #[error("could not sign in")]
     CouldNotSignIn,
-    #[error("validation error")]
+    #[error(transparent)]
     ValidationError(#[from] ValidationError),
-    #[error("sdk error")]
+    #[error(transparent)]
     SdkError(#[from] Box<SdkError<RespondToAuthChallengeError>>),
 }
 
@@ -338,9 +338,9 @@ pub struct SignUpInput<'a> {
 
 #[derive(Debug, Error)]
 pub enum SignUpError {
-    #[error("sdk error")]
+    #[error(transparent)]
     SdkError(#[from] Box<SdkError<aws_sdk_cognitoidentityprovider::error::SignUpError>>),
-    #[error("validation error")]
+    #[error(transparent)]
     ValidationError(#[from] ValidationError),
 }
 
@@ -425,11 +425,12 @@ pub struct Credentials {
     pub refresh_token: Option<String>,
     #[serde(with = "time::serde::rfc3339::option")]
     pub expiration_time: Option<time::OffsetDateTime>,
+    pub refresh_token_is_expired: Option<bool>,
 }
 
 #[derive(Debug, Error)]
 pub enum RefreshError {
-    #[error("sdk error")]
+    #[error(transparent)]
     SdkError(#[from] Box<SdkError<aws_sdk_cognitoidentityprovider::error::InitiateAuthError>>),
     #[error("refresh token expired")]
     RefreshTokenExpired,
@@ -453,6 +454,7 @@ impl Credentials {
             id_token,
             refresh_token,
             expiration_time: Some(time::OffsetDateTime::now_utc() + time::Duration::seconds(expires_in.into())),
+            ..Default::default()
         }
     }
 
@@ -568,12 +570,17 @@ impl Credentials {
             .and_then(|expiration_time| expiration_time.as_str())
             .and_then(|expiration_time| OffsetDateTime::parse(expiration_time, &Rfc3339).ok());
 
+        let refresh_token_is_expired = json
+            .get("refresh_token_is_expired")
+            .and_then(|refresh_token_is_expired| refresh_token_is_expired.as_bool());
+
         let creds = Credentials {
             email,
             access_token,
             id_token,
             refresh_token,
             expiration_time,
+            refresh_token_is_expired,
         };
 
         Ok(creds)
@@ -584,23 +591,29 @@ impl Credentials {
         client: &Client,
         client_id: Option<String>,
     ) -> Result<(), RefreshError> {
-        if let Some(expiration_time) = self.get_refresh_expiration_time() {
-            if expiration_time < time::OffsetDateTime::now_utc() {
-                return Err(RefreshError::RefreshTokenExpired);
-            }
+        if let Some(true) = self.refresh_token_is_expired {
+            return Err(RefreshError::RefreshTokenExpired);
         }
 
         let refresh_token = self.refresh_token.as_ref().ok_or(RefreshError::RefreshTokenNotSet)?;
         let client_id = client_id.as_ref().map_or(CLIENT_ID, String::as_str);
 
-        let out = client
+        let out = match client
             .initiate_auth()
             .client_id(client_id)
             .auth_flow(AuthFlowType::RefreshTokenAuth)
             .auth_parameters("REFRESH_TOKEN", refresh_token)
             .send()
             .await
-            .map_err(Box::new)?;
+        {
+            Ok(out) => out,
+            Err(SdkError::ServiceError { err, .. }) if err.is_not_authorized_exception() => {
+                self.refresh_token_is_expired = Some(true);
+                self.save_credentials().ok();
+                return Err(RefreshError::RefreshTokenExpired);
+            },
+            Err(err) => return Err(Box::new(err).into()),
+        };
 
         match out.authentication_result {
             Some(auth_result) => {
@@ -617,34 +630,24 @@ impl Credentials {
 
     /// Clear the values of the credentials
     pub fn clear_credentials(&mut self) {
-        self.email = None;
-        self.access_token = None;
-        self.id_token = None;
-        self.refresh_token = None;
-        self.expiration_time = None;
+        *self = Self::default();
     }
 
-    pub fn get_access_token(&self) -> Option<&String> {
-        self.access_token.as_ref()
+    pub fn get_access_token(&self) -> Option<&str> {
+        self.access_token.as_deref()
     }
 
-    pub fn get_id_token(&self) -> Option<&String> {
-        self.id_token.as_ref()
+    pub fn get_id_token(&self) -> Option<&str> {
+        self.id_token.as_deref()
     }
 
-    pub fn get_refresh_token(&self) -> Option<&String> {
-        self.refresh_token.as_ref()
+    pub fn get_refresh_token(&self) -> Option<&str> {
+        self.refresh_token.as_deref()
     }
 
     pub fn get_expiration_time(&self) -> Option<time::OffsetDateTime> {
         let access_token = self.access_token.as_ref()?;
         let token: Token<Header, RegisteredClaims, _> = Token::parse_unverified(access_token).ok()?;
-        time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
-    }
-
-    pub fn get_refresh_expiration_time(&self) -> Option<time::OffsetDateTime> {
-        let refresh_token = self.refresh_token.as_ref()?;
-        let token: Token<Header, RegisteredClaims, _> = Token::parse_unverified(refresh_token).ok()?;
         time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
     }
 
@@ -656,7 +659,7 @@ impl Credentials {
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epslion(time::Duration::seconds(20))
+        self.is_expired_epslion(time::Duration::seconds(30))
     }
 
     pub fn get_email(&self) -> Option<&String> {

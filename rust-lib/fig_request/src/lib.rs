@@ -1,3 +1,5 @@
+use std::time::Duration;
+
 use fig_auth::get_token;
 use fig_settings::api_host;
 use once_cell::sync::Lazy;
@@ -15,12 +17,13 @@ use serde::{
 use serde_json::Value;
 use thiserror::Error;
 
-static CLIENT: Lazy<Client> = Lazy::new(|| {
+static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
     Client::builder()
         .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
         .https_only(true)
+        .timeout(Duration::from_secs(20))
         .build()
-        .unwrap()
+        .ok()
 });
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -37,6 +40,8 @@ pub enum Error {
     Auth(#[from] fig_auth::Error),
     #[error("Unknown")]
     Unknown,
+    #[error("No client")]
+    NoClient,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -69,7 +74,7 @@ pub enum GraphqlResponse<T> {
 }
 
 pub struct Request {
-    builder: RequestBuilder,
+    builder: Option<RequestBuilder>,
     auth: bool,
 }
 
@@ -79,7 +84,9 @@ impl Request {
         url.set_path(endpoint.as_ref());
 
         Self {
-            builder: CLIENT.request(method, url).header("Accept", "application/json"),
+            builder: CLIENT
+                .as_ref()
+                .map(|client| client.request(method, url).header("Accept", "application/json")),
             auth: false,
         }
     }
@@ -98,14 +105,14 @@ impl Request {
 
     pub fn body(self, body: impl Serialize) -> Self {
         Self {
-            builder: self.builder.json(&body),
+            builder: self.builder.map(|builder| builder.json(&body)),
             ..self
         }
     }
 
     pub fn query<Q: Serialize + ?Sized>(self, query: &Q) -> Self {
         Self {
-            builder: self.builder.query(query),
+            builder: self.builder.map(|builder| builder.query(query)),
             ..self
         }
     }
@@ -125,17 +132,22 @@ impl Request {
     }
 
     pub async fn send(self) -> Result<Response> {
-        let builder = match self.auth {
-            true => {
-                let token = match std::env::var("FIG_TOKEN") {
-                    Ok(token) => token,
-                    Err(_) => get_token().await?,
+        match self.builder {
+            Some(builder) => {
+                let builder = match self.auth {
+                    true => {
+                        let token = match std::env::var("FIG_TOKEN") {
+                            Ok(token) => token,
+                            Err(_) => get_token().await?,
+                        };
+                        builder.bearer_auth(token)
+                    },
+                    false => builder,
                 };
-                self.builder.bearer_auth(token)
+                Ok(builder.send().await?)
             },
-            false => self.builder,
-        };
-        Ok(builder.send().await?)
+            None => Err(Error::NoClient),
+        }
     }
 
     /// Deserialize json to `T: [DeserializeOwned]`
