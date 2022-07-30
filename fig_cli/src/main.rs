@@ -5,6 +5,10 @@ pub mod cli;
 pub mod daemon;
 pub mod util;
 
+use std::io::{
+    stderr,
+    Write,
+};
 use std::process::exit;
 
 use clap::StructOpt;
@@ -72,9 +76,9 @@ async fn main() {
 
     if let Err(err) = result {
         if *FIG_LOG_LEVEL > LevelFilter::INFO {
-            eprintln!("{err:?}");
+            writeln!(stderr(), "{err:?}").ok();
         } else {
-            eprintln!("{err}");
+            writeln!(stderr(), "{err}").ok();
         }
         exit(1);
     }
