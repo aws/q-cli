@@ -9,8 +9,12 @@ use std::task::{
 };
 use std::time::Duration;
 
-use anyhow::Result;
+use anyhow::{
+    Context as _,
+    Result,
+};
 use async_trait::async_trait;
+use fig_directories::fig_data_dir;
 use fig_install::dotfiles::api::DotfileData;
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;
@@ -400,7 +404,8 @@ impl Future for HasSleep {
 #[async_trait]
 impl Task for SendQueuedTelemetryEvents {
     async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
-        let mut receiver = Receiver::open("fig/telemetry-track-event-queue")?;
+        let data_dir = fig_data_dir().context("Could not get data dir")?;
+        let mut receiver = Receiver::open(data_dir.join("telemetry-track-event-queue"))?;
         loop {
             let batch = receiver
                 .recv_batch_timeout(100, HasSleep {
