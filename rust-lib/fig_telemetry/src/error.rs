@@ -2,12 +2,15 @@ use thiserror::Error;
 
 #[derive(Error, Debug)]
 pub enum Error {
-    #[error("Telemetry has been disabled")]
+    #[error("telemetry is disabled")]
     TelemetryDisabled,
-    #[error("Error making telemetry request")]
+    #[error(transparent)]
     ReqwestError(#[from] reqwest::Error),
-    #[error("Error with the auth service")]
-    AuthError(#[from] anyhow::Error),
+    #[error(transparent)]
+    AuthError(#[from] fig_auth::Error),
     #[error(transparent)]
     DefaultsError(#[from] fig_auth::defaults::DefaultsError),
+    // TODO(grant): remove other varient
+    #[error(transparent)]
+    Other(#[from] anyhow::Error),
 }

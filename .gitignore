@@ -27,4 +27,5 @@ dotenv/docker-compose.yaml
 
 target/
 build/
-.vscode
+.vscode/
+.fleet/

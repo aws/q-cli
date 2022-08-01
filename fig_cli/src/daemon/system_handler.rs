@@ -4,6 +4,7 @@ use anyhow::{
     Context,
     Result,
 };
+use fig_directories::fig_data_dir;
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;
 use fig_ipc::daemon::get_daemon_socket_path;
@@ -154,10 +155,12 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                             Command::TelemetryEmitTrack(command) => {
                                 let event: TrackEvent = command.into();
                                 if command.enqueue.unwrap_or(false) {
-                                    if let Ok(mut sender) = Sender::open("fig/telemetry-track-event-queue") {
-                                        if let Ok(buf) = serde_json::to_vec(&event) {
-                                            if sender.send(buf).await.is_ok() {
-                                                continue;
+                                    if let Some(dir) = fig_data_dir() {
+                                        if let Ok(mut sender) = Sender::open(dir.join("telemetry-track-event-queue")) {
+                                            if let Ok(buf) = serde_json::to_vec(&event) {
+                                                if sender.send(buf).await.is_ok() {
+                                                    continue;
+                                                }
                                             }
                                         }
                                     }

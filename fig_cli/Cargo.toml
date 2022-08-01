@@ -23,9 +23,9 @@ clap_complete = "3.2.2"
 clap_complete_fig = "3.2.4"
 crossterm = "0.24.0"
 ctrlc = "3.2.1"
-deno_core = { version = "0.144.0", optional = true }
-deno_runtime = { version = "0.70.0", optional = true }
-dialoguer = { version = "0.10.1", features = ["fuzzy-select"] }
+deno_core = { version = "0.145.0", optional = true }
+deno_runtime = { version = "0.71.0", optional = true }
+dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
 fig_install = { path = "../rust-lib/fig_install" }
@@ -49,7 +49,7 @@ self_update = { version = "0.30.0", default-features = false, features = [
     "rustls",
 ] }
 semver = "1.0.12"
-serde = { version = "1.0.140", features = ["derive"]}
+serde = { version = "1.0.140", features = ["derive"] }
 serde_json = "1.0.82"
 spinners = "4.1.0"
 sysinfo = "0.24.7"

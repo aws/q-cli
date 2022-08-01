@@ -1,7 +1,7 @@
 export default {
-  "**/*.swift": ["swiftlint lint --fix --quiet 2>/dev/null", "swiftlint lint"],
-  "**/*.rs": (files) => [
-    `cargo +nightly fmt --check -- --color always ${files.join(" ")}`,
+  "*.swift": ["swiftlint lint --fix --quiet 2>/dev/null", "swiftlint lint"],
+  "*.{rs,toml}": () => [
+    "cargo +nightly fmt --check -- --color always",
     "cargo +stable clippy --locked --color always -- -D warnings",
   ],
 };
