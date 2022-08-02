@@ -20,7 +20,6 @@ use thiserror::Error;
 static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
     Client::builder()
         .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
-        .https_only(true)
         .timeout(Duration::from_secs(20))
         .build()
         .ok()
