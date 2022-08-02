@@ -61,7 +61,11 @@ enum FigWebsocketMessage {
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let ticket = Request::get("/authenticate/ticket").auth().text().await?;
+    let ticket = Request::get("/authenticate/ticket")
+        .query(&[("format", "json")])
+        .auth()
+        .text()
+        .await?;
 
     let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
