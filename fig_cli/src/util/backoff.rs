@@ -12,6 +12,7 @@ pub struct Backoff {
 
 impl Backoff {
     pub fn new(min_duration: Duration, max_duration: Duration) -> Self {
+        assert!(min_duration < max_duration);
         Self {
             attempt: 0,
             min_duration,
@@ -29,7 +30,7 @@ impl Backoff {
         let sleep = {
             let mut rng = rand::thread_rng();
             let temp = cmp::min(self.max_duration, self.min_duration * 2_u32.pow(self.attempt));
-            temp / 2 + rng.gen_range(Duration::ZERO..temp / 2)
+            temp / 2 + rng.gen_range(Duration::ZERO..=temp / 2)
         };
         self.attempt += 1;
         tokio::time::sleep(sleep).await;
