@@ -580,7 +580,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "clap 3.2.15",
+ "clap 3.2.16",
  "env_logger 0.9.0",
  "lazy_static",
  "lazycell",
@@ -921,9 +921,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.15"
+version = "3.2.16"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44bbe24bbd31a185bc2c4f7c2abe80bea13a20d57ee4e55be70ac512bdc76417"
+checksum = "a3dbbb6653e7c55cc8595ad3e1f7be8f32aba4eb7ff7f0fd1163d4f3d137c0a9"
 dependencies = [
  "atty",
  "bitflags",
@@ -942,7 +942,7 @@ version = "3.2.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ead064480dfc4880a10764488415a97fdd36a4cf1bb022d372f02e8faf8386e1"
 dependencies = [
- "clap 3.2.15",
+ "clap 3.2.16",
 ]
 
 [[package]]
@@ -951,7 +951,7 @@ version = "3.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ed37b4c0c1214673eba6ad8ea31666626bf72be98ffb323067d973c48b4964b9"
 dependencies = [
- "clap 3.2.15",
+ "clap 3.2.16",
  "clap_complete",
 ]
 
@@ -2145,7 +2145,7 @@ dependencies = [
  "async-trait",
  "bitflags",
  "cfg-if 1.0.0",
- "clap 3.2.15",
+ "clap 3.2.16",
  "clap_complete",
  "clap_complete_fig",
  "crossterm",
@@ -2213,7 +2213,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 3.2.15",
+ "clap 3.2.16",
  "dashmap",
  "fig_auth",
  "fig_directories",
@@ -2295,7 +2295,7 @@ version = "0.1.0"
 dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
- "clap 3.2.15",
+ "clap 3.2.16",
  "fig_directories",
  "fig_util",
  "regex",
@@ -2411,7 +2411,7 @@ name = "fig_util"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "clap 3.2.15",
+ "clap 3.2.16",
  "fig_directories",
  "nix 0.24.2",
  "once_cell",
@@ -2431,7 +2431,7 @@ dependencies = [
  "anyhow",
  "bitflags",
  "bytes",
- "clap 3.2.15",
+ "clap 3.2.16",
  "dashmap",
  "fig_auth",
  "fig_color",
