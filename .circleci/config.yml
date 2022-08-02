@@ -57,6 +57,11 @@ workflows:
           matrix:
             parameters:
               platform: [f36]
+      - sentry:
+          requires: [ubuntu, fedora]
+          context:
+            - sentry
+
   noop:
     when:
       not:
@@ -184,6 +189,31 @@ jobs:
             git push --tags --force
             COMMIT_HASH=`git log -n 1 --pretty=format:"%H"`
             curl -X POST << pipeline.parameters.callback_url >> -d "commit;$COMMIT_HASH"
+
+  # Does sentry
+  sentry:
+    docker:
+      - image: cimg/base:2022.08
+    resource_class: small
+    environment:
+      SENTRY_ORG: withfig
+      SENTRY_PROJECT: fig-rust-desktop
+      SENTRY_ENVIRONMENT: production
+    steps:
+      - checkout-desktop
+      - run:
+          name: Install sentry
+          command: |
+            curl -sL https://sentry.io/get-cli/ | bash
+      - run:
+          name: Create new sentry release
+          command: |
+            cd desktop
+            export SENTRY_RELEASE=fig-rust-desktop@$(jq -r '.FIG_VERSION' bundle/bundle_info.json)
+            sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
+            sentry-cli releases set-commits $SENTRY_RELEASE --auto
+            sentry-cli releases finalize $SENTRY_RELEASE
+            sentry-cli releases deploys $SENTRY_RELEASE new -e $SENTRY_ENVIRONMENT
 
   # Does nothing. Prevents build errors. Ask Mia for more info.
   noop:
