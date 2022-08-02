@@ -58,6 +58,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       options.attachStacktrace = true
       options.sessionTrackingIntervalMillis = 5_000
       options.enabled = !Defaults.shared.telemetryDisabled
+      options.tracesSampleRate = 0.01
     }
     warnToMoveToApplicationIfNecessary()
     
