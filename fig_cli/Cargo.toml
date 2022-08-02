@@ -15,7 +15,7 @@ deno = ["dep:deno_core", "dep:deno_runtime"]
 [dependencies]
 anyhow = "1.0.58"
 arboard = { version = "2.1.0", default-features = false }
-async-trait = "0.1.56"
+async-trait = "0.1.57"
 bitflags = "1.3.2"
 cfg-if = "1.0.0"
 clap = { version = "3.2.15", features = ["derive"] }
