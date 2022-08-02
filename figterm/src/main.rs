@@ -572,41 +572,41 @@ fn figterm_main() -> Result<()> {
                             res = stdin.read(&mut read_buffer) => {
                                 match res {
                                     Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
-                                            Ok(s) => {
-                                                trace!("Read {} bytes from input: {:?}", size, s);
-                                                match interceptor::parse_code(s.as_bytes()) {
-                                                    Some((key_code, modifier)) => {
-                                                        match key_interceptor.intercept_key(key_code.clone(), &modifier) {
-                                                            Some(action) => {
-                                                                debug!("Action: {:?}", action);
-                                                                let hook =
-                                                                    fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
-                                                                outgoing_sender.send(hook_to_message(hook)).unwrap();
+                                        Ok(s) => {
+                                            trace!("Read {size} bytes from input: {s:?}");
+                                            match interceptor::parse_code(s.as_bytes()) {
+                                                Some((key_code, modifier)) => {
+                                                    match key_interceptor.intercept_key(key_code.clone(), &modifier) {
+                                                        Some(action) => {
+                                                            debug!("Action: {action:?}");
+                                                            let hook =
+                                                                fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                                            outgoing_sender.send(hook_to_message(hook)).unwrap();
 
-                                                                if key_code == KeyCode::Esc {
-                                                                    key_interceptor.reset();
-                                                                }
-
-                                                                continue 'select_loop;
+                                                            if key_code == KeyCode::Esc {
+                                                                key_interceptor.reset();
                                                             }
-                                                            None => {}
-                                                        }
-                                                    }
-                                                    None => {}
-                                                }
 
-                                                master.write(s.as_bytes()).await?;
-                                                Ok(())
+                                                            continue 'select_loop;
+                                                        }
+                                                        None => {}
+                                                    }
+                                                }
+                                                None => {}
                                             }
-                                            Err(err) => {
-                                                error!("Failed to convert utf8: {}", err);
-                                                trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
-                                                master.write(&read_buffer[..size]).await?;
-                                                Ok(())
-                                            }
+
+                                            master.write(s.as_bytes()).await?;
+                                            Ok(())
+                                        }
+                                        Err(err) => {
+                                            error!("Failed to convert utf8: {err}");
+                                            trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
+                                            master.write(&read_buffer[..size]).await?;
+                                            Ok(())
+                                        }
                                     },
                                     Err(err) => {
-                                        error!("Failed to read from stdin: {}", err);
+                                        error!("Failed to read from stdin: {err}");
                                         Err(err.into())
                                     }
                                 }
@@ -615,7 +615,7 @@ fn figterm_main() -> Result<()> {
                                 unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
                                 unsafe { ioctl_tiocswinsz(master.as_raw_fd(), &winsize) }?;
                                 let window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
-                                debug!("Window size changed: {:?}", window_size);
+                                debug!("Window size changed: {window_size:?}");
                                 term.resize(window_size);
                                 Ok(())
                             }
@@ -626,7 +626,7 @@ fn figterm_main() -> Result<()> {
                                         break 'select_loop Ok(());
                                     }
                                     Ok(size) => {
-                                        trace!("Read {} bytes from master", size);
+                                        trace!("Read {size} bytes from master");
 
                                         for byte in &write_buffer[..size] {
                                             processor.advance(&mut term, *byte);
@@ -636,17 +636,17 @@ fn figterm_main() -> Result<()> {
                                         stdout.flush().await?;
 
                                         if can_send_edit_buffer(&term) {
-                                            if let Err(e) = send_edit_buffer(&term, &outgoing_sender).await {
-                                                warn!("Failed to send edit buffer: {}", e);
+                                            if let Err(err) = send_edit_buffer(&term, &outgoing_sender).await {
+                                                warn!("Failed to send edit buffer: {err}");
                                             }
                                         }
 
                                         Ok(())
                                     }
                                     Err(err) => {
-                                        error!("Failed to read from master: {}", err);
-                                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
-                                            error!("Failed to restore terminal settings: {}", e);
+                                        error!("Failed to read from master: {err}");
+                                        if let Err(err) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                                            error!("Failed to restore terminal settings: {err}");
                                         }
                                         std::process::exit(0);
                                     }
@@ -655,12 +655,12 @@ fn figterm_main() -> Result<()> {
                             msg = incomming_receiver.recv_async() => {
                                 match msg {
                                     Ok((buf, response_tx)) => {
-                                        debug!("Received message from socket: {:?}", buf);
+                                        debug!("Received message from socket: {buf:?}");
                                         process_figterm_message(
                                             buf, response_tx, &term, &mut master, &mut key_interceptor).await?;
                                     }
                                     Err(err) => {
-                                        error!("Failed to receive message from socket: {}", err);
+                                        error!("Failed to receive message from socket: {err}");
                                     }
                                 }
                                 Ok(())
@@ -669,17 +669,17 @@ fn figterm_main() -> Result<()> {
                             _ = edit_buffer_interval.tick() => {
                                 let send_eb = INSERTION_LOCKED_AT.read().is_some();
                                 if send_eb && can_send_edit_buffer(&term) {
-                                    if let Err(e) = send_edit_buffer(&term, &outgoing_sender).await {
-                                        warn!("Failed to send edit buffer: {}", e);
+                                    if let Err(err) = send_edit_buffer(&term, &outgoing_sender).await {
+                                        warn!("Failed to send edit buffer: {err}");
                                     }
                                 }
                                 Ok(())
                             }
                         };
 
-                        if let Err(e) = select_result {
-                            error!("Error in select loop: {}", e);
-                            break 'select_loop Err(e);
+                        if let Err(err) = select_result {
+                            error!("Error in select loop: {err}");
+                            break 'select_loop Err(err);
                         }
                     };
 
@@ -688,20 +688,20 @@ fn figterm_main() -> Result<()> {
                     result
                 }) {
                     Ok(()) => {
-                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
-                            error!("Failed to restore terminal settings: {}", e);
+                        if let Err(err) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                            error!("Failed to restore terminal settings: {err}");
                         }
 
                         info!("Exiting");
                         exit(0);
                     },
-                    Err(e) => {
-                        if let Err(e) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
-                            error!("Failed to restore terminal settings: {}", e);
+                    Err(err) => {
+                        if let Err(err) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
+                            error!("Failed to restore terminal settings: {err}");
                         }
 
-                        error!("Error in async runtime: {}", e);
-                        Err(e)
+                        error!("Error in async runtime: {err}");
+                        Err(err)
                     },
                 }
         },
@@ -710,10 +710,10 @@ fn figterm_main() -> Result<()> {
             // https://man7.org/linux/man-pages/man7/signal-safety.7.html
             match launch_shell() {
                 Ok(()) => Ok(()),
-                Err(e) => {
-                    println!("ERROR: {:?}", e);
-                    capture_anyhow(&e);
-                    Err(e)
+                Err(err) => {
+                    println!("ERROR: {err:?}");
+                    capture_anyhow(&err);
+                    Err(err)
                 },
             }
         },
@@ -738,14 +738,14 @@ fn main() {
         return;
     }
 
-    if let Err(e) = figterm_main() {
-        println!("Fig had an Error!: {e:?}");
-        capture_anyhow(&e);
+    if let Err(err) = figterm_main() {
+        println!("Fig had an Error!: {err:?}");
+        capture_anyhow(&err);
 
         // Fallback to normal shell
-        if let Err(e) = launch_shell() {
-            capture_anyhow(&e);
-            logger::stdio_debug_log(e.to_string());
+        if let Err(err) = launch_shell() {
+            capture_anyhow(&err);
+            logger::stdio_debug_log(err.to_string());
         }
     }
 }

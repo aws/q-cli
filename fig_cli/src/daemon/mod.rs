@@ -25,7 +25,6 @@ use futures::{
     SinkExt,
     StreamExt,
 };
-use parking_lot::lock_api::RawMutex;
 use parking_lot::{
     Mutex,
     RwLock,
@@ -43,6 +42,7 @@ use tracing::{
 use crate::daemon::launchd_plist::LaunchdPlist;
 #[cfg(target_os = "macos")]
 use crate::daemon::settings_watcher::spawn_settings_watcher;
+use crate::daemon::system_handler::spawn_incoming_system_handler;
 use crate::daemon::systemd_unit::SystemdUnit;
 use crate::daemon::websocket::process_websocket;
 use crate::util::backoff::Backoff;
@@ -348,7 +348,7 @@ impl LaunchService {
         let log_path_str = format!("file:{}", log_path.to_string_lossy());
 
         let unit = SystemdUnit::new("Fig Daemon")
-            .exec_start(format!("{} daemon", executable_path_str))
+            .exec_start(format!("{executable_path_str} daemon"))
             .restart("always")
             .restart_sec(5)
             .wanted_by("default.target")
@@ -426,24 +426,20 @@ impl Default for DaemonStatus {
     }
 }
 
-pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::const_new(RawMutex::INIT, false);
+pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::new(false);
 
 /// Spawn the daemon to listen for updates and dotfiles changes
 #[cfg(unix)]
 pub async fn daemon() -> Result<()> {
-    use crate::daemon::system_handler::spawn_incoming_system_handler;
-
     *IS_RUNNING_DAEMON.lock() = true;
 
     info!("Starting daemon...");
 
     let daemon_status = Arc::new(RwLock::new(DaemonStatus::default()));
 
-    // Add small random element to the delay to avoid all clients from sending the messages at the same
-    // time
-    let dist = Uniform::new(59., 60.);
-    let delay = dist.sample(&mut rand::thread_rng());
-    let mut ping_interval = tokio::time::interval(Duration::from_secs_f64(delay));
+    // Add small random element to the delay to avoid all clients from
+    // sending the messages at the same time
+    let delay = Uniform::new(59., 61.).sample(&mut rand::thread_rng());
 
     // Spawn task scheduler
     let (mut scheduler, scheduler_join) = scheduler::Scheduler::spawn().await;
@@ -488,13 +484,13 @@ pub async fn daemon() -> Result<()> {
                     daemon_status.write().system_socket_status = Ok(());
                     backoff.reset();
                     if let Err(err) = handle.await {
-                        error!("Error on system handler join: {:?}", err);
+                        error!("Error on system handler join: {err:?}");
                         daemon_status.write().system_socket_status = Err(err.into());
                     }
                     return;
                 },
                 Err(err) => {
-                    error!("Error spawning system handler: {:?}", err);
+                    error!("Error spawning system handler: {err:?}");
                     daemon_status.write().system_socket_status = Err(err);
                 },
             }
@@ -506,7 +502,8 @@ pub async fn daemon() -> Result<()> {
     let daemon_status_clone = daemon_status.clone();
     let websocket_join = tokio::spawn(async move {
         let daemon_status = daemon_status_clone;
-        let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(120.));
+        let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(300.));
+        let mut ping_interval = tokio::time::interval(Duration::from_secs_f64(delay));
         loop {
             match websocket::connect_to_fig_websocket().await {
                 Ok(mut websocket_stream) => {
@@ -518,7 +515,7 @@ pub async fn daemon() -> Result<()> {
                                 match process_websocket(&next, &mut scheduler).await {
                                     Ok(()) => {}
                                     Err(err) => {
-                                        error!("Error while processing websocket message: {}", err);
+                                        error!("Error while processing websocket message: {err}");
                                         daemon_status.write().websocket_status = Err(err);
                                         break;
                                     }
@@ -527,7 +524,7 @@ pub async fn daemon() -> Result<()> {
                             _ = ping_interval.tick() => {
                                 debug!("Sending ping to websocket");
                                 if let Err(err) = websocket_stream.send(tungstenite::Message::Ping(vec![])).await {
-                                    error!("Error while sending ping to websocket: {}", err);
+                                    error!("Error while sending ping to websocket: {err}");
                                     daemon_status.write().websocket_status = Err(err.into());
                                     break;
                                 };
@@ -536,7 +533,7 @@ pub async fn daemon() -> Result<()> {
                     }
                 },
                 Err(err) => {
-                    error!("Error while connecting to websocket: {}", err);
+                    error!("Error while connecting to websocket: {err}");
                     daemon_status.write().websocket_status = Err(err);
                 },
             }
@@ -563,13 +560,13 @@ pub async fn daemon() -> Result<()> {
                             daemon_status.write().settings_watcher_status = Ok(());
                             backoff.reset();
                             if let Err(err) = join_handle.await {
-                                error!("Error on settings watcher join: {:?}", err);
+                                error!("Error on settings watcher join: {err:?}");
                                 daemon_status.write().settings_watcher_status = Err(err.into());
                             }
                             return;
                         },
                         Err(err) => {
-                            error!("Error spawning settings watcher: {:?}", err);
+                            error!("Error spawning settings watcher: {err:?}");
                             daemon_status.write().settings_watcher_status = Err(err);
                         },
                     }

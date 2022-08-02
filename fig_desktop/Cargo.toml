@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.0.1"
+version = "2.0.3"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -14,12 +14,12 @@ default = []
 console = ["tokio/tracing", "fig_log/console"]
 
 [dependencies]
-anyhow = "1.0.58"
+anyhow = "1.0.59"
 base64 = "0.13.0"
-bytes = "1.2.0"
+bytes = "1.2.1"
 camino = { version = "1.0.9", features = ["serde1"] }
 cfg-if = "1.0.0"
-clap = "3.2.15"
+clap = "3.2.16"
 dashmap = "5.3.4"
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_directories = { path = "../rust-lib/fig_directories" }
@@ -41,14 +41,14 @@ parking_lot = "0.12.1"
 percent-encoding = "2.1.0"
 regex = "1.6.0"
 semver = "1.0.12"
-serde = { version = "1.0.140", features = ["derive"] }
+serde = { version = "1.0.141", features = ["derive"] }
 serde_json = "1.0.82"
 shellexpand = "2.1.0"
-sysinfo = "0.24.7"
+sysinfo = "0.25.1"
 system_socket = { path = "../rust-lib/system_socket" }
-time = { version = "=0.3.11" }
+time = { version = "=0.3.12" }
 tokio = { version = "1", features = [ "full" ] }
-tracing = "0.1.35"
+tracing = "0.1.36"
 url = "2.2.2"
 which = "4.2.5"
 whoami = "1.2.1"

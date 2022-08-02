@@ -58,10 +58,34 @@ enum FigWebsocketMessage {
     },
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+struct TicketBody {
+    ticket: String,
+    fly_instance: Option<String>,
+}
+
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let ticket = Request::get("/authenticate/ticket").auth().text().await?;
+    let ticket_response = Request::get("/authenticate/ticket")
+        .query(&[("format", "json")])
+        .auth()
+        .send()
+        .await?
+        .handle_fig_response()
+        .await?;
+
+    let ticket_body: TicketBody = match ticket_response
+        .headers()
+        .get("content-type")
+        .and_then(|header| header.to_str().ok())
+    {
+        Some("application/json") => ticket_response.json().await?,
+        _ => TicketBody {
+            ticket: ticket_response.text().await?,
+            ..Default::default()
+        },
+    };
 
     let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
@@ -69,7 +93,16 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         device_id.push_str(&email);
     }
 
-    let url = Url::parse_with_params(ws_host().as_str(), &[("deviceId", &device_id), ("ticket", &ticket)])?;
+    let mut params = vec![
+        ("deviceId", device_id.as_str()),
+        ("ticket", ticket_body.ticket.as_str()),
+    ];
+
+    if let Some(ref fly_instance) = ticket_body.fly_instance {
+        params.push(("flyInstance", fly_instance));
+    }
+
+    let url = Url::parse_with_params(ws_host().as_str(), &params)?;
 
     let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
         .await
@@ -89,7 +122,7 @@ pub async fn process_websocket(
         Some(next) => match next {
             Ok(websocket_message) => match websocket_message {
                 Message::Text(text) => {
-                    debug!("message: {:?}", text);
+                    debug!("message: {text:?}");
                     let websocket_message_result = serde_json::from_str::<FigWebsocketMessage>(text);
 
                     match websocket_message_result {
@@ -115,7 +148,7 @@ pub async fn process_websocket(
                                 payload,
                                 apps,
                             } => match payload.as_ref().map(serde_json::to_string).transpose() {
-                                Err(e) => error!("Could not serialize event payload: {e:?}"),
+                                Err(err) => error!("Could not serialize event payload: {err:?}"),
                                 Ok(payload_blob) => {
                                     let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
                                     send_hook_to_socket(hook).await.ok();
@@ -135,7 +168,7 @@ pub async fn process_websocket(
                                 }
                             },
                         },
-                        Err(e) => error!("Could not parse json message: {e:?}"),
+                        Err(err) => error!("Could not parse json message: {err:?}"),
                     }
                     Ok(())
                 },

@@ -21,12 +21,12 @@ use anyhow::{
     Result,
 };
 use bytes::BytesMut;
+use fig_proto::prost::Message;
 use fig_proto::{
     FigMessage,
     FigProtobufEncodable,
+    ReflectMessage,
 };
-use prost::Message;
-use prost_reflect::ReflectMessage;
 use system_socket::SystemStream;
 use thiserror::Error;
 use tokio::io::{

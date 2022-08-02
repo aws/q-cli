@@ -3,11 +3,13 @@ use std::time::Duration;
 use fig_auth::get_token;
 use fig_settings::api_host;
 use once_cell::sync::Lazy;
+use reqwest::cookie::Cookie;
+use reqwest::header::HeaderMap;
 pub use reqwest::Method;
 use reqwest::{
     Client,
     RequestBuilder,
-    Response,
+    StatusCode,
 };
 use serde::de::DeserializeOwned;
 use serde::{
@@ -20,7 +22,7 @@ use thiserror::Error;
 static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
     Client::builder()
         .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
-        .https_only(true)
+        .cookie_store(true)
         .timeout(Duration::from_secs(20))
         .build()
         .ok()
@@ -144,7 +146,9 @@ impl Request {
                     },
                     false => builder,
                 };
-                Ok(builder.send().await?)
+                Ok(Response {
+                    inner: builder.send().await?,
+                })
             },
             None => Err(Error::NoClient),
         }
@@ -153,7 +157,7 @@ impl Request {
     /// Deserialize json to `T: [DeserializeOwned]`
     pub async fn deser_json<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
         let response = self.send().await?;
-        let json = handle_fig_response(response).await?.json().await?;
+        let json = response.handle_fig_response().await?.json().await?;
         Ok(json)
     }
 
@@ -165,14 +169,14 @@ impl Request {
     /// Raw body text
     pub async fn text(self) -> Result<String> {
         let response = self.send().await?;
-        let text = handle_fig_response(response).await?.text().await?;
+        let text = response.handle_fig_response().await?.text().await?;
         Ok(text)
     }
 
     /// Raw body bytes
     pub async fn bytes(self) -> Result<bytes::Bytes> {
         let response = self.send().await?;
-        let bytes = handle_fig_response(response).await?.bytes().await?;
+        let bytes = response.handle_fig_response().await?.bytes().await?;
         Ok(bytes)
     }
 
@@ -184,37 +188,71 @@ impl Request {
             Err(err) => Err(err.into()),
         }
     }
+
+    pub async fn response(self) -> Result<Response> {
+        self.send().await
+    }
 }
 
-pub async fn handle_fig_response(resp: Response) -> Result<Response> {
-    if resp.status().is_success() {
-        Ok(resp)
-    } else {
-        let err = resp.error_for_status_ref().err();
-        macro_rules! status_err {
-            () => {{
-                match err {
-                    Some(err) => return Err(err.into()),
-                    None => return Err(Error::Unknown),
-                }
-            }};
-        }
+pub struct Response {
+    inner: reqwest::Response,
+}
 
-        match resp.text().await {
-            Ok(text) => match serde_json::from_str::<Value>(&text) {
-                Ok(json) => Err(match json.get("error").and_then(|error| error.as_str()) {
-                    Some(error) => Error::Fig(error.into()),
-                    None => status_err!(),
-                }),
-                Err(_) => {
-                    if !text.is_empty() {
-                        Err(Error::Fig(text))
-                    } else {
-                        status_err!()
+impl Response {
+    pub fn status(&self) -> StatusCode {
+        self.inner.status()
+    }
+
+    pub fn cookies(&self) -> impl Iterator<Item = Cookie> {
+        self.inner.cookies()
+    }
+
+    pub fn headers(&self) -> &HeaderMap {
+        self.inner.headers()
+    }
+
+    pub async fn text(self) -> Result<String, reqwest::Error> {
+        self.inner.text().await
+    }
+
+    pub async fn json<T: DeserializeOwned>(self) -> Result<T, reqwest::Error> {
+        self.inner.json().await
+    }
+
+    pub async fn bytes(self) -> Result<bytes::Bytes, reqwest::Error> {
+        self.inner.bytes().await
+    }
+
+    pub async fn handle_fig_response(self) -> Result<Response> {
+        if self.inner.status().is_success() {
+            Ok(self)
+        } else {
+            let err = self.inner.error_for_status_ref().err();
+            macro_rules! status_err {
+                () => {{
+                    match err {
+                        Some(err) => return Err(err.into()),
+                        None => return Err(Error::Unknown),
                     }
+                }};
+            }
+
+            match self.inner.text().await {
+                Ok(text) => match serde_json::from_str::<Value>(&text) {
+                    Ok(json) => Err(match json.get("error").and_then(|error| error.as_str()) {
+                        Some(error) => Error::Fig(error.into()),
+                        None => status_err!(),
+                    }),
+                    Err(_) => {
+                        if !text.is_empty() {
+                            Err(Error::Fig(text))
+                        } else {
+                            status_err!()
+                        }
+                    },
                 },
-            },
-            Err(_) => status_err!(),
+                Err(_) => status_err!(),
+            }
         }
     }
 }

@@ -7,15 +7,13 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
-anyhow = "1.0.58"
-bytes = "1.2.0"
+anyhow = "1.0.59"
+bytes = "1.2.1"
 cfg-if = "1.0.0"
 fig_proto = { path = "../fig_proto" }
-prost = "0.10.4"
-prost-reflect = "0.8.1"
 system_socket = { path = "../system_socket" }
 thiserror = "1.0.30"
 tokio = { version = "1.20.1", features = ["fs", "time", "io-util", "net"] }
-tracing = "0.1.35"
+tracing = "0.1.36"
 whoami = "1.2.1"
 wsl = "0.1.0"
