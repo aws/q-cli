@@ -989,15 +989,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "cmake"
-version = "0.1.48"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e8ad8cef104ac57b68b89df3208164d228503abbdce70f6880ffa3d970e7443a"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "cocoa"
 version = "0.24.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1074,8 +1065,8 @@ version = "0.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "06c5fd425783d81668ed68ec98408a80498fb4ae2fd607797539e1a9dfa3618f"
 dependencies = [
- "prost",
- "prost-types",
+ "prost 0.10.4",
+ "prost-types 0.10.1",
  "tonic",
  "tracing-core",
 ]
@@ -1093,7 +1084,7 @@ dependencies = [
  "hdrhistogram",
  "humantime",
  "parking_lot 0.11.2",
- "prost-types",
+ "prost-types 0.10.1",
  "serde",
  "serde_json",
  "thread_local",
@@ -2215,7 +2206,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.0.1"
+version = "2.0.3"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -2321,8 +2312,6 @@ dependencies = [
  "bytes",
  "cfg-if 1.0.0",
  "fig_proto",
- "prost",
- "prost-reflect",
  "system_socket",
  "thiserror",
  "tokio",
@@ -2353,7 +2342,7 @@ dependencies = [
  "fig_util",
  "nix 0.24.2",
  "once_cell",
- "prost",
+ "prost 0.11.0",
  "prost-reflect",
  "prost-reflect-build",
  "rmp-serde",
@@ -4877,26 +4866,34 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "71adf41db68aa0daaefc69bb30bcd68ded9b9abaad5d1fbb6304c4fb390e083e"
 dependencies = [
  "bytes",
- "prost-derive",
+ "prost-derive 0.10.1",
+]
+
+[[package]]
+name = "prost"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "399c3c31cdec40583bb68f0b18403400d01ec4289c383aa047560439952c4dd7"
+dependencies = [
+ "bytes",
+ "prost-derive 0.11.0",
 ]
 
 [[package]]
 name = "prost-build"
-version = "0.10.4"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8ae5a4388762d5815a9fc0dea33c56b021cdc8dde0c55e0c9ca57197254b0cab"
+checksum = "d49d928704208aba2cb1fb022ce1a319bdedcb03caf51ddf82734fa903407762"
 dependencies = [
  "bytes",
- "cfg-if 1.0.0",
- "cmake",
  "heck 0.4.0",
  "itertools",
  "lazy_static",
  "log",
  "multimap",
  "petgraph",
- "prost",
- "prost-types",
+ "prost 0.11.0",
+ "prost-types 0.11.0",
  "regex",
  "tempfile",
  "which",
@@ -4916,25 +4913,37 @@ dependencies = [
 ]
 
 [[package]]
-name = "prost-reflect"
-version = "0.8.1"
+name = "prost-derive"
+version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a9b5885b76f107151487927cb630854e7fd95ffa394a693116feaa84df1e0274"
+checksum = "7345d5f0e08c0536d7ac7229952590239e77abf0a0100a1b1d890add6ea96364"
+dependencies = [
+ "anyhow",
+ "itertools",
+ "proc-macro2 1.0.42",
+ "quote 1.0.20",
+ "syn 1.0.98",
+]
+
+[[package]]
+name = "prost-reflect"
+version = "0.9.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d389b05970b1da25a29ac300c74b8c05b8850adfe1d2ddf5c32e39fe0dc97df8"
 dependencies = [
  "base64 0.13.0",
- "prost",
+ "prost 0.11.0",
  "prost-reflect-derive",
- "prost-types",
+ "prost-types 0.11.0",
  "serde",
  "serde-value",
- "time 0.3.11",
 ]
 
 [[package]]
 name = "prost-reflect-build"
-version = "0.8.1"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a24c777d3470654a9f594285a43a29f054a13f38c3408b2c7474fc5926647827"
+checksum = "08aa774b486000d80ef9a63875c4cba1acc4024d4a23a3bb588f8b680e2c64fb"
 dependencies = [
  "prost-build",
  "prost-reflect",
@@ -4942,9 +4951,9 @@ dependencies = [
 
 [[package]]
 name = "prost-reflect-derive"
-version = "0.8.0"
+version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b144e83776eb85a47eefeb686ddf59f9b2c6968b4f9115d8d6846332882ca5f4"
+checksum = "f90bf611b6adcffdb7c42d1826a751b520d078f753f96112ae4ec9ba2eb78663"
 dependencies = [
  "proc-macro2 1.0.42",
  "quote 1.0.20",
@@ -4958,7 +4967,17 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2d0a014229361011dc8e69c8a1ec6c2e8d0f2af7c91e3ea3f5b2170298461e68"
 dependencies = [
  "bytes",
- "prost",
+ "prost 0.10.4",
+]
+
+[[package]]
+name = "prost-types"
+version = "0.11.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d30bc806a29b347314be074ff0608ef8e547286e8ea68b061a2fe55689edc01f"
+dependencies = [
+ "bytes",
+ "prost 0.11.0",
 ]
 
 [[package]]
@@ -6773,8 +6792,8 @@ dependencies = [
  "hyper-timeout",
  "percent-encoding",
  "pin-project",
- "prost",
- "prost-derive",
+ "prost 0.10.4",
+ "prost-derive 0.10.1",
  "tokio",
  "tokio-stream",
  "tokio-util",
