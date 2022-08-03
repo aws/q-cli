@@ -42,7 +42,7 @@ jobs:
 
       - name: Set VERSION
         run: |
-          VERSION="$(jq -r .FIG_VERSION bundle/bundle_info.json)"
+          VERSION="$(sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' fig_desktop/Cargo.toml | head -1)"
           echo VERSION=$VERSION >> $GITHUB_ENV
           echo "Version: $VERSION"
 
