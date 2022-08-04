@@ -326,7 +326,7 @@ dependencies = [
  "aws-endpoint",
  "aws-http",
  "aws-sig-auth",
- "aws-smithy-async",
+ "aws-smithy-async 0.46.0",
  "aws-smithy-client",
  "aws-smithy-http",
  "aws-smithy-http-tower",
@@ -383,12 +383,24 @@ dependencies = [
 ]
 
 [[package]]
+name = "aws-smithy-async"
+version = "0.47.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "86fc23ad8d050c241bdbfa74ae360be94a844ace8e218f64a2b2de77bfa9a707"
+dependencies = [
+ "futures-util",
+ "pin-project-lite",
+ "tokio",
+ "tokio-stream",
+]
+
+[[package]]
 name = "aws-smithy-client"
 version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "44243329ba8618474c3b7f396de281f175ae172dd515b3d35648671a3cf51871"
 dependencies = [
- "aws-smithy-async",
+ "aws-smithy-async 0.46.0",
  "aws-smithy-http",
  "aws-smithy-http-tower",
  "aws-smithy-types",
@@ -468,7 +480,7 @@ version = "0.46.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fb54f097516352475a0159c9355f8b4737c54044538a4d9aca4d376ef2361ccc"
 dependencies = [
- "aws-smithy-async",
+ "aws-smithy-async 0.46.0",
  "aws-smithy-client",
  "aws-smithy-http",
  "aws-smithy-types",
@@ -2215,7 +2227,7 @@ name = "fig_auth"
 version = "0.1.0"
 dependencies = [
  "aws-sdk-cognitoidentityprovider",
- "aws-smithy-async",
+ "aws-smithy-async 0.47.0",
  "aws-smithy-client",
  "base64 0.13.0",
  "cfg-if 1.0.0",
