@@ -31,6 +31,7 @@ use event::{
 };
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
+use fig_util::directories;
 use figterm::FigtermState;
 use fnv::FnvBuildHasher;
 use native::NativeState;
@@ -73,6 +74,7 @@ use wry::application::window::{
     WindowId as WryWindowId,
 };
 use wry::webview::{
+    WebContext,
     WebView,
     WebViewBuilder,
 };
@@ -139,10 +141,14 @@ impl WebviewManager {
     fn build_webview<T>(
         &mut self,
         window_id: WindowId,
-        builder: impl Fn(&EventLoop, T) -> wry::Result<WebView>,
+        builder: impl Fn(&mut WebContext, &EventLoop, T) -> wry::Result<WebView>,
         options: T,
     ) -> wry::Result<()> {
-        let webview = builder(&self.event_loop, options)?;
+        let webview = builder(
+            &mut WebContext::new(directories::fig_data_dir().ok()),
+            &self.event_loop,
+            options,
+        )?;
         self.insert_webview(window_id, webview);
         Ok(())
     }
@@ -223,16 +229,14 @@ impl WebviewManager {
             }
 
             if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
-                tokio::runtime::Handle::current()
-                    .block_on(fig_telemetry::dispatch_emit_track(
-                        fig_telemetry::TrackEvent::new(
-                            fig_telemetry::TrackEventType::QuitApp,
-                            fig_telemetry::TrackSource::App,
-                            empty::<(&str, &str)>(),
-                        ),
-                        false,
-                    ))
-                    .ok();
+                tokio::runtime::Handle::current().spawn(fig_telemetry::dispatch_emit_track(
+                    fig_telemetry::TrackEvent::new(
+                        fig_telemetry::TrackEventType::QuitApp,
+                        fig_telemetry::TrackSource::App,
+                        empty::<(&str, &str)>(),
+                    ),
+                    false,
+                ));
             }
         });
     }
@@ -271,6 +275,7 @@ struct MissionControlOptions {
 }
 
 fn build_mission_control(
+    web_context: &mut WebContext,
     event_loop: &EventLoop,
     MissionControlOptions {
         show_onboarding,
@@ -297,6 +302,7 @@ fn build_mission_control(
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
+        .with_web_context(web_context)
         .with_url(if show_onboarding {
             "https://desktop.fig.io/onboarding/1"
         } else {
@@ -326,7 +332,11 @@ fn build_mission_control(
 
 struct AutocompleteOptions {}
 
-fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: AutocompleteOptions) -> wry::Result<WebView> {
+fn build_autocomplete(
+    web_context: &mut WebContext,
+    event_loop: &EventLoop,
+    _autocomplete_options: AutocompleteOptions,
+) -> wry::Result<WebView> {
     let mut window_builder = WindowBuilder::new()
         .with_title("Fig Autocomplete")
         .with_transparent(true)
@@ -361,6 +371,7 @@ fn build_autocomplete(event_loop: &EventLoop, _autocomplete_options: Autocomplet
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
+        .with_web_context(web_context)
         .with_url("https://app.withfig.com/autocomplete/v9")?
         .with_ipc_handler(move |_window, payload| {
             proxy
@@ -449,7 +460,13 @@ async fn main() {
 
     install::run_install().await;
 
-    let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    let show_onboarding =
+        std::env::consts::OS != "windows" && !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+
+    #[cfg(target_os = "linux")]
+    {
+        gtk::init().expect("Failed initializing GTK");
+    }
 
     let mut webview_manager = WebviewManager::new();
     webview_manager

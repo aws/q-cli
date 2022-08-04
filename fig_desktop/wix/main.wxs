@@ -1,0 +1,144 @@
+<?xml version='1.0' encoding='windows-1252'?>
+
+<!-- Removal of these lines will cause installation errors -->
+<?if $(sys.BUILDARCH) = x64 or $(sys.BUILDARCH) = arm64 ?>
+    <?define PlatformProgramFilesFolder = "ProgramFiles64Folder" ?>
+<?else ?>
+    <?define PlatformProgramFilesFolder = "ProgramFilesFolder" ?>
+<?endif ?>
+<!-- The rest is safe to edit -->
+
+<Wix xmlns='http://schemas.microsoft.com/wix/2006/wi'>
+    <Product
+        Id='*'
+        Name='Fig'
+        UpgradeCode='B2580243-CD54-4A60-AFAA-83A1930D8186'
+        Manufacturer='Fig developers'
+        Language='1033'
+        Codepage='1252'
+        Version='$(fun.AutoVersion(2.0))'>
+
+        <Package Id='*'
+            Keywords='Installer'
+            Description='Fig adds IDE-style autocomplete to your existing terminal'
+            Manufacturer='Fig developers'
+            InstallerVersion='450'
+            InstallPrivileges='elevated'
+            Languages='1033'
+            Compressed='yes'
+            InstallScope='perMachine'
+            SummaryCodepage='1252'
+        />
+
+        <MajorUpgrade
+            DowngradeErrorMessage='A newer version of [ProductName] is already installed. Setup will now exit.'
+        />
+
+        <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
+        <Property Id='DiskPrompt' Value='Fig Installation'/>
+
+        <Directory Id='TARGETDIR' Name='SourceDir'>
+            <Directory Id='$(var.PlatformProgramFilesFolder)' Name='PFiles'>
+                <Directory Id='APPLICATIONFOLDER' Name='fig'>
+                    <Directory Id='Bin' Name='bin'>
+                        <Component Id='install_fig_desktop' Guid='bd267785-bf7c-4231-8156-0994760f9a3c'>
+                            <File
+                                Id='fig_desktop'
+                                Name='fig_desktop.exe'
+                                DiskId='1'
+                                Source='$(var.CargoTargetBinDir)\fig_desktop.exe'
+                                KeyPath='yes'
+                            />
+                        </Component>
+                        <Component Id='install_fig' Guid='aaf2f950-ea7f-47dc-abb3-89d557e8d2c7'>
+                            <File
+                                Id='fig'
+                                Name='fig.exe'
+                                DiskId='1'
+                                Source='$(var.CargoTargetBinDir)\fig_cli.exe'
+                                KeyPath='yes'
+                            />
+                        </Component>
+                        <Component Id='install_figterm' Guid='765d689c-52f1-4319-83fc-3ad00c61b5cb'>
+                            <File
+                                Id='figterm'
+                                Name='figterm.exe'
+                                DiskId='1'
+                                Source='$(var.CargoTargetBinDir)\figterm.exe'
+                            />
+                        </Component>
+                        <Component Id='add_to_path' Guid='9B96094B-4BFE-4CFA-9E67-DC4E363A6BB6' KeyPath='yes'>
+                            <Environment
+                                Id='PATH'
+                                Name='PATH'
+                                Value='[Bin]'
+                                Permanent='no'
+                                Part='last'
+                                Action='set'
+                                System='no'
+                            />
+                        </Component>
+                    </Directory>
+                </Directory>
+            </Directory>
+        </Directory>
+
+        <Feature
+            Id='binaries'
+            Title='Binaries'
+            Description='Installs all binaries and the license.'
+            Level='1'
+            ConfigurableDirectory='APPLICATIONFOLDER'
+            AllowAdvertise='no'
+            Display='expand'
+            Absent='disallow'
+        >
+            <ComponentRef Id='install_fig_desktop'/>
+            <ComponentRef Id='install_fig'/>
+            <ComponentRef Id='install_figterm'/>
+            <ComponentRef Id='add_to_path'/>
+        </Feature>
+
+        <SetProperty Id='ARPINSTALLLOCATION' Value='[APPLICATIONFOLDER]' After='CostFinalize'/>
+
+        <Icon Id='icon' SourceFile='fig_desktop\icons\fig.ico'/>
+        <Property Id='ARPPRODUCTICON' Value='icon'/>
+        <Property Id='ARPHELPLINK' Value='https://fig.io'/>
+
+        <CustomAction
+            Id='install_integrations'
+            Execute='immediate'
+            Impersonate='yes'
+            Return='check'
+            FileKey='fig'
+            ExeCommand='install --dotfiles --no-confirm'
+        />
+        <CustomAction
+            Id='uninstall_integrations'
+            Execute='immediate'
+            Impersonate='yes'
+            Return='check'
+            FileKey='fig'
+            ExeCommand='_ uninstall --dotfiles'
+        />
+        <CustomAction
+            Id="run_fig_desktop"
+            Impersonate='yes'
+            Return='asyncNoWait'
+            FileKey='fig_desktop'
+            ExeCommand='--mission-control'
+        />
+
+        <InstallExecuteSequence>
+            <Custom Action='uninstall_integrations' Before='InstallInitialize'>REMOVE ~= "ALL"</Custom>
+            <Custom Action='install_integrations' After='InstallFinalize'>NOT Installed AND NOT REMOVE</Custom>
+        </InstallExecuteSequence>
+
+        <UI>
+            <UIRef Id='WixUI_FeatureTree'/>
+            <Publish Dialog='WelcomeDlg' Control='Next' Event='NewDialog' Value='CustomizeDlg' Order='99'>1</Publish>
+            <Publish Dialog='CustomizeDlg' Control='Back' Event='NewDialog' Value='WelcomeDlg' Order='99'>1</Publish>
+            <Publish Dialog="ExitDialog" Control="Finish" Event="DoAction" Value="run_fig_desktop">NOT Installed</Publish>
+        </UI>
+    </Product>
+</Wix>

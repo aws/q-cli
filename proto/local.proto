@@ -139,12 +139,21 @@ message InputMethodCommand {
 message PromptAccessibilityCommand {}
 
 // == Hooks ==
+message TerminalCursorCoordinates {
+	int32 x = 1;
+	int32 y = 2;
+	int32 xpixel = 3;
+	int32 ypixel = 4;
+}
+
 message EditBufferHook {
 	fig_common.ShellContext context = 1;
 
 	string text = 2;
 	int64 cursor = 3;
 	int64 histno = 4;
+
+	optional TerminalCursorCoordinates terminal_cursor_coordinates = 5;
 }
 
 message InitHook {

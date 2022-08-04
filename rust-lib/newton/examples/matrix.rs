@@ -34,9 +34,10 @@ fn main() {
 
     event_loop
         .run::<_, std::io::Error>(ControlFlow::Poll, move |event, display_state, control_flow| {
-            match event {
-                Event::KeyPressed { code: KeyCode::Esc, .. } => *control_flow = ControlFlow::Exit(0),
-                _ => (),
+            if let Event::KeyPressed { code, .. } = event {
+                if code == KeyCode::Esc {
+                    *control_flow = ControlFlow::Exit(0);
+                }
             }
 
             display_state.clear();

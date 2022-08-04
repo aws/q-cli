@@ -25,8 +25,8 @@ fn main() {
 
     event_loop
         .run::<_, std::io::Error>(ControlFlow::Wait, |event, display_state, control_flow| {
-            match event {
-                Event::KeyPressed { code, .. } => match code {
+            if let Event::KeyPressed { code, .. } = event {
+                match code {
                     KeyCode::Enter => {
                         state
                             .selected
@@ -51,8 +51,7 @@ fn main() {
                     },
                     KeyCode::Esc => *control_flow = ControlFlow::Exit(0),
                     _ => (),
-                },
-                _ => (),
+                }
             }
 
             display_state.clear();

@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::fs::{
     self,
     File,
@@ -9,7 +10,7 @@ use anyhow::{
     Context,
     Result,
 };
-use fig_directories::fig_dir;
+use fig_util::directories;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use tracing::level_filters::LevelFilter;
@@ -27,24 +28,18 @@ static FIG_LOG_LEVEL: Lazy<RwLock<LevelFilter>> = Lazy::new(|| {
     )
 });
 
-pub fn stdio_debug_log(s: impl AsRef<str>) {
+pub fn stdio_debug_log(s: impl Display) {
     let level = FIG_LOG_LEVEL.read();
     if *level >= Level::DEBUG {
-        println!("{}", s.as_ref());
+        println!("{s}");
     }
-}
-
-fn log_folder() -> Result<PathBuf> {
-    let mut dir = fig_dir().context("failed to get fig path")?;
-    dir.push("logs");
-    Ok(dir)
 }
 
 /// Get the path to the pt logfile
 fn log_path(ptc_name: impl AsRef<str>) -> Result<PathBuf> {
     let log_file_name = format!("figterm{}.log", ptc_name.as_ref().replace('/', "_"));
 
-    let mut dir = log_folder()?;
+    let mut dir = directories::fig_dir()?.join("logs");
     dir.push(log_file_name);
     Ok(dir)
 }

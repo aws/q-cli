@@ -7,10 +7,7 @@ use std::io::{
     Write,
 };
 
-use anyhow::{
-    Context,
-    Result,
-};
+use anyhow::Result;
 use clap::Args;
 use crossterm::tty::IsTty;
 use fig_auth::is_logged_in;
@@ -133,9 +130,9 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
         {
             // Add dotfiles sourcing
+            let data_path = shell.get_data_path()?;
             let get_dotfile_source = || {
-                let raw = std::fs::read_to_string(shell.get_data_path().context("Failed to get shell data path").ok()?)
-                    .ok()?;
+                let raw = std::fs::read_to_string(data_path).ok()?;
                 let source: DotfileData = serde_json::from_str(&raw).ok()?;
                 Some(source.dotfile)
             };
@@ -169,17 +166,26 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
 
                 to_source.push("fig app onboarding".into())
             } else {
-                // not showing onboarding
-                to_source.push(guard_source(
-                    shell,
-                    false,
-                    "FIG_CHECKED_PROMPTS",
-                    GuardAssignment::AfterSourcing,
-                    match shell {
-                        Shell::Bash | Shell::Zsh => "(fig app prompts &)",
-                        Shell::Fish => "begin; fig app prompts &; end",
-                    },
-                ));
+                cfg_if! {
+                    if #[cfg(target_os = "linux")] {
+                        let show_prompts = !wsl::is_wsl();
+                    } else {
+                        let show_prompts = true;
+                    }
+                }
+
+                if show_prompts {
+                    to_source.push(guard_source(
+                        shell,
+                        false,
+                        "FIG_CHECKED_PROMPTS",
+                        GuardAssignment::AfterSourcing,
+                        match shell {
+                            Shell::Bash | Shell::Zsh => "(fig app prompts &)",
+                            Shell::Fish => "begin; fig app prompts &; end",
+                        },
+                    ));
+                }
             }
         }
     }

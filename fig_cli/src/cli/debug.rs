@@ -20,6 +20,7 @@ use fig_ipc::command::{
     toggle_debug_mode,
 };
 use fig_proto::local::InputMethodAction;
+use fig_util::directories;
 use serde_json::json;
 
 use crate::cli::app::quit_fig;
@@ -213,9 +214,7 @@ impl DebugSubcommand {
                     std::process::exit(code);
                 })?;
 
-                let log_dir = fig_directories::fig_dir()
-                    .context("Could not find fig dir")?
-                    .join("logs");
+                let log_dir = directories::fig_dir()?.join("logs");
 
                 let mut files = files.clone();
 

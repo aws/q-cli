@@ -5,6 +5,7 @@ use anyhow::{
     Context,
     Result,
 };
+use fig_util::directories;
 use tokio::fs::File;
 use tokio::io::AsyncWriteExt;
 
@@ -26,7 +27,7 @@ impl Sync for Settings {
     }
 
     fn location(&self) -> Result<PathBuf> {
-        let fig_dir = fig_directories::fig_dir().context("Could not get fig_dir")?;
+        let fig_dir = directories::fig_dir().context("Could not get fig_dir")?;
         Ok(fig_dir.join("settings.json"))
     }
 

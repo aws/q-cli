@@ -14,12 +14,14 @@ use anyhow::{
     Result,
 };
 use async_trait::async_trait;
-use fig_directories::fig_data_dir;
 use fig_install::dotfiles::api::DotfileData;
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;
 use fig_telemetry::TrackEvent;
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
 use flume::Sender;
 use rand::distributions::Uniform;
 use rand::prelude::Distribution;
@@ -404,7 +406,7 @@ impl Future for HasSleep {
 #[async_trait]
 impl Task for SendQueuedTelemetryEvents {
     async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
-        let data_dir = fig_data_dir().context("Could not get data dir")?;
+        let data_dir = directories::fig_data_dir().context("Could not get data dir")?;
         let mut receiver = Receiver::open(data_dir.join("telemetry-track-event-queue"))?;
         loop {
             let batch = receiver
@@ -451,7 +453,7 @@ impl Task for SendDotfilesLineCountTelemetry {
                 Shell::Zsh => (".zshrc", "zshrc_line_count"),
                 Shell::Fish => ("fish.config", "fish_config_line_count"),
             };
-            let dotfile = shell.get_config_directory().and_then(|dir| {
+            let dotfile = shell.get_config_directory().ok().and_then(|dir| {
                 let dotfile_path = dir.join(filename);
                 std::fs::read_to_string(&dotfile_path).ok()
             });
@@ -461,6 +463,7 @@ impl Task for SendDotfilesLineCountTelemetry {
 
             let dotfile_data: Option<DotfileData> = shell
                 .get_data_path()
+                .ok()
                 .and_then(|path| std::fs::read_to_string(&path).ok())
                 .and_then(|contents| serde_json::from_str(&contents).ok());
             if let Some(data) = dotfile_data {

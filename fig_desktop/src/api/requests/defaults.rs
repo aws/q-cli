@@ -1,9 +1,4 @@
-use std::path::PathBuf;
-
-use anyhow::{
-    anyhow,
-    Result,
-};
+use anyhow::anyhow;
 use fig_proto::fig::defaults_value::Type;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -12,6 +7,7 @@ use fig_proto::fig::{
     GetDefaultsPropertyResponse,
     UpdateDefaultsPropertyRequest,
 };
+use fig_util::directories;
 use serde_json::Value;
 use tokio::fs;
 
@@ -20,24 +16,21 @@ use super::{
     RequestResultImpl,
 };
 
-fn path() -> Result<PathBuf> {
-    Ok(fig_directories::fig_data_dir()
-        .ok_or_else(|| anyhow!("Failed to get data dir"))?
-        .join("defaults.json"))
-}
-
 pub async fn get(request: GetDefaultsPropertyRequest) -> RequestResult {
     let value = match request.key {
-        Some(ref key) => fs::read(&path()?).await.ok().and_then(|file| {
-            let mut value: Value = serde_json::from_slice(&file).ok()?;
-            match value.get_mut(key).map(|v| v.take()).unwrap_or(Value::Null) {
-                Value::Null => Some(Type::Null(true)),
-                Value::Bool(b) => Some(Type::Boolean(b)),
-                Value::Number(i) => i.as_i64().map(Type::Integer),
-                Value::String(s) => Some(Type::String(s)),
-                _ => None,
-            }
-        }),
+        Some(ref key) => fs::read(&directories::fig_data_dir()?.join("defaults.json"))
+            .await
+            .ok()
+            .and_then(|file| {
+                let mut value: Value = serde_json::from_slice(&file).ok()?;
+                match value.get_mut(key).map(|v| v.take()).unwrap_or(Value::Null) {
+                    Value::Null => Some(Type::Null(true)),
+                    Value::Bool(b) => Some(Type::Boolean(b)),
+                    Value::Number(i) => i.as_i64().map(Type::Integer),
+                    Value::String(s) => Some(Type::String(s)),
+                    _ => None,
+                }
+            }),
         None => return Err(anyhow!("No key provided")),
     };
 
@@ -58,7 +51,7 @@ pub async fn update(request: UpdateDefaultsPropertyRequest) -> RequestResult {
             })
             | None,
         ) => {
-            let path = path()?;
+            let path = directories::fig_data_dir()?.join("defaults.json");
             if !path.exists() {
                 match path.parent() {
                     Some(parent) if !parent.exists() => fs::create_dir_all(parent).await?,
@@ -88,7 +81,7 @@ pub async fn update(request: UpdateDefaultsPropertyRequest) -> RequestResult {
                 _ => unreachable!(),
             };
 
-            let path = path()?;
+            let path = directories::fig_data_dir()?.join("defaults.json");
             if !path.exists() {
                 match path.parent() {
                     Some(parent) if !parent.exists() => fs::create_dir_all(parent).await?,

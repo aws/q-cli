@@ -16,7 +16,10 @@ use fig_integrations::{
     get_default_backup_dir,
     Integration,
 };
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
 use self_update::update::UpdateStatus;
 
 use crate::daemon;
@@ -34,7 +37,7 @@ bitflags::bitflags! {
 
 // todo(mia): get rid of this function
 pub fn get_ssh_config_path() -> Result<PathBuf> {
-    Ok(fig_directories::home_dir()
+    Ok(directories::home_dir()
         .context("Could not get home directory")?
         .join(".ssh")
         .join("config"))
@@ -162,7 +165,7 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
             if #[cfg(feature = "managed")] {
                 println!("Uninstall Fig via your package manager");
             } else {
-                let local_path = fig_directories::home_dir()
+                let local_path = directories::home_dir()
                     .context("Could not find home directory")?
                     .join(".local")
                     .join("bin")

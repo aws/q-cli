@@ -3,6 +3,7 @@ use std::ops::Deref;
 use std::sync::Arc;
 use std::time::Duration;
 
+use anyhow::Result;
 use dashmap::DashMap;
 use fig_proto::figterm::{
     figterm_message,
@@ -12,7 +13,11 @@ use fig_proto::figterm::{
     InterceptCommand,
     SetBufferCommand,
 };
-use fig_proto::local::ShellContext;
+use fig_proto::local::{
+    ShellContext,
+    TerminalCursorCoordinates,
+};
+use fig_util::directories;
 use parking_lot::FairMutex;
 use time::OffsetDateTime;
 use tokio::sync::mpsc;
@@ -52,6 +57,7 @@ pub struct FigTermSession {
     pub last_receive: Instant,
     pub edit_buffer: EditBuffer,
     pub context: Option<ShellContext>,
+    pub terminal_cursor_coordinates: Option<TerminalCursorCoordinates>,
     pub current_session_metrics: Option<SessionMetrics>,
 }
 
@@ -141,7 +147,7 @@ impl FigtermState {
         match self.sessions.get_mut(&key) {
             Some(mut session) => {
                 self.set_most_recent_session(key);
-                Some(f(&mut *session))
+                Some(f(&mut session))
             },
             None => None,
         }
@@ -166,25 +172,27 @@ pub struct EditBuffer {
     pub cursor: i64,
 }
 
-pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
+pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) -> Result<()> {
     if state.figterm_state.contains_key(&session_id) {
-        return;
+        return Ok(());
     }
+
     let (tx, mut rx) = mpsc::channel(0xff);
     state.figterm_state.insert(session_id.clone(), FigTermSession {
         sender: tx,
         last_receive: Instant::now(),
         edit_buffer: EditBuffer::default(),
         context: None,
+        terminal_cursor_coordinates: None,
         current_session_metrics: None,
     });
-    tokio::spawn(async move {
-        let socket = fig_ipc::figterm::get_figterm_socket_path(&*session_id);
 
-        let mut stream = match fig_ipc::connect_timeout(socket.clone(), Duration::from_secs(1)).await {
+    let socket_path = directories::figterm_socket_path(&*session_id)?;
+    tokio::spawn(async move {
+        let mut stream = match fig_ipc::connect_timeout(socket_path.clone(), Duration::from_secs(1)).await {
             Ok(stream) => stream,
             Err(err) => {
-                error!("Error connecting to figterm socket at {socket:?}: {err:?}");
+                error!("Error connecting to figterm socket at {socket_path:?}: {err:?}");
                 return;
             },
         };
@@ -265,6 +273,8 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) {
         trace!("figterm session {session_id} closed");
         state.figterm_state.remove(&session_id);
     });
+
+    Ok(())
 }
 
 pub async fn clean_figterm_cache(state: Arc<GlobalState>) {

@@ -2,11 +2,11 @@ use std::time::Duration;
 
 use anyhow::Result;
 use fig_proto::local;
+use fig_util::directories;
 use system_socket::SystemStream;
 
 use super::{
     connect_timeout,
-    get_fig_socket_path,
     send_message,
 };
 
@@ -21,7 +21,7 @@ pub async fn send_hook(connection: &mut SystemStream, hook: local::Hook) -> Resu
 
 /// Send a hook directly to the Fig socket
 pub async fn send_hook_to_socket(hook: local::Hook) -> Result<()> {
-    let path = get_fig_socket_path();
+    let path = directories::fig_socket_path()?;
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
     send_hook(&mut conn, hook).await
 }

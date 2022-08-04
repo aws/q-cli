@@ -54,18 +54,18 @@ static ASSETS: Lazy<HashMap<&str, Arc<Vec<u8>>>> = Lazy::new(|| {
 
 pub type ProcessedAsset = (Arc<Vec<u8>>, AssetKind);
 
-#[cfg_attr(target_os = "macos", allow(dead_code))]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 static ASSET_CACHE: Lazy<Cache<PathBuf, ProcessedAsset>> =
     Lazy::new(|| Cache::builder().time_to_live(Duration::from_secs(120)).build());
 
-#[cfg_attr(target_os = "macos", allow(dead_code))]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 #[derive(Debug, Clone)]
 pub enum AssetKind {
     Png,
     Svg,
 }
 
-#[cfg_attr(target_os = "macos", allow(dead_code))]
+#[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     if let Some(asset) = ASSET_CACHE.get(&path) {
         trace!("icon cache hit");
@@ -108,7 +108,7 @@ fn resolve_asset(name: &str) -> (Arc<Vec<u8>>, AssetKind) {
 }
 
 fn build_asset(name: &str) -> Response {
-    trace!("building response for asset {}", name);
+    trace!("building response for asset {name}");
 
     let resolved = resolve_asset(name);
 
@@ -143,7 +143,12 @@ pub fn handle(request: &Request) -> wry::Result<Response> {
             response.replace(build_asset(name));
         }
     } else if domain == None {
-        let meta = fs::metadata(&*percent_decode_str(url.path()).decode_utf8_lossy())?;
+        let path = &*percent_decode_str(url.path()).decode_utf8_lossy();
+
+        #[cfg(windows)]
+        let path = transform_unix_to_windows_path(path);
+
+        let meta = fs::metadata(path)?;
         if meta.is_dir() {
             response.replace(build_asset("folder"));
         } else if meta.is_file() {
@@ -154,4 +159,22 @@ pub fn handle(request: &Request) -> wry::Result<Response> {
     }
 
     Ok(response.unwrap_or_else(build_default))
+}
+
+/// Translate a unix style path into a windows style path assuming root dir is the drive
+#[cfg(windows)]
+fn transform_unix_to_windows_path(path: impl AsRef<std::path::Path>) -> PathBuf {
+    use std::path::Component;
+
+    let path_components: Vec<_> = path.as_ref().components().collect();
+    match &path_components[..] {
+        [Component::RootDir, Component::Normal(drive), rest @ ..] => {
+            let mut root = std::ffi::OsString::from(drive);
+            root.push(":\\");
+            let mut path = PathBuf::from(root);
+            path.extend(rest);
+            path
+        },
+        _ => path.as_ref().to_owned(),
+    }
 }

@@ -24,12 +24,6 @@ pub enum WindowEvent {
         x: i32,
         y: i32,
     },
-    UpdateCaret {
-        x: i32,
-        y: i32,
-        width: i32,
-        height: i32,
-    },
     Resize {
         width: u32,
         height: u32,

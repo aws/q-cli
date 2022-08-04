@@ -7,15 +7,14 @@ use anyhow::{
     Context,
     Result,
 };
+use fig_util::directories;
 use time::OffsetDateTime;
 
 pub fn get_default_backup_dir() -> Result<PathBuf> {
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;
-    fig_directories::home_dir()
-        .map(|path| path.join(".fig.dotfiles.bak").join(now))
-        .context("Could not get home dir")
+    Ok(directories::home_dir().map(|path| path.join(".fig.dotfiles.bak").join(now))?)
 }
 
 pub fn backup_file(path: impl AsRef<Path>, backup_dir: Option<impl Into<PathBuf>>) -> Result<()> {

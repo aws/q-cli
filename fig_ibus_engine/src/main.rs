@@ -6,6 +6,7 @@ use std::time::{
     Instant,
 };
 
+use fig_util::directories;
 use parking_lot::Mutex;
 use tracing::{
     debug,
@@ -48,7 +49,7 @@ fn send_hook(hook: fig_proto::local::Hook) {
 }
 
 fn get_stream() -> Result<UnixStream, Instant> {
-    fig_ipc::connect_sync(fig_ipc::get_fig_socket_path()).map_err(|err| {
+    fig_ipc::connect_sync(directories::fig_socket_path().expect("Failed getting fig socket")).map_err(|err| {
         warn!("Failed connecting to socket: {err:?}");
         Instant::now()
     })
@@ -77,7 +78,7 @@ extern "C" fn cursor_callback(x: i32, y: i32, w: i32, h: i32) {
 extern "C" fn log_warning(level: u8, message: *const c_char) {
     // SAFETY: All the messages we recieve can be seen in `engine.vala`. They do not contain invalid
     // characters and they properly end with a null byte (vala upholds this).
-    let message = unsafe { CStr::from_ptr(message as *mut i8) };
+    let message = unsafe { CStr::from_ptr(message as *mut c_char) };
     if let Ok(message) = message.to_str() {
         match level {
             0 => trace!("{message}"),

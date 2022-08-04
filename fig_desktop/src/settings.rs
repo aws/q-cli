@@ -42,7 +42,7 @@ pub async fn settings_listener(global_state: Arc<GlobalState>, proxy: EventLoopP
         .configure(notify::Config::OngoingEvents(Some(Duration::from_secs_f32(2.25))))
         .unwrap();
 
-    let settings_path = match fig_settings::settings::settings_path() {
+    let settings_path = match fig_settings::settings::settings_path().ok() {
         Some(settings_path) => match settings_path.parent() {
             Some(settings_dir) => match watcher.watch(settings_dir, RecursiveMode::NonRecursive) {
                 Ok(()) => {
@@ -65,7 +65,7 @@ pub async fn settings_listener(global_state: Arc<GlobalState>, proxy: EventLoopP
         },
     };
 
-    let state_path = match fig_settings::state::state_path() {
+    let state_path = match fig_settings::state::state_path().ok() {
         Some(state_path) => match state_path.parent() {
             Some(state_dir) => match watcher.watch(state_dir, RecursiveMode::NonRecursive) {
                 Ok(()) => {

@@ -13,14 +13,12 @@ use std::path::{
 
 use anyhow::{
     bail,
-    Context,
     Result,
 };
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::FuzzySelect;
-use fig_ipc::get_fig_socket_path;
 use globset::{
     Glob,
     GlobSet,
@@ -134,7 +132,7 @@ pub fn is_app_running() -> bool {
                 Ok(result) => !result.trim().is_empty(),
                 Err(_) => false,
             }
-        } else if #[cfg(target_os = "linux")] {
+        } else {
             use sysinfo::{
                 ProcessRefreshKind,
                 RefreshKind,
@@ -143,10 +141,15 @@ pub fn is_app_running() -> bool {
             };
 
             let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name("fig_desktop");
-            processes.next().is_some()
-        } else {
-            false
+            cfg_if! {
+                if #[cfg(target_os = "windows")] {
+                    let mut processes = s.processes_by_exact_name("fig_desktop.exe");
+                    processes.next().is_some()
+                } else if #[cfg(target_os = "linux")] {
+                    let mut processes = s.processes_by_exact_name("fig_desktop");
+                    processes.next().is_some()
+                }
+            }
         }
     }
 }
@@ -176,6 +179,9 @@ impl LaunchOptions {
 }
 
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
+    use anyhow::Context;
+    use fig_util::directories::fig_socket_path;
+
     if is_app_running() {
         return Ok(());
     }
@@ -184,8 +190,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
         println!("\n→ Launching Fig...\n");
     }
 
-    let fig_socket_path = get_fig_socket_path();
-    std::fs::remove_file(&fig_socket_path).ok();
+    std::fs::remove_file(fig_socket_path()?).ok();
 
     cfg_if! {
         if #[cfg(target_os = "macos")] {
@@ -194,17 +199,24 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
                 .output()
                 .context("\nUnable to launch Fig\n")?;
         } else if #[cfg(target_os = "linux")] {
-            std::process::Command::new("systemctl")
+            let process = std::process::Command::new("systemctl")
                 .args(&["--user", "start", "fig"])
                 .output()
                 .context("\nUnable to launch Fig\n")?;
+
+            if !process.status.success() {
+                bail!("Failed to launch fig.desktop");
+            }
         } else if #[cfg(target_os = "windows")] {
+            use std::os::windows::process::CommandExt;
+            use windows::Win32::System::Threading::DETACHED_PROCESS;
+
             std::process::Command::new("fig_desktop")
-                .arg("--mission-control")
-                .output()
+                .creation_flags(DETACHED_PROCESS.0)
+                .spawn()
                 .context("\nUnable to launch Fig\n")?;
         } else {
-            compile_error!("unsupported platform")
+            compile_error!()
         }
     }
 
@@ -217,8 +229,9 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     }
 
     // Wait for socket to exist
+    let path = fig_socket_path()?;
     for _ in 0..9 {
-        if fig_socket_path.exists() {
+        if path.exists() {
             return Ok(());
         }
         // Sleep for a bit
@@ -251,7 +264,7 @@ pub fn login_message() -> String {
     )
 }
 
-pub fn get_fig_version() -> Result<(String, String)> {
+pub fn get_fig_version() -> Result<String> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             use anyhow::Context;
@@ -273,10 +286,10 @@ pub fn get_fig_version() -> Result<(String, String)> {
             };
 
             let fig_version = get_plist_field("CFBundleShortVersionString")?;
-            let fig_build_number = get_plist_field("CFBundleVersion")?;
-            Ok((fig_version, fig_build_number))
+           Ok(fig_version)
         } else {
-            Err(anyhow::anyhow!("Unsupported platform"))
+            use std::process::Command;
+            Ok(String::from_utf8_lossy(&Command::new("fig_desktop").arg("--version").output()?.stdout).into())
         }
     }
 }
@@ -316,4 +329,26 @@ pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
         .default(0)
         .with_prompt(prompt)
         .interact()?)
+}
+
+#[ignore]
+#[test]
+fn test() {
+    use sysinfo::{
+        ProcessRefreshKind,
+        RefreshKind,
+        System,
+        SystemExt,
+    };
+
+    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+    cfg_if! {
+        if #[cfg(target_os = "windows")] {
+            let mut processes = s.processes_by_name("fig_desktop");
+            assert!(processes.next().is_some());
+        } else if #[cfg(target_os = "linux")] {
+            let mut processes = s.processes_by_exact_name("fig_desktop");
+            assert!(processes.next().is_some());
+        }
+    }
 }

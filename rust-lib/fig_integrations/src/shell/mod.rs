@@ -11,7 +11,10 @@ use anyhow::{
 };
 use cfg_if::cfg_if;
 use clap::ValueEnum;
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
 use regex::{
     Regex,
     RegexSet,
@@ -51,7 +54,7 @@ pub trait ShellExt {
 
 impl ShellExt for Shell {
     fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>> {
-        let config_dir = self.get_config_directory().context("Failed to get base directories")?;
+        let config_dir = self.get_config_directory()?;
 
         let integrations: Vec<Box<dyn ShellIntegration>> = match self {
             Shell::Bash => {
@@ -199,6 +202,7 @@ impl ShellScriptShellIntegration {
         self.path.file_name().and_then(|s| s.to_str())
     }
 
+    #[allow(clippy::needless_return)]
     fn get_contents(&self) -> String {
         let Self { shell, when, path } = self;
         let rcfile = match path.file_name().and_then(|x| x.to_str()) {
@@ -221,7 +225,8 @@ impl ShellScriptShellIntegration {
                     Shell::Fish => "contains $HOME/.local/bin $fish_user_paths or set -a PATH $HOME/.local/bin",
                     _ => "PATH=\"${PATH:+\"$PATH:\"}~/.local/bin\"",
                 };
-                return format!("{add_to_path_line}\n{source_line}")
+
+                return format!("{add_to_path_line}\n{source_line}");
             }
         );
     }
@@ -285,10 +290,7 @@ impl DotfileShellIntegration {
         Ok(ShellScriptShellIntegration {
             shell: self.shell,
             when,
-            path: fig_directories::fig_dir()
-                .context("Could not get fig dir")?
-                .join("shell")
-                .join(integration_file_name),
+            path: directories::fig_dir()?.join("shell").join(integration_file_name),
         })
     }
 
@@ -334,14 +336,14 @@ impl DotfileShellIntegration {
     }
 
     fn legacy_source_text(&self, when: When) -> Result<String> {
-        let home = fig_directories::home_dir().context("Could not get home dir")?;
+        let home = directories::home_dir()?;
         let integration_path = self.script_integration(when)?.path;
         let path = integration_path.strip_prefix(home)?;
         Ok(format!(". \"$HOME/{}\"", path.display()))
     }
 
     fn source_text(&self, when: When) -> Result<String> {
-        let home = fig_directories::home_dir().context("Could not get home dir")?;
+        let home = directories::home_dir()?;
         let integration_path = self.script_integration(when)?.path;
         let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
 

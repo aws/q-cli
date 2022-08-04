@@ -214,17 +214,20 @@ mod tests {
     use super::*;
 
     fn test_message() -> local::LocalMessage {
-        let ctx = hooks::new_context(
-            Some(123),
-            Some("/dev/pty123".into()),
-            Some("/bin/bash".into()),
-            Some("/home/user".into()),
-            None,
-            None,
-            None,
-            None,
-        );
-        let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3);
+        let ctx = local::ShellContext {
+            pid: Some(123),
+            ttys: Some("/dev/pty123".into()),
+            process_name: Some("/bin/bash".into()),
+            current_working_directory: Some("/home/user".into()),
+            session_id: None,
+            integration_version: None,
+            terminal: None,
+            hostname: None,
+            remote_context: None,
+            shell_path: Some("/bin/bash".into()),
+            wsl_distro: None,
+        };
+        let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3, None);
         hooks::hook_to_message(hook)
     }
 

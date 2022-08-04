@@ -34,6 +34,7 @@ export TTY=$(tty)
 export FIG_PID="$$"
 
 FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
+FIG_SHELL_PATH=$(fig _ get-shell)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
   FIG_IN_DOCKER=1
@@ -83,6 +84,10 @@ fig_precmd() {
   fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
+  fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"
+  if [[ -n "${WSL_DISTRO_NAME}" ]]; then
+    fig_osc "WSLDistro=%s" "${WSL_DISTRO_NAME}"
+  fi
   fig_osc "PID=%d" "$$"
   fig_osc "SessionId=%s" "${TERM_SESSION_ID}"
   fig_osc "ExitCode=%s" "${LAST_STATUS}"

@@ -32,7 +32,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     // currently support async, this should be improved in the future, but currently this works fine
 
     let settings_path = fig_settings::settings::settings_path().context("Could not get settings path")?;
-    let state_path = fig_settings::state::state_path().context("Could not get state path")?;
+    let state_path = fig_settings::state::state_path()?;
     let application_path = "/Applications/Fig.app";
 
     let (settings_watcher_tx, settings_watcher_rx) = std::sync::mpsc::channel();

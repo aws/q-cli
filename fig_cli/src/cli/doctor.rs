@@ -28,7 +28,6 @@ use crossterm::{
     cursor,
     execute,
 };
-use fig_directories::home_dir;
 use fig_integrations::shell::{
     ShellExt,
     ShellIntegration,
@@ -36,7 +35,6 @@ use fig_integrations::shell::{
 use fig_integrations::InstallationError;
 use fig_ipc::{
     connect_timeout,
-    get_fig_socket_path,
     send_recv_message_timeout,
 };
 use fig_proto::daemon::diagnostic_response::{
@@ -50,6 +48,7 @@ use fig_telemetry::{
     TrackSource,
 };
 use fig_util::{
+    directories,
     get_parent_process_exe,
     Shell,
     Terminal,
@@ -149,6 +148,17 @@ impl From<anyhow::Error> for DoctorError {
             info: vec![],
             fix: None,
             error: Some(err),
+        }
+    }
+}
+
+impl From<fig_util::Error> for DoctorError {
+    fn from(err: fig_util::Error) -> Self {
+        DoctorError::Error {
+            reason: err.to_string().into(),
+            info: vec![],
+            fix: None,
+            error: Some(anyhow::Error::from(err)),
         }
     }
 }
@@ -355,11 +365,12 @@ impl DoctorCheck for FigBinCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = fig_directories::fig_dir().context("couldn't get home directory")?;
+        let path = directories::fig_dir().map_err(anyhow::Error::from)?;
         Ok(check_file_exists(&path)?)
     }
 }
 
+#[cfg(unix)]
 macro_rules! path_check {
     ($name:ident, $path:expr) => {
         struct $name;
@@ -380,6 +391,7 @@ macro_rules! path_check {
     };
 }
 
+#[cfg(unix)]
 path_check!(LocalBinPathCheck, ".local/bin");
 #[cfg(target_os = "macos")]
 path_check!(FigBinPathCheck, ".fig/bin");
@@ -431,7 +443,7 @@ impl DoctorCheck for FigSocketCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let fig_socket_path = get_fig_socket_path();
+        let fig_socket_path = directories::fig_socket_path()?;
         let parent = fig_socket_path.parent().map(PathBuf::from);
 
         if let Some(parent) = parent {
@@ -448,7 +460,7 @@ impl DoctorCheck for FigSocketCheck {
             }
         }
 
-        check_file_exists(&get_fig_socket_path()).map_err(|_| {
+        check_file_exists(directories::fig_socket_path().expect("No home directory")).map_err(|_| {
             doctor_fix_async!({
                 reason: "Fig socket missing",
                 fix: restart_fig()
@@ -711,8 +723,8 @@ impl DoctorCheck for InsertionLockCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let insetion_lock_path = fig_directories::fig_dir()
-            .context("Could not get fig dir")?
+        let insetion_lock_path = directories::fig_dir()
+            .map_err(anyhow::Error::from)?
             .join("insertion-lock");
 
         if insetion_lock_path.exists() {
@@ -760,8 +772,8 @@ impl DoctorCheck for DaemonCheck {
         {
             use std::io::Write;
 
-            let launch_agents_path = fig_directories::home_dir()
-                .context("Could not get home dir")?
+            let launch_agents_path = fig_util::directories::home_dir()
+                .map_err(anyhow::Error::from)?
                 .join("Library/LaunchAgents");
 
             if !launch_agents_path.exists() {
@@ -804,7 +816,7 @@ impl DoctorCheck for DaemonCheck {
             Some(0) => Ok(()),
             Some(n) => {
                 let error_message = tokio::fs::read_to_string(
-                    &fig_directories::fig_dir()
+                    &directories::fig_dir()
                         .context("Could not get fig dir")?
                         .join("logs")
                         .join("daemon-exit.log"),
@@ -832,7 +844,7 @@ impl DoctorCheck for DaemonCheck {
         }?;
 
         // Get diagnostics from the daemon
-        let socket_path = fig_ipc::daemon::get_daemon_socket_path();
+        let socket_path = directories::daemon_socket_path();
 
         if !socket_path.exists() {
             return Err(DoctorError::Error {
@@ -934,7 +946,8 @@ struct DotfileCheck {
 #[async_trait]
 impl DoctorCheck<Option<Shell>> for DotfileCheck {
     fn name(&self) -> Cow<'static, str> {
-        let path = home_dir()
+        let path = directories::home_dir()
+            .ok()
             .and_then(|home_dir| self.integration.path().strip_prefix(&home_dir).ok().map(PathBuf::from))
             .map(|path| format!("~/{}", path.display()))
             .unwrap_or_else(|| self.integration.path().display().to_string());
@@ -1169,12 +1182,8 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe().context("Could not get executable path.")?;
-        let fig_bin_path = fig_directories::fig_dir().unwrap().join("bin").join("fig");
-        let local_bin_path = fig_directories::home_dir()
-            .unwrap()
-            .join(".local")
-            .join("bin")
-            .join("fig");
+        let fig_bin_path = directories::fig_dir().unwrap().join("bin").join("fig");
+        let local_bin_path = directories::home_dir().unwrap().join(".local").join("bin").join("fig");
 
         if path == fig_bin_path
             || path == local_bin_path
@@ -1370,7 +1379,7 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
                 },
             }
 
-            let integration_path = fig_directories::home_dir()
+            let integration_path = directories::home_dir()
                 .context("Could not get home dir")?
                 .join("Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt");
             if !integration_path.exists() {
@@ -1401,8 +1410,8 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
 
     fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
-            match fig_directories::home_dir() {
-                Some(home) => {
+            match directories::home_dir() {
+                Ok(home) => {
                     if !home.join(".iterm2_shell_integration.bash").exists() {
                         DoctorCheckType::NoCheck
                     } else if matches!(current_terminal.to_owned(), Some(Terminal::Iterm)) {
@@ -1411,7 +1420,7 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
                         DoctorCheckType::SoftCheck
                     }
                 },
-                None => DoctorCheckType::NoCheck,
+                Err(_) => DoctorCheckType::NoCheck,
             }
         } else {
             DoctorCheckType::NoCheck
@@ -1419,9 +1428,7 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
     }
 
     async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
-        let integration_file = fig_directories::home_dir()
-            .unwrap()
-            .join(".iterm2_shell_integration.bash");
+        let integration_file = directories::home_dir().unwrap().join(".iterm2_shell_integration.bash");
         let integration = read_to_string(integration_file).context("Could not read .iterm2_shell_integration.bash")?;
 
         match Regex::new(r"V(\d*\.\d*\.\d*)").unwrap().captures(&integration) {
@@ -1470,7 +1477,7 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
 
         if integration != "installed!" {
             // Check ~/.hyper_plugins/local/fig-hyper-integration/index.js exists
-            let integration_path = fig_directories::home_dir()
+            let integration_path = directories::home_dir()
                 .context("Could not get home dir")?
                 .join(".hyper_plugins/local/fig-hyper-integration/index.js");
 
@@ -1479,7 +1486,7 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
             }
 
             let config = read_to_string(
-                fig_directories::home_dir()
+                directories::home_dir()
                     .context("Could not get home dir")?
                     .join(".hyper.js"),
             )
@@ -1547,7 +1554,7 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
 
         if integration != "installed!" {
             // Check if withfig.fig exists
-            let extensions = fig_directories::home_dir()
+            let extensions = directories::home_dir()
                 .context("Could not get home dir")?
                 .join(".vscode")
                 .join("extensions");
@@ -1890,13 +1897,16 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "Let's make sure Fig is running...".into(),
             vec![
                 &FigBinCheck {},
+                #[cfg(unix)]
                 &LocalBinPathCheck {},
                 #[cfg(target_os = "macos")]
                 &FigBinPathCheck {},
                 &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
+                #[cfg(unix)]
                 &DaemonCheck {},
+                #[cfg(unix)]
                 &FigtermSocketCheck {},
                 &InsertionLockCheck {},
                 &PseudoTerminalPathCheck {},

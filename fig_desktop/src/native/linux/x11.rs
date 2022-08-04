@@ -26,7 +26,6 @@ use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
 use crate::event::WindowEvent;
-use crate::window::CursorPositionKind;
 use crate::{
     Event,
     EventLoopProxy,
@@ -61,8 +60,6 @@ mod atoms {
         })
     }
 }
-
-pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Absolute;
 
 pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");

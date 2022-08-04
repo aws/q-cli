@@ -9,6 +9,10 @@ use serde::{
 };
 
 use crate::process_info::get_parent_process_exe;
+use crate::{
+    directories,
+    Error,
+};
 
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
@@ -65,20 +69,26 @@ impl Shell {
     }
 
     /// Get the directory for the shell that contains the dotfiles
-    pub fn get_config_directory(&self) -> Option<PathBuf> {
+    pub fn get_config_directory(&self) -> Result<PathBuf, Error> {
         match self {
-            Shell::Bash => fig_directories::home_dir(),
-            Shell::Zsh => std::env::var_os("ZDOTDIR")
+            Shell::Bash => Ok(directories::home_dir()?),
+            Shell::Zsh => match std::env::var_os("ZDOTDIR")
                 .or_else(|| std::env::var_os("FIG_ZDOTDIR"))
                 .map(PathBuf::from)
-                .or_else(fig_directories::home_dir),
-            Shell::Fish => std::env::var_os("__fish_config_dir")
-                .map(PathBuf::from)
-                .or_else(|| fig_directories::home_dir().map(|home| home.join(".config").join("fish"))),
+            {
+                Some(dir) => Ok(dir),
+                None => Ok(directories::home_dir()?),
+            },
+            Shell::Fish => match std::env::var_os("__fish_config_dir").map(PathBuf::from) {
+                Some(dir) => Ok(dir),
+                None => Ok(directories::home_dir().map(|home| home.join(".config").join("fish"))?),
+            },
         }
     }
 
-    pub fn get_data_path(&self) -> Option<PathBuf> {
-        fig_directories::fig_data_dir().map(|dir| dir.join("shell").join(format!("{}.json", self)))
+    pub fn get_data_path(&self) -> Result<PathBuf, Error> {
+        Ok(directories::fig_data_dir()?
+            .join("shell")
+            .join(format!("{}.json", self)))
     }
 }

@@ -1,23 +1,23 @@
 pub mod cli;
 pub mod history;
+pub mod input;
 pub mod interceptor;
 pub mod ipc;
 pub mod logger;
 pub mod pty;
 pub mod term;
 
-use std::ffi::CString;
+use std::env;
+#[cfg(unix)]
+use std::ffi::{
+    CString,
+    OsStr,
+};
 use std::iter::repeat;
-use std::os::unix::prelude::AsRawFd;
-use std::process::exit;
 use std::str::FromStr;
 use std::time::{
     Duration,
     SystemTime,
-};
-use std::{
-    env,
-    vec,
 };
 
 use alacritty_terminal::ansi::Processor;
@@ -25,6 +25,7 @@ use alacritty_terminal::event::{
     Event,
     EventListener,
 };
+use alacritty_terminal::grid::Dimensions;
 use alacritty_terminal::term::{
     CommandInfo,
     ShellState,
@@ -37,6 +38,7 @@ use anyhow::{
     Context,
     Result,
 };
+use cfg_if::cfg_if;
 use clap::StructOpt;
 use cli::Cli;
 use fig_proto::figterm::intercept_command::SetFigjsIntercepts;
@@ -49,7 +51,6 @@ use fig_proto::figterm::{
 };
 use fig_proto::hooks::{
     hook_to_message,
-    new_context,
     new_edit_buffer_hook,
     new_preexec_hook,
     new_prompt_hook,
@@ -57,6 +58,7 @@ use fig_proto::hooks::{
 use fig_proto::local::{
     self,
     LocalMessage,
+    TerminalCursorCoordinates,
 };
 use fig_settings::state;
 use fig_telemetry::sentry::{
@@ -64,31 +66,26 @@ use fig_telemetry::sentry::{
     configure_scope,
     release_name,
 };
-use fig_util::Terminal;
+use fig_util::process_info::{
+    Pid,
+    PidExt,
+};
+use fig_util::Terminal as FigTerminal;
 use flume::Sender;
-use nix::libc::STDIN_FILENO;
-use nix::sys::termios::{
-    tcgetattr,
-    tcsetattr,
-    SetArg,
-};
-use nix::unistd::{
-    execvp,
-    getpid,
-    isatty,
-};
+#[cfg(unix)]
+use nix::unistd::execvp;
 use once_cell::sync::Lazy;
 use parking_lot::lock_api::RawRwLock;
 use parking_lot::{
     Mutex,
     RwLock,
 };
+use portable_pty::PtySize;
 use tokio::io::{
     self,
-    AsyncReadExt,
     AsyncWriteExt,
 };
-use tokio::signal::unix::SignalKind;
+use tokio::sync::oneshot;
 use tokio::{
     runtime,
     select,
@@ -102,9 +99,11 @@ use tracing::{
     warn,
 };
 
-use crate::interceptor::terminal_input_parser::{
+use crate::input::{
+    InputEvent,
     KeyCode,
-    KeyModifiers,
+    KeyCodeEncodeModes,
+    KeyboardEncoding,
 };
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
@@ -113,16 +112,17 @@ use crate::ipc::{
     spawn_outgoing_sender,
 };
 use crate::logger::init_logger;
-use crate::pty::async_pty::AsyncPtyMaster;
+#[cfg(unix)]
+use crate::pty::unix::open_pty;
+#[cfg(windows)]
+use crate::pty::win::open_pty;
 use crate::pty::{
-    fork_pty,
-    ioctl_tiocswinsz,
-    PtyForkResult,
+    AsyncMasterPty,
+    CommandBuilder,
 };
 use crate::term::{
-    get_winsize,
-    read_winsize,
-    termios_to_raw,
+    SystemTerminal,
+    Terminal,
 };
 
 const BUFFER_SIZE: usize = 4096;
@@ -142,7 +142,7 @@ impl EventSender {
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
-    let terminal = Terminal::parent_terminal().map(|s| s.internal_id());
+    let terminal = FigTerminal::parent_terminal().map(|s| s.to_string());
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .map(|s| s.parse().ok())
@@ -150,39 +150,53 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         .flatten()
         .unwrap_or(8);
 
-    let mut context = new_context(
-        shell_state.local_context.pid,
-        shell_state.local_context.tty.clone(),
-        shell_state.local_context.shell.clone(),
-        shell_state
-            .local_context
-            .current_working_directory
-            .clone()
-            .map(|cwd| cwd.display().to_string()),
-        shell_state.local_context.session_id.clone(),
-        Some(integration_version),
-        terminal.clone(),
-        shell_state.local_context.hostname.clone(),
-    );
-
-    if shell_state.in_ssh || shell_state.in_docker {
-        let remote_context = new_context(
-            shell_state.remote_context.pid,
-            shell_state.remote_context.tty.clone(),
-            shell_state.remote_context.shell.clone(),
-            shell_state
+    let remote_context = if shell_state.in_ssh || shell_state.in_docker {
+        Some(Box::new(local::ShellContext {
+            pid: shell_state.remote_context.pid,
+            ttys: shell_state.remote_context.tty.clone(),
+            process_name: shell_state.remote_context.shell.clone(),
+            shell_path: shell_state
+                .remote_context
+                .shell_path
+                .clone()
+                .map(|path| path.display().to_string()),
+            wsl_distro: shell_state.remote_context.wsl_distro.clone(),
+            current_working_directory: shell_state
                 .remote_context
                 .current_working_directory
                 .clone()
                 .map(|cwd| cwd.display().to_string()),
-            shell_state.remote_context.session_id.clone(),
-            Some(integration_version),
-            terminal,
-            shell_state.remote_context.hostname.clone(),
-        );
-        context.remote_context = Some(Box::new(remote_context));
+            session_id: shell_state.remote_context.session_id.clone(),
+            integration_version: Some(integration_version),
+            terminal: terminal.clone(),
+            hostname: shell_state.remote_context.hostname.clone(),
+            remote_context: None,
+        }))
+    } else {
+        None
+    };
+
+    local::ShellContext {
+        pid: shell_state.local_context.pid,
+        ttys: shell_state.local_context.tty.clone(),
+        process_name: shell_state.local_context.shell.clone(),
+        shell_path: shell_state
+            .local_context
+            .shell_path
+            .clone()
+            .map(|path| path.display().to_string()),
+        wsl_distro: shell_state.local_context.wsl_distro.clone(),
+        current_working_directory: shell_state
+            .local_context
+            .current_working_directory
+            .clone()
+            .map(|cwd| cwd.display().to_string()),
+        session_id: shell_state.local_context.session_id.clone(),
+        integration_version: Some(integration_version),
+        terminal,
+        hostname: shell_state.local_context.hostname.clone(),
+        remote_context,
     }
-    context
 }
 
 impl EventListener for EventSender {
@@ -195,7 +209,7 @@ impl EventListener for EventSender {
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
                 if let Err(err) = self.socket_sender.send(message) {
-                    error!("Sender error: {:?}", err);
+                    error!("Sender error: {err:?}");
                 }
             },
             Event::PreExec => {
@@ -203,12 +217,12 @@ impl EventListener for EventSender {
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
                 if let Err(err) = self.socket_sender.send(message) {
-                    error!("Sender error: {:?}", err);
+                    error!("Sender error: {err:?}");
                 }
             },
             Event::CommandInfo(command_info) => {
                 if let Err(err) = self.history_sender.send(command_info.clone()) {
-                    error!("Sender error: {:?}", err);
+                    error!("Sender error: {err:?}");
                 }
             },
             Event::ShellChanged => {
@@ -232,6 +246,27 @@ impl EventListener for EventSender {
                 .and_then(|level| LevelFilter::from_str(&level).ok())
                 .unwrap_or(LevelFilter::INFO),
         );
+    }
+}
+
+#[allow(clippy::needless_return)]
+fn get_cursor_coordinates(terminal: &mut dyn Terminal) -> Option<TerminalCursorCoordinates> {
+    cfg_if! {
+        if #[cfg(target_os = "windows")] {
+            use term::cast;
+
+            let coordinate = terminal.get_cursor_coordinate().ok()?;
+            let screen_size = terminal.get_screen_size().ok()?;
+            return Some(TerminalCursorCoordinates {
+                x: cast(coordinate.cols).ok()?,
+                y: cast(coordinate.rows).ok()?,
+                xpixel: cast(screen_size.xpixel).ok()?,
+                ypixel: cast(screen_size.ypixel).ok()?,
+            });
+        } else {
+            let _terminal = terminal;
+            return None;
+        }
     }
 }
 
@@ -282,7 +317,11 @@ where
     shell_enabled && !insertion_locked && !prexec
 }
 
-async fn send_edit_buffer<T>(term: &Term<T>, sender: &Sender<LocalMessage>) -> Result<()>
+async fn send_edit_buffer<T>(
+    term: &Term<T>,
+    sender: &Sender<LocalMessage>,
+    cursor_coordinates: Option<TerminalCursorCoordinates>,
+) -> Result<()>
 where
     T: EventListener,
 {
@@ -294,7 +333,9 @@ where
                 trace!("buffer chars: {:?}", edit_buffer.buffer.chars().collect::<Vec<_>>());
 
                 let context = shell_state_to_context(term.shell_state());
-                let edit_buffer_hook = new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0);
+
+                let edit_buffer_hook =
+                    new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0, cursor_coordinates);
                 let message = hook_to_message(edit_buffer_hook);
 
                 debug!("Sending: {:?}", message);
@@ -311,7 +352,7 @@ async fn process_figterm_message(
     figterm_message: FigtermMessage,
     response_tx: Sender<FigtermResponse>,
     term: &Term<EventSender>,
-    pty_master: &mut AsyncPtyMaster,
+    pty_master: &mut Box<dyn AsyncMasterPty + Send + Sync>,
     key_interceptor: &mut KeyInterceptor,
 ) -> Result<()> {
     match figterm_message.command {
@@ -429,325 +470,332 @@ async fn process_figterm_message(
     Ok(())
 }
 
-fn launch_shell() -> Result<()> {
-    let parent_shell = match env::var("FIG_SHELL").ok().filter(|s| !s.is_empty()) {
-        Some(v) => v,
+fn get_parent_shell() -> Result<String> {
+    match env::var("FIG_SHELL").ok().filter(|s| !s.is_empty()) {
+        Some(v) => Ok(v),
         None => match env::var("SHELL").ok().filter(|s| !s.is_empty()) {
-            Some(shell) => shell,
+            Some(shell) => Ok(shell),
             None => {
                 anyhow::bail!("No FIG_SHELL or SHELL found");
             },
         },
-    };
+    }
+}
 
-    let parent_shell_is_login = env::var("FIG_IS_LOGIN_SHELL").ok().filter(|s| !s.is_empty());
-    let parent_shell_extra_args = env::var("FIG_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty());
+fn build_shell_command() -> Result<CommandBuilder> {
+    let parent_shell = get_parent_shell()?;
+    let mut builder = CommandBuilder::new(&parent_shell);
 
-    let parent_shell_execution_string = env::var("FIG_EXECUTION_STRING").ok().filter(|s| !s.is_empty());
-
-    let mut args = vec![CString::new(&*parent_shell).expect("Failed to convert shell name to CString")];
-
-    if parent_shell_is_login.as_deref() == Some("1") {
-        args.push(CString::new("--login").expect("Failed to convert arg to CString"));
+    if env::var("FIG_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
+        builder.arg("--login");
     }
 
-    if let Some(execution_string) = parent_shell_execution_string {
-        args.push(CString::new("-c").expect("Failed to convert -c flag to CString"));
-        args.push(CString::new(execution_string).expect("Failed to convert execution string to CString"));
+    if let Some(execution_string) = env::var("FIG_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
+        builder.args(["-c", &execution_string]);
     }
 
-    if let Some(extra_args) = parent_shell_extra_args {
-        args.extend(
-            extra_args
-                .split_whitespace()
-                .filter(|arg| arg != &"--login")
-                .filter_map(|arg| CString::new(arg).ok()),
-        );
+    if let Some(extra_args) = env::var("FIG_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
+        builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
     }
 
-    env::set_var("FIG_TERM", "1");
-    env::set_var("FIG_TERM_VERSION", env!("CARGO_PKG_VERSION"));
+    builder.env("FIG_TERM", "1");
+    builder.env("FIG_TERM_VERSION", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
-        env::set_var("FIG_TERM_TMUX", "1");
+        builder.env("FIG_TERM_TMUX", "1");
     }
 
     // Clean up environment and launch shell.
-    env::remove_var("FIG_SHELL");
-    env::remove_var("FIG_IS_LOGIN_SHELL");
-    env::remove_var("FIG_START_TEXT");
-    env::remove_var("FIG_SHELL_EXTRA_ARGS");
-    env::remove_var("FIG_EXECUTION_STRING");
+    builder.env_remove("FIG_SHELL");
+    builder.env_remove("FIG_IS_LOGIN_SHELL");
+    builder.env_remove("FIG_START_TEXT");
+    builder.env_remove("FIG_SHELL_EXTRA_ARGS");
+    builder.env_remove("FIG_EXECUTION_STRING");
 
-    execvp(&args[0], &args).expect("Failed to execvp");
+    Ok(builder)
+}
+
+#[cfg(unix)]
+fn launch_shell() -> Result<()> {
+    let cmd = build_shell_command()?.as_command()?;
+    let mut args: Vec<&OsStr> = std::vec![cmd.get_program()];
+    args.extend(cmd.get_args());
+
+    let cargs: Vec<_> = args
+        .into_iter()
+        .map(|arg| CString::new(arg.to_string_lossy().as_ref()).expect("Failed to convert arg to CString"))
+        .collect();
+    for (key, val) in cmd.get_envs() {
+        match val {
+            Some(value) => env::set_var(key, value),
+            None => {
+                env::remove_var(key);
+            },
+        }
+    }
+
+    execvp(&cargs[0], &cargs).expect("Failed to execvp");
     unreachable!()
 }
 
 fn figterm_main() -> Result<()> {
     let term_session_id = env::var("TERM_SESSION_ID").context("Failed to get TERM_SESSION_ID environment variable")?;
+    let mut terminal = SystemTerminal::new_from_stdio()?;
+    let screen_size = terminal.get_screen_size()?;
 
-    logger::stdio_debug_log("Checking stdin fd is a tty");
+    let pty_size = PtySize {
+        rows: screen_size.rows as u16,
+        cols: screen_size.cols as u16,
+        pixel_width: screen_size.xpixel as u16,
+        pixel_height: screen_size.ypixel as u16,
+    };
 
-    // Check that stdin is a tty
-    if !isatty(STDIN_FILENO).context("Failed to check if stdin is a tty")? {
-        anyhow::bail!("stdin is not a tty");
-    }
+    let pty = open_pty(&pty_size).context("Failed to open pty")?;
+    let command = build_shell_command()?;
 
-    // Get term data
-    let termios = tcgetattr(STDIN_FILENO).context("Failed to get terminal attributes")?;
-    let old_termios = termios.clone();
-
-    let mut winsize = get_winsize(STDIN_FILENO).context("Failed to get terminal size")?;
-
+    let pty_name = pty.slave.get_name().unwrap_or_else(|| term_session_id.clone());
+    logger::stdio_debug_log(format!("pty name: {}", pty_name));
+    init_logger(&pty_name).context("Failed to init logger")?;
     logger::stdio_debug_log("Forking child shell process");
+    let mut child = pty.slave.spawn_command(command)?;
+    let (child_tx, mut child_rx) = oneshot::channel();
+    info!("Shell: {:?}", child.process_id());
+    std::thread::spawn(move || child_tx.send(child.wait()));
+    info!("Figterm: {}", Pid::current());
+    info!("Pty name: {}", pty_name);
 
-    let ai_beta = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
+    terminal.set_raw_mode()?;
 
-    // Fork pseudoterminal
-    // SAFETY: forkpty is safe to call, but the child must not call any functions
-    // that are not async-signal-safe.
-    match fork_pty(&old_termios, &winsize).context("Failed to fork pty")? {
-        PtyForkResult::Parent(pt_details, pid) => {
-            let runtime = runtime::Builder::new_multi_thread()
-                .enable_all()
-                .thread_name("figterm-runtime-worker")
-                .build()?;
+    let runtime = runtime::Builder::new_multi_thread()
+        .enable_all()
+        .thread_name("figterm-runtime-worker")
+        .build()?;
+    let runtime_result = runtime.block_on(async {
+        let history_sender = history::spawn_history_task().await;
+        // Spawn thread to handle outgoing data to main Fig app
+        let outgoing_sender = spawn_outgoing_sender().await?;
 
-            init_logger(&pt_details.pty_name).context("Failed to init logger")?;
+        // Spawn thread to handle incoming data
+        let incoming_receiver = spawn_incoming_receiver(&term_session_id).await?;
 
-            match runtime
-                .block_on(async {
-                    info!("Shell: {}", pid);
-                    info!("Figterm: {}", getpid());
-                    info!("Pty name: {}", pt_details.pty_name);
+        let mut stdout = io::stdout();
+        let mut master = pty.master.get_async_master_pty()?;
 
-                    let history_sender = history::spawn_history_task().await;
+        let mut processor = Processor::new();
+        let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
 
-                    let raw_termios = termios_to_raw(termios);
-                    tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &raw_termios)?;
-                    trace!("Set raw termios");
+        let event_sender = EventSender::new(outgoing_sender.clone(), history_sender);
 
-                    // Spawn thread to handle outgoing data to main Fig app
-                    let outgoing_sender = spawn_outgoing_sender().await?;
+        let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
-                    // Spawn thread to handle incoming data
-                    let incomming_receiver = spawn_incoming_receiver(&term_session_id).await?;
+        #[cfg(windows)]
+        term.set_windows_delay_end_prompt(true);
 
-                    let mut stdin = io::stdin();
-                    let mut stdout = io::stdout();
-                    let mut master = AsyncPtyMaster::new(pt_details.pty_master)?;
+        let mut write_buffer = [0u8; BUFFER_SIZE];
 
-                    let mut window_change_signal = tokio::signal::unix::signal(
-                        SignalKind::window_change(),
-                    )?;
+        let mut key_interceptor = KeyInterceptor::new();
+        key_interceptor.load_key_intercepts()?;
 
-                    let mut processor = Processor::new();
-                    let mut window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
+        let mut first_time = true;
 
-                    let event_sender = EventSender::new(outgoing_sender.clone(), history_sender);
+        let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
 
-                    let mut term = alacritty_terminal::Term::new(window_size, event_sender, 1);
+        let input_rx = terminal.read_input()?;
 
-                    let mut read_buffer = [0u8; BUFFER_SIZE];
-                    let mut write_buffer = [0u8; BUFFER_SIZE];
+        let modes = KeyCodeEncodeModes {
+            #[cfg(unix)]
+            encoding: KeyboardEncoding::Xterm,
+            #[cfg(windows)]
+            encoding: KeyboardEncoding::Win32,
+            application_cursor_keys: false,
+            newline_mode: false,
+        };
 
-                    let mut key_interceptor = KeyInterceptor::new();
-                    key_interceptor.load_key_intercepts()?;
+        let ai_beta = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
 
-                    // TODO: Write initial text to pty
-
-                    let mut first_time = true;
-
-                    let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
-
-                    let result: Result<()> = 'select_loop: loop {
-                        if first_time && term.shell_state().has_seen_prompt {
-                            trace!("Has seen prompt and first time");
-                            let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
-                            if let Some(mut initial_command) = initial_command {
-                                debug!("Sending initial text: {}", initial_command);
-                                initial_command.push('\n');
-                                if let Err(e) = master.write(initial_command.as_bytes()).await {
-                                    error!("Failed to write initial command: {}", e);
-                                }
-                            }
-                            first_time = false;
-                        }
-
-                        let select_result: Result<()> = select! {
-                            biased;
-                            res = stdin.read(&mut read_buffer) => {
-                                match res {
-                                    Ok(size) => match std::str::from_utf8(&read_buffer[..size]) {
-                                        Ok(s) => {
-                                            trace!("Read {size} bytes from input: {s:?}");
-                                            match interceptor::parse_code(s.as_bytes()) {
-                                                Some((key_code, modifier)) => {
-                                                    if ai_beta && key_code == KeyCode::Enter && modifier == KeyModifiers::NONE {
-                                                        if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
-                                                            let buffer = buffer.trim();
-                                                            if buffer.len() > 1 && buffer.starts_with('#') && window_size.columns > buffer.len() {
-                                                                master.write(
-                                                                    &repeat(b'\x08')
-                                                                        .take(buffer.len()
-                                                                        .max(cursor_idx.unwrap_or(0)))
-                                                                        .collect::<Vec<_>>()
-                                                                ).await?;
-                                                                master.write(
-                                                                    format!(
-                                                                        "fig ai '{}'\r", 
-                                                                        buffer
-                                                                            .trim_start_matches('#')
-                                                                            .trim()
-                                                                            .replace('\'', "'\"'\"'")
-                                                                        ).as_bytes()
-                                                                ).await?;
-                                                                continue 'select_loop;
-                                                            }
-                                                        }
-                                                    }
-
-                                                    match key_interceptor.intercept_key(key_code.clone(), &modifier) {
-                                                        Some(action) => {
-                                                            debug!("Action: {action:?}");
-                                                            let hook =
-                                                                fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
-                                                            outgoing_sender.send(hook_to_message(hook)).unwrap();
-
-                                                            if key_code == KeyCode::Esc {
-                                                                key_interceptor.reset();
-                                                            }
-
-                                                            continue 'select_loop;
-                                                        }
-                                                        None => {}
-                                                    }
-                                                }
-                                                None => {}
-                                            }
-
-                                            master.write(s.as_bytes()).await?;
-                                            Ok(())
-                                        }
-                                        Err(err) => {
-                                            error!("Failed to convert utf8: {err}");
-                                            trace!("Read {} bytes from input: {:?}", size, &read_buffer[..size]);
-                                            master.write(&read_buffer[..size]).await?;
-                                            Ok(())
-                                        }
-                                    },
-                                    Err(err) => {
-                                        error!("Failed to read from stdin: {err}");
-                                        Err(err.into())
-                                    }
-                                }
-                            }
-                            _ = window_change_signal.recv() => {
-                                unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
-                                unsafe { ioctl_tiocswinsz(master.as_raw_fd(), &winsize) }?;
-                                window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
-                                debug!("Window size changed: {window_size:?}");
-                                term.resize(window_size);
-                                Ok(())
-                            }
-                            res = master.read(&mut write_buffer) => {
-                                match res {
-                                    Ok(0) => {
-                                        trace!("EOF from master");
-                                        break 'select_loop Ok(());
-                                    }
-                                    Ok(size) => {
-                                        trace!("Read {size} bytes from master");
-
-                                        for byte in &write_buffer[..size] {
-                                            processor.advance(&mut term, *byte);
-                                        }
-
-                                        stdout.write_all(&write_buffer[..size]).await?;
-                                        stdout.flush().await?;
-
-                                        if can_send_edit_buffer(&term) {
-                                            if let Err(err) = send_edit_buffer(&term, &outgoing_sender).await {
-                                                warn!("Failed to send edit buffer: {err}");
-                                            }
-                                        }
-
-                                        Ok(())
-                                    }
-                                    Err(err) => {
-                                        error!("Failed to read from master: {err}");
-                                        if let Err(err) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
-                                            error!("Failed to restore terminal settings: {err}");
-                                        }
-                                        std::process::exit(0);
-                                    }
-                                }
-                            }
-                            msg = incomming_receiver.recv_async() => {
-                                match msg {
-                                    Ok((buf, response_tx)) => {
-                                        debug!("Received message from socket: {buf:?}");
-                                        process_figterm_message(
-                                            buf, response_tx, &term, &mut master, &mut key_interceptor).await?;
-                                    }
-                                    Err(err) => {
-                                        error!("Failed to receive message from socket: {err}");
-                                    }
-                                }
-                                Ok(())
-                            }
-                            // Check if to send the edit buffer because of timeout
-                            _ = edit_buffer_interval.tick() => {
-                                let send_eb = INSERTION_LOCKED_AT.read().is_some();
-                                if send_eb && can_send_edit_buffer(&term) {
-                                    if let Err(err) = send_edit_buffer(&term, &outgoing_sender).await {
-                                        warn!("Failed to send edit buffer: {err}");
-                                    }
-                                }
-                                Ok(())
-                            }
-                        };
-
-                        if let Err(err) = select_result {
-                            error!("Error in select loop: {err}");
-                            break 'select_loop Err(err);
-                        }
-                    };
-
-                    remove_socket(&term_session_id).await?;
-
-                    result
-                }) {
-                    Ok(()) => {
-                        if let Err(err) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
-                            error!("Failed to restore terminal settings: {err}");
-                        }
-
-                        info!("Exiting");
-                        exit(0);
-                    },
-                    Err(err) => {
-                        if let Err(err) = tcsetattr(STDIN_FILENO, SetArg::TCSAFLUSH, &old_termios) {
-                            error!("Failed to restore terminal settings: {err}");
-                        }
-
-                        error!("Error in async runtime: {err}");
-                        Err(err)
-                    },
+        let result: Result<()> = 'select_loop: loop {
+            if first_time && term.shell_state().has_seen_prompt {
+                trace!("Has seen prompt and first time");
+                let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
+                if let Some(mut initial_command) = initial_command {
+                    debug!("Sending initial text: {}", initial_command);
+                    initial_command.push('\n');
+                    if let Err(e) = master.write(initial_command.as_bytes()).await {
+                        error!("Failed to write initial command: {}", e);
+                    }
                 }
-        },
-        PtyForkResult::Child => {
-            // DO NOT RUN ANY FUNCTIONS THAT ARE NOT ASYNC SIGNAL SAFE
-            // https://man7.org/linux/man-pages/man7/signal-safety.7.html
-            match launch_shell() {
-                Ok(()) => Ok(()),
-                Err(err) => {
-                    println!("ERROR: {err:?}");
-                    capture_anyhow(&err);
-                    Err(err)
-                },
+                first_time = false;
             }
-        },
-    }
+
+            let select_result: Result<()> = select! {
+                biased;
+                res = input_rx.recv_async() => {
+                    match res {
+                        Ok(Ok(InputEvent::Key(event))) => {
+                            if ai_beta && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                                if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
+                                    let buffer = buffer.trim();
+                                    if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {
+                                        master.write(
+                                            &repeat(b'\x08')
+                                                .take(buffer.len()
+                                                .max(cursor_idx.unwrap_or(0)))
+                                                .collect::<Vec<_>>()
+                                        ).await?;
+                                        master.write(
+                                            format!(
+                                                "fig ai '{}'\r",
+                                                buffer
+                                                    .trim_start_matches('#')
+                                                    .trim()
+                                                    .replace('\'', "'\"'\"'")
+                                                ).as_bytes()
+                                        ).await?;
+                                        continue 'select_loop;
+                                    }
+                                }
+                            }
+
+                            if let Ok(s) = event.key.encode(event.modifiers, modes, true) {
+                                trace!("Encoded input key {event:?} as {s}");
+                                if let Some(action) = key_interceptor.intercept_key(&event) {
+                                    debug!("Intercepted action: {action:?}");
+                                    let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                    outgoing_sender.send(hook_to_message(hook)).unwrap();
+
+                                    if event.key == KeyCode::Escape {
+                                        key_interceptor.reset();
+                                    }
+                                } else {
+                                    master.write(s.as_bytes()).await?;
+                                }
+                            } else {
+                                warn!("Could not encode key event: {:?}", event);
+                            }
+                            Ok(())
+                        }
+                        Ok(Ok(InputEvent::Resized)) => {
+                            let size = terminal.get_screen_size()?;
+                            let pty_size = PtySize {
+                                rows: size.rows as u16,
+                                cols: size.cols as u16,
+                                pixel_width: size.xpixel as u16,
+                                pixel_height: size.ypixel as u16,
+                            };
+
+                            master.resize(pty_size)?;
+                            let window_size = SizeInfo::new(size.rows as usize, size.cols as usize);
+                            debug!("Window size changed: {:?}", window_size);
+                            term.resize(window_size);
+                            Ok(())
+                        }
+                        Ok(Ok(InputEvent::Paste(string))) => {
+                            // Pass through bracketed pastes.
+                            master.write(b"\x1b[200~").await?;
+                            master.write(string.as_bytes()).await?;
+                            master.write(b"\x1b[201~").await?;
+                            Ok(())
+                        }
+                        Ok(Ok(InputEvent::Mouse(_))) => {
+                            /* Ignore for now */
+                            Ok(())
+                        }
+                        Ok(Err(err)) => {
+                            error!("Failed receiving input from stdin: {}", err);
+                            Err(err)
+                        }
+                        Err(err) => {
+                            warn!("Failed recv: {}", err);
+                            Ok(())
+                        }
+                    }
+                }
+                res = master.read(&mut write_buffer) => {
+                    match res {
+                        Ok(0) => {
+                            trace!("EOF from master");
+                            break 'select_loop Ok(());
+                        }
+                        Ok(size) => {
+                            trace!("Read {} bytes from master", size);
+
+                            let old_delayed_count = term.get_delayed_events_count();
+                            for byte in &write_buffer[..size] {
+                                processor.advance(&mut term, *byte);
+                            }
+
+                            let delayed_count = term.get_delayed_events_count();
+
+                            // We have delayed events and did not receive delayed events. Flush all
+                            // delayed events now.
+                            if delayed_count > 0 && delayed_count == old_delayed_count {
+                                term.flush_delayed_events();
+                            }
+
+                            stdout.write_all(&write_buffer[..size]).await?;
+                            stdout.flush().await?;
+
+                            if can_send_edit_buffer(&term) {
+                                let cursor_coordinates = get_cursor_coordinates(&mut terminal);
+                                if let Err(e) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
+                                    warn!("Failed to send edit buffer: {}", e);
+                                }
+                            }
+
+                            Ok(())
+                        }
+                        Err(err) => {
+                            error!("Failed to read from master: {}", err);
+                            break 'select_loop Ok(());
+                        }
+                    }
+                }
+                msg = incoming_receiver.recv_async() => {
+                    match msg {
+                        Ok((message, sender)) => {
+                            debug!("Received message from socket: {:?}", message);
+                            process_figterm_message(message, sender, &term, &mut master, &mut key_interceptor).await?;
+                        }
+                        Err(err) => {
+                            error!("Failed to receive message from socket: {}", err);
+                        }
+                    }
+                    Ok(())
+                }
+                // Check if to send the edit buffer because of timeout
+                _ = edit_buffer_interval.tick() => {
+                    let send_eb = INSERTION_LOCKED_AT.read().is_some();
+                    if send_eb && can_send_edit_buffer(&term) {
+                        let cursor_coordinates = get_cursor_coordinates(&mut terminal);
+                        if let Err(e) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
+                            warn!("Failed to send edit buffer: {}", e);
+                        }
+                    }
+                    Ok(())
+                }
+                _ = &mut child_rx => {
+                    trace!("Shell process exited");
+                    break 'select_loop Ok(());
+                }
+            };
+
+            if let Err(e) = select_result {
+                error!("Error in select loop: {}", e);
+                break 'select_loop Err(e);
+            }
+        };
+
+        remove_socket(&term_session_id).await?;
+
+        result
+    });
+
+    // Reading from stdin is a blocking task on a separate thread:
+    // https://github.com/tokio-rs/tokio/issues/2466
+    // We must explicitly shutdown the runtime to exit.
+    // This can cause resource leaks if we aren't careful about tasks we spawn.
+    runtime.shutdown_background();
+
+    runtime_result
 }
 
 fn main() {
@@ -768,14 +816,21 @@ fn main() {
         return;
     }
 
-    if let Err(err) = figterm_main() {
-        println!("Fig had an Error!: {err:?}");
-        capture_anyhow(&err);
-
-        // Fallback to normal shell
-        if let Err(err) = launch_shell() {
+    match figterm_main() {
+        Ok(()) => {
+            info!("Exiting");
+        },
+        Err(err) => {
+            error!("Error in async runtime: {err}");
+            println!("Fig had an Error!: {err:?}");
             capture_anyhow(&err);
-            logger::stdio_debug_log(err.to_string());
-        }
+
+            // Fallback to normal shell
+            #[cfg(unix)]
+            if let Err(err) = launch_shell() {
+                capture_anyhow(&err);
+                logger::stdio_debug_log(err.to_string());
+            }
+        },
     }
 }

@@ -54,7 +54,7 @@ impl IssueArgs {
         let mut body = "### Details:\n|OS|Fig|Shell|\n|-|-|-|\n".to_owned();
 
         let os_version: String = OSVersion::new().map(|v| v.into()).unwrap_or_default();
-        let fig_version = get_fig_version().map(|(version, _)| version).unwrap_or_default();
+        let fig_version = get_fig_version().unwrap_or_default();
         let shell = get_parent_process_exe().unwrap_or_default();
         writeln!(body, "|{}|{}|{}|", &os_version, &fig_version, &shell.display()).ok();
         body.push_str("fig diagnostic\n\n");

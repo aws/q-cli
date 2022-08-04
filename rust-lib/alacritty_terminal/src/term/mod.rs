@@ -39,6 +39,7 @@ use crate::ansi::{
     StandardCharset,
 };
 use crate::event::{
+    DelayedEvent,
     Event,
     EventListener,
 };
@@ -177,8 +178,12 @@ pub struct ShellContext {
     pub pid: Option<i32>,
     /// The current tty
     pub tty: Option<String>,
-    /// The name of the current shell's executable
+    /// The name of the current shell
     pub shell: Option<String>,
+    /// The full path of the current shell's executable
+    pub shell_path: Option<PathBuf>,
+    /// Current wsl distro
+    pub wsl_distro: Option<String>,
     /// Current working directory
     pub current_working_directory: Option<PathBuf>,
     /// The current session id
@@ -290,6 +295,12 @@ pub struct Term<T> {
 
     /// State tracked by figterm to determine the current state of the shell
     shell_state: ShellState,
+
+    /// Delay and manually trigger end_prompt/new_cmd on windows.
+    windows_delay_end_prompt: bool,
+
+    /// Delayed events that should eventually be manually triggered.
+    delayed_events: Vec<DelayedEvent>,
 }
 
 impl<T> Term<T> {
@@ -329,6 +340,8 @@ impl<T> Term<T> {
             title: None,
             title_stack: Vec::new(),
             shell_state,
+            windows_delay_end_prompt: false,
+            delayed_events: Vec::new(),
         }
     }
 
@@ -815,6 +828,83 @@ impl<T> Term<T> {
             },
             None => None,
         }
+    }
+
+    pub fn set_windows_delay_end_prompt(&mut self, delay_end_prompt: bool) {
+        self.windows_delay_end_prompt = delay_end_prompt;
+    }
+
+    fn end_prompt_internal(&mut self, force: bool) {
+        if self.windows_delay_end_prompt && !force {
+            self.delayed_events.push(DelayedEvent::EndPrompt);
+            return;
+        }
+
+        trace!("Fig end prompt");
+        self.grid.cursor.template.fig_flags.remove(FigFlags::IN_PROMPT);
+    }
+
+    fn new_cmd_internal(&mut self, force: bool)
+    where
+        T: EventListener,
+    {
+        if self.windows_delay_end_prompt && !force {
+            self.delayed_events.push(DelayedEvent::NewCmd);
+            return;
+        }
+
+        trace!("Fig new command");
+
+        self.shell_state.cmd_cursor = Some(self.grid().cursor.point);
+        trace!("New command cursor: {:?}", self.shell_state.cmd_cursor);
+
+        // Add work around for emojis
+        if let Ok(cursor_offset) = std::env::var("FIG_PROMPT_OFFSET_WORKAROUND") {
+            if let Ok(offset) = cursor_offset.parse::<i32>() {
+                self.shell_state.cmd_cursor = self.shell_state.cmd_cursor.map(|cursor| Point {
+                    column: Column((cursor.column.0 as i32 - offset).max(0) as usize),
+                    line: cursor.line,
+                });
+
+                trace!(
+                    "Command cursor offset by '{}' to {:?}",
+                    offset,
+                    self.shell_state.cmd_cursor
+                );
+            }
+        }
+
+        self.shell_state.preexec = false;
+
+        self.event_proxy.send_event(Event::Prompt, &self.shell_state);
+        trace!("Prompt event sent");
+
+        if let Some(command) = &self.shell_state.command_info {
+            self.event_proxy
+                .send_event(Event::CommandInfo(command), &self.shell_state);
+            trace!("Command info event sent");
+        }
+    }
+
+    pub fn get_delayed_events_count(&self) -> usize {
+        self.delayed_events.len()
+    }
+
+    pub fn flush_delayed_events(&mut self) -> Vec<DelayedEvent>
+    where
+        T: EventListener,
+    {
+        while let Some(event) = self.delayed_events.pop() {
+            match event {
+                DelayedEvent::EndPrompt => {
+                    self.end_prompt_internal(true);
+                },
+                DelayedEvent::NewCmd => {
+                    self.new_cmd_internal(true);
+                },
+            }
+        }
+        self.delayed_events.clone()
     }
 }
 
@@ -1664,37 +1754,7 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn new_cmd(&mut self) {
-        trace!("Fig new command");
-
-        self.shell_state.cmd_cursor = Some(self.grid().cursor.point);
-        trace!("New command cursor: {:?}", self.shell_state.cmd_cursor);
-
-        // Add work around for emojis
-        if let Ok(cursor_offset) = std::env::var("FIG_PROMPT_OFFSET_WORKAROUND") {
-            if let Ok(offset) = cursor_offset.parse::<i32>() {
-                self.shell_state.cmd_cursor = self.shell_state.cmd_cursor.map(|cursor| Point {
-                    column: Column((cursor.column.0 as i32 - offset).max(0) as usize),
-                    line: cursor.line,
-                });
-
-                trace!(
-                    "Command cursor offset by '{}' to {:?}",
-                    offset,
-                    self.shell_state.cmd_cursor
-                );
-            }
-        }
-
-        self.shell_state.preexec = false;
-
-        self.event_proxy.send_event(Event::Prompt, &self.shell_state);
-        trace!("Prompt event sent");
-
-        if let Some(command) = &self.shell_state.command_info {
-            self.event_proxy
-                .send_event(Event::CommandInfo(command), &self.shell_state);
-            trace!("Command info event sent");
-        }
+        self.new_cmd_internal(false);
     }
 
     fn start_prompt(&mut self) {
@@ -1705,8 +1765,7 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     fn end_prompt(&mut self) {
-        trace!("Fig end prompt");
-        self.grid.cursor.template.fig_flags.remove(FigFlags::IN_PROMPT);
+        self.end_prompt_internal(false);
     }
 
     fn pre_exec(&mut self) {
@@ -1744,6 +1803,14 @@ impl<T: EventListener> Handler for Term<T> {
             Ok(_) => {},
             Err(e) => log::error!("Failed to set current dir: {}", e),
         }
+    }
+
+    fn shell_path(&mut self, path: &std::path::Path) {
+        self.shell_state.get_mut_context().shell_path = Some(path.to_path_buf());
+    }
+
+    fn wsl_distro(&mut self, distro: &str) {
+        self.shell_state.get_mut_context().wsl_distro = Some(distro.trim().into());
     }
 
     fn exit_code(&mut self, exit_code: i32) {

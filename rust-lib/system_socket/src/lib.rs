@@ -100,9 +100,10 @@ impl AsyncRead for SystemStream {
     ) -> Poll<std::io::Result<()>> {
         use std::io::Read;
 
-        let mut read = vec![];
-        let len = tokio::task::block_in_place(|| self.project().0.read(&mut read))?;
-        buf.set_filled(len);
+        let original_len = buf.filled().len();
+        let slice = buf.initialize_unfilled();
+        let len = tokio::task::block_in_place(|| self.project().0.read(slice))?;
+        buf.set_filled(original_len + len);
 
         Poll::Ready(Ok(()))
     }

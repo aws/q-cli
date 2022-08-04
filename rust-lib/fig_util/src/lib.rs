@@ -1,3 +1,4 @@
+pub mod directories;
 mod error;
 mod open;
 pub mod process_info;

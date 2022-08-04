@@ -1,7 +1,7 @@
 use std::path::PathBuf;
 
 use anyhow::Result;
-use fig_directories::fig_data_dir;
+use fig_util::directories;
 use tracing::{
     error,
     info,
@@ -11,12 +11,12 @@ use crate::git;
 
 const THEMES_REPO: &str = "https://github.com/withfig/themes.git";
 
-fn themes_repo_directory() -> Option<PathBuf> {
-    fig_data_dir().map(|dir| dir.join("themes"))
+fn themes_repo_directory() -> Result<PathBuf> {
+    Ok(directories::fig_data_dir()?.join("themes"))
 }
 
-pub fn themes_directory() -> Option<PathBuf> {
-    themes_repo_directory().map(|dir| dir.join("themes"))
+pub fn themes_directory() -> Result<PathBuf> {
+    Ok(themes_repo_directory()?.join("themes"))
 }
 
 pub async fn clone_or_update() -> Result<()> {

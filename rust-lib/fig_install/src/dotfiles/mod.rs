@@ -19,7 +19,7 @@ pub enum SyncWhen {
 /// user's settings
 pub async fn download_and_notify(always_download: bool) -> Result<Option<api::UpdateStatus>> {
     // Guard if the user has disabled immediate syncing
-    if always_download || !fig_settings::settings::get_bool_or("dotfiles.syncImmediately", true) {
+    if !always_download && !fig_settings::settings::get_bool_or("dotfiles.syncImmediately", true) {
         return Ok(None);
     }
 

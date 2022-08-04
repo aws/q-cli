@@ -4,10 +4,8 @@ use anyhow::{
     Context,
     Result,
 };
-use fig_directories::fig_data_dir;
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;
-use fig_ipc::daemon::get_daemon_socket_path;
 use fig_ipc::{
     recv_message,
     send_message,
@@ -28,6 +26,7 @@ use fig_proto::daemon::{
     DaemonResponse,
 };
 use fig_telemetry::TrackEvent;
+use fig_util::directories;
 use parking_lot::RwLock;
 use system_socket::{
     SystemListener,
@@ -155,7 +154,7 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
                             Command::TelemetryEmitTrack(command) => {
                                 let event: TrackEvent = command.into();
                                 if command.enqueue.unwrap_or(false) {
-                                    if let Some(dir) = fig_data_dir() {
+                                    if let Ok(dir) = directories::fig_data_dir() {
                                         if let Ok(mut sender) = Sender::open(dir.join("telemetry-track-event-queue")) {
                                             if let Ok(buf) = serde_json::to_vec(&event) {
                                                 if sender.send(buf).await.is_ok() {
@@ -202,7 +201,7 @@ async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLoc
 }
 
 pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<JoinHandle<()>> {
-    let system_socket_path = get_daemon_socket_path();
+    let system_socket_path = directories::daemon_socket_path();
 
     // Create the system socket directory if it doesn't exist
     if let Some(system_socket_dir) = system_socket_path.parent() {

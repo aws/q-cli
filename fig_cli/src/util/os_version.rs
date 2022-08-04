@@ -63,8 +63,9 @@ impl OSVersion {
     pub fn new() -> Result<OSVersion> {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
-                use regex::Regex;
                 use std::process::Command;
+
+                use regex::Regex;
                 use anyhow::Context;
 
                 let version_info = Command::new("sw_vers")
@@ -143,8 +144,26 @@ impl OSVersion {
                     distribution: None,
                     release: None,
                 })
-            } else {
-                Err(anyhow::anyhow!("Unsupported platform"))
+            } else if #[cfg(target_os = "windows")] {
+                use std::process::Command;
+
+                use anyhow::Context;
+
+                Ok(OSVersion::Windows {
+                    version: String::from_utf8_lossy(&Command::new("systeminfo")
+                        .arg("/FO")
+                        .arg("CSV")
+                        .output()
+                        .context("Could not get windows version")?.stdout)
+                        .split_once('\n')
+                        .unwrap()
+                        .1
+                        .split(',')
+                        .nth(2)
+                        .unwrap()
+                        .trim_matches('"')
+                        .to_owned()
+                })
             }
         }
     }
@@ -160,7 +179,7 @@ impl OSVersion {
                 }
             },
             OSVersion::Linux { .. } => SupportLevel::InDevelopment,
-            _ => SupportLevel::Unsupported,
+            OSVersion::Windows { .. } => SupportLevel::InDevelopment,
         }
     }
 }

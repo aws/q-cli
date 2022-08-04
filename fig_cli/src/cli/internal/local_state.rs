@@ -2,7 +2,6 @@ use std::process::Command;
 
 use anyhow::{
     anyhow,
-    Context,
     Result,
 };
 use clap::{
@@ -74,7 +73,7 @@ impl LocalStateArgs {
                 },
             },
             Some(LocalStateSubcommand::Open) => {
-                let path = fig_settings::state::state_path().context("Could not get state path")?;
+                let path = fig_settings::state::state_path()?;
                 match Command::new("open").arg(path).status()?.success() {
                     true => Ok(()),
                     false => Err(anyhow!("Could not open state file")),

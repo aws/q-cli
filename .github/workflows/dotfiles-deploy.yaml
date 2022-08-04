@@ -87,9 +87,12 @@ jobs:
       - name: Upload to S3 Bucket
         run: |
           aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/
-          aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/latest/${{matrix.build}}
 
-          aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/bin/latest/*"
+          # latest binary uploads for linux are handled through circleci
+          if [[ ${{ matrix.build }} != x86_64-unknown-linux-gnu ]]; then
+            aws s3 cp ./cli/$BINARY_NAME-$VERSION-${{matrix.build}} s3://get-fig-io/bin/latest/${{matrix.build}}
+            aws cloudfront create-invalidation --distribution-id E1HTOEOFYWKMTG --paths "/bin/latest/*"
+          fi
         env:
           AWS_ACCESS_KEY_ID: ${{ secrets.DOTFILESD_AWS_ACCESS_KEY_ID }}
           AWS_SECRET_ACCESS_KEY: ${{ secrets.DOTFILESD_AWS_SECRET_ACCESS_KEY }}

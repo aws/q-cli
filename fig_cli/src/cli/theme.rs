@@ -11,6 +11,7 @@ use crossterm::style::{
     Color,
     Stylize,
 };
+use fig_util::directories;
 use serde::{
     Deserialize,
     Serialize,
@@ -34,12 +35,11 @@ struct Theme {
     version: Option<String>,
 }
 
-fn theme_folder() -> Option<PathBuf> {
-    let new_theme_dir = fig_install::themes::themes_directory();
-    if new_theme_dir.as_ref().map(|dir| dir.exists()).unwrap_or(false) {
-        new_theme_dir
-    } else {
-        fig_directories::home_dir().map(|home| home.join(".fig").join("themes"))
+fn theme_folder() -> Result<PathBuf> {
+    let new_theme_dir = fig_install::themes::themes_directory()?;
+    match new_theme_dir.exists() {
+        true => Ok(new_theme_dir),
+        false => Ok(directories::home_dir()?.join(".fig").join("themes")),
     }
 }
 

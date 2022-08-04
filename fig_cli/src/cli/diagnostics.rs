@@ -19,7 +19,10 @@ use fig_proto::local::{
     IntegrationAction,
     TerminalIntegrationCommand,
 };
-use fig_util::Terminal;
+use fig_util::{
+    directories,
+    Terminal,
+};
 use regex::Regex;
 use serde::{
     Deserialize,
@@ -90,10 +93,7 @@ pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
 }
 
 fn get_local_specs() -> Result<Vec<PathBuf>> {
-    let specs_location = fig_directories::home_dir()
-        .context("Could not get home dir")?
-        .join(".fig")
-        .join("autocomplete");
+    let specs_location = directories::home_dir()?.join(".fig").join("autocomplete");
     let glob_pattern = specs_location.join("*.js");
     let patterns = [glob_pattern.to_str().unwrap()];
     let glob = glob(&patterns)?;
@@ -522,7 +522,7 @@ struct DotfilesDiagnostics {
 
 impl DotfilesDiagnostics {
     fn new() -> Result<DotfilesDiagnostics> {
-        let home_dir = fig_directories::home_dir().context("Could not get base dir")?;
+        let home_dir = directories::home_dir().context("Could not get base dir")?;
 
         let profile = std::fs::read_to_string(home_dir.join(".profile")).ok();
         let bashrc = std::fs::read_to_string(home_dir.join(".bashrc")).ok();
