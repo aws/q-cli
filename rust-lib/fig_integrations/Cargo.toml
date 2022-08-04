@@ -12,6 +12,6 @@ fig_directories = { path = "../fig_directories" }
 fig_util = { path = "../fig_util" }
 regex = "1.6.0"
 serde = { version = "1.0.141", features = ["derive"] }
-thiserror = "1.0.31"
+thiserror = "1.0.32"
 time = { version = "0.3.12", features = ["macros", "formatting"] }
 

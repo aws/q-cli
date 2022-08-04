@@ -55,7 +55,7 @@ spinners = "4.1.0"
 sysinfo = "0.25.1"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
-thiserror = "1.0.30"
+thiserror = "1.0.32"
 time = { version = "=0.3.12", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.20.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.2", features = ["rustls-tls-webpki-roots"] }
