@@ -32,16 +32,20 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error("{0}")]
-    Fig(String),
+    #[error("{error}")]
+    Fig {
+        error: String,
+        status: StatusCode,
+        sentry_id: Option<String>,
+    },
     #[error(transparent)]
     Graphql(#[from] GraphqlError),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
     #[error(transparent)]
     Auth(#[from] fig_auth::Error),
-    #[error("Unknown")]
-    Unknown,
+    #[error("Status {0}")]
+    Status(StatusCode),
     #[error("No client")]
     NoClient,
 }
@@ -198,6 +202,13 @@ pub struct Response {
     inner: reqwest::Response,
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct ErrorResponse {
+    error: String,
+    sentry_id: Option<String>,
+}
+
 impl Response {
     pub fn status(&self) -> StatusCode {
         self.inner.status()
@@ -228,24 +239,31 @@ impl Response {
             Ok(self)
         } else {
             let err = self.inner.error_for_status_ref().err();
+            let status = self.inner.status();
+
             macro_rules! status_err {
                 () => {{
                     match err {
                         Some(err) => return Err(err.into()),
-                        None => return Err(Error::Unknown),
+                        None => return Err(Error::Status(status)),
                     }
                 }};
             }
 
             match self.inner.text().await {
-                Ok(text) => match serde_json::from_str::<Value>(&text) {
-                    Ok(json) => Err(match json.get("error").and_then(|error| error.as_str()) {
-                        Some(error) => Error::Fig(error.into()),
-                        None => status_err!(),
+                Ok(text) => match serde_json::from_str::<ErrorResponse>(&text) {
+                    Ok(ErrorResponse { error, sentry_id }) => Err(Error::Fig {
+                        error,
+                        status,
+                        sentry_id,
                     }),
                     Err(_) => {
                         if !text.is_empty() {
-                            Err(Error::Fig(text))
+                            Err(Error::Fig {
+                                error: text,
+                                status,
+                                sentry_id: None,
+                            })
                         } else {
                             status_err!()
                         }

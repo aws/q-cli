@@ -1,4 +1,5 @@
 use std::fmt::Display;
+use std::io::stdout;
 use std::process::Command;
 
 use arboard::Clipboard;
@@ -107,6 +108,12 @@ impl AiArgs {
         if n.map(|n| n > 10).unwrap_or_default() {
             anyhow::bail!("n must be <= 10");
         }
+
+        tokio::spawn(async {
+            tokio::signal::ctrl_c().await.unwrap();
+            crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+            std::process::exit(0);
+        });
 
         'ask_loop: loop {
             let question = match input {
