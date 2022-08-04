@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-anyhow = "1.0.59"
+anyhow = "1.0.60"
 cfg-if = "1.0.0"
 crossterm = "0.24.0"
 fig_auth = { path = "../fig_auth" }
