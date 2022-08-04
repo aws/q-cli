@@ -39,6 +39,9 @@ pub enum RootUserSubcommand {
         /// Force a refresh of the auth token
         #[clap(long, value_parser)]
         hard_refresh: bool,
+        /// Email to login to
+        #[clap(value_parser)]
+        email: Option<String>,
     },
     /// Logout of Fig
     Logout,
@@ -47,7 +50,11 @@ pub enum RootUserSubcommand {
 impl RootUserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            Self::Login { refresh, hard_refresh } => login_cli(refresh, hard_refresh).await,
+            Self::Login {
+                email,
+                refresh,
+                hard_refresh,
+            } => login_cli(email, refresh, hard_refresh).await,
             Self::Logout => logout_cli().await,
         }
     }
@@ -237,7 +244,7 @@ impl TokensSubcommand {
 }
 
 /// Login to fig
-pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
+pub async fn login_cli(email: Option<String>, refresh: bool, hard_refresh: bool) -> Result<()> {
     let client = get_client()?;
 
     if refresh || hard_refresh {
@@ -253,16 +260,19 @@ pub async fn login_cli(refresh: bool, hard_refresh: bool) -> Result<()> {
 
     let theme = dialoguer_theme();
 
-    let email: String = dialoguer::Input::with_theme(&theme)
-        .with_prompt("Email")
-        .validate_with(|input: &String| -> Result<(), &str> {
-            if validator::validate_email(input.trim()) {
-                Ok(())
-            } else {
-                Err("This is not a valid email")
-            }
-        })
-        .interact_text()?;
+    let email: String = match email {
+        Some(email) => email,
+        None => dialoguer::Input::with_theme(&theme)
+            .with_prompt("Email")
+            .validate_with(|input: &String| -> Result<(), &str> {
+                if validator::validate_email(input.trim()) {
+                    Ok(())
+                } else {
+                    Err("This is not a valid email")
+                }
+            })
+            .interact_text()?,
+    };
 
     let trimmed_email = email.trim();
 

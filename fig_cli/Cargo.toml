@@ -1,6 +1,6 @@
 [package]
 name = "fig_cli"
-version = "1.4.7"
+version = "1.4.8"
 authors = ["fig developers"]
 edition = "2021"
 description = "The CLI for Fig"
@@ -14,7 +14,7 @@ deno = ["dep:deno_core", "dep:deno_runtime"]
 
 [dependencies]
 anyhow = "1.0.60"
-arboard = { version = "2.1.0", default-features = false }
+arboard = { version = "2.1.0", default-features = false, features = ["wayland-data-control"] }
 async-trait = "0.1.57"
 bitflags = "1.3.2"
 cfg-if = "1.0.0"

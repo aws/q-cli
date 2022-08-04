@@ -1,6 +1,7 @@
 pub mod api;
 pub mod backoff;
 pub mod os_version;
+pub mod spinner;
 pub mod sync;
 
 use std::env;
@@ -280,7 +281,7 @@ pub fn get_fig_version() -> Result<(String, String)> {
     }
 }
 
-pub fn dialoguer_theme() -> impl dialoguer::theme::Theme {
+pub fn dialoguer_theme() -> ColorfulTheme {
     ColorfulTheme {
         prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
         ..ColorfulTheme::default()

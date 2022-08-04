@@ -120,10 +120,10 @@ impl Default for TermMode {
 #[derive(Serialize, Deserialize, Debug, Copy, Clone, PartialEq, Eq)]
 pub struct SizeInfo {
     /// Number of lines in the viewport.
-    screen_lines: usize,
+    pub screen_lines: usize,
 
     /// Number of columns in the viewport.
-    columns: usize,
+    pub columns: usize,
 }
 
 impl SizeInfo {
