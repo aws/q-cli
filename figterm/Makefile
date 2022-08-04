@@ -103,8 +103,16 @@ install-native-release: build-native-release
 	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
 
 install-native-usr: build-native
-	FILES := $(shell ls -1 /usr/bin | grep figterm)
-	echo $(FILES)
+	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n"); do \
+		sudo rm -f "/usr/bin/$${exe}"; \
+		sudo install $(TARGET_DIR)/debug/$(CRATE_NAME) "/usr/bin/$${exe}"; \
+	done
+
+install-native-usr-release: build-native-release
+	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n"); do \
+		sudo rm -f "/usr/bin/$${exe}"; \
+		sudo install $(TARGET_DIR)/release/$(CRATE_NAME) "/usr/bin/$${exe}"; \
+	done
 
 ### Clean the project
 

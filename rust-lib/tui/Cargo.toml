@@ -6,4 +6,4 @@ publish = false
 
 [dependencies]
 newton = { path = "../newton" }
-paste = "1.0.7"
+paste = "1.0.8"

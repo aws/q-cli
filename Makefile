@@ -5,7 +5,7 @@ BUILD_DIR = $(MAKE_DIR)/build
 export BUILT_PRODUCTS_DIR = $(BUILD_DIR)/usr/bin
 $(shell mkdir -p $(BUILT_PRODUCTS_DIR))
 
-VERSION = $(shell jq -r .FIG_VERSION $(MAKE_DIR)/bundle/bundle_info.json)
+VERSION = $(shell sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' $(MAKE_DIR)/fig_desktop/Cargo.toml | head -1)
 NUMERIC = $(shell echo ${VERSION} | cut -f1 -d-)
 FLAVOR = $(shell echo ${VERSION} | cut -f2 -d-)
 

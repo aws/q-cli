@@ -1,6 +1,6 @@
 [package]
 name = "fig_cli"
-version = "1.4.7"
+version = "1.4.8"
 authors = ["fig developers"]
 edition = "2021"
 description = "The CLI for Fig"
@@ -13,8 +13,8 @@ managed = []
 deno = ["dep:deno_core", "dep:deno_runtime"]
 
 [dependencies]
-anyhow = "1.0.59"
-arboard = { version = "2.1.0", default-features = false }
+anyhow = "1.0.60"
+arboard = { version = "2.1.0", default-features = false, features = ["wayland-data-control"] }
 async-trait = "0.1.57"
 bitflags = "1.3.2"
 cfg-if = "1.0.0"
@@ -48,14 +48,14 @@ regex = "1.6.0"
 self_update = { version = "0.30.0", default-features = false, features = [
     "rustls",
 ] }
-semver = "1.0.12"
+semver = "1.0.13"
 serde = { version = "1.0.141", features = ["derive"] }
 serde_json = "1.0.82"
 spinners = "4.1.0"
 sysinfo = "0.25.1"
 system_socket = { path = "../rust-lib/system_socket" }
 tempfile = "3.3.0"
-thiserror = "1.0.30"
+thiserror = "1.0.32"
 time = { version = "=0.3.12", features = ["serde-human-readable", "local-offset", "formatting", "macros", "serde-well-known"] }
 tokio = { version = "1.20.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.2", features = ["rustls-tls-webpki-roots"] }

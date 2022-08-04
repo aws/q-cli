@@ -1,5 +1,6 @@
 //! CLI functionality
 
+mod ai;
 pub mod app;
 mod completion;
 mod debug;
@@ -152,6 +153,8 @@ pub enum CliRootCommands {
     /// Manage system integrations
     #[clap(subcommand)]
     Integrations(IntegrationsSubcommands),
+    Ai(ai::AiArgs),
+
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -285,6 +288,7 @@ impl Cli {
                 CliRootCommands::Man(args) => args.execute(),
                 CliRootCommands::Workflow(args) => args.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
+                CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())

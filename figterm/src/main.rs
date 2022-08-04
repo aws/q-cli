@@ -29,6 +29,7 @@ use alacritty_terminal::term::{
     CommandInfo,
     ShellState,
     SizeInfo,
+    TextBuffer,
 };
 use alacritty_terminal::Term;
 use anyhow::{
@@ -101,7 +102,10 @@ use tracing::{
     warn,
 };
 
-use crate::interceptor::terminal_input_parser::KeyCode;
+use crate::interceptor::terminal_input_parser::{
+    KeyCode,
+    KeyModifiers,
+};
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
     remove_socket,
@@ -496,6 +500,8 @@ fn figterm_main() -> Result<()> {
 
     logger::stdio_debug_log("Forking child shell process");
 
+    let ai_beta = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
+
     // Fork pseudoterminal
     // SAFETY: forkpty is safe to call, but the child must not call any functions
     // that are not async-signal-safe.
@@ -535,11 +541,11 @@ fn figterm_main() -> Result<()> {
                     )?;
 
                     let mut processor = Processor::new();
-                    let size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
+                    let mut window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
 
                     let event_sender = EventSender::new(outgoing_sender.clone(), history_sender);
 
-                    let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
+                    let mut term = alacritty_terminal::Term::new(window_size, event_sender, 1);
 
                     let mut read_buffer = [0u8; BUFFER_SIZE];
                     let mut write_buffer = [0u8; BUFFER_SIZE];
@@ -576,6 +582,30 @@ fn figterm_main() -> Result<()> {
                                             trace!("Read {size} bytes from input: {s:?}");
                                             match interceptor::parse_code(s.as_bytes()) {
                                                 Some((key_code, modifier)) => {
+                                                    if ai_beta && key_code == KeyCode::Enter && modifier == KeyModifiers::NONE {
+                                                        if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
+                                                            let buffer = buffer.trim();
+                                                            if buffer.len() > 1 && buffer.starts_with('#') && window_size.columns > buffer.len() {
+                                                                master.write(
+                                                                    &repeat(b'\x08')
+                                                                        .take(buffer.len()
+                                                                        .max(cursor_idx.unwrap_or(0)))
+                                                                        .collect::<Vec<_>>()
+                                                                ).await?;
+                                                                master.write(
+                                                                    format!(
+                                                                        "fig ai '{}'\r", 
+                                                                        buffer
+                                                                            .trim_start_matches('#')
+                                                                            .trim()
+                                                                            .replace('\'', "'\"'\"'")
+                                                                        ).as_bytes()
+                                                                ).await?;
+                                                                continue 'select_loop;
+                                                            }
+                                                        }
+                                                    }
+
                                                     match key_interceptor.intercept_key(key_code.clone(), &modifier) {
                                                         Some(action) => {
                                                             debug!("Action: {action:?}");
@@ -614,7 +644,7 @@ fn figterm_main() -> Result<()> {
                             _ = window_change_signal.recv() => {
                                 unsafe { read_winsize(STDIN_FILENO, &mut winsize) }?;
                                 unsafe { ioctl_tiocswinsz(master.as_raw_fd(), &winsize) }?;
-                                let window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
+                                window_size = SizeInfo::new(winsize.ws_row as usize, winsize.ws_col as usize);
                                 debug!("Window size changed: {window_size:?}");
                                 term.resize(window_size);
                                 Ok(())

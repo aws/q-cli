@@ -12,6 +12,7 @@ use std::io::{
 use std::process::exit;
 
 use clap::StructOpt;
+use crossterm::style::Stylize;
 use fig_log::FIG_LOG_LEVEL;
 use fig_telemetry::sentry::{
     configure_scope,
@@ -76,9 +77,9 @@ async fn main() {
 
     if let Err(err) = result {
         if *FIG_LOG_LEVEL > LevelFilter::INFO {
-            writeln!(stderr(), "{err:?}").ok();
+            writeln!(stderr(), "{}\n{err:?}", "Error".bold().red()).ok();
         } else {
-            writeln!(stderr(), "{err}").ok();
+            writeln!(stderr(), "{} {err}", "error:".bold().red()).ok();
         }
         exit(1);
     }
