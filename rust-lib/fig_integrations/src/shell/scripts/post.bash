@@ -36,6 +36,8 @@ FIG_SHELL_PATH=$(fig _ get-shell)
 
 if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
   FIG_IN_DOCKER=1
+elif [[ -f /.dockerenv ]]; then
+  FIG_IN_DOCKER=1
 else
   FIG_IN_DOCKER=0
 fi

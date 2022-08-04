@@ -30,6 +30,8 @@ set FIG_SHELL_PATH (fig _ get-shell)
 
 if test -e /proc/1/cgroup; and grep -q docker /proc/1/cgroup
     set FIG_IN_DOCKER 1
+else if test -f /.dockerenv; then
+    set FIG_IN_DOCKER 1
 else
     set FIG_IN_DOCKER 0
 end

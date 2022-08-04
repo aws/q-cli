@@ -41,6 +41,7 @@ struct ShellContext {
 
 enum CommandContext {
   case ssh(controlPath: String, remoteHostname: String)
+  case docker(user: String?, remoteHostname: String)
 }
 
 extension ShellContext {
@@ -200,6 +201,21 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
 
     if !event.context.hasRemoteContext {
       self.setCommandContext(for: event.context.sessionID, context: nil)
+    } else if event.context.hasRemoteContextType,
+        event.context.remoteContextType == FigCommon_ShellContext.RemoteContextType.docker {
+      let userHostname = event.context.remoteContext.hostname.split(separator: "@", maxSplits: 1).map(String.init)
+      var hostname: String
+      var user: String?
+      if userHostname.count == 2 {
+        user = userHostname[0]
+        hostname = userHostname[1]
+      } else {
+        hostname = userHostname[0]
+      }
+      self.setCommandContext(
+        for: event.context.sessionID,
+           context: .docker(user: user, remoteHostname: hostname)
+      )
     }
     self.setShellContext(for: event.context.sessionID, context: shellContext)
   }
@@ -301,6 +317,10 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
 
   fileprivate func setCommandContext(for terminalSessionId: TerminalSessionId, context: CommandContext?) {
     guard let session = self.getTerminalSession(for: terminalSessionId) else {
+      return
+    }
+
+    if case .ssh = session.commandContext, case .docker = context {
       return
     }
 

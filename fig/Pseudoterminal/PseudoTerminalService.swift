@@ -297,6 +297,11 @@ extension PseudoTerminal {
 ssh -o PasswordAuthentication=no -q -o 'ControlPath=\(controlPath)' '\(remoteDest)' \
 '\(request.command.replacingOccurrences(of: "'", with: "'\"'\"'"))'
 """
+    case let .docker(user, containerId):
+      let userText = user.map({ "-u \($0)" }) ?? ""
+      command = """
+docker exec \(userText) \(containerId) sh -c '\(request.command.replacingOccurrences(of: "'", with: "'\"'\"'"))'
+"""
     default:
       break
     }

@@ -150,7 +150,15 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         .flatten()
         .unwrap_or(8);
 
-    let remote_context = if shell_state.in_ssh || shell_state.in_docker {
+    let remote_context_type = if shell_state.in_ssh {
+        Some(local::shell_context::RemoteContextType::Ssh)
+    } else if shell_state.in_docker {
+        Some(local::shell_context::RemoteContextType::Docker)
+    } else {
+        None
+    };
+
+    let remote_context = if remote_context_type.is_some() {
         Some(Box::new(local::ShellContext {
             pid: shell_state.remote_context.pid,
             ttys: shell_state.remote_context.tty.clone(),
@@ -171,6 +179,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             terminal: terminal.clone(),
             hostname: shell_state.remote_context.hostname.clone(),
             remote_context: None,
+            remote_context_type: None,
         }))
     } else {
         None
@@ -196,6 +205,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         terminal,
         hostname: shell_state.local_context.hostname.clone(),
         remote_context,
+        remote_context_type: remote_context_type.map(|x| x.into()),
     }
 }
 
