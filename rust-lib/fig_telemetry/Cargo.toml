@@ -7,7 +7,7 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
-anyhow = "1.0.60"
+anyhow = "1.0.59"
 fig_auth = { path = "../fig_auth" }
 fig_ipc = { path = "../fig_ipc" }
 fig_proto = { path = "../fig_proto" }

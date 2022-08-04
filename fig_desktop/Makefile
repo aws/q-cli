@@ -1,4 +1,5 @@
 PLATFORM := $(shell uname -s)
+ARCH ?= x86_64
 
 # Check if variable contains string https://stackoverflow.com/a/2741747
 ifneq (,$(findstring CYGWIN,$(PLATFORM)))
@@ -69,7 +70,7 @@ $(BINARY_NAME)-aarch64-apple-darwin:
 $(BINARY_NAME)-darwin-universal: $(BINARY_NAME)-x86_64-apple-darwin $(BINARY_NAME)-aarch64-apple-darwin
 	lipo -create -output $(OUT_DIR)/$@ $(OUT_DIR)/$(BINARY_NAME)-x86_64-apple-darwin $(OUT_DIR)/$(BINARY_NAME)-aarch64-apple-darwin
 
-linux: $(BINARY_NAME)-x86_64-unknown-linux-gnu
+linux: $(BINARY_NAME)-$(ARCH)-unknown-linux-gnu
 	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
 
 $(BINARY_NAME)-x86_64-unknown-linux-gnu:

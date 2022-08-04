@@ -26,20 +26,6 @@ parameters:
     type: string
     default: "develop"
 
-executors:
-  kinetic:
-    docker:
-      - image: ubuntu:22.10
-  jammy:
-    docker:
-      - image: ubuntu:22.04
-  focal:
-    docker:
-      - image: ubuntu:20.04
-  f36:
-    docker:
-      - image: fedora:36
-
 workflows:
   version: 2
   build:
@@ -47,21 +33,27 @@ workflows:
       equal: [<< pipeline.trigger_source >>, api]
     jobs:
       - update-version
-      - ubuntu:
+      - ubuntu-x86_64:
           requires: [update-version]
           matrix:
             parameters:
               platform: [kinetic, jammy, focal]
-      - fedora:
+      - ubuntu-x86_64-cli-only:
           requires: [update-version]
           matrix:
             parameters:
-              platform: [f36]
+              platform: [xenial]
+      - ubuntu-aarch64-focal:
+          requires: [update-version]
+      - fedora-x86_64:
+          requires: [update-version]
+          matrix:
+            parameters:
+              version: ["36"]
       - sentry:
-          requires: [ubuntu, fedora]
+          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal]
           context:
             - sentry
-
   noop:
     when:
       not:
@@ -70,65 +62,50 @@ workflows:
       - noop
 
 jobs:
-  # Builds packages for Ubuntu
-  ubuntu:
+  ubuntu-x86_64:
     parameters:
       platform:
         type: string
-    executor: << parameters.platform >>
+    docker:
+      - image: ubuntu:<< parameters.platform >>
     resource_class: large
     steps:
-      - prepare-debian:
+      - build-ubuntu:
           platform: << parameters.platform >>
-      - callback:
-          command: dependencies
-          args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus
-      - run:
-          name: Build
-          command: cd desktop && make archive && make deb
-      - store_artifacts:
-          path: desktop/build/fig-x86_64-linux.deb
-          destination: << parameters.platform >>/deb
-      - store_artifacts:
-          path: desktop/build/fig-x86_64-linux.tar.gz
-          destination: << parameters.platform >>/archive
+          arch: x86_64
 
-  fedora:
+  ubuntu-x86_64-cli-only:
     parameters:
       platform:
         type: string
-    executor: << parameters.platform >>
+    docker:
+      - image: ubuntu:<< parameters.platform >>
     resource_class: large
     steps:
-      - prepare-fedora:
+      - build-ubuntu-cli-only:
           platform: << parameters.platform >>
-      - run:
-          name: Build
-          command: cd desktop && make archive && make rpm
-      - run:
-          name: Gather RPM metadata
-          command: |
-            rpm --query --requires desktop/build/fig-x86_64-linux.rpm > /tmp/requires.txt
-            rpm --query --provides desktop/build/fig-x86_64-linux.rpm > /tmp/provides.txt
-            rpm --query --info desktop/build/fig-x86_64-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/installed-size.txt
-      - callback:
-          command: dependencies
-          args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
-      - callback:
-          command: rpm_requires
-          args: << parameters.platform >>;$(cat /tmp/requires.txt)
-      - callback:
-          command: rpm_provides
-          args: << parameters.platform >>;$(cat /tmp/provides.txt)
-      - callback:
-          command: rpm_installed_size
-          args: << parameters.platform >>;$(cat /tmp/installed-size.txt)
-      - store_artifacts:
-          path: desktop/build/fig-x86_64-linux.rpm
-          destination: << parameters.platform >>/rpm
-      - store_artifacts:
-          path: desktop/build/fig-x86_64-linux.tar.gz
-          destination: << parameters.platform >>/archive
+          arch: x86_64
+
+  ubuntu-aarch64-focal:
+    machine:
+      image: ubuntu-2004:current
+    resource_class: arm.large
+    steps:
+      - build-ubuntu:
+          platform: focal
+          arch: aarch64
+
+  fedora-x86_64:
+    parameters:
+      version:
+        type: string
+    docker:
+      - image: fedora:<< parameters.version >>
+    resource_class: large
+    steps:
+      - build-fedora:
+          platform: f<< parameters.version >>
+          arch: x86_64
 
   # Creates tag on specified revision
   update-version:
@@ -136,19 +113,19 @@ jobs:
       - image: ubuntu:22.04
     resource_class: small
     steps:
-      - configure-apt
+      - configure-apt:
+          platform: jammy
       - run:
           name: Install dependencies
           command: |
-            apt update
-            apt install -y curl git jq python3-pip
+            sudo apt install -y curl git jq python3-pip
             python3 -m pip install semver
       - checkout-desktop:
           checkout: << pipeline.parameters.checkout >>
       - run:
           name: Resolve relative version
           command: |
-            LAST_VERSION=`sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' fig_desktop/Cargo.toml | head -1`
+            LAST_VERSION=`sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' desktop/fig_desktop/Cargo.toml | head -1`
             PIPELINE_VERSION=<< pipeline.parameters.version >>
             echo $PIPELINE_VERSION > version
             if [[ $PIPELINE_VERSION == "major" ]] || [[ $PIPELINE_VERSION == "minor" ]] || [[ $PIPELINE_VERSION == "patch" ]]; then
@@ -237,10 +214,13 @@ commands:
     parameters:
       platform:
         type: string
+      rust-target:
+        type: string
     steps:
       - checkout-desktop
       - configure-rust:
           platform: << parameters.platform >>
+          target: << parameters.rust-target >>
 
   checkout-desktop:
     parameters:
@@ -262,6 +242,8 @@ commands:
     parameters:
       platform:
         type: string
+      target:
+        type: string
     steps:
       - rust/install:
           version: 1.62.0
@@ -270,79 +252,130 @@ commands:
           steps:
             - run:
                 name: Configure rust
-                command: printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-C", "link-arg=-fuse-ld=mold"]' > ~/.cargo/config.toml
+                command: printf '[target.<< parameters.target >>]\nrustflags = ["-C", "link-arg=-fuse-ld=mold"]' > ~/.cargo/config.toml
       - when:
           condition:
             not: *supports_mold
           steps:
             - run:
                 name: Configure rust
-                command: printf '[target.x86_64-unknown-linux-gnu]\nrustflags = ["-C", "link-arg=-fuse-ld=lld"]' > ~/.cargo/config.toml
+                command: printf '[target.<< parameters.target >>]\nrustflags = ["-C", "link-arg=-fuse-ld=lld"]' > ~/.cargo/config.toml
 
   configure-apt:
+    parameters:
+      platform:
+        type: string
     steps:
+      - run:
+          name: Install sudo
+          command: |
+            if ! command -v sudo; then
+              apt update
+              apt install -y sudo
+            fi
       - run:
           name: Configure APT
           command: |
-            cat \<<EOF >/tmp/preseed.txt
-            tzdata tzdata/Areas select America
-            tzdata tzdata/Zones/America select Los_Angeles
-            EOF
-            debconf-set-selections /tmp/preseed.txt
             echo "export DEBIAN_FRONTEND=noninteractive" >> $BASH_ENV
             echo "export DEBCONF_NONINTERACTIVE_SEEN=true" >> $BASH_ENV
-            sed -i 's#archive.ubuntu.com/ubuntu#mirror.pit.teraswitch.com/ubuntu#g' /etc/apt/sources.list
-            sed -i 's#security.ubuntu.com/ubuntu#mirror.pit.teraswitch.com/ubuntu#g' /etc/apt/sources.list
+            echo "export TZ=America/Los_Angeles" >> $BASH_ENV
+            sudo sed -i 's#archive.ubuntu.com/ubuntu#mirror.pit.teraswitch.com/ubuntu#g' /etc/apt/sources.list
+            sudo sed -i 's#security.ubuntu.com/ubuntu#mirror.pit.teraswitch.com/ubuntu#g' /etc/apt/sources.list
+            sudo apt update
+      - run:
+          name: Install noninteractive
+          command: |
+            echo 'tzdata tzdata/Areas select America' | sudo debconf-set-selections
+            echo 'tzdata tzdata/Zones/America select Los_Angeles' | sudo debconf-set-selections
+            sudo DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles apt install -y tzdata keyboard-configuration
+      - when:
+          condition:
+            equal: [<< parameters.platform >>, xenial]
+          steps:
+            - run:
+                name: Configure cmake and clang repositories
+                command: |
+                  sudo apt install -y apt-transport-https ca-certificates gnupg wget
+                  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
+                  sudo echo "deb http://apt.kitware.com/ubuntu/ << parameters.platform >> main" >> /etc/apt/sources.list
+
+                  wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
+                  sudo echo "deb http://apt.llvm.org/<< parameters.platform >>/ llvm-toolchain-<< parameters.platform >> main" >> /etc/apt/sources.list
+
+                  sudo apt update
 
   prepare-debian:
     parameters:
       platform:
         type: string
+      arch:
+        type: string
+      include_desktop_deps:
+        type: boolean
+        default: true
     steps:
-      - configure-apt
+      - configure-apt:
+          platform: << parameters.platform >>
       - run:
           name: Update
           command: |
-            apt update
-            apt upgrade -y
+            sudo apt upgrade -y
       - run:
           name: Install dependencies
-          command: |
-            apt install -y \
-              clang cmake curl git jq libayatana-appindicator3-dev libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.0-dev valac
+          command: sudo apt install -y clang cmake curl git jq
+      - when:
+          condition: << parameters.include_desktop_deps >>
+          steps:
+            - run:
+                name: Install desktop dependencies
+                command: |
+                  sudo apt install -y \
+                    libayatana-appindicator3-dev \
+                    libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.0-dev valac
+      - when:
+          condition:
+            equal: [<< parameters.platform >>, xenial]
+          steps:
+            - run:
+                name: Set cc to clang
+                command: sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 30
       - when:
           condition: *supports_mold
           steps:
             - run:
                 name: Install mold
-                command: apt install -y mold
+                command: sudo apt install -y mold
       - when:
           condition:
-            not: *supports_mold
+            and:
+              - not: *supports_mold
           steps:
             - run:
                 name: Install lld
-                command: apt install -y lld
+                command: sudo apt install -y lld
       - prepare-post:
           platform: << parameters.platform >>
+          rust-target: << parameters.arch >>-unknown-linux-gnu
 
   prepare-fedora:
     parameters:
       platform:
+        type: string
+      arch:
         type: string
     steps:
       - run:
           name: Configure DNF
           command: |
             printf \nfastestmirror=1 >>/etc/dnf/dnf.conf
-            dnf clean all
+            sudo dnf clean all
       - run:
           name: Update
-          command: dnf upgrade -y
+          command: sudo dnf upgrade -y
       - run:
           name: Install dependencies
           command: |
-            dnf install -y clang cmake curl gcc git gtk3-devel g++ ibus-devel jq libappindicator-gtk3-devel make mold \
+            sudo dnf install -y clang cmake curl gcc git gtk3-devel g++ ibus-devel jq libappindicator-gtk3-devel make mold \
                            openssl-devel perl-FindBin rpmdevtools vala webkit2gtk3-devel
       - run:
           # this *should not* be necessary, but it doesn't appear to work without this
@@ -350,3 +383,90 @@ commands:
           command: git config --global --add safe.directory /tmp/_circleci_local_build_repo
       - prepare-post:
           platform: << parameters.platform >>
+          rust-target: << parameters.arch >>-unknown-linux-gnu
+
+  # Builds packages for Ubuntu
+  build-ubuntu:
+    parameters:
+      platform:
+        type: string
+      arch:
+        type: string
+    steps:
+      - prepare-debian:
+          platform: << parameters.platform >>
+          arch: << parameters.arch >>
+      - callback:
+          command: dependencies
+          args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus
+      - run:
+          name: Build
+          command: cd desktop && make ARCH=<< parameters.arch >> archive && make ARCH=<< parameters.arch >> deb
+      - store_artifacts:
+          path: desktop/build/fig-<< parameters.arch >>-linux.deb
+          destination: << parameters.platform >>/<< parameters.arch >>/deb
+      - store_artifacts:
+          path: desktop/build/fig-<< parameters.arch >>-linux.tar.gz
+          destination: << parameters.platform >>/<< parameters.arch >>/archive
+      - store_artifacts:
+          path: desktop/build/usr/bin/fig
+          destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
+
+  build-ubuntu-cli-only:
+    parameters:
+      platform:
+        type: string
+      arch:
+        type: string
+    steps:
+      - prepare-debian:
+          platform: << parameters.platform >>
+          arch: << parameters.arch >>
+          include_desktop_deps: false
+      - run:
+          name: Build CLI
+          command: cd desktop && make ARCH=<< parameters.arch >> fig
+      - store_artifacts:
+          path: desktop/build/usr/bin/fig
+          destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
+
+  build-fedora:
+    parameters:
+      platform:
+        type: string
+      arch:
+        type: string
+    steps:
+      - prepare-fedora:
+          platform: << parameters.platform >>
+          arch: << parameters.arch >>
+      - run:
+          name: Build
+          command: cd desktop && make ARCH=<< parameters.arch >> archive && make ARCH=<< parameters.arch >> rpm
+      - run:
+          name: Gather RPM metadata
+          command: |
+            rpm --query --requires desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/requires.txt
+            rpm --query --provides desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/provides.txt
+            rpm --query --info desktop/build/fig-<< parameters.arch >>-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/installed-size.txt
+      - callback:
+          command: dependencies
+          args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
+      - callback:
+          command: rpm_requires
+          args: << parameters.platform >>;$(cat /tmp/requires.txt)
+      - callback:
+          command: rpm_provides
+          args: << parameters.platform >>;$(cat /tmp/provides.txt)
+      - callback:
+          command: rpm_installed_size
+          args: << parameters.platform >>;$(cat /tmp/installed-size.txt)
+      - store_artifacts:
+          path: desktop/build/fig-<< parameters.arch >>-linux.rpm
+          destination: << parameters.platform >>/<< parameters.arch >>/rpm
+      - store_artifacts:
+          path: desktop/build/fig-<< parameters.arch >>-linux.tar.gz
+          destination: << parameters.platform >>/<< parameters.arch >>/archive
+      - store_artifacts:
+          path: desktop/build/fig
+          destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin

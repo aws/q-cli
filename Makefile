@@ -1,4 +1,5 @@
 MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
+ARCH ?= x86_64
 
 BUILD_DIR = $(MAKE_DIR)/build
 
@@ -16,40 +17,40 @@ endif
 all: archive deb
 
 archive: bin icons bundle 
-	cd $(BUILD_DIR) && tar -cjf fig-x86_64-linux.tar.gz usr install.sh
+	cd $(BUILD_DIR) && tar -cjf fig-$(ARCH)-linux.tar.gz usr install.sh
 
 arch: archive
-	mv fig-x86_64-linux.tar.gz fig-x86_64-linux-archlinux-$(VERSION).tar.gz
+	mv fig-$(ARCH)-linux.tar.gz fig-$(ARCH)-linux-archlinux-$(VERSION).tar.gz
 
 deb: bin icons bundle
-	mkdir -p $(BUILD_DIR)/fig-x86_64-linux
-	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-x86_64-linux
-	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/zsh\ \(figterm\)
-	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/bash\ \(figterm\)
-	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/fish\ \(figterm\)
-	cp -r $(MAKE_DIR)/bundle/deb/. $(BUILD_DIR)/fig-x86_64-linux
-	sed -i "s/^Version:.*/Version: $(VERSION)/" $(BUILD_DIR)/fig-x86_64-linux/DEBIAN/control
-	cd $(BUILD_DIR) && dpkg-deb --build --root-owner-group fig-x86_64-linux
-	dpkg-deb --info $(BUILD_DIR)/fig-x86_64-linux.deb
+	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux
+	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-$(ARCH)-linux
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/zsh\ \(figterm\)
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/bash\ \(figterm\)
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/fish\ \(figterm\)
+	cp -r $(MAKE_DIR)/bundle/deb/. $(BUILD_DIR)/fig-$(ARCH)-linux
+	sed -i "s/^Version:.*/Version: $(VERSION)/" $(BUILD_DIR)/fig-$(ARCH)-linux/DEBIAN/control
+	cd $(BUILD_DIR) && dpkg-deb --build --root-owner-group fig-$(ARCH)-linux
+	dpkg-deb --info $(BUILD_DIR)/fig-$(ARCH)-linux.deb
 
 rpm: bin icons bundle
 	rpmdev-setuptree
-	mkdir -p $(BUILD_DIR)/fig-x86_64-linux
+	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux
 	cp $(MAKE_DIR)/bundle/rpm/fig.spec ~/rpmbuild/SPECS/
-	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-x86_64-linux
-	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/zsh\ \(figterm\)
-	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/bash\ \(figterm\)
-	cp $(BUILD_DIR)/fig-x86_64-linux/usr/bin/figterm $(BUILD_DIR)/fig-x86_64-linux/usr/bin/fish\ \(figterm\)
+	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-$(ARCH)-linux
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/zsh\ \(figterm\)
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/bash\ \(figterm\)
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/fish\ \(figterm\)
 	sed -i "s/^Version:.*/Version: ${NUMERIC}/" ~/rpmbuild/SPECS/fig.spec
 	sed -i "s/^Release:.*/Release: ${FLAVOR}/" ~/rpmbuild/SPECS/fig.spec
 	mkdir -p ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
 	rm -r ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
-	cp -r $(BUILD_DIR)/fig-x86_64-linux ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
+	cp -r $(BUILD_DIR)/fig-$(ARCH)-linux ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/
 	rpmbuild -bb ~/rpmbuild/SPECS/fig.spec
-	cp ~/rpmbuild/RPMS/x86_64/fig-${NUMERIC}-${FLAVOR}.x86_64.rpm $(BUILD_DIR)/fig-x86_64-linux.rpm
+	cp ~/rpmbuild/RPMS/$(ARCH)/fig-${NUMERIC}-${FLAVOR}.$(ARCH).rpm $(BUILD_DIR)/fig-$(ARCH)-linux.rpm
 
 bin: fig_ibus_engine fig_desktop fig figterm
-	rm -f $(BUILT_PRODUCTS_DIR)/*-x86_64-unknown-linux-gnu
+	rm -f $(BUILT_PRODUCTS_DIR)/*-$(ARCH)-unknown-linux-gnu
 
 fig_desktop:
 	$(MAKE) -C $(MAKE_DIR)/$@
@@ -78,7 +79,7 @@ bundle:
 # Actions
 
 preview: archive
-	tar -tvf $(BUILD_DIR)/fig-x86_64-linux.tar.gz
+	tar -tvf $(BUILD_DIR)/fig-$(ARCH)-linux.tar.gz
 
 .PHONY: all archive arch deb rpm bin fig_desktop figterm fig fig_cli fig_ibus_engine icons preview bundle
 
