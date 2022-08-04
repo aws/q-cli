@@ -150,7 +150,7 @@ pub async fn api_request(
                 },
                 // process
                 RunProcessRequest(request) => process::run(request).await,
-                PseudoterminalExecuteRequest(request) => process::execute(request).await,
+                PseudoterminalExecuteRequest(request) => process::execute(request, &global_state.figterm_state).await,
                 PseudoterminalWriteRequest(_deprecated) => process::write().await,
                 // properties
                 UpdateApplicationPropertiesRequest(request) => {

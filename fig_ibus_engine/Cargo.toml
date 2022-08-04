@@ -10,6 +10,7 @@ publish = false
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_log = { path = "../rust-lib/fig_log" }
+fig_util = { path = "../rust-lib/fig_util" }
 parking_lot = "0.12.1"
 tracing = "0.1.35"
 

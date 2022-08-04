@@ -9,6 +9,7 @@ use anyhow::{
     Context,
     Result,
 };
+use fig_util::directories;
 use regex::Regex;
 
 use crate::{
@@ -25,9 +26,7 @@ pub struct SshIntegration {
 
 impl SshIntegration {
     fn get_integration_path(&self) -> Result<PathBuf> {
-        Ok(fig_directories::fig_dir()
-            .context("Could not get fig dir path")?
-            .join("ssh"))
+        Ok(directories::fig_dir()?.join("ssh"))
     }
 
     fn get_file_integration(&self) -> Result<FileIntegration> {
@@ -38,7 +37,7 @@ impl SshIntegration {
     }
 
     fn legacy_text(&self) -> Result<String> {
-        let home = fig_directories::home_dir().context("Could not get home dir")?;
+        let home = directories::home_dir()?;
         let integration_path = self.get_integration_path()?;
         let path = integration_path.strip_prefix(home)?;
         Ok(format!("Include ~/{}", path.display()))
@@ -54,7 +53,7 @@ impl SshIntegration {
     }
 
     fn source_text(&self) -> Result<String> {
-        let home = fig_directories::home_dir().context("Could not get home dir")?;
+        let home = directories::home_dir()?;
         let integration_path = self.get_integration_path()?;
         let path = integration_path.strip_prefix(home)?;
         Ok(format!("Match all\n  Include ~/{}", path.display()))

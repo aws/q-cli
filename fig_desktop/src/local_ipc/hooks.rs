@@ -50,11 +50,12 @@ use crate::{
 
 pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, proxy: &EventLoopProxy) -> Result<()> {
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
-    ensure_figterm(session_id.clone(), global_state.clone());
+    ensure_figterm(session_id.clone(), global_state.clone())?;
 
     let old_metrics = global_state.figterm_state.with_mut(session_id.clone(), |session| {
         session.edit_buffer.text = hook.text.clone();
         session.edit_buffer.cursor = hook.cursor;
+        session.terminal_cursor_coordinates = hook.terminal_cursor_coordinates.clone();
         session.context = hook.context.clone();
 
         let received_at = OffsetDateTime::now_local().unwrap_or_else(|_| OffsetDateTime::now_utc());
@@ -88,18 +89,17 @@ pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, p
                 ("num_insertions", metrics.num_insertions.into()),
                 ("num_popups", metrics.num_popups.into()),
             ];
-            if let Err(e) = fig_telemetry::dispatch_emit_track(
-                fig_telemetry::TrackEvent::new(
+            tokio::spawn(async {
+                if let Err(e) = fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                     fig_telemetry::TrackEventType::TerminalSessionMetricsRecorded,
                     fig_telemetry::TrackSource::App,
                     properties,
-                ),
-                true,
-            )
-            .await
-            {
-                warn!("Failed to record terminal session metrics: {}", e);
-            }
+                ))
+                .await
+                {
+                    warn!("Failed to record terminal session metrics: {e}");
+                }
+            });
         }
     }
 
@@ -158,7 +158,7 @@ pub async fn caret_position(
     proxy
         .send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),
-            window_event: WindowEvent::UpdateCaret { x, y, width, height },
+            window_event: WindowEvent::Reposition { x, y: y + height },
         })
         .unwrap();
 

@@ -6,6 +6,7 @@ use std::time::{
     Instant,
 };
 
+use fig_util::directories;
 use parking_lot::Mutex;
 use tracing::{
     debug,
@@ -48,7 +49,7 @@ fn send_hook(hook: fig_proto::local::Hook) {
 }
 
 fn get_stream() -> Result<UnixStream, Instant> {
-    fig_ipc::connect_sync(fig_ipc::get_fig_socket_path()).map_err(|err| {
+    fig_ipc::connect_sync(directories::fig_socket_path().expect("Failed getting fig socket")).map_err(|err| {
         warn!("Failed connecting to socket: {err:?}");
         Instant::now()
     })

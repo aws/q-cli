@@ -45,5 +45,8 @@ message ShellContext {
 	optional string hostname = 8;
 
 	optional ShellContext remote_context = 9;
+
+  optional string shell_path = 10;
+  optional string wsl_distro = 11;
 }
 

@@ -10,6 +10,7 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks;
+use fig_util::directories;
 use fig_util::terminal::CURRENT_TERMINAL;
 use once_cell::sync::Lazy;
 
@@ -105,7 +106,7 @@ impl HookSubcommand {
                 text,
             } => {
                 let context = hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
-                Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor))
+                Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor, None))
             },
             HookSubcommand::Hide => Ok(hooks::new_hide_hook()),
             HookSubcommand::Init { pid, tty } => {
@@ -136,7 +137,7 @@ impl HookSubcommand {
                 prompt,
             } => {
                 if *prompt && !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
-                    let installed_hosts_file = fig_directories::fig_dir()
+                    let installed_hosts_file = directories::fig_dir()
                         .context("Can't get fig dir")?
                         .join("ssh_hostnames");
                     let mut installed_hosts = OpenOptions::new()

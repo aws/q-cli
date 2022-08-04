@@ -36,14 +36,14 @@ jobs:
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-        
+
       - name: Install Nightly Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
           toolchain: nightly
           profile: minimal
           components: rustfmt
-      
+
       - name: Fmt
         uses: actions-rs/cargo@v1
         with:
@@ -53,16 +53,15 @@ jobs:
 
   clippy:
     strategy:
-      matrix: 
-        os: [ubuntu-latest, macos-latest]
-        # os: [ubuntu-latest, macos-latest, windows-latest]
+      matrix:
+        os: [ubuntu-latest, macos-latest, windows-latest]
       fail-fast: false
     name: Clippy ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
-      
+
       - name: Install Ubuntu dependencies
         if: startsWith(matrix.os,'ubuntu')
         run: |
@@ -86,6 +85,11 @@ jobs:
           brew update || brew update
           brew install protobuf
 
+      - name: Install Windows dependencies
+        if: startsWith(matrix.os,'windows')
+        run: |
+          choco install protoc
+
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -106,9 +110,8 @@ jobs:
 
   test-code-cov:
     strategy:
-      matrix: 
-        os: [ubuntu-latest, macos-latest]    
-        # os: [ubuntu-latest, macos-latest, windows-latest]    
+      matrix:
+        os: [ubuntu-latest]
       fail-fast: false
     name: Test and Codecov ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
@@ -140,7 +143,12 @@ jobs:
         run: |
           brew update || brew update
           brew install protobuf
-        
+
+      - name: Install Windows dependencies
+        if: startsWith(matrix.os,'windows')
+        run: |
+          choco install protoc
+
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
         with:
@@ -167,3 +175,4 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           env_vars: OS
+

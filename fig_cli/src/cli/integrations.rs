@@ -11,7 +11,10 @@ use fig_integrations::{
     get_default_backup_dir,
     Integration as _,
 };
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
 use tracing::debug;
 
 use crate::daemon;
@@ -38,7 +41,7 @@ pub enum Integration {
 }
 
 pub fn get_ssh_config_path() -> Result<PathBuf> {
-    Ok(fig_directories::home_dir()
+    Ok(directories::home_dir()
         .context("Could not get home directory")?
         .join(".ssh")
         .join("config"))

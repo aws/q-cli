@@ -12,8 +12,6 @@ use std::path::{
     PathBuf,
 };
 use std::process::Command;
-use std::sync::Arc;
-use std::time::Duration;
 
 use anyhow::{
     anyhow,
@@ -21,31 +19,11 @@ use anyhow::{
     Result,
 };
 use cfg_if::cfg_if;
-use futures::{
-    SinkExt,
-    StreamExt,
-};
-use parking_lot::{
-    Mutex,
-    RwLock,
-};
-use rand::distributions::Uniform;
-use rand::prelude::Distribution;
-use tokio::select;
-use tokio_tungstenite::tungstenite;
-use tracing::{
-    debug,
-    error,
-    info,
-};
+use fig_util::directories;
+use parking_lot::Mutex;
 
 use crate::daemon::launchd_plist::LaunchdPlist;
-#[cfg(target_os = "macos")]
-use crate::daemon::settings_watcher::spawn_settings_watcher;
-use crate::daemon::system_handler::spawn_incoming_system_handler;
 use crate::daemon::systemd_unit::SystemdUnit;
-use crate::daemon::websocket::process_websocket;
-use crate::util::backoff::Backoff;
 
 pub fn get_daemon() -> Result<LaunchService> {
     cfg_if! {
@@ -301,7 +279,7 @@ pub struct LaunchService {
 
 impl LaunchService {
     pub fn launchd() -> Result<LaunchService> {
-        let homedir = fig_directories::home_dir().context("Could not get home directory")?;
+        let homedir = directories::home_dir()?;
 
         let plist_path = homedir
             .join("Library")
@@ -333,7 +311,7 @@ impl LaunchService {
     }
 
     pub fn systemd() -> Result<LaunchService> {
-        let homedir = fig_directories::home_dir().context("Could not get home directory")?;
+        let homedir = directories::home_dir()?;
 
         let path = homedir
             .join(".config")
@@ -364,8 +342,7 @@ impl LaunchService {
     }
 
     pub fn scm() -> Result<LaunchService> {
-        let _homedir = fig_directories::home_dir().context("Could not get home directory")?;
-
+        let _homedir = directories::home_dir()?;
         todo!("Figure out windows SCM launch call");
     }
 
@@ -431,6 +408,30 @@ pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::new(false);
 /// Spawn the daemon to listen for updates and dotfiles changes
 #[cfg(unix)]
 pub async fn daemon() -> Result<()> {
+    use std::sync::Arc;
+    use std::time::Duration;
+
+    use futures::{
+        SinkExt,
+        StreamExt,
+    };
+    use parking_lot::RwLock;
+    use rand::distributions::Uniform;
+    use rand::prelude::Distribution;
+    use tokio::select;
+    use tokio_tungstenite::tungstenite;
+    use tracing::{
+        debug,
+        error,
+        info,
+    };
+
+    #[cfg(target_os = "macos")]
+    use crate::daemon::settings_watcher::spawn_settings_watcher;
+    use crate::daemon::system_handler::spawn_incoming_system_handler;
+    use crate::daemon::websocket::process_websocket;
+    use crate::util::backoff::Backoff;
+
     *IS_RUNNING_DAEMON.lock() = true;
 
     info!("Starting daemon...");

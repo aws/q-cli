@@ -6,12 +6,12 @@ use std::path::{
 };
 
 use clap::Args;
-use fig_directories::home_dir;
 use fig_telemetry::{
     TrackEvent,
     TrackEventType,
     TrackSource,
 };
+use fig_util::directories;
 use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
@@ -131,7 +131,7 @@ async fn uninstall_app_bundle() {
     }
 
     // Remove launch agents
-    if let Some(home) = home_dir() {
+    if let Ok(home) = directories::home_dir() {
         let launch_agents = home.join("Library").join("LaunchAgents");
         remove_in_dir_with_prefix_unless(&launch_agents, "io.fig.", |p| p.contains("daemon")).await;
     } else {
@@ -156,17 +156,15 @@ async fn uninstall_user_data() {
     }
 
     // Delete data dir
-    if let Some(fig_data_dir) = fig_directories::fig_data_dir() {
+    if let Ok(fig_data_dir) = directories::fig_data_dir() {
         tokio::fs::remove_dir_all(&fig_data_dir)
             .await
             .map_err(|err| warn!("Could not remove {}: {err}", fig_data_dir.display()))
             .ok();
-    } else {
-        warn!("Could not find data directory");
     }
 
     // Delete the ~/.fig folder
-    if let Some(fig_dir) = fig_directories::fig_dir() {
+    if let Ok(fig_dir) = directories::fig_dir() {
         tokio::fs::remove_dir_all(fig_dir)
             .await
             .map_err(|err| warn!("Could not remove ~/.fig folder: {err}"))
@@ -177,7 +175,7 @@ async fn uninstall_user_data() {
 }
 
 async fn uninstall_input_method() {
-    if let Some(home) = fig_directories::home_dir() {
+    if let Ok(home) = directories::home_dir() {
         // Remove the app
         let fig_input_method_app = home.join("Library").join("Input Methods").join("FigInputMethod.app");
 
@@ -194,7 +192,7 @@ async fn uninstall_input_method() {
 
 async fn uninstall_terminal_integrations() {
     // Delete integrations
-    if let Some(home) = home_dir() {
+    if let Ok(home) = directories::home_dir() {
         // Delete iTerm integratione
         for path in &[
             "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py",

@@ -8,11 +8,8 @@ use std::io::{
 use std::path::PathBuf;
 
 use alacritty_terminal::term::CommandInfo;
-use anyhow::{
-    Context,
-    Result,
-};
-use fig_directories::fig_dir;
+use anyhow::Result;
+use fig_util::directories;
 use flume::{
     bounded,
     Sender,
@@ -93,9 +90,11 @@ impl History {
     pub fn load() -> Result<History> {
         trace!("Loading history");
 
-        let old_history_path = fig_dir().context("Failed to get fig_dir")?.join("history");
+        let old_history_path = directories::fig_dir()?.join("history");
 
-        let history_path: PathBuf = [fig_dir().unwrap(), "fig.history".into()].into_iter().collect();
+        let history_path: PathBuf = [directories::fig_dir().unwrap(), "fig.history".into()]
+            .into_iter()
+            .collect();
 
         let mut old_history = Vec::new();
 
@@ -196,10 +195,11 @@ impl History {
 
         // Legacy insert into old history file
         if legacy {
-            let legacy_history_file = File::options()
-                .create(true)
-                .append(true)
-                .open(&[fig_dir().unwrap(), "history".into()].into_iter().collect::<PathBuf>())?;
+            let legacy_history_file = File::options().create(true).append(true).open(
+                &[directories::fig_dir().unwrap(), "history".into()]
+                    .into_iter()
+                    .collect::<PathBuf>(),
+            )?;
 
             let mut legacy_history_buff = BufWriter::new(legacy_history_file);
 

@@ -14,14 +14,13 @@ and CLI. Several projects live here:
     - `alacritty_terminal` - Our internal fork of the [alacritty internal terminal implementation](https://github.com/alacritty/alacritty/tree/master/alacritty_terminal), used for figterm ansi parsing and screen tracking
     - `fig_auth` - AWS credential management, mostly used for fetching the current auth token
     - `fig_color` - Used for figterm to parse colors in terminal output
-    - `fig_directories` - A wrapper over [`dirs`](https://docs.rs/dirs/latest/dirs/) that provides standard locations for fig folders
     - `fig_integrations` - Fig's system integrations (ssh, dotfiles, etc)
     - `fig_ipc` - Defines the fig wire protocol and standard locations for sockets
     - `fig_log` - Defines standard ways to log errors using [`tracing`](https://docs.rs/tracing/latest/tracing/)
     - `fig_proto` - The protocol buffer definitions compiled to Rust
     - `fig_settings` - Utilities for interacting with figs remote/local settings and local state
     - `fig_telemetry` - Used to report telemetry to segment and [`sentry`](https://docs.rs/sentry/latest/sentry/)
-    - `fig_util` - Misc other utilites that are useful in mutiple projects (Terminal, Shell enums, etc)
+    - `fig_util` - Misc other utilites that are useful in mutiple projects (Directories, Terminal, Shell enums, etc)
     - `system_socket` - A light wrapper over `UnixSockets` that allows them to be used in Windows projects as well
     - `viu` - An internal fork of [`viu`](https://github.com/atanunq/viu) to provide displaying of images in the terminal
 - `typescript-api-bindings/` - The protocol buffer bindings for typescript

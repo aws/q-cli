@@ -3,6 +3,7 @@ use std::process::Stdio;
 use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
+    EnvironmentVariable,
     PseudoterminalExecuteRequest,
     PseudoterminalExecuteResponse,
     RunProcessRequest,
@@ -14,31 +15,54 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
+use crate::figterm::FigtermState;
 use crate::native::{
     SHELL,
     SHELL_ARGS,
 };
 
+fn get_shell_path_from_state(state: &FigtermState) -> Option<String> {
+    state.most_recent_session()?.context?.shell_path
+}
+
 // TODO(mia): implement actual pseudoterminal stuff
-pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
-    let mut cmd = Command::new(SHELL);
+pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
+    let shell = get_shell_path_from_state(state).unwrap_or_else(|| SHELL.into());
+    let mut cmd = Command::new(shell);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
+    // TODO(sean): better SHELL_ARGs handling here based on shell.
+    // TODO(sean): handle wsl distro from FigtermState here.
     cmd.args(SHELL_ARGS);
     cmd.stdin(Stdio::inherit());
-
-    cfg_if::cfg_if!(
-        if #[cfg(target_os="windows")] {
-            // account for weird behavior passing in commands containing && to WSL
-            cmd.args(request.command.split(' ').collect::<Vec<&str>>());
-        } else {
-            cmd.arg(&request.command);
-        }
-    );
+    cmd.arg(&request.command);
 
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);
     }
 
-    for var in request.env {
+    let mut env = request.env;
+    env.push(EnvironmentVariable {
+        key: "FIG_ENV_VAR".to_owned(),
+        value: Some("1".to_owned()),
+    });
+    env.push(EnvironmentVariable {
+        key: "FIG_SHELL_VAR".to_owned(),
+        value: Some("1".to_owned()),
+    });
+    env.push(EnvironmentVariable {
+        key: "FIG_TERM".to_owned(),
+        value: Some("1".to_owned()),
+    });
+    env.push(EnvironmentVariable {
+        key: "FIG_PTY".to_owned(),
+        value: Some("1".to_owned()),
+    });
+    env.push(EnvironmentVariable {
+        key: "PROCESS_LAUNCHED_BY_FIG".to_owned(),
+        value: Some("1".to_owned()),
+    });
+    for var in env {
         cmd.env(var.key.clone(), var.value());
     }
 
@@ -61,7 +85,11 @@ pub async fn execute(request: PseudoterminalExecuteRequest) -> RequestResult {
 }
 
 pub async fn run(request: RunProcessRequest) -> RequestResult {
+    // TODO(sean) we can infer shell as above for execute if no executable is provided.
     let mut cmd = Command::new(&request.executable);
+    #[cfg(target_os = "windows")]
+    cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
+
     if let Some(working_directory) = request.working_directory {
         cmd.current_dir(working_directory);
     } else if let Ok(working_directory) = std::env::current_dir() {

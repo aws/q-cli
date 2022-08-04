@@ -36,6 +36,7 @@ use clap::{
     ValueEnum,
 };
 use fig_log::Logger;
+use fig_util::directories;
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
@@ -253,7 +254,7 @@ impl Cli {
                     let res = daemon().await;
                     if let Err(err) = &res {
                         std::fs::write(
-                            fig_directories::fig_dir().unwrap().join("logs").join("daemon-exit.log"),
+                            directories::fig_dir().unwrap().join("logs").join("daemon-exit.log"),
                             format!("{:?}", err),
                         )
                         .ok();

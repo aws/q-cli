@@ -52,6 +52,8 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error(transparent)]
     JsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    FigUtilError(#[from] fig_util::Error),
     #[error("settings file is not a json object")]
     SettingsNotObject,
     #[error("could not get path to settings file")]

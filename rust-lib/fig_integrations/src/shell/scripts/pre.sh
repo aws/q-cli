@@ -41,7 +41,11 @@ then
   # new ttys are created using Tmux of VSCode and must be explictly
   # overwritten.
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
-    export TERM_SESSION_ID="$(uuidgen)"
+    if command -v uuidgen 1>/dev/null 2>&1; then
+      export TERM_SESSION_ID="$(uuidgen)"
+    else
+      export TERM_SESSION_ID="$(powershell -Command "[guid]::NewGuid().ToString()")"
+    fi
   fi
   export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
@@ -56,11 +60,16 @@ then
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
     FIG_TERM_NAME="${FIG_SHELL} (figterm)"
-    FIG_SHELL_PATH="$(command -v "$FIG_TERM_NAME" || echo "${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)")"
+    
+    if [[ "$OSTYPE" == "darwin"* ]]; then
+        FIG_SHELL_PATH="$(command -v "$FIG_TERM_NAME" || echo "${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)")"
 
-    # Only copy figterm binary if it doesn't already exist
-    if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
-      cp -p "$(command -v figterm)" "${FIG_SHELL_PATH}"
+        # Only copy figterm binary if it doesn't already exist
+        if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
+          cp -p "$(command -v figterm)" "${FIG_SHELL_PATH}"
+        fi
+    else
+      FIG_SHELL_PATH="$(command -v figterm)"
     fi
 
     FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"

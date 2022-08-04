@@ -2,13 +2,13 @@ PLATFORM := $(shell uname -s)
 
 # Check if variable contains string https://stackoverflow.com/a/2741747
 ifneq (,$(findstring CYGWIN,$(PLATFORM)))
-	PLATFORM := "windows"
+	PLATFORM := windows
 endif
 ifneq (,$(findstring MINGW,$(PLATFORM)))
-	PLATFORM := "windows"
+	PLATFORM := windows
 endif
 ifneq (,$(findstring MSYS,$(PLATFORM)))
-	PLATFORM := "windows"
+	PLATFORM := windows
 endif
 
 $(warning PLATFORM is $(PLATFORM))
@@ -21,10 +21,17 @@ endif
 # Add cargo executables to PATH
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
-SHELL := env PATH=$(PATH) /bin/bash
+ifneq "$(PLATFORM)" "windows"
+SHELL := env "PATH=$(PATH)" /bin/bash
+endif
 
+ifeq "$(PLATFORM)" "windows"
+MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))) | tr '\\' '/' | sed 's/^C:/\/c/g')
+TARGET_DIR  ?= $(shell cargo metadata --format-version 1 | jq -r .target_directory | tr '\\' '/' | sed 's/^C:/\/c/g')
+else
 MAKE_DIR    ?= $(shell dirname $(realpath $(firstword $(MAKEFILE_LIST))))
 TARGET_DIR  ?= $(shell cargo metadata --format-version 1 | jq -r .target_directory)
+endif
 
 BUILT_PRODUCTS_DIR ?= $(MAKE_DIR)/build
 OUT_DIR            := $(BUILT_PRODUCTS_DIR)
@@ -32,9 +39,9 @@ $(shell mkdir -p $(OUT_DIR))
 
 ifneq "$(CONFIGURATION)" "Debug"
 CARGO_OPTIONS ?= --locked --release
-CARGO_BUILD := "release"
+CARGO_BUILD := release
 else
-CARGO_BUILD := "debug"
+CARGO_BUILD := debug
 endif
 
 BINARY_NAME ?= fig
@@ -49,7 +56,7 @@ ifeq "$(PLATFORM)" "Linux"
 all: linux
 endif
 ifeq "$(PLATFORM)" "windows"
-all: windows
+all: windows-msvc
 endif
 
 macos: $(BINARY_NAME)-darwin-universal
@@ -77,12 +84,19 @@ $(BINARY_NAME)-aarch64-unknown-linux-gnu:
 	cargo build --target=aarch64-unknown-linux-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/aarch64-unknown-linux-gnu/$(CARGO_BUILD)/$(CRATE_NAME) $(OUT_DIR)/$@
 
-windows: $(BINARY_NAME)-x86_64-pc-windows-gnu
+windows-gnu: $(BINARY_NAME)-x86_64-pc-windows-gnu
+	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
+
+windows-msvc: $(BINARY_NAME)-x86_64-pc-windows-msvc
 	install $(OUT_DIR)/$< $(OUT_DIR)/$(BINARY_NAME)
 
 $(BINARY_NAME)-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/x86_64-pc-windows-gnu/$(CARGO_BUILD)/$(CRATE_NAME).exe $(OUT_DIR)/$@
+
+$(BINARY_NAME)-x86_64-pc-windows-msvc:
+	cargo build --target x86_64-pc-windows-msvc $(CARGO_OPTIONS)
+	install $(TARGET_DIR)/x86_64-pc-windows-msvc/release/$(CRATE_NAME).exe $(OUT_DIR)/$@
 
 ### Build and Install for local dev
 

@@ -1,19 +1,15 @@
 pub mod command;
-pub mod daemon;
-pub mod figterm;
 pub mod hook;
 
 use std::fmt::Debug;
 use std::io::{
     Cursor,
+    ErrorKind,
     Write,
 };
 #[cfg(unix)]
 use std::os::unix::net::UnixStream as SyncUnixStream;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::Path;
 use std::time::Duration;
 
 use anyhow::{
@@ -40,29 +36,6 @@ use tracing::{
     error,
     trace,
 };
-
-/// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
-pub fn get_fig_socket_path() -> PathBuf {
-    cfg_if::cfg_if! {
-        if #[cfg(unix)] {
-            if wsl::is_wsl() {
-                PathBuf::from("/mnt/c/fig/fig.socket")
-            } else {
-                [
-                    Path::new("/var/tmp/fig"),
-                    Path::new(&whoami::username()),
-                    Path::new("fig.socket"),
-                ]
-                .into_iter()
-                .collect()
-            }
-        } else if #[cfg(windows)] {
-            PathBuf::from(r"C:\fig\fig.socket")
-        } else {
-            compile_error!("Unsupported platform");
-        }
-    }
-}
 
 pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream> {
     let socket = socket.as_ref();
@@ -149,8 +122,10 @@ where
             trace!("Sent message: {message:?}");
         },
         Err(err) => {
-            error!("Failed to write message: {err}");
-            bail!("Failed to write message: {err}");
+            if !(err.kind() == ErrorKind::BrokenPipe || err.kind() == ErrorKind::ConnectionRefused) {
+                error!("Failed to write message: {err}");
+                bail!("Failed to write message: {err}");
+            }
         },
     };
 

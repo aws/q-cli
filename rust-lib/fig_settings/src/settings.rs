@@ -1,5 +1,7 @@
 use std::path::PathBuf;
 
+use fig_util::directories;
+
 use crate::remote_settings::{
     delete_remote_setting,
     update_remote_setting,
@@ -9,14 +11,16 @@ use crate::{
     LocalJson,
 };
 
-pub fn settings_path() -> Option<PathBuf> {
-    fig_directories::fig_dir().map(|path| path.join("settings.json"))
+pub fn settings_path() -> Result<PathBuf, super::Error> {
+    Ok(directories::fig_dir()
+        .map_err(fig_util::Error::from)?
+        .join("settings.json"))
 }
 
 pub type LocalSettings = LocalJson;
 
 pub fn local_settings() -> Result<LocalSettings, super::Error> {
-    let path = settings_path().ok_or(super::Error::SettingsPathNotFound)?;
+    let path = settings_path()?;
     LocalSettings::load(path)
 }
 

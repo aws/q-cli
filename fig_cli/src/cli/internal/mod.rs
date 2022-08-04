@@ -31,7 +31,10 @@ use fig_proto::hooks::{
 };
 use fig_proto::ReflectMessage;
 use fig_request::Request;
-use fig_util::get_parent_process_exe;
+use fig_util::{
+    directories,
+    get_parent_process_exe,
+};
 use rand::distributions::{
     Alphanumeric,
     DistString,
@@ -175,6 +178,10 @@ pub enum InternalSubcommand {
         body: Option<String>,
         #[clap(long, value_parser)]
         namespace: Option<String>,
+    },
+    FigSocketPath,
+    FigtermSocketPath {
+        session_id: String,
     },
     #[clap(group(
         ArgGroup::new("target")
@@ -328,6 +335,20 @@ impl InternalSubcommand {
             },
             InternalSubcommand::GetShell => {
                 if let Some(exe) = get_parent_process_exe() {
+                    #[cfg(windows)]
+                    let exe = if exe.file_name().unwrap() == "bash.exe" {
+                        exe.parent()
+                            .context("No parent")?
+                            .parent()
+                            .context("No parent")?
+                            .parent()
+                            .context("No parent")?
+                            .join("bin")
+                            .join("bash.exe")
+                    } else {
+                        exe
+                    };
+
                     if write!(stdout(), "{}", exe.display()).is_ok() {
                         return Ok(());
                     }
@@ -349,40 +370,44 @@ impl InternalSubcommand {
                 //   - 2 fallback to FIG_TERM env
                 cfg_if!(
                     if #[cfg(target_os = "linux")] {
-                        use fig_util::process_info::PidExt;
-                        match (|| {
-                            let current_pid = fig_util::process_info::Pid::current();
+                        if wsl::is_wsl() {
+                            exit(2)
+                        } else {
+                            use fig_util::process_info::PidExt;
+                            match (|| {
+                                let current_pid = fig_util::process_info::Pid::current();
 
-                            let parent_pid = current_pid.parent()?;
-                            let parent_path = parent_pid.exe()?;
-                            let parent_name = parent_path.file_name()?.to_str()?;
+                                let parent_pid = current_pid.parent()?;
+                                let parent_path = parent_pid.exe()?;
+                                let parent_name = parent_path.file_name()?.to_str()?;
 
-                            let valid_parent = ["zsh", "bash", "fish"].contains(&parent_name);
+                                let valid_parent = ["zsh", "bash", "fish"].contains(&parent_name);
 
-                            let grandparent_pid = parent_pid.parent()?;
-                            let grandparent_path = grandparent_pid.exe()?;
-                            let grandparent_name = grandparent_path.file_name()?.to_str()?;
+                                let grandparent_pid = parent_pid.parent()?;
+                                let grandparent_path = grandparent_pid.exe()?;
+                                let grandparent_name = grandparent_path.file_name()?.to_str()?;
 
-                            let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
-                                .iter()
-                                .filter_map(|terminal| terminal.executable_name())
-                                .any(|bin_name| bin_name == grandparent_name);
+                                let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
+                                    .iter()
+                                    .filter_map(|terminal| terminal.executable_name())
+                                    .any(|bin_name| bin_name == grandparent_name);
 
-                            let ancestry = format!(
-                                "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
-                                if valid_grandparent { "✅" } else { "❌" },
-                                grandparent_path.display(),
-                                if valid_parent { "✅" } else { "❌" },
-                                parent_path.display(),
-                            );
+                                let ancestry = format!(
+                                    "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
+                                    if valid_grandparent { "✅" } else { "❌" },
+                                    grandparent_path.display(),
+                                    if valid_parent { "✅" } else { "❌" },
+                                    parent_path.display(),
+                                );
 
-                            Some((valid_parent && valid_grandparent, ancestry))
-                        })() {
-                            Some((should_execute, ancestry)) => {
-                                writeln!(stdout(), "{ancestry}").ok();
-                                exit(if should_execute { 0 } else { 1 });
-                            },
-                            None => exit(1),
+                                Some((valid_parent && valid_grandparent, ancestry))
+                            })() {
+                                Some((should_execute, ancestry)) => {
+                                    writeln!(stdout(), "{ancestry}").ok();
+                                    exit(if should_execute { 0 } else { 1 });
+                                },
+                                None => exit(1),
+                            }
                         }
                     } else {
                         exit(2);
@@ -420,11 +445,11 @@ impl InternalSubcommand {
                 let message = fig_proto::FigMessage::json(serde_json::from_str::<serde_json::Value>(&json)?)?;
 
                 let socket = if app {
-                    fig_ipc::get_fig_socket_path()
+                    directories::fig_socket_path().expect("Failed to get socket path")
                 } else if daemon {
-                    fig_ipc::daemon::get_daemon_socket_path()
+                    directories::daemon_socket_path()
                 } else if let Some(ref figterm) = figterm {
-                    fig_ipc::figterm::get_figterm_socket_path(figterm)
+                    directories::figterm_socket_path(figterm).expect("Failed to get socket path")
                 } else {
                     bail!("No destination for message");
                 };
@@ -455,6 +480,12 @@ impl InternalSubcommand {
                 } else {
                     fig_ipc::send_message(&mut conn, message).await?;
                 }
+            },
+            InternalSubcommand::FigSocketPath => {
+                println!("{}", directories::fig_socket_path()?.to_string_lossy());
+            },
+            InternalSubcommand::FigtermSocketPath { session_id } => {
+                println!("{}", directories::figterm_socket_path(session_id)?.to_string_lossy());
             },
         }
 

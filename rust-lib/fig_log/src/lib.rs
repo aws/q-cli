@@ -9,7 +9,7 @@ use anyhow::{
     Context,
     Result,
 };
-use fig_directories::fig_dir;
+use fig_util::directories;
 use once_cell::sync::Lazy;
 use tracing::level_filters::LevelFilter;
 use tracing::Level;
@@ -36,16 +36,10 @@ pub fn stdio_debug_log(s: impl Display) {
     }
 }
 
-fn log_folder() -> Result<PathBuf> {
-    let mut dir = fig_dir().context("failed to get fig path")?;
-    dir.push("logs");
-    Ok(dir)
-}
-
 fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
-    let mut dir = log_folder()?;
-    dir.push(log_file_name.as_ref().replace('/', "_").replace('\\', "_"));
-    Ok(dir)
+    Ok(directories::fig_dir()?
+        .join("logs")
+        .join(log_file_name.as_ref().replace('/', "_").replace('\\', "_")))
 }
 
 #[must_use]

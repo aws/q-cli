@@ -4,10 +4,7 @@ use std::iter::empty;
 use std::process::Command;
 use std::time::Duration;
 
-use anyhow::{
-    Context,
-    Result,
-};
+use anyhow::Result;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use fig_ipc::command::{
@@ -19,7 +16,6 @@ use fig_settings::{
     state,
 };
 use regex::Regex;
-use serde_json::json;
 use tracing::{
     info,
     trace,
@@ -27,6 +23,7 @@ use tracing::{
 
 use crate::cli::debug::get_app_info;
 use crate::util::{
+    is_app_running,
     launch_fig,
     LaunchOptions,
 };
@@ -51,13 +48,6 @@ pub enum AppSubcommand {
     Uninstall(uninstall::UninstallArgs),
     /// Prompts shown on terminal startup
     Prompts,
-}
-
-fn is_app_running() -> bool {
-    match get_app_info() {
-        Ok(s) => !s.is_empty(),
-        _ => false,
-    }
 }
 
 pub fn launch_fig_cli() -> Result<()> {
@@ -238,38 +228,46 @@ impl AppSubcommand {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             },
             AppSubcommand::SetPath => {
-                println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
-                let path = std::env::var("PATH")?;
-                fig_settings::state::set_value("pty.path", json!(path))?;
-                println!(
-                    "Fig will now use the following path to locate the fig executable:\n{}\n",
-                    path.magenta()
-                );
-                let output = Command::new("tty").output().context(format!(
-                    "{} Unable to reload. Restart terminal to apply changes.",
-                    "Error:".red()
-                ))?;
+                cfg_if! {
+                    if #[cfg(unix)] {
+                        use anyhow::Context;
+                        use fig_ipc::hook::send_hook_to_socket;
+                        use fig_proto::hooks;
+                        use serde_json::json;
 
-                #[cfg(unix)]
-                {
-                    use fig_ipc::hook::send_hook_to_socket;
-                    use fig_proto::hooks;
+                        println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
+                        let path = std::env::var("PATH")?;
+                        fig_settings::state::set_value("pty.path", json!(path))?;
+                        println!(
+                            "Fig will now use the following path to locate the fig executable:\n{}\n",
+                            path.magenta()
+                        );
 
-                    let tty = String::from_utf8(output.stdout)?;
-                    let pid = nix::unistd::getppid();
 
-                    let hook = hooks::generate_shell_context(pid, tty, None, None)
-                        .and_then(hooks::new_init_hook)
-                        .context(format!(
+                        let output = Command::new("tty").output().context(format!(
                             "{} Unable to reload. Restart terminal to apply changes.",
                             "Error:".red()
                         ))?;
 
-                    send_hook_to_socket(hook).await.context(format!(
-                        "\n{}\nFig might not be running to launch Fig run: {}\n",
-                        "Unable to Connect to Fig:".bold(),
-                        "fig launch".magenta()
-                    ))?;
+
+                        let tty = String::from_utf8(output.stdout)?;
+                        let pid = nix::unistd::getppid();
+
+                        let hook = hooks::generate_shell_context(pid, tty, None, None)
+                            .and_then(hooks::new_init_hook)
+                            .context(format!(
+                                "{} Unable to reload. Restart terminal to apply changes.",
+                                "Error:".red()
+                            ))?;
+
+                        send_hook_to_socket(hook).await.context(format!(
+                            "\n{}\nFig might not be running to launch Fig run: {}\n",
+                            "Unable to Connect to Fig:".bold(),
+                            "fig launch".magenta()
+                        ))?;
+                    } else {
+                        anyhow::bail!("Not implemented on this platform");
+                    }
                 }
             },
         }

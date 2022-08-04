@@ -3,9 +3,9 @@ use std::path::PathBuf;
 
 use anyhow::{
     bail,
-    Context,
     Result,
 };
+use fig_util::directories;
 use tracing::{
     error,
     info,
@@ -20,38 +20,27 @@ use crate::{
 pub mod api;
 pub mod manifest;
 
-// pub type Result<T, E = PluginError> = std::result::Result<T, E>;
-//
-// #[derive(Debug, Error)]
-// pub enum PluginError {
-//     #[error(transparent)]
-//     Git(#[from] GitError),
-//     #[error(transparent)]
-//     Io(#[from] std::io::Error),
-//     #[error("no git url found")]
-//     NoGitUrl,
-// }
-
-pub fn plugin_data_dir() -> Option<PathBuf> {
+pub fn plugin_data_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            fig_directories::home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
+            Ok(directories::home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))?)
         } else {
-            fig_directories::fig_data_dir().map(|dir| dir.join("plugins"))
+            Ok(directories::fig_data_dir()?.join("plugins"))
         }
     }
 }
 
 pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
-    let dotfiles_path = dotfiles::api::all_file_path().context("Could not read all file")?;
+    let dotfiles_path = dotfiles::api::all_file_path()?;
     let dotfiles_file = std::fs::File::open(dotfiles_path)?;
+
     let dotfiles_data: dotfiles::api::DotfilesData = serde_json::from_reader(&dotfiles_file)?;
 
     let tasks = dotfiles_data.plugins.into_iter().map(|plugin| {
         tokio::spawn(async move {
             match api::fetch_plugin(plugin.name).await {
                 Ok(plugin) => {
-                    if let Some(plugins_directory) = plugin_data_dir() {
+                    if let Ok(plugins_directory) = plugin_data_dir() {
                         let plugin_directory = plugins_directory.join(&plugin.name);
 
                         if !git::check_if_git_repo(&plugin_directory).await {

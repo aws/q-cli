@@ -1,12 +1,15 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
-use std::process::Command;
 
 use anyhow::{
     Context,
     Result,
 };
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
+#[cfg(unix)]
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -24,6 +27,8 @@ use crate::plugins::api::PluginData;
 
 #[cfg(target_os = "linux")]
 static LINUX_KERNEL_VERSION: Lazy<Option<String>> = Lazy::new(|| {
+    use std::process::Command;
+
     Command::new("uname")
         .arg("-r")
         .output()
@@ -33,6 +38,8 @@ static LINUX_KERNEL_VERSION: Lazy<Option<String>> = Lazy::new(|| {
 
 #[cfg(target_os = "macos")]
 static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
+    use std::process::Command;
+
     Command::new("sw_vers")
         .output()
         .ok()
@@ -76,7 +83,7 @@ pub enum UpdateStatus {
 
 pub async fn download_dotfiles() -> Result<UpdateStatus> {
     let device_uniqueid = fig_util::get_system_id().ok();
-    let plugins_directry = crate::plugins::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
+    let plugins_directory = crate::plugins::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
 
     let debug_dotfiles = match fig_settings::state::get_value("developer.dotfiles.debug") {
         Ok(Some(serde_json::Value::Bool(true))) => Some("true"),
@@ -90,7 +97,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
             ("architecture", Some(std::env::consts::ARCH)),
             ("device", device_uniqueid.as_deref()),
             ("debug", debug_dotfiles),
-            ("pluginsDirectory", plugins_directry.as_deref()),
+            ("pluginsDirectory", plugins_directory.ok().as_deref()),
             #[cfg(target_os = "linux")]
             ("linuxKernelVersion", LINUX_KERNEL_VERSION.as_deref()),
             #[cfg(target_os = "macos")]
@@ -103,7 +110,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     let dotfiles: DotfilesData = serde_json::from_str(&download).context("Failed to parse JSON")?;
     debug!("dotfiles: {:?}", dotfiles.dotfiles);
 
-    let all_json_path = all_file_path().context("Could not get cache file path")?;
+    let all_json_path = all_file_path()?;
 
     // Create dotfiles folder if it doesn't exist
     let dotfiles_folder = all_json_path.parent().unwrap();
@@ -116,7 +123,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
 
     // Write to the individual shell files
     for (shell, dotfile) in dotfiles.dotfiles {
-        let shell_json_path = shell.get_data_path().context("Could not get cache file path")?;
+        let shell_json_path = shell.get_data_path()?;
 
         let dotfiles = DotfileData {
             dotfile,
@@ -158,7 +165,6 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     }
 }
 
-#[must_use]
-pub fn all_file_path() -> Option<PathBuf> {
-    fig_directories::fig_data_dir().map(|dir| dir.join("shell").join("all.json"))
+pub fn all_file_path() -> Result<PathBuf> {
+    Ok(directories::fig_data_dir()?.join("shell").join("all.json"))
 }

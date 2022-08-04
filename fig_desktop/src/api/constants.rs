@@ -4,6 +4,7 @@ use std::env::{
 };
 
 use camino::Utf8PathBuf;
+use fig_util::directories;
 use serde::{
     Deserialize,
     Serialize,
@@ -34,10 +35,12 @@ impl Default for Constants {
             cli: which("fig").ok().and_then(|exe| Utf8PathBuf::try_from(exe).ok()),
             bundle_path: None,
             remote: None,
-            home: fig_directories::home_dir().and_then(|dir| dir.try_into().ok()),
+            home: directories::home_dir().ok().and_then(|dir| dir.try_into().ok()),
             user: whoami::username(),
             default_path: var("PATH").ok(),
-            themes_folder: fig_install::themes::themes_directory().and_then(|dir| Utf8PathBuf::try_from(dir).ok()),
+            themes_folder: fig_install::themes::themes_directory()
+                .ok()
+                .and_then(|dir| Utf8PathBuf::try_from(dir).ok()),
             themes: Some(vec!["light".into(), "dark".into(), "system".into()]),
             os: consts::OS,
             arch: consts::ARCH,

@@ -281,16 +281,13 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             None => (None, workflow_name.as_ref()),
         };
 
-        workflows = workflows
-            .into_iter()
-            .filter(|c| {
-                c.name == name
-                    && match namespace {
-                        Some(namespace) => c.namespace == namespace,
-                        None => true,
-                    }
-            })
-            .collect();
+        workflows.retain(|workflow| {
+            workflow.name == name
+                && match namespace {
+                    Some(namespace) => workflow.namespace == namespace,
+                    None => true,
+                }
+        });
 
         if workflows.is_empty() {
             bail!("No matching workflows for {workflow_name}");

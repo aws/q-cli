@@ -1,17 +1,13 @@
 use std::ffi::CStr;
-use std::io::{
-    stderr,
-    stdin,
-    stdout,
-};
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
 
 use anyhow::Result;
+use fig_proto::local::TerminalCursorCoordinates;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
+use tracing::warn;
 use windows::Win32::Foundation::{
-    BOOL,
     HWND,
     POINT,
 };
@@ -24,17 +20,6 @@ use windows::Win32::System::Com::{
     VARIANT_0,
     VARIANT_0_0,
     VARIANT_0_0_0,
-};
-use windows::Win32::System::Console::{
-    AttachConsole,
-    FreeConsole,
-    GetConsoleScreenBufferInfo,
-    GetCurrentConsoleFont,
-    GetStdHandle,
-    ATTACH_PARENT_PROCESS,
-    CONSOLE_FONT_INFO,
-    CONSOLE_SCREEN_BUFFER_INFO,
-    STD_OUTPUT_HANDLE,
 };
 use windows::Win32::System::Ole::VT_I4;
 use windows::Win32::System::ProcessStatus::K32GetProcessImageFileNameA;
@@ -56,7 +41,6 @@ use windows::Win32::UI::Accessibility::{
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow,
-    GetParent,
     GetWindowThreadProcessId,
     CHILDID_SELF,
     EVENT_OBJECT_LOCATIONCHANGE,
@@ -73,21 +57,20 @@ use crate::event::{
     NativeEvent,
     WindowEvent,
 };
-use crate::window::CursorPositionKind;
 use crate::{
     EventLoopProxy,
     GlobalState,
     AUTOCOMPLETE_ID,
 };
 
-pub const SHELL: &str = "wsl";
-pub const SHELL_ARGS: [&str; 0] = [];
-pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relative;
+pub const SHELL: &str = "bash";
+pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];
 
 static UNMANAGED: Lazy<Unmanaged> = unsafe {
     Lazy::new(|| Unmanaged {
         main_thread: GetCurrentThreadId(),
         previous_focus: RwLock::new(None),
+        global_state: RwLock::new(Option::<Arc<GlobalState>>::None),
         event_sender: RwLock::new(Option::<EventLoopProxy>::None),
         foreground_hook: RwLock::new(SetWinEventHook(
             EVENT_SYSTEM_FOREGROUND,
@@ -110,7 +93,61 @@ impl NativeState {
     pub fn handle(&self, event: NativeEvent) {
         match event {
             NativeEvent::EditBufferChanged => unsafe {
-                update_caret_position();
+                match *UNMANAGED.console_state.read() {
+                    ConsoleState::None => (),
+                    ConsoleState::Accessible { caret_x, caret_y } => {
+                        UNMANAGED.send_event(WindowEvent::Reposition { x: caret_x, y: caret_y })
+                    },
+                    ConsoleState::Console { hwnd } => {
+                        let coords = UNMANAGED
+                            .global_state
+                            .read()
+                            .as_ref()
+                            .unwrap()
+                            .figterm_state
+                            .most_recent_session()
+                            .and_then(|session| session.terminal_cursor_coordinates)
+                            .unwrap_or(TerminalCursorCoordinates {
+                                x: 0,
+                                y: 0,
+                                xpixel: 0,
+                                ypixel: 0,
+                            });
+
+                        let mut position = POINT {
+                            x: coords.x * 8,
+                            y: (coords.y + 1) * 16,
+                        };
+
+                        if ClientToScreen(hwnd, &mut position).as_bool() {
+                            UNMANAGED.send_event(WindowEvent::Reposition {
+                                x: position.x,
+                                y: position.y,
+                            });
+                        };
+                    },
+                    ConsoleState::WindowsTerminal { window_x, window_y } => {
+                        let coords = UNMANAGED
+                            .global_state
+                            .read()
+                            .as_ref()
+                            .unwrap()
+                            .figterm_state
+                            .most_recent_session()
+                            .and_then(|session| session.terminal_cursor_coordinates)
+                            .unwrap_or(TerminalCursorCoordinates {
+                                x: 0,
+                                y: 0,
+                                xpixel: 0,
+                                ypixel: 0,
+                            });
+
+                        UNMANAGED.send_event(WindowEvent::Reposition {
+                            x: window_x + coords.x * 8,
+                            y: window_y + (coords.y + 1) * 16,
+                        });
+                    },
+                }
             },
         }
     }
@@ -118,14 +155,16 @@ impl NativeState {
 
 enum ConsoleState {
     None,
-    Accessible { caret_position: POINT },
-    Console { hwnd: HWND, process_id: u32 },
+    Console { hwnd: HWND },
+    Accessible { caret_x: i32, caret_y: i32 },
+    WindowsTerminal { window_x: i32, window_y: i32 },
 }
 
 #[allow(dead_code)]
 struct Unmanaged {
     main_thread: u32,
     previous_focus: RwLock<Option<u32>>,
+    global_state: RwLock<Option<Arc<GlobalState>>>,
     event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
@@ -149,8 +188,7 @@ impl Unmanaged {
 pub mod icons {
     use crate::icons::ProcessedAsset;
 
-    #[allow(unused_variables)]
-    pub fn lookup(name: &str) -> Option<ProcessedAsset> {
+    pub fn lookup(_name: &str) -> Option<ProcessedAsset> {
         None
     }
 }
@@ -158,6 +196,7 @@ pub mod icons {
 #[allow(unused_variables)]
 pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
     UNMANAGED.event_sender.write().replace(proxy);
+    UNMANAGED.global_state.write().replace(global_state);
 
     unsafe {
         update_focused_state(GetForegroundWindow());
@@ -176,6 +215,8 @@ unsafe fn update_focused_state(hwnd: HWND) {
     let mut process_id: u32 = 0;
     let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
     let process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).unwrap();
+
+    // Get the terminal name
     let mut process_name = vec![0; 256];
     let len = K32GetProcessImageFileNameA(process_handle, &mut process_name) as usize;
     process_name.truncate(len + 1);
@@ -195,49 +236,21 @@ unsafe fn update_focused_state(hwnd: HWND) {
 
     match title {
         title if ["Hyper", "Code"].contains(&title) => (),
-        title if ["cmd", "powershell"].contains(&title) => {
-            let hwnd = GetParent(hwnd);
+        title if ["cmd", "mintty", "powershell"].contains(&title) => {
             let mut process_id: u32 = 0;
             GetWindowThreadProcessId(hwnd, &mut process_id);
-            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
+            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd }
         },
         title if title == "WindowsTerminal" => {
-            CoInitialize(std::ptr::null_mut()).unwrap();
-            let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap();
-            let window = automation.ElementFromHandle(hwnd).unwrap();
-
-            let control_type_id = VARIANT {
-                Anonymous: VARIANT_0 {
-                    Anonymous: ManuallyDrop::new(VARIANT_0_0 {
-                        vt: VT_I4.0 as u16,
-                        wReserved1: 0,
-                        wReserved2: 0,
-                        wReserved3: 0,
-                        Anonymous: VARIANT_0_0_0 {
-                            lVal: UIA_TextControlTypeId,
-                        },
-                    }),
+            let (window_x, window_y) = match windows_terminal_inner_position(hwnd) {
+                Ok(ok) => ok,
+                Err(_) => {
+                    warn!("Failed to get inner position for Windows Terminal window");
+                    *UNMANAGED.console_state.write() = ConsoleState::None;
+                    return;
                 },
             };
-
-            let interest = automation
-                .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)
-                .unwrap();
-
-            match window.FindFirst(TreeScope_Descendants, &interest) {
-                Ok(terminal) => {
-                    let hwnd = match terminal.CurrentNativeWindowHandle() {
-                        Ok(hwnd) => hwnd,
-                        Err(_) => return,
-                    };
-                    let mut process_id: u32 = 0;
-                    GetWindowThreadProcessId(hwnd, &mut process_id);
-                    *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd, process_id }
-                },
-                Err(_) => *UNMANAGED.console_state.write() = ConsoleState::None,
-            }
-
-            let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
+            *UNMANAGED.console_state.write() = ConsoleState::WindowsTerminal { window_x, window_y }
         },
         _ => {
             *UNMANAGED.console_state.write() = ConsoleState::None;
@@ -254,46 +267,6 @@ unsafe fn update_focused_state(hwnd: HWND) {
         thread_id,
         WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
     ));
-}
-
-unsafe fn update_caret_position() {
-    match *UNMANAGED.console_state.read() {
-        ConsoleState::None => (),
-        ConsoleState::Accessible { caret_position } => UNMANAGED.send_event(WindowEvent::Reposition {
-            x: caret_position.x,
-            y: caret_position.y,
-        }),
-        ConsoleState::Console { hwnd, process_id } => {
-            let _lock1 = stderr().lock();
-            let _lock2 = stdin().lock();
-            let _lock3 = stdout().lock();
-
-            FreeConsole();
-            AttachConsole(process_id);
-            let handle = GetStdHandle(STD_OUTPUT_HANDLE).unwrap();
-
-            let mut info = CONSOLE_SCREEN_BUFFER_INFO::default();
-            GetConsoleScreenBufferInfo(handle, &mut info);
-
-            let mut font = CONSOLE_FONT_INFO::default();
-            GetCurrentConsoleFont(handle, BOOL::from(false), &mut font);
-
-            let mut position = POINT {
-                x: ((info.dwCursorPosition.X - info.srWindow.Left) * font.dwFontSize.X) as i32,
-                y: ((info.dwCursorPosition.Y - info.srWindow.Top) * font.dwFontSize.Y) as i32,
-            };
-
-            if ClientToScreen(hwnd, &mut position).as_bool() {
-                UNMANAGED.send_event(WindowEvent::Reposition {
-                    x: position.x,
-                    y: position.y,
-                });
-            };
-
-            FreeConsole();
-            AttachConsole(ATTACH_PARENT_PROCESS);
-        },
-    }
 }
 
 unsafe extern "system" fn win_event_proc(
@@ -316,7 +289,24 @@ unsafe extern "system" fn win_event_proc(
             && OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW
             && id_child == CHILDID_SELF as i32 =>
         {
-            UNMANAGED.send_event(WindowEvent::Hide)
+            UNMANAGED.send_event(WindowEvent::Hide);
+
+            if let ConsoleState::WindowsTerminal {
+                ref mut window_x,
+                ref mut window_y,
+            } = *UNMANAGED.console_state.write()
+            {
+                match windows_terminal_inner_position(hwnd) {
+                    Ok((x, y)) => {
+                        *window_x = x;
+                        *window_y = y;
+                    },
+                    Err(_) => {
+                        warn!("Failed to get inner position for Windows Terminal window");
+                        *UNMANAGED.console_state.write() = ConsoleState::None;
+                    },
+                }
+            }
         },
         e if e == EVENT_OBJECT_LOCATIONCHANGE && OBJECT_IDENTIFIER(id_object) == OBJID_CARET => {
             let mut acc = None;
@@ -332,7 +322,8 @@ unsafe extern "system" fn win_event_proc(
                         .is_ok()
                     {
                         *UNMANAGED.console_state.write() = ConsoleState::Accessible {
-                            caret_position: POINT { x: left, y: top },
+                            caret_x: left,
+                            caret_y: top + height,
                         }
                     }
                 }
@@ -340,4 +331,32 @@ unsafe extern "system" fn win_event_proc(
         },
         _ => (),
     }
+}
+
+unsafe fn windows_terminal_inner_position(hwnd: HWND) -> Result<(i32, i32)> {
+    CoInitialize(std::ptr::null_mut()).unwrap();
+    let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER)?;
+    let window = automation.ElementFromHandle(hwnd)?;
+
+    let control_type_id = VARIANT {
+        Anonymous: VARIANT_0 {
+            Anonymous: ManuallyDrop::new(VARIANT_0_0 {
+                vt: VT_I4.0 as u16,
+                wReserved1: 0,
+                wReserved2: 0,
+                wReserved3: 0,
+                Anonymous: VARIANT_0_0_0 {
+                    lVal: UIA_TextControlTypeId,
+                },
+            }),
+        },
+    };
+
+    let interest = automation.CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)?;
+
+    let inner = window.FindFirst(TreeScope_Descendants, &interest);
+    let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
+    let bounds = inner?.CurrentBoundingRectangle()?;
+
+    Ok((bounds.left, bounds.top))
 }

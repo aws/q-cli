@@ -9,16 +9,12 @@ use wry::application::dpi::{
     PhysicalPosition,
     PhysicalSize,
     Position,
-    Size,
 };
 use wry::webview::WebView;
 
 use crate::event::WindowEvent;
 use crate::figterm::FigTermCommand;
-use crate::{
-    native,
-    GlobalState,
-};
+use crate::GlobalState;
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -35,13 +31,12 @@ impl fmt::Display for WindowId {
     }
 }
 
+// TODO: Add state for the active terminal window
 pub struct WindowState {
     pub webview: WebView,
     pub window_id: WindowId,
     pub anchor: RwLock<PhysicalPosition<i32>>,
     pub position: RwLock<PhysicalPosition<i32>>,
-    pub caret_position: RwLock<PhysicalPosition<i32>>,
-    pub caret_size: RwLock<PhysicalSize<i32>>,
 }
 
 impl WindowState {
@@ -56,95 +51,38 @@ impl WindowState {
             webview,
             anchor: RwLock::new(PhysicalPosition::default()),
             position: RwLock::new(position),
-            caret_position: RwLock::new(PhysicalPosition::default()),
-            caret_size: RwLock::new(PhysicalSize::default()),
         }
+    }
+
+    fn update_position(&self) {
+        let positon = *self.position.read();
+        let anchor = *self.anchor.read();
+        self.webview
+            .window()
+            .set_outer_position(Position::Physical(PhysicalPosition {
+                x: positon.x + anchor.x,
+                y: positon.y + anchor.y,
+            }))
     }
 
     pub fn handle(&self, event: WindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(WindowId, String)>) {
         match event {
             WindowEvent::Reanchor { x, y } => {
-                let position = *self.position.read();
-                let caret_position = *self.caret_position.read();
-                let caret_size = *self.caret_size.read();
                 *self.anchor.write() = PhysicalPosition { x, y };
-                match native::CURSOR_POSITION_KIND {
-                    CursorPositionKind::Absolute => {
-                        self.webview
-                            .window()
-                            .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: caret_position.x + position.x,
-                                y: caret_position.y + position.y + caret_size.height,
-                            }))
-                    },
-                    CursorPositionKind::Relative => {
-                        self.webview
-                            .window()
-                            .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x + position.x,
-                                y: y + caret_position.y + position.y + caret_size.height,
-                            }))
-                    },
-                }
+                self.update_position();
             },
             WindowEvent::Reposition { x, y } => {
-                let caret_position = *self.caret_position.read();
-                let caret_size = *self.caret_size.read();
-                *self.position.write() = PhysicalPosition {
-                    x: caret_position.x,
-                    y: caret_position.y,
-                };
-                match native::CURSOR_POSITION_KIND {
-                    CursorPositionKind::Absolute => {
-                        self.webview
-                            .window()
-                            .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + caret_position.x,
-                                y: y + caret_position.y + caret_size.height,
-                            }))
-                    },
-                    CursorPositionKind::Relative => {
-                        let anchor = *self.anchor.read();
-                        self.webview
-                            .window()
-                            .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + caret_position.x + x,
-                                y: anchor.y + caret_position.y + y + caret_size.height,
-                            }))
-                    },
-                }
+                *self.position.write() = PhysicalPosition { x, y };
+                self.update_position();
             },
-            WindowEvent::UpdateCaret { x, y, width, height } => {
-                let position = *self.position.read();
-                *self.caret_position.write() = PhysicalPosition { x, y };
-                *self.caret_size.write() = PhysicalSize { width, height };
-                if x == 0 && y == 0 {
-                    self.webview.window().set_visible(false);
-                }
-                match native::CURSOR_POSITION_KIND {
-                    CursorPositionKind::Absolute => {
-                        self.webview
-                            .window()
-                            .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: x + position.x,
-                                y: y + position.y + height,
-                            }))
-                    },
-                    CursorPositionKind::Relative => {
-                        let anchor = PhysicalPosition { x, y };
-                        self.webview
-                            .window()
-                            .set_outer_position(Position::Physical(PhysicalPosition {
-                                x: anchor.x + x + position.x,
-                                y: anchor.y + y + position.y + height,
-                            }))
-                    },
-                }
+            WindowEvent::Resize { width, height } => {
+                #[cfg(target_os = "linux")]
+                self.webview
+                    .window()
+                    .set_min_inner_size(Some(LogicalSize { width, height }));
+                #[cfg(not(target_os = "linux"))]
+                self.webview.window().set_inner_size(LogicalSize { width, height });
             },
-            WindowEvent::Resize { width, height } => self
-                .webview
-                .window()
-                .set_min_inner_size(Some(LogicalSize { width, height })),
             WindowEvent::Hide => {
                 if let Some(session) = state.figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
@@ -152,12 +90,17 @@ impl WindowState {
                     });
                 }
                 self.webview.window().set_visible(false);
+                #[cfg(not(target_os = "linux"))]
+                self.webview.window().set_resizable(true);
+                #[cfg(target_os = "linux")]
                 self.webview
                     .window()
-                    .set_min_inner_size(Some(Size::Physical(PhysicalSize { width: 1, height: 1 })));
+                    .set_min_inner_size(Some(PhysicalSize { width: 1, height: 1 }));
                 self.webview
                     .window()
-                    .set_inner_size(Size::Physical(PhysicalSize { width: 1, height: 1 }));
+                    .set_inner_size(PhysicalSize { width: 1, height: 1 });
+                #[cfg(not(target_os = "linux"))]
+                self.webview.window().set_resizable(false);
             },
             WindowEvent::HideSoft => {
                 if let Some(session) = state.figterm_state.most_recent_session() {

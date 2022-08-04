@@ -7,31 +7,6 @@ use crate::util::get_shell;
 
 const CURRENT_INTEGRATION_VERSION: i32 = 7;
 
-/// Construct a new Shell Context
-#[allow(clippy::too_many_arguments)]
-pub fn new_context(
-    pid: Option<i32>,
-    ttys: Option<String>,
-    process_name: Option<String>,
-    current_working_directory: Option<String>,
-    session_id: Option<String>,
-    integration_version: Option<i32>,
-    terminal: Option<String>,
-    hostname: Option<String>,
-) -> ShellContext {
-    ShellContext {
-        pid,
-        ttys,
-        process_name,
-        current_working_directory,
-        session_id,
-        integration_version,
-        terminal,
-        hostname,
-        remote_context: None,
-    }
-}
-
 fn hook_enum_to_hook(hook: hook::Hook) -> Hook {
     Hook { hook: Some(hook) }
 }
@@ -57,6 +32,8 @@ pub fn generate_shell_context(
         integration_version: Some(integration_version.into().unwrap_or(CURRENT_INTEGRATION_VERSION)),
         process_name: Some(shell),
         current_working_directory: Some(cwd.to_string_lossy().into()),
+        shell_path: None,
+        wsl_distro: None,
         terminal: None,
         hostname: None,
         remote_context: None,
@@ -69,9 +46,11 @@ pub fn new_edit_buffer_hook(
     text: impl Into<String>,
     cursor: i64,
     histno: i64,
+    coords: impl Into<Option<TerminalCursorCoordinates>>,
 ) -> Hook {
     hook_enum_to_hook(hook::Hook::EditBuffer(EditBufferHook {
         context: context.into(),
+        terminal_cursor_coordinates: coords.into(),
         text: text.into(),
         cursor,
         histno,
@@ -185,12 +164,7 @@ mod tests {
     use super::*;
 
     #[test]
-    fn new_contest_test() {
-        new_context(None, None, None, None, None, None, None, None);
-    }
-
-    #[test]
     fn new_edit_buffer_hook_test() {
-        new_edit_buffer_hook(None, "test", 0, 0);
+        new_edit_buffer_hook(None, "test", 0, 0, None);
     }
 }

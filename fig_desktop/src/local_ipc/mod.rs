@@ -15,6 +15,7 @@ use fig_proto::local::{
     LocalMessage,
     SuccessResponse,
 };
+use fig_util::directories;
 use system_socket::SystemListener;
 use tokio::io::{
     AsyncRead,
@@ -41,18 +42,14 @@ pub enum LocalResponse {
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
 pub async fn start_local_ipc(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
-    let socket_path = fig_ipc::get_fig_socket_path();
+    let socket_path = directories::fig_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
             std::fs::create_dir_all(parent).expect("Failed creating socket path");
         }
     }
 
-    if socket_path.exists() {
-        tokio::fs::remove_file(&socket_path)
-            .await
-            .expect("Failed clearing socket path");
-    }
+    tokio::fs::remove_file(&socket_path).await.ok();
 
     let listener = SystemListener::bind(&socket_path)?;
 

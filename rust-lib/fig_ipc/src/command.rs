@@ -17,11 +17,11 @@ use fig_proto::local::{
     UninstallCommand,
     UpdateCommand,
 };
+use fig_util::directories;
 use system_socket::SystemStream;
 
 use super::{
     connect_timeout,
-    get_fig_socket_path,
     recv_message,
     send_message,
 };
@@ -120,13 +120,13 @@ pub async fn send_recv_command(
 }
 
 pub async fn send_command_to_socket(command: local::command::Command) -> Result<()> {
-    let path = get_fig_socket_path();
+    let path = directories::fig_socket_path()?;
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
     send_command(&mut conn, command).await
 }
 
 pub async fn send_recv_command_to_socket(command: local::command::Command) -> Result<Option<local::CommandResponse>> {
-    let path = get_fig_socket_path();
+    let path = directories::fig_socket_path()?;
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
     send_recv_command(&mut conn, command).await
 }

@@ -3,7 +3,6 @@ use std::sync::Arc;
 use anyhow::Result;
 
 use crate::event::NativeEvent;
-use crate::window::CursorPositionKind;
 use crate::{
     EventLoopProxy,
     GlobalState,
@@ -11,7 +10,6 @@ use crate::{
 
 pub const SHELL: &str = "/bin/bash";
 pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];
-pub const CURSOR_POSITION_KIND: CursorPositionKind = CursorPositionKind::Relative;
 
 #[derive(Debug, Default)]
 pub struct NativeState {}

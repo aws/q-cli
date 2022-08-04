@@ -4,6 +4,12 @@ use crate::term::{
     SizeInfo,
 };
 
+#[derive(Debug, Clone)]
+pub enum DelayedEvent {
+    EndPrompt,
+    NewCmd,
+}
+
 /// Terminal event.
 ///
 /// These events instruct the TODO socket over changes that can't be handled by the terminal

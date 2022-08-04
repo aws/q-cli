@@ -1,3 +1,4 @@
+use fig_util::directories;
 use serde::{
     Deserialize,
     Serialize,
@@ -37,7 +38,7 @@ pub struct KeyBindings(pub Vec<KeyBinding>);
 
 impl KeyBindings {
     pub fn load() -> Result<Self, Error> {
-        let path = fig_directories::fig_dir()
+        let path = directories::fig_dir()
             .map(|dir| dir.join("apps").join("autocomplete").join("actions.json"))
             .unwrap();
         Ok(serde_json::from_reader(std::fs::File::open(&path)?)?)

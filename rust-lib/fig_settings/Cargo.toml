@@ -8,7 +8,7 @@ publish = false
 
 [dependencies]
 fig_auth = { path = "../fig_auth" }
-fig_directories = { path = "../fig_directories" }
+fig_util = { path = "../fig_util" }
 once_cell = { version = "1.13.0", features = ["parking_lot"] }
 regex = "1.6.0"
 reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
@@ -21,4 +21,3 @@ url = "2.2.2"
 
 [dev-dependencies]
 tempfile = "3.3.0"
-

@@ -31,7 +31,7 @@ use aws_smithy_client::erase::{
     DynMiddleware,
 };
 use aws_smithy_client::hyper_ext;
-use fig_directories::fig_data_dir;
+use fig_util::directories;
 use jwt::{
     Header,
     RegisteredClaims,
@@ -470,7 +470,7 @@ impl Credentials {
     }
 
     pub fn save_credentials(&self) -> Result<()> {
-        let data_dir = fig_data_dir().ok_or(Error::Dir)?;
+        let data_dir = directories::fig_data_dir().map_err(|_| Error::Dir)?;
 
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
@@ -547,7 +547,7 @@ impl Credentials {
     }
 
     pub fn load_credentials() -> Result<Credentials> {
-        let data_dir = fig_data_dir().ok_or(Error::Dir)?;
+        let data_dir = directories::fig_data_dir().map_err(|_| Error::Dir)?;
 
         let creds_path = data_dir.join("credentials.json");
 

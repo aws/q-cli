@@ -7,18 +7,75 @@ use fig_settings::keybindings::KeyBindings;
 pub use terminal_input_parser::parse_code;
 use tracing::trace;
 
-use self::terminal_input_parser::{
-    key_from_text,
+use crate::input::{
     KeyCode,
-    KeyModifiers,
+    KeyEvent,
+    Modifiers,
 };
+
+pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
+    let text = text.as_ref();
+
+    let mut modifiers = Modifiers::NONE;
+    let mut remaining = text;
+    let key_txt = loop {
+        match remaining.split_once('+') {
+            Some(("", "")) | None => {
+                break remaining;
+            },
+            Some((modifier_txt, key)) => {
+                modifiers |= match modifier_txt {
+                    "control" => Modifiers::CTRL,
+                    "shift" => Modifiers::SHIFT,
+                    "alt" => Modifiers::ALT,
+                    "meta" | "command" => Modifiers::META,
+                    _ => Modifiers::NONE,
+                };
+                remaining = key;
+            },
+        }
+    };
+
+    let key = match key_txt {
+        "backspace" => KeyCode::Backspace,
+        "enter" => KeyCode::Enter,
+        "left" => KeyCode::LeftArrow,
+        "right" => KeyCode::RightArrow,
+        "up" => KeyCode::UpArrow,
+        "down" => KeyCode::DownArrow,
+        "home" => KeyCode::Home,
+        "end" => KeyCode::End,
+        "pageup" => KeyCode::PageUp,
+        "pagedown" => KeyCode::PageDown,
+        "tab" => KeyCode::Tab,
+        // "backtab" => KeyCode::BackTab,
+        "delete" => KeyCode::Delete,
+        "insert" => KeyCode::Insert,
+        "esc" => KeyCode::Escape,
+        f_key if f_key.starts_with('f') => {
+            let f_key = f_key.trim_start_matches('f');
+            let f_key = f_key.parse::<u8>().ok()?;
+            KeyCode::Function(f_key)
+        },
+        c => {
+            let mut chars = c.chars();
+            let first_char = chars.next()?;
+            if chars.next().is_some() {
+                return None;
+            }
+            KeyCode::Char(first_char)
+        },
+    };
+
+    Some(KeyEvent { key, modifiers })
+}
 
 #[derive(Debug, Clone, Default)]
 pub struct KeyInterceptor {
     intercept_all: bool,
     intercept_bind: bool,
 
-    mappings: DashMap<(KeyCode<'static>, KeyModifiers), String, fnv::FnvBuildHasher>,
+    mappings: DashMap<KeyEvent, String, fnv::FnvBuildHasher>,
 }
 
 impl KeyInterceptor {
@@ -33,6 +90,21 @@ impl KeyInterceptor {
             if let Some(default_bindings) = action.default_bindings {
                 for binding in default_bindings {
                     if let Some(binding) = key_from_text(binding) {
+                        if let Some(alt) = match binding.key {
+                            KeyCode::UpArrow => Some(KeyCode::ApplicationUpArrow),
+                            KeyCode::DownArrow => Some(KeyCode::ApplicationDownArrow),
+                            KeyCode::LeftArrow => Some(KeyCode::ApplicationLeftArrow),
+                            KeyCode::RightArrow => Some(KeyCode::ApplicationRightArrow),
+                            _ => None,
+                        } {
+                            self.mappings.insert(
+                                KeyEvent {
+                                    key: alt,
+                                    modifiers: binding.modifiers,
+                                },
+                                action.identifier.clone(),
+                            );
+                        }
                         self.mappings.insert(binding, action.identifier.clone());
                     }
                 }
@@ -69,11 +141,10 @@ impl KeyInterceptor {
         self.intercept_bind = false;
     }
 
-    pub fn intercept_key<'a>(&self, key: KeyCode<'a>, modifiers: &KeyModifiers) -> Option<String> {
-        trace!("Intercepting key: {key:?} {modifiers:?}");
-        let owned_key = key.to_owned();
+    pub fn intercept_key(&self, key_event: &KeyEvent) -> Option<String> {
+        trace!("Intercepting key: {key_event:?}");
         if self.intercept_all || self.intercept_bind {
-            if let Some(action) = self.mappings.get(&(owned_key, *modifiers)) {
+            if let Some(action) = self.mappings.get(key_event) {
                 return Some(action.value().to_string());
             }
         }

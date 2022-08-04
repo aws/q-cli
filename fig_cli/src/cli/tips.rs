@@ -3,12 +3,10 @@ use std::fs::{
     File,
 };
 
-use anyhow::{
-    Context,
-    Result,
-};
+use anyhow::Result;
 use clap::Subcommand;
 use crossterm::style::Stylize;
+use fig_util::directories;
 use semver::Version;
 use serde::{
     Deserialize,
@@ -129,7 +127,7 @@ fn get_all_tips() -> Vec<Tip> {
 
 impl Tips {
     fn save(&self) -> anyhow::Result<()> {
-        let data_dir = fig_directories::fig_data_dir().context("Could not get fig data dir")?;
+        let data_dir = directories::fig_data_dir()?;
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
         }
@@ -141,9 +139,7 @@ impl Tips {
     }
 
     fn load() -> anyhow::Result<Tips> {
-        let path = fig_directories::fig_data_dir()
-            .context("Could not get fig data dir")?
-            .join("tips.json");
+        let path = directories::fig_data_dir()?.join("tips.json");
 
         if !path.exists() {
             return Err(anyhow::anyhow!("Could not find tips file"));
@@ -197,7 +193,7 @@ impl TipsSubcommand {
                             tips.time_last_sent = now;
                         }
                     } else {
-                        let changelog: Changelog = serde_json::from_str(include_str!("../../../../changelog.json"))?;
+                        let changelog: Changelog = serde_json::from_str(include_str!("../../../changelog.json"))?;
                         if Version::parse(&tips.last_changelog)? < Version::parse(&changelog.version)? {
                             println!("{}", changelog.notes);
                             tips.last_changelog = changelog.version;

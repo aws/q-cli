@@ -1,15 +1,19 @@
 use std::path::PathBuf;
 
+use fig_util::directories;
+
 use crate::LocalJson;
 
-pub fn state_path() -> Option<PathBuf> {
-    fig_directories::fig_data_dir().map(|path| path.join("state.json"))
+pub fn state_path() -> Result<PathBuf, super::Error> {
+    Ok(directories::fig_data_dir()
+        .map_err(fig_util::Error::from)?
+        .join("state.json"))
 }
 
 pub type LocalState = LocalJson;
 
 pub fn local_settings() -> Result<LocalState, super::Error> {
-    let path = state_path().ok_or(super::Error::SettingsPathNotFound)?;
+    let path = state_path()?;
     LocalState::load(path)
 }
 

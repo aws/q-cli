@@ -26,6 +26,7 @@ export TTY=(tty)
 export FIG_PID=$fish_pid
 
 set FIG_HOSTNAME (fig _ hostname; or hostname -f 2> /dev/null; or hostname)
+set FIG_SHELL_PATH (fig _ get-shell)
 
 if test -e /proc/1/cgroup; and grep -q docker /proc/1/cgroup
     set FIG_IN_DOCKER 1
@@ -83,6 +84,10 @@ function fig_precmd --on-event fish_prompt
     fig_osc "Docker=%d" "$FIG_IN_DOCKER"
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
+    fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"
+    if [[ -n "$WSL_DISTRO_NAME" ]]; then
+        fig_osc "WSLDistro=%s" "$WSL_DISTRO_NAME"
+    fi
     fig_osc "PID=%d" "$fish_pid"
     fig_osc "SessionId=%s" "$TERM_SESSION_ID"
     fig_osc "ExitCode=%s" "$last_status"

@@ -8,7 +8,6 @@ publish = false
 anyhow = "1.0.60"
 cfg-if = "1.0.0"
 clap = { version = "3.2.16", features = ["derive"] }
-fig_directories = { path = "../fig_directories" }
 fig_util = { path = "../fig_util" }
 regex = "1.6.0"
 serde = { version = "1.0.141", features = ["derive"] }
