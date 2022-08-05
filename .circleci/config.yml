@@ -129,7 +129,7 @@ jobs:
             choco install protoc -y
 
             choco install wixtoolset -y
-            PATH="$PATH:C:\Program Files (x86)\WiX Toolset v3.11\bin"
+            PATH="$PATH:C:/Program Files (x86)/WiX Toolset v3.11\bin"
 
             cargo install cargo-wix
 
@@ -145,7 +145,7 @@ jobs:
             cd desktop
             cargo wix -p "fig_desktop" -n "fig" --no-build --nocapture -v
       - store_artifacts:
-          path: desktop\build\wix\fig-2.0.3-x86_64.msi
+          path: desktop/build/wix/fig-2.0.3-x86_64.msi
           destination: windows/msi
 
   # Creates tag on specified revision
