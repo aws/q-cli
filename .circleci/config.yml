@@ -54,7 +54,7 @@ workflows:
       - windows:
           requires: [update-version]
       - sentry:
-          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal]
+          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal, windows]
           context:
             - sentry
   noop:
