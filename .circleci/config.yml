@@ -129,7 +129,7 @@ jobs:
             choco install protoc -y
 
             choco install wixtoolset -y
-            PATH="$PATH:C:/Program Files (x86)/WiX Toolset v3.11\bin"
+            PATH="$PATH:C:/Program Files (x86)/WiX Toolset v3.11/bin"
 
             cargo install cargo-wix
 
