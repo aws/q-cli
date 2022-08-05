@@ -119,6 +119,9 @@ jobs:
       shell: bash.exe
     steps:
       - checkout-desktop
+      - run:
+        name: Make dummy dir
+        command: mkdir -p "$HOME"/.cargo/env
       - rust/install:
           version: 1.62.0
       - run:
