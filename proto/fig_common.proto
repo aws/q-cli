@@ -46,6 +46,13 @@ message ShellContext {
 
 	optional ShellContext remote_context = 9;
 
+  enum RemoteContextType {
+    SSH = 0;
+    DOCKER = 1;
+  }
+
+  optional RemoteContextType remote_context_type = 12;
+
   optional string shell_path = 10;
   optional string wsl_distro = 11;
 }

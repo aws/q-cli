@@ -224,6 +224,7 @@ mod tests {
             terminal: None,
             hostname: None,
             remote_context: None,
+            remote_context_type: None,
             shell_path: Some("/bin/bash".into()),
             wsl_distro: None,
         };

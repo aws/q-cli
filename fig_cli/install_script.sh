@@ -1,5 +1,4 @@
 #!/usr/bin/env bash
-set -e
 
 ## <script src="https://get-fig-io.s3.us-west-1.amazonaws.com/readability.js"></script>
 ## <link href="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/themes/prism-okaidia.min.css" rel="stylesheet" />
@@ -7,137 +6,108 @@ set -e
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
-MAGENTA="\033[1;35m"
-BOLD="\033[1;1m"
-RESET="\033[0m"
-
-function abort() {
-    echo $1
-    echo "If you need help, please email us at ${BOLD}hello@fig.io${RESET}."
-    exit 1
-}
-
-# Fail fast with a concise message when not using bash or zsh
-# Single brackets are needed here for POSIX compatibility
 if [ -z "${BASH_VERSION:-}" ] && [ -z "${ZSH_VERSION:-}" ]; then
-  abort "Bash is required to interpret this script."
-fi
-
-FIG_DOWNLOAD_DIR="https://get-fig-io.s3.us-west-1.amazonaws.com/bin/latest"
-
-ARCH=`uname -m`
-PLATFORM=`uname -s`
-
-if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
-    ARCH="aarch64"
-fi
-
-if [[ $ARCH == x86_64* ]] || [[ $ARCH == amd64* ]]; then
-    ARCH="x86_64"
-fi
-
-if [[ $PLATFORM == Darwin* ]]; then
-    PLATFORM="apple-darwin"
-fi
-
-if [[ $PLATFORM == Linux* ]]; then
-    PLATFORM="unknown-linux-gnu"
-fi
-
-if [[ $PLATFORM == CYGWIN* ]] || [[ $PLATFORM == MINGW* ]] || [[ $PLATFORM == MSYS* ]]; then
-    PLATFORM="pc-windows-msvc"
-fi
-
-# URL to download the latest version of the binary
-DOWNLOAD_URL="$FIG_DOWNLOAD_DIR/$ARCH-$PLATFORM"
-
-# Whether or not to install minimal remote install.
-IS_REMOTE=1
-
-# Ensure the user has the necessary tools to install fig
-function check_for_command() {
-    if ! command -v $1 >/dev/null; then
-        abort "Please install $1 before running this script."
-    fi
-}
-
-# Download url $1 to file $2
-function download_file() {
-    if command -v curl &> /dev/null; then
-        curl -s -L -o "$2" "$1"
-        if [ $? -ne 0 ]; then
-            abort "Failed to download $1"
-        fi
-    elif command -v wget &> /dev/null; then
-        wget -q -O "$2" "$1"
-        if [ $? -ne 0 ]; then
-            abort "Failed to download $1"
-        fi
-    else
-        abort "Neither curl nor wget found. Please install one of them."
-    fi
-}
-
-# The directory where the binary will be installed
-function global_install_directory() {
-    case "$(uname -s)" in
-        Linux*|Darwin*)
-            _install_dir="/usr/local/bin"
-            ;;
-        *)
-            abort "Unknown OS type: $_ostype"
-            ;;
-    esac
-
-    # Check that the directory is in the PATH
-    if ! echo "$PATH" | grep -q "$_install_dir"; then
-        abort "Please add $_install_dir to your PATH."
-    fi
-
-    # Return the install directory
-    echo "$_install_dir"
-}
-
-# The directory where the binary will be installed
-function install_directory() {
-    case "$(uname -s)" in
-        Linux*|Darwin*)
-            echo "${HOME}/.local/bin"
-            ;;
-        *)
-            abort "Unknown OS type: $_ostype"
-            ;;
-    esac
-}
-
-# The directory where the binary is downloaded to
-download_dir="$(mktemp -d)"
-
-download_file "${DOWNLOAD_URL}" "${download_dir}/fig"
-
-if ! chmod +x "${download_dir}/fig"; then
-    abort "Your platform and architecture (${PLATFORM}-${ARCH}) is unsupported."
-fi
-
-INSTALL_DIR="$(install_directory)"
-mkdir -p "${INSTALL_DIR}"
-mv "${download_dir}/fig" "${INSTALL_DIR}"
-
-if [[ -n "${SSH_TTY}" ]]; then
-    printf "On remote machine, installing fig shell integrations only.\n"
-    "${INSTALL_DIR}/fig" install --dotfiles
-    if [ $? -ne 0 ]; then
-        abort "Failed to install shell integrations."
-    fi
+  echo "Bash is required to interpret this script."
 else
-    "${INSTALL_DIR}/fig" install
-    if [ $? -ne 0 ]; then
-        abort "Failed to install fig"
+  function unsupported() {
+    echo $1
+    echo "If you would like support for this, please create a GitHub issue here: https://github.com/withfig/fig/issues/new/choose"
+  }
+
+  function helpmsg() {
+    echo $1
+    echo "If you'd like help, email us at hello@fig.io."
+  }
+  
+  function install_fig() {
+    FIG_DOWNLOAD_DIR="https://get-fig-io.s3.us-west-1.amazonaws.com/bin/latest"
+    
+    ARCH=`uname -m`
+    PLATFORM=`uname -s`
+    
+    if [[ $ARCH == armv8* ]] || [[ $ARCH == arm64* ]] || [[ $ARCH == aarch64* ]]; then
+      ARCH="aarch64"
+    elif [[ $ARCH == x86_64* ]] || [[ $ARCH == amd64* ]]; then
+      ARCH="x86_64"
+    else
+      unsupported "Unsupported architecture $ARCH."
+      return 1
+    fi
+    
+    if [[ $PLATFORM == Darwin* ]]; then
+      PLATFORM="apple-darwin"
+      INSTALL_DIR="${HOME}/.local/bin"
+    elif [[ $PLATFORM == Linux* ]]; then
+      PLATFORM="unknown-linux-gnu"
+      INSTALL_DIR="${HOME}/.local/bin"
+
+      LDD_VERSION=$(ldd --version | head -1 | rev | cut -d' ' -f1 | rev)
+      LDD_MAJOR=$(echo $LDD_VERSION | cut -f1 -d'.')
+      LDD_MINOR=$(echo $LDD_VERSION | cut -f2 -d'.')
+
+      if [[ $ARCH == "aarch64" ]]; then
+        if (( $LDD_MAJOR < 2 )) || ( (( $LDD_MAJOR == 2 )) && (( $LDD_MINOR < 31 )) ); then
+          unsupported "Outdated glibc version $LDD_VERSION. On $ARCH machines fig requires at least glibc 2.31"
+          return 1
+        fi
+      elif [[ $ARCH == "x86_64" ]]; then
+        if (( $LDD_MAJOR < 2 )) || ( (( $LDD_MAJOR == 2 )) && (( $LDD_MINOR < 23 )) ); then
+          unsupported "Outdated glibc version $LDD_VERSION. On $ARCH machines fig requires at least glibc 2.23"
+          return 1
+        fi
+      fi
+    elif [[ $PLATFORM == CYGWIN* ]] || [[ $PLATFORM == MINGW* ]] || [[ $PLATFORM == MSYS* ]]; then
+      PLATFORM="pc-windows-msvc"
+      unsupported "Fig currently does not support windows."
+      return 1
+    else
+      unsupported "Unsupported platform $PLATFORM."
+      return 1
     fi
 
-    printf "\n${MAGENTA}➜${RESET} ${BOLD}Next steps:${RESET}\n"
-    printf "  Run ${MAGENTA}fig login${RESET} to login to your fig account\n"
-    printf "  Run ${MAGENTA}fig${RESET} to start editing your dotfiles\n"
+    # URL to download the latest version of the binary
+    DOWNLOAD_URL="$FIG_DOWNLOAD_DIR/$ARCH-$PLATFORM"
+    DOWNLOAD_DIR="$(mktemp -d)"
+    
+    if command -v curl &> /dev/null; then
+      curl -Lso "${DOWNLOAD_DIR}/fig" "${DOWNLOAD_URL}"
+    elif command -v wget &> /dev/null; then
+      wget -qO "${DOWNLOAD_DIR}/fig" "${DOWNLOAD_URL}"
+    else
+      echo "Could not find curl or wget to download fig from"
+      echo "  ${DOWNLOAD_URL} "
+      echo "Please install one and try again."
+      return 1
+    fi
+    
+    if [[ ! -f "${DOWNLOAD_DIR}/fig" ]]; then
+      helmsg "Failed to download binary for ${PLATFORM}-${ARCH}."
+      return 1
+    fi
+  
+    mkdir -p "${INSTALL_DIR}"
+    mv "${DOWNLOAD_DIR}/fig" "${INSTALL_DIR}"
+
+    if ! chmod +x "${INSTALL_DIR}/fig"; then
+      helpmsg "Failed to make fig binary executable"
+      return 1
+    fi
+    
+    "${INSTALL_DIR}/fig" install --dotfiles --force
+    if [ $? -ne 0 ]; then
+      helpmsg "Failed to install shell integrations."
+      return 1
+    fi
+
+    # Source integrations in current shell.
+    if [[ -n "${BASH_VERSION}" ]]; then
+      [[ -f "$HOME/.fig/shell/bashrc.post.bash" ]] && . "$HOME/.fig/shell/bashrc.post.bash"
+    elif [[ -n "${ZSH_VERSION}" ]]; then
+      [[ -f "$HOME/.fig/shell/zshrc.post.zsh" ]] && . "$HOME/.fig/shell/zshrc.post.zsh"
+    fi
+  }
+
+  install_fig
 fi
 
 # ------------------------------------------
@@ -147,12 +117,3 @@ fi
 # This script contains hidden JavaScript which is used to improve
 # readability in the browser (via syntax highlighting, etc), right-click
 # and "View source" of this page to see the entire bash script!
-#
-# You'll also notice that we use the ":" character in the Introduction
-# which allows our copy/paste commands to be syntax highlighted, but not
-# ran. In bash : is equal to `true` and true can take infinite arguments
-# while still returning true. This turns these commands into no-ops so
-# when ran as a script, they're totally ignored.
-#
-# Credit goes to firebase.tools for the inspiration & much of the implementation.
-# Install scripts for Homebrew, Docker & Sentry were also used as reference.
