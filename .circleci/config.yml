@@ -8,6 +8,7 @@ version: 2.1
 
 orbs:
   rust: circleci/rust@1.6.0
+  win: circleci/windows@5.0.0
 
 parameters:
   version:
@@ -50,6 +51,8 @@ workflows:
           matrix:
             parameters:
               version: ["36"]
+      - windows:
+          requires: [update-version]
       - sentry:
           requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal]
           context:
@@ -106,6 +109,39 @@ jobs:
       - build-fedora:
           platform: f<< parameters.version >>
           arch: x86_64
+
+  windows:
+    environment:
+      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+    executor: 
+      name: win/server-2022
+      size: large
+      shell: bash.exe
+    steps:
+      - checkout-desktop
+      - rust/install:
+          version: 1.62.0
+      - run:
+          name: Install dependencies
+          command: |
+            choco install protoc -y
+            choco install wixtoolset -y
+            cargo install cargo-wix
+
+            echo 'PATH="$PATH:C:\Program Files (x86)\WiX Toolset v3.11\bin"' >> $BASH_ENV
+      #- run:
+      #    name: Build
+      #    command: |
+      #      cd desktop
+      #      cargo build --release
+      - run:
+          name: Bundle
+          command: |
+            cd desktop
+            cargo wix -p "fig_desktop" -n "fig" --no-build --nocapture -v
+      - store_artifacts:
+          path: desktop\build\wix\fig-2.0.3-x86_64.msi
+          destination: windows/msi
 
   # Creates tag on specified revision
   update-version:
