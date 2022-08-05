@@ -120,18 +120,20 @@ jobs:
     steps:
       - checkout-desktop
       - run:
-          name: Make dummy dir
-          command: mkdir -p "$HOME"/.cargo/env
-      - rust/install:
-          version: 1.62.0
-      - run:
           name: Install dependencies
           command: |
+            curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
+            ./rustup-init.exe -y --profile minimal --default-host x86_64-pc-windows-msvc --default-toolchain stable
+            PATH="$PATH:$HOME/.cargo/bin"
+
             choco install protoc -y
+
             choco install wixtoolset -y
+            PATH="$PATH:C:\Program Files (x86)\WiX Toolset v3.11\bin"
+
             cargo install cargo-wix
 
-            echo 'PATH="$PATH:C:\Program Files (x86)\WiX Toolset v3.11\bin"' >> $BASH_ENV
+            $BASH_ENV=$PATH
       #- run:
       #    name: Build
       #    command: |
