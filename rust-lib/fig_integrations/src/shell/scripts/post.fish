@@ -85,9 +85,9 @@ function fig_precmd --on-event fish_prompt
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
     fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"
-    if [[ -n "$WSL_DISTRO_NAME" ]]; then
+    if test -n "$WSL_DISTRO_NAME";
         fig_osc "WSLDistro=%s" "$WSL_DISTRO_NAME"
-    fi
+    end
     fig_osc "PID=%d" "$fish_pid"
     fig_osc "SessionId=%s" "$TERM_SESSION_ID"
     fig_osc "ExitCode=%s" "$last_status"

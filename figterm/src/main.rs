@@ -610,7 +610,8 @@ fn figterm_main() -> Result<()> {
             newline_mode: false,
         };
 
-        let ai_beta = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
+        let ai_enabled = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false)
+            && !fig_settings::settings::get_bool_or("ai.disable-pound-sub", true);
 
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
@@ -631,7 +632,7 @@ fn figterm_main() -> Result<()> {
                 res = input_rx.recv_async() => {
                     match res {
                         Ok(Ok(InputEvent::Key(event))) => {
-                            if ai_beta && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                            if ai_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                 if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
                                     let buffer = buffer.trim();
                                     if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {

@@ -41,29 +41,20 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
         cmd.current_dir(working_directory);
     }
 
-    let mut env = request.env;
-    env.push(EnvironmentVariable {
-        key: "FIG_ENV_VAR".to_owned(),
-        value: Some("1".to_owned()),
-    });
-    env.push(EnvironmentVariable {
-        key: "FIG_SHELL_VAR".to_owned(),
-        value: Some("1".to_owned()),
-    });
-    env.push(EnvironmentVariable {
-        key: "FIG_TERM".to_owned(),
-        value: Some("1".to_owned()),
-    });
-    env.push(EnvironmentVariable {
-        key: "FIG_PTY".to_owned(),
-        value: Some("1".to_owned()),
-    });
-    env.push(EnvironmentVariable {
-        key: "PROCESS_LAUNCHED_BY_FIG".to_owned(),
-        value: Some("1".to_owned()),
-    });
-    for var in env {
-        cmd.env(var.key.clone(), var.value());
+    cmd.env("FIG_ENV_VAR", "1");
+    cmd.env("FIG_SHELL_VAR", "1");
+    cmd.env("FIG_TERM", "1");
+    cmd.env("FIG_PTY", "1");
+    cmd.env("PROCESS_LAUNCHED_BY_FIG", "1");
+    cmd.env("HISTFILE", "");
+    cmd.env("HISTCONTROL", "ignoreboth");
+    cmd.env("TERM", "xterm-256color");
+
+    for EnvironmentVariable { key, value } in &request.env {
+        match value {
+            Some(value) => cmd.env(key, value),
+            None => cmd.env_remove(key),
+        };
     }
 
     let output = cmd

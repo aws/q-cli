@@ -127,38 +127,39 @@ fn build_default() -> Response {
     build_asset("template")
 }
 
-pub fn handle(request: &Request) -> wry::Result<Response> {
+pub fn handle(request: &Request) -> anyhow::Result<Response> {
     debug!("request for '{}' over fig protocol", request.uri());
     let url = Url::parse(request.uri())?;
     let domain = url.domain();
     // rust really doesn't like us not specifying RandomState here
     let pairs: HashMap<_, _, RandomState> = HashMap::from_iter(url.query_pairs());
 
-    let mut response = None;
+    Ok(match domain {
+        Some("template") => Some(build_asset("template")),
+        Some("icon") | Some("asset") => pairs
+            .get("asset")
+            .or_else(|| pairs.get("type"))
+            .map(|name| build_asset(name)),
+        None => {
+            let path = &*percent_decode_str(url.path()).decode_utf8()?;
 
-    if domain == Some("template") {
-        // TODO(mia): implement
-    } else if domain == Some("icon") || domain == Some("asset") {
-        if let Some(name) = pairs.get("asset").or_else(|| pairs.get("type")) {
-            response.replace(build_asset(name));
-        }
-    } else if domain == None {
-        let path = &*percent_decode_str(url.path()).decode_utf8_lossy();
+            #[cfg(windows)]
+            let path = transform_unix_to_windows_path(path);
 
-        #[cfg(windows)]
-        let path = transform_unix_to_windows_path(path);
-
-        let meta = fs::metadata(path)?;
-        if meta.is_dir() {
-            response.replace(build_asset("folder"));
-        } else if meta.is_file() {
-            response.replace(build_asset("file"));
-        } else if meta.is_symlink() {
-            response.replace(build_asset("symlink"));
-        }
+            let meta = fs::metadata(path)?;
+            if meta.is_dir() {
+                Some(build_asset("folder"))
+            } else if meta.is_file() {
+                Some(build_asset("file"))
+            } else if meta.is_symlink() {
+                Some(build_asset("symlink"))
+            } else {
+                None
+            }
+        },
+        _ => None,
     }
-
-    Ok(response.unwrap_or_else(build_default))
+    .unwrap_or_else(build_default))
 }
 
 /// Translate a unix style path into a windows style path assuming root dir is the drive
