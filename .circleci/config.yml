@@ -144,8 +144,9 @@ jobs:
           command: |
             cd desktop
             cargo wix -p "fig_desktop" -n "fig" --no-build --nocapture -v
+            mv build/wix/fig-*-x86_64.msi build/wix/fig.msi
       - store_artifacts:
-          path: desktop/build/wix/fig-2.0.3-x86_64.msi
+          path: desktop/build/wix/fig.msi
           destination: windows/msi
 
   # Creates tag on specified revision
