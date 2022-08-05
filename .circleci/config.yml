@@ -133,7 +133,7 @@ jobs:
 
             cargo install cargo-wix
 
-            $BASH_ENV=$PATH
+            BASH_ENV=$PATH
       #- run:
       #    name: Build
       #    command: |
