@@ -134,11 +134,11 @@ jobs:
             cargo install cargo-wix
 
             echo "export PATH=\"$PATH\"" >> $BASH_ENV
-      #- run:
-      #    name: Build
-      #    command: |
-      #      cd desktop
-      #      cargo build --release
+      - run:
+          name: Build
+          command: |
+            cd desktop
+            cargo build --release
       - run:
           name: Bundle
           command: |
