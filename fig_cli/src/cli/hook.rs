@@ -153,7 +153,7 @@ impl HookSubcommand {
                         let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
                         println!(
                             "{bar}\n  To install SSH support for {}, run the following on your remote machine\n\n    {} {} \n     \
-                            source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | source\n{bar}",
+                            source <(curl -Ls fig.io/install)\n\n    🐟 {} \n     curl -Ls fig.io/install | bash; and exec fish\n{bar}",
                             "Fig".magenta(),
                             *BASH_UNICODE,
                             "Bash/zsh:".bold().underlined(),

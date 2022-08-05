@@ -6,8 +6,6 @@
 ## <script src="https://cdnjs.cloudflare.com/ajax/libs/prism/1.16.0/components/prism-bash.min.js"></script>
 ## <style>body {color: #272822; background-color: #272822; font-size: 0.8em;} </style>
 
-# Fail fast with a concise message when not using bash or zsh
-# Single brackets are needed here for POSIX compatibility
 if [ -z "${BASH_VERSION:-}" ] && [ -z "${ZSH_VERSION:-}" ]; then
   echo "Bash is required to interpret this script."
 else
@@ -119,12 +117,3 @@ fi
 # This script contains hidden JavaScript which is used to improve
 # readability in the browser (via syntax highlighting, etc), right-click
 # and "View source" of this page to see the entire bash script!
-#
-# You'll also notice that we use the ":" character in the Introduction
-# which allows our copy/paste commands to be syntax highlighted, but not
-# ran. In bash : is equal to `true` and true can take infinite arguments
-# while still returning true. This turns these commands into no-ops so
-# when ran as a script, they're totally ignored.
-#
-# Credit goes to firebase.tools for the inspiration & much of the implementation.
-# Install scripts for Homebrew, Docker & Sentry were also used as reference.
