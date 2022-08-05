@@ -103,7 +103,6 @@ impl AiArgs {
         }
 
         let Self { mut input, n } = self;
-        let mut first_run_with_input = input.is_some();
 
         if n.map(|n| n > 10).unwrap_or_default() {
             anyhow::bail!("n must be <= 10");
@@ -142,12 +141,7 @@ impl AiArgs {
             }
 
             'generate_loop: loop {
-                let spinner_text = if first_run_with_input {
-                    format!("  {} {} ", "Translated Bash".bold(), "·".grey())
-                } else {
-                    format!("  {} {} ", "Bash".bold(), "·".grey())
-                };
-                first_run_with_input = false;
+                let spinner_text = format!("  {} {} ", "Bash".bold(), "·".grey());
 
                 let mut spinner = Spinner::new(vec![
                     SpinnerComponent::Text(spinner_text.clone()),
