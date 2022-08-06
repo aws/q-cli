@@ -2227,9 +2227,11 @@ name = "fig_api_client"
 version = "0.1.0"
 dependencies = [
  "fig_request",
+ "fig_settings",
  "fig_util",
  "serde",
  "serde_json",
+ "time 0.3.12",
  "url",
 ]
 
@@ -2335,6 +2337,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.16",
  "dashmap",
+ "fig_api_client",
  "fig_auth",
  "fig_install",
  "fig_integrations",
@@ -2484,16 +2487,13 @@ dependencies = [
 name = "fig_settings"
 version = "0.1.0"
 dependencies = [
- "fig_auth",
  "fig_util",
  "once_cell",
  "regex",
- "reqwest",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror",
- "time 0.3.12",
  "tokio",
  "url",
 ]
@@ -2506,11 +2506,11 @@ dependencies = [
  "fig_auth",
  "fig_ipc",
  "fig_proto",
+ "fig_request",
  "fig_settings",
  "fig_util",
  "once_cell",
  "parking_lot 0.12.1",
- "reqwest",
  "sentry",
  "serde",
  "serde_json",

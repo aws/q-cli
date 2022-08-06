@@ -80,11 +80,9 @@ impl ThemeArgs {
                 match fs::read_to_string(theme_path) {
                     Ok(theme_file) => {
                         let theme: Theme = serde_json::from_str(&theme_file)?;
-                        let result = fig_settings::settings::set_value("autocomplete.theme", json!(theme_str)).await;
                         let author = theme.author;
 
                         println!();
-
                         let mut theme_line = format!("› Switching to theme '{}'", theme_str.bold());
                         match author {
                             Some(Author { name, twitter, github }) => {
@@ -92,7 +90,7 @@ impl ThemeArgs {
                                     write!(theme_line, " by {}", name.bold()).ok();
                                 }
 
-                                println!("{}", theme_line);
+                                println!("{theme_line}");
 
                                 if let Some(twitter) = twitter {
                                     println!("  🐦 {}", twitter.with(Color::Rgb { r: 29, g: 161, b: 242 }));
@@ -102,20 +100,17 @@ impl ThemeArgs {
                                     println!("  💻 {}", format!("github.com/{}", github).underlined());
                                 }
                             },
-                            None => {
-                                println!("{}", theme_line);
-                            },
+                            None => println!("{theme_line}"),
                         }
                         println!();
-                        result?;
+
+                        fig_api_client::settings::update("autocomplete.theme", json!(theme_str)).await?;
                         Ok(())
                     },
                     Err(_) => {
                         if BUILT_IN_THEMES.contains(&theme_str) {
-                            let result =
-                                fig_settings::settings::set_value("autocomplete.theme", json!(theme_str)).await;
                             println!("› Switching to theme '{}'", theme_str.bold());
-                            result?;
+                            fig_api_client::settings::update("autocomplete.theme", json!(theme_str)).await?;
                             Ok(())
                         } else {
                             anyhow::bail!("'{theme_str}' does not exist in {}", theme_dir.display())

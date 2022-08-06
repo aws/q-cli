@@ -1,12 +1,7 @@
-use std::fmt::Display;
 use std::path::PathBuf;
 
 use fig_util::directories;
 
-use crate::remote_settings::{
-    delete_remote_setting,
-    update_remote_setting,
-};
 use crate::{
     Error,
     LocalJson,
@@ -29,13 +24,24 @@ pub fn get_map() -> Result<serde_json::Map<String, serde_json::Value>, super::Er
     Ok(local_settings()?.inner)
 }
 
-pub async fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), super::Error> {
+/// Do not use this if you want to update remote settings, use
+/// [fig_api_client::settings::update]
+pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<(), super::Error> {
     let key = key.into();
     let value = value.into();
     let mut settings = local_settings()?;
-    settings.set(&key, value.clone());
+    settings.set(&key, value);
     settings.save()?;
-    Ok(update_remote_setting(key, value).await?)
+    Ok(())
+}
+
+/// Do not use this if you want to update remote settings_path, use
+/// [fig_api_client::settings::delete]
+pub fn remove_value(key: impl AsRef<str>) -> Result<(), Error> {
+    let mut settings = local_settings()?;
+    settings.remove(&key);
+    settings.save()?;
+    Ok(())
 }
 
 pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>, super::Error> {
@@ -74,14 +80,7 @@ pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
     get_int(key).ok().flatten().unwrap_or(default)
 }
 
-pub async fn remove_value(key: impl AsRef<str>) -> Result<(), Error> {
-    let mut settings = local_settings()?;
-    settings.remove(&key);
-    settings.save()?;
-    Ok(delete_remote_setting(key.as_ref()).await?)
-}
-
-pub async fn product_gate(product: impl Display, namespace: Option<impl Display>) -> bool {
+pub async fn product_gate(product: impl std::fmt::Display, namespace: Option<impl std::fmt::Display>) -> bool {
     let settings = match local_settings() {
         Ok(settings) => settings,
         Err(_) => return false,

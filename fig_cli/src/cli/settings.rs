@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::process::exit;
 
 use anyhow::{
     bail,
@@ -11,14 +10,13 @@ use clap::{
     Args,
     Subcommand,
 };
-use crossterm::style::Stylize;
+use fig_api_client::settings;
 use fig_auth::is_logged_in;
 use fig_ipc::command::{
     open_ui_element,
     restart_settings_listener,
 };
 use fig_proto::local::UiElement;
-use fig_settings::remote_settings::RemoteSettings;
 use fig_settings::settings::settings_path;
 use globset::Glob;
 use serde_json::json;
@@ -112,7 +110,7 @@ impl SettingsArgs {
                 Ok(())
             },
             Some(SettingsSubcommands::Sync) => {
-                let RemoteSettings { settings, updated_at } = fig_settings::remote_settings::get_settings().await?;
+                let settings::Settings { settings, updated_at } = settings::get().await?;
 
                 let path = settings_path().context("Could not get settings path")?;
 
@@ -128,7 +126,7 @@ impl SettingsArgs {
             },
             Some(SettingsSubcommands::All { remote, format }) => {
                 let settings = if remote {
-                    match fig_settings::remote_settings::get_settings().await?.settings {
+                    match settings::get().await?.settings {
                         serde_json::Value::Object(map) => map,
                         val => bail!("Remote settings is not an object: {val}"),
                     }
@@ -174,33 +172,9 @@ impl SettingsArgs {
                     },
                     (Some(value_str), false) => {
                         let value = serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
-                        let remote_result = fig_settings::settings::set_value(key, value).await;
-                        match remote_result {
-                            Ok(()) => {
-                                println!("Successfully set setting");
-                                Ok(())
-                            },
-                            Err(err) => match err {
-                                fig_settings::Error::RemoteSettingsError(
-                                    fig_settings::remote_settings::Error::AuthError(_),
-                                ) => {
-                                    eprintln!("You are not logged in to Fig");
-                                    eprintln!("Run {} to login", "fig login".magenta().bold());
-                                    exit(1);
-                                },
-                                fig_settings::Error::RemoteSettingsError(
-                                    fig_settings::remote_settings::Error::ReqwestError(err),
-                                ) => match err.status() {
-                                    Some(status) if status == 401 => {
-                                        eprintln!("You are not logged in to Fig");
-                                        eprintln!("Run {} to login", "fig login".magenta().bold());
-                                        exit(1);
-                                    },
-                                    _ => Err(err.into()),
-                                },
-                                err => Err(err.into()),
-                            },
-                        }
+                        settings::update(key, value).await?;
+                        println!("Successfully set setting");
+                        Ok(())
                     },
                     (None, true) => {
                         let glob = Glob::new(key).context("Could not create glob")?.compile_matcher();
@@ -222,25 +196,13 @@ impl SettingsArgs {
                             },
                         }
 
-                        let futures = keys_to_remove
-                            .into_iter()
-                            .map(fig_settings::settings::remove_value)
-                            .collect::<Vec<_>>();
+                        let futures = keys_to_remove.into_iter().map(settings::delete).collect::<Vec<_>>();
 
                         let join = futures::future::join_all(futures).await;
 
                         for result in join {
                             if let Err(err) = result {
-                                match err {
-                                    fig_settings::Error::RemoteSettingsError(
-                                        fig_settings::remote_settings::Error::AuthError(_),
-                                    ) => {
-                                        eprintln!("You are not logged in to Fig");
-                                        eprintln!("Run {} to login", "fig login".magenta().bold());
-                                        exit(1);
-                                    },
-                                    err => return Err(err.into()),
-                                }
+                                println!("{err}");
                             }
                         }
 

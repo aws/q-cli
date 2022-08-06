@@ -4,10 +4,7 @@ use serde_json::{
     Value,
 };
 
-use crate::{
-    Error,
-    API_DOMAIN,
-};
+use crate::Error;
 
 fn create_anonymous_id() -> anyhow::Result<String> {
     let anonymous_id = uuid::Uuid::new_v4().as_hyphenated().to_string();
@@ -66,20 +63,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
 }
 
 pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
-    // Emit it!
-    let mut request = reqwest::Client::new().post(format!("{API_DOMAIN}{route}"));
-
-    if let Ok(token) = fig_auth::get_token().await {
-        request = request.bearer_auth(token);
-    }
-
     body.insert("anonymousId".into(), get_or_create_anonymous_id()?.into());
-
-    request
-        .header("Content-Type", "application/json")
-        .json(&body)
-        .send()
-        .await?;
-
+    fig_request::Request::post(route).auth().body(body).send().await?;
     Ok(())
 }
