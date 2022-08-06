@@ -8,6 +8,7 @@ publish = false
 anyhow = "1.0.59"
 cfg-if = "1.0.0"
 crossterm = "0.24.0"
+fig_api_client = { version = "0.1.0", path = "../fig_api_client" }
 fig_auth = { path = "../fig_auth" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }

@@ -15,6 +15,7 @@ use std::ffi::{
 };
 use std::iter::repeat;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::{
     Duration,
     SystemTime,
@@ -620,8 +621,17 @@ fn figterm_main() -> Result<()> {
             newline_mode: false,
         };
 
-        let ai_enabled = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false)
-            && !fig_settings::settings::get_bool_or("ai.disable-pound-sub", true);
+        let fig_pro = Arc::new(Mutex::new(false));
+        let fig_pro_clone = fig_pro.clone();
+        tokio::spawn(async move {
+            *fig_pro_clone.lock() = fig_api_client::user::plans()
+                .await
+                .map(|plans| plans.highest_plan())
+                .unwrap_or_default()
+                .is_pro()
+        });
+
+        let ai_enabled = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
 
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
@@ -643,7 +653,7 @@ fn figterm_main() -> Result<()> {
                     match res {
                         Ok(Ok((raw, InputEvent::Key(event)))) => {
                             info!("Got key, {event:?}, {raw:?}");
-                            if ai_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                            if ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                 if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
                                     let buffer = buffer.trim();
                                     if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {

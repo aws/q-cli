@@ -2223,6 +2223,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig_api_client"
+version = "0.1.0"
+dependencies = [
+ "fig_request",
+ "fig_util",
+ "serde",
+ "serde_json",
+ "url",
+]
+
+[[package]]
 name = "fig_auth"
 version = "0.1.0"
 dependencies = [
@@ -2260,6 +2271,7 @@ dependencies = [
  "deno_core",
  "deno_runtime",
  "dialoguer",
+ "fig_api_client",
  "fig_auth",
  "fig_install",
  "fig_integrations",
@@ -2367,6 +2379,7 @@ dependencies = [
  "anyhow",
  "cfg-if 1.0.0",
  "crossterm",
+ "fig_api_client",
  "fig_auth",
  "fig_request",
  "fig_settings",
@@ -2537,6 +2550,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.16",
  "dashmap",
+ "fig_api_client",
  "fig_auth",
  "fig_color",
  "fig_ipc",

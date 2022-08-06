@@ -22,6 +22,13 @@ use crossterm::{
     cursor,
     execute,
 };
+use fig_api_client::workflows::{
+    workflows,
+    Generator,
+    ParameterType,
+    TreeElement,
+    Workflow,
+};
 #[cfg(unix)]
 use fig_ipc::command::open_ui_element;
 #[cfg(unix)]
@@ -31,10 +38,6 @@ use fig_telemetry::{
     TrackEvent,
     TrackEventType,
     TrackSource,
-};
-use serde::{
-    Deserialize,
-    Serialize,
 };
 use serde_json::Value;
 #[cfg(unix)]
@@ -80,70 +83,6 @@ impl WorkflowArgs {
     pub async fn execute(self) -> Result<()> {
         execute(self.args).await
     }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type")]
-#[serde(rename_all = "camelCase")]
-enum Generator {
-    #[serde(rename_all = "camelCase")]
-    Named { name: String },
-    #[serde(rename_all = "camelCase")]
-    Script { script: String },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(tag = "type", content = "typeData")]
-#[serde(rename_all = "camelCase")]
-enum ParameterType {
-    #[serde(rename_all = "camelCase")]
-    Checkbox {
-        true_value_substitution: String,
-        false_value_substitution: String,
-    },
-    #[serde(rename_all = "camelCase")]
-    Text { placeholder: Option<String> },
-    #[serde(rename_all = "camelCase")]
-    Selector {
-        placeholder: Option<String>,
-        suggestions: Option<Vec<String>>,
-        generators: Option<Vec<Generator>>,
-    },
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct Parameter {
-    name: String,
-    display_name: Option<String>,
-    description: Option<String>,
-    depends_on: Vec<String>,
-    #[serde(flatten)]
-    parameter_type: ParameterType,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-#[serde(untagged)]
-enum TreeElement {
-    String(String),
-    Token { name: String },
-}
-
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
-#[serde(rename_all = "camelCase")]
-struct Workflow {
-    name: String,
-    display_name: Option<String>,
-    description: Option<String>,
-    template_version: u32,
-    last_invoked_at: Option<String>,
-    tags: Option<Vec<String>>,
-    parameters: Vec<Parameter>,
-    namespace: String,
-    template: String,
-    tree: Vec<TreeElement>,
-    is_owned_by_user: Option<bool>,
 }
 
 #[cfg(unix)]
@@ -260,7 +199,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Get workflows early
     execute!(std::io::stdout(), cursor::Hide)?;
     let mut spinner = Spinner::new(Spinners::Dots, "Getting workflows...".to_owned());
-    let mut workflows: Vec<Workflow> = Request::get("/workflows").auth().deser_json().await?;
+    let mut workflows = workflows().await?;
     spinner.stop_with_message(String::new());
     execute!(std::io::stdout(), cursor::Show)?;
 

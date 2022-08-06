@@ -4,7 +4,7 @@ use anyhow::{
 };
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use fig_install::plugins::api::{
+use fig_api_client::plugins::{
     all_plugins,
     installed_plugins,
     unique_plugin,

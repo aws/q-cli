@@ -5,6 +5,7 @@ use anyhow::{
     Context,
     Result,
 };
+use fig_api_client::plugins::PluginData;
 use fig_util::{
     directories,
     Shell,
@@ -22,8 +23,6 @@ use tracing::{
     debug,
     info,
 };
-
-use crate::plugins::api::PluginData;
 
 #[cfg(target_os = "linux")]
 static LINUX_KERNEL_VERSION: Lazy<Option<String>> = Lazy::new(|| {

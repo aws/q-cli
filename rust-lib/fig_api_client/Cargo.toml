@@ -1,0 +1,13 @@
+[package]
+name = "fig_api_client"
+version = "0.1.0"
+edition = "2021"
+
+# See more keys and their definitions at https://doc.rust-lang.org/cargo/reference/manifest.html
+
+[dependencies]
+fig_request = { version = "0.1.0", path = "../fig_request" }
+fig_util = { version = "0.1.0", path = "../fig_util" }
+serde = { version = "1.0.142", features = ["derive"] }
+serde_json = "1.0.83"
+url = { version = "2.2.2", features = ["serde"] }

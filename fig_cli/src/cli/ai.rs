@@ -20,7 +20,7 @@ use crate::util::spinner::{
 #[derive(Debug, Args)]
 pub struct AiArgs {
     #[clap(value_parser)]
-    input: Option<String>,
+    input: Vec<String>,
     /// Number of completions to generate (must be <=10)
     #[clap(short, long, value_parser)]
     n: Option<usize>,
@@ -68,9 +68,9 @@ impl Display for DialogActions {
             },
             DialogActions::Edit { command, display } => {
                 if *display {
-                    write!(f, "📝 Edit and execute {}", command.to_string().magenta())
+                    write!(f, "📝 Edit {}", command.to_string().magenta())
                 } else {
-                    write!(f, "📝 Edit and execute command")
+                    write!(f, "📝 Edit command")
                 }
             },
             DialogActions::Copy { command, display } => {
@@ -102,7 +102,8 @@ impl AiArgs {
             anyhow::bail!("Fig AI is comming soon to Fig Pro");
         }
 
-        let Self { mut input, n } = self;
+        let Self { input, n } = self;
+        let mut input = if input.is_empty() { None } else { Some(input.join(" ")) };
 
         if n.map(|n| n > 10).unwrap_or_default() {
             anyhow::bail!("n must be <= 10");
@@ -113,6 +114,8 @@ impl AiArgs {
             crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
             std::process::exit(0);
         });
+
+        println!();
 
         'ask_loop: loop {
             let question = match input {

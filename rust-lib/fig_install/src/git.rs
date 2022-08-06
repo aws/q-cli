@@ -28,7 +28,6 @@ use thiserror::Error;
 use tokio::io::AsyncWriteExt;
 use tokio::task::block_in_place;
 
-use crate::plugins::manifest::GitReference;
 use crate::util::checksum::GitChecksum;
 
 pub type Result<T, E = GitError> = std::result::Result<T, E>;
@@ -43,6 +42,14 @@ pub enum GitError {
     Reqwest(#[from] reqwest::Error),
     #[error("directory already exists: {0:?}")]
     DirectoryExists(PathBuf),
+}
+
+#[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum GitReference {
+    Commit(String),
+    Branch(String),
+    Tag(String),
 }
 
 #[derive(Debug, Clone, Deserialize, Serialize)]

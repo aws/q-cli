@@ -1,3 +1,4 @@
+use std::fmt::Display;
 use std::path::PathBuf;
 
 use fig_util::directories;
@@ -78,4 +79,27 @@ pub async fn remove_value(key: impl AsRef<str>) -> Result<(), Error> {
     settings.remove(&key);
     settings.save()?;
     Ok(delete_remote_setting(key.as_ref()).await?)
+}
+
+pub async fn product_gate(product: impl Display, namespace: Option<impl Display>) -> bool {
+    let settings = match local_settings() {
+        Ok(settings) => settings,
+        Err(_) => return false,
+    };
+    settings
+        .get(&format!("product-gate.{product}.enabled"))
+        .and_then(|val| val.as_bool())
+        .unwrap_or_default()
+        || if let Some(namespace) = namespace {
+            settings
+                .get(&format!("product-gate.{namespace}.{product}.enabled"))
+                .and_then(|val| val.as_bool())
+                .unwrap_or_default()
+        } else {
+            false
+        }
+        || settings
+            .get(&format!("{product}.beta"))
+            .and_then(|val| val.as_bool())
+            .unwrap_or_default()
 }
