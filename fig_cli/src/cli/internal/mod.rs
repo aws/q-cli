@@ -430,7 +430,8 @@ impl InternalSubcommand {
                 let method = fig_request::Method::from_str(&method.to_string())?;
                 let mut request = Request::new(method, route).namespace(namespace);
                 if let Some(body) = body {
-                    request = request.body(serde_json::from_str(&body)?);
+                    let value: serde_json::Value = serde_json::from_str(&body)?;
+                    request = request.body(value);
                 }
                 let value = request.auth().json().await?;
                 println!("{value}");

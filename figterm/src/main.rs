@@ -15,6 +15,7 @@ use std::ffi::{
 };
 use std::iter::repeat;
 use std::str::FromStr;
+use std::sync::Arc;
 use std::time::{
     Duration,
     SystemTime,
@@ -150,7 +151,15 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         .flatten()
         .unwrap_or(8);
 
-    let remote_context = if shell_state.in_ssh || shell_state.in_docker {
+    let remote_context_type = if shell_state.in_ssh {
+        Some(local::shell_context::RemoteContextType::Ssh)
+    } else if shell_state.in_docker {
+        Some(local::shell_context::RemoteContextType::Docker)
+    } else {
+        None
+    };
+
+    let remote_context = if remote_context_type.is_some() {
         Some(Box::new(local::ShellContext {
             pid: shell_state.remote_context.pid,
             ttys: shell_state.remote_context.tty.clone(),
@@ -171,6 +180,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             terminal: terminal.clone(),
             hostname: shell_state.remote_context.hostname.clone(),
             remote_context: None,
+            remote_context_type: None,
         }))
     } else {
         None
@@ -196,6 +206,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         terminal,
         hostname: shell_state.local_context.hostname.clone(),
         remote_context,
+        remote_context_type: remote_context_type.map(|x| x.into()),
     }
 }
 
@@ -610,8 +621,17 @@ fn figterm_main() -> Result<()> {
             newline_mode: false,
         };
 
-        let ai_enabled = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false)
-            && !fig_settings::settings::get_bool_or("ai.disable-pound-sub", true);
+        let fig_pro = Arc::new(Mutex::new(false));
+        let fig_pro_clone = fig_pro.clone();
+        tokio::spawn(async move {
+            *fig_pro_clone.lock() = fig_api_client::user::plans()
+                .await
+                .map(|plans| plans.highest_plan())
+                .unwrap_or_default()
+                .is_pro()
+        });
+
+        let ai_enabled = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
 
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
@@ -631,8 +651,9 @@ fn figterm_main() -> Result<()> {
                 biased;
                 res = input_rx.recv_async() => {
                     match res {
-                        Ok(Ok(InputEvent::Key(event))) => {
-                            if ai_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                        Ok(Ok((raw, InputEvent::Key(event)))) => {
+                            info!("Got key, {event:?}, {raw:?}");
+                            if ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                 if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
                                     let buffer = buffer.trim();
                                     if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {
@@ -656,25 +677,28 @@ fn figterm_main() -> Result<()> {
                                 }
                             }
 
-                            if let Ok(s) = event.key.encode(event.modifiers, modes, true) {
-                                trace!("Encoded input key {event:?} as {s}");
-                                if let Some(action) = key_interceptor.intercept_key(&event) {
-                                    debug!("Intercepted action: {action:?}");
-                                    let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
-                                    outgoing_sender.send(hook_to_message(hook)).unwrap();
+                            let raw = raw.or_else(|| {
+                                event.key.encode(event.modifiers, modes, true)
+                                    .ok()
+                                    .map(|s| s.into_bytes())
+                            });
+                            if let Some(action) = key_interceptor.intercept_key(&event) {
+                                debug!("Intercepted action: {action:?}");
+                                let s = raw
+                                    .and_then(|b| String::from_utf8(b).ok())
+                                    .unwrap_or_default();
+                                let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                outgoing_sender.send(hook_to_message(hook)).unwrap();
 
-                                    if event.key == KeyCode::Escape {
-                                        key_interceptor.reset();
-                                    }
-                                } else {
-                                    master.write(s.as_bytes()).await?;
+                                if event.key == KeyCode::Escape {
+                                    key_interceptor.reset();
                                 }
-                            } else {
-                                warn!("Could not encode key event: {:?}", event);
+                            } else if let Some(bytes) = raw {
+                                master.write(&bytes).await?;
                             }
                             Ok(())
                         }
-                        Ok(Ok(InputEvent::Resized)) => {
+                        Ok(Ok((_, InputEvent::Resized))) => {
                             let size = terminal.get_screen_size()?;
                             let pty_size = PtySize {
                                 rows: size.rows as u16,
@@ -689,15 +713,21 @@ fn figterm_main() -> Result<()> {
                             term.resize(window_size);
                             Ok(())
                         }
-                        Ok(Ok(InputEvent::Paste(string))) => {
+                        Ok(Ok((None, InputEvent::Paste(string)))) => {
+                            info!("Pasty");
                             // Pass through bracketed pastes.
                             master.write(b"\x1b[200~").await?;
                             master.write(string.as_bytes()).await?;
                             master.write(b"\x1b[201~").await?;
                             Ok(())
                         }
-                        Ok(Ok(InputEvent::Mouse(_))) => {
-                            /* Ignore for now */
+                        Ok(Ok((raw, _))) => {
+                            if let Some(raw) = raw {
+                                info!("Fallback write");
+                                master.write(&raw).await?;
+                            } else {
+                                info!("Unhandled input event with no raw pass-through data");
+                            }
                             Ok(())
                         }
                         Ok(Err(err)) => {
@@ -717,7 +747,7 @@ fn figterm_main() -> Result<()> {
                             break 'select_loop Ok(());
                         }
                         Ok(size) => {
-                            trace!("Read {} bytes from master", size);
+                            info!("Read {} bytes from master", size);
 
                             let old_delayed_count = term.get_delayed_events_count();
                             for byte in &write_buffer[..size] {

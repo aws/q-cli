@@ -16,10 +16,6 @@ use fig_auth::cognito::{
 };
 use fig_request::Request;
 use fig_settings::state;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 use serde_json::{
     json,
     Value,
@@ -75,6 +71,7 @@ pub enum UserSubcommand {
     },
     #[clap(subcommand)]
     Tokens(TokensSubcommand),
+    Plan,
 }
 
 impl UserSubcommand {
@@ -83,6 +80,10 @@ impl UserSubcommand {
             Self::Root(cmd) => cmd.execute().await,
             Self::Whoami { format, only_email } => whoami_cli(format, only_email).await,
             Self::Tokens(cmd) => cmd.execute().await,
+            Self::Plan => {
+                println!("Plan: {:?}", fig_api_client::user::plans().await?.highest_plan());
+                Ok(())
+            },
         }
     }
 }
@@ -351,12 +352,6 @@ pub async fn logout_cli() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct WhoamiResponse {
-    email: String,
-    username: Option<String>,
-}
-
 pub async fn whoami_cli(format: OutputFormat, only_email: bool) -> Result<()> {
     let email = fig_auth::get_email();
 
@@ -371,14 +366,14 @@ pub async fn whoami_cli(format: OutputFormat, only_email: bool) -> Result<()> {
                     },
                 }
             } else {
-                let response: WhoamiResponse = Request::get("/user/whoami").auth().deser_json().await?;
+                let account = fig_api_client::user::account().await?;
                 match format {
-                    OutputFormat::Plain => match response.username {
-                        Some(username) => println!("Email: {}\nUsername: {}", response.email, username),
-                        None => println!("Email: {}\nUsername is null", response.email),
+                    OutputFormat::Plain => match account.username {
+                        Some(username) => println!("Email: {}\nUsername: {}", account.email, username),
+                        None => println!("Email: {}\nUsername is null", account.email),
                     },
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&response)?),
-                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&response)?),
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&account)?),
+                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&account)?),
                 }
             }
             Ok(())

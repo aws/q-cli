@@ -5,6 +5,7 @@ use anyhow::{
     bail,
     Result,
 };
+use fig_api_client::plugins::plugin as fetch_plugin;
 use fig_util::directories;
 use tracing::{
     error,
@@ -16,9 +17,6 @@ use crate::{
     dotfiles,
     git,
 };
-
-pub mod api;
-pub mod manifest;
 
 pub fn plugin_data_dir() -> Result<PathBuf> {
     cfg_if::cfg_if! {
@@ -38,7 +36,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
 
     let tasks = dotfiles_data.plugins.into_iter().map(|plugin| {
         tokio::spawn(async move {
-            match api::fetch_plugin(plugin.name).await {
+            match fetch_plugin(plugin.name).await {
                 Ok(plugin) => {
                     if let Ok(plugins_directory) = plugin_data_dir() {
                         let plugin_directory = plugins_directory.join(&plugin.name);
@@ -72,12 +70,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
                         if fig_settings::settings::get_bool_or("plugins.zcompile", false) {
                             if let Some(installation) = plugin.installation {
                                 if let Some(source_files) = installation.source_files {
-                                    let source_files = match source_files {
-                                        api::ElementOrList::Element(element) => vec![element],
-                                        api::ElementOrList::List(v) => v,
-                                    };
-
-                                    for file in source_files {
+                                    for file in source_files.iter() {
                                         let mut argument = OsString::from("zcompile ");
                                         argument.push(plugin_directory.join(file));
 
@@ -95,7 +88,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
                 },
                 Err(err) => {
                     error!("Error fetching plugin: {err}");
-                    return Err(err);
+                    return Err(err.into());
                 },
             }
 
