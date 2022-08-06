@@ -52,6 +52,8 @@ pub enum Blocking {
     Wait,
 }
 
+type InputEventResult = Result<(Option<Vec<u8>>, InputEvent)>;
+
 /// `Terminal` abstracts over some basic terminal capabilities.
 /// If the `set_raw_mode` or `set_cooked_mode` functions are used in
 /// any combination, the implementation is required to restore the
@@ -73,7 +75,7 @@ pub trait Terminal {
     /// Flush any buffered output
     fn flush(&mut self) -> Result<()>;
 
-    fn read_input(&mut self) -> Result<Receiver<Result<InputEvent>>>;
+    fn read_input(&mut self) -> Result<Receiver<InputEventResult>>;
 
     #[cfg(windows)]
     fn get_cursor_coordinate(&mut self) -> Result<CellCoordinate>;

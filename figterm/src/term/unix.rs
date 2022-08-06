@@ -247,10 +247,10 @@ impl Terminal for UnixTerminal {
         self.write.flush().context("flush failed")
     }
 
-    fn read_input(&mut self) -> Result<Receiver<Result<InputEvent>>> {
+    fn read_input(&mut self) -> Result<Receiver<Result<(Option<Vec<u8>>, InputEvent)>>> {
         let mut window_change_signal = tokio::signal::unix::signal(SignalKind::window_change())?;
 
-        let (input_tx, input_rx) = unbounded::<Result<InputEvent>>();
+        let (input_tx, input_rx) = unbounded::<Result<(Option<Vec<u8>>, InputEvent)>>();
 
         tokio::spawn(async move {
             let mut stdin = io::stdin();
@@ -265,8 +265,8 @@ impl Terminal for UnixTerminal {
                             Ok(n) => {
                                 parser.parse(
                                     &buf[0..n],
-                                    |evt| {
-                                        if let Err(e) = input_tx.send(Ok(evt)) {
+                                    |raw, evt| {
+                                        if let Err(e) = input_tx.send(Ok((raw, evt))) {
                                             warn!("Error sending event: {e}");
                                         }
                                     },
@@ -282,7 +282,7 @@ impl Terminal for UnixTerminal {
                     }
                     _ = window_change_signal.recv() => {
                         let event = InputEvent::Resized;
-                        if let Err(e) = input_tx.send_async(Ok(event)).await {
+                        if let Err(e) = input_tx.send_async(Ok((None, event))).await {
                             warn!("Error sending event: {e}");
                         }
                     }

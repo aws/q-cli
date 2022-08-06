@@ -650,8 +650,8 @@ impl Terminal for WindowsTerminal {
             .map_err(|e| anyhow::anyhow!("flush failed: {}", e))
     }
 
-    fn read_input(&mut self) -> Result<Receiver<Result<InputEvent>>> {
-        let (input_tx, input_rx) = unbounded::<Result<InputEvent>>();
+    fn read_input(&mut self) -> Result<Receiver<Result<(Option<Vec<u8>>, InputEvent)>>> {
+        let (input_tx, input_rx) = unbounded::<Result<(Option<Vec<u8>>, InputEvent)>>();
         let mut input_handle = self.input_handle.try_clone()?;
         tokio::task::spawn_blocking(move || {
             let mut parser = InputParser::new();
@@ -675,8 +675,8 @@ impl Terminal for WindowsTerminal {
 
                 match input_handle.read_console_input(pending) {
                     Ok(records) => {
-                        parser.decode_input_records(&records, &mut |evt| {
-                            if let Err(e) = input_tx.send(Ok(evt)) {
+                        parser.decode_input_records(&records, &mut |raw, evt| {
+                            if let Err(e) = input_tx.send(Ok((raw, evt))) {
                                 warn!("Failed to send input record: {e}");
                             }
                         });

@@ -641,7 +641,8 @@ fn figterm_main() -> Result<()> {
                 biased;
                 res = input_rx.recv_async() => {
                     match res {
-                        Ok(Ok(InputEvent::Key(event))) => {
+                        Ok(Ok((raw, InputEvent::Key(event)))) => {
+                            info!("Got key, {event:?}, {raw:?}");
                             if ai_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                 if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
                                     let buffer = buffer.trim();
@@ -666,25 +667,28 @@ fn figterm_main() -> Result<()> {
                                 }
                             }
 
-                            if let Ok(s) = event.key.encode(event.modifiers, modes, true) {
-                                trace!("Encoded input key {event:?} as {s}");
-                                if let Some(action) = key_interceptor.intercept_key(&event) {
-                                    debug!("Intercepted action: {action:?}");
-                                    let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
-                                    outgoing_sender.send(hook_to_message(hook)).unwrap();
+                            let raw = raw.or_else(|| {
+                                event.key.encode(event.modifiers, modes, true)
+                                    .ok()
+                                    .map(|s| s.into_bytes())
+                            });
+                            if let Some(action) = key_interceptor.intercept_key(&event) {
+                                debug!("Intercepted action: {action:?}");
+                                let s = raw
+                                    .and_then(|b| String::from_utf8(b).ok())
+                                    .unwrap_or_default();
+                                let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                outgoing_sender.send(hook_to_message(hook)).unwrap();
 
-                                    if event.key == KeyCode::Escape {
-                                        key_interceptor.reset();
-                                    }
-                                } else {
-                                    master.write(s.as_bytes()).await?;
+                                if event.key == KeyCode::Escape {
+                                    key_interceptor.reset();
                                 }
-                            } else {
-                                warn!("Could not encode key event: {:?}", event);
+                            } else if let Some(bytes) = raw {
+                                master.write(&bytes).await?;
                             }
                             Ok(())
                         }
-                        Ok(Ok(InputEvent::Resized)) => {
+                        Ok(Ok((_, InputEvent::Resized))) => {
                             let size = terminal.get_screen_size()?;
                             let pty_size = PtySize {
                                 rows: size.rows as u16,
@@ -699,15 +703,21 @@ fn figterm_main() -> Result<()> {
                             term.resize(window_size);
                             Ok(())
                         }
-                        Ok(Ok(InputEvent::Paste(string))) => {
+                        Ok(Ok((None, InputEvent::Paste(string)))) => {
+                            info!("Pasty");
                             // Pass through bracketed pastes.
                             master.write(b"\x1b[200~").await?;
                             master.write(string.as_bytes()).await?;
                             master.write(b"\x1b[201~").await?;
                             Ok(())
                         }
-                        Ok(Ok(InputEvent::Mouse(_))) => {
-                            /* Ignore for now */
+                        Ok(Ok((raw, _))) => {
+                            if let Some(raw) = raw {
+                                info!("Fallback write");
+                                master.write(&raw).await?;
+                            } else {
+                                info!("Unhandled input event with no raw pass-through data");
+                            }
                             Ok(())
                         }
                         Ok(Err(err)) => {
@@ -727,7 +737,7 @@ fn figterm_main() -> Result<()> {
                             break 'select_loop Ok(());
                         }
                         Ok(size) => {
-                            trace!("Read {} bytes from master", size);
+                            info!("Read {} bytes from master", size);
 
                             let old_delayed_count = term.get_delayed_events_count();
                             for byte in &write_buffer[..size] {
