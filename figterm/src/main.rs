@@ -638,10 +638,10 @@ fn figterm_main() -> Result<()> {
                 trace!("Has seen prompt and first time");
                 let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                 if let Some(mut initial_command) = initial_command {
-                    debug!("Sending initial text: {}", initial_command);
+                    debug!("Sending initial text: {initial_command}");
                     initial_command.push('\n');
-                    if let Err(e) = master.write(initial_command.as_bytes()).await {
-                        error!("Failed to write initial command: {}", e);
+                    if let Err(err) = master.write(initial_command.as_bytes()).await {
+                        error!("Failed to write initial command: {err}");
                     }
                 }
                 first_time = false;
@@ -709,7 +709,7 @@ fn figterm_main() -> Result<()> {
 
                             master.resize(pty_size)?;
                             let window_size = SizeInfo::new(size.rows as usize, size.cols as usize);
-                            debug!("Window size changed: {:?}", window_size);
+                            debug!("Window size changed: {window_size:?}");
                             term.resize(window_size);
                             Ok(())
                         }
@@ -731,11 +731,11 @@ fn figterm_main() -> Result<()> {
                             Ok(())
                         }
                         Ok(Err(err)) => {
-                            error!("Failed receiving input from stdin: {}", err);
+                            error!("Failed receiving input from stdin: {err}");
                             Err(err)
                         }
                         Err(err) => {
-                            warn!("Failed recv: {}", err);
+                            warn!("Failed recv: {err}");
                             Ok(())
                         }
                     }
@@ -747,7 +747,7 @@ fn figterm_main() -> Result<()> {
                             break 'select_loop Ok(());
                         }
                         Ok(size) => {
-                            info!("Read {} bytes from master", size);
+                            info!("Read {size} bytes from master");
 
                             let old_delayed_count = term.get_delayed_events_count();
                             for byte in &write_buffer[..size] {
@@ -767,15 +767,15 @@ fn figterm_main() -> Result<()> {
 
                             if can_send_edit_buffer(&term) {
                                 let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                                if let Err(e) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
-                                    warn!("Failed to send edit buffer: {}", e);
+                                if let Err(err) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
+                                    warn!("Failed to send edit buffer: {err}");
                                 }
                             }
 
                             Ok(())
                         }
                         Err(err) => {
-                            error!("Failed to read from master: {}", err);
+                            error!("Failed to read from master: {err}");
                             break 'select_loop Ok(());
                         }
                     }
@@ -783,11 +783,11 @@ fn figterm_main() -> Result<()> {
                 msg = incoming_receiver.recv_async() => {
                     match msg {
                         Ok((message, sender)) => {
-                            debug!("Received message from socket: {:?}", message);
+                            debug!("Received message from socket: {message:?}");
                             process_figterm_message(message, sender, &term, &mut master, &mut key_interceptor).await?;
                         }
                         Err(err) => {
-                            error!("Failed to receive message from socket: {}", err);
+                            error!("Failed to receive message from socket: {err}");
                         }
                     }
                     Ok(())
@@ -809,9 +809,9 @@ fn figterm_main() -> Result<()> {
                 }
             };
 
-            if let Err(e) = select_result {
-                error!("Error in select loop: {}", e);
-                break 'select_loop Err(e);
+            if let Err(err) = select_result {
+                error!("Error in select loop: {err}");
+                break 'select_loop Err(err);
             }
         };
 
