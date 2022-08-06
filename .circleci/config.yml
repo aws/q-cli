@@ -147,7 +147,7 @@ jobs:
             mv target/wix/fig-*-x86_64.msi target/wix/fig.msi
       - store_artifacts:
           path: desktop/target/wix/fig.msi
-          destination: windows/msi
+          destination: windows/fig.msi
 
   # Creates tag on specified revision
   update-version:
