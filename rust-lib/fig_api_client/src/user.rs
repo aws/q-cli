@@ -59,7 +59,7 @@ pub struct TeamPlan {
     pub name: String,
     pub role: TeamRole,
     #[serde(flatten)]
-    pub plan: Plan,
+    pub plan: Option<Plan>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -69,7 +69,7 @@ pub struct UserPlan {
     pub email: String,
     pub username: Option<String>,
     #[serde(flatten)]
-    pub plan: Plan,
+    pub plan: Option<Plan>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -81,13 +81,18 @@ pub struct Plans {
 
 impl Plans {
     pub fn highest_plan(&self) -> CustomerPlan {
-        self.user_plan.plan.customer_plan.max(
-            self.team_plans
-                .iter()
-                .map(|plan| plan.plan.customer_plan)
-                .max()
-                .unwrap_or_default(),
-        )
+        self.user_plan
+            .plan
+            .as_ref()
+            .map(|plan| plan.customer_plan)
+            .unwrap_or_default()
+            .max(
+                self.team_plans
+                    .iter()
+                    .filter_map(|plan| plan.plan.as_ref().map(|plan| plan.customer_plan))
+                    .max()
+                    .unwrap_or_default(),
+            )
     }
 }
 
