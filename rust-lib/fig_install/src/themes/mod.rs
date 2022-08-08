@@ -3,6 +3,7 @@ use std::path::PathBuf;
 use anyhow::Result;
 use fig_util::directories;
 use tracing::{
+    debug,
     error,
     info,
 };
@@ -25,7 +26,7 @@ pub async fn clone_or_update() -> Result<()> {
             info!("Cloned themes repo");
         },
         Err(err) => {
-            error!("Error cloning themes repo: {err}");
+            debug!("Error cloning themes repo: {err}");
             match git::update_git_repo_with_reference(themes_repo_directory().unwrap(), None).await {
                 Ok(_) => info!("Updated themes repo"),
                 Err(err) => {
