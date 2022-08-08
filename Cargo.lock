@@ -2258,7 +2258,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.4.8"
+version = "1.4.9"
 dependencies = [
  "anyhow",
  "arboard",
@@ -2540,7 +2540,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "4.4.2"
+version = "5.0.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
