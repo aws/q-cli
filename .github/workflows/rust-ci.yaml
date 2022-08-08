@@ -10,6 +10,8 @@ on:
       - "fig_desktop/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
+    branches: 
+      - develop
   push:
     paths:
       - "rust-lib/**"
@@ -22,7 +24,7 @@ on:
       - develop
 
 concurrency:
-  group: ${{ github.ref }}
+  group: rust-ci-${{ github.ref }}
   cancel-in-progress: true
 
 env:
@@ -33,6 +35,7 @@ jobs:
   fmt:
     name: Fmt
     runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -58,6 +61,7 @@ jobs:
       fail-fast: false
     name: Clippy ${{ matrix.os }}
     runs-on: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
@@ -117,6 +121,7 @@ jobs:
     runs-on: ${{ matrix.os }}
     env:
       OS: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
     steps:
       - name: Checkout repository
         uses: actions/checkout@v3
