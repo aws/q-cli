@@ -1,13 +1,13 @@
-use anyhow::{
-    bail,
-    Result,
-};
 use clap::{
     Args,
     Subcommand,
     ValueEnum,
 };
 use crossterm::style::Stylize;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_request::Request;
 use serde::{
     Deserialize,

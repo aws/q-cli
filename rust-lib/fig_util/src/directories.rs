@@ -13,11 +13,13 @@ pub enum DirectoryError {
     NoHomeDirectory,
     #[error("non absolute path: {0:?}")]
     NonAbsolutePath(PathBuf),
+    #[error("IO Error: {0}")]
+    Io(#[from] std::io::Error),
 }
 
-use crate::Error as CrateError;
+type Result<T, E = DirectoryError> = std::result::Result<T, E>;
 
-fn map_env_dir(path: &OsStr) -> Result<PathBuf, DirectoryError> {
+fn map_env_dir(path: &OsStr) -> Result<PathBuf> {
     let path = Path::new(path);
     path.is_absolute()
         .then(|| path.to_path_buf())
@@ -25,12 +27,12 @@ fn map_env_dir(path: &OsStr) -> Result<PathBuf, DirectoryError> {
 }
 
 /// The $HOME directory
-pub fn home_dir() -> Result<PathBuf, DirectoryError> {
+pub fn home_dir() -> Result<PathBuf> {
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
 /// The $HOME/.fig directory
-pub fn fig_dir() -> Result<PathBuf, DirectoryError> {
+pub fn fig_dir() -> Result<PathBuf> {
     match std::env::var_os("FIG_DOT_DIR") {
         Some(dot_dir) => map_env_dir(&dot_dir),
         None => dirs::home_dir()
@@ -40,7 +42,7 @@ pub fn fig_dir() -> Result<PathBuf, DirectoryError> {
 }
 
 /// The $DATA/fig directory
-pub fn fig_data_dir() -> Result<PathBuf, DirectoryError> {
+pub fn fig_data_dir() -> Result<PathBuf> {
     match std::env::var_os("FIG_DATA_DIR") {
         Some(data_dir) => map_env_dir(&data_dir),
         None => dirs::data_local_dir()
@@ -50,7 +52,7 @@ pub fn fig_data_dir() -> Result<PathBuf, DirectoryError> {
 }
 
 /// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
-pub fn fig_socket_path() -> Result<PathBuf, CrateError> {
+pub fn fig_socket_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             use std::path::Path;
@@ -82,14 +84,14 @@ pub fn fig_socket_path() -> Result<PathBuf, CrateError> {
             .into_iter()
             .collect())
         } else if #[cfg(target_os = "windows")] {
-            dirs::data_local_dir().map(|path| path.join("fig").join("fig.socket")).ok_or(CrateError::Directory(DirectoryError::NoHomeDirectory))
+            dirs::data_local_dir().map(|path| path.join("fig").join("fig.socket")).ok_or(DirectoryError::NoHomeDirectory)
         } else {
             compile_error!("Unsupported platform");
         }
     }
 }
 
-pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf, CrateError> {
+pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             use std::process::Command;
@@ -106,7 +108,7 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf, CrateErr
         } else if #[cfg(target_os = "macos")] {
             Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
         } else if #[cfg(target_os = "windows")] {
-            dirs::data_local_dir().map(|path| path.join("fig").join(format!("figterm-{session_id}.socket"))).ok_or(CrateError::Directory(DirectoryError::NoHomeDirectory))
+            dirs::data_local_dir().map(|path| path.join("fig").join(format!("figterm-{session_id}.socket"))).ok_or(DirectoryError::NoHomeDirectory)
         } else {
             compile_error!("Unsupported platform");
         }

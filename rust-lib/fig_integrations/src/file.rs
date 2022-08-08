@@ -3,15 +3,11 @@ use std::path::{
     PathBuf,
 };
 
-use anyhow::{
-    Context,
+use crate::error::{
+    Error,
     Result,
 };
-
-use crate::{
-    InstallationError,
-    Integration,
-};
+use crate::Integration;
 
 #[derive(Debug, Clone)]
 pub struct FileIntegration {
@@ -24,12 +20,12 @@ impl Integration for FileIntegration {
         format!("File Integration @ {}", self.path.to_string_lossy())
     }
 
-    fn is_installed(&self) -> Result<(), InstallationError> {
-        let current_contents =
-            std::fs::read_to_string(&self.path).context(format!("{} does not exist.", self.path.display()))?;
+    fn is_installed(&self) -> Result<()> {
+        let current_contents = std::fs::read_to_string(&self.path)
+            .map_err(|_| Error::Custom(format!("{} does not exist.", self.path.display()).into()))?;
         if current_contents.ne(&self.contents) {
             let message = format!("{} should contain:\n{}", self.path.display(), self.contents);
-            return Err(InstallationError::ImproperInstallation(message.into()));
+            return Err(Error::ImproperInstallation(message.into()));
         }
         Ok(())
     }
@@ -38,7 +34,10 @@ impl Integration for FileIntegration {
         if self.is_installed().is_ok() {
             return Ok(());
         }
-        let parent_dir = self.path.parent().context("Could not get integration file directory")?;
+        let parent_dir = self
+            .path
+            .parent()
+            .ok_or_else(|| Error::Custom("Could not get integration file directory".into()))?;
         std::fs::create_dir_all(parent_dir)?;
         std::fs::write(&self.path, &self.contents)?;
         Ok(())

@@ -15,3 +15,6 @@ debug = 1
 incremental = true
 lto = "off"
 
+[profile.dev.package.backtrace]
+opt-level = 3
+

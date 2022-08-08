@@ -5,12 +5,9 @@ use std::fs::{
 };
 use std::path::PathBuf;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use fig_util::directories;
 use once_cell::sync::Lazy;
+use thiserror::Error;
 use tracing::level_filters::LevelFilter;
 use tracing::Level;
 use tracing_appender::non_blocking::WorkerGuard;
@@ -19,6 +16,16 @@ use tracing_subscriber::{
     fmt,
     EnvFilter,
 };
+
+type Result<T, E = Error> = std::result::Result<T, E>;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Dir(#[from] fig_util::directories::DirectoryError),
+}
 
 fn filter_layer() -> EnvFilter {
     EnvFilter::builder()
@@ -88,7 +95,7 @@ impl Logger {
                     fs::create_dir_all(log_path.parent().unwrap())?;
                 }
 
-                let file = File::create(log_path).context("failed to create log file")?;
+                let file = File::create(log_path)?;
                 let (non_blocking, guard) = tracing_appender::non_blocking(file);
                 let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
 

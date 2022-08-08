@@ -1,11 +1,25 @@
 pub mod api;
 pub mod notify;
 
-use anyhow::Result;
+use thiserror::Error;
 use tracing::{
     error,
     info,
 };
+
+#[derive(Debug, Error)]
+pub enum DotfilesError {
+    #[error(transparent)]
+    Request(#[from] fig_request::Error),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+    #[error(transparent)]
+    Settings(#[from] fig_settings::Error),
+    #[error(transparent)]
+    Dir(#[from] fig_util::directories::DirectoryError),
+}
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum SyncWhen {
@@ -17,7 +31,7 @@ pub enum SyncWhen {
 
 /// Download and notify terminals about new dotfiles updates bases on the
 /// user's settings
-pub async fn download_and_notify(always_download: bool) -> Result<Option<api::UpdateStatus>> {
+pub async fn download_and_notify(always_download: bool) -> Result<Option<api::UpdateStatus>, DotfilesError> {
     // Guard if the user has disabled immediate syncing
     if !always_download && !fig_settings::settings::get_bool_or("dotfiles.syncImmediately", true) {
         return Ok(None);

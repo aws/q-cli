@@ -1,11 +1,11 @@
 use std::process::exit;
 
-use anyhow::{
+use clap::Subcommand;
+use crossterm::style::Stylize;
+use eyre::{
     bail,
     Result,
 };
-use clap::Subcommand;
-use crossterm::style::Stylize;
 use fig_auth::cognito::{
     get_client,
     Credentials,
@@ -146,7 +146,7 @@ impl RootUserSubcommand {
                                 continue;
                             },
                             SignInConfirmError::NotAuthorized => {
-                                return Err(anyhow::anyhow!(
+                                return Err(eyre::eyre!(
                                     "Not authorized, you may have entered the wrong code too many times."
                                 ));
                             },

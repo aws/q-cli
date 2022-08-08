@@ -1,6 +1,6 @@
 use std::fmt;
 
-use anyhow::Result;
+use eyre::Result;
 use serde::{
     Deserialize,
     Serialize,
@@ -64,9 +64,8 @@ impl OSVersion {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
                 use std::process::Command;
-
                 use regex::Regex;
-                use anyhow::Context;
+                use eyre::{ContextCompat, WrapErr};
 
                 let version_info = Command::new("sw_vers")
                     .output()
@@ -147,7 +146,7 @@ impl OSVersion {
             } else if #[cfg(target_os = "windows")] {
                 use std::process::Command;
 
-                use anyhow::Context;
+                use eyre::WrapErr;
 
                 Ok(OSVersion::Windows {
                     version: String::from_utf8_lossy(&Command::new("systeminfo")
@@ -164,6 +163,8 @@ impl OSVersion {
                         .trim_matches('"')
                         .to_owned()
                 })
+            } else {
+                Err(eyre::eyre!("Unsupported platform"))
             }
         }
     }

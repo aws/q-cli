@@ -1,16 +1,17 @@
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::{
-    anyhow,
-    Context,
-    Result,
-};
 use clap::{
     Subcommand,
     ValueEnum,
 };
 use crossterm::style::Stylize;
+use eyre::{
+    eyre,
+    ContextCompat,
+    Result,
+    WrapErr,
+};
 use fig_install::dotfiles::download_and_notify;
 use fig_ipc::command::{
     input_method_command,
@@ -120,7 +121,7 @@ fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> R
     let value = info
         .split('=')
         .nth(1)
-        .context(anyhow!("Could not get field value for {}", field.as_ref()))?
+        .context(eyre!("Could not get field value for {}", field.as_ref()))?
         .replace('"', "");
     Ok(value.trim().into())
 }
@@ -171,7 +172,7 @@ impl DebugSubcommand {
                     .wait()?;
             },
             DebugSubcommand::Build { build } => {
-                let x = build.to_possible_value().context(anyhow!("Invalid build value"))?;
+                let x = build.to_possible_value().context(eyre!("Invalid build value"))?;
                 let res = run_build_command(x.get_name()).await;
                 if res.is_err() {
                     println!("\n{}", "Unable to connect to Fig.".bold());
@@ -179,7 +180,7 @@ impl DebugSubcommand {
                         "\nFig might not be running, to launch Fig run: {}\n",
                         "fig launch".magenta()
                     );
-                    return res;
+                    return res.map_err(eyre::Report::from);
                 }
             },
             DebugSubcommand::Dotfiles { disable } => {
@@ -200,7 +201,7 @@ impl DebugSubcommand {
                 };
                 if result.is_err() {
                     println!("Could not update debug mode");
-                    return result.map(|_| ());
+                    return result.map(|_| ()).map_err(eyre::Report::from);
                 }
             },
             DebugSubcommand::Logs { files } => {
@@ -263,14 +264,14 @@ impl DebugSubcommand {
                 let result = input_method_command(action).await;
                 if result.is_err() {
                     println!("Could not run ime command.");
-                    return result;
+                    return result.map_err(eyre::Report::from);
                 }
             },
             DebugSubcommand::PromptAccessibility => {
                 let result = prompt_accessibility_command().await;
                 if result.is_err() {
                     println!("Could not prompt for accessibility permissions.");
-                    return result;
+                    return result.map_err(eyre::Report::from);
                 }
             },
             DebugSubcommand::Sample => {
@@ -294,7 +295,7 @@ impl DebugSubcommand {
                     .wait();
                 if result.is_err() {
                     println!("Could not sample Fig process.");
-                    anyhow::bail!("Failed to sample Fig process.");
+                    eyre::bail!("Failed to sample Fig process.");
                 }
                 println!("\n\n\n-------\nFinished writing to {}", outfile.display());
                 println!("Please send this file to the Fig Team");
@@ -342,7 +343,7 @@ impl DebugSubcommand {
                     let result = prompt_accessibility_command().await;
                     if result.is_err() {
                         println!("Could not prompt for accessibility permissions.");
-                        return result;
+                        return result.map_err(eyre::Report::from);
                     }
                 },
                 Some(AccessibilityAction::Open) => {

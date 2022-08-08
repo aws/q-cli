@@ -12,10 +12,6 @@ use std::os::unix::net::UnixStream as SyncUnixStream;
 use std::path::Path;
 use std::time::Duration;
 
-use anyhow::{
-    bail,
-    Result,
-};
 use bytes::BytesMut;
 use fig_proto::prost::Message;
 use fig_proto::{
@@ -37,13 +33,35 @@ use tracing::{
     trace,
 };
 
-pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream> {
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    Connect(#[from] ConnectError),
+    #[error(transparent)]
+    Send(#[from] SendError),
+    #[error(transparent)]
+    Recv(#[from] RecvError),
+    #[error("timeout")]
+    Timeout,
+    #[error(transparent)]
+    Dir(#[from] fig_util::directories::DirectoryError),
+}
+
+#[derive(Debug, Error)]
+pub enum ConnectError {
+    #[error(transparent)]
+    Io(#[from] io::Error),
+    #[error("timeout connecting to socket")]
+    Timeout,
+}
+
+pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream, ConnectError> {
     let socket = socket.as_ref();
     let conn = match SystemStream::connect(socket).await {
         Ok(conn) => conn,
         Err(err) => {
             error!("Failed to connect to {socket:?}: {err}");
-            bail!("Failed to connect to {socket:?}: {err}");
+            return Err(err.into());
         },
     };
 
@@ -58,17 +76,17 @@ pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream> {
 }
 
 /// Connect to a system socket with a timeout
-pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream> {
+pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream, ConnectError> {
     let socket = socket.as_ref();
     let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket)).await {
         Ok(Ok(conn)) => conn,
         Ok(Err(err)) => {
             error!("Failed to connect to {socket:?}: {err}");
-            bail!("Failed to connect to {socket:?}: {err}");
+            return Err(err.into());
         },
         Err(_) => {
             error!("Timeout while connecting to {socket:?}");
-            bail!("Timeout while connecting to {socket:?}");
+            return Err(ConnectError::Timeout);
         },
     };
 
@@ -84,13 +102,13 @@ pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Res
 
 /// Connect to `socket` synchronously without a timeout
 #[cfg(unix)]
-pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
+pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream, ConnectError> {
     let socket = socket.as_ref();
     let conn = match SyncUnixStream::connect(socket) {
         Ok(conn) => conn,
         Err(err) => {
             error!("Failed to connect to {socket:?}: {err}");
-            bail!("Failed to connect to {socket:?}: {err}");
+            return Err(err.into());
         },
     };
 
@@ -104,7 +122,15 @@ pub fn connect_sync(socket: impl AsRef<Path>) -> Result<SyncUnixStream> {
     Ok(conn)
 }
 
-pub async fn send_message<M, S>(stream: &mut S, message: M) -> Result<()>
+#[derive(Debug, Error)]
+pub enum SendError {
+    #[error(transparent)]
+    Encode(#[from] fig_proto::FigMessageEncodeError),
+    #[error(transparent)]
+    Io(#[from] io::Error),
+}
+
+pub async fn send_message<M, S>(stream: &mut S, message: M) -> Result<(), SendError>
 where
     M: FigProtobufEncodable,
     S: AsyncWrite + Unpin,
@@ -113,7 +139,7 @@ where
         Ok(encoded_message) => encoded_message,
         Err(err) => {
             error!("Failed to encode message: {err}");
-            bail!("Failed to encode message: {err}");
+            return Err(err.into());
         },
     };
 
@@ -124,7 +150,7 @@ where
         Err(err) => {
             if !(err.kind() == ErrorKind::BrokenPipe || err.kind() == ErrorKind::ConnectionRefused) {
                 error!("Failed to write message: {err}");
-                bail!("Failed to write message: {err}");
+                return Err(err.into());
             }
         },
     };
@@ -132,7 +158,7 @@ where
     Ok(())
 }
 
-pub fn send_message_sync<M, S>(stream: &mut S, message: M) -> Result<()>
+pub fn send_message_sync<M, S>(stream: &mut S, message: M) -> Result<(), SendError>
 where
     M: FigProtobufEncodable,
     S: Write,
@@ -141,7 +167,7 @@ where
         Ok(encoded_message) => encoded_message,
         Err(err) => {
             error!("Failed to encode message: {err}");
-            bail!("Failed to encode message: {err}");
+            return Err(err.into());
         },
     };
 
@@ -151,7 +177,7 @@ where
         },
         Err(err) => {
             error!("Failed to write message: {err}");
-            bail!("Failed to write message: {err}");
+            return Err(err.into());
         },
     };
 
@@ -160,11 +186,11 @@ where
 
 #[derive(Debug, Error)]
 pub enum RecvError {
-    #[error("failed to read from stream: {0}")]
+    #[error(transparent)]
     Io(#[from] io::Error),
-    #[error("failed to parse message: {0}")]
+    #[error(transparent)]
     Parse(#[from] fig_proto::FigMessageParseError),
-    #[error("failed to decode message: {0}")]
+    #[error(transparent)]
     Decode(#[from] fig_proto::FigMessageDecodeError),
 }
 
@@ -222,7 +248,7 @@ where
     }
 }
 
-pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M) -> Result<Option<R>>
+pub async fn send_recv_message<M, R, S>(stream: &mut S, message: M) -> Result<Option<R>, Error>
 where
     M: FigProtobufEncodable,
     R: Message + ReflectMessage + Default,
@@ -232,7 +258,11 @@ where
     Ok(recv_message(stream).await?)
 }
 
-pub async fn send_recv_message_timeout<M, R, S>(stream: &mut S, message: M, timeout: Duration) -> Result<Option<R>>
+pub async fn send_recv_message_timeout<M, R, S>(
+    stream: &mut S,
+    message: M,
+    timeout: Duration,
+) -> Result<Option<R>, Error>
 where
     M: FigProtobufEncodable,
     R: Message + ReflectMessage + Default,
@@ -243,7 +273,7 @@ where
         Ok(result) => result?,
         Err(_) => {
             error!("Timeout while receiving message");
-            bail!("Timeout while receiving message");
+            return Err(Error::Timeout);
         },
     })
 }

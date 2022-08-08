@@ -1,3 +1,4 @@
+use anyhow::Context;
 use fig_integrations::get_default_backup_dir;
 use fig_integrations::shell::ShellExt;
 use fig_proto::fig::{
@@ -15,7 +16,7 @@ use super::{
 pub async fn onboarding(request: OnboardingRequest) -> RequestResult {
     match request.action() {
         OnboardingAction::InstallationScript => {
-            let backup_dir = get_default_backup_dir()?;
+            let backup_dir = get_default_backup_dir().context("Failed to get backup dir")?;
 
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {

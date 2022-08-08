@@ -5,8 +5,8 @@ use std::net::{
     SocketAddrV6,
 };
 
-use anyhow::{
-    Context,
+use eyre::{
+    ContextCompat,
     Result,
 };
 use futures::{

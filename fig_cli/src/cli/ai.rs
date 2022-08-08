@@ -96,17 +96,17 @@ fn theme() -> ColorfulTheme {
 }
 
 impl AiArgs {
-    pub async fn execute(self) -> anyhow::Result<()> {
+    pub async fn execute(self) -> eyre::Result<()> {
         // Product gate
         if !fig_settings::settings::get_bool_or("product-gate.ai.enabled", false) {
-            anyhow::bail!("Fig AI is comming soon to Fig Pro");
+            eyre::bail!("Fig AI is comming soon to Fig Pro");
         }
 
         let Self { input, n } = self;
         let mut input = if input.is_empty() { None } else { Some(input.join(" ")) };
 
         if n.map(|n| n > 10).unwrap_or_default() {
-            anyhow::bail!("n must be <= 10");
+            eyre::bail!("n must be <= 10");
         }
 
         tokio::spawn(async {
@@ -140,7 +140,7 @@ impl AiArgs {
             let question = question.trim().replace('\n', " ");
 
             if question.len() > 120 {
-                anyhow::bail!("input is >120 characters");
+                eyre::bail!("input is >120 characters");
             }
 
             'generate_loop: loop {
@@ -199,7 +199,7 @@ impl AiArgs {
                                 if let Ok(mut clipboard) = Clipboard::new() {
                                     match clipboard.set_text(command.to_string()) {
                                         Ok(_) => println!("Copied!"),
-                                        Err(err) => anyhow::bail!(err),
+                                        Err(err) => eyre::bail!(err),
                                     }
                                 }
                                 break 'ask_loop;
@@ -217,7 +217,7 @@ impl AiArgs {
                 }
 
                 match &choices[..] {
-                    [] => anyhow::bail!("no valid completions were generated"),
+                    [] => eyre::bail!("no valid completions were generated"),
                     [choice] => {
                         spinner.stop_with_message(format!("{spinner_text}{}", choice.magenta()));
                         println!();

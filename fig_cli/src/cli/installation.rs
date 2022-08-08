@@ -5,11 +5,12 @@ use std::path::{
     PathBuf,
 };
 
-use anyhow::{
-    Context,
-    Result,
-};
 use crossterm::style::Stylize;
+use eyre::{
+    ContextCompat,
+    Result,
+    WrapErr,
+};
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::{
@@ -113,7 +114,7 @@ pub fn install_cli(install_components: InstallComponents, no_confirm: bool, forc
 }
 
 fn install_fig(_modify_files: bool) -> Result<()> {
-    let backup_dir = get_default_backup_dir()?;
+    let backup_dir = get_default_backup_dir().context("Could not get backup dir")?;
 
     let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
@@ -134,7 +135,7 @@ fn install_fig(_modify_files: bool) -> Result<()> {
     if errs.is_empty() {
         Ok(())
     } else {
-        Err(anyhow::anyhow!(errs.join("\n")))
+        Err(eyre::eyre!(errs.join("\n")))
     }
 }
 
@@ -182,7 +183,9 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
         }
     }
 
-    daemon_result.and(dotfiles_result).and(ssh_result)
+    daemon_result
+        .and(dotfiles_result)
+        .and(ssh_result.map_err(eyre::Report::from))
 }
 
 fn uninstall_daemon() -> Result<()> {
@@ -194,7 +197,7 @@ fn uninstall_daemon() -> Result<()> {
         } else if #[cfg(windows)] {
             daemon::LaunchService::scm()?.uninstall()?;
         } else {
-            anyhow::bail!("Unsupported platform")
+            eyre::bail!("Unsupported platform")
         }
     }
 
@@ -222,7 +225,7 @@ pub enum UpdateType {
 pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     cfg_if::cfg_if! {
         if #[cfg(feature = "managed")] {
-            Err(anyhow::anyhow!("This installation of Fig is managed by a package manager, please use the built-in method of updating packages"))
+            Err(eyre::eyre!("This installation of Fig is managed by a package manager, please use the built-in method of updating packages"))
         } else if #[cfg(target_os = "macos")] {
             // Let desktop app handle updates on macOS
             use crate::util::{launch_fig, LaunchOptions};
@@ -237,7 +240,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                     Ok(UpdateStatus::UpToDate)
                 }
                 Err(_) => {
-                    anyhow::bail!(
+                    eyre::bail!(
                         "\n{}\nFig might not be running to launch Fig run: {}\n",
                         "Unable to Connect to Fig:".bold(),
                         "fig launch".magenta()
@@ -321,7 +324,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                             .default(true)
                             .interact()?
                         {
-                            return Err(anyhow::anyhow!("Update cancelled"));
+                            return Err(eyre::eyre!("Update cancelled"));
                         }
                     } else {
                         println!(

@@ -25,15 +25,15 @@ mod tweet;
 mod user;
 mod workflow;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use cfg_if::cfg_if;
 use clap::{
     Parser,
     Subcommand,
     ValueEnum,
+};
+use eyre::{
+    Result,
+    WrapErr,
 };
 use fig_log::Logger;
 use fig_util::directories;
@@ -237,7 +237,7 @@ impl Cli {
                                     .await
                                     .context("\nCould not launch fig\n")?;
                             } else {
-                                Err(anyhow::anyhow!("input method is only implemented on macOS"))?;
+                                Err(eyre::eyre!("input method is only implemented on macOS"))?;
                             }
                         }
 
@@ -337,7 +337,7 @@ async fn root_command() -> Result<()> {
 
             if !is_logged_in() && is_app_running() {
                 if quit_command().await.is_err() {
-                    anyhow::bail!(
+                    eyre::bail!(
                         "\nFig is running but you are not logged in. Please quit Fig from the menu\
                         bar and try again\n"
                     );

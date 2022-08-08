@@ -5,7 +5,6 @@ edition = "2021"
 publish = false
 
 [dependencies]
-anyhow = "1.0.59"
 cfg-if = "1.0.0"
 crossterm = "0.24.0"
 fig_api_client = { version = "0.1.0", path = "../fig_api_client" }

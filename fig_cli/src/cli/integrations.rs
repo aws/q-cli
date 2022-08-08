@@ -1,10 +1,11 @@
 use std::path::PathBuf;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use clap::Subcommand;
+use eyre::{
+    ContextCompat,
+    Result,
+    WrapErr,
+};
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::{
@@ -57,7 +58,7 @@ impl IntegrationsSubcommands {
 }
 
 async fn install(integration: Integration) -> Result<()> {
-    let backup_dir = get_default_backup_dir()?;
+    let backup_dir = get_default_backup_dir().context("Could not get backup dir")?;
 
     let mut installed = false;
 
@@ -90,7 +91,7 @@ async fn install(integration: Integration) -> Result<()> {
             if errs.is_empty() {
                 Ok(())
             } else {
-                Err(anyhow::anyhow!(errs.join("\n")))
+                Err(eyre::eyre!(errs.join("\n")))
             }
         },
         Integration::Daemon => {
@@ -103,7 +104,7 @@ async fn install(integration: Integration) -> Result<()> {
             };
             if ssh_integration.is_installed().is_err() {
                 installed = true;
-                ssh_integration.install(Some(&backup_dir))
+                ssh_integration.install(Some(&backup_dir)).map_err(eyre::Report::from)
             } else {
                 Ok(())
             }
@@ -153,7 +154,7 @@ async fn uninstall(integration: Integration) -> Result<()> {
             if errs.is_empty() {
                 Ok(())
             } else {
-                Err(anyhow::anyhow!(errs.join("\n")))
+                Err(eyre::eyre!(errs.join("\n")))
             }
         },
         Integration::Daemon => {
@@ -166,7 +167,7 @@ async fn uninstall(integration: Integration) -> Result<()> {
             };
             if ssh_integration.is_installed().is_ok() {
                 uninstalled = true;
-                ssh_integration.uninstall()
+                ssh_integration.uninstall().map_err(eyre::Report::from)
             } else {
                 Ok(())
             }

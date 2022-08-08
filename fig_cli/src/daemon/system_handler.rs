@@ -1,8 +1,8 @@
 use std::sync::Arc;
 
-use anyhow::{
-    Context,
+use eyre::{
     Result,
+    WrapErr,
 };
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;

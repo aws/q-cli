@@ -13,6 +13,7 @@ use std::process::exit;
 
 use clap::StructOpt;
 use crossterm::style::Stylize;
+use eyre::Result;
 use fig_log::FIG_LOG_LEVEL;
 use fig_telemetry::sentry::{
     configure_scope,
@@ -23,7 +24,7 @@ use tracing::metadata::LevelFilter;
 const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
 
 #[tokio::main]
-async fn main() {
+async fn main() -> Result<()> {
     // Whitelist commands do not have sentry or telemetry, telemetry should only run on
     // user facing commands as performance is less important
     let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
@@ -68,6 +69,8 @@ async fn main() {
         },
     };
 
+    color_eyre::install()?;
+
     let cli_join = cli::Cli::parse().execute();
 
     let result = match track_join {
@@ -77,10 +80,12 @@ async fn main() {
 
     if let Err(err) = result {
         if *FIG_LOG_LEVEL > LevelFilter::INFO {
-            writeln!(stderr(), "{}\n{err:?}", "Error".bold().red()).ok();
+            writeln!(stderr(), "{} {err:?}", "error:".bold().red()).ok();
         } else {
             writeln!(stderr(), "{} {err}", "error:".bold().red()).ok();
         }
         exit(1);
     }
+
+    Ok(())
 }

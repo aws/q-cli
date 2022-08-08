@@ -11,14 +11,15 @@ use std::path::{
     PathBuf,
 };
 
-use anyhow::{
-    bail,
-    Result,
-};
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::FuzzySelect;
+use eyre::{
+    bail,
+    Result,
+    WrapErr,
+};
 use globset::{
     Glob,
     GlobSet,
@@ -179,7 +180,6 @@ impl LaunchOptions {
 }
 
 pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
-    use anyhow::Context;
     use fig_util::directories::fig_socket_path;
 
     if is_app_running() {
@@ -225,7 +225,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     }
 
     if !is_app_running() {
-        anyhow::bail!("Unable to launch Fig");
+        eyre::bail!("Unable to launch Fig");
     }
 
     // Wait for socket to exist
@@ -267,7 +267,7 @@ pub fn login_message() -> String {
 pub fn get_fig_version() -> Result<String> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            use anyhow::Context;
+            use eyre::ContextCompat;
             use regex::Regex;
 
             let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;

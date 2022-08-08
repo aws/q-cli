@@ -1,9 +1,10 @@
 use std::borrow::Cow;
 use std::path::PathBuf;
 
-use anyhow::{
-    Context,
+use eyre::{
+    ContextCompat,
     Result,
+    WrapErr,
 };
 use fig_util::directories;
 use tokio::fs::File;

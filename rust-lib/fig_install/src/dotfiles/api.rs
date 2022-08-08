@@ -1,16 +1,12 @@
 use std::collections::HashMap;
 use std::path::PathBuf;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use fig_api_client::plugins::PluginData;
 use fig_util::{
     directories,
     Shell,
 };
-#[cfg(unix)]
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -23,6 +19,8 @@ use tracing::{
     debug,
     info,
 };
+
+use super::DotfilesError;
 
 #[cfg(target_os = "linux")]
 static LINUX_KERNEL_VERSION: Lazy<Option<String>> = Lazy::new(|| {
@@ -80,9 +78,11 @@ pub enum UpdateStatus {
     NotUpdated,
 }
 
-pub async fn download_dotfiles() -> Result<UpdateStatus> {
+pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
     let device_uniqueid = fig_util::get_system_id().ok();
-    let plugins_directory = crate::plugins::plugin_data_dir().map(|p| p.to_string_lossy().to_string());
+    let plugins_directory = crate::plugins::plugin_data_dir()
+        .map(|p| p.to_string_lossy().to_string())
+        .ok();
 
     let debug_dotfiles = match fig_settings::state::get_value("developer.dotfiles.debug") {
         Ok(Some(serde_json::Value::Bool(true))) => Some("true"),
@@ -96,7 +96,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
             ("architecture", Some(std::env::consts::ARCH)),
             ("device", device_uniqueid.as_deref()),
             ("debug", debug_dotfiles),
-            ("pluginsDirectory", plugins_directory.ok().as_deref()),
+            ("pluginsDirectory", plugins_directory.as_deref()),
             #[cfg(target_os = "linux")]
             ("linuxKernelVersion", LINUX_KERNEL_VERSION.as_deref()),
             #[cfg(target_os = "macos")]
@@ -106,7 +106,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
         .await?;
 
     // Parse the JSON
-    let dotfiles: DotfilesData = serde_json::from_str(&download).context("Failed to parse JSON")?;
+    let dotfiles: DotfilesData = serde_json::from_str(&download)?;
     debug!("dotfiles: {:?}", dotfiles.dotfiles);
 
     let all_json_path = all_file_path()?;
@@ -164,6 +164,6 @@ pub async fn download_dotfiles() -> Result<UpdateStatus> {
     }
 }
 
-pub fn all_file_path() -> Result<PathBuf> {
+pub fn all_file_path() -> Result<PathBuf, fig_util::directories::DirectoryError> {
     Ok(directories::fig_data_dir()?.join("shell").join("all.json"))
 }

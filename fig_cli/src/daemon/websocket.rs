@@ -1,10 +1,10 @@
 use std::io::Write;
 use std::time::Duration;
 
-use anyhow::{
-    anyhow,
-    Context,
+use eyre::{
+    eyre,
     Result,
+    WrapErr,
 };
 use fig_auth::get_email;
 use fig_ipc::hook::send_hook_to_socket;
@@ -175,11 +175,11 @@ pub async fn process_websocket(
                 Message::Close(close_frame) => match close_frame {
                     Some(close_frame) => {
                         info!("Websocket close frame: {close_frame:?}");
-                        Err(anyhow!("Websocket close frame: {close_frame:?}"))
+                        Err(eyre!("Websocket close frame: {close_frame:?}"))
                     },
                     None => {
                         info!("Websocket close frame");
-                        Err(anyhow!("Websocket close frame"))
+                        Err(eyre!("Websocket close frame"))
                     },
                 },
                 Message::Ping(_) => {
@@ -197,12 +197,12 @@ pub async fn process_websocket(
             },
             Err(err) => {
                 error!("Websock next error: {err:?}");
-                Err(anyhow!("Websock next error: {err:?}"))
+                Err(eyre!("Websock next error: {err:?}"))
             },
         },
         None => {
             info!("Websocket closed");
-            Err(anyhow!("Websocket closed"))
+            Err(eyre!("Websocket closed"))
         },
     }
 }

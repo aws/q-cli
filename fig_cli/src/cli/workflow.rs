@@ -11,16 +11,16 @@ use std::iter::empty;
 use std::process::Command;
 use std::rc::Rc;
 
-use anyhow::{
-    anyhow,
-    bail,
-    Result,
-};
 use clap::Args;
 use crossterm::style::Stylize;
 use crossterm::{
     cursor,
     execute,
+};
+use eyre::{
+    bail,
+    eyre,
+    Result,
 };
 use fig_api_client::workflows::{
     workflows,
@@ -320,7 +320,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                             println!();
                                             return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
                                                 Ok(()) => Ok(()),
-                                                Err(err) => Err(err.context("Could not open fig")),
+                                                Err(err) => Err(err.into()),
                                             };
                                         },
                                     }
@@ -399,7 +399,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
     let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
-        return Err(anyhow!(
+        return Err(eyre!(
             "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
             "fig update".magenta(),
@@ -589,7 +589,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                         for generator in generators {
                                             match generator {
                                                 Generator::Named { .. } => {
-                                                    return Err(anyhow!(
+                                                    return Err(eyre!(
                                                         "Named generators aren't supported in workflows yet"
                                                     ));
                                                 },
@@ -704,7 +704,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         },
                         _ => value.to_owned(),
                     },
-                    None => return Err(anyhow!("Missing execution args")),
+                    None => return Err(eyre!("Missing execution args")),
                 });
             }
 

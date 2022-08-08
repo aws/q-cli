@@ -3,9 +3,9 @@ use std::fs::{
     File,
 };
 
-use anyhow::Result;
 use clap::Subcommand;
 use crossterm::style::Stylize;
+use eyre::Result;
 use fig_util::directories;
 use semver::Version;
 use serde::{
@@ -126,7 +126,7 @@ fn get_all_tips() -> Vec<Tip> {
 }
 
 impl Tips {
-    fn save(&self) -> anyhow::Result<()> {
+    fn save(&self) -> eyre::Result<()> {
         let data_dir = directories::fig_data_dir()?;
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
@@ -138,11 +138,11 @@ impl Tips {
         Ok(())
     }
 
-    fn load() -> anyhow::Result<Tips> {
+    fn load() -> eyre::Result<Tips> {
         let path = directories::fig_data_dir()?.join("tips.json");
 
         if !path.exists() {
-            return Err(anyhow::anyhow!("Could not find tips file"));
+            return Err(eyre::eyre!("Could not find tips file"));
         }
         let file = File::open(path)?;
         Ok(serde_json::from_reader(file)?)

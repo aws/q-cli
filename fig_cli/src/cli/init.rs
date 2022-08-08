@@ -7,9 +7,9 @@ use std::io::{
     Write,
 };
 
-use anyhow::Result;
 use clap::Args;
 use crossterm::tty::IsTty;
+use eyre::Result;
 use fig_auth::is_logged_in;
 use fig_install::dotfiles::api::DotfileData;
 use fig_integrations::shell::{
