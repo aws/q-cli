@@ -38,6 +38,9 @@ pub enum RootUserSubcommand {
         /// Email to login to
         #[clap(value_parser)]
         email: Option<String>,
+        ///
+        #[clap(long, value_parser, hide = true)]
+        switchable: bool,
     },
     /// Logout of Fig
     Logout,
@@ -50,8 +53,125 @@ impl RootUserSubcommand {
                 email,
                 refresh,
                 hard_refresh,
-            } => login_cli(email, refresh, hard_refresh).await,
-            Self::Logout => logout_cli().await,
+                switchable,
+            } => {
+                let client = get_client()?;
+
+                if refresh || hard_refresh {
+                    let mut creds = Credentials::load_credentials()?;
+                    if creds.is_expired() || hard_refresh {
+                        creds.refresh_credentials(&client, None).await?;
+                        creds.save_credentials()?;
+                    }
+                    return Ok(());
+                }
+
+                if email.is_none() {
+                    println!("{}", "Login to Fig".bold().magenta());
+                }
+
+                let email: String = match email {
+                    Some(email) => email,
+                    None => dialoguer::Input::with_theme(&dialoguer_theme())
+                        .with_prompt("Email")
+                        .validate_with(|input: &String| -> Result<(), &str> {
+                            if validator::validate_email(input.trim()) {
+                                Ok(())
+                            } else {
+                                Err("This is not a valid email")
+                            }
+                        })
+                        .interact_text()?,
+                };
+
+                let trimmed_email = email.trim();
+                let sign_in_input = SignInInput::new(&client, trimmed_email, None);
+
+                println!("Sending login code to {trimmed_email}...");
+                println!("Please check your email for the code");
+
+                let mut sign_in_output = match sign_in_input.sign_in().await {
+                    Ok(out) => out,
+                    Err(err) => match err {
+                        SignInError::UserNotFound(_) => {
+                            SignUpInput::new(&client, &email, None).sign_up().await?;
+                            sign_in_input.sign_in().await?
+                        },
+                        err => return Err(err.into()),
+                    },
+                };
+
+                loop {
+                    let login_code: String = dialoguer::Input::with_theme(&dialoguer_theme())
+                        .with_prompt("Login code")
+                        .validate_with(|input: &String| -> Result<(), &str> {
+                            if input.len() == 6 && input.chars().all(|c| c.is_ascii_digit()) {
+                                Ok(())
+                            } else {
+                                Err("Code must be 6 digits")
+                            }
+                        })
+                        .interact_text()?;
+
+                    match sign_in_output.confirm(login_code.trim()).await {
+                        Ok(creds) => {
+                            creds.save_credentials()?;
+
+                            if switchable {
+                                let dir = Credentials::account_credentials_dir()?;
+                                if !dir.exists() {
+                                    std::fs::create_dir_all(&dir)?;
+                                }
+                                std::fs::copy(
+                                    Credentials::path()?,
+                                    Credentials::account_credentials_path(&trimmed_email)?,
+                                )?;
+                            }
+
+                            Request::post("/user/login")
+                                .auth()
+                                .body(match state::get_string("anonymousId") {
+                                    Ok(Some(anonymous_id)) => json!({ "anonymousId": anonymous_id }),
+                                    _ => json!({}),
+                                })
+                                .send()
+                                .await?;
+
+                            println!("Login successful!");
+                            return Ok(());
+                        },
+                        Err(err) => match err {
+                            SignInConfirmError::ErrorCodeMismatch => {
+                                println!("Code mismatch, try again...");
+                                continue;
+                            },
+                            SignInConfirmError::NotAuthorized => {
+                                return Err(anyhow::anyhow!(
+                                    "Not authorized, you may have entered the wrong code too many times."
+                                ));
+                            },
+                            err => return Err(err.into()),
+                        },
+                    };
+                }
+            },
+            Self::Logout => {
+                let mut creds = Credentials::load_credentials()?;
+                creds.clear_credentials();
+                creds.save_credentials()?;
+
+                #[cfg(target_os = "macos")]
+                {
+                    tokio::process::Command::new("defaults")
+                        .args(["delete", "com.mschrage.fig.shared"])
+                        .output()
+                        .await
+                        .ok();
+                }
+
+                println!("Logged out");
+                Ok(())
+            },
         }
     }
 }
@@ -60,6 +180,8 @@ impl RootUserSubcommand {
 pub enum UserSubcommand {
     #[clap(flatten)]
     Root(RootUserSubcommand),
+    #[clap(subcommand)]
+    Tokens(TokensSubcommand),
     Whoami {
         /// Output format to use
         #[clap(long, short, value_enum, value_parser, default_value_t)]
@@ -69,19 +191,81 @@ pub enum UserSubcommand {
         #[clap(long, short = 'e', value_parser)]
         only_email: bool,
     },
-    #[clap(subcommand)]
-    Tokens(TokensSubcommand),
     Plan,
+    ListAccounts {
+        /// Output format to use
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
+        format: OutputFormat,
+    },
+    Switch {
+        /// Email to switch to
+        #[clap(value_parser)]
+        email: String,
+    },
 }
 
 impl UserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             Self::Root(cmd) => cmd.execute().await,
-            Self::Whoami { format, only_email } => whoami_cli(format, only_email).await,
             Self::Tokens(cmd) => cmd.execute().await,
+            Self::Whoami { format, only_email } => match fig_auth::get_email() {
+                Some(email) => {
+                    if only_email {
+                        match format {
+                            OutputFormat::Plain => println!("Email: {email}"),
+                            OutputFormat::Json => println!("{}", json!({ "email": email })),
+                            OutputFormat::JsonPretty => println!("{:#}", json!({ "email": email })),
+                        }
+                    } else {
+                        let account = fig_api_client::user::account().await?;
+                        match format {
+                            OutputFormat::Plain => match account.username {
+                                Some(username) => println!("Email: {}\nUsername: {}", account.email, username),
+                                None => println!("Email: {}\nUsername is null", account.email),
+                            },
+                            OutputFormat::Json => println!("{}", serde_json::to_string(&account)?),
+                            OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&account)?),
+                        }
+                    }
+                    Ok(())
+                },
+                None => {
+                    match format {
+                        OutputFormat::Plain => println!("Not logged in"),
+                        OutputFormat::Json => println!("{}", json!({ "email": null })),
+                        OutputFormat::JsonPretty => println!("{:#}", json!({ "email": null })),
+                    }
+                    exit(1);
+                },
+            },
             Self::Plan => {
                 println!("Plan: {:?}", fig_api_client::user::plans().await?.highest_plan());
+                Ok(())
+            },
+            Self::ListAccounts { format } => {
+                let files: Vec<String> = std::fs::read_dir(Credentials::account_credentials_dir()?)?
+                    .filter_map(|file| file.ok())
+                    .filter_map(|file| {
+                        file.path()
+                            .file_stem()
+                            .and_then(|name| name.to_str())
+                            .map(|name| name.into())
+                    })
+                    .collect();
+                match format {
+                    OutputFormat::Plain => {
+                        for file in files {
+                            println!("{file}");
+                        }
+                    },
+                    OutputFormat::Json => println!("{}", json!(files)),
+                    OutputFormat::JsonPretty => println!("{:#}", json!(files)),
+                }
+                Ok(())
+            },
+            Self::Switch { email } => {
+                std::fs::copy(Credentials::account_credentials_path(email)?, Credentials::path()?)?;
                 Ok(())
             },
         }
@@ -241,150 +425,5 @@ impl TokensSubcommand {
                 }
             },
         }
-    }
-}
-
-/// Login to fig
-pub async fn login_cli(email: Option<String>, refresh: bool, hard_refresh: bool) -> Result<()> {
-    let client = get_client()?;
-
-    if refresh || hard_refresh {
-        let mut creds = Credentials::load_credentials()?;
-        if creds.is_expired() || hard_refresh {
-            creds.refresh_credentials(&client, None).await?;
-            creds.save_credentials()?;
-        }
-        return Ok(());
-    }
-
-    println!("{}", "Login to Fig".bold().magenta());
-
-    let theme = dialoguer_theme();
-
-    let email: String = match email {
-        Some(email) => email,
-        None => dialoguer::Input::with_theme(&theme)
-            .with_prompt("Email")
-            .validate_with(|input: &String| -> Result<(), &str> {
-                if validator::validate_email(input.trim()) {
-                    Ok(())
-                } else {
-                    Err("This is not a valid email")
-                }
-            })
-            .interact_text()?,
-    };
-
-    let trimmed_email = email.trim();
-
-    let sign_in_input = SignInInput::new(&client, trimmed_email, None);
-
-    println!("Sending login code to {trimmed_email}...");
-    println!("Please check your email for the code");
-
-    let mut sign_in_output = match sign_in_input.sign_in().await {
-        Ok(out) => out,
-        Err(err) => match err {
-            SignInError::UserNotFound(_) => {
-                SignUpInput::new(&client, email, None).sign_up().await?;
-
-                sign_in_input.sign_in().await?
-            },
-            err => return Err(err.into()),
-        },
-    };
-
-    loop {
-        let login_code: String = dialoguer::Input::with_theme(&theme)
-            .with_prompt("Login code")
-            .validate_with(|input: &String| -> Result<(), &str> {
-                if input.len() == 6 && input.chars().all(|c| c.is_ascii_digit()) {
-                    Ok(())
-                } else {
-                    Err("Code must be 6 digits")
-                }
-            })
-            .interact_text()?;
-
-        match sign_in_output.confirm(login_code.trim()).await {
-            Ok(creds) => {
-                creds.save_credentials()?;
-                let body = match state::get_string("anonymousId") {
-                    Ok(Some(anonymous_id)) => json!({ "anonymousId": anonymous_id }),
-                    _ => json!({}),
-                };
-                Request::post("/user/login").auth().body(body).send().await?;
-                println!("Login successful!");
-                return Ok(());
-            },
-            Err(err) => match err {
-                SignInConfirmError::ErrorCodeMismatch => {
-                    println!("Code mismatch, try again...");
-                    continue;
-                },
-                SignInConfirmError::NotAuthorized => {
-                    return Err(anyhow::anyhow!(
-                        "Not authorized, you may have entered the wrong code too many times."
-                    ));
-                },
-                err => return Err(err.into()),
-            },
-        };
-    }
-}
-
-// Logout from fig
-pub async fn logout_cli() -> Result<()> {
-    let mut creds = Credentials::load_credentials()?;
-    creds.clear_credentials();
-    creds.save_credentials()?;
-
-    #[cfg(target_os = "macos")]
-    {
-        tokio::process::Command::new("defaults")
-            .args(["delete", "com.mschrage.fig.shared"])
-            .output()
-            .await
-            .ok();
-    }
-
-    println!("Logged out");
-    Ok(())
-}
-
-pub async fn whoami_cli(format: OutputFormat, only_email: bool) -> Result<()> {
-    let email = fig_auth::get_email();
-
-    match email {
-        Some(email) => {
-            if only_email {
-                match format {
-                    OutputFormat::Plain => println!("Email: {email}"),
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&json!({ "email": email }))?),
-                    OutputFormat::JsonPretty => {
-                        println!("{}", serde_json::to_string_pretty(&json!({ "email": email }))?)
-                    },
-                }
-            } else {
-                let account = fig_api_client::user::account().await?;
-                match format {
-                    OutputFormat::Plain => match account.username {
-                        Some(username) => println!("Email: {}\nUsername: {}", account.email, username),
-                        None => println!("Email: {}\nUsername is null", account.email),
-                    },
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&account)?),
-                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&account)?),
-                }
-            }
-            Ok(())
-        },
-        None => {
-            match format {
-                OutputFormat::Plain => println!("Not logged in"),
-                OutputFormat::Json => println!("{}", serde_json::to_string(&json!({ "email": null }))?),
-                OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&json!({ "email": null }))?),
-            }
-            exit(1);
-        },
     }
 }

@@ -1,8 +1,10 @@
 use std::collections::HashMap;
+use std::fmt::Display;
 use std::fs::{
     self,
     File,
 };
+use std::path::PathBuf;
 
 use aws_sdk_cognitoidentityprovider::error::{
     InitiateAuthError,
@@ -68,8 +70,8 @@ pub enum Error {
     Serde(#[from] serde_json::Error),
     #[error(transparent)]
     Defaults(#[from] defaults::DefaultsError),
-    #[error("could not find dir")]
-    Dir,
+    #[error(transparent)]
+    Dir(#[from] fig_util::directories::DirectoryError),
     #[error("credentials file does not exist")]
     CredentialsFileNotExist,
 }
@@ -451,6 +453,21 @@ pub enum RefreshError {
 }
 
 impl Credentials {
+    /// Path to the main credentials file
+    pub fn path() -> Result<PathBuf, fig_util::directories::DirectoryError> {
+        Ok(directories::fig_data_dir()?.join("credentials.json"))
+    }
+
+    /// Path to alternitive credentials file folder
+    pub fn account_credentials_dir() -> Result<PathBuf, fig_util::directories::DirectoryError> {
+        Ok(directories::fig_data_dir()?.join("account_credentials"))
+    }
+
+    /// Path to credentials file for a specific account
+    pub fn account_credentials_path(email: impl Display) -> Result<PathBuf, fig_util::directories::DirectoryError> {
+        Ok(Credentials::account_credentials_dir()?.join(format!("{email}.json")))
+    }
+
     pub fn new(
         email: impl Into<String>,
         access_token: Option<String>,
@@ -470,13 +487,13 @@ impl Credentials {
     }
 
     pub fn save_credentials(&self) -> Result<()> {
-        let data_dir = directories::fig_data_dir().map_err(|_| Error::Dir)?;
+        let data_dir = directories::fig_data_dir()?;
 
         if !data_dir.exists() {
             fs::create_dir_all(&data_dir)?;
         }
 
-        let mut creds_file = File::create(data_dir.join("credentials.json"))?;
+        let mut creds_file = File::create(&Credentials::path()?)?;
 
         #[cfg(unix)]
         {
@@ -547,17 +564,13 @@ impl Credentials {
     }
 
     pub fn load_credentials() -> Result<Credentials> {
-        let data_dir = directories::fig_data_dir().map_err(|_| Error::Dir)?;
-
-        let creds_path = data_dir.join("credentials.json");
+        let creds_path = Credentials::path()?;
 
         if !creds_path.exists() {
             return Err(Error::CredentialsFileNotExist);
         }
 
-        let creds_file = File::open(data_dir.join("credentials.json"))?;
-
-        Ok(serde_json::from_reader(creds_file)?)
+        Ok(serde_json::from_reader(File::open(creds_path)?)?)
     }
 
     pub async fn refresh_credentials(

@@ -1723,8 +1723,8 @@ mod test {
         let mut p = InputParser::new();
         let mut inputs = Vec::new();
         // Fragment this F-key sequence across two different pushes
-        p.parse(b"\x1b[11", |evt| inputs.push(evt), true);
-        p.parse(b"~", |evt| inputs.push(evt), true);
+        p.parse(b"\x1b[11", |_, evt| inputs.push(evt), true);
+        p.parse(b"~", |_, evt| inputs.push(evt), true);
         // make sure we recognize it as just the F-key
         assert_eq!(
             vec![InputEvent::Key(KeyEvent {
@@ -1749,8 +1749,8 @@ mod test {
 
         let mut inputs = Vec::new();
         // Fragment this F-key sequence across two different pushes
-        p.parse(b"\x1b[11", |evt| inputs.push(evt), true);
-        p.parse(b"", |evt| inputs.push(evt), false);
+        p.parse(b"\x1b[11", |_, evt| inputs.push(evt), true);
+        p.parse(b"", |_, evt| inputs.push(evt), false);
         // make sure we recognize it as just the F-key
         assert_eq!(
             vec![
@@ -1830,8 +1830,8 @@ mod test {
 
         let mut inputs = vec![];
 
-        p.parse(input, |e| inputs.push(e), false);
-        p.parse(input2, |e| inputs.push(e), false);
+        p.parse(input, |_, e| inputs.push(e), false);
+        p.parse(input2, |_, e| inputs.push(e), false);
 
         assert_eq!(vec![InputEvent::Paste("12345678".to_owned())], inputs)
     }

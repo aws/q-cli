@@ -39,6 +39,7 @@ use anyhow::{
     Context,
     Result,
 };
+use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::StructOpt;
 use cli::Cli;
@@ -318,11 +319,7 @@ where
     drop(handle);
 
     trace!(
-        "in_docker_ssh: {}, shell_enabled: {}, prexec: {}, insertion_locked: {}",
-        in_docker_ssh,
-        shell_enabled,
-        prexec,
-        insertion_locked
+        "in_docker_ssh: {in_docker_ssh}, shell_enabled: {shell_enabled}, prexec: {prexec}, insertion_locked: {insertion_locked}"
     );
 
     shell_enabled && !insertion_locked && !prexec
@@ -339,7 +336,7 @@ where
     match term.get_current_buffer() {
         Some(edit_buffer) => {
             if let Some(cursor_idx) = edit_buffer.cursor_idx.and_then(|i| i.try_into().ok()) {
-                debug!("edit_buffer: {:?}", edit_buffer);
+                debug!("edit_buffer: {edit_buffer:?}");
                 trace!("buffer bytes: {:02X?}", edit_buffer.buffer.as_bytes());
                 trace!("buffer chars: {:?}", edit_buffer.buffer.chars().collect::<Vec<_>>());
 
@@ -349,7 +346,7 @@ where
                     new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0, cursor_coordinates);
                 let message = hook_to_message(edit_buffer_hook);
 
-                debug!("Sending: {:?}", message);
+                debug!("Sending: {message:?}");
 
                 sender.send_async(message).await?;
             }
@@ -572,7 +569,7 @@ fn figterm_main() -> Result<()> {
     info!("Shell: {:?}", child.process_id());
     std::thread::spawn(move || child_tx.send(child.wait()));
     info!("Figterm: {}", Pid::current());
-    info!("Pty name: {}", pty_name);
+    info!("Pty name: {pty_name}");
 
     terminal.set_raw_mode()?;
 
@@ -631,17 +628,17 @@ fn figterm_main() -> Result<()> {
                 .is_pro()
         });
 
-        let ai_enabled = fig_settings::settings::get_bool_or("product-gate.ai.enabled", false);
+        let ai_enabled = fig_settings::settings::get_bool_or("ai.terminal-hash-sub", true);
 
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
                 let initial_command = env::var("FIG_START_TEXT").ok().filter(|s| !s.is_empty());
                 if let Some(mut initial_command) = initial_command {
-                    debug!("Sending initial text: {}", initial_command);
+                    debug!("Sending initial text: {initial_command}");
                     initial_command.push('\n');
-                    if let Err(e) = master.write(initial_command.as_bytes()).await {
-                        error!("Failed to write initial command: {}", e);
+                    if let Err(err) = master.write(initial_command.as_bytes()).await {
+                        error!("Failed to write initial command: {err}");
                     }
                 }
                 first_time = false;
@@ -650,95 +647,110 @@ fn figterm_main() -> Result<()> {
             let select_result: Result<()> = select! {
                 biased;
                 res = input_rx.recv_async() => {
+                    let mut input_res = Ok(());
                     match res {
-                        Ok(Ok((raw, InputEvent::Key(event)))) => {
-                            info!("Got key, {event:?}, {raw:?}");
-                            if ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
-                                if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
-                                    let buffer = buffer.trim();
-                                    if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {
-                                        master.write(
-                                            &repeat(b'\x08')
-                                                .take(buffer.len()
-                                                .max(cursor_idx.unwrap_or(0)))
-                                                .collect::<Vec<_>>()
-                                        ).await?;
-                                        master.write(
-                                            format!(
-                                                "fig ai '{}'\r",
-                                                buffer
-                                                    .trim_start_matches('#')
-                                                    .trim()
-                                                    .replace('\'', "'\"'\"'")
-                                                ).as_bytes()
-                                        ).await?;
-                                        continue 'select_loop;
+                        Ok(events) => {
+                            let events_len = events.len();
+                            let mut write_buffer = BytesMut::new();
+                            for event in events {
+                                match event {
+                                    Ok((raw, InputEvent::Key(event))) => {
+                                        info!("Got key, {event:?}, {raw:?}");
+                                        if ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                                            if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
+                                                let buffer = buffer.trim();
+                                                if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {
+                                                    write_buffer.extend(
+                                                        &repeat(b'\x08')
+                                                            .take(buffer.len()
+                                                            .max(cursor_idx.unwrap_or(0)))
+                                                            .collect::<Vec<_>>()
+                                                    );
+                                                    write_buffer.extend(
+                                                        format!(
+                                                            "fig ai '{}'\r",
+                                                            buffer
+                                                                .trim_start_matches('#')
+                                                                .trim()
+                                                                .replace('\'', "'\"'\"'")
+                                                            ).as_bytes()
+                                                    );
+                                                    continue 'select_loop;
+                                                }
+                                            }
+                                        }
+
+                                        let raw = raw.or_else(|| {
+                                            event.key.encode(event.modifiers, modes, true)
+                                                .ok()
+                                                .map(|s| s.into_bytes())
+                                        });
+
+                                        if let Some(action) = key_interceptor.intercept_key(&event) {
+                                            debug!("Intercepted action: {action:?}");
+                                            let s = raw.clone()
+                                                .and_then(|b| String::from_utf8(b).ok())
+                                                .unwrap_or_default();
+                                            let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                            outgoing_sender.send(hook_to_message(hook)).unwrap();
+
+                                            if event.key == KeyCode::Escape {
+                                                key_interceptor.reset();
+                                                if events_len > 0 {
+                                                    if let Some(bytes) = raw {
+                                                        write_buffer.extend(&bytes);
+                                                    }
+                                                }
+                                            }
+                                        } else if let Some(bytes) = raw {
+                                            write_buffer.extend(&bytes);
+                                        }
                                     }
-                                }
-                            }
+                                    Ok((_, InputEvent::Resized)) => {
+                                        terminal.flush()?;
 
-                            let raw = raw.or_else(|| {
-                                event.key.encode(event.modifiers, modes, true)
-                                    .ok()
-                                    .map(|s| s.into_bytes())
-                            });
-                            if let Some(action) = key_interceptor.intercept_key(&event) {
-                                debug!("Intercepted action: {action:?}");
-                                let s = raw
-                                    .and_then(|b| String::from_utf8(b).ok())
-                                    .unwrap_or_default();
-                                let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
-                                outgoing_sender.send(hook_to_message(hook)).unwrap();
+                                        let size = terminal.get_screen_size()?;
+                                        let pty_size = PtySize {
+                                            rows: size.rows as u16,
+                                            cols: size.cols as u16,
+                                            pixel_width: size.xpixel as u16,
+                                            pixel_height: size.ypixel as u16,
+                                        };
 
-                                if event.key == KeyCode::Escape {
-                                    key_interceptor.reset();
-                                }
-                            } else if let Some(bytes) = raw {
-                                master.write(&bytes).await?;
+                                        master.resize(pty_size)?;
+                                        let window_size = SizeInfo::new(size.rows as usize, size.cols as usize);
+                                        debug!("Window size changed: {window_size:?}");
+                                        term.resize(window_size);
+                                    }
+                                    Ok((None, InputEvent::Paste(string))) => {
+                                        info!("Pasty");
+                                        // Pass through bracketed pastes.
+                                        write_buffer.extend(b"\x1b[200~");
+                                        write_buffer.extend(string.as_bytes());
+                                        write_buffer.extend(b"\x1b[201~");
+                                    }
+                                    Ok((raw, _)) => {
+                                        if let Some(raw) = raw {
+                                            info!("Fallback write");
+                                            write_buffer.extend(&raw);
+                                        } else {
+                                            info!("Unhandled input event with no raw pass-through data");
+                                        }
+                                    }
+                                    Err(err) => {
+                                        error!("Failed receiving input from stdin: {err}");
+                                        input_res = Err(err);
+                                        break;
+                                    }
+                                };
                             }
-                            Ok(())
-                        }
-                        Ok(Ok((_, InputEvent::Resized))) => {
-                            let size = terminal.get_screen_size()?;
-                            let pty_size = PtySize {
-                                rows: size.rows as u16,
-                                cols: size.cols as u16,
-                                pixel_width: size.xpixel as u16,
-                                pixel_height: size.ypixel as u16,
-                            };
-
-                            master.resize(pty_size)?;
-                            let window_size = SizeInfo::new(size.rows as usize, size.cols as usize);
-                            debug!("Window size changed: {:?}", window_size);
-                            term.resize(window_size);
-                            Ok(())
-                        }
-                        Ok(Ok((None, InputEvent::Paste(string)))) => {
-                            info!("Pasty");
-                            // Pass through bracketed pastes.
-                            master.write(b"\x1b[200~").await?;
-                            master.write(string.as_bytes()).await?;
-                            master.write(b"\x1b[201~").await?;
-                            Ok(())
-                        }
-                        Ok(Ok((raw, _))) => {
-                            if let Some(raw) = raw {
-                                info!("Fallback write");
-                                master.write(&raw).await?;
-                            } else {
-                                info!("Unhandled input event with no raw pass-through data");
-                            }
-                            Ok(())
-                        }
-                        Ok(Err(err)) => {
-                            error!("Failed receiving input from stdin: {}", err);
-                            Err(err)
+                            master.write(&write_buffer).await?;
                         }
                         Err(err) => {
-                            warn!("Failed recv: {}", err);
-                            Ok(())
+                            warn!("Failed recv: {err}");
                         }
-                    }
+                    };
+                    input_res
                 }
                 res = master.read(&mut write_buffer) => {
                     match res {
@@ -747,7 +759,7 @@ fn figterm_main() -> Result<()> {
                             break 'select_loop Ok(());
                         }
                         Ok(size) => {
-                            info!("Read {} bytes from master", size);
+                            info!("Read {size} bytes from master");
 
                             let old_delayed_count = term.get_delayed_events_count();
                             for byte in &write_buffer[..size] {
@@ -767,15 +779,15 @@ fn figterm_main() -> Result<()> {
 
                             if can_send_edit_buffer(&term) {
                                 let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                                if let Err(e) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
-                                    warn!("Failed to send edit buffer: {}", e);
+                                if let Err(err) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
+                                    warn!("Failed to send edit buffer: {err}");
                                 }
                             }
 
                             Ok(())
                         }
                         Err(err) => {
-                            error!("Failed to read from master: {}", err);
+                            error!("Failed to read from master: {err}");
                             break 'select_loop Ok(());
                         }
                     }
@@ -783,11 +795,11 @@ fn figterm_main() -> Result<()> {
                 msg = incoming_receiver.recv_async() => {
                     match msg {
                         Ok((message, sender)) => {
-                            debug!("Received message from socket: {:?}", message);
+                            debug!("Received message from socket: {message:?}");
                             process_figterm_message(message, sender, &term, &mut master, &mut key_interceptor).await?;
                         }
                         Err(err) => {
-                            error!("Failed to receive message from socket: {}", err);
+                            error!("Failed to receive message from socket: {err}");
                         }
                     }
                     Ok(())
@@ -797,8 +809,8 @@ fn figterm_main() -> Result<()> {
                     let send_eb = INSERTION_LOCKED_AT.read().is_some();
                     if send_eb && can_send_edit_buffer(&term) {
                         let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                        if let Err(e) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
-                            warn!("Failed to send edit buffer: {}", e);
+                        if let Err(err) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
+                            warn!("Failed to send edit buffer: {err}");
                         }
                     }
                     Ok(())
@@ -809,9 +821,9 @@ fn figterm_main() -> Result<()> {
                 }
             };
 
-            if let Err(e) = select_result {
-                error!("Error in select loop: {}", e);
-                break 'select_loop Err(e);
+            if let Err(err) = select_result {
+                error!("Error in select loop: {err}");
+                break 'select_loop Err(err);
             }
         };
 

@@ -23,8 +23,7 @@ pub use track::{
 
 pub use crate::sentry::init_sentry;
 
-const API_DOMAIN: &str = "https://api.fig.io/telemetry/";
-const ALIAS_SUBDOMAIN: &str = "alias";
-const IDENTIFY_SUBDOMAIN: &str = "identify";
-const TRACK_SUBDOMAIN: &str = "track";
-const PAGE_SUBDOMAIN: &str = "page";
+const ALIAS_SUBDOMAIN: &str = "/telemetry/alias";
+const IDENTIFY_SUBDOMAIN: &str = "/telemetry/identify";
+const TRACK_SUBDOMAIN: &str = "/telemetry/track";
+const PAGE_SUBDOMAIN: &str = "/telemetry/page";

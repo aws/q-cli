@@ -4,12 +4,11 @@ use serde::{
     Serialize,
 };
 use thiserror::Error;
-use tokio::io;
 
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("Io error: {0}")]
-    IoError(#[from] io::Error),
+    IoError(#[from] std::io::Error),
     #[error("Json error: {0}")]
     JsonError(#[from] serde_json::Error),
 }

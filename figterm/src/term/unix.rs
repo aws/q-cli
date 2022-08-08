@@ -14,9 +14,10 @@ use anyhow::{
     Context,
     Result,
 };
+use bytes::BytesMut;
 use filedescriptor::FileDescriptor;
 use flume::{
-    unbounded,
+    bounded,
     Receiver,
 };
 use nix::libc::{
@@ -44,6 +45,7 @@ use tracing::{
     warn,
 };
 
+use super::InputEventResult;
 use crate::input::{
     InputEvent,
     InputParser,
@@ -247,34 +249,33 @@ impl Terminal for UnixTerminal {
         self.write.flush().context("flush failed")
     }
 
-    fn read_input(&mut self) -> Result<Receiver<Result<(Option<Vec<u8>>, InputEvent)>>> {
+    fn read_input(&mut self) -> Result<Receiver<InputEventResult>> {
         let mut window_change_signal = tokio::signal::unix::signal(SignalKind::window_change())?;
-
-        let (input_tx, input_rx) = unbounded::<Result<(Option<Vec<u8>>, InputEvent)>>();
+        let (input_tx, input_rx) = bounded::<InputEventResult>(1);
 
         tokio::spawn(async move {
             let mut stdin = io::stdin();
             let mut parser = InputParser::new();
-            let mut buf = [0u8; 2048];
+            let mut buf = BytesMut::with_capacity(1024);
 
             loop {
                 select! {
                     biased;
-                    res = stdin.read(&mut buf) => {
+                    res = stdin.read_buf(&mut buf) => {
                         match res {
                             Ok(n) => {
+                                let mut events = vec![];
                                 parser.parse(
                                     &buf[0..n],
-                                    |raw, evt| {
-                                        if let Err(e) = input_tx.send(Ok((raw, evt))) {
-                                            warn!("Error sending event: {e}");
-                                        }
-                                    },
-                                    n == buf.len(),
+                                    |raw, evt| events.push(Ok((raw, evt))),
+                                    false,
                                 );
+                                if let Err(e) = input_tx.send_async(events).await {
+                                    warn!("Error sending event: {e}");
+                                }
                             }
                             Err(err) => {
-                                if let Err(e) = input_tx.send_async(Err(anyhow::anyhow!(err))).await {
+                                if let Err(e) = input_tx.send_async(vec![Err(anyhow::anyhow!(err))]).await {
                                     error!("Error sending event: {e}");
                                 }
                             }
@@ -282,11 +283,12 @@ impl Terminal for UnixTerminal {
                     }
                     _ = window_change_signal.recv() => {
                         let event = InputEvent::Resized;
-                        if let Err(e) = input_tx.send_async(Ok((None, event))).await {
+                        if let Err(e) = input_tx.send_async(vec![Ok((None, event))]).await {
                             warn!("Error sending event: {e}");
                         }
                     }
                 }
+                buf.clear();
             }
         });
 

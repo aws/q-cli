@@ -1,5 +1,4 @@
 pub mod keybindings;
-pub mod remote_settings;
 pub mod settings;
 pub mod state;
 
@@ -8,9 +7,9 @@ use std::path::PathBuf;
 
 use once_cell::sync::Lazy;
 use regex::Regex;
-use reqwest::Url;
 use serde_json::Value;
 use thiserror::Error;
+use url::Url;
 
 fn get_host_string(key: impl AsRef<str>) -> Option<Url> {
     state::get_value(key)
@@ -46,8 +45,6 @@ pub struct LocalJson {
 
 #[derive(Debug, Error)]
 pub enum Error {
-    #[error(transparent)]
-    RemoteSettingsError(#[from] remote_settings::Error),
     #[error(transparent)]
     IoError(#[from] std::io::Error),
     #[error(transparent)]

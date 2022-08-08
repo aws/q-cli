@@ -2227,9 +2227,11 @@ name = "fig_api_client"
 version = "0.1.0"
 dependencies = [
  "fig_request",
+ "fig_settings",
  "fig_util",
  "serde",
  "serde_json",
+ "time 0.3.12",
  "url",
 ]
 
@@ -2256,7 +2258,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.4.8"
+version = "1.4.9"
 dependencies = [
  "anyhow",
  "arboard",
@@ -2335,6 +2337,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.16",
  "dashmap",
+ "fig_api_client",
  "fig_auth",
  "fig_install",
  "fig_integrations",
@@ -2484,16 +2487,13 @@ dependencies = [
 name = "fig_settings"
 version = "0.1.0"
 dependencies = [
- "fig_auth",
  "fig_util",
  "once_cell",
  "regex",
- "reqwest",
  "serde",
  "serde_json",
  "tempfile",
  "thiserror",
- "time 0.3.12",
  "tokio",
  "url",
 ]
@@ -2506,11 +2506,11 @@ dependencies = [
  "fig_auth",
  "fig_ipc",
  "fig_proto",
+ "fig_request",
  "fig_settings",
  "fig_util",
  "once_cell",
  "parking_lot 0.12.1",
- "reqwest",
  "sentry",
  "serde",
  "serde_json",
@@ -2540,7 +2540,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "4.4.2"
+version = "5.0.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -6291,11 +6291,11 @@ checksum = "24188a676b6ae68c3b2cb3a01be17fbf7240ce009799bb56d5b1409051e78fde"
 
 [[package]]
 name = "shellexpand"
-version = "2.1.0"
+version = "2.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83bdb7831b2d85ddf4a7b148aa19d0587eddbe8671a436b7bd1182eaad0f2829"
+checksum = "7ccc8076840c4da029af4f87e4e8daeb0fca6b87bbb02e10cb60b791450e11e4"
 dependencies = [
- "dirs-next",
+ "dirs",
 ]
 
 [[package]]

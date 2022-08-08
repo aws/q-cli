@@ -17,7 +17,7 @@ use std::os::windows::io::AsRawHandle;
 use anyhow::Result;
 use filedescriptor::FileDescriptor;
 use flume::{
-    unbounded,
+    bounded,
     Receiver,
 };
 use tracing::{
@@ -63,6 +63,7 @@ use winapi::um::wincon::{
 };
 use winapi::um::winnls::CP_UTF8;
 
+use super::InputEventResult;
 use crate::input::{
     InputEvent,
     InputParser,
@@ -650,8 +651,8 @@ impl Terminal for WindowsTerminal {
             .map_err(|e| anyhow::anyhow!("flush failed: {}", e))
     }
 
-    fn read_input(&mut self) -> Result<Receiver<Result<(Option<Vec<u8>>, InputEvent)>>> {
-        let (input_tx, input_rx) = unbounded::<Result<(Option<Vec<u8>>, InputEvent)>>();
+    fn read_input(&mut self) -> Result<Receiver<InputEventResult>> {
+        let (input_tx, input_rx) = bounded::<InputEventResult>(1);
         let mut input_handle = self.input_handle.try_clone()?;
         tokio::task::spawn_blocking(move || {
             let mut parser = InputParser::new();
@@ -664,10 +665,10 @@ impl Terminal for WindowsTerminal {
                     if result == WAIT_OBJECT_0 {
                         pending = input_handle.get_number_of_input_events().unwrap_or(0);
                     } else if result == WAIT_FAILED {
-                        if let Err(e) = input_tx.send(Err(anyhow::anyhow!(
+                        if let Err(e) = input_tx.send(vec![Err(anyhow::anyhow!(
                             "failed to WaitForSingleObject: {}",
                             std::io::Error::last_os_error()
-                        ))) {
+                        ))]) {
                             error!("Failed to send error: {e}");
                         };
                     }
@@ -675,11 +676,11 @@ impl Terminal for WindowsTerminal {
 
                 match input_handle.read_console_input(pending) {
                     Ok(records) => {
-                        parser.decode_input_records(&records, &mut |raw, evt| {
-                            if let Err(e) = input_tx.send(Ok((raw, evt))) {
-                                warn!("Failed to send input record: {e}");
-                            }
-                        });
+                        let mut events = vec![];
+                        parser.decode_input_records(&records, &mut |raw, evt| events.push(Ok((raw, evt))));
+                        if let Err(e) = input_tx.send(events) {
+                            warn!("Failed to send input record: {e}");
+                        }
                     },
                     Err(e) => {
                         warn!("Failed to read events from console: {e}");
