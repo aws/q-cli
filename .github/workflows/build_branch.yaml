@@ -27,6 +27,9 @@ on:
   schedule:
     - cron:  '0 7 * * 1-5'
 
+env:
+  BASH_ENV: build_branch_bash_env
+
 jobs:
   release:
     runs-on: [self-hosted, macos, x64]
@@ -170,13 +173,24 @@ jobs:
       - name: Ensure BUILT_PRODUCTS_DIR exists
         run: mkdir -p "$FIG_BUILT_PRODUCTS_DIR"
 
+      - name: Generate Rust Env
+        env:
+          LINKER: ld
+        run: | 
+          rm -f $BASH_ENV
+          ./build-scripts/rust-init.sh
+
       - name: Build figterm
-        run: make macos
         working-directory: ./figterm
+        run: |
+          source $BASH_ENV
+          make macos
 
       - name: Build fig_cli
-        run: make macos
         working-directory: ./fig_cli
+        run: |
+          source $BASH_ENV
+          make macos
           
 ############################################
 # Build, Archive & Export 
