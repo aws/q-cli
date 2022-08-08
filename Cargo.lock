@@ -2469,7 +2469,7 @@ dependencies = [
 
 [[package]]
 name = "fig_request"
-version = "0.1.0"
+version = "0.2.0"
 dependencies = [
  "bytes",
  "fig_auth",
@@ -2500,7 +2500,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "0.2.0"
+version = "0.2.1"
 dependencies = [
  "anyhow",
  "fig_auth",

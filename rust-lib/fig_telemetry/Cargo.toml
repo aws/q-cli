@@ -1,6 +1,6 @@
 [package]
 name = "fig_telemetry"
-version = "0.2.0"
+version = "0.2.1"
 authors = ["fig developers"]
 edition = "2021"
 homepage = "https://fig.io"
@@ -8,10 +8,10 @@ publish = false
 
 [dependencies]
 anyhow = "1.0.59"
-fig_auth = { version = "0.1.0", path = "../fig_auth" }
+fig_auth = { path = "../fig_auth" }
 fig_ipc = { path = "../fig_ipc" }
 fig_proto = { path = "../fig_proto" }
-fig_request = { version = "0.1.0", path = "../fig_request" }
+fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 once_cell = { version = "1.13.0", features = ["parking_lot"] }

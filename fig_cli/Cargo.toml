@@ -26,14 +26,14 @@ ctrlc = "3.2.1"
 deno_core = { version = "0.146.0", optional = true }
 deno_runtime = { version = "0.72.0", optional = true }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
-fig_api_client = { version = "0.1.0", path = "../rust-lib/fig_api_client" }
+fig_api_client = { path = "../rust-lib/fig_api_client" }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_install = { path = "../rust-lib/fig_install" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
-fig_request = { version = "0.1.0", path = "../rust-lib/fig_request" }
+fig_request = { path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_util = { path = "../rust-lib/fig_util" }
