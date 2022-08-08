@@ -519,6 +519,10 @@ fn build_shell_command() -> Result<CommandBuilder> {
     builder.env_remove("FIG_SHELL_EXTRA_ARGS");
     builder.env_remove("FIG_EXECUTION_STRING");
 
+    if let Ok(dir) = std::env::current_dir() {
+        builder.cwd(dir);
+    }
+
     Ok(builder)
 }
 

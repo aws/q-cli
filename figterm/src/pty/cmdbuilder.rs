@@ -11,12 +11,9 @@ use anyhow::Context;
 use cfg_if::cfg_if;
 #[cfg(unix)]
 use nix::libc;
-#[cfg(feature = "serde_support")]
-use serde_derive::*;
 
 /// Used to deal with Windows having case-insensitive environment variables.
 #[derive(Clone, Debug, PartialEq, PartialOrd)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 struct EnvEntry {
     /// Whether or not this environment variable came from the base environment,
     /// as opposed to having been explicitly set by the caller.
@@ -60,7 +57,6 @@ fn get_base_env() -> BTreeMap<OsString, EnvEntry> {
 /// `CommandBuilder` is used to prepare a command to be spawned into a pty.
 /// The interface is intentionally similar to that of `std::process::Command`.
 #[derive(Clone, Debug, PartialEq)]
-#[cfg_attr(feature = "serde_support", derive(Serialize, Deserialize))]
 pub struct CommandBuilder {
     args: Vec<OsString>,
     envs: BTreeMap<OsString, EnvEntry>,
