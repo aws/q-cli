@@ -4356,7 +4356,6 @@ dependencies = [
  "crossterm",
  "noise",
  "rand 0.8.5",
- "unicode-segmentation",
 ]
 
 [[package]]

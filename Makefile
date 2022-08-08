@@ -20,7 +20,7 @@ archive: bin icons bundle
 	cd $(BUILD_DIR) && tar -cjf fig-$(ARCH)-linux.tar.gz usr install.sh
 
 arch: archive
-	mv fig-$(ARCH)-linux.tar.gz fig-$(ARCH)-linux-archlinux-$(VERSION).tar.gz
+	cp $(BUILD_DIR)/fig-$(ARCH)-linux.tar.gz $(BUILD_DIR)/fig-$(ARCH)-linux-archlinux.tar.gz
 
 deb: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux
