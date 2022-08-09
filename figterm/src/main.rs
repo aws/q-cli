@@ -39,7 +39,10 @@ use anyhow::{
     Context,
     Result,
 };
-use bytes::BytesMut;
+use bytes::{
+    Bytes,
+    BytesMut,
+};
 use cfg_if::cfg_if;
 use clap::StructOpt;
 use cli::Cli;
@@ -132,13 +135,19 @@ const BUFFER_SIZE: usize = 4096;
 struct EventSender {
     socket_sender: Sender<LocalMessage>,
     history_sender: Sender<CommandInfo>,
+    input_sender: Sender<Bytes>,
 }
 
 impl EventSender {
-    fn new(socket_sender: Sender<LocalMessage>, history_sender: Sender<CommandInfo>) -> Self {
+    fn new(
+        socket_sender: Sender<LocalMessage>,
+        history_sender: Sender<CommandInfo>,
+        input_sender: Sender<Bytes>,
+    ) -> Self {
         Self {
             socket_sender,
             history_sender,
+            input_sender,
         }
     }
 }
@@ -220,6 +229,14 @@ impl EventListener for EventSender {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
+
+                if let Some((text, execute)) = &shell_state.insert_on_new_cmd {
+                    self.input_sender.send(text.clone().into_bytes().into()).unwrap();
+                    if *execute {
+                        self.input_sender.send(Bytes::from_static(b"\r")).unwrap();
+                    }
+                }
+
                 if let Err(err) = self.socket_sender.send(message) {
                     error!("Sender error: {err:?}");
                 }
@@ -595,7 +612,8 @@ fn figterm_main() -> Result<()> {
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
 
-        let event_sender = EventSender::new(outgoing_sender.clone(), history_sender);
+        let (event_sender_tx, event_sender_rx) = flume::bounded(16);
+        let event_sender = EventSender::new(outgoing_sender.clone(), history_sender, event_sender_tx);
 
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
@@ -749,6 +767,15 @@ fn figterm_main() -> Result<()> {
                         }
                     };
                     input_res
+                }
+                res = event_sender_rx.recv_async() => {
+                    match res {
+                        Ok(b) => {
+                            master.write(&b).await?;
+                        }
+                        Err(err) => warn!("Failed to recv: {err}"),
+                    };
+                    Ok(())
                 }
                 res = master.read(&mut write_buffer) => {
                     match res {

@@ -61,12 +61,26 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
                 })
                 .unwrap();
         },
-        UiElement::MissionControl => proxy
-            .send_event(Event::WindowEvent {
-                window_id: MISSION_CONTROL_ID.clone(),
-                window_event: WindowEvent::Show,
-            })
-            .unwrap(),
+        UiElement::MissionControl => {
+            if let Some(route) = command.route {
+                let mut url = url::Url::parse("https://desktop.fig.io").unwrap();
+                url.set_path(&route);
+
+                proxy
+                    .send_event(Event::WindowEvent {
+                        window_id: MISSION_CONTROL_ID.clone(),
+                        window_event: WindowEvent::Navigate { url },
+                    })
+                    .unwrap();
+            }
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_event: WindowEvent::Show,
+                })
+                .unwrap();
+        },
         UiElement::MenuBar => error!("Opening menu bar is unimplemented"),
         UiElement::InputMethodPrompt => error!("Opening input method prompt is unimplemented"),
     };

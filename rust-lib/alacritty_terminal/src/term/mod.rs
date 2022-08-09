@@ -219,6 +219,8 @@ pub struct ShellState {
     pub command_info: Option<CommandInfo>,
     /// Fig Log Level
     pub fig_log_level: Option<String>,
+    /// Text to insert on NewCmd, bool indicates if to execute
+    pub insert_on_new_cmd: Option<(String, bool)>,
 }
 
 impl ShellState {
@@ -878,6 +880,8 @@ impl<T> Term<T> {
 
         self.event_proxy.send_event(Event::Prompt, &self.shell_state);
         trace!("Prompt event sent");
+
+        self.shell_state.insert_on_new_cmd = None;
 
         if let Some(command) = &self.shell_state.command_info {
             self.event_proxy
@@ -1753,10 +1757,12 @@ impl<T: EventListener> Handler for Term<T> {
         }
     }
 
+    #[inline]
     fn new_cmd(&mut self) {
         self.new_cmd_internal(false);
     }
 
+    #[inline]
     fn start_prompt(&mut self) {
         trace!("Fig start prompt");
         self.shell_state.has_seen_prompt = true;
@@ -1764,10 +1770,12 @@ impl<T: EventListener> Handler for Term<T> {
         self.grid.cursor.template.fig_flags.insert(FigFlags::IN_PROMPT);
     }
 
+    #[inline]
     fn end_prompt(&mut self) {
         self.end_prompt_internal(false);
     }
 
+    #[inline]
     fn pre_exec(&mut self) {
         trace!("Fig PreExec");
 
@@ -1796,6 +1804,7 @@ impl<T: EventListener> Handler for Term<T> {
         self.shell_state.preexec = true;
     }
 
+    #[inline]
     fn dir(&mut self, directory: &std::path::Path) {
         trace!("Fig dir: {:?}", directory.display());
         self.shell_state.get_mut_context().current_working_directory = Some(directory.to_path_buf());
@@ -1805,24 +1814,28 @@ impl<T: EventListener> Handler for Term<T> {
         }
     }
 
+    #[inline]
     fn shell_path(&mut self, path: &std::path::Path) {
         self.shell_state.get_mut_context().shell_path = Some(path.to_path_buf());
     }
 
+    #[inline]
     fn wsl_distro(&mut self, distro: &str) {
         self.shell_state.get_mut_context().wsl_distro = Some(distro.trim().into());
     }
 
+    #[inline]
     fn exit_code(&mut self, exit_code: i32) {
-        trace!("Fig exit code: {}", exit_code);
+        trace!("Fig exit code: {exit_code}");
         if let Some(command) = &mut self.shell_state.command_info {
             command.exit_code = Some(exit_code);
         }
     }
 
+    #[inline]
     fn shell(&mut self, shell: &str) {
         let shell = shell.trim().to_owned();
-        trace!("Fig shell: {:?}", shell);
+        trace!("Fig shell: {shell:?}");
         let shell_changed = match &self.shell_state.get_context().shell {
             Some(old_shell) => old_shell.ne(&shell),
             None => true,
@@ -1833,16 +1846,18 @@ impl<T: EventListener> Handler for Term<T> {
         }
     }
 
+    #[inline]
     fn fish_suggestion_color(&mut self, color: &str) {
-        trace!("Fig fish suggestion color: {:?}", color);
+        trace!("Fig fish suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
             self.shell_state.fish_suggestion_color = fig_color::parse_suggestion_color_fish(color, color_support);
         }
     }
 
+    #[inline]
     fn zsh_suggestion_color(&mut self, color: &str) {
-        trace!("Fig zsh suggestion color: {:?}", color);
+        trace!("Fig zsh suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
             self.shell_state.zsh_autosuggestion_color =
@@ -1850,45 +1865,62 @@ impl<T: EventListener> Handler for Term<T> {
         }
     }
 
+    #[inline]
     fn tty(&mut self, tty: &str) {
         let tty = tty.trim().to_owned();
-        trace!("Fig tty: {:?}", tty);
+        trace!("Fig tty: {tty:?}");
         self.shell_state.get_mut_context().tty = Some(tty);
     }
 
+    #[inline]
     fn pid(&mut self, pid: i32) {
-        trace!("Fig pid: {}", pid);
+        trace!("Fig pid: {pid}");
         self.shell_state.get_mut_context().pid = Some(pid);
     }
 
+    #[inline]
     fn session_id(&mut self, session_id: &str) {
         let session_id = session_id.trim().to_owned();
-        trace!("Fig session_id: {:?}", session_id);
+        trace!("Fig session_id: {session_id:?}");
         self.shell_state.get_mut_context().session_id = Some(session_id);
     }
 
+    #[inline]
     fn docker(&mut self, in_docker: bool) {
-        trace!("Fig in_docker: {}", in_docker);
+        trace!("Fig in_docker: {in_docker}");
         self.shell_state.in_docker = in_docker;
     }
 
+    #[inline]
     fn ssh(&mut self, in_ssh: bool) {
-        trace!("Fig in_ssh: {}", in_ssh);
+        trace!("Fig in_ssh: {in_ssh}");
         self.shell_state.in_ssh = in_ssh;
     }
 
+    #[inline]
     fn hostname(&mut self, hostname: &str) {
         let hostname = hostname.trim().to_owned();
-        trace!("Fig hostname: {:?}", hostname);
+        trace!("Fig hostname: {hostname:?}");
         self.shell_state.get_mut_context().hostname = Some(hostname);
     }
 
+    #[inline]
     fn log(&mut self, fig_log_level: &str) {
         let fig_log_level = fig_log_level.trim().to_owned();
-        trace!("Fig log: {:?}", fig_log_level);
+        trace!("Fig log: {fig_log_level:?}");
 
         self.shell_state.fig_log_level = Some(fig_log_level.clone());
         self.event_proxy.log_level_event(Some(fig_log_level));
+    }
+
+    #[inline]
+    fn insert_on_new_cmd(&mut self, insert_on_new_cmd: &str) {
+        self.shell_state.insert_on_new_cmd = Some((insert_on_new_cmd.to_owned(), false));
+    }
+
+    #[inline]
+    fn execute_on_new_cmd(&mut self, insert_on_new_cmd: &str) {
+        self.shell_state.insert_on_new_cmd = Some((insert_on_new_cmd.to_owned(), true));
     }
 }
 

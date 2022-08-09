@@ -527,11 +527,11 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
         Ok(content) => content,
         Err(_) => {
             if let Err(err) = tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir")).await {
-                error!("Unable to create directory: {}", err);
+                error!("Unable to create directory: {err}");
             }
 
             if let Err(err) = tokio::fs::write(&file, "").await {
-                error!("Unable to write to file: {}", err);
+                error!("Unable to write to file: {err}");
             }
 
             exit(1);
@@ -556,48 +556,15 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
                 _ => UpdatedVerbosity::Minimal,
             };
 
-            let source_immediately = fig_settings::settings::get_value("dotfiles.sourceImmediately")
+            let source_immediately = match fig_settings::settings::get_value("dotfiles.sourceImmediately")
                 .ok()
                 .flatten()
-                .and_then(|s| s.as_str().map(|s| s.to_owned()));
-
-            let source_updates = match source_immediately.as_deref() {
-                Some("always") => true,
-                // Ask is depercated
-                // Some("ask") => {
-                //     let dialog_result =  dialoguer::Select::with_theme(&dialoguer_theme())
-                //             .with_prompt("In the future, would you like Fig to auto-apply dotfiles changes in open
-                // terminals?")             .items(&["Yes", "No"])
-                //             .default(0)
-                //             .interact_opt();
-
-                //     match dialog_result {
-                //         Ok(Some(0)) => {
-                //             fig_settings::settings::set_value(
-                //                 "dotfiles.sourceImmediately",
-                //                 json!("always"),
-                //             )
-                //             .await
-                //             .ok();
-
-                //             true
-                //         }
-                //         Ok(Some(1)) => {
-                //             fig_settings::settings::set_value(
-                //                 "dotfiles.sourceImmediately",
-                //                 json!("never"),
-                //             )
-                //             .await
-                //             .ok();
-
-                //             false
-                //         }
-                //         _ => false,
-                //     }
-                // }
-                Some("never") => false,
-                _ => false,
+            {
+                Some(serde_json::Value::String(s)) => Some(s),
+                _ => None,
             };
+
+            let source_updates = matches!(source_immediately.as_deref(), Some("always"));
 
             if source_updates {
                 if verbosity >= UpdatedVerbosity::Minimal {
@@ -626,7 +593,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     };
 
     if let Err(err) = tokio::fs::write(&file, "").await {
-        error!("Unable to write to file: {}", err);
+        error!("Unable to write to file: {err}");
     }
 
     exit(exit_code);

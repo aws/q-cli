@@ -1,9 +1,12 @@
 use std::fmt::Display;
-use std::io::stdout;
-use std::process::Command;
+use std::io::{
+    stdout,
+    Write,
+};
 
 use arboard::Clipboard;
 use clap::Args;
+use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use serde::{
@@ -17,12 +20,15 @@ use crate::util::spinner::{
     SpinnerComponent,
 };
 
+const SEEN_ONBOARDING_KEY: &str = "ai.seen-onboarding";
+const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
+
 #[derive(Debug, Args)]
 pub struct AiArgs {
     #[clap(value_parser)]
     input: Vec<String>,
-    /// Number of completions to generate (must be <=10)
-    #[clap(short, long, value_parser)]
+    /// Number of completions to generate (must be <=5)
+    #[clap(short, long, value_parser, hide = true)]
     n: Option<usize>,
 }
 
@@ -61,21 +67,21 @@ impl Display for DialogActions {
         match self {
             DialogActions::Execute { command, display } => {
                 if *display {
-                    write!(f, "⚡ Execute {}", command.to_string().magenta())
+                    write!(f, "⚡ Execute {}", command.bright_magenta())
                 } else {
                     write!(f, "⚡ Execute command")
                 }
             },
             DialogActions::Edit { command, display } => {
                 if *display {
-                    write!(f, "📝 Edit {}", command.to_string().magenta())
+                    write!(f, "📝 Edit {}", command.bright_magenta())
                 } else {
                     write!(f, "📝 Edit command")
                 }
             },
             DialogActions::Copy { command, display } => {
                 if *display {
-                    write!(f, "📋 Copy {}", command.to_string().magenta())
+                    write!(f, "📋 Copy {}", command.bright_magenta())
                 } else {
                     write!(f, "📋 Copy to clipboard")
                 }
@@ -97,25 +103,62 @@ fn theme() -> ColorfulTheme {
 
 impl AiArgs {
     pub async fn execute(self) -> eyre::Result<()> {
-        // Product gate
-        if !fig_settings::settings::get_bool_or("product-gate.ai.enabled", false) {
-            eyre::bail!("Fig AI is comming soon to Fig Pro");
+        // Spawn task to get `fig pro` status
+        tokio::spawn(async {
+            let is_pro = fig_api_client::user::plans()
+                .await
+                .map(|plan| plan.highest_plan())
+                .unwrap_or_default()
+                .is_pro();
+            fig_settings::state::set_value(IS_FIG_PRO_KEY, is_pro).ok();
+        });
+
+        // show onboarding if it hasnt been seen, show fig pro to non pro users
+        let seen_onboarding = fig_settings::state::get_bool_or(SEEN_ONBOARDING_KEY, false);
+        let is_fig_pro = fig_settings::state::get_bool_or(IS_FIG_PRO_KEY, false);
+
+        if !seen_onboarding {
+            println!();
+            println!(
+                "  Translate {} to {} commands. Run in any shell.",
+                "English".bold(),
+                "Bash".bold()
+            );
+            println!();
+            println!(
+                "  {} translates your English instructions to Bash syntax and commands.",
+                "fig ai".bright_magenta().bold()
+            );
+            println!("  You can run the command in any shell.");
+
+            fig_settings::state::set_value(SEEN_ONBOARDING_KEY, true).ok();
         }
+
+        if !is_fig_pro {
+            println!();
+            println!(
+                "  {} is currently in beta for {} users.",
+                "fig ai".bright_magenta().bold(),
+                "Fig Pro".bold()
+            );
+            println!("  Run {} to learn more...", "fig pro".bright_magenta().bold());
+        }
+
+        println!();
 
         let Self { input, n } = self;
         let mut input = if input.is_empty() { None } else { Some(input.join(" ")) };
 
-        if n.map(|n| n > 10).unwrap_or_default() {
-            eyre::bail!("n must be <= 10");
+        if n.map(|n| n > 5).unwrap_or_default() {
+            eyre::bail!("n must be <= 5");
         }
 
+        // hack to show cursor which dialoguer eats
         tokio::spawn(async {
             tokio::signal::ctrl_c().await.unwrap();
             crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
             std::process::exit(0);
         });
-
-        println!();
 
         'ask_loop: loop {
             let question = match input {
@@ -171,28 +214,15 @@ impl AiArgs {
                     ($action:expr) => {
                         match $action {
                             Some(DialogActions::Execute { command, .. }) => {
-                                println!(
-                                    "{} Executing {}...",
-                                    ">".bold(),
-                                    command.to_string().magenta().bold()
-                                );
-                                Command::new("bash")
-                                    .arg("-ic")
-                                    .arg(command)
-                                    .spawn()?
-                                    .wait()?;
+                                let mut stdout = stdout();
+                                write!(stdout, "\x1b]697;ExecuteOnNewCmd={command}\x07").ok();
+                                stdout.flush().ok();
                                 break 'ask_loop;
                             },
                             Some(DialogActions::Edit { command, .. }) => {
-                                let command: String = dialoguer::Input::with_theme(&theme())
-                                    .with_initial_text(command)
-                                    .interact_text()?;
-                                println!("Executing {}...", command.to_string().magenta().bold());
-                                Command::new("bash")
-                                    .arg("-ic")
-                                    .arg(command)
-                                    .spawn()?
-                                    .wait()?;
+                                let mut stdout = stdout();
+                                write!(stdout, "\x1b]697;InsertOnNewCmd={command}\x07").ok();
+                                stdout.flush().ok();
                                 break 'ask_loop;
                             },
                             Some(DialogActions::Copy { command, .. }) => {
@@ -217,9 +247,12 @@ impl AiArgs {
                 }
 
                 match &choices[..] {
-                    [] => eyre::bail!("no valid completions were generated"),
+                    [] => {
+                        spinner.stop_with_message(format!("{spinner_text}❌"));
+                        eyre::bail!("no valid completions were generated");
+                    },
                     [choice] => {
-                        spinner.stop_with_message(format!("{spinner_text}{}", choice.magenta()));
+                        spinner.stop_with_message(format!("{spinner_text}{}", choice.bright_magenta()));
                         println!();
 
                         let actions = [
@@ -244,7 +277,8 @@ impl AiArgs {
                         handle_action!(selected.and_then(|i| actions.get(i)));
                     },
                     choices => {
-                        spinner.stop_with_message("".into());
+                        spinner.stop_with_message(format!("{spinner_text}{}", "<multiple options>".dark_grey()));
+                        println!();
 
                         let mut actions: Vec<_> = choices
                             .iter()

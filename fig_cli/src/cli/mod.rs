@@ -15,6 +15,7 @@ mod invite;
 mod issue;
 mod man;
 mod plugins;
+mod pro;
 mod settings;
 mod source;
 mod ssh;
@@ -154,7 +155,10 @@ pub enum CliRootCommands {
     /// Manage system integrations
     #[clap(subcommand)]
     Integrations(IntegrationsSubcommands),
+    /// English -> Bash translation
     Ai(ai::AiArgs),
+    /// Fig Pro
+    Pro,
 
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
@@ -290,6 +294,7 @@ impl Cli {
                 CliRootCommands::Workflow(args) => args.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
+                CliRootCommands::Pro => pro::execute().await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
