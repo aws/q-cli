@@ -42,6 +42,7 @@ use tokio::select;
 use tokio::signal::unix::SignalKind;
 use tracing::{
     error,
+    trace,
     warn,
 };
 
@@ -264,6 +265,7 @@ impl Terminal for UnixTerminal {
                     res = stdin.read_buf(&mut buf) => {
                         match res {
                             Ok(n) => {
+                                trace!("Read input: {:?}", &buf[0..n]);
                                 let mut events = vec![];
                                 parser.parse(
                                     &buf[0..n],

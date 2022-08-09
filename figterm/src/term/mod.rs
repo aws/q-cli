@@ -3,6 +3,7 @@
 use std::fmt::Display;
 
 use anyhow::Result;
+use bytes::Bytes;
 use flume::Receiver;
 use num_traits::NumCast;
 
@@ -52,7 +53,7 @@ pub enum Blocking {
     Wait,
 }
 
-type InputEventResult = Vec<Result<(Option<Vec<u8>>, InputEvent)>>;
+type InputEventResult = Vec<Result<(Option<Bytes>, InputEvent)>>;
 
 /// `Terminal` abstracts over some basic terminal capabilities.
 /// If the `set_raw_mode` or `set_cooked_mode` functions are used in
