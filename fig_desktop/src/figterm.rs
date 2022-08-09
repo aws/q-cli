@@ -26,6 +26,7 @@ use tokio::time::{
     Instant,
 };
 use tracing::{
+    debug,
     error,
     trace,
 };
@@ -248,6 +249,13 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) -> 
             })
             .await
             {
+                if let fig_ipc::SendError::Io(err) = &err {
+                    if err.kind() == std::io::ErrorKind::ConnectionReset {
+                        debug!("Connection reset when sending message to figterm session {session_id}: {err:?}");
+                        break;
+                    }
+                }
+
                 error!("Failed sending message to figterm session {session_id}: {err:?}");
                 break;
             }

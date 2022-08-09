@@ -2,11 +2,17 @@ use std::ffi::CStr;
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
 
-use anyhow::Result;
+use anyhow::{
+    anyhow,
+    Result,
+};
 use fig_proto::local::TerminalCursorCoordinates;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use tracing::warn;
+use tracing::{
+    debug,
+    warn,
+};
 use windows::Win32::Foundation::{
     HWND,
     POINT,
@@ -66,6 +72,12 @@ use crate::{
 pub const SHELL: &str = "bash";
 pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];
 
+#[repr(C)]
+struct AutomationTable(IUIAutomation);
+
+unsafe impl Sync for AutomationTable {}
+unsafe impl Send for AutomationTable {}
+
 static UNMANAGED: Lazy<Unmanaged> = unsafe {
     Lazy::new(|| Unmanaged {
         main_thread: GetCurrentThreadId(),
@@ -83,6 +95,10 @@ static UNMANAGED: Lazy<Unmanaged> = unsafe {
         )),
         location_hook: RwLock::new(None),
         console_state: RwLock::new(ConsoleState::None),
+        automation_instance: AutomationTable({
+            CoInitialize(std::ptr::null_mut()).unwrap();
+            CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap()
+        }),
     })
 };
 
@@ -143,8 +159,8 @@ impl NativeState {
                             });
 
                         UNMANAGED.send_event(WindowEvent::Reposition {
-                            x: window_x + coords.x * 8,
-                            y: window_y + (coords.y + 1) * 16,
+                            x: window_x + (coords.x + 1) * 8,
+                            y: window_y + (coords.y + 2) * 16,
                         });
                     },
                 }
@@ -153,6 +169,7 @@ impl NativeState {
     }
 }
 
+#[derive(Clone, Copy, Debug)]
 enum ConsoleState {
     None,
     Console { hwnd: HWND },
@@ -169,6 +186,7 @@ struct Unmanaged {
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
     console_state: RwLock<ConsoleState>,
+    automation_instance: AutomationTable,
 }
 
 impl Unmanaged {
@@ -214,7 +232,13 @@ unsafe fn update_focused_state(hwnd: HWND) {
 
     let mut process_id: u32 = 0;
     let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
-    let process_handle = OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id).unwrap();
+    let process_handle = match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) {
+        Ok(process_handle) => process_handle,
+        Err(e) => {
+            debug!("Failed to get a handle to a Windows process, it's likely been closed: {e}");
+            return;
+        },
+    };
 
     // Get the terminal name
     let mut process_name = vec![0; 256];
@@ -291,15 +315,14 @@ unsafe extern "system" fn win_event_proc(
         {
             UNMANAGED.send_event(WindowEvent::Hide);
 
-            if let ConsoleState::WindowsTerminal {
-                ref mut window_x,
-                ref mut window_y,
-            } = *UNMANAGED.console_state.write()
-            {
+            let console_state = *UNMANAGED.console_state.read();
+            if let ConsoleState::WindowsTerminal { .. } = console_state {
                 match windows_terminal_inner_position(hwnd) {
                     Ok((x, y)) => {
-                        *window_x = x;
-                        *window_y = y;
+                        *UNMANAGED.console_state.write() = ConsoleState::WindowsTerminal {
+                            window_x: x,
+                            window_y: y,
+                        }
                     },
                     Err(_) => {
                         warn!("Failed to get inner position for Windows Terminal window");
@@ -334,9 +357,7 @@ unsafe extern "system" fn win_event_proc(
 }
 
 unsafe fn windows_terminal_inner_position(hwnd: HWND) -> Result<(i32, i32)> {
-    CoInitialize(std::ptr::null_mut()).unwrap();
-    let automation: IUIAutomation = CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER)?;
-    let window = automation.ElementFromHandle(hwnd)?;
+    let window = UNMANAGED.automation_instance.0.ElementFromHandle(hwnd)?;
 
     let control_type_id = VARIANT {
         Anonymous: VARIANT_0 {
@@ -352,11 +373,21 @@ unsafe fn windows_terminal_inner_position(hwnd: HWND) -> Result<(i32, i32)> {
         },
     };
 
-    let interest = automation.CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)?;
+    let interest = UNMANAGED
+        .automation_instance
+        .0
+        .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)?;
 
-    let inner = window.FindFirst(TreeScope_Descendants, &interest);
+    let inner = window.FindAll(TreeScope_Descendants, &interest);
     let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
-    let bounds = inner?.CurrentBoundingRectangle()?;
+    let inner = inner?;
+    for i in 0..inner.Length()? {
+        let element = inner.GetElement(i)?;
+        if element.CurrentLocalizedControlType()? == "terminal" {
+            let bounds = element.CurrentBoundingRectangle()?;
+            return Ok((bounds.left, bounds.top));
+        }
+    }
 
-    Ok((bounds.left, bounds.top))
+    Err(anyhow!("Failed to acquire Windows Terminal bounds"))
 }

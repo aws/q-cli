@@ -146,16 +146,10 @@ where
     match stream.write_all(&encoded_message).await {
         Ok(()) => {
             trace!("Sent message: {message:?}");
+            Ok(())
         },
-        Err(err) => {
-            if !(err.kind() == ErrorKind::BrokenPipe || err.kind() == ErrorKind::ConnectionRefused) {
-                error!("Failed to write message: {err}");
-                return Err(err.into());
-            }
-        },
-    };
-
-    Ok(())
+        Err(err) => Err(err.into()),
+    }
 }
 
 pub fn send_message_sync<M, S>(stream: &mut S, message: M) -> Result<(), SendError>
