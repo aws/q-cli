@@ -7,6 +7,7 @@ mod system_info;
 pub mod terminal;
 
 pub use error::Error;
+use once_cell::sync::Lazy;
 pub use open::{
     open_url,
     open_url_async,
@@ -15,3 +16,13 @@ pub use process_info::get_parent_process_exe;
 pub use shell::Shell;
 pub use system_info::get_system_id;
 pub use terminal::Terminal;
+
+static IN_SSH: Lazy<bool> = Lazy::new(|| {
+    std::env::var_os("SSH_CLIENT").is_some()
+        || std::env::var_os("SSH_CONNECTION").is_some()
+        || std::env::var_os("SSH_TTY").is_some()
+});
+
+pub fn in_ssh() -> bool {
+    *IN_SSH
+}
