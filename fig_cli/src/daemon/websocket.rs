@@ -42,9 +42,9 @@ enum FigWebsocketMessage {
     DotfilesUpdated,
     #[serde(rename_all = "camelCase")]
     SettingsUpdated {
-        settings: serde_json::Value,
-        #[serde(with = "time::serde::rfc3339")]
-        updated_at: time::OffsetDateTime,
+        settings: serde_json::Map<String, serde_json::Value>,
+        #[serde(with = "time::serde::rfc3339::option")]
+        updated_at: Option<time::OffsetDateTime>,
     },
     #[serde(rename_all = "camelCase")]
     Event {
@@ -139,8 +139,10 @@ pub async fn process_websocket(
                                 let settings_json = serde_json::to_string_pretty(&settings)?;
                                 settings_file.write_all(settings_json.as_bytes())?;
 
-                                if let Ok(updated_at) = updated_at.format(&Rfc3339) {
-                                    fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
+                                if let Some(updated_at) = updated_at {
+                                    if let Ok(updated_at) = updated_at.format(&Rfc3339) {
+                                        fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
+                                    }
                                 }
                             },
                             FigWebsocketMessage::Event {
