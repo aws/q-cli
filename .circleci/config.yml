@@ -501,6 +501,8 @@ commands:
       - run:
           name: Build CLI
           command: cd desktop && make ARCH=<< parameters.arch >> fig
+          environment:
+            CARGO_PROFILE_RELEASE_DEBUG: 0
       - store_artifacts:
           path: desktop/build/usr/bin/fig
           destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
