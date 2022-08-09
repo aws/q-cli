@@ -73,6 +73,7 @@ use tokio::io::{
     AsyncWriteExt,
 };
 use tokio::sync::oneshot;
+use tokio::task::block_in_place;
 use tokio::{
     runtime,
     select,
@@ -107,6 +108,8 @@ use crate::term::{
     SystemTerminal,
     Terminal,
 };
+
+const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
 const BUFFER_SIZE: usize = 4096;
 
@@ -421,11 +424,14 @@ fn figterm_main() -> Result<()> {
         let fig_pro = Arc::new(Mutex::new(false));
         let fig_pro_clone = fig_pro.clone();
         tokio::spawn(async move {
-            *fig_pro_clone.lock() = fig_api_client::user::plans()
+            *fig_pro_clone.lock() = block_in_place(|| fig_settings::state::get_bool_or(IS_FIG_PRO_KEY, false));
+            let fig_pro = fig_api_client::user::plans()
                 .await
                 .map(|plans| plans.highest_plan())
                 .unwrap_or_default()
-                .is_pro()
+                .is_pro();
+            *fig_pro_clone.lock() = fig_pro;
+            block_in_place(|| fig_settings::state::set_value(IS_FIG_PRO_KEY, fig_pro).ok());
         });
 
         let ai_enabled = fig_settings::settings::get_bool_or("ai.terminal-hash-sub", true);
