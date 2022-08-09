@@ -57,14 +57,7 @@ workflows:
       - windows:
           requires: [update-version]
       - sentry:
-          requires:
-            [
-              ubuntu-x86_64,
-              fedora-x86_64,
-              ubuntu-aarch64-focal,
-              archlinux-x86_64,
-              windows,
-            ]
+          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal, archlinux-x86_64, windows]
           context:
             - sentry
   noop:
@@ -81,7 +74,7 @@ jobs:
         type: string
     docker:
       - image: ubuntu:<< parameters.platform >>
-    resource_class: xlarge
+    resource_class: large
     steps:
       - build-ubuntu:
           platform: << parameters.platform >>
@@ -93,7 +86,7 @@ jobs:
         type: string
     docker:
       - image: ubuntu:<< parameters.platform >>
-    resource_class: xlarge
+    resource_class: large
     steps:
       - build-ubuntu-cli-only:
           platform: << parameters.platform >>
@@ -102,7 +95,7 @@ jobs:
   ubuntu-aarch64-focal:
     machine:
       image: ubuntu-2004:current
-    resource_class: arm.xlarge
+    resource_class: arm.large
     steps:
       - build-ubuntu:
           platform: focal
@@ -114,7 +107,7 @@ jobs:
         type: string
     docker:
       - image: fedora:<< parameters.version >>
-    resource_class: xlarge
+    resource_class: large
     steps:
       - build-fedora:
           platform: f<< parameters.version >>
@@ -122,18 +115,18 @@ jobs:
 
   archlinux-x86_64:
     docker:
-      - image: archlinux
-    resource_class: xlarge
+      - image: archlinux      
+    resource_class: large
     steps:
       - build-archlinux:
           arch: x86_64
-
+        
   windows:
     environment:
       CARGO_NET_GIT_FETCH_WITH_CLI: "true"
-    executor:
+    executor: 
       name: win/server-2022
-      size: xlarge
+      size: large
       shell: bash.exe
     steps:
       - checkout-desktop
@@ -568,3 +561,4 @@ commands:
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux-archlinux.tar.gz
           destination: archlinux/<< parameters.arch >>/archlinux
+
