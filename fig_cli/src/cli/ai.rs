@@ -97,11 +97,6 @@ fn theme() -> ColorfulTheme {
 
 impl AiArgs {
     pub async fn execute(self) -> eyre::Result<()> {
-        // Product gate
-        if !fig_settings::settings::get_bool_or("product-gate.ai.enabled", false) {
-            eyre::bail!("Fig AI is comming soon to Fig Pro");
-        }
-
         let Self { input, n } = self;
         let mut input = if input.is_empty() { None } else { Some(input.join(" ")) };
 
