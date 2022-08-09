@@ -28,7 +28,7 @@ on:
     - cron:  '0 7 * * 1-5'
 
 env:
-  BASH_ENV: build_branch_bash_env
+  BASH_ENV: /tmp/build_branch_bash_env
 
 jobs:
   release:
