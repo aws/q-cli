@@ -8,7 +8,7 @@ edition = "2021"
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-serde = { version = "1.0.142", features = ["derive"] }
+serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.83"
 time = { version = "0.3.12", features = ["serde"] }
 url = { version = "2.2.2", features = ["serde"] }
