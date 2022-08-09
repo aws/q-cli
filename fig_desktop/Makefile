@@ -88,6 +88,20 @@ $(BINARY_NAME)-x86_64-pc-windows-gnu:
 	cargo build --target x86_64-pc-windows-gnu $(CARGO_OPTIONS)
 	install $(TARGET_DIR)/x86_64-pc-windows-gnu/release/$(CRATE_NAME).exe $(OUT_DIR)/$@
 
+### Build and Install for local dev
+
+build-native:
+	cargo build
+
+build-native-release:
+	cargo build --release
+
+install-native-usr: build-native
+	sudo install $(TARGET_DIR)/debug/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
+
+install-native-usr-release: build-native-release
+	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
+
 ### Convert icons
 
 icons:
