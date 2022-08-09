@@ -2296,7 +2296,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.4.9"
+version = "1.4.10"
 dependencies = [
  "arboard",
  "async-trait",
@@ -2574,7 +2574,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "5.0.0"
+version = "5.1.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -3758,20 +3758,6 @@ dependencies = [
  "gobject-sys",
  "libc",
  "system-deps 5.0.0",
-]
-
-[[package]]
-name = "jni"
-version = "0.18.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "24967112a1e4301ca5342ea339763613a37592b8a6ce6cf2e4494537c7a42faf"
-dependencies = [
- "cesu8",
- "combine",
- "jni-sys",
- "log",
- "thiserror",
- "walkdir",
 ]
 
 [[package]]
@@ -6118,9 +6104,9 @@ dependencies = [
 
 [[package]]
 name = "serde"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e590c437916fb6b221e1d00df6e3294f3fccd70ca7e92541c475d6ed6ef5fee2"
+checksum = "53e8e5d5b70924f74ff5c6d64d9a5acd91422117c60f48c4e07855238a254553"
 dependencies = [
  "serde_derive",
 ]
@@ -6146,9 +6132,9 @@ dependencies = [
 
 [[package]]
 name = "serde_derive"
-version = "1.0.142"
+version = "1.0.143"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "34b5b8d809babe02f538c2cfec6f2c1ed10804c0e5a6a041a049a4f5588ccc2e"
+checksum = "d3d8e8de557aee63c26b85b947f5e59b690d0454c753f3adeb5cd7835ab88391"
 dependencies = [
  "proc-macro2 1.0.43",
  "quote 1.0.21",
@@ -6867,7 +6853,7 @@ dependencies = [
  "gtk",
  "image 0.24.3",
  "instant",
- "jni 0.19.0",
+ "jni",
  "lazy_static",
  "libappindicator",
  "libc",
@@ -8608,9 +8594,9 @@ dependencies = [
 
 [[package]]
 name = "wry"
-version = "0.20.0"
+version = "0.20.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8577a0d09cb80c5e0493694979a221d2328075b576238f1df1fff7e4e45934d8"
+checksum = "22a806297d9fae9fef5a9d52480e5edc5452f97ea9d15b55c8a58ab93c9582f1"
 dependencies = [
  "block",
  "cocoa",
@@ -8620,7 +8606,6 @@ dependencies = [
  "glib",
  "gtk",
  "http",
- "jni 0.18.0",
  "libc",
  "log",
  "objc",

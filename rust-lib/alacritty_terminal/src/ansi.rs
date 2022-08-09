@@ -523,12 +523,6 @@ pub trait Handler {
     /// Fig Log Osc
     fn log(&mut self, _: &str) {}
 
-    /// Fig InsertOnNewCmd
-    fn insert_on_new_cmd(&mut self, _: &str) {}
-
-    /// Fig ExecuteOnNewCmd
-    fn execute_on_new_cmd(&mut self, _: &str) {}
-
     /// Unhandled `execute` fallthrough
     fn unhandled_execute(&mut self, _byte: u8) -> HandledStatus {
         HandledStatus::Unhandled
@@ -1267,14 +1261,6 @@ where
                                     },
                                     b"SSH" => {
                                         self.handler.ssh(!(val.len() <= 2 && val[1] == b'0'));
-                                    },
-                                    b"InsertOnNewCmd" => match str::from_utf8(&val[1..]) {
-                                        Ok(s) => self.handler.insert_on_new_cmd(s),
-                                        Err(err) => log::error!("Error decoding InsertOnNewCmd: {err}"),
-                                    },
-                                    b"ExecuteOnNewCmd" => match str::from_utf8(&val[1..]) {
-                                        Ok(s) => self.handler.execute_on_new_cmd(s),
-                                        Err(err) => log::error!("Error decoding ExecuteOnNewCmd: {err}"),
                                     },
                                     _ => unhandled!(),
                                 }

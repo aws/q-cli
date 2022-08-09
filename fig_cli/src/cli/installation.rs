@@ -65,6 +65,10 @@ pub fn install_cli(install_components: InstallComponents, no_confirm: bool, forc
         let mut manual_install = if no_confirm {
             false
         } else {
+            if !dialoguer::console::user_attended() {
+                eyre::bail!("You must run with --no-confirm if unattended");
+            }
+
             !dialoguer::Confirm::with_theme(&dialoguer_theme())
                 .with_prompt(
                     "Do you want fig to modify your shell config (you will have to manually do this otherwise)?",

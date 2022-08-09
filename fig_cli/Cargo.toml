@@ -1,6 +1,6 @@
 [package]
 name = "fig_cli"
-version = "1.4.9"
+version = "1.4.10"
 authors = ["fig developers"]
 edition = "2021"
 description = "The CLI for Fig"
@@ -50,7 +50,7 @@ self_update = { version = "0.30.0", default-features = false, features = [
     "rustls",
 ] }
 semver = "1.0.13"
-serde = { version = "1.0.142", features = ["derive"] }
+serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.83"
 spinners = "4.1.0"
 sysinfo = "0.25.1"

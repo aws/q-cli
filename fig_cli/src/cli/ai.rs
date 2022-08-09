@@ -1,8 +1,5 @@
 use std::fmt::Display;
-use std::io::{
-    stdout,
-    Write,
-};
+use std::io::stdout;
 
 use arboard::Clipboard;
 use clap::Args;
@@ -99,6 +96,18 @@ fn theme() -> ColorfulTheme {
         values_style: dialoguer::console::Style::new().magenta().bright(),
         ..dialoguer_theme()
     }
+}
+
+async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
+    let session_id = std::env::var("TERM_SESSION_ID")?;
+    let mut conn = fig_ipc::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
+    fig_ipc::send_message(&mut conn, fig_proto::figterm::FigtermMessage {
+        command: Some(fig_proto::figterm::figterm_message::Command::InsertOnNewCmdCommand(
+            fig_proto::figterm::InsertOnNewCmdCommand { text, execute },
+        )),
+    })
+    .await?;
+    Ok(())
 }
 
 impl AiArgs {
@@ -214,15 +223,19 @@ impl AiArgs {
                     ($action:expr) => {
                         match $action {
                             Some(DialogActions::Execute { command, .. }) => {
-                                let mut stdout = stdout();
-                                write!(stdout, "\x1b]697;ExecuteOnNewCmd={command}\x07").ok();
-                                stdout.flush().ok();
+                                if let Err(err) = send_figterm(command.to_owned(), true).await {
+                                    println!("{} {err}", "Failed to execute command:".bright_red().bold());
+                                    println!();
+                                    println!("Command: {command}");
+                                }
                                 break 'ask_loop;
                             },
                             Some(DialogActions::Edit { command, .. }) => {
-                                let mut stdout = stdout();
-                                write!(stdout, "\x1b]697;InsertOnNewCmd={command}\x07").ok();
-                                stdout.flush().ok();
+                                if let Err(err) = send_figterm(command.to_owned(), false).await {
+                                    println!("{} {err}", "Failed to insert command:".bright_red().bold());
+                                    println!();
+                                    println!("Command: {command}");
+                                }
                                 break 'ask_loop;
                             },
                             Some(DialogActions::Copy { command, .. }) => {

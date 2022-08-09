@@ -219,8 +219,6 @@ pub struct ShellState {
     pub command_info: Option<CommandInfo>,
     /// Fig Log Level
     pub fig_log_level: Option<String>,
-    /// Text to insert on NewCmd, bool indicates if to execute
-    pub insert_on_new_cmd: Option<(String, bool)>,
 }
 
 impl ShellState {
@@ -880,8 +878,6 @@ impl<T> Term<T> {
 
         self.event_proxy.send_event(Event::Prompt, &self.shell_state);
         trace!("Prompt event sent");
-
-        self.shell_state.insert_on_new_cmd = None;
 
         if let Some(command) = &self.shell_state.command_info {
             self.event_proxy
@@ -1911,16 +1907,6 @@ impl<T: EventListener> Handler for Term<T> {
 
         self.shell_state.fig_log_level = Some(fig_log_level.clone());
         self.event_proxy.log_level_event(Some(fig_log_level));
-    }
-
-    #[inline]
-    fn insert_on_new_cmd(&mut self, insert_on_new_cmd: &str) {
-        self.shell_state.insert_on_new_cmd = Some((insert_on_new_cmd.to_owned(), false));
-    }
-
-    #[inline]
-    fn execute_on_new_cmd(&mut self, insert_on_new_cmd: &str) {
-        self.shell_state.insert_on_new_cmd = Some((insert_on_new_cmd.to_owned(), true));
     }
 }
 
