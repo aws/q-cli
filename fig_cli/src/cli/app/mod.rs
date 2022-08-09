@@ -195,7 +195,7 @@ impl AppSubcommand {
                 } else {
                     let no_autolaunch = settings::get_bool_or("app.disableAutolaunch", false);
                     let user_quit_app = state::get_bool_or("APP_TERMINATED_BY_USER", false);
-                    if !no_autolaunch && !user_quit_app {
+                    if !no_autolaunch && !user_quit_app && !fig_util::in_ssh() {
                         let already_seen_hint: bool =
                             fig_settings::state::get_bool_or("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", false);
                         println!("Launching {}...", "Fig".magenta());
