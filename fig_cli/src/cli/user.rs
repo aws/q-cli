@@ -180,8 +180,10 @@ impl RootUserSubcommand {
 pub enum UserSubcommand {
     #[clap(flatten)]
     Root(RootUserSubcommand),
+    /// Subcommand for dealing with tokens
     #[clap(subcommand)]
     Tokens(TokensSubcommand),
+    /// Prints details about the current user
     Whoami {
         /// Output format to use
         #[clap(long, short, value_enum, value_parser, default_value_t)]
@@ -191,12 +193,22 @@ pub enum UserSubcommand {
         #[clap(long, short = 'e', value_parser)]
         only_email: bool,
     },
-    Plan,
+    /// Prints details about the user's plan
+    #[clap(hide = true)]
+    Plan {
+        /// Output format to use
+        #[clap(long, short, value_enum, value_parser, default_value_t)]
+        format: OutputFormat,
+    },
+    /// List all accounts that can be switch to
+    #[clap(hide = true)]
     ListAccounts {
         /// Output format to use
         #[clap(long, short, value_enum, value_parser, default_value_t)]
         format: OutputFormat,
     },
+    /// Switch to a switchable account
+    #[clap(hide = true)]
     Switch {
         /// Email to switch to
         #[clap(value_parser)]
@@ -239,8 +251,13 @@ impl UserSubcommand {
                     exit(1);
                 },
             },
-            Self::Plan => {
-                println!("Plan: {:?}", fig_api_client::user::plans().await?.highest_plan());
+            Self::Plan { format } => {
+                let plan = fig_api_client::user::plans().await?;
+                match format {
+                    OutputFormat::Plain => println!("Plan: {:?}", plan.highest_plan()),
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&plan)?),
+                    OutputFormat::JsonPretty => println!("{}", serde_json::to_string_pretty(&plan)?),
+                }
                 Ok(())
             },
             Self::ListAccounts { format } => {

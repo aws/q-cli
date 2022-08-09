@@ -111,14 +111,14 @@ install-native: build-native
 	mkdir -p $(HOME)/.local/bin/
 	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
-install-native-usr: build-native
-	sudo install $(TARGET_DIR)/debug/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
-
 install-native-release: build-native-release
 	mkdir -p $(HOME)/.local/bin/
 	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
-install-native-release-usr: build-native-release
+install-native-usr: build-native
+	sudo install $(TARGET_DIR)/debug/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
+
+install-native-usr-release: build-native-release
 	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
 
 ### Generate Fig compleation spec
