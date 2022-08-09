@@ -474,6 +474,7 @@ fn figterm_main() -> Result<()> {
                                                                 .replace('\'', "'\"'\"'")
                                                             ).as_bytes()
                                                     );
+                                                    master.write(&write_buffer).await?;
                                                     continue 'select_loop;
                                                 }
                                             }
