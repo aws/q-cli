@@ -1,4 +1,5 @@
 pub mod cli;
+mod event_handler;
 pub mod history;
 pub mod input;
 pub mod interceptor;
@@ -14,7 +15,6 @@ use std::ffi::{
     OsStr,
 };
 use std::iter::repeat;
-use std::str::FromStr;
 use std::sync::Arc;
 use std::time::{
     Duration,
@@ -22,13 +22,9 @@ use std::time::{
 };
 
 use alacritty_terminal::ansi::Processor;
-use alacritty_terminal::event::{
-    Event,
-    EventListener,
-};
+use alacritty_terminal::event::EventListener;
 use alacritty_terminal::grid::Dimensions;
 use alacritty_terminal::term::{
-    CommandInfo,
     ShellState,
     SizeInfo,
     TextBuffer,
@@ -39,26 +35,14 @@ use anyhow::{
     Context,
     Result,
 };
-use bytes::{
-    Bytes,
-    BytesMut,
-};
+use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::StructOpt;
 use cli::Cli;
-use fig_proto::figterm::intercept_command::SetFigjsIntercepts;
-use fig_proto::figterm::{
-    self,
-    figterm_message,
-    intercept_command,
-    FigtermMessage,
-    FigtermResponse,
-};
+use event_handler::EventHandler;
 use fig_proto::hooks::{
     hook_to_message,
     new_edit_buffer_hook,
-    new_preexec_hook,
-    new_prompt_hook,
 };
 use fig_proto::local::{
     self,
@@ -68,7 +52,6 @@ use fig_proto::local::{
 use fig_settings::state;
 use fig_telemetry::sentry::{
     capture_anyhow,
-    configure_scope,
     release_name,
 };
 use fig_util::process_info::{
@@ -80,7 +63,6 @@ use flume::Sender;
 #[cfg(unix)]
 use nix::unistd::execvp;
 use once_cell::sync::Lazy;
-use parking_lot::lock_api::RawRwLock;
 use parking_lot::{
     Mutex,
     RwLock,
@@ -95,7 +77,6 @@ use tokio::{
     runtime,
     select,
 };
-use tracing::level_filters::LevelFilter;
 use tracing::{
     debug,
     error,
@@ -121,10 +102,7 @@ use crate::logger::init_logger;
 use crate::pty::unix::open_pty;
 #[cfg(windows)]
 use crate::pty::win::open_pty;
-use crate::pty::{
-    AsyncMasterPty,
-    CommandBuilder,
-};
+use crate::pty::CommandBuilder;
 use crate::term::{
     SystemTerminal,
     Terminal,
@@ -132,25 +110,10 @@ use crate::term::{
 
 const BUFFER_SIZE: usize = 4096;
 
-struct EventSender {
-    socket_sender: Sender<LocalMessage>,
-    history_sender: Sender<CommandInfo>,
-    input_sender: Sender<Bytes>,
-}
-
-impl EventSender {
-    fn new(
-        socket_sender: Sender<LocalMessage>,
-        history_sender: Sender<CommandInfo>,
-        input_sender: Sender<Bytes>,
-    ) -> Self {
-        Self {
-            socket_sender,
-            history_sender,
-            input_sender,
-        }
-    }
-}
+static INSERT_ON_NEW_CMD: Mutex<Option<String>> = Mutex::new(None);
+static EXECUTE_ON_NEW_CMD: Mutex<bool> = Mutex::new(false);
+static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
+static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     let terminal = FigTerminal::parent_terminal().map(|s| s.to_string());
@@ -169,8 +132,8 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         None
     };
 
-    let remote_context = if remote_context_type.is_some() {
-        Some(Box::new(local::ShellContext {
+    let remote_context = remote_context_type.is_some().then(|| {
+        Box::new(local::ShellContext {
             pid: shell_state.remote_context.pid,
             ttys: shell_state.remote_context.tty.clone(),
             process_name: shell_state.remote_context.shell.clone(),
@@ -191,10 +154,8 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             hostname: shell_state.remote_context.hostname.clone(),
             remote_context: None,
             remote_context_type: None,
-        }))
-    } else {
-        None
-    };
+        })
+    });
 
     local::ShellContext {
         pid: shell_state.local_context.pid,
@@ -220,64 +181,6 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     }
 }
 
-impl EventListener for EventSender {
-    fn send_event(&self, event: Event, shell_state: &ShellState) {
-        debug!("{event:?}");
-        debug!("{shell_state:?}");
-        match event {
-            Event::Prompt => {
-                let context = shell_state_to_context(shell_state);
-                let hook = new_prompt_hook(Some(context));
-                let message = hook_to_message(hook);
-
-                if let Some((text, execute)) = &shell_state.insert_on_new_cmd {
-                    self.input_sender.send(text.clone().into_bytes().into()).unwrap();
-                    if *execute {
-                        self.input_sender.send(Bytes::from_static(b"\r")).unwrap();
-                    }
-                }
-
-                if let Err(err) = self.socket_sender.send(message) {
-                    error!("Sender error: {err:?}");
-                }
-            },
-            Event::PreExec => {
-                let context = shell_state_to_context(shell_state);
-                let hook = new_preexec_hook(Some(context));
-                let message = hook_to_message(hook);
-                if let Err(err) = self.socket_sender.send(message) {
-                    error!("Sender error: {err:?}");
-                }
-            },
-            Event::CommandInfo(command_info) => {
-                if let Err(err) = self.history_sender.send(command_info.clone()) {
-                    error!("Sender error: {err:?}");
-                }
-            },
-            Event::ShellChanged => {
-                let shell = if shell_state.in_ssh || shell_state.in_docker {
-                    shell_state.remote_context.shell.as_ref()
-                } else {
-                    shell_state.local_context.shell.as_ref()
-                };
-                configure_scope(|scope| {
-                    if let Some(shell) = shell {
-                        scope.set_tag("shell", shell);
-                    }
-                });
-            },
-        }
-    }
-
-    fn log_level_event(&self, level: Option<String>) {
-        logger::set_log_level(
-            level
-                .and_then(|level| LevelFilter::from_str(&level).ok())
-                .unwrap_or(LevelFilter::INFO),
-        );
-    }
-}
-
 #[allow(clippy::needless_return)]
 fn get_cursor_coordinates(terminal: &mut dyn Terminal) -> Option<TerminalCursorCoordinates> {
     cfg_if! {
@@ -298,9 +201,6 @@ fn get_cursor_coordinates(terminal: &mut dyn Terminal) -> Option<TerminalCursorC
         }
     }
 }
-
-static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::const_new(RawRwLock::INIT, None);
-static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
@@ -371,128 +271,6 @@ where
         },
         None => Err(anyhow!("No edit buffer to send")),
     }
-}
-
-async fn process_figterm_message(
-    figterm_message: FigtermMessage,
-    response_tx: Sender<FigtermResponse>,
-    term: &Term<EventSender>,
-    pty_master: &mut Box<dyn AsyncMasterPty + Send + Sync>,
-    key_interceptor: &mut KeyInterceptor,
-) -> Result<()> {
-    match figterm_message.command {
-        Some(figterm_message::Command::InsertTextCommand(command)) => {
-            let current_buffer = term.get_current_buffer().map(|buff| (buff.buffer, buff.cursor_idx));
-            let mut insertion_string = String::new();
-            if let Some((buffer, Some(position))) = current_buffer {
-                if let Some(ref text_to_insert) = command.insertion {
-                    trace!("buffer: {buffer:?}, cursor_position: {position:?}");
-
-                    // perform deletion
-                    // if let Some(deletion) = command.deletion {
-                    //     let deletion = deletion as usize;
-                    //     buffer.drain(position - deletion..position);
-                    // }
-                    // // move cursor
-                    // if let Some(offset) = command.offset {
-                    //     position += offset as usize;
-                    // }
-                    // // split text by cursor
-                    // let (left, right) = buffer.split_at(position);
-
-                    INSERTION_LOCKED_AT.write().replace(SystemTime::now());
-                    let expected = format!("{buffer}{text_to_insert}");
-                    trace!("lock set, expected buffer: {expected:?}");
-                    *EXPECTED_BUFFER.lock() = expected;
-                }
-                if let Some(ref insertion_buffer) = command.insertion_buffer {
-                    if buffer.ne(insertion_buffer) {
-                        if buffer.starts_with(insertion_buffer) {
-                            if let Some(len_diff) = buffer.len().checked_sub(insertion_buffer.len()) {
-                                insertion_string.extend(repeat('\x08').take(len_diff));
-                            }
-                        } else if insertion_buffer.starts_with(&buffer) {
-                            insertion_string.push_str(&insertion_buffer[buffer.len()..]);
-                        }
-                    }
-                }
-            }
-            insertion_string.push_str(&command.to_term_string());
-            pty_master.write(insertion_string.as_bytes()).await?;
-        },
-        Some(figterm_message::Command::InterceptCommand(command)) => match command.intercept_command {
-            Some(intercept_command::InterceptCommand::SetInterceptAll(_)) => {
-                debug!("Set intercept all");
-                key_interceptor.set_intercept_all(true);
-            },
-            Some(intercept_command::InterceptCommand::ClearIntercept(_)) => {
-                debug!("Clear intercept");
-                key_interceptor.set_intercept_all(false);
-            },
-            Some(intercept_command::InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
-                intercept_bound_keystrokes,
-                intercept_global_keystrokes,
-                actions,
-            })) => {
-                key_interceptor.set_intercept_all(intercept_global_keystrokes);
-                key_interceptor.set_intercept_bind(intercept_bound_keystrokes);
-                key_interceptor.set_actions(&actions);
-            },
-            None => {},
-        },
-        Some(figterm_message::Command::DiagnosticsCommand(_command)) => {
-            let map_color = |color: &fig_color::VTermColor| -> figterm::TermColor {
-                figterm::TermColor {
-                    color: Some(match color {
-                        fig_color::VTermColor::Rgb(r, g, b) => {
-                            figterm::term_color::Color::Rgb(figterm::term_color::Rgb {
-                                r: *r as i32,
-                                b: *b as i32,
-                                g: *g as i32,
-                            })
-                        },
-                        fig_color::VTermColor::Indexed(i) => figterm::term_color::Color::Indexed(*i as u32),
-                    }),
-                }
-            };
-
-            let map_style = |style: &fig_color::SuggestionColor| -> figterm::TermStyle {
-                figterm::TermStyle {
-                    fg: style.fg().as_ref().map(map_color),
-                    bg: style.bg().as_ref().map(map_color),
-                }
-            };
-
-            let (edit_buffer, cursor_position) = term
-                .get_current_buffer()
-                .map(|buf| (Some(buf.buffer), buf.cursor_idx.and_then(|i| i.try_into().ok())))
-                .unwrap_or((None, None));
-
-            if let Err(err) = response_tx
-                .send_async(FigtermResponse {
-                    response: Some(figterm::figterm_response::Response::DiagnosticsResponse(
-                        figterm::DiagnosticsResponse {
-                            shell_context: Some(shell_state_to_context(term.shell_state())),
-                            fish_suggestion_style: term.shell_state().fish_suggestion_color.as_ref().map(map_style),
-                            zsh_autosuggestion_style: term
-                                .shell_state()
-                                .zsh_autosuggestion_color
-                                .as_ref()
-                                .map(map_style),
-                            edit_buffer,
-                            cursor_position,
-                        },
-                    )),
-                })
-                .await
-            {
-                error!("Failed to send response: {err}");
-            }
-        },
-        _ => {},
-    }
-
-    Ok(())
 }
 
 fn get_parent_shell() -> Result<String> {
@@ -613,14 +391,14 @@ fn figterm_main() -> Result<()> {
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
 
         let (event_sender_tx, event_sender_rx) = flume::bounded(16);
-        let event_sender = EventSender::new(outgoing_sender.clone(), history_sender, event_sender_tx);
+        let event_sender = EventHandler::new(outgoing_sender.clone(), history_sender, event_sender_tx);
 
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
         #[cfg(windows)]
         term.set_windows_delay_end_prompt(true);
 
-        let mut write_buffer = [0u8; BUFFER_SIZE];
+        let mut write_buffer: Vec<u8> = vec![0; BUFFER_SIZE];
 
         let mut key_interceptor = KeyInterceptor::new();
         key_interceptor.load_key_intercepts()?;
@@ -802,6 +580,10 @@ fn figterm_main() -> Result<()> {
                             stdout.write_all(&write_buffer[..size]).await?;
                             stdout.flush().await?;
 
+                            if write_buffer.capacity() == write_buffer.len() {
+                                write_buffer.reserve(write_buffer.len());
+                            }
+
                             if can_send_edit_buffer(&term) {
                                 let cursor_coordinates = get_cursor_coordinates(&mut terminal);
                                 if let Err(err) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
@@ -821,7 +603,7 @@ fn figterm_main() -> Result<()> {
                     match msg {
                         Ok((message, sender)) => {
                             debug!("Received message from socket: {message:?}");
-                            process_figterm_message(message, sender, &term, &mut master, &mut key_interceptor).await?;
+                            ipc::process_figterm_message(message, sender, &term, &mut master, &mut key_interceptor).await?;
                         }
                         Err(err) => {
                             error!("Failed to receive message from socket: {err}");

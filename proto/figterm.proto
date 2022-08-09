@@ -10,6 +10,7 @@ message FigtermMessage {
         InsertTextCommand insert_text_command = 2;
         SetBufferCommand set_buffer_command = 3;
         DiagnosticsCommand diagnostics_command = 4;
+        InsertOnNewCmdCommand insert_on_new_cmd_command = 5;
     }
 }
 
@@ -111,5 +112,10 @@ message DiagnosticsResponse {
   optional string edit_buffer = 4;
   // The current cursor cursor position
   optional uint32 cursor_position = 5;
+}
+
+message InsertOnNewCmdCommand {
+  string text = 1;
+  bool execute = 2;
 }
 

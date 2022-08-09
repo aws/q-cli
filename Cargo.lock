@@ -2296,7 +2296,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.4.9"
+version = "1.4.10"
 dependencies = [
  "arboard",
  "async-trait",
@@ -2574,7 +2574,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "5.0.0"
+version = "5.1.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
