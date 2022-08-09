@@ -2,12 +2,12 @@ use std::fs::OpenOptions;
 use std::io::prelude::*;
 use std::process::exit;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use clap::Subcommand;
 use crossterm::style::Stylize;
+use eyre::{
+    Result,
+    WrapErr,
+};
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks;
 use fig_util::directories;
@@ -169,6 +169,6 @@ impl HookSubcommand {
         };
 
         let hook = hook.context("Invalid input for hook")?;
-        send_hook_to_socket(hook).await
+        Ok(send_hook_to_socket(hook).await?)
     }
 }

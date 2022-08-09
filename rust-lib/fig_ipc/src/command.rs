@@ -1,6 +1,5 @@
 use std::time::Duration;
 
-use anyhow::Result;
 use fig_proto::local::{
     self,
     command,
@@ -25,6 +24,9 @@ use super::{
     recv_message,
     send_message,
 };
+use crate::Error;
+
+type Result<T, E = crate::Error> = std::result::Result<T, E>;
 
 pub async fn restart_settings_listener() -> Result<()> {
     let command = command::Command::RestartSettingsListener(RestartSettingsListenerCommand {});
@@ -108,7 +110,7 @@ pub async fn send_command(connection: &mut SystemStream, command: local::command
         })),
     };
 
-    send_message(connection, message).await
+    Ok(send_message(connection, message).await?)
 }
 
 pub async fn send_recv_command(
@@ -116,7 +118,9 @@ pub async fn send_recv_command(
     command: local::command::Command,
 ) -> Result<Option<local::CommandResponse>> {
     send_command(connection, command).await?;
-    Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection)).await??)
+    Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection))
+        .await
+        .or(Err(Error::Timeout))??)
 }
 
 pub async fn send_command_to_socket(command: local::command::Command) -> Result<()> {
@@ -130,53 +134,3 @@ pub async fn send_recv_command_to_socket(command: local::command::Command) -> Re
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
     send_recv_command(&mut conn, command).await
 }
-
-// func RunInstallScriptCommand() error {
-// noResponse := true
-//
-// cmd := fig_proto.Command{
-// NoResponse: &noResponse,
-// Command: &fig_proto.Command_RunInstallScript{
-// RunInstallScript: &fig_proto.RunInstallScriptCommand{},
-// },
-// }
-//
-// if err := SendCommand(&cmd); err != nil {
-// return err
-// }
-//
-// return nil
-// }
-//
-// func RunResetCacheCommand() error {
-// noResponse := true
-//
-// cmd := fig_proto.Command{
-// NoResponse: &noResponse,
-// Command: &fig_proto.Command_ResetCache{
-// ResetCache: &fig_proto.ResetCacheCommand{},
-// },
-// }
-//
-// if err := SendCommand(&cmd); err != nil {
-// return err
-// }
-//
-// return nil
-// }
-//
-// func GetDebugModeCommand() (string, error) {
-// cmd := fig_proto.Command{
-// Command: &fig_proto.Command_DebugMode{
-// DebugMode: &fig_proto.DebugModeCommand{},
-// },
-// }
-//
-// response, err := SendRecvCommand(&cmd)
-// if err != nil {
-// return "", err
-// }
-//
-// return GetCommandResponseMessage(response)
-// }
-//

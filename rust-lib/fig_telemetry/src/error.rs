@@ -8,7 +8,8 @@ pub enum Error {
     DefaultsError(#[from] fig_auth::defaults::DefaultsError),
     #[error(transparent)]
     Request(#[from] fig_request::Error),
-    // TODO(grant): remove other varient
     #[error(transparent)]
-    Other(#[from] anyhow::Error),
+    SettingsError(#[from] fig_settings::Error),
+    #[error(transparent)]
+    IpcError(#[from] fig_ipc::Error),
 }

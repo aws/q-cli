@@ -1,11 +1,21 @@
 use std::collections::HashMap;
 
-use anyhow::Result;
+use thiserror::Error;
 
 use crate::local::*;
 use crate::util::get_shell;
 
 const CURRENT_INTEGRATION_VERSION: i32 = 7;
+
+type Result<T, E = HookError> = std::result::Result<T, E>;
+
+#[derive(Debug, Error)]
+pub enum HookError {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    GetShell(#[from] crate::util::GetShellError),
+}
 
 fn hook_enum_to_hook(hook: hook::Hook) -> Hook {
     Hook { hook: Some(hook) }

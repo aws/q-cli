@@ -10,11 +10,6 @@ use std::path::{
 use std::process::Command;
 use std::time::Duration;
 
-use anyhow::{
-    bail,
-    Context,
-    Result,
-};
 use async_trait::async_trait;
 use clap::Args;
 use crossterm::style::Stylize;
@@ -28,11 +23,16 @@ use crossterm::{
     cursor,
     execute,
 };
+use eyre::{
+    bail,
+    Result,
+    WrapErr,
+};
 use fig_integrations::shell::{
     ShellExt,
     ShellIntegration,
 };
-use fig_integrations::InstallationError;
+use fig_integrations::Error as InstallationError;
 use fig_ipc::{
     connect_timeout,
     send_recv_message_timeout,
@@ -115,7 +115,7 @@ enum DoctorError {
         reason: Cow<'static, str>,
         info: Vec<Cow<'static, str>>,
         fix: Option<DoctorFix>,
-        error: Option<anyhow::Error>,
+        error: Option<eyre::Report>,
     },
 }
 
@@ -141,8 +141,8 @@ impl std::fmt::Display for DoctorError {
     }
 }
 
-impl From<anyhow::Error> for DoctorError {
-    fn from(err: anyhow::Error) -> Self {
+impl From<eyre::Report> for DoctorError {
+    fn from(err: eyre::Report) -> Self {
         DoctorError::Error {
             reason: err.to_string().into(),
             info: vec![],
@@ -158,7 +158,7 @@ impl From<fig_util::Error> for DoctorError {
             reason: err.to_string().into(),
             info: vec![],
             fix: None,
-            error: Some(anyhow::Error::from(err)),
+            error: Some(eyre::Report::from(err)),
         }
     }
 }
@@ -212,8 +212,8 @@ macro_rules! doctor_fix_async {
     };
 }
 
-// impl From<anyhow::Error> for DoctorError {
-//    fn from(err: anyhow::Error) -> Self {
+// impl From<eyre::Report> for DoctorError {
+//    fn from(err: eyre::Report) -> Self {
 //        DoctorError::Error {
 //            reason: err.to_string().into(),
 //            info: vec![],
@@ -225,7 +225,7 @@ macro_rules! doctor_fix_async {
 
 fn check_file_exists(path: impl AsRef<Path>) -> Result<()> {
     if !path.as_ref().exists() {
-        anyhow::bail!("No file at path {}", path.as_ref().display())
+        eyre::bail!("No file at path {}", path.as_ref().display())
     }
     Ok(())
 }
@@ -249,7 +249,7 @@ where
                 return Ok(());
             }
         }
-        anyhow::bail!(
+        eyre::bail!(
             "Failed to run {:?}",
             args.iter()
                 .filter_map(|s| s.as_ref().to_str())
@@ -365,7 +365,7 @@ impl DoctorCheck for FigBinCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = directories::fig_dir().map_err(anyhow::Error::from)?;
+        let path = directories::fig_dir().map_err(eyre::Report::from)?;
         Ok(check_file_exists(&path)?)
     }
 }
@@ -443,7 +443,7 @@ impl DoctorCheck for FigSocketCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let fig_socket_path = directories::fig_socket_path()?;
+        let fig_socket_path = directories::fig_socket_path().context("No socket path")?;
         let parent = fig_socket_path.parent().map(PathBuf::from);
 
         if let Some(parent) = parent {
@@ -617,7 +617,7 @@ impl DoctorCheck for FigtermSocketCheck {
                 )),
             };
 
-            let fig_message = message.encode_fig_protobuf()?;
+            let fig_message = message.encode_fig_protobuf().context("Failed to encode protobuf")?;
 
             conn.write(&fig_message).await.map_err(|e| doctor_error!("{e}"))?;
 
@@ -668,7 +668,9 @@ impl DoctorCheck for FigtermSocketCheck {
         };
 
         let response: Result<Option<fig_proto::figterm::FigtermResponse>> =
-            fig_ipc::send_recv_message_timeout(&mut conn, message, Duration::from_secs(1)).await;
+            fig_ipc::send_recv_message_timeout(&mut conn, message, Duration::from_secs(1))
+                .await
+                .context("Failed to send/recv message");
 
         match response {
             Ok(Some(figterm_response)) => match figterm_response.response {
@@ -724,7 +726,7 @@ impl DoctorCheck for InsertionLockCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let insetion_lock_path = directories::fig_dir()
-            .map_err(anyhow::Error::from)?
+            .map_err(eyre::Report::from)?
             .join("insertion-lock");
 
         if insetion_lock_path.exists() {
@@ -773,7 +775,7 @@ impl DoctorCheck for DaemonCheck {
             use std::io::Write;
 
             let launch_agents_path = fig_util::directories::home_dir()
-                .map_err(anyhow::Error::from)?
+                .map_err(eyre::Report::from)?
                 .join("Library/LaunchAgents");
 
             if !launch_agents_path.exists() {
@@ -792,13 +794,13 @@ impl DoctorCheck for DaemonCheck {
 
             // Check the directory is writable
             // I wish `try` was stable :(
-            (|| {
+            (|| -> Result<()> {
                 let mut file = std::fs::File::create(&launch_agents_path.join("test.txt"))
                     .context("Could not create test file")?;
                 file.write_all(b"test").context("Could not write to test file")?;
                 file.sync_all().context("Could not sync test file")?;
                 std::fs::remove_file(&launch_agents_path.join("test.txt")).context("Could not remove test file")?;
-                anyhow::Ok(())
+                Ok(())
             })()
             .map_err(|err| DoctorError::Error {
                 reason: "LaunchAgents directory is not writable".into(),
@@ -875,7 +877,8 @@ impl DoctorCheck for DaemonCheck {
             fig_proto::daemon::new_diagnostic_message(),
             Duration::from_secs(1),
         )
-        .await;
+        .await
+        .context("Failed to send/recv message");
 
         match diagnostic_response_result {
             Ok(Some(diagnostic_response)) => match diagnostic_response.response {
@@ -1026,9 +1029,15 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                         fix_integration.install(None)?;
                         Ok(())
                     }))),
-                    error: Some(anyhow::Error::new(err)),
+                    error: Some(eyre::Report::new(err)),
                 })
             },
+            Err(err) => Err(DoctorError::Error {
+                reason: err.to_string().into(),
+                info: vec![],
+                fix: None,
+                error: Some(eyre::Report::new(err)),
+            }),
         }
     }
 }
@@ -1640,10 +1649,7 @@ impl DoctorCheck for IbusCheck {
             }}));
         }
 
-        let ibus_engine_output = Command::new("ibus")
-            .arg("engine")
-            .output()
-            .map_err(anyhow::Error::new)?;
+        let ibus_engine_output = Command::new("ibus").arg("engine").output().map_err(eyre::Report::new)?;
 
         let stdout = String::from_utf8_lossy(&ibus_engine_output.stdout);
         if ibus_engine_output.status.success() && "fig" == stdout.trim() {
@@ -1700,7 +1706,7 @@ where
         Ok(c) => c,
         Err(e) => {
             println!("Failed to get context: {:?}", e);
-            anyhow::bail!(e);
+            eyre::bail!(e);
         },
     };
     for check in checks {
@@ -1775,8 +1781,8 @@ where
             }
             println!();
             match error {
-                Some(err) => anyhow::bail!(err),
-                None => anyhow::bail!(reason),
+                Some(err) => eyre::bail!(err),
+                None => eyre::bail!(reason),
             }
         }
     }
@@ -1874,7 +1880,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()
         .map(|shell| shell.get_shell_integrations())
-        .collect::<Result<Vec<_>>>()?
+        .collect::<Result<Vec<_>, fig_integrations::Error>>()?
         .into_iter()
         .flatten()
         .map(|integration| DotfileCheck { integration })
@@ -1883,7 +1889,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     let mut all_dotfile_checks: Vec<&dyn DoctorCheck<_>> = vec![];
     all_dotfile_checks.extend(shell_integrations.iter().map(|p| p as &dyn DoctorCheck<_>));
 
-    let status = async {
+    let status: Result<()> = async {
         run_checks_with_context(
             "Let's check your dotfiles...",
             all_dotfile_checks,
@@ -1976,10 +1982,11 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             .await?;
         }
 
-        anyhow::Ok(())
-    };
+        Ok(())
+    }
+    .await;
 
-    let is_error = status.await.is_err();
+    let is_error = status.is_err();
 
     stop_spinner(spinner)?;
 

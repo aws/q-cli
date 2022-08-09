@@ -8,11 +8,8 @@ use serde::{
     Serialize,
 };
 
+use crate::directories;
 use crate::process_info::get_parent_process_exe;
-use crate::{
-    directories,
-    Error,
-};
 
 /// Shells supported by Fig
 #[derive(Debug, Copy, Clone, PartialEq, Eq, Hash, Serialize, Deserialize, ValueEnum)]
@@ -69,7 +66,7 @@ impl Shell {
     }
 
     /// Get the directory for the shell that contains the dotfiles
-    pub fn get_config_directory(&self) -> Result<PathBuf, Error> {
+    pub fn get_config_directory(&self) -> Result<PathBuf, directories::DirectoryError> {
         match self {
             Shell::Bash => Ok(directories::home_dir()?),
             Shell::Zsh => match std::env::var_os("ZDOTDIR")
@@ -86,7 +83,7 @@ impl Shell {
         }
     }
 
-    pub fn get_data_path(&self) -> Result<PathBuf, Error> {
+    pub fn get_data_path(&self) -> Result<PathBuf, directories::DirectoryError> {
         Ok(directories::fig_data_dir()?
             .join("shell")
             .join(format!("{}.json", self)))

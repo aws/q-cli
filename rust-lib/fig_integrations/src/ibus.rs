@@ -1,12 +1,10 @@
 use std::path::Path;
 use std::process::Command;
 
-use anyhow::{
-    anyhow,
+use crate::error::{
+    Error,
     Result,
 };
-
-use crate::error::InstallationError;
 use crate::Integration;
 
 fn ibus_engine_path() -> &'static Path {
@@ -26,29 +24,29 @@ impl Integration for IbusIntegration {
             .status
             .success()
             .then(|| ())
-            .ok_or_else(|| anyhow!("Failed set IBus engine to Fig, IBus may not be running."))
+            .ok_or_else(|| Error::Custom("Failed set IBus engine to Fig, IBus may not be running".into()))
     }
 
     fn uninstall(&self) -> Result<()> {
-        Err(anyhow!("IBus integration cannot be uninstalled"))
+        Err(Error::Custom("IBus integration cannot be uninstalled".into()))
     }
 
-    fn is_installed(&self) -> Result<(), InstallationError> {
+    fn is_installed(&self) -> Result<()> {
         if !ibus_engine_path().exists() {
-            return Err(InstallationError::FileDoesNotExist(ibus_engine_path().into()));
+            return Err(Error::FileDoesNotExist(ibus_engine_path().into()));
         }
 
         let ibus_engine_output = Command::new("ibus")
             .arg("engine")
             .output()
-            .map_err(|err| InstallationError::NotInstalled(err.to_string().into()))?;
+            .map_err(|err| Error::NotInstalled(err.to_string().into()))?;
 
         let stdout = String::from_utf8_lossy(&ibus_engine_output.stdout);
 
         if ibus_engine_output.status.success() && "fig" == stdout.trim() {
             Ok(())
         } else {
-            Err(InstallationError::NotInstalled("".into()))
+            Err(Error::NotInstalled("".into()))
         }
     }
 }

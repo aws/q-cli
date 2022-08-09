@@ -1,9 +1,9 @@
-use anyhow::{
+use clap::Subcommand;
+use crossterm::style::Stylize;
+use eyre::{
     bail,
     Result,
 };
-use clap::Subcommand;
-use crossterm::style::Stylize;
 use fig_api_client::plugins::{
     all_plugins,
     installed_plugins,
@@ -94,7 +94,7 @@ impl PluginsSubcommands {
                     },
                     Err(err) => {
                         spinner.stop_with_message(format!("{} Failed to sync plugins\n", "✖️".red()));
-                        Err(err)
+                        Err(err.into())
                     },
                 }
             },
@@ -110,7 +110,7 @@ impl PluginsSubcommands {
                     },
                     Err(err) => {
                         spinner.stop_with_message(format!("{} Failed to update plugins\n", "✖️".red()));
-                        Err(err)
+                        Err(err.into())
                     },
                 }
             },
@@ -134,7 +134,7 @@ impl PluginsSubcommands {
                     },
                     Err(err) => {
                         spinner.stop_with_message(format!("{} Failed to install plugin\n", "✘".red(),));
-                        anyhow::bail!(err)
+                        eyre::bail!(err)
                     },
                 }
             },
@@ -158,7 +158,7 @@ impl PluginsSubcommands {
                     },
                     Err(err) => {
                         spinner.stop_with_message(format!("{} Failed to remove plugin\n", "✘".red(),));
-                        anyhow::bail!(err)
+                        eyre::bail!(err)
                     },
                 }
             },

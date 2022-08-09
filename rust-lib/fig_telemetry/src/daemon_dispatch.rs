@@ -15,7 +15,7 @@ use crate::{
     TrackSource,
 };
 
-async fn send_daemon_message(message: DaemonMessage) -> Result<(), Error> {
+async fn send_daemon_message(message: DaemonMessage) -> Result<(), fig_ipc::Error> {
     let daemon_socket_path = directories::daemon_socket_path();
     let mut conn = fig_ipc::connect_timeout(daemon_socket_path, Duration::from_secs(1)).await?;
     fig_ipc::send_message(&mut conn, message).await?;

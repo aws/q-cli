@@ -1,9 +1,9 @@
-use anyhow::Result;
 use clap::{
     Args,
     IntoApp,
     ValueEnum,
 };
+use eyre::Result;
 
 use crate::cli::Cli;
 

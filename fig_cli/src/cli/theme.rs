@@ -2,14 +2,14 @@ use std::fmt::Write;
 use std::fs;
 use std::path::PathBuf;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use clap::Args;
 use crossterm::style::{
     Color,
     Stylize,
+};
+use eyre::{
+    Result,
+    WrapErr,
 };
 use fig_util::directories;
 use serde::{
@@ -113,7 +113,7 @@ impl ThemeArgs {
                             fig_api_client::settings::update("autocomplete.theme", json!(theme_str)).await?;
                             Ok(())
                         } else {
-                            anyhow::bail!("'{theme_str}' does not exist in {}", theme_dir.display())
+                            eyre::bail!("'{theme_str}' does not exist in {}", theme_dir.display())
                         }
                     },
                 }

@@ -7,6 +7,10 @@ use anyhow::{
     Result,
 };
 use bitflags::bitflags;
+use bytes::{
+    Bytes,
+    BytesMut,
+};
 
 use crate::input::keymap::{
     Found,
@@ -796,12 +800,14 @@ pub struct InputParser {
     key_map: KeyMap<InputEvent>,
     buf: ReadBuffer,
     state: InputState,
+    raw_byte_stack: BytesMut,
 }
 
 #[cfg(windows)]
 mod windows {
     use std;
 
+    use bytes::Bytes;
     use winapi::um::winuser;
 
     use super::*;
@@ -828,7 +834,7 @@ mod windows {
         mods
     }
     impl InputParser {
-        fn decode_key_record<F: FnMut(Option<Vec<u8>>, InputEvent)>(
+        fn decode_key_record<F: FnMut(Option<Bytes>, InputEvent)>(
             &mut self,
             event: &KEY_EVENT_RECORD,
             callback: &mut F,
@@ -959,7 +965,7 @@ mod windows {
             }
         }
 
-        fn decode_mouse_record<F: FnMut(Option<Vec<u8>>, InputEvent)>(
+        fn decode_mouse_record<F: FnMut(Option<Bytes>, InputEvent)>(
             &self,
             event: &MOUSE_EVENT_RECORD,
             callback: &mut F,
@@ -1004,7 +1010,7 @@ mod windows {
             callback(None, mouse);
         }
 
-        fn decode_resize_record<F: FnMut(Option<Vec<u8>>, InputEvent)>(
+        fn decode_resize_record<F: FnMut(Option<Bytes>, InputEvent)>(
             &self,
             _event: &WINDOW_BUFFER_SIZE_RECORD,
             callback: &mut F,
@@ -1012,7 +1018,7 @@ mod windows {
             callback(None, InputEvent::Resized);
         }
 
-        pub fn decode_input_records<F: FnMut(Option<Vec<u8>>, InputEvent)>(
+        pub fn decode_input_records<F: FnMut(Option<Bytes>, InputEvent)>(
             &mut self,
             records: &[INPUT_RECORD],
             callback: &mut F,
@@ -1044,6 +1050,7 @@ impl InputParser {
             key_map: Self::build_basic_key_map(),
             buf: ReadBuffer::new(),
             state: InputState::Normal,
+            raw_byte_stack: BytesMut::new(),
         }
     }
 
@@ -1401,12 +1408,7 @@ impl InputParser {
         }
     }
 
-    fn dispatch_callback<F: FnMut(Option<Vec<u8>>, InputEvent)>(
-        &mut self,
-        mut callback: F,
-        raw: Option<Vec<u8>>,
-        event: InputEvent,
-    ) {
+    fn dispatch_callback<F: FnMut(Option<Bytes>, InputEvent)>(&mut self, mut callback: F, event: InputEvent) {
         match (self.state, event) {
             (
                 InputState::Normal,
@@ -1426,8 +1428,9 @@ impl InputParser {
             ) => {
                 // The prior ESC was not part of an ALT sequence, so emit
                 // it before we start collecting for paste.
+                let raw = self.raw_byte_stack.split();
                 callback(
-                    raw,
+                    Some(raw.freeze()),
                     InputEvent::Key(KeyEvent {
                         key: KeyCode::Escape,
                         modifiers: Modifiers::NONE,
@@ -1438,8 +1441,9 @@ impl InputParser {
             (InputState::EscapeMaybeAlt, InputEvent::Key(KeyEvent { key, modifiers })) => {
                 // Treat this as ALT-key
                 self.state = InputState::Normal;
+                let raw = self.raw_byte_stack.split();
                 callback(
-                    raw,
+                    Some(raw.freeze()),
                     InputEvent::Key(KeyEvent {
                         key,
                         modifiers: modifiers | Modifiers::ALT,
@@ -1449,30 +1453,34 @@ impl InputParser {
             (InputState::EscapeMaybeAlt, event) => {
                 // The prior ESC was not part of an ALT sequence, so emit
                 // both it and the current event
+                let raw_esc = self.raw_byte_stack.split_off(1);
                 callback(
-                    None,
+                    Some(raw_esc.freeze()),
                     InputEvent::Key(KeyEvent {
                         key: KeyCode::Escape,
                         modifiers: Modifiers::NONE,
                     }),
                 );
-                callback(raw, event);
+                let raw = self.raw_byte_stack.split();
+                callback(Some(raw.freeze()), event);
             },
-            (_, event) => callback(raw, event),
+            (_, event) => {
+                let raw = self.raw_byte_stack.split();
+                callback(Some(raw.freeze()), event);
+            },
         }
     }
 
-    fn process_bytes<F: FnMut(Option<Vec<u8>>, InputEvent)>(&mut self, mut callback: F, maybe_more: bool) {
+    fn process_bytes<F: FnMut(Option<Bytes>, InputEvent)>(&mut self, mut callback: F, maybe_more: bool) {
         while !self.buf.is_empty() {
             match self.state {
                 InputState::Pasting(offset) => {
                     let end_paste = PASTE_END.as_bytes();
                     if let Some(idx) = self.buf.find_subsequence(offset, end_paste) {
                         let pasted = String::from_utf8_lossy(&self.buf.as_slice()[0..idx]).to_string();
-                        self.buf.advance(pasted.len() + end_paste.len());
-
-                        let raw: Vec<u8> = [PASTE_START.as_bytes(), pasted.as_bytes(), PASTE_END.as_bytes()].concat();
-                        callback(Some(raw), InputEvent::Paste(pasted));
+                        self.advance_buf(pasted.len() + end_paste.len());
+                        let raw = self.raw_byte_stack.split();
+                        callback(Some(raw.freeze()), InputEvent::Paste(pasted));
                         self.state = InputState::Normal;
                     } else {
                         // Advance our offset so that in the case where we receive a paste that
@@ -1548,50 +1556,33 @@ impl InputParser {
                             _,
                         ) if self.state == InputState::Normal && self.buf.len() > len => {
                             self.state = InputState::EscapeMaybeAlt;
-                            self.buf.advance(len);
+                            self.advance_buf(len);
                         }
                         (Found::Exact(len, event), _) | (Found::Ambiguous(len, event), false) => {
-                            let raw: Vec<u8> = self.buf.as_slice()[..len].into();
+                            self.advance_buf(len);
                             self.dispatch_callback(
                                 &mut callback,
-                                Some(raw),
                                 event.clone()
                             );
-                            self.buf.advance(len);
                         }
                         (Found::Ambiguous(_, _), true) | (Found::NeedData, true) => {
                             return;
                         }
-                        (Found::None, more) | (Found::NeedData, more) => {
-                            if !more {
-                                // Flush buffer if there is no more input.
-                                let len = self.buf.len();
-                                let raw: Vec<u8> = self.buf.as_slice()[..len].into();
-                                self.buf.advance(len);
+                        (Found::None, _) | (Found::NeedData, false) => {
+                            // No pre-defined key, so pull out a unicode character
+                            if let Some((c, len)) = Self::decode_one_char(self.buf.as_slice()) {
+                                self.advance_buf(len);
                                 self.dispatch_callback(
                                     &mut callback,
-                                    Some(raw),
-                                    InputEvent::RawString,
+                                    InputEvent::Key(KeyEvent {
+                                        key: KeyCode::Char(c),
+                                        modifiers: Modifiers::NONE,
+                                    }),
                                 );
                             } else {
-                                // No pre-defined key, so pull out a unicode character
-                                if let Some((c, len)) = Self::decode_one_char(self.buf.as_slice()) {
-
-                                    let raw: Vec<u8> = self.buf.as_slice()[..len].into();
-                                    self.buf.advance(len);
-                                    self.dispatch_callback(
-                                        &mut callback,
-                                        Some(raw),
-                                        InputEvent::Key(KeyEvent {
-                                            key: KeyCode::Char(c),
-                                            modifiers: Modifiers::NONE,
-                                        }),
-                                    );
-                                } else {
-                                    // We need more data to recognize the input, so
-                                    // yield the remainder of the slice
-                                    return;
-                                }
+                                // We need more data to recognize the input, so
+                                // yield the remainder of the slice
+                                return;
                             }
                         }
                     }
@@ -1614,9 +1605,14 @@ impl InputParser {
     /// immediately available, you should follow up with a call to parse
     /// with an empty slice and `maybe_more=false` to allow the partial
     /// data to be recognized and processed.
-    pub fn parse<F: FnMut(Option<Vec<u8>>, InputEvent)>(&mut self, bytes: &[u8], callback: F, maybe_more: bool) {
+    pub fn parse<F: FnMut(Option<Bytes>, InputEvent)>(&mut self, bytes: &[u8], callback: F, maybe_more: bool) {
         self.buf.extend_with(bytes);
         self.process_bytes(callback, maybe_more);
+    }
+
+    fn advance_buf(&mut self, len: usize) {
+        self.raw_byte_stack.extend(&self.buf.as_slice()[..len]);
+        self.buf.advance(len);
     }
 
     pub fn parse_as_vec(&mut self, bytes: &[u8]) -> Vec<InputEvent> {

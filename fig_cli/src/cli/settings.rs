@@ -1,14 +1,14 @@
 use std::io::Write;
 
-use anyhow::{
-    bail,
-    Context,
-    Result,
-};
 use clap::{
     ArgGroup,
     Args,
     Subcommand,
+};
+use eyre::{
+    bail,
+    Result,
+    WrapErr,
 };
 use fig_api_client::settings;
 use fig_auth::is_logged_in;
@@ -90,7 +90,7 @@ impl SettingsArgs {
                     },
                     Err(err) => {
                         print_connection_error!();
-                        Err(err)
+                        Err(err.into())
                     },
                 }
             },
@@ -163,7 +163,7 @@ impl SettingsArgs {
                             Ok(())
                         },
                         None => match self.format {
-                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {key}")),
+                            OutputFormat::Plain => Err(eyre::eyre!("No value associated with {key}")),
                             OutputFormat::Json | OutputFormat::JsonPretty => {
                                 println!("null");
                                 Ok(())
@@ -183,7 +183,7 @@ impl SettingsArgs {
 
                         match keys_to_remove.len() {
                             0 => {
-                                return Err(anyhow::anyhow!("No settings found matching {key}"));
+                                return Err(eyre::eyre!("No settings found matching {key}"));
                             },
                             1 => {
                                 println!("Removing {:?}", keys_to_remove[0]);
@@ -220,7 +220,7 @@ impl SettingsArgs {
                             Ok(()) => Ok(()),
                             Err(err) => {
                                 print_connection_error!();
-                                Err(err.context("Could not open settings"))
+                                Err(err.into())
                             },
                         }
                     } else {

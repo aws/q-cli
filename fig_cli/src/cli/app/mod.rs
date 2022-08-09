@@ -4,9 +4,9 @@ use std::iter::empty;
 use std::process::Command;
 use std::time::Duration;
 
-use anyhow::Result;
 use clap::Subcommand;
 use crossterm::style::Stylize;
+use eyre::Result;
 use fig_ipc::command::{
     quit_command,
     update_command,
@@ -101,7 +101,7 @@ pub async fn quit_fig() -> Result<()> {
                 }
             }
             println!("\nUnable to quit Fig\n");
-            return second_try;
+            second_try?;
         }
     }
 
@@ -217,7 +217,7 @@ impl AppSubcommand {
                         uninstall::uninstall_mac_app(args).await;
                     } else {
                         let _args = args;
-                        anyhow::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)
+                        eyre::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)
                     }
                 }
             },
@@ -230,7 +230,7 @@ impl AppSubcommand {
             AppSubcommand::SetPath => {
                 cfg_if! {
                     if #[cfg(unix)] {
-                        use anyhow::Context;
+                        use eyre::WrapErr;
                         use fig_ipc::hook::send_hook_to_socket;
                         use fig_proto::hooks;
                         use serde_json::json;
@@ -266,7 +266,7 @@ impl AppSubcommand {
                             "fig launch".magenta()
                         ))?;
                     } else {
-                        anyhow::bail!("Not implemented on this platform");
+                        eyre::bail!("Not implemented on this platform");
                     }
                 }
             },

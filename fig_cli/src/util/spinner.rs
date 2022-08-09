@@ -33,7 +33,7 @@ pub struct Spinner {
 impl Drop for Spinner {
     fn drop(&mut self) {
         if self.join.is_some() {
-            self.sender.send(None).unwrap();
+            self.sender.send(Some("\x1b[2K\r".into())).unwrap();
             self.join.take().unwrap().join().unwrap();
         }
     }

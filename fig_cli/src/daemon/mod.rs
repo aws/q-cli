@@ -13,12 +13,13 @@ use std::path::{
 };
 use std::process::Command;
 
-use anyhow::{
-    anyhow,
-    Context,
-    Result,
-};
 use cfg_if::cfg_if;
+use eyre::{
+    eyre,
+    ContextCompat,
+    Result,
+    WrapErr,
+};
 use fig_util::directories;
 use parking_lot::Mutex;
 
@@ -34,7 +35,7 @@ pub fn get_daemon() -> Result<LaunchService> {
         } else if #[cfg(windows)] {
             LaunchService::scm()
         } else {
-            Err(anyhow!("Unsupported platform"));
+            Err(eyre!("Unsupported platform"));
         }
     }
 }
@@ -77,7 +78,7 @@ impl InitSystem {
         let output = Command::new("ps").args(["-p1"]).output().context("Could not run ps")?;
 
         if !output.status.success() {
-            return Err(anyhow!("ps failed: {}", output.status));
+            return Err(eyre!("ps failed: {}", output.status));
         }
 
         let output_str = String::from_utf8_lossy(&output.stdout);
@@ -93,7 +94,7 @@ impl InitSystem {
         } else if output_str.contains("sc") {
             Ok(InitSystem::SCM)
         } else {
-            Err(anyhow!("Could not determine init system"))
+            Err(eyre!("Could not determine init system"))
         }
     }
 
@@ -103,7 +104,7 @@ impl InitSystem {
                 let output = Command::new("launchctl").arg("load").arg(path.as_ref()).output()?;
 
                 if !output.status.success() {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "Could not start daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -112,7 +113,7 @@ impl InitSystem {
                 let stderr = String::from_utf8_lossy(&output.stderr);
 
                 if !stderr.is_empty() {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "Could not start daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -130,7 +131,7 @@ impl InitSystem {
                     .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
 
                 if !output.status.success() {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "Could not start daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -146,7 +147,7 @@ impl InitSystem {
                     .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
 
                 if !output.status.success() {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "Could not start daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -154,7 +155,7 @@ impl InitSystem {
 
                 Ok(())
             },
-            _ => Err(anyhow!("Could not start daemon: unsupported init system")),
+            _ => Err(eyre!("Could not start daemon: unsupported init system")),
         }
     }
 
@@ -164,7 +165,7 @@ impl InitSystem {
                 let output = Command::new("launchctl").arg("unload").arg(path.as_ref()).output()?;
 
                 if !output.status.success() {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "Could not stop daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -173,7 +174,7 @@ impl InitSystem {
                 let stderr = String::from_utf8_lossy(&output.stderr);
 
                 if !stderr.is_empty() {
-                    return Err(anyhow!(
+                    return Err(eyre!(
                         "Could not stop daemon: {}",
                         String::from_utf8_lossy(&output.stderr)
                     ));
@@ -201,7 +202,7 @@ impl InitSystem {
 
                 Ok(())
             },
-            _ => Err(anyhow!("Could not stop daemon: unsupported init system")),
+            _ => Err(eyre!("Could not stop daemon: unsupported init system")),
         }
     }
 
@@ -262,7 +263,7 @@ impl InitSystem {
 
                 todo!("Parse service status and return it (windows)");
             },
-            _ => Err(anyhow!("Could not get daemon status: unsupported init system")),
+            _ => Err(eyre!("Could not get daemon status: unsupported init system")),
         }
     }
 }

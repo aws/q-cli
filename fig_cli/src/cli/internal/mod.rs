@@ -10,11 +10,6 @@ use std::path::PathBuf;
 use std::process::exit;
 use std::str::FromStr;
 
-use anyhow::{
-    bail,
-    Context,
-    Result,
-};
 use clap::{
     ArgGroup,
     Args,
@@ -22,6 +17,11 @@ use clap::{
     ValueEnum,
 };
 use crossterm::style::Stylize;
+use eyre::{
+    bail,
+    ContextCompat,
+    Result,
+};
 use fig_auth::get_token;
 use fig_install::dotfiles::notify::TerminalNotification;
 use fig_ipc::hook::send_hook_to_socket;

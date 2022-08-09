@@ -3,6 +3,7 @@ supports_mold: &supports_mold
     - equal: [<< parameters.platform >>, kinetic]
     - equal: [<< parameters.platform >>, jammy]
     - equal: [<< parameters.platform >>, f36]
+    - equal: [<< parameters.platform >>, archlinux]
 
 version: 2.1
 
@@ -51,10 +52,12 @@ workflows:
           matrix:
             parameters:
               version: ["36"]
+      - archlinux-x86_64:
+          requires: [update-version]
       - windows:
           requires: [update-version]
       - sentry:
-          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal, windows]
+          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal, archlinux-x86_64, windows]
           context:
             - sentry
   noop:
@@ -110,6 +113,14 @@ jobs:
           platform: f<< parameters.version >>
           arch: x86_64
 
+  archlinux-x86_64:
+    docker:
+      - image: archlinux      
+    resource_class: large
+    steps:
+      - build-archlinux:
+          arch: x86_64
+        
   windows:
     environment:
       CARGO_NET_GIT_FETCH_WITH_CLI: "true"
@@ -147,7 +158,7 @@ jobs:
             mv target/wix/fig-*-x86_64.msi target/wix/fig.msi
       - store_artifacts:
           path: desktop/target/wix/fig.msi
-          destination: windows/fig.msi
+          destination: windows/msi
 
   # Creates tag on specified revision
   update-version:
@@ -288,20 +299,24 @@ commands:
         type: string
     steps:
       - rust/install:
-          version: 1.62.0
+          version: 1.62.1
       - when:
           condition: *supports_mold
           steps:
             - run:
                 name: Configure rust
-                command: printf '[target.<< parameters.target >>]\nrustflags = ["-C", "link-arg=-fuse-ld=mold"]' > ~/.cargo/config.toml
+                command: ./desktop/build-scripts/rust-init.sh
+                environment:
+                  LINKER: mold
       - when:
           condition:
             not: *supports_mold
           steps:
             - run:
                 name: Configure rust
-                command: printf '[target.<< parameters.target >>]\nrustflags = ["-C", "link-arg=-fuse-ld=lld"]' > ~/.cargo/config.toml
+                command: ./desktop/build-scripts/rust-init.sh
+                environment:
+                  LINKER: lld
 
   configure-apt:
     parameters:
@@ -427,6 +442,24 @@ commands:
           platform: << parameters.platform >>
           rust-target: << parameters.arch >>-unknown-linux-gnu
 
+  prepare-archlinux:
+    parameters:
+      arch:
+        type: string
+    steps:
+      - run:
+          name: Update
+          command: |
+            pacman -Syyu --noconfirm
+      - run:
+          name: Install dependencies
+          command: |
+            pacman -S --noconfirm --needed webkit2gtk base-devel curl wget openssl appmenu-gtk-module \
+              gtk3 libappindicator-gtk3 librsvg libvips make vala git openssh jq ibus cmake mold clang
+      - prepare-post:
+          platform: "archlinux"
+          rust-target: << parameters.arch >>-unknown-linux-gnu
+
   # Builds packages for Ubuntu
   build-ubuntu:
     parameters:
@@ -512,3 +545,18 @@ commands:
       - store_artifacts:
           path: desktop/build/fig
           destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
+
+  build-archlinux:
+    parameters:
+      arch:
+        type: string
+    steps:
+      - prepare-archlinux:
+          arch: << parameters.arch >>
+      - run:
+          name: Build
+          command: cd desktop && make ARCH=<< parameters.arch >> arch
+      - store_artifacts:
+          path: desktop/build/fig-<< parameters.arch >>-linux-archlinux.tar.gz
+          destination: archlinux/<< parameters.arch >>/archlinux
+

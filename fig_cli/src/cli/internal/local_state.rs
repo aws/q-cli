@@ -1,15 +1,15 @@
 use std::process::Command;
 
-use anyhow::{
-    anyhow,
-    Result,
-};
 use clap::{
     ArgGroup,
     Args,
     Subcommand,
 };
 use crossterm::style::Stylize;
+use eyre::{
+    eyre,
+    Result,
+};
 use fig_ipc::command::restart_settings_listener;
 use serde_json::json;
 
@@ -69,14 +69,14 @@ impl LocalStateArgs {
                 },
                 Err(err) => {
                     print_connection_error!();
-                    Err(err)
+                    Err(err.into())
                 },
             },
             Some(LocalStateSubcommand::Open) => {
                 let path = fig_settings::state::state_path()?;
                 match Command::new("open").arg(path).status()?.success() {
                     true => Ok(()),
-                    false => Err(anyhow!("Could not open state file")),
+                    false => Err(eyre!("Could not open state file")),
                 }
             },
             Some(LocalStateSubcommand::All { format }) => {
@@ -111,7 +111,7 @@ impl LocalStateArgs {
                             Ok(())
                         },
                         None => match self.format {
-                            OutputFormat::Plain => Err(anyhow::anyhow!("No value associated with {key}")),
+                            OutputFormat::Plain => Err(eyre::eyre!("No value associated with {key}")),
                             OutputFormat::Json | OutputFormat::JsonPretty => {
                                 println!("null");
                                 Ok(())
@@ -129,9 +129,9 @@ impl LocalStateArgs {
                         println!("Successfully updated state");
                         Ok(())
                     },
-                    (Some(_), true) => Err(anyhow!("Cannot delete a value with a value")),
+                    (Some(_), true) => Err(eyre!("Cannot delete a value with a value")),
                 },
-                None => Err(anyhow!("{}", "No key specified")),
+                None => Err(eyre!("No key specified")),
             },
         }
     }

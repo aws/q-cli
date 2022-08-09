@@ -1,5 +1,3 @@
-use anyhow::Result;
-
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum TerminalNotification {
     NewUpdates,
@@ -7,13 +5,13 @@ pub enum TerminalNotification {
 }
 
 impl std::str::FromStr for TerminalNotification {
-    type Err = anyhow::Error;
+    type Err = String;
 
-    fn from_str(s: &str) -> Result<Self> {
+    fn from_str(s: &str) -> Result<Self, Self::Err> {
         match s {
             "newUpdates" => Ok(TerminalNotification::NewUpdates),
             "source" => Ok(TerminalNotification::Source),
-            _ => Err(anyhow::anyhow!("Invalid terminal notification: {}", s)),
+            _ => Err(format!("Invalid terminal notification: {s}")),
         }
     }
 }
@@ -27,7 +25,7 @@ impl std::fmt::Display for TerminalNotification {
     }
 }
 
-pub fn notify_terminal(session_id: impl AsRef<str>, notification: TerminalNotification) -> Result<()> {
+pub fn notify_terminal(session_id: impl AsRef<str>, notification: TerminalNotification) -> std::io::Result<()> {
     let dotfiles_update_path = std::env::temp_dir()
         .join("fig")
         .join("dotfiles_updates")
@@ -39,7 +37,7 @@ pub fn notify_terminal(session_id: impl AsRef<str>, notification: TerminalNotifi
 }
 
 /// Notify dotfiles updates
-pub fn notify_all_terminals(notification: TerminalNotification) -> Result<()> {
+pub fn notify_all_terminals(notification: TerminalNotification) -> std::io::Result<()> {
     let tempdir = std::env::temp_dir();
     let dotfiles_updates_folder = tempdir.join("fig").join("dotfiles_updates");
 

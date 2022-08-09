@@ -5,10 +5,6 @@ use std::path::{
     PathBuf,
 };
 
-use anyhow::{
-    Context,
-    Result,
-};
 use cfg_if::cfg_if;
 use clap::ValueEnum;
 use fig_util::{
@@ -24,10 +20,11 @@ use serde::{
     Serialize,
 };
 
+use crate::error::Result;
 use crate::{
     backup_file,
+    Error,
     FileIntegration,
-    InstallationError,
     Integration,
 };
 
@@ -233,7 +230,7 @@ impl ShellScriptShellIntegration {
 }
 
 impl Integration for ShellScriptShellIntegration {
-    fn is_installed(&self) -> Result<(), InstallationError> {
+    fn is_installed(&self) -> Result<()> {
         self.get_file_integration().is_installed()
     }
 
@@ -369,7 +366,7 @@ impl DotfileShellIntegration {
                 ""
             },
         );
-        Regex::new(&regex).context("Invalid source regex")
+        Ok(Regex::new(&regex)?)
     }
 
     fn remove_from_text(&self, text: impl Into<String>, when: When) -> Result<String> {
@@ -386,15 +383,15 @@ impl DotfileShellIntegration {
             .fold::<String, _>(text.into(), |acc, reg| reg.replace_all(&acc, "").into()))
     }
 
-    fn matches_text(&self, text: &str, when: When) -> Result<(), InstallationError> {
+    fn matches_text(&self, text: &str, when: When) -> Result<()> {
         let dotfile = self.dotfile_path();
         if self.legacy_regexes(when)?.is_match(text) {
             let message = format!("{} has legacy {} integration.", dotfile.display(), when);
-            return Err(InstallationError::LegacyInstallation(message.into()));
+            return Err(Error::LegacyInstallation(message.into()));
         }
         if !self.source_regex(when, false)?.is_match(text) {
             let message = format!("{} does not source {} integration", dotfile.display(), when);
-            return Err(InstallationError::NotInstalled(message.into()));
+            return Err(Error::NotInstalled(message.into()));
         }
         if !self.source_regex(when, true)?.is_match(text) {
             let position = match when {
@@ -407,7 +404,7 @@ impl DotfileShellIntegration {
                 when,
                 position
             );
-            return Err(InstallationError::ImproperInstallation(message.into()));
+            return Err(Error::ImproperInstallation(message.into()));
         }
         Ok(())
     }
@@ -497,13 +494,13 @@ impl Integration for DotfileShellIntegration {
         Ok(())
     }
 
-    fn is_installed(&self) -> Result<(), InstallationError> {
+    fn is_installed(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
         let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
             // Remove comments and empty lines.
             Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
             _ => {
-                return Err(InstallationError::FileDoesNotExist(dotfile.into()));
+                return Err(Error::FileDoesNotExist(dotfile.into()));
             },
         };
 

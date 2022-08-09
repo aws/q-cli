@@ -6,13 +6,13 @@ use serde_json::{
 
 use crate::Error;
 
-fn create_anonymous_id() -> anyhow::Result<String> {
+fn create_anonymous_id() -> Result<String, fig_settings::Error> {
     let anonymous_id = uuid::Uuid::new_v4().as_hyphenated().to_string();
     state::set_value("anonymousId", anonymous_id.clone())?;
     Ok(anonymous_id)
 }
 
-pub fn get_or_create_anonymous_id() -> anyhow::Result<String> {
+pub fn get_or_create_anonymous_id() -> Result<String, fig_settings::Error> {
     if let Ok(Some(anonymous_id)) = state::get_string("anonymousId") {
         return Ok(anonymous_id);
     }

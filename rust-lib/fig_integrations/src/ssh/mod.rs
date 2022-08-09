@@ -5,17 +5,16 @@ use std::path::{
     PathBuf,
 };
 
-use anyhow::{
-    Context,
-    Result,
-};
 use fig_util::directories;
 use regex::Regex;
 
+use crate::error::{
+    Error,
+    Result,
+};
 use crate::{
     backup_file,
     FileIntegration,
-    InstallationError,
     Integration,
 };
 
@@ -45,7 +44,7 @@ impl SshIntegration {
 
     fn legacy_regex(&self) -> Result<Regex> {
         let regex = format!(r#"{}\n{{0,2}}"#, regex::escape(&self.legacy_text()?));
-        Regex::new(&regex).context("Invalid source regex")
+        Ok(Regex::new(&regex)?)
     }
 
     fn description(&self) -> String {
@@ -65,7 +64,7 @@ impl SshIntegration {
             regex::escape(&self.description()),
             regex::escape(&self.source_text()?)
         );
-        Regex::new(&regex).context("Invalid source regex")
+        Ok(Regex::new(&regex)?)
     }
 }
 
@@ -110,20 +109,20 @@ impl Integration for SshIntegration {
         Ok(())
     }
 
-    fn is_installed(&self) -> Result<(), InstallationError> {
+    fn is_installed(&self) -> Result<()> {
         let filtered_contents: String = match std::fs::read_to_string(&self.path) {
             // Remove comments and empty lines.
             Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
             _ => {
                 let message = format!("{} does not exist.", self.path.display());
-                return Err(InstallationError::NotInstalled(message.into()));
+                return Err(Error::NotInstalled(message.into()));
             },
         };
 
         self.get_file_integration()?.is_installed()?;
         if !self.source_regex()?.is_match(&filtered_contents) {
             let message = format!("{} does not source Fig's ssh integration", self.path.display());
-            return Err(InstallationError::NotInstalled(message.into()));
+            return Err(Error::NotInstalled(message.into()));
         }
 
         Ok(())

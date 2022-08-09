@@ -63,7 +63,7 @@ mod test {
     #[test]
     fn test_load_json() {
         let json = serde_json::from_str::<KeyBindings>(TEST_JSON).unwrap();
-        assert_eq!(json.0.len(), 18);
+        assert_eq!(json.0.len(), 28);
 
         assert_eq!(json.0[0].identifier, "insertSelected");
         assert_eq!(json.0[0].name, Some("Insert selected".to_string()));

@@ -166,7 +166,7 @@ struct ManyPlugins {
     plugins: Vec<serde_json::Map<String, serde_json::Value>>,
 }
 
-pub async fn all_plugins<F, I>(fields: F) -> Result<Vec<serde_json::Map<String, serde_json::Value>>>
+pub async fn all_plugins<F, I>(fields: F) -> Result<Vec<serde_json::Map<String, serde_json::Value>>, fig_request::Error>
 where
     F: IntoIterator<Item = I>,
     I: Into<String>,
@@ -193,7 +193,10 @@ struct UniquePlugin {
     plugin: serde_json::Map<String, serde_json::Value>,
 }
 
-pub async fn unique_plugin<N, F, I>(name: N, fields: F) -> Result<serde_json::Map<String, serde_json::Value>>
+pub async fn unique_plugin<N, F, I>(
+    name: N,
+    fields: F,
+) -> Result<serde_json::Map<String, serde_json::Value>, fig_request::Error>
 where
     N: std::fmt::Display,
     F: IntoIterator<Item = I>,
@@ -222,7 +225,9 @@ struct InstalledPlugins {
     plugins: Vec<serde_json::Map<String, serde_json::Value>>,
 }
 
-pub async fn installed_plugins<F, I>(_fields: F) -> Result<Vec<serde_json::Map<String, serde_json::Value>>>
+pub async fn installed_plugins<F, I>(
+    _fields: F,
+) -> Result<Vec<serde_json::Map<String, serde_json::Value>>, fig_request::Error>
 where
     F: IntoIterator<Item = I>,
     I: Into<String>,

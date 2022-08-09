@@ -1,5 +1,5 @@
-use anyhow::Result;
 use clap::Args;
+use eyre::Result;
 use url::Url;
 
 #[derive(Debug, Args)]

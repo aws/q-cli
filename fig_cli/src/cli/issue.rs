@@ -1,8 +1,8 @@
 use std::fmt::Write;
 
-use anyhow::Result;
 use clap::Args;
 use crossterm::style::Stylize;
+use eyre::Result;
 use fig_util::get_parent_process_exe;
 use regex::Regex;
 

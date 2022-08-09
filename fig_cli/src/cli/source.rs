@@ -1,8 +1,8 @@
 //! Sync of dotfiles
 
-use anyhow::{
-    Context,
+use eyre::{
     Result,
+    WrapErr,
 };
 use fig_auth::is_logged_in;
 use fig_install::dotfiles::download_and_notify;
@@ -14,7 +14,7 @@ use fig_install::dotfiles::notify::{
 /// Download the lastest dotfiles
 pub async fn source_cli() -> Result<()> {
     if !is_logged_in() {
-        anyhow::bail!("Must be logged in to sync dotfiles");
+        eyre::bail!("Must be logged in to sync dotfiles");
     }
     download_and_notify(true)
         .await

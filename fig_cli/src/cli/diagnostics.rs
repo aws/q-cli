@@ -4,12 +4,13 @@ use std::fmt::Display;
 use std::path::PathBuf;
 use std::process::Command;
 
-use anyhow::{
-    Context,
-    Result,
-};
 use clap::Args;
 use crossterm::style::Stylize;
+use eyre::{
+    ContextCompat,
+    Result,
+    WrapErr,
+};
 use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::command_response::Response;
 use fig_proto::local::{
@@ -199,7 +200,7 @@ pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
-        _ => anyhow::bail!("Invalid response"),
+        _ => eyre::bail!("Invalid response"),
     }
 }
 
@@ -362,7 +363,7 @@ pub async fn verify_integration(integration: impl Into<String>) -> Result<String
     let message = match response.response {
         Some(Response::Success(success)) => success.message,
         Some(Response::Error(error)) => error.message,
-        _ => anyhow::bail!("Invalid response"),
+        _ => eyre::bail!("Invalid response"),
     };
 
     message.context("No message found")

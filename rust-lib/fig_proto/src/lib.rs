@@ -13,7 +13,6 @@ use std::fmt::Debug;
 use std::io::Cursor;
 use std::mem::size_of;
 
-use anyhow::Result;
 use bytes::{
     Buf,
     Bytes,
@@ -97,16 +96,26 @@ pub enum FigMessageDecodeError {
     RmpDecode(#[from] rmp_serde::decode::Error),
 }
 
+#[derive(Debug, Error)]
+pub enum FigMessageEncodeError {
+    #[error(transparent)]
+    IntError(#[from] std::num::TryFromIntError),
+    #[error(transparent)]
+    JsonEncode(#[from] serde_json::Error),
+    #[error(transparent)]
+    RmpEncode(#[from] rmp_serde::encode::Error),
+}
+
 impl FigMessage {
-    pub fn json(json: impl Serialize) -> Result<FigMessage> {
+    pub fn json(json: impl Serialize) -> Result<FigMessage, FigMessageEncodeError> {
         FigMessage::encode(FigMessageType::Json, &serde_json::to_vec(&json)?)
     }
 
-    pub fn message_pack(message_pack: impl Serialize) -> Result<FigMessage> {
+    pub fn message_pack(message_pack: impl Serialize) -> Result<FigMessage, FigMessageEncodeError> {
         FigMessage::encode(FigMessageType::MessagePack, &rmp_serde::to_vec(&message_pack)?)
     }
 
-    pub fn encode(message_type: FigMessageType, body: &[u8]) -> Result<FigMessage> {
+    pub fn encode(message_type: FigMessageType, body: &[u8]) -> Result<FigMessage, FigMessageEncodeError> {
         let message_len: u64 = body.len().try_into()?;
         let message_len_be = message_len.to_be_bytes();
 
@@ -194,17 +203,17 @@ impl std::ops::Deref for FigMessage {
 /// A trait for types that can be converted to a FigProtobuf
 pub trait FigProtobufEncodable: Debug + Send + Sync {
     /// Encodes a protobuf message into a fig message
-    fn encode_fig_protobuf(&self) -> Result<FigMessage>;
+    fn encode_fig_protobuf(&self) -> Result<FigMessage, FigMessageEncodeError>;
 }
 
 impl FigProtobufEncodable for FigMessage {
-    fn encode_fig_protobuf(&self) -> Result<FigMessage> {
+    fn encode_fig_protobuf(&self) -> Result<FigMessage, FigMessageEncodeError> {
         Ok(self.clone())
     }
 }
 
 impl<T: Message> FigProtobufEncodable for T {
-    fn encode_fig_protobuf(&self) -> Result<FigMessage> {
+    fn encode_fig_protobuf(&self) -> Result<FigMessage, FigMessageEncodeError> {
         FigMessage::encode(FigMessageType::Protobuf, &self.encode_to_vec())
     }
 }

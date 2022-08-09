@@ -369,7 +369,7 @@ async fn process_figterm_message(
             let mut insertion_string = String::new();
             if let Some((buffer, Some(position))) = current_buffer {
                 if let Some(ref text_to_insert) = command.insertion {
-                    trace!("buffer: {:?}, cursor_position: {:?}", buffer, position);
+                    trace!("buffer: {buffer:?}, cursor_position: {position:?}");
 
                     // perform deletion
                     // if let Some(deletion) = command.deletion {
@@ -384,8 +384,8 @@ async fn process_figterm_message(
                     // let (left, right) = buffer.split_at(position);
 
                     INSERTION_LOCKED_AT.write().replace(SystemTime::now());
-                    let expected = format!("{}{}", buffer, text_to_insert);
-                    trace!("lock set, expected buffer: {:?}", expected);
+                    let expected = format!("{buffer}{text_to_insert}");
+                    trace!("lock set, expected buffer: {expected:?}");
                     *EXPECTED_BUFFER.lock() = expected;
                 }
                 if let Some(ref insertion_buffer) = command.insertion_buffer {
@@ -519,6 +519,10 @@ fn build_shell_command() -> Result<CommandBuilder> {
     builder.env_remove("FIG_SHELL_EXTRA_ARGS");
     builder.env_remove("FIG_EXECUTION_STRING");
 
+    if let Ok(dir) = std::env::current_dir() {
+        builder.cwd(dir);
+    }
+
     Ok(builder)
 }
 
@@ -650,7 +654,6 @@ fn figterm_main() -> Result<()> {
                     let mut input_res = Ok(());
                     match res {
                         Ok(events) => {
-                            let events_len = events.len();
                             let mut write_buffer = BytesMut::new();
                             for event in events {
                                 match event {
@@ -683,24 +686,19 @@ fn figterm_main() -> Result<()> {
                                         let raw = raw.or_else(|| {
                                             event.key.encode(event.modifiers, modes, true)
                                                 .ok()
-                                                .map(|s| s.into_bytes())
+                                                .map(|s| s.into_bytes().into())
                                         });
 
                                         if let Some(action) = key_interceptor.intercept_key(&event) {
                                             debug!("Intercepted action: {action:?}");
                                             let s = raw.clone()
-                                                .and_then(|b| String::from_utf8(b).ok())
+                                                .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                 .unwrap_or_default();
                                             let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
                                             outgoing_sender.send(hook_to_message(hook)).unwrap();
 
                                             if event.key == KeyCode::Escape {
                                                 key_interceptor.reset();
-                                                if events_len > 0 {
-                                                    if let Some(bytes) = raw {
-                                                        write_buffer.extend(&bytes);
-                                                    }
-                                                }
                                             }
                                         } else if let Some(bytes) = raw {
                                             write_buffer.extend(&bytes);
@@ -759,7 +757,7 @@ fn figterm_main() -> Result<()> {
                             break 'select_loop Ok(());
                         }
                         Ok(size) => {
-                            info!("Read {size} bytes from master");
+                            trace!("Read {size} bytes from master");
 
                             let old_delayed_count = term.get_delayed_events_count();
                             for byte in &write_buffer[..size] {

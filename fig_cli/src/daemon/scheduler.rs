@@ -9,11 +9,11 @@ use std::task::{
 };
 use std::time::Duration;
 
-use anyhow::{
-    Context as _,
-    Result,
-};
 use async_trait::async_trait;
+use eyre::{
+    Result,
+    WrapErr,
+};
 use fig_install::dotfiles::api::DotfileData;
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;

@@ -1,10 +1,10 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use anyhow::{
-    anyhow,
-    Context,
+use eyre::{
+    eyre,
     Result,
+    WrapErr,
 };
 use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks;
@@ -102,7 +102,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                         DebouncedEvent::Error(err, path) => {
                             let error_msg = format!("Error watching settings ({path:?}): {err}");
                             error!("{error_msg}");
-                            daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
+                            daemon_status.write().settings_watcher_status = Err(eyre!(error_msg));
                         },
                         event => {
                             debug!("Ignoring event: {event:?}");
@@ -110,7 +110,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                     }
                 },
                 Err(err) => {
-                    daemon_status.write().settings_watcher_status = Err(anyhow!(err));
+                    daemon_status.write().settings_watcher_status = Err(eyre!(err));
                     break;
                 },
             }
@@ -123,12 +123,12 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         if let Err(err) = watcher.watch(&*settings_path, RecursiveMode::NonRecursive) {
             let error_msg = format!("Could not watch {settings_path:?}: {err}");
             error!("{error_msg}");
-            daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
+            daemon_status.write().settings_watcher_status = Err(eyre!(error_msg));
         }
         if let Err(err) = watcher.watch(&*state_path, RecursiveMode::NonRecursive) {
             let error_msg = format!("Could not watch {state_path:?}: {err}");
             error!("{error_msg}");
-            daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
+            daemon_status.write().settings_watcher_status = Err(eyre!(error_msg));
         }
 
         if let Err(err) = watcher.watch(application_path, RecursiveMode::NonRecursive) {
@@ -141,13 +141,13 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                     if let Err(err) = forward_tx.send(event) {
                         let error_msg = format!("Error forwarding settings event: {err}");
                         error!("{error_msg}");
-                        daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
+                        daemon_status.write().settings_watcher_status = Err(eyre!(error_msg));
                     }
                 },
                 Err(err) => {
                     let error_msg = format!("Settings watcher rx: {err}");
                     error!("{error_msg}");
-                    daemon_status.write().settings_watcher_status = Err(anyhow!(error_msg));
+                    daemon_status.write().settings_watcher_status = Err(eyre!(error_msg));
                 },
             }
         }

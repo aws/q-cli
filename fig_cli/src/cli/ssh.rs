@@ -1,9 +1,9 @@
-use anyhow::{
+use clap::Parser;
+use eyre::{
     bail,
-    Context,
+    ContextCompat,
     Result,
 };
-use clap::Parser;
 use fig_request::Request;
 use once_cell::sync::Lazy;
 use regex::Regex;

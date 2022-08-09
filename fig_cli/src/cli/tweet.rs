@@ -1,5 +1,5 @@
-use anyhow::Result;
 use crossterm::style::Stylize;
+use eyre::Result;
 use rand::prelude::*;
 use url::Url;
 
