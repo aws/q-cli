@@ -523,6 +523,12 @@ pub trait Handler {
     /// Fig Log Osc
     fn log(&mut self, _: &str) {}
 
+    /// Fig InsertOnNewCmd
+    fn insert_on_new_cmd(&mut self, _: &str) {}
+
+    /// Fig ExecuteOnNewCmd
+    fn execute_on_new_cmd(&mut self, _: &str) {}
+
     /// Unhandled `execute` fallthrough
     fn unhandled_execute(&mut self, _byte: u8) -> HandledStatus {
         HandledStatus::Unhandled
@@ -1204,77 +1210,71 @@ where
                                 match key {
                                     b"Dir" => match str::from_utf8(val[1..].as_ref()) {
                                         Ok(path_str) => self.handler.dir(Path::new(path_str)),
-                                        Err(err) => {
-                                            log::error!("Failed to parse path: {err}")
-                                        },
+                                        Err(err) => log::error!("Failed to parse path: {err}"),
                                     },
                                     b"ShellPath" => match str::from_utf8(val[1..].as_ref()) {
                                         Ok(path_str) => self.handler.shell_path(Path::new(path_str)),
-                                        Err(err) => {
-                                            log::error!("Failed to parse path: {err}")
-                                        },
+                                        Err(err) => log::error!("Failed to parse path: {err}"),
                                     },
                                     b"WSLDistro" => match str::from_utf8(val[1..].as_ref()) {
                                         Ok(s) => self.handler.wsl_distro(s),
-                                        Err(err) => log::error!("Error decoding WSL Distro: {}", err),
+                                        Err(err) => log::error!("Error decoding WSL Distro: {err}"),
                                     },
                                     b"ExitCode" => match str::from_utf8(&val[1..]) {
                                         Ok(code) => match code.parse::<i32>() {
                                             Ok(code) => self.handler.exit_code(code),
-                                            Err(err) => {
-                                                log::error!("Error parsing ExitCode: {}", err)
-                                            },
+                                            Err(err) => log::error!("Error parsing ExitCode: {err}"),
                                         },
-                                        Err(err) => log::error!("Error decoding ExitCode: {}", err),
+                                        Err(err) => log::error!("Error decoding ExitCode: {err}"),
                                     },
                                     b"Shell" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.shell(s),
-                                        Err(err) => log::error!("Error decoding Shell: {}", err),
+                                        Err(err) => log::error!("Error decoding Shell: {err}"),
                                     },
                                     b"FishSuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.fish_suggestion_color(s),
-                                        Err(err) => {
-                                            log::error!("Error decoding FishSuggestionColor: {}", err)
-                                        },
+                                        Err(err) => log::error!("Error decoding FishSuggestionColor: {err}"),
                                     },
                                     b"ZshAutosuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.zsh_suggestion_color(s),
-                                        Err(err) => {
-                                            log::error!("Error decoding ZshAutosuggestionColor: {}", err)
-                                        },
+                                        Err(err) => log::error!("Error decoding ZshAutosuggestionColor: {err}"),
                                     },
                                     b"TTY" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.tty(s),
-                                        Err(err) => log::error!("Error decoding TTY: {}", err),
+                                        Err(err) => log::error!("Error decoding TTY: {err}"),
                                     },
                                     b"PID" => match str::from_utf8(&val[1..]) {
                                         Ok(code) => match code.parse::<i32>() {
                                             Ok(pid) => self.handler.pid(pid),
-                                            Err(err) => {
-                                                log::error!("Error parsing ExitCode: {}", err)
-                                            },
+                                            Err(err) => log::error!("Error parsing ExitCode: {err}"),
                                         },
-                                        Err(err) => log::error!("Error decoding ExitCode: {}", err),
+                                        Err(err) => log::error!("Error decoding ExitCode: {err}"),
                                     },
                                     b"SessionId" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.session_id(s),
-                                        Err(err) => {
-                                            log::error!("Error decoding SessionId: {}", err)
-                                        },
+                                        Err(err) => log::error!("Error decoding SessionId: {err}"),
                                     },
                                     b"Docker" => {
                                         self.handler.docker(!(val.len() <= 2 && val[1] == b'0'));
                                     },
                                     b"Hostname" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.hostname(s),
-                                        Err(err) => log::error!("Error decoding Hostname: {}", err),
+                                        Err(err) => log::error!("Error decoding Hostname: {err}"),
                                     },
                                     b"Log" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.log(s),
-                                        Err(err) => log::error!("Error decoding Log: {}", err),
+                                        Err(err) => log::error!("Error decoding Log: {err}"),
                                     },
                                     b"SSH" => {
                                         self.handler.ssh(!(val.len() <= 2 && val[1] == b'0'));
+                                    },
+                                    b"InsertOnNewCmd" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.insert_on_new_cmd(s),
+                                        Err(err) => log::error!("Error decoding InsertOnNewCmd: {err}"),
+                                    },
+                                    b"ExecuteOnNewCmd" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.execute_on_new_cmd(s),
+                                        Err(err) => log::error!("Error decoding ExecuteOnNewCmd: {err}"),
                                     },
                                     _ => unhandled!(),
                                 }
