@@ -220,7 +220,9 @@ impl ShellScriptShellIntegration {
                 };
                 let add_to_path_line = match self.shell {
                     Shell::Fish => "contains $HOME/.local/bin $fish_user_paths or set -a PATH $HOME/.local/bin",
-                    _ => "PATH=\"${PATH:+\"$PATH:\"}~/.local/bin\"",
+                    _ => "_FIG_LOCAL_BIN=~/.local/bin
+[[ \":$PATH:\" != *\":$_FIG_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_FIG_LOCAL_BIN\"
+unset _FIG_LOCAL_BIN",
                 };
 
                 return format!("{add_to_path_line}\n{source_line}");
