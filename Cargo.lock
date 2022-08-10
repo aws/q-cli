@@ -2489,6 +2489,7 @@ dependencies = [
  "uuid",
  "validator",
  "which",
+ "winapi 0.3.9",
  "windows 0.39.0",
  "wsl",
  "yaque",
