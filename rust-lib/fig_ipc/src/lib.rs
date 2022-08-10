@@ -4,7 +4,6 @@ pub mod hook;
 use std::fmt::Debug;
 use std::io::{
     Cursor,
-    ErrorKind,
     Write,
 };
 #[cfg(unix)]
