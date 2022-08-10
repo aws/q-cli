@@ -30,8 +30,10 @@ pub struct AiArgs {
 }
 
 #[derive(Debug, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct Choice {
     text: Option<String>,
+    additional_message: Option<String>,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -219,7 +221,12 @@ impl AiArgs {
                 let choices: Vec<_> = response
                     .choices
                     .iter()
-                    .filter_map(|choice| choice.text.as_deref())
+                    .filter_map(|choice| {
+                        choice
+                            .text
+                            .as_ref()
+                            .map(|text| (text, choice.additional_message.as_ref()))
+                    })
                     .collect();
 
                 macro_rules! handle_action {
@@ -267,8 +274,11 @@ impl AiArgs {
                         spinner.stop_with_message(format!("{spinner_text}❌"));
                         eyre::bail!("no valid completions were generated");
                     },
-                    [choice] => {
+                    [(choice, additional_message)] => {
                         spinner.stop_with_message(format!("{spinner_text}{}", choice.bright_magenta()));
+                        if let Some(additional_message) = additional_message {
+                            println!("  {additional_message}");
+                        }
                         println!();
 
                         let actions = [
@@ -298,7 +308,7 @@ impl AiArgs {
 
                         let mut actions: Vec<_> = choices
                             .iter()
-                            .map(|choice| DialogActions::Execute {
+                            .map(|(choice, _)| DialogActions::Execute {
                                 command: choice.to_string(),
                                 display: true,
                             })
