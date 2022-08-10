@@ -57,7 +57,14 @@ workflows:
       - windows:
           requires: [update-version]
       - sentry:
-          requires: [ubuntu-x86_64, fedora-x86_64, ubuntu-aarch64-focal, archlinux-x86_64, windows]
+          requires:
+            [
+              ubuntu-x86_64,
+              fedora-x86_64,
+              ubuntu-aarch64-focal,
+              archlinux-x86_64,
+              windows,
+            ]
           context:
             - sentry
   noop:
@@ -115,16 +122,16 @@ jobs:
 
   archlinux-x86_64:
     docker:
-      - image: archlinux      
+      - image: archlinux
     resource_class: large
     steps:
       - build-archlinux:
           arch: x86_64
-        
+
   windows:
     environment:
       CARGO_NET_GIT_FETCH_WITH_CLI: "true"
-    executor: 
+    executor:
       name: win/server-2022
       size: large
       shell: bash.exe
@@ -526,6 +533,7 @@ commands:
             rpm --query --requires desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/requires.txt
             rpm --query --provides desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/provides.txt
             rpm --query --info desktop/build/fig-<< parameters.arch >>-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/installed-size.txt
+            rpm --query --xml desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/dump.xml
       - callback:
           command: dependencies
           args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
@@ -538,6 +546,9 @@ commands:
       - callback:
           command: rpm_installed_size
           args: << parameters.platform >>;$(cat /tmp/installed-size.txt)
+      - callback:
+          command: rpm_xml
+          args: << parameters.platform >>;$(cat /tmp/dump.xml)
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux.rpm
           destination: << parameters.platform >>/<< parameters.arch >>/rpm
@@ -561,4 +572,3 @@ commands:
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux-archlinux.tar.gz
           destination: archlinux/<< parameters.arch >>/archlinux
-
