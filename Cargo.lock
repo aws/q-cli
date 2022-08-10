@@ -2339,6 +2339,7 @@ dependencies = [
  "tui",
  "url",
  "validator",
+ "which",
  "windows 0.39.0",
  "wsl",
  "yaque",

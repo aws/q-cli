@@ -308,6 +308,19 @@ impl Cli {
     }
 }
 
+fn desktop_app_is_installed() -> bool {
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            std::path::Path::new("/Applications/Fig.app/").exists()
+        } else if #[cfg(target_os = "linux")] {
+            use which::which;
+            which("fig_desktop").is_ok()
+        } else {
+            true
+        }
+    }
+}
+
 async fn uninstall_command() -> Result<()> {
     let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Are you sure you want to uninstall Fig?")
@@ -318,14 +331,18 @@ async fn uninstall_command() -> Result<()> {
         return Ok(());
     }
 
-    let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
-        fig_ipc::command::uninstall_command().await.is_ok()
-    } else {
-        false
-    };
+    if desktop_app_is_installed() {
+        let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
+            fig_ipc::command::uninstall_command().await.is_ok()
+        } else {
+            false
+        };
 
-    if !success {
-        println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
+        if !success {
+            println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
+        }
+    } else {
+        installation::uninstall_cli(installation::InstallComponents::all())?
     }
 
     Ok(())
