@@ -2355,11 +2355,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-<<<<<<< Updated upstream
 version = "2.1.5"
-=======
-version = "2.1.4"
->>>>>>> Stashed changes
 dependencies = [
  "anyhow",
  "base64 0.13.0",
