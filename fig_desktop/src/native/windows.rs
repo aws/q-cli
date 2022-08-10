@@ -70,7 +70,6 @@ use crate::{
 };
 
 pub const SHELL: &str = "bash";
-pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];
 
 #[repr(C)]
 struct AutomationTable(IUIAutomation);

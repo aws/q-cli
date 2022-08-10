@@ -18,7 +18,6 @@ use crate::{
 };
 
 pub const SHELL: &str = "/bin/bash";
-pub const SHELL_ARGS: [&str; 3] = ["--noprofile", "--norc", "-c"];
 
 #[derive(Debug, Default)]
 pub struct NativeState {
