@@ -103,7 +103,10 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     let mut conn = fig_ipc::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
     fig_ipc::send_message(&mut conn, fig_proto::figterm::FigtermMessage {
         command: Some(fig_proto::figterm::figterm_message::Command::InsertOnNewCmdCommand(
-            fig_proto::figterm::InsertOnNewCmdCommand { text, execute },
+            fig_proto::figterm::InsertOnNewCmdCommand {
+                text: format!("\x1b[200~{text}\x1b[201~"),
+                execute,
+            },
         )),
     })
     .await?;

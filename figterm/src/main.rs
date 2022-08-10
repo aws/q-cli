@@ -556,9 +556,7 @@ fn figterm_main() -> Result<()> {
                 res = event_sender_rx.recv_async() => {
                     match res {
                         Ok(b) => {
-                            master.write(b"\x1b[200~").await?;
                             master.write(&b).await?;
-                            master.write(b"\x1b[201~").await?;
                         }
                         Err(err) => warn!("Failed to recv: {err}"),
                     };
