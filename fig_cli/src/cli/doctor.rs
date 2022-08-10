@@ -1803,6 +1803,62 @@ impl DoctorCheck for DesktopCompatibilityCheck {
     }
 }
 
+struct WindowsConsoleCheck;
+
+#[async_trait]
+impl DoctorCheck for WindowsConsoleCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Windows Console Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        #[cfg(target_os = "windows")]
+        {
+            use winapi::um::consoleapi::GetConsoleMode;
+            use std::os::windows::io::AsRawHandle;
+
+            let mut mode = 0;
+            let stdin_ok = unsafe {
+                GetConsoleMode(
+                    std::io::stdin().as_raw_handle() as *mut _,
+                    &mut mode
+                )
+            };
+            let stdout_ok = unsafe {
+                GetConsoleMode(
+                    std::io::stdout().as_raw_handle() as *mut _,
+                    &mut mode
+                )
+            };
+
+            if stdin_ok != 1 || stdout_ok != 1 {
+                return Err(
+                    DoctorError::Error {
+                        reason: "Windows Console APIs are not suppported in this terminal".into(),
+                        info: vec![
+                            "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
+                            "MinTTY and other TTY implementations may not work properly.".into(),
+                            "".into(),
+                            "You can try the following fixes to get Fig working with your shell:".into(),
+                            "- If using Git for Windows, reinstall and choose \"Use default console window\" instead of MinTTY".into(),
+                            "- If using Git for Windows and you really want to use MinTTY, reinstall and check \"Enable experimental support for pseudo consoles\"".into(),
+                            "- Use your shell with a different supported terminal emulator like Windows Terminal.".into(),
+                            "- Launch your terminal emulator with winpty (e.g. winpty mintty). NOTE: this can lead to some UI bugs.".into()
+                        ],
+                        fix: None,
+                        error: None,
+                    }
+                );
+            }
+        }
+        Ok(())
+    }
+}
+
 struct LoginStatusCheck;
 
 #[async_trait]
@@ -2070,6 +2126,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &LocalBinPathCheck {},
                 #[cfg(target_os = "macos")]
                 &FigBinPathCheck {},
+                #[cfg(target_os = "windows")]
+                &WindowsConsoleCheck {},
                 &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
@@ -2148,6 +2206,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             &mut spinner,
         )
         .await?;
+
 
         #[cfg(target_os = "linux")]
         {

@@ -390,18 +390,13 @@ impl InternalSubcommand {
                         use std::os::windows::io::AsRawHandle;
 
                         let mut mode = 0;
-                        let (stdin_status, stdout_status) = unsafe {
-                            let stdin_ok = GetConsoleMode(
+                        let stdin_ok = unsafe {
+                            GetConsoleMode(
                                 std::io::stdin().as_raw_handle() as *mut _,
                                 &mut mode
-                            );
-                            let stdout_ok = GetConsoleMode(
-                                std::io::stdout().as_raw_handle() as *mut _,
-                                &mut mode
-                            );
-                            (stdin_ok, stdout_ok)
+                            )
                         };
-                        exit(if stdin_status == 1 && stdout_status == 1 { 2 } else { 1 });
+                        exit(if stdin_ok == 1 { 2 } else { 1 });
                     } else {
                         exit(2);
                     }
