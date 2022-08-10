@@ -192,7 +192,7 @@ impl SshSubcommand {
 
         if !status.success() {
             if let Some(code) = status.code() {
-                bail!("SSH process exited with code {code}");
+                std::process::exit(code);
             }
             bail!("SSH process was not successful");
         }
