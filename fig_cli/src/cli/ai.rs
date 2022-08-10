@@ -143,7 +143,7 @@ impl AiArgs {
             fig_settings::state::set_value(SEEN_ONBOARDING_KEY, true).ok();
         }
 
-        if !is_fig_pro {
+        if !seen_onboarding || !is_fig_pro {
             println!();
             println!(
                 "  {} is currently in beta for {} users.",

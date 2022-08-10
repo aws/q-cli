@@ -130,18 +130,6 @@ impl SshSubcommand {
         }
         let selected_identity = if let Some(identity) = &self.auth {
             let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
-            if self.get_identities {
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(
-                        &remote_identities
-                            .into_iter()
-                            .filter(|iden| identities.contains(&iden.remote_id.to_string()))
-                            .collect::<Vec<Identity>>()
-                    )?
-                );
-                return Ok(());
-            }
             let name_matches = remote_identities
                 .into_iter()
                 .filter(|iden| identities.contains(&iden.remote_id.to_string()))
@@ -204,7 +192,7 @@ impl SshSubcommand {
 
         if !status.success() {
             if let Some(code) = status.code() {
-                bail!("SSH process exited with code {code}");
+                std::process::exit(code);
             }
             bail!("SSH process was not successful");
         }

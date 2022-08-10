@@ -10,30 +10,44 @@ use fig_proto::fig::{
     RunProcessResponse,
 };
 use tokio::process::Command;
+use tracing::warn;
 
 use super::{
     RequestResult,
     RequestResultImpl,
 };
 use crate::figterm::FigtermState;
-use crate::native::{
-    SHELL,
-    SHELL_ARGS,
-};
+use crate::native::SHELL;
 
 fn get_shell_path_from_state(state: &FigtermState) -> Option<String> {
     state.most_recent_session()?.context?.shell_path
 }
 
+fn shell_args(shell_path: &str) -> &'static [&'static str] {
+    let (_, shell_name) = shell_path
+        .rsplit_once(|c| c == '/' || c == '\\')
+        .unwrap_or(("", shell_path));
+    match shell_name {
+        "bash" => &["--norc", "--noprofile", "-c"],
+        "zsh" => &["--norcs", "-c"],
+        "fish" => &["--no-config", "-c"],
+        _ => {
+            warn!("unknown shell {shell_name}");
+            &[]
+        },
+    }
+}
+
 // TODO(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
     let shell = get_shell_path_from_state(state).unwrap_or_else(|| SHELL.into());
+    let args = shell_args(&shell);
     let mut cmd = Command::new(shell);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
     // TODO(sean): better SHELL_ARGs handling here based on shell.
     // TODO(sean): handle wsl distro from FigtermState here.
-    cmd.args(SHELL_ARGS);
+    cmd.args(args);
     cmd.stdin(Stdio::inherit());
     cmd.arg(&request.command);
 

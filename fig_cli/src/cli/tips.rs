@@ -7,7 +7,6 @@ use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_util::directories;
-use semver::Version;
 use serde::{
     Deserialize,
     Serialize,
@@ -193,12 +192,15 @@ impl TipsSubcommand {
                             tips.time_last_sent = now;
                         }
                     } else {
-                        let changelog: Changelog = serde_json::from_str(include_str!("../../../changelog.json"))?;
-                        if Version::parse(&tips.last_changelog)? < Version::parse(&changelog.version)? {
-                            println!("{}", changelog.notes);
-                            tips.last_changelog = changelog.version;
-                            tips.time_last_sent = now;
-                        }
+                        // todo: renable changelog
+                        // let changelog: Changelog =
+                        // serde_json::from_str(include_str!("../../../changelog.json"))?;
+                        // if Version::parse(&tips.last_changelog)? <
+                        // Version::parse(&changelog.version)? {
+                        //     println!("{}", changelog.notes);
+                        //     tips.last_changelog = changelog.version;
+                        //     tips.time_last_sent = now;
+                        // }
                     }
                     tips.save()?;
                 },
