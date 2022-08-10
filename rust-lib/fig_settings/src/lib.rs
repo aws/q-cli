@@ -5,8 +5,6 @@ pub mod state;
 use std::fs;
 use std::path::PathBuf;
 
-use once_cell::sync::Lazy;
-use regex::Regex;
 use serde_json::Value;
 use thiserror::Error;
 use url::Url;
@@ -24,14 +22,18 @@ pub fn api_host() -> Url {
         .unwrap_or_else(|| Url::parse("https://api.fig.io").unwrap())
 }
 
-static WS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r"(\S+:|^)//").unwrap());
-
 pub fn ws_host() -> Url {
     get_host_string("developer.wsHost")
         .or_else(|| get_host_string("developer.cli.wsHost"))
         .unwrap_or_else(|| {
-            let host = api_host();
-            Url::parse(&WS_REGEX.replace_all(host.as_str(), "wss://")).unwrap()
+            let mut host = api_host();
+            host.set_scheme(match host.scheme() {
+                "http" => "ws",
+                "https" => "wss",
+                _ => "wss",
+            })
+            .unwrap();
+            host
         })
 }
 

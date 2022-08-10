@@ -2512,8 +2512,6 @@ name = "fig_settings"
 version = "0.1.0"
 dependencies = [
  "fig_util",
- "once_cell",
- "regex",
  "serde",
  "serde_json",
  "tempfile",
