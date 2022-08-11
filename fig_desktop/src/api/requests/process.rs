@@ -3,13 +3,23 @@ use std::process::Stdio;
 use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
-    EnvironmentVariable, PseudoterminalExecuteRequest, PseudoterminalExecuteResponse, RunProcessRequest,
+    EnvironmentVariable,
+    PseudoterminalExecuteRequest,
+    PseudoterminalExecuteResponse,
+    RunProcessRequest,
     RunProcessResponse,
 };
 use tokio::process::Command;
-use tracing::{debug, error, warn};
+use tracing::{
+    debug,
+    error,
+    warn,
+};
 
-use super::{RequestResult, RequestResultImpl};
+use super::{
+    RequestResult,
+    RequestResultImpl,
+};
 use crate::figterm::FigtermState;
 use crate::native::SHELL;
 

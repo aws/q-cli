@@ -40,10 +40,11 @@ use windows::Win32::UI::Accessibility::{
     SetWinEventHook,
     TextUnit_Character,
     TreeScope_Descendants,
+    UIA_HasKeyboardFocusPropertyId,
     UIA_IsTextPatternAvailablePropertyId,
     UIA_TextPatternId,
     UnhookWinEvent,
-    HWINEVENTHOOK, UIA_HasKeyboardFocusPropertyId,
+    HWINEVENTHOOK,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow,
@@ -131,29 +132,31 @@ impl NativeState {
 
                         let interest = automation.CreateAndCondition(
                             &automation.CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, &VT_TRUE)?,
-                            &automation.CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, &VT_TRUE)?
+                            &automation.CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, &VT_TRUE)?,
                         )?;
-                    
+
                         let inner = window.FindFirst(TreeScope_Descendants, &interest)?;
                         let text_pattern = inner.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId)?;
                         let selection = text_pattern.GetSelection()?;
                         let caret = selection.GetElement(0)?;
                         caret.ExpandToEnclosingUnit(TextUnit_Character)?;
-                    
+
                         let bounds = caret.GetBoundingRectangles()?;
                         let mut elements = std::ptr::null_mut::<RECT>();
                         let mut elements_len = 0;
-                    
-                        UNMANAGED
-                            .automation_instance
-                            .0
-                            .SafeArrayToRectNativeArray(bounds, &mut elements, &mut elements_len)?;
+
+                        UNMANAGED.automation_instance.0.SafeArrayToRectNativeArray(
+                            bounds,
+                            &mut elements,
+                            &mut elements_len,
+                        )?;
 
                         if elements_len > 0 {
                             let bounds = *elements;
 
                             UNMANAGED.send_event(WindowEvent::Reposition {
-                                x: bounds.left, y: bounds.bottom
+                                x: bounds.left,
+                                y: bounds.bottom,
                             });
                         }
                     },
