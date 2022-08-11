@@ -214,8 +214,8 @@ jobs:
             NEW_VERSION=`cat version`
             GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             cd desktop
-            git config user.name 'Fig Deploy'
-            git config user.email 'deploy@fig.io'
+            git config user.name 'fig-deploy[bot]'
+            git config user.email '109307685+fig-deploy[bot]@users.noreply.github.com'
             git add fig_desktop/Cargo.toml
             git checkout -B build-<< pipeline.parameters.id >>
             printf "Version $NEW_VERSION [skip-ci]\n\n<< pipeline.parameters.changelog >>" > commit_message
