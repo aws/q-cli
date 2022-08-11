@@ -1,0 +1,60 @@
+use std::time::SystemTimeError;
+
+use cfg_if::cfg_if;
+use fig_util::get_system_id;
+use thiserror::Error;
+
+pub mod index;
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(windows)]
+mod windows;
+
+pub use index::check as check_for_updates;
+use index::Package;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("unsupported platform")]
+    UnsupportedPlatform,
+    #[error(transparent)]
+    Util(#[from] fig_util::Error),
+    #[error(transparent)]
+    Reqwest(#[from] reqwest::Error),
+    #[error(transparent)]
+    Semver(#[from] semver::Error),
+    #[error(transparent)]
+    SystemTime(#[from] SystemTimeError),
+}
+
+fn system_threshold(version: &str) -> Result<u8, Error> {
+    let mut threshold: u8 = 0;
+
+    // different for each system
+    for ch in get_system_id()?.chars() {
+        threshold = threshold.wrapping_add(((ch as u32) % 256) as u8);
+    }
+    // different for each version
+    // prevents people from getting repeatedly hit by untested releases
+    for ch in version.chars() {
+        if let Some(digit) = ch.to_digit(10) {
+            threshold = threshold.wrapping_add(((0b10101010 << digit) % 123) as u8);
+        }
+    }
+
+    Ok(threshold)
+}
+
+#[allow(clippy::needless_return)] // actually fairly needed
+pub fn apply_update(package: Package) -> Result<(), Error> {
+    cfg_if! {
+        if #[cfg(windows)] {
+            return windows::update(package);
+        } else if #[cfg(target_os = "macos")] {
+            return macos::update(package),
+        } else {
+            let _package = package;
+            return Err(Error::UnsupportedPlatform)
+        }
+    }
+}

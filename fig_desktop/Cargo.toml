@@ -30,6 +30,7 @@ fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
+fig_update = { version = "0.1.0", path = "../rust-lib/fig_update" }
 fig_util = { path = "../rust-lib/fig_util" }
 fnv = "1.0.7"
 hashbrown = "0.12.3"
