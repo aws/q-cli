@@ -44,6 +44,7 @@ fn system_threshold(version: &str) -> Result<u8, Error> {
     Ok(threshold)
 }
 
+#[allow(clippy::needless_return)] // actually fairly needed
 pub fn apply_update(package: Package) -> Result<(), Error> {
     cfg_if! {
         if #[cfg(windows)] {
