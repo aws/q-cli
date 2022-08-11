@@ -179,7 +179,10 @@ impl WebviewManager {
                             // TODO(grant): Refresh the debugger
                         },
                         Event::NativeEvent(native_event) => {
-                            self.global_state.native_state.handle(native_event);
+                            self.global_state
+                                .native_state
+                                .handle(native_event)
+                                .expect("Failed to handle native event");
                         },
                     }
                 },

@@ -14,7 +14,9 @@ pub const SHELL: &str = "/bin/bash";
 pub struct NativeState {}
 
 impl NativeState {
-    pub fn handle(&self, _event: NativeEvent) {}
+    pub fn handle(&self, _event: NativeEvent) -> Result<()> {
+        Ok(())
+    }
 }
 
 pub async fn init(_global_state: Arc<GlobalState>, _proxy: EventLoopProxy) -> Result<()> {

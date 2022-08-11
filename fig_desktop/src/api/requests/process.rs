@@ -10,7 +10,10 @@ use fig_proto::fig::{
     RunProcessResponse,
 };
 use tokio::process::Command;
-use tracing::warn;
+use tracing::{
+    debug,
+    warn,
+};
 
 use super::{
     RequestResult,
@@ -28,9 +31,9 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
         .rsplit_once(|c| c == '/' || c == '\\')
         .unwrap_or(("", shell_path));
     match shell_name {
-        "bash" => &["--norc", "--noprofile", "-c"],
-        "zsh" => &["--norcs", "-c"],
-        "fish" => &["--no-config", "-c"],
+        "bash" | "bash.exe" => &["--norc", "--noprofile", "-c"],
+        "zsh" | "zsh.exe" => &["--norcs", "-c"],
+        "fish" | "fish.exe" => &["--no-config", "-c"],
         _ => {
             warn!("unknown shell {shell_name}");
             &[]
@@ -42,6 +45,14 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
 pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
     let shell = get_shell_path_from_state(state).unwrap_or_else(|| SHELL.into());
     let args = shell_args(&shell);
+
+    debug!(
+        "Executing {:?} (shell {shell:?}, args {args:?}, cwd {:?}, env {:?})",
+        request.command,
+        request.working_directory(),
+        request.env
+    );
+
     let mut cmd = Command::new(shell);
     #[cfg(target_os = "windows")]
     cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
