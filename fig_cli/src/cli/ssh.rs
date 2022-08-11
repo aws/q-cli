@@ -50,6 +50,7 @@ struct Identity {
     display_name: String,
     username: String,
     path_to_auth: String,
+    namespace: String,
 }
 
 impl Connection {
@@ -154,12 +155,14 @@ impl SshSubcommand {
             let id = identities.iter().next().unwrap();
             let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
             if self.get_identities {
+                let user_namespace = fig_api_client::user::account().await?.username;
                 println!(
                     "{}",
                     serde_json::to_string_pretty(
                         &remote_identities
                             .into_iter()
-                            .filter(|iden| identities.contains(&iden.remote_id.to_string()))
+                            .filter(|iden| Some(&iden.namespace) == user_namespace.as_ref()
+                                || identities.contains(&iden.remote_id.to_string()))
                             .collect::<Vec<Identity>>()
                     )?
                 );

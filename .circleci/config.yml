@@ -45,7 +45,7 @@ workflows:
           matrix:
             parameters:
               platform: [xenial]
-      - ubuntu-aarch64-focal:
+      - ubuntu-aarch64-focal-cli-only:
           requires: [update-version]
       - fedora-x86_64:
           requires: [update-version]
@@ -61,7 +61,7 @@ workflows:
             [
               ubuntu-x86_64,
               fedora-x86_64,
-              ubuntu-aarch64-focal,
+              ubuntu-aarch64-focal-cli-only,
               archlinux-x86_64,
               windows,
             ]
@@ -99,12 +99,12 @@ jobs:
           platform: << parameters.platform >>
           arch: x86_64
 
-  ubuntu-aarch64-focal:
+  ubuntu-aarch64-focal-cli-only:
     machine:
       image: ubuntu-2004:current
     resource_class: arm.large
     steps:
-      - build-ubuntu:
+      - build-ubuntu-cli-only:
           platform: focal
           arch: aarch64
 
@@ -214,8 +214,8 @@ jobs:
             NEW_VERSION=`cat version`
             GIT_SSH_COMMAND="ssh -o StrictHostKeyChecking=no"
             cd desktop
-            git config user.name 'Fig Deploy'
-            git config user.email 'deploy@fig.io'
+            git config user.name 'fig-deploy[bot]'
+            git config user.email '109307685+fig-deploy[bot]@users.noreply.github.com'
             git add fig_desktop/Cargo.toml
             git checkout -B build-<< pipeline.parameters.id >>
             printf "Version $NEW_VERSION [skip-ci]\n\n<< pipeline.parameters.changelog >>" > commit_message
@@ -306,7 +306,7 @@ commands:
         type: string
     steps:
       - rust/install:
-          version: 1.62.1
+          version: 1.63.0
       - when:
           condition: *supports_mold
           steps:
@@ -483,13 +483,10 @@ commands:
           args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus
       - run:
           name: Build
-          command: cd desktop && make ARCH=<< parameters.arch >> archive && make ARCH=<< parameters.arch >> deb
+          command: cd desktop && make ARCH=<< parameters.arch >> deb
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux.deb
           destination: << parameters.platform >>/<< parameters.arch >>/deb
-      - store_artifacts:
-          path: desktop/build/fig-<< parameters.arch >>-linux.tar.gz
-          destination: << parameters.platform >>/<< parameters.arch >>/archive
       - store_artifacts:
           path: desktop/build/usr/bin/fig
           destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
@@ -526,7 +523,7 @@ commands:
           arch: << parameters.arch >>
       - run:
           name: Build
-          command: cd desktop && make ARCH=<< parameters.arch >> archive && make ARCH=<< parameters.arch >> rpm
+          command: cd desktop && make ARCH=<< parameters.arch >> rpm
       - run:
           name: Gather RPM metadata
           command: |
@@ -552,9 +549,6 @@ commands:
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux.rpm
           destination: << parameters.platform >>/<< parameters.arch >>/rpm
-      - store_artifacts:
-          path: desktop/build/fig-<< parameters.arch >>-linux.tar.gz
-          destination: << parameters.platform >>/<< parameters.arch >>/archive
       - store_artifacts:
           path: desktop/build/fig
           destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin

@@ -141,9 +141,9 @@ dependencies = [
 
 [[package]]
 name = "anyhow"
-version = "1.0.60"
+version = "1.0.61"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c794e162a5eff65c72ef524dfe393eb923c354e350bb78b9c7383df13f3bc142"
+checksum = "508b352bb5c066aac251f6daf6b36eccd03e8a88e8081cd44959ea277a3af9a8"
 dependencies = [
  "backtrace",
 ]
@@ -366,7 +366,7 @@ dependencies = [
  "percent-encoding",
  "regex",
  "ring",
- "time 0.3.12",
+ "time 0.3.13",
  "tracing",
 ]
 
@@ -459,7 +459,7 @@ dependencies = [
  "itoa",
  "num-integer",
  "ryu",
- "time 0.3.12",
+ "time 0.3.13",
 ]
 
 [[package]]
@@ -1109,21 +1109,21 @@ dependencies = [
 
 [[package]]
 name = "console-api"
-version = "0.3.0"
+version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06c5fd425783d81668ed68ec98408a80498fb4ae2fd607797539e1a9dfa3618f"
+checksum = "e57ff02e8ad8e06ab9731d5dc72dc23bef9200778eae1a89d555d8c42e5d4a86"
 dependencies = [
- "prost 0.10.4",
- "prost-types 0.10.1",
+ "prost",
+ "prost-types",
  "tonic",
  "tracing-core",
 ]
 
 [[package]]
 name = "console-subscriber"
-version = "0.1.6"
+version = "0.1.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "31432bc31ff8883bf6a693a79371862f73087822470c82d6a1ec778781ee3978"
+checksum = "e933c43a5db3779b3600cdab18856af2411ca2237e33ba8ab476d5d5b1a6c1e7"
 dependencies = [
  "console-api",
  "crossbeam-channel 0.5.6",
@@ -1132,7 +1132,7 @@ dependencies = [
  "hdrhistogram",
  "humantime",
  "parking_lot 0.11.2",
- "prost-types 0.10.1",
+ "prost-types",
  "serde",
  "serde_json",
  "thread_local 1.1.4",
@@ -1169,7 +1169,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94d4706de1b0fa5b132270cddffa8585166037822e260a944fe161acd137ca05"
 dependencies = [
  "percent-encoding",
- "time 0.3.12",
+ "time 0.3.13",
  "version_check",
 ]
 
@@ -1185,7 +1185,7 @@ dependencies = [
  "publicsuffix",
  "serde",
  "serde_json",
- "time 0.3.12",
+ "time 0.3.13",
  "url",
 ]
 
@@ -2257,7 +2257,7 @@ dependencies = [
  "fig_util",
  "serde",
  "serde_json",
- "time 0.3.12",
+ "time 0.3.13",
  "url",
 ]
 
@@ -2277,7 +2277,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.12",
+ "time 0.3.13",
  "tokio",
  "uuid",
 ]
@@ -2327,11 +2327,11 @@ dependencies = [
  "serde_json",
  "skim",
  "spinners",
- "sysinfo 0.25.1",
+ "sysinfo 0.25.2",
  "system_socket",
  "tempfile",
  "thiserror",
- "time 0.3.12",
+ "time 0.3.13",
  "tokio",
  "tokio-tungstenite 0.17.2",
  "tracing",
@@ -2356,7 +2356,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.2.0"
+version = "2.2.2"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -2390,9 +2390,9 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "sysinfo 0.25.1",
+ "sysinfo 0.25.2",
  "system_socket",
- "time 0.3.12",
+ "time 0.3.13",
  "tokio",
  "tracing",
  "url",
@@ -2425,7 +2425,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
- "time 0.3.12",
+ "time 0.3.13",
  "tokio",
  "tracing",
  "url",
@@ -2441,7 +2441,7 @@ dependencies = [
  "regex",
  "serde",
  "thiserror",
- "time 0.3.12",
+ "time 0.3.13",
 ]
 
 [[package]]
@@ -2481,7 +2481,7 @@ dependencies = [
  "fig_util",
  "nix 0.24.2",
  "once_cell",
- "prost 0.11.0",
+ "prost",
  "prost-reflect",
  "prost-reflect-build",
  "protobuf-src",
@@ -2512,8 +2512,6 @@ name = "fig_settings"
 version = "0.1.0"
 dependencies = [
  "fig_util",
- "once_cell",
- "regex",
  "serde",
  "serde_json",
  "tempfile",
@@ -5165,22 +5163,12 @@ checksum = "2f61dcf0b917cd75d4521d7343d1ffff3d1583054133c9b5cbea3375c703c40d"
 
 [[package]]
 name = "prost"
-version = "0.10.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71adf41db68aa0daaefc69bb30bcd68ded9b9abaad5d1fbb6304c4fb390e083e"
-dependencies = [
- "bytes",
- "prost-derive 0.10.1",
-]
-
-[[package]]
-name = "prost"
 version = "0.11.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "399c3c31cdec40583bb68f0b18403400d01ec4289c383aa047560439952c4dd7"
 dependencies = [
  "bytes",
- "prost-derive 0.11.0",
+ "prost-derive",
 ]
 
 [[package]]
@@ -5196,24 +5184,11 @@ dependencies = [
  "log",
  "multimap",
  "petgraph 0.6.2",
- "prost 0.11.0",
- "prost-types 0.11.1",
+ "prost",
+ "prost-types",
  "regex",
  "tempfile",
  "which",
-]
-
-[[package]]
-name = "prost-derive"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7b670f45da57fb8542ebdbb6105a925fe571b67f9e7ed9f47a06a84e72b4e7cc"
-dependencies = [
- "anyhow",
- "itertools",
- "proc-macro2 1.0.43",
- "quote 1.0.21",
- "syn 1.0.99",
 ]
 
 [[package]]
@@ -5236,9 +5211,9 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d389b05970b1da25a29ac300c74b8c05b8850adfe1d2ddf5c32e39fe0dc97df8"
 dependencies = [
  "base64 0.13.0",
- "prost 0.11.0",
+ "prost",
  "prost-reflect-derive",
- "prost-types 0.11.1",
+ "prost-types",
  "serde",
  "serde-value",
 ]
@@ -5266,22 +5241,12 @@ dependencies = [
 
 [[package]]
 name = "prost-types"
-version = "0.10.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2d0a014229361011dc8e69c8a1ec6c2e8d0f2af7c91e3ea3f5b2170298461e68"
-dependencies = [
- "bytes",
- "prost 0.10.4",
-]
-
-[[package]]
-name = "prost-types"
 version = "0.11.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4dfaa718ad76a44b3415e6c4d53b17c8f99160dcb3a99b10470fce8ad43f6e3e"
 dependencies = [
  "bytes",
- "prost 0.11.0",
+ "prost",
 ]
 
 [[package]]
@@ -6086,7 +6051,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.12",
+ "time 0.3.13",
  "url",
  "uuid",
 ]
@@ -6763,9 +6728,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.25.1"
+version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "373e4bc9213f734126e2be3e2e118dbc9b909c37487d8d755822bc90f70ae62a"
+checksum = "1594a36887d0f70096702bffadfb67dfbfe76ad4bf84605e86157dc9fce9961a"
 dependencies = [
  "cfg-if 1.0.0",
  "core-foundation-sys",
@@ -7049,12 +7014,11 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.12"
+version = "0.3.13"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "74b7cc93fc23ba97fde84f7eea56c55d1ba183f495c6715defdfc7b9cb8c870f"
+checksum = "db76ff9fa4b1458b3c7f077f3ff9887394058460d21e634355b273aaf11eea45"
 dependencies = [
  "itoa",
- "js-sys",
  "libc",
  "num_threads",
  "serde",
@@ -7259,9 +7223,9 @@ dependencies = [
 
 [[package]]
 name = "tonic"
-version = "0.7.2"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5be9d60db39854b30b835107500cf0aca0b0d14d6e1c3de124217c23a29c2ddb"
+checksum = "498f271adc46acce75d66f639e4d35b31b2394c295c82496727dafa16d465dd2"
 dependencies = [
  "async-stream",
  "async-trait",
@@ -7277,8 +7241,8 @@ dependencies = [
  "hyper-timeout",
  "percent-encoding",
  "pin-project",
- "prost 0.10.4",
- "prost-derive 0.10.1",
+ "prost",
+ "prost-derive",
  "tokio",
  "tokio-stream",
  "tokio-util",
@@ -7360,7 +7324,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
 dependencies = [
  "crossbeam-channel 0.5.6",
- "time 0.3.12",
+ "time 0.3.13",
  "tracing-subscriber",
 ]
 
@@ -7430,7 +7394,7 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local 1.1.4",
- "time 0.3.12",
+ "time 0.3.13",
  "tracing",
  "tracing-core",
  "tracing-log",

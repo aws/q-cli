@@ -281,19 +281,34 @@ impl AiArgs {
                         }
                         println!();
 
-                        let actions = [
-                            DialogActions::Execute {
-                                command: choice.to_string(),
-                                display: false,
-                            },
-                            DialogActions::Edit {
-                                command: choice.to_string(),
-                                display: false,
-                            },
-                            DialogActions::Regenerate,
-                            DialogActions::Ask,
-                            DialogActions::Cancel,
-                        ];
+                        let actions: Vec<DialogActions> = fig_settings::settings::get("ai.menu-actions")
+                            .ok()
+                            .flatten()
+                            .unwrap_or_else(|| {
+                                ["execute", "edit", "regenerate", "ask", "cancel"]
+                                    .map(String::from)
+                                    .to_vec()
+                            })
+                            .into_iter()
+                            .filter_map(|action| match action.as_str() {
+                                "execute" => Some(DialogActions::Execute {
+                                    command: choice.to_string(),
+                                    display: false,
+                                }),
+                                "edit" => Some(DialogActions::Edit {
+                                    command: choice.to_string(),
+                                    display: false,
+                                }),
+                                "copy" => Some(DialogActions::Copy {
+                                    command: choice.to_string(),
+                                    display: false,
+                                }),
+                                "regenerate" => Some(DialogActions::Regenerate),
+                                "ask" => Some(DialogActions::Ask),
+                                "cancel" => Some(DialogActions::Cancel),
+                                _ => None,
+                            })
+                            .collect();
 
                         let selected = dialoguer::Select::with_theme(&dialoguer_theme())
                             .default(0)

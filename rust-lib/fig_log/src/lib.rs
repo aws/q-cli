@@ -59,6 +59,7 @@ pub struct LoggerGuard<const N: usize> {
 pub struct Logger {
     log_file_name: Option<String>,
     stdout_logger: bool,
+    max_file_size: Option<u64>,
 }
 
 impl Logger {
@@ -73,6 +74,11 @@ impl Logger {
 
     pub fn with_file(mut self, file_name: impl Into<String>) -> Logger {
         self.log_file_name = Some(file_name.into());
+        self
+    }
+
+    pub fn with_max_file_size(mut self, size: u64) -> Logger {
+        self.max_file_size = Some(size);
         self
     }
 
@@ -95,7 +101,14 @@ impl Logger {
                     fs::create_dir_all(log_path.parent().unwrap())?;
                 }
 
-                let file = File::create(log_path)?;
+                if let Some(max_file_size) = self.max_file_size {
+                    let metadata = std::fs::metadata(&log_path)?;
+                    if metadata.len() > max_file_size {
+                        std::fs::remove_file(&log_path)?;
+                    }
+                }
+
+                let file = File::options().append(true).create(true).open(log_path)?;
                 let (non_blocking, guard) = tracing_appender::non_blocking(file);
                 let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
 
