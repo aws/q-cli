@@ -62,6 +62,7 @@ pub fn get_system_id() -> Result<String, Error> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
+#[allow(clippy::needless_return)] // not actually needless
 pub fn get_platform() -> Result<&'static str, Error> {
     if let Some(over_ride) = option_env!("FIG_OVERRIDE_PLATFORM") {
         return Ok(over_ride);
@@ -80,18 +81,10 @@ pub fn get_platform() -> Result<&'static str, Error> {
     }
 }
 
-pub fn get_arch() -> Result<&'static str, Error> {
+pub fn get_arch() -> &'static str {
     if let Some(over_ride) = option_env!("FIG_OVERRIDE_ARCH") {
-        return Ok(over_ride);
-    }
-
-    cfg_if! {
-        if #[cfg(target_arch = "x86_64")] {
-            return Ok("x86_64");
-        } else if #[cfg(target_arch = "aarch64")] {
-            return Ok("aarch64");
-        } else {
-            return Err(Error::UnsupportedArch);
-        }
+        over_ride
+    } else {
+        std::env::consts::ARCH
     }
 }

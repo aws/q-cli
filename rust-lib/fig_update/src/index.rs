@@ -142,7 +142,7 @@ pub async fn check(current_version: &str) -> Result<Option<Package>> {
 
     let candidate = chosen.unwrap();
 
-    let package = match (get_platform()?, get_arch()?) {
+    let package = match (get_platform()?, get_arch()) {
         ("windows", "x86_64") => candidate.windows.x86_64.clone(),
         ("macos", "x86_64") => candidate.macos.x86_64.clone(),
         ("macos", "aarch64") => candidate.macos.aarch64.clone(),

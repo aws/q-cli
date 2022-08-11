@@ -2374,6 +2374,7 @@ dependencies = [
  "fig_proto",
  "fig_settings",
  "fig_telemetry",
+ "fig_update",
  "fig_util",
  "fnv",
  "freedesktop-icons",

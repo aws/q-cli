@@ -90,6 +90,8 @@ async fn main() {
         true,
     );
 
+    utils::update_check().await;
+
     let cli = cli::Cli::parse();
 
     if let Some(url) = cli.url_link {
