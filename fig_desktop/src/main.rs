@@ -94,7 +94,7 @@ async fn main() {
     utils::update_check().await;
 
     tokio::spawn(async {
-        let seconds = fig_settings::settings::get_int_or("autoupdate.checkPeriod", 60 * 60 * 3);
+        let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
         if seconds < 0 {
             return;
         }
