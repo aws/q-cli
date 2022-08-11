@@ -9,13 +9,11 @@ use anyhow::{
 use fig_proto::local::TerminalCursorCoordinates;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
-use tracing::{
-    debug,
-    warn,
-};
+use tracing::debug;
 use windows::Win32::Foundation::{
     HWND,
     POINT,
+    RECT,
 };
 use windows::Win32::Graphics::Gdi::ClientToScreen;
 use windows::Win32::System::Com::{
@@ -27,7 +25,7 @@ use windows::Win32::System::Com::{
     VARIANT_0_0,
     VARIANT_0_0_0,
 };
-use windows::Win32::System::Ole::VT_I4;
+use windows::Win32::System::Ole::VT_BOOL;
 use windows::Win32::System::ProcessStatus::K32GetProcessImageFileNameA;
 use windows::Win32::System::Threading::{
     GetCurrentThreadId,
@@ -38,12 +36,14 @@ use windows::Win32::UI::Accessibility::{
     AccessibleObjectFromEvent,
     CUIAutomation,
     IUIAutomation,
+    IUIAutomationTextPattern,
     SetWinEventHook,
+    TextUnit_Character,
     TreeScope_Descendants,
-    UIA_ControlTypePropertyId,
-    UIA_TextControlTypeId,
+    UIA_IsTextPatternAvailablePropertyId,
+    UIA_TextPatternId,
     UnhookWinEvent,
-    HWINEVENTHOOK,
+    HWINEVENTHOOK, UIA_HasKeyboardFocusPropertyId,
 };
 use windows::Win32::UI::WindowsAndMessaging::{
     GetForegroundWindow,
@@ -93,7 +93,7 @@ static UNMANAGED: Lazy<Unmanaged> = unsafe {
             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
         )),
         location_hook: RwLock::new(None),
-        console_state: RwLock::new(ConsoleState::None),
+        hwnd: RwLock::new(HWND(0)),
         automation_instance: AutomationTable({
             CoInitialize(std::ptr::null_mut()).unwrap();
             CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap()
@@ -101,79 +101,63 @@ static UNMANAGED: Lazy<Unmanaged> = unsafe {
     })
 };
 
+const VT_TRUE: VARIANT = VARIANT {
+    Anonymous: VARIANT_0 {
+        Anonymous: ManuallyDrop::new(VARIANT_0_0 {
+            vt: VT_BOOL.0 as u16,
+            wReserved1: 0,
+            wReserved2: 0,
+            wReserved3: 0,
+            Anonymous: VARIANT_0_0_0 {
+                boolVal: unsafe { std::mem::transmute(0xffff_u16) },
+            },
+        }),
+    },
+};
+
 #[derive(Debug, Default)]
 pub struct NativeState;
 
 impl NativeState {
-    pub fn handle(&self, event: NativeEvent) {
+    pub fn handle(&self, event: NativeEvent) -> Result<()> {
         match event {
             NativeEvent::EditBufferChanged => unsafe {
-                match *UNMANAGED.console_state.read() {
-                    ConsoleState::None => (),
-                    ConsoleState::Accessible { caret_x, caret_y } => {
-                        UNMANAGED.send_event(WindowEvent::Reposition { x: caret_x, y: caret_y })
-                    },
-                    ConsoleState::Console { hwnd } => {
-                        let coords = UNMANAGED
-                            .global_state
-                            .read()
-                            .as_ref()
-                            .unwrap()
-                            .figterm_state
-                            .most_recent_session()
-                            .and_then(|session| session.terminal_cursor_coordinates)
-                            .unwrap_or(TerminalCursorCoordinates {
-                                x: 0,
-                                y: 0,
-                                xpixel: 0,
-                                ypixel: 0,
-                            });
+                let hwnd = *UNMANAGED.hwnd.read();
+                let automation = &UNMANAGED.automation_instance.0;
+                let window = automation.ElementFromHandle(hwnd)?;
+            
+                let interest = automation.CreateAndCondition(
+                    &automation.CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, &VT_TRUE)?,
+                    &automation.CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, &VT_TRUE)?
+                )?;
+            
+                let inner = window.FindFirst(TreeScope_Descendants, &interest)?;
+                let text_pattern = inner.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId)?;
+                let selection = text_pattern.GetSelection()?;
+                let caret = selection.GetElement(0)?;
+                caret.ExpandToEnclosingUnit(TextUnit_Character)?;
+            
+                let bounds = caret.GetBoundingRectangles()?;
+                let mut elements = std::ptr::null_mut::<RECT>();
+                let mut elements_len = 0;
+            
+                UNMANAGED
+                    .automation_instance
+                    .0
+                    .SafeArrayToRectNativeArray(bounds, &mut elements, &mut elements_len)?;
 
-                        let mut position = POINT {
-                            x: coords.x * 8,
-                            y: (coords.y + 1) * 16,
-                        };
+                if elements_len > 0 {
+                    let bounds = *elements;
 
-                        if ClientToScreen(hwnd, &mut position).as_bool() {
-                            UNMANAGED.send_event(WindowEvent::Reposition {
-                                x: position.x,
-                                y: position.y,
-                            });
-                        };
-                    },
-                    ConsoleState::WindowsTerminal { window_x, window_y } => {
-                        let coords = UNMANAGED
-                            .global_state
-                            .read()
-                            .as_ref()
-                            .unwrap()
-                            .figterm_state
-                            .most_recent_session()
-                            .and_then(|session| session.terminal_cursor_coordinates)
-                            .unwrap_or(TerminalCursorCoordinates {
-                                x: 0,
-                                y: 0,
-                                xpixel: 0,
-                                ypixel: 0,
-                            });
-
-                        UNMANAGED.send_event(WindowEvent::Reposition {
-                            x: window_x + (coords.x + 1) * 8,
-                            y: window_y + (coords.y + 2) * 16,
-                        });
-                    },
+                    UNMANAGED.send_event(WindowEvent::Reposition {
+                        x: bounds.left, y: bounds.bottom
+                    });
                 }
             },
         }
-    }
-}
 
-#[derive(Clone, Copy, Debug)]
-enum ConsoleState {
-    None,
-    Console { hwnd: HWND },
-    Accessible { caret_x: i32, caret_y: i32 },
-    WindowsTerminal { window_x: i32, window_y: i32 },
+        Err(anyhow!("Failed to acquire caret position"))
+    }
 }
 
 #[allow(dead_code)]
@@ -184,7 +168,7 @@ struct Unmanaged {
     event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
-    console_state: RwLock<ConsoleState>,
+    hwnd: RwLock<HWND>,
     automation_instance: AutomationTable,
 }
 
@@ -262,21 +246,13 @@ unsafe fn update_focused_state(hwnd: HWND) {
         title if ["cmd", "mintty", "powershell"].contains(&title) => {
             let mut process_id: u32 = 0;
             GetWindowThreadProcessId(hwnd, &mut process_id);
-            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd }
+            *UNMANAGED.hwnd.write() = hwnd
         },
         title if title == "WindowsTerminal" => {
-            let (window_x, window_y) = match windows_terminal_inner_position(hwnd) {
-                Ok(ok) => ok,
-                Err(_) => {
-                    warn!("Failed to get inner position for Windows Terminal window");
-                    *UNMANAGED.console_state.write() = ConsoleState::None;
-                    return;
-                },
-            };
-            *UNMANAGED.console_state.write() = ConsoleState::WindowsTerminal { window_x, window_y }
+            *UNMANAGED.hwnd.write() = hwnd;
         },
         _ => {
-            *UNMANAGED.console_state.write() = ConsoleState::None;
+            *UNMANAGED.hwnd.write() = HWND(0);
             return;
         },
     }
@@ -313,22 +289,6 @@ unsafe extern "system" fn win_event_proc(
             && id_child == CHILDID_SELF as i32 =>
         {
             UNMANAGED.send_event(WindowEvent::Hide);
-
-            let console_state = *UNMANAGED.console_state.read();
-            if let ConsoleState::WindowsTerminal { .. } = console_state {
-                match windows_terminal_inner_position(hwnd) {
-                    Ok((x, y)) => {
-                        *UNMANAGED.console_state.write() = ConsoleState::WindowsTerminal {
-                            window_x: x,
-                            window_y: y,
-                        }
-                    },
-                    Err(_) => {
-                        warn!("Failed to get inner position for Windows Terminal window");
-                        *UNMANAGED.console_state.write() = ConsoleState::None;
-                    },
-                }
-            }
         },
         e if e == EVENT_OBJECT_LOCATIONCHANGE && OBJECT_IDENTIFIER(id_object) == OBJID_CARET => {
             let mut acc = None;
@@ -343,50 +303,11 @@ unsafe extern "system" fn win_event_proc(
                         .accLocation(&mut left, &mut top, &mut width, &mut height, &varchild)
                         .is_ok()
                     {
-                        *UNMANAGED.console_state.write() = ConsoleState::Accessible {
-                            caret_x: left,
-                            caret_y: top + height,
-                        }
+                        *UNMANAGED.hwnd.write() = hwnd;
                     }
                 }
             }
         },
         _ => (),
     }
-}
-
-unsafe fn windows_terminal_inner_position(hwnd: HWND) -> Result<(i32, i32)> {
-    let window = UNMANAGED.automation_instance.0.ElementFromHandle(hwnd)?;
-
-    let control_type_id = VARIANT {
-        Anonymous: VARIANT_0 {
-            Anonymous: ManuallyDrop::new(VARIANT_0_0 {
-                vt: VT_I4.0 as u16,
-                wReserved1: 0,
-                wReserved2: 0,
-                wReserved3: 0,
-                Anonymous: VARIANT_0_0_0 {
-                    lVal: UIA_TextControlTypeId,
-                },
-            }),
-        },
-    };
-
-    let interest = UNMANAGED
-        .automation_instance
-        .0
-        .CreatePropertyCondition(UIA_ControlTypePropertyId, &control_type_id)?;
-
-    let inner = window.FindAll(TreeScope_Descendants, &interest);
-    let _ = ManuallyDrop::into_inner(control_type_id.Anonymous.Anonymous);
-    let inner = inner?;
-    for i in 0..inner.Length()? {
-        let element = inner.GetElement(i)?;
-        if element.CurrentLocalizedControlType()? == "terminal" {
-            let bounds = element.CurrentBoundingRectangle()?;
-            return Ok((bounds.left, bounds.top));
-        }
-    }
-
-    Err(anyhow!("Failed to acquire Windows Terminal bounds"))
 }
