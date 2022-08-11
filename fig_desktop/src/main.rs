@@ -16,6 +16,7 @@ mod webview;
 mod window;
 
 use std::iter::empty;
+use std::time::Duration;
 
 use clap::Parser;
 use event::Event;
@@ -91,6 +92,15 @@ async fn main() {
     );
 
     utils::update_check().await;
+
+    tokio::spawn(async {
+        let mut interval = tokio::time::interval(Duration::from_secs(60 * 60 * 3));
+        interval.tick().await; // first tick is completed immediately
+        loop {
+            interval.tick().await;
+            utils::update_check().await;
+        }
+    });
 
     let cli = cli::Cli::parse();
 
