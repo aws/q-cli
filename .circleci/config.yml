@@ -45,7 +45,7 @@ workflows:
           matrix:
             parameters:
               platform: [xenial]
-      - ubuntu-aarch64-focal:
+      - ubuntu-aarch64-focal-cli-only:
           requires: [update-version]
       - fedora-x86_64:
           requires: [update-version]
@@ -61,7 +61,7 @@ workflows:
             [
               ubuntu-x86_64,
               fedora-x86_64,
-              ubuntu-aarch64-focal,
+              ubuntu-aarch64-focal-cli-only,
               archlinux-x86_64,
               windows,
             ]
@@ -99,12 +99,12 @@ jobs:
           platform: << parameters.platform >>
           arch: x86_64
 
-  ubuntu-aarch64-focal:
+  ubuntu-aarch64-focal-cli-only:
     machine:
       image: ubuntu-2004:current
     resource_class: arm.large
     steps:
-      - build-ubuntu:
+      - build-ubuntu-cli-only:
           platform: focal
           arch: aarch64
 
