@@ -93,8 +93,13 @@ else
       return 1
     fi
     
-    "${INSTALL_DIR}/fig" install --dotfiles --force
-    if [ $? -ne 0 ]; then
+    if [[ $- == *i* ]]; then
+      "${INSTALL_DIR}/fig" install --dotfiles --force
+    else 
+      "${INSTALL_DIR}/fig" install --dotfiles --force --no-confirm
+    fi
+
+    if [[ $? -ne 0 ]]; then
       helpmsg "Failed to install shell integrations."
       return 1
     fi
