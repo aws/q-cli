@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 
 use fig_util::directories;
+use serde::de::DeserializeOwned;
 
 use crate::{
     Error,
@@ -50,6 +51,14 @@ pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
     let settings = local_settings()?;
     let value = settings.get(key);
     Ok(value.cloned())
+}
+
+pub fn get<T: DeserializeOwned>(key: impl AsRef<str>) -> Result<Option<T>> {
+    let settings = local_settings()?;
+    match settings.get(key) {
+        Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
+        None => Ok(None),
+    }
 }
 
 pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>> {
