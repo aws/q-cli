@@ -25,7 +25,9 @@ pub struct NativeState {
 }
 
 impl NativeState {
-    pub fn handle(&self, _event: NativeEvent) {}
+    pub fn handle(&self, _event: NativeEvent) -> Result<()> {
+        Ok(())
+    }
 }
 
 enum DisplayServer {

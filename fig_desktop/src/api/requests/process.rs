@@ -12,7 +12,6 @@ use fig_proto::fig::{
 use tokio::process::Command;
 use tracing::{
     debug,
-    error,
     warn,
 };
 

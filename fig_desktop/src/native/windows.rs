@@ -6,16 +6,13 @@ use anyhow::{
     anyhow,
     Result,
 };
-use fig_proto::local::TerminalCursorCoordinates;
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use tracing::debug;
 use windows::Win32::Foundation::{
     HWND,
-    POINT,
     RECT,
 };
-use windows::Win32::Graphics::Gdi::ClientToScreen;
 use windows::Win32::System::Com::{
     CoCreateInstance,
     CoInitialize,
