@@ -9,6 +9,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+#[cfg(not(target_os = "linux"))]
 use tracing::{
     error,
     info,

@@ -2545,13 +2545,13 @@ dependencies = [
 name = "fig_update"
 version = "0.1.0"
 dependencies = [
- "anyhow",
  "cfg-if 1.0.0",
  "fig_util",
  "once_cell",
  "reqwest",
  "semver 1.0.13",
  "serde",
+ "thiserror",
  "tokio",
  "tracing",
 ]

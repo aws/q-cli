@@ -4,10 +4,6 @@ use std::time::{
     UNIX_EPOCH,
 };
 
-use anyhow::{
-    bail,
-    Result,
-};
 use fig_util::{
     get_arch,
     get_platform,
@@ -18,7 +14,10 @@ use semver::Version;
 use serde::Deserialize;
 use tracing::trace;
 
-use crate::system_threshold;
+use crate::{
+    system_threshold,
+    Error,
+};
 
 #[derive(Deserialize)]
 pub struct Index {
@@ -65,13 +64,13 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 
 const INDEX_ENDPOINT: &str = "https://pkg.fig.io/managed/index";
 
-async fn pull() -> Result<Index> {
+async fn pull() -> Result<Index, Error> {
     let response = CLIENT.get(INDEX_ENDPOINT).send().await?;
     let index = response.json().await?;
     Ok(index)
 }
 
-pub async fn check(current_version: &str) -> Result<Option<Package>> {
+pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
     let index = pull().await?;
 
     let remote_version = Version::parse(&index.latest_version)?;
@@ -142,11 +141,11 @@ pub async fn check(current_version: &str) -> Result<Option<Package>> {
 
     let candidate = chosen.unwrap();
 
-    let package = match (get_platform()?, get_arch()) {
+    let package = match (get_platform(), get_arch()) {
         ("windows", "x86_64") => candidate.windows.x86_64.clone(),
         ("macos", "x86_64") => candidate.macos.x86_64.clone(),
         ("macos", "aarch64") => candidate.macos.aarch64.clone(),
-        (plat, arch) => bail!("unknown platform/arch {plat} {arch}"),
+        _ => return Err(Error::UnsupportedPlatform),
     };
 
     Ok(Some(package))

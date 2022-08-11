@@ -94,7 +94,11 @@ async fn main() {
     utils::update_check().await;
 
     tokio::spawn(async {
-        let mut interval = tokio::time::interval(Duration::from_secs(60 * 60 * 3));
+        let seconds = fig_settings::settings::get_int_or("autoupdate.checkPeriod", 60 * 60 * 3);
+        if seconds < 0 {
+            return;
+        }
+        let mut interval = tokio::time::interval(Duration::from_secs(seconds as u64));
         interval.tick().await; // first tick is completed immediately
         loop {
             interval.tick().await;

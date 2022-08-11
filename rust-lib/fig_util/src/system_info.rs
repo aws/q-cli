@@ -62,22 +62,11 @@ pub fn get_system_id() -> Result<String, Error> {
     Ok(format!("{:x}", hasher.finalize()))
 }
 
-#[allow(clippy::needless_return)] // not actually needless
-pub fn get_platform() -> Result<&'static str, Error> {
+pub fn get_platform() -> &'static str {
     if let Some(over_ride) = option_env!("FIG_OVERRIDE_PLATFORM") {
-        return Ok(over_ride);
-    }
-
-    cfg_if! {
-        if #[cfg(windows)] {
-            return Ok("windows");
-        } else if #[cfg(target_os = "linux")] {
-            return Ok("linux");
-        } else if #[cfg(target_os = "macos")] {
-            return Ok("macos");
-        } else {
-            return Err(Error::UnsupportedPlatform);
-        }
+        over_ride
+    } else {
+        std::env::consts::OS
     }
 }
 
