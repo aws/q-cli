@@ -93,7 +93,7 @@ static UNMANAGED: Lazy<Unmanaged> = unsafe {
             WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
         )),
         location_hook: RwLock::new(None),
-        hwnd: RwLock::new(HWND(0)),
+        console_state: RwLock::new(ConsoleState::None),
         automation_instance: AutomationTable({
             CoInitialize(std::ptr::null_mut()).unwrap();
             CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap()
@@ -122,42 +122,57 @@ impl NativeState {
     pub fn handle(&self, event: NativeEvent) -> Result<()> {
         match event {
             NativeEvent::EditBufferChanged => unsafe {
-                let hwnd = *UNMANAGED.hwnd.read();
-                let automation = &UNMANAGED.automation_instance.0;
-                let window = automation.ElementFromHandle(hwnd)?;
-            
-                let interest = automation.CreateAndCondition(
-                    &automation.CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, &VT_TRUE)?,
-                    &automation.CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, &VT_TRUE)?
-                )?;
-            
-                let inner = window.FindFirst(TreeScope_Descendants, &interest)?;
-                let text_pattern = inner.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId)?;
-                let selection = text_pattern.GetSelection()?;
-                let caret = selection.GetElement(0)?;
-                caret.ExpandToEnclosingUnit(TextUnit_Character)?;
-            
-                let bounds = caret.GetBoundingRectangles()?;
-                let mut elements = std::ptr::null_mut::<RECT>();
-                let mut elements_len = 0;
-            
-                UNMANAGED
-                    .automation_instance
-                    .0
-                    .SafeArrayToRectNativeArray(bounds, &mut elements, &mut elements_len)?;
+                let console_state = *UNMANAGED.console_state.read();
+                match console_state {
+                    ConsoleState::None => (),
+                    ConsoleState::Console { hwnd } => {
+                        let automation = &UNMANAGED.automation_instance.0;
+                        let window = automation.ElementFromHandle(hwnd)?;
 
-                if elements_len > 0 {
-                    let bounds = *elements;
+                        let interest = automation.CreateAndCondition(
+                            &automation.CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, &VT_TRUE)?,
+                            &automation.CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, &VT_TRUE)?
+                        )?;
+                    
+                        let inner = window.FindFirst(TreeScope_Descendants, &interest)?;
+                        let text_pattern = inner.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId)?;
+                        let selection = text_pattern.GetSelection()?;
+                        let caret = selection.GetElement(0)?;
+                        caret.ExpandToEnclosingUnit(TextUnit_Character)?;
+                    
+                        let bounds = caret.GetBoundingRectangles()?;
+                        let mut elements = std::ptr::null_mut::<RECT>();
+                        let mut elements_len = 0;
+                    
+                        UNMANAGED
+                            .automation_instance
+                            .0
+                            .SafeArrayToRectNativeArray(bounds, &mut elements, &mut elements_len)?;
 
-                    UNMANAGED.send_event(WindowEvent::Reposition {
-                        x: bounds.left, y: bounds.bottom
-                    });
+                        if elements_len > 0 {
+                            let bounds = *elements;
+
+                            UNMANAGED.send_event(WindowEvent::Reposition {
+                                x: bounds.left, y: bounds.bottom
+                            });
+                        }
+                    },
+                    ConsoleState::Accessible { caret_x, caret_y } => {
+                        UNMANAGED.send_event(WindowEvent::Reposition { x: caret_x, y: caret_y });
+                    },
                 }
             },
         }
 
         Err(anyhow!("Failed to acquire caret position"))
     }
+}
+
+#[derive(Clone, Copy, Debug)]
+enum ConsoleState {
+    None,
+    Console { hwnd: HWND },
+    Accessible { caret_x: i32, caret_y: i32 },
 }
 
 #[allow(dead_code)]
@@ -168,7 +183,7 @@ struct Unmanaged {
     event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
-    hwnd: RwLock<HWND>,
+    console_state: RwLock<ConsoleState>,
     automation_instance: AutomationTable,
 }
 
@@ -243,16 +258,11 @@ unsafe fn update_focused_state(hwnd: HWND) {
 
     match title {
         title if ["Hyper", "Code"].contains(&title) => (),
-        title if ["cmd", "mintty", "powershell"].contains(&title) => {
-            let mut process_id: u32 = 0;
-            GetWindowThreadProcessId(hwnd, &mut process_id);
-            *UNMANAGED.hwnd.write() = hwnd
-        },
-        title if title == "WindowsTerminal" => {
-            *UNMANAGED.hwnd.write() = hwnd;
+        title if ["cmd", "mintty", "powershell", "WindowsTerminal"].contains(&title) => {
+            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd }
         },
         _ => {
-            *UNMANAGED.hwnd.write() = HWND(0);
+            *UNMANAGED.console_state.write() = ConsoleState::None;
             return;
         },
     }
@@ -303,7 +313,10 @@ unsafe extern "system" fn win_event_proc(
                         .accLocation(&mut left, &mut top, &mut width, &mut height, &varchild)
                         .is_ok()
                     {
-                        *UNMANAGED.hwnd.write() = hwnd;
+                        *UNMANAGED.console_state.write() = ConsoleState::Accessible {
+                            caret_x: left,
+                            caret_y: top + height,
+                        }
                     }
                 }
             }
