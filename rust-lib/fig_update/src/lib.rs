@@ -30,16 +30,17 @@ pub enum Error {
 fn system_threshold(version: &str) -> Result<u8, Error> {
     let mut threshold: u8 = 0;
 
-    let mut apply = |from: &str| {
-        for ch in from.chars() {
-            threshold = threshold.wrapping_add((((ch as u32) % 256) as u8).wrapping_add(128));
-        }
-    };
-
     // different for each system
-    apply(&get_system_id()?);
+    for ch in get_system_id.chars() {
+        threshold = threshold.wrapping_add((((ch as u32) % 256) as u8));
+    }
     // different for each version
-    apply(version);
+    // prevents people from getting repeatedly hit by untested releases
+    for ch in version.chars() {
+        if Some(digit) = ch.to_digit(10) {
+            threshold = threshold.wrapping_add(((0b10101010 << digit) % 123) as u8);
+        }
+    }
 
     Ok(threshold)
 }
