@@ -74,10 +74,19 @@ pub struct Rect<U, V> {
     pub height: V,
 }
 
+#[cfg(target_os = "linux")]
+pub async fn update_check() {
+    // updates on linux are handled by the package manager
+    // note(mia): we may in the future still implement a nag to update,
+    //     it just won't work automatically like it does on windows/macos
+}
+
+#[cfg(not(target_os = "linux"))]
 pub async fn update_check() {
     info!("checking for updates...");
     match fig_update::check_for_updates(env!("CARGO_PKG_VERSION")).await {
         Ok(Some(package)) => {
+            info!("updating!");
             if let Err(err) = fig_update::apply_update(package) {
                 error!("failed applying update: {err:?}");
             }
