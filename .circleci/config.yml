@@ -306,7 +306,7 @@ commands:
         type: string
     steps:
       - rust/install:
-          version: 1.62.1
+          version: 1.63.0
       - when:
           condition: *supports_mold
           steps:
