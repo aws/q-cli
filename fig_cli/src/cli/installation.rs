@@ -5,7 +5,6 @@ use std::path::{
     PathBuf,
 };
 
-use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use eyre::{
     ContextCompat,
@@ -341,7 +340,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                             );
                         }
 
-                        return Ok(update.update_extended()?)
+                        Ok(update.update_extended()?)
                     })
                 })?;
             }
