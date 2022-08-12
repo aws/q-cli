@@ -1,5 +1,4 @@
 pub mod local_state;
-
 use std::fmt::Display;
 use std::io::{
     stdout,
@@ -10,6 +9,7 @@ use std::path::PathBuf;
 use std::process::exit;
 use std::str::FromStr;
 
+use cfg_if::cfg_if;
 use clap::{
     ArgGroup,
     Args,
@@ -388,9 +388,8 @@ impl InternalSubcommand {
                                 let grandparent_name = grandparent_path.file_name()?.to_str()?;
 
                                 let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
-                                    .iter()
-                                    .filter_map(|terminal| terminal.executable_name())
-                                    .any(|bin_name| bin_name == grandparent_name);
+                                    .iter().chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
+                                    .any(|terminal| terminal.executable_names().contains(&grandparent_name));
 
                                 let ancestry = format!(
                                     "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",

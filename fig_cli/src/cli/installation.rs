@@ -5,6 +5,7 @@ use std::path::{
     PathBuf,
 };
 
+use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use eyre::{
     ContextCompat,

@@ -7,6 +7,7 @@ use std::io::{
     Write,
 };
 
+use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::tty::IsTty;
 use eyre::Result;

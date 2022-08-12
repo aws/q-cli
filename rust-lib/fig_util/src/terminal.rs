@@ -20,6 +20,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Terminator,
     Terminal::WezTerm,
 ];
+pub const SPECIAL_TERMINALS: &[Terminal] = &[Terminal::Tmux, Terminal::Nvim];
 
 pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
 
@@ -61,6 +62,14 @@ pub enum Terminal {
     Terminator,
     /// Terminology
     Terminology,
+
+    // Other pseudoterminal that we want to launch within
+    /// Tmux
+    Tmux,
+    /// Nvim
+    Nvim,
+    /// Zellij
+    Zellij,
 }
 
 impl fmt::Display for Terminal {
@@ -83,6 +92,10 @@ impl fmt::Display for Terminal {
             Terminal::XfceTerminal => write!(f, "Xfce Terminal"),
             Terminal::Terminator => write!(f, "Terminator"),
             Terminal::Terminology => write!(f, "Terminology"),
+
+            Terminal::Tmux => write!(f, "Tmux"),
+            Terminal::Nvim => write!(f, "Nvim"),
+            Terminal::Zellij => write!(f, "Zellij"),
         }
     }
 }
@@ -130,6 +143,10 @@ impl Terminal {
             Terminal::XfceTerminal => "xfce-terminal".into(),
             Terminal::Terminator => "terminator".into(),
             Terminal::Terminology => "terminology".into(),
+
+            Terminal::Tmux => "tmux".into(),
+            Terminal::Nvim => "nvim".into(),
+            Terminal::Zellij => "zellij".into(),
         }
     }
 
@@ -147,28 +164,28 @@ impl Terminal {
             Terminal::Nova => String::from("com.panic.Nova"),
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
             Terminal::JediTerm(id) => id.to_string(),
-            Terminal::GnomeTerminal => todo!(),
-            Terminal::Konsole => todo!(),
-            Terminal::Tilix => todo!(),
-            Terminal::XfceTerminal => todo!(),
-            Terminal::Terminator => todo!(),
-            Terminal::Terminology => todo!(),
+            _ => todo!(),
         }
     }
 
-    pub fn executable_name(&self) -> Option<Cow<'static, str>> {
+    pub fn executable_names(&self) -> &'static [&'static str] {
         match self {
-            Terminal::Vscode => Some("code".into()),
-            Terminal::VSCodeInsiders => Some("code-insiders".into()),
-            Terminal::Alacritty => Some("alacritty".into()),
-            Terminal::Kitty => Some("kitty".into()),
-            Terminal::GnomeTerminal => Some("gnome-terminal-server".into()),
-            Terminal::Konsole => Some("konsole".into()),
-            Terminal::Tilix => Some("tilix".into()),
-            Terminal::XfceTerminal => Some("xfce4-terminal".into()),
-            Terminal::Terminology => Some("terminology".into()),
-            Terminal::WezTerm => Some("wezterm".into()),
-            _ => None,
+            Terminal::Vscode => &["code"],
+            Terminal::VSCodeInsiders => &["code-insiders"],
+            Terminal::Alacritty => &["alacritty"],
+            Terminal::Kitty => &["kitty"],
+            Terminal::GnomeTerminal => &["gnome-terminal-server"],
+            Terminal::Konsole => &["konsole"],
+            Terminal::Tilix => &["tilix"],
+            Terminal::XfceTerminal => &["xfce4-terminal"],
+            Terminal::Terminology => &["terminology"],
+            Terminal::WezTerm => &["wezterm", "wezterm-gui"],
+
+            Terminal::Tmux => &["tmux"],
+            Terminal::Nvim => &["nvim"],
+            Terminal::Zellij => &["zellij"],
+
+            _ => &[],
         }
     }
 

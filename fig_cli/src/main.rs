@@ -1,6 +1,3 @@
-#[macro_use]
-extern crate cfg_if;
-
 pub mod cli;
 pub mod daemon;
 pub mod util;

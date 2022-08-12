@@ -4,6 +4,7 @@ use std::iter::empty;
 use std::process::Command;
 use std::time::Duration;
 
+use cfg_if::cfg_if;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
