@@ -21,7 +21,7 @@ clap = { version = "3.2.16", features = ["derive"] }
 clap_complete = "3.2.2"
 clap_complete_fig = "3.2.4"
 color-eyre = "0.6.2"
-crossterm = "0.24.0"
+crossterm = "0.25.0"
 ctrlc = "3.2.1"
 deno_core = { version = "0.146.0", optional = true }
 deno_runtime = { version = "0.72.0", optional = true }

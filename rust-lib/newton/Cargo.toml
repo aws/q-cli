@@ -5,7 +5,7 @@ edition = "2021"
 publish = false
 
 [dependencies]
-crossterm = { version = "0.24.0", features = ["serde"] }
+crossterm = { version = "0.25.0", features = ["serde"] }
 
 [dev-dependencies]
 noise = "0.7.0"

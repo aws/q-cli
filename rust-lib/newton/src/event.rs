@@ -10,6 +10,7 @@ use crossterm::event::{
 
 #[derive(Clone, Copy, Debug)]
 pub enum Event {
+    None,
     Initialize { width: i32, height: i32 },
     Update,
     Draw,
@@ -63,6 +64,7 @@ impl From<crossterm::event::Event> for Event {
                 width: width.into(),
                 height: height.into(),
             },
+            _ => Event::None,
         }
     }
 }
