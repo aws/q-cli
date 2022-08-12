@@ -155,8 +155,12 @@ async fn main() {
             force_visible: cli.mission_control,
         })
         .unwrap();
-    webview_manager
-        .build_webview(AUTOCOMPLETE_ID, build_autocomplete, AutocompleteOptions {})
-        .unwrap();
+
+    if !fig_settings::settings::get_bool_or("autocomplete.disable", false) {
+        webview_manager
+            .build_webview(AUTOCOMPLETE_ID, build_autocomplete, AutocompleteOptions {})
+            .unwrap();
+    }
+
     webview_manager.run().await.unwrap();
 }
