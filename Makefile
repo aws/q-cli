@@ -30,6 +30,7 @@ deb: bin icons bundle
 	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/fish\ \(figterm\)
 	cp -r $(MAKE_DIR)/bundle/deb/. $(BUILD_DIR)/fig-$(ARCH)-linux
 	sed -i "s/^Version:.*/Version: $(VERSION)/" $(BUILD_DIR)/fig-$(ARCH)-linux/DEBIAN/control
+	chmod 755 $(BUILD_DIR)/fig-$(ARCH)-linux/DEBIAN/prerm
 	cd $(BUILD_DIR) && dpkg-deb --build --root-owner-group fig-$(ARCH)-linux
 	dpkg-deb --info $(BUILD_DIR)/fig-$(ARCH)-linux.deb
 
