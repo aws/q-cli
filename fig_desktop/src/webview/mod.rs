@@ -209,7 +209,11 @@ impl WebviewManager {
                             Some(window_state) => {
                                 window_state.handle(window_event, &self.figterm_state, &api_handler_tx);
                             },
-                            None => todo!(),
+                            None => {
+                                // TODO(grant): figure out how to handle this gracefuly
+                                warn!("No window {window_id} avaiable for event");
+                                trace!("Event: {window_event:?}");
+                            },
                         },
                         Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
