@@ -1546,7 +1546,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e85ec9af0ca08ea4e3c17ba8ea7cf718d51b819af0b7edd195dd9fd45ef9b82f"
 dependencies = [
  "async-trait",
- "deno_core 0.147.0",
+ "deno_core",
  "tokio",
  "uuid",
 ]
@@ -1557,30 +1557,7 @@ version = "0.65.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6904eb29f52af0240626c9d85baa7cfad48fc59e0df9338f34f6e6ec139a03a5"
 dependencies = [
- "deno_core 0.147.0",
-]
-
-[[package]]
-name = "deno_core"
-version = "0.146.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "88475da37fe0544b7372fd4705560df496498eb5eeb40ce19bfe7787ed0600ca"
-dependencies = [
- "anyhow",
- "deno_ops 0.24.0",
- "futures",
- "indexmap",
- "libc",
- "log",
- "once_cell",
- "parking_lot 0.12.1",
- "pin-project",
- "serde",
- "serde_json",
- "serde_v8 0.57.0",
- "sourcemap",
- "url",
- "v8",
+ "deno_core",
 ]
 
 [[package]]
@@ -1590,7 +1567,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e420a3b18534cd15af2c6f5c76386326e8b96fa8332ca9b901cec2a2016b00c7"
 dependencies = [
  "anyhow",
- "deno_ops 0.25.0",
+ "deno_ops",
  "futures",
  "indexmap",
  "libc",
@@ -1600,7 +1577,7 @@ dependencies = [
  "pin-project",
  "serde",
  "serde_json",
- "serde_v8 0.58.0",
+ "serde_v8",
  "sourcemap",
  "url",
  "v8",
@@ -1620,7 +1597,7 @@ dependencies = [
  "cbc",
  "const-oid",
  "ctr",
- "deno_core 0.147.0",
+ "deno_core",
  "deno_web",
  "elliptic-curve",
  "num-traits",
@@ -1648,7 +1625,7 @@ checksum = "a95a370185f2efe61e1decf6e6e979c40388d0ead7350d2fb5c9a4403ffb661c"
 dependencies = [
  "bytes",
  "data-url",
- "deno_core 0.147.0",
+ "deno_core",
  "deno_tls",
  "dyn-clone",
  "http",
@@ -1665,7 +1642,7 @@ version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "58c294a07fb64896b5c314beca0a337fea5dac98a59c169f286ec637f968c65a"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "dlopen",
  "libffi",
  "serde",
@@ -1684,7 +1661,7 @@ dependencies = [
  "brotli",
  "bytes",
  "cache_control",
- "deno_core 0.147.0",
+ "deno_core",
  "deno_websocket",
  "flate2",
  "fly-accept-encoding",
@@ -1704,7 +1681,7 @@ version = "0.57.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "24741991a2430c5b42f41bbdf4fe66c528c20cc8648916d42fd8a9db559749a7"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "deno_tls",
  "log",
  "serde",
@@ -1720,21 +1697,7 @@ version = "0.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "323502bc8611380abf239ec98cbba8320be0ddc6261c377c8534c5aeeed01a18"
 dependencies = [
- "deno_core 0.147.0",
-]
-
-[[package]]
-name = "deno_ops"
-version = "0.24.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e217fd2f9a61bc581f6b13868a46ef800efb7532348fd86cc4fe49204d203ea6"
-dependencies = [
- "once_cell",
- "proc-macro-crate",
- "proc-macro2 1.0.43",
- "quote 1.0.21",
- "regex",
- "syn 1.0.99",
+ "deno_core",
 ]
 
 [[package]]
@@ -1760,7 +1723,7 @@ dependencies = [
  "atty",
  "deno_broadcast_channel",
  "deno_console",
- "deno_core 0.147.0",
+ "deno_core",
  "deno_crypto",
  "deno_fetch",
  "deno_ffi",
@@ -1806,7 +1769,7 @@ version = "0.52.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a1fc943b2d18bc873af7926be56641780b47b905fef28ba8005fe21b93ed4a34"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "once_cell",
  "rustls 0.20.6",
  "rustls-native-certs 0.6.2",
@@ -1822,7 +1785,7 @@ version = "0.65.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "fd0754bc50f159ab63f9c693448153e51ba9ce18bf392be931a4e16675177b8f"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "serde",
  "serde_repr",
  "urlpattern",
@@ -1836,7 +1799,7 @@ checksum = "1301807d285df2e6df86fa889bee5cf68eaa596b1719335aedc3ec9bf033687c"
 dependencies = [
  "async-trait",
  "base64-simd",
- "deno_core 0.147.0",
+ "deno_core",
  "encoding_rs",
  "flate2",
  "serde",
@@ -1850,7 +1813,7 @@ version = "0.66.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d73a3f3ea99adb2ff95f1f02b6d669354a932d9ad79d5e0876145f213972aed2"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "serde",
  "tokio",
  "wgpu-core",
@@ -1863,7 +1826,7 @@ version = "0.65.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "c1b5046f98f589f9c434abf22051d8b12f02e8e12d07c691a6fbceda13333dc3"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
 ]
 
 [[package]]
@@ -1872,7 +1835,7 @@ version = "0.70.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ecfc7a3f0e18f7d7f4ed884514f4d9b1f99c53d17466b6495c7415ea096532a3"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "deno_tls",
  "http",
  "hyper",
@@ -1888,7 +1851,7 @@ version = "0.60.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "575235bd9fc999bba9e66627ae3f9df9b67c3605c7f3616a6bad19ab23127277"
 dependencies = [
- "deno_core 0.147.0",
+ "deno_core",
  "deno_web",
  "rusqlite",
  "serde",
@@ -2344,7 +2307,7 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "ctrlc",
- "deno_core 0.146.0",
+ "deno_core",
  "deno_runtime",
  "dialoguer",
  "eyre",
@@ -6267,20 +6230,6 @@ dependencies = [
 
 [[package]]
 name = "serde_v8"
-version = "0.57.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "b3c3efa9cff97d5a543df0508c37af619e422fb92eb525f38d255d46df7a0eb7"
-dependencies = [
- "bytes",
- "derive_more",
- "serde",
- "serde_bytes",
- "smallvec",
- "v8",
-]
-
-[[package]]
-name = "serde_v8"
 version = "0.58.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8a423a0dafa74e9693b7d3e5a056bc069737c601bc8f9cdc55836fae5eb2967c"
@@ -8300,7 +8249,7 @@ dependencies = [
  "fxhash",
  "log",
  "naga",
- "parking_lot 0.12.1",
+ "parking_lot 0.11.2",
  "profiling",
  "ron",
  "serde",
@@ -8338,7 +8287,7 @@ dependencies = [
  "metal",
  "naga",
  "objc",
- "parking_lot 0.12.1",
+ "parking_lot 0.11.2",
  "profiling",
  "range-alloc",
  "raw-window-handle 0.4.3",
