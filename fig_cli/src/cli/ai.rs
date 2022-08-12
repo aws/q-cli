@@ -17,6 +17,8 @@ use crate::util::spinner::{
     SpinnerComponent,
 };
 
+const MAX_QUESTION_LEN: usize = 250;
+
 const SEEN_ONBOARDING_KEY: &str = "ai.seen-onboarding";
 const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
@@ -183,9 +185,9 @@ impl AiArgs {
 
                     dialoguer::Input::with_theme(&theme())
                         .with_prompt("Text")
-                        .validate_with(|input: &String| -> Result<(), &str> {
-                            if input.trim().len() > 120 {
-                                Err("Input is >120 characters")
+                        .validate_with(|input: &String| -> Result<(), String> {
+                            if input.trim().len() > MAX_QUESTION_LEN {
+                                Err(format!("Input is >{MAX_QUESTION_LEN} characters"))
                             } else {
                                 Ok(())
                             }
@@ -196,8 +198,8 @@ impl AiArgs {
 
             let question = question.trim().replace('\n', " ");
 
-            if question.len() > 120 {
-                eyre::bail!("input is >120 characters");
+            if question.len() > MAX_QUESTION_LEN {
+                eyre::bail!("input is >{MAX_QUESTION_LEN} characters");
             }
 
             'generate_loop: loop {
