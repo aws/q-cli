@@ -483,10 +483,13 @@ commands:
           args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus util-linux
       - run:
           name: Build
-          command: cd desktop && make ARCH=<< parameters.arch >> deb
+          command: cd desktop && FIG_IS_PACKAGE_MANAGED=1 make ARCH=<< parameters.arch >> deb
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux.deb
           destination: << parameters.platform >>/<< parameters.arch >>/deb
+      - run:
+          name: Build
+          command: cd desktop && make ARCH=<< parameters.arch >> deb
       - store_artifacts:
           path: desktop/build/usr/bin/fig
           destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
@@ -523,7 +526,7 @@ commands:
           arch: << parameters.arch >>
       - run:
           name: Build
-          command: cd desktop && make ARCH=<< parameters.arch >> rpm
+          command: cd desktop && FIG_IS_PACKAGE_MANAGED=1 make ARCH=<< parameters.arch >> rpm
       - run:
           name: Gather RPM metadata
           command: |
@@ -562,7 +565,7 @@ commands:
           arch: << parameters.arch >>
       - run:
           name: Build
-          command: cd desktop && make ARCH=<< parameters.arch >> arch
+          command: cd desktop && FIG_IS_PACKAGE_MANAGED=1 make ARCH=<< parameters.arch >> arch
       - store_artifacts:
           path: desktop/build/fig-<< parameters.arch >>-linux-archlinux.tar.gz
           destination: archlinux/<< parameters.arch >>/archlinux

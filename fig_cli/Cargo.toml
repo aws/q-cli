@@ -9,7 +9,6 @@ publish = false
 
 [features]
 default = []
-managed = []
 deno = ["dep:deno_core", "dep:deno_runtime"]
 
 [dependencies]
