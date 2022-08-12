@@ -345,7 +345,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                         Ok(update.update_extended()?)
                     })
                 })?;
-                Err(eyre::eyre!("Installation not properly handled"))
+                return Err(eyre::eyre!("Installation not properly handled"));
             }
         };
     }
