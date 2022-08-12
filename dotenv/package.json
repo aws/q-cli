@@ -42,7 +42,7 @@
     "js-yaml": "^4.1.0",
     "long": "^5.1.0",
     "node-pty": "^0.10.1",
-    "protobufjs": "^6.11.2",
+    "protobufjs": "^7.0.0",
     "ts-node": "^10.4.0",
     "ts-proto": "^1.85.0",
     "uuid": "^8.3.2"
