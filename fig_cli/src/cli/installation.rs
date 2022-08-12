@@ -224,11 +224,12 @@ pub enum UpdateType {
 
 /// Self-update the fig binary
 /// Update will exit the binary if the update was successful
+#[allow(clippy::needless_return)]
 pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     if option_env!("FIG_IS_PACKAGE_MANAGED").is_some() {
-        return Err(eyre::eyre!(
+        Err(eyre::eyre!(
             "This installation of Fig is managed by a package manager, please use the built-in method of updating packages"
-        ));
+        ))
     } else {
         cfg_if::cfg_if! {
             if #[cfg(target_os = "macos")] {
@@ -239,10 +240,11 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                 launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
 
                 let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
+
                 match desktop_app_update {
                     Ok(()) => {
                         println!("\n→ Checking for updates to macOS app...\n");
-                        return Ok(UpdateStatus::UpToDate)
+                        return Ok(UpdateStatus::UpToDate);
                     }
                     Err(_) => {
                         eyre::bail!(
@@ -343,10 +345,10 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                         Ok(update.update_extended()?)
                     })
                 })?;
+                Err(eyre::eyre!("Installation not properly handled"))
             }
         };
     }
-    Err(eyre::eyre!("Installation not properly handled"))
 }
 
 pub async fn update_cli(no_confirm: bool) -> Result<()> {

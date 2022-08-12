@@ -48,13 +48,13 @@ fn system_threshold(version: &str) -> Result<u8, Error> {
 #[allow(clippy::needless_return)] // actually fairly needed
 pub fn apply_update(package: Package) -> Result<(), Error> {
     cfg_if! {
-        if #[cfg(windows)] {
+        if #[cfg(target_os = "windows")] {
             return windows::update(package);
         } else if #[cfg(target_os = "macos")] {
-            return macos::update(package),
+            return macos::update(package);
         } else {
             let _package = package;
-            return Err(Error::UnsupportedPlatform)
+            return Err(Error::UnsupportedPlatform);
         }
     }
 }
