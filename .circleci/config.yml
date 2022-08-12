@@ -480,7 +480,7 @@ commands:
           arch: << parameters.arch >>
       - callback:
           command: dependencies
-          args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus
+          args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus util-linux
       - run:
           name: Build
           command: cd desktop && make ARCH=<< parameters.arch >> deb
