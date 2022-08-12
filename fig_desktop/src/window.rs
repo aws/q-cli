@@ -13,8 +13,10 @@ use wry::application::dpi::{
 use wry::webview::WebView;
 
 use crate::event::WindowEvent;
-use crate::figterm::FigTermCommand;
-use crate::GlobalState;
+use crate::figterm::{
+    FigTermCommand,
+    FigtermState,
+};
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -65,7 +67,12 @@ impl WindowState {
             }))
     }
 
-    pub fn handle(&self, event: WindowEvent, state: &GlobalState, api_tx: &UnboundedSender<(WindowId, String)>) {
+    pub fn handle(
+        &self,
+        event: WindowEvent,
+        figterm_state: &FigtermState,
+        api_tx: &UnboundedSender<(WindowId, String)>,
+    ) {
         match event {
             WindowEvent::Reanchor { x, y } => {
                 *self.anchor.write() = PhysicalPosition { x, y };
@@ -84,7 +91,7 @@ impl WindowState {
                 self.webview.window().set_inner_size(LogicalSize { width, height });
             },
             WindowEvent::Hide => {
-                if let Some(session) = state.figterm_state.most_recent_session() {
+                if let Some(session) = figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
                         let _ = session.sender.send(FigTermCommand::InterceptClear).await;
                     });
@@ -103,7 +110,7 @@ impl WindowState {
                 self.webview.window().set_resizable(false);
             },
             WindowEvent::HideSoft => {
-                if let Some(session) = state.figterm_state.most_recent_session() {
+                if let Some(session) = figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
                         let _ = session.sender.send(FigTermCommand::InterceptClear).await;
                     });

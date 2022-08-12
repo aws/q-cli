@@ -4,6 +4,7 @@ use std::fmt::Display;
 use std::path::PathBuf;
 use std::process::Command;
 
+use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::{

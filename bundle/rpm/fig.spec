@@ -27,6 +27,9 @@ cp -r %{_builddir}/fig-%{version}-%{release}/usr %{buildroot}
 %clean
 rm -rf %{buildroot}
 
+%preun
+fig _ uninstall-for-all-users
+
 %files
 /usr/bin/fig
 /usr/bin/fig_desktop

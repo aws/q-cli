@@ -18,12 +18,10 @@ use tracing::{
     trace,
 };
 
-use crate::{
-    EventLoopProxy,
-    GlobalState,
-};
+use crate::notification::NotificationsState;
+use crate::EventLoopProxy;
 
-pub async fn settings_listener(global_state: Arc<GlobalState>, proxy: EventLoopProxy) {
+pub async fn settings_listener(notifications_state: Arc<NotificationsState>, proxy: EventLoopProxy) {
     let (tx, mut rx) = tokio::sync::mpsc::channel(1);
 
     let mut watcher = notify::recommended_watcher(move |res| match res {
@@ -96,8 +94,7 @@ pub async fn settings_listener(global_state: Arc<GlobalState>, proxy: EventLoopP
             if let Some(ref settings_path) = settings_path {
                 if event.paths.contains(settings_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        global_state
-                            .notifications_state
+                        notifications_state
                             .send_notification(
                                 &NotificationType::NotifyOnSettingsChange,
                                 fig_proto::fig::Notification {
@@ -118,8 +115,7 @@ pub async fn settings_listener(global_state: Arc<GlobalState>, proxy: EventLoopP
             if let Some(ref state_path) = state_path {
                 if event.paths.contains(state_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        global_state
-                            .notifications_state
+                        notifications_state
                             .send_notification(
                                 &NotificationType::NotifyOnLocalStateChanged,
                                 fig_proto::fig::Notification {

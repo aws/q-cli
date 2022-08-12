@@ -61,3 +61,19 @@ pub fn get_system_id() -> Result<String, Error> {
     hasher.update(hwid.ok_or(Error::HwidNotFound)?);
     Ok(format!("{:x}", hasher.finalize()))
 }
+
+pub fn get_platform() -> &'static str {
+    if let Some(over_ride) = option_env!("FIG_OVERRIDE_PLATFORM") {
+        over_ride
+    } else {
+        std::env::consts::OS
+    }
+}
+
+pub fn get_arch() -> &'static str {
+    if let Some(over_ride) = option_env!("FIG_OVERRIDE_ARCH") {
+        over_ride
+    } else {
+        std::env::consts::ARCH
+    }
+}

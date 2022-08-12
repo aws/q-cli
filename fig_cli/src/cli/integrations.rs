@@ -23,22 +23,30 @@ use crate::daemon;
 #[derive(Debug, Subcommand)]
 pub enum IntegrationsSubcommands {
     Install {
-        // Integration to install
+        /// Integration to install
         #[clap(subcommand)]
         integration: Integration,
+        /// Suppress status messages
+        #[clap(long, short)]
+        silent: bool,
     },
     Uninstall {
-        // Integration to uninstall
+        /// Integration to uninstall
         #[clap(subcommand)]
         integration: Integration,
+        /// Suppress status messages
+        #[clap(long, short)]
+        silent: bool,
     },
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, Clone, Copy)]
 pub enum Integration {
     Dotfiles,
     Daemon,
     Ssh,
+    #[doc(hidden)]
+    All,
 }
 
 pub fn get_ssh_config_path() -> Result<PathBuf> {
@@ -51,18 +59,35 @@ pub fn get_ssh_config_path() -> Result<PathBuf> {
 impl IntegrationsSubcommands {
     pub async fn execute(self) -> Result<()> {
         match self {
-            IntegrationsSubcommands::Install { integration } => install(integration).await,
-            IntegrationsSubcommands::Uninstall { integration } => uninstall(integration).await,
+            IntegrationsSubcommands::Install { integration, silent } => {
+                if let Integration::All = integration {
+                    install(Integration::Dotfiles, silent).await?;
+                    install(Integration::Daemon, silent).await?;
+                    install(Integration::Ssh, silent).await
+                } else {
+                    install(integration, silent).await
+                }
+            },
+            IntegrationsSubcommands::Uninstall { integration, silent } => {
+                if let Integration::All = integration {
+                    uninstall(Integration::Dotfiles, silent).await?;
+                    uninstall(Integration::Daemon, silent).await?;
+                    uninstall(Integration::Ssh, silent).await
+                } else {
+                    uninstall(integration, silent).await
+                }
+            },
         }
     }
 }
 
-async fn install(integration: Integration) -> Result<()> {
+async fn install(integration: Integration, silent: bool) -> Result<()> {
     let backup_dir = get_default_backup_dir().context("Could not get backup dir")?;
 
     let mut installed = false;
 
     let result = match integration {
+        Integration::All => Ok(()),
         Integration::Dotfiles => {
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
@@ -111,21 +136,22 @@ async fn install(integration: Integration) -> Result<()> {
         },
     };
 
-    if installed && result.is_ok() {
+    if installed && result.is_ok() && !silent {
         println!("Installed!")
     }
 
-    if !installed {
+    if !installed && !silent {
         println!("Already installed")
     }
 
     result
 }
 
-async fn uninstall(integration: Integration) -> Result<()> {
+async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
     let mut uninstalled = false;
 
     let result = match integration {
+        Integration::All => Ok(()),
         Integration::Dotfiles => {
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
@@ -174,11 +200,11 @@ async fn uninstall(integration: Integration) -> Result<()> {
         },
     };
 
-    if uninstalled && result.is_ok() {
+    if uninstalled && result.is_ok() && !silent {
         println!("Uninstalled!")
     }
 
-    if !uninstalled {
+    if !uninstalled && !silent {
         println!("Not installed")
     }
 

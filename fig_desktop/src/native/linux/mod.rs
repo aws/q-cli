@@ -2,8 +2,6 @@ pub mod icons;
 mod sway;
 mod x11;
 
-use std::sync::Arc;
-
 use anyhow::Result;
 use parking_lot::Mutex;
 use tracing::{
@@ -12,19 +10,22 @@ use tracing::{
 };
 
 use crate::event::NativeEvent;
-use crate::{
-    EventLoopProxy,
-    GlobalState,
-};
+use crate::EventLoopProxy;
 
 pub const SHELL: &str = "/bin/bash";
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct NativeState {
     _active_window: Mutex<Option<String>>,
 }
 
 impl NativeState {
+    pub fn new(_proxy: EventLoopProxy) -> Self {
+        Self {
+            _active_window: Mutex::new(None),
+        }
+    }
+
     pub fn handle(&self, _event: NativeEvent) -> Result<()> {
         Ok(())
     }
@@ -44,11 +45,11 @@ impl DisplayServer {
     }
 }
 
-pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
+pub async fn init(proxy: EventLoopProxy) -> Result<()> {
     match DisplayServer::detect() {
         Ok(DisplayServer::X11) => {
             info!("Detected X11 server");
-            tokio::spawn(async { x11::handle_x11(global_state, proxy).await });
+            tokio::spawn(async { x11::handle_x11(proxy).await });
         },
         Ok(DisplayServer::Wayland) => {
             info!("Detected Wayland server");

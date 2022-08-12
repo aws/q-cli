@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.2.2"
+version = "2.2.3"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -30,6 +30,7 @@ fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
+fig_update = { version = "0.1.0", path = "../rust-lib/fig_update" }
 fig_util = { path = "../rust-lib/fig_util" }
 fnv = "1.0.7"
 hashbrown = "0.12.3"
@@ -54,9 +55,10 @@ which = "4.2.5"
 whoami = "1.2.1"
 wry = { version = "0.20.1", default-features = false, features = ["tray", "protocol", "devtools", "transparent"] }
 
-[target.'cfg(windows)'.dependencies.windows]
+[target.'cfg(target_os = "windows")'.dependencies.windows]
 version = "0.39.0"
 features = [
+    "implement",
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
     "Win32_Networking_WinSock",
@@ -71,11 +73,10 @@ features = [
     "Win32_UI_Accessibility",
 ]
 
-[target.'cfg(target_os="linux")'.dependencies]
+[target.'cfg(target_os = "linux")'.dependencies]
 freedesktop-icons = "0.2.1"
 gtk = { version = "0.15", features = [ "v3_22" ] }
 x11rb = "0.10.1"
 
 [build-dependencies]
 image = "0.24.3"
-

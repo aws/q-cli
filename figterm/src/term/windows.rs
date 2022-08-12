@@ -55,7 +55,6 @@ use winapi::um::wincon::{
     ENABLE_LINE_INPUT,
     ENABLE_MOUSE_INPUT,
     ENABLE_PROCESSED_INPUT,
-    // ENABLE_VIRTUAL_TERMINAL_INPUT,
     ENABLE_VIRTUAL_TERMINAL_PROCESSING,
     ENABLE_WINDOW_INPUT,
     INPUT_RECORD,
@@ -64,10 +63,7 @@ use winapi::um::wincon::{
 use winapi::um::winnls::CP_UTF8;
 
 use super::InputEventResult;
-use crate::input::{
-    InputEvent,
-    InputParser,
-};
+use crate::input::InputParser;
 use crate::term::istty::IsTty;
 use crate::term::{
     cast,

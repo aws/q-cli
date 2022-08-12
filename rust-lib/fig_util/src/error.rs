@@ -6,6 +6,8 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error("unsupported platform")]
     UnsupportedPlatform,
+    #[error("unsupported archiecture")]
+    UnsupportedArch,
     #[error(transparent)]
     Directory(#[from] crate::directories::DirectoryError),
     #[error("process has no parent")]

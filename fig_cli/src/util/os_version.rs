@@ -1,5 +1,6 @@
 use std::fmt;
 
+use cfg_if::cfg_if;
 use eyre::Result;
 use serde::{
     Deserialize,

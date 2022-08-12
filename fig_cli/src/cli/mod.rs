@@ -28,10 +28,12 @@ mod workflow;
 
 use cfg_if::cfg_if;
 use clap::{
+    IntoApp,
     Parser,
     Subcommand,
     ValueEnum,
 };
+use color_eyre::owo_colors::OwoColorize;
 use eyre::{
     Result,
     WrapErr,
@@ -74,21 +76,23 @@ pub enum Processes {
     App,
 }
 
+/// Top level cli commands
+#[deny(missing_docs)]
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
-    #[clap(subcommand)]
     /// Interact with the desktop app
-    App(app::AppSubcommand),
-    #[clap(subcommand, hide = true)]
-    /// Hook commands
-    Hook(hook::HookSubcommand),
     #[clap(subcommand)]
+    App(app::AppSubcommand),
+    /// Hook commands
+    #[clap(subcommand, hide = true)]
+    Hook(hook::HookSubcommand),
     /// Debug Fig
+    #[clap(subcommand)]
     Debug(debug::DebugSubcommand),
     /// Customize appearance & behavior
     Settings(settings::SettingsArgs),
-    #[clap(subcommand)]
     /// Enable/disable fig tips
+    #[clap(subcommand)]
     Tips(tips::TipsSubcommand),
     /// Install fig cli components
     Install(internal::InstallArgs),
@@ -120,10 +124,13 @@ pub enum CliRootCommands {
     Tweet,
     /// Create a new Github issue
     Issue(issue::IssueArgs),
+    /// Root level user subcommands
     #[clap(flatten)]
     RootUser(user::RootUserSubcommand),
+    /// Manage your fig user
     #[clap(subcommand)]
     User(user::UserSubcommand),
+    /// Manage your fig team
     Team(team::TeamCommand),
     /// Check Fig is properly configured
     Doctor(doctor::DoctorArgs),
@@ -143,13 +150,15 @@ pub enum CliRootCommands {
         #[clap(value_enum, value_parser, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
-    #[clap(hide = true)]
     /// Run the Fig tutorial
+    #[clap(hide = true)]
     Onboarding,
+    /// Manage your shell plugins with Fig
     #[clap(subcommand)]
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man(man::ManArgs),
+    /// Fig Workflows
     #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
     Workflow(workflow::WorkflowArgs),
     /// Manage system integrations
@@ -159,6 +168,10 @@ pub enum CliRootCommands {
     Ai(ai::AiArgs),
     /// Fig Pro
     Pro,
+    /// Version
+    Version,
+    /// Print help for all subcommands
+    HelpAll,
 
     /// (LEGACY) Old hook that was being used somewhere
     #[clap(name = "app:running", hide = true)]
@@ -169,6 +182,7 @@ pub enum CliRootCommands {
     /// (LEGACY) Old tmux hook that might be in ~/.tmux.conf
     #[clap(name = "bg:tmux", hide = true)]
     LegacyBgTmux {
+        /// Tmux args
         #[clap(value_parser)]
         args: Vec<String>,
     },
@@ -301,6 +315,26 @@ impl Cli {
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Pro => pro::execute().await,
+                CliRootCommands::Version => {
+                    print!("{}", Self::command().render_version());
+                    Ok(())
+                },
+                CliRootCommands::HelpAll => {
+                    let mut cmd = Self::command().help_template("{all-args}");
+                    eprintln!();
+                    eprintln!(
+                        "  \x1B[1m███████╗██╗ ██████╗
+  ██╔════╝██║██╔════╝
+  █████╗  ██║██║  ███╗
+  ██╔══╝  ██║██║   ██║
+  ██║     ██║╚██████╔╝
+  ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m\n"
+                    );
+                    println!("{}\n    {}\n", "USAGE:".yellow(), "fig [OPTIONS] [SUBCOMMAND]".green());
+                    cmd.print_long_help()?;
+                    Ok(())
+                },
+
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_app_running() { "1" } else { "0" });
                     Ok(())
@@ -319,8 +353,7 @@ fn desktop_app_is_installed() -> bool {
         if #[cfg(target_os = "macos")] {
             std::path::Path::new("/Applications/Fig.app/").exists()
         } else if #[cfg(target_os = "linux")] {
-            use which::which;
-            which("fig_desktop").is_ok()
+            which::which("fig_desktop").is_ok()
         } else {
             true
         }
@@ -413,7 +446,6 @@ async fn root_command() -> Result<()> {
 
 #[cfg(test)]
 mod test {
-    use clap::IntoApp;
 
     use super::*;
 

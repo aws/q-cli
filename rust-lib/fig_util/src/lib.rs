@@ -14,7 +14,11 @@ pub use open::{
 };
 pub use process_info::get_parent_process_exe;
 pub use shell::Shell;
-pub use system_info::get_system_id;
+pub use system_info::{
+    get_arch,
+    get_platform,
+    get_system_id,
+};
 pub use terminal::Terminal;
 
 static IN_SSH: Lazy<bool> = Lazy::new(|| {

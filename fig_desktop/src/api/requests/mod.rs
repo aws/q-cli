@@ -31,11 +31,14 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::figterm::FigtermState;
+use crate::notification::NotificationsState;
 use crate::utils::truncate_string;
 use crate::window::WindowId;
 use crate::{
+    DebugState,
     EventLoopProxy,
-    GlobalState,
+    InterceptState,
     FIG_PROTO_MESSAGE_RECIEVED,
 };
 
@@ -66,7 +69,10 @@ impl RequestResultImpl for RequestResult {
 pub async fn api_request(
     window_id: WindowId,
     client_originated_message_b64: String,
-    global_state: &GlobalState,
+    debug_state: &DebugState,
+    figterm_state: &FigtermState,
+    intercept_state: &InterceptState,
+    notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) {
     let data = match base64::decode(client_originated_message_b64) {
@@ -128,9 +134,9 @@ pub async fn api_request(
 
             match submessage {
                 // debug
-                DebuggerUpdateRequest(request) => debug::update(request, &global_state.debug_state).await,
+                DebuggerUpdateRequest(request) => debug::update(request, debug_state).await,
                 // figterm
-                InsertTextRequest(request) => figterm::insert_text(request, &global_state.figterm_state).await,
+                InsertTextRequest(request) => figterm::insert_text(request, figterm_state).await,
                 // fs
                 ReadFileRequest(request) => fs::read_file(request).await,
                 WriteFileRequest(request) => fs::write_file(request).await,
@@ -140,21 +146,15 @@ pub async fn api_request(
                 CreateDirectoryRequest(request) => fs::create_directory_request(request).await,
                 // notifications
                 NotificationRequest(request) => {
-                    notifications::handle_request(
-                        request,
-                        window_id.clone(),
-                        message_id,
-                        &global_state.notifications_state,
-                    )
-                    .await
+                    notifications::handle_request(request, window_id.clone(), message_id, notifications_state).await
                 },
                 // process
                 RunProcessRequest(request) => process::run(request).await,
-                PseudoterminalExecuteRequest(request) => process::execute(request, &global_state.figterm_state).await,
+                PseudoterminalExecuteRequest(request) => process::execute(request, figterm_state).await,
                 PseudoterminalWriteRequest(_deprecated) => process::write().await,
                 // properties
                 UpdateApplicationPropertiesRequest(request) => {
-                    properties::update(request, &global_state.figterm_state, &global_state.intercept_state).await
+                    properties::update(request, figterm_state, intercept_state).await
                 },
                 // state
                 GetLocalStateRequest(request) => state::get(request).await,
@@ -171,8 +171,7 @@ pub async fn api_request(
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 TelemetryPageRequest(request) => telemetry::handle_page_request(request).await,
                 AggregateSessionMetricActionRequest(request) => {
-                    telemetry::handle_aggregate_session_metric_action_request(request, &global_state.figterm_state)
-                        .await
+                    telemetry::handle_aggregate_session_metric_action_request(request, figterm_state).await
                 },
                 // window
                 PositionWindowRequest(request) => window::position_window(request, window_id.clone(), proxy).await,

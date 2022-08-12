@@ -38,21 +38,27 @@ use crate::event::{
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
+    FigtermState,
     SessionMetrics,
 };
+use crate::notification::NotificationsState;
 use crate::{
     Event,
     EventLoopProxy,
-    GlobalState,
     AUTOCOMPLETE_ID,
     FIG_PROTO_MESSAGE_RECIEVED,
 };
 
-pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, proxy: &EventLoopProxy) -> Result<()> {
+pub async fn edit_buffer(
+    hook: EditBufferHook,
+    figterm_state: Arc<FigtermState>,
+    notifications_state: &NotificationsState,
+    proxy: &EventLoopProxy,
+) -> Result<()> {
     let session_id = FigtermSessionId(hook.context.clone().unwrap().session_id.unwrap());
-    ensure_figterm(session_id.clone(), global_state.clone())?;
+    ensure_figterm(session_id.clone(), figterm_state.clone())?;
 
-    let old_metrics = global_state.figterm_state.with_mut(session_id.clone(), |session| {
+    let old_metrics = figterm_state.with_mut(session_id.clone(), |session| {
         session.edit_buffer.text = hook.text.clone();
         session.edit_buffer.cursor = hook.cursor;
         session.terminal_cursor_coordinates = hook.terminal_cursor_coordinates.clone();
@@ -103,7 +109,7 @@ pub async fn edit_buffer(hook: EditBufferHook, global_state: Arc<GlobalState>, p
         }
     }
 
-    for sub in global_state.notifications_state.subscriptions.iter() {
+    for sub in notifications_state.subscriptions.iter() {
         let message_id = match sub.get(&NotificationType::NotifyOnEditbuffferChange) {
             Some(id) => *id,
             None => continue,
@@ -165,9 +171,8 @@ pub async fn caret_position(
     Ok(())
 }
 
-pub async fn prompt(hook: PromptHook, global_state: &GlobalState, proxy: &EventLoopProxy) -> Result<()> {
-    global_state
-        .notifications_state
+pub async fn prompt(hook: PromptHook, notifications_state: &NotificationsState, proxy: &EventLoopProxy) -> Result<()> {
+    notifications_state
         .send_notification(
             &NotificationType::NotifyOnPrompt,
             Notification {
@@ -190,9 +195,12 @@ pub async fn prompt(hook: PromptHook, global_state: &GlobalState, proxy: &EventL
     Ok(())
 }
 
-pub async fn pre_exec(hook: PreExecHook, global_state: &GlobalState, proxy: &EventLoopProxy) -> Result<()> {
-    global_state
-        .notifications_state
+pub async fn pre_exec(
+    hook: PreExecHook,
+    notifications_state: &NotificationsState,
+    proxy: &EventLoopProxy,
+) -> Result<()> {
+    notifications_state
         .send_notification(
             &NotificationType::NotifyOnProcessChanged,
             Notification {
@@ -229,13 +237,12 @@ pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<
 
 pub async fn intercepted_key(
     InterceptedKeyHook { action, .. }: InterceptedKeyHook,
-    global_state: &GlobalState,
+    notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     debug!("Intercepted Key Action: {action:?}");
 
-    global_state
-        .notifications_state
+    notifications_state
         .send_notification(
             &NotificationType::NotifyOnKeybindingPressed,
             Notification {

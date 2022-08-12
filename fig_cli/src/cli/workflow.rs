@@ -11,6 +11,7 @@ use std::iter::empty;
 use std::process::Command;
 use std::rc::Rc;
 
+use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::style::Stylize;
 use crossterm::{
@@ -27,7 +28,6 @@ use fig_api_client::workflows::{
     Generator,
     ParameterType,
     TreeElement,
-    Workflow,
 };
 #[cfg(unix)]
 use fig_ipc::command::open_ui_element;
@@ -87,7 +87,7 @@ impl WorkflowArgs {
 
 #[cfg(unix)]
 enum WorkflowAction {
-    Run(Box<Workflow>),
+    Run(Box<fig_api_client::workflows::Workflow>),
     Create,
 }
 

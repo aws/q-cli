@@ -1,5 +1,4 @@
 pub mod local_state;
-
 use std::fmt::Display;
 use std::io::{
     stdout,
@@ -7,9 +6,13 @@ use std::io::{
     Write,
 };
 use std::path::PathBuf;
-use std::process::exit;
+use std::process::{
+    exit,
+    Command,
+};
 use std::str::FromStr;
 
+use cfg_if::cfg_if;
 use clap::{
     ArgGroup,
     Args,
@@ -200,6 +203,8 @@ pub enum InternalSubcommand {
         #[clap(long, value_parser)]
         recv: bool,
     },
+    /// Linux only
+    UninstallForAllUsers,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -388,9 +393,8 @@ impl InternalSubcommand {
                                 let grandparent_name = grandparent_path.file_name()?.to_str()?;
 
                                 let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
-                                    .iter()
-                                    .filter_map(|terminal| terminal.executable_name())
-                                    .any(|bin_name| bin_name == grandparent_name);
+                                    .iter().chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
+                                    .any(|terminal| terminal.executable_names().contains(&grandparent_name));
 
                                 let ancestry = format!(
                                     "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
@@ -487,6 +491,20 @@ impl InternalSubcommand {
             },
             InternalSubcommand::FigtermSocketPath { session_id } => {
                 println!("{}", directories::figterm_socket_path(session_id)?.to_string_lossy());
+            },
+            InternalSubcommand::UninstallForAllUsers => {
+                let out = Command::new("users").output()?;
+                let users = String::from_utf8_lossy(&out.stdout);
+                for user in users
+                    .split('\n')
+                    .map(|line| line.trim())
+                    .filter(|line| !line.is_empty())
+                {
+                    Command::new("sudo")
+                        .args(&["-u", user, "--", "fig", "integrations", "uninstall", "all", "--silent"])
+                        .spawn()?
+                        .wait()?;
+                }
             },
         }
 

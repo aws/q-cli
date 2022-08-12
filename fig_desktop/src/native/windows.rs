@@ -1,6 +1,5 @@
 use std::ffi::CStr;
 use std::mem::ManuallyDrop;
-use std::sync::Arc;
 
 use anyhow::{
     anyhow,
@@ -9,6 +8,7 @@ use anyhow::{
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 use tracing::debug;
+use windows::core::implement;
 use windows::Win32::Foundation::{
     HWND,
     RECT,
@@ -33,6 +33,8 @@ use windows::Win32::UI::Accessibility::{
     AccessibleObjectFromEvent,
     CUIAutomation,
     IUIAutomation,
+    IUIAutomationFocusChangedEventHandler,
+    IUIAutomationFocusChangedEventHandler_Impl,
     IUIAutomationTextPattern,
     SetWinEventHook,
     TextUnit_Character,
@@ -63,41 +65,10 @@ use crate::event::{
 };
 use crate::{
     EventLoopProxy,
-    GlobalState,
     AUTOCOMPLETE_ID,
 };
 
 pub const SHELL: &str = "bash";
-
-#[repr(C)]
-struct AutomationTable(IUIAutomation);
-
-unsafe impl Sync for AutomationTable {}
-unsafe impl Send for AutomationTable {}
-
-static UNMANAGED: Lazy<Unmanaged> = unsafe {
-    Lazy::new(|| Unmanaged {
-        main_thread: GetCurrentThreadId(),
-        previous_focus: RwLock::new(None),
-        global_state: RwLock::new(Option::<Arc<GlobalState>>::None),
-        event_sender: RwLock::new(Option::<EventLoopProxy>::None),
-        foreground_hook: RwLock::new(SetWinEventHook(
-            EVENT_SYSTEM_FOREGROUND,
-            EVENT_SYSTEM_FOREGROUND,
-            None,
-            Some(win_event_proc),
-            0,
-            0,
-            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
-        )),
-        location_hook: RwLock::new(None),
-        console_state: RwLock::new(ConsoleState::None),
-        automation_instance: AutomationTable({
-            CoInitialize(std::ptr::null_mut()).unwrap();
-            CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap()
-        }),
-    })
-};
 
 const VT_TRUE: VARIANT = VARIANT {
     Anonymous: VARIANT_0 {
@@ -113,10 +84,54 @@ const VT_TRUE: VARIANT = VARIANT {
     },
 };
 
-#[derive(Debug, Default)]
-pub struct NativeState;
+static UNMANAGED: Lazy<Unmanaged> = unsafe {
+    Lazy::new(|| Unmanaged {
+        main_thread: GetCurrentThreadId(),
+        previous_focus: RwLock::new(None),
+        event_sender: RwLock::new(Option::<EventLoopProxy>::None),
+        foreground_hook: RwLock::new(SetWinEventHook(
+            EVENT_SYSTEM_FOREGROUND,
+            EVENT_SYSTEM_FOREGROUND,
+            None,
+            Some(win_event_proc),
+            0,
+            0,
+            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+        )),
+        location_hook: RwLock::new(None),
+        console_state: RwLock::new(ConsoleState::None),
+    })
+};
+
+#[derive(Debug)]
+pub struct NativeState {
+    automation: Automation,
+    _focus_changed_event_handler: IUIAutomationFocusChangedEventHandler,
+}
 
 impl NativeState {
+    pub fn new(proxy: EventLoopProxy) -> Self {
+        unsafe {
+            CoInitialize(std::ptr::null_mut()).unwrap();
+            let automation = Automation(CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap());
+
+            let focus_changed_event_handler: IUIAutomationFocusChangedEventHandler = FocusChangedEventHandler {
+                event_loop_proxy: proxy,
+            }
+            .into();
+
+            automation
+                .0
+                .AddFocusChangedEventHandler(None, &focus_changed_event_handler)
+                .unwrap();
+
+            Self {
+                automation,
+                _focus_changed_event_handler: focus_changed_event_handler,
+            }
+        }
+    }
+
     pub fn handle(&self, event: NativeEvent) -> Result<()> {
         match event {
             NativeEvent::EditBufferChanged => unsafe {
@@ -124,7 +139,7 @@ impl NativeState {
                 match console_state {
                     ConsoleState::None => (),
                     ConsoleState::Console { hwnd } => {
-                        let automation = &UNMANAGED.automation_instance.0;
+                        let automation = &self.automation.0;
                         let window = automation.ElementFromHandle(hwnd)?;
 
                         let interest = automation.CreateAndCondition(
@@ -142,23 +157,37 @@ impl NativeState {
                         let mut elements = std::ptr::null_mut::<RECT>();
                         let mut elements_len = 0;
 
-                        UNMANAGED.automation_instance.0.SafeArrayToRectNativeArray(
-                            bounds,
-                            &mut elements,
-                            &mut elements_len,
-                        )?;
+                        automation.SafeArrayToRectNativeArray(bounds, &mut elements, &mut elements_len)?;
 
                         if elements_len > 0 {
                             let bounds = *elements;
 
-                            UNMANAGED.send_event(WindowEvent::Reposition {
-                                x: bounds.left,
-                                y: bounds.bottom,
-                            });
+                            UNMANAGED
+                                .event_sender
+                                .read()
+                                .clone()
+                                .unwrap()
+                                .send_event(Event::WindowEvent {
+                                    window_id: AUTOCOMPLETE_ID,
+                                    window_event: WindowEvent::Reposition {
+                                        x: bounds.left,
+                                        y: bounds.bottom,
+                                    },
+                                })
+                                .ok();
                         }
                     },
                     ConsoleState::Accessible { caret_x, caret_y } => {
-                        UNMANAGED.send_event(WindowEvent::Reposition { x: caret_x, y: caret_y });
+                        UNMANAGED
+                            .event_sender
+                            .read()
+                            .clone()
+                            .unwrap()
+                            .send_event(Event::WindowEvent {
+                                window_id: AUTOCOMPLETE_ID,
+                                window_event: WindowEvent::Reposition { x: caret_x, y: caret_y },
+                            })
+                            .ok();
                     },
                 }
             },
@@ -179,25 +208,46 @@ enum ConsoleState {
 struct Unmanaged {
     main_thread: u32,
     previous_focus: RwLock<Option<u32>>,
-    global_state: RwLock<Option<Arc<GlobalState>>>,
     event_sender: RwLock<Option<EventLoopProxy>>,
     foreground_hook: RwLock<HWINEVENTHOOK>,
     location_hook: RwLock<Option<HWINEVENTHOOK>>,
     console_state: RwLock<ConsoleState>,
-    automation_instance: AutomationTable,
 }
 
-impl Unmanaged {
-    pub fn send_event(&self, event: WindowEvent) {
-        self.event_sender
-            .read()
-            .clone()
-            .expect("Window event sender was none")
-            .send_event(Event::WindowEvent {
-                window_id: AUTOCOMPLETE_ID,
-                window_event: event,
-            })
-            .expect("Failed to emit window event");
+#[derive(Debug)]
+#[repr(C)]
+struct Automation(IUIAutomation);
+unsafe impl Sync for Automation {}
+unsafe impl Send for Automation {}
+
+#[derive(Debug)]
+#[implement(IUIAutomationFocusChangedEventHandler)]
+#[repr(C)]
+struct FocusChangedEventHandler {
+    event_loop_proxy: EventLoopProxy,
+}
+
+impl IUIAutomationFocusChangedEventHandler_Impl for FocusChangedEventHandler {
+    fn HandleFocusChangedEvent(
+        &self,
+        sender: &core::option::Option<windows::Win32::UI::Accessibility::IUIAutomationElement>,
+    ) -> windows::core::Result<()> {
+        if let Some(sender) = sender {
+            unsafe {
+                if let Ok(name) = sender.CurrentName() {
+                    if name != "Fig Autocomplete" {
+                        self.event_loop_proxy
+                            .send_event(Event::WindowEvent {
+                                window_id: AUTOCOMPLETE_ID,
+                                window_event: WindowEvent::Hide,
+                            })
+                            .ok();
+                    }
+                }
+            }
+        }
+
+        Ok(())
     }
 }
 
@@ -209,10 +259,8 @@ pub mod icons {
     }
 }
 
-#[allow(unused_variables)]
-pub async fn init(global_state: Arc<GlobalState>, proxy: EventLoopProxy) -> Result<()> {
+pub async fn init(proxy: EventLoopProxy) -> Result<()> {
     UNMANAGED.event_sender.write().replace(proxy);
-    UNMANAGED.global_state.write().replace(global_state);
 
     unsafe {
         update_focused_state(GetForegroundWindow());
@@ -226,7 +274,16 @@ unsafe fn update_focused_state(hwnd: HWND) {
         UnhookWinEvent(hook);
     }
 
-    UNMANAGED.send_event(WindowEvent::Hide);
+    UNMANAGED
+        .event_sender
+        .read()
+        .clone()
+        .unwrap()
+        .send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID,
+            window_event: WindowEvent::Hide,
+        })
+        .ok();
 
     let mut process_id: u32 = 0;
     let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
@@ -298,7 +355,16 @@ unsafe extern "system" fn win_event_proc(
             && OBJECT_IDENTIFIER(id_object) == OBJID_WINDOW
             && id_child == CHILDID_SELF as i32 =>
         {
-            UNMANAGED.send_event(WindowEvent::Hide);
+            UNMANAGED
+                .event_sender
+                .read()
+                .clone()
+                .unwrap()
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::Hide,
+                })
+                .ok();
         },
         e if e == EVENT_OBJECT_LOCATIONCHANGE && OBJECT_IDENTIFIER(id_object) == OBJID_CARET => {
             let mut acc = None;

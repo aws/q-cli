@@ -1,6 +1,7 @@
 use std::io::Write;
 use std::time::Duration;
 
+use cfg_if::cfg_if;
 use eyre::{
     eyre,
     Result,
@@ -59,6 +60,7 @@ enum FigWebsocketMessage {
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
 struct TicketBody {
     ticket: String,
     fly_instance: Option<String>,
@@ -68,7 +70,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     info!("Connecting to websocket");
 
     let ticket_response = Request::get("/authenticate/ticket")
-        .query(&[("format", "json")])
+        .query(&[("format", "v2")])
         .auth()
         .send()
         .await?
@@ -79,6 +81,8 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         .headers()
         .get("content-type")
         .and_then(|header| header.to_str().ok())
+        .and_then(|content_type| content_type.split_once(';'))
+        .map(|(v, _)| v)
     {
         Some("application/json") => ticket_response.json().await?,
         _ => TicketBody {
@@ -103,6 +107,8 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     }
 
     let url = Url::parse_with_params(ws_host().as_str(), &params)?;
+
+    debug!("Connecting to {url}");
 
     let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
         .await

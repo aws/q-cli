@@ -16,13 +16,12 @@ mod webview;
 mod window;
 
 use std::iter::empty;
+use std::time::Duration;
 
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
-use figterm::FigtermState;
-use native::NativeState;
 use notification::NotificationsState;
 use parking_lot::RwLock;
 use sysinfo::{
@@ -66,15 +65,6 @@ pub struct InterceptState {
 pub type EventLoop = WryEventLoop<Event>;
 pub type EventLoopProxy = WryEventLoopProxy<Event>;
 
-#[derive(Debug, Default)]
-pub struct GlobalState {
-    pub debug_state: DebugState,
-    pub figterm_state: FigtermState,
-    pub intercept_state: InterceptState,
-    pub native_state: NativeState,
-    pub notifications_state: NotificationsState,
-}
-
 #[tokio::main]
 async fn main() {
     let _logger_guard = Logger::new()
@@ -89,6 +79,21 @@ async fn main() {
         1.0,
         true,
     );
+
+    utils::update_check().await;
+
+    tokio::spawn(async {
+        let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
+        if seconds < 0 {
+            return;
+        }
+        let mut interval = tokio::time::interval(Duration::from_secs(seconds as u64));
+        interval.tick().await; // first tick is completed immediately
+        loop {
+            interval.tick().await;
+            utils::update_check().await;
+        }
+    });
 
     let cli = cli::Cli::parse();
 
