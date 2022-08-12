@@ -16,7 +16,7 @@ endif
 
 all: archive deb
 
-archive: bin icons bundle 
+archive: bin icons bundle
 	cd $(BUILD_DIR) && tar -cjf fig-$(ARCH)-linux.tar.gz usr install.sh
 
 arch: archive
