@@ -17,10 +17,11 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::figterm::FigtermState;
 use crate::{
+    DebugState,
     EventLoop,
     EventLoopProxy,
-    GlobalState,
     AUTOCOMPLETE_ID,
 };
 
@@ -98,10 +99,14 @@ fn load_from_memory() -> Icon {
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
 
-pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Result<SystemTray> {
+pub fn build_tray(
+    event_loop: &EventLoop,
+    debug_state: &DebugState,
+    figterm_state: &FigtermState,
+) -> wry::Result<SystemTray> {
     let mut tray_menu = ContextMenu::new();
 
-    create_tray_menu(&mut tray_menu, global_state);
+    create_tray_menu(&mut tray_menu, debug_state, figterm_state);
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
@@ -115,8 +120,8 @@ pub fn build_tray(event_loop: &EventLoop, global_state: &GlobalState) -> wry::Re
     Ok(SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?)
 }
 
-fn create_tray_menu(tray_menu: &mut ContextMenu, global_state: &GlobalState) {
-    let figterm_session = global_state.figterm_state.most_recent_session();
+fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figterm_state: &FigtermState) {
+    let figterm_session = figterm_state.most_recent_session();
 
     // Debugger Menu
 
@@ -179,7 +184,7 @@ fn create_tray_menu(tray_menu: &mut ContextMenu, global_state: &GlobalState) {
     context_debugger!("debugger-terminal", "terminal: {}", terminal);
     context_debugger!("debugger-process", "process: {}", process_name);
 
-    let api_message = format!("api-message: {}", match &*global_state.debug_state.debug_lines.read() {
+    let api_message = format!("api-message: {}", match &*debug_state.debug_lines.read() {
         v if !v.is_empty() => v.join(" | "),
         _ => "None".to_string(),
     });

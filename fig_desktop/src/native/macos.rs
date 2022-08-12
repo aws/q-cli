@@ -3,23 +3,24 @@ use std::sync::Arc;
 use anyhow::Result;
 
 use crate::event::NativeEvent;
-use crate::{
-    EventLoopProxy,
-    GlobalState,
-};
+use crate::EventLoopProxy;
 
 pub const SHELL: &str = "/bin/bash";
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct NativeState {}
 
 impl NativeState {
+    pub fn new(_proxy: EventLoopProxy) -> Self {
+        Self {}
+    }
+
     pub fn handle(&self, _event: NativeEvent) -> Result<()> {
         Ok(())
     }
 }
 
-pub async fn init(_global_state: Arc<GlobalState>, _proxy: EventLoopProxy) -> Result<()> {
+pub async fn init(_proxy: EventLoopProxy) -> Result<()> {
     Ok(())
 }
 

@@ -58,6 +58,7 @@ wry = { version = "0.20.1", default-features = false, features = ["tray", "proto
 [target.'cfg(windows)'.dependencies.windows]
 version = "0.39.0"
 features = [
+    "implement",
     "Win32_Foundation",
     "Win32_Graphics_Gdi",
     "Win32_Networking_WinSock",
@@ -79,4 +80,3 @@ x11rb = "0.10.1"
 
 [build-dependencies]
 image = "0.24.3"
-

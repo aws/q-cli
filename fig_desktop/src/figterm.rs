@@ -31,8 +31,6 @@ use tracing::{
     trace,
 };
 
-use crate::GlobalState;
-
 #[derive(Debug, Clone)]
 pub struct SessionMetrics {
     pub start_time: OffsetDateTime,
@@ -173,13 +171,13 @@ pub struct EditBuffer {
     pub cursor: i64,
 }
 
-pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) -> Result<()> {
-    if state.figterm_state.contains_key(&session_id) {
+pub fn ensure_figterm(session_id: FigtermSessionId, figterm_state: Arc<FigtermState>) -> Result<()> {
+    if figterm_state.contains_key(&session_id) {
         return Ok(());
     }
 
     let (tx, mut rx) = mpsc::channel(0xff);
-    state.figterm_state.insert(session_id.clone(), FigTermSession {
+    figterm_state.insert(session_id.clone(), FigTermSession {
         sender: tx,
         last_receive: Instant::now(),
         edit_buffer: EditBuffer::default(),
@@ -269,8 +267,7 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) -> 
                 }
                 session.last_receive = Instant::now();
             };
-            if state
-                .figterm_state
+            if figterm_state
                 .with_mut(session_id.clone(), update_metrics_for_insert)
                 .is_none()
             {
@@ -279,19 +276,19 @@ pub fn ensure_figterm(session_id: FigtermSessionId, state: Arc<GlobalState>) -> 
         }
         // remove from cache
         trace!("figterm session {session_id} closed");
-        state.figterm_state.remove(&session_id);
+        figterm_state.remove(&session_id);
     });
 
     Ok(())
 }
 
-pub async fn clean_figterm_cache(state: Arc<GlobalState>) {
+pub async fn clean_figterm_cache(state: Arc<FigtermState>) {
     loop {
         trace!("cleaning figterm cache");
         let mut last_receive = Instant::now();
         {
             let mut to_remove = Vec::new();
-            for session in state.figterm_state.sessions.iter() {
+            for session in state.sessions.iter() {
                 if session.last_receive.elapsed() > Duration::from_secs(600) {
                     to_remove.push(session.key().clone());
                 } else if last_receive > session.last_receive {
@@ -299,7 +296,7 @@ pub async fn clean_figterm_cache(state: Arc<GlobalState>) {
                 }
             }
             for session_id in to_remove {
-                state.figterm_state.remove(&session_id);
+                state.remove(&session_id);
             }
         }
         sleep_until(last_receive + Duration::from_secs(600)).await;

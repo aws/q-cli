@@ -10,6 +10,7 @@ use fig_util::directories;
 use fnv::FnvBuildHasher;
 use regex::RegexSet;
 use tracing::{
+    debug,
     error,
     info,
     trace,
@@ -44,6 +45,9 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::figterm::FigtermState;
+use crate::native::NativeState;
+use crate::notification::NotificationsState;
 use crate::tray::{
     self,
     build_tray,
@@ -58,8 +62,9 @@ use crate::{
     local_ipc,
     native,
     settings,
+    DebugState,
     EventLoop,
-    GlobalState,
+    InterceptState,
 };
 
 pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
@@ -71,16 +76,27 @@ pub struct WebviewManager {
     fig_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
     window_id_map: DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>,
     event_loop: EventLoop,
-    global_state: Arc<GlobalState>,
+    debug_state: Arc<DebugState>,
+    figterm_state: Arc<FigtermState>,
+    intercept_state: Arc<InterceptState>,
+    native_state: NativeState,
+    notifications_state: Arc<NotificationsState>,
 }
 
 impl Default for WebviewManager {
     fn default() -> Self {
+        let event_loop = WryEventLoop::with_user_event();
+        let proxy = event_loop.create_proxy();
+
         Self {
             fig_id_map: Default::default(),
             window_id_map: Default::default(),
-            event_loop: WryEventLoop::with_user_event(),
-            global_state: Default::default(),
+            event_loop,
+            debug_state: Arc::new(DebugState::default()),
+            figterm_state: Arc::new(FigtermState::default()),
+            intercept_state: Arc::new(InterceptState::default()),
+            native_state: NativeState::new(proxy),
+            notifications_state: Arc::new(NotificationsState::default()),
         }
     }
 }
@@ -115,28 +131,43 @@ impl WebviewManager {
     pub async fn run(self) -> wry::Result<()> {
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
 
-        native::init(self.global_state.clone(), self.event_loop.create_proxy())
+        native::init(self.event_loop.create_proxy())
             .await
             .expect("Failed to initialize native integrations");
 
-        tokio::spawn(figterm::clean_figterm_cache(self.global_state.clone()));
+        tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         tokio::spawn(local_ipc::start_local_ipc(
-            self.global_state.clone(),
+            self.figterm_state.clone(),
+            self.notifications_state.clone(),
             self.event_loop.create_proxy(),
         ));
 
-        let proxy = self.event_loop.create_proxy();
-        let global_state = self.global_state.clone();
-        tokio::spawn(async move {
-            while let Some((fig_id, payload)) = api_handler_rx.recv().await {
-                api_request(fig_id, payload, &global_state, &proxy).await;
-            }
-        });
+        {
+            let proxy = self.event_loop.create_proxy();
+            let debug_state = self.debug_state.clone();
+            let figterm_state = self.figterm_state.clone();
+            let intercept_state = self.intercept_state.clone();
+            let notifications_state = self.notifications_state.clone();
+            tokio::spawn(async move {
+                while let Some((fig_id, payload)) = api_handler_rx.recv().await {
+                    api_request(
+                        fig_id,
+                        payload,
+                        &debug_state,
+                        &figterm_state,
+                        &intercept_state,
+                        &notifications_state,
+                        &proxy,
+                    )
+                    .await;
+                }
+            });
+        }
 
-        settings::settings_listener(self.global_state.clone(), self.event_loop.create_proxy()).await;
+        settings::settings_listener(self.notifications_state.clone(), self.event_loop.create_proxy()).await;
 
-        let _tray = build_tray(&self.event_loop, &self.global_state).unwrap();
+        let _tray = build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap();
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, _, control_flow| {
@@ -168,7 +199,7 @@ impl WebviewManager {
                             window_event,
                         } => match self.fig_id_map.get(&window_id) {
                             Some(window_state) => {
-                                window_state.handle(window_event, &self.global_state, &api_handler_tx);
+                                window_state.handle(window_event, &self.figterm_state, &api_handler_tx);
                             },
                             None => todo!(),
                         },
@@ -179,10 +210,9 @@ impl WebviewManager {
                             // TODO(grant): Refresh the debugger
                         },
                         Event::NativeEvent(native_event) => {
-                            self.global_state
-                                .native_state
-                                .handle(native_event)
-                                .expect("Failed to handle native event");
+                            if let Err(e) = self.native_state.handle(native_event) {
+                                debug!("Failed to handle native event: {e}");
+                            }
                         },
                     }
                 },

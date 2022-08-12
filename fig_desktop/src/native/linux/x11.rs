@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::sync::Arc;
 
 use once_cell::sync::Lazy;
 use tracing::{
@@ -29,7 +28,6 @@ use crate::event::WindowEvent;
 use crate::{
     Event,
     EventLoopProxy,
-    GlobalState,
     AUTOCOMPLETE_ID,
 };
 
@@ -61,7 +59,7 @@ mod atoms {
     }
 }
 
-pub async fn handle_x11(_global_state: Arc<GlobalState>, proxy: EventLoopProxy) {
+pub async fn handle_x11(proxy: EventLoopProxy) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
 
     let setup = conn.setup();

@@ -22,8 +22,6 @@ use clap::Parser;
 use event::Event;
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
-use figterm::FigtermState;
-use native::NativeState;
 use notification::NotificationsState;
 use parking_lot::RwLock;
 use sysinfo::{
@@ -66,15 +64,6 @@ pub struct InterceptState {
 
 pub type EventLoop = WryEventLoop<Event>;
 pub type EventLoopProxy = WryEventLoopProxy<Event>;
-
-#[derive(Debug, Default)]
-pub struct GlobalState {
-    pub debug_state: DebugState,
-    pub figterm_state: FigtermState,
-    pub intercept_state: InterceptState,
-    pub native_state: NativeState,
-    pub notifications_state: NotificationsState,
-}
 
 #[tokio::main]
 async fn main() {
