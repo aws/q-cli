@@ -138,10 +138,6 @@ pub enum InternalSubcommand {
     Callback(CallbackArgs),
     /// Install fig cli
     Install(InstallArgs),
-    InstallIbus {
-        #[clap(value_parser)]
-        fig_ibus_engine_location: String,
-    },
     /// Uninstall fig cli
     Uninstall {
         /// Uninstall only the daemon
@@ -235,33 +231,6 @@ impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
             InternalSubcommand::Install(args) => install_cli_from_args(args)?,
-            InternalSubcommand::InstallIbus {
-                fig_ibus_engine_location,
-            } => {
-                let xml = format!(
-                    "<?xml version=\"1.0\" encoding=\"utf-8\" ?>
-<component>
-    <name>org.freedesktop.IBus.FigIBusEngine</name>
-    <description>Fig integration for the IBus input method</description>
-    <version>0.1.0</version>
-    <license></license>
-    <author>Fig</author>
-    <homepage>https://fig.io</homepage>
-    <exec>{fig_ibus_engine_location}</exec>
-    <textdomain></textdomain>
-    <engines>
-        <engine>
-            <name>FigIBusEngine</name>
-            <longname>Fig IBus Engine</longname>
-            <description>Fig integration for the IBus input method</description>
-            <author>Fig</author>
-        </engine>
-    </engines>
-</component>"
-                );
-                tokio::fs::create_dir_all("/usr/share/ibus/component").await?;
-                tokio::fs::write("/usr/share/ibus/component/engine.xml", xml).await?;
-            },
             InternalSubcommand::Uninstall {
                 daemon,
                 dotfiles,
