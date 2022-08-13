@@ -24,9 +24,9 @@ const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.i
 async fn main() -> Result<()> {
     // Whitelist commands do not have sentry or telemetry, telemetry should only run on
     // user facing commands as performance is less important
-    let (_guard, track_join) = match std::env::args().nth(1).as_deref() {
-        Some("init" | "_" | "internal" | "tips" | "completion" | "hook") => (None, None),
-        Some("daemon") => (
+    let (_guard, track_join) = match (std::env::args().nth(1).as_deref(), std::env::args().nth(2).as_deref()) {
+        (Some("init" | "_" | "internal" | "tips" | "completion" | "hook"), _) => (None, None),
+        (Some("daemon"), _) | (Some("login"), Some("-r")) | (Some("app"), Some("prompt")) => (
             Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false)),
             None,
         ),
