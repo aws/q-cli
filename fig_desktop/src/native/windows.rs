@@ -6,7 +6,7 @@ use anyhow::{
     Result,
 };
 use once_cell::sync::Lazy;
-use parking_lot::RwLock;
+use parking_lot::Mutex;
 use tracing::debug;
 use windows::core::implement;
 use windows::Win32::Foundation::{
@@ -25,7 +25,6 @@ use windows::Win32::System::Com::{
 use windows::Win32::System::Ole::VT_BOOL;
 use windows::Win32::System::ProcessStatus::K32GetProcessImageFileNameA;
 use windows::Win32::System::Threading::{
-    GetCurrentThreadId,
     OpenProcess,
     PROCESS_QUERY_LIMITED_INFORMATION,
 };
@@ -84,27 +83,17 @@ const VT_TRUE: VARIANT = VARIANT {
     },
 };
 
-static UNMANAGED: Lazy<Unmanaged> = unsafe {
-    Lazy::new(|| Unmanaged {
-        main_thread: GetCurrentThreadId(),
-        previous_focus: RwLock::new(None),
-        event_sender: RwLock::new(Option::<EventLoopProxy>::None),
-        foreground_hook: RwLock::new(SetWinEventHook(
-            EVENT_SYSTEM_FOREGROUND,
-            EVENT_SYSTEM_FOREGROUND,
-            None,
-            Some(win_event_proc),
-            0,
-            0,
-            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
-        )),
-        location_hook: RwLock::new(None),
-        console_state: RwLock::new(ConsoleState::None),
+static UNMANAGED: Lazy<Mutex<Unmanaged>> = Lazy::new(|| {
+    Mutex::new(Unmanaged {
+        event_sender: None,
+        location_hook: None,
+        console_state: ConsoleState::None,
     })
-};
+});
 
 #[derive(Debug)]
 pub struct NativeState {
+    proxy: EventLoopProxy,
     automation: Automation,
     _focus_changed_event_handler: IUIAutomationFocusChangedEventHandler,
 }
@@ -116,7 +105,7 @@ impl NativeState {
             let automation = Automation(CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap());
 
             let focus_changed_event_handler: IUIAutomationFocusChangedEventHandler = FocusChangedEventHandler {
-                event_loop_proxy: proxy,
+                event_loop_proxy: proxy.clone(),
             }
             .into();
 
@@ -126,6 +115,7 @@ impl NativeState {
                 .unwrap();
 
             Self {
+                proxy,
                 automation,
                 _focus_changed_event_handler: focus_changed_event_handler,
             }
@@ -135,7 +125,7 @@ impl NativeState {
     pub fn handle(&self, event: NativeEvent) -> Result<()> {
         match event {
             NativeEvent::EditBufferChanged => unsafe {
-                let console_state = *UNMANAGED.console_state.read();
+                let console_state = UNMANAGED.lock().console_state;
                 match console_state {
                     ConsoleState::None => (),
                     ConsoleState::Console { hwnd } => {
@@ -162,11 +152,7 @@ impl NativeState {
                         if elements_len > 0 {
                             let bounds = *elements;
 
-                            UNMANAGED
-                                .event_sender
-                                .read()
-                                .clone()
-                                .unwrap()
+                            self.proxy
                                 .send_event(Event::WindowEvent {
                                     window_id: AUTOCOMPLETE_ID,
                                     window_event: WindowEvent::Reposition {
@@ -178,11 +164,7 @@ impl NativeState {
                         }
                     },
                     ConsoleState::Accessible { caret_x, caret_y } => {
-                        UNMANAGED
-                            .event_sender
-                            .read()
-                            .clone()
-                            .unwrap()
+                        self.proxy
                             .send_event(Event::WindowEvent {
                                 window_id: AUTOCOMPLETE_ID,
                                 window_event: WindowEvent::Reposition { x: caret_x, y: caret_y },
@@ -204,14 +186,10 @@ enum ConsoleState {
     Accessible { caret_x: i32, caret_y: i32 },
 }
 
-#[allow(dead_code)]
 struct Unmanaged {
-    main_thread: u32,
-    previous_focus: RwLock<Option<u32>>,
-    event_sender: RwLock<Option<EventLoopProxy>>,
-    foreground_hook: RwLock<HWINEVENTHOOK>,
-    location_hook: RwLock<Option<HWINEVENTHOOK>>,
-    console_state: RwLock<ConsoleState>,
+    event_sender: Option<EventLoopProxy>,
+    location_hook: Option<HWINEVENTHOOK>,
+    console_state: ConsoleState,
 }
 
 #[derive(Debug)]
@@ -260,24 +238,35 @@ pub mod icons {
 }
 
 pub async fn init(proxy: EventLoopProxy) -> Result<()> {
-    UNMANAGED.event_sender.write().replace(proxy);
+    UNMANAGED.lock().event_sender.replace(proxy);
 
     unsafe {
         update_focused_state(GetForegroundWindow());
+
+        SetWinEventHook(
+            EVENT_SYSTEM_FOREGROUND,
+            EVENT_SYSTEM_FOREGROUND,
+            None,
+            Some(win_event_proc),
+            0,
+            0,
+            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+        );
     }
 
     Ok(())
 }
 
 unsafe fn update_focused_state(hwnd: HWND) {
-    if let Some(hook) = UNMANAGED.location_hook.write().take() {
+    let mut unmanaged = UNMANAGED.lock();
+
+    if let Some(hook) = unmanaged.location_hook.take() {
         UnhookWinEvent(hook);
     }
 
-    UNMANAGED
+    unmanaged
         .event_sender
-        .read()
-        .clone()
+        .as_ref()
         .unwrap()
         .send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID,
@@ -316,15 +305,15 @@ unsafe fn update_focused_state(hwnd: HWND) {
     match title {
         title if ["Hyper", "Code"].contains(&title) => (),
         title if ["cmd", "mintty", "powershell", "WindowsTerminal"].contains(&title) => {
-            *UNMANAGED.console_state.write() = ConsoleState::Console { hwnd }
+            unmanaged.console_state = ConsoleState::Console { hwnd }
         },
         _ => {
-            *UNMANAGED.console_state.write() = ConsoleState::None;
+            unmanaged.console_state = ConsoleState::None;
             return;
         },
     }
 
-    UNMANAGED.location_hook.write().replace(SetWinEventHook(
+    unmanaged.location_hook.replace(SetWinEventHook(
         EVENT_OBJECT_LOCATIONCHANGE,
         EVENT_OBJECT_LOCATIONCHANGE,
         None,
@@ -356,9 +345,9 @@ unsafe extern "system" fn win_event_proc(
             && id_child == CHILDID_SELF as i32 =>
         {
             UNMANAGED
+                .lock()
                 .event_sender
-                .read()
-                .clone()
+                .as_ref()
                 .unwrap()
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID,
@@ -379,7 +368,7 @@ unsafe extern "system" fn win_event_proc(
                         .accLocation(&mut left, &mut top, &mut width, &mut height, &varchild)
                         .is_ok()
                     {
-                        *UNMANAGED.console_state.write() = ConsoleState::Accessible {
+                        UNMANAGED.lock().console_state = ConsoleState::Accessible {
                             caret_x: left,
                             caret_y: top + height,
                         }

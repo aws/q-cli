@@ -308,7 +308,7 @@ pub fn build_mission_control(
     let webview = WebViewBuilder::new(window)?
         .with_web_context(web_context)
         .with_url(if show_onboarding {
-            "https://desktop.fig.io/onboarding/1"
+            "https://desktop.fig.io/onboarding/welcome"
         } else {
             "https://desktop.fig.io"
         })?

@@ -142,8 +142,7 @@ async fn main() {
 
     install::run_install().await;
 
-    let show_onboarding =
-        std::env::consts::OS != "windows" && !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
 
     #[cfg(target_os = "linux")]
     gtk::init().expect("Failed initializing GTK");
