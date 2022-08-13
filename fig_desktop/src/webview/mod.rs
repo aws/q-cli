@@ -276,6 +276,7 @@ where
 pub struct MissionControlOptions {
     pub show_onboarding: bool,
     pub force_visible: bool,
+    pub page: Option<String>,
 }
 
 pub fn build_mission_control(
@@ -284,6 +285,7 @@ pub fn build_mission_control(
     MissionControlOptions {
         show_onboarding,
         force_visible,
+        page,
     }: MissionControlOptions,
 ) -> wry::Result<WebView> {
     let is_visible = !fig_auth::is_logged_in() || force_visible || show_onboarding;
@@ -305,13 +307,18 @@ pub fn build_mission_control(
 
     let proxy = event_loop.create_proxy();
 
+    let url = if show_onboarding {
+        "https://desktop.fig.io/onboarding/welcome".to_owned()
+    } else {
+        match page {
+            Some(page) => format!("https://desktop.fig.io/{}", page),
+            None => "https://desktop.fig.io".to_owned(),
+        }
+    };
+
     let webview = WebViewBuilder::new(window)?
         .with_web_context(web_context)
-        .with_url(if show_onboarding {
-            "https://desktop.fig.io/onboarding/1"
-        } else {
-            "https://desktop.fig.io"
-        })?
+        .with_url(url.as_str())?
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {
