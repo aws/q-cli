@@ -33,6 +33,7 @@ use sysinfo::{
     SystemExt,
 };
 use tracing::warn;
+use url::Url;
 use webview::{
     build_autocomplete,
     build_mission_control,
@@ -97,16 +98,24 @@ async fn main() {
 
     let cli = cli::Cli::parse();
 
-    if let Some(url) = cli.url_link {
-        println!("Opening {url}");
-        return;
-    }
+    let page = cli.url_link.and_then(|url| {
+        let url = Url::parse(&url).unwrap();
+        assert_eq!(url.scheme(), "fig");
+
+        match url.host_str() {
+            Some("plugins") => Some(format!("plugins{}", url.path())),
+            command => {
+                println!("Unknown command {command:?}");
+                None
+            },
+        }
+    });
 
     if !cli.allow_multiple {
         match get_current_pid() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                let processes = system.processes_by_exact_name("fig_desktop");
+                let processes = system.processes_by_name("fig_desktop");
                 for process in processes {
                     let pid = process.pid();
                     if current_pid != pid {
@@ -117,8 +126,11 @@ async fn main() {
                         } else {
                             let exe = process.exe().display();
                             eprintln!("Fig is already running: {exe} ({pid})");
-                            eprintln!("Opening Fig Window...");
-                            fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl, None)
+                            match page {
+                                Some(ref page) => eprintln!("Opening /{page}..."),
+                                None => eprintln!("Opening Fig Window..."),
+                            }
+                            fig_ipc::command::open_ui_element(fig_proto::local::UiElement::MissionControl, page)
                                 .await
                                 .unwrap();
                             return;
@@ -151,7 +163,8 @@ async fn main() {
     webview_manager
         .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
             show_onboarding,
-            force_visible: cli.mission_control,
+            force_visible: cli.mission_control || page.is_some(),
+            page,
         })
         .unwrap();
 
