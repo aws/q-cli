@@ -2326,7 +2326,7 @@ dependencies = [
  "futures",
  "globset",
  "humantime",
- "nix 0.24.2",
+ "nix 0.25.0",
  "notify 4.0.17",
  "once_cell",
  "parking_lot 0.12.1",
@@ -2491,7 +2491,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "fig_util",
- "nix 0.24.2",
+ "nix 0.25.0",
  "once_cell",
  "prost",
  "prost-reflect",
@@ -2574,7 +2574,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.17",
  "dirs",
- "nix 0.24.2",
+ "nix 0.25.0",
  "once_cell",
  "serde",
  "sha2",
@@ -2611,7 +2611,7 @@ dependencies = [
  "fnv",
  "lazy_static",
  "memmem",
- "nix 0.24.2",
+ "nix 0.25.0",
  "num-traits",
  "once_cell",
  "parking_lot 0.12.1",
@@ -4502,6 +4502,20 @@ dependencies = [
  "cfg-if 1.0.0",
  "libc",
  "memoffset",
+]
+
+[[package]]
+name = "nix"
+version = "0.25.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e322c04a9e3440c327fca7b6c8a63e6890a32fa2ad689db972425f07e0d22abb"
+dependencies = [
+ "autocfg",
+ "bitflags",
+ "cfg-if 1.0.0",
+ "libc",
+ "memoffset",
+ "pin-utils",
 ]
 
 [[package]]
