@@ -377,7 +377,11 @@ fn figterm_main() -> Result<()> {
 
     let runtime = runtime::Builder::new_multi_thread()
         .enable_all()
-        .thread_name("figterm-runtime-worker")
+        .thread_name_fn(|| {
+            static ATOMIC_ID: std::sync::atomic::AtomicUsize = std::sync::atomic::AtomicUsize::new(0);
+            let id = ATOMIC_ID.fetch_add(1, std::sync::atomic::Ordering::SeqCst);
+            format!("figterm-runtime-worker-{id}")
+        })
         .build()?;
     let runtime_result = runtime.block_on(async {
         let history_sender = history::spawn_history_task().await;
