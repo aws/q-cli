@@ -7,6 +7,7 @@ use super::{
 };
 use crate::figterm::{
     FigTermCommand,
+    FigtermSessionId,
     FigtermState,
 };
 use crate::InterceptState;
@@ -24,16 +25,20 @@ pub async fn update(
         *intercept_state.intercept_global_keystrokes.write() = intercept_global_keystrokes;
     }
 
-    let most_recent_session_id = figterm_state.most_recent_session_id();
+    let lock_session_id = request
+        .current_terminal_session_id
+        .map(FigtermSessionId)
+        .or_else(|| figterm_state.most_recent_session_id());
+
     for session in figterm_state.sessions.iter() {
-        match most_recent_session_id {
-            Some(ref most_recent_session_id) if session.key() == most_recent_session_id => {
-                if let Some(session) = figterm_state.sessions.get(most_recent_session_id) {
+        match lock_session_id {
+            Some(ref lock_session_id) if session.key() == lock_session_id => {
+                if let Some(session) = figterm_state.sessions.get(lock_session_id) {
                     if let Err(err) = session
                         .sender
                         .send(FigTermCommand::InterceptFigJs {
-                            intercept_bound_keystrokes: request.intercept_bound_keystrokes(),
-                            intercept_global_keystrokes: request.intercept_bound_keystrokes(),
+                            intercept_bound_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
+                            intercept_global_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
                             actions: request
                                 .action_list
                                 .clone()
@@ -50,7 +55,7 @@ pub async fn update(
                         })
                         .await
                     {
-                        error!("Failed sending command to figterm session {most_recent_session_id}: {err}");
+                        error!("Failed sending command to figterm session {lock_session_id}: {err}");
                     }
                 }
             },
