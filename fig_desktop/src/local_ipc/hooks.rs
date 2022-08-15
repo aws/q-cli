@@ -31,10 +31,7 @@ use tracing::{
     warn,
 };
 
-use crate::event::{
-    NativeEvent,
-    WindowEvent,
-};
+use crate::event::WindowEvent;
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
@@ -145,7 +142,8 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
-    proxy.send_event(Event::NativeEvent(NativeEvent::EditBufferChanged))?;
+    #[cfg(target_os = "windows")]
+    proxy.send_event(Event::NativeEvent(crate::event::NativeEvent::EditBufferChanged))?;
 
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,

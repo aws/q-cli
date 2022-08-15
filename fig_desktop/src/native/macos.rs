@@ -1,3 +1,5 @@
+use std::sync::Arc;
+
 use anyhow::Result;
 
 use crate::event::NativeEvent;
@@ -18,7 +20,7 @@ impl NativeState {
     }
 }
 
-pub async fn init(_proxy: EventLoopProxy) -> Result<()> {
+pub async fn init(_proxy: EventLoopProxy, _native_state: Arc<NativeState>) -> Result<()> {
     Ok(())
 }
 

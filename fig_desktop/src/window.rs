@@ -64,7 +64,7 @@ impl WindowState {
             .set_outer_position(Position::Physical(PhysicalPosition {
                 x: positon.x + anchor.x,
                 y: positon.y + anchor.y,
-            }))
+            }));
     }
 
     pub fn handle(

@@ -157,7 +157,15 @@ async fn main() {
     let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
 
     #[cfg(target_os = "linux")]
-    gtk::init().expect("Failed initializing GTK");
+    {
+        match std::env::var("FIG_BACKEND").ok().as_deref() {
+            Some("default") => {},
+            Some(backend) => std::env::set_var("GDK_BACKEND", backend),
+            None => std::env::set_var("GDK_BACKEND", "x11"),
+        }
+
+        gtk::init().expect("Failed initializing GTK");
+    }
 
     let mut webview_manager = WebviewManager::new();
     webview_manager

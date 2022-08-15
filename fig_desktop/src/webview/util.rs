@@ -1,4 +1,6 @@
+use once_cell::sync::Lazy;
 use serde_json::json;
+use wry::application::window::Icon;
 use wry::http::status::StatusCode;
 use wry::http::{
     Request as HttpRequest,
@@ -28,4 +30,41 @@ pub fn wrap_custom_protocol(
             },
         })
     }
+}
+
+#[allow(clippy::needless_return)]
+pub static ICON: Lazy<Icon> = Lazy::new(|| {
+    cfg_if::cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            let icon_path = "/usr/share/icons/hicolor/512x512/apps/fig.png";
+            return load_icon(icon_path);
+        } else {
+            return load_from_memory();
+        }
+    );
+});
+
+#[cfg(target_os = "linux")]
+fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        let image = image::open(path).expect("Failed to open icon path").into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+}
+
+#[cfg(not(target_os = "linux"))]
+fn load_from_memory() -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        // TODO: Use different per platform icons
+        let image = image::load_from_memory(include_bytes!("../../icons/512x512.png"))
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }

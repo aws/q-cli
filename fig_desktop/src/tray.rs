@@ -110,7 +110,7 @@ pub fn build_tray(
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
-            let icon_path = "/usr/share/icons/hicolor/512x512/apps/fig.png";
+            let icon_path = "/usr/share/icons/hicolor/64x64/apps/fig.png";
             let icon = load_icon(icon_path);
         } else {
             let icon = load_from_memory();

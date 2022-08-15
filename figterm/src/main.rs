@@ -348,7 +348,15 @@ fn launch_shell() -> Result<()> {
 }
 
 fn figterm_main() -> Result<()> {
-    let term_session_id = env::var("TERM_SESSION_ID").context("Failed to get TERM_SESSION_ID environment variable")?;
+    let term_session_id = match env::var("TERM_SESSION_ID") {
+        Ok(term_session_id) => term_session_id,
+        Err(_) => {
+            let term_session_id = uuid::Uuid::new_v4().to_string();
+            std::env::set_var("TERM_SESSION_ID", &term_session_id);
+            term_session_id
+        },
+    };
+
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
 

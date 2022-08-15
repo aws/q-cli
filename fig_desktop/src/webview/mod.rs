@@ -8,6 +8,7 @@ use cfg_if::cfg_if;
 use dashmap::DashMap;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
+use once_cell::sync::Lazy;
 use regex::RegexSet;
 use tracing::{
     debug,
@@ -28,6 +29,7 @@ use wry::application::event_loop::{
 };
 use wry::application::menu::MenuType;
 use wry::application::window::{
+    Theme,
     WindowBuilder,
     WindowId as WryWindowId,
 };
@@ -72,6 +74,18 @@ pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
 pub const MISSION_CONTROL_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 
+pub static THEME: Lazy<Option<Theme>> = Lazy::new(|| {
+    match fig_settings::settings::get_string("app.theme")
+        .ok()
+        .flatten()
+        .as_deref()
+    {
+        Some("light") => Some(Theme::Light),
+        Some("dark") => Some(Theme::Dark),
+        _ => None,
+    }
+});
+
 pub struct WebviewManager {
     fig_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
     window_id_map: DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>,
@@ -79,7 +93,7 @@ pub struct WebviewManager {
     debug_state: Arc<DebugState>,
     figterm_state: Arc<FigtermState>,
     intercept_state: Arc<InterceptState>,
-    native_state: NativeState,
+    native_state: Arc<NativeState>,
     notifications_state: Arc<NotificationsState>,
 }
 
@@ -95,7 +109,7 @@ impl Default for WebviewManager {
             debug_state: Arc::new(DebugState::default()),
             figterm_state: Arc::new(FigtermState::default()),
             intercept_state: Arc::new(InterceptState::default()),
-            native_state: NativeState::new(proxy),
+            native_state: Arc::new(NativeState::new(proxy)),
             notifications_state: Arc::new(NotificationsState::default()),
         }
     }
@@ -131,7 +145,7 @@ impl WebviewManager {
     pub async fn run(self) -> wry::Result<()> {
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
 
-        native::init(self.event_loop.create_proxy())
+        native::init(self.event_loop.create_proxy(), self.native_state.clone())
             .await
             .expect("Failed to initialize native integrations");
 
@@ -295,6 +309,8 @@ pub fn build_mission_control(
         .with_title("Fig")
         .with_visible(is_visible)
         .with_always_on_top(false)
+        .with_window_icon(Some(util::ICON.clone()))
+        .with_theme(*THEME)
         .build(event_loop)?;
 
     #[cfg(target_os = "linux")]
@@ -353,7 +369,9 @@ pub fn build_autocomplete(
         .with_transparent(true)
         .with_decorations(false)
         .with_always_on_top(true)
-        .with_visible(false);
+        .with_visible(false)
+        .with_window_icon(Some(util::ICON.clone()))
+        .with_theme(*THEME);
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
@@ -377,13 +395,18 @@ pub fn build_autocomplete(
 
         window.gtk_window().set_type_hint(WindowTypeHint::Utility);
         window.gtk_window().set_role("autocomplete");
+        window.gtk_window().set_accept_focus(false);
+        window.gtk_window().set_decorated(false);
     }
 
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
         .with_web_context(web_context)
-        .with_url("https://app.withfig.com/autocomplete/v9")?
+        .with_url(&fig_settings::settings::get_string_or(
+            "developer.autocomplete.host",
+            "https://app.withfig.com/autocomplete/v9".into(),
+        ))?
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {

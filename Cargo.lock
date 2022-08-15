@@ -2349,6 +2349,7 @@ dependencies = [
  "tracing-subscriber",
  "tui",
  "url",
+ "uuid",
  "validator",
  "which",
  "windows 0.39.0",
@@ -2624,6 +2625,7 @@ dependencies = [
  "tokio",
  "tracing",
  "tracing-subscriber",
+ "uuid",
  "winapi 0.3.9",
  "winreg 0.10.1",
 ]
@@ -7851,6 +7853,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dd6469f4314d5f1ffec476e05f17cc9a78bc7a27a6a857842170bdf8d6f98d2f"
 dependencies = [
  "getrandom 0.2.7",
+ "rand 0.8.5",
  "serde",
 ]
 
