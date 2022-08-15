@@ -176,6 +176,7 @@ message InsertTextRequest {
     string text = 1;
     TextUpdate update  = 2;
   }
+  optional string terminal_session_id = 3;
 }
 
 message PseudoterminalWriteRequest {

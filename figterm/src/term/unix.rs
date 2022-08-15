@@ -257,7 +257,7 @@ impl Terminal for UnixTerminal {
         tokio::spawn(async move {
             let mut stdin = io::stdin();
             let mut parser = InputParser::new();
-            let mut buf = BytesMut::with_capacity(1024);
+            let mut buf = BytesMut::with_capacity(8192);
 
             loop {
                 select! {
@@ -266,11 +266,15 @@ impl Terminal for UnixTerminal {
                         match res {
                             Ok(n) => {
                                 trace!("Read input: {:?}", &buf[0..n]);
+                                let full = buf.capacity() == buf.len();
+                                if full {
+                                    buf.reserve(buf.len());
+                                }
                                 let mut events = vec![];
                                 parser.parse(
                                     &buf[0..n],
                                     |raw, evt| events.push(Ok((raw, evt))),
-                                    false,
+                                    full,
                                 );
                                 if let Err(e) = input_tx.send_async(events).await {
                                     warn!("Error sending event: {e}");
