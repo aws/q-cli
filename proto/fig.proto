@@ -450,6 +450,7 @@ message UpdateApplicationPropertiesRequest {
   optional bool interceptBoundKeystrokes = 1;
   optional bool interceptGlobalKeystrokes = 3;
   optional ActionList actionList = 4;
+  optional string current_terminal_session_id = 5;
 
   reserved 2;
 }
