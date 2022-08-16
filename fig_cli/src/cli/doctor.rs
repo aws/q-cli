@@ -24,7 +24,6 @@ use crossterm::{
     execute,
 };
 use eyre::{
-    bail,
     Result,
     WrapErr,
 };
@@ -60,11 +59,6 @@ use serde_json::json;
 use spinners::{
     Spinner,
     Spinners,
-};
-use sysinfo::{
-    ProcessRefreshKind,
-    RefreshKind,
-    SystemExt,
 };
 use system_socket::SystemStream;
 use tokio::io::{
@@ -190,6 +184,7 @@ macro_rules! doctor_error {
     }}
 }
 
+#[allow(unused_macros)]
 macro_rules! doctor_fix {
     ({ reason: $reason:expr,fix: $fix:expr }) => {
         DoctorError::Error {
@@ -1680,6 +1675,12 @@ impl DoctorCheck for IBusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        use sysinfo::{
+            ProcessRefreshKind,
+            RefreshKind,
+            SystemExt,
+        };
+
         let system = sysinfo::System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
 
         if system.processes_by_exact_name("ibus-daemon").next().is_none() {
@@ -1690,7 +1691,7 @@ impl DoctorCheck for IBusCheck {
                     if !output.status.success() {
                         let stdout = String::from_utf8_lossy(&output.stdout);
                         let stderr = String::from_utf8_lossy(&output.stderr);
-                        bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+                        eyre::bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
                     }
                     Ok(())
             }}));
