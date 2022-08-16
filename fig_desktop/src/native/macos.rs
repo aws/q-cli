@@ -32,3 +32,7 @@ pub mod icons {
         None
     }
 }
+
+pub const fn autocomplete_active() -> bool {
+    true
+}

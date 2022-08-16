@@ -160,6 +160,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                         hooks::intercepted_key(request, &notifications_state, &proxy).await
                     },
                     Some(FileChanged(request)) => hooks::file_changed(request).await,
+                    Some(FocusedWindowData(request)) => hooks::focused_window_data(request, &proxy).await,
                     err => {
                         match &err {
                             Some(unknown) => error!("Unknown hook: {unknown:?}"),

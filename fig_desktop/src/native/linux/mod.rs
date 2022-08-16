@@ -1,7 +1,12 @@
 pub mod icons;
+pub mod integrations;
 mod sway;
 mod x11;
 
+use std::sync::atomic::{
+    AtomicBool,
+    Ordering,
+};
 use std::sync::Arc;
 
 use anyhow::Result;
@@ -75,4 +80,10 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
     icons::init()?;
 
     Ok(())
+}
+
+static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
+
+pub fn autocomplete_active() -> bool {
+    WM_REVICED_DATA.load(Ordering::Relaxed)
 }

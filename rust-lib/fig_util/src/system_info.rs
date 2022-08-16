@@ -77,3 +77,42 @@ pub fn get_arch() -> &'static str {
         std::env::consts::ARCH
     }
 }
+
+#[cfg(target_os = "linux")]
+#[derive(Debug)]
+pub enum DisplayServer {
+    X11,
+    Wayland,
+}
+
+#[cfg(target_os = "linux")]
+#[derive(Debug)]
+pub enum DesktopEnvironment {
+    Gnome,
+    Plasma,
+    I3,
+}
+
+#[cfg(target_os = "linux")]
+pub fn detect_desktop() -> Result<(DisplayServer, DesktopEnvironment), Error> {
+    let display_server = match std::env::var("XDG_SESSION_TYPE") {
+        Ok(session) => match session.as_str() {
+            "x11" => DisplayServer::X11,
+            "wayland" => DisplayServer::Wayland,
+            _ => return Err(Error::UnknownDisplayServer(session)),
+        },
+        _ => return Err(Error::MissingEnv("XDG_SESSION_TYPE")),
+    };
+
+    let desktop_environment = match std::env::var("XDG_SESSION_DESKTOP") {
+        Ok(desktop) => match desktop.as_str() {
+            "GNOME" => DesktopEnvironment::Gnome,
+            "KDE" => DesktopEnvironment::Plasma,
+            "i3" => DesktopEnvironment::I3,
+            _ => return Err(Error::UnknownDesktop(desktop)),
+        },
+        _ => return Err(Error::MissingEnv("XDG_SESSION_DESKTOP")),
+    };
+
+    Ok((display_server, desktop_environment))
+}
