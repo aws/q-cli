@@ -1,10 +1,7 @@
 use std::iter::empty;
 
 use semver::Version;
-use tracing::{
-    debug,
-    error,
-};
+use tracing::error;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
@@ -88,7 +85,7 @@ pub async fn run_install() {
                     Ok(ibus_connection) => match ibus::ibus_proxy(&ibus_connection).await {
                         Ok(ibus_proxy) => match ibus_proxy.set_global_engine("fig").await {
                             Ok(()) => {
-                                debug!("Set IBus engine to 'fig'");
+                                tracing::debug!("Set IBus engine to 'fig'");
                                 break;
                             },
                             Err(err) => error!(%err, "Failed to set global engine 'fig'"),

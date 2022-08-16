@@ -1620,8 +1620,10 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 }
 
+#[cfg(target_os = "linux")]
 struct IBusEnvCheck;
 
+#[cfg(target_os = "linux")]
 #[async_trait]
 impl DoctorCheck for IBusEnvCheck {
     fn name(&self) -> Cow<'static, str> {
@@ -1663,8 +1665,10 @@ impl DoctorCheck for IBusEnvCheck {
     }
 }
 
+#[cfg(target_os = "linux")]
 struct IBusCheck;
 
+#[cfg(target_os = "linux")]
 #[async_trait]
 impl DoctorCheck for IBusCheck {
     fn name(&self) -> Cow<'static, str> {
