@@ -834,26 +834,3 @@ class PointableButton: NSButton {
     self.addCursorRect(self.bounds, cursor: .pointingHand)
   }
 }
-
-extension CompanionWindow {
-
-  // https://linear.app/fig/issue/ENG-145/multitouch-swiping-between-workspaces-loses-window
-  // Imperfect workaround for when floating window disappears after multitouch swipe in exposé
-
-  func updateCollectionBehavior() {
-    // in exposé
-    if self.isOnActiveSpace && !self.occlusionState.contains(.visible) {
-      self.collectionBehavior = [ .managed ]
-    } else {
-      self.collectionBehavior = [.canJoinAllSpaces, .fullScreenAuxiliary ]
-    }
-  }
-
-  func windowDidChangeOcclusionState(_ notification: Notification) {
-    self.updateCollectionBehavior()
-  }
-
-  @objc func spaceChanged() {
-    self.updateCollectionBehavior()
-  }
-}
