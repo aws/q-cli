@@ -234,11 +234,11 @@ pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<
 }
 
 pub async fn intercepted_key(
-    InterceptedKeyHook { action, .. }: InterceptedKeyHook,
+    InterceptedKeyHook { action, context, .. }: InterceptedKeyHook,
     notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
-    debug!("Intercepted Key Action: {action:?}");
+    debug!(?action, "Intercepted Key Action");
 
     notifications_state
         .send_notification(
@@ -248,6 +248,7 @@ pub async fn intercepted_key(
                     KeybindingPressedNotification {
                         keypress: None,
                         action: Some(action),
+                        context,
                     },
                 )),
             },

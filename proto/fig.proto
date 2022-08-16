@@ -615,6 +615,7 @@ message ProcessChangedNotification {
 message KeybindingPressedNotification {
   optional KeyEvent keypress = 1;
   optional string action = 2;
+  optional fig_common.ShellContext context = 3;
 }
 
 message WindowFocusChangedNotification {
