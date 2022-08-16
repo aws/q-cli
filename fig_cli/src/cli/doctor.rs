@@ -1688,6 +1688,37 @@ impl DoctorCheck for LoginStatusCheck {
     }
 }
 
+struct MissionControlHostCheck;
+
+#[async_trait]
+impl DoctorCheck for MissionControlHostCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Mission Control is loading from the correct URL".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        match fig_settings::settings::get_string("developer.mission-control.host")
+            .ok()
+            .flatten()
+        {
+            Some(host) => {
+                if host.contains("localhost") {
+                    Err(DoctorError::Warning(
+                        format!(
+                            "developer.mission-control.host = {}, delete this setting if Mission Control fails to load",
+                            host
+                        )
+                        .into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            },
+            None => Ok(()),
+        }
+    }
+}
+
 async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
@@ -1918,6 +1949,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &PseudoTerminalPathCheck {},
                 &AutocompleteDevModeCheck {},
                 &PluginDevModeCheck {},
+                &MissionControlHostCheck {},
             ],
             config,
             &mut spinner,
