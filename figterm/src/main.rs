@@ -509,7 +509,8 @@ fn figterm_main() -> Result<()> {
                                             let s = raw.clone()
                                                 .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                 .unwrap_or_default();
-                                            let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                            let context = shell_state_to_context(term.shell_state());
+                                            let hook = fig_proto::hooks::new_intercepted_key_hook(context, action.to_string(), s);
                                             outgoing_sender.send(hook_to_message(hook)).unwrap();
 
                                             if event.key == KeyCode::Escape {

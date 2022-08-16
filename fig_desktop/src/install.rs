@@ -1,7 +1,10 @@
 use std::iter::empty;
 
 use semver::Version;
-use tracing::error;
+use tracing::{
+    debug,
+    error,
+};
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
@@ -9,34 +12,24 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 pub async fn run_install() {
     tokio::spawn(async {
         if let Err(err) = fig_install::themes::clone_or_update().await {
-            error!("Failed to clone or update themes: {err}");
+            error!(%err, "Failed to clone or update themes");
         }
     });
 
     tokio::spawn(async {
         if let Err(err) = fig_install::plugins::fetch_installed_plugins(false).await {
-            error!("Failed to fetch installed plugins: {err}");
+            error!(%err, "Failed to fetch installed plugins");
         }
     });
 
     tokio::spawn(async {
         if let Err(err) = fig_install::dotfiles::download_and_notify(false).await {
-            error!("Failed to download installed plugins: {err}");
-        }
-    });
-
-    #[cfg(target_os = "linux")]
-    tokio::spawn(async {
-        use fig_integrations::Integration;
-        let ibus_integration = fig_integrations::ibus::IbusIntegration {};
-        if let Err(err) = ibus_integration.install(None) {
-            error!("Failed to enable IBus Integration: {err}");
+            error!(%err, "Failed to download installed plugins");
         }
     });
 
     if should_run_install_script() {
         // Add any items that are only once per version
-
         tokio::spawn(async {
             fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::UpdatedApp,
@@ -49,7 +42,63 @@ pub async fn run_install() {
     }
 
     if let Err(err) = set_previous_version(current_version()) {
-        error!("Failed to set previous version: {err}");
+        error!(%err, "Failed to set previous version");
+    }
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Output;
+        use std::time::Duration;
+
+        use sysinfo::{
+            ProcessRefreshKind,
+            RefreshKind,
+            System,
+            SystemExt,
+        };
+        use tokio::process::Command;
+        use tracing::info;
+
+        let system = tokio::task::block_in_place(|| {
+            System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
+        });
+        if system.processes_by_name("ibus-daemon").next().is_none() {
+            info!("Launching 'ibus-daemon'");
+            match Command::new("ibus-daemon").arg("-drxR").output().await {
+                Ok(Output { status, stdout, stderr }) if !status.success() => {
+                    error!({
+                        ?status,
+                        stdout = %String::from_utf8_lossy(&stdout),
+                        stderr = %String::from_utf8_lossy(&stderr)
+                    }, "Failed to run 'ibus-daemon -drxR'");
+                },
+                Err(err) => error!(%err, "Failed to run 'ibus-daemon -drxR'"),
+                Ok(_) => {},
+            };
+        }
+
+        tokio::spawn(async {
+            // Try for up to 10 attempts until it succeeds or stop
+            for _ in 0..10 {
+                // Sleep for a short duration to allow ibus engine to start
+                // before it can handle our requests
+                tokio::time::sleep(Duration::from_secs(1)).await;
+
+                match ibus::ibus_connect().await {
+                    Ok(ibus_connection) => match ibus::ibus_proxy(&ibus_connection).await {
+                        Ok(ibus_proxy) => match ibus_proxy.set_global_engine("fig").await {
+                            Ok(()) => {
+                                debug!("Set IBus engine to 'fig'");
+                                break;
+                            },
+                            Err(err) => error!(%err, "Failed to set global engine 'fig'"),
+                        },
+                        Err(err) => error!(%err, "IBus failed to proxy"),
+                    },
+                    Err(err) => error!(%err, "IBus failed to connect"),
+                }
+            }
+        });
     }
 }
 

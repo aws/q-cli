@@ -1620,10 +1620,53 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 }
 
-struct IbusCheck;
+struct IBusEnvCheck;
 
 #[async_trait]
-impl DoctorCheck for IbusCheck {
+impl DoctorCheck for IBusEnvCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "IBus Env Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let err = |var: &str, val: Option<&str>, expect: &str| {
+            Err(DoctorError::Error {
+                reason: "IBus environment variable is not set".into(),
+                info: vec![
+                    "Please restart your DE/WM session, for more details see https://fig.io/user-manual/other/linux"
+                        .into(),
+                    match val {
+                        Some(val) => format!("{var} is '{val}', expected '{expect}'").into(),
+                        None => format!("{var} is not set, expected '{expect}'").into(),
+                    },
+                ],
+                fix: None,
+                error: None,
+            })
+        };
+
+        let check_env = |var: &str, expect: &str| match std::env::var(var) {
+            Ok(val) if val == expect => Ok(()),
+            Ok(val) => err(var, Some(&val), expect),
+            Err(_) => err(var, None, expect),
+        };
+
+        check_env("GTK_IM_MODULE", "ibus")?;
+        check_env("QT_IM_MODULE", "ibus")?;
+        check_env("XMODIFIERS", "@im=ibus")?;
+        // TODO(grant): Add kitty env when fully supported
+        Ok(())
+    }
+}
+
+struct IBusCheck;
+
+#[async_trait]
+impl DoctorCheck for IBusCheck {
     fn name(&self) -> Cow<'static, str> {
         "IBus Check".into()
     }
@@ -1649,25 +1692,42 @@ impl DoctorCheck for IbusCheck {
             }}));
         }
 
-        let ibus_engine_output = Command::new("ibus").arg("engine").output().map_err(eyre::Report::new)?;
+        let ibus_connection = ibus::ibus_connect()
+            .await
+            .wrap_err("Failed to connect to IBus on D-Bus")?;
 
-        let stdout = String::from_utf8_lossy(&ibus_engine_output.stdout);
-        if ibus_engine_output.status.success() && "fig" == stdout.trim() {
-            Ok(())
-        } else {
-            Err(doctor_fix!({
-                reason: "ibus-daemon engine is not fig",
-                fix: || {
-                    let output = Command::new("ibus").args(&["engine", "fig"]).output()?;
-                    if !output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        bail!("Setting ibus engine to fig failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+        let ibus_proxy = ibus::ibus_proxy(&ibus_connection)
+            .await
+            .wrap_err("Failed to create IBus proxy")?;
+
+        let error: Option<eyre::Report> = match ibus_proxy.global_engine().await {
+            Ok(engine) => {
+                let value: Option<&zvariant::Value> = engine.downcast_ref();
+                if let Some(zvariant::Value::Structure(s)) = value {
+                    if let Some(zvariant::Value::Str(id)) = s.fields().get(2) {
+                        if id.as_str() == "fig" {
+                            return Ok(());
+                        }
                     }
-                    Ok(())
                 }
-            }))
-        }
+                None
+            },
+            Err(err) => Some(err.into()),
+        };
+
+        Err(DoctorError::Error {
+            reason: "ibus engine is not fig".into(),
+            fix: Some(DoctorFix::Async(Box::pin(async move {
+                let ibus_connection = ibus_connection;
+                let ibus_proxy = ibus::ibus_proxy(&ibus_connection)
+                    .await
+                    .wrap_err("Failed to create IBus proxy")?;
+                ibus_proxy.set_global_engine("fig").await?;
+                Ok(())
+            }))),
+            info: vec![],
+            error,
+        })
     }
 }
 
@@ -2007,7 +2067,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             run_checks(
                 "Let's check Linux integrations".into(),
-                vec![&IbusCheck {}],
+                vec![&IBusEnvCheck {}, &IBusCheck {}],
                 config,
                 &mut spinner,
             )
