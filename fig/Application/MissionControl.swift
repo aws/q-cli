@@ -19,6 +19,7 @@ class MissionControl {
     case home = 0
     case settings = 1
     case plugins = 2
+    case onboarding = 3
 
     func endpoint() -> String {
       switch self {
@@ -28,8 +29,18 @@ class MissionControl {
         return "plugins"
       case .home:
         return ""
+      case .onboarding:
+        return "onboarding/welcome"
       }
     }
+  }
+
+  static func launchOnboarding() {
+    MissionControl.openUI(.onboarding)
+
+    self.shared.window?.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
+    self.shared.window?.center()
+    self.shared.window?.behaviorOnClose = .terminateApplicationWhenClosed
   }
 
   @objc class func openUI(_ tab: Tab = .home, additionalPathComponent: String? = nil) {
@@ -97,7 +108,9 @@ class MissionControl {
     missionControl.makeKeyAndOrderFront(self)
 
     // Set color to match background of mission-control app to avoid flicker while loading
-    missionControl.backgroundColor = NSColor(hex: "#ffffff")
+    let mode = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")
+
+    missionControl.backgroundColor = mode == "Dark" ? NSColor(hex: "#000000") : NSColor(hex: "#ffffff")
 
     missionControl.delegate = missionControl
     missionControl.isReleasedWhenClosed = false
