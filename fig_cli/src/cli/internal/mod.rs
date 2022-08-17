@@ -202,6 +202,8 @@ pub enum InternalSubcommand {
     /// Linux only
     UninstallForAllUsers,
     Uuidgen,
+    #[cfg(target_os = "linux")]
+    IbusBootstrap,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -483,6 +485,34 @@ impl InternalSubcommand {
             },
             InternalSubcommand::Uuidgen => {
                 writeln!(stdout(), "{}", uuid::Uuid::new_v4()).ok();
+            },
+            #[cfg(target_os = "linux")]
+            InternalSubcommand::IbusBootstrap => {
+                use sysinfo::{
+                    ProcessRefreshKind,
+                    RefreshKind,
+                };
+                use tokio::process::Command;
+
+                let system = tokio::task::block_in_place(|| {
+                    System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
+                });
+                if system.processes_by_name("ibus-daemon").next().is_none() {
+                    info!("Launching 'ibus-daemon'");
+                    match Command::new("ibus-daemon").arg("-drxR").output().await {
+                        Ok(std::process::Output { status, stdout, stderr }) if !status.success() => {
+                            let stdout = String::from_utf8_lossy(&stdout);
+                            let stderr = String::from_utf8_lossy(&stderr);
+                            eyre::bail!(
+                                "Failed to run 'ibus-daemon -drxR': status={status:?} stdout={stdout:?} stderr={stderr:?}"
+                            );
+                        },
+                        Err(err) => eyre::bail!("Failed to run 'ibus-daemon -drxR': {err}"),
+                        Ok(_) => writeln!(stdout(), "ibus-daemon is now running").ok(),
+                    };
+                } else {
+                    writeln!(stdout(), "ibus-daemon is already running").ok();
+                }
             },
         }
 

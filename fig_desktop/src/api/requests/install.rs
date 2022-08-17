@@ -1,6 +1,6 @@
 use std::fmt::Display;
 
-use fig_integrations::ibus::IbusIntegration;
+use cfg_if::cfg_if;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::{
     get_default_backup_dir,
@@ -23,6 +23,7 @@ use fig_util::Shell;
 
 use super::RequestResult;
 
+#[cfg(target_os = "linux")]
 fn integration_status(integration: impl Integration) -> ServerOriginatedSubMessage {
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
         response: Some(Response::InstallationStatus(match integration.is_installed() {
@@ -89,10 +90,24 @@ pub async fn install(request: InstallRequest) -> RequestResult {
             })
         },
         (InstallComponent::Ibus, InstallAction::InstallAction) => {
-            let integration = IbusIntegration {};
-            integration_result(integration.is_installed().or_else(|_| integration.install(None)))
+            cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    let integration = fig_integrations::ibus::IbusIntegration {};
+                    integration_result(integration.is_installed().or_else(|_| integration.install(None)))
+                } else {
+                    integration_result(Err("IBus cannot be uninstalled"))
+                }
+            }
         },
-        (InstallComponent::Ibus, InstallAction::StatusAction) => integration_status(IbusIntegration {}),
+        (InstallComponent::Ibus, InstallAction::StatusAction) => {
+            cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    integration_status(fig_integrations::ibus::IbusIntegration {})
+                } else {
+                    integration_result(Err("IBus cannot be uninstalled"))
+                }
+            }
+        },
         (InstallComponent::Ibus, InstallAction::UninstallAction) => {
             integration_result(Err("IBus cannot be uninstalled"))
         },

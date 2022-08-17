@@ -8,7 +8,6 @@ use alacritty_terminal::term::{
     CommandInfo,
     ShellState,
 };
-use bytes::Bytes;
 use fig_proto::hooks::{
     hook_to_message,
     new_preexec_hook,
@@ -26,6 +25,7 @@ use tracing::{
 use crate::{
     logger,
     shell_state_to_context,
+    MainLoopEvent,
     EXECUTE_ON_NEW_CMD,
     INSERT_ON_NEW_CMD,
 };
@@ -33,19 +33,19 @@ use crate::{
 pub struct EventHandler {
     socket_sender: Sender<LocalMessage>,
     history_sender: Sender<CommandInfo>,
-    input_sender: Sender<Bytes>,
+    main_loop_sender: Sender<MainLoopEvent>,
 }
 
 impl EventHandler {
     pub fn new(
         socket_sender: Sender<LocalMessage>,
         history_sender: Sender<CommandInfo>,
-        input_sender: Sender<Bytes>,
+        main_loop_sender: Sender<MainLoopEvent>,
     ) -> Self {
         Self {
             socket_sender,
             history_sender,
-            input_sender,
+            main_loop_sender,
         }
     }
 }
@@ -69,10 +69,13 @@ impl EventListener for EventHandler {
                 };
 
                 if let Some(text) = insert_on_new_cmd {
-                    self.input_sender.send(text.into_bytes().into()).unwrap();
+                    let mut insert: Vec<u8> = text.into_bytes();
                     if execute_on_new_cmd {
-                        self.input_sender.send(Bytes::from_static(b"\r")).unwrap();
+                        insert.extend_from_slice(b"\r");
                     }
+                    self.main_loop_sender
+                        .send(MainLoopEvent::Insert { insert, unlock: false })
+                        .unwrap();
                 }
 
                 if let Err(err) = self.socket_sender.send(message) {

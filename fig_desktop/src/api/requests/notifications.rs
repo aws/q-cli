@@ -7,7 +7,7 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::window::WindowId;
+use crate::webview::window::WindowId;
 use crate::NotificationsState;
 
 pub async fn handle_request(

@@ -12,3 +12,11 @@ cfg_if::cfg_if! {
         compile_error!("Unsupported platform");
     }
 }
+
+#[derive(Debug, Clone)]
+pub struct WindowGeometry {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}

@@ -14,7 +14,7 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::window::WindowId;
+use crate::webview::window::WindowId;
 use crate::{
     EventLoopProxy,
     FIG_PROTO_MESSAGE_RECIEVED,

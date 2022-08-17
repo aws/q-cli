@@ -1,4 +1,5 @@
 mod util;
+pub mod window;
 
 use std::borrow::Cow;
 use std::iter::empty;
@@ -18,6 +19,10 @@ use tracing::{
     warn,
 };
 use url::Url;
+use window::{
+    WindowId,
+    WindowState,
+};
 use wry::application::event::{
     Event as WryEvent,
     StartCause,
@@ -53,10 +58,6 @@ use crate::notification::NotificationsState;
 use crate::tray::{
     self,
     build_tray,
-};
-use crate::window::{
-    WindowId,
-    WindowState,
 };
 use crate::{
     figterm,
@@ -143,8 +144,6 @@ impl WebviewManager {
     }
 
     pub async fn run(self) -> wry::Result<()> {
-        let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
-
         native::init(self.event_loop.create_proxy(), self.native_state.clone())
             .await
             .expect("Failed to initialize native integrations");
@@ -157,12 +156,14 @@ impl WebviewManager {
             self.event_loop.create_proxy(),
         ));
 
+        let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
         {
             let proxy = self.event_loop.create_proxy();
             let debug_state = self.debug_state.clone();
             let figterm_state = self.figterm_state.clone();
             let intercept_state = self.intercept_state.clone();
             let notifications_state = self.notifications_state.clone();
+            let native_state = self.native_state.clone();
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
                     api_request(
@@ -172,6 +173,7 @@ impl WebviewManager {
                         &figterm_state,
                         &intercept_state,
                         &notifications_state,
+                        &native_state,
                         &proxy,
                     )
                     .await;
@@ -214,7 +216,7 @@ impl WebviewManager {
                     }
                 },
                 WryEvent::UserEvent(event) => {
-                    trace!("Executing user event: {event:?}");
+                    trace!(?event, "Executing user event");
                     match event {
                         Event::WindowEvent {
                             window_id,
@@ -226,7 +228,7 @@ impl WebviewManager {
                             None => {
                                 // TODO(grant): figure out how to handle this gracefuly
                                 warn!("No window {window_id} avaiable for event");
-                                trace!("Event: {window_event:?}");
+                                trace!(?window_event, "Event");
                             },
                         },
                         Event::ControlFlow(new_control_flow) => {
@@ -236,8 +238,8 @@ impl WebviewManager {
                             // TODO(grant): Refresh the debugger
                         },
                         Event::NativeEvent(native_event) => {
-                            if let Err(e) = self.native_state.handle(native_event) {
-                                debug!("Failed to handle native event: {e}");
+                            if let Err(err) = self.native_state.handle(native_event) {
+                                debug!("Failed to handle native event: {err}");
                             }
                         },
                     }

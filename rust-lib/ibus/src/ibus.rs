@@ -35,6 +35,7 @@ pub enum AddressError {
 }
 
 pub async fn ibus_address() -> Result<String, AddressError> {
+    // TODO(grant): get address directly
     match Command::new("ibus").arg("address").output().await {
         Ok(output) if !output.status.success() => Err(AddressError::FailedOutput(output)),
         Ok(Output { stdout, .. }) => {

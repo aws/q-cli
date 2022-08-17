@@ -36,6 +36,21 @@ pub async fn run_install() {
             .await
             .ok()
         });
+
+        #[cfg(target_os = "linux")]
+        {
+            use tokio::process::Command;
+
+            tokio::spawn(async {
+                match Command::new("fig").args(&["_", "install", "daemon"]).output().await {
+                    Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
+                        error!(?status, stderr = %String::from_utf8_lossy(&stderr), "Failed to init fig daemon");
+                    },
+                    Err(err) => error!(%err, "Failed to init fig daemon"),
+                    Ok(_) => {},
+                }
+            });
+        }
     }
 
     if let Err(err) = set_previous_version(current_version()) {
@@ -43,60 +58,21 @@ pub async fn run_install() {
     }
 
     #[cfg(target_os = "linux")]
-    {
-        use std::process::Output;
-        use std::time::Duration;
-
-        use sysinfo::{
-            ProcessRefreshKind,
-            RefreshKind,
-            System,
-            SystemExt,
-        };
-        use tokio::process::Command;
-        use tracing::info;
-
-        let system = tokio::task::block_in_place(|| {
-            System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
-        });
-        if system.processes_by_name("ibus-daemon").next().is_none() {
-            info!("Launching 'ibus-daemon'");
-            match Command::new("ibus-daemon").arg("-drxR").output().await {
-                Ok(Output { status, stdout, stderr }) if !status.success() => {
-                    error!({
-                        ?status,
-                        stdout = %String::from_utf8_lossy(&stdout),
-                        stderr = %String::from_utf8_lossy(&stderr)
-                    }, "Failed to run 'ibus-daemon -drxR'");
+    tokio::spawn(async {
+        match ibus::ibus_connect().await {
+            Ok(ibus_connection) => match ibus::ibus_proxy(&ibus_connection).await {
+                Ok(ibus_proxy) => {
+                    // TODO(grant): Write cache via dbus ?
+                    match ibus_proxy.set_global_engine("fig").await {
+                        Ok(()) => tracing::debug!("Set IBus engine to 'fig'"),
+                        Err(err) => error!(%err, "Failed to set global engine 'fig'"),
+                    }
                 },
-                Err(err) => error!(%err, "Failed to run 'ibus-daemon -drxR'"),
-                Ok(_) => {},
-            };
+                Err(err) => error!(%err, "IBus failed to proxy"),
+            },
+            Err(err) => error!(%err, "IBus failed to connect"),
         }
-
-        tokio::spawn(async {
-            // Try for up to 10 attempts until it succeeds or stop
-            for _ in 0..10 {
-                // Sleep for a short duration to allow ibus engine to start
-                // before it can handle our requests
-                tokio::time::sleep(Duration::from_secs(1)).await;
-
-                match ibus::ibus_connect().await {
-                    Ok(ibus_connection) => match ibus::ibus_proxy(&ibus_connection).await {
-                        Ok(ibus_proxy) => match ibus_proxy.set_global_engine("fig").await {
-                            Ok(()) => {
-                                tracing::debug!("Set IBus engine to 'fig'");
-                                break;
-                            },
-                            Err(err) => error!(%err, "Failed to set global engine 'fig'"),
-                        },
-                        Err(err) => error!(%err, "IBus failed to proxy"),
-                    },
-                    Err(err) => error!(%err, "IBus failed to connect"),
-                }
-            }
-        });
-    }
+    });
 }
 
 fn should_run_install_script() -> bool {

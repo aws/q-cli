@@ -1,5 +1,6 @@
 use std::path::Path;
 use std::process::Command;
+use std::time::Duration;
 
 use crate::error::{
     Error,
@@ -7,7 +8,7 @@ use crate::error::{
 };
 use crate::Integration;
 
-fn ibus_engine_path() -> &'static Path {
+pub fn ibus_engine_path() -> &'static Path {
     Path::new("/usr/share/ibus/component/engine.xml")
 }
 
@@ -19,12 +20,33 @@ impl Integration for IbusIntegration {
     }
 
     fn install(&self, _: Option<&Path>) -> Result<()> {
-        let output = Command::new("ibus").args(&["engine", "fig"]).output()?;
-        output
-            .status
-            .success()
-            .then(|| ())
-            .ok_or_else(|| Error::Custom("Failed set IBus engine to Fig, IBus may not be running".into()))
+        match Command::new("ibus").arg("write-cache").output() {
+            Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
+                return Err(Error::Custom(
+                    format!(
+                        "Failed to run 'ibus write-cache':\n{}",
+                        String::from_utf8_lossy(&stderr)
+                    )
+                    .into(),
+                ));
+            },
+            Err(err) => return Err(Error::Custom(format!("Failed to run 'ibus write-cache': {err}").into())),
+            Ok(_) => {},
+        };
+
+        std::thread::sleep(Duration::from_millis(250));
+
+        match Command::new("ibus").arg("engine").arg("fig").output() {
+            Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
+                return Err(Error::Custom(
+                    format!("Failed to run 'ibus engine fig':\n{}", String::from_utf8_lossy(&stderr)).into(),
+                ));
+            },
+            Err(err) => return Err(Error::Custom(format!("Failed to run 'ibus engine fig': {err}").into())),
+            Ok(_) => {},
+        };
+
+        Ok(())
     }
 
     fn uninstall(&self) -> Result<()> {
@@ -32,10 +54,6 @@ impl Integration for IbusIntegration {
     }
 
     fn is_installed(&self) -> Result<()> {
-        if !ibus_engine_path().exists() {
-            return Err(Error::FileDoesNotExist(ibus_engine_path().into()));
-        }
-
         let ibus_engine_output = Command::new("ibus")
             .arg("engine")
             .output()
@@ -46,7 +64,7 @@ impl Integration for IbusIntegration {
         if ibus_engine_output.status.success() && "fig" == stdout.trim() {
             Ok(())
         } else {
-            Err(Error::NotInstalled("".into()))
+            Err(Error::Custom(stdout.to_string().into()))
         }
     }
 }

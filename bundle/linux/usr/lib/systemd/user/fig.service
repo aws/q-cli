@@ -1,8 +1,11 @@
 [Unit]
-Description=Start Fig
+Description=Fig Desktop App
 After=multi-user.target
 Wants=graphical.target
 
 [Service]
 ExecStart=/usr/bin/fig_desktop
+
+[Install]
+WantedBy=default.target
 

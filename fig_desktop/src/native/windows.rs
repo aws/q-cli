@@ -178,6 +178,10 @@ impl NativeState {
 
         Err(anyhow!("Failed to acquire caret position"))
     }
+
+    pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
+        None
+    }
 }
 
 #[derive(Clone, Copy, Debug)]

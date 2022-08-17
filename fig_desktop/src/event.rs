@@ -1,6 +1,6 @@
 use wry::application::event_loop::ControlFlow;
 
-use crate::window::WindowId;
+use crate::webview::window::WindowId;
 
 #[allow(clippy::enum_variant_names)]
 #[derive(Debug)]
