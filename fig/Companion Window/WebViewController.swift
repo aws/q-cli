@@ -321,6 +321,10 @@ extension WebViewController: WKNavigationDelegate {
 
   }
 
+  func webView(_ webView: WKWebView, didFail navigation: WKNavigation!, withError error: Error) {
+
+  }
+
   func webView(_ webView: WKWebView, didFinish navigation: WKNavigation!) {
     print("Loaded URL \(webView.url?.absoluteString ?? "<none>")")
     var scriptContent = "var meta = document.createElement('meta');"
