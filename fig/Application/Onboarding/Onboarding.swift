@@ -235,6 +235,21 @@ extension Onboarding {
     case .closeInputMethodPromptWindow:
       callback(true)
       webView.window?.close()
+    case .finishOnboarding:
+      let frame = webView.window?.frame ?? .zero
+      let defaultSize = NSSize(width: 1030, height: 720)
+
+      let delta = NSSize(width: defaultSize.width - frame.size.width,
+                         height: defaultSize.height - frame.size.height)
+
+      webView.window?.setFrame(frame.insetBy(dx: -delta.width/2, dy: -delta.height/2),
+                               display: true,
+                               animate: true)
+
+      if let window = webView.window as? WebViewWindow {
+        window.behaviorOnClose = .hideWindowWhenClosed
+      }
+      callback(true)
     case .UNRECOGNIZED:
       Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
       callback(false)

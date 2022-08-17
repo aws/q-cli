@@ -143,18 +143,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       Defaults.shared.clearExistingLineOnTerminalInsert = true
       Defaults.shared.showSidebar = false
 
-      let onboardingViewController = WebViewController()
-      onboardingViewController.webView?.defaultURL = nil
-      onboardingViewController.webView?.loadBundleApp("landing")
-      onboardingViewController.webView?.dragShouldRepositionWindow = true
-
-      onboardingWindow = WebViewWindow(viewController: onboardingViewController)
-      onboardingWindow.makeKeyAndOrderFront(nil)
-      onboardingWindow.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
-      onboardingWindow.center()
-      onboardingWindow.appearance = NSAppearance(named: NSAppearance.Name.vibrantLight)
-
-      onboardingWindow.makeKeyAndOrderFront(self)
+      MissionControl.launchOnboarding()
 
       UserDefaults.standard.set(true, forKey: "hasLaunched")
       UserDefaults.standard.synchronize()
