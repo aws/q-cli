@@ -212,7 +212,7 @@ jobs:
             sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" fig_desktop/Cargo.toml
       - run:
           name: Update lockfile
-          command: cargo generate-lockfile --offline
+          command: cd desktop && cargo generate-lockfile --offline
       - run:
           name: Push tagged release
           command: |
