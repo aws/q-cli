@@ -380,3 +380,7 @@ unsafe extern "system" fn win_event_proc(
         _ => (),
     }
 }
+
+pub const fn autocomplete_active() -> bool {
+    true
+}

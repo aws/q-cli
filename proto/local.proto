@@ -55,6 +55,7 @@ message Hook {
 		CursorPositionHook cursor_position = 113;
 		FocusChangeHook focus_change = 114;
 		InterceptedKeyHook intercepted_key = 115;
+		FocusedWindowDataHook focused_window_data = 116;
 	}
 }
 
@@ -241,6 +242,16 @@ message InterceptedKeyHook {
 	string action = 3;
 }
 
+message FocusedWindowDataHook {
+	string source = 1;
+	string id = 2;
+	int32 x = 3;
+	int32 y = 4;
+	int32 width = 5;
+	int32 height = 6;
+	optional bool hide = 7;
+}
+
 // == Responses ==
 message ErrorResponse {
 	optional int32 exit_code = 1;
@@ -283,6 +294,7 @@ message DiagnosticsResponse {
 	bool autocomplete = 19;
 	bool unix_socket_server_exists = 20;
 	string current_session = 21;
+	optional bool autocomplete_active = 22;
 }
 
 message CommandResponse {

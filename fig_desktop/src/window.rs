@@ -17,6 +17,7 @@ use crate::figterm::{
     FigTermCommand,
     FigtermState,
 };
+use crate::native;
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -117,8 +118,10 @@ impl WindowState {
                 }
             },
             WindowEvent::Show => {
-                self.webview.window().set_visible(true);
-                self.webview.window().set_always_on_top(true);
+                if native::autocomplete_active() {
+                    self.webview.window().set_visible(true);
+                    self.webview.window().set_always_on_top(true);
+                }
             },
             WindowEvent::Navigate { url } => {
                 self.webview

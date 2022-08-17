@@ -1291,6 +1291,33 @@ impl DoctorCheck<DiagnosticsResponse> for DotfilesSymlinkedCheck {
     }
 }
 
+struct AutocompleteActiveCheck;
+
+#[async_trait]
+impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Autocomplete is active".into()
+    }
+
+    fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
+        if diagnostics.autocomplete_active.is_some() {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
+    }
+
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
+        if diagnostics.autocomplete_active() {
+            Ok(())
+        } else {
+            Err(doctor_error!(
+                "Autocomplete is currently disabled. Your desktop integration(s) may be broken!"
+            ))
+        }
+    }
+}
+
 struct SecureKeyboardCheck;
 
 #[async_trait]
@@ -1736,6 +1763,46 @@ impl DoctorCheck for IBusCheck {
     }
 }
 
+struct DesktopCompatibilityCheck;
+
+#[async_trait]
+impl DoctorCheck for DesktopCompatibilityCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Desktop Compatibility Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    #[cfg(target_os = "linux")]
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        use fig_util::{
+            DesktopEnvironment,
+            DisplayServer,
+        };
+
+        let (display_server, desktop_environment) = fig_util::detect_desktop()?;
+
+        match (display_server, desktop_environment) {
+            (DisplayServer::X11, DesktopEnvironment::Gnome | DesktopEnvironment::Plasma | DesktopEnvironment::I3) => {
+                Ok(())
+            },
+            (DisplayServer::Wayland, DesktopEnvironment::Gnome) => Err(doctor_warning!(
+                "Fig's support for GNOME on Wayland is in development. It may not work properly on your system."
+            )),
+            (display_server, desktop_environment) => Err(doctor_error!(
+                "Unsupported desktop configuration {desktop_environment:?} on {display_server:?}"
+            )),
+        }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        Ok(())
+    }
+}
+
 struct LoginStatusCheck;
 
 #[async_trait]
@@ -2053,6 +2120,20 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             .await?;
         }
 
+        #[cfg(target_os = "linux")]
+        {
+            use super::diagnostics::get_diagnostics;
+
+            run_checks_with_context(
+                format!("Let's check {}...", "fig diagnostic".bold()),
+                vec![&AutocompleteActiveCheck],
+                get_diagnostics,
+                config,
+                &mut spinner,
+            )
+            .await?;
+        }
+
         run_checks_with_context(
             "Let's check your terminal integrations...",
             vec![
@@ -2072,7 +2153,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             run_checks(
                 "Let's check Linux integrations".into(),
-                vec![&IBusEnvCheck {}, &IBusCheck {}],
+                vec![&IBusEnvCheck {}, &IBusCheck {}, &DesktopCompatibilityCheck],
                 config,
                 &mut spinner,
             )

@@ -1,11 +1,9 @@
-use std::borrow::Cow;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-use once_cell::sync::Lazy;
 use tracing::{
     debug,
     error,
-    info,
     trace,
 };
 use x11rb::connection::Connection;
@@ -24,7 +22,11 @@ use x11rb::protocol::xproto::{
 use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
-use super::NativeState;
+use super::integrations::WM_CLASS_WHITELIST;
+use super::{
+    NativeState,
+    WM_REVICED_DATA,
+};
 use crate::event::WindowEvent;
 use crate::native::WindowData;
 use crate::{
@@ -32,13 +34,6 @@ use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
-
-static WM_CLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
-    fig_util::terminal::LINUX_TERMINALS
-        .iter()
-        .filter_map(|t| t.wm_class())
-        .collect()
-});
 
 mod atoms {
     use once_cell::sync::OnceCell;
@@ -98,6 +93,7 @@ fn handle_property_event(
     proxy: &EventLoopProxy,
     event: PropertyNotifyEvent,
 ) -> anyhow::Result<()> {
+    WM_REVICED_DATA.store(true, Ordering::Relaxed);
     let PropertyNotifyEvent { atom, state, .. } = event;
     if state == Property::NEW_VALUE {
         // TODO(mia): cache this
@@ -146,7 +142,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         },
     };
 
-    info!("focus changed to {}", wm_class.escape_ascii());
+    debug!("focus changed to {}", wm_class.escape_ascii());
 
     if wm_class == b"Fig_desktop" {
         // get wm_role
@@ -176,7 +172,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         }
     }
 
-    if !WM_CLASS_WHITELSIT.iter().any(|w| w.as_bytes() == wm_class) {
+    if !WM_CLASS_WHITELIST.iter().any(|w| w.as_bytes() == wm_class) {
         // hide if not a whitelisted wm class
         hide()?;
         return Ok(());

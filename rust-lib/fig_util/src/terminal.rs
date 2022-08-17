@@ -1,4 +1,3 @@
-use std::borrow::Cow;
 use std::fmt;
 
 use once_cell::sync::Lazy;
@@ -189,19 +188,37 @@ impl Terminal {
         }
     }
 
-    pub fn wm_class(&self) -> Option<Cow<'static, str>> {
+    pub fn wm_class(&self) -> Option<&'static str> {
         match self {
-            Terminal::Vscode => Some("Code".into()),
-            Terminal::VSCodeInsiders => Some("Vscode-insiders".into()),
-            Terminal::GnomeTerminal => Some("Gnome-terminal".into()),
-            Terminal::Konsole => Some("konsole".into()),
-            Terminal::Tilix => Some("Tilix".into()),
-            Terminal::Alacritty => Some("Alacritty".into()),
-            Terminal::Kitty => Some("kitty".into()),
-            Terminal::XfceTerminal => Some("Xfce4-terminal".into()),
-            Terminal::Terminator => Some("Terminator".into()),
-            Terminal::Terminology => Some("terminology".into()),
-            Terminal::WezTerm => Some("org.wezfurlong.wezterm".into()),
+            Terminal::Vscode => Some("Code"),
+            Terminal::VSCodeInsiders => Some("Vscode-insiders"),
+            Terminal::GnomeTerminal => Some("Gnome-terminal"),
+            Terminal::Konsole => Some("konsole"),
+            Terminal::Tilix => Some("Tilix"),
+            Terminal::Alacritty => Some("Alacritty"),
+            Terminal::Kitty => Some("kitty"),
+            Terminal::XfceTerminal => Some("Xfce4-terminal"),
+            Terminal::Terminator => Some("Terminator"),
+            Terminal::Terminology => Some("terminology"),
+            Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
+            _ => None,
+        }
+    }
+
+    // corresponds to GSE source type
+    pub fn gnome_id(&self) -> Option<&'static str> {
+        match self {
+            Terminal::Vscode => Some("Code"),
+            Terminal::VSCodeInsiders => Some("Code - Insiders"),
+            Terminal::GnomeTerminal => Some("gnome-terminal-server"),
+            Terminal::Konsole => Some("org.kde.konsole"),
+            Terminal::Tilix => Some("tilix"),
+            Terminal::Alacritty => Some("Alacritty"),
+            Terminal::Kitty => Some("kitty"),
+            Terminal::XfceTerminal => Some("xfce4-terminal"),
+            Terminal::Terminator => Some("terminator"),
+            Terminal::Terminology => Some("terminology"),
+            Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
             _ => None,
         }
     }

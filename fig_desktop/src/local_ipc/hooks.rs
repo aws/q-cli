@@ -19,6 +19,7 @@ use fig_proto::local::{
     EditBufferHook,
     FileChangedHook,
     FocusChangeHook,
+    FocusedWindowDataHook,
     InterceptedKeyHook,
     PreExecHook,
     PromptHook,
@@ -38,6 +39,8 @@ use crate::figterm::{
     FigtermState,
     SessionMetrics,
 };
+#[cfg(target_os = "linux")]
+use crate::native;
 use crate::notification::NotificationsState;
 use crate::{
     Event,
@@ -262,4 +265,15 @@ pub async fn intercepted_key(
 
 pub async fn file_changed(_file_changed_hook: FileChangedHook) -> Result<()> {
     Ok(())
+}
+
+pub async fn focused_window_data(hook: FocusedWindowDataHook, proxy: &EventLoopProxy) -> Result<()> {
+    #[cfg(target_os = "linux")]
+    return native::integrations::from_hook(hook, proxy);
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _hook = hook;
+        let _proxy = proxy;
+        Ok(())
+    }
 }

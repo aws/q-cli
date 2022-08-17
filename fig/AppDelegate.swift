@@ -161,6 +161,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       }
 
       self.setupCompanionWindow()
+
+      let args = ProcessInfo.processInfo.arguments
+
+      if let showOnLaunch = LocalState.shared.getValue(forKey: LocalState.showMissionControlOnLaunch) as? Bool,
+         showOnLaunch && !args.contains("--headless") {
+          MissionControl.openUI()
+      }
     }
 
     configureStatusBarItem()
@@ -365,7 +372,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     issue.image = NSImage(imageLiteralResourceName: "github")
 
     let forum = statusBarMenu.addItem(
-      withTitle: "Support Guide",
+      withTitle: "User Manual",
       action: #selector(AppDelegate.viewSupportForum),
       keyEquivalent: "")
     forum.image = NSImage(named: NSImage.Name("commandkey"))
@@ -526,18 +533,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     //        statusBarMenu.addItem(NSMenuItem.separator())
 
-    let forum = statusBarMenu.addItem(
-      withTitle: "Support Guide",
-      action: #selector(AppDelegate.viewSupportForum),
+    let missionControl = statusBarMenu.addItem(
+      withTitle: "Dashboard",
+      action: #selector(MissionControl.openDashboard),
       keyEquivalent: "")
-    forum.image = NSImage(named: NSImage.Name("commandkey"))
+    missionControl.image = NSImage(imageLiteralResourceName: "commandkey")
+    missionControl.target = MissionControl.self
 
-    let slack = statusBarMenu.addItem(
-      withTitle: "Join Fig Community",
-      action: #selector(AppDelegate.inviteToSlack),
-      keyEquivalent: "")
-    slack.image = NSImage(named: NSImage.Name("discord"))// .resized(to: NSSize(width: 16, height: 16))
-    statusBarMenu.addItem(NSMenuItem.separator())
     let settings = statusBarMenu.addItem(
       withTitle: "Settings",
       action: #selector(Settings.openUI),
@@ -545,6 +547,19 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     settings.image = NSImage(imageLiteralResourceName: "gear")
     settings.target = Settings.self
 
+    statusBarMenu.addItem(NSMenuItem.separator())
+
+    let forum = statusBarMenu.addItem(
+      withTitle: "User Manual",
+      action: #selector(AppDelegate.viewSupportForum),
+      keyEquivalent: "")
+    forum.image = NSImage(named: NSImage.Name("option"))
+
+    let slack = statusBarMenu.addItem(
+      withTitle: "Join Fig Community",
+      action: #selector(AppDelegate.inviteToSlack),
+      keyEquivalent: "")
+    slack.image = NSImage(named: NSImage.Name("discord"))// .resized(to: NSSize(width: 16, height: 16))
     statusBarMenu.addItem(NSMenuItem.separator())
 
     if let version = Bundle.main.infoDictionary?["CFBundleShortVersionString"] as? String,
@@ -945,7 +960,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
 
   @objc func viewSupportForum() {
-    NSWorkspace.shared.open(URL(string: "https://fig.io/support")!)
+    NSWorkspace.shared.open(URL(string: "https://fig.io/user-manual")!)
     TelemetryProvider.shared.track(event: .viewSupportForum, with: [:])
   }
 
