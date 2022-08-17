@@ -50,7 +50,8 @@ pub async fn onboarding(request: OnboardingRequest) -> RequestResult {
                 Err(err) => RequestResult::error(err.to_string()),
             }
         },
-        OnboardingAction::PromptForAccessibilityPermission
+        OnboardingAction::FinishOnboarding
+        | OnboardingAction::PromptForAccessibilityPermission
         | OnboardingAction::LaunchShellOnboarding
         | OnboardingAction::CloseAccessibilityPromptWindow
         | OnboardingAction::RequestRestart

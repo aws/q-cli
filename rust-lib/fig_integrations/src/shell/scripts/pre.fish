@@ -27,7 +27,7 @@ if test "$TERM_PROGRAM" != WarpTerminal
     # explicitly set for VSCode and Hyper. This variable is inherited when
     # new ttys are created using tmux and must be explictly overwritten.
     if test -z "$TERM_SESSION_ID"; or test -n "$TMUX"
-        export TERM_SESSION_ID=(uuidgen)
+        export TERM_SESSION_ID=(fig _ uuidgen)
     end
     export FIG_INTEGRATION_VERSION=8
 

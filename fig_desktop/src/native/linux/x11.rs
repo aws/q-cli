@@ -1,10 +1,9 @@
-use std::borrow::Cow;
+use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
-use once_cell::sync::Lazy;
 use tracing::{
     debug,
     error,
-    info,
     trace,
 };
 use x11rb::connection::Connection;
@@ -19,24 +18,22 @@ use x11rb::protocol::xproto::{
     EventMask,
     Property,
     PropertyNotifyEvent,
-    Window,
 };
 use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
+use super::integrations::WM_CLASS_WHITELIST;
+use super::{
+    NativeState,
+    WM_REVICED_DATA,
+};
 use crate::event::WindowEvent;
+use crate::native::WindowData;
 use crate::{
     Event,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
-
-static WM_CLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
-    fig_util::terminal::LINUX_TERMINALS
-        .iter()
-        .filter_map(|t| t.wm_class())
-        .collect()
-});
 
 mod atoms {
     use once_cell::sync::OnceCell;
@@ -59,7 +56,7 @@ mod atoms {
     }
 }
 
-pub async fn handle_x11(proxy: EventLoopProxy) {
+pub async fn handle_x11(proxy: EventLoopProxy, native_state: Arc<NativeState>) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
 
     let setup = conn.setup();
@@ -81,9 +78,9 @@ pub async fn handle_x11(proxy: EventLoopProxy) {
     .check()
     .expect("Failed changing event mask");
 
-    while let Ok(event) = conn.wait_for_event() {
+    while let Ok(event) = tokio::task::block_in_place(|| conn.wait_for_event()) {
         if let X11Event::PropertyNotify(event) = event {
-            if let Err(err) = handle_property_event(&conn, &proxy, event) {
+            if let Err(err) = handle_property_event(&conn, &native_state, &proxy, event) {
                 error!("error handling PropertyNotifyEvent: {err}");
             }
         }
@@ -92,9 +89,11 @@ pub async fn handle_x11(proxy: EventLoopProxy) {
 
 fn handle_property_event(
     conn: &RustConnection,
+    native_state: &NativeState,
     proxy: &EventLoopProxy,
     event: PropertyNotifyEvent,
 ) -> anyhow::Result<()> {
+    WM_REVICED_DATA.store(true, Ordering::Relaxed);
     let PropertyNotifyEvent { atom, state, .. } = event;
     if state == Property::NEW_VALUE {
         // TODO(mia): cache this
@@ -102,15 +101,14 @@ fn handle_property_event(
 
         if property_name == b"_NET_ACTIVE_WINDOW" {
             trace!("active window changed");
-            let focus = get_input_focus(conn)?.reply()?.focus;
-            process_window(conn, proxy, focus)?;
+            process_window(conn, native_state, proxy)?;
         }
     }
 
     Ok(())
 }
 
-fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window) -> anyhow::Result<()> {
+fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &EventLoopProxy) -> anyhow::Result<()> {
     let hide = || {
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),
@@ -118,13 +116,23 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         })
     };
 
-    if window == 0 {
-        // null window selected
+    let focus_window = get_input_focus(conn)?.reply()?.focus;
+    trace!("Active window id: {focus_window}");
+
+    if focus_window == 0 {
         hide()?;
         return Ok(());
     }
 
-    let wm_class = match WmClass::get(conn, window)?.reply() {
+    let wm_class = WmClass::get(conn, focus_window)?.reply();
+
+    let old_window_data = native_state.active_window.lock().replace(WindowData {
+        id: focus_window,
+        class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
+        instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
+    });
+
+    let wm_class = match wm_class {
         Ok(class_raw) => class_raw.class().to_owned(),
         Err(err) => {
             debug!("No wm class {err:?}");
@@ -134,11 +142,20 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         },
     };
 
-    info!("focus changed to {}", wm_class.escape_ascii());
+    debug!("focus changed to {}", wm_class.escape_ascii());
 
     if wm_class == b"Fig_desktop" {
         // get wm_role
-        let reply = get_property(conn, false, window, atoms::wm_role(conn), AtomEnum::STRING, 0, 2048)?.reply()?;
+        let reply = get_property(
+            conn,
+            false,
+            focus_window,
+            atoms::wm_role(conn),
+            AtomEnum::STRING,
+            0,
+            2048,
+        )?
+        .reply()?;
 
         if &reply.value != b"autocomplete" {
             // hide if not an autocomplete window
@@ -148,7 +165,14 @@ fn process_window(conn: &RustConnection, proxy: &EventLoopProxy, window: Window)
         return Ok(());
     }
 
-    if !WM_CLASS_WHITELSIT.iter().any(|w| w.as_bytes() == wm_class) {
+    if let Some(old_window_data) = old_window_data {
+        if old_window_data.id != focus_window {
+            hide()?;
+            return Ok(());
+        }
+    }
+
+    if !WM_CLASS_WHITELIST.iter().any(|w| w.as_bytes() == wm_class) {
         // hide if not a whitelisted wm class
         hide()?;
         return Ok(());

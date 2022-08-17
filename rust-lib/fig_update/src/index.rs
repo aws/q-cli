@@ -39,8 +39,12 @@ pub struct Rollout {
 }
 
 #[derive(Deserialize, Clone, Debug)]
+/// Resolved update package
 pub struct Package {
+    /// A link that can be used to download the package
     pub download: String,
+    /// SHA256 of the entire downloaded object
+    // todo(mia): automatically verify this instead of delegating to platform-specific code
     pub sha256: String,
 }
 

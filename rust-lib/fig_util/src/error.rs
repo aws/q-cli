@@ -16,4 +16,10 @@ pub enum Error {
     HwidNotFound,
     #[error("the shell, `{0}`, isn't supported yet")]
     UnknownShell(String),
+    #[error("missing environment variable `{0}`")]
+    MissingEnv(&'static str),
+    #[error("unknown display server `{0}`")]
+    UnknownDisplayServer(String),
+    #[error("unknown desktop `{0}`")]
+    UnknownDesktop(String),
 }

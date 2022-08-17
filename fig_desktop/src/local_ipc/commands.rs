@@ -21,23 +21,27 @@ use crate::event::{
     WindowEvent,
 };
 use crate::{
+    native,
     EventLoopProxy,
     MISSION_CONTROL_ID,
 };
 
-pub async fn debug(_command: DebugModeCommand) -> LocalResult {
+pub async fn debug(_: DebugModeCommand) -> LocalResult {
     todo!()
 }
 
-pub async fn quit(_command: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
+pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::ControlFlow(ControlFlow::Exit))
         .map(|_| LocalResponse::Success(None))
         .map_err(|_| exit(0))
 }
 
-pub async fn diagnostic(_command: DiagnosticsCommand) -> LocalResult {
-    let response = DiagnosticsResponse { ..Default::default() };
+pub async fn diagnostic(_: DiagnosticsCommand) -> LocalResult {
+    let response = DiagnosticsResponse {
+        autocomplete_active: Some(native::autocomplete_active()),
+        ..Default::default()
+    };
     Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
         response,
     ))))

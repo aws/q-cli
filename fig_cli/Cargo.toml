@@ -21,7 +21,7 @@ clap_complete = "3.2.2"
 clap_complete_fig = "3.2.4"
 color-eyre = "0.6.2"
 crossterm = "0.25.0"
-ctrlc = "3.2.1"
+ctrlc = "3.2.3"
 deno_core = { version = "0.147.0", optional = true }
 deno_runtime = { version = "0.73.0", optional = true }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
@@ -38,10 +38,11 @@ fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.14"
-futures = "0.3.21"
+futures = "0.3.23"
 globset = "0.4.9"
 humantime = "2.1.0"
-once_cell = "1.13.0"
+ibus = { path = "../rust-lib/ibus" }
+once_cell = "1.13.1"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.6.0"
@@ -67,16 +68,19 @@ tracing-subscriber = { version = "0.3.15", features = [
 ] }
 tui = { path = "../rust-lib/tui" }
 url = "2.2.2"
+uuid = { version = "1.1.2", features = ["v4", "fast-rng"] }
 validator = "0.16.0"
 which = "4.2.5"
 yaque = "0.6.3"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.24.2"
+nix = "0.25.0"
 skim = "0.9.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
+ibus = { path = "../rust-lib/ibus" }
 wsl = "0.1.0"
+zvariant = "3"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 notify = "4.0.17"

@@ -220,7 +220,7 @@ class WindowServer: WindowService {
 
       //https://stackoverflow.com/a/19887161/926887
       let windowFrame = NSRect.init(x: point.x,
-                                    y: NSMaxY(NSScreen.screens[0].frame) - point.y,
+                                    y: NSScreen.screens[0].frame.maxY - point.y,
                                     width: bounds.width,
                                     height: bounds.height)
       // swiftlint:disable force_cast
@@ -399,6 +399,17 @@ class ExternalWindow {
     }
 
     return provider.getCursorRect(in: self)
+  }
+  
+  var isFullScreen: Bool? {
+    guard let axref = self.accesibilityElement else { return nil }
+    var isFullScreen: AnyObject?
+    let res = AXUIElementCopyAttributeValue(axref, "AXFullScreen" as CFString, &isFullScreen)
+
+    guard res == .success else { return nil }
+
+    return isFullScreen as? Bool
+    
   }
 }
 

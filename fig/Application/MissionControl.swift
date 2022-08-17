@@ -19,6 +19,7 @@ class MissionControl {
     case home = 0
     case settings = 1
     case plugins = 2
+    case onboarding = 3
 
     func endpoint() -> String {
       switch self {
@@ -28,8 +29,39 @@ class MissionControl {
         return "plugins"
       case .home:
         return ""
+      case .onboarding:
+        return "onboarding/welcome"
       }
     }
+  }
+
+  static func launchOnboarding() {
+    MissionControl.openUI(.onboarding)
+
+    self.shared.window?.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
+    self.shared.window?.center()
+    self.shared.window?.behaviorOnClose = .terminateApplicationWhenClosed
+  }
+
+  init() {
+    NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)),
+                                           name: AXWindowServer.windowDidChangeNotification,
+                                           object: nil)
+
+  }
+
+  @objc func windowDidChange(_ notification: Notification) {
+    guard let window = notification.object as? ExternalWindow else { return }
+
+    if window.isFullScreen ?? false == true {
+      NSApp.setActivationPolicy(.accessory)
+    } else {
+      NSApp.setActivationPolicy(.regular)
+    }
+  }
+
+  @objc static func openDashboard() {
+    MissionControl.openUI(.home)
   }
 
   @objc class func openUI(_ tab: Tab = .home, additionalPathComponent: String? = nil) {
@@ -44,7 +76,8 @@ class MissionControl {
       }
 
       // otherwise use fallback
-      return Remote.missionControlURL.appendingPathComponent(tab.endpoint()).appendingPathComponent(additionalPathComponent ?? "")
+      return Remote.missionControlURL.appendingPathComponent(tab.endpoint())
+                                     .appendingPathComponent(additionalPathComponent ?? "")
     }()
 
     if let window = MissionControl.shared.window {
@@ -97,7 +130,9 @@ class MissionControl {
     missionControl.makeKeyAndOrderFront(self)
 
     // Set color to match background of mission-control app to avoid flicker while loading
-    missionControl.backgroundColor = NSColor(hex: "#ffffff")
+    let mode = UserDefaults.standard.string(forKey: "AppleInterfaceStyle")
+
+    missionControl.backgroundColor = mode == "Dark" ? NSColor(hex: "#000000") : NSColor(hex: "#ffffff")
 
     missionControl.delegate = missionControl
     missionControl.isReleasedWhenClosed = false
@@ -114,6 +149,6 @@ class MissionControl {
   }
 
   static var shouldShowIconInDock: Bool {
-    return LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
+    return true // LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
   }
 }

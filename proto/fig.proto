@@ -370,6 +370,7 @@ enum OnboardingAction {
   CLOSE_ACCESSIBILITY_PROMPT_WINDOW = 5;
   REQUEST_RESTART = 6;
   CLOSE_INPUT_METHOD_PROMPT_WINDOW = 7;
+  FINISH_ONBOARDING = 8;
 }
 
 message OnboardingRequest {
@@ -450,6 +451,7 @@ message UpdateApplicationPropertiesRequest {
   optional bool interceptBoundKeystrokes = 1;
   optional bool interceptGlobalKeystrokes = 3;
   optional ActionList actionList = 4;
+  optional string current_terminal_session_id = 5;
 
   reserved 2;
 }
@@ -614,6 +616,7 @@ message ProcessChangedNotification {
 message KeybindingPressedNotification {
   optional KeyEvent keypress = 1;
   optional string action = 2;
+  optional fig_common.ShellContext context = 3;
 }
 
 message WindowFocusChangedNotification {

@@ -42,9 +42,7 @@ then
   # overwritten.
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     if command -v uuidgen 1>/dev/null 2>&1; then
-      export TERM_SESSION_ID="$(uuidgen)"
-    else
-      export TERM_SESSION_ID="$(powershell -Command "[guid]::NewGuid().ToString()")"
+      export TERM_SESSION_ID="$(fig _ uuidgen)"
     fi
   fi
   export FIG_INTEGRATION_VERSION=8

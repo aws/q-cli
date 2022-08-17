@@ -39,6 +39,7 @@ fig _ uninstall-for-all-users
 "/usr/bin/fish (figterm)"
 /usr/bin/figterm
 /usr/lib/systemd/user/fig.service
+/usr/lib/environment.d/60-fig.conf
 /usr/share/applications/fig.desktop
 /usr/share/ibus/component/engine.xml
 /usr/share/icons/hicolor/16x16/apps/fig.png

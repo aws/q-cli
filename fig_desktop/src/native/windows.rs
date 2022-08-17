@@ -1,5 +1,6 @@
 use std::ffi::CStr;
 use std::mem::ManuallyDrop;
+use std::sync::Arc;
 
 use anyhow::{
     anyhow,
@@ -237,7 +238,7 @@ pub mod icons {
     }
 }
 
-pub async fn init(proxy: EventLoopProxy) -> Result<()> {
+pub async fn init(proxy: EventLoopProxy, _native_state: Arc<NativeState>) -> Result<()> {
     UNMANAGED.lock().event_sender.replace(proxy);
 
     unsafe {
@@ -378,4 +379,8 @@ unsafe extern "system" fn win_event_proc(
         },
         _ => (),
     }
+}
+
+pub const fn autocomplete_active() -> bool {
+    true
 }

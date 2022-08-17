@@ -201,6 +201,7 @@ pub enum InternalSubcommand {
     },
     /// Linux only
     UninstallForAllUsers,
+    Uuidgen,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -392,7 +393,7 @@ impl InternalSubcommand {
                 send_hook_to_socket(hook).await?;
             },
             InternalSubcommand::AuthToken => {
-                println!("{}", get_token().await?);
+                writeln!(stdout(), "{}", get_token().await?).ok();
             },
             InternalSubcommand::Request {
                 route,
@@ -407,7 +408,7 @@ impl InternalSubcommand {
                     request = request.body(value);
                 }
                 let value = request.auth().json().await?;
-                println!("{value}");
+                writeln!(stdout(), "{value}").ok();
             },
             InternalSubcommand::Ipc {
                 app,
@@ -456,10 +457,15 @@ impl InternalSubcommand {
                 }
             },
             InternalSubcommand::FigSocketPath => {
-                println!("{}", directories::fig_socket_path()?.to_string_lossy());
+                writeln!(stdout(), "{}", directories::fig_socket_path()?.to_string_lossy()).ok();
             },
             InternalSubcommand::FigtermSocketPath { session_id } => {
-                println!("{}", directories::figterm_socket_path(session_id)?.to_string_lossy());
+                writeln!(
+                    stdout(),
+                    "{}",
+                    directories::figterm_socket_path(session_id)?.to_string_lossy()
+                )
+                .ok();
             },
             InternalSubcommand::UninstallForAllUsers => {
                 let out = Command::new("users").output()?;
@@ -474,6 +480,9 @@ impl InternalSubcommand {
                         .spawn()?
                         .wait()?;
                 }
+            },
+            InternalSubcommand::Uuidgen => {
+                writeln!(stdout(), "{}", uuid::Uuid::new_v4()).ok();
             },
         }
 

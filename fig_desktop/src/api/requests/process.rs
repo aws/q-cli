@@ -46,12 +46,13 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
     let shell = get_shell_path_from_state(state).unwrap_or_else(|| SHELL.into());
     let args = shell_args(&shell);
 
-    debug!(
-        "Executing {:?} (shell {shell:?}, args {args:?}, cwd {:?}, env {:?})",
-        request.command,
-        request.working_directory(),
-        request.env
-    );
+    debug!({
+        shell,
+        args =? args,
+        command = request.command,
+        cwd = request.working_directory(),
+        env =? request.env
+    }, "Executing command");
 
     let mut cmd = Command::new(shell);
     #[cfg(target_os = "windows")]
@@ -101,6 +102,13 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
 }
 
 pub async fn run(request: RunProcessRequest) -> RequestResult {
+    debug!({
+        exe = request.executable,
+        args =? request.arguments,
+        cwd = request.working_directory(),
+        env =? request.env
+    }, "Running command");
+
     // TODO(sean) we can infer shell as above for execute if no executable is provided.
     let mut cmd = Command::new(&request.executable);
     #[cfg(target_os = "windows")]

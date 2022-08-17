@@ -27,11 +27,13 @@ export function pressed(
 export function setInterceptKeystrokes(
   actions: Action[],
   intercept: boolean,
-  globalIntercept?: boolean
+  globalIntercept?: boolean,
+  currentTerminalSessionId?: string
 ) {
   sendUpdateApplicationPropertiesRequest({
     interceptBoundKeystrokes: intercept,
     interceptGlobalKeystrokes: globalIntercept,
-    actionList: { actions }
+    actionList: { actions },
+    currentTerminalSessionId
   });
 }

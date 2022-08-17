@@ -17,6 +17,7 @@ use crate::figterm::{
     FigTermCommand,
     FigtermState,
 };
+use crate::native;
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -64,7 +65,7 @@ impl WindowState {
             .set_outer_position(Position::Physical(PhysicalPosition {
                 x: positon.x + anchor.x,
                 y: positon.y + anchor.y,
-            }))
+            }));
     }
 
     pub fn handle(
@@ -93,7 +94,7 @@ impl WindowState {
             WindowEvent::Hide => {
                 if let Some(session) = figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::InterceptClear).await;
+                        let _ = session.sender.send(FigTermCommand::InterceptClear);
                     });
                 }
                 self.webview.window().set_visible(false);
@@ -112,13 +113,15 @@ impl WindowState {
             WindowEvent::HideSoft => {
                 if let Some(session) = figterm_state.most_recent_session() {
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::InterceptClear).await;
+                        let _ = session.sender.send(FigTermCommand::InterceptClear);
                     });
                 }
             },
             WindowEvent::Show => {
-                self.webview.window().set_visible(true);
-                self.webview.window().set_always_on_top(true);
+                if native::autocomplete_active() {
+                    self.webview.window().set_visible(true);
+                    self.webview.window().set_always_on_top(true);
+                }
             },
             WindowEvent::Navigate { url } => {
                 self.webview

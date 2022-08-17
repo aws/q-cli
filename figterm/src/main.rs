@@ -348,7 +348,15 @@ fn launch_shell() -> Result<()> {
 }
 
 fn figterm_main() -> Result<()> {
-    let term_session_id = env::var("TERM_SESSION_ID").context("Failed to get TERM_SESSION_ID environment variable")?;
+    let term_session_id = match env::var("TERM_SESSION_ID") {
+        Ok(term_session_id) => term_session_id,
+        Err(_) => {
+            let term_session_id = uuid::Uuid::new_v4().to_string();
+            std::env::set_var("TERM_SESSION_ID", &term_session_id);
+            term_session_id
+        },
+    };
+
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
 
@@ -501,7 +509,8 @@ fn figterm_main() -> Result<()> {
                                             let s = raw.clone()
                                                 .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                 .unwrap_or_default();
-                                            let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                            let context = shell_state_to_context(term.shell_state());
+                                            let hook = fig_proto::hooks::new_intercepted_key_hook(context, action.to_string(), s);
                                             outgoing_sender.send(hook_to_message(hook)).unwrap();
 
                                             if event.key == KeyCode::Escape {

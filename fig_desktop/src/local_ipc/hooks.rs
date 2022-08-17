@@ -19,6 +19,7 @@ use fig_proto::local::{
     EditBufferHook,
     FileChangedHook,
     FocusChangeHook,
+    FocusedWindowDataHook,
     InterceptedKeyHook,
     PreExecHook,
     PromptHook,
@@ -31,16 +32,15 @@ use tracing::{
     warn,
 };
 
-use crate::event::{
-    NativeEvent,
-    WindowEvent,
-};
+use crate::event::WindowEvent;
 use crate::figterm::{
     ensure_figterm,
     FigtermSessionId,
     FigtermState,
     SessionMetrics,
 };
+#[cfg(target_os = "linux")]
+use crate::native;
 use crate::notification::NotificationsState;
 use crate::{
     Event,
@@ -96,14 +96,14 @@ pub async fn edit_buffer(
                 ("num_popups", metrics.num_popups.into()),
             ];
             tokio::spawn(async {
-                if let Err(e) = fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                if let Err(err) = fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                     fig_telemetry::TrackEventType::TerminalSessionMetricsRecorded,
                     fig_telemetry::TrackSource::App,
                     properties,
                 ))
                 .await
                 {
-                    warn!("Failed to record terminal session metrics: {e}");
+                    warn!(%err, "Failed to record terminal session metrics");
                 }
             });
         }
@@ -145,7 +145,8 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
-    proxy.send_event(Event::NativeEvent(NativeEvent::EditBufferChanged))?;
+    #[cfg(target_os = "windows")]
+    proxy.send_event(Event::NativeEvent(crate::event::NativeEvent::EditBufferChanged))?;
 
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,
@@ -159,7 +160,7 @@ pub async fn caret_position(
     CursorPositionHook { x, y, width, height }: CursorPositionHook,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
-    debug!("Cursor Position: {x} {y} {width} {height}");
+    debug!({ x, y, width, height }, "Cursor Position");
 
     proxy
         .send_event(Event::WindowEvent {
@@ -236,11 +237,11 @@ pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<
 }
 
 pub async fn intercepted_key(
-    InterceptedKeyHook { action, .. }: InterceptedKeyHook,
+    InterceptedKeyHook { action, context, .. }: InterceptedKeyHook,
     notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
-    debug!("Intercepted Key Action: {action:?}");
+    debug!(%action, "Intercepted Key Action");
 
     notifications_state
         .send_notification(
@@ -250,6 +251,7 @@ pub async fn intercepted_key(
                     KeybindingPressedNotification {
                         keypress: None,
                         action: Some(action),
+                        context,
                     },
                 )),
             },
@@ -263,4 +265,15 @@ pub async fn intercepted_key(
 
 pub async fn file_changed(_file_changed_hook: FileChangedHook) -> Result<()> {
     Ok(())
+}
+
+pub async fn focused_window_data(hook: FocusedWindowDataHook, proxy: &EventLoopProxy) -> Result<()> {
+    #[cfg(target_os = "linux")]
+    return native::integrations::from_hook(hook, proxy);
+    #[cfg(not(target_os = "linux"))]
+    {
+        let _hook = hook;
+        let _proxy = proxy;
+        Ok(())
+    }
 }
