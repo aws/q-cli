@@ -31,18 +31,16 @@ class MissionControl {
       }
     }
   }
-  
+
   init() {
     NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)),
                                            name: AXWindowServer.windowDidChangeNotification,
                                            object: nil)
-    
+
   }
-  
+
   @objc func windowDidChange(_ notification: Notification) {
-    print("TAB: windowDidChange")
     guard let window = notification.object as? ExternalWindow else { return }
-    print("TAB: \(String(describing: window.isFullScreen))")
 
     if window.isFullScreen ?? false == true {
       NSApp.setActivationPolicy(.accessory)
@@ -134,6 +132,6 @@ class MissionControl {
   }
 
   static var shouldShowIconInDock: Bool {
-    return true //LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
+    return true // LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
   }
 }
