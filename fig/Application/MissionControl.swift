@@ -49,6 +49,10 @@ class MissionControl {
     }
   }
 
+  @objc static func openDashboard() {
+    MissionControl.openUI(.home)
+  }
+
   @objc class func openUI(_ tab: Tab = .home, additionalPathComponent: String? = nil) {
     Logger.log(message: "Open MissionControl UI")
 
