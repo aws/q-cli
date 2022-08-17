@@ -31,6 +31,25 @@ class MissionControl {
       }
     }
   }
+  
+  init() {
+    NotificationCenter.default.addObserver(self, selector: #selector(windowDidChange(_:)),
+                                           name: AXWindowServer.windowDidChangeNotification,
+                                           object: nil)
+    
+  }
+  
+  @objc func windowDidChange(_ notification: Notification) {
+    print("TAB: windowDidChange")
+    guard let window = notification.object as? ExternalWindow else { return }
+    print("TAB: \(String(describing: window.isFullScreen))")
+
+    if window.isFullScreen ?? false == true {
+      NSApp.setActivationPolicy(.accessory)
+    } else {
+      NSApp.setActivationPolicy(.regular)
+    }
+  }
 
   @objc class func openUI(_ tab: Tab = .home, additionalPathComponent: String? = nil) {
     Logger.log(message: "Open MissionControl UI")
@@ -44,7 +63,8 @@ class MissionControl {
       }
 
       // otherwise use fallback
-      return Remote.missionControlURL.appendingPathComponent(tab.endpoint()).appendingPathComponent(additionalPathComponent ?? "")
+      return Remote.missionControlURL.appendingPathComponent(tab.endpoint())
+                                     .appendingPathComponent(additionalPathComponent ?? "")
     }()
 
     if let window = MissionControl.shared.window {
@@ -114,6 +134,6 @@ class MissionControl {
   }
 
   static var shouldShowIconInDock: Bool {
-    return LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
+    return true //LocalState.shared.getValue(forKey: LocalState.showIconInDock) as? Bool ??  false
   }
 }

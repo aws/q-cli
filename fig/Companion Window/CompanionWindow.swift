@@ -145,13 +145,6 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
        disableTransparency {
       self.backgroundColor = .red
     }
-
-    NSWorkspace.shared.notificationCenter.addObserver(
-      self,
-      selector: #selector(spaceChanged),
-      name: NSWorkspace.activeSpaceDidChangeNotification,
-      object: nil
-    )
   }
 
   override func mouseEntered(with event: NSEvent) {

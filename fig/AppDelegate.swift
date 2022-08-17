@@ -172,6 +172,13 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       }
       
       self.setupCompanionWindow()
+      
+      let args = ProcessInfo.processInfo.arguments
+      
+      if let showOnLaunch = LocalState.shared.getValue(forKey: LocalState.showMissionControlOnLaunch) as? Bool,
+         showOnLaunch && !args.contains("--headless"){
+          MissionControl.openUI()
+      }
     }
     
     configureStatusBarItem()
