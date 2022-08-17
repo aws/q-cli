@@ -13,7 +13,7 @@ fig_proto = { path = "../fig_proto" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-once_cell = { version = "1.13.0", features = ["parking_lot"] }
+once_cell = { version = "1.13.1", features = ["parking_lot"] }
 parking_lot = "0.12.1"
 sentry = { version = "0.27.0", default-features = false, features = ["backtrace", "contexts", "panic", "anyhow", "reqwest", "rustls"] }
 serde = "1.0.143"
