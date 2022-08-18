@@ -48,15 +48,28 @@ class MissionControl {
                                            name: AXWindowServer.windowDidChangeNotification,
                                            object: nil)
 
+    NSWorkspace.shared.notificationCenter.addObserver(
+      self,
+      selector: #selector(windowDidChange(_:)),
+      name: NSWorkspace.activeSpaceDidChangeNotification,
+      object: nil
+    )
   }
 
   @objc func windowDidChange(_ notification: Notification) {
-    guard let window = notification.object as? ExternalWindow else { return }
-
-    if window.isFullScreen ?? false == true {
+    if let window = notification.object as? ExternalWindow,
+           window.isFullScreen ?? false == true {
+      // Enable autocomplete to show up in full-screen applications
       NSApp.setActivationPolicy(.accessory)
-    } else {
+      return
+    }
+
+    if self.window?.isVisible ?? false {
+      // If Dashboard window exists, show Fig icon in dock
       NSApp.setActivationPolicy(.regular)
+    } else {
+      // If Dashboard is closed, remove Fig icon from dock
+      NSApp.setActivationPolicy(.accessory)
     }
   }
 
