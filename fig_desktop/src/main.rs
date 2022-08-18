@@ -3,7 +3,6 @@
 mod api;
 mod cli;
 mod event;
-// mod figterm;
 mod figterm;
 mod icons;
 mod install;

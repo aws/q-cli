@@ -227,6 +227,13 @@ impl Terminal {
         }
     }
 
+    pub fn relative_cursor_offset(&self) -> (i32, i32) {
+        match self {
+            Terminal::GnomeTerminal => (-51, -44),
+            _ => (0, 0),
+        }
+    }
+
     /// (macos) do we need input method
     pub fn is_input_dependant(&self) -> bool {
         matches!(

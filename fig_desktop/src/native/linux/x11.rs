@@ -34,8 +34,8 @@ use super::{
 };
 use crate::event::WindowEvent;
 use crate::native::{
-    WindowData,
     WindowGeometry,
+    X11WindowData,
 };
 use crate::{
     Event,
@@ -136,7 +136,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
 
     let window_reply = window_geometry(conn, focus_window);
 
-    let old_window_data = native_state.active_window.lock().replace(WindowData {
+    let old_window_data = native_state.x11_active_window.lock().replace(X11WindowData {
         id: focus_window,
         class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
         instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
@@ -190,7 +190,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         }
     }
 
-    if !WM_CLASS_WHITELIST.iter().any(|w| w.as_bytes() == wm_class) {
+    if !WM_CLASS_WHITELIST.keys().any(|w| w.as_bytes() == wm_class) {
         // hide if not a whitelisted wm class
         hide()?;
         return Ok(());

@@ -152,8 +152,7 @@ impl WebviewManager {
         // tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         tokio::spawn(local_ipc::start_local_ipc(
-            self.figterm_state.clone(),
-            self.notifications_state.clone(),
+            self.native_state.clone(),
             self.event_loop.create_proxy(),
         ));
 

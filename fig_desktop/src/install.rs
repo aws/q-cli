@@ -55,23 +55,6 @@ pub async fn run_install() {
     }
 
     #[cfg(target_os = "linux")]
-    tokio::spawn(async {
-        match dbus::ibus::ibus_connect().await {
-            Ok(ibus_connection) => match dbus::ibus::ibus_proxy(&ibus_connection).await {
-                Ok(ibus_proxy) => {
-                    // TODO(grant): Write cache via dbus ?
-                    match ibus_proxy.set_global_engine("fig").await {
-                        Ok(()) => tracing::debug!("Set IBus engine to 'fig'"),
-                        Err(err) => error!(%err, "Failed to set global engine 'fig'"),
-                    }
-                },
-                Err(err) => error!(%err, "IBus failed to proxy"),
-            },
-            Err(err) => error!(%err, "IBus failed to connect"),
-        }
-    });
-
-    #[cfg(target_os = "linux")]
     // todo(mia): make this part of onboarding
     tokio::spawn(async {
         use tokio::process::Command;
@@ -105,6 +88,39 @@ pub async fn run_install() {
             Err(err) => error!(%err, "Failed getting process list"),
         }
     });
+
+    #[cfg(target_os = "linux")]
+    {
+        use std::process::Output;
+        use std::time::Duration;
+
+        use sysinfo::{
+            ProcessRefreshKind,
+            RefreshKind,
+            System,
+            SystemExt,
+        };
+        use tokio::process::Command;
+        use tracing::info;
+
+        let system = tokio::task::block_in_place(|| {
+            System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
+        });
+        if system.processes_by_name("ibus-daemon").next().is_none() {
+            info!("Launching 'ibus-daemon'");
+            match Command::new("ibus-daemon").arg("-drxR").output().await {
+                Ok(Output { status, stdout, stderr }) if !status.success() => {
+                    error!({
+                        ?status,
+                        stdout = %String::from_utf8_lossy(&stdout),
+                        stderr = %String::from_utf8_lossy(&stderr)
+                    }, "Failed to run 'ibus-daemon -drxR'");
+                },
+                Err(err) => error!(%err, "Failed to run 'ibus-daemon -drxR'"),
+                Ok(_) => tokio::time::sleep(Duration::from_millis(500)).await,
+            };
+        }
+    }
 }
 
 fn should_run_install_script() -> bool {

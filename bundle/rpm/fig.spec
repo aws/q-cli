@@ -33,7 +33,6 @@ fig _ uninstall-for-all-users
 %files
 /usr/bin/fig
 /usr/bin/fig_desktop
-/usr/bin/fig_ibus_engine
 "/usr/bin/zsh (figterm)"
 "/usr/bin/bash (figterm)"
 "/usr/bin/fish (figterm)"

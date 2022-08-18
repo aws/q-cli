@@ -8,6 +8,7 @@ use fig_proto::local::{
 use tracing::debug;
 
 use crate::event::WindowEvent;
+use crate::native::NativeState;
 use crate::{
     Event,
     EventLoopProxy,
@@ -16,16 +17,9 @@ use crate::{
 
 pub async fn caret_position(
     CursorPositionHook { x, y, width, height }: CursorPositionHook,
-    proxy: &EventLoopProxy,
+    _proxy: &EventLoopProxy,
 ) -> Result<()> {
-    debug!({ x, y, width, height }, "Cursor Position");
-
-    proxy
-        .send_event(Event::WindowEvent {
-            window_id: AUTOCOMPLETE_ID.clone(),
-            window_event: WindowEvent::Reposition { x, y: y + height },
-        })
-        .unwrap();
+    debug!({ x, y, width, height }, "Cursor Position (ignored!)");
 
     Ok(())
 }
@@ -45,12 +39,17 @@ pub async fn file_changed(_file_changed_hook: FileChangedHook) -> Result<()> {
     Ok(())
 }
 
-pub async fn focused_window_data(hook: FocusedWindowDataHook, proxy: &EventLoopProxy) -> Result<()> {
+pub async fn focused_window_data(
+    hook: FocusedWindowDataHook,
+    native_state: &NativeState,
+    proxy: &EventLoopProxy,
+) -> Result<()> {
     #[cfg(target_os = "linux")]
-    return crate::native::integrations::from_hook(hook, proxy);
+    return crate::native::integrations::from_hook(hook, native_state, proxy);
     #[cfg(not(target_os = "linux"))]
     {
         let _hook = hook;
+        let _native_state = native_state;
         let _proxy = proxy;
         Ok(())
     }
