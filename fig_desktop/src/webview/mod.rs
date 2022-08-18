@@ -325,12 +325,15 @@ pub fn build_mission_control(
 
     let proxy = event_loop.create_proxy();
 
+    let base_url =
+        fig_settings::settings::get_string_or("developer.mission-control.host", "https://desktop.fig.io".into());
+
     let url = if show_onboarding {
-        "https://desktop.fig.io/onboarding/welcome".to_owned()
+        format!("{base_url}/onboarding/welcome")
     } else {
         match page {
-            Some(page) => format!("https://desktop.fig.io/{}", page),
-            None => "https://desktop.fig.io".to_owned(),
+            Some(page) => format!("{base_url}/{}", page),
+            None => base_url,
         }
     };
 

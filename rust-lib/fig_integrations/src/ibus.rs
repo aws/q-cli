@@ -1,6 +1,12 @@
 use std::path::Path;
 use std::process::Command;
-use std::time::Duration;
+
+use sysinfo::{
+    ProcessRefreshKind,
+    RefreshKind,
+    System,
+    SystemExt,
+};
 
 use crate::error::{
     Error,
@@ -20,33 +26,30 @@ impl Integration for IbusIntegration {
     }
 
     fn install(&self, _: Option<&Path>) -> Result<()> {
-        match Command::new("ibus").arg("write-cache").output() {
-            Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
-                return Err(Error::Custom(
-                    format!(
-                        "Failed to run 'ibus write-cache':\n{}",
-                        String::from_utf8_lossy(&stderr)
-                    )
-                    .into(),
-                ));
-            },
-            Err(err) => return Err(Error::Custom(format!("Failed to run 'ibus write-cache': {err}").into())),
-            Ok(_) => {},
-        };
-
-        std::thread::sleep(Duration::from_millis(250));
+        let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+        if system.processes_by_name("ibus-daemon").next().is_none() {
+            return Err(Error::Custom(
+                "IBus daemon is not running, either run `ibus-setup` or log out and log back in.".into(),
+            ));
+        }
 
         match Command::new("ibus").arg("engine").arg("fig").output() {
             Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
-                return Err(Error::Custom(
-                    format!("Failed to run 'ibus engine fig':\n{}", String::from_utf8_lossy(&stderr)).into(),
-                ));
+                Err(Error::Custom(
+                    format!(
+                        "Failed to set IBus engine, you may need to log out and log back in.\n\nDetails: Failed to run 'ibus engine fig':\n{}", 
+                        String::from_utf8_lossy(&stderr)
+                    ).into(),
+                ))
             },
-            Err(err) => return Err(Error::Custom(format!("Failed to run 'ibus engine fig': {err}").into())),
-            Ok(_) => {},
-        };
-
-        Ok(())
+            Err(err) => Err(Error::Custom(
+                format!(
+                    "Failed to run 'ibus', it may not be installed.\n\nDetails: Failed to run 'ibus engine fig': {err}"
+                )
+                .into(),
+            )),
+            Ok(_) => Ok(()),
+        }
     }
 
     fn uninstall(&self) -> Result<()> {
@@ -64,7 +67,9 @@ impl Integration for IbusIntegration {
         if ibus_engine_output.status.success() && "fig" == stdout.trim() {
             Ok(())
         } else {
-            Err(Error::Custom(stdout.to_string().into()))
+            Err(Error::Custom(
+                String::from_utf8_lossy(&ibus_engine_output.stderr).to_string().into(),
+            ))
         }
     }
 }

@@ -25,7 +25,7 @@ fn integration_status(integration: impl Integration) -> ServerOriginatedSubMessa
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
         response: Some(Response::InstallationStatus(match integration.is_installed() {
             Ok(_) => InstallationStatus::InstallInstalled.into(),
-            Err(_) => InstallationStatus::InstallInstalled.into(),
+            Err(_) => InstallationStatus::InstallNotInstalled.into(),
         })),
     })
 }
