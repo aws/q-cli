@@ -40,7 +40,6 @@ fig _ uninstall-for-all-users
 /usr/lib/systemd/user/fig.service
 /usr/lib/environment.d/60-fig.conf
 /usr/share/applications/fig.desktop
-/usr/share/ibus/component/engine.xml
 /usr/share/icons/hicolor/16x16/apps/fig.png
 /usr/share/icons/hicolor/22x22/apps/fig.png
 /usr/share/icons/hicolor/24x24/apps/fig.png
