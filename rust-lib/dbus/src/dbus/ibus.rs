@@ -14,13 +14,7 @@ use zbus::{
     ConnectionBuilder,
 };
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error(transparent)]
-    Address(#[from] AddressError),
-    #[error(transparent)]
-    Zbus(#[from] zbus::Error),
-}
+use super::CrateError;
 
 #[derive(Debug, Error)]
 pub enum AddressError {
@@ -49,12 +43,12 @@ pub async fn ibus_address() -> Result<String, AddressError> {
     }
 }
 
-pub async fn ibus_connect() -> Result<Connection, Error> {
+pub async fn ibus_connect() -> Result<Connection, CrateError> {
     let address = ibus_address().await?;
     Ok(ConnectionBuilder::address(&*address)?.build().await?)
 }
 
-pub async fn ibus_proxy(connection: &Connection) -> Result<IBusProxy, Error> {
+pub async fn ibus_proxy(connection: &Connection) -> Result<IBusProxy, CrateError> {
     Ok(IBusProxy::new(connection).await?)
 }
 
@@ -66,7 +60,7 @@ pub trait IBus {
     /// Exit method
     fn exit(&self, restart: bool) -> zbus::Result<()>;
 
-    /// GetE&nginesByNames method
+    /// GetEnginesByNames method
     fn get_engines_by_names(&self, names: &[&str]) -> zbus::Result<Vec<OwnedValue>>;
 
     /// GetUseGlobalEngine method

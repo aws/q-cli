@@ -38,19 +38,16 @@ pub async fn run_install() {
         });
 
         #[cfg(target_os = "linux")]
-        {
+        tokio::spawn(async {
             use tokio::process::Command;
-
-            tokio::spawn(async {
-                match Command::new("fig").args(&["_", "install", "daemon"]).output().await {
-                    Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
-                        error!(?status, stderr = %String::from_utf8_lossy(&stderr), "Failed to init fig daemon");
-                    },
-                    Err(err) => error!(%err, "Failed to init fig daemon"),
-                    Ok(_) => {},
-                }
-            });
-        }
+            match Command::new("fig").args(&["_", "install", "--daemon"]).output().await {
+                Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
+                    error!(?status, stderr = %String::from_utf8_lossy(&stderr), "Failed to init fig daemon");
+                },
+                Err(err) => error!(%err, "Failed to init fig daemon"),
+                Ok(_) => {},
+            }
+        });
     }
 
     if let Err(err) = set_previous_version(current_version()) {
@@ -59,8 +56,8 @@ pub async fn run_install() {
 
     #[cfg(target_os = "linux")]
     tokio::spawn(async {
-        match ibus::ibus_connect().await {
-            Ok(ibus_connection) => match ibus::ibus_proxy(&ibus_connection).await {
+        match dbus::ibus::ibus_connect().await {
+            Ok(ibus_connection) => match dbus::ibus::ibus_proxy(&ibus_connection).await {
                 Ok(ibus_proxy) => {
                     // TODO(grant): Write cache via dbus ?
                     match ibus_proxy.set_global_engine("fig").await {
@@ -71,6 +68,41 @@ pub async fn run_install() {
                 Err(err) => error!(%err, "IBus failed to proxy"),
             },
             Err(err) => error!(%err, "IBus failed to connect"),
+        }
+    });
+
+    #[cfg(target_os = "linux")]
+    // todo(mia): make this part of onboarding
+    tokio::spawn(async {
+        use tokio::process::Command;
+        match Command::new("sh")
+            .arg("-c")
+            .arg("ps x | grep gnome-shell | wc -l")
+            .output()
+            .await
+        {
+            Ok(output) => {
+                match String::from_utf8_lossy(&output.stdout)
+                    .trim_matches('\n')
+                    .parse::<u32>()
+                {
+                    Ok(num) => {
+                        if num > 1 {
+                            match dbus::gnome_shell::has_extension().await {
+                                Ok(true) => tracing::debug!("shell extension already installed"),
+                                Ok(false) => {
+                                    if let Err(err) = dbus::gnome_shell::install_extension().await {
+                                        error!(%err, "Failed to install shell extension")
+                                    }
+                                },
+                                Err(err) => error!(%err, "Failed to check shell extensions"),
+                            }
+                        }
+                    },
+                    Err(err) => error!(%err, "Failed parsing process list"),
+                }
+            },
+            Err(err) => error!(%err, "Failed getting process list"),
         }
     });
 }

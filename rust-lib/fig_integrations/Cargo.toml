@@ -15,5 +15,5 @@ thiserror = "1.0.32"
 time = { version = "0.3.13", features = ["macros", "formatting"] }
 
 [target.'cfg(target_os = "linux")'.dependencies]
-ibus = { path = "../ibus" }
+dbus = { path = "../dbus" }
 

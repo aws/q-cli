@@ -241,26 +241,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "async-io"
-version = "1.8.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0ab006897723d9352f63e2b13047177c3982d8d79709d713ce7747a8f19fd1b0"
-dependencies = [
- "autocfg",
- "concurrent-queue",
- "futures-lite",
- "libc",
- "log",
- "once_cell",
- "parking",
- "polling",
- "slab",
- "socket2",
- "waker-fn",
- "winapi 0.3.9",
-]
-
-[[package]]
 name = "async-lock"
 version = "2.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1599,6 +1579,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "dbus"
+version = "0.1.0"
+dependencies = [
+ "once_cell",
+ "thiserror",
+ "tokio",
+ "zbus",
+]
+
+[[package]]
 name = "debugid"
 version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2443,6 +2433,7 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "ctrlc",
+ "dbus",
  "deno_core",
  "deno_runtime",
  "dialoguer",
@@ -2462,7 +2453,6 @@ dependencies = [
  "futures",
  "globset",
  "humantime",
- "ibus",
  "nix 0.25.0",
  "notify 4.0.17",
  "once_cell",
@@ -2516,6 +2506,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.17",
  "dashmap",
+ "dbus",
  "fig_api_client",
  "fig_auth",
  "fig_install",
@@ -2531,7 +2522,6 @@ dependencies = [
  "freedesktop-icons",
  "gtk",
  "hashbrown 0.12.3",
- "ibus",
  "image 0.24.3",
  "moka",
  "notify 5.0.0-pre.15",
@@ -2554,7 +2544,6 @@ dependencies = [
  "windows 0.39.0",
  "wry",
  "x11rb 0.10.1",
- "zbus",
 ]
 
 [[package]]
@@ -2591,8 +2580,8 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.17",
+ "dbus",
  "fig_util",
- "ibus",
  "regex",
  "serde",
  "sysinfo 0.25.2",
@@ -3730,15 +3719,6 @@ dependencies = [
  "js-sys",
  "wasm-bindgen",
  "winapi 0.3.9",
-]
-
-[[package]]
-name = "ibus"
-version = "0.1.0"
-dependencies = [
- "thiserror",
- "tokio",
- "zbus",
 ]
 
 [[package]]
@@ -5368,19 +5348,6 @@ dependencies = [
  "crc32fast",
  "deflate 1.0.0",
  "miniz_oxide 0.5.3",
-]
-
-[[package]]
-name = "polling"
-version = "2.2.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "685404d509889fade3e86fe3a5803bca2ec09b0c0778d5ada6ec8bf7a8de5259"
-dependencies = [
- "cfg-if 1.0.0",
- "libc",
- "log",
- "wepoll-ffi",
- "winapi 0.3.9",
 ]
 
 [[package]]
@@ -8477,15 +8444,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9193164d4de03a926d909d3bc7c30543cecb35400c02114792c2cae20d5e2dbb"
 
 [[package]]
-name = "wepoll-ffi"
-version = "0.1.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d743fdedc5c64377b5fc2bc036b01c7fd642205a0d96356034ae3404d49eb7fb"
-dependencies = [
- "cc",
-]
-
-[[package]]
 name = "wgpu-core"
 version = "0.13.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -9054,7 +9012,6 @@ dependencies = [
  "async-broadcast",
  "async-channel",
  "async-executor",
- "async-io",
  "async-lock",
  "async-recursion",
  "async-task",

@@ -1724,11 +1724,11 @@ impl DoctorCheck for IBusCheck {
             }}));
         }
 
-        let ibus_connection = ibus::ibus_connect()
+        let ibus_connection = dbus::ibus::ibus_connect()
             .await
             .wrap_err("Failed to connect to IBus on D-Bus")?;
 
-        let ibus_proxy = ibus::ibus_proxy(&ibus_connection)
+        let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
             .await
             .wrap_err("Failed to create IBus proxy")?;
 
@@ -1751,7 +1751,7 @@ impl DoctorCheck for IBusCheck {
             reason: "ibus engine is not fig".into(),
             fix: Some(DoctorFix::Async(Box::pin(async move {
                 let ibus_connection = ibus_connection;
-                let ibus_proxy = ibus::ibus_proxy(&ibus_connection)
+                let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
                     .await
                     .wrap_err("Failed to create IBus proxy")?;
                 ibus_proxy.set_global_engine("fig").await?;
