@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::process::Stdio;
 
 use camino::{
     Utf8Path,
@@ -82,6 +81,7 @@ pub async fn update_check() {
 #[cfg(windows)]
 pub async fn update_check() {
     use std::os::windows::process::CommandExt;
+
     use tracing::{
         error,
         info,
@@ -102,7 +102,13 @@ pub async fn update_check() {
         Ok(Some(package)) => {
             info!("Updating Fig...");
 
-            if let Err(e) = std::process::Command::new("powershell").args(["-c", &format!("wget {} -outfile {}", &package.download, installer.to_string_lossy())]).status() {
+            if let Err(e) = std::process::Command::new("powershell")
+                .args([
+                    "-c",
+                    &format!("wget {} -outfile {}", &package.download, installer.to_string_lossy()),
+                ])
+                .status()
+            {
                 error!("Failed to download the newest version of Fig: {e}");
                 return;
             }
