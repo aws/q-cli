@@ -13,6 +13,8 @@ mod state;
 mod telemetry;
 mod window;
 
+use std::time::Duration;
+
 use anyhow::Result;
 use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -131,7 +133,66 @@ pub async fn api_request(
         },
     };
 
-    let response = match message.submessage {
+    let response = match tokio::time::timeout(
+        Duration::from_secs(30),
+        handle_request(
+            message,
+            message_id,
+            &window_id,
+            debug_state,
+            figterm_state,
+            intercept_state,
+            notifications_state,
+            native_state,
+            proxy,
+        ),
+    )
+    .await
+    {
+        Ok(response) => response,
+        Err(_) => {
+            warn!(%window_id, "Fig API request timedout after 30 seconds");
+            RequestResult::error("Request timedout after 30 seconds")
+        },
+    };
+
+    trace!("Sending response to {window_id}: {response:?}");
+
+    let message = ServerOriginatedMessage {
+        id: Some(message_id),
+        submessage: Some(match response {
+            Ok(msg) => *msg,
+            Err(msg) => {
+                warn!("Send error response for {window_id}: {msg}");
+                ServerOriginatedSubMessage::Error(msg.to_string())
+            },
+        }),
+    };
+
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id,
+            window_event: WindowEvent::Emit {
+                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                payload: base64::encode(message.encode_to_vec()),
+            },
+        })
+        .unwrap();
+}
+
+#[allow(clippy::too_many_arguments)]
+async fn handle_request(
+    message: ClientOriginatedMessage,
+    message_id: i64,
+    window_id: &WindowId,
+    debug_state: &DebugState,
+    figterm_state: &FigtermState,
+    intercept_state: &InterceptState,
+    notifications_state: &NotificationsState,
+    native_state: &NativeState,
+    proxy: &EventLoopProxy,
+) -> RequestResult {
+    match message.submessage {
         Some(submessage) => {
             use ClientOriginatedSubMessage::*;
 
@@ -201,28 +262,5 @@ pub async fn api_request(
             warn!("Missing submessage: {truncated}");
             RequestResult::error("Missing submessage")
         },
-    };
-
-    trace!("Sending response to {window_id}: {response:?}");
-
-    let message = ServerOriginatedMessage {
-        id: message.id,
-        submessage: Some(match response {
-            Ok(msg) => *msg,
-            Err(msg) => {
-                warn!("Send error response for {window_id}: {msg}");
-                ServerOriginatedSubMessage::Error(msg.to_string())
-            },
-        }),
-    };
-
-    proxy
-        .send_event(Event::WindowEvent {
-            window_id,
-            window_event: WindowEvent::Emit {
-                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
-                payload: base64::encode(message.encode_to_vec()),
-            },
-        })
-        .unwrap();
+    }
 }

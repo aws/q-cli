@@ -166,17 +166,25 @@ impl WebviewManager {
             let native_state = self.native_state.clone();
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
-                    api_request(
-                        fig_id,
-                        payload,
-                        &debug_state,
-                        &figterm_state,
-                        &intercept_state,
-                        &notifications_state,
-                        &native_state,
-                        &proxy,
-                    )
-                    .await;
+                    let proxy = proxy.clone();
+                    let debug_state = debug_state.clone();
+                    let figterm_state = figterm_state.clone();
+                    let intercept_state = intercept_state.clone();
+                    let notifications_state = notifications_state.clone();
+                    let native_state = native_state.clone();
+                    tokio::spawn(async move {
+                        api_request(
+                            fig_id,
+                            payload,
+                            &debug_state,
+                            &figterm_state,
+                            &intercept_state,
+                            &notifications_state,
+                            &native_state,
+                            &proxy.clone(),
+                        )
+                        .await;
+                    });
                 }
             });
         }
