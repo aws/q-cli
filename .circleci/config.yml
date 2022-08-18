@@ -202,7 +202,7 @@ jobs:
             NEW_VERSION=`cat version`
             cd desktop
             sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" fig_desktop/Cargo.toml
-            sed -i "0,/^Version=\"[^\"]*\"\$/s//Version=\"$NEW_VERSION\"/" fig.wxi
+            sed -i "s/Version=\"[^\"]*\"/Version=\"$NEW_VERSION\"/" fig.wxi
       - run:
           name: Update lockfile
           command: cd desktop && cargo update -p fig_desktop
