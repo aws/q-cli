@@ -1,7 +1,6 @@
 pub mod uninstall;
 
 use std::iter::empty;
-use std::process::Command;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
@@ -16,13 +15,11 @@ use fig_settings::{
     settings,
     state,
 };
-use regex::Regex;
 use tracing::{
     info,
     trace,
 };
 
-use crate::cli::debug::get_app_info;
 use crate::util::{
     is_app_running,
     launch_fig,
@@ -82,27 +79,34 @@ pub async fn quit_fig() -> Result<()> {
 
     println!("\n→ Quitting Fig...\n");
     if quit_command().await.is_err() {
-        tokio::time::sleep(Duration::from_millis(500)).await;
-        let second_try = quit_command().await;
-        if second_try.is_err() {
-            if let Ok(info) = get_app_info() {
-                let pid = Regex::new(r"pid = (\S+)")
-                    .unwrap()
-                    .captures(&info)
-                    .and_then(|c| c.get(1));
-                if let Some(pid) = pid {
-                    let success = Command::new("kill")
-                        .arg("-KILL")
-                        .arg(pid.as_str())
-                        .status()
-                        .map(|res| res.success());
-                    if let Ok(true) = success {
-                        return Ok(());
+        #[cfg(unix)]
+        {
+            use std::process::Command;
+            use regex::Regex;
+            use crate::cli::debug::get_app_info;
+
+            tokio::time::sleep(Duration::from_millis(500)).await;
+            let second_try = quit_command().await;
+            if second_try.is_err() {
+                if let Ok(info) = get_app_info() {
+                    let pid = Regex::new(r"pid = (\S+)")
+                        .unwrap()
+                        .captures(&info)
+                        .and_then(|c| c.get(1));
+                    if let Some(pid) = pid {
+                        let success = Command::new("kill")
+                            .arg("-KILL")
+                            .arg(pid.as_str())
+                            .status()
+                            .map(|res| res.success());
+                        if let Ok(true) = success {
+                            return Ok(());
+                        }
                     }
                 }
+                println!("\nUnable to quit Fig\n");
+                second_try?;
             }
-            println!("\nUnable to quit Fig\n");
-            second_try?;
         }
     }
 
