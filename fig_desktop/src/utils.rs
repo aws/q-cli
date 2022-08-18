@@ -1,10 +1,12 @@
 use std::borrow::Cow;
+use std::process::Stdio;
 
 use camino::{
     Utf8Path,
     Utf8PathBuf,
 };
 use fig_proto::fig::FilePath;
+use fig_util::directories;
 use serde::{
     Deserialize,
     Serialize,
@@ -75,21 +77,44 @@ pub struct Rect<U, V> {
     pub height: V,
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(unix)]
 pub async fn update_check() {
     // updates on linux are handled by the package manager
     // note(mia): we may in the future still implement a nag to update,
     //     it just won't work automatically like it does on windows/macos
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(windows)]
 pub async fn update_check() {
-    info!("checking for updates...");
+    let installer = directories::fig_data_dir().unwrap().join("fig_installer.exe");
+
+    if installer.exists() {
+        if let Err(e) = std::fs::remove_file(&installer) {
+            error!("Failed to remove previous installer version: {e}");
+            return;
+        }
+    }
+
+    info!("Checking for updates...");
     match fig_update::check_for_updates(env!("CARGO_PKG_VERSION")).await {
         Ok(Some(package)) => {
-            info!("updating!");
-            if let Err(err) = fig_update::apply_update(package) {
-                error!("failed applying update: {err:?}");
+            info!("Updating Fig...");
+
+
+            if let Err(e) = std::process::Command::new("powershell").args(["-c", &format!("wget {} -outfile {}", &package.download, installer.to_string_lossy())]).status() {
+                error!("Failed to download the newest version of Fig: {e}");
+                return;
+            }
+
+            match std::process::Command::new(&installer)
+                .args(["/upgrade", "/quiet", "norestart"])
+                .stdout(Stdio::null())
+                .stdin(Stdio::null())
+                .stderr(Stdio::null())
+                .spawn()
+            {
+                Ok(_) => std::process::exit(0),
+                Err(e) => error!("Failed to update Fig: {e}"),
             }
         },
         Ok(None) => {

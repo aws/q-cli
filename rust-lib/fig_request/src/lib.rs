@@ -6,18 +6,13 @@ use once_cell::sync::Lazy;
 use reqwest::cookie::Cookie;
 use reqwest::header::HeaderMap;
 pub use reqwest::Method;
-use reqwest::{
-    Client,
-    RequestBuilder,
-    StatusCode,
-};
+use reqwest::{Client, RequestBuilder, StatusCode};
 use serde::de::DeserializeOwned;
-use serde::{
-    Deserialize,
-    Serialize,
-};
+use serde::{Deserialize, Serialize};
 use serde_json::Value;
 use thiserror::Error;
+
+pub use reqwest;
 
 static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
     Client::builder()
@@ -27,6 +22,10 @@ static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
         .build()
         .ok()
 });
+
+pub fn client() -> Option<&'static Client> {
+    CLIENT.as_ref()
+}
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
