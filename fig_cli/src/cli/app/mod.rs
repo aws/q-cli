@@ -82,7 +82,9 @@ pub async fn quit_fig() -> Result<()> {
         #[cfg(unix)]
         {
             use std::process::Command;
+
             use regex::Regex;
+
             use crate::cli::debug::get_app_info;
 
             tokio::time::sleep(Duration::from_millis(500)).await;
