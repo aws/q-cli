@@ -35,12 +35,16 @@ impl Integration for IbusIntegration {
 
         match Command::new("ibus").arg("engine").arg("fig").output() {
             Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
-                Err(Error::Custom(
-                    format!(
-                        "Failed to set IBus engine, you may need to log out and log back in.\n\nDetails: Failed to run 'ibus engine fig':\n{}", 
-                        String::from_utf8_lossy(&stderr)
-                    ).into(),
-                ))
+                if self.is_installed().is_ok() {
+                    Ok(())
+                } else {
+                    Err(Error::Custom(
+                        format!(
+                            "Failed to set IBus engine, you may need to log out and log back in.\n\nDetails: Failed to run 'ibus engine fig':\n{}", 
+                            String::from_utf8_lossy(&stderr)
+                        ).into()
+                    ))
+                }
             },
             Err(err) => Err(Error::Custom(
                 format!(

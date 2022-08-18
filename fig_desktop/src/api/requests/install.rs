@@ -3,6 +3,8 @@ use std::fmt::Display;
 use cfg_if::cfg_if;
 use fig_integrations::get_default_backup_dir;
 use fig_integrations::shell::ShellExt;
+#[cfg(target_os = "linux")]
+use fig_integrations::Integration;
 use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,
