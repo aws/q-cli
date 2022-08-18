@@ -79,17 +79,18 @@ pub async fn quit_fig() -> Result<()> {
 
     println!("\n→ Quitting Fig...\n");
     if quit_command().await.is_err() {
-        #[cfg(unix)]
-        {
-            use std::process::Command;
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let second_try = quit_command().await;
+        if second_try.is_err() {
+            #[cfg(unix)]
+            {
+                use std::process::Command;
 
-            use regex::Regex;
+                use regex::Regex;
 
-            use crate::cli::debug::get_app_info;
+                use crate::cli::debug::get_app_info;
 
-            tokio::time::sleep(Duration::from_millis(500)).await;
-            let second_try = quit_command().await;
-            if second_try.is_err() {
+
                 if let Ok(info) = get_app_info() {
                     let pid = Regex::new(r"pid = (\S+)")
                         .unwrap()
@@ -106,9 +107,10 @@ pub async fn quit_fig() -> Result<()> {
                         }
                     }
                 }
-                println!("\nUnable to quit Fig\n");
-                second_try?;
             }
+
+            println!("\nUnable to quit Fig\n");
+            second_try?;
         }
     }
 
