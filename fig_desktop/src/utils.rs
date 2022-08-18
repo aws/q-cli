@@ -86,6 +86,8 @@ pub async fn update_check() {
 
 #[cfg(windows)]
 pub async fn update_check() {
+    use std::os::windows::process::CommandExt;
+
     let installer = directories::fig_data_dir().unwrap().join("fig_installer.exe");
 
     if installer.exists() {
@@ -100,17 +102,15 @@ pub async fn update_check() {
         Ok(Some(package)) => {
             info!("Updating Fig...");
 
-
             if let Err(e) = std::process::Command::new("powershell").args(["-c", &format!("wget {} -outfile {}", &package.download, installer.to_string_lossy())]).status() {
                 error!("Failed to download the newest version of Fig: {e}");
                 return;
             }
 
-            match std::process::Command::new(&installer)
-                .args(["/upgrade", "/quiet", "norestart"])
-                .stdout(Stdio::null())
-                .stdin(Stdio::null())
-                .stderr(Stdio::null())
+            let detached = 0x8;
+            match std::process::Command::new(installer.as_os_str())
+                .args(["/upgrade", "/quiet", "/norestart"])
+                .creation_flags(detached)
                 .spawn()
             {
                 Ok(_) => std::process::exit(0),
