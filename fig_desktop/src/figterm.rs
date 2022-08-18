@@ -52,7 +52,7 @@ impl SessionMetrics {
 
 #[derive(Debug, Clone)]
 pub struct FigTermSession {
-    pub sender: mpsc::Sender<FigTermCommand>,
+    pub sender: mpsc::UnboundedSender<FigTermCommand>,
     pub last_receive: Instant,
     pub edit_buffer: EditBuffer,
     pub context: Option<ShellContext>,
@@ -176,7 +176,7 @@ pub fn ensure_figterm(session_id: FigtermSessionId, figterm_state: Arc<FigtermSt
         return Ok(());
     }
 
-    let (tx, mut rx) = mpsc::channel(0xff);
+    let (tx, mut rx) = mpsc::unbounded_channel();
     figterm_state.insert(session_id.clone(), FigTermSession {
         sender: tx,
         last_receive: Instant::now(),

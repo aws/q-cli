@@ -24,7 +24,6 @@ use crossterm::{
     execute,
 };
 use eyre::{
-    bail,
     Result,
     WrapErr,
 };
@@ -60,11 +59,6 @@ use serde_json::json;
 use spinners::{
     Spinner,
     Spinners,
-};
-use sysinfo::{
-    ProcessRefreshKind,
-    RefreshKind,
-    SystemExt,
 };
 use system_socket::SystemStream;
 use tokio::io::{
@@ -190,6 +184,7 @@ macro_rules! doctor_error {
     }}
 }
 
+#[allow(unused_macros)]
 macro_rules! doctor_fix {
     ({ reason: $reason:expr,fix: $fix:expr }) => {
         DoctorError::Error {
@@ -1296,6 +1291,33 @@ impl DoctorCheck<DiagnosticsResponse> for DotfilesSymlinkedCheck {
     }
 }
 
+struct AutocompleteActiveCheck;
+
+#[async_trait]
+impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Autocomplete is active".into()
+    }
+
+    fn get_type(&self, diagnostics: &DiagnosticsResponse, _platform: Platform) -> DoctorCheckType {
+        if diagnostics.autocomplete_active.is_some() {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
+    }
+
+    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
+        if diagnostics.autocomplete_active() {
+            Ok(())
+        } else {
+            Err(doctor_error!(
+                "Autocomplete is currently disabled. Your desktop integration(s) may be broken!"
+            ))
+        }
+    }
+}
+
 struct SecureKeyboardCheck;
 
 #[async_trait]
@@ -1620,10 +1642,57 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 }
 
-struct IbusCheck;
+#[cfg(target_os = "linux")]
+struct IBusEnvCheck;
 
+#[cfg(target_os = "linux")]
 #[async_trait]
-impl DoctorCheck for IbusCheck {
+impl DoctorCheck for IBusEnvCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "IBus Env Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let err = |var: &str, val: Option<&str>, expect: &str| {
+            Err(DoctorError::Error {
+                reason: "IBus environment variable is not set".into(),
+                info: vec![
+                    "Please restart your DE/WM session, for more details see https://fig.io/user-manual/other/linux"
+                        .into(),
+                    match val {
+                        Some(val) => format!("{var} is '{val}', expected '{expect}'").into(),
+                        None => format!("{var} is not set, expected '{expect}'").into(),
+                    },
+                ],
+                fix: None,
+                error: None,
+            })
+        };
+
+        let check_env = |var: &str, expect: &str| match std::env::var(var) {
+            Ok(val) if val == expect => Ok(()),
+            Ok(val) => err(var, Some(&val), expect),
+            Err(_) => err(var, None, expect),
+        };
+
+        check_env("GTK_IM_MODULE", "ibus")?;
+        check_env("QT_IM_MODULE", "ibus")?;
+        check_env("XMODIFIERS", "@im=ibus")?;
+        // TODO(grant): Add kitty env when fully supported
+        Ok(())
+    }
+}
+
+#[cfg(target_os = "linux")]
+struct IBusCheck;
+
+#[cfg(target_os = "linux")]
+#[async_trait]
+impl DoctorCheck for IBusCheck {
     fn name(&self) -> Cow<'static, str> {
         "IBus Check".into()
     }
@@ -1633,6 +1702,12 @@ impl DoctorCheck for IbusCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        use sysinfo::{
+            ProcessRefreshKind,
+            RefreshKind,
+            SystemExt,
+        };
+
         let system = sysinfo::System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
 
         if system.processes_by_exact_name("ibus-daemon").next().is_none() {
@@ -1643,31 +1718,135 @@ impl DoctorCheck for IbusCheck {
                     if !output.status.success() {
                         let stdout = String::from_utf8_lossy(&output.stdout);
                         let stderr = String::from_utf8_lossy(&output.stderr);
-                        bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+                        eyre::bail!("ibus-daemon launch failed:\nstdout: {stdout}\nstderr: {stderr}\n");
                     }
                     Ok(())
             }}));
         }
 
-        let ibus_engine_output = Command::new("ibus").arg("engine").output().map_err(eyre::Report::new)?;
+        let ibus_connection = dbus::ibus::ibus_connect()
+            .await
+            .wrap_err("Failed to connect to IBus on D-Bus")?;
 
-        let stdout = String::from_utf8_lossy(&ibus_engine_output.stdout);
-        if ibus_engine_output.status.success() && "fig" == stdout.trim() {
-            Ok(())
-        } else {
-            Err(doctor_fix!({
-                reason: "ibus-daemon engine is not fig",
-                fix: || {
-                    let output = Command::new("ibus").args(&["engine", "fig"]).output()?;
-                    if !output.status.success() {
-                        let stdout = String::from_utf8_lossy(&output.stdout);
-                        let stderr = String::from_utf8_lossy(&output.stderr);
-                        bail!("Setting ibus engine to fig failed:\nstdout: {stdout}\nstderr: {stderr}\n");
+        let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
+            .await
+            .wrap_err("Failed to create IBus proxy")?;
+
+        let error: Option<eyre::Report> = match ibus_proxy.global_engine().await {
+            Ok(engine) => {
+                let value: Option<&zvariant::Value> = engine.downcast_ref();
+                if let Some(zvariant::Value::Structure(s)) = value {
+                    if let Some(zvariant::Value::Str(id)) = s.fields().get(2) {
+                        if id.as_str() == "fig" {
+                            return Ok(());
+                        }
                     }
-                    Ok(())
                 }
-            }))
+                None
+            },
+            Err(err) => Some(err.into()),
+        };
+
+        Err(DoctorError::Error {
+            reason: "ibus engine is not fig".into(),
+            fix: Some(DoctorFix::Async(Box::pin(async move {
+                let ibus_connection = ibus_connection;
+                let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
+                    .await
+                    .wrap_err("Failed to create IBus proxy")?;
+                ibus_proxy.set_global_engine("fig").await?;
+                Ok(())
+            }))),
+            info: vec![],
+            error,
+        })
+    }
+}
+
+struct DesktopCompatibilityCheck;
+
+#[async_trait]
+impl DoctorCheck for DesktopCompatibilityCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Desktop Compatibility Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    #[cfg(target_os = "linux")]
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        use fig_util::{
+            DesktopEnvironment,
+            DisplayServer,
+        };
+
+        let (display_server, desktop_environment) = fig_util::detect_desktop()?;
+
+        match (display_server, desktop_environment) {
+            (DisplayServer::X11, DesktopEnvironment::Gnome | DesktopEnvironment::Plasma | DesktopEnvironment::I3) => {
+                Ok(())
+            },
+            (DisplayServer::Wayland, DesktopEnvironment::Gnome) => Err(doctor_warning!(
+                "Fig's support for GNOME on Wayland is in development. It may not work properly on your system."
+            )),
+            (display_server, desktop_environment) => Err(doctor_error!(
+                "Unsupported desktop configuration {desktop_environment:?} on {display_server:?}"
+            )),
         }
+    }
+
+    #[cfg(not(target_os = "linux"))]
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        Ok(())
+    }
+}
+
+struct WindowsConsoleCheck;
+
+#[async_trait]
+impl DoctorCheck for WindowsConsoleCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Windows Console Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::io::AsRawHandle;
+
+            use winapi::um::consoleapi::GetConsoleMode;
+
+            let mut mode = 0;
+            let stdin_ok = unsafe { GetConsoleMode(std::io::stdin().as_raw_handle() as *mut _, &mut mode) };
+            let stdout_ok = unsafe { GetConsoleMode(std::io::stdout().as_raw_handle() as *mut _, &mut mode) };
+
+            if stdin_ok != 1 || stdout_ok != 1 {
+                return Err(
+                    DoctorError::Error {
+                        reason: "Windows Console APIs are not suppported in this terminal".into(),
+                        info: vec![
+                            "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
+                            "MinTTY and other TTY implementations may not work properly.".into(),
+                            "".into(),
+                            "You can try the following fixes to get Fig working with your shell:".into(),
+                            "- If using Git for Windows, reinstall and choose \"Use default console window\" instead of MinTTY".into(),
+                            "- If using Git for Windows and you really want to use MinTTY, reinstall and check \"Enable experimental support for pseudo consoles\"".into(),
+                            "- Use your shell with a different supported terminal emulator like Windows Terminal.".into(),
+                            "- Launch your terminal emulator with winpty (e.g. winpty mintty). NOTE: this can lead to some UI bugs.".into()
+                        ],
+                        fix: None,
+                        error: None,
+                    }
+                );
+            }
+        }
+        Ok(())
     }
 }
 
@@ -1938,6 +2117,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &LocalBinPathCheck {},
                 #[cfg(target_os = "macos")]
                 &FigBinPathCheck {},
+                #[cfg(target_os = "windows")]
+                &WindowsConsoleCheck {},
                 &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},
@@ -1988,6 +2169,20 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             .await?;
         }
 
+        #[cfg(target_os = "linux")]
+        {
+            use super::diagnostics::get_diagnostics;
+
+            run_checks_with_context(
+                format!("Let's check {}...", "fig diagnostic".bold()),
+                vec![&AutocompleteActiveCheck],
+                get_diagnostics,
+                config,
+                &mut spinner,
+            )
+            .await?;
+        }
+
         run_checks_with_context(
             "Let's check your terminal integrations...",
             vec![
@@ -2007,7 +2202,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             run_checks(
                 "Let's check Linux integrations".into(),
-                vec![&IbusCheck {}],
+                vec![&IBusEnvCheck {}, &IBusCheck {}, &DesktopCompatibilityCheck],
                 config,
                 &mut spinner,
             )

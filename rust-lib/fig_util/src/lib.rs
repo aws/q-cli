@@ -14,6 +14,12 @@ pub use open::{
 };
 pub use process_info::get_parent_process_exe;
 pub use shell::Shell;
+#[cfg(target_os = "linux")]
+pub use system_info::{
+    detect_desktop,
+    DesktopEnvironment,
+    DisplayServer,
+};
 pub use system_info::{
     get_arch,
     get_platform,

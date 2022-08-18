@@ -11,26 +11,37 @@ use notify::{
     RecursiveMode,
     Watcher,
 };
+use once_cell::sync::Lazy;
+use parking_lot::Mutex;
+use serde_json::{
+    Map,
+    Value,
+};
 use tokio::fs::read_to_string;
 use tracing::{
     error,
-    info,
     trace,
 };
 
 use crate::notification::NotificationsState;
 use crate::EventLoopProxy;
 
+static SETTINGS: Lazy<Mutex<Map<String, Value>>> =
+    Lazy::new(|| Mutex::new(fig_settings::settings::get_map().unwrap_or_default()));
+
+static STATE: Lazy<Mutex<Map<String, Value>>> =
+    Lazy::new(|| Mutex::new(fig_settings::state::get_map().unwrap_or_default()));
+
 pub async fn settings_listener(notifications_state: Arc<NotificationsState>, proxy: EventLoopProxy) {
-    let (tx, mut rx) = tokio::sync::mpsc::channel(1);
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     let mut watcher = notify::recommended_watcher(move |res| match res {
         Ok(event) => {
-            if let Err(err) = tx.blocking_send(event) {
-                error!("failed to send notify event: {err}")
+            if let Err(err) = tx.send(event) {
+                error!(%err, "failed to send notify event")
             }
         },
-        Err(err) => error!("notify watcher: {err:?}"),
+        Err(err) => error!(%err, "notify watcher"),
     })
     .unwrap();
 
@@ -48,7 +59,7 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
                     Some(settings_path)
                 },
                 Err(err) => {
-                    error!("failed to watch settings dir: {err}");
+                    error!(%err, "failed to watch settings dir");
                     None
                 },
             },
@@ -71,7 +82,7 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
                     Some(state_path)
                 },
                 Err(err) => {
-                    error!("failed to watch state dir: {err}");
+                    error!(%err, "failed to watch state dir");
                     None
                 },
             },
@@ -89,18 +100,26 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
     tokio::spawn(async move {
         let _watcher = watcher;
         while let Some(event) = rx.recv().await {
-            info!("event: {event:?}");
+            trace!(?event, "Settings event");
 
             if let Some(ref settings_path) = settings_path {
                 if event.paths.contains(settings_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
+                        let settings_str = read_to_string(settings_path).await.ok();
+
+                        if let Some(settings_str) = &settings_str {
+                            if let Ok(settings_map) = serde_json::from_str(settings_str) {
+                                *SETTINGS.lock() = settings_map;
+                            }
+                        }
+
                         notifications_state
                             .send_notification(
                                 &NotificationType::NotifyOnSettingsChange,
                                 fig_proto::fig::Notification {
                                     r#type: Some(NotificationEnum::SettingsChangedNotification(
                                         SettingsChangedNotification {
-                                            json_blob: read_to_string(settings_path).await.ok(),
+                                            json_blob: settings_str,
                                         },
                                     )),
                                 },
@@ -115,14 +134,20 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
             if let Some(ref state_path) = state_path {
                 if event.paths.contains(state_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
+                        let state_str = read_to_string(state_path).await.ok();
+
+                        if let Some(state_str) = &state_str {
+                            if let Ok(state_map) = serde_json::from_str(state_str) {
+                                *STATE.lock() = state_map;
+                            }
+                        }
+
                         notifications_state
                             .send_notification(
                                 &NotificationType::NotifyOnLocalStateChanged,
                                 fig_proto::fig::Notification {
                                     r#type: Some(NotificationEnum::LocalStateChangedNotification(
-                                        LocalStateChangedNotification {
-                                            json_blob: read_to_string(state_path).await.ok(),
-                                        },
+                                        LocalStateChangedNotification { json_blob: state_str },
                                     )),
                                 },
                                 &proxy,

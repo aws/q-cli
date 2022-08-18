@@ -18,6 +18,10 @@ impl NativeState {
     pub fn handle(&self, _event: NativeEvent) -> Result<()> {
         Ok(())
     }
+
+    pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
+        None
+    }
 }
 
 pub async fn init(_proxy: EventLoopProxy, _native_state: Arc<NativeState>) -> Result<()> {
@@ -31,4 +35,8 @@ pub mod icons {
     pub fn lookup(name: &str) -> Option<ProcessedAsset> {
         None
     }
+}
+
+pub const fn autocomplete_active() -> bool {
+    true
 }

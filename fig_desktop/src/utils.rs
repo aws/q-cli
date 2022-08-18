@@ -11,11 +11,6 @@ use serde::{
     Deserialize,
     Serialize,
 };
-#[cfg(not(target_os = "linux"))]
-use tracing::{
-    error,
-    info,
-};
 
 pub fn resolve_filepath<'a>(file_path: &'a FilePath) -> Cow<'a, Utf8Path> {
     let convert = |path: &'a str| -> Cow<str> {
@@ -87,6 +82,10 @@ pub async fn update_check() {
 #[cfg(windows)]
 pub async fn update_check() {
     use std::os::windows::process::CommandExt;
+    use tracing::{
+        error,
+        info,
+    };
 
     let installer = directories::fig_data_dir().unwrap().join("fig_installer.exe");
 
@@ -98,6 +97,7 @@ pub async fn update_check() {
     }
 
     info!("Checking for updates...");
+
     match fig_update::check_for_updates(env!("CARGO_PKG_VERSION")).await {
         Ok(Some(package)) => {
             info!("Updating Fig...");

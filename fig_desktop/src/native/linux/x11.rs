@@ -1,7 +1,6 @@
-use std::borrow::Cow;
+use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
-use once_cell::sync::Lazy;
 use tracing::{
     debug,
     error,
@@ -13,32 +12,36 @@ use x11rb::properties::WmClass;
 use x11rb::protocol::xproto::{
     change_window_attributes,
     get_atom_name,
+    get_geometry,
     get_input_focus,
     get_property,
+    query_tree,
     AtomEnum,
     ChangeWindowAttributesAux,
     EventMask,
+    GetGeometryReply,
     Property,
     PropertyNotifyEvent,
+    Window,
 };
 use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
-use super::NativeState;
+use super::integrations::WM_CLASS_WHITELIST;
+use super::{
+    NativeState,
+    WM_REVICED_DATA,
+};
 use crate::event::WindowEvent;
-use crate::native::WindowData;
+use crate::native::{
+    WindowData,
+    WindowGeometry,
+};
 use crate::{
     Event,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
-
-static WM_CLASS_WHITELSIT: Lazy<Vec<Cow<'static, str>>> = Lazy::new(|| {
-    fig_util::terminal::LINUX_TERMINALS
-        .iter()
-        .filter_map(|t| t.wm_class())
-        .collect()
-});
 
 mod atoms {
     use once_cell::sync::OnceCell;
@@ -98,6 +101,7 @@ fn handle_property_event(
     proxy: &EventLoopProxy,
     event: PropertyNotifyEvent,
 ) -> anyhow::Result<()> {
+    WM_REVICED_DATA.store(true, Ordering::Relaxed);
     let PropertyNotifyEvent { atom, state, .. } = event;
     if state == Property::NEW_VALUE {
         // TODO(mia): cache this
@@ -130,10 +134,18 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
 
     let wm_class = WmClass::get(conn, focus_window)?.reply();
 
+    let window_reply = window_geometry(conn, focus_window);
+
     let old_window_data = native_state.active_window.lock().replace(WindowData {
         id: focus_window,
         class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
         instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
+        window_geometry: window_reply.ok().map(|window_reply| WindowGeometry {
+            x: window_reply.x as i32,
+            y: window_reply.y as i32,
+            width: window_reply.width as i32,
+            height: window_reply.height as i32,
+        }),
     });
 
     let wm_class = match wm_class {
@@ -146,7 +158,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         },
     };
 
-    info!("focus changed to {}", wm_class.escape_ascii());
+    debug!("focus changed to {}", wm_class.escape_ascii());
 
     if wm_class == b"Fig_desktop" {
         // get wm_role
@@ -169,6 +181,8 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         return Ok(());
     }
 
+    info!("Not autocomplete");
+
     if let Some(old_window_data) = old_window_data {
         if old_window_data.id != focus_window {
             hide()?;
@@ -176,33 +190,31 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         }
     }
 
-    if !WM_CLASS_WHITELSIT.iter().any(|w| w.as_bytes() == wm_class) {
+    if !WM_CLASS_WHITELIST.iter().any(|w| w.as_bytes() == wm_class) {
         // hide if not a whitelisted wm class
         hide()?;
         return Ok(());
     }
 
+    info!("Not whitelisted");
+
     // TODO(mia): get the geometry and subscribe to changes
 
-    // let mut frame = window;
-    // let query = query_tree(conn, window)?.reply()?;
-    // let root = query.root;
-    // let mut parent = query.parent;
-
-    // while parent != root {
-    //     frame = parent;
-    //     parent = query_tree(conn, frame)?.reply()?.parent;
-    // }
-
-    // let geometry = get_geometry(conn, frame)?.reply()?;
-
-    // proxy.send_event(FigEvent::WindowEvent {
-    //    fig_id: AUTOCOMPLETE_ID.clone(),
-    //    window_event: FigWindowEvent::Reposition {
-    //        x: geometry.x as i32,
-    //        y: geometry.y as i32,
-    //    },
-    //})?;
-
     Ok(())
+}
+
+fn window_geometry(connection: &RustConnection, window: Window) -> anyhow::Result<GetGeometryReply> {
+    let mut frame = window;
+    let query = query_tree(connection, window)?.reply()?;
+    let root = query.root;
+    let mut parent = query.parent;
+
+    while parent != root {
+        frame = parent;
+        parent = query_tree(connection, frame)?.reply()?.parent;
+    }
+
+    let geometry = get_geometry(connection, frame)?.reply()?;
+
+    Ok(geometry)
 }

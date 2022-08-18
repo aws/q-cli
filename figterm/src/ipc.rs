@@ -36,6 +36,7 @@ use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
     shell_state_to_context,
+    MainLoopEvent,
     EXECUTE_ON_NEW_CMD,
     EXPECTED_BUFFER,
     INSERTION_LOCKED_AT,
@@ -55,23 +56,41 @@ pub async fn remove_socket(session_id: impl Display) -> Result<()> {
 }
 
 /// Spawn a thread to send events to Fig desktop app
-pub async fn spawn_outgoing_sender() -> Result<Sender<fig_proto::local::LocalMessage>> {
+pub async fn spawn_outgoing_sender(
+    main_loop_sender: Sender<MainLoopEvent>,
+) -> Result<Sender<fig_proto::local::LocalMessage>> {
     trace!("Spawning outgoing sender");
     let (outgoing_tx, outgoing_rx) = unbounded::<fig_proto::local::LocalMessage>();
     let socket = directories::fig_socket_path()?;
 
     tokio::spawn(async move {
+        let unlock_interceptor = || {
+            main_loop_sender
+                .send(MainLoopEvent::Insert {
+                    insert: Vec::new(),
+                    unlock: true,
+                })
+                .unwrap();
+        };
+
         while let Ok(message) = outgoing_rx.recv_async().await {
             match fig_ipc::connect_timeout(&socket, Duration::from_secs(1)).await {
                 Ok(mut unix_stream) => match fig_ipc::send_message(&mut unix_stream, message).await {
                     Ok(()) => {
-                        if let Err(e) = unix_stream.flush().await {
-                            error!("Failed to flush socket: {e}");
+                        if let Err(err) = unix_stream.flush().await {
+                            error!(%err, "Failed to flush socket");
+                            unlock_interceptor();
                         }
                     },
-                    Err(e) => error!("Failed to send message: {e}"),
+                    Err(err) => {
+                        error!(%err, "Failed to send message");
+                        unlock_interceptor();
+                    },
                 },
-                Err(e) => error!("Error connecting to socket: {e}"),
+                Err(err) => {
+                    error!(%err, "Error connecting to socket");
+                    unlock_interceptor();
+                },
             }
         }
     });

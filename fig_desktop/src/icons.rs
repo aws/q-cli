@@ -128,7 +128,7 @@ fn build_default() -> Response {
 }
 
 pub fn handle(request: &Request) -> anyhow::Result<Response> {
-    debug!("request for '{}' over fig protocol", request.uri());
+    debug!(uri = request.uri(), "Fig protocol request");
     let url = Url::parse(request.uri())?;
     let domain = url.domain();
     // rust really doesn't like us not specifying RandomState here

@@ -1,5 +1,6 @@
 use std::io::Cursor;
 use std::path::Path;
+use std::sync::atomic::Ordering;
 
 use anyhow::{
     anyhow,
@@ -27,6 +28,7 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::native::linux::WM_REVICED_DATA;
 use crate::utils::Rect;
 use crate::{
     EventLoopProxy,
@@ -150,6 +152,7 @@ pub async fn handle_sway(proxy: EventLoopProxy, socket: impl AsRef<Path>) {
                                 let app_id = container.get("app_id").and_then(|x| x.as_str());
 
                                 if let Some("org.kde.konsole") = app_id {
+                                    WM_REVICED_DATA.store(true, Ordering::Relaxed);
                                     proxy
                                         .send_event(Event::WindowEvent {
                                             window_id: AUTOCOMPLETE_ID.clone(),

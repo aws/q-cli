@@ -32,9 +32,10 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
+use crate::native::NativeState;
 use crate::notification::NotificationsState;
 use crate::utils::truncate_string;
-use crate::window::WindowId;
+use crate::webview::window::WindowId;
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -66,6 +67,7 @@ impl RequestResultImpl for RequestResult {
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 pub async fn api_request(
     window_id: WindowId,
     client_originated_message_b64: String,
@@ -73,6 +75,7 @@ pub async fn api_request(
     figterm_state: &FigtermState,
     intercept_state: &InterceptState,
     notifications_state: &NotificationsState,
+    native_state: &NativeState,
     proxy: &EventLoopProxy,
 ) {
     let data = match base64::decode(client_originated_message_b64) {
@@ -174,7 +177,9 @@ pub async fn api_request(
                     telemetry::handle_aggregate_session_metric_action_request(request, figterm_state).await
                 },
                 // window
-                PositionWindowRequest(request) => window::position_window(request, window_id.clone(), proxy).await,
+                PositionWindowRequest(request) => {
+                    window::position_window(request, window_id.clone(), native_state, proxy).await
+                },
                 WindowFocusRequest(request) => window::focus(request, window_id.clone(), proxy).await,
                 // onboarding
                 OnboardingRequest(request) => onboarding::onboarding(request).await,

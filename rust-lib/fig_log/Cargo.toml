@@ -13,7 +13,7 @@ console = ["console-subscriber"]
 [dependencies]
 console-subscriber = { version = "0.1.7", optional = true, features = ["parking_lot"] }
 fig_util = { path = "../fig_util" }
-once_cell = "1.13.0"
+once_cell = "1.13.1"
 thiserror = "1.0.32"
 tracing = "0.1.36"
 tracing-appender = "0.2.2"

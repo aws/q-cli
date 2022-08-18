@@ -9,34 +9,24 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 pub async fn run_install() {
     tokio::spawn(async {
         if let Err(err) = fig_install::themes::clone_or_update().await {
-            error!("Failed to clone or update themes: {err}");
+            error!(%err, "Failed to clone or update themes");
         }
     });
 
     tokio::spawn(async {
         if let Err(err) = fig_install::plugins::fetch_installed_plugins(false).await {
-            error!("Failed to fetch installed plugins: {err}");
+            error!(%err, "Failed to fetch installed plugins");
         }
     });
 
     tokio::spawn(async {
         if let Err(err) = fig_install::dotfiles::download_and_notify(false).await {
-            error!("Failed to download installed plugins: {err}");
-        }
-    });
-
-    #[cfg(target_os = "linux")]
-    tokio::spawn(async {
-        use fig_integrations::Integration;
-        let ibus_integration = fig_integrations::ibus::IbusIntegration {};
-        if let Err(err) = ibus_integration.install(None) {
-            error!("Failed to enable IBus Integration: {err}");
+            error!(%err, "Failed to download installed plugins");
         }
     });
 
     if should_run_install_script() {
         // Add any items that are only once per version
-
         tokio::spawn(async {
             fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::UpdatedApp,
@@ -46,11 +36,75 @@ pub async fn run_install() {
             .await
             .ok()
         });
+
+        #[cfg(target_os = "linux")]
+        tokio::spawn(async {
+            use tokio::process::Command;
+            match Command::new("fig").args(&["_", "install", "--daemon"]).output().await {
+                Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
+                    error!(?status, stderr = %String::from_utf8_lossy(&stderr), "Failed to init fig daemon");
+                },
+                Err(err) => error!(%err, "Failed to init fig daemon"),
+                Ok(_) => {},
+            }
+        });
     }
 
     if let Err(err) = set_previous_version(current_version()) {
-        error!("Failed to set previous version: {err}");
+        error!(%err, "Failed to set previous version");
     }
+
+    #[cfg(target_os = "linux")]
+    tokio::spawn(async {
+        match dbus::ibus::ibus_connect().await {
+            Ok(ibus_connection) => match dbus::ibus::ibus_proxy(&ibus_connection).await {
+                Ok(ibus_proxy) => {
+                    // TODO(grant): Write cache via dbus ?
+                    match ibus_proxy.set_global_engine("fig").await {
+                        Ok(()) => tracing::debug!("Set IBus engine to 'fig'"),
+                        Err(err) => error!(%err, "Failed to set global engine 'fig'"),
+                    }
+                },
+                Err(err) => error!(%err, "IBus failed to proxy"),
+            },
+            Err(err) => error!(%err, "IBus failed to connect"),
+        }
+    });
+
+    #[cfg(target_os = "linux")]
+    // todo(mia): make this part of onboarding
+    tokio::spawn(async {
+        use tokio::process::Command;
+        match Command::new("sh")
+            .arg("-c")
+            .arg("ps x | grep gnome-shell | wc -l")
+            .output()
+            .await
+        {
+            Ok(output) => {
+                match String::from_utf8_lossy(&output.stdout)
+                    .trim_matches('\n')
+                    .parse::<u32>()
+                {
+                    Ok(num) => {
+                        if num > 1 {
+                            match dbus::gnome_shell::has_extension().await {
+                                Ok(true) => tracing::debug!("shell extension already installed"),
+                                Ok(false) => {
+                                    if let Err(err) = dbus::gnome_shell::install_extension().await {
+                                        error!(%err, "Failed to install shell extension")
+                                    }
+                                },
+                                Err(err) => error!(%err, "Failed to check shell extensions"),
+                            }
+                        }
+                    },
+                    Err(err) => error!(%err, "Failed parsing process list"),
+                }
+            },
+            Err(err) => error!(%err, "Failed getting process list"),
+        }
+    });
 }
 
 fn should_run_install_script() -> bool {

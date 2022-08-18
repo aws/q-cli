@@ -91,6 +91,7 @@ use crate::input::{
     KeyCode,
     KeyCodeEncodeModes,
     KeyboardEncoding,
+    Modifiers,
 };
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
@@ -117,6 +118,10 @@ static INSERT_ON_NEW_CMD: Mutex<Option<String>> = Mutex::new(None);
 static EXECUTE_ON_NEW_CMD: Mutex<bool> = Mutex::new(false);
 static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
+
+pub enum MainLoopEvent {
+    Insert { insert: Vec<u8>, unlock: bool },
+}
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     let terminal = FigTerminal::parent_terminal().map(|s| s.to_string());
@@ -392,9 +397,11 @@ fn figterm_main() -> Result<()> {
         })
         .build()?;
     let runtime_result = runtime.block_on(async {
+        let (main_loop_tx, main_loop_rx) = flume::bounded::<MainLoopEvent>(16);
+
         let history_sender = history::spawn_history_task().await;
         // Spawn thread to handle outgoing data to main Fig app
-        let outgoing_sender = spawn_outgoing_sender().await?;
+        let outgoing_sender = spawn_outgoing_sender(main_loop_tx.clone()).await?;
 
         // Spawn thread to handle incoming data
         let incoming_receiver = spawn_incoming_receiver(&term_session_id).await?;
@@ -405,8 +412,7 @@ fn figterm_main() -> Result<()> {
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
 
-        let (event_sender_tx, event_sender_rx) = flume::bounded(16);
-        let event_sender = EventHandler::new(outgoing_sender.clone(), history_sender, event_sender_tx);
+        let event_sender = EventHandler::new(outgoing_sender.clone(), history_sender, main_loop_tx);
 
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
@@ -509,13 +515,19 @@ fn figterm_main() -> Result<()> {
                                             let s = raw.clone()
                                                 .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                 .unwrap_or_default();
-                                            let hook = fig_proto::hooks::new_intercepted_key_hook(None, action.to_string(), s);
+                                            let context = shell_state_to_context(term.shell_state());
+                                            let hook = fig_proto::hooks::new_intercepted_key_hook(context, action.to_string(), s);
                                             outgoing_sender.send(hook_to_message(hook)).unwrap();
 
                                             if event.key == KeyCode::Escape {
                                                 key_interceptor.reset();
                                             }
                                         } else if let Some(bytes) = raw {
+                                            if (event.key == KeyCode::Char('c') || event.key == KeyCode::Char('d'))
+                                                && event.modifiers == Modifiers::CTRL {
+                                                key_interceptor.reset();
+                                            }
+
                                             write_buffer.extend(&bytes);
                                         }
                                     }
@@ -565,10 +577,17 @@ fn figterm_main() -> Result<()> {
                     };
                     input_res
                 }
-                res = event_sender_rx.recv_async() => {
+                res = main_loop_rx.recv_async() => {
                     match res {
-                        Ok(b) => {
-                            master.write(&b).await?;
+                        Ok(event) => {
+                            match event {
+                                MainLoopEvent::Insert { insert, unlock } => {
+                                    master.write(&insert).await?;
+                                    if unlock {
+                                        key_interceptor.reset();
+                                    }
+                                },
+                            }
                         }
                         Err(err) => warn!("Failed to recv: {err}"),
                     };

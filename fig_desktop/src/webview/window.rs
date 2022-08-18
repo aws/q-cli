@@ -17,6 +17,7 @@ use crate::figterm::{
     FigTermCommand,
     FigtermState,
 };
+use crate::native;
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -91,9 +92,10 @@ impl WindowState {
                 self.webview.window().set_inner_size(LogicalSize { width, height });
             },
             WindowEvent::Hide => {
-                if let Some(session) = figterm_state.most_recent_session() {
+                for session in figterm_state.sessions.iter() {
+                    let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::InterceptClear).await;
+                        let _ = sender.send(FigTermCommand::InterceptClear);
                     });
                 }
                 self.webview.window().set_visible(false);
@@ -110,15 +112,18 @@ impl WindowState {
                 self.webview.window().set_resizable(false);
             },
             WindowEvent::HideSoft => {
-                if let Some(session) = figterm_state.most_recent_session() {
+                for session in figterm_state.sessions.iter() {
+                    let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::InterceptClear).await;
+                        let _ = sender.send(FigTermCommand::InterceptClear);
                     });
                 }
             },
             WindowEvent::Show => {
-                self.webview.window().set_visible(true);
-                self.webview.window().set_always_on_top(true);
+                if native::autocomplete_active() {
+                    self.webview.window().set_visible(true);
+                    self.webview.window().set_always_on_top(true);
+                }
             },
             WindowEvent::Navigate { url } => {
                 self.webview

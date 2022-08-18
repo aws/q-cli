@@ -172,6 +172,8 @@ jobs:
           command: |
             sudo apt install -y curl git jq python3-pip
             python3 -m pip install semver
+      - rust/install:
+          version: 1.63.0
       - checkout-desktop:
           checkout: << pipeline.parameters.checkout >>
       - run:
@@ -201,6 +203,9 @@ jobs:
             cd desktop
             sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" fig_desktop/Cargo.toml
             sed -i "0,/^Version=\"[^\"]*\"\$/s//Version=\"$NEW_VERSION\"/" fig.wxi
+      - run:
+          name: Update lockfile
+          command: cd desktop && cargo update -p fig_desktop
       - run:
           name: Push tagged release
           command: |

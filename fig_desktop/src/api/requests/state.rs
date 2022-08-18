@@ -17,7 +17,7 @@ pub async fn get(request: GetLocalStateRequest) -> RequestResult {
     let value = match request.key {
         Some(key) => state::get_value(&key)
             .map_err(|_| anyhow!("Failed getting settings value for {key}"))?
-            .ok_or_else(|| anyhow!("No value for key"))?,
+            .ok_or_else(|| anyhow!("No value for key '{key}'"))?,
         None => state::local_settings()
             .map(|s| Value::Object(s.inner))
             .map_err(|_| anyhow!("Failed getting settings"))?,

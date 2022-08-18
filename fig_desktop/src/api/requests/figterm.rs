@@ -38,7 +38,6 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
                 session
                     .sender
                     .send(figterm_command)
-                    .await
                     .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
                 return RequestResult::success();
             },
@@ -50,7 +49,6 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
         session
             .sender
             .send(figterm_command)
-            .await
             .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
     } else {
         return RequestResult::error("No figterm sessions");
