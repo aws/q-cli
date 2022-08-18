@@ -1724,11 +1724,11 @@ impl DoctorCheck for IBusCheck {
             }}));
         }
 
-        let ibus_connection = ibus::ibus_connect()
+        let ibus_connection = dbus::ibus::ibus_connect()
             .await
             .wrap_err("Failed to connect to IBus on D-Bus")?;
 
-        let ibus_proxy = ibus::ibus_proxy(&ibus_connection)
+        let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
             .await
             .wrap_err("Failed to create IBus proxy")?;
 
@@ -1751,7 +1751,7 @@ impl DoctorCheck for IBusCheck {
             reason: "ibus engine is not fig".into(),
             fix: Some(DoctorFix::Async(Box::pin(async move {
                 let ibus_connection = ibus_connection;
-                let ibus_proxy = ibus::ibus_proxy(&ibus_connection)
+                let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
                     .await
                     .wrap_err("Failed to create IBus proxy")?;
                 ibus_proxy.set_global_engine("fig").await?;
@@ -1799,6 +1799,53 @@ impl DoctorCheck for DesktopCompatibilityCheck {
 
     #[cfg(not(target_os = "linux"))]
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        Ok(())
+    }
+}
+
+struct WindowsConsoleCheck;
+
+#[async_trait]
+impl DoctorCheck for WindowsConsoleCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Windows Console Check".into()
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        DoctorCheckType::NormalCheck
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        #[cfg(target_os = "windows")]
+        {
+            use std::os::windows::io::AsRawHandle;
+
+            use winapi::um::consoleapi::GetConsoleMode;
+
+            let mut mode = 0;
+            let stdin_ok = unsafe { GetConsoleMode(std::io::stdin().as_raw_handle() as *mut _, &mut mode) };
+            let stdout_ok = unsafe { GetConsoleMode(std::io::stdout().as_raw_handle() as *mut _, &mut mode) };
+
+            if stdin_ok != 1 || stdout_ok != 1 {
+                return Err(
+                    DoctorError::Error {
+                        reason: "Windows Console APIs are not suppported in this terminal".into(),
+                        info: vec![
+                            "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
+                            "MinTTY and other TTY implementations may not work properly.".into(),
+                            "".into(),
+                            "You can try the following fixes to get Fig working with your shell:".into(),
+                            "- If using Git for Windows, reinstall and choose \"Use default console window\" instead of MinTTY".into(),
+                            "- If using Git for Windows and you really want to use MinTTY, reinstall and check \"Enable experimental support for pseudo consoles\"".into(),
+                            "- Use your shell with a different supported terminal emulator like Windows Terminal.".into(),
+                            "- Launch your terminal emulator with winpty (e.g. winpty mintty). NOTE: this can lead to some UI bugs.".into()
+                        ],
+                        fix: None,
+                        error: None,
+                    }
+                );
+            }
+        }
         Ok(())
     }
 }
@@ -2070,6 +2117,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &LocalBinPathCheck {},
                 #[cfg(target_os = "macos")]
                 &FigBinPathCheck {},
+                #[cfg(target_os = "windows")]
+                &WindowsConsoleCheck {},
                 &FigIntegrationsCheck {},
                 &AppRunningCheck {},
                 &FigSocketCheck {},

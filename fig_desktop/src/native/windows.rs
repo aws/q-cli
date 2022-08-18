@@ -96,7 +96,7 @@ static UNMANAGED: Lazy<Mutex<Unmanaged>> = Lazy::new(|| {
 pub struct NativeState {
     proxy: EventLoopProxy,
     automation: Automation,
-    _focus_changed_event_handler: IUIAutomationFocusChangedEventHandler,
+    _focus_changed_event_handler: AutomationEventHandler,
 }
 
 impl NativeState {
@@ -118,7 +118,7 @@ impl NativeState {
             Self {
                 proxy,
                 automation,
-                _focus_changed_event_handler: focus_changed_event_handler,
+                _focus_changed_event_handler: AutomationEventHandler(focus_changed_event_handler),
             }
         }
     }
@@ -178,6 +178,10 @@ impl NativeState {
 
         Err(anyhow!("Failed to acquire caret position"))
     }
+
+    pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
+        None
+    }
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -198,6 +202,12 @@ struct Unmanaged {
 struct Automation(IUIAutomation);
 unsafe impl Sync for Automation {}
 unsafe impl Send for Automation {}
+
+#[derive(Debug)]
+#[repr(C)]
+struct AutomationEventHandler(IUIAutomationFocusChangedEventHandler);
+unsafe impl Sync for AutomationEventHandler {}
+unsafe impl Send for AutomationEventHandler {}
 
 #[derive(Debug)]
 #[implement(IUIAutomationFocusChangedEventHandler)]

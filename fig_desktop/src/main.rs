@@ -13,7 +13,6 @@ mod settings;
 mod tray;
 mod utils;
 mod webview;
-mod window;
 
 use std::iter::empty;
 use std::time::Duration;

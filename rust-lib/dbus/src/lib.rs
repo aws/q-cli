@@ -1,7 +1,7 @@
 #[cfg(target_os = "linux")]
-mod ibus;
+mod dbus;
 #[cfg(target_os = "linux")]
-pub use ibus::*;
+pub use crate::dbus::*;
 
 #[cfg(not(target_os = "linux"))]
 pub fn _dummy() {}

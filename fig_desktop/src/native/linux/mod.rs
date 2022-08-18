@@ -16,6 +16,7 @@ use tracing::{
     info,
 };
 
+use super::WindowGeometry;
 use crate::event::NativeEvent;
 use crate::EventLoopProxy;
 
@@ -26,6 +27,7 @@ pub struct WindowData {
     pub id: x11rb::protocol::xproto::Window,
     pub class: Option<Vec<u8>>,
     pub instance: Option<Vec<u8>>,
+    pub window_geometry: Option<WindowGeometry>,
 }
 
 #[derive(Debug)]
@@ -42,6 +44,11 @@ impl NativeState {
 
     pub fn handle(&self, _event: NativeEvent) -> Result<()> {
         Ok(())
+    }
+
+    pub fn get_window_geometry(&self) -> Option<WindowGeometry> {
+        let active_window = self.active_window.lock();
+        active_window.as_ref().and_then(|window| window.window_geometry.clone())
     }
 }
 

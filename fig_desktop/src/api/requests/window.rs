@@ -14,22 +14,37 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::window::WindowId;
+use crate::native::NativeState;
+use crate::webview::window::WindowId;
 use crate::EventLoopProxy;
 
 /// TODO(vikram): implement is_above, is_clipped and corresponding window behavior
 pub async fn position_window(
     request: PositionWindowRequest,
     window_id: WindowId,
+    native_state: &NativeState,
     proxy: &EventLoopProxy,
 ) -> RequestResult {
     if request.dryrun.unwrap_or(false) {
-        return RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
-            PositionWindowResponse {
-                is_above: Some(false),
-                is_clipped: Some(false),
+        match native_state.get_window_geometry() {
+            Some(_) => {
+                // TODO(grant): do something with geometry
+                return RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
+                    PositionWindowResponse {
+                        is_above: Some(false),
+                        is_clipped: Some(false),
+                    },
+                )));
             },
-        )));
+            None => {
+                return RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
+                    PositionWindowResponse {
+                        is_above: Some(false),
+                        is_clipped: Some(false),
+                    },
+                )));
+            },
+        }
     }
 
     let anchor = request.anchor.expect("Missing anchor field");
@@ -63,7 +78,7 @@ pub async fn position_window(
             proxy
                 .send_event(Event::WindowEvent {
                     window_id,
-                    window_event: WindowEvent::HideSoft,
+                    window_event: WindowEvent::Hide,
                 })
                 .unwrap();
         },

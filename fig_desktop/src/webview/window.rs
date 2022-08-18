@@ -92,9 +92,10 @@ impl WindowState {
                 self.webview.window().set_inner_size(LogicalSize { width, height });
             },
             WindowEvent::Hide => {
-                if let Some(session) = figterm_state.most_recent_session() {
+                for session in figterm_state.sessions.iter() {
+                    let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::InterceptClear);
+                        let _ = sender.send(FigTermCommand::InterceptClear);
                     });
                 }
                 self.webview.window().set_visible(false);
@@ -111,9 +112,10 @@ impl WindowState {
                 self.webview.window().set_resizable(false);
             },
             WindowEvent::HideSoft => {
-                if let Some(session) = figterm_state.most_recent_session() {
+                for session in figterm_state.sessions.iter() {
+                    let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = session.sender.send(FigTermCommand::InterceptClear);
+                        let _ = sender.send(FigTermCommand::InterceptClear);
                     });
                 }
             },
