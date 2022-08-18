@@ -410,7 +410,7 @@ pub fn build_autocomplete(
         .with_web_context(web_context)
         .with_url(&fig_settings::settings::get_string_or(
             "developer.autocomplete.host",
-            "https://app.withfig.com/autocomplete/v9".into(),
+            "https://fig-autocomplete.vercel.app/".into(),
         ))?
         .with_ipc_handler(move |_window, payload| {
             proxy
@@ -430,6 +430,7 @@ pub fn build_autocomplete(
             r"^staging\.withfig\.com$",
             r"^app\.withfig\.com$",
             r"-withfig\.vercel\.app$",
+            r"^fig-autocomplete\.vercel\.app$",
         ]))
         .with_clipboard(true)
         .build()?;
