@@ -4,6 +4,7 @@ use std::time::Duration;
 use fig_auth::get_token;
 use fig_settings::api_host;
 use once_cell::sync::Lazy;
+pub use reqwest;
 use reqwest::cookie::Cookie;
 use reqwest::header::HeaderMap;
 pub use reqwest::Method;
@@ -14,11 +15,12 @@ use reqwest::{
     StatusCode,
 };
 use serde::de::DeserializeOwned;
-use serde::{Deserialize, Serialize};
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use serde_json::Value;
 use thiserror::Error;
-
-pub use reqwest;
 
 static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
     let danger_accept_invalid_certs = std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some();
