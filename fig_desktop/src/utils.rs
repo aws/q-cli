@@ -5,7 +5,6 @@ use camino::{
     Utf8PathBuf,
 };
 use fig_proto::fig::FilePath;
-use fig_util::directories;
 use serde::{
     Deserialize,
     Serialize,
@@ -87,7 +86,7 @@ pub async fn update_check() {
         info,
     };
 
-    let installer = directories::fig_data_dir().unwrap().join("fig_installer.exe");
+    let installer = fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe");
 
     if installer.exists() {
         if let Err(e) = std::fs::remove_file(&installer) {

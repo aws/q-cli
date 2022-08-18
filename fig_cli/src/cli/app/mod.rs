@@ -149,6 +149,7 @@ impl AppSubcommand {
             AppSubcommand::Onboarding => {
                 cfg_if! {
                     if #[cfg(unix)] {
+                        use std::process::Command;
                         use std::os::unix::process::CommandExt;
 
                         launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
@@ -237,6 +238,8 @@ impl AppSubcommand {
             AppSubcommand::SetPath => {
                 cfg_if! {
                     if #[cfg(unix)] {
+                        use std::process::Command;
+
                         use eyre::WrapErr;
                         use fig_ipc::hook::send_hook_to_socket;
                         use fig_proto::hooks;
