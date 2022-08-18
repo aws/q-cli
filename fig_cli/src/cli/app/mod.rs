@@ -90,7 +90,6 @@ pub async fn quit_fig() -> Result<()> {
 
                 use crate::cli::debug::get_app_info;
 
-
                 if let Ok(info) = get_app_info() {
                     let pid = Regex::new(r"pid = (\S+)")
                         .unwrap()
