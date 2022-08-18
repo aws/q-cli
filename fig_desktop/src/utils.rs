@@ -101,11 +101,10 @@ pub async fn update_check() {
         Ok(Some(package)) => {
             info!("Updating Fig...");
 
-            if let Err(e) = std::process::Command::new("powershell")
-                .args([
-                    "-c",
-                    &format!("wget {} -outfile {}", &package.download, installer.to_string_lossy()),
-                ])
+            let create_no_window = 0x0;
+            if let Err(e) = std::process::Command::new("curl")
+                .creation_flags(create_no_window)
+                .args(["-L", "-s", "-o", &installer.to_string_lossy(), &package.download])
                 .status()
             {
                 error!("Failed to download the newest version of Fig: {e}");
@@ -114,8 +113,8 @@ pub async fn update_check() {
 
             let detached = 0x8;
             match std::process::Command::new(installer.as_os_str())
-                .args(["/upgrade", "/quiet", "/norestart"])
                 .creation_flags(detached)
+                .args(["/upgrade", "/quiet", "/norestart"])
                 .spawn()
             {
                 Ok(_) => std::process::exit(0),

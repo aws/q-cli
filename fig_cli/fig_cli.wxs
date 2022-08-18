@@ -69,55 +69,45 @@
             <ComponentRef Id="InstallFigCLI"/>
         </Feature>
 
-        <!--
         <CustomAction
-            Id="CreateJunction"
-            Execute="immediate"
-            Impersonate="yes"
-            Return="check"
-            Directory="FIGROOT"
-            ExeCommand="cmd /c mklink /J latest $(var.Version)"
+            Id="PrepQuitFig"
+            Property="WixQuietExecCmdLine"
+            Value='"[#fig.exe]" quit'
         />
-        <CustomAction
-            Id="RemoveJunction"
-            Execute="immediate"
-            Impersonate="yes"
-            Return="check"
-            Directory="FIGROOT"
-            ExeCommand="cmd /c rmdir latest /q"
-        />
-        -->
         <CustomAction
             Id="QuitFig"
-            Execute="immediate"
-            Impersonate="yes"
+            BinaryKey="WixCA"
+            DllEntry="WixQuietExec"
             Return="ignore"
-            FileKey="fig.exe"
-            ExeCommand="quit"
+        />
+        <CustomAction
+            Id="PrepInstallIntegrations"
+            Property="WixQuietExecCmdLine"
+            Value='"[#fig.exe]" install --dotfiles --no-confirm'
         />
         <CustomAction
             Id="InstallIntegrations"
-            Execute="immediate"
-            Impersonate="yes"
-            Return="check"
-            FileKey="fig.exe"
-            ExeCommand="install --dotfiles --no-confirm"
+            BinaryKey="WixCA"
+            DllEntry="WixQuietExec"
+        />
+        <CustomAction
+            Id="PrepUninstallIntegrations"
+            Property="WixQuietExecCmdLine"
+            Value='"[#fig.exe]" _ uninstall --dotfiles'
         />
         <CustomAction
             Id="UninstallIntegrations"
-            Execute="immediate"
-            Impersonate="yes"
-            Return="check"
-            FileKey="fig.exe"
-            ExeCommand="_ uninstall --dotfiles"
+            BinaryKey="WixCA"
+            DllEntry="WixQuietExec"
         />
 
         <InstallExecuteSequence>
-            <!--<Custom Action="CreateJunction" Before="InstallInitialize">NOT Installed AND NOT REMOVE</Custom>-->
-            <Custom Action="QuitFig" Before="UninstallIntegrations">REMOVE ~= "ALL"</Custom>
-            <Custom Action="UninstallIntegrations" Before="InstallInitialize">REMOVE ~= "ALL"</Custom>
-            <Custom Action="InstallIntegrations" After="InstallFinalize">NOT Installed AND NOT REMOVE</Custom>
-            <!--<Custom Action="RemoveJunction" After="InstallIntegrations">REMOVE ~= "ALL"</Custom>-->
+            <Custom Action="PrepQuitFig" Before="QuitFig">REMOVE~="ALL"</Custom>
+            <Custom Action="QuitFig" Before="PrepUninstallIntegrations">REMOVE~="ALL"</Custom>
+            <Custom Action="PrepUninstallIntegrations" Before="UninstallIntegrations">REMOVE~="ALL"</Custom>
+            <Custom Action="UninstallIntegrations" Before="InstallInitialize">REMOVE~="ALL"</Custom>
+            <Custom Action="PrepInstallIntegrations" After="InstallFinalize">NOT Installed AND NOT PATCH</Custom>
+            <Custom Action="InstallIntegrations" After="PrepInstallIntegrations">NOT Installed AND NOT PATCH</Custom>
         </InstallExecuteSequence>
     </Product>
 </Wix>
