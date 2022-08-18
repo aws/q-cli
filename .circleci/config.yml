@@ -54,8 +54,8 @@ workflows:
               version: ["36"]
       - archlinux-x86_64:
           requires: [update-version]
-      # - windows:
-      #     requires: [update-version]
+      - windows:
+          requires: [update-version]
       - sentry:
           requires:
             [
@@ -63,7 +63,7 @@ workflows:
               fedora-x86_64,
               ubuntu-aarch64-focal-cli-only,
               archlinux-x86_64,
-              # windows,
+              windows,
             ]
           context:
             - sentry

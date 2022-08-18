@@ -1,11 +1,8 @@
 use std::fmt::Display;
 
 use cfg_if::cfg_if;
+use fig_integrations::get_default_backup_dir;
 use fig_integrations::shell::ShellExt;
-use fig_integrations::{
-    get_default_backup_dir,
-    Integration,
-};
 use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,

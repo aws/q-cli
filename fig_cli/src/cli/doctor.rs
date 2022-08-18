@@ -1818,22 +1818,13 @@ impl DoctorCheck for WindowsConsoleCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         #[cfg(target_os = "windows")]
         {
-            use winapi::um::consoleapi::GetConsoleMode;
             use std::os::windows::io::AsRawHandle;
 
+            use winapi::um::consoleapi::GetConsoleMode;
+
             let mut mode = 0;
-            let stdin_ok = unsafe {
-                GetConsoleMode(
-                    std::io::stdin().as_raw_handle() as *mut _,
-                    &mut mode
-                )
-            };
-            let stdout_ok = unsafe {
-                GetConsoleMode(
-                    std::io::stdout().as_raw_handle() as *mut _,
-                    &mut mode
-                )
-            };
+            let stdin_ok = unsafe { GetConsoleMode(std::io::stdin().as_raw_handle() as *mut _, &mut mode) };
+            let stdout_ok = unsafe { GetConsoleMode(std::io::stdout().as_raw_handle() as *mut _, &mut mode) };
 
             if stdin_ok != 1 || stdout_ok != 1 {
                 return Err(
@@ -2206,7 +2197,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             &mut spinner,
         )
         .await?;
-
 
         #[cfg(target_os = "linux")]
         {
