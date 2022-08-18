@@ -3,12 +3,14 @@
 mod api;
 mod cli;
 mod event;
+// mod figterm;
 mod figterm;
 mod icons;
 mod install;
 mod local_ipc;
 mod native;
 mod notification;
+mod secure_ipc;
 mod settings;
 mod tray;
 mod utils;

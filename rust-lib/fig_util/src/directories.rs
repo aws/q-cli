@@ -1,3 +1,4 @@
+use std::env;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::path::{
@@ -51,24 +52,30 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
-/// Get path to "/var/tmp/fig/$USERNAME/fig.socket"
-pub fn fig_socket_path() -> Result<PathBuf> {
+/// Get path to "/var/tmp/fig/$USERNAME"
+pub fn fig_ephemeral_dir() -> Result<PathBuf> {
+    named_fig_ephemeral_dir(whoami::username())
+}
+
+pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             use std::path::Path;
             use std::process::Command;
 
             if wsl::is_wsl() {
-                Ok(PathBuf::from(String::from_utf8_lossy(
+                let socket_path = PathBuf::from(String::from_utf8_lossy(
                     &Command::new("wslpath").arg(String::from_utf8_lossy(
                         &Command::new("fig.exe").args(["_", "fig-socket-path"]
                     ).output()?.stdout).to_string()
-                ).output()?.stdout).to_string()))
+                ).output()?.stdout).to_string());
+                let dir_path = socket_path.parent()
+                    .and_then(|p| p.parent()).ok_or(DirectoryError::NoHomeDirectory)?;
+                Ok(dir_path.join(name))
             } else {
                 Ok([
                     Path::new("/var/tmp/fig"),
-                    Path::new(&whoami::username()),
-                    Path::new("fig.socket"),
+                    Path::new(&name),
                 ]
                 .into_iter()
                 .collect())
@@ -78,17 +85,35 @@ pub fn fig_socket_path() -> Result<PathBuf> {
 
             Ok([
                 Path::new("/var/tmp/fig"),
-                Path::new(&whoami::username()),
-                Path::new("fig.socket"),
+                Path::new(&name),
             ]
             .into_iter()
             .collect())
         } else if #[cfg(target_os = "windows")] {
-            dirs::data_local_dir().map(|path| path.join("fig").join("fig.socket")).ok_or(DirectoryError::NoHomeDirectory)
+            Ok(dirs::data_local_dir()
+                .ok_or(DirectoryError::NoHomeDirectory)?
+                .join("fig")
+                .join(name))
         } else {
             compile_error!("Unsupported platform");
         }
     }
+}
+
+pub fn fig_socket_path() -> Result<PathBuf> {
+    fig_ephemeral_dir().map(|x| x.join("fig.socket"))
+}
+
+pub fn secure_socket_path() -> Result<PathBuf> {
+    if let Ok(parent) = env::var("FIG_PARENT") {
+        parent_socket_path(whoami::username(), &parent)
+    } else {
+        fig_ephemeral_dir().map(|x| x.join("secure.socket"))
+    }
+}
+
+pub fn parent_socket_path(user_name: String, parent: &String) -> Result<PathBuf> {
+    named_fig_ephemeral_dir(user_name).map(|x| x.join(format!("parent/{parent}.socket")))
 }
 
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {

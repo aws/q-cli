@@ -60,11 +60,11 @@ use spinners::{
     Spinner,
     Spinners,
 };
-use system_socket::SystemStream;
 use tokio::io::{
     AsyncBufReadExt,
     AsyncWriteExt,
 };
+use tokio::net::UnixStream;
 
 use super::app::restart_fig;
 use crate::cli::diagnostics::{
@@ -596,7 +596,7 @@ impl DoctorCheck for FigtermSocketCheck {
         // Try sending an insert event and ensure it inserts what is expected
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
 
-        let write_handle: tokio::task::JoinHandle<Result<SystemStream, DoctorError>> = tokio::spawn(async move {
+        let write_handle: tokio::task::JoinHandle<Result<UnixStream, DoctorError>> = tokio::spawn(async move {
             conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 

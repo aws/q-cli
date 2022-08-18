@@ -10,128 +10,61 @@ import Foundation
 import FigAPIBindings
 
 class FigTerm {
+  static let insertedTextNotification: NSNotification.Name = Notification.Name("insertedTextNotification")
+  fileprivate static let figtermManagesInsertionLockInVersion = 8
+
   // swiftlint:disable identifier_name
   static let lineAcceptedInKeystrokeBufferNotification: NSNotification.Name =
     .init("lineAcceptedInXTermBufferNotification")
-
-  static let defaultPath = URL(fileURLWithPath: "/tmp/figterm-input.socket")
 
   static func path(for sessionId: SessionId) -> String {
     // We aren't using NSTemporaryDirectory because length of socket path is capped at 104 characters
     return "/tmp/figterm-\(sessionId).socket"
   }
 
-  static func updateBuffer(_ update: Fig_TextUpdate,
-                           into session: SessionId,
-                           wrapWithFigMessage: Bool = true,
-                           figtermManagesInsertionLock: Bool = true) throws {
-
-    try connect(to: session) { socket in
-
-      if !figtermManagesInsertionLock {
-        ShellInsertionProvider.insertLock()
+  static func updateBuffer(_ update: Fig_TextUpdate, into session: SessionId) throws {
+    let insertCommand = Figterm_InsertTextCommand.with({ insert in
+      // Optional proto fields are not Swift optionals: https://github.com/apple/swift-protobuf/issues/644
+      if update.hasDeletion {
+        insert.deletion = UInt64(update.deletion)
       }
+      if update.hasInsertion {
+        insert.insertion = update.insertion
+      }
+      if update.hasOffset {
+        insert.offset = update.offset
+      }
+      if update.hasImmediate {
+        insert.immediate = update.immediate
+      }
+      if update.hasInsertionBuffer {
+        insert.insertionBuffer = update.insertionBuffer
+      }
+    })
 
+    // Try secureIPC first.
+    if (try? SecureIPC.shared.makeInsertTextRequest(for: session, with: insertCommand)) == nil {
       let figtermMessage = Figterm_FigtermMessage.with { msg in
-        msg.insertTextCommand = Figterm_InsertTextCommand.with({ insert in
-          // Optional proto fields are not Swift optionals: https://github.com/apple/swift-protobuf/issues/644
-          if update.hasDeletion {
-            insert.deletion = UInt64(update.deletion)
-          }
-          if update.hasInsertion {
-            insert.insertion = update.insertion
-          }
-          if update.hasOffset {
-            insert.offset = update.offset
-          }
-          if update.hasImmediate {
-            insert.immediate = update.immediate
-          }
-          if update.hasInsertionBuffer {
-            insert.insertionBuffer = update.insertionBuffer
-          }
-        })
+        msg.insertTextCommand = insertCommand
       }
 
-      let seralizedFigtermMessage = try figtermMessage.serializedData()
-
-      var data = Data()
-      if wrapWithFigMessage {
-        data.append(contentsOf: "\u{001b}@fig-pbuf".utf8)
-        data.append(contentsOf: Data(from: Int64(seralizedFigtermMessage.count).bigEndian))
+      let socket = UnixSocketClient(path: path(for: session))
+      guard socket.connect() else {
+        let error = String(utf8String: strerror(errno)) ?? "Unknown error code"
+        throw APIError.generic(message: "Could connected to \(path(for: session)). Error \(errno): \(error)")
       }
-      data.append(contentsOf: seralizedFigtermMessage)
 
-      socket.send(data: data)
+      try socket.send(message: figtermMessage)
 
-      if !figtermManagesInsertionLock {
-        ShellInsertionProvider.insertUnlock(deletion: Int(update.deletion),
-                                            insertion: update.insertion,
-                                            offset: Int(update.offset),
-                                            immediate: update.immediate)
-      } else {
-        Defaults.shared.incrementKeystokesSaved(by: Int(update.deletion) + update.insertion.count)
-
-        if update.immediate {
-          NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
-        }
-      }
-    }
-  }
-
-  //
-  static func insert(_ text: String,
-                     into session: SessionId,
-                     wrapWithFigMessage: Bool = true,
-                     figtermManagesInsertionLock: Bool = true) throws {
-
-    try updateBuffer(Fig_TextUpdate.with({ update in
-      update.deletion = 0
-      update.insertion = text
-      update.offset = 0
-      update.immediate = false
-      update.clearInsertionBuffer()
-    }), into: session, wrapWithFigMessage: wrapWithFigMessage,
-                     figtermManagesInsertionLock: figtermManagesInsertionLock)
-  }
-
-  // `legacyInsert` is used to write text to the C-implementation of figterm.
-  // `text` is sent directly to the socket with no framing protocol
-
-  static func legacyInsert(_ text: String, into session: SessionId) throws {
-
-    try connect(to: session) { socket in
-
-      ShellInsertionProvider.insertLock()
-
-      socket.send(message: text)
-
-      ShellInsertionProvider.insertUnlock(with: text)
-
-    }
-  }
-
-  fileprivate static func connect(to session: SessionId, connectCallback: ((UnixSocketClient) throws -> Void)) throws {
-
-    let socket = UnixSocketClient(path: path(for: session))
-    guard socket.connect() else {
-      let error = String(utf8String: strerror(errno)) ?? "Unknown error code"
-      throw APIError.generic(message: "Could connected to \(path(for: session)). Error \(errno): \(error)")
+      socket.disconnect()
     }
 
-    try connectCallback(socket)
+    Defaults.shared.incrementKeystokesSaved(by: Int(update.deletion) + update.insertion.count)
 
-    socket.disconnect()
+    if update.immediate {
+      NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)
+    }
   }
-
-}
-
-extension FigTerm {
-  static let insertedTextNotification: NSNotification.Name = Notification.Name("insertedTextNotification")
-
-  fileprivate static let rustRewriteIncludedInVersion = 6
-  fileprivate static let addedFigtermMessageInVersion = 7
-  fileprivate static let figtermManagesInsertionLockInVersion = 8
 
   static func handleInsertRequest(_ request: Fig_InsertTextRequest) throws -> Bool {
 
@@ -142,30 +75,21 @@ extension FigTerm {
 
     let integrationVersion = window.associatedShellContext?.integrationVersion ?? 0
 
+    guard integrationVersion >= figtermManagesInsertionLockInVersion else {
+      throw APIError.generic(message: "Outdated figterm version.")
+    }
+
     switch request.type {
     case .text(let text):
-
-      switch integrationVersion {
-      case 0..<rustRewriteIncludedInVersion:
-        // if session is still using c-figterm, send raw text
-        try FigTerm.legacyInsert(text, into: session)
-      case rustRewriteIncludedInVersion:
-        try FigTerm.insert(text, into: session,
-                           wrapWithFigMessage: false,
-                           figtermManagesInsertionLock: false)
-      case addedFigtermMessageInVersion:
-        try FigTerm.insert(text, into: session, figtermManagesInsertionLock: false)
-      case figtermManagesInsertionLockInVersion, _:
-        try FigTerm.insert(text, into: session)
-      }
-
+      try FigTerm.updateBuffer(Fig_TextUpdate.with({ update in
+        update.deletion = 0
+        update.insertion = text
+        update.offset = 0
+        update.immediate = false
+        update.clearInsertionBuffer()
+      }), into: session)
     case .update:
-
-      if integrationVersion >= figtermManagesInsertionLockInVersion {
-        try FigTerm.updateBuffer(request.update, into: session)
-      } else {
-        throw APIError.generic(message: "Not supported yet.")
-      }
+      try FigTerm.updateBuffer(request.update, into: session)
     default:
       break
     }

@@ -7,8 +7,8 @@ pub mod figterm;
 pub mod hooks;
 pub mod local;
 pub(crate) mod proto;
+pub mod secure_hooks;
 pub mod util;
-
 use std::fmt::Debug;
 use std::io::Cursor;
 use std::mem::size_of;
@@ -31,6 +31,10 @@ pub use prost_reflect::{
 };
 use serde::Serialize;
 use thiserror::Error;
+
+pub mod secure {
+    pub use crate::proto::secure::*;
+}
 
 // This is not used explicitly, but it must be here for the derive
 // impls on the protos for dynamic message

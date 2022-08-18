@@ -31,3 +31,9 @@ pub(crate) mod figterm {
     pub use crate::fig_common::*;
     include!(concat!(env!("OUT_DIR"), "/figterm.rs"));
 }
+
+/// Secure Socket Protocal Buffers
+pub(crate) mod secure {
+    pub use crate::fig_common::*;
+    include!(concat!(env!("OUT_DIR"), "/secure.rs"));
+}

@@ -2,7 +2,7 @@ use std::time::Duration;
 
 use fig_proto::local;
 use fig_util::directories;
-use system_socket::SystemStream;
+use tokio::net::UnixStream;
 
 use super::{
     connect_timeout,
@@ -10,7 +10,7 @@ use super::{
 };
 
 /// Send a hook using a system socket
-pub async fn send_hook(connection: &mut SystemStream, hook: local::Hook) -> Result<(), crate::SendError> {
+pub async fn send_hook(connection: &mut UnixStream, hook: local::Hook) -> Result<(), crate::SendError> {
     let message = local::LocalMessage {
         r#type: Some(local::local_message::Type::Hook(hook)),
     };

@@ -6,7 +6,7 @@ use super::{
     RequestResultImpl,
 };
 use crate::figterm::{
-    FigTermCommand,
+    FigtermCommand,
     FigtermSessionId,
     FigtermState,
 };
@@ -14,14 +14,14 @@ use crate::figterm::{
 pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> RequestResult {
     let figterm_command = match request.r#type {
         Some(some) => match some {
-            fig_proto::fig::insert_text_request::Type::Text(text) => FigTermCommand::InsertText {
+            fig_proto::fig::insert_text_request::Type::Text(text) => FigtermCommand::InsertText {
                 insertion: Some(text),
                 deletion: None,
                 immediate: None,
                 offset: None,
                 insertion_buffer: None,
             },
-            fig_proto::fig::insert_text_request::Type::Update(update) => FigTermCommand::InsertText {
+            fig_proto::fig::insert_text_request::Type::Update(update) => FigtermCommand::InsertText {
                 insertion: update.insertion,
                 deletion: update.deletion,
                 immediate: update.immediate,

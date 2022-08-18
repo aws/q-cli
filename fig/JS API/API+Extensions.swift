@@ -127,6 +127,18 @@ extension NSWorkspace {
 extension Process {
   static func handleRunProcessRequest(_ request: Fig_RunProcessRequest,
                                       completion: @escaping ((Fig_RunProcessResponse) -> Void)) {
+
+    // Try to send over secureIPC first
+    if let sessionId = AXWindowServer.shared.allowlistedWindow?.session {
+      if (try? SecureIPC.shared.makeProcessRunRequest(
+        for: sessionId,
+        with: request,
+        callback: completion
+      )) != nil {
+        return
+      }
+    }
+
     let lang = NSLocale.current.languageCode ?? "en"
     let region = NSLocale.current.regionCode ?? "US"
     let LANG = lang + "_" + region

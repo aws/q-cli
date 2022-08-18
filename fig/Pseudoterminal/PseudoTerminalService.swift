@@ -289,7 +289,19 @@ extension PseudoTerminal {
     callback: @escaping ((Fig_PseudoterminalExecuteResponse) -> Void)
   ) {
 
-    let commandContext = AXWindowServer.shared.allowlistedWindow?.associatedCommandContext
+    let window = AXWindowServer.shared.allowlistedWindow
+    // Try to send over secureIPC first
+    if let sessionId = window?.session {
+      if (try? SecureIPC.shared.makeExecuteRequest(
+        for: sessionId,
+        with: request,
+        callback: callback
+      )) != nil {
+        return
+      }
+    }
+
+    let commandContext = window?.associatedCommandContext
     var command = request.command
     switch commandContext {
     case let .ssh(controlPath, remoteDest):

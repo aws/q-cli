@@ -125,7 +125,7 @@ pub async fn handle_page_request(request: TelemetryPageRequest) -> RequestResult
     RequestResult::success()
 }
 
-pub async fn handle_aggregate_session_metric_action_request(
+pub fn handle_aggregate_session_metric_action_request(
     request: AggregateSessionMetricActionRequest,
     state: &FigtermState,
 ) -> RequestResult {

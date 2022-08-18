@@ -57,3 +57,11 @@ message ShellContext {
   optional string wsl_distro = 11;
 }
 
+message Empty {}
+
+message FileData {
+  oneof data {
+    string text = 1;
+    bytes binary = 2;
+  }
+}

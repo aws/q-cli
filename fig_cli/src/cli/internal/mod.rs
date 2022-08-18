@@ -11,7 +11,12 @@ use std::process::{
     Command,
 };
 use std::str::FromStr;
+use std::time::Duration;
 
+use bytes::{
+    Buf,
+    BytesMut,
+};
 use cfg_if::cfg_if;
 use clap::{
     ArgGroup,
@@ -46,6 +51,11 @@ use sysinfo::{
     System,
     SystemExt,
 };
+use tokio::io::{
+    AsyncReadExt,
+    AsyncWriteExt,
+};
+use tokio::select;
 use tracing::{
     debug,
     error,
@@ -179,6 +189,7 @@ pub enum InternalSubcommand {
         namespace: Option<String>,
     },
     FigSocketPath,
+    StreamFromSocket,
     FigtermSocketPath {
         session_id: String,
     },
@@ -493,6 +504,53 @@ impl InternalSubcommand {
                         .args(&["-u", user, "--", "fig", "integrations", "uninstall", "all", "--silent"])
                         .spawn()?
                         .wait()?;
+                }
+            },
+            InternalSubcommand::StreamFromSocket => {
+                let mut stdout = tokio::io::stdout();
+                let mut stdin = tokio::io::stdin();
+
+                let mut stdout_buf = BytesMut::with_capacity(1024);
+                let mut stream_buf = BytesMut::with_capacity(1024);
+
+                let socket = directories::secure_socket_path()?;
+                while let Ok(mut stream) = fig_ipc::connect_timeout(&socket, Duration::from_secs(5)).await {
+                    loop {
+                        select! {
+                            n = stream.read_buf(&mut stdout_buf) => {
+                                match n {
+                                    Ok(0) | Err(_) => {
+                                        break;
+                                    }
+                                    Ok(mut n) => {
+                                        while !stdout_buf.is_empty() {
+                                            let m = stdout.write(&stdout_buf[..n]).await?;
+                                            stdout.flush().await?;
+                                            stdout_buf.advance(m);
+                                            n -= m;
+                                        }
+                                        stdout_buf.clear();
+                                    }
+                                }
+                            }
+                            n = stdin.read_buf(&mut stream_buf) => {
+                                match n {
+                                    Ok(0) | Err(_) => {
+                                        break;
+                                    }
+                                    Ok(mut n) => {
+                                        while !stream_buf.is_empty() {
+                                            let m = stream.write(&stream_buf[..n]).await?;
+                                            stream.flush().await?;
+                                            stream_buf.advance(m);
+                                            n -= m;
+                                        }
+                                        stream_buf.clear();
+                                    }
+                                }
+                            }
+                        }
+                    }
                 }
             },
             InternalSubcommand::Uuidgen => {

@@ -1185,6 +1185,7 @@ where
             // Reset text cursor color.
             b"112" => self.handler.reset_color(NamedColor::Cursor as usize),
 
+            // feeg
             b"697" => {
                 if let Some(fig_osc) = params.get(1) {
                     match *fig_osc {

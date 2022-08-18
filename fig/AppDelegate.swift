@@ -110,6 +110,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     _ = TerminalSessionLinker.shared
 
     _ = IPC.shared
+    _ = SecureIPC.shared
 
     _ = DockerEventStream.shared
     _ = iTermIntegration.default
@@ -553,6 +554,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       withTitle: "User Manual",
       action: #selector(AppDelegate.viewSupportForum),
       keyEquivalent: "")
+
     forum.image = NSImage(named: NSImage.Name("option"))
 
     let slack = statusBarMenu.addItem(

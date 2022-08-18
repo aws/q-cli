@@ -5,6 +5,11 @@ use eyre::{
     Result,
 };
 use fig_request::Request;
+use fig_util::directories::{
+    parent_socket_path,
+    secure_socket_path,
+};
+use fig_util::gen_hex_string;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{
@@ -183,12 +188,32 @@ impl SshSubcommand {
             id_matches.into_iter().next().unwrap()
         };
 
-        let mut child = Command::new("ssh")
-            .arg(format!("{}@{}", selected_identity.username, host.ip))
-            .arg("-i")
-            .arg(selected_identity.path_to_auth)
-            .arg("-p")
-            .arg(connection.port().to_string())
+        let apply_connection = |mut command: Command| -> Command {
+            command
+                .arg(format!("{}@{}", selected_identity.username, host.ip))
+                .arg("-i")
+                .arg(selected_identity.path_to_auth.clone())
+                .arg("-p")
+                .arg(connection.port().to_string());
+            command
+        };
+
+        apply_connection(Command::new("ssh"))
+            .arg("mkdir -p /var/tmp/fig/$USER/parent")
+            .status()
+            .await?;
+
+        let parent_id = gen_hex_string();
+
+        let mut child = apply_connection(Command::new("ssh"))
+            .arg("-R")
+            .arg(format!(
+                "{}:{}",
+                parent_socket_path(selected_identity.username, &parent_id)?.to_string_lossy(),
+                secure_socket_path()?.to_string_lossy(),
+            ))
+            .arg("-o")
+            .arg(format!("SetEnv FIG_PARENT={parent_id}"))
             .spawn()?;
 
         let status = child.wait().await?;

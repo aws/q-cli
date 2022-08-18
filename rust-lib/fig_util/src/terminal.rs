@@ -18,6 +18,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::XfceTerminal,
     Terminal::Terminator,
     Terminal::WezTerm,
+    Terminal::Ssh,
 ];
 pub const SPECIAL_TERMINALS: &[Terminal] = &[Terminal::Tmux, Terminal::Nvim];
 
@@ -61,7 +62,8 @@ pub enum Terminal {
     Terminator,
     /// Terminology
     Terminology,
-
+    /// SSH
+    Ssh,
     // Other pseudoterminal that we want to launch within
     /// Tmux
     Tmux,
@@ -91,7 +93,7 @@ impl fmt::Display for Terminal {
             Terminal::XfceTerminal => write!(f, "Xfce Terminal"),
             Terminal::Terminator => write!(f, "Terminator"),
             Terminal::Terminology => write!(f, "Terminology"),
-
+            Terminal::Ssh => write!(f, "SSH"),
             Terminal::Tmux => write!(f, "Tmux"),
             Terminal::Nvim => write!(f, "Nvim"),
             Terminal::Zellij => write!(f, "Zellij"),
@@ -142,7 +144,7 @@ impl Terminal {
             Terminal::XfceTerminal => "xfce-terminal".into(),
             Terminal::Terminator => "terminator".into(),
             Terminal::Terminology => "terminology".into(),
-
+            Terminal::Ssh => "ssh".into(),
             Terminal::Tmux => "tmux".into(),
             Terminal::Nvim => "nvim".into(),
             Terminal::Zellij => "zellij".into(),
@@ -179,6 +181,8 @@ impl Terminal {
             Terminal::XfceTerminal => &["xfce4-terminal"],
             Terminal::Terminology => &["terminology"],
             Terminal::WezTerm => &["wezterm", "wezterm-gui"],
+
+            Terminal::Ssh => &["sshd"],
 
             Terminal::Tmux => &["tmux"],
             Terminal::Nvim => &["nvim"],

@@ -140,6 +140,7 @@ message InputMethodCommand {
 message PromptAccessibilityCommand {}
 
 // == Hooks ==
+
 message TerminalCursorCoordinates {
 	int32 x = 1;
 	int32 y = 2;

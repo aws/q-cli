@@ -17,7 +17,7 @@ use fig_proto::local::{
     UpdateCommand,
 };
 use fig_util::directories;
-use system_socket::SystemStream;
+use tokio::net::UnixStream;
 
 use super::{
     connect_timeout,
@@ -101,7 +101,7 @@ pub async fn run_install_script_command() -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn send_command(connection: &mut SystemStream, command: local::command::Command) -> Result<()> {
+pub async fn send_command(connection: &mut UnixStream, command: local::command::Command) -> Result<()> {
     let message = local::LocalMessage {
         r#type: Some(local::local_message::Type::Command(local::Command {
             id: None,
@@ -114,7 +114,7 @@ pub async fn send_command(connection: &mut SystemStream, command: local::command
 }
 
 pub async fn send_recv_command(
-    connection: &mut SystemStream,
+    connection: &mut UnixStream,
     command: local::command::Command,
 ) -> Result<Option<local::CommandResponse>> {
     send_command(connection, command).await?;

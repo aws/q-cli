@@ -8,12 +8,12 @@ use alacritty_terminal::term::{
     CommandInfo,
     ShellState,
 };
-use fig_proto::hooks::{
+use fig_proto::secure::Hostbound;
+use fig_proto::secure_hooks::{
     hook_to_message,
     new_preexec_hook,
     new_prompt_hook,
 };
-use fig_proto::local::LocalMessage;
 use fig_telemetry::sentry::configure_scope;
 use flume::Sender;
 use tracing::level_filters::LevelFilter;
@@ -31,14 +31,14 @@ use crate::{
 };
 
 pub struct EventHandler {
-    socket_sender: Sender<LocalMessage>,
+    socket_sender: Sender<Hostbound>,
     history_sender: Sender<CommandInfo>,
     main_loop_sender: Sender<MainLoopEvent>,
 }
 
 impl EventHandler {
     pub fn new(
-        socket_sender: Sender<LocalMessage>,
+        socket_sender: Sender<Hostbound>,
         history_sender: Sender<CommandInfo>,
         main_loop_sender: Sender<MainLoopEvent>,
     ) -> Self {

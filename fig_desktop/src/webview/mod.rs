@@ -60,10 +60,10 @@ use crate::tray::{
     build_tray,
 };
 use crate::{
-    figterm,
     icons,
     local_ipc,
     native,
+    secure_ipc,
     settings,
     DebugState,
     EventLoop,
@@ -148,7 +148,8 @@ impl WebviewManager {
             .await
             .expect("Failed to initialize native integrations");
 
-        tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
+        // TODO(mia): implement
+        // tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         tokio::spawn(local_ipc::start_local_ipc(
             self.figterm_state.clone(),
@@ -156,7 +157,14 @@ impl WebviewManager {
             self.event_loop.create_proxy(),
         ));
 
+        tokio::spawn(secure_ipc::start_secure_ipc(
+            self.figterm_state.clone(),
+            self.notifications_state.clone(),
+            self.event_loop.create_proxy(),
+        ));
+
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
+
         {
             let proxy = self.event_loop.create_proxy();
             let debug_state = self.debug_state.clone();

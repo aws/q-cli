@@ -14,7 +14,7 @@ use wry::webview::WebView;
 
 use crate::event::WindowEvent;
 use crate::figterm::{
-    FigTermCommand,
+    FigtermCommand,
     FigtermState,
 };
 use crate::native;
@@ -95,7 +95,7 @@ impl WindowState {
                 for session in figterm_state.sessions.iter() {
                     let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = sender.send(FigTermCommand::InterceptClear);
+                        let _ = sender.send(FigtermCommand::InterceptClear);
                     });
                 }
                 self.webview.window().set_visible(false);
@@ -115,7 +115,7 @@ impl WindowState {
                 for session in figterm_state.sessions.iter() {
                     let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = sender.send(FigTermCommand::InterceptClear);
+                        let _ = sender.send(FigtermCommand::InterceptClear);
                     });
                 }
             },

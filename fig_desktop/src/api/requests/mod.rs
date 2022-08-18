@@ -213,12 +213,12 @@ async fn handle_request(
                     notifications::handle_request(request, window_id.clone(), message_id, notifications_state).await
                 },
                 // process
-                RunProcessRequest(request) => process::run(request).await,
+                RunProcessRequest(request) => process::run(request, figterm_state).await,
                 PseudoterminalExecuteRequest(request) => process::execute(request, figterm_state).await,
                 PseudoterminalWriteRequest(_deprecated) => process::write().await,
                 // properties
                 UpdateApplicationPropertiesRequest(request) => {
-                    properties::update(request, figterm_state, intercept_state).await
+                    properties::update(request, figterm_state, intercept_state)
                 },
                 // state
                 GetLocalStateRequest(request) => state::get(request).await,
@@ -235,7 +235,7 @@ async fn handle_request(
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 TelemetryPageRequest(request) => telemetry::handle_page_request(request).await,
                 AggregateSessionMetricActionRequest(request) => {
-                    telemetry::handle_aggregate_session_metric_action_request(request, figterm_state).await
+                    telemetry::handle_aggregate_session_metric_action_request(request, figterm_state)
                 },
                 // window
                 PositionWindowRequest(request) => {

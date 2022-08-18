@@ -602,10 +602,6 @@ impl Terminal for WindowsTerminal {
         let mut xpixel = 0;
         let mut ypixel = 0;
         if let Ok(font_info) = self.output_handle.get_console_font_info() {
-            warn!(
-                "got font info {:?}, {:?}",
-                font_info.dwFontSize.X, font_info.dwFontSize.Y
-            );
             xpixel = cast(font_info.dwFontSize.X).unwrap_or(0);
             ypixel = cast(font_info.dwFontSize.Y).unwrap_or(0);
         }

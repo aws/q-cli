@@ -163,27 +163,27 @@ message Result {
 /// Requests
 
 message TextUpdate {
-    optional string insertion = 1;
-    optional int64 deletion = 2; 
-    optional int64 offset = 3;
-    optional bool immediate = 4;
-    // client buffer at the time of the insertion request (prior to insertion)
-    optional string insertion_buffer = 5;
+  optional string insertion = 1;
+  optional int64 deletion = 2; 
+  optional int64 offset = 3;
+  optional bool immediate = 4;
+  // client buffer at the time of the insertion request (prior to insertion)
+  optional string insertion_buffer = 5;
 }
 
 message InsertTextRequest {
   oneof type {
     string text = 1;
-    TextUpdate update  = 2;
+    TextUpdate update = 2;
   }
   optional string terminal_session_id = 3;
 }
 
 message PseudoterminalWriteRequest {
-    oneof input {
-      string text = 1;
-      bytes octal = 2;
-    }
+  oneof input {
+    string text = 1;
+    bytes octal = 2;
+  }
 }
 
 message PseudoterminalExecuteRequest {
@@ -252,11 +252,11 @@ message ContentsOfDirectoryResponse {
 }
 
 message DestinationOfSymbolicLinkRequest {
-    optional FilePath path = 1;
+  optional FilePath path = 1;
 }
 
 message DestinationOfSymbolicLinkResponse {
-    optional FilePath destination = 1;
+  optional FilePath destination = 1;
 }
 
 message CreateDirectoryRequest {
@@ -575,7 +575,7 @@ message Notification {
     SettingsChangedNotification settings_changed_notification = 2;
     ShellPromptReturnedNotification shell_prompt_returned_notification = 3;
     LocationChangedNotification location_changed_notification = 4;
-    ProcessChangedNotification process_change_notification= 5;
+    ProcessChangedNotification process_change_notification = 5;
     KeybindingPressedNotification keybinding_pressed_notification = 6;
     WindowFocusChangedNotification window_focus_changed_notification = 7;
     HistoryUpdatedNotification history_updated_notification = 8;
