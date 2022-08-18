@@ -17,4 +17,3 @@ lto = "off"
 
 [profile.dev.package.backtrace]
 opt-level = 3
-

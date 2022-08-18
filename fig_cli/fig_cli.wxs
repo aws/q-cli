@@ -1,0 +1,123 @@
+<?xml version='1.0'?>
+
+<Wix xmlns="http://schemas.microsoft.com/wix/2006/wi">
+    <?include ../fig.wxi?>
+
+    <Product
+        Id="*"
+        Language='1033'
+        Manufacturer="Fig"
+        Name="Fig CLI"
+        UpgradeCode="76C5808F-F1D1-4CEA-8C20-A6A4EC7FD80C"
+        Version="$(var.Version)"
+    >
+        <Package
+            Compressed="yes"
+            Description="Fig CLI let's users interact with fig directly from their terminal"
+            Id="*"
+            InstallerVersion="450"
+            InstallPrivileges="limited"
+            InstallScope="perUser"
+            Manufacturer="Fig"
+        />
+
+        <MajorUpgrade DowngradeErrorMessage="A later version of [ProductName] is already installed. Setup will now exit"/>
+
+        <Media Id='1' Cabinet='media1.cab' EmbedCab='yes' DiskPrompt='CD-ROM #1'/>
+        <Property Id='DiskPrompt' Value='Fig CLI Installation'/>
+
+        <Directory Id="TARGETDIR" Name="SourceDir">
+            <Directory Id="LocalAppDataFolder">
+                <Directory Id="FIGROOT" Name="Fig">
+                    <Component Guid="089AF7E5-8E31-4ABC-9B0B-D6B35C25E354" Id="InstallFigCLI">
+                        <RegistryValue
+                            Key="Software\Fig\FigCLI"
+                            KeyPath="yes"
+                            Name="InstallFolder"
+                            Root="HKCU"
+                            Type="string"
+                            Value="[INSTALLFOLDER]"
+                        />
+                        <File
+                            Name="fig.exe"
+                            Source="target/release/fig_cli.exe"
+                        />
+                        <RemoveFolder
+                            Id="RemoveINSTALLFOLDER"
+                            On="uninstall"
+                        />
+                        <RemoveFolder
+                            Id="RemoveFIGROOT"
+                            Directory="FIGROOT"
+                            On="uninstall"
+                        />
+                        <Environment
+                            Id="AddToPath"
+                            Name="PATH"
+                            Value="[FIGROOT]"
+                            Permanent="no"
+                            Part="last"
+                            Action="set"
+                            System="no"
+                        />
+                    </Component>
+                </Directory>
+            </Directory>
+        </Directory>
+
+        <Feature Id="Install">
+            <ComponentRef Id="InstallFigCLI"/>
+        </Feature>
+
+        <!--
+        <CustomAction
+            Id="CreateJunction"
+            Execute="immediate"
+            Impersonate="yes"
+            Return="check"
+            Directory="FIGROOT"
+            ExeCommand="cmd /c mklink /J latest $(var.Version)"
+        />
+        <CustomAction
+            Id="RemoveJunction"
+            Execute="immediate"
+            Impersonate="yes"
+            Return="check"
+            Directory="FIGROOT"
+            ExeCommand="cmd /c rmdir latest /q"
+        />
+        -->
+        <CustomAction
+            Id="QuitFig"
+            Execute="immediate"
+            Impersonate="yes"
+            Return="ignore"
+            FileKey="fig.exe"
+            ExeCommand="quit"
+        />
+        <CustomAction
+            Id="InstallIntegrations"
+            Execute="immediate"
+            Impersonate="yes"
+            Return="check"
+            FileKey="fig.exe"
+            ExeCommand="install --dotfiles --no-confirm"
+        />
+        <CustomAction
+            Id="UninstallIntegrations"
+            Execute="immediate"
+            Impersonate="yes"
+            Return="check"
+            FileKey="fig.exe"
+            ExeCommand="_ uninstall --dotfiles"
+        />
+
+        <InstallExecuteSequence>
+            <!--<Custom Action="CreateJunction" Before="InstallInitialize">NOT Installed AND NOT REMOVE</Custom>-->
+            <Custom Action="QuitFig" Before="UninstallIntegrations">REMOVE ~= "ALL"</Custom>
+            <Custom Action="UninstallIntegrations" Before="InstallInitialize">REMOVE ~= "ALL"</Custom>
+            <Custom Action="InstallIntegrations" After="InstallFinalize">NOT Installed AND NOT REMOVE</Custom>
+            <!--<Custom Action="RemoveJunction" After="InstallIntegrations">REMOVE ~= "ALL"</Custom>-->
+        </InstallExecuteSequence>
+    </Product>
+</Wix>

@@ -2497,7 +2497,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.2.8"
+version = "2.2.10"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -2514,6 +2514,7 @@ dependencies = [
  "fig_ipc",
  "fig_log",
  "fig_proto",
+ "fig_request",
  "fig_settings",
  "fig_telemetry",
  "fig_update",

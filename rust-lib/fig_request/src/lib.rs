@@ -4,6 +4,7 @@ use std::time::Duration;
 use fig_auth::get_token;
 use fig_settings::api_host;
 use once_cell::sync::Lazy;
+pub use reqwest;
 use reqwest::cookie::Cookie;
 use reqwest::header::HeaderMap;
 pub use reqwest::Method;
@@ -70,6 +71,10 @@ static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
 
     client.build().ok()
 });
+
+pub fn client() -> Option<&'static Client> {
+    CLIENT.as_ref()
+}
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 

@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.2.9"
+version = "2.2.10"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -29,6 +29,7 @@ fig_integrations = { path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
+fig_request = { path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_update = { version = "0.1.0", path = "../rust-lib/fig_update" }

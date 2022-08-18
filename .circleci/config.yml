@@ -149,23 +149,15 @@ jobs:
             choco install wixtoolset -y
             PATH="$PATH:/c/Program Files (x86)/WiX Toolset v3.11/bin"
 
-            cargo install cargo-wix
-
             echo "export PATH=\"$PATH\"" >> $BASH_ENV
       - run:
-          name: Build
+          name: Build and bundle
           command: |
             cd desktop
-            cargo build --release
-      - run:
-          name: Bundle
-          command: |
-            cd desktop
-            cargo wix -p "fig_desktop" -n "fig" --no-build --nocapture -v
-            mv target/wix/fig-*-x86_64.msi target/wix/fig.msi
+            ./bundle.bat
       - store_artifacts:
-          path: desktop/target/wix/fig.msi
-          destination: windows/msi
+          path: desktop/target/wix/fig_installer.exe
+          destination: windows/exe
 
   # Creates tag on specified revision
   update-version:
@@ -210,6 +202,7 @@ jobs:
             NEW_VERSION=`cat version`
             cd desktop
             sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" fig_desktop/Cargo.toml
+            sed -i "s/Version=\"[^\"]*\"/Version=\"$NEW_VERSION\"/" fig.wxi
       - run:
           name: Update lockfile
           command: cd desktop && cargo update -p fig_desktop
