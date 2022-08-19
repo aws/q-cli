@@ -65,7 +65,7 @@
             Impersonate="yes"
             Return="asyncNoWait"
             FileKey="fig_desktop.exe"
-            ExeCommand="--mission-control"
+            ExeCommand="--dashboard"
         />
 
         <InstallExecuteSequence>
