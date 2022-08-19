@@ -109,20 +109,16 @@ impl LocalJson {
             fs::File::create(&path)?;
         }
 
-        let string = {
+        let (string, res) = {
+            let _lock_guard = json_type.lock().read();
             let mut file = FileRwLock::new(File::open(&path)?);
             let mut read = file.write()?;
-
-            let (string, res) = {
-                let _lock_guard = json_type.lock().read();
-                let mut string = String::new();
-                let res = read.read_to_string(&mut string);
-                (string, res)
-            };
-
-            res?;
-            string
+            let mut string = String::new();
+            let res = read.read_to_string(&mut string);
+            (string, res)
         };
+
+        res?;
 
         Ok(Self {
             inner: match serde_json::from_str(&string).or_else(|_| {
@@ -150,11 +146,10 @@ impl LocalJson {
 
         let json = serde_json::to_vec_pretty(&self.inner)?;
 
-        let mut file = FileRwLock::new(File::create(&path)?);
-        let mut lock = file.write()?;
-
         let res = {
             let _lock_guard = self.json_type.lock().write();
+            let mut file = FileRwLock::new(File::create(&path)?);
+            let mut lock = file.write()?;
             lock.write_all(&json)
         };
         res?;
