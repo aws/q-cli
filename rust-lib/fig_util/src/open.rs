@@ -3,12 +3,10 @@ use std::process::Command;
 
 use cfg_if::cfg_if;
 
-use crate::wsl;
-
 pub fn command(url: impl AsRef<str>) -> Command {
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            let executable = if wsl::is_wsl() {
+            let executable = if crate::wsl::is_wsl() {
                 "wslview"
             } else {
                 "xdg-open"

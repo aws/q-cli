@@ -8,8 +8,6 @@ use std::path::{
 
 use thiserror::Error;
 
-use crate::wsl;
-
 #[derive(Debug, Error)]
 pub enum DirectoryError {
     #[error("home directory not found")]
@@ -65,7 +63,7 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
             use std::path::Path;
             use std::process::Command;
 
-            if wsl::is_wsl() {
+            if crate::wsl::is_wsl() {
                 let socket_path = PathBuf::from(String::from_utf8_lossy(
                     &Command::new("wslpath").arg(String::from_utf8_lossy(
                         &Command::new("fig.exe").args(["_", "fig-socket-path"]
@@ -123,7 +121,7 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
         if #[cfg(target_os = "linux")] {
             use std::process::Command;
 
-            if wsl::is_wsl() {
+            if crate::wsl::is_wsl() {
                 Ok(PathBuf::from(String::from_utf8_lossy(
                     &Command::new("wslpath").arg(String::from_utf8_lossy(
                         &Command::new("fig.exe").args(["_", "figterm-socket-path"]
