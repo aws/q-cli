@@ -7,6 +7,7 @@
 //
 
 import Foundation
+import SwiftProtobuf
 
 // import Foundation
 // import ServerAddress
@@ -160,6 +161,15 @@ final class UnixSocketClient: NSObject, StreamDelegate {
     var bytes = [UInt8](repeating: 0, count: data.count)
     (data as NSData).getBytes(&bytes, length: data.count)
     outputStream.write(&bytes, maxLength: data.count)
+  }
+
+  func send(message: SwiftProtobuf.Message) throws {
+    let serialized = try message.serializedData()
+    var data = Data()
+    data.append(contentsOf: "\u{001b}@fig-pbuf".utf8)
+    data.append(contentsOf: Data(from: Int64(serialized.count).bigEndian))
+    data.append(contentsOf: serialized)
+    self.send(data: data)
   }
 
   // MARK: - StreamDelegate

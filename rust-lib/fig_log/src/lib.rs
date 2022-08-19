@@ -101,8 +101,8 @@ impl Logger {
                     fs::create_dir_all(log_path.parent().unwrap())?;
                 }
 
-                if log_path.try_exists()? {
-                    if let Some(max_file_size) = self.max_file_size {
+                if let Some(max_file_size) = self.max_file_size {
+                    if log_path.try_exists()? {
                         let metadata = std::fs::metadata(&log_path)?;
                         if metadata.len() > max_file_size {
                             std::fs::remove_file(&log_path)?;

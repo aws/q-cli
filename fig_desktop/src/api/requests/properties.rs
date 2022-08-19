@@ -6,13 +6,13 @@ use super::{
     RequestResultImpl,
 };
 use crate::figterm::{
-    FigTermCommand,
+    FigtermCommand,
     FigtermSessionId,
     FigtermState,
 };
 use crate::InterceptState;
 
-pub async fn update(
+pub fn update(
     request: UpdateApplicationPropertiesRequest,
     figterm_state: &FigtermState,
     intercept_state: &InterceptState,
@@ -34,7 +34,7 @@ pub async fn update(
         match lock_session_id {
             Some(ref lock_session_id) if session.key() == lock_session_id => {
                 if let Some(session) = figterm_state.sessions.get(lock_session_id) {
-                    if let Err(err) = session.sender.send(FigTermCommand::InterceptFigJs {
+                    if let Err(err) = session.sender.send(FigtermCommand::InterceptFigJs {
                         intercept_bound_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
                         intercept_global_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
                         actions: request
@@ -56,7 +56,7 @@ pub async fn update(
                 }
             },
             _ => {
-                if let Err(err) = session.sender.send(FigTermCommand::InterceptClear) {
+                if let Err(err) = session.sender.send(FigtermCommand::InterceptClear) {
                     let key = session.key();
                     error!("Failed sending command to figterm session {key}: {err}");
                 }

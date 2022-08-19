@@ -5,35 +5,46 @@ use anyhow::{
     Result,
 };
 use fig_proto::local::FocusedWindowDataHook;
-use hashbrown::HashSet;
+use fig_util::Terminal;
+use hashbrown::HashMap;
 use once_cell::sync::Lazy;
 use tracing::log::debug;
 
-use super::WM_REVICED_DATA;
+use super::{
+    NativeState,
+    WM_REVICED_DATA,
+};
 use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::native::ActiveWindowData;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
 
-pub static WM_CLASS_WHITELIST: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    fig_util::terminal::LINUX_TERMINALS
-        .iter()
-        .filter_map(|t| t.wm_class())
-        .collect()
+pub static WM_CLASS_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
+    let mut whitelist = HashMap::new();
+    for terminal in fig_util::terminal::LINUX_TERMINALS {
+        if let Some(wm_class) = terminal.wm_class() {
+            whitelist.insert(wm_class, terminal.clone());
+        }
+    }
+    whitelist
 });
 
-static GSE_WHITELIST: Lazy<HashSet<&'static str>> = Lazy::new(|| {
-    fig_util::terminal::LINUX_TERMINALS
-        .iter()
-        .filter_map(|t| t.gnome_id())
-        .collect()
+pub static GSE_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
+    let mut whitelist = HashMap::new();
+    for terminal in fig_util::terminal::LINUX_TERMINALS {
+        if let Some(gnome_id) = terminal.gnome_id() {
+            whitelist.insert(gnome_id, terminal.clone());
+        }
+    }
+    whitelist
 });
 
-fn from_source(from: &str) -> Option<&HashSet<&'static str>> {
+fn from_source(from: &str) -> Option<&HashMap<&'static str, Terminal>> {
     match from {
         "wm_class" => Some(&WM_CLASS_WHITELIST),
         "gse" => Some(&GSE_WHITELIST),
@@ -41,7 +52,7 @@ fn from_source(from: &str) -> Option<&HashSet<&'static str>> {
     }
 }
 
-pub fn from_hook(hook: FocusedWindowDataHook, proxy: &EventLoopProxy) -> Result<()> {
+pub fn from_hook(hook: FocusedWindowDataHook, native_state: &NativeState, proxy: &EventLoopProxy) -> Result<()> {
     WM_REVICED_DATA.store(true, Ordering::Relaxed);
 
     if hook.hide() {
@@ -53,10 +64,19 @@ pub fn from_hook(hook: FocusedWindowDataHook, proxy: &EventLoopProxy) -> Result<
     }
 
     debug!("focus event on {} from {}", hook.id, hook.source);
-    if !from_source(&hook.source)
+    if let Some(terminal) = from_source(&hook.source)
         .ok_or_else(|| anyhow!("received invalid focus window data source"))?
-        .contains(hook.id.as_str())
+        .get(hook.id.as_str())
     {
+        let offset = terminal.relative_cursor_offset();
+        let mut handle = native_state.active_window_data.lock();
+        *handle = Some(ActiveWindowData {
+            x: hook.x,
+            y: hook.y,
+            off_x: offset.0,
+            off_y: offset.1,
+        });
+    } else {
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID,
             window_event: WindowEvent::Hide,

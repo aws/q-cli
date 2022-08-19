@@ -28,9 +28,9 @@ use fig_proto::daemon::{
 use fig_telemetry::TrackEvent;
 use fig_util::directories;
 use parking_lot::RwLock;
-use system_socket::{
-    SystemListener,
-    SystemStream,
+use tokio::net::{
+    UnixListener,
+    UnixStream,
 };
 use tokio::task::JoinHandle;
 use tracing::{
@@ -46,7 +46,7 @@ use crate::util::{
     LaunchOptions,
 };
 
-async fn spawn_system_handler(mut stream: SystemStream, daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
+async fn spawn_system_handler(mut stream: UnixStream, daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
     tokio::spawn(async move {
         loop {
             match recv_message::<DaemonMessage, _>(&mut stream).await {
@@ -216,10 +216,10 @@ pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatu
     }
 
     // Bind the system socket
-    let system_socket = SystemListener::bind(&system_socket_path).context("Could not connect to system socket")?;
+    let system_socket = UnixListener::bind(&system_socket_path).context("Could not connect to system socket")?;
 
     Ok(tokio::spawn(async move {
-        while let Ok(stream) = system_socket.accept().await {
+        while let Ok((stream, _)) = system_socket.accept().await {
             if let Err(err) = spawn_system_handler(stream, daemon_status.clone()).await {
                 error!("Error while spawining unix socket connection handler: {err}");
             }

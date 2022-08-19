@@ -18,7 +18,6 @@ use fig_proto::{
     FigProtobufEncodable,
     ReflectMessage,
 };
-use system_socket::SystemStream;
 use thiserror::Error;
 use tokio::io::{
     self,
@@ -27,6 +26,7 @@ use tokio::io::{
     AsyncWrite,
     AsyncWriteExt,
 };
+use tokio::net::UnixStream;
 use tracing::{
     error,
     trace,
@@ -54,9 +54,9 @@ pub enum ConnectError {
     Timeout,
 }
 
-pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream, ConnectError> {
+pub async fn connect(socket: impl AsRef<Path>) -> Result<UnixStream, ConnectError> {
     let socket = socket.as_ref();
-    let conn = match SystemStream::connect(socket).await {
+    let conn = match UnixStream::connect(socket).await {
         Ok(conn) => conn,
         Err(err) => {
             error!("Failed to connect to {socket:?}: {err}");
@@ -75,9 +75,9 @@ pub async fn connect(socket: impl AsRef<Path>) -> Result<SystemStream, ConnectEr
 }
 
 /// Connect to a system socket with a timeout
-pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<SystemStream, ConnectError> {
+pub async fn connect_timeout(socket: impl AsRef<Path>, timeout: Duration) -> Result<UnixStream, ConnectError> {
     let socket = socket.as_ref();
-    let conn = match tokio::time::timeout(timeout, SystemStream::connect(socket)).await {
+    let conn = match tokio::time::timeout(timeout, UnixStream::connect(socket)).await {
         Ok(Ok(conn)) => conn,
         Ok(Err(err)) => {
             error!("Failed to connect to {socket:?}: {err}");
@@ -143,7 +143,7 @@ where
     };
 
     match stream.write_all(&encoded_message).await {
-        Ok(()) => {
+        Ok(_) => {
             trace!("Sent message: {message:?}");
             Ok(())
         },
@@ -190,6 +190,13 @@ pub enum RecvError {
 impl RecvError {
     pub fn is_disconnect(&self) -> bool {
         if let RecvError::Io(io) = self {
+            #[cfg(windows)]
+            {
+                use windows_sys::Win32::Networking::WinSock::WSAECONNRESET;
+                if let Some(WSAECONNRESET) = io.raw_os_error() {
+                    return true;
+                }
+            }
             matches!(io.kind(), std::io::ErrorKind::ConnectionAborted)
         } else {
             false

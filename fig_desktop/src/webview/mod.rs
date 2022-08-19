@@ -60,10 +60,10 @@ use crate::tray::{
     build_tray,
 };
 use crate::{
-    figterm,
     icons,
     local_ipc,
     native,
+    secure_ipc,
     settings,
     DebugState,
     EventLoop,
@@ -148,15 +148,22 @@ impl WebviewManager {
             .await
             .expect("Failed to initialize native integrations");
 
-        tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
+        // TODO(mia): implement
+        // tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         tokio::spawn(local_ipc::start_local_ipc(
+            self.native_state.clone(),
+            self.event_loop.create_proxy(),
+        ));
+
+        tokio::spawn(secure_ipc::start_secure_ipc(
             self.figterm_state.clone(),
             self.notifications_state.clone(),
             self.event_loop.create_proxy(),
         ));
 
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
+
         {
             let proxy = self.event_loop.create_proxy();
             let debug_state = self.debug_state.clone();
@@ -166,17 +173,25 @@ impl WebviewManager {
             let native_state = self.native_state.clone();
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
-                    api_request(
-                        fig_id,
-                        payload,
-                        &debug_state,
-                        &figterm_state,
-                        &intercept_state,
-                        &notifications_state,
-                        &native_state,
-                        &proxy,
-                    )
-                    .await;
+                    let proxy = proxy.clone();
+                    let debug_state = debug_state.clone();
+                    let figterm_state = figterm_state.clone();
+                    let intercept_state = intercept_state.clone();
+                    let notifications_state = notifications_state.clone();
+                    let native_state = native_state.clone();
+                    tokio::spawn(async move {
+                        api_request(
+                            fig_id,
+                            payload,
+                            &debug_state,
+                            &figterm_state,
+                            &intercept_state,
+                            &notifications_state,
+                            &native_state,
+                            &proxy.clone(),
+                        )
+                        .await;
+                    });
                 }
             });
         }
@@ -223,7 +238,12 @@ impl WebviewManager {
                             window_event,
                         } => match self.fig_id_map.get(&window_id) {
                             Some(window_state) => {
-                                window_state.handle(window_event, &self.figterm_state, &api_handler_tx);
+                                window_state.handle(
+                                    window_event,
+                                    &self.figterm_state,
+                                    &self.native_state,
+                                    &api_handler_tx,
+                                );
                             },
                             None => {
                                 // TODO(grant): figure out how to handle this gracefuly
@@ -410,7 +430,7 @@ pub fn build_autocomplete(
         .with_web_context(web_context)
         .with_url(&fig_settings::settings::get_string_or(
             "developer.autocomplete.host",
-            "https://app.withfig.com/autocomplete/v9".into(),
+            "https://fig-autocomplete.vercel.app/".into(),
         ))?
         .with_ipc_handler(move |_window, payload| {
             proxy
@@ -430,6 +450,7 @@ pub fn build_autocomplete(
             r"^staging\.withfig\.com$",
             r"^app\.withfig\.com$",
             r"-withfig\.vercel\.app$",
+            r"^fig-autocomplete\.vercel\.app$",
         ]))
         .with_clipboard(true)
         .build()?;

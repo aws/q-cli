@@ -16,11 +16,11 @@ use fig_proto::local::{
     SuccessResponse,
 };
 use fig_util::directories;
-use system_socket::SystemListener;
 use tokio::io::{
     AsyncRead,
     AsyncWrite,
 };
+use tokio::net::UnixListener;
 use tracing::{
     debug,
     error,
@@ -28,8 +28,7 @@ use tracing::{
     warn,
 };
 
-use crate::figterm::FigtermState;
-use crate::notification::NotificationsState;
+use crate::native::NativeState;
 use crate::EventLoopProxy;
 
 pub enum LocalResponse {
@@ -40,11 +39,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(
-    figterm_state: Arc<FigtermState>,
-    notifications_state: Arc<NotificationsState>,
-    proxy: EventLoopProxy,
-) -> Result<()> {
+pub async fn start_local_ipc(native_state: Arc<NativeState>, proxy: EventLoopProxy) -> Result<()> {
     let socket_path = directories::fig_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -54,15 +49,10 @@ pub async fn start_local_ipc(
 
     tokio::fs::remove_file(&socket_path).await.ok();
 
-    let listener = SystemListener::bind(&socket_path)?;
+    let listener = UnixListener::bind(&socket_path)?;
 
-    while let Ok(stream) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(
-            stream,
-            figterm_state.clone(),
-            notifications_state.clone(),
-            proxy.clone(),
-        ));
+    while let Ok((stream, _)) = listener.accept().await {
+        tokio::spawn(handle_local_ipc(stream, native_state.clone(), proxy.clone()));
     }
 
     Ok(())
@@ -70,8 +60,7 @@ pub async fn start_local_ipc(
 
 async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
     mut stream: S,
-    figterm_state: Arc<FigtermState>,
-    notifications_state: Arc<NotificationsState>,
+    native_state: Arc<NativeState>,
     proxy: EventLoopProxy,
 ) {
     while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
@@ -148,19 +137,27 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
             Some(LocalMessageType::Hook(hook)) => {
                 use fig_proto::local::hook::Hook::*;
 
+                macro_rules! legacy_hook {
+                    ($name:expr) => {{
+                        warn!(
+                            "received legacy figterm hook `{}`, please update your figterm version!",
+                            $name
+                        );
+                        Ok(())
+                    }};
+                }
+
                 if let Err(err) = match hook.hook {
-                    Some(EditBuffer(request)) => {
-                        hooks::edit_buffer(request, figterm_state.clone(), &notifications_state, &proxy).await
-                    },
+                    Some(EditBuffer(_)) => legacy_hook!("EditBuffer"),
                     Some(CursorPosition(request)) => hooks::caret_position(request, &proxy).await,
-                    Some(Prompt(request)) => hooks::prompt(request, &notifications_state, &proxy).await,
+                    Some(Prompt(_)) => legacy_hook!("Prompt"),
                     Some(FocusChange(request)) => hooks::focus_change(request, &proxy).await,
-                    Some(PreExec(request)) => hooks::pre_exec(request, &notifications_state, &proxy).await,
-                    Some(InterceptedKey(request)) => {
-                        hooks::intercepted_key(request, &notifications_state, &proxy).await
-                    },
+                    Some(PreExec(_)) => legacy_hook!("PreExec"),
+                    Some(InterceptedKey(_)) => legacy_hook!("InterceptedKey"),
                     Some(FileChanged(request)) => hooks::file_changed(request).await,
-                    Some(FocusedWindowData(request)) => hooks::focused_window_data(request, &proxy).await,
+                    Some(FocusedWindowData(request)) => {
+                        hooks::focused_window_data(request, &native_state, &proxy).await
+                    },
                     err => {
                         match &err {
                             Some(unknown) => error!("Unknown hook: {unknown:?}"),

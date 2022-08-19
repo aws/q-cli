@@ -60,11 +60,11 @@ use spinners::{
     Spinner,
     Spinners,
 };
-use system_socket::SystemStream;
 use tokio::io::{
     AsyncBufReadExt,
     AsyncWriteExt,
 };
+use tokio::net::UnixStream;
 
 use super::app::restart_fig;
 use crate::cli::diagnostics::{
@@ -596,7 +596,7 @@ impl DoctorCheck for FigtermSocketCheck {
         // Try sending an insert event and ensure it inserts what is expected
         enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
 
-        let write_handle: tokio::task::JoinHandle<Result<SystemStream, DoctorError>> = tokio::spawn(async move {
+        let write_handle: tokio::task::JoinHandle<Result<UnixStream, DoctorError>> = tokio::spawn(async move {
             conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
@@ -1724,13 +1724,9 @@ impl DoctorCheck for IBusCheck {
             }}));
         }
 
-        let ibus_connection = dbus::ibus::ibus_connect()
+        let ibus_proxy = dbus::ibus::ibus_proxy()
             .await
-            .wrap_err("Failed to connect to IBus on D-Bus")?;
-
-        let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
-            .await
-            .wrap_err("Failed to create IBus proxy")?;
+            .wrap_err("Failed to connect to IBus bus")?;
 
         let error: Option<eyre::Report> = match ibus_proxy.global_engine().await {
             Ok(engine) => {
@@ -1750,10 +1746,9 @@ impl DoctorCheck for IBusCheck {
         Err(DoctorError::Error {
             reason: "ibus engine is not fig".into(),
             fix: Some(DoctorFix::Async(Box::pin(async move {
-                let ibus_connection = ibus_connection;
-                let ibus_proxy = dbus::ibus::ibus_proxy(&ibus_connection)
+                let ibus_proxy = dbus::ibus::ibus_proxy()
                     .await
-                    .wrap_err("Failed to create IBus proxy")?;
+                    .wrap_err("Failed to connect to IBus bus")?;
                 ibus_proxy.set_global_engine("fig").await?;
                 Ok(())
             }))),

@@ -10,10 +10,36 @@ import Foundation
 
 import Socket
 import Dispatch
+import SwiftProtobuf
+
+enum FigProtoEncoding: String {
+  case binary = "pbuf"
+  case json = "json"
+
+  var type: String {
+    return self.rawValue
+  }
+
+  var typeBytes: Data {
+    return self.rawValue.data(using: .utf8)!
+  }
+
+  static var typeSize: Int {
+    return 4
+  }
+
+  static var headerPrefix: Data {
+    return "\u{1B}@fig-".data(using: .utf8)!
+  }
+  // \efig-(pbuf|json)
+  static var headerSize: Int {
+    return headerPrefix.count + typeSize + 8
+  }
+}
 
 protocol UnixSocketServerDelegate: AnyObject {
-  func recieved(string: String, on socket: Socket?)
-  func recieved(data: Data, on socket: Socket?)
+  func received(data: Data, on socket: Socket, using encoding: FigProtoEncoding)
+  func onCloseConnection(socket: Socket)
 }
 
 class UnixSocketServer {
@@ -24,7 +50,6 @@ class UnixSocketServer {
   var continueRunningValue = true
   var connectedSockets = [Int32: Socket]()
   let socketLockQueue = DispatchQueue(label: "com.fig.socketLockQueue")
-  let bidirectional: Bool
   var continueRunning: Bool {
     get {
       return socketLockQueue.sync {
@@ -38,16 +63,15 @@ class UnixSocketServer {
     }
   }
 
-  init(path: String, bidirectional: Bool = false) {
+  init(path: String) {
     self.path = path
     let url = URL(fileURLWithPath: self.path)
     try? FileManager.default.createDirectory(at: url.deletingLastPathComponent(),
-                                            withIntermediateDirectories: true,
+                                             withIntermediateDirectories: true,
                                              // Create with drwxrwxrwt permissions so folder
                                              // can be reused from separate accounts
                                              // https://github.com/withfig/fig/issues/1140
                                              attributes: [ .posixPermissions: 0o1777 ])
-    self.bidirectional = bidirectional
   }
 
   deinit {
@@ -111,17 +135,65 @@ class UnixSocketServer {
     }
   }
 
-  func addNewConnection(socket: Socket) {
+  // send a response to a socket that conforms to the IPC protocol
+  func send(_ response: SwiftProtobuf.Message, to socket: Socket, encoding: FigProtoEncoding) throws {
+    var data: Data!
+    switch encoding {
+    case .binary:
+      data = try response.serializedData()
+    case .json:
+      let json = try response.jsonString()
+      data = json.data(using: .utf8)
+    }
 
-    // Add the new socket to the list of connected sockets...
+    try socket.write(from: "\u{001b}@fig-\(encoding.type)")
+    try socket.write(from: Data(from: Int64(data.count).bigEndian))
+    try socket.write(from: data)
+  }
+
+  func processRawBytes(rawBytes: Data) throws -> (Data, FigProtoEncoding)? {
+    var header = rawBytes.subdata(in: 0...FigProtoEncoding.headerSize)
+
+    guard header.starts(with: FigProtoEncoding.headerPrefix) else {
+      return nil
+    }
+
+    header = header.advanced(by: FigProtoEncoding.headerPrefix.count)
+
+    let type = header.subdata(in: 0..<FigProtoEncoding.typeSize)
+    let encoding: FigProtoEncoding!
+    switch type {
+    case FigProtoEncoding.binary.typeBytes:
+      encoding = .binary
+    case FigProtoEncoding.json.typeBytes:
+      encoding = .json
+    default:
+      return nil
+    }
+
+    header = header.advanced(by: FigProtoEncoding.typeSize)
+
+    let packetSizeData = header.subdata(in: 0..<8)
+    guard let packetSizeLittleEndian = packetSizeData.to(type: Int64.self) else {
+      return nil
+    }
+
+    let packetSize = Int64(bigEndian: packetSizeLittleEndian)
+
+    guard packetSize <= rawBytes.count - FigProtoEncoding.headerSize && packetSize >= 0 else {
+      return nil
+    }
+
+    return (rawBytes.subdata(in: FigProtoEncoding.headerSize...FigProtoEncoding.headerSize + Int(packetSize)), encoding)
+  }
+
+  func addNewConnection(socket: Socket) {
     socketLockQueue.sync { [unowned self, socket] in
       self.connectedSockets[socket.socketfd] = socket
     }
 
-    // Get the global concurrent queue...
     let queue = DispatchQueue.global(qos: .default)
 
-    // Create the run loop work item and dispatch to the default priority global queue...
     queue.async { [unowned self, socket] in
 
       var shouldKeepRunning = true
@@ -129,33 +201,16 @@ class UnixSocketServer {
       var readData = Data(capacity: UnixSocketServer.bufferSize)
 
       do {
-
         repeat {
           let bytesRead = try socket.read(into: &readData)
 
           if bytesRead > 0 {
-
-            // maintain old behavior for legacy ~/fig.socket
-            // can be removed after v1.0.53
-            if !bidirectional {
-              guard let response = String(data: readData, encoding: .utf8) else {
-
-                print("Error decoding response...")
-                readData.count = 0
-                break
-              }
-
-              self.delegate?.recieved(string: response, on: self.bidirectional ? socket : nil)
-              Logger.log(message: "recieved message \"\(response)\"", subsystem: .unix)
-
+            if let (message, encoding) = try? processRawBytes(rawBytes: readData) {
+              self.delegate?.received(data: message, on: socket, using: encoding)
             }
-
-            self.delegate?.recieved(data: readData, on: self.bidirectional ? socket : nil)
-
           }
 
           if bytesRead == 0 {
-
             shouldKeepRunning = false
             break
           }
@@ -165,6 +220,7 @@ class UnixSocketServer {
         } while shouldKeepRunning
 
         socket.close()
+        self.delegate?.onCloseConnection(socket: socket)
 
         self.socketLockQueue.sync { [unowned self, socket] in
           self.connectedSockets[socket.socketfd] = nil

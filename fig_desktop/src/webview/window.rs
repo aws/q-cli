@@ -14,10 +14,13 @@ use wry::webview::WebView;
 
 use crate::event::WindowEvent;
 use crate::figterm::{
-    FigTermCommand,
+    FigtermCommand,
     FigtermState,
 };
-use crate::native;
+use crate::native::{
+    self,
+    NativeState,
+};
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -57,31 +60,33 @@ impl WindowState {
         }
     }
 
-    fn update_position(&self) {
+    fn update_position(&self, native_state: &NativeState) {
         let positon = *self.position.read();
         let anchor = *self.anchor.read();
-        self.webview
-            .window()
-            .set_outer_position(Position::Physical(PhysicalPosition {
-                x: positon.x + anchor.x,
-                y: positon.y + anchor.y,
-            }));
+        let x = positon.x + anchor.x;
+        let y = positon.y + anchor.y;
+        native_state.position_window(&self.window_id, x, y, || {
+            self.webview
+                .window()
+                .set_outer_position(Position::Physical(PhysicalPosition { x, y }))
+        })
     }
 
     pub fn handle(
         &self,
         event: WindowEvent,
         figterm_state: &FigtermState,
+        native_state: &NativeState,
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
             WindowEvent::Reanchor { x, y } => {
                 *self.anchor.write() = PhysicalPosition { x, y };
-                self.update_position();
+                self.update_position(native_state);
             },
             WindowEvent::Reposition { x, y } => {
                 *self.position.write() = PhysicalPosition { x, y };
-                self.update_position();
+                self.update_position(native_state);
             },
             WindowEvent::Resize { width, height } => {
                 #[cfg(target_os = "linux")]
@@ -95,7 +100,7 @@ impl WindowState {
                 for session in figterm_state.sessions.iter() {
                     let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = sender.send(FigTermCommand::InterceptClear);
+                        let _ = sender.send(FigtermCommand::InterceptClear);
                     });
                 }
                 self.webview.window().set_visible(false);
@@ -115,7 +120,7 @@ impl WindowState {
                 for session in figterm_state.sessions.iter() {
                     let sender = session.sender.clone();
                     Handle::current().spawn(async move {
-                        let _ = sender.send(FigTermCommand::InterceptClear);
+                        let _ = sender.send(FigtermCommand::InterceptClear);
                     });
                 }
             },

@@ -4,6 +4,7 @@ use fig_util::directories;
 
 use crate::{
     Error,
+    JsonType,
     LocalJson,
 };
 
@@ -18,8 +19,7 @@ pub fn state_path() -> Result<PathBuf> {
 pub type LocalState = LocalJson;
 
 pub fn local_settings() -> Result<LocalState> {
-    let path = state_path()?;
-    LocalState::load(path)
+    LocalState::load(JsonType::State)
 }
 
 pub fn get_map() -> Result<serde_json::Map<String, serde_json::Value>> {

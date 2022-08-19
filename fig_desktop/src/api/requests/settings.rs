@@ -16,14 +16,15 @@ use super::{
 pub async fn get(request: GetSettingsPropertyRequest) -> RequestResult {
     let value = match request.key {
         Some(key) => settings::get_value(&key)
-            .map_err(|_| anyhow!("Failed getting settings value for {key}"))?
+            .map_err(|err| anyhow!("Failed getting settings value for {key}: {err}"))?
             .ok_or_else(|| anyhow!("No value for key '{key}'"))?,
         None => settings::local_settings()
             .map(|s| Value::Object(s.inner))
             .map_err(|_| anyhow!("Failed getting settings"))?,
     };
 
-    let json_blob = serde_json::to_string(&value).map_err(|_| anyhow!("Could not convert value for key to JSON"))?;
+    let json_blob =
+        serde_json::to_string(&value).map_err(|err| anyhow!("Could not convert value for key to JSON: {err}"))?;
 
     let response = ServerOriginatedSubMessage::GetSettingsPropertyResponse(GetSettingsPropertyResponse {
         json_blob: Some(json_blob),
@@ -39,11 +40,11 @@ pub async fn update(request: UpdateSettingsPropertyRequest) -> RequestResult {
             let value = serde_json::from_str(&value).unwrap_or(serde_json::Value::String(value));
             fig_api_client::settings::update(key, value)
                 .await
-                .map_err(|_| anyhow!("Failed setting {key}"))?;
+                .map_err(|err| anyhow!("Failed setting {key}: {err}"))?;
         },
         (Some(key), None) => fig_api_client::settings::delete(key)
             .await
-            .map_err(|_| anyhow!("Failed removing {key}"))?,
+            .map_err(|err| anyhow!("Failed removing {key}: {err}"))?,
         (None, _) => {
             return RequestResult::error("No key provided with request");
         },

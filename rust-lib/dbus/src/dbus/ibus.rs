@@ -4,17 +4,16 @@ use std::process::Output;
 
 use thiserror::Error;
 use tokio::process::Command;
+use zbus::dbus_proxy;
 use zbus::zvariant::{
     OwnedObjectPath,
     OwnedValue,
 };
-use zbus::{
-    dbus_proxy,
-    Connection,
-    ConnectionBuilder,
-};
 
-use super::CrateError;
+use super::{
+    ibus_bus,
+    CrateError,
+};
 
 #[derive(Debug, Error)]
 pub enum AddressError {
@@ -43,13 +42,8 @@ pub async fn ibus_address() -> Result<String, AddressError> {
     }
 }
 
-pub async fn ibus_connect() -> Result<Connection, CrateError> {
-    let address = ibus_address().await?;
-    Ok(ConnectionBuilder::address(&*address)?.build().await?)
-}
-
-pub async fn ibus_proxy(connection: &Connection) -> Result<IBusProxy, CrateError> {
-    Ok(IBusProxy::new(connection).await?)
+pub async fn ibus_proxy() -> Result<IBusProxy<'static>, CrateError> {
+    Ok(IBusProxy::new(ibus_bus().await?).await?)
 }
 
 #[dbus_proxy(interface = "org.freedesktop.IBus")]

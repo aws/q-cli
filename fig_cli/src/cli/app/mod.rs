@@ -1,7 +1,6 @@
 pub mod uninstall;
 
 use std::iter::empty;
-use std::process::Command;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
@@ -16,13 +15,11 @@ use fig_settings::{
     settings,
     state,
 };
-use regex::Regex;
 use tracing::{
     info,
     trace,
 };
 
-use crate::cli::debug::get_app_info;
 use crate::util::{
     is_app_running,
     launch_fig,
@@ -85,22 +82,32 @@ pub async fn quit_fig() -> Result<()> {
         tokio::time::sleep(Duration::from_millis(500)).await;
         let second_try = quit_command().await;
         if second_try.is_err() {
-            if let Ok(info) = get_app_info() {
-                let pid = Regex::new(r"pid = (\S+)")
-                    .unwrap()
-                    .captures(&info)
-                    .and_then(|c| c.get(1));
-                if let Some(pid) = pid {
-                    let success = Command::new("kill")
-                        .arg("-KILL")
-                        .arg(pid.as_str())
-                        .status()
-                        .map(|res| res.success());
-                    if let Ok(true) = success {
-                        return Ok(());
+            #[cfg(unix)]
+            {
+                use std::process::Command;
+
+                use regex::Regex;
+
+                use crate::cli::debug::get_app_info;
+
+                if let Ok(info) = get_app_info() {
+                    let pid = Regex::new(r"pid = (\S+)")
+                        .unwrap()
+                        .captures(&info)
+                        .and_then(|c| c.get(1));
+                    if let Some(pid) = pid {
+                        let success = Command::new("kill")
+                            .arg("-KILL")
+                            .arg(pid.as_str())
+                            .status()
+                            .map(|res| res.success());
+                        if let Ok(true) = success {
+                            return Ok(());
+                        }
                     }
                 }
             }
+
             println!("\nUnable to quit Fig\n");
             second_try?;
         }
@@ -143,6 +150,7 @@ impl AppSubcommand {
             AppSubcommand::Onboarding => {
                 cfg_if! {
                     if #[cfg(unix)] {
+                        use std::process::Command;
                         use std::os::unix::process::CommandExt;
 
                         launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
@@ -231,6 +239,8 @@ impl AppSubcommand {
             AppSubcommand::SetPath => {
                 cfg_if! {
                     if #[cfg(unix)] {
+                        use std::process::Command;
+
                         use eyre::WrapErr;
                         use fig_ipc::hook::send_hook_to_socket;
                         use fig_proto::hooks;

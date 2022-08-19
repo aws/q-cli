@@ -1,3 +1,5 @@
+#[cfg(target_os = "linux")]
+mod cleanup;
 pub mod cli;
 mod event_handler;
 pub mod history;
@@ -5,6 +7,7 @@ pub mod input;
 pub mod interceptor;
 pub mod ipc;
 pub mod logger;
+mod message;
 pub mod pty;
 pub mod term;
 
@@ -39,15 +42,14 @@ use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::StructOpt;
 use cli::Cli;
-use event_handler::EventHandler;
-use fig_proto::hooks::{
-    hook_to_message,
-    new_edit_buffer_hook,
-};
 use fig_proto::local::{
     self,
-    LocalMessage,
     TerminalCursorCoordinates,
+};
+use fig_proto::secure::Hostbound;
+use fig_proto::secure_hooks::{
+    hook_to_message,
+    new_edit_buffer_hook,
 };
 use fig_settings::state;
 use fig_telemetry::sentry::{
@@ -86,6 +88,7 @@ use tracing::{
     warn,
 };
 
+use crate::event_handler::EventHandler;
 use crate::input::{
     InputEvent,
     KeyCode,
@@ -95,11 +98,11 @@ use crate::input::{
 };
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
-    remove_socket,
     spawn_incoming_receiver,
-    spawn_outgoing_sender,
+    spawn_ipc,
 };
 use crate::logger::init_logger;
+use crate::message::process_figterm_message;
 #[cfg(unix)]
 use crate::pty::unix::open_pty;
 #[cfg(windows)]
@@ -165,25 +168,61 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         })
     });
 
+    // note(mia): lord have mercy
+    // todo(mia): clean this up
     local::ShellContext {
-        pid: shell_state.local_context.pid,
-        ttys: shell_state.local_context.tty.clone(),
-        process_name: shell_state.local_context.shell.clone(),
+        pid: shell_state.local_context.pid.or(shell_state.remote_context.pid),
+        ttys: shell_state
+            .local_context
+            .tty
+            .clone()
+            .or_else(|| shell_state.remote_context.tty.clone()),
+        process_name: shell_state
+            .local_context
+            .shell
+            .clone()
+            .or_else(|| shell_state.remote_context.shell.clone()),
         shell_path: shell_state
             .local_context
             .shell_path
             .clone()
-            .map(|path| path.display().to_string()),
-        wsl_distro: shell_state.local_context.wsl_distro.clone(),
+            .map(|path| path.display().to_string())
+            .or_else(|| {
+                shell_state
+                    .remote_context
+                    .shell_path
+                    .clone()
+                    .map(|path| path.display().to_string())
+            }),
+        wsl_distro: shell_state
+            .local_context
+            .wsl_distro
+            .clone()
+            .or_else(|| shell_state.remote_context.wsl_distro.clone()),
         current_working_directory: shell_state
             .local_context
             .current_working_directory
             .clone()
-            .map(|cwd| cwd.display().to_string()),
-        session_id: shell_state.local_context.session_id.clone(),
+            .map(|cwd| cwd.display().to_string())
+            .or_else(|| {
+                shell_state
+                    .remote_context
+                    .current_working_directory
+                    .clone()
+                    .map(|cwd| cwd.display().to_string())
+            }),
+        session_id: shell_state
+            .local_context
+            .session_id
+            .clone()
+            .or_else(|| shell_state.remote_context.session_id.clone()),
         integration_version: Some(integration_version),
         terminal,
-        hostname: shell_state.local_context.hostname.clone(),
+        hostname: shell_state
+            .local_context
+            .hostname
+            .clone()
+            .or_else(|| shell_state.remote_context.hostname.clone()),
         remote_context,
         remote_context_type: remote_context_type.map(|x| x.into()),
     }
@@ -214,7 +253,7 @@ fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
 {
-    let in_docker_ssh = term.shell_state().in_docker | term.shell_state().in_ssh;
+    let in_docker_ssh = term.shell_state().in_docker || term.shell_state().in_ssh;
     let shell_enabled = [Some("bash"), Some("zsh"), Some("fish"), Some("nu")]
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
@@ -222,7 +261,7 @@ where
     let mut handle = INSERTION_LOCKED_AT.write();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
-            let lock_expired = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::new(0, 50_000_000);
+            let lock_expired = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::from_millis(16);
             let should_unlock = lock_expired
                 || term
                     .get_current_buffer()
@@ -252,7 +291,7 @@ where
 
 async fn send_edit_buffer<T>(
     term: &Term<T>,
-    sender: &Sender<LocalMessage>,
+    sender: &Sender<Hostbound>,
     cursor_coordinates: Option<TerminalCursorCoordinates>,
 ) -> Result<()>
 where
@@ -400,11 +439,13 @@ fn figterm_main() -> Result<()> {
         let (main_loop_tx, main_loop_rx) = flume::bounded::<MainLoopEvent>(16);
 
         let history_sender = history::spawn_history_task().await;
-        // Spawn thread to handle outgoing data to main Fig app
-        let outgoing_sender = spawn_outgoing_sender(main_loop_tx.clone()).await?;
-
-        // Spawn thread to handle incoming data
         let incoming_receiver = spawn_incoming_receiver(&term_session_id).await?;
+
+        // Spawn thread to handle IPC
+        let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_ipc(
+            term_session_id.clone(),
+            main_loop_tx.clone()
+        ).await?;
 
         let mut stdout = io::stdout();
         let mut master = pty.master.get_async_master_pty()?;
@@ -412,7 +453,7 @@ fn figterm_main() -> Result<()> {
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
 
-        let event_sender = EventHandler::new(outgoing_sender.clone(), history_sender, main_loop_tx);
+        let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx);
 
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
@@ -425,8 +466,6 @@ fn figterm_main() -> Result<()> {
         key_interceptor.load_key_intercepts()?;
 
         let mut first_time = true;
-
-        let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
 
         let input_rx = terminal.read_input()?;
 
@@ -516,8 +555,8 @@ fn figterm_main() -> Result<()> {
                                                 .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                 .unwrap_or_default();
                                             let context = shell_state_to_context(term.shell_state());
-                                            let hook = fig_proto::hooks::new_intercepted_key_hook(context, action.to_string(), s);
-                                            outgoing_sender.send(hook_to_message(hook)).unwrap();
+                                            let hook = fig_proto::secure_hooks::new_intercepted_key_hook(context, action.to_string(), s);
+                                            secure_sender.send(hook_to_message(hook)).unwrap();
 
                                             if event.key == KeyCode::Escape {
                                                 key_interceptor.reset();
@@ -548,7 +587,6 @@ fn figterm_main() -> Result<()> {
                                         term.resize(window_size);
                                     }
                                     Ok((None, InputEvent::Paste(string))) => {
-                                        info!("Pasty");
                                         // Pass through bracketed pastes.
                                         write_buffer.extend(b"\x1b[200~");
                                         write_buffer.extend(string.as_bytes());
@@ -624,7 +662,7 @@ fn figterm_main() -> Result<()> {
 
                             if can_send_edit_buffer(&term) {
                                 let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                                if let Err(err) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
+                                if let Err(err) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
                                     warn!("Failed to send edit buffer: {err}");
                                 }
                             }
@@ -637,11 +675,17 @@ fn figterm_main() -> Result<()> {
                         }
                     }
                 }
-                msg = incoming_receiver.recv_async() => {
+                msg = secure_receiver.recv_async() => {
                     match msg {
-                        Ok((message, sender)) => {
+                        Ok(message) => {
                             debug!("Received message from socket: {message:?}");
-                            ipc::process_figterm_message(message, sender, &term, &mut master, &mut key_interceptor).await?;
+                            process_figterm_message(
+                                message,
+                                secure_sender.clone(),
+                                &term,
+                                &mut master,
+                                &mut key_interceptor
+                            ).await?;
                         }
                         Err(err) => {
                             error!("Failed to receive message from socket: {err}");
@@ -649,17 +693,35 @@ fn figterm_main() -> Result<()> {
                     }
                     Ok(())
                 }
-                // Check if to send the edit buffer because of timeout
-                _ = edit_buffer_interval.tick() => {
-                    let send_eb = INSERTION_LOCKED_AT.read().is_some();
-                    if send_eb && can_send_edit_buffer(&term) {
-                        let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                        if let Err(err) = send_edit_buffer(&term, &outgoing_sender, cursor_coordinates).await {
-                            warn!("Failed to send edit buffer: {err}");
+                msg = incoming_receiver.recv_async() => {
+                    match msg {
+                        Ok((message, sender)) => {
+                            debug!("Received message from figterm listener: {message:?}");
+                            process_figterm_message(
+                                message,
+                                sender.clone(),
+                                &term,
+                                &mut master,
+                                &mut key_interceptor
+                            ).await?;
+                        }
+                        Err(err) => {
+                            error!("Failed to receive message from socket: {err}");
                         }
                     }
                     Ok(())
                 }
+                // // Check if to send the edit buffer because of timeout
+                // _ = edit_buffer_interval.tick() => {
+                //     let send_eb = INSERTION_LOCKED_AT.read().is_some();
+                //     if send_eb && can_send_edit_buffer(&term) {
+                //         let cursor_coordinates = get_cursor_coordinates(&mut terminal);
+                //         if let Err(e) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
+                //             warn!("Failed to send edit buffer: {}", e);
+                //         }
+                //     }
+                //     Ok(())
+                // }
                 _ = &mut child_rx => {
                     trace!("Shell process exited");
                     break 'select_loop Ok(());
@@ -671,8 +733,7 @@ fn figterm_main() -> Result<()> {
                 break 'select_loop Err(err);
             }
         };
-
-        remove_socket(&term_session_id).await?;
+        let _ = stop_ipc_tx.send(());
 
         result
     });
@@ -682,6 +743,10 @@ fn figterm_main() -> Result<()> {
     // We must explicitly shutdown the runtime to exit.
     // This can cause resource leaks if we aren't careful about tasks we spawn.
     runtime.shutdown_background();
+
+    // attempt cleanup
+    #[cfg(target_os = "linux")]
+    cleanup::cleanup()?;
 
     runtime_result
 }

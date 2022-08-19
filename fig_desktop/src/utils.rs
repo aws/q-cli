@@ -70,26 +70,53 @@ pub struct Rect<U, V> {
     pub height: V,
 }
 
-#[cfg(target_os = "linux")]
+#[cfg(not(target_os = "windows"))]
 pub async fn update_check() {
     // updates on linux are handled by the package manager
     // note(mia): we may in the future still implement a nag to update,
     //     it just won't work automatically like it does on windows/macos
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "windows")]
 pub async fn update_check() {
+    use std::os::windows::process::CommandExt;
+
     use tracing::{
         error,
         info,
     };
 
-    info!("checking for updates...");
+    let installer = fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe");
+
+    if installer.exists() {
+        if let Err(e) = std::fs::remove_file(&installer) {
+            error!("Failed to remove previous installer version: {e}");
+            return;
+        }
+    }
+
+    info!("Checking for updates...");
+
     match fig_update::check_for_updates(env!("CARGO_PKG_VERSION")).await {
         Ok(Some(package)) => {
-            info!("updating!");
-            if let Err(err) = fig_update::apply_update(package) {
-                error!("failed applying update: {err:?}");
+            info!("Updating Fig...");
+
+            let detached = 0x8;
+            if let Err(e) = std::process::Command::new("curl")
+                .creation_flags(detached)
+                .args(["-L", "-s", "-o", &installer.to_string_lossy(), &package.download])
+                .status()
+            {
+                error!("Failed to download the newest version of Fig: {e}");
+                return;
+            }
+
+            match std::process::Command::new(installer.as_os_str())
+                .args(["/upgrade", "/quiet", "/norestart"])
+                .spawn()
+            {
+                Ok(_) => std::process::exit(0),
+                Err(e) => error!("Failed to update Fig: {e}"),
             }
         },
         Ok(None) => {

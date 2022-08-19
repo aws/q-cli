@@ -110,6 +110,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     _ = TerminalSessionLinker.shared
 
     _ = IPC.shared
+    _ = SecureIPC.shared
 
     _ = DockerEventStream.shared
     _ = iTermIntegration.default
@@ -553,6 +554,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       withTitle: "User Manual",
       action: #selector(AppDelegate.viewSupportForum),
       keyEquivalent: "")
+
     forum.image = NSImage(named: NSImage.Name("option"))
 
     let slack = statusBarMenu.addItem(
@@ -904,7 +906,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
   }
 
   @objc func inviteToSlack() {
-    NSWorkspace.shared.open(URL(string: "https://fig-core-backend.herokuapp.com/community")!)
+    NSWorkspace.shared.open(URL(string: "https://fig.io/community")!)
     TelemetryProvider.shared.track(event: .joinSlack, with: [:])
 
   }

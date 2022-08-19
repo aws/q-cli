@@ -9,6 +9,7 @@ mod install;
 mod local_ipc;
 mod native;
 mod notification;
+mod secure_ipc;
 mod settings;
 mod tray;
 mod utils;
@@ -154,6 +155,9 @@ async fn main() {
     install::run_install().await;
 
     let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    if show_onboarding {
+        tracing::info!("Showing onboarding");
+    }
 
     #[cfg(target_os = "linux")]
     {
@@ -163,7 +167,7 @@ async fn main() {
             None => std::env::set_var("GDK_BACKEND", "x11"),
         }
 
-        gtk::init().expect("Failed initializing GTK");
+        native::gtk::init().expect("Failed initializing GTK");
     }
 
     let mut webview_manager = WebviewManager::new();

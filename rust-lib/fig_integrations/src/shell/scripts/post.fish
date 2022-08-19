@@ -87,7 +87,7 @@ function fig_precmd --on-event fish_prompt
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
     fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"
-    if test -n "$WSL_DISTRO_NAME";
+    if test -n "$WSL_DISTRO_NAME"
         fig_osc "WSLDistro=%s" "$WSL_DISTRO_NAME"
     end
     fig_osc "PID=%d" "$fish_pid"

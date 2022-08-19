@@ -1,0 +1,79 @@
+syntax = "proto3";
+package secure;
+import "fig_common.proto";
+import "fig.proto";
+import "figterm.proto";
+import "local.proto";
+
+// all endpoints defined in this file are available to remote servers
+// be careful and keep security in mind
+
+message Clientbound {
+	oneof packet {
+    HandshakeResponse handshake_response = 100;
+		fig_common.Empty ping = 101;
+		Request request = 102;
+	}
+
+	message HandshakeResponse {
+    bool success = 1;
+	}
+
+  message Request {
+    optional uint64 nonce = 1;
+
+    oneof request {
+      figterm.InterceptCommand intercept = 100;
+      figterm.InsertTextCommand insert_text = 101;
+      figterm.SetBufferCommand set_buffer = 102;
+      fig_common.Empty diagnostics = 103;
+      fig.RunProcessRequest run_process = 104;
+      fig.ReadFileRequest read_file = 105;
+      fig.PseudoterminalExecuteRequest pseudoterminal_execute = 106;
+      figterm.InsertOnNewCmdCommand insert_on_new_cmd = 107;
+    }
+  }
+}
+
+// hooks removed:
+// OpenedSSHConnectionHook: not neccessary after multiplexing is no longer a requirement
+// unused: CallbackHook, Hide, PostExecHook, TmuxPaneChangedHook, KeyboardFocusChangedHook, EventHook, FileChangedHook
+// not necessary over remote: IntegrationReadyHook, FocusChangeHook, CursorPositionHook
+
+message Hostbound {
+	oneof packet {
+    Handshake handshake = 100;
+		Hook hook = 101;
+		Response response = 102;
+	}
+
+	message Handshake {
+		string id = 1;
+		string secret = 2;
+	}
+
+  message Hook {
+    oneof hook {
+      local.EditBufferHook edit_buffer = 101;
+      local.PromptHook prompt = 102;
+      local.PreExecHook pre_exec = 103;
+      local.InterceptedKeyHook intercepted_key = 104;
+    }
+  }
+  
+  message Response {
+    optional uint64 nonce = 1;
+  
+    oneof response {
+      string error = 100;
+      figterm.DiagnosticsResponse diagnostics = 101;
+      fig.RunProcessResponse run_process = 102;
+      ReadFileResponse read_file = 103;
+      fig.PseudoterminalExecuteResponse pseudoterminal_execute = 104;
+    }
+  
+    message ReadFileResponse {
+      fig_common.FileData data = 1;
+    }
+  }
+}

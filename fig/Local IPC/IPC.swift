@@ -16,42 +16,13 @@ typealias CommandResponse = Local_CommandResponse
 // swiftlint:disable type_body_length
 // swiftlint:disable type_name
 class IPC: UnixSocketServerDelegate {
-
-  enum Encoding: String {
-    case binary = "pbuf"
-    case json = "json"
-
-    var type: String {
-      return self.rawValue
-    }
-
-    var typeBytes: Data {
-      return self.rawValue.data(using: .utf8)!
-    }
-
-    static var typeSize: Int {
-      return 4
-    }
-
-    static var headerPrefix: Data {
-      return "\u{1B}@fig-".data(using: .utf8)!
-    }
-    // \efig-(pbuf|json)
-    static var headerSize: Int {
-      return headerPrefix.count + typeSize + 8
-    }
-  }
-
   static let unixSocket: URL = URL(fileURLWithPath: "/var/tmp/fig/\(NSUserName())/fig.socket")
 
   static let shared = IPC()
   fileprivate var buffer: Data = Data()
   fileprivate let legacyServer = UnixSocketServer(
-    path: FileManager.default.temporaryDirectory.appendingPathComponent("fig.socket").path,
-    bidirectional: true)
-  fileprivate let server = UnixSocketServer(
-    path: unixSocket.path,
-    bidirectional: true)
+    path: FileManager.default.temporaryDirectory.appendingPathComponent("fig.socket").path)
+  fileprivate let server = UnixSocketServer(path: unixSocket.path)
   init() {
     legacyServer.delegate = self
     legacyServer.run()
@@ -67,10 +38,17 @@ class IPC: UnixSocketServerDelegate {
     )
   }
 
-  func recieved(data: Data, on socket: Socket?) {
-    guard let socket = socket,
-          let (message, encoding) = try? retriveMessage(rawBytes: data)
-    else { return }
+  func received(data: Data, on socket: Socket, using encoding: FigProtoEncoding) {
+    var message: LocalMessage?
+    switch encoding {
+    case .binary:
+      message = try? LocalMessage(serializedData: data)
+    case .json:
+      message = try? LocalMessage(jsonUTF8Data: data)
+    }
+    guard let message = message else {
+      return
+    }
 
     do {
       try self.handle(message, from: socket, using: encoding)
@@ -81,79 +59,7 @@ class IPC: UnixSocketServerDelegate {
     }
   }
 
-  func recieved(string: String, on socket: Socket?) {}
-
-  // send a response to a socket that conforms to the IPC protocol
-  func send(_ response: CommandResponse, to socket: Socket, encoding: IPC.Encoding) throws {
-    var data: Data!
-    switch encoding {
-    case .binary:
-      data = try response.serializedData()
-    case .json:
-      let json = try response.jsonString()
-      data = json.data(using: .utf8)
-    }
-
-    try socket.write(from: "\u{001b}@fig-\(encoding.type)")
-    try socket.write(from: Data(from: Int64(data.count).bigEndian))
-    try socket.write(from: data)
-
-  }
-
-  // attempt to decode the bytes as a packet, if not possible add to buffer
-  func retriveMessage(rawBytes: Data) throws -> (LocalMessage, IPC.Encoding)? {
-    //    buffer.append(rawBytes)
-
-    var header = rawBytes.subdata(in: 0...IPC.Encoding.headerSize)
-
-    guard header.starts(with: IPC.Encoding.headerPrefix) else {
-      return nil
-    }
-
-    header = header.advanced(by: IPC.Encoding.headerPrefix.count)
-
-    let type = header.subdata(in: 0..<IPC.Encoding.typeSize)
-    let encoding: IPC.Encoding!
-    switch type {
-    case IPC.Encoding.binary.typeBytes:
-      encoding = .binary
-    case IPC.Encoding.json.typeBytes:
-      encoding = .json
-    default:
-      return nil
-    }
-
-    header = header.advanced(by: IPC.Encoding.typeSize)
-
-    let packetSizeData = header.subdata(in: 0..<8)
-    guard let packetSizeLittleEndian = packetSizeData.to(type: Int64.self) else {
-      return nil
-    }
-
-    let packetSize = Int64(bigEndian: packetSizeLittleEndian)
-
-    guard packetSize <= rawBytes.count - IPC.Encoding.headerSize && packetSize >= 0 else {
-      return nil
-    }
-
-    let message = rawBytes.subdata(in: IPC.Encoding.headerSize...IPC.Encoding.headerSize + Int(packetSize))
-
-    switch encoding {
-    case .binary:
-      return (try LocalMessage(serializedData: message), encoding!)
-    case .json:
-      guard let json = String(data: message, encoding: .utf8) else {
-        return nil
-      }
-      return (try LocalMessage(jsonString: json), encoding!)
-    case .none:
-      return nil
-    }
-
-  }
-
-  func handle(_ message: LocalMessage, from socket: Socket, using encoding: IPC.Encoding) throws {
-
+  func handle(_ message: LocalMessage, from socket: Socket, using encoding: FigProtoEncoding) throws {
     switch message.type {
     case .command(let command):
       try handleCommand(command, from: socket, using: encoding)
@@ -167,7 +73,9 @@ class IPC: UnixSocketServerDelegate {
     }
   }
 
-  func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: IPC.Encoding)
+  func onCloseConnection(socket: Socket) {}
+
+  func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: FigProtoEncoding)
   throws {
 
     Logger.log(message: "Recieved command message!", subsystem: .unix)
@@ -229,7 +137,7 @@ class IPC: UnixSocketServerDelegate {
 
     if var resp = response {
       resp.id = messageId
-      try self.send(resp, to: socket, encoding: encoding)
+      try self.server.send(resp, to: socket, encoding: encoding)
     }
   }
 
@@ -279,7 +187,6 @@ class IPC: UnixSocketServerDelegate {
     case .openedSshConnection(let hook):
       IPC.post(notification: .sshConnectionOpened, object: hook)
     case .callback(let hook):
-
       Logger.log(message: "Callback hook")
       NotificationCenter.default.post(
         name: PseudoTerminal.recievedCallbackNotification,

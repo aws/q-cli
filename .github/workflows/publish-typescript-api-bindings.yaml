@@ -3,7 +3,9 @@ name: Publish package to NPM
 on:
   workflow_dispatch:
   push:
-    paths: typescript-api-bindings/src/*.ts
+    paths: 
+      - typescript-api-bindings/src/*.ts
+      - proto/fig.proto
 
 jobs:
   release:

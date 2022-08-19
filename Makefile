@@ -50,7 +50,7 @@ rpm: bin icons bundle
 	rpmbuild -bb ~/rpmbuild/SPECS/fig.spec
 	cp ~/rpmbuild/RPMS/$(ARCH)/fig-${NUMERIC}-${FLAVOR}.$(ARCH).rpm $(BUILD_DIR)/fig-$(ARCH)-linux.rpm
 
-bin: fig_ibus_engine fig_desktop fig figterm
+bin: fig_desktop fig figterm
 	rm -f $(BUILT_PRODUCTS_DIR)/*-$(ARCH)-unknown-linux-gnu
 
 fig_desktop:

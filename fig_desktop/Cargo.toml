@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.2.8"
+version = "2.3.4"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -21,7 +21,6 @@ camino = { version = "1.0.9", features = ["serde1"] }
 cfg-if = "1.0.0"
 clap = "3.2.16"
 dashmap = "5.3.4"
-dbus = { path = "../rust-lib/dbus" }
 fig_api_client = { version = "0.1.0", path = "../rust-lib/fig_api_client" }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_install = { path = "../rust-lib/fig_install" }
@@ -29,10 +28,12 @@ fig_integrations = { path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
+fig_request = { path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
 fig_update = { version = "0.1.0", path = "../rust-lib/fig_update" }
 fig_util = { path = "../rust-lib/fig_util" }
+flume = "0.10.14"
 fnv = "1.0.7"
 hashbrown = "0.12.3"
 image = "0.24.3"
@@ -47,7 +48,6 @@ serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.83"
 shellexpand = "2.1.2"
 sysinfo = "0.25.2"
-system_socket = { path = "../rust-lib/system_socket" }
 time = { version = "=0.3.13" }
 tokio = { version = "1", features = [ "full" ] }
 tracing = "0.1.36"
@@ -75,9 +75,11 @@ features = [
 ]
 
 [target.'cfg(target_os = "linux")'.dependencies]
+dbus = { path = "../rust-lib/dbus" }
 freedesktop-icons = "0.2.1"
 gtk = { version = "0.15", features = [ "v3_22" ] }
 x11rb = "0.10.1"
+zbus = "3.0.0"
 
 [build-dependencies]
 image = "0.24.3"

@@ -4,6 +4,7 @@ use std::time::Duration;
 use fig_auth::get_token;
 use fig_settings::api_host;
 use once_cell::sync::Lazy;
+pub use reqwest;
 use reqwest::cookie::Cookie;
 use reqwest::header::HeaderMap;
 pub use reqwest::Method;
@@ -22,8 +23,11 @@ use serde_json::Value;
 use thiserror::Error;
 
 static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
-    let danger_accept_invalid_certs = std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some();
-    let custom_cert = std::env::var_os("FIG_CUSTOM_CERT");
+    let danger_accept_invalid_certs = std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some()
+        || fig_settings::state::get_bool_or("FIG_DANGER_ACCEPT_INVALID_CERTS", false);
+    let custom_cert = std::env::var("FIG_CUSTOM_CERT")
+        .ok()
+        .or_else(|| fig_settings::state::get_string("FIG_CUSTOM_CERT").ok().flatten());
 
     let mut client = Client::builder()
         .danger_accept_invalid_certs(danger_accept_invalid_certs)
@@ -37,17 +41,17 @@ static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
             match std::fs::read(path) {
                 Ok(file) => {
                     let cert = match path.extension().and_then(|e| e.to_str()) {
-                        Some("pem") => match Certificate::from_pem(&file) {
-                            Ok(cert) => Some(cert),
-                            Err(err) => {
-                                tracing::error!(%err, "Failed to deser pem file");
-                                None
-                            },
-                        },
                         Some("der") => match Certificate::from_der(&file) {
                             Ok(cert) => Some(cert),
                             Err(err) => {
                                 tracing::error!(%err, "Failed to deser der file");
+                                None
+                            },
+                        },
+                        Some(_) => match Certificate::from_pem(&file) {
+                            Ok(cert) => Some(cert),
+                            Err(err) => {
+                                tracing::error!(%err, "Failed to deser pem file");
                                 None
                             },
                         },
@@ -70,6 +74,10 @@ static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
 
     client.build().ok()
 });
+
+pub fn client() -> Option<&'static Client> {
+    CLIENT.as_ref()
+}
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 

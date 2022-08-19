@@ -16,14 +16,15 @@ use super::{
 pub async fn get(request: GetLocalStateRequest) -> RequestResult {
     let value = match request.key {
         Some(key) => state::get_value(&key)
-            .map_err(|_| anyhow!("Failed getting settings value for {key}"))?
+            .map_err(|err| anyhow!("Failed getting settings value for {key}: {err}"))?
             .ok_or_else(|| anyhow!("No value for key '{key}'"))?,
         None => state::local_settings()
             .map(|s| Value::Object(s.inner))
-            .map_err(|_| anyhow!("Failed getting settings"))?,
+            .map_err(|err| anyhow!("Failed getting settings: {err}"))?,
     };
 
-    let json_blob = serde_json::to_string(&value).map_err(|_| anyhow!("Could not convert value for key to JSON"))?;
+    let json_blob =
+        serde_json::to_string(&value).map_err(|err| anyhow!("Could not convert value for key to JSON: {err}"))?;
 
     let response = ServerOriginatedSubMessage::GetLocalStateResponse(GetLocalStateResponse {
         json_blob: Some(json_blob),
@@ -36,9 +37,9 @@ pub async fn update(request: UpdateLocalStateRequest) -> RequestResult {
     match (&request.key, request.value) {
         (Some(key), Some(value)) => {
             let value = serde_json::from_str(&value).unwrap_or(serde_json::Value::String(value));
-            state::set_value(key, value).map_err(|_| anyhow!("Failed setting {key}"))?;
+            state::set_value(key, value).map_err(|err| anyhow!("Failed setting {key}: {err}"))?;
         },
-        (Some(key), None) => state::remove_value(key).map_err(|_| anyhow!("Failed removing {key}"))?,
+        (Some(key), None) => state::remove_value(key).map_err(|err| anyhow!("Failed removing {key}: {err}"))?,
         (None, _) => {
             return RequestResult::error("No key provided with request");
         },

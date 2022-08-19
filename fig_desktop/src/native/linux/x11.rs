@@ -1,6 +1,7 @@
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use parking_lot::Mutex;
 use tracing::{
     debug,
     error,
@@ -28,20 +29,27 @@ use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
 use super::integrations::WM_CLASS_WHITELIST;
-use super::{
-    NativeState,
-    WM_REVICED_DATA,
-};
+use super::WM_REVICED_DATA;
 use crate::event::WindowEvent;
-use crate::native::{
-    WindowData,
-    WindowGeometry,
-};
+use crate::native::WindowGeometry;
 use crate::{
     Event,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
+
+#[derive(Debug)]
+pub struct X11State {
+    pub active_window: Mutex<Option<X11WindowData>>,
+}
+
+#[derive(Debug)]
+pub struct X11WindowData {
+    pub id: x11rb::protocol::xproto::Window,
+    pub class: Option<Vec<u8>>,
+    pub instance: Option<Vec<u8>>,
+    pub window_geometry: Option<WindowGeometry>,
+}
 
 mod atoms {
     use once_cell::sync::OnceCell;
@@ -64,7 +72,7 @@ mod atoms {
     }
 }
 
-pub async fn handle_x11(proxy: EventLoopProxy, native_state: Arc<NativeState>) {
+pub async fn handle_x11(proxy: EventLoopProxy, x11_state: Arc<X11State>) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
 
     let setup = conn.setup();
@@ -88,7 +96,7 @@ pub async fn handle_x11(proxy: EventLoopProxy, native_state: Arc<NativeState>) {
 
     while let Ok(event) = tokio::task::block_in_place(|| conn.wait_for_event()) {
         if let X11Event::PropertyNotify(event) = event {
-            if let Err(err) = handle_property_event(&conn, &native_state, &proxy, event) {
+            if let Err(err) = handle_property_event(&conn, &x11_state, &proxy, event) {
                 error!("error handling PropertyNotifyEvent: {err}");
             }
         }
@@ -97,7 +105,7 @@ pub async fn handle_x11(proxy: EventLoopProxy, native_state: Arc<NativeState>) {
 
 fn handle_property_event(
     conn: &RustConnection,
-    native_state: &NativeState,
+    x11_state: &X11State,
     proxy: &EventLoopProxy,
     event: PropertyNotifyEvent,
 ) -> anyhow::Result<()> {
@@ -109,14 +117,14 @@ fn handle_property_event(
 
         if property_name == b"_NET_ACTIVE_WINDOW" {
             trace!("active window changed");
-            process_window(conn, native_state, proxy)?;
+            process_window(conn, x11_state, proxy)?;
         }
     }
 
     Ok(())
 }
 
-fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &EventLoopProxy) -> anyhow::Result<()> {
+fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoopProxy) -> anyhow::Result<()> {
     let hide = || {
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),
@@ -136,7 +144,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
 
     let window_reply = window_geometry(conn, focus_window);
 
-    let old_window_data = native_state.active_window.lock().replace(WindowData {
+    let old_window_data = x11_state.active_window.lock().replace(X11WindowData {
         id: focus_window,
         class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
         instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
@@ -190,7 +198,7 @@ fn process_window(conn: &RustConnection, native_state: &NativeState, proxy: &Eve
         }
     }
 
-    if !WM_CLASS_WHITELIST.iter().any(|w| w.as_bytes() == wm_class) {
+    if !WM_CLASS_WHITELIST.keys().any(|w| w.as_bytes() == wm_class) {
         // hide if not a whitelisted wm class
         hide()?;
         return Ok(());

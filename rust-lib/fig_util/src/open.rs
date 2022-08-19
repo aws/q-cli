@@ -5,16 +5,26 @@ use cfg_if::cfg_if;
 
 pub fn command(url: impl AsRef<str>) -> Command {
     cfg_if! {
-        if #[cfg(target_os = "macos")] {
+        if #[cfg(target_os = "linux")] {
+            let executable = if crate::wsl::is_wsl() {
+                "wslview"
+            } else {
+                "xdg-open"
+            };
+
+            let mut command = Command::new(executable);
+            command.arg(url.as_ref());
+            command
+        } else if #[cfg(target_os = "macos")] {
             let mut command = Command::new("open");
             command.arg(url.as_ref());
             command
-        } else if #[cfg(target_os = "linux")] {
-            let mut command = Command::new("xdg-open");
-            command.arg(url.as_ref());
-            command
-        } else if #[cfg(windows)] {
+        } else if #[cfg(target_os = "windows")] {
+            use std::os::windows::process::CommandExt;
+
+            let detached = 0x8;
             let mut command = Command::new("cmd");
+            command.creation_flags(detached);
             command.args(&["/c", "start", url.as_ref()]);
             command
         } else {

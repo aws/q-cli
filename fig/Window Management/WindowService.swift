@@ -400,7 +400,7 @@ class ExternalWindow {
 
     return provider.getCursorRect(in: self)
   }
-  
+
   var isFullScreen: Bool? {
     guard let axref = self.accesibilityElement else { return nil }
     var isFullScreen: AnyObject?
@@ -409,7 +409,7 @@ class ExternalWindow {
     guard res == .success else { return nil }
 
     return isFullScreen as? Bool
-    
+
   }
 }
 
