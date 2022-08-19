@@ -101,9 +101,9 @@ pub async fn update_check() {
         Ok(Some(package)) => {
             info!("Updating Fig...");
 
-            let create_no_window = 0x0;
+            let detached = 0x8;
             if let Err(e) = std::process::Command::new("curl")
-                .creation_flags(create_no_window)
+                .creation_flags(detached)
                 .args(["-L", "-s", "-o", &installer.to_string_lossy(), &package.download])
                 .status()
             {
@@ -111,9 +111,7 @@ pub async fn update_check() {
                 return;
             }
 
-            let detached = 0x8;
             match std::process::Command::new(installer.as_os_str())
-                .creation_flags(detached)
                 .args(["/upgrade", "/quiet", "/norestart"])
                 .spawn()
             {
