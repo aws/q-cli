@@ -69,7 +69,7 @@
         />
 
         <InstallExecuteSequence>
-            <Custom Action="Run" After="InstallFinalize">NOT Installed AND NOT REMOVE</Custom>
+            <Custom Action="Run" After="InstallFinalize">NOT Installed AND NOT PATCH</Custom>
         </InstallExecuteSequence>
     </Product>
 </Wix>

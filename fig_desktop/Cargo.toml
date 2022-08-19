@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.2.11"
+version = "2.3.2"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -21,7 +21,6 @@ camino = { version = "1.0.9", features = ["serde1"] }
 cfg-if = "1.0.0"
 clap = "3.2.16"
 dashmap = "5.3.4"
-dbus = { path = "../rust-lib/dbus" }
 fig_api_client = { version = "0.1.0", path = "../rust-lib/fig_api_client" }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_install = { path = "../rust-lib/fig_install" }
@@ -76,6 +75,7 @@ features = [
 ]
 
 [target.'cfg(target_os = "linux")'.dependencies]
+dbus = { path = "../rust-lib/dbus" }
 freedesktop-icons = "0.2.1"
 gtk = { version = "0.15", features = [ "v3_22" ] }
 x11rb = "0.10.1"

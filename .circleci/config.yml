@@ -215,6 +215,7 @@ jobs:
             git config user.name 'fig-deploy[bot]'
             git config user.email '109307685+fig-deploy[bot]@users.noreply.github.com'
             git add fig_desktop/Cargo.toml
+            git add fig.wxi
             git checkout -B build-<< pipeline.parameters.id >>
             printf "Version $NEW_VERSION [skip-ci]\n\n<< pipeline.parameters.changelog >>" > commit_message
             git commit --allow-empty --file commit_message
