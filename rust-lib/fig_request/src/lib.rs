@@ -41,17 +41,17 @@ static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
             match std::fs::read(path) {
                 Ok(file) => {
                     let cert = match path.extension().and_then(|e| e.to_str()) {
-                        Some("pem" | "cert" | "cer" | "crt") => match Certificate::from_pem(&file) {
-                            Ok(cert) => Some(cert),
-                            Err(err) => {
-                                tracing::error!(%err, "Failed to deser pem file");
-                                None
-                            },
-                        },
                         Some("der") => match Certificate::from_der(&file) {
                             Ok(cert) => Some(cert),
                             Err(err) => {
                                 tracing::error!(%err, "Failed to deser der file");
+                                None
+                            },
+                        },
+                        Some(_) => match Certificate::from_pem(&file) {
+                            Ok(cert) => Some(cert),
+                            Err(err) => {
+                                tracing::error!(%err, "Failed to deser pem file");
                                 None
                             },
                         },

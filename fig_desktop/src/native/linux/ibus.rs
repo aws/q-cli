@@ -24,10 +24,12 @@ use crate::{
 
 pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Result<()> {
     let ibus_connection = ibus_bus_new().await?;
+    debug!("Connected to ibus");
     DBusProxy::new(&ibus_connection)
         .await?
         .add_match("eavesdrop=true")
         .await?;
+    debug!("Added eavesdrop to ibus proxy");
     let mut stream = MessageStream::from(ibus_connection);
     tokio::spawn(async move {
         let mut active_input_contexts = HashSet::new();
@@ -120,7 +122,10 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
                         }
                     }
                 },
-                Ok(None) => break,
+                Ok(None) => {
+                    debug!("Received end from ibus");
+                    break;
+                },
                 Err(err) => {
                     error!(%err, "Failed receiving message from stream");
                 },
