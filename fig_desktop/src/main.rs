@@ -167,7 +167,7 @@ async fn main() {
             None => std::env::set_var("GDK_BACKEND", "x11"),
         }
 
-        gtk::init().expect("Failed initializing GTK");
+        native::gtk::init().expect("Failed initializing GTK");
     }
 
     let mut webview_manager = WebviewManager::new();

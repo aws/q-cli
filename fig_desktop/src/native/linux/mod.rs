@@ -146,3 +146,39 @@ static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
 pub fn autocomplete_active() -> bool {
     WM_REVICED_DATA.load(Ordering::Relaxed)
 }
+
+pub mod gtk {
+    pub fn init() -> Result<(), gtk::glib::BoolError> {
+        use gtk::glib::translate::{
+            from_glib,
+            ToGlibPtr,
+        };
+        use gtk::{
+            ffi,
+            glib,
+            is_initialized,
+            set_initialized,
+        };
+
+        if gtk::is_initialized_main_thread() {
+            return Ok(());
+        } else if is_initialized() {
+            panic!("Attempted to initialize GTK from two different threads.");
+        }
+        unsafe {
+            let name = vec!["fig"];
+            if from_glib(ffi::gtk_init_check(&mut 1, &mut name.to_glib_none().0)) {
+                let result: bool = from_glib(glib::ffi::g_main_context_acquire(
+                    gtk::glib::ffi::g_main_context_default(),
+                ));
+                if !result {
+                    return Err(glib::bool_error!("Failed to acquire default main context"));
+                }
+                set_initialized();
+                Ok(())
+            } else {
+                Err(glib::bool_error!("Failed to initialize GTK"))
+            }
+        }
+    }
+}
