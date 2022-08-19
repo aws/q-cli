@@ -63,6 +63,7 @@ use crate::event::{
     NativeEvent,
     WindowEvent,
 };
+use crate::webview::window::WindowId;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
@@ -181,6 +182,10 @@ impl NativeState {
 
     pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
         None
+    }
+
+    pub fn position_window(&self, _window_id: &WindowId, _x: i32, _y: i32, fallback: impl FnOnce()) {
+        fallback();
     }
 }
 

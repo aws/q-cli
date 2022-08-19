@@ -238,7 +238,12 @@ impl WebviewManager {
                             window_event,
                         } => match self.fig_id_map.get(&window_id) {
                             Some(window_state) => {
-                                window_state.handle(window_event, &self.figterm_state, &api_handler_tx);
+                                window_state.handle(
+                                    window_event,
+                                    &self.figterm_state,
+                                    &self.native_state,
+                                    &api_handler_tx,
+                                );
                             },
                             None => {
                                 // TODO(grant): figure out how to handle this gracefuly

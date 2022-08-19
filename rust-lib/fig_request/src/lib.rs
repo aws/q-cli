@@ -23,8 +23,11 @@ use serde_json::Value;
 use thiserror::Error;
 
 static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
-    let danger_accept_invalid_certs = std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some();
-    let custom_cert = std::env::var_os("FIG_CUSTOM_CERT");
+    let danger_accept_invalid_certs = std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some()
+        || fig_settings::state::get_bool_or("FIG_DANGER_ACCEPT_INVALID_CERTS", false);
+    let custom_cert = std::env::var("FIG_CUSTOM_CERT")
+        .ok()
+        .or_else(|| fig_settings::state::get_string("FIG_CUSTOM_CERT").ok().flatten());
 
     let mut client = Client::builder()
         .danger_accept_invalid_certs(danger_accept_invalid_certs)
@@ -38,7 +41,7 @@ static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
             match std::fs::read(path) {
                 Ok(file) => {
                     let cert = match path.extension().and_then(|e| e.to_str()) {
-                        Some("pem") => match Certificate::from_pem(&file) {
+                        Some("pem" | "cert" | "cer" | "crt") => match Certificate::from_pem(&file) {
                             Ok(cert) => Some(cert),
                             Err(err) => {
                                 tracing::error!(%err, "Failed to deser pem file");

@@ -2409,6 +2409,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fd-lock"
+version = "3.0.6"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e11dcc7e4d79a8c89b9ab4c6f5c30b1fc4a83c420792da3542fd31179ed5f517"
+dependencies = [
+ "cfg-if 1.0.0",
+ "rustix",
+ "windows-sys",
+]
+
+[[package]]
 name = "ff"
 version = "0.12.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2703,7 +2714,9 @@ dependencies = [
 name = "fig_settings"
 version = "0.1.0"
 dependencies = [
+ "fd-lock",
  "fig_util",
+ "parking_lot 0.12.1",
  "serde",
  "serde_json",
  "tempfile",
@@ -4488,11 +4501,11 @@ dependencies = [
 [[package]]
 name = "mio"
 version = "0.8.4"
-source = "git+https://github.com/sullivan-sean/mio#cee5c6bb4e952463f1fe5acbd651d34bff96bb2b"
+source = "git+https://github.com/sullivan-sean/mio#488254d2b509b4b1152ee118aabf8533616b5d47"
 dependencies = [
  "libc",
  "log",
- "tempfile",
+ "rand 0.8.5",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
 ]

@@ -34,7 +34,7 @@ pub static WM_CLASS_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new
     whitelist
 });
 
-static GSE_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
+pub static GSE_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
     let mut whitelist = HashMap::new();
     for terminal in fig_util::terminal::LINUX_TERMINALS {
         if let Some(gnome_id) = terminal.gnome_id() {

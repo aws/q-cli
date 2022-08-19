@@ -3,6 +3,7 @@ use std::sync::Arc;
 use anyhow::Result;
 
 use crate::event::NativeEvent;
+use crate::webview::window::WindowId;
 use crate::EventLoopProxy;
 
 pub const SHELL: &str = "/bin/bash";
@@ -21,6 +22,10 @@ impl NativeState {
 
     pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
         None
+    }
+
+    pub fn position_window(&self, _window_id: &WindowId, _x: i32, _y: i32, fallback: impl FnOnce()) {
+        fallback();
     }
 }
 

@@ -45,6 +45,7 @@ use tokio::time::{
     Instant,
 };
 use tracing::{
+    debug,
     error,
     info,
     warn,
@@ -110,12 +111,12 @@ async fn handle_secure_ipc(
         .await
         .unwrap_or_else(|err| {
             if !err.is_disconnect() {
-                error!("Failed receiving secure message: {err}");
+                error!(%err, "Failed receiving secure message");
             }
             None
         })
     {
-        info!("Received secure message: {message:?}");
+        debug!(?message, "Received secure message");
         if let Some(response) = match message.packet {
             Some(hostbound::Packet::Handshake(handshake)) => {
                 if session_id.is_some() {
@@ -169,10 +170,10 @@ async fn handle_secure_ipc(
             },
             Some(hostbound::Packet::Hook(hostbound::Hook { hook: Some(hook) })) => {
                 if let Some(session_id) = &session_id {
-                    if let Err(err) = match &hook {
+                    if let Err(err) = match hook {
                         hostbound::hook::Hook::EditBuffer(edit_buffer) => {
                             hooks::edit_buffer(
-                                edit_buffer,
+                                &edit_buffer,
                                 session_id,
                                 figterm_state.clone(),
                                 &notifications_state,
@@ -181,16 +182,16 @@ async fn handle_secure_ipc(
                             .await
                         },
                         hostbound::hook::Hook::Prompt(prompt) => {
-                            hooks::prompt(prompt, &notifications_state, &proxy).await
+                            hooks::prompt(&prompt, &notifications_state, &proxy).await
                         },
                         hostbound::hook::Hook::PreExec(pre_exec) => {
-                            hooks::pre_exec(pre_exec, &notifications_state, &proxy).await
+                            hooks::pre_exec(&pre_exec, &notifications_state, &proxy).await
                         },
                         hostbound::hook::Hook::InterceptedKey(intercepted_key) => {
                             hooks::intercepted_key(intercepted_key, &notifications_state, &proxy).await
                         },
                     } {
-                        error!("Failed processing hook {hook:?} {err}")
+                        error!(%err, "Failed processing hook")
                     }
                     None
                 } else {
@@ -235,14 +236,14 @@ async fn handle_secure_ipc(
     }
 
     if let Err(err) = ping_task.await {
-        error!("Secure ping task join error: {err}");
+        error!(%err, "Secure ping task join error");
     }
 
     if let Err(err) = outgoing_task.await {
-        error!("Secure outgoing task join error: {err}");
+        error!(%err, "Secure outgoing task join error");
     }
 
-    info!("disconnect from {session_id:?}");
+    info!("Disconnect from {session_id:?}");
 }
 
 async fn handle_outgoing(
@@ -252,7 +253,7 @@ async fn handle_outgoing(
 ) {
     while let Ok(message) = outgoing.recv_async().await {
         if let Err(err) = fig_ipc::send_message(&mut writer, message).await {
-            error!("secure outgoing task send error: {err}");
+            error!(%err, "Secure outgoing task send error");
             bad_connection.notify_one();
             return;
         }

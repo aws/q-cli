@@ -199,7 +199,7 @@ pub async fn pre_exec(
 }
 
 pub async fn intercepted_key(
-    InterceptedKeyHook { action, context, .. }: &InterceptedKeyHook,
+    InterceptedKeyHook { action, context, .. }: InterceptedKeyHook,
     notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
@@ -212,8 +212,8 @@ pub async fn intercepted_key(
                 r#type: Some(fig_proto::fig::notification::Type::KeybindingPressedNotification(
                     KeybindingPressedNotification {
                         keypress: None,
-                        action: Some(action.clone()),
-                        context: context.clone(),
+                        action: Some(action),
+                        context,
                     },
                 )),
             },

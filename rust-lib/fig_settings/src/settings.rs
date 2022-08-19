@@ -5,6 +5,7 @@ use serde::de::DeserializeOwned;
 
 use crate::{
     Error,
+    JsonType,
     LocalJson,
 };
 
@@ -19,8 +20,7 @@ pub fn settings_path() -> Result<PathBuf> {
 pub type LocalSettings = LocalJson;
 
 pub fn local_settings() -> Result<LocalSettings> {
-    let path = settings_path()?;
-    LocalSettings::load(path)
+    LocalSettings::load(JsonType::Settings)
 }
 
 pub fn get_map() -> Result<serde_json::Map<String, serde_json::Value>> {

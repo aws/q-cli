@@ -1,6 +1,6 @@
 use std::io::Cursor;
 use std::path::Path;
-use std::sync::atomic::Ordering;
+use std::sync::Arc;
 
 use anyhow::{
     anyhow,
@@ -12,11 +12,15 @@ use bytes::{
     Bytes,
     BytesMut,
 };
+use fig_util::Terminal;
+use flume::Receiver;
+use parking_lot::Mutex;
 use serde_json::{
     json,
     Value,
 };
 use tokio::io::AsyncWriteExt;
+use tokio::net::UnixStream;
 use tracing::{
     error,
     info,
@@ -24,20 +28,43 @@ use tracing::{
     warn,
 };
 
-use crate::event::{
-    Event,
-    WindowEvent,
-};
-use crate::native::linux::WM_REVICED_DATA;
+use super::integrations::GSE_WHITELIST;
 use crate::utils::Rect;
-use crate::{
-    EventLoopProxy,
-    AUTOCOMPLETE_ID,
-};
+use crate::EventLoopProxy;
 
+#[derive(Debug)]
+pub struct SwayState {
+    pub active_window_rect: Mutex<Option<Rect<i64, i64>>>,
+    pub active_terminal: Mutex<Option<Terminal>>,
+    pub sway_tx: flume::Sender<SwayCommand>,
+}
+
+pub enum SwayCommand {
+    PositionWindow { x: i64, y: i64 },
+}
+
+impl SwayCommand {
+    #[allow(dead_code)]
+    fn to_request(&self) -> String {
+        match self {
+            SwayCommand::PositionWindow { x, y } => {
+                format!("for_window [window_role=\"autocomplete\"] move absolute position {x} px {y} px")
+            },
+        }
+    }
+}
+
+#[derive(Debug)]
+enum Payload {
+    Json(Value),
+    #[allow(dead_code)]
+    Bytes(Bytes),
+}
+
+#[derive(Debug)]
 struct I3Ipc {
     payload_type: u32,
-    payload: Value,
+    payload: Payload,
 }
 
 enum ParseResult {
@@ -73,10 +100,10 @@ impl I3Ipc {
         let mut payload_buf = vec![0; payload_length as usize];
         src.copy_to_slice(&mut payload_buf);
 
-        let payload = match serde_json::from_slice(&payload_buf) {
+        let payload = Payload::Json(match serde_json::from_slice(&payload_buf) {
             Ok(payload) => payload,
             Err(err) => return ParseResult::Error(err.into()),
-        };
+        });
 
         ParseResult::Ok {
             i3ipc: Self { payload_type, payload },
@@ -85,7 +112,10 @@ impl I3Ipc {
     }
 
     pub fn serialize(&self) -> Bytes {
-        let payload = serde_json::to_vec(&self.payload).unwrap();
+        let payload: Bytes = match &self.payload {
+            Payload::Json(value) => serde_json::to_vec(&value).unwrap().into(),
+            Payload::Bytes(bytes) => bytes.clone(),
+        };
 
         let mut bytes = BytesMut::with_capacity(14);
         bytes.extend_from_slice(b"i3-ipc");
@@ -97,95 +127,117 @@ impl I3Ipc {
     }
 }
 
-pub async fn handle_sway(proxy: EventLoopProxy, socket: impl AsRef<Path>) {
+pub async fn handle_sway(
+    _proxy: EventLoopProxy,
+    sway_state: Arc<SwayState>,
+    socket: impl AsRef<Path>,
+    _sway_rx: Receiver<SwayCommand>,
+) {
     use tokio::io::AsyncReadExt;
 
-    let mut conn = tokio::net::UnixStream::connect(socket).await.unwrap();
+    let mut conn = UnixStream::connect(socket).await.unwrap();
 
     let message = I3Ipc {
         payload_type: 2,
-        payload: json!(["window"]),
+        payload: Payload::Json(json!(["window"])),
     };
 
     conn.write_all(&message.serialize()).await.unwrap();
 
-    let mut buf = bytes::BytesMut::new();
+    let mut buf = BytesMut::new();
     loop {
-        conn.read_buf(&mut buf).await.unwrap();
+        tokio::select! {
+            res = conn.read_buf(&mut buf) => {
+                res.unwrap();
+                handle_incomming(&mut conn, &mut buf, &sway_state).await;
+            }
+            // command = sway_rx.recv_async() => {
+            //     command.unwrap().to_request().as_bytes()).await.unwrap();
+            //     let message = I3Ipc {
+            //         payload_type: 0,
+            //         payload: Payload::Bytes(Bytes::from_static(b"exit")),
+            //     };
+            //     conn.write_all(&message.serialize()).await.unwrap();
+            // }
+        }
+    }
+}
+
+pub async fn handle_incomming(conn: &mut UnixStream, buf: &mut BytesMut, sway_state: &SwayState) {
+    use tokio::io::AsyncReadExt;
+
+    loop {
         match I3Ipc::parse(&mut Cursor::new(buf.as_ref())) {
             ParseResult::Ok {
                 i3ipc: I3Ipc { payload, payload_type },
                 size,
             } => {
-                trace!("{payload_type} {payload:?}");
+                let payload = match payload {
+                    Payload::Json(value) => value,
+                    Payload::Bytes(_) => todo!(),
+                };
+
+                trace!(%payload_type, %payload, "Recieved event");
                 buf.advance(size);
 
                 // Handle the message
                 match payload_type {
-                    2 => {
-                        if let Some(Value::Bool(true)) = payload.get("success") {
-                            info!("Successfuly subscribed to sway events");
-                        } else {
-                            warn!("Failed to subscribe to sway events: {payload}");
-                        }
+                    2 => match payload.get("success") {
+                        Some(Value::Bool(true)) => info!("Successfuly subscribed to sway events"),
+                        _ => warn!(%payload, "Failed to subscribe to sway events"),
                     },
                     0x80000003 => match payload.get("change") {
                         Some(Value::String(event)) if event == "focus" => {
                             if let Some(Value::Object(container)) = payload.get("container") {
-                                let _geometey = match container.get("geometry") {
+                                let app_id = container.get("app_id").and_then(|x| x.as_str());
+
+                                let geometey = match container.get("rect") {
                                     Some(Value::Object(geometry)) => {
                                         let x = geometry.get("x").and_then(|x| x.as_i64());
                                         let y = geometry.get("y").and_then(|y| y.as_i64());
                                         let width = geometry.get("width").and_then(|w| w.as_i64());
                                         let height = geometry.get("height").and_then(|h| h.as_i64());
 
-                                        Some(Rect {
+                                        Rect {
                                             x: x.unwrap_or(0),
                                             y: y.unwrap_or(0),
                                             width: width.unwrap_or(0),
                                             height: height.unwrap_or(0),
-                                        })
+                                        }
                                     },
-                                    _ => None,
+                                    _ => {
+                                        tracing::warn!(?app_id, "Failed to get window geometey");
+                                        continue;
+                                    },
                                 };
 
-                                let app_id = container.get("app_id").and_then(|x| x.as_str());
+                                tracing::trace!(?geometey, ?app_id, "Recieved focus change");
 
-                                if let Some("org.kde.konsole") = app_id {
-                                    WM_REVICED_DATA.store(true, Ordering::Relaxed);
-                                    proxy
-                                        .send_event(Event::WindowEvent {
-                                            window_id: AUTOCOMPLETE_ID.clone(),
-                                            window_event: WindowEvent::Show,
-                                        })
-                                        .unwrap();
-                                    // proxy
-                                    //    .send_event(FigEvent::WindowEvent {
-                                    //        fig_id: AUTOCOMPLETE_ID.clone(),
-                                    //        window_event: FigWindowEvent::Reposition {
-                                    //            x: geometey.unwrap().x as i32,
-                                    //            y: geometey.unwrap().y as i32,
-                                    //        },
-                                    //    })
-                                    //    .unwrap();
-                                    proxy
-                                        .send_event(Event::WindowEvent {
-                                            window_id: AUTOCOMPLETE_ID.clone(),
-                                            window_event: WindowEvent::Reanchor { x: 0, y: 0 },
-                                        })
-                                        .unwrap();
+                                if let Some(app_id) = app_id {
+                                    let terminal = GSE_WHITELIST.get(app_id);
+                                    tracing::debug!(?terminal, "TERMINAL");
+
+                                    if let Some(terminal) = terminal {
+                                        *sway_state.active_window_rect.lock() = Some(geometey);
+                                        *sway_state.active_terminal.lock() = Some(terminal.clone());
+                                    }
                                 }
                             }
                         },
                         Some(Value::String(event)) => trace!("Unknown event: {event}"),
-                        event => trace!("Unknown event: {event:?}"),
+                        Some(event) => trace!(%event, "Unknown event"),
+                        None => trace!(event = "None", "Unknown event"),
                     },
-                    _ => trace!("Unknown payload type: {payload_type} {payload:?}"),
+                    _ => trace!(%payload_type, %payload, "Unknown payload type"),
                 }
+                break;
             },
-            ParseResult::Incomplete => continue,
-            ParseResult::Error(error) => {
-                error!("Failed to parse sway message: {error}");
+            ParseResult::Incomplete => {
+                conn.read_buf(buf).await.unwrap();
+                continue;
+            },
+            ParseResult::Error(err) => {
+                error!(%err, "Failed to parse sway message");
                 break;
             },
         }

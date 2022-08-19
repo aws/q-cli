@@ -155,6 +155,9 @@ async fn main() {
     install::run_install().await;
 
     let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    if show_onboarding {
+        tracing::info!("Showing onboarding");
+    }
 
     #[cfg(target_os = "linux")]
     {
