@@ -78,7 +78,6 @@ skim = "0.9.4"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus = { path = "../rust-lib/dbus" }
-wsl = "0.1.0"
 zvariant = "3"
 
 [target.'cfg(target_os = "macos")'.dependencies]

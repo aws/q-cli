@@ -2535,7 +2535,6 @@ dependencies = [
  "which",
  "winapi 0.3.9",
  "windows 0.39.0",
- "wsl",
  "yaque",
  "zvariant",
 ]
@@ -2659,7 +2658,6 @@ dependencies = [
  "tracing",
  "whoami",
  "windows-sys",
- "wsl",
 ]
 
 [[package]]
@@ -2778,7 +2776,6 @@ dependencies = [
  "whoami",
  "windows 0.38.0",
  "winreg 0.10.1",
- "wsl",
 ]
 
 [[package]]
@@ -2824,7 +2821,6 @@ dependencies = [
  "winapi 0.3.9",
  "windows 0.39.0",
  "winreg 0.10.1",
- "wsl",
 ]
 
 [[package]]
@@ -8953,12 +8949,6 @@ dependencies = [
  "winapi 0.2.8",
  "winapi-build",
 ]
-
-[[package]]
-name = "wsl"
-version = "0.1.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f8dab7ac864710bdea6594becbea5b5050333cf34fefb0dc319567eb347950d4"
 
 [[package]]
 name = "x11"

@@ -8,6 +8,8 @@ use std::path::{
 
 use thiserror::Error;
 
+use crate::wsl;
+
 #[derive(Debug, Error)]
 pub enum DirectoryError {
     #[error("home directory not found")]

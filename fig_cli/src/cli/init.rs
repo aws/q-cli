@@ -169,7 +169,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             } else {
                 cfg_if! {
                     if #[cfg(target_os = "linux")] {
-                        let show_prompts = !wsl::is_wsl();
+                        let show_prompts = !fig_util::wsl::is_wsl();
                     } else {
                         let show_prompts = true;
                     }

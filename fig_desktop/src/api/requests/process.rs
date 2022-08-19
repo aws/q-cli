@@ -49,6 +49,17 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
     }
 }
 
+fn set_fig_vars(cmd: &mut Command) {
+    cmd.env("FIG_ENV_VAR", "1");
+    cmd.env("FIG_SHELL_VAR", "1");
+    cmd.env("FIG_TERM", "1");
+    cmd.env("FIG_PTY", "1");
+    cmd.env("PROCESS_LAUNCHED_BY_FIG", "1");
+    cmd.env("HISTFILE", "");
+    cmd.env("HISTCONTROL", "ignoreboth");
+    cmd.env("TERM", "xterm-256color");
+}
+
 // TODO(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
     if let Some(session) = state.most_recent_session() {
@@ -103,14 +114,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
             cmd.current_dir(working_directory);
         }
 
-        cmd.env("FIG_ENV_VAR", "1");
-        cmd.env("FIG_SHELL_VAR", "1");
-        cmd.env("FIG_TERM", "1");
-        cmd.env("FIG_PTY", "1");
-        cmd.env("PROCESS_LAUNCHED_BY_FIG", "1");
-        cmd.env("HISTFILE", "");
-        cmd.env("HISTCONTROL", "ignoreboth");
-        cmd.env("TERM", "xterm-256color");
+        set_fig_vars(&mut cmd);
 
         for EnvironmentVariable { key, value } in &request.env {
             match value {
@@ -145,6 +149,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         cwd = request.working_directory(),
         env =? request.env
     }, "Running command");
+
     if let Some(session) = state.most_recent_session() {
         let (message, rx) = FigtermCommand::run_process(
             request.executable,
@@ -183,6 +188,9 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         for arg in request.arguments {
             cmd.arg(arg);
         }
+
+        set_fig_vars(&mut cmd);
+
         for var in request.env {
             cmd.env(var.key.clone(), var.value());
         }

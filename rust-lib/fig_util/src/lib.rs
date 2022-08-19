@@ -5,6 +5,7 @@ pub mod process_info;
 mod shell;
 mod system_info;
 pub mod terminal;
+pub mod wsl;
 
 pub use error::Error;
 use once_cell::sync::Lazy;
