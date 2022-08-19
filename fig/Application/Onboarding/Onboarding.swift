@@ -220,8 +220,6 @@ extension Onboarding {
       Accessibility.closeUI()
     case .launchShellOnboarding:
       callback(true)
-      webView.window?.close()
-      Defaults.shared.loggedIn = true
 
       Onboarding.setupTerminalsForShellOnboarding {
         SecureKeyboardInput.notifyIfEnabled()
@@ -242,13 +240,29 @@ extension Onboarding {
       let delta = NSSize(width: defaultSize.width - frame.size.width,
                          height: defaultSize.height - frame.size.height)
 
-      webView.window?.setFrame(frame.insetBy(dx: -delta.width/2, dy: -delta.height/2),
+      let sizedFrame = frame.insetBy(dx: -delta.width/2,
+                                     dy: -delta.height/2)
+
+      let screenCenter = NSPoint(x: NSScreen.main?.frame.midX ?? 0,
+                                 y: NSScreen.main?.frame.midY ?? 0)
+
+      let idealWindowOrigin = NSPoint(x: screenCenter.x - sizedFrame.width/2,
+                                      y: screenCenter.y - sizedFrame.height/2)
+
+      let idealWindowFrame =
+                sizedFrame.offsetBy(dx: idealWindowOrigin.x - sizedFrame.origin.x,
+                                    dy: idealWindowOrigin.y - sizedFrame.origin.y)
+      webView.window?.setFrame(idealWindowFrame,
                                display: true,
                                animate: true)
 
       if let window = webView.window as? WebViewWindow {
         window.behaviorOnClose = .hideWindowWhenClosed
       }
+
+      // This updates the state of the status bar from onboarding layout to
+      Defaults.shared.loggedIn = true
+
       callback(true)
     case .UNRECOGNIZED:
       Logger.log(message: "Unrecognized Onboarding Action!", subsystem: .api)
