@@ -315,7 +315,7 @@ pub struct MissionControlOptions {
     pub page: Option<String>,
 }
 
-pub fn build_mission_control(
+pub fn build_dashboard(
     web_context: &mut WebContext,
     event_loop: &EventLoop,
     MissionControlOptions {
@@ -340,7 +340,7 @@ pub fn build_mission_control(
         use gtk::traits::GtkWindowExt;
         use wry::application::platform::unix::WindowExtUnix;
 
-        window.gtk_window().set_role("mission_control");
+        window.gtk_window().set_role("dashboard");
     }
 
     let proxy = event_loop.create_proxy();

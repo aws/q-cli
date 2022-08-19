@@ -36,7 +36,7 @@ use tracing::warn;
 use url::Url;
 use webview::{
     build_autocomplete,
-    build_mission_control,
+    build_dashboard,
     AutocompleteOptions,
     MissionControlOptions,
     WebviewManager,
@@ -172,9 +172,9 @@ async fn main() {
 
     let mut webview_manager = WebviewManager::new();
     webview_manager
-        .build_webview(MISSION_CONTROL_ID, build_mission_control, MissionControlOptions {
+        .build_webview(MISSION_CONTROL_ID, build_dashboard, MissionControlOptions {
             show_onboarding,
-            force_visible: cli.mission_control || page.is_some(),
+            force_visible: cli.dashboard || page.is_some(),
             page,
         })
         .unwrap();

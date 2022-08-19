@@ -3,9 +3,9 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
-    /// Force Mission Control to be open on launch
+    /// Force dashboard to be open on launch
     #[clap(long, action)]
-    pub mission_control: bool,
+    pub dashboard: bool,
     /// Kill old instances of `fig_desktop`
     #[clap(long, action)]
     pub kill_old: bool,
