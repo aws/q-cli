@@ -277,10 +277,10 @@ commands:
       rust-target:
         type: string
     steps:
+      - checkout-desktop
       - configure-rust:
           platform: << parameters.platform >>
           target: << parameters.rust-target >>
-      - checkout-desktop
 
   # this should be the last step before you start building in
   # order to give github some time to process the new commit
