@@ -501,7 +501,7 @@ impl InternalSubcommand {
                     .filter(|line| !line.is_empty())
                 {
                     Command::new("sudo")
-                        .args(&["-u", user, "--", "fig", "integrations", "uninstall", "all", "--silent"])
+                        .args(&["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
                         .spawn()?
                         .wait()?;
                 }
