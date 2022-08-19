@@ -97,7 +97,10 @@ use crate::input::{
     Modifiers,
 };
 use crate::interceptor::KeyInterceptor;
-use crate::ipc::spawn_ipc;
+use crate::ipc::{
+    spawn_incoming_receiver,
+    spawn_ipc,
+};
 use crate::logger::init_logger;
 use crate::message::process_figterm_message;
 #[cfg(unix)]
@@ -436,6 +439,7 @@ fn figterm_main() -> Result<()> {
         let (main_loop_tx, main_loop_rx) = flume::bounded::<MainLoopEvent>(16);
 
         let history_sender = history::spawn_history_task().await;
+        let incoming_receiver = spawn_incoming_receiver(&term_session_id).await?;
 
         // Spawn thread to handle IPC
         let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_ipc(
@@ -678,6 +682,24 @@ fn figterm_main() -> Result<()> {
                             process_figterm_message(
                                 message,
                                 secure_sender.clone(),
+                                &term,
+                                &mut master,
+                                &mut key_interceptor
+                            ).await?;
+                        }
+                        Err(err) => {
+                            error!("Failed to receive message from socket: {err}");
+                        }
+                    }
+                    Ok(())
+                }
+                msg = incoming_receiver.recv_async() => {
+                    match msg {
+                        Ok((message, sender)) => {
+                            debug!("Received message from figterm listener: {message:?}");
+                            process_figterm_message(
+                                message,
+                                sender.clone(),
                                 &term,
                                 &mut master,
                                 &mut key_interceptor
