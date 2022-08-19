@@ -348,7 +348,7 @@ impl Cli {
     }
 }
 
-fn desktop_app_is_installed() -> bool {
+pub fn desktop_app_is_installed() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             std::path::Path::new("/Applications/Fig.app/").exists()
