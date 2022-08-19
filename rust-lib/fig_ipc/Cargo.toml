@@ -11,7 +11,6 @@ bytes = "1.2.1"
 cfg-if = "1.0.0"
 fig_proto = { path = "../fig_proto" }
 fig_util = { path = "../fig_util" }
-futures = "0.3.21"
 thiserror = "1.0.32"
 tokio = { version = "1.20.1", features = ["fs", "time", "io-util", "net"] }
 tracing = "0.1.36"

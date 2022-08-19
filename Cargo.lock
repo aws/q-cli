@@ -1602,7 +1602,6 @@ dependencies = [
 name = "dbus"
 version = "0.1.0"
 dependencies = [
- "flume",
  "once_cell",
  "thiserror",
  "tokio",
@@ -2635,7 +2634,6 @@ version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
  "clap 3.2.17",
- "dbus",
  "fig_util",
  "regex",
  "serde",
@@ -2652,7 +2650,6 @@ dependencies = [
  "cfg-if 1.0.0",
  "fig_proto",
  "fig_util",
- "futures",
  "thiserror",
  "tokio",
  "tracing",
