@@ -136,7 +136,6 @@ jobs:
       size: large
       shell: bash.exe
     steps:
-      - checkout-desktop
       - run:
           name: Install dependencies
           command: |
@@ -150,6 +149,7 @@ jobs:
             PATH="$PATH:/c/Program Files (x86)/WiX Toolset v3.11/bin"
 
             echo "export PATH=\"$PATH\"" >> $BASH_ENV
+      - checkout-desktop
       - run:
           name: Build and bundle
           command: |
@@ -277,11 +277,13 @@ commands:
       rust-target:
         type: string
     steps:
-      - checkout-desktop
       - configure-rust:
           platform: << parameters.platform >>
           target: << parameters.rust-target >>
+      - checkout-desktop
 
+  # this should be the last step before you start building in
+  # order to give github some time to process the new commit
   checkout-desktop:
     parameters:
       checkout:
