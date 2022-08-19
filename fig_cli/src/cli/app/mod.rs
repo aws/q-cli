@@ -20,6 +20,7 @@ use tracing::{
     trace,
 };
 
+use super::desktop_app_is_installed;
 use crate::util::{
     is_app_running,
     launch_fig,
@@ -165,7 +166,8 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Prompts => {
-                if is_app_running() {
+                if !desktop_app_is_installed() {
+                } else if is_app_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {
                         info!("New version {} is available", version);
