@@ -57,35 +57,23 @@ pub async fn run_install() {
     #[cfg(target_os = "linux")]
     // todo(mia): make this part of onboarding
     tokio::spawn(async {
-        use tokio::process::Command;
-        match Command::new("sh")
-            .arg("-c")
-            .arg("ps x | grep gnome-shell | wc -l")
-            .output()
-            .await
-        {
-            Ok(output) => {
-                match String::from_utf8_lossy(&output.stdout)
-                    .trim_matches('\n')
-                    .parse::<u32>()
-                {
-                    Ok(num) => {
-                        if num > 1 {
-                            match dbus::gnome_shell::has_extension().await {
-                                Ok(true) => tracing::debug!("shell extension already installed"),
-                                Ok(false) => {
-                                    if let Err(err) = dbus::gnome_shell::install_extension().await {
-                                        error!(%err, "Failed to install shell extension")
-                                    }
-                                },
-                                Err(err) => error!(%err, "Failed to check shell extensions"),
-                            }
-                        }
-                    },
-                    Err(err) => error!(%err, "Failed parsing process list"),
-                }
-            },
-            Err(err) => error!(%err, "Failed getting process list"),
+        use sysinfo::{
+            ProcessRefreshKind,
+            SystemExt,
+        };
+        let mut s = sysinfo::System::new();
+        s.refresh_processes_specifics(ProcessRefreshKind::new());
+        if s.processes_by_exact_name("/usr/bin/gnome-shell").next().is_some() {
+            drop(s);
+            match dbus::gnome_shell::has_extension().await {
+                Ok(true) => tracing::debug!("shell extension already installed"),
+                Ok(false) => {
+                    if let Err(err) = dbus::gnome_shell::install_extension().await {
+                        error!(%err, "Failed to install shell extension")
+                    }
+                },
+                Err(err) => error!(%err, "Failed to check shell extensions"),
+            }
         }
     });
 
