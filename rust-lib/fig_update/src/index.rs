@@ -1,4 +1,9 @@
+use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
+use std::hash::{
+    Hash,
+    Hasher,
+};
 use std::time::{
     SystemTime,
     UNIX_EPOCH,
@@ -7,6 +12,7 @@ use std::time::{
 use fig_util::{
     get_arch,
     get_platform,
+    get_system_id,
 };
 use once_cell::sync::Lazy;
 use reqwest::Client;
@@ -14,10 +20,7 @@ use semver::Version;
 use serde::Deserialize;
 use tracing::trace;
 
-use crate::{
-    system_threshold,
-    Error,
-};
+use crate::Error;
 
 #[derive(Deserialize)]
 pub struct Index {
@@ -99,7 +102,17 @@ pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
 
     let mut chosen = None;
     let right_now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
-    let system_threshold = system_threshold(current_version)?;
+
+    let system_threshold = {
+        let mut hasher = DefaultHasher::new();
+        // different for each system
+        get_system_id()?.hash(&mut hasher);
+        // different for each version, which prevents people from getting repeatedly hit by untested
+        // releases
+        current_version.hash(&mut hasher);
+
+        (hasher.finish() % 0xff) as u8
+    };
 
     for remote_version in remote_versions.into_iter().map(|x| x.1) {
         if let Some(entry) = index.versions.get(remote_version) {

@@ -1,7 +1,6 @@
 use std::time::SystemTimeError;
 
 use cfg_if::cfg_if;
-use fig_util::get_system_id;
 use thiserror::Error;
 
 pub mod index;
@@ -25,24 +24,6 @@ pub enum Error {
     Semver(#[from] semver::Error),
     #[error(transparent)]
     SystemTime(#[from] SystemTimeError),
-}
-
-fn system_threshold(version: &str) -> Result<u8, Error> {
-    let mut threshold: u8 = 0;
-
-    // different for each system
-    for ch in get_system_id()?.chars() {
-        threshold = threshold.wrapping_add(((ch as u32) % 256) as u8);
-    }
-    // different for each version
-    // prevents people from getting repeatedly hit by untested releases
-    for ch in version.chars() {
-        if let Some(digit) = ch.to_digit(10) {
-            threshold = threshold.wrapping_add(((0b10101010 << digit) % 123) as u8);
-        }
-    }
-
-    Ok(threshold)
 }
 
 #[allow(clippy::needless_return)] // actually fairly needed
