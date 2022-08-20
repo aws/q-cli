@@ -29,44 +29,47 @@
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="LocalAppDataFolder">
                 <Directory Id="FIGROOT" Name="Fig">
-                    <Component Guid="089AF7E5-8E31-4ABC-9B0B-D6B35C25E354" Id="InstallFigCLI">
-                        <RegistryValue
-                            Key="Software\Fig\FigCLI"
-                            KeyPath="yes"
-                            Name="InstallFolder"
-                            Root="HKCU"
-                            Type="string"
-                            Value="[INSTALLFOLDER]"
-                        />
-                        <File
-                            Name="fig.exe"
-                            Source="target/release/fig_cli.exe"
-                        />
-                        <RemoveFolder
-                            Id="RemoveINSTALLFOLDER"
-                            On="uninstall"
-                        />
-                        <RemoveFolder
-                            Id="RemoveFIGROOT"
-                            Directory="FIGROOT"
-                            On="uninstall"
-                        />
-                        <Environment
-                            Id="AddToPath"
-                            Name="PATH"
-                            Value="[FIGROOT]"
-                            Permanent="no"
-                            Part="last"
-                            Action="set"
-                            System="no"
-                        />
-                    </Component>
+                    <Directory Id="TargetFolder" Name="$(var.Version)">
+                        <Component Guid="C97F05C2-903C-424C-8745-07773F295AC9" Id="FigCLI">
+                            <RegistryValue
+                                Key="Software\Fig\FigCLI"
+                                KeyPath="yes"
+                                Name="InstallFolder"
+                                Root="HKCU"
+                                Type="string"
+                                Value="[INSTALLFOLDER]"
+                            />
+                            <File
+                                Name="fig.exe"
+                                Source="target/release/fig_cli.exe"
+                            />
+                            <RemoveFolder
+                                Id="RemoveTargetFolder"
+                                Directory="TargetFolder"
+                                On="uninstall"
+                            />
+                            <RemoveFolder
+                                Id="RemoveFIGROOT"
+                                Directory="FIGROOT"
+                                On="uninstall"
+                            />
+                            <Environment
+                                Id="AddToPath"
+                                Name="PATH"
+                                Value="[TargetFolder]"
+                                Permanent="no"
+                                Part="last"
+                                Action="set"
+                                System="no"
+                            />
+                        </Component>
+                    </Directory>
                 </Directory>
             </Directory>
         </Directory>
 
         <Feature Id="Install">
-            <ComponentRef Id="InstallFigCLI"/>
+            <ComponentRef Id="FigCLI"/>
         </Feature>
 
         <CustomAction
@@ -100,14 +103,40 @@
             BinaryKey="WixCA"
             DllEntry="WixQuietExec"
         />
+        <CustomAction
+            Id="PrepCreateJunction"
+            Property="WixQuietExecCmdLine"
+            Value='"cmd" /c mklink /J "[FIGROOT]latest" $(var.Version)'
+        />
+        <CustomAction
+            Id="CreateJunction"
+            BinaryKey="WixCA"
+            DllEntry="WixQuietExec"
+            Return="check"
+        />
+        <CustomAction
+            Id="PrepRemoveJunction"
+            Property="WixQuietExecCmdLine"
+            Value='"cmd" /c rmdir "[FIGROOT]latest" /q'
+        />
+        <CustomAction
+            Id="RemoveJunction"
+            BinaryKey="WixCA"
+            DllEntry="WixQuietExec"
+            Return="check"
+        />
 
         <InstallExecuteSequence>
             <Custom Action="PrepQuitFig" Before="QuitFig">REMOVE~="ALL"</Custom>
-            <Custom Action="QuitFig" Before="PrepUninstallIntegrations">REMOVE~="ALL"</Custom>
+            <Custom Action="QuitFig" Before="PrepRemoveJunction">REMOVE~="ALL"</Custom>
+            <Custom Action="PrepRemoveJunction" Before="RemoveJunction">REMOVE~="ALL"</Custom>
+            <Custom Action="RemoveJunction" Before="PrepUninstallIntegrations">REMOVE~="ALL"</Custom>
             <Custom Action="PrepUninstallIntegrations" Before="UninstallIntegrations">REMOVE~="ALL"</Custom>
             <Custom Action="UninstallIntegrations" Before="InstallInitialize">REMOVE~="ALL"</Custom>
             <Custom Action="PrepInstallIntegrations" After="InstallFinalize">NOT Installed AND NOT PATCH</Custom>
             <Custom Action="InstallIntegrations" After="PrepInstallIntegrations">NOT Installed AND NOT PATCH</Custom>
+            <Custom Action="PrepCreateJunction" After="InstallIntegrations">NOT Installed AND NOT PATCH</Custom>
+            <Custom Action="CreateJunction" After="PrepCreateJunction">NOT Installed AND NOT PATCH</Custom>
         </InstallExecuteSequence>
     </Product>
 </Wix>

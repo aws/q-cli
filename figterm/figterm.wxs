@@ -29,29 +29,32 @@
         <Directory Id="TARGETDIR" Name="SourceDir">
             <Directory Id="LocalAppDataFolder">
                 <Directory Id="FIGROOT" Name="Fig">
-                    <Component Guid="98B128BB-5886-43DA-9F68-AE087F270DCD" Id="InstallFigterm">
-                        <RegistryValue
-                            Key="Software\Fig\Figterm"
-                            KeyPath="yes"
-                            Name="InstallFolder"
-                            Root="HKCU"
-                            Type="string"
-                            Value="[INSTALLFOLDER]"
-                        />
-                        <File
-                            Name="figterm.exe"
-                            Source="target/release/figterm.exe"
-                        />
-                        <RemoveFolder
-                            Id="RemoveINSTALLFOLDER"
-                            On="uninstall"
-                        />
-                        <RemoveFolder
-                            Id="RemoveFIGROOT"
-                            Directory="FIGROOT"
-                            On="uninstall"
-                        />
-                    </Component>
+                    <Directory Id="TargetFolder" Name="$(var.Version)">
+                        <Component Guid="98B128BB-5886-43DA-9F68-AE087F270DCD" Id="InstallFigterm">
+                            <RegistryValue
+                                Key="Software\Fig\Figterm"
+                                KeyPath="yes"
+                                Name="InstallFolder"
+                                Root="HKCU"
+                                Type="string"
+                                Value="[INSTALLFOLDER]"
+                            />
+                            <File
+                                Name="figterm.exe"
+                                Source="target/release/figterm.exe"
+                            />
+                            <RemoveFolder
+                                Id="RemoveTargetFolder"
+                                Directory="TargetFolder"
+                                On="uninstall"
+                            />
+                            <RemoveFolder
+                                Id="RemoveFIGROOT"
+                                Directory="FIGROOT"
+                                On="uninstall"
+                            />
+                        </Component>
+                    </Directory>
                 </Directory>
             </Directory>
         </Directory>
