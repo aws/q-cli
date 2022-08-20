@@ -10,6 +10,7 @@ use std::path::{
     Path,
     PathBuf,
 };
+use std::process::Command;
 
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
@@ -193,13 +194,8 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     std::fs::remove_file(fig_socket_path()?).ok();
 
     cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            std::process::Command::new("open")
-                .args(["-g", "-b", "com.mschrage.fig"])
-                .output()
-                .context("\nUnable to launch Fig\n")?;
-        } else if #[cfg(target_os = "linux")] {
-            let process = std::process::Command::new("systemctl")
+        if #[cfg(target_os = "linux")] {
+            let process = Command::new("systemctl")
                 .args(&["--user", "start", "fig"])
                 .output()
                 .context("\nUnable to launch Fig\n")?;
@@ -207,16 +203,19 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
             if !process.status.success() {
                 bail!("Failed to launch fig.desktop");
             }
+        } else if #[cfg(target_os = "macos")] {
+            Command::new("open")
+                .args(["-g", "-b", "com.mschrage.fig"])
+                .output()
+                .context("\nUnable to launch Fig\n")?;
         } else if #[cfg(target_os = "windows")] {
             use std::os::windows::process::CommandExt;
             use windows::Win32::System::Threading::DETACHED_PROCESS;
 
-            std::process::Command::new("fig_desktop")
+            Command::new("fig_desktop")
                 .creation_flags(DETACHED_PROCESS.0)
                 .spawn()
                 .context("\nUnable to launch Fig\n")?;
-        } else {
-            compile_error!()
         }
     }
 
@@ -230,12 +229,33 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
 
     // Wait for socket to exist
     let path = fig_socket_path()?;
-    for _ in 0..9 {
-        if path.exists() {
-            return Ok(());
+
+    cfg_if! {
+        if #[cfg(not(target_os = "windows"))] {
+            for _ in 0..10 {
+                // Wait for socket to exist
+                if path.exists() {
+                    return Ok(());
+                }
+
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
+        } else if #[cfg(target_os = "windows")] {
+            for _ in 0..20 {
+                match path.metadata() {
+                    Ok(_) => return Ok(()),
+                    Err(err) => if let Some(code) = err.raw_os_error() {
+                        // Windows can't query socket file existence
+                        // Check against arbitrary error code
+                        if code == 1920 {
+                            return Ok(())
+                        }
+                    },
+                }
+
+                std::thread::sleep(std::time::Duration::from_millis(500));
+            }
         }
-        // Sleep for a bit
-        std::thread::sleep(std::time::Duration::from_millis(500));
     }
 
     bail!("\nUnable to finish launching Fig properly\n")
