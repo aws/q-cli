@@ -35,7 +35,6 @@ pub fn init() -> Result<()> {
             .output()
         {
             if let Ok(output) = String::from_utf8(output.stdout) {
-                // TODO(mia): ask someone to rewrite this is a more ideomatic way
                 let _ = set_theme(output.split_at(1).1.split_at(output.len() - 3).0.to_string());
             }
         }
