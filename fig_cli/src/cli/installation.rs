@@ -36,7 +36,6 @@ bitflags::bitflags! {
     }
 }
 
-// todo(mia): get rid of this function
 pub fn get_ssh_config_path() -> Result<PathBuf> {
     Ok(directories::home_dir()
         .context("Could not get home directory")?

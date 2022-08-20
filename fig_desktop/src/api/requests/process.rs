@@ -60,7 +60,7 @@ fn set_fig_vars(cmd: &mut Command) {
     cmd.env("TERM", "xterm-256color");
 }
 
-// TODO(mia): implement actual pseudoterminal stuff
+// todo(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
     if let Some(session) = state.most_recent_session() {
         let (message, rx) = FigtermCommand::pseudoterminal_execute(
