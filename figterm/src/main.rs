@@ -493,6 +493,15 @@ fn figterm_main() -> Result<()> {
 
         let ai_enabled = fig_settings::settings::get_bool_or("ai.terminal-hash-sub", true);
 
+        if let Ok(shell) = get_parent_shell() {
+            let path = std::path::Path::new(&shell);
+            let name = path.file_name().and_then(|name| name.to_str()).unwrap_or(shell.as_str());
+            let title_osc = format!("\x1b]0;{name}\x07");
+            if let Err(err) = stdout.write(title_osc.as_bytes()).await {
+                error!("Failed to write title osc: {err}");
+            }
+        }
+
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");

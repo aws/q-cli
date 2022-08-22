@@ -34,21 +34,26 @@ pub(crate) fn default_properties() -> Map<String, Value> {
 
     if let Some(email) = fig_auth::get_email() {
         if let Some(domain) = email.split('@').last() {
-            prop.insert("prop_domain".into(), domain.into());
+            prop.insert("domain".into(), domain.into());
         }
-        prop.insert("prop_email".into(), email.into());
+        prop.insert("email".into(), email.into());
     }
 
     #[cfg(target_os = "macos")]
     if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
         if let Some((version, build)) = version.split_once(',') {
-            prop.insert("prop_version".into(), version.into());
-            prop.insert("prop_build".into(), build.into());
+            prop.insert("app_version".into(), version.into());
+            prop.insert("app_build".into(), build.into());
         }
     }
 
+    #[cfg(target_os = "linux")]
+    if let Some(linux_os_release) = fig_util::get_linux_os_release() {
+        prop.insert("device_linux_release".into(), serde_json::json!(linux_os_release));
+    }
+
     prop.insert(
-        "install_method".into(),
+        "device_install_method".into(),
         crate::install_method::get_install_method().to_string().into(),
     );
 
@@ -56,6 +61,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
         prop.insert("device_id".into(), device_id.into());
     }
 
+    prop.insert("device_desktop".into(), true.into());
     prop.insert("device_os".into(), std::env::consts::OS.into());
     prop.insert("device_arch".into(), std::env::consts::ARCH.into());
 

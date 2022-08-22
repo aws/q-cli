@@ -19,8 +19,10 @@ pub use shell::Shell;
 #[cfg(target_os = "linux")]
 pub use system_info::{
     detect_desktop,
+    get_linux_os_release,
     DesktopEnvironment,
     DisplayServer,
+    LinuxOsRelease,
 };
 pub use system_info::{
     get_arch,

@@ -3,6 +3,11 @@ name: Rust CI
 on:
   workflow_dispatch:
   pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
     paths:
       - "rust-lib/**"
       - "figterm/**"
@@ -54,6 +59,17 @@ jobs:
           toolchain: nightly
           args: --check
 
+  cargo-deny:
+    name: Cargo Deny
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Deny
+        uses: EmbarkStudios/cargo-deny-action@v1
+
   clippy:
     strategy:
       matrix:
@@ -104,6 +120,12 @@ jobs:
 
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
+
+      - name: Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: check
+          args: --workspace --locked
 
       - name: Clippy
         uses: actions-rs/clippy-check@v1

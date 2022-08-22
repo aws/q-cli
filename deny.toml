@@ -17,8 +17,11 @@ severity-threshold = "medium"
 
 [licenses]
 default = "allow"
-copyleft = "allow"
+copyleft = "deny"
 private = { ignore = true }
+allow = [
+  "MPL-2.0"
+]
 
 [[licenses.clarify]]
 name = "ring"
