@@ -8,13 +8,12 @@
 
 import Foundation
 
-
 class DeepLinkHandler {
-  
+
   private class func openPluginPage(path: String?) {
     MissionControl.openUI(MissionControl.Tab.plugins, additionalPathComponent: path)
   }
-  
+
   class func handle(appName: String?, path: String?, queries: [URLQueryItem]?) {
     if let name = appName {
       switch name {

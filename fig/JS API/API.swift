@@ -167,8 +167,16 @@ class API {
         response.macosInputMethodResponse = try InputMethod.default.handleAPIRequest(request)
       case .createDirectoryRequest:
         throw APIError.generic(message: "Not implmented on MacOS")
-      case .installRequest:
-        throw APIError.generic(message: "Not implmented on MacOS")
+      case .installRequest(let request):
+        isAsync = true
+
+        Onboarding.handleInstallRequest(request, callback: { output in
+          var response = Response()
+          response.id = id
+          response.installResponse = output
+          API.send(response, to: webView, using: encoding)
+        })
+
       case .aggregateSessionMetricActionRequest:
         // todo(sean): Add aggergate request
         throw APIError.generic(message: "Not implmented on MacOS")
