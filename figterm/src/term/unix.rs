@@ -257,7 +257,7 @@ impl Terminal for UnixTerminal {
         tokio::spawn(async move {
             let mut stdin = io::stdin();
             let mut parser = InputParser::new();
-            let mut buf = BytesMut::with_capacity(8192);
+            let mut buf = BytesMut::with_capacity(crate::BUFFER_SIZE);
 
             loop {
                 select! {
