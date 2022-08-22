@@ -95,81 +95,6 @@ EOF
 # If the user does ctrl + c, run the exit_script function
 trap exit_script_nice SIGINT SIGTERM SIGQUIT
 
-# Help text
-show_help() {
-   # make sure the final EOF is aligned with the end 
-less -R <<EOF
-
-
-   ${BOLD}${MAGENTA}${UNDERLINE}Fig Onboarding Help${NORMAL}
-   (press q to quit)
-
-
-
-   ${BOLD}The Fig autocomplete box disappeared${NORMAL}
-      This can happen if you hit 
-         * ${BOLD}esc${NORMAL}
-         * the ${BOLD}↑${NORMAL} up arrow too many times (after the up arrow shows your history, Fig hides until the next line)
-
-      ${UNDERLINE}To bring it back${NORMAL}: hit the enter key on an empty line once or twice. It should reappear. 
-
-
-   ${BOLD}Where is the Fig Menu${NORMAL}
-      Click the Fig Icon (◧) in your Mac status bar (top right of your screen)
-
-
-   ${BOLD}I don't see Fig popup next to my cursor${NORMAL}
-      Hmm. Try some of the following to debug.
-
-      1. Hit enter a few times then start typing. Maybe you hid it by hitting the up arrow key too many times.
-
-      2. Make sure the Fig CLI tool is installed:
-         * Go to Fig Menu (◧) > Settings > Developer > Install CLI Tool 
-
-      3. Make sure Accessibility is enabled
-         * Go to Fig Menu (◧) > Settings > Developer > Request Accessibility Permission
-           (This should take you to System Preferences > Security & Privacy > Accessibility)
-         * Click the lock icon to unlock (it may prompt for your password)
-         * If Fig is unchecked, check it. If Fig is checked, uncheck it then check it again.
-
-      4. Toggle Autocomplete off and on again
-         * Go to Fig Menu (◧) > Autocomplete 
-
-
-      If the problem persists: please let us know! Contact the Fig team at hello@fig.io
-
-
-   ${BOLD}What does the ↪ symbol / suggestion mean?${NORMAL}
-      This lets you run the command that's currently in your Terminal. 
-      Sometimes Fig's autocomplete appears when you actually want to run a command. Rather than clicking escape or the up arrow, this lets you run the command by clicking enter.
-   
-
-
-   ${BOLD}I want to quit this onboarding / walkthrough${NORMAL}
-      Hit ctrl + c
-
-
-
-   ${BOLD}I want to quit Fig${NORMAL}
-      * Go to Fig Menu (◧) > Quit Fig
-
-   
-
-   ${BOLD}I want to uninstall Fig${NORMAL}
-      * Go to Fig Menu (◧) > Settings > Uninstall Fig
-      3. If you're feeling generous, we would love to hear why you uninstalled Fig. hello@fig.io
-   
-
-
-   ${BOLD}What is cd?${NORMAL}
-      cd is a shell command that lets you change directories. e.g. cd ~/Desktop will change the current directory in your shell to the Desktop.
-
-
-
-EOF
-  reset_prompt
-}
-
 ### Core Script ###
 clear
 
@@ -199,7 +124,7 @@ cat <<EOF
    This quick walkthrough will show you how Fig works.
 
 
-   Stuck? Type ${BOLD}help${NORMAL}. 
+
    Want to quit? Hit ${BOLD}ctrl + c${NORMAL}
 
 EOF
@@ -258,10 +183,6 @@ while true; do
     "continue") break ;;
     "c") break ;;
     "") print_special "Type ${BOLD}cd .fig/${NORMAL} to continue" ;;
-    help|HELP|--help|-h)
-      show_help
-      print_special "Type ${BOLD}cd .fig/${NORMAL} to continue"
-      ;;
     *)
       print_special "${YELLOW}Whoops. Looks like you tried something other than cd."
       print_special "Type ${BOLD}cd .fig/${NORMAL} to continue"
@@ -304,10 +225,6 @@ while true; do
     "")
       print_special "Try running ${BOLD}git commit -m 'hello'${NORMAL} to continue. Otherwise, just type ${BOLD}continue"
       ;;
-    help|HELP|--help|-h)
-      show_help
-      print_special "Try running ${BOLD}git commit -m 'hello'${NORMAL} to continue. Otherwise, just type ${BOLD}continue"
-      ;;
     *)
       print_special "${YELLOW}Whoops. Looks like you tried something other than ${BOLD}git commit${NORMAL}."
       print_special "Try running ${BOLD}git commit -m 'hello'${NORMAL} to continue. Otherwise, just type ${BOLD}continue"
@@ -329,94 +246,8 @@ cat <<EOF
    fig update       check for updates
    fig --help       a summary of Fig commands with examples
 
-
-   ${BOLD}To Continue...${NORMAL} 
-
-   Run ${MAGENTA}${BOLD}fig${NORMAL} to see how you can customize Fig
-   (You can also type ${UNDERLINE}continue${NORMAL})
-
 EOF
 
-prepare_prompt
-while true; do
-  input=""
-  read -e -p "$DEFAULT_PROMPT" input
-  echo # New line after output
-  case "${input}" in
-
-    "fig")
-      fig > /dev/null
-clear
-cat <<EOF
-
-   ${BOLD}Awesome!${NORMAL}
-
-   You can use ${MAGENTA}${BOLD}Fig${NORMAL} to:
-
-    * ${BOLD}Customize autocomplete${NORMAL}:
-        height, width, theme, fuzzy search, keybindings, etc.
-
-    * ${BOLD}Enable 3rd party shell plugins${NORMAL}:
-        prompts, autosuggestions, themes & more
-
-    * ${BOLD}Manage and sync your dotfiles/shell configuration${NORMAL}
-EOF
-      press_enter_to_continue
-      break
-      ;;
-    "continue"*) break ;;
-    "c") break ;;
-    ""|help|HELP|--help|-h)
-      show_help
-cat <<EOF
-
-   ${BOLD}To Continue...${NORMAL} 
-
-   Run ${MAGENTA}${BOLD}fig${NORMAL}
-   (You can also type ${UNDERLINE}continue${NORMAL})
-
-EOF
-      ;;
-    *)
-      print_special "${YELLOW}Whoops. Looks like you tried something unexpected."
-cat <<EOF
-
-   ${BOLD}To Continue...${NORMAL} 
-
-   Run ${MAGENTA}${BOLD}fig${NORMAL}
-   (You can also type ${UNDERLINE}continue${NORMAL})
-
-EOF
-      ;;
-  esac
-done
-
-clear 
-cat <<EOF
-
-   ${BOLD}Want to share Fig?${NORMAL}
-   
-      Run ${MAGENTA}${BOLD}fig tweet${NORMAL} or ${MAGENTA}${BOLD}fig invite${NORMAL} (you get 5 invites!)
-
-
-   ${BOLD}Want to contribute?${NORMAL}
-
-      * Check out our docs: ${UNDERLINE}fig.io/docs/getting-started${NORMAL}
-      * Submit a pull request: ${UNDERLINE}github.com/withfig/autocomplete${NORMAL}
-
-EOF
-
-# Tell use how to open urls based on terminal type
-# https://superuser.com/questions/683962/how-to-identify-the-terminal-from-a-script
-if [[ "${TERM_PROGRAM}" == "iTerm.app" ]]; then
-  echo "   ${UNDERLINE}Hint${NORMAL}: Hold cmd + click to open URLs"
-else
-  echo "   ${UNDERLINE}Hint${NORMAL}: Hold cmd + double-click to open URLs"
-fi
-echo
-
-
-echo
 press_enter_to_continue 'Press enter to finish'
 echo
 echo
@@ -424,16 +255,13 @@ echo
 # Done using http://patorjk.com/software/taag/#p=testall&f=Graffiti&t=fig
 # Font name = Ivrit
 clear
-
+# Prompt user to restart terminal after running Fig doctor
+fig _ local-state doctor.prompt-restart-terminal true 2>&1 1>/dev/null
 cat <<EOF
-   ${BOLD}Almost done!${NORMAL}
 
-   1. You should run ${MAGENTA}${BOLD}fig doctor${NORMAL} right now. 
-      This checks for common bugs and fixes them!
+   ${BOLD}One last thing...${NORMAL}
 
-   2. Fig won't work in any terminal sessions you currently have running,
-      only new ones. (You might want to restart your terminal emulator)
-
-   3. FYI we've saved a backup of your dotfiles to ~/.fig.dotfiles.bak
+   Run ${MAGENTA}${BOLD}fig doctor${NORMAL} right now. 
+   This checks for common bugs and fixes them!
 
 EOF
