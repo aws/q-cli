@@ -12,6 +12,8 @@ vulnerability = "deny"
 unmaintained = "warn"
 yanked = "warn"
 notice = "warn"
+ignore = [ "RUSTSEC-2020-0071" ]
+severity-threshold = "medium"
 
 [licenses]
 default = "allow"
@@ -29,8 +31,15 @@ multiple-versions = "warn"
 wildcards = "allow"
 highlight = "all"
 
+[[bans.deny]]
+name = "openssl"
+
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = []
+allow-git = [
+  "https://github.com/sullivan-sean/tokio",
+  "https://github.com/sullivan-sean/mio",
+  "https://github.com/grant0417/skim"
+]
