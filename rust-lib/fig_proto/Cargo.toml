@@ -14,7 +14,7 @@ prost = "0.11.0"
 prost-reflect = { version = "0.9.2", features = ["serde", "derive"] }
 rmp-serde = "1.1.0"
 serde = { version = "1.0.143", features = ["derive"] }
-serde_json = "1.0.83"
+serde_json = "1.0.85"
 thiserror = "1.0.32"
 
 [target.'cfg(unix)'.dependencies]
