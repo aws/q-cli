@@ -115,7 +115,7 @@ use crate::term::{
 
 const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
-const BUFFER_SIZE: usize = 4096;
+const BUFFER_SIZE: usize = 16384;
 
 static INSERT_ON_NEW_CMD: Mutex<Option<String>> = Mutex::new(None);
 static EXECUTE_ON_NEW_CMD: Mutex<bool> = Mutex::new(false);
