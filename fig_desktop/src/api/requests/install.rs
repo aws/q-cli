@@ -94,7 +94,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     let integration = fig_integrations::ibus::IbusIntegration {};
                     integration_result(integration.is_installed().or_else(|_| integration.install(None)))
                 } else {
-                    integration_result(Err("IBus cannot be uninstalled"))
+                    integration_result(Err("IBus cannot be installed"))
                 }
             }
         },
@@ -103,12 +103,21 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 if #[cfg(target_os = "linux")] {
                     integration_status(fig_integrations::ibus::IbusIntegration {})
                 } else {
-                    integration_result(Err("IBus cannot be uninstalled"))
+                    integration_result(Err("IBus status cannot be queried"))
                 }
             }
         },
         (InstallComponent::Ibus, InstallAction::UninstallAction) => {
             integration_result(Err("IBus cannot be uninstalled"))
+        },
+        (InstallComponent::Accessibility, InstallAction::InstallAction) => {
+            integration_result(Err("Accessibility permissions cannot be installed"))
+        },
+        (InstallComponent::Accessibility, InstallAction::StatusAction) => {
+            integration_result(Err("Accessibility permissions cannot be queried"))
+        },
+        (InstallComponent::Accessibility, InstallAction::UninstallAction) => {
+            integration_result(Err("Accessibility permissions cannot be uninstalled"))
         },
     };
 

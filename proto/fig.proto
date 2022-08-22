@@ -380,8 +380,9 @@ message OnboardingRequest {
 /// Installation
 
 enum InstallComponent {
-  DOTFILES = 0;
-  IBUS     = 1;
+  DOTFILES      = 0;
+  IBUS          = 1;
+  ACCESSIBILITY = 2;
 }
 
 enum InstallAction {

@@ -201,6 +201,67 @@ class Onboarding {
 import FigAPIBindings
 import WebKit
 extension Onboarding {
+  static func handleInstallRequest(
+    _ request: Fig_InstallRequest,
+    callback: @escaping ((Fig_InstallResponse) -> Void)
+  ) {
+
+    switch request.component {
+    case .ibus:
+      callback(Fig_InstallResponse.with({ response in
+        response.result = Fig_Result.with({ result in
+          result.result = .resultError
+          result.error = "Ibus installation is not implemented on macOS"
+        })
+      }))
+    case .dotfiles:
+      callback(Fig_InstallResponse.with({ response in
+        response.result = Fig_Result.with({ result in
+          result.result = .resultError
+          result.error = "Dotfiles installation is not implemented on macOS using this API."
+        })
+      }))
+    case .accessibility:
+      switch request.action {
+      case .installAction:
+        Accessibility.promptForPermission { granted in
+          callback(Fig_InstallResponse.with({ response in
+            response.result = Fig_Result.with({ result in
+              if granted {
+                result.result = .resultOk
+              } else {
+                result.result = .resultError
+                result.error = "Ibus installation is not implemented on macOS"
+              }
+            })
+          }))
+        }
+      case .statusAction:
+        callback(Fig_InstallResponse.with({ response in
+          response.installationStatus = Accessibility.enabled ? .installInstalled
+                                                              : .installNotInstalled
+        }))
+
+      case .uninstallAction:
+        callback(Fig_InstallResponse.with({ response in
+          response.result = Fig_Result.with({ result in
+            result.result = .resultError
+            result.error = "Accessibility uninstallation is not implemented on macOS"
+          })
+        }))
+      case .UNRECOGNIZED:
+        break
+      }
+    case .UNRECOGNIZED:
+      callback(Fig_InstallResponse.with({ response in
+        response.result = Fig_Result.with({ result in
+          result.result = .resultError
+          result.error = "Unrecognized installation component."
+        })
+      }))
+    }
+  }
+
   static func handleRequest(
     _ request: Fig_OnboardingRequest,
     in webView: WKWebView,
