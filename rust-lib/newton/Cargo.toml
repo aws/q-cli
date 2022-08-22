@@ -8,5 +8,4 @@ publish = false
 crossterm = { version = "0.25.0", features = ["serde"] }
 
 [dev-dependencies]
-noise = "0.7.0"
 rand = { version = "0.8.5", features = ["std_rng"] }

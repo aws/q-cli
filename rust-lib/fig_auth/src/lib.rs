@@ -2,6 +2,7 @@ pub mod cognito;
 pub mod password;
 
 pub mod defaults;
+mod reqwest_client;
 
 use std::time::Duration;
 
@@ -31,6 +32,10 @@ pub enum Error {
     Defaults(#[from] defaults::DefaultsError),
     #[error("timeout")]
     Timeout(#[from] Elapsed),
+}
+
+pub fn reqwest_client() -> Option<&'static reqwest::Client> {
+    reqwest_client::CLIENT.as_ref()
 }
 
 pub fn logout() -> Result<(), Error> {

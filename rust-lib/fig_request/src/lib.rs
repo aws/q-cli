@@ -1,15 +1,10 @@
-use std::path::Path;
-use std::time::Duration;
-
 use fig_auth::get_token;
 use fig_settings::api_host;
-use once_cell::sync::Lazy;
 pub use reqwest;
 use reqwest::cookie::Cookie;
 use reqwest::header::HeaderMap;
 pub use reqwest::Method;
 use reqwest::{
-    Certificate,
     Client,
     RequestBuilder,
     StatusCode,
@@ -22,61 +17,8 @@ use serde::{
 use serde_json::Value;
 use thiserror::Error;
 
-static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
-    let danger_accept_invalid_certs = std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some()
-        || fig_settings::state::get_bool_or("FIG_DANGER_ACCEPT_INVALID_CERTS", false);
-    let custom_cert = std::env::var("FIG_CUSTOM_CERT")
-        .ok()
-        .or_else(|| fig_settings::state::get_string("FIG_CUSTOM_CERT").ok().flatten());
-
-    let mut client = Client::builder()
-        .danger_accept_invalid_certs(danger_accept_invalid_certs)
-        .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
-        .cookie_store(true)
-        .timeout(Duration::from_secs(20));
-
-    if let Some(custom_cert) = custom_cert {
-        let path = Path::new(&custom_cert);
-        if path.exists() {
-            match std::fs::read(path) {
-                Ok(file) => {
-                    let cert = match path.extension().and_then(|e| e.to_str()) {
-                        Some("der") => match Certificate::from_der(&file) {
-                            Ok(cert) => Some(cert),
-                            Err(err) => {
-                                tracing::error!(%err, "Failed to deser der file");
-                                None
-                            },
-                        },
-                        Some(_) => match Certificate::from_pem(&file) {
-                            Ok(cert) => Some(cert),
-                            Err(err) => {
-                                tracing::error!(%err, "Failed to deser pem file");
-                                None
-                            },
-                        },
-                        _ => None,
-                    };
-
-                    match cert {
-                        Some(cert) => {
-                            client = client.add_root_certificate(cert);
-                        },
-                        None => tracing::error!(?path, "Failed to deser cert"),
-                    }
-                },
-                Err(err) => tracing::error!(%err, ?path, "Failed to read cert file"),
-            }
-        } else {
-            tracing::error!(?path, "Cert path does not exist");
-        }
-    }
-
-    client.build().ok()
-});
-
 pub fn client() -> Option<&'static Client> {
-    CLIENT.as_ref()
+    fig_auth::reqwest_client()
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -141,7 +83,7 @@ impl Request {
         url.set_path(endpoint.as_ref());
 
         Self {
-            builder: CLIENT
+            builder: client()
                 .as_ref()
                 .map(|client| client.request(method, url).header("Accept", "application/json")),
             auth: false,

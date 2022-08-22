@@ -9,7 +9,7 @@ bytes = "1.2.1"
 fig_auth = { path = "../fig_auth" }
 fig_settings = { path = "../fig_settings" }
 once_cell = { version = "1.13.1", features = ["parking_lot"] }
-reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks", "cookies"] }
+reqwest = { version = "0.11.11", default-features = false, features = ["json", "rustls-tls-webpki-roots", "socks", "cookies"] }
 serde = "1.0.143"
 serde_json = "1.0.83"
 thiserror = "1.0.32"
