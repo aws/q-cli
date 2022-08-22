@@ -47,7 +47,7 @@ semver = "1.0.13"
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.85"
 shellexpand = "2.1.2"
-sysinfo = "0.25.2"
+sysinfo = "0.25.3"
 time = { version = "=0.3.13" }
 tokio = { version = "1", features = [ "full" ] }
 tracing = "0.1.36"
