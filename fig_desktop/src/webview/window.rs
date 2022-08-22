@@ -64,7 +64,8 @@ impl WindowState {
         let positon = *self.position.read();
         let anchor = *self.anchor.read();
         let x = positon.x + anchor.x;
-        let y = positon.y + anchor.y;
+        let y = positon.y + anchor.y + 5;
+        self.webview.window().set_visible(true);
         native_state.position_window(&self.window_id, x, y, || {
             self.webview
                 .window()

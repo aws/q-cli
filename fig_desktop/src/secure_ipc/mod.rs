@@ -45,9 +45,9 @@ use tokio::time::{
     Instant,
 };
 use tracing::{
-    debug,
     error,
     info,
+    trace,
     warn,
 };
 
@@ -116,7 +116,7 @@ async fn handle_secure_ipc(
             None
         })
     {
-        debug!(?message, "Received secure message");
+        trace!(?message, "Received secure message");
         if let Some(response) = match message.packet {
             Some(hostbound::Packet::Handshake(handshake)) => {
                 if session_id.is_some() {

@@ -243,7 +243,7 @@ async fn handle_request(
                 },
                 WindowFocusRequest(request) => window::focus(request, window_id.clone(), proxy).await,
                 // onboarding
-                OnboardingRequest(request) => onboarding::onboarding(request).await,
+                OnboardingRequest(request) => onboarding::onboarding(request, proxy).await,
                 // install
                 InstallRequest(request) => install::install(request).await,
                 // other

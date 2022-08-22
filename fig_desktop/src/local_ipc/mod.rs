@@ -101,7 +101,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                             | PromptAccessibility(_)
                             | InputMethod(_)
                             | Uninstall(_) => {
-                                debug!("Unhandled command: {command:?}");
+                                debug!(?command, "Unhandled command");
                                 Err(LocalResponse::Error {
                                     code: None,
                                     message: Some("Unknown command".to_owned()),
@@ -112,26 +112,31 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                     },
                 };
 
-                let message = {
-                    CommandResponse {
-                        id: command.id,
-                        response: Some(match response {
-                            LocalResponse::Error {
-                                code: exit_code,
-                                message,
-                            } => CommandResponseTypes::Error(ErrorResponse { exit_code, message }),
-                            LocalResponse::Success(message) => {
-                                CommandResponseTypes::Success(SuccessResponse { message })
-                            },
-                            LocalResponse::Message(m) => *m,
-                        }),
-                    }
-                };
+                match command.no_response {
+                    Some(true) => {},
+                    _ => {
+                        let message = {
+                            CommandResponse {
+                                id: command.id,
+                                response: Some(match response {
+                                    LocalResponse::Error {
+                                        code: exit_code,
+                                        message,
+                                    } => CommandResponseTypes::Error(ErrorResponse { exit_code, message }),
+                                    LocalResponse::Success(message) => {
+                                        CommandResponseTypes::Success(SuccessResponse { message })
+                                    },
+                                    LocalResponse::Message(m) => *m,
+                                }),
+                            }
+                        };
 
-                // TODO: implement AsyncWrite trait for Windows sockets
-                if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
-                    error!("Failed sending local response: {err}");
-                    break;
+                        // TODO: implement AsyncWrite trait for Windows sockets
+                        if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
+                            error!(%err, "Failed sending local response");
+                            break;
+                        }
+                    },
                 }
             },
             Some(LocalMessageType::Hook(hook)) => {

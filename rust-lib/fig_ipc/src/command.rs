@@ -101,11 +101,11 @@ pub async fn run_install_script_command() -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn send_command(connection: &mut UnixStream, command: local::command::Command) -> Result<()> {
+pub async fn send_command(connection: &mut UnixStream, command: local::command::Command, response: bool) -> Result<()> {
     let message = local::LocalMessage {
         r#type: Some(local::local_message::Type::Command(local::Command {
             id: None,
-            no_response: Some(false),
+            no_response: Some(!response),
             command: Some(command),
         })),
     };
@@ -117,7 +117,7 @@ pub async fn send_recv_command(
     connection: &mut UnixStream,
     command: local::command::Command,
 ) -> Result<Option<local::CommandResponse>> {
-    send_command(connection, command).await?;
+    send_command(connection, command, true).await?;
     Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection))
         .await
         .or(Err(Error::Timeout))??)
@@ -126,7 +126,7 @@ pub async fn send_recv_command(
 pub async fn send_command_to_socket(command: local::command::Command) -> Result<()> {
     let path = directories::fig_socket_path()?;
     let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    send_command(&mut conn, command).await
+    send_command(&mut conn, command, false).await
 }
 
 pub async fn send_recv_command_to_socket(command: local::command::Command) -> Result<Option<local::CommandResponse>> {

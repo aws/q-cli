@@ -6,21 +6,25 @@ use serde::{
     Serialize,
 };
 
+/// Terminals that macOS supports
 pub const MACOS_TERMINALS: &[Terminal] = &[];
+
+/// Terminals that Linux supports
 pub const LINUX_TERMINALS: &[Terminal] = &[
-    Terminal::Vscode,
-    Terminal::VSCodeInsiders,
-    Terminal::GnomeTerminal,
-    Terminal::Konsole,
-    Terminal::Tilix,
     Terminal::Alacritty,
     Terminal::Kitty,
+    Terminal::GnomeTerminal,
+    Terminal::Konsole,
     Terminal::XfceTerminal,
-    Terminal::Terminator,
     Terminal::WezTerm,
-    Terminal::Ssh,
+    Terminal::Tilix,
+    Terminal::Terminator,
+    Terminal::Vscode,
+    Terminal::VSCodeInsiders,
 ];
-pub const SPECIAL_TERMINALS: &[Terminal] = &[Terminal::Tmux, Terminal::Nvim];
+
+/// Other terminals that figterm should launch within that are not full terminal emulators
+pub const SPECIAL_TERMINALS: &[Terminal] = &[Terminal::Ssh, Terminal::Tmux, Terminal::Nvim];
 
 pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
 
@@ -62,9 +66,10 @@ pub enum Terminal {
     Terminator,
     /// Terminology
     Terminology,
+
+    // Other pseudoterminal that we want to launch within
     /// SSH
     Ssh,
-    // Other pseudoterminal that we want to launch within
     /// Tmux
     Tmux,
     /// Nvim

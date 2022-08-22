@@ -418,10 +418,11 @@ pub fn build_autocomplete(
         use gtk::traits::GtkWindowExt;
         use wry::application::platform::unix::WindowExtUnix;
 
-        window.gtk_window().set_type_hint(WindowTypeHint::Utility);
-        window.gtk_window().set_role("autocomplete");
-        window.gtk_window().set_accept_focus(false);
-        window.gtk_window().set_decorated(false);
+        let gtk_window = window.gtk_window();
+        gtk_window.set_role("autocomplete");
+        gtk_window.set_type_hint(WindowTypeHint::Utility);
+        gtk_window.set_accept_focus(false);
+        gtk_window.set_decorated(false);
     }
 
     let proxy = event_loop.create_proxy();

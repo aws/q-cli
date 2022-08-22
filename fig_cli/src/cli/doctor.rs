@@ -1724,37 +1724,7 @@ impl DoctorCheck for IBusCheck {
             }}));
         }
 
-        let ibus_proxy = dbus::ibus::ibus_proxy()
-            .await
-            .wrap_err("Failed to connect to IBus bus")?;
-
-        let error: Option<eyre::Report> = match ibus_proxy.global_engine().await {
-            Ok(engine) => {
-                let value: Option<&zvariant::Value> = engine.downcast_ref();
-                if let Some(zvariant::Value::Structure(s)) = value {
-                    if let Some(zvariant::Value::Str(id)) = s.fields().get(2) {
-                        if id.as_str() == "fig" {
-                            return Ok(());
-                        }
-                    }
-                }
-                None
-            },
-            Err(err) => Some(err.into()),
-        };
-
-        Err(DoctorError::Error {
-            reason: "ibus engine is not fig".into(),
-            fix: Some(DoctorFix::Async(Box::pin(async move {
-                let ibus_proxy = dbus::ibus::ibus_proxy()
-                    .await
-                    .wrap_err("Failed to connect to IBus bus")?;
-                ibus_proxy.set_global_engine("fig").await?;
-                Ok(())
-            }))),
-            info: vec![],
-            error,
-        })
+        Ok(())
     }
 }
 

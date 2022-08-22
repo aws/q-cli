@@ -154,12 +154,18 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             // this is explictly set in onboarding in macOS app.
             let has_see_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
 
-            let terminal = Terminal::parent_terminal();
+            cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    let terminal_supports_onboarding = {
+                        let terminal = Terminal::parent_terminal();
+                        [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
+                    };
+                } else {
+                    let terminal_supports_onboarding = true;
+                }
+            }
 
-            if is_logged_in()
-                && !has_see_onboarding
-                && [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
-            {
+            if is_logged_in() && !has_see_onboarding && terminal_supports_onboarding {
                 to_source.push(match shell {
                     Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)".into(),
                     Shell::Fish => "begin; fig restart daemon &> /dev/null &; end".into(),
