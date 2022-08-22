@@ -2229,9 +2229,19 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             println!("{} Everything looks good!", CHECKMARK.green());
         }
         println!();
-        println!("Fig still not working? Run {} to let us know!", "fig issue".magenta());
-        println!("Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
+        println!("  Fig still not working? Run {} to let us know!", "fig issue".magenta());
+        println!("  Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
         println!()
+    }
+
+    if fig_settings::state::get_bool_or("doctor.prompt-restart-terminal", false) {
+        println!(
+            "  {}{}",
+            "PS. Autocomplete won't work in any existing terminal sessions, ".bold(),
+            "only new ones.".bold().italic()
+        );
+        println!("  (You might want to restart your terminal emulator)");
+        fig_settings::state::set_value("doctor.prompt-restart-terminal", false)?;
     }
     Ok(())
 }
