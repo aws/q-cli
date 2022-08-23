@@ -75,6 +75,8 @@ pub enum Error {
     CredentialsFileNotExist,
 }
 
+const APP_NAME_VALID_SYMBOLS: &str = "!#$%&'*+-.^_`|~";
+
 pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     use aws_smithy_http::body::SdkBody;
 
@@ -110,9 +112,16 @@ pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
 
+    let app_name: std::borrow::Cow<str> = format!("{name}-{os}-{arch}")
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || APP_NAME_VALID_SYMBOLS.contains(*c))
+        .collect();
+
+    dbg!(&app_name);
+
     let config = Config::builder()
         .region(Region::new(REGION))
-        .app_name(AppName::new(format!("{name}-{os}-{arch}")).unwrap())
+        .app_name(AppName::new(app_name).unwrap())
         .build();
 
     Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
