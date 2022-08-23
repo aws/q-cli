@@ -27,11 +27,13 @@ use crate::EventLoopProxy;
 pub const SHELL: &str = "/bin/bash";
 
 #[derive(Debug)]
+#[allow(dead_code)] // we will definitely need inner_x and inner_y at some point
 pub struct ActiveWindowData {
-    x: i32,
-    y: i32,
-    off_x: i32,
-    off_y: i32,
+    inner_x: i32,
+    inner_y: i32,
+    outer_x: i32,
+    outer_y: i32,
+    scale: f32,
 }
 
 #[derive(Debug)]

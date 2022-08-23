@@ -217,25 +217,18 @@ impl Terminal {
     // corresponds to GSE source type
     pub fn gnome_id(&self) -> Option<&'static str> {
         match self {
-            Terminal::Vscode => Some("Code"),
-            Terminal::VSCodeInsiders => Some("Code - Insiders"),
+            // Terminal::Vscode => Some("Code"),
+            // Terminal::VSCodeInsiders => Some("Code - Insiders"),
             Terminal::GnomeTerminal => Some("gnome-terminal-server"),
-            Terminal::Konsole => Some("org.kde.konsole"),
+            // Terminal::Konsole => Some("org.kde.konsole"),
             Terminal::Tilix => Some("tilix"),
             Terminal::Alacritty => Some("Alacritty"),
-            Terminal::Kitty => Some("kitty"),
+            // Terminal::Kitty => Some("kitty"),
             Terminal::XfceTerminal => Some("xfce4-terminal"),
-            Terminal::Terminator => Some("terminator"),
-            Terminal::Terminology => Some("terminology"),
-            Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
+            // Terminal::Terminator => Some("terminator"),
+            // Terminal::Terminology => Some("terminology"),
+            // Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
             _ => None,
-        }
-    }
-
-    pub fn relative_cursor_offset(&self) -> (i32, i32) {
-        match self {
-            Terminal::GnomeTerminal => (-51, -44),
-            _ => (0, 0),
         }
     }
 

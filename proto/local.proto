@@ -243,14 +243,20 @@ message InterceptedKeyHook {
 	string action = 3;
 }
 
+message BoundingBox {
+	int32 x = 1;
+	int32 y = 2;
+	int32 width = 3;
+	int32 height = 4;
+}
+
 message FocusedWindowDataHook {
 	string source = 1;
 	string id = 2;
-	int32 x = 3;
-	int32 y = 4;
-	int32 width = 5;
-	int32 height = 6;
-	optional bool hide = 7;
+	BoundingBox inner = 3;
+	BoundingBox outer = 4;
+	optional bool hide = 5;
+	float scale = 6;
 }
 
 // == Responses ==
