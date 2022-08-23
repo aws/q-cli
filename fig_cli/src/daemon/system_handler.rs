@@ -201,27 +201,25 @@ async fn spawn_system_handler(mut stream: UnixStream, daemon_status: Arc<RwLock<
 }
 
 pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<JoinHandle<()>> {
-    let system_socket_path = directories::daemon_socket_path();
+    let daemon_socket_path = directories::daemon_socket_path()?;
 
     // Create the system socket directory if it doesn't exist
-    if let Some(system_socket_dir) = system_socket_path.parent() {
-        tokio::fs::create_dir_all(system_socket_dir)
+    if let Some(daemon_socket_dir) = daemon_socket_path.parent() {
+        tokio::fs::create_dir_all(daemon_socket_dir)
             .await
-            .context("Could not create system socket directory")?;
+            .context("Could not create daemon socket directory")?;
     }
 
     // Remove the system socket if it already exists
-    if system_socket_path.exists() {
-        tokio::fs::remove_file(&system_socket_path).await?;
-    }
+    tokio::fs::remove_file(&daemon_socket_path).await.ok();
 
     // Bind the system socket
-    let system_socket = UnixListener::bind(&system_socket_path).context("Could not connect to system socket")?;
+    let daemon_socket = UnixListener::bind(&daemon_socket_path).context("Could not connect to daemon socket")?;
 
     Ok(tokio::spawn(async move {
-        while let Ok((stream, _)) = system_socket.accept().await {
+        while let Ok((stream, _)) = daemon_socket.accept().await {
             if let Err(err) = spawn_system_handler(stream, daemon_status.clone()).await {
-                error!("Error while spawining unix socket connection handler: {err}");
+                error!("Error while spawining daemon socket connection handler: {err}");
             }
         }
     }))

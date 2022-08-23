@@ -175,7 +175,7 @@ mod linux {
 #[cfg(target_os = "linux")]
 pub use linux::*;
 
-#[cfg(test)]
+#[cfg(all(target_os = "linux", test))]
 mod test {
     use super::*;
 

@@ -407,7 +407,6 @@ impl Default for DaemonStatus {
 pub static IS_RUNNING_DAEMON: Mutex<bool> = Mutex::new(false);
 
 /// Spawn the daemon to listen for updates and dotfiles changes
-#[cfg(unix)]
 pub async fn daemon() -> Result<()> {
     use std::sync::Arc;
     use std::time::Duration;
@@ -582,17 +581,11 @@ pub async fn daemon() -> Result<()> {
 
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join,settings_watcher_join)?;
+            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join, settings_watcher_join)?;
         } else {
             tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
         }
     }
 
     Ok(())
-}
-
-/// Spawn the daemon to listen for updates and dotfiles changes
-#[cfg(windows)]
-pub async fn daemon() -> Result<()> {
-    todo!();
 }

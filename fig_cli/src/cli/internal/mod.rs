@@ -447,7 +447,7 @@ impl InternalSubcommand {
                 let socket = if app {
                     directories::fig_socket_path().expect("Failed to get socket path")
                 } else if daemon {
-                    directories::daemon_socket_path()
+                    directories::daemon_socket_path().expect("Failed to get daemon socket path")
                 } else if let Some(ref figterm) = figterm {
                     directories::figterm_socket_path(figterm).expect("Failed to get socket path")
                 } else {

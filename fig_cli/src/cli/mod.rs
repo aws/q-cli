@@ -228,9 +228,11 @@ impl Cli {
             Some(CliRootCommands::Daemon) => {
                 // Remove the daemon log file if it is >10Mb
                 let daemon_log_file = fig_util::directories::fig_dir()?.join("logs").join("daemon.log");
-                let metadata = std::fs::metadata(&daemon_log_file)?;
-                if metadata.len() > 10_000_000 {
-                    std::fs::remove_file(&daemon_log_file)?;
+                if daemon_log_file.exists() {
+                    let metadata = std::fs::metadata(&daemon_log_file)?;
+                    if metadata.len() > 10_000_000 {
+                        std::fs::remove_file(&daemon_log_file)?;
+                    }
                 }
                 // The daemon prints all logs to stdout
                 logger = logger.with_stdout();
