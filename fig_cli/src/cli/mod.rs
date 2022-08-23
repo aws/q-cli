@@ -23,6 +23,7 @@ mod team;
 mod theme;
 mod tips;
 mod tweet;
+mod uninstall;
 mod user;
 mod workflow;
 
@@ -272,7 +273,7 @@ impl Cli {
                         internal::install_cli_from_args(args)
                     }
                 },
-                CliRootCommands::Uninstall => uninstall_command().await,
+                CliRootCommands::Uninstall => uninstall::uninstall_command().await,
                 CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm).await,
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
@@ -360,33 +361,6 @@ pub fn desktop_app_is_installed() -> bool {
             true
         }
     }
-}
-
-async fn uninstall_command() -> Result<()> {
-    let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Are you sure you want to uninstall Fig?")
-        .interact()?;
-
-    if !should_uninstall {
-        println!("Phew...");
-        return Ok(());
-    }
-
-    if desktop_app_is_installed() {
-        let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
-            fig_ipc::command::uninstall_command().await.is_ok()
-        } else {
-            false
-        };
-
-        if !success {
-            println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
-        }
-    } else {
-        installation::uninstall_cli(installation::InstallComponents::all())?
-    }
-
-    Ok(())
 }
 
 async fn root_command() -> Result<()> {
