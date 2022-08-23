@@ -841,7 +841,7 @@ impl DoctorCheck for DaemonCheck {
         }?;
 
         // Get diagnostics from the daemon
-        let socket_path = directories::daemon_socket_path();
+        let socket_path = directories::daemon_socket_path().unwrap();
 
         if !socket_path.exists() {
             return Err(DoctorError::Error {

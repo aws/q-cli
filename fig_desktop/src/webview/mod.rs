@@ -23,6 +23,7 @@ use window::{
     WindowId,
     WindowState,
 };
+use wry::application::dpi::LogicalSize;
 use wry::application::event::{
     Event as WryEvent,
     StartCause,
@@ -326,14 +327,19 @@ pub fn build_dashboard(
 ) -> wry::Result<WebView> {
     let is_visible = !fig_auth::is_logged_in() || force_visible || show_onboarding;
 
-    let window = WindowBuilder::new()
-        .with_resizable(true)
+    let mut window = WindowBuilder::new()
         .with_title("Fig")
+        .with_resizable(true)
         .with_visible(is_visible)
         .with_always_on_top(false)
         .with_window_icon(Some(util::ICON.clone()))
-        .with_theme(*THEME)
-        .build(event_loop)?;
+        .with_theme(*THEME);
+
+    if show_onboarding {
+        window = window.with_inner_size(LogicalSize::new(590, 480));
+    }
+
+    let window = window.build(event_loop)?;
 
     #[cfg(target_os = "linux")]
     {

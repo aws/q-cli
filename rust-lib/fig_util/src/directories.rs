@@ -133,7 +133,7 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
         } else if #[cfg(target_os = "macos")] {
             Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
         } else if #[cfg(target_os = "windows")] {
-            dirs::data_local_dir().map(|path| path.join("fig").join(format!("figterm-{session_id}.socket"))).ok_or(DirectoryError::NoHomeDirectory)
+            dirs::data_local_dir().map(|path| path.join("Fig").join(format!("figterm-{session_id}.socket"))).ok_or(DirectoryError::NoHomeDirectory)
         } else {
             compile_error!("Unsupported platform");
         }
@@ -141,14 +141,14 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
 }
 
 /// Get path to "$TMPDIR/fig/daemon.sock"
-pub fn daemon_socket_path() -> PathBuf {
-    [
-        std::env::temp_dir().as_path(),
-        Path::new("fig"),
-        Path::new("daemon.sock"),
-    ]
-    .into_iter()
-    .collect()
+pub fn daemon_socket_path() -> Result<PathBuf> {
+    cfg_if::cfg_if! {
+        if #[cfg(not(target_os = "windows"))] {
+            Ok(std::env::temp_dir().join("fig").join("daemon.sock"))
+        } else if #[cfg(target_os = "windows")] {
+            dirs::data_local_dir().map(|path| path.join("Fig").join("daemon.socket")).ok_or(DirectoryError::NoHomeDirectory)
+        }
+    }
 }
 
 #[cfg(test)]
