@@ -92,17 +92,25 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
                                         },
                                     };
                                     debug!(
-                                        "SetCursorLocationRelative{{x: {}, y: {}}} on {}",
+                                        "SetCursorLocationRelative{{x: {}, y: {}, h: {}}} on {}",
                                         body.0,
                                         body.1,
+                                        body.3,
                                         path.as_str()
                                     );
                                     let abs: (i32, i32) = {
                                         let handle = native_state.active_window_data.lock();
                                         match *handle {
-                                            Some(ActiveWindowData { x, y, off_x, off_y }) => {
-                                                (body.0 + x + off_x, body.1 + y + off_y)
-                                            },
+                                            Some(ActiveWindowData {
+                                                outer_x,
+                                                outer_y,
+                                                scale,
+                                                ..
+                                            }) => (
+                                                (body.0 as f32 / scale).round() as i32 + outer_x,
+                                                (body.1 as f32 / scale).round() as i32 + outer_y
+                                                    - (body.3 as f32 / scale).round() as i32,
+                                            ),
                                             None => continue,
                                         }
                                     };

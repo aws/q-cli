@@ -64,17 +64,19 @@ pub fn from_hook(hook: FocusedWindowDataHook, native_state: &NativeState, proxy:
     }
 
     debug!("focus event on {} from {}", hook.id, hook.source);
-    if let Some(terminal) = from_source(&hook.source)
+    if from_source(&hook.source)
         .ok_or_else(|| anyhow!("received invalid focus window data source"))?
-        .get(hook.id.as_str())
+        .contains_key(hook.id.as_str())
     {
-        let offset = terminal.relative_cursor_offset();
+        let inner = hook.inner.unwrap();
+        let outer = hook.outer.unwrap();
         let mut handle = native_state.active_window_data.lock();
         *handle = Some(ActiveWindowData {
-            x: hook.x,
-            y: hook.y,
-            off_x: offset.0,
-            off_y: offset.1,
+            inner_x: inner.x,
+            inner_y: inner.y,
+            outer_x: outer.x,
+            outer_y: outer.y,
+            scale: hook.scale,
         });
     } else {
         proxy.send_event(Event::WindowEvent {
