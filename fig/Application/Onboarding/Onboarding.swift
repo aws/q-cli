@@ -231,7 +231,7 @@ extension Onboarding {
                 result.result = .resultOk
               } else {
                 result.result = .resultError
-                result.error = "Ibus installation is not implemented on macOS"
+                result.error = "Accessibility permission was not enabled."
               }
             })
           }))
