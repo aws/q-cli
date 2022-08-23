@@ -376,7 +376,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       withTitle: "User Manual",
       action: #selector(AppDelegate.viewSupportForum),
       keyEquivalent: "")
-    forum.image = NSImage(named: NSImage.Name("commandkey"))
+    forum.image = NSImage(named: NSImage.Name("option"))
 
     statusBarMenu.addItem(NSMenuItem.separator())
 
