@@ -680,9 +680,10 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool {
       if hideMenuBar {
         self.statusBarItem = nil
-      } else {
+      } else if self.statusBarItem == nil && !hideMenuBar {
+
         let statusBar = NSStatusBar.system
-        statusBarItem = statusBar.statusItem(
+        self.statusBarItem = statusBar.statusItem(
           withLength: NSStatusItem.squareLength)
         statusBarItem.button?.title = "🍐"
         statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")// .overlayBadge()
