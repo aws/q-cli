@@ -109,13 +109,12 @@ async fn main() {
         let url = Url::parse(&url).unwrap();
         assert_eq!(url.scheme(), "fig");
 
-        match url.host_str() {
-            Some("plugins") => Some(format!("plugins{}", url.path())),
-            command => {
-                println!("Unknown command {command:?}");
-                None
-            },
-        }
+        url.host_str().map(|s| {
+            let mut owned = s.to_owned();
+            owned.push('/');
+            owned.push_str(url.path());
+            owned
+        })
     });
 
     if !cli.allow_multiple {
