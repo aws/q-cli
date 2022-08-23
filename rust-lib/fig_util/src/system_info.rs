@@ -112,9 +112,9 @@ mod linux {
         };
 
         let desktop_environment = match std::env::var("XDG_SESSION_DESKTOP") {
-            Ok(desktop) => match desktop.as_str() {
-                "GNOME" => DesktopEnvironment::Gnome,
-                "KDE" => DesktopEnvironment::Plasma,
+            Ok(desktop) => match desktop.to_lowercase().as_str() {
+                "gnome" | "gnome-xorg" | "ubuntu" => DesktopEnvironment::Gnome,
+                "kde" => DesktopEnvironment::Plasma,
                 "i3" => DesktopEnvironment::I3,
                 _ => return Err(Error::UnknownDesktop(desktop)),
             },
