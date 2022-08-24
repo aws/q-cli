@@ -1756,8 +1756,8 @@ impl DoctorCheck for DesktopCompatibilityCheck {
             (DisplayServer::Wayland, DesktopEnvironment::Gnome) => Err(doctor_warning!(
                 "Fig's support for GNOME on Wayland is in development. It may not work properly on your system."
             )),
-            (display_server, desktop_environment) => Err(doctor_error!(
-                "Unsupported desktop configuration {desktop_environment:?} on {display_server:?}"
+            (display_server, desktop_environment) => Err(doctor_warning!(
+                "Unknown desktop configuration {desktop_environment:?} on {display_server:?}"
             )),
         }
     }
