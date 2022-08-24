@@ -49,8 +49,50 @@ pub(crate) fn default_properties() -> Map<String, Value> {
 
     #[cfg(target_os = "linux")]
     if let Some(linux_os_release) = fig_util::get_linux_os_release() {
-        prop.insert("device_linux_release".into(), serde_json::json!(linux_os_release));
+        prop.insert("device_linux_release_id".into(), linux_os_release.id.as_deref().into());
+        prop.insert(
+            "device_linux_release_name".into(),
+            linux_os_release.name.as_deref().into(),
+        );
+        prop.insert(
+            "device_linux_release_version".into(),
+            linux_os_release.version.as_deref().into(),
+        );
+        prop.insert(
+            "device_linux_release_version_id".into(),
+            linux_os_release.version_id.as_deref().into(),
+        );
+        prop.insert(
+            "device_linux_release_variant".into(),
+            linux_os_release.variant.as_deref().into(),
+        );
+        prop.insert(
+            "device_linux_release_variant_id".into(),
+            linux_os_release.variant_id.as_deref().into(),
+        );
+        prop.insert(
+            "device_linux_release_build_id".into(),
+            linux_os_release.build_id.as_deref().into(),
+        );
     }
+
+    if let Ok(desktop) = std::env::var("XDG_SESSION_DESKTOP") {
+        prop.insert("device_linux_environment_desktop".into(), desktop.into());
+    } else if let Ok(desktop) = std::env::var("DESKTOP_SESSION") {
+        prop.insert("device_linux_environment_desktop".into(), desktop.into());
+    }
+
+    prop.insert(
+        "device_linux_environment_display_server".into(),
+        match std::env::var("XDG_SESSION_TYPE") {
+            Ok(desktop) => desktop.into(),
+            Err(_) => "x11".into(),
+        },
+    );
+
+    // TODO(chay): add windows release
+
+    // TODO(matt): add macos release
 
     prop.insert(
         "device_install_method".into(),
