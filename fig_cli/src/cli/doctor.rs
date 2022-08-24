@@ -2167,7 +2167,11 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             run_checks(
                 "Let's check Linux integrations".into(),
-                vec![&IBusEnvCheck {}, &IBusCheck {}, &DesktopCompatibilityCheck],
+                vec![
+                    &IBusEnvCheck {},
+                    &IBusCheck {},
+                    // &DesktopCompatibilityCheck // we need a better way of getting the data
+                ],
                 config,
                 &mut spinner,
             )
