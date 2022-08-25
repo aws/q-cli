@@ -138,6 +138,8 @@ class MissionControl {
                                        isLongRunningWindow: true,
                                        restoreAccessoryPolicyOnClose:
                                         self.shouldShowIconInDock)
+    missionControl.minSize = NSSize(width: 300,
+                                    height: 300)
     missionControl.setFrame(NSRect(x: 0, y: 0, width: 1030, height: 720), display: true, animate: false)
     missionControl.center()
     missionControl.makeKeyAndOrderFront(self)
