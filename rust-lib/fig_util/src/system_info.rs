@@ -111,12 +111,16 @@ mod linux {
             _ => return Err(Error::MissingEnv("XDG_SESSION_TYPE")),
         };
 
-        let desktop_environment = match std::env::var("XDG_SESSION_DESKTOP") {
-            Ok(desktop) => match desktop.to_lowercase().as_str() {
-                "gnome" | "gnome-xorg" | "ubuntu" => DesktopEnvironment::Gnome,
-                "kde" | "plasma" => DesktopEnvironment::Plasma,
-                "i3" => DesktopEnvironment::I3,
-                _ => return Err(Error::UnknownDesktop(desktop)),
+        let desktop_environment = match std::env::var("XDG_CURRENT_DESKTOP") {
+            Ok(current) => {
+                let current = current.to_lowercase();
+                let (_, desktop) = current.split_once(':').unwrap_or(("", current.as_str()));
+                match desktop.to_lowercase().as_str() {
+                    "gnome" | "gnome-xorg" => DesktopEnvironment::Gnome,
+                    "kde" => DesktopEnvironment::Plasma,
+                    "i3" => DesktopEnvironment::I3,
+                    _ => return Err(Error::UnknownDesktop(current)),
+                }
             },
             _ => return Err(Error::MissingEnv("XDG_SESSION_DESKTOP")),
         };
