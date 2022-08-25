@@ -235,8 +235,11 @@ impl Cli {
                         std::fs::remove_file(&daemon_log_file)?;
                     }
                 }
-                // The daemon prints all logs to stdout
-                logger = logger.with_stdout();
+
+                if fig_settings::state::get_bool_or("logging.daemon", false) {
+                    // The daemon prints all logs to stdout
+                    logger = logger.with_stdout();
+                }
             },
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
