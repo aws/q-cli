@@ -1841,7 +1841,7 @@ mod test {
 
         p.parse(&input, |_, e| inputs.push(e), false);
 
-        assert_eq!(vec![InputEvent::Paste("abcdefg".repeat(4001).to_owned())], inputs)
+        assert_eq!(vec![InputEvent::Paste("abcdefg".repeat(4000).to_owned())], inputs)
     }
 
     #[test]
