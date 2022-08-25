@@ -1,3 +1,4 @@
+use std::iter::empty;
 use std::process::exit;
 
 use clap::Subcommand;
@@ -16,6 +17,11 @@ use fig_auth::cognito::{
 };
 use fig_request::Request;
 use fig_settings::state;
+use fig_telemetry::{
+    TrackEvent,
+    TrackEventType,
+    TrackSource,
+};
 use serde_json::{
     json,
     Value,
@@ -128,14 +134,22 @@ impl RootUserSubcommand {
                                 )?;
                             }
 
-                            Request::post("/user/login")
-                                .auth()
-                                .body(match state::get_string("anonymousId") {
-                                    Ok(Some(anonymous_id)) => json!({ "anonymousId": anonymous_id }),
-                                    _ => json!({}),
-                                })
-                                .send()
-                                .await?;
+                            let (telem_join, login_join) = tokio::join!(
+                                fig_telemetry::dispatch_emit_track(
+                                    TrackEvent::new(TrackEventType::Login, TrackSource::Cli, empty::<(&str, &str)>()),
+                                    false,
+                                ),
+                                Request::post("/user/login")
+                                    .auth()
+                                    .body(match state::get_string("anonymousId") {
+                                        Ok(Some(anonymous_id)) => json!({ "anonymousId": anonymous_id }),
+                                        _ => json!({}),
+                                    })
+                                    .send()
+                            );
+
+                            telem_join.ok();
+                            login_join?;
 
                             println!("Login successful!");
                             return Ok(());
@@ -156,6 +170,13 @@ impl RootUserSubcommand {
                 }
             },
             Self::Logout => {
+                fig_telemetry::dispatch_emit_track(
+                    TrackEvent::new(TrackEventType::Logout, TrackSource::Cli, empty::<(&str, &str)>()),
+                    false,
+                )
+                .await
+                .ok();
+
                 let mut creds = Credentials::load_credentials()?;
                 creds.clear_credentials();
                 creds.save_credentials()?;

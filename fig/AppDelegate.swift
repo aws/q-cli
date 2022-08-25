@@ -62,7 +62,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     warnToMoveToApplicationIfNecessary()
 
     // Set timeout to avoid hanging misbehaving 3rd party apps
-    Accessibility.setGlobalTimeout(seconds: 2)
+    Accessibility.setGlobalTimeout(seconds: 0.5)
 
     if let hideMenuBar = Settings.shared.getValue(forKey: Settings.hideMenubarIcon) as? Bool, hideMenuBar {
       print("Not showing menubarIcon because of \(Settings.hideMenubarIcon)")
@@ -156,10 +156,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       ShellBridge.symlinkCLI()
 
       UpdateService.provider.resetShellConfig()
-
-      if !Accessibility.enabled {
-        Accessibility.showPromptUI()
-      }
 
       self.setupCompanionWindow()
 

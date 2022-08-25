@@ -959,7 +959,7 @@ dependencies = [
  "js-sys",
  "num-integer",
  "num-traits",
- "time 0.1.43",
+ "time 0.1.44",
  "wasm-bindgen",
  "winapi",
 ]
@@ -1287,9 +1287,9 @@ dependencies = [
 
 [[package]]
 name = "cpufeatures"
-version = "0.2.3"
+version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1079fb8528d9f9c888b1e8aa651e6e079ade467323d58f75faf1d30b1808f540"
+checksum = "dc948ebb96241bb40ab73effeb80d9f93afaad49359d159a5e61be51619fe813"
 dependencies = [
  "libc",
 ]
@@ -4145,11 +4145,10 @@ dependencies = [
 [[package]]
 name = "mio"
 version = "0.8.4"
-source = "git+https://github.com/sullivan-sean/mio#9f2628638358bd7e1f520b7b9221bdd550452ff3"
+source = "git+https://github.com/sullivan-sean/mio#569de7288f6c436c7b5dffe9fd96efa5642583e1"
 dependencies = [
  "libc",
  "log",
- "rand",
  "wasi 0.11.0+wasi-snapshot-preview1",
  "windows-sys",
 ]
@@ -4568,9 +4567,9 @@ checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
 
 [[package]]
 name = "owo-colors"
-version = "3.4.0"
+version = "3.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "decf7381921fea4dcb2549c5667eda59b3ec297ab7e2b5fc33eac69d2e7da87b"
+checksum = "c1b04fb49957986fdce4d6ee7a65027d55d4b6d2265e5848bbb507b58ccfdb6f"
 
 [[package]]
 name = "p256"
@@ -4837,10 +4836,11 @@ dependencies = [
 
 [[package]]
 name = "polling"
-version = "2.2.0"
+version = "2.3.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "685404d509889fade3e86fe3a5803bca2ec09b0c0778d5ada6ec8bf7a8de5259"
+checksum = "899b00b9c8ab553c743b3e11e87c5c7d423b2a2de229ba95b24a756344748011"
 dependencies = [
+ "autocfg",
  "cfg-if 1.0.0",
  "libc",
  "log",
@@ -5099,7 +5099,7 @@ dependencies = [
  "mach",
  "once_cell",
  "raw-cpuid",
- "wasi 0.10.2+wasi-snapshot-preview1",
+ "wasi 0.10.0+wasi-snapshot-preview1",
  "web-sys",
  "winapi",
 ]
@@ -6524,11 +6524,12 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.1.43"
+version = "0.1.44"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ca8a50ef2360fbd1eeb0ecd46795a87a19024eb4b53c5dc916ca1fd95fe62438"
+checksum = "6db9e6914ab8b1ae1c260a4ae7a49b6c5611b40328a735b21862567685e73255"
 dependencies = [
  "libc",
+ "wasi 0.10.0+wasi-snapshot-preview1",
  "winapi",
 ]
 
@@ -6578,7 +6579,7 @@ checksum = "cda74da7e1a664f795bb1f8a87ec406fb89a02522cf6e50620d016add6dbbf5c"
 [[package]]
 name = "tokio"
 version = "1.20.1"
-source = "git+https://github.com/sullivan-sean/tokio#308843084c12c58ba4309e2123018efc3fae0e81"
+source = "git+https://github.com/sullivan-sean/tokio#1a847a7e9e5f0f7043b6a834409288830f4b2228"
 dependencies = [
  "autocfg",
  "bytes",
@@ -6609,7 +6610,7 @@ dependencies = [
 [[package]]
 name = "tokio-macros"
 version = "1.8.0"
-source = "git+https://github.com/sullivan-sean/tokio#308843084c12c58ba4309e2123018efc3fae0e81"
+source = "git+https://github.com/sullivan-sean/tokio#1a847a7e9e5f0f7043b6a834409288830f4b2228"
 dependencies = [
  "proc-macro2 1.0.43",
  "quote 1.0.21",
@@ -7312,9 +7313,9 @@ dependencies = [
 
 [[package]]
 name = "wasi"
-version = "0.10.2+wasi-snapshot-preview1"
+version = "0.10.0+wasi-snapshot-preview1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fd6fbd9a79829dd1ad0cc20627bf1ed606756a7f77edff7b66b7064f9cb327c6"
+checksum = "1a143597ca7c7793eff794def352d41792a93c481eb1042423ff7ff72ba2c31f"
 
 [[package]]
 name = "wasi"

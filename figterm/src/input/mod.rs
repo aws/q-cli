@@ -1557,17 +1557,14 @@ impl InputParser {
                         ) if self.state == InputState::Normal && self.buf.len() > len => {
                             self.state = InputState::EscapeMaybeAlt;
                             self.advance_buf(len);
-                        }
+                        },
                         (Found::Exact(len, event), _) | (Found::Ambiguous(len, event), false) => {
                             self.advance_buf(len);
-                            self.dispatch_callback(
-                                &mut callback,
-                                event.clone()
-                            );
-                        }
+                            self.dispatch_callback(&mut callback, event.clone());
+                        },
                         (Found::Ambiguous(_, _), true) | (Found::NeedData, true) => {
                             return;
-                        }
+                        },
                         (Found::None, _) | (Found::NeedData, false) => {
                             // No pre-defined key, so pull out a unicode character
                             if let Some((c, len)) = Self::decode_one_char(self.buf.as_slice()) {
@@ -1584,7 +1581,7 @@ impl InputParser {
                                 // yield the remainder of the slice
                                 return;
                             }
-                        }
+                        },
                     }
                 },
             }
@@ -1830,6 +1827,46 @@ mod test {
         p.parse(input2, |_, e| inputs.push(e), false);
 
         assert_eq!(vec![InputEvent::Paste("12345678".to_owned())], inputs)
+    }
+
+    #[test]
+    fn large_paste() {
+        let mut p = InputParser::new();
+
+        let mut input = PASTE_START.as_bytes().to_vec();
+        input.extend("abcdefg".repeat(4000).as_bytes());
+        input.extend(PASTE_END.as_bytes());
+
+        let mut inputs = vec![];
+
+        p.parse(&input, |_, e| inputs.push(e), false);
+
+        assert_eq!(vec![InputEvent::Paste("abcdefg".repeat(4000).to_owned())], inputs)
+    }
+
+    #[test]
+    fn large_partial_bracketed_paste() {
+        let mut p = InputParser::new();
+
+        let mut input = PASTE_START.as_bytes().to_vec();
+        input.extend("abcdefg".repeat(4000).as_bytes());
+
+        let mut input2 = "hijklmno".repeat(4000).as_bytes().to_vec();
+        input2.extend(PASTE_END.as_bytes());
+
+        let mut inputs = vec![];
+
+        p.parse(&input, |_, e| inputs.push(e), false);
+        p.parse(&input2, |_, e| inputs.push(e), false);
+
+        assert_eq!(
+            vec![InputEvent::Paste(format!(
+                "{}{}",
+                "abcdefg".repeat(4000),
+                "hijklmno".repeat(4000)
+            )),],
+            inputs
+        )
     }
 
     #[test]

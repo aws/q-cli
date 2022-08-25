@@ -114,7 +114,7 @@ mod linux {
         let desktop_environment = match std::env::var("XDG_SESSION_DESKTOP") {
             Ok(desktop) => match desktop.to_lowercase().as_str() {
                 "gnome" | "gnome-xorg" | "ubuntu" => DesktopEnvironment::Gnome,
-                "kde" => DesktopEnvironment::Plasma,
+                "kde" | "plasma" => DesktopEnvironment::Plasma,
                 "i3" => DesktopEnvironment::I3,
                 _ => return Err(Error::UnknownDesktop(desktop)),
             },
@@ -136,8 +136,6 @@ mod linux {
         pub version: Option<String>,
         pub id: Option<String>,
         pub version_id: Option<String>,
-        pub pretty_name: Option<String>,
-        pub cpe_name: Option<String>,
         pub build_id: Option<String>,
         pub variant: Option<String>,
         pub variant_id: Option<String>,
@@ -155,8 +153,6 @@ mod linux {
                                 "VERSION" => os_release.version = Some(value.into()),
                                 "ID" => os_release.id = Some(value.into()),
                                 "VERSION_ID" => os_release.version_id = Some(value.into()),
-                                "PRETTY_NAME" => os_release.pretty_name = Some(value.into()),
-                                "CPE_NAME" => os_release.cpe_name = Some(value.into()),
                                 "BUILD_ID" => os_release.build_id = Some(value.into()),
                                 "VARIANT" => os_release.variant = Some(value.into()),
                                 "VARIANT_ID" => os_release.variant_id = Some(value.into()),
