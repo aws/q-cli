@@ -278,7 +278,7 @@ extension Onboarding {
         callback(true)
       }
     case .closeAccessibilityPromptWindow:
-      Accessibility.closeUI()
+      break
     case .launchShellOnboarding:
       callback(true)
 

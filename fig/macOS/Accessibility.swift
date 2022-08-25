@@ -112,49 +112,6 @@ class Accessibility {
     }
   }
 
-  fileprivate static var promptWindow: WebViewWindow?
-
-  static func showPromptUI() {
-
-    if let promptWindow = Accessibility.promptWindow {
-
-      if promptWindow.contentViewController != nil {
-        promptWindow.makeKeyAndOrderFront(nil)
-        promptWindow.orderFrontRegardless()
-        NSApp.activate(ignoringOtherApps: true)
-
-        return
-      } else {
-        Accessibility.promptWindow?.contentViewController = nil
-        Accessibility.promptWindow = nil
-      }
-    }
-
-    let accessibilityViewController = WebViewController()
-    accessibilityViewController.webView?.defaultURL = nil
-    accessibilityViewController.webView?.loadBundleApp("accessibility")
-    accessibilityViewController.webView?.dragShouldRepositionWindow = true
-
-    let prompt = WebViewWindow(viewController: accessibilityViewController, shouldQuitAppOnClose: false)
-    prompt.setFrame(NSRect(x: 0, y: 0, width: 590, height: 480), display: true, animate: false)
-    prompt.center()
-    prompt.makeKeyAndOrderFront(self)
-
-    // Set color to match background of app to avoid flicker while loading
-    prompt.backgroundColor = NSColor.white
-
-    prompt.delegate = prompt
-    prompt.isReleasedWhenClosed = false
-    prompt.level = .normal
-
-    Accessibility.promptWindow = prompt
-  }
-
-  static func closeUI() {
-    Accessibility.promptWindow?.close()
-    Accessibility.promptWindow = nil
-  }
-
   static func listAttributes(for element: AXUIElement) {
     var names: CFArray?
     AXUIElementCopyAttributeNames(element, &names)

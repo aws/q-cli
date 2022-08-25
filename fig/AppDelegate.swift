@@ -157,10 +157,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       UpdateService.provider.resetShellConfig()
 
-      if !Accessibility.enabled {
-        Accessibility.showPromptUI()
-      }
-
       self.setupCompanionWindow()
 
       let args = ProcessInfo.processInfo.arguments
