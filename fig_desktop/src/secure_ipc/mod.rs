@@ -97,7 +97,7 @@ async fn handle_secure_ipc(
     proxy: EventLoopProxy,
 ) {
     let (mut reader, writer) = tokio::io::split(stream);
-    let (clientbound_tx, clientbound_rx) = flume::bounded(0xff);
+    let (clientbound_tx, clientbound_rx) = flume::unbounded();
 
     let (stop_pings_tx, stop_pings_rx) = oneshot::channel();
 
@@ -146,7 +146,7 @@ async fn handle_secure_ipc(
                         },
                         None => {
                             session_id = Some(id.clone());
-                            let (command_tx, command_rx) = flume::bounded(0xff);
+                            let (command_tx, command_rx) = flume::unbounded();
                             tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
                             figterm_state.insert(id, FigtermSession {
                                 secret: handshake.secret,
