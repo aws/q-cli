@@ -281,7 +281,8 @@ extension Onboarding {
       break
     case .launchShellOnboarding:
       callback(true)
-
+      LocalState.shared.set(value: false,
+                            forKey: LocalState.hasSeenOnboarding)
       Onboarding.setupTerminalsForShellOnboarding {
         SecureKeyboardInput.notifyIfEnabled()
       }
