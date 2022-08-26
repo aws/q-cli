@@ -520,6 +520,9 @@ class WebView: WKWebView {
     let url: URL = {
 
       // Use value specified by developer.autocomplete.host if it exists
+
+      let urlString = urlString ?? LocalState.shared.getValue(forKey: Settings.autocompleteURL) as? String
+
       if let urlString = urlString,
          let url = URL(string: urlString) {
         return url
