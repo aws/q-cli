@@ -78,11 +78,11 @@ pub struct FigMessage {
 
 #[derive(Debug, Error)]
 pub enum FigMessageParseError {
-    #[error("incomlete message")]
+    #[error("incomplete message")]
     Incomplete,
-    #[error("invalid message header")]
-    InvalidHeader,
-    #[error("invalid message type")]
+    #[error("invalid message header: {}", .0.escape_ascii())]
+    InvalidHeader([u8; 2]),
+    #[error("invalid message type: {}", .0.escape_ascii())]
     InvalidMessageType([u8; 8]),
     #[error(transparent)]
     Io(#[from] std::io::Error),
@@ -145,7 +145,7 @@ impl FigMessage {
         let mut header = [0; 2];
         src.copy_to_slice(&mut header);
         if header[0] != b'\x1b' || header[1] != b'@' {
-            return Err(FigMessageParseError::InvalidHeader);
+            return Err(FigMessageParseError::InvalidHeader(header));
         }
 
         let mut message_type_buf = [0; 8];

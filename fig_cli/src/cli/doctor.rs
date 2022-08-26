@@ -24,6 +24,7 @@ use crossterm::{
     execute,
 };
 use eyre::{
+    ContextCompat,
     Result,
     WrapErr,
 };
@@ -46,9 +47,12 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::system_info::{
+    OSVersion,
+    SupportLevel,
+};
 use fig_util::{
     directories,
-    get_parent_process_exe,
     Shell,
     Terminal,
 };
@@ -67,10 +71,7 @@ use tokio::io::{
 use tokio::net::UnixStream;
 
 use super::app::restart_fig;
-use crate::cli::diagnostics::{
-    dscl_read,
-    verify_integration,
-};
+use crate::cli::diagnostics::verify_integration;
 use crate::util::{
     app_path_from_bundle_id,
     glob,
@@ -78,8 +79,6 @@ use crate::util::{
     is_executable_in_path,
     launch_fig,
     LaunchOptions,
-    OSVersion,
-    SupportLevel,
 };
 
 #[derive(Debug, Args)]
@@ -1059,8 +1058,27 @@ impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
     }
 }
 
+#[cfg(target_os = "macos")]
+pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
+    let username_command = Command::new("id").arg("-un").output().context("Could not get id")?;
+
+    let username: String = String::from_utf8_lossy(&username_command.stdout).trim().into();
+
+    let result = Command::new("dscl")
+        .arg(".")
+        .arg("-read")
+        .arg(format!("/Users/{}", username))
+        .arg(value)
+        .output()
+        .context("Could not read value")?;
+
+    Ok(String::from_utf8_lossy(&result.stdout).trim().into())
+}
+
+#[cfg(target_os = "macos")]
 struct ShellCompatibilityCheck;
 
+#[cfg(target_os = "macos")]
 #[async_trait]
 impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
     fn name(&self) -> Cow<'static, str> {
@@ -1070,11 +1088,14 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let shell_regex = Regex::new(r"(bash|fish|zsh)").unwrap();
 
-        let current_shell = get_parent_process_exe();
-        let current_shell_valid = current_shell.as_ref().map(|path| path.to_string_lossy()).map(|s| {
-            let is_match = shell_regex.is_match(&s);
-            (s, is_match)
-        });
+        let current_shell = fig_util::get_parent_process_exe();
+        let current_shell_valid = current_shell
+            .as_ref()
+            .map(|path| path.to_string_lossy().to_string())
+            .map(|s| {
+                let is_match = shell_regex.is_match(&s);
+                (s, is_match)
+            });
 
         let default_shell = dscl_read("UserShell");
         let default_shell_valid = default_shell.as_ref().map(|s| (s, shell_regex.is_match(s)));
@@ -1544,7 +1565,7 @@ impl DoctorCheck for SystemVersionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let os_version = OSVersion::new().context("Could not get OS Version")?;
+        let os_version = OSVersion::new().wrap_err("Could not get OS Version")?;
         match os_version.support_level() {
             SupportLevel::Supported => Ok(()),
             SupportLevel::InDevelopment => Err(DoctorError::Warning(
@@ -1742,12 +1763,14 @@ impl DoctorCheck for DesktopCompatibilityCheck {
 
     #[cfg(target_os = "linux")]
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        use fig_util::{
+        use fig_util::system_info::linux::{
+            get_desktop_environment,
+            get_display_server,
             DesktopEnvironment,
             DisplayServer,
         };
 
-        let (display_server, desktop_environment) = fig_util::detect_desktop()?;
+        let (display_server, desktop_environment) = (get_display_server()?, get_desktop_environment()?);
 
         match (display_server, desktop_environment) {
             (DisplayServer::X11, DesktopEnvironment::Gnome | DesktopEnvironment::Plasma | DesktopEnvironment::I3) => {

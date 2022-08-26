@@ -3,7 +3,7 @@ mod error;
 mod open;
 pub mod process_info;
 mod shell;
-mod system_info;
+pub mod system_info;
 pub mod terminal;
 pub mod wsl;
 
@@ -16,19 +16,6 @@ pub use open::{
 pub use process_info::get_parent_process_exe;
 use rand::Rng;
 pub use shell::Shell;
-#[cfg(target_os = "linux")]
-pub use system_info::{
-    detect_desktop,
-    get_linux_os_release,
-    DesktopEnvironment,
-    DisplayServer,
-    LinuxOsRelease,
-};
-pub use system_info::{
-    get_arch,
-    get_platform,
-    get_system_id,
-};
 pub use terminal::Terminal;
 
 pub fn gen_hex_string() -> String {

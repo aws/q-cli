@@ -1,5 +1,8 @@
 use cfg_if::cfg_if;
-use tracing::trace;
+use tracing::{
+    error,
+    trace,
+};
 use wry::application::event_loop::ControlFlow;
 use wry::application::menu::{
     ContextMenu,
@@ -23,6 +26,7 @@ use crate::{
     EventLoop,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
+    MISSION_CONTROL_ID,
 };
 
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
@@ -40,6 +44,19 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
         },
         id if id == MenuId::new("quit") => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
+        },
+        id if id == MenuId::new("dashboard") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID,
+                    window_event: WindowEvent::Show,
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("community") => {
+            if let Err(err) = fig_util::open_url("https://fig.io/community") {
+                error!(%err, "Failed to open community url")
+            }
         },
         id => {
             trace!("Unhandled tray event: {id:?}");
@@ -198,9 +215,21 @@ fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figte
     debugger_menu.add_native_item(MenuItem::Separator);
     debugger_menu.add_item(MenuItemAttributes::new("Manually Refresh Menu").with_id(MenuId::new("debugger-refresh")));
 
+    tray_menu.add_item(MenuItemAttributes::new("Dashboard").with_id(MenuId::new("dashboard")));
+
+    tray_menu.add_item(MenuItemAttributes::new("Join Community").with_id(MenuId::new("community")));
+
+    tray_menu.add_native_item(MenuItem::Separator);
+
     tray_menu.add_submenu("Debugger", true, debugger_menu);
 
+    tray_menu.add_item(
+        MenuItemAttributes::new(&format!("Version {}", env!("CARGO_PKG_VERSION"))).with_id(MenuId::new("version")),
+    );
+
     tray_menu.add_item(MenuItemAttributes::new("Toggle Devtools").with_id(MenuId::new("toggle-devtools")));
+
+    tray_menu.add_native_item(MenuItem::Separator);
 
     tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit")));
 }

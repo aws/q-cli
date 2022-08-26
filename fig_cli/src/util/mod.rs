@@ -1,6 +1,4 @@
-pub mod api;
 pub mod backoff;
-pub mod os_version;
 pub mod spinner;
 pub mod sync;
 
@@ -27,10 +25,6 @@ use globset::{
     GlobSetBuilder,
 };
 use once_cell::sync::Lazy;
-pub use os_version::{
-    OSVersion,
-    SupportLevel,
-};
 use regex::Regex;
 use tracing::warn;
 

@@ -1,4 +1,5 @@
 use fig_settings::state;
+use fig_util::system_info::get_system_id;
 use serde_json::{
     Map,
     Value,
@@ -48,7 +49,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     }
 
     #[cfg(target_os = "linux")]
-    if let Some(linux_os_release) = fig_util::get_linux_os_release() {
+    if let Some(linux_os_release) = fig_util::system_info::linux::get_os_release() {
         prop.insert("device_linux_release_id".into(), linux_os_release.id.as_deref().into());
         prop.insert(
             "device_linux_release_name".into(),
@@ -99,7 +100,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
         crate::install_method::get_install_method().to_string().into(),
     );
 
-    if let Ok(device_id) = fig_util::get_system_id() {
+    if let Ok(device_id) = get_system_id() {
         prop.insert("device_id".into(), device_id.into());
     }
 

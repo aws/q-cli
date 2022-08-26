@@ -634,9 +634,9 @@ dependencies = [
 
 [[package]]
 name = "base64ct"
-version = "1.5.1"
+version = "1.5.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3bdca834647821e0b13d9539a8634eb62d3501b6b6c2cec1722786ee6671b851"
+checksum = "ea2b2456fd614d856680dcd9fcc660a51a820fa09daef2e49772b56a193c8474"
 
 [[package]]
 name = "beef"
@@ -2401,6 +2401,7 @@ dependencies = [
  "nix 0.25.0",
  "notify",
  "once_cell",
+ "owo-colors",
  "parking_lot 0.12.1",
  "rand",
  "regex",
@@ -2657,6 +2658,7 @@ dependencies = [
  "nix 0.25.0",
  "once_cell",
  "rand",
+ "regex",
  "serde",
  "sha2",
  "thiserror",
@@ -7564,7 +7566,7 @@ dependencies = [
  "fxhash",
  "log",
  "naga",
- "parking_lot 0.11.2",
+ "parking_lot 0.12.1",
  "profiling",
  "ron",
  "serde",
@@ -7602,7 +7604,7 @@ dependencies = [
  "metal",
  "naga",
  "objc",
- "parking_lot 0.11.2",
+ "parking_lot 0.12.1",
  "profiling",
  "range-alloc",
  "raw-window-handle 0.4.3",
