@@ -16,7 +16,9 @@ fn main() -> Result<()> {
 
     // TODO: remove this when protoc is newer in all repos
     #[cfg(target_os = "linux")]
-    std::env::set_var("PROTOC", protobuf_src::protoc());
+    if std::env::var_os("LOCAL_PROTOC").is_none() {
+        std::env::set_var("PROTOC", protobuf_src::protoc());
+    }
 
     prost_reflect_build::Builder::new().compile_protos(PROTO_FILES, &["../../proto"])?;
 
