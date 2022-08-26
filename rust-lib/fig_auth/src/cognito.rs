@@ -117,8 +117,6 @@ pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
         .filter(|c| c.is_ascii_alphanumeric() || APP_NAME_VALID_SYMBOLS.contains(*c))
         .collect();
 
-    dbg!(&app_name);
-
     let config = Config::builder()
         .region(Region::new(REGION))
         .app_name(AppName::new(app_name).unwrap())

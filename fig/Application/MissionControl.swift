@@ -83,7 +83,14 @@ class MissionControl {
     let url: URL = {
 
       // Use value specified by developer.mission-control.host if it exists
-      if let urlString = Settings.shared.getValue(forKey: Settings.missionControlURL) as? String,
+
+      let urlKey = Settings.missionControlURL
+
+      let urlString: String? =
+          Settings.shared.getValue(forKey: urlKey) as? String ??
+          LocalState.shared.getValue(forKey: urlKey) as? String
+
+      if let urlString = urlString,
          let url = URL(string: urlString) {
         return url.appendingPathComponent(tab.endpoint()).appendingPathComponent(additionalPathComponent ?? "")
       }
