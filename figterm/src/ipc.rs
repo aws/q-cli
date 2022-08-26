@@ -311,6 +311,7 @@ pub async fn spawn_ipc(
                         info!("Handshake succeeded");
 
                         // send outgoing messages
+                        outgoing_rx.drain();
                         let outgoing_rx = outgoing_rx.clone();
                         let main_loop_sender = main_loop_sender.clone();
                         let outgoing_task = tokio::spawn(async move {

@@ -45,6 +45,7 @@ use tokio::time::{
     Instant,
 };
 use tracing::{
+    debug,
     error,
     info,
     trace,
@@ -132,10 +133,12 @@ async fn handle_secure_ipc(
                                 session_id = Some(id);
                                 session.writer = Some(clientbound_tx.clone());
                                 session.dead_since = None;
+                                debug!("Client auth accepted because of secret match");
                                 Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                     success: true,
                                 }))
                             } else {
+                                debug!("Client auth rejected because of secret mismatch");
                                 Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                     success: false,
                                 }))
@@ -161,6 +164,7 @@ async fn handle_secure_ipc(
                                 response_map: HashMap::new(),
                                 nonce_counter: Arc::new(AtomicU64::new(0)),
                             });
+                            debug!("Client auth accepted because of new id");
                             Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                 success: true,
                             }))
@@ -196,6 +200,7 @@ async fn handle_secure_ipc(
                     None
                 } else {
                     // apparently they didn't get the memo
+                    debug!("Client tried to send secure hook without auth");
                     Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                         success: false,
                     }))
@@ -252,6 +257,7 @@ async fn handle_outgoing(
     bad_connection: Arc<Notify>,
 ) {
     while let Ok(message) = outgoing.recv_async().await {
+        trace!(?message, "Sending secure message");
         if let Err(err) = fig_ipc::send_message(&mut writer, message).await {
             error!(%err, "Secure outgoing task send error");
             bad_connection.notify_one();

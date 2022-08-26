@@ -2568,6 +2568,7 @@ version = "0.1.0"
 dependencies = [
  "bytes",
  "fig_util",
+ "hex",
  "nix 0.25.0",
  "once_cell",
  "prost",
