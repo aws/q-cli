@@ -584,7 +584,19 @@ impl DoctorCheck for FigtermSocketCheck {
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
         let socket_path = PathBuf::from("/tmp").join(format!("figterm-{term_session}.socket"));
 
-        check_file_exists(&socket_path)?;
+        if let Err(err) = check_file_exists(&socket_path) {
+            return Err(DoctorError::Error {
+                reason: "Tried to find the socket file, but it wasn't there.".into(),
+                info: vec![
+                    "Fig uses the /tmp directory for sockets.".into(),
+                    "Did you delete files in /tmp? The OS will clear it automatically.".into(),
+                    "Try making a new tab or window in your terminal, then run `fig doctor` again.".into(),
+                    format!("No file at path: {socket_path:?}").into(),
+                ],
+                fix: None,
+                error: Some(err),
+            });
+        }
 
         // Connect to the socket
         let mut conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
@@ -593,7 +605,9 @@ impl DoctorCheck for FigtermSocketCheck {
         };
 
         // Try sending an insert event and ensure it inserts what is expected
-        enable_raw_mode().context("Terminal doesn't support raw mode to verify figterm socket")?;
+        enable_raw_mode().context(
+            "Your terminal doesn't support raw mode, which is required to verify that the figterm socket works",
+        )?;
 
         let write_handle: tokio::task::JoinHandle<Result<UnixStream, DoctorError>> = tokio::spawn(async move {
             conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
@@ -631,8 +645,7 @@ impl DoctorCheck for FigtermSocketCheck {
                 } else {
                     Err(DoctorError::Warning(
                         format!(
-                            "Figterm socket did not read buffer correctly, make sure not to do any input while doctor \
-                             is running: {:?}",
+                            "Figterm socket did not read buffer correctly, don't press any keys while the checks are running: {:?}",
                             buffer
                         )
                         .into(),
