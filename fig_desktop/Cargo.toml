@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.3.12"
+version = "2.3.13"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
