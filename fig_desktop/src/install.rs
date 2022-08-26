@@ -1,12 +1,27 @@
 use std::iter::empty;
+use std::time::Duration;
 
 use semver::Version;
 use tracing::error;
+
+use crate::utils;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
 pub async fn run_install() {
+    tokio::spawn(async {
+        let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
+        if seconds < 0 {
+            return;
+        }
+        let mut interval = tokio::time::interval(Duration::from_secs(seconds as u64));
+        loop {
+            interval.tick().await;
+            utils::update_check().await;
+        }
+    });
+
     tokio::spawn(async {
         if let Err(err) = fig_install::themes::clone_or_update().await {
             error!(%err, "Failed to clone or update themes");
@@ -77,10 +92,17 @@ pub async fn run_install() {
         }
     });
 
+    // Does this need to check if the daemon is already running like the ibus-daemon below @chay
+    #[cfg(target_os = "windows")]
+    tokio::process::Command::new("fig")
+        .creation_flags(0x8)
+        .arg("daemon")
+        .spawn()
+        .ok();
+
     #[cfg(target_os = "linux")]
     {
         use std::process::Output;
-        use std::time::Duration;
 
         use sysinfo::{
             ProcessRefreshKind,
