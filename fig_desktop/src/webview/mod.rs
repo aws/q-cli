@@ -215,7 +215,7 @@ impl WebviewManager {
                     if let Some(window_state) = self.window_id_map.get(&window_id) {
                         match event {
                             WryWindowEvent::CloseRequested => window_state.webview.window().set_visible(false),
-                            WryWindowEvent::ThemeChanged(_) => {
+                            WryWindowEvent::ThemeChanged(_theme) => {
                                 // TODO: handle this
                             },
                             _ => (),

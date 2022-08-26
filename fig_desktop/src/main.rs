@@ -16,7 +16,6 @@ mod utils;
 mod webview;
 
 use std::iter::empty;
-use std::time::Duration;
 
 use clap::Parser;
 use event::Event;
@@ -81,28 +80,6 @@ async fn main() {
         true,
     );
 
-    utils::update_check().await;
-
-    #[cfg(target_os = "windows")]
-    tokio::process::Command::new("fig")
-        .creation_flags(0x8)
-        .arg("daemon")
-        .spawn()
-        .ok();
-
-    tokio::spawn(async {
-        let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
-        if seconds < 0 {
-            return;
-        }
-        let mut interval = tokio::time::interval(Duration::from_secs(seconds as u64));
-        interval.tick().await; // first tick is completed immediately
-        loop {
-            interval.tick().await;
-            utils::update_check().await;
-        }
-    });
-
     let cli = cli::Cli::parse();
 
     let page = cli.url_link.and_then(|url| {
@@ -160,11 +137,6 @@ async fn main() {
 
     install::run_install().await;
 
-    let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
-    if show_onboarding {
-        tracing::info!("Showing onboarding");
-    }
-
     #[cfg(target_os = "linux")]
     {
         match std::env::var("FIG_BACKEND").ok().as_deref() {
@@ -174,6 +146,11 @@ async fn main() {
         }
 
         native::gtk::init().expect("Failed initializing GTK");
+    }
+
+    let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    if show_onboarding {
+        tracing::info!("Showing onboarding");
     }
 
     let mut webview_manager = WebviewManager::new();

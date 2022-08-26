@@ -2,6 +2,7 @@ use std::collections::HashMap;
 use std::path::PathBuf;
 
 use fig_api_client::plugins::PluginData;
+use fig_util::system_info::get_system_id;
 use fig_util::{
     directories,
     Shell,
@@ -79,7 +80,7 @@ pub enum UpdateStatus {
 }
 
 pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
-    let device_uniqueid = fig_util::get_system_id().ok();
+    let device_uniqueid = get_system_id().ok();
     let plugins_directory = crate::plugins::plugin_data_dir()
         .map(|p| p.to_string_lossy().to_string())
         .ok();

@@ -21,6 +21,7 @@ use crate::native::{
     self,
     NativeState,
 };
+use crate::AUTOCOMPLETE_ID;
 
 #[allow(unused)]
 pub enum CursorPositionKind {
@@ -90,12 +91,19 @@ impl WindowState {
                 self.update_position(native_state);
             },
             WindowEvent::Resize { width, height } => {
-                #[cfg(target_os = "linux")]
-                self.webview
-                    .window()
-                    .set_min_inner_size(Some(LogicalSize { width, height }));
-                #[cfg(not(target_os = "linux"))]
-                self.webview.window().set_inner_size(LogicalSize { width, height });
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "linux")] {
+                        if self.window_id == AUTOCOMPLETE_ID {
+                            self.webview
+                                .window()
+                                .set_min_inner_size(Some(LogicalSize { width, height }));
+                        } else {
+                            self.webview.window().set_inner_size(LogicalSize { width, height });
+                        }
+                    } else {
+                        self.webview.window().set_inner_size(LogicalSize { width, height });
+                    }
+                }
             },
             WindowEvent::Hide => {
                 for session in figterm_state.sessions.iter() {
@@ -126,9 +134,16 @@ impl WindowState {
                 }
             },
             WindowEvent::Show => {
-                if native::autocomplete_active() {
+                if self.window_id == AUTOCOMPLETE_ID {
+                    if native::autocomplete_active() {
+                        self.webview.window().set_visible(true);
+                        self.webview.window().set_always_on_top(true);
+                        #[cfg(target_os = "windows")]
+                        self.webview.window().set_always_on_top(false);
+                    }
+                } else {
                     self.webview.window().set_visible(true);
-                    self.webview.window().set_always_on_top(true);
+                    self.webview.window().set_focus();
                 }
             },
             WindowEvent::Navigate { url } => {

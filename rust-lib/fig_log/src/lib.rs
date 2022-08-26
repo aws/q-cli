@@ -102,7 +102,7 @@ impl Logger {
                 }
 
                 if let Some(max_file_size) = self.max_file_size {
-                    if log_path.try_exists()? {
+                    if log_path.exists() {
                         let metadata = std::fs::metadata(&log_path)?;
                         if metadata.len() > max_file_size {
                             std::fs::remove_file(&log_path)?;

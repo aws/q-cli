@@ -1,20 +1,13 @@
-use std::fmt::Write;
-
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_util::get_parent_process_exe;
 use regex::Regex;
 
 use crate::cli::diagnostics::{
     Diagnostic,
     Diagnostics,
 };
-use crate::util::{
-    get_fig_version,
-    is_app_running,
-    OSVersion,
-};
+use crate::util::dialoguer_theme;
 
 #[derive(Debug, Args)]
 pub struct IssueArgs {
@@ -29,7 +22,8 @@ pub struct IssueArgs {
 impl IssueArgs {
     pub async fn execute(&self) -> Result<()> {
         // Check if fig is running
-        if !self.force && !is_app_running() {
+        #[cfg(target_os = "macos")]
+        if !self.force && !crate::util::is_app_running() {
             println!(
                 "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
                 "fig launch".magenta(),
@@ -38,48 +32,70 @@ impl IssueArgs {
             return Ok(());
         }
 
-        let issue_title = self.description.join(" ");
-        let mut assignees = vec!["mschrage"];
+        let joined_description = self.description.join(" ").trim().to_owned();
+
+        let issue_title = match joined_description.len() {
+            0 => dialoguer::Input::with_theme(&dialoguer_theme())
+                .with_prompt("Issue Title")
+                .interact_text()?,
+            _ => joined_description,
+        };
+
+        let mut assignees = vec![];
+        let mut labels = vec![
+            "NEED_TO_LABEL".into(),
+            "type:bug".into(),
+            format!("os:{}", std::env::consts::OS),
+        ];
+
+        match std::env::consts::OS {
+            "macos" => assignees.push("mschrage"),
+            "linux" => assignees.push("grant0417"),
+            "windows" => assignees.push("chaynabors"),
+            _ => {},
+        }
 
         if Regex::new(r"(?i)cli").unwrap().is_match(&issue_title) {
             assignees.push("grant0417");
-            assignees.push("sullivan-sean");
+            labels.push("codebase:cli".into());
         }
 
         if Regex::new(r"(?i)figterm").unwrap().is_match(&issue_title) {
             assignees.push("grant0417");
-            assignees.push("sullivan-sean");
+            labels.push("codebase:figterm".into());
         }
 
-        let mut body = "### Details:\n|OS|Fig|Shell|\n|-|-|-|\n".to_owned();
+        if Regex::new(r"(?i)ssh").unwrap().is_match(&issue_title) {
+            labels.push("integration:docker".into());
+        }
 
-        let os_version: String = OSVersion::new().map(|v| v.into()).unwrap_or_default();
-        let fig_version = get_fig_version().unwrap_or_default();
-        let shell = get_parent_process_exe().unwrap_or_default();
-        writeln!(body, "|{}|{}|{}|", &os_version, &fig_version, &shell.display()).ok();
-        body.push_str("fig diagnostic\n\n");
+        if Regex::new(r"(?i)docker").unwrap().is_match(&issue_title) {
+            labels.push("integration:ssh".into());
+        }
 
-        let diagnostic = Diagnostics::new().await?.user_readable()?.join("\n");
-        body.push_str(&diagnostic);
+        let environment = Diagnostics::new().await?.user_readable()?.join("\n");
 
-        println!("{}", &body);
-
-        println!("\n→ Opening GitHub...\n");
+        println!();
+        println!("{}", "> Environment".bold());
+        println!("```");
+        println!("{environment}");
+        println!("```");
+        println!();
 
         let url = url::Url::parse_with_params("https://github.com/withfig/fig/issues/new", &[
-            ("labels", "NEED_TO_LABEL"),
-            ("assignees", &assignees.join(",")),
             ("template", "1_main_issue_template.yml"),
+            ("title", &issue_title),
+            ("labels", &labels.join(",")),
+            ("assignees", &assignees.join(",")),
             (
                 "issue_details",
                 "<!-- Include a detailed description of the issue, and a screenshot/video if you can! -->\n\n",
             ),
-            ("environment", &body),
-            ("title", &issue_title),
+            ("environment", &environment),
         ])?;
 
         if fig_util::open_url(url.as_str()).is_err() {
-            println!("{}", url.as_str().underlined());
+            println!("Issue Url: {}", url.as_str().underlined());
         }
 
         Ok(())

@@ -9,7 +9,7 @@ use std::time::{
     UNIX_EPOCH,
 };
 
-use fig_util::{
+use fig_util::system_info::{
     get_arch,
     get_platform,
     get_system_id,

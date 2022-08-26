@@ -12,6 +12,7 @@ use fig_ipc::hook::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
 use fig_request::Request;
 use fig_settings::ws_host;
+use fig_util::system_info::get_system_id;
 use serde::{
     Deserialize,
     Serialize,
@@ -91,7 +92,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         },
     };
 
-    let mut device_id = fig_util::get_system_id().context("Cound not get machine_id")?;
+    let mut device_id = get_system_id().context("Cound not get machine_id")?;
     if let Some(email) = get_email() {
         device_id.push(':');
         device_id.push_str(&email);

@@ -1,12 +1,8 @@
-use std::borrow::Cow;
-use std::ffi::OsStr;
 use std::fmt::Display;
-use std::path::PathBuf;
 use std::process::Command;
 
 use cfg_if::cfg_if;
 use clap::Args;
-use crossterm::style::Stylize;
 use eyre::{
     ContextCompat,
     Result,
@@ -16,28 +12,26 @@ use fig_ipc::command::send_recv_command_to_socket;
 use fig_proto::local::command_response::Response;
 use fig_proto::local::{
     command,
-    DiagnosticsCommand,
-    DiagnosticsResponse,
     IntegrationAction,
     TerminalIntegrationCommand,
 };
+#[cfg(not(target_os = "windows"))]
+use fig_proto::local::{
+    DiagnosticsCommand,
+    DiagnosticsResponse,
+};
+use fig_telemetry::InstallMethod;
+use fig_util::system_info::OSVersion;
 use fig_util::{
     directories,
     Terminal,
 };
-use regex::Regex;
 use serde::{
     Deserialize,
     Serialize,
 };
 
 use crate::cli::OutputFormat;
-use crate::util::{
-    glob,
-    glob_dir,
-    is_app_running,
-    OSVersion,
-};
 
 #[derive(Debug, Args)]
 pub struct DiagnosticArgs {
@@ -51,7 +45,10 @@ pub struct DiagnosticArgs {
 
 impl DiagnosticArgs {
     pub async fn execute(&self) -> Result<()> {
-        if !self.force && !is_app_running() {
+        #[cfg(target_os = "macos")]
+        if !self.force && !crate::util::is_app_running() {
+            use owo_colors::OwoColorize;
+
             println!(
                 "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to get limited diagnostics.",
                 "fig launch".magenta(),
@@ -78,29 +75,53 @@ pub trait Diagnostic {
     }
 }
 
-pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
-    let username_command = Command::new("id").arg("-un").output().context("Could not get id")?;
-
-    let username: String = String::from_utf8_lossy(&username_command.stdout).trim().into();
-
-    let result = Command::new("dscl")
-        .arg(".")
-        .arg("-read")
-        .arg(format!("/Users/{}", username))
-        .arg(value)
-        .output()
-        .context("Could not read value")?;
-
-    Ok(String::from_utf8_lossy(&result.stdout).trim().into())
+#[derive(Debug, Clone, Serialize, Deserialize)]
+struct NewFigDetails {
+    cli_version: String,
+    desktop_version: Option<String>,
+    figterm_version: Option<String>,
 }
 
-fn get_local_specs() -> Result<Vec<PathBuf>> {
-    let specs_location = directories::home_dir()?.join(".fig").join("autocomplete");
-    let glob_pattern = specs_location.join("*.js");
-    let patterns = [glob_pattern.to_str().unwrap()];
-    let glob = glob(&patterns)?;
+impl NewFigDetails {
+    pub fn new() -> NewFigDetails {
+        let desktop_version = Command::new("fig_desktop")
+            .arg("--version")
+            .output()
+            .ok()
+            .map(|output| {
+                String::from_utf8_lossy(&output.stdout)
+                    .trim()
+                    .replace("fig_desktop ", "")
+            });
 
-    glob_dir(&glob, specs_location)
+        let figterm_version = Command::new("figterm")
+            .arg("--version")
+            .output()
+            .ok()
+            .map(|output| String::from_utf8_lossy(&output.stdout).trim().replace("figterm ", ""));
+
+        NewFigDetails {
+            cli_version: env!("CARGO_PKG_VERSION").into(),
+            desktop_version,
+            figterm_version,
+        }
+    }
+}
+
+impl Diagnostic for NewFigDetails {
+    fn user_readable(&self) -> Result<Vec<String>> {
+        let mut details = vec![format!("cli-version: {}", self.cli_version)];
+
+        if let Some(ref desktop_version) = self.desktop_version {
+            details.push(format!("desktop-version: {desktop_version}"));
+        }
+
+        if let Some(ref figterm_version) = self.figterm_version {
+            details.push(format!("figterm-version: {figterm_version}"));
+        }
+
+        Ok(details)
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -147,12 +168,10 @@ impl HardwareInfo {
                         sys.physical_core_count()
                             .map_or_else(|| "Unknown".into(), |cores| format!("{cores}")),
                     ),
-                    memory: Some(format!("{} KB", sys.total_memory())),
+                    memory: Some(format!("{} GB", (sys.total_memory() / 1024) as f32 / 1024.0)),
                 };
 
                 if let Some(processor) = sys.cpus().first() {
-                    hardware_info.model_name = Some(processor.name().into());
-                    hardware_info.model_identifier = Some(processor.vendor_id().into());
                     hardware_info.chip = Some(processor.brand().into());
                 }
 
@@ -165,35 +184,56 @@ impl HardwareInfo {
 impl Diagnostic for HardwareInfo {
     fn user_readable(&self) -> Result<Vec<String>> {
         Ok(vec![
-            format!("Model Name: {}", self.model_name.as_deref().unwrap_or_default()),
-            format!(
-                "Model Identifier: {}",
-                self.model_identifier.as_deref().unwrap_or_default()
-            ),
-            format!("Chip: {}", self.chip.as_deref().unwrap_or_default()),
-            format!("Cores: {}", self.total_cores.as_deref().unwrap_or_default()),
-            format!("Memory: {}", self.memory.as_deref().unwrap_or_default()),
+            #[cfg(target_os = "macos")]
+            format!("model: {}", self.model_name.as_deref().unwrap_or_default()),
+            #[cfg(target_os = "macos")]
+            format!("model-id: {}", self.model_identifier.as_deref().unwrap_or_default()),
+            format!("chip-id: {}", self.chip.as_deref().unwrap_or_default()),
+            format!("cores: {}", self.total_cores.as_deref().unwrap_or_default()),
+            format!("mem: {}", self.memory.as_deref().unwrap_or_default()),
         ])
     }
 }
 
 impl Diagnostic for OSVersion {
     fn user_readable(&self) -> Result<Vec<String>> {
-        Ok(vec![format!("{}", self)])
+        match self {
+            OSVersion::Linux {
+                kernel_version,
+                os_release,
+            } => {
+                let mut v = vec![format!("kernel: {kernel_version}")];
+
+                if let Some(os_release) = os_release {
+                    if let Some(name) = &os_release.name {
+                        v.push(format!("distro: {name}"));
+                    }
+
+                    if let Some(version) = &os_release.version {
+                        v.push(format!("distro-version: {version}"));
+                    } else if let Some(version) = &os_release.version_id {
+                        v.push(format!("distro-version: {version}"));
+                    }
+
+                    if let Some(variant) = &os_release.variant {
+                        v.push(format!("distro-variant: {variant}"));
+                    } else if let Some(variant) = &os_release.variant_id {
+                        v.push(format!("distro-variant: {variant}"));
+                    }
+
+                    if let Some(build) = &os_release.build_id {
+                        v.push(format!("distro-build: {build}"));
+                    }
+                }
+
+                Ok(v)
+            },
+            other => Ok(vec![format!("{other}")]),
+        }
     }
 }
 
-fn installed_via_brew() -> Result<bool> {
-    let result = Command::new("brew")
-        .arg("list")
-        .arg("--cask")
-        .output()
-        .with_context(|| "Could not get brew casks")?;
-    let text = String::from_utf8_lossy(&result.stdout);
-
-    Ok(Regex::new(r"(?m:^fig$)").unwrap().is_match(text.trim()))
-}
-
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let response = send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
         .await?
@@ -205,6 +245,7 @@ pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     }
 }
 
+#[cfg(target_os = "macos")]
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct Version {
     distribution: String,
@@ -215,9 +256,10 @@ struct Version {
     is_running_on_read_only_volume: bool,
 }
 
+#[cfg(target_os = "macos")]
 impl Diagnostic for Version {
     fn user_readable(&self) -> Result<Vec<String>> {
-        let mut version: Vec<Cow<str>> = vec![self.distribution.as_str().into()];
+        let mut version: Vec<std::borrow::Cow<str>> = vec![self.distribution.as_str().into()];
 
         if self.beta {
             version.push("[Beta]".into())
@@ -237,7 +279,7 @@ impl Diagnostic for Version {
             version.push("TRANSLOCATED!".into());
         }
 
-        Ok(vec![format!("Fig version: {}", version.join(" "))])
+        Ok(vec![format!("desktop-version: {}", version.join(" "))])
     }
 }
 
@@ -250,7 +292,21 @@ impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let envs = std::env::vars()
             .into_iter()
-            .filter(|(key, _)| key.starts_with("FIG_") || key == "TERM_SESSION_ID" || key == "PATH" || key == "TERM")
+            .filter(|(key, _)| {
+                key.starts_with("FIG_")
+                    || key == "SHELL"
+                    || key == "DISPLAY"
+                    || key == "PATH"
+                    || key == "TERM_SESSION_ID"
+                    || key == "TERM"
+                    || key == "XDG_CURRENT_DESKTOP"
+                    || key == "XDG_SESSION_DESKTOP"
+                    || key == "XDG_SESSION_TYPE"
+                    || key == "GLFW_IM_MODULE"
+                    || key == "GTK_IM_MODULE"
+                    || key == "QT_IM_MODULE"
+                    || key == "XMODIFIERS"
+            })
             .collect();
 
         EnvVarDiagnostic { envs }
@@ -262,7 +318,7 @@ impl Diagnostic for EnvVarDiagnostic {
         let mut lines = vec![];
 
         for (key, value) in &self.envs {
-            lines.push(format!("{}={}", key, value));
+            lines.push(format!("{}: {}", key, value));
         }
 
         Ok(lines)
@@ -271,23 +327,26 @@ impl Diagnostic for EnvVarDiagnostic {
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct CurrentEnvironment {
-    user_shell: String,
+    shell_exe: Option<String>,
+    figterm_exe: Option<String>,
+    terminal_exe: Option<String>,
     current_dir: String,
-    cli_installed: bool,
     executable_location: String,
-    installed_via_brew: Option<bool>,
-    current_window_id: Option<String>,
-    current_process: Option<String>,
     terminal: Option<Terminal>,
+    install_method: InstallMethod,
 }
 
 impl CurrentEnvironment {
     fn new() -> CurrentEnvironment {
-        let user_shell = fig_settings::state::get_value("userShell")
-            .ok()
-            .flatten()
-            .and_then(|v| v.as_str().map(String::from))
-            .unwrap_or_else(|| "Unknown UserShell".into());
+        use fig_util::process_info::{
+            Pid,
+            PidExt,
+        };
+
+        let self_pid = Pid::current();
+
+        let shell_pid = self_pid.parent();
+        let shell_exe = shell_pid.and_then(|pid| pid.exe()).map(|p| p.display().to_string());
 
         let current_dir = std::env::current_dir()
             .map(|path| path.to_string_lossy().into_owned())
@@ -299,57 +358,36 @@ impl CurrentEnvironment {
 
         let terminal = fig_util::terminal::Terminal::parent_terminal();
 
+        let install_method = fig_telemetry::get_install_method();
+
         CurrentEnvironment {
-            user_shell,
+            shell_exe,
+            figterm_exe: None,
+            terminal_exe: None,
             current_dir,
-            cli_installed: true,
             executable_location,
-            installed_via_brew: installed_via_brew().ok(),
-            current_window_id: None,
-            current_process: None,
             terminal,
+            install_method,
         }
-    }
-
-    fn current_window_id(&mut self, window_id: impl Into<String>) {
-        self.current_window_id = Some(window_id.into());
-    }
-
-    fn current_process(&mut self, current_process: impl Into<String>) {
-        self.current_process = Some(current_process.into());
     }
 }
 
 impl Diagnostic for CurrentEnvironment {
     fn user_readable(&self) -> Result<Vec<String>> {
-        let mut lines = vec![
-            format!("User Shell: {}", self.user_shell),
-            format!("Current Directory: {}", self.current_dir),
-            format!("CLI Installed: {}", self.cli_installed),
-            format!("Executable Location: {}", self.executable_location),
+        Ok(vec![
+            format!("shell: {}", self.shell_exe.as_deref().unwrap_or("<unknown>")),
             format!(
-                "Current Window ID: {}",
-                self.current_window_id.as_deref().unwrap_or("<unknown>")
-            ),
-            format!(
-                "Active Process: {}",
-                self.current_process.as_deref().unwrap_or("<unknown>")
-            ),
-            format!(
-                "Terminal: {}",
+                "terminal: {}",
                 self.terminal
                     .as_ref()
                     .map(|term| term.internal_id())
                     .as_deref()
                     .unwrap_or("<unknown>")
             ),
-        ];
-
-        if let Some(true) = self.installed_via_brew {
-            lines.push("Installed via Brew: true".into());
-        }
-
-        Ok(lines)
+            format!("cwd: {}", self.current_dir),
+            format!("exe-path: {}", self.executable_location),
+            format!("install-method: {}", self.install_method),
+        ])
     }
 }
 
@@ -404,6 +442,7 @@ struct IntegrationDiagnostics {
 }
 
 impl IntegrationDiagnostics {
+    #[cfg(target_os = "macos")]
     async fn new() -> IntegrationDiagnostics {
         let mut integrations = vec![
             (Integrations::Ssh, IntegrationStatus { status: "false".into() }),
@@ -437,6 +476,7 @@ impl IntegrationDiagnostics {
         IntegrationDiagnostics { integrations }
     }
 
+    #[cfg(target_os = "macos")]
     fn docker(&mut self, status: impl Into<String>) {
         self.integrations
             .push((Integrations::Docker, IntegrationStatus { status: status.into() }));
@@ -450,64 +490,6 @@ impl Diagnostic for IntegrationDiagnostics {
         for (integration, status) in &self.integrations {
             lines.push(format!("{}: {}", integration, status.status));
         }
-
-        Ok(lines)
-    }
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-struct FigDetails {
-    path_to_bundle: String,
-    autocomplete: bool,
-    settings_json: bool,
-    accessibility: String,
-    num_specs: usize,
-    symlinked: String,
-    onlytab: String,
-    keypath: String,
-    installscript: String,
-    psudoterminal_path: String,
-    securekeyboard: String,
-    securekeyboard_path: String,
-    insertion_lock: Option<String>,
-}
-
-impl FigDetails {
-    fn new(diagnostics: &DiagnosticsResponse) -> FigDetails {
-        FigDetails {
-            path_to_bundle: diagnostics.path_to_bundle.clone(),
-            autocomplete: diagnostics.autocomplete,
-            settings_json: fig_settings::settings::local_settings().is_ok(),
-            accessibility: diagnostics.accessibility.clone(),
-            num_specs: get_local_specs().map_or(0, |v| v.len()),
-            symlinked: diagnostics.symlinked.clone(),
-            onlytab: diagnostics.onlytab.clone(),
-            keypath: diagnostics.keypath.clone(),
-            installscript: diagnostics.installscript.clone(),
-            psudoterminal_path: diagnostics.psudoterminal_path.clone(),
-            securekeyboard: diagnostics.securekeyboard.clone(),
-            securekeyboard_path: diagnostics.securekeyboard_path.clone(),
-            insertion_lock: None,
-        }
-    }
-}
-
-impl Diagnostic for FigDetails {
-    fn user_readable(&self) -> Result<Vec<String>> {
-        let mut lines = vec![];
-
-        lines.push(format!("Bundle path: {}", self.path_to_bundle));
-        lines.push(format!("Autocomplete: {}", self.autocomplete));
-        lines.push(format!("Settings.json: {}", self.settings_json));
-        lines.push(format!("Accessibility: {}", self.accessibility));
-        lines.push(format!("Number of specs: {}", self.num_specs));
-        lines.push(format!("Symlinked dotfiles: {}", self.symlinked));
-        lines.push(format!("Only insert on tab: {}", self.onlytab));
-        lines.push(format!("Keybindings path: {}", self.keypath));
-        lines.push(format!("Installation Script: {}", self.installscript));
-        lines.push(format!("PseudoTerminal Path: {}", self.psudoterminal_path));
-        lines.push(format!("SecureKeyboardInput: {}", self.securekeyboard));
-        lines.push(format!("SecureKeyboardProcess: {}", self.securekeyboard_path));
 
         Ok(lines)
     }
@@ -545,13 +527,17 @@ impl DotfilesDiagnostics {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct Diagnostics {
     timestamp: u64,
-    fig_running: bool,
+
+    #[cfg(target_os = "macos")]
     version: Option<Version>,
+
+    new_fig_details: NewFigDetails,
+
+    fig_running: bool,
     hardware: HardwareInfo,
-    os: OSVersion,
+    os: Option<OSVersion>,
     user_env: CurrentEnvironment,
     env_var: EnvVarDiagnostic,
-    fig_details: Option<FigDetails>,
     integrations: Option<IntegrationDiagnostics>,
     dotfiles: DotfilesDiagnostics,
 }
@@ -562,49 +548,61 @@ impl Diagnostics {
             .duration_since(std::time::UNIX_EPOCH)?
             .as_secs();
 
-        match get_diagnostics().await {
-            Ok(diagnostics) => {
-                let mut integrations = IntegrationDiagnostics::new().await;
-                integrations.docker(&diagnostics.docker);
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                match get_diagnostics().await {
+                    Ok(diagnostics) => {
+                        let mut integrations = IntegrationDiagnostics::new().await;
+                        integrations.docker(&diagnostics.docker);
 
-                let mut current_env = CurrentEnvironment::new();
-                current_env.current_window_id(&diagnostics.current_window_identifier);
-                current_env.current_process(&diagnostics.current_process);
+                        let current_env = CurrentEnvironment::new();
 
-                let fig_details = FigDetails::new(&diagnostics);
-
+                        Ok(Diagnostics {
+                            timestamp,
+                            fig_running: true,
+                            new_fig_details: NewFigDetails::new(),
+                            version: Some(Version {
+                                distribution: diagnostics.distribution,
+                                beta: diagnostics.beta,
+                                debug_mode: diagnostics.debug_autocomplete,
+                                dev_mode: diagnostics.developer_mode_enabled,
+                                layout: diagnostics.current_layout_name,
+                                is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
+                            }),
+                            hardware: HardwareInfo::new()?,
+                            os: OSVersion::new(),
+                            user_env: current_env,
+                            env_var: EnvVarDiagnostic::new(),
+                            integrations: Some(integrations),
+                            dotfiles: DotfilesDiagnostics::new()?,
+                        })
+                    },
+                    _ => Ok(Diagnostics {
+                        timestamp,
+                        fig_running: false,
+                        new_fig_details: NewFigDetails::new(),
+                        version: None,
+                        hardware: HardwareInfo::new()?,
+                        os: OSVersion::new(),
+                        user_env: CurrentEnvironment::new(),
+                        env_var: EnvVarDiagnostic::new(),
+                        integrations: None,
+                        dotfiles: DotfilesDiagnostics::new()?,
+                    }),
+                }
+            } else {
                 Ok(Diagnostics {
                     timestamp,
                     fig_running: true,
-                    version: Some(Version {
-                        distribution: diagnostics.distribution,
-                        beta: diagnostics.beta,
-                        debug_mode: diagnostics.debug_autocomplete,
-                        dev_mode: diagnostics.developer_mode_enabled,
-                        layout: diagnostics.current_layout_name,
-                        is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
-                    }),
+                    new_fig_details: NewFigDetails::new(),
                     hardware: HardwareInfo::new()?,
-                    os: OSVersion::new()?,
-                    user_env: current_env,
+                    os: OSVersion::new(),
+                    user_env: CurrentEnvironment::new(),
                     env_var: EnvVarDiagnostic::new(),
-                    fig_details: Some(fig_details),
-                    integrations: Some(integrations),
+                    integrations: None,
                     dotfiles: DotfilesDiagnostics::new()?,
                 })
-            },
-            _ => Ok(Diagnostics {
-                timestamp,
-                fig_running: false,
-                version: None,
-                hardware: HardwareInfo::new()?,
-                os: OSVersion::new()?,
-                user_env: CurrentEnvironment::new(),
-                env_var: EnvVarDiagnostic::new(),
-                fig_details: None,
-                integrations: None,
-                dotfiles: DotfilesDiagnostics::new()?,
-            }),
+            }
         }
     }
 }
@@ -619,29 +617,36 @@ impl Diagnostic for Diagnostics {
             new_lines
         };
 
-        let mut lines = vec!["# Fig Diagnostics".into()];
+        let mut lines = vec![];
 
         if !self.fig_running {
             lines.push("## NOTE: Fig is not running, run `fig launch` to get the full diagnostics".into());
         }
 
-        lines.push("## Fig details:".into());
-        if let Some(version) = &self.version {
-            lines.extend(print_indent(&version.user_readable()?, "  ", 1));
+        lines.push("fig-details:".into());
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                if let Some(version) = &self.version {
+                    lines.extend(print_indent(&version.user_readable()?, "  ", 1));
+                }
+            } else {
+                lines.extend(print_indent(&self.new_fig_details.user_readable()?, "  ", 1));
+            }
         }
-        #[cfg(target_os = "macos")]
-        if let Some(details) = &self.fig_details {
-            lines.extend(print_indent(&details.user_readable()?, "  ", 1));
-        }
-        lines.push("## Hardware Info:".into());
+        lines.push("hardware-info:".into());
         lines.extend(print_indent(&self.hardware.user_readable()?, "  ", 1));
-        lines.push("## OS Info:".into());
-        lines.extend(print_indent(&self.os.user_readable()?, "  ", 1));
-        lines.push("## Environment:".into());
+        lines.push("os-info:".into());
+        match self.os {
+            Some(ref os) => lines.extend(print_indent(&os.user_readable()?, "  ", 1)),
+            None => lines.push(format!("  - os: {}", std::env::consts::OS)),
+        }
+        lines.push("environment:".into());
         lines.extend(print_indent(&self.user_env.user_readable()?, "  ", 1));
-        lines.push("  - Environment Variables:".into());
+        lines.push("  - env-vars:".into());
         lines.extend(print_indent(&self.env_var.user_readable()?, "  ", 2));
-        lines.push("## Integrations:".into());
+        #[cfg(target_os = "macos")]
+        lines.push("- integrations:".into());
+        #[cfg(target_os = "macos")]
         if let Some(integrations) = &self.integrations {
             lines.extend(print_indent(&integrations.user_readable()?, "  ", 1));
         }

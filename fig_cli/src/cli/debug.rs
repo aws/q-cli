@@ -25,6 +25,7 @@ use fig_util::directories;
 use serde_json::json;
 
 use crate::cli::app::quit_fig;
+#[cfg(target_os = "macos")]
 use crate::cli::diagnostics::get_diagnostics;
 use crate::cli::launch_fig;
 use crate::util::{
@@ -353,8 +354,10 @@ impl DebugSubcommand {
                         .wait()?;
                 },
                 Some(AccessibilityAction::Status) | None => {
+                    #[cfg(target_os = "macos")]
                     let diagnostic = get_diagnostics().await?;
 
+                    #[cfg(target_os = "macos")]
                     println!("Accessibility Enabled: {}", diagnostic.accessibility)
                 },
             },

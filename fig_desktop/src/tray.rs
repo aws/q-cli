@@ -1,5 +1,9 @@
 use cfg_if::cfg_if;
-use tracing::trace;
+use tracing::{
+    error,
+    trace,
+};
+use url::Url;
 use wry::application::event_loop::ControlFlow;
 use wry::application::menu::{
     ContextMenu,
@@ -23,6 +27,7 @@ use crate::{
     EventLoop,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
+    MISSION_CONTROL_ID,
 };
 
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
@@ -41,38 +46,52 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
         id if id == MenuId::new("quit") => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
         },
+        id if id == MenuId::new("dashboard") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID,
+                    window_event: WindowEvent::Show,
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("settings") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID,
+                    window_event: WindowEvent::Show,
+                })
+                .unwrap();
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: MISSION_CONTROL_ID,
+                    window_event: WindowEvent::Navigate {
+                        url: Url::parse("https://desktop.fig.io/settings").unwrap(),
+                    },
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("community") => {
+            if let Err(err) = fig_util::open_url("https://fig.io/community") {
+                error!(%err, "Failed to open community url")
+            }
+        },
+        id if id == MenuId::new("user-manual") => {
+            if let Err(err) = fig_util::open_url("https://fig.io/user-manual") {
+                error!(%err, "Failed to open user manual url")
+            }
+        },
+        id if id == MenuId::new("issue") => {
+            std::process::Command::new("fig")
+                .arg("issue")
+                .arg("Title")
+                .output()
+                .ok();
+        },
         id => {
             trace!("Unhandled tray event: {id:?}");
         },
     }
 }
-
-// pub fn handle_tray_event(
-//    app: &AppHandle,
-//    event: SystemTrayEvent,
-//    debug_state: Arc<DebugState>,
-//    figterm_state: Arc<FigtermState>,
-// ) {
-//    match event {
-//        SystemTrayEvent::MenuItemClick { id, .. } => match id.as_str() {
-//            "debugger-refresh" => {
-//                if let Err(err) = update_tray_menu(app, &debug_state, &figterm_state) {
-//                    warn!("Failed to update tray menu: {}", err);
-//                }
-//            },
-//            "quit" => {
-//                app.exit(0);
-//            },
-//            unknown_id => warn!("unknown menu item clicked: '{}'", unknown_id),
-//        },
-//        SystemTrayEvent::LeftClick { .. } | SystemTrayEvent::RightClick { .. } => {
-//            if let Err(err) = update_tray_menu(app, &debug_state, &figterm_state) {
-//                warn!("Failed to update tray menu: {}", err);
-//            }
-//        },
-//        _ => {},
-//    }
-// }
 
 #[cfg(target_os = "linux")]
 fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
@@ -196,11 +215,45 @@ fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figte
     );
 
     debugger_menu.add_native_item(MenuItem::Separator);
+
     debugger_menu.add_item(MenuItemAttributes::new("Manually Refresh Menu").with_id(MenuId::new("debugger-refresh")));
 
-    tray_menu.add_submenu("Debugger", true, debugger_menu);
+    tray_menu.add_item(MenuItemAttributes::new(&menu_name("🎛️", "Dashboard")).with_id(MenuId::new("dashboard")));
 
-    tray_menu.add_item(MenuItemAttributes::new("Toggle Devtools").with_id(MenuId::new("toggle-devtools")));
+    tray_menu.add_item(MenuItemAttributes::new(&menu_name("⚙️", "Settings")).with_id(MenuId::new("settings")));
 
-    tray_menu.add_item(MenuItemAttributes::new("Quit").with_id(MenuId::new("quit")));
+    tray_menu.add_native_item(MenuItem::Separator);
+
+    tray_menu.add_item(MenuItemAttributes::new(&menu_name("📚", "User Manual")).with_id(MenuId::new("user-manual")));
+
+    tray_menu.add_item(MenuItemAttributes::new(&menu_name("💬", "Join Community")).with_id(MenuId::new("community")));
+
+    tray_menu.add_native_item(MenuItem::Separator);
+
+    tray_menu.add_item(MenuItemAttributes::new(&menu_name("🐞", "Report an Issue")).with_id(MenuId::new("issue")));
+
+    tray_menu.add_native_item(MenuItem::Separator);
+
+    // Disabled til it works
+    let _ = debugger_menu;
+    // tray_menu.add_submenu("Debugger", true, debugger_menu);
+
+    tray_menu.add_item(
+        MenuItemAttributes::new(&format!("Version {}", env!("CARGO_PKG_VERSION"))).with_id(MenuId::new("version")),
+    );
+
+    tray_menu
+        .add_item(MenuItemAttributes::new(&menu_name("", "Toggle Devtools")).with_id(MenuId::new("toggle-devtools")));
+
+    tray_menu.add_native_item(MenuItem::Separator);
+
+    tray_menu.add_item(MenuItemAttributes::new(&menu_name("❌", "Quit")).with_id(MenuId::new("quit")));
+}
+
+fn menu_name(icon: &str, name: &str) -> String {
+    if std::env::consts::OS == "windows" {
+        name.into()
+    } else {
+        format!("{icon} {name}")
+    }
 }

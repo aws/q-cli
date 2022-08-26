@@ -369,7 +369,7 @@ impl InternalSubcommand {
                                 let parent_path = parent_pid.exe()?;
                                 let parent_name = parent_path.file_name()?.to_str()?;
 
-                                let valid_parent = ["zsh", "bash", "fish"].contains(&parent_name);
+                                let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
                                 let grandparent_pid = parent_pid.parent()?;
                                 let grandparent_path = grandparent_pid.exe()?;
