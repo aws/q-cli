@@ -39,14 +39,19 @@ if test "$TERM_PROGRAM" != WarpTerminal
 
     # Do not launch figterm in non-interactive shells (like VSCode Tasks)
     if status --is-interactive
-        set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
-        set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/$FIG_TERM_NAME")
+        if test (command uname) = "Darwin"
+            set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
+            set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/$FIG_TERM_NAME")
 
-        # Only copy figterm binary if it doesn't already exist
-        # WARNING: copying file if it already exists results
-        # in crashes. See https://github.com/withfig/fig/issues/548
-        if not test -f "$FIG_SHELL_PATH"
-            cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
+            # Only copy figterm binary if it doesn't already exist
+            # WARNING: copying file if it already exists results
+            # in crashes. See https://github.com/withfig/fig/issues/548
+            if not test -f "$FIG_SHELL_PATH"
+                cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
+            end
+        else
+            set FIG_TERM_NAME "figterm"
+            set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME")
         end
 
         # Need to exec bash because we're using 'exec -a <name>'

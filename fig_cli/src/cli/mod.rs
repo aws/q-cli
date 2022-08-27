@@ -112,6 +112,7 @@ pub enum CliRootCommands {
     #[clap(hide = true)]
     Daemon,
     /// Run diagnostic tests
+    #[clap(alias("diagnostic"))]
     Diagnostic(diagnostics::DiagnosticArgs),
     /// Generate the dotfiles for the given shell
     Init(init::InitArgs),
@@ -163,7 +164,7 @@ pub enum CliRootCommands {
     #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
     Workflow(workflow::WorkflowArgs),
     /// Manage system integrations
-    #[clap(subcommand)]
+    #[clap(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
     /// English -> Bash translation
     Ai(ai::AiArgs),

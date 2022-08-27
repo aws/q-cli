@@ -42,7 +42,11 @@ pub enum IntegrationsSubcommands {
 
 #[derive(Debug, Subcommand, Clone, Copy)]
 pub enum Integration {
-    Dotfiles,
+    Dotfiles {
+        /// Only install the integrations for a single shell
+        #[clap(value_enum)]
+        shell: Option<Shell>,
+    },
     Daemon,
     Ssh,
     #[doc(hidden)]
@@ -61,7 +65,7 @@ impl IntegrationsSubcommands {
         match self {
             IntegrationsSubcommands::Install { integration, silent } => {
                 if let Integration::All = integration {
-                    install(Integration::Dotfiles, silent).await?;
+                    install(Integration::Dotfiles { shell: None }, silent).await?;
                     install(Integration::Daemon, silent).await?;
                     install(Integration::Ssh, silent).await
                 } else {
@@ -70,7 +74,7 @@ impl IntegrationsSubcommands {
             },
             IntegrationsSubcommands::Uninstall { integration, silent } => {
                 if let Integration::All = integration {
-                    uninstall(Integration::Dotfiles, silent).await?;
+                    uninstall(Integration::Dotfiles { shell: None }, silent).await?;
                     uninstall(Integration::Daemon, silent).await?;
                     uninstall(Integration::Ssh, silent).await
                 } else {
@@ -88,9 +92,14 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
 
     let result = match integration {
         Integration::All => Ok(()),
-        Integration::Dotfiles => {
+        Integration::Dotfiles { shell } => {
+            let shells = match shell {
+                Some(shell) => vec![shell],
+                None => vec![Shell::Bash, Shell::Zsh, Shell::Fish],
+            };
+
             let mut errs: Vec<String> = vec![];
-            for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
+            for shell in &shells {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
@@ -152,9 +161,14 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
 
     let result = match integration {
         Integration::All => Ok(()),
-        Integration::Dotfiles => {
+        Integration::Dotfiles { shell } => {
+            let shells = match shell {
+                Some(shell) => vec![shell],
+                None => vec![Shell::Bash, Shell::Zsh, Shell::Fish],
+            };
+
             let mut errs: Vec<String> = vec![];
-            for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
+            for shell in &shells {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {

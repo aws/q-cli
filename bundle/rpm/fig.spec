@@ -33,9 +33,6 @@ fig _ uninstall-for-all-users
 %files
 /usr/bin/fig
 /usr/bin/fig_desktop
-"/usr/bin/zsh (figterm)"
-"/usr/bin/bash (figterm)"
-"/usr/bin/fish (figterm)"
 /usr/bin/figterm
 /usr/lib/systemd/user/fig.service
 /usr/lib/environment.d/60-fig.conf
