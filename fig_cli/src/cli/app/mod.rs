@@ -151,8 +151,25 @@ impl AppSubcommand {
                                 .exec();
                         }
                     } else if #[cfg(windows)] {
-                        println!("Onboarding isn't supported on Windows yet");
-                        println!("You'll need to restart existing terminal sessions but Fig should work here!");
+                        if state::set_value("user.onboarding", true).is_ok() &&
+                           state::set_value("doctor.prompt-restart-terminal", false).is_ok() {
+                            println!(
+                                "
+                            
+                                \x1B[1m███████╗██╗ ██████╗
+                                ██╔════╝██║██╔════╝
+                                █████╗  ██║██║  ███╗
+                                ██╔══╝  ██║██║   ██║
+                                ██║     ██║╚██████╔╝
+                                ╚═╝     ╚═╝ ╚═════╝ Autocomplete\x1B[0m
+                            
+                                1. Type {} and suggestions will appear.
+                            
+                                2. Run {} to check for common bugs.
+                            
+                                ", "\"cd \"".bold(), "fig doctor".bold().magenta());
+
+                        }
                     }
                 }
             },
