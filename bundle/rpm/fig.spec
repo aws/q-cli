@@ -47,5 +47,6 @@ fig _ uninstall-for-all-users
 /usr/share/icons/hicolor/256x256/apps/fig.png
 /usr/share/icons/hicolor/512x512/apps/fig.png
 /usr/share/pixmaps/fig.png
+/usr/share/licenses/fig/LICENSE
 
 %changelog
