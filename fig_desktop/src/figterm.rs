@@ -85,7 +85,7 @@ pub struct FigtermState {
 
 impl FigtermState {
     /// Set the most recent session.
-    fn set_most_recent_session(&self, session_id: impl Into<Option<FigtermSessionId>>) {
+    pub fn set_most_recent_session(&self, session_id: impl Into<Option<FigtermSessionId>>) {
         let session_id = session_id.into();
         trace!("Most recent session set to {session_id:?}");
         *self.most_recent.lock() = session_id;
@@ -93,7 +93,6 @@ impl FigtermState {
 
     /// Inserts a new session id
     pub fn insert(&self, key: FigtermSessionId, value: FigtermSession) {
-        self.set_most_recent_session(key.clone());
         self.sessions.insert(key, value);
     }
 
@@ -108,13 +107,7 @@ impl FigtermState {
 
     /// Gets mutable reference to the given session id and sets the most recent session id
     pub fn with_mut<T>(&self, key: FigtermSessionId, f: impl FnOnce(&mut FigtermSession) -> T) -> Option<T> {
-        match self.sessions.get_mut(&key) {
-            Some(mut session) => {
-                self.set_most_recent_session(key);
-                Some(f(&mut session))
-            },
-            None => None,
-        }
+        self.sessions.get_mut(&key).map(|mut session| f(&mut session))
     }
 
     pub fn most_recent_session_id(&self) -> Option<FigtermSessionId> {
@@ -124,7 +117,8 @@ impl FigtermState {
     pub fn most_recent_session(
         &self,
     ) -> Option<Ref<'_, FigtermSessionId, FigtermSession, BuildHasherDefault<FnvHasher>>> {
-        self.most_recent.lock().as_ref().and_then(|key| self.sessions.get(key))
+        let id = self.most_recent_session_id();
+        id.as_ref().and_then(|id| self.sessions.get(id))
     }
 }
 

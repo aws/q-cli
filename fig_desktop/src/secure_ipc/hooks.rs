@@ -75,6 +75,7 @@ pub async fn edit_buffer(
             None
         }
     });
+    figterm_state.set_most_recent_session(session_id.clone());
 
     if let Some(metrics) = old_metrics.flatten() {
         if metrics.end_time > metrics.start_time {
