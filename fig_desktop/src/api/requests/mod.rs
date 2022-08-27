@@ -97,8 +97,8 @@ pub async fn api_request(
         },
     };
 
-    let message = match ClientOriginatedMessage::decode(data.as_slice()) {
-        Ok(message) => message,
+    let request = match ClientOriginatedMessage::decode(data.as_slice()) {
+        Ok(request) => request,
         Err(err) => {
             warn!("Failed to decode proto from {window_id}: {err}");
             proxy
@@ -114,10 +114,10 @@ pub async fn api_request(
         },
     };
 
-    trace!("Recieved message from {window_id}: {message:?}");
+    trace!(?request, "Recieved request from {window_id}");
 
-    let message_id = match message.id {
-        Some(message_id) => message_id,
+    let request_id = match request.id {
+        Some(request_id) => request_id,
         None => {
             warn!("No message_id provided from {window_id}");
             proxy
@@ -136,8 +136,8 @@ pub async fn api_request(
     let response = match tokio::time::timeout(
         Duration::from_secs(30),
         handle_request(
-            message,
-            message_id,
+            request,
+            request_id,
             &window_id,
             debug_state,
             figterm_state,
@@ -156,10 +156,10 @@ pub async fn api_request(
         },
     };
 
-    trace!("Sending response to {window_id}: {response:?}");
+    trace!(?response, "Sending response to {window_id}");
 
     let message = ServerOriginatedMessage {
-        id: Some(message_id),
+        id: Some(request_id),
         submessage: Some(match response {
             Ok(msg) => *msg,
             Err(msg) => {

@@ -7,10 +7,6 @@ use std::sync::atomic::{
 use std::sync::Arc;
 
 use anyhow::Result;
-use fig_proto::fig::{
-    PseudoterminalExecuteRequest,
-    RunProcessRequest,
-};
 use fig_proto::figterm::{
     intercept_command,
     InsertTextCommand,
@@ -22,6 +18,8 @@ use fig_proto::secure::clientbound::request::Request;
 use fig_proto::secure::clientbound::{
     self,
     HandshakeResponse,
+    PseudoterminalExecuteRequest,
+    RunProcessRequest,
 };
 use fig_proto::secure::{
     hostbound,

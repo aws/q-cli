@@ -207,6 +207,8 @@ impl WebviewManager {
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, _, control_flow| {
+            trace!(?event, "Main loop event");
+
             *control_flow = ControlFlow::Wait;
 
             match event {
@@ -232,7 +234,6 @@ impl WebviewManager {
                     }
                 },
                 WryEvent::UserEvent(event) => {
-                    trace!(?event, "Executing user event");
                     match event {
                         Event::WindowEvent {
                             window_id,
@@ -383,6 +384,7 @@ pub fn build_dashboard(
         ]))
         .with_initialization_script(&javascript_init())
         .with_clipboard(true)
+        .with_hotkeys_zoom(true)
         .build()?;
 
     Ok(webview)
@@ -460,6 +462,7 @@ pub fn build_autocomplete(
             r"^fig-autocomplete\.vercel\.app$",
         ]))
         .with_clipboard(true)
+        .with_hotkeys_zoom(true)
         .build()?;
 
     Ok(webview)

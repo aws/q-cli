@@ -27,11 +27,26 @@ message Clientbound {
       figterm.InsertTextCommand insert_text = 101;
       figterm.SetBufferCommand set_buffer = 102;
       fig_common.Empty diagnostics = 103;
-      fig.RunProcessRequest run_process = 104;
+      RunProcessRequest run_process = 104;
       fig.ReadFileRequest read_file = 105;
-      fig.PseudoterminalExecuteRequest pseudoterminal_execute = 106;
+      PseudoterminalExecuteRequest pseudoterminal_execute = 106;
       figterm.InsertOnNewCmdCommand insert_on_new_cmd = 107;
     }
+  }
+
+  message RunProcessRequest {
+    string executable = 1;
+    repeated string arguments = 2;
+    optional string workingDirectory = 3;
+    repeated fig.EnvironmentVariable env = 4;
+  }
+
+  message PseudoterminalExecuteRequest {
+    string command = 1;
+    optional string workingDirectory = 2;
+    optional bool backgroundJob = 3;
+    optional bool isPipelined = 4;
+    repeated fig.EnvironmentVariable env = 5;
   }
 }
 

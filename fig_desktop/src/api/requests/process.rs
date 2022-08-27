@@ -3,6 +3,7 @@ use std::time::Duration;
 use anyhow::{
     anyhow,
     bail,
+    Context,
 };
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -26,6 +27,7 @@ use super::{
 };
 use crate::figterm::{
     FigtermCommand,
+    FigtermSessionId,
     FigtermState,
 };
 use crate::native::SHELL;
@@ -66,7 +68,19 @@ fn set_fig_vars(cmd: &mut Command) {
 
 // todo(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
-    if let Some(session) = state.most_recent_session() {
+    debug!({
+        term_session =? request.terminal_session_id,
+        command = request.command,
+        cwd = request.working_directory(),
+        env =? request.env,
+        background = request.background_job,
+        pipelined = request.is_pipelined
+    }, "Executing command");
+
+    if let Some(session) = match request.terminal_session_id {
+        Some(session) => state.sessions.get(&FigtermSessionId(session)),
+        None => state.most_recent_session(),
+    } {
         let (message, rx) = FigtermCommand::pseudoterminal_execute(
             request.command,
             request.working_directory,
@@ -79,7 +93,10 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
         }
         drop(session);
 
-        let response = timeout(Duration::from_secs(10), rx).await??;
+        let response = timeout(Duration::from_secs(10), rx)
+            .await
+            .context("Figterm response timed out after 10 sec")?
+            .context("Figterm response failed to recive from sender")?;
 
         if let hostbound::response::Response::PseudoterminalExecute(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
@@ -98,13 +115,6 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
 
         let shell = get_shell_path_from_state(state).unwrap_or_else(|| SHELL.into());
         let args = shell_args(&shell);
-        debug!({
-            shell,
-            args =? args,
-            command = request.command,
-            cwd = request.working_directory(),
-            env =? request.env
-        }, "Executing command");
 
         let mut cmd = Command::new(shell);
         #[cfg(target_os = "windows")]
@@ -148,13 +158,17 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
 
 pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestResult {
     debug!({
+        term_session =? request.terminal_session_id,
         exe = request.executable,
         args =? request.arguments,
         cwd = request.working_directory(),
         env =? request.env
     }, "Running command");
 
-    if let Some(session) = state.most_recent_session() {
+    if let Some(session) = match request.terminal_session_id {
+        Some(session) => state.sessions.get(&FigtermSessionId(session)),
+        None => state.most_recent_session(),
+    } {
         let (message, rx) = FigtermCommand::run_process(
             request.executable,
             request.arguments,
