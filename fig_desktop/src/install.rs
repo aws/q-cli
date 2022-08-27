@@ -1,24 +1,22 @@
 use std::iter::empty;
-use std::time::Duration;
 
 use semver::Version;
 use tracing::error;
-
-use crate::utils;
 
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
 pub async fn run_install() {
+    #[cfg(windows)]
     tokio::spawn(async {
         let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
         if seconds < 0 {
             return;
         }
-        let mut interval = tokio::time::interval(Duration::from_secs(seconds as u64));
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
         loop {
             interval.tick().await;
-            utils::update_check().await;
+            crate::utils::update_check().await;
         }
     });
 
@@ -127,7 +125,7 @@ pub async fn run_install() {
                     }, "Failed to run 'ibus-daemon -drxR'");
                 },
                 Err(err) => error!(%err, "Failed to run 'ibus-daemon -drxR'"),
-                Ok(_) => tokio::time::sleep(Duration::from_millis(500)).await,
+                Ok(_) => tokio::time::sleep(std::time::Duration::from_millis(500)).await,
             };
         }
     }

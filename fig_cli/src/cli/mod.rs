@@ -309,7 +309,7 @@ impl Cli {
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => app::launch_fig_cli(),
+                CliRootCommands::Launch => launch_fig(LaunchOptions::new().wait_for_activation().verbose()),
                 CliRootCommands::Quit => app::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,

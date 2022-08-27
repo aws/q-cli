@@ -110,7 +110,7 @@ async fn handle_secure_ipc(
         .await
         .unwrap_or_else(|err| {
             if !err.is_disconnect() {
-                error!(%err, "Failed receiving secure message");
+                warn!(%err, "Failed receiving secure message");
             }
             None
         })

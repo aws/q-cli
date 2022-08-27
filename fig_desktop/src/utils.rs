@@ -70,13 +70,6 @@ pub struct Rect<U, V> {
     pub height: V,
 }
 
-#[cfg(not(target_os = "windows"))]
-pub async fn update_check() {
-    // updates on linux are handled by the package manager
-    // note(mia): we may in the future still implement a nag to update,
-    //     it just won't work automatically like it does on windows/macos
-}
-
 #[cfg(target_os = "windows")]
 pub async fn update_check() {
     use std::os::windows::process::CommandExt;

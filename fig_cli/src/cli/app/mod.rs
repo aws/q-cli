@@ -49,19 +49,9 @@ pub enum AppSubcommand {
     Prompts,
 }
 
-pub fn launch_fig_cli() -> Result<()> {
-    if is_app_running() {
-        println!("\n→ Fig is already running.\n");
-        return Ok(());
-    }
-
-    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-    Ok(())
-}
-
 pub async fn quit_fig() -> Result<()> {
     if !is_app_running() {
-        println!("\n→ Fig is not running\n");
+        println!("Fig is not running");
         return Ok(());
     }
 
@@ -78,7 +68,7 @@ pub async fn quit_fig() -> Result<()> {
         .ok();
     });
 
-    println!("\n→ Quitting Fig...\n");
+    println!("Quitting Fig");
     if quit_command().await.is_err() {
         tokio::time::sleep(Duration::from_millis(500)).await;
         let second_try = quit_command().await;
@@ -109,7 +99,7 @@ pub async fn quit_fig() -> Result<()> {
                 }
             }
 
-            println!("\nUnable to quit Fig\n");
+            println!("Unable to quit Fig");
             second_try?;
         }
     }
@@ -121,23 +111,23 @@ pub async fn quit_fig() -> Result<()> {
 
 pub async fn restart_fig() -> Result<()> {
     if !is_app_running() {
-        launch_fig_cli()
+        launch_fig(LaunchOptions::new().wait_for_activation().verbose())
     } else {
         cfg_if! {
             if #[cfg(target_os = "linux")] {
                 quit_fig().await?;
                 launch_fig(LaunchOptions { wait_for_activation: true, verbose: true })?;
             } else {
+                use eyre::Context;
+
                 use fig_ipc::command::restart_command;
 
-                println!("\n→ Restarting Fig...\n");
-                if restart_command().await.is_err() {
-                    println!("\nUnable to restart Fig\n");
-                } else {
-                    tokio::time::sleep(Duration::from_millis(1000)).await;
-                }
+                println!("Restarting Fig");
+                restart_command().await.context("Unable to restart Fig")?;
+                tokio::time::sleep(Duration::from_millis(1000)).await;
             }
         }
+
         Ok(())
     }
 }
@@ -162,6 +152,7 @@ impl AppSubcommand {
                         }
                     } else if #[cfg(windows)] {
                         println!("Onboarding isn't supported on Windows yet");
+                        println!("You'll need to restart existing terminal sessions but Fig should work here!");
                     }
                 }
             },
@@ -234,7 +225,7 @@ impl AppSubcommand {
             },
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
-            AppSubcommand::Launch => launch_fig_cli()?,
+            AppSubcommand::Launch => launch_fig(LaunchOptions::new().wait_for_activation().verbose())?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             },

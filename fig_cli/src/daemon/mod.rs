@@ -1,10 +1,12 @@
-pub mod launchd_plist;
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "macos")]
+mod macos;
 pub mod scheduler;
 #[cfg(target_os = "macos")]
 pub mod settings_watcher;
 pub mod socket_server;
 pub mod system_handler;
-pub mod systemd_unit;
 pub mod websocket;
 
 use std::path::{
@@ -20,11 +22,12 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_util::directories;
 use parking_lot::Mutex;
 
-use crate::daemon::launchd_plist::LaunchdPlist;
-use crate::daemon::systemd_unit::SystemdUnit;
+#[cfg(target_os = "linux")]
+use crate::daemon::linux::SystemdUnit;
+#[cfg(target_os = "macos")]
+use crate::daemon::macos::LaunchdPlist;
 
 pub fn get_daemon() -> Result<LaunchService> {
     cfg_if! {
@@ -33,7 +36,7 @@ pub fn get_daemon() -> Result<LaunchService> {
         } else if #[cfg(target_os = "linux")] {
             LaunchService::systemd()
         } else if #[cfg(windows)] {
-            LaunchService::scm()
+            Ok(LaunchService::default())
         } else {
             Err(eyre!("Unsupported platform"));
         }
@@ -49,8 +52,13 @@ pub fn uninstall_daemon() -> Result<()> {
 }
 
 #[non_exhaustive]
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
+#[derive(Clone, Copy, Debug, Default, PartialEq, Eq)]
 pub enum InitSystem {
+    /// Windows has no init system aside from SCM which requires elevated access
+    ///
+    /// https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager
+    #[default]
+    None,
     /// macOS init system
     ///
     /// <https://launchd.info/>
@@ -67,34 +75,34 @@ pub enum InitSystem {
     ///
     /// <https://wiki.gentoo.org/wiki/Project:OpenRC>
     OpenRc,
-    /// Init subsystem used by Windows
-    ///
-    /// <https://docs.microsoft.com/en-us/windows/win32/services/service-control-manager>
-    SCM,
 }
 
 impl InitSystem {
     pub fn get_init_system() -> Result<InitSystem> {
-        let output = Command::new("ps").args(["-p1"]).output().context("Could not run ps")?;
+        cfg_if! {
+            if #[cfg(target_os = "linux")] {
+                let output = Command::new("ps").args(["-p1"]).output().context("Could not run ps")?;
 
-        if !output.status.success() {
-            return Err(eyre!("ps failed: {}", output.status));
-        }
+                if !output.status.success() {
+                    return Err(eyre!("ps failed: {}", output.status));
+                }
 
-        let output_str = String::from_utf8_lossy(&output.stdout);
+                let output_str = String::from_utf8_lossy(&output.stdout);
 
-        if output_str.contains("launchd") {
-            Ok(InitSystem::Launchd)
-        } else if output_str.contains("systemd") {
-            Ok(InitSystem::Systemd)
-        } else if output_str.contains("runit") {
-            Ok(InitSystem::Runit)
-        } else if output_str.contains("openrc") {
-            Ok(InitSystem::OpenRc)
-        } else if output_str.contains("sc") {
-            Ok(InitSystem::SCM)
-        } else {
-            Err(eyre!("Could not determine init system"))
+                if output_str.contains("systemd") {
+                    Ok(InitSystem::Systemd)
+                } else if output_str.contains("runit") {
+                    Ok(InitSystem::Runit)
+                } else if output_str.contains("openrc") {
+                    Ok(InitSystem::OpenRc)
+                } else {
+                    Err(eyre!("Could not determine init system"))
+                }
+            } else if #[cfg(target_os = "macos")] {
+                Ok(InitSystem::Launchd)
+            } else if #[cfg(target_os = "windows")] {
+                Ok(InitSystem::None)
+            }
         }
     }
 
@@ -126,22 +134,6 @@ impl InitSystem {
                     .arg("--user")
                     .arg("--now")
                     .arg("enable")
-                    .arg(path.as_ref())
-                    .output()
-                    .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
-
-                if !output.status.success() {
-                    return Err(eyre!(
-                        "Could not start daemon: {}",
-                        String::from_utf8_lossy(&output.stderr)
-                    ));
-                }
-
-                Ok(())
-            },
-            InitSystem::SCM => {
-                let output = Command::new("sc")
-                    .arg("start")
                     .arg(path.as_ref())
                     .output()
                     .with_context(|| format!("Could not enable {:?}", path.as_ref()))?;
@@ -193,15 +185,6 @@ impl InitSystem {
 
                 Ok(())
             },
-            InitSystem::SCM => {
-                Command::new("sc")
-                    .arg("stop")
-                    .arg(path.as_ref())
-                    .output()
-                    .with_context(|| format!("Could not disable {:?}", path.as_ref()))?;
-
-                Ok(())
-            },
             _ => Err(eyre!("Could not stop daemon: unsupported init system")),
         }
     }
@@ -219,7 +202,7 @@ impl InitSystem {
     pub fn daemon_name(&self) -> &'static str {
         match self {
             InitSystem::Launchd => "io.fig.dotfiles-daemon",
-            InitSystem::Systemd | InitSystem::SCM => "fig-daemon",
+            InitSystem::Systemd => "fig-daemon",
             _ => unimplemented!(),
         }
     }
@@ -253,22 +236,13 @@ impl InitSystem {
 
                 Ok(status)
             },
-            InitSystem::SCM => {
-                let _output = Command::new("sc")
-                    .arg("query")
-                    .arg("type=")
-                    .arg("service")
-                    .output()
-                    .context("Could not query SCM")?;
-
-                todo!("Parse service status and return it (windows)");
-            },
             _ => Err(eyre!("Could not get daemon status: unsupported init system")),
         }
     }
 }
 
 /// A service that can be launched by the init system
+#[derive(Debug, Default)]
 pub struct LaunchService {
     /// Path to the service's definition file
     pub path: PathBuf,
@@ -279,40 +253,9 @@ pub struct LaunchService {
 }
 
 impl LaunchService {
-    pub fn launchd() -> Result<LaunchService> {
-        let homedir = directories::home_dir()?;
-
-        let plist_path = homedir
-            .join("Library")
-            .join("LaunchAgents")
-            .join(format!("{}.plist", InitSystem::Launchd.daemon_name()));
-
-        let executable_path = std::env::current_exe()?;
-        let executable_path_str = executable_path.to_string_lossy();
-
-        let log_path = homedir.join(".fig").join("logs").join("daemon.log");
-        let log_path_str = log_path.to_string_lossy();
-
-        let plist = LaunchdPlist::new(InitSystem::Launchd.daemon_name())
-            .program(&*executable_path_str)
-            .program_arguments([&*executable_path_str, "daemon"])
-            .keep_alive(true)
-            .run_at_load(true)
-            .throttle_interval(20)
-            .standard_out_path(&*log_path_str)
-            .standard_error_path(&*log_path_str)
-            .environment_variable("FIG_LOG_LEVEL", "debug")
-            .plist();
-
-        Ok(LaunchService {
-            path: plist_path,
-            data: plist,
-            launch_system: InitSystem::Launchd,
-        })
-    }
-
+    #[cfg(target_os = "linux")]
     pub fn systemd() -> Result<LaunchService> {
-        let homedir = directories::home_dir()?;
+        let homedir = fig_util::directories::home_dir()?;
 
         let path = homedir
             .join(".config")
@@ -342,9 +285,37 @@ impl LaunchService {
         })
     }
 
-    pub fn scm() -> Result<LaunchService> {
-        let _homedir = directories::home_dir()?;
-        todo!("Figure out windows SCM launch call");
+    #[cfg(target_os = "macos")]
+    pub fn launchd() -> Result<LaunchService> {
+        let homedir = fig_util::directories::home_dir()?;
+
+        let plist_path = homedir
+            .join("Library")
+            .join("LaunchAgents")
+            .join(format!("{}.plist", InitSystem::Launchd.daemon_name()));
+
+        let executable_path = std::env::current_exe()?;
+        let executable_path_str = executable_path.to_string_lossy();
+
+        let log_path = homedir.join(".fig").join("logs").join("daemon.log");
+        let log_path_str = log_path.to_string_lossy();
+
+        let plist = LaunchdPlist::new(InitSystem::Launchd.daemon_name())
+            .program(&*executable_path_str)
+            .program_arguments([&*executable_path_str, "daemon"])
+            .keep_alive(true)
+            .run_at_load(true)
+            .throttle_interval(20)
+            .standard_out_path(&*log_path_str)
+            .standard_error_path(&*log_path_str)
+            .environment_variable("FIG_LOG_LEVEL", "debug")
+            .plist();
+
+        Ok(LaunchService {
+            path: plist_path,
+            data: plist,
+            launch_system: InitSystem::Launchd,
+        })
     }
 
     pub fn start(&self) -> Result<()> {

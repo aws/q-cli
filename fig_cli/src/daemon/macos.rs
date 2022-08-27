@@ -151,7 +151,7 @@ impl LaunchdPlist {
     }
 
     /// Set the label
-    pub fn label(mut self, label: impl Into<String>) -> LaunchdPlist {
+    pub fn _label(mut self, label: impl Into<String>) -> LaunchdPlist {
         self.label = label.into();
         self
     }
@@ -173,7 +173,7 @@ impl LaunchdPlist {
     }
 
     /// Set the environment variables
-    pub fn environment_variables<I, K, V>(mut self, environment_variables: I) -> LaunchdPlist
+    pub fn _environment_variables<I, K, V>(mut self, environment_variables: I) -> LaunchdPlist
     where
         I: IntoIterator<Item = (K, V)>,
         K: Into<String>,
@@ -206,7 +206,7 @@ impl LaunchdPlist {
     }
 
     /// Set the standard in path
-    pub fn standard_in_path(mut self, path: impl Into<String>) -> LaunchdPlist {
+    pub fn _standard_in_path(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.standard_in_path = Some(path.into());
         self
     }
@@ -224,7 +224,7 @@ impl LaunchdPlist {
     }
 
     /// Set the working directory
-    pub fn working_directory(mut self, path: impl Into<String>) -> LaunchdPlist {
+    pub fn _working_directory(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.working_directory = Some(path.into());
         self
     }

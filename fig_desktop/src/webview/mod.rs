@@ -336,8 +336,9 @@ pub fn build_dashboard(
         .with_window_icon(Some(util::ICON.clone()))
         .with_theme(*THEME);
 
-    if show_onboarding {
-        window = window.with_inner_size(LogicalSize::new(590, 480));
+    match show_onboarding {
+        true => window = window.with_inner_size(LogicalSize::new(590, 480)),
+        false => window = window.with_inner_size(LogicalSize::new(1030, 720)),
     }
 
     let window = window.build(event_loop)?;

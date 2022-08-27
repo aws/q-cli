@@ -179,11 +179,15 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     use fig_util::directories::fig_socket_path;
 
     if is_app_running() {
+        if opts.verbose {
+            println!("Fig is already running");
+        }
+
         return Ok(());
     }
 
     if opts.verbose {
-        println!("\n→ Launching Fig...\n");
+        println!("Launching Fig");
     }
 
     std::fs::remove_file(fig_socket_path()?).ok();
@@ -228,6 +232,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
         return Ok(());
     }
 
+    #[cfg(not(target_os = "windows"))]
     if !is_app_running() {
         eyre::bail!("Unable to launch Fig");
     }

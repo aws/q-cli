@@ -101,6 +101,7 @@ pub fn install_cli(install_components: InstallComponents, no_confirm: bool, forc
         }
     }
 
+    // TODO: (mia)
     // Disable ssh by default for now.
     // if install_components.contains(InstallComponents::SSH) {
     // let ssh_integration = SshIntegration { path: get_ssh_config_path()? };
@@ -195,10 +196,8 @@ fn uninstall_daemon() -> Result<()> {
             daemon::LaunchService::launchd()?.uninstall()?;
         } else if #[cfg(target_os = "linux")] {
             daemon::LaunchService::systemd()?.uninstall()?;
-        } else if #[cfg(windows)] {
-            daemon::LaunchService::scm()?.uninstall()?;
-        } else {
-            eyre::bail!("Unsupported platform")
+        } else if #[cfg(target_os = "windows")] {
+            daemon::LaunchService::default().uninstall()?;
         }
     }
 
@@ -226,35 +225,46 @@ pub enum UpdateType {
 #[allow(clippy::needless_return)]
 pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
     if option_env!("FIG_IS_PACKAGE_MANAGED").is_some() {
-        Err(eyre::eyre!(
+        return Err(eyre::eyre!(
             "This installation of Fig is managed by a package manager, please use the built-in method of updating packages"
-        ))
-    } else {
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "macos")] {
-                // Let desktop app handle updates on macOS
-                use crate::util::{launch_fig, LaunchOptions};
-                use fig_ipc::command::update_command;
+        ));
+    }
 
-                launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            let _confirm = match update_type {
+                UpdateType::Confirm => true,
+                UpdateType::NoConfirm => false,
+            };
 
-                let desktop_app_update = update_command(update_type == UpdateType::NoConfirm).await;
+            let progress_output = match update_type {
+                UpdateType::Confirm => true,
+                UpdateType::NoConfirm => true,
+            };
 
-                match desktop_app_update {
-                    Ok(()) => {
-                        println!("\n→ Checking for updates to macOS app...\n");
-                        return Ok(UpdateStatus::UpToDate);
-                    }
-                    Err(_) => {
-                        eyre::bail!(
-                            "\n{}\nFig might not be running to launch Fig run: {}\n",
-                            "Unable to Connect to Fig:".bold(),
-                            "fig launch".magenta()
-                        );
-                    }
+            tokio::task::block_in_place(move || {
+                let current_version = env!("CARGO_PKG_VERSION");
+
+                let update = self_update::backends::s3::Update::configure()
+                    .bucket_name("get-fig-io")
+                    .asset_prefix("bin")
+                    .region("us-west-1")
+                    .bin_name("fig")
+                    .current_version(current_version)
+                    .no_confirm(true)
+                    .show_output(false)
+                    .show_download_progress(progress_output)
+                    .build()?;
+
+                let latest_release = update.get_latest_release()?;
+
+                if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
+                    println!("You are already on the latest version {}", current_version);
+
+                    return Ok(UpdateStatus::UpToDate);
                 }
-            } else {
-                let _confirm = match update_type {
+
+                let confirm = match update_type {
                     UpdateType::Confirm => true,
                     UpdateType::NoConfirm => false,
                 };
@@ -280,73 +290,61 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
                     let latest_release = update.get_latest_release()?;
 
-                    if !self_update::version::bump_is_greater(current_version, &latest_release.version)? {
+                    if !self_update::version::bump_is_greater(current_version, &latest_release.version)?
+                    {
                         println!("You are already on the latest version {}", current_version);
 
                         return Ok(UpdateStatus::UpToDate);
                     }
 
-                    let confirm = match update_type {
-                        UpdateType::Confirm => true,
-                        UpdateType::NoConfirm => false,
-                    };
-
-                    let progress_output = match update_type {
-                        UpdateType::Confirm => true,
-                        UpdateType::NoConfirm => true,
-                    };
-
-                    tokio::task::block_in_place(move || {
-                        let current_version = env!("CARGO_PKG_VERSION");
-
-                        let update = self_update::backends::s3::Update::configure()
-                            .bucket_name("get-fig-io")
-                            .asset_prefix("bin")
-                            .region("us-west-1")
-                            .bin_name("fig")
-                            .current_version(current_version)
-                            .no_confirm(true)
-                            .show_output(false)
-                            .show_download_progress(progress_output)
-                            .build()?;
-
-                        let latest_release = update.get_latest_release()?;
-
-                        if !self_update::version::bump_is_greater(current_version, &latest_release.version)?
-                        {
-                            println!("You are already on the latest version {}", current_version);
-
-                            return Ok(UpdateStatus::UpToDate);
-                        }
-
-                        if confirm {
-                            if !dialoguer::Confirm::with_theme(&dialoguer_theme())
-                                .with_prompt(format!(
-                                    "Do you want to update {} from {} to {}?",
-                                    env!("CARGO_PKG_NAME"),
-                                    update.current_version(),
-                                    latest_release.version
-                                ))
-                                .default(true)
-                                .interact()?
-                            {
-                                return Err(eyre::eyre!("Update cancelled"));
-                            }
-                        } else {
-                            println!(
-                                "Updating {} from {} to {}",
+                    if confirm {
+                        if !dialoguer::Confirm::with_theme(&dialoguer_theme())
+                            .with_prompt(format!(
+                                "Do you want to update {} from {} to {}?",
                                 env!("CARGO_PKG_NAME"),
                                 update.current_version(),
                                 latest_release.version
-                            );
+                            ))
+                            .default(true)
+                            .interact()?
+                        {
+                            return Err(eyre::eyre!("Update cancelled"));
                         }
+                    } else {
+                        println!(
+                            "Updating {} from {} to {}",
+                            env!("CARGO_PKG_NAME"),
+                            update.current_version(),
+                            latest_release.version
+                        );
+                    }
 
-                        Ok(update.update_extended()?)
-                    })
-                })?;
-                return Err(eyre::eyre!("Installation not properly handled"));
+                    Ok(update.update_extended()?)
+                })
+            })?;
+
+            Err(eyre::eyre!("Installation not properly handled"))
+        } else if #[cfg(any(target_os = "macos", target_os = "windows"))] {
+            // Let desktop app handle updates on macOS
+            use crate::util::{launch_fig, LaunchOptions};
+            use fig_ipc::command::update_command;
+
+            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+
+            match update_command(update_type == UpdateType::NoConfirm).await {
+                Ok(()) => {
+                    println!("Fig will now attempt to update. If Fig is already up to date, nothing else will be done.");
+                    Ok(UpdateStatus::UpToDate)
+                }
+                Err(_) => {
+                    eyre::bail!(
+                        "{}\nFig might not be running. To launch Fig, run {}",
+                        "Unable to Connect to Fig:".bold(),
+                        "fig launch".magenta()
+                    )
+                }
             }
-        };
+        }
     }
 }
 
