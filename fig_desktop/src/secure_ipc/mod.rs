@@ -7,10 +7,6 @@ use std::sync::atomic::{
 use std::sync::Arc;
 
 use anyhow::Result;
-use fig_proto::fig::{
-    PseudoterminalExecuteRequest,
-    RunProcessRequest,
-};
 use fig_proto::figterm::{
     intercept_command,
     InsertTextCommand,
@@ -22,6 +18,8 @@ use fig_proto::secure::clientbound::request::Request;
 use fig_proto::secure::clientbound::{
     self,
     HandshakeResponse,
+    PseudoterminalExecuteRequest,
+    RunProcessRequest,
 };
 use fig_proto::secure::{
     hostbound,
@@ -97,7 +95,7 @@ async fn handle_secure_ipc(
     proxy: EventLoopProxy,
 ) {
     let (mut reader, writer) = tokio::io::split(stream);
-    let (clientbound_tx, clientbound_rx) = flume::bounded(0xff);
+    let (clientbound_tx, clientbound_rx) = flume::unbounded();
 
     let (stop_pings_tx, stop_pings_rx) = oneshot::channel();
 
@@ -112,7 +110,7 @@ async fn handle_secure_ipc(
         .await
         .unwrap_or_else(|err| {
             if !err.is_disconnect() {
-                error!(%err, "Failed receiving secure message");
+                warn!(%err, "Failed receiving secure message");
             }
             None
         })
@@ -146,7 +144,7 @@ async fn handle_secure_ipc(
                         },
                         None => {
                             session_id = Some(id.clone());
-                            let (command_tx, command_rx) = flume::bounded(0xff);
+                            let (command_tx, command_rx) = flume::unbounded();
                             tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
                             figterm_state.insert(id, FigtermSession {
                                 secret: handshake.secret,

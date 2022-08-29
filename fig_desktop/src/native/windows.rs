@@ -320,7 +320,7 @@ unsafe fn update_focused_state(hwnd: HWND) {
 
     match title {
         title if ["Hyper", "Code"].contains(&title) => (),
-        title if ["cmd", "mintty", "powershell", "WindowsTerminal"].contains(&title) => {
+        title if ["bash", "cmd", "mintty", "powershell", "WindowsTerminal"].contains(&title) => {
             unmanaged.console_state = ConsoleState::Console { hwnd }
         },
         _ => {

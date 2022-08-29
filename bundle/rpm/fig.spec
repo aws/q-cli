@@ -1,12 +1,11 @@
 Name: fig
 Version: $VERSION
-Release: $RELEASE
+Release: 1
+Buildarch: $ARCH
 Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
 URL: https://fig.io
-Source0: fig-%{version}-%{release}.tar.bz2
-NoSource: 0
 
 Requires: webkit2gtk3
 Requires: gtk3
@@ -16,13 +15,9 @@ Requires: ibus
 %description
 %{summary}
 
-%prep
-
-%build
-echo oOoOoOoO im buildin!
-
 %install
-cp -r %{_builddir}/fig-%{version}-%{release}/usr %{buildroot}
+rm -r %{buildroot}
+cp -r %{_builddir}/fig-%{version}-%{release}.$ARCH/ %{buildroot}
 
 %clean
 rm -rf %{buildroot}
@@ -33,9 +28,6 @@ fig _ uninstall-for-all-users
 %files
 /usr/bin/fig
 /usr/bin/fig_desktop
-"/usr/bin/zsh (figterm)"
-"/usr/bin/bash (figterm)"
-"/usr/bin/fish (figterm)"
 /usr/bin/figterm
 /usr/lib/systemd/user/fig.service
 /usr/lib/environment.d/60-fig.conf
@@ -50,5 +42,7 @@ fig _ uninstall-for-all-users
 /usr/share/icons/hicolor/256x256/apps/fig.png
 /usr/share/icons/hicolor/512x512/apps/fig.png
 /usr/share/pixmaps/fig.png
+/usr/share/fig/manifest.json
+/usr/share/licenses/fig/LICENSE
 
 %changelog

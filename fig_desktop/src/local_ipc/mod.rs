@@ -88,11 +88,11 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                             OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
                             Quit(command) => commands::quit(command, &proxy).await,
                             Diagnostics(command) => commands::diagnostic(command).await,
+                            Update(command) => commands::update(command).await,
                             Logout(_)
                             | TerminalIntegration(_)
                             | ListTerminalIntegrations(_)
                             | Restart(_)
-                            | Update(_)
                             | ReportWindow(_)
                             | RestartSettingsListener(_)
                             | RunInstallScript(_)

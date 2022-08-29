@@ -1,3 +1,4 @@
+use std::io::Read;
 use std::path::Path;
 use std::process::Command;
 
@@ -6,6 +7,11 @@ use clap::{
     ValueEnum,
 };
 use crossterm::style::Stylize;
+use crossterm::terminal::{
+    disable_raw_mode,
+    enable_raw_mode,
+};
+use crossterm::ExecutableCommand;
 use eyre::{
     eyre,
     ContextCompat,
@@ -106,12 +112,13 @@ pub enum DebugSubcommand {
     UnixSocket,
     /// Debug fig codesign verification
     VerifyCodesign,
-
-    ///
+    /// Accessibility
     Accessibility {
         #[clap(value_enum, value_parser)]
         action: Option<AccessibilityAction>,
     },
+    /// Key Tester
+    KeyTester,
 }
 
 fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
@@ -354,12 +361,50 @@ impl DebugSubcommand {
                         .wait()?;
                 },
                 Some(AccessibilityAction::Status) | None => {
-                    #[cfg(target_os = "macos")]
-                    let diagnostic = get_diagnostics().await?;
-
-                    #[cfg(target_os = "macos")]
-                    println!("Accessibility Enabled: {}", diagnostic.accessibility)
+                    cfg_if::cfg_if! {
+                        if #[cfg(target_os = "macos")] {
+                            let diagnostic = get_diagnostics().await?;
+                            println!("Accessibility Enabled: {}", diagnostic.accessibility)
+                        } else {
+                            println!("Unable to get accessibility status on this platform");
+                        }
+                    }
                 },
+            },
+            Self::KeyTester => {
+                println!("{} (use {} to quit)", "Testing Key Input".bold(), "ctrl-d".magenta());
+
+                enable_raw_mode()?;
+
+                let mut stdout = std::io::stdout();
+                let mut stdin = std::io::stdin();
+
+                loop {
+                    let mut buff = [0; 1024];
+                    let bytes = stdin.read(&mut buff)?;
+                    let input = &buff[0..bytes];
+
+                    stdout.execute(crossterm::style::Print(format!(
+                        "{bytes} bytes : \"{}\" : {:x?}",
+                        input.escape_ascii(),
+                        input
+                    )))?;
+
+                    let (_, rows) = crossterm::terminal::size()?;
+                    let (_, cursor_row) = crossterm::cursor::position()?;
+                    if cursor_row >= rows.saturating_sub(1) {
+                        stdout.execute(crossterm::terminal::ScrollUp(1))?;
+                    }
+                    stdout.execute(crossterm::cursor::MoveToNextLine(1))?;
+
+                    // ctrl-d
+                    if [4] == input {
+                        break;
+                    }
+                }
+
+                disable_raw_mode()?;
+                println!("ctrl-d");
             },
         }
         Ok(())

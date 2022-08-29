@@ -130,6 +130,7 @@ impl Logger {
         };
 
         let registry = registry.with(stdout_layer);
+        let registry = registry.with(tracing_error::ErrorLayer::default());
 
         registry.init();
 

@@ -8,4 +8,3 @@ ExecStart=/usr/bin/fig_desktop
 
 [Install]
 WantedBy=default.target
-

@@ -1,3 +1,8 @@
+use std::io::{
+    stdout,
+    Write,
+};
+
 use clap::{
     Args,
     IntoApp,
@@ -28,12 +33,13 @@ pub struct CompletionArgs {
 
 impl CompletionArgs {
     pub fn execute(&self) -> Result<()> {
-        println!("{}", match self.shell {
+        writeln!(stdout(), "{}", match self.shell {
             Shells::Bash => generation_completions(clap_complete::shells::Bash),
             Shells::Fish => generation_completions(clap_complete::shells::Fish),
             Shells::Zsh => generation_completions(clap_complete::shells::Zsh),
             Shells::Fig => generation_completions(clap_complete_fig::Fig),
-        });
+        })
+        .ok();
         Ok(())
     }
 }

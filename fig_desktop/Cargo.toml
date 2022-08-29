@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.3.11"
+version = "2.3.14"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -37,6 +37,7 @@ flume = "0.10.14"
 fnv = "1.0.7"
 hashbrown = "0.12.3"
 image = "0.24.3"
+imageproc = "0.23.0"
 moka = "0.9.3"
 notify = "5.0.0-pre.15"
 once_cell = "1.13.1"

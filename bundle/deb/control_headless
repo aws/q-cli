@@ -1,0 +1,6 @@
+Package: fig-headless
+Description: Fig for Linux
+Maintainer: Grant Gurvis <grant@fig.io>
+Homepage: https://fig.io
+Version: $VERSION
+Architecture: amd64

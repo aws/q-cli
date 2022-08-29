@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::ffi::OsStr;
@@ -9,7 +10,10 @@ use std::time::Duration;
 
 use anyhow::Result;
 use image::imageops::FilterType;
-use image::ImageOutputFormat;
+use image::{
+    ImageOutputFormat,
+    Rgba,
+};
 use moka::sync::Cache;
 use once_cell::sync::Lazy;
 use percent_encoding::percent_decode_str;
@@ -107,24 +111,30 @@ fn resolve_asset(name: &str) -> (Arc<Vec<u8>>, AssetKind) {
     })
 }
 
-fn build_asset(name: &str) -> Response {
-    trace!("building response for asset {name}");
-
-    let resolved = resolve_asset(name);
-
+fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response {
     ResponseBuilder::new()
         .status(StatusCode::OK)
-        .mimetype(match resolved.1 {
+        .mimetype(match asset_kind {
             AssetKind::Png => "image/png",
             AssetKind::Svg => "image/svg+xml",
         })
         .header("Access-Control-Allow-Origin", "*")
-        .body(resolved.0.to_vec())
+        .body(data)
         .unwrap()
 }
 
+fn cached_asset_response(name: &str) -> Response {
+    trace!("building response for asset {name}");
+    let (data, asset_kind) = resolve_asset(name);
+    build_asset_response(data.to_vec(), asset_kind)
+}
+
 fn build_default() -> Response {
-    build_asset("template")
+    cached_asset_response("template")
+}
+
+fn scale(a: u8, b: u8) -> u8 {
+    (a as f32 * (b as f32 / 256.0)) as u8
 }
 
 pub fn handle(request: &Request) -> anyhow::Result<Response> {
@@ -135,11 +145,37 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
     let pairs: HashMap<_, _, RandomState> = HashMap::from_iter(url.query_pairs());
 
     Ok(match domain {
-        Some("template") => Some(build_asset("template")),
+        Some("template") => {
+            let query_pairs: HashMap<Cow<str>, Cow<str>> = url.query_pairs().collect();
+
+            let mut image =
+                image::load_from_memory_with_format(ASSETS.get("template").unwrap(), image::ImageFormat::Png).unwrap();
+
+            if let Some(color) = query_pairs.get("color") {
+                if color.len() == 6 {
+                    if let (Ok(color_r), Ok(color_g), Ok(color_b)) = (
+                        u8::from_str_radix(&color[0..2], 16),
+                        u8::from_str_radix(&color[2..4], 16),
+                        u8::from_str_radix(&color[4..6], 16),
+                    ) {
+                        imageproc::map::map_colors_mut(&mut image, |Rgba([r, g, b, a])| {
+                            Rgba([scale(r, color_r), scale(g, color_g), scale(b, color_b), a])
+                        });
+                    }
+                }
+            }
+
+            // todo: add baged
+            // if let Some(badge) = query_pairs.get("badge") {}
+
+            let mut png_bytes = std::io::Cursor::new(Vec::new());
+            image.write_to(&mut png_bytes, image::ImageFormat::Png).unwrap();
+            Some(build_asset_response(png_bytes.into_inner(), AssetKind::Png))
+        },
         Some("icon") | Some("asset") => pairs
             .get("asset")
             .or_else(|| pairs.get("type"))
-            .map(|name| build_asset(name)),
+            .map(|name| cached_asset_response(name)),
         None => {
             let path = &*percent_decode_str(url.path()).decode_utf8()?;
 
@@ -148,11 +184,11 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
 
             let meta = fs::metadata(path)?;
             if meta.is_dir() {
-                Some(build_asset("folder"))
+                Some(cached_asset_response("folder"))
             } else if meta.is_file() {
-                Some(build_asset("file"))
+                Some(cached_asset_response("file"))
             } else if meta.is_symlink() {
-                Some(build_asset("symlink"))
+                Some(cached_asset_response("symlink"))
             } else {
                 None
             }

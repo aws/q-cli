@@ -1,3 +1,4 @@
+use cfg_if::cfg_if;
 use eyre::Result;
 
 use crate::util::dialoguer_theme;
@@ -12,26 +13,32 @@ pub async fn uninstall_command() -> Result<()> {
         return Ok(());
     }
 
-    #[cfg(target_os = "linux")]
-    uninstall().await?;
+    cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            uninstall().await?;
+        } else if #[cfg(target_os = "macos")] {
+            if super::desktop_app_is_installed() {
+                use crate::util::{
+                    launch_fig,
+                    LaunchOptions,
+                };
+                let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
+                    fig_ipc::command::uninstall_command().await.is_ok()
+                } else {
+                    false
+                };
 
-    #[cfg(target_os = "macos")]
-    if super::desktop_app_is_installed() {
-        use crate::util::{
-            launch_fig,
-            LaunchOptions,
-        };
-        let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
-            fig_ipc::command::uninstall_command().await.is_ok()
-        } else {
-            false
-        };
-
-        if !success {
-            println!("\nFig is not running. Please launch Fig and try again to complete uninstall.\n");
+                if !success {
+                    println!("Fig is not running. Please launch Fig and try again to complete uninstall.");
+                }
+            } else {
+                super::installation::uninstall_cli(super::installation::InstallComponents::all())?
+            }
+        } else if #[cfg(target_os = "windows")] {
+            println!("Please uninstall fig from the `Add or remove programs` menu for now.\n");
+            println!("If you're having issues uninstalling fig, run `fig issue` to let us know, and use the tool at the following link to remove fig:");
+            println!("https://support.microsoft.com/en-us/topic/fix-problems-that-block-programs-from-being-installed-or-removed-cca7d1b6-65a9-3d98-426b-e9f927e1eb4d")
         }
-    } else {
-        super::installation::uninstall_cli(super::installation::InstallComponents::all())?
     }
 
     Ok(())

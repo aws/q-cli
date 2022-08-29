@@ -68,20 +68,29 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             }
         },
         OnboardingAction::LaunchShellOnboarding => {
+            fig_settings::state::set_value("user.onboarding", false).ok();
+
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "linux")] {
-                    // for terminal_executable in LINUX_TERMINALS.iter().flat_map(|term| term.executable_names()) {
-                    //     if let Ok(terminal_executable_path) = which::which(terminal_executable) {
-                    //         break
-                    //     }
-                    // }
+                    use fig_util::terminal::LINUX_TERMINALS;
+
+                    for terminal_executable in LINUX_TERMINALS.iter().flat_map(|term| term.executable_names()) {
+                        if let Ok(terminal_executable_path) = which::which(terminal_executable) {
+                            tokio::spawn(Command::new(terminal_executable_path).output());
+                            break;
+                        }
+                    }
                     RequestResult::error("Unimplemented")
                 } else if #[cfg(target_os = "macos")] {
                     RequestResult::error("Unimplemented")
                 } else if #[cfg(target_os = "windows")] {
-                    // TODO(chay): impl auto launch of terminal
-                    // start "" "%PROGRAMFILES%\\Git\\bin\\sh.exe" --login
-                    RequestResult::error("Unimplemented")
+                    use std::os::windows::process::CommandExt;
+
+                    let create_new_console = 0x10;
+                    match std::process::Command::new("cmd").creation_flags(create_new_console).arg("/c").raw_arg(r#"""%PROGRAMFILES%/Git/bin/bash.exe"""#).spawn() {
+                        Ok(_) => RequestResult::success(),
+                        Err(e) => RequestResult::error(format!("Failed to start Git Bash: {e}")),
+                    }
                 }
             }
         },

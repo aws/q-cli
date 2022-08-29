@@ -26,7 +26,7 @@ parameters:
     default: ""
   checkout:
     type: string
-    default: "develop"
+    default: ""
 
 workflows:
   version: 2
@@ -56,14 +56,28 @@ workflows:
           requires: [update-version]
       - windows:
           requires: [update-version]
+      - linux-headless-x86_64:
+          requires: [update-version]
+      - linux-desktop-x86_64:
+          requires: [update-version]
+      - package-tarball-x86_64:
+          requires: [linux-headless-x86_64, linux-desktop-x86_64]
+      - package-deb-x86_64:
+          requires: [linux-headless-x86_64, linux-desktop-x86_64]
+      - package-rpm-x86_64:
+          requires: [linux-headless-x86_64, linux-desktop-x86_64]
       - sentry:
           requires:
             [
-              ubuntu-x86_64,
-              fedora-x86_64,
-              ubuntu-aarch64-focal-cli-only,
-              archlinux-x86_64,
+              package-tarball-x86_64,
+              package-deb-x86_64,
+              package-rpm-x86_64,
               windows,
+              ubuntu-x86_64,
+              ubuntu-x86_64-cli-only,
+              ubuntu-aarch64-focal-cli-only,
+              fedora-x86_64,
+              archlinux-x86_64,
             ]
           context:
             - sentry
@@ -159,6 +173,155 @@ jobs:
           path: desktop/target/wix/fig_installer.exe
           destination: windows/exe
 
+  linux-headless-x86_64:
+    docker:
+      - image: messense/rust-musl-cross:x86_64-musl
+    resource_class: large
+    steps:
+      - prepare-debian:
+          platform: focal
+          arch: x86_64
+          include_desktop_deps: false
+          fourth: musl
+          native-linker: true
+      - run:
+          name: Install musl stuff
+          command: apt install -y musl-dev
+      - run:
+          name: Install Rust toolchain
+          command: rustup target add x86_64-unknown-linux-musl
+      - run:
+          name: Build fig_cli
+          command: cd desktop && cargo build -rp fig_cli
+      - run:
+          name: Build figterm
+          command: cd desktop && cargo build -rp figterm
+      - run:
+          name: Prepare binaries
+          command: |
+            mkdir -p bin/linux/x86_64/
+            mv desktop/target/x86_64-unknown-linux-musl/release/fig_cli bin/linux/x86_64/fig_cli
+            mv desktop/target/x86_64-unknown-linux-musl/release/figterm bin/linux/x86_64/figterm
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bin/linux/x86_64/fig_cli
+            - bin/linux/x86_64/figterm
+
+  linux-desktop-x86_64:
+    docker:
+      - image: ubuntu:bionic
+    resource_class: large
+    steps:
+      - prepare-debian:
+          platform: bionic
+          arch: x86_64
+          include_desktop_deps: true
+      - run:
+          name: Build fig_desktop
+          command: cd desktop && cargo build -rp fig_desktop
+      - run:
+          name: Prepare binaries
+          command: |
+            mkdir -p bin/linux/x86_64/
+            mv desktop/target/release/fig_desktop bin/linux/x86_64/fig_desktop
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bin/linux/x86_64/fig_desktop
+
+  package-tarball-x86_64:
+    docker:
+      - image: cimg/base:edge-22.04
+    resource_class: small
+    environment:
+      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
+      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
+      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
+    steps:
+      - checkout-desktop
+      - attach_workspace:
+          at: /tmp/ws
+      - run:
+          name: Package full
+          command: |
+            cd desktop
+            IS_HEADLESS=0 build-scripts/tarball.sh
+      - store_artifacts:
+          path: desktop/fig.tar.xz
+          destination: pkg/os=linux,arch=x86_64,kind=tar,variant=full
+      - run:
+          name: Package headless
+          command: |
+            cd desktop
+            IS_HEADLESS=1 build-scripts/tarball.sh
+      - store_artifacts:
+          path: desktop/fig.tar.xz
+          destination: pkg/os=linux,arch=x86_64,kind=tar,variant=headless
+
+  package-rpm-x86_64:
+    docker:
+      - image: fedora:36
+    resource_class: small
+    environment:
+      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
+      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
+      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
+      ARCH: x86_64
+    steps:
+      - run:
+          name: Install tools
+          command: dnf install -y git jq rpmdevtools
+      - checkout-desktop
+      - attach_workspace:
+          at: /tmp/ws
+      - run:
+          name: Package full
+          command: |
+            cd desktop
+            IS_HEADLESS=0 build-scripts/rpm.sh
+      - store_artifacts:
+          path: desktop/fig.rpm
+          destination: pkg/os=linux,arch=x86_64,kind=rpm,variant=full
+      - run:
+          name: Package headless
+          command: |
+            cd desktop
+            IS_HEADLESS=1 build-scripts/rpm.sh
+      - store_artifacts:
+          path: desktop/fig.rpm
+          destination: pkg/os=linux,arch=x86_64,kind=rpm,variant=headless
+
+  package-deb-x86_64:
+    docker:
+      - image: cimg/base:edge-22.04
+    resource_class: small
+    environment:
+      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
+      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
+      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
+      ARCH: x86_64
+    steps:
+      - checkout-desktop
+      - attach_workspace:
+          at: /tmp/ws
+      - run:
+          name: Package full
+          command: |
+            cd desktop
+            IS_HEADLESS=0 build-scripts/deb.sh
+      - store_artifacts:
+          path: desktop/fig.deb
+          destination: pkg/os=linux,arch=x86_64,kind=deb,variant=full
+      - run:
+          name: Package headless
+          command: |
+            cd desktop
+            IS_HEADLESS=1 build-scripts/deb.sh
+      - store_artifacts:
+          path: desktop/fig.deb
+          destination: pkg/os=linux,arch=x86_64,kind=deb,variant=headless
+
   # Creates tag on specified revision
   update-version:
     docker:
@@ -218,7 +381,7 @@ jobs:
             git add fig_desktop/Cargo.toml
             git add fig.wxi
             git checkout -B build-<< pipeline.parameters.id >>
-            printf "Version $NEW_VERSION [skip-ci]\n\n<< pipeline.parameters.changelog >>" > commit_message
+            printf "Version $NEW_VERSION [skip-ci] [skip ci]\n\n<< pipeline.parameters.changelog >>" > commit_message
             git commit --allow-empty --file commit_message
             git push  --set-upstream origin build-<< pipeline.parameters.id >>
             git tag --annotate --force --message "<< pipeline.parameters.changelog >>" $NEW_VERSION
@@ -276,11 +439,15 @@ commands:
         type: string
       rust-target:
         type: string
+      native-linker:
+        type: boolean
+        default: false
     steps:
       - checkout-desktop
       - configure-rust:
           platform: << parameters.platform >>
           target: << parameters.rust-target >>
+          native-linker: << parameters.native-linker >>
 
   # this should be the last step before you start building in
   # order to give github some time to process the new commit
@@ -306,6 +473,8 @@ commands:
         type: string
       target:
         type: string
+      native-linker:
+        type: boolean
     steps:
       - rust/install:
           version: 1.63.0
@@ -319,13 +488,24 @@ commands:
                   LINKER: mold
       - when:
           condition:
-            not: *supports_mold
+            and:
+              - not: *supports_mold
+              - not: << parameters.native-linker >>
           steps:
             - run:
                 name: Configure rust
                 command: ./desktop/build-scripts/rust-init.sh
                 environment:
                   LINKER: lld
+      - when:
+          condition:
+            and:
+              - not: *supports_mold
+              - << parameters.native-linker >>
+          steps:
+            - run:
+                name: Configure rust
+                command: ./desktop/build-scripts/rust-init.sh
 
   configure-apt:
     parameters:
@@ -379,6 +559,12 @@ commands:
       include_desktop_deps:
         type: boolean
         default: true
+      fourth:
+        type: string
+        default: gnu
+      native-linker:
+        type: boolean
+        default: false
     steps:
       - configure-apt:
           platform: << parameters.platform >>
@@ -421,7 +607,8 @@ commands:
                 command: sudo apt install -y lld
       - prepare-post:
           platform: << parameters.platform >>
-          rust-target: << parameters.arch >>-unknown-linux-gnu
+          rust-target: << parameters.arch >>-unknown-linux-<< parameters.fourth >>
+          native-linker: << parameters.native-linker >>
 
   prepare-fedora:
     parameters:

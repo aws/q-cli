@@ -879,9 +879,9 @@ impl<T> Term<T> {
         self.event_proxy.send_event(Event::Prompt, &self.shell_state);
         trace!("Prompt event sent");
 
-        if let Some(command) = &self.shell_state.command_info {
+        if let Some(command) = self.shell_state.command_info.take() {
             self.event_proxy
-                .send_event(Event::CommandInfo(command), &self.shell_state);
+                .send_event(Event::CommandInfo(&command), &self.shell_state);
             trace!("Command info event sent");
         }
     }

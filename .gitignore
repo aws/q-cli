@@ -34,3 +34,4 @@ target/
 build/
 .vscode/
 .fleet/
+bin/

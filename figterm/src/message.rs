@@ -90,7 +90,13 @@ fn create_command(executable: impl AsRef<OsStr>, working_directory: Option<Strin
         }
     }
 
-    cmd.envs(vec![("PROCESS_LAUNCHED_BY_FIG", "1"), ("TERM", "xterm-256color")]);
+    cmd.envs([
+        ("PROCESS_LAUNCHED_BY_FIG", "1"),
+        ("FIG_NO_RAN_COMMAND", "1"),
+        ("HISTFILE", ""),
+        ("HISTCONTROL", "ignoreboth"),
+        ("TERM", "xterm-256color"),
+    ]);
 
     cmd
 }

@@ -25,9 +25,6 @@ arch: archive
 deb: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux
 	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-$(ARCH)-linux
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/zsh\ \(figterm\)
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/bash\ \(figterm\)
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/fish\ \(figterm\)
 	cp -r $(MAKE_DIR)/bundle/deb/. $(BUILD_DIR)/fig-$(ARCH)-linux
 	sed -i "s/^Version:.*/Version: $(VERSION)/" $(BUILD_DIR)/fig-$(ARCH)-linux/DEBIAN/control
 	chmod 755 $(BUILD_DIR)/fig-$(ARCH)-linux/DEBIAN/prerm
@@ -39,9 +36,6 @@ rpm: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux
 	cp $(MAKE_DIR)/bundle/rpm/fig.spec ~/rpmbuild/SPECS/
 	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-$(ARCH)-linux
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/zsh\ \(figterm\)
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/bash\ \(figterm\)
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/figterm $(BUILD_DIR)/fig-$(ARCH)-linux/usr/bin/fish\ \(figterm\)
 	sed -i "s/^Version:.*/Version: ${NUMERIC}/" ~/rpmbuild/SPECS/fig.spec
 	sed -i "s/^Release:.*/Release: ${FLAVOR}/" ~/rpmbuild/SPECS/fig.spec
 	mkdir -p ~/rpmbuild/BUILD/fig-${NUMERIC}-${FLAVOR}/

@@ -17,7 +17,6 @@ use serde_json::{
     Map,
     Value,
 };
-use tokio::fs::read_to_string;
 use tracing::{
     error,
     trace,
@@ -105,28 +104,27 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
             if let Some(ref settings_path) = settings_path {
                 if event.paths.contains(settings_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        let settings_str = read_to_string(settings_path).await.ok();
-
-                        if let Some(settings_str) = &settings_str {
-                            if let Ok(settings_map) = serde_json::from_str(settings_str) {
-                                *SETTINGS.lock() = settings_map;
-                            }
-                        }
-
-                        notifications_state
-                            .send_notification(
-                                &NotificationType::NotifyOnSettingsChange,
-                                fig_proto::fig::Notification {
-                                    r#type: Some(NotificationEnum::SettingsChangedNotification(
-                                        SettingsChangedNotification {
-                                            json_blob: settings_str,
+                        match fig_settings::settings::get_map() {
+                            Ok(settings) => {
+                                notifications_state
+                                    .send_notification(
+                                        &NotificationType::NotifyOnSettingsChange,
+                                        fig_proto::fig::Notification {
+                                            r#type: Some(NotificationEnum::SettingsChangedNotification(
+                                                SettingsChangedNotification {
+                                                    json_blob: serde_json::to_string(&settings).ok(),
+                                                },
+                                            )),
                                         },
-                                    )),
-                                },
-                                &proxy,
-                            )
-                            .await
-                            .unwrap();
+                                        &proxy,
+                                    )
+                                    .await
+                                    .unwrap();
+
+                                *SETTINGS.lock() = settings;
+                            },
+                            Err(err) => error!(%err, "Failed to get settings"),
+                        }
                     }
                 }
             }
@@ -134,26 +132,27 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
             if let Some(ref state_path) = state_path {
                 if event.paths.contains(state_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        let state_str = read_to_string(state_path).await.ok();
+                        match fig_settings::state::get_map() {
+                            Ok(state) => {
+                                notifications_state
+                                    .send_notification(
+                                        &NotificationType::NotifyOnLocalStateChanged,
+                                        fig_proto::fig::Notification {
+                                            r#type: Some(NotificationEnum::LocalStateChangedNotification(
+                                                LocalStateChangedNotification {
+                                                    json_blob: serde_json::to_string(&state).ok(),
+                                                },
+                                            )),
+                                        },
+                                        &proxy,
+                                    )
+                                    .await
+                                    .unwrap();
 
-                        if let Some(state_str) = &state_str {
-                            if let Ok(state_map) = serde_json::from_str(state_str) {
-                                *STATE.lock() = state_map;
-                            }
+                                *STATE.lock() = state;
+                            },
+                            Err(err) => error!(%err, "Failed to get state"),
                         }
-
-                        notifications_state
-                            .send_notification(
-                                &NotificationType::NotifyOnLocalStateChanged,
-                                fig_proto::fig::Notification {
-                                    r#type: Some(NotificationEnum::LocalStateChangedNotification(
-                                        LocalStateChangedNotification { json_blob: state_str },
-                                    )),
-                                },
-                                &proxy,
-                            )
-                            .await
-                            .unwrap();
                     }
                 }
             }

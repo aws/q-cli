@@ -207,6 +207,8 @@ impl WebviewManager {
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, _, control_flow| {
+            trace!(?event, "Main loop event");
+
             *control_flow = ControlFlow::Wait;
 
             match event {
@@ -232,7 +234,6 @@ impl WebviewManager {
                     }
                 },
                 WryEvent::UserEvent(event) => {
-                    trace!(?event, "Executing user event");
                     match event {
                         Event::WindowEvent {
                             window_id,
@@ -335,8 +336,9 @@ pub fn build_dashboard(
         .with_window_icon(Some(util::ICON.clone()))
         .with_theme(*THEME);
 
-    if show_onboarding {
-        window = window.with_inner_size(LogicalSize::new(590, 480));
+    match show_onboarding {
+        true => window = window.with_inner_size(LogicalSize::new(590, 480)),
+        false => window = window.with_inner_size(LogicalSize::new(1030, 720)),
     }
 
     let window = window.build(event_loop)?;
@@ -383,6 +385,7 @@ pub fn build_dashboard(
         ]))
         .with_initialization_script(&javascript_init())
         .with_clipboard(true)
+        .with_hotkeys_zoom(true)
         .build()?;
 
     Ok(webview)
@@ -421,7 +424,10 @@ pub fn build_autocomplete(
     #[cfg(target_os = "linux")]
     {
         use gtk::gdk::WindowTypeHint;
-        use gtk::traits::GtkWindowExt;
+        use gtk::traits::{
+            GtkWindowExt,
+            WidgetExt,
+        };
         use wry::application::platform::unix::WindowExtUnix;
 
         let gtk_window = window.gtk_window();
@@ -429,6 +435,9 @@ pub fn build_autocomplete(
         gtk_window.set_type_hint(WindowTypeHint::Utility);
         gtk_window.set_accept_focus(false);
         gtk_window.set_decorated(false);
+        if let Some(window) = gtk_window.window() {
+            window.set_override_redirect(true);
+        }
     }
 
     let proxy = event_loop.create_proxy();
@@ -460,6 +469,7 @@ pub fn build_autocomplete(
             r"^fig-autocomplete\.vercel\.app$",
         ]))
         .with_clipboard(true)
+        .with_hotkeys_zoom(true)
         .build()?;
 
     Ok(webview)

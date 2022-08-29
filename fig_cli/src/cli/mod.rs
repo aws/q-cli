@@ -112,6 +112,7 @@ pub enum CliRootCommands {
     #[clap(hide = true)]
     Daemon,
     /// Run diagnostic tests
+    #[clap(alias("diagnostic"))]
     Diagnostic(diagnostics::DiagnosticArgs),
     /// Generate the dotfiles for the given shell
     Init(init::InitArgs),
@@ -163,7 +164,7 @@ pub enum CliRootCommands {
     #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
     Workflow(workflow::WorkflowArgs),
     /// Manage system integrations
-    #[clap(subcommand)]
+    #[clap(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
     /// English -> Bash translation
     Ai(ai::AiArgs),
@@ -308,7 +309,7 @@ impl Cli {
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => app::launch_fig_cli(),
+                CliRootCommands::Launch => launch_fig(LaunchOptions::new().wait_for_activation().verbose()),
                 CliRootCommands::Quit => app::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,

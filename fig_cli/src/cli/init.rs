@@ -152,7 +152,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
         if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
             // if no value, assume that we have seen onboarding already.
             // this is explictly set in onboarding in macOS app.
-            let has_see_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
+            let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
 
             cfg_if! {
                 if #[cfg(target_os = "macos")] {
@@ -165,7 +165,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
                 }
             }
 
-            if is_logged_in() && !has_see_onboarding && terminal_supports_onboarding {
+            if is_logged_in() && !has_seen_onboarding && terminal_supports_onboarding {
                 to_source.push(match shell {
                     Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)".into(),
                     Shell::Fish => "begin; fig restart daemon &> /dev/null &; end".into(),

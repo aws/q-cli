@@ -136,16 +136,17 @@ pub fn is_app_running() -> bool {
                 SystemExt,
             };
 
-            let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
             cfg_if! {
                 if #[cfg(target_os = "windows")] {
-                    let mut processes = s.processes_by_exact_name("fig_desktop.exe");
-                    processes.next().is_some()
+                    let process_name = "fig_desktop.exe";
                 } else if #[cfg(target_os = "linux")] {
-                    let mut processes = s.processes_by_exact_name("fig_desktop");
-                    processes.next().is_some()
+                    let process_name = "fig_desktop";
                 }
             }
+
+            let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+            let mut processes = s.processes_by_exact_name(process_name);
+            processes.next().is_some()
         }
     }
 }
@@ -178,30 +179,44 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     use fig_util::directories::fig_socket_path;
 
     if is_app_running() {
+        if opts.verbose {
+            println!("Fig is already running");
+        }
+
         return Ok(());
     }
 
     if opts.verbose {
-        println!("\n→ Launching Fig...\n");
+        println!("Launching Fig");
     }
 
     std::fs::remove_file(fig_socket_path()?).ok();
 
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            let process = Command::new("systemctl")
-                .args(&["--user", "start", "fig"])
-                .output()
-                .context("\nUnable to launch Fig\n")?;
+            if fig_util::wsl::is_wsl() {
+                let output = Command::new("fig_desktop.exe")
+                    .output()
+                    .context("Unable to launch Fig")?;
 
-            if !process.status.success() {
-                bail!("Failed to launch fig.desktop");
+                if !output.status.success() {
+                    bail!("Failed to launch Fig: {}", String::from_utf8_lossy(&output.stderr));
+                }
+            } else {
+                let output = Command::new("systemctl")
+                    .args(&["--user", "start", "fig"])
+                    .output()
+                    .context("Unable to launch Fig")?;
+
+                if !output.status.success() {
+                    bail!("Failed to launch Fig: {}", String::from_utf8_lossy(&output.stderr));
+                }
             }
         } else if #[cfg(target_os = "macos")] {
             Command::new("open")
                 .args(["-g", "-b", "com.mschrage.fig"])
                 .output()
-                .context("\nUnable to launch Fig\n")?;
+                .context("Unable to launch Fig")?;
         } else if #[cfg(target_os = "windows")] {
             use std::os::windows::process::CommandExt;
             use windows::Win32::System::Threading::DETACHED_PROCESS;
@@ -209,7 +224,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
             Command::new("fig_desktop")
                 .creation_flags(DETACHED_PROCESS.0)
                 .spawn()
-                .context("\nUnable to launch Fig\n")?;
+                .context("Unable to launch Fig")?;
         }
     }
 
@@ -217,6 +232,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
         return Ok(());
     }
 
+    #[cfg(not(target_os = "windows"))]
     if !is_app_running() {
         eyre::bail!("Unable to launch Fig");
     }
@@ -303,7 +319,8 @@ pub fn get_fig_version() -> Result<String> {
            Ok(fig_version)
         } else {
             use std::process::Command;
-            Ok(String::from_utf8_lossy(&Command::new("fig_desktop").arg("--version").output()?.stdout).into())
+            Ok(String::from_utf8_lossy(&Command::new("fig_desktop").arg("--version").output()?.stdout)
+                .replace("fig_desktop", "").trim().into())
         }
     }
 }
