@@ -107,7 +107,10 @@ use crate::message::process_figterm_message;
 use crate::pty::unix::open_pty;
 #[cfg(windows)]
 use crate::pty::win::open_pty;
-use crate::pty::CommandBuilder;
+use crate::pty::{
+    AsyncMasterPtyExt,
+    CommandBuilder,
+};
 use crate::term::{
     SystemTerminal,
     Terminal,
@@ -509,7 +512,7 @@ fn figterm_main() -> Result<()> {
                 if let Some(mut initial_command) = initial_command {
                     debug!("Sending initial text: {initial_command}");
                     initial_command.push('\n');
-                    if let Err(err) = master.write(initial_command.as_bytes()).await {
+                    if let Err(err) = master.write_all(initial_command.as_bytes()).await {
                         error!("Failed to write initial command: {err}");
                     }
                 }
@@ -546,7 +549,7 @@ fn figterm_main() -> Result<()> {
                                                                 .replace('\'', "'\"'\"'")
                                                             ).as_bytes()
                                                     );
-                                                    master.write(&write_buffer).await?;
+                                                    master.write_all(&write_buffer).await?;
                                                     continue 'select_loop;
                                                 }
                                             }
@@ -616,7 +619,7 @@ fn figterm_main() -> Result<()> {
                                     }
                                 };
                             }
-                            master.write(&write_buffer).await?;
+                            master.write_all(&write_buffer).await?;
                         }
                         Err(err) => {
                             warn!("Failed recv: {err}");
@@ -629,7 +632,7 @@ fn figterm_main() -> Result<()> {
                         Ok(event) => {
                             match event {
                                 MainLoopEvent::Insert { insert, unlock } => {
-                                    master.write(&insert).await?;
+                                    master.write_all(&insert).await?;
                                     if unlock {
                                         key_interceptor.reset();
                                     }

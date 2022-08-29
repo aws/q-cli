@@ -212,8 +212,8 @@ impl AsyncMasterPty for UnixAsyncMasterPty {
         loop {
             let mut guard = self.fd.writable_mut().await?;
 
-            match guard.try_io(|inner| inner.get_mut().write_all(buff)) {
-                Ok(result) => return result.map(|_| buff.len()),
+            match guard.try_io(|inner| inner.get_mut().write(buff)) {
+                Ok(result) => return result,
                 Err(_would_block) => continue,
             }
         }
