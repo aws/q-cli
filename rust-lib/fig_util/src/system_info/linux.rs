@@ -37,7 +37,7 @@ pub fn get_desktop_environment() -> Result<DesktopEnvironment, Error> {
             let current = current.to_lowercase();
             let (_, desktop) = current.split_once(':').unwrap_or(("", current.as_str()));
             match desktop.to_lowercase().as_str() {
-                "gnome" | "gnome-xorg" | "ubuntu" => Ok(DesktopEnvironment::Gnome),
+                "gnome" | "gnome-xorg" | "ubuntu" | "pop" => Ok(DesktopEnvironment::Gnome),
                 "kde" | "plasma" => Ok(DesktopEnvironment::Plasma),
                 "i3" => Ok(DesktopEnvironment::I3),
                 _ => Err(Error::UnknownDesktop(current)),
@@ -53,7 +53,7 @@ pub fn get_os_release() -> Option<&'static OsRelease> {
     OS_RELEASE.as_ref()
 }
 
-/// https://www.man7.org/linux/man-pages/man5/os-release.5.html
+/// Fields from <https://www.man7.org/linux/man-pages/man5/os-release.5.html>
 #[derive(Debug, Clone, Default, PartialEq, Eq, Serialize, Deserialize)]
 pub struct OsRelease {
     pub id: Option<String>,

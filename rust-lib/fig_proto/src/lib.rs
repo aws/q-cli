@@ -111,15 +111,15 @@ pub enum FigMessageEncodeError {
 }
 
 impl FigMessage {
-    pub fn json(json: impl Serialize) -> Result<FigMessage, FigMessageEncodeError> {
+    pub fn json(json: impl Serialize) -> Result<Bytes, FigMessageEncodeError> {
         FigMessage::encode(FigMessageType::Json, &serde_json::to_vec(&json)?)
     }
 
-    pub fn message_pack(message_pack: impl Serialize) -> Result<FigMessage, FigMessageEncodeError> {
+    pub fn message_pack(message_pack: impl Serialize) -> Result<Bytes, FigMessageEncodeError> {
         FigMessage::encode(FigMessageType::MessagePack, &rmp_serde::to_vec(&message_pack)?)
     }
 
-    pub fn encode(message_type: FigMessageType, body: &[u8]) -> Result<FigMessage, FigMessageEncodeError> {
+    pub fn encode(message_type: FigMessageType, body: &[u8]) -> Result<Bytes, FigMessageEncodeError> {
         let message_len: u64 = body.len().try_into()?;
         let message_len_be = message_len.to_be_bytes();
 
@@ -131,10 +131,7 @@ impl FigMessage {
         inner.extend_from_slice(&message_len_be);
         inner.extend_from_slice(body);
 
-        Ok(FigMessage {
-            inner: inner.freeze(),
-            message_type: FigMessageType::Protobuf,
-        })
+        Ok(inner.freeze())
     }
 
     pub fn parse(src: &mut Cursor<&[u8]>) -> Result<FigMessage, FigMessageParseError> {
@@ -212,17 +209,11 @@ impl std::ops::Deref for FigMessage {
 /// A trait for types that can be converted to a FigProtobuf
 pub trait FigProtobufEncodable: Debug + Send + Sync {
     /// Encodes a protobuf message into a fig message
-    fn encode_fig_protobuf(&self) -> Result<FigMessage, FigMessageEncodeError>;
-}
-
-impl FigProtobufEncodable for FigMessage {
-    fn encode_fig_protobuf(&self) -> Result<FigMessage, FigMessageEncodeError> {
-        Ok(self.clone())
-    }
+    fn encode_fig_protobuf(&self) -> Result<Bytes, FigMessageEncodeError>;
 }
 
 impl<T: Message> FigProtobufEncodable for T {
-    fn encode_fig_protobuf(&self) -> Result<FigMessage, FigMessageEncodeError> {
+    fn encode_fig_protobuf(&self) -> Result<Bytes, FigMessageEncodeError> {
         FigMessage::encode(FigMessageType::Protobuf, &self.encode_to_vec())
     }
 }
@@ -253,13 +244,7 @@ mod tests {
     #[test]
     fn test_to_fig_pbuf() {
         let message = test_message();
-
         assert!(message.encode_fig_protobuf().unwrap().starts_with(b"\x1b@fig-pbuf"));
-
-        assert_eq!(
-            message.encode_fig_protobuf().unwrap().message_type,
-            FigMessageType::Protobuf
-        );
     }
 
     #[test]

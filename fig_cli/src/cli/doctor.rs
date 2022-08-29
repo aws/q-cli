@@ -1647,8 +1647,10 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 }
 
+#[cfg(target_os = "macos")]
 struct ImeStatusCheck;
 
+#[cfg(target_os = "macos")]
 #[async_trait]
 impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     fn name(&self) -> Cow<'static, str> {
@@ -2191,6 +2193,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &ItermBashIntegrationCheck {},
                 &HyperIntegrationCheck {},
                 &VSCodeIntegrationCheck {},
+                #[cfg(target_os = "macos")]
                 &ImeStatusCheck {},
             ],
             get_terminal_context,

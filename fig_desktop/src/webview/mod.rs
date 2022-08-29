@@ -424,7 +424,10 @@ pub fn build_autocomplete(
     #[cfg(target_os = "linux")]
     {
         use gtk::gdk::WindowTypeHint;
-        use gtk::traits::GtkWindowExt;
+        use gtk::traits::{
+            GtkWindowExt,
+            WidgetExt,
+        };
         use wry::application::platform::unix::WindowExtUnix;
 
         let gtk_window = window.gtk_window();
@@ -432,6 +435,9 @@ pub fn build_autocomplete(
         gtk_window.set_type_hint(WindowTypeHint::Utility);
         gtk_window.set_accept_focus(false);
         gtk_window.set_decorated(false);
+        if let Some(window) = gtk_window.window() {
+            window.set_override_redirect(true);
+        }
     }
 
     let proxy = event_loop.create_proxy();
