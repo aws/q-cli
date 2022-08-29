@@ -1,10 +1,10 @@
-mkdir -p ~/.fig/bin >/dev/null
+command mkdir -p ~/.fig/bin >/dev/null
 
-contains $HOME/.fig/bin $fish_user_paths
-or set -a PATH $HOME/.fig/bin
+builtin contains $HOME/.fig/bin $PATH
+or set --append PATH $HOME/.fig/bin
 
-contains $HOME/.local/bin $fish_user_paths
-or set -a PATH $HOME/.local/bin
+builtin contains $HOME/.local/bin $PATH
+or set --append PATH $HOME/.local/bin
 
 if not test -z "$FIG_NEW_SESSION"
     set --erase TERM_SESSION_ID
@@ -27,9 +27,9 @@ if test "$TERM_PROGRAM" != WarpTerminal
     # explicitly set for VSCode and Hyper. This variable is inherited when
     # new ttys are created using tmux and must be explictly overwritten.
     if test -z "$TERM_SESSION_ID"; or test -n "$TMUX"
-        export TERM_SESSION_ID=(fig _ uuidgen)
+        set --export TERM_SESSION_ID (fig _ uuidgen)
     end
-    export FIG_INTEGRATION_VERSION=8
+    set --export FIG_INTEGRATION_VERSION 8
 
     set FIG_SHELL (fig _ get-shell)
     set FIG_IS_LOGIN_SHELL 0
@@ -39,18 +39,18 @@ if test "$TERM_PROGRAM" != WarpTerminal
 
     # Do not launch figterm in non-interactive shells (like VSCode Tasks)
     if status --is-interactive
-        if test (command uname) = "Darwin"
-            set FIG_TERM_NAME (basename "$FIG_SHELL")" (figterm)"
+        if test (command uname) = Darwin
+            set FIG_TERM_NAME (command basename "$FIG_SHELL")" (figterm)"
             set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/$FIG_TERM_NAME")
 
             # Only copy figterm binary if it doesn't already exist
             # WARNING: copying file if it already exists results
             # in crashes. See https://github.com/withfig/fig/issues/548
             if not test -f "$FIG_SHELL_PATH"
-                cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
+                command cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH"
             end
         else
-            set FIG_TERM_NAME "figterm"
+            set FIG_TERM_NAME figterm
             set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME")
         end
 

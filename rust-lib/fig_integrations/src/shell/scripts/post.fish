@@ -1,8 +1,8 @@
-contains $HOME/.fig/bin $fish_user_paths
-or set -a PATH $HOME/.fig/bin
+builtin contains $HOME/.fig/bin $PATH
+or set --append PATH $HOME/.fig/bin
 
-contains $HOME/.local/bin $fish_user_paths
-or set -a PATH $HOME/.local/bin
+builtin contains $HOME/.local/bin $PATH
+or set --append PATH $HOME/.local/bin
 
 # if test "$FIG_DID_NOT_EXEC_FIGTERM" = 1
 #     and test "$FIG_TERM" != 1
@@ -13,7 +13,7 @@ or set -a PATH $HOME/.local/bin
 
 
 # Open workflows on keyboard shortcut
-set -q FIG_WORKFLOWS_KEYBIND || set FIG_WORKFLOWS_KEYBIND '\cf'
+set --query FIG_WORKFLOWS_KEYBIND || set FIG_WORKFLOWS_KEYBIND '\cf'
 
 # function fig-open-workflows
 #     fig run
@@ -22,37 +22,40 @@ set -q FIG_WORKFLOWS_KEYBIND || set FIG_WORKFLOWS_KEYBIND '\cf'
 
 # bind (string unescape $FIG_WORKFLOWS_KEYBIND) fig-open-workflows
 
-export TTY=(tty)
-export FIG_PID=$fish_pid
+set --export TTY (command tty)
+set --export FIG_PID $fish_pid
 
-set FIG_HOSTNAME (fig _ hostname; or hostname -f 2> /dev/null; or hostname)
+set FIG_HOSTNAME (fig _ hostname; or command hostname -f 2> /dev/null; or command hostname)
 set FIG_SHELL_PATH (fig _ get-shell)
 
-if test -e /proc/1/cgroup; and grep -q docker /proc/1/cgroup
+if test -e /proc/1/cgroup; and command grep -q docker /proc/1/cgroup
     set FIG_IN_DOCKER 1
-else if test -f /.dockerenv; then
+else if test -f /.dockerenv
     set FIG_IN_DOCKER 1
 else
     set FIG_IN_DOCKER 0
 end
 
 function fig_osc
-    printf "\033]697;$argv[1]\007" $argv[2..-1]
+    builtin printf "\033]697;$argv[1]\007" $argv[2..-1]
 end
 
 function fig_copy_fn
-    functions $argv[1] | sed "s/^function $argv[1]/function $argv[2]/" | source
+    functions --erase $argv[2]
+    functions --copy $argv[1] $argv[2]
+    #builtin functions $argv[1] | sed "s/^function $argv[1]/function $argv[2]/" | source
 end
 
 function fig_fn_defined
-    test (functions $argv[1] | grep -vE '^ *(#|function |end$|$)' | wc -l | xargs) != 0
+    functions --query $argv[1]
+    #test (builtin functions $argv[1] | command grep -vE '^ *(#|function |end$|$)' | command wc -l | command xargs) != 0
 end
 
 function fig_wrap_prompt
     set -l last_status $status
     fig_osc StartPrompt
 
-    printf "%b" (string join "\n" $argv)
+    builtin printf "%b" (string join "\n" $argv)
     fig_osc EndPrompt
 
     return $last_status
