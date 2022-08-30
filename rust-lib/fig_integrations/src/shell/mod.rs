@@ -209,17 +209,18 @@ impl ShellScriptShellIntegration {
         cfg_if!(
             if #[cfg(target_os = "macos")] {
                 return match self.shell {
-                    Shell::Fish => format!("eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
+                    // `test -x` checks if the file can be executed
+                    Shell::Fish => format!("test -x ~/.local/bin/fig; and eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
                     _ => format!("eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
                 }
             } else {
                 let source_line = match self.shell {
-                    Shell::Fish => format!("eval (fig init {shell} {when}{rcfile} | string split0)"),
+                    Shell::Fish => format!("command -qv fig; and eval (fig init {shell} {when}{rcfile} | string split0)"),
                     Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$(fig init {shell} {when}{rcfile})\""),
                     _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
                 };
                 let add_to_path_line = match self.shell {
-                    Shell::Fish => "contains $HOME/.local/bin $fish_user_paths or set -a PATH $HOME/.local/bin",
+                    Shell::Fish => "contains $HOME/.local/bin $PATH; or set -a PATH $HOME/.local/bin",
                     _ => "_FIG_LOCAL_BIN=~/.local/bin
 [[ \":$PATH:\" != *\":$_FIG_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_FIG_LOCAL_BIN\"
 unset _FIG_LOCAL_BIN",
