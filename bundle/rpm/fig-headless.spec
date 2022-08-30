@@ -6,6 +6,7 @@ Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
 URL: https://fig.io
+Conflicts: fig
 
 %description
 %{summary}
@@ -20,6 +21,9 @@ rm -rf %{buildroot}
 %preun
 fig _ uninstall-for-all-users
 
+%posttrans
+(ls /etc/yum.repos.d/fig.repo>/dev/null && sed -i 's/f$releasever\///' '/etc/yum.repos.d/fig.repo') || true
+
 %files
 /usr/bin/fig
 "/usr/bin/zsh (figterm)"
@@ -28,5 +32,6 @@ fig _ uninstall-for-all-users
 /usr/bin/figterm
 /usr/lib/systemd/user/fig.service
 /usr/share/fig/manifest.json
+/usr/share/licenses/fig/LICENSE
 
 %changelog

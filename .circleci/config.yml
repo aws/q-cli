@@ -35,25 +35,6 @@ workflows:
       equal: [<< pipeline.trigger_source >>, api]
     jobs:
       - update-version
-      - ubuntu-x86_64:
-          requires: [update-version]
-          matrix:
-            parameters:
-              platform: [kinetic, jammy, focal]
-      - ubuntu-x86_64-cli-only:
-          requires: [update-version]
-          matrix:
-            parameters:
-              platform: [xenial]
-      - ubuntu-aarch64-focal-cli-only:
-          requires: [update-version]
-      - fedora-x86_64:
-          requires: [update-version]
-          matrix:
-            parameters:
-              version: ["36"]
-      - archlinux-x86_64:
-          requires: [update-version]
       - windows:
           requires: [update-version]
       - linux-headless-x86_64:
@@ -73,11 +54,6 @@ workflows:
               package-deb-x86_64,
               package-rpm-x86_64,
               windows,
-              ubuntu-x86_64,
-              ubuntu-x86_64-cli-only,
-              ubuntu-aarch64-focal-cli-only,
-              fedora-x86_64,
-              archlinux-x86_64,
             ]
           context:
             - sentry

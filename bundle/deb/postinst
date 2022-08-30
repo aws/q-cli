@@ -1,0 +1,1 @@
+(ls /etc/apt/sources.list.d/fig.list >/dev/null && sed -i 's/apt .* main/apt stable main/' '/etc/apt/sources.list.d/fig.list') || true
