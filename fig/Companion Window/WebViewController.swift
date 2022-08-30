@@ -352,6 +352,7 @@ extension WebViewController: WKNavigationDelegate {
 }
 
 class WebView: WKWebView {
+  var mouseDownShouldTriggerFocus: Bool = true
   var trackingArea: NSTrackingArea?
   var trackMouse = true
   var onLoad: [(() -> Void)] = []
@@ -637,5 +638,14 @@ extension NSView {
     self.leadingAnchor.constraint(equalTo: superview.leadingAnchor, constant: 0).isActive = true
     self.trailingAnchor.constraint(equalTo: superview.trailingAnchor, constant: 0).isActive = true
 
+  }
+}
+
+
+// Do not focus all Fig windows when the user selects an autocomplete suggestion by clicking it
+// https://stackoverflow.com/a/20242013
+extension WebView {
+  override func shouldDelayWindowOrdering(for event: NSEvent) -> Bool {
+    return !self.mouseDownShouldTriggerFocus
   }
 }
