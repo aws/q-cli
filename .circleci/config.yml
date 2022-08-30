@@ -260,6 +260,11 @@ jobs:
           path: desktop/fig.rpm
           destination: pkg/os=linux,arch=x86_64,kind=rpm,variant=full
       - run:
+          name: Collect full rpm info
+          command: |
+            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;full;$(cat /tmp/rpm.xml)"
+      - run:
           name: Package headless
           command: |
             cd desktop
@@ -267,6 +272,11 @@ jobs:
       - store_artifacts:
           path: desktop/fig.rpm
           destination: pkg/os=linux,arch=x86_64,kind=rpm,variant=headless
+      - run:
+          name: Collect headless rpm info
+          command: |
+            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;headless;$(cat /tmp/rpm.xml)"
 
   package-deb-x86_64:
     docker:
