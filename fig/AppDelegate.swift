@@ -70,7 +70,6 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       let statusBar = NSStatusBar.system
       statusBarItem = statusBar.statusItem(
         withLength: NSStatusItem.squareLength)
-      statusBarItem.button?.title = "🍐"
       statusBarItem.button?.image = NSImage(imageLiteralResourceName: "statusbar@2x.png")// .overlayBadge()
       statusBarItem.button?.image?.isTemplate = true
       statusBarItem.button?.wantsLayer = true
