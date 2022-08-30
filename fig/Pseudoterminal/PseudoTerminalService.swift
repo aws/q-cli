@@ -291,7 +291,7 @@ extension PseudoTerminal {
 
     let window = AXWindowServer.shared.allowlistedWindow
     // Try to send over secureIPC first
-    if let sessionId = window?.session {
+    if let sessionId = request.hasTerminalSessionID ? request.terminalSessionID : window?.session {
       if (try? SecureIPC.shared.makeExecuteRequest(
         for: sessionId,
         with: request,

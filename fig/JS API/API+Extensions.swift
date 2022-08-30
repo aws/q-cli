@@ -129,7 +129,8 @@ extension Process {
                                       completion: @escaping ((Fig_RunProcessResponse) -> Void)) {
 
     // Try to send over secureIPC first
-    if let sessionId = AXWindowServer.shared.allowlistedWindow?.session {
+    let window = AXWindowServer.shared.allowlistedWindow
+    if let sessionId = request.hasTerminalSessionID ? request.terminalSessionID : window?.session {
       if (try? SecureIPC.shared.makeProcessRunRequest(
         for: sessionId,
         with: request,

@@ -170,7 +170,11 @@ class SecureIPC: UnixSocketServerDelegate {
     }) { [weak self] (handlerId) in
       let clientRequest = Secure_Clientbound.Request.with { req in
         req.nonce = handlerId
-        req.pseudoterminalExecute = request
+        req.pseudoterminalExecute.command = request.command
+        req.pseudoterminalExecute.workingDirectory = request.workingDirectory
+        req.pseudoterminalExecute.env = request.env
+        req.pseudoterminalExecute.isPipelined = request.isPipelined
+        req.pseudoterminalExecute.backgroundJob = request.backgroundJob
       }
       try self?.makeRequest(for: sessionId, with: clientRequest)
     }
@@ -188,7 +192,10 @@ class SecureIPC: UnixSocketServerDelegate {
     }) { [weak self] (handlerId) in
       let clientRequest = Secure_Clientbound.Request.with { req in
         req.nonce = handlerId
-        req.runProcess = request
+        req.runProcess.executable = request.executable
+        req.runProcess.arguments = request.arguments
+        req.runProcess.workingDirectory = request.workingDirectory
+        req.runProcess.env = request.env
       }
       try self?.makeRequest(for: sessionId, with: clientRequest)
     }
