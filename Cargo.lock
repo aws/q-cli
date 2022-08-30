@@ -2461,7 +2461,7 @@ dependencies = [
  "serde_json",
  "skim",
  "spinners",
- "sysinfo",
+ "sysinfo 0.26.0",
  "tempfile",
  "thiserror",
  "time 0.3.14",
@@ -2530,7 +2530,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "sysinfo",
+ "sysinfo 0.26.0",
  "time 0.3.14",
  "tokio",
  "tracing",
@@ -2580,7 +2580,7 @@ dependencies = [
  "fig_util",
  "regex",
  "serde",
- "sysinfo",
+ "sysinfo 0.26.0",
  "thiserror",
  "time 0.3.14",
 ]
@@ -6601,6 +6601,20 @@ dependencies = [
  "libc",
  "ntapi",
  "once_cell",
+ "winapi",
+]
+
+[[package]]
+name = "sysinfo"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e08068324641dc7a50f3aa753e730594619ed9c5ba037b1b3920cb683e1a80b1"
+dependencies = [
+ "cfg-if 1.0.0",
+ "core-foundation-sys",
+ "libc",
+ "ntapi",
+ "once_cell",
  "rayon",
  "winapi",
 ]
@@ -8261,7 +8275,7 @@ dependencies = [
  "notify",
  "rand 0.8.5",
  "semver 1.0.13",
- "sysinfo",
+ "sysinfo 0.25.3",
 ]
 
 [[package]]
