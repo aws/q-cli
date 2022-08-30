@@ -214,6 +214,7 @@ class WindowManager: NSObject {
 
     let web = WebViewController()
     web.webView?.defaultURL = nil
+    web.webView?.mouseDownShouldTriggerFocus = false
 
     web.webView?.loadAutocomplete()
     let companion = CompanionWindow(viewController: web)
