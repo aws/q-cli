@@ -80,7 +80,23 @@ async fn main() -> Result<()> {
 
     color_eyre::install()?;
 
-    let cli_join = cli::Cli::parse().execute();
+    let parsed = match cli::Cli::try_parse() {
+        Ok(cli) => cli,
+        Err(err) if matches!(err.kind, clap::ErrorKind::UnknownArgument) => {
+            err.print()?;
+            println!(
+                "This command may be valid in newer versions of the Fig CLI. Try running {}",
+                "fig update".magenta()
+            );
+            return Ok(());
+        },
+        Err(err) => {
+            err.print()?;
+            return Ok(());
+        },
+    };
+
+    let cli_join = parsed.execute();
 
     let result = match track_join {
         Some(track_join) => tokio::join!(cli_join, track_join).0,
