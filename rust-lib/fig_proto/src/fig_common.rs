@@ -2,7 +2,6 @@
 
 use serde_json::Value;
 
-pub use crate::proto::fig_common::Empty;
 use crate::proto::fig_common::*;
 
 impl From<String> for Json {

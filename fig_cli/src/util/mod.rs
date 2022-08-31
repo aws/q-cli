@@ -179,10 +179,6 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
     use fig_util::directories::fig_socket_path;
 
     if is_app_running() {
-        if opts.verbose {
-            println!("Fig is already running");
-        }
-
         return Ok(());
     }
 

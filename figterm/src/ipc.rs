@@ -13,12 +13,9 @@ use fig_ipc::{
     recv_message,
     send_message,
 };
-use fig_proto::fig_common::Empty;
 use fig_proto::figterm::{
-    figterm_message,
-    figterm_response,
-    FigtermMessage,
-    FigtermResponse,
+    FigtermRequestMessage,
+    FigtermResponseMessage,
 };
 use fig_proto::secure::hostbound::Handshake;
 use fig_proto::secure::{
@@ -146,43 +143,10 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
     Ok((MessageSource::UnixStream(reader), MessageSink::UnixStream(writer), None))
 }
 
-fn convert_figterm_command_to_clientbound(command: figterm_message::Command) -> Clientbound {
-    use clientbound::request::Request;
-    use figterm_message::Command;
-
-    let request = match command {
-        Command::InterceptCommand(command) => Request::Intercept(command),
-        Command::InsertTextCommand(command) => Request::InsertText(command),
-        Command::SetBufferCommand(command) => Request::SetBuffer(command),
-        Command::DiagnosticsCommand(_) => Request::Diagnostics(Empty {}),
-        Command::InsertOnNewCmdCommand(command) => Request::InsertOnNewCmd(command),
-    };
-    let packet = clientbound::Packet::Request(clientbound::Request {
-        nonce: None,
-        request: Some(request),
-    });
-
-    Clientbound { packet: Some(packet) }
-}
-
-fn convert_hostbound_to_figterm_response(message: Hostbound) -> Result<FigtermResponse> {
-    use hostbound::response::Response;
-
-    if let Some(hostbound::Packet::Response(response)) = message.packet {
-        if let Some(Response::Diagnostics(diagnostics_response)) = response.response {
-            let response = FigtermResponse {
-                response: Some(figterm_response::Response::DiagnosticsResponse(diagnostics_response)),
-            };
-            return Ok(response);
-        }
-    }
-
-    anyhow::bail!("Could not convert hostbound message to figterm message")
-}
-
-pub async fn spawn_incoming_receiver(
+/// Spawns a local unix socket for communicating with figterm on a local machine
+pub async fn spawn_figterm_ipc(
     session_id: impl std::fmt::Display,
-) -> Result<Receiver<(Clientbound, Sender<Hostbound>)>> {
+) -> Result<Receiver<(FigtermRequestMessage, Sender<FigtermResponseMessage>)>> {
     trace!("Spawning incoming receiver");
 
     let (incoming_tx, incoming_rx) = unbounded();
@@ -197,22 +161,19 @@ pub async fn spawn_incoming_receiver(
                 let incoming_tx = incoming_tx.clone();
 
                 let (mut read_half, mut write_half) = tokio::io::split(stream);
-                let (response_tx, response_rx) = unbounded::<Hostbound>();
+                let (response_tx, response_rx) = unbounded::<FigtermResponseMessage>();
 
                 tokio::spawn(async move {
                     let mut rx_thread = tokio::spawn(async move {
                         loop {
-                            match fig_ipc::recv_message::<FigtermMessage, _>(&mut read_half).await {
+                            match fig_ipc::recv_message::<FigtermRequestMessage, _>(&mut read_half).await {
                                 Ok(Some(message)) => {
-                                    debug!("Received message: {message:?}");
-                                    if let Some(command) = message.command {
-                                        let request = convert_figterm_command_to_clientbound(command);
-                                        incoming_tx
-                                            .clone()
-                                            .send_async((request, response_tx.clone()))
-                                            .await
-                                            .unwrap();
-                                    }
+                                    // debug!("Received message: {message:?}");
+                                    incoming_tx
+                                        .clone()
+                                        .send_async((message, response_tx.clone()))
+                                        .await
+                                        .unwrap();
                                 },
                                 Ok(None) => {
                                     debug!("Received EOF");
@@ -232,20 +193,15 @@ pub async fn spawn_incoming_receiver(
                             _ = &mut rx_thread => break,
                             res = response_rx.recv_async() => {
                                 match res {
-                                    Ok(message) => {
-                                        // Remap hostbound protocol responses back to old figterm.proto protocol
-                                        if let Ok(response) = convert_hostbound_to_figterm_response(message) {
-                                            match response.encode_fig_protobuf() {
-                                                Ok(protobuf) => {
-                                                    if let Err(err) = write_half.write_all(&protobuf).await {
-                                                        error!("Failed to send response: {err}");
-                                                        break;
-                                                    }
-                                                },
-                                                Err(err) => {
-                                                    error!("Failed to encode protobuf: {err}")
+                                    Ok(response) => {
+                                        match response.encode_fig_protobuf() {
+                                            Ok(protobuf) => {
+                                                if let Err(err) = write_half.write_all(&protobuf).await {
+                                                    error!("Failed to send response: {err}");
+                                                    break;
                                                 }
-                                            }
+                                            },
+                                            Err(err) => error!("Failed to encode protobuf: {err}")
                                         }
                                     }
                                     Err(_) => break,
@@ -261,7 +217,8 @@ pub async fn spawn_incoming_receiver(
     Ok(incoming_rx)
 }
 
-pub async fn spawn_ipc(
+/// Conects to the desktop app and allows for a secure connection from remote hosts
+pub async fn spawn_secure_ipc(
     session_id: String,
     main_loop_sender: Sender<MainLoopEvent>,
 ) -> Result<(Sender<Hostbound>, Receiver<Clientbound>, oneshot::Sender<()>)> {

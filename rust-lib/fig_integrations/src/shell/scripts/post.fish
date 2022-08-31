@@ -132,11 +132,11 @@ function fig_precmd --on-event fish_prompt
 
     set fig_has_set_prompt 1
 
-    # Check if we have a new dotfiles to load
     if command -v fig &>/dev/null
-        if fig _ prompt-dotfiles-changed
-            set -ge FIG_DOTFILES_SOURCED
-            exec fish
+        switch (fig _ pre-cmd)
+            case EXEC_NEW_SHELL
+                set -ge FIG_DOTFILES_SOURCED
+                exec fish
         end
     end
 end

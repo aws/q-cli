@@ -8,12 +8,11 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use fig_proto::figterm::{
-    intercept_command,
-    InsertTextCommand,
-    InterceptCommand,
-    SetBufferCommand,
+    intercept_request,
+    InsertTextRequest,
+    InterceptRequest,
+    SetBufferRequest,
 };
-use fig_proto::local::Empty;
 use fig_proto::secure::clientbound::request::Request;
 use fig_proto::secure::clientbound::{
     self,
@@ -272,17 +271,17 @@ async fn handle_commands(
     while let Ok(command) = incoming.recv_async().await {
         let (request, nonce_channel) = match command {
             FigtermCommand::InterceptDefault => (
-                Request::Intercept(InterceptCommand {
-                    intercept_command: Some(intercept_command::InterceptCommand::SetInterceptAll(
-                        intercept_command::SetInterceptAll {},
+                Request::Intercept(InterceptRequest {
+                    intercept_command: Some(intercept_request::InterceptCommand::SetInterceptAll(
+                        intercept_request::SetInterceptAll {},
                     )),
                 }),
                 None,
             ),
             FigtermCommand::InterceptClear => (
-                Request::Intercept(InterceptCommand {
-                    intercept_command: Some(intercept_command::InterceptCommand::ClearIntercept(
-                        intercept_command::ClearIntercept {},
+                Request::Intercept(InterceptRequest {
+                    intercept_command: Some(intercept_request::InterceptCommand::ClearIntercept(
+                        intercept_request::ClearIntercept {},
                     )),
                 }),
                 None,
@@ -292,9 +291,9 @@ async fn handle_commands(
                 intercept_global_keystrokes,
                 actions,
             } => (
-                Request::Intercept(InterceptCommand {
-                    intercept_command: Some(intercept_command::InterceptCommand::SetFigjsIntercepts(
-                        intercept_command::SetFigjsIntercepts {
+                Request::Intercept(InterceptRequest {
+                    intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
+                        intercept_request::SetFigjsIntercepts {
                             intercept_bound_keystrokes,
                             intercept_global_keystrokes,
                             actions,
@@ -310,7 +309,7 @@ async fn handle_commands(
                 immediate,
                 insertion_buffer,
             } => (
-                Request::InsertText(InsertTextCommand {
+                Request::InsertText(InsertTextRequest {
                     insertion,
                     deletion: deletion.map(|x| x as u64),
                     offset,
@@ -320,7 +319,7 @@ async fn handle_commands(
                 None,
             ),
             FigtermCommand::SetBuffer { text, cursor_position } => {
-                (Request::SetBuffer(SetBufferCommand { text, cursor_position }), None)
+                (Request::SetBuffer(SetBufferRequest { text, cursor_position }), None)
             },
             FigtermCommand::RunProcess {
                 channel,
@@ -401,7 +400,7 @@ async fn send_pings(outgoing: flume::Sender<Clientbound>, mut stop_pings: onesho
         select! {
             _ = interval.tick() => {
                 let _ = outgoing.try_send(Clientbound {
-                    packet: Some(clientbound::Packet::Ping(Empty {})),
+                    packet: Some(clientbound::Packet::Ping(())),
                 });
             }
             _ = &mut stop_pings => break

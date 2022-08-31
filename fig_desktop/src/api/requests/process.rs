@@ -60,7 +60,6 @@ fn set_fig_vars(cmd: &mut Command) {
     // Disable running telemetry request for cli "Ran Command"
     cmd.env("FIG_NO_RAN_COMMAND", "1");
 
-    cmd.env("PROCESS_LAUNCHED_BY_FIG", "1");
     cmd.env("HISTFILE", "");
     cmd.env("HISTCONTROL", "ignoreboth");
     cmd.env("TERM", "xterm-256color");

@@ -87,10 +87,14 @@ async fn main() {
         assert_eq!(url.scheme(), "fig");
 
         url.host_str().map(|s| {
-            let mut owned = s.to_owned();
-            owned.push('/');
-            owned.push_str(url.path());
-            owned
+            if s == "dashboard" {
+                let mut path = String::new();
+                path.push_str(url.path());
+                path
+            } else {
+                warn!("Invalid deep link");
+                "".to_string()
+            }
         })
     });
 

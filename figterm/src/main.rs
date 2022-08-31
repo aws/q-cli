@@ -44,6 +44,7 @@ use clap::StructOpt;
 use cli::Cli;
 use fig_proto::local::{
     self,
+    EnvironmentVariable,
     TerminalCursorCoordinates,
 };
 use fig_proto::secure::Hostbound;
@@ -98,11 +99,14 @@ use crate::input::{
 };
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
-    spawn_incoming_receiver,
-    spawn_ipc,
+    spawn_figterm_ipc,
+    spawn_secure_ipc,
 };
 use crate::logger::init_logger;
-use crate::message::process_figterm_message;
+use crate::message::{
+    process_figterm_message,
+    process_secure_message,
+};
 #[cfg(unix)]
 use crate::pty::unix::open_pty;
 #[cfg(windows)]
@@ -124,6 +128,8 @@ static INSERT_ON_NEW_CMD: Mutex<Option<String>> = Mutex::new(None);
 static EXECUTE_ON_NEW_CMD: Mutex<bool> = Mutex::new(false);
 static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
+
+static SHELL_ENVIRONMENT_VARIABLES: Lazy<Mutex<Vec<EnvironmentVariable>>> = Lazy::new(|| Mutex::new(vec![]));
 
 pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
@@ -168,6 +174,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             hostname: shell_state.remote_context.hostname.clone(),
             remote_context: None,
             remote_context_type: None,
+            environment_variables: vec![],
         })
     });
 
@@ -189,14 +196,8 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .local_context
             .shell_path
             .clone()
-            .map(|path| path.display().to_string())
-            .or_else(|| {
-                shell_state
-                    .remote_context
-                    .shell_path
-                    .clone()
-                    .map(|path| path.display().to_string())
-            }),
+            .or_else(|| shell_state.remote_context.shell_path.clone())
+            .map(|path| path.display().to_string()),
         wsl_distro: shell_state
             .local_context
             .wsl_distro
@@ -206,14 +207,8 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .local_context
             .current_working_directory
             .clone()
-            .map(|cwd| cwd.display().to_string())
-            .or_else(|| {
-                shell_state
-                    .remote_context
-                    .current_working_directory
-                    .clone()
-                    .map(|cwd| cwd.display().to_string())
-            }),
+            .or_else(|| shell_state.remote_context.current_working_directory.clone())
+            .map(|cwd| cwd.display().to_string()),
         session_id: shell_state
             .local_context
             .session_id
@@ -228,6 +223,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .or_else(|| shell_state.remote_context.hostname.clone()),
         remote_context,
         remote_context_type: remote_context_type.map(|x| x.into()),
+        environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
     }
 }
 
@@ -422,6 +418,9 @@ fn figterm_main() -> Result<()> {
     init_logger(&pty_name).context("Failed to init logger")?;
     logger::stdio_debug_log("Forking child shell process");
     let mut child = pty.slave.spawn_command(command)?;
+    if let Some(pid) = child.process_id() {
+        logger::stdio_debug_log(format!("Child pid: {pid}"));
+    }
     let (child_tx, mut child_rx) = oneshot::channel();
     info!("Shell: {:?}", child.process_id());
     std::thread::spawn(move || child_tx.send(child.wait()));
@@ -442,10 +441,13 @@ fn figterm_main() -> Result<()> {
         let (main_loop_tx, main_loop_rx) = flume::bounded::<MainLoopEvent>(16);
 
         let history_sender = history::spawn_history_task().await;
-        let incoming_receiver = spawn_incoming_receiver(&term_session_id).await?;
 
-        // Spawn thread to handle IPC
-        let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_ipc(
+
+        // Spawn thread to handle figterm ipc
+        let incoming_receiver = spawn_figterm_ipc(&term_session_id).await?;
+
+        // Spawn thread to handle secure ipc
+        let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_secure_ipc(
             term_session_id.clone(),
             main_loop_tx.clone()
         ).await?;
@@ -691,7 +693,7 @@ fn figterm_main() -> Result<()> {
                     match msg {
                         Ok(message) => {
                             debug!("Received message from socket: {message:?}");
-                            process_figterm_message(
+                            process_secure_message(
                                 message,
                                 secure_sender.clone(),
                                 &term,

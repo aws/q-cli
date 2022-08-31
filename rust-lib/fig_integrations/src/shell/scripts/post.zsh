@@ -169,12 +169,15 @@ fig_precmd() {
 
   FIG_HAS_SET_PROMPT=1
 
-  # Check if we have a new dotfiles to load
   if command -v fig >/dev/null 2>&1; then
-    if fig _ prompt-dotfiles-changed; then
-      unset FIG_DOTFILES_SOURCED
-      exec zsh
-    fi
+    case $(fig _ pre-cmd) in
+      EXEC_NEW_SHELL)
+        unset FIG_DOTFILES_SOURCED
+        exec zsh
+        ;;
+      *)
+        ;;
+    esac
   fi
 }
 

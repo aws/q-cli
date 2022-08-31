@@ -5,13 +5,15 @@ import "fig.proto";
 import "figterm.proto";
 import "local.proto";
 
+import "google/protobuf/empty.proto";
+
 // all endpoints defined in this file are available to remote servers
 // be careful and keep security in mind
 
 message Clientbound {
 	oneof packet {
     HandshakeResponse handshake_response = 100;
-		fig_common.Empty ping = 101;
+		google.protobuf.Empty ping = 101;
 		Request request = 102;
 	}
 
@@ -23,14 +25,16 @@ message Clientbound {
     optional uint64 nonce = 1;
 
     oneof request {
-      figterm.InterceptCommand intercept = 100;
-      figterm.InsertTextCommand insert_text = 101;
-      figterm.SetBufferCommand set_buffer = 102;
-      fig_common.Empty diagnostics = 103;
-      RunProcessRequest run_process = 104;
+      figterm.InterceptRequest intercept = 100;
+      figterm.InsertTextRequest insert_text = 101;
+      figterm.SetBufferRequest set_buffer = 102;
+      figterm.DiagnosticsRequest diagnostics = 103;
+      figterm.InsertOnNewCmdRequest insert_on_new_cmd = 107;
+
       fig.ReadFileRequest read_file = 105;
+
+      RunProcessRequest run_process = 104;
       PseudoterminalExecuteRequest pseudoterminal_execute = 106;
-      figterm.InsertOnNewCmdCommand insert_on_new_cmd = 107;
     }
   }
 
@@ -38,7 +42,7 @@ message Clientbound {
     string executable = 1;
     repeated string arguments = 2;
     optional string workingDirectory = 3;
-    repeated fig.EnvironmentVariable env = 4;
+    repeated fig_common.EnvironmentVariable env = 4;
   }
 
   message PseudoterminalExecuteRequest {
@@ -46,7 +50,7 @@ message Clientbound {
     optional string workingDirectory = 2;
     optional bool backgroundJob = 3;
     optional bool isPipelined = 4;
-    repeated fig.EnvironmentVariable env = 5;
+    repeated fig_common.EnvironmentVariable env = 5;
   }
 }
 
@@ -81,10 +85,13 @@ message Hostbound {
   
     oneof response {
       string error = 100;
+
       figterm.DiagnosticsResponse diagnostics = 101;
+
       fig.RunProcessResponse run_process = 102;
-      ReadFileResponse read_file = 103;
       fig.PseudoterminalExecuteResponse pseudoterminal_execute = 104;
+
+      ReadFileResponse read_file = 103;
     }
   
     message ReadFileResponse {

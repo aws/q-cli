@@ -48,6 +48,7 @@ pub fn generate_shell_context(
         hostname: None,
         remote_context: None,
         remote_context_type: None,
+        environment_variables: vec![],
     })
 }
 

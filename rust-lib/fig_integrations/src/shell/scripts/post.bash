@@ -94,6 +94,17 @@ function __fig_pre_prompt () {
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
 
+  if command -v fig >/dev/null 2>&1; then
+    case $(fig _ pre-cmd) in
+      EXEC_NEW_SHELL)
+        unset FIG_DOTFILES_SOURCED
+        exec bash
+        ;;
+      *)
+        ;;
+    esac
+  fi
+
   # Work around bug in CentOS 7.2 where preexec doesn't run if you press ^C
   # while entering a command.
   [[ -z "${_fig_done_preexec:-}" ]] && __fig_preexec ""
@@ -101,12 +112,6 @@ function __fig_pre_prompt () {
 
   # Reset $?
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
-
-  # Check if we have a new dotfiles to load
-  if command -v fig >/dev/null 2>&1 && fig _ prompt-dotfiles-changed; then
-    unset FIG_DOTFILES_SOURCED
-    exec bash
-  fi
 }
 
 function __fig_post_prompt () {

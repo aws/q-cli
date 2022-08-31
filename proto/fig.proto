@@ -90,17 +90,11 @@ message Frame {
   Size size = 2;
 }
 
-
-message EnvironmentVariable {
-  string key = 1;
-  optional string value = 2;
-}
-
 message Process {
   optional int32 pid = 1;
   optional string executable = 2;
   optional string directory = 3; 
-  repeated EnvironmentVariable env = 4;
+  repeated fig_common.EnvironmentVariable env = 4;
 }
 
 message FilePath {
@@ -134,7 +128,7 @@ message Screen {
 message Session {
   optional string session_id = 1;
   optional Process frontmost_process = 2;
-  repeated EnvironmentVariable env = 3;
+  repeated fig_common.EnvironmentVariable env = 3;
 }
 
 message Application {
@@ -191,7 +185,7 @@ message PseudoterminalExecuteRequest {
   optional string workingDirectory = 2;
   optional bool backgroundJob = 3;
   optional bool isPipelined = 4;
-  repeated EnvironmentVariable env = 5;
+  repeated fig_common.EnvironmentVariable env = 5;
   optional string terminal_session_id = 6;
 }
 
@@ -510,7 +504,7 @@ message RunProcessRequest {
   string executable = 1;
   repeated string arguments = 2;
   optional string workingDirectory = 3;
-  repeated EnvironmentVariable env = 4;
+  repeated fig_common.EnvironmentVariable env = 4;
   optional string terminal_session_id = 5;
 }
 

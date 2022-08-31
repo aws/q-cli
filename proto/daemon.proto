@@ -1,7 +1,6 @@
 syntax = "proto3";
 package daemon;
 
-import "google/protobuf/timestamp.proto";
 import "fig_common.proto";
 
 //

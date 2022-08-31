@@ -2,7 +2,7 @@ use std::iter::repeat;
 
 pub use crate::proto::figterm::*;
 
-impl InsertTextCommand {
+impl InsertTextRequest {
     pub fn to_term_string(&self) -> String {
         let mut out = String::new();
 
