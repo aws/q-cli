@@ -35,9 +35,15 @@ prepare_bundle() {
 gen_manifest() {
     echo Generating install manifest
     mkdir -p build/usr/share/fig
+    if [[ $IS_HEADLESS = 0 ]]; then
+        VARIANT=desktop
+    else
+        VARIANT=headless
+    fi
     jq -n \
         --arg ib "$1" \
         --arg pa $(date -Iseconds) \
-        '{managed_by: $ib, packaged_at: $pa}' \
+        --arg va "$VARIANT" \
+        '{managed_by: $ib, packaged_at: $pa, packaged_by: "fig", variant: $va}' \
         >build/usr/share/fig/manifest.json
 }
