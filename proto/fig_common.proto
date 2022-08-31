@@ -27,7 +27,18 @@ message Json {
     }
 }
 
+message EnvironmentVariable {
+  string key = 1;
+  optional string value = 2;
+}
+
 message ShellContext {
+  enum RemoteContextType {
+    SSH = 0;
+    DOCKER = 1;
+  }
+
+  // pid of the shell
 	optional int32 pid = 1;
   // /dev/ttys## of terminal session
 	optional string ttys = 2; 
@@ -43,21 +54,17 @@ message ShellContext {
 	optional string terminal = 7;
   // the hostname of the computer figterm is running on
 	optional string hostname = 8;
-
+  // the shell context for the remote session
 	optional ShellContext remote_context = 9;
-
-  enum RemoteContextType {
-    SSH = 0;
-    DOCKER = 1;
-  }
-
-  optional RemoteContextType remote_context_type = 12;
-
+  // path to the current shell exe
   optional string shell_path = 10;
+  // name of the wsl instance
   optional string wsl_distro = 11;
+  // the type of remote context
+  optional RemoteContextType remote_context_type = 12;
+  // environment variables in the shell
+  repeated EnvironmentVariable environment_variables = 13;
 }
-
-message Empty {}
 
 message FileData {
   oneof data {

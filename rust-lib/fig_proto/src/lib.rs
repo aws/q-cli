@@ -236,6 +236,7 @@ mod tests {
             remote_context_type: None,
             shell_path: Some("/bin/bash".into()),
             wsl_distro: None,
+            environment_variables: vec![],
         };
         let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3, None);
         hooks::hook_to_message(hook)

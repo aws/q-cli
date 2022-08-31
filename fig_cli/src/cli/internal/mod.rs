@@ -1,6 +1,7 @@
 pub mod local_state;
 use std::fmt::Display;
 use std::io::{
+    stderr,
     stdout,
     Read,
     Write,
@@ -33,12 +34,19 @@ use eyre::{
 use fig_auth::get_token;
 use fig_install::dotfiles::notify::TerminalNotification;
 use fig_ipc::hook::send_hook_to_socket;
+use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
+use fig_proto::figterm::{
+    FigtermRequestMessage,
+    UpdateShellContextRequest,
+};
 use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
+use fig_proto::local::EnvironmentVariable;
 use fig_proto::ReflectMessage;
 use fig_request::Request;
+use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
     get_parent_process_exe,
@@ -142,6 +150,9 @@ pub enum InternalSubcommand {
     /// Prompt the user that the dotfiles have changes
     /// Also use for `fig source` internals
     PromptDotfilesChanged,
+    /// Command that is run during the PreCmd section of
+    /// the fig integrations.
+    PreCmd,
     /// Change the local-state file
     LocalState(local_state::LocalStateArgs),
     /// Callback used for the internal psudoterminal
@@ -265,6 +276,7 @@ impl InternalSubcommand {
                 installation::uninstall_cli(uninstall_components)?
             },
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
+            InternalSubcommand::PreCmd => pre_cmd().await,
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
             InternalSubcommand::Callback(CallbackArgs {
                 handler_id,
@@ -475,7 +487,7 @@ impl InternalSubcommand {
                     } else if daemon {
                         recv!(fig_proto::daemon::DaemonResponse);
                     } else if figterm.is_some() {
-                        recv!(fig_proto::figterm::FigtermResponse);
+                        recv!(fig_proto::figterm::FigtermResponseMessage);
                     }
                 } else {
                     fig_ipc::send_message(&mut conn, message).await?;
@@ -693,4 +705,127 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     }
 
     exit(exit_code);
+}
+
+pub async fn pre_cmd() {
+    let session_id = match std::env::var("TERM_SESSION_ID") {
+        Ok(session_id) => session_id,
+        Err(_) => exit(1),
+    };
+
+    let session_id_clone = session_id.clone();
+    let shell_state_join = tokio::spawn(async move {
+        let session_id = session_id_clone;
+        match figterm_socket_path(&session_id) {
+            Ok(figterm_path) => match fig_ipc::connect(figterm_path).await {
+                Ok(mut figterm_stream) => {
+                    let message = FigtermRequestMessage {
+                        request: Some(FigtermRequest::UpdateShellContext(UpdateShellContextRequest {
+                            update_environment_variables: true,
+                            environment_variables: std::env::vars()
+                                .map(|(key, value)| EnvironmentVariable {
+                                    key,
+                                    value: Some(value),
+                                })
+                                .collect(),
+                        })),
+                    };
+                    if let Err(err) = fig_ipc::send_message(&mut figterm_stream, message).await {
+                        error!(%err, %session_id, "Failed to send UpdateShellContext to Figterm");
+                    }
+                },
+                Err(err) => error!(%err, %session_id, "Failed to connect to Figterm socket"),
+            },
+            Err(err) => error!(%err, %session_id, "Failed to get Figterm socket path"),
+        }
+    });
+
+    let notification_join = tokio::spawn(async move {
+        let file = std::env::temp_dir()
+            .join("fig")
+            .join("dotfiles_updates")
+            .join(session_id);
+
+        let file_content = match tokio::fs::read_to_string(&file).await {
+            Ok(content) => content,
+            Err(_) => {
+                if let Err(err) = tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir")).await
+                {
+                    error!("Unable to create directory: {err}");
+                }
+
+                if let Err(err) = tokio::fs::write(&file, "").await {
+                    error!("Unable to write to file: {err}");
+                }
+
+                exit(1);
+            },
+        };
+
+        match TerminalNotification::from_str(&file_content) {
+            Ok(TerminalNotification::Source) => {
+                writeln!(stdout(), "EXEC_NEW_SHELL").ok();
+                writeln!(stderr(), "\n{}\n", "✅ Dotfiles sourced!".bold()).ok();
+                0
+            },
+            Ok(TerminalNotification::NewUpdates) => {
+                let verbosity = match fig_settings::settings::get_value("dotfiles.verbosity")
+                    .ok()
+                    .flatten()
+                    .and_then(|v| v.as_str().map(|s| s.to_string()))
+                    .as_deref()
+                {
+                    Some("none") => UpdatedVerbosity::None,
+                    Some("minimal") => UpdatedVerbosity::Minimal,
+                    Some("full") => UpdatedVerbosity::Full,
+                    _ => UpdatedVerbosity::Minimal,
+                };
+
+                let source_immediately = match fig_settings::settings::get_value("dotfiles.sourceImmediately")
+                    .ok()
+                    .flatten()
+                {
+                    Some(serde_json::Value::String(s)) => Some(s),
+                    _ => None,
+                };
+
+                let source_updates = matches!(source_immediately.as_deref(), Some("always"));
+
+                if source_updates {
+                    if verbosity >= UpdatedVerbosity::Minimal {
+                        writeln!(
+                        stderr(),
+                        "\nYou just updated your dotfiles in {}!\nAutomatically applying changes in this terminal.\n",
+                        "◧ Fig".bold()
+                    )
+                    .ok();
+                    }
+                    0
+                } else {
+                    if verbosity == UpdatedVerbosity::Full {
+                        writeln!(
+                            stderr(),
+                            "\nYou just updated your dotfiles in {}!\nTo apply changes run {} or open a new terminal",
+                            "◧ Fig".bold(),
+                            "fig source".magenta().bold()
+                        )
+                        .ok();
+                    }
+                    1
+                }
+            },
+            Err(_) => 1,
+        };
+
+        if let Err(err) = tokio::fs::write(&file, "").await {
+            error!("Unable to write to file: {err}");
+        }
+    });
+
+    let (shell_state, notification) = tokio::join!(shell_state_join, notification_join);
+
+    shell_state.ok();
+    notification.ok();
+
+    exit(0);
 }

@@ -613,9 +613,9 @@ impl DoctorCheck for FigtermSocketCheck {
             conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
-            let message = fig_proto::figterm::FigtermMessage {
-                command: Some(fig_proto::figterm::figterm_message::Command::InsertTextCommand(
-                    fig_proto::figterm::InsertTextCommand {
+            let message = fig_proto::figterm::FigtermRequestMessage {
+                request: Some(fig_proto::figterm::figterm_request_message::Request::InsertText(
+                    fig_proto::figterm::InsertTextRequest {
                         insertion: Some("Testing figterm...\n".into()),
                         deletion: None,
                         offset: None,
@@ -668,20 +668,20 @@ impl DoctorCheck for FigtermSocketCheck {
 
         // Figterm diagnostics
 
-        let message = fig_proto::figterm::FigtermMessage {
-            command: Some(fig_proto::figterm::figterm_message::Command::DiagnosticsCommand(
-                fig_proto::figterm::DiagnosticsCommand {},
+        let message = fig_proto::figterm::FigtermRequestMessage {
+            request: Some(fig_proto::figterm::figterm_request_message::Request::Diagnostics(
+                fig_proto::figterm::DiagnosticsRequest {},
             )),
         };
 
-        let response: Result<Option<fig_proto::figterm::FigtermResponse>> =
+        let response: Result<Option<fig_proto::figterm::FigtermResponseMessage>> =
             fig_ipc::send_recv_message_timeout(&mut conn, message, Duration::from_secs(1))
                 .await
                 .context("Failed to send/recv message");
 
         match response {
             Ok(Some(figterm_response)) => match figterm_response.response {
-                Some(fig_proto::figterm::figterm_response::Response::DiagnosticsResponse(
+                Some(fig_proto::figterm::figterm_response_message::Response::Diagnostics(
                     fig_proto::figterm::DiagnosticsResponse {
                         zsh_autosuggestion_style,
                         fish_suggestion_style,

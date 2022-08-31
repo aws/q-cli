@@ -3,21 +3,22 @@ package figterm;
 
 import "fig_common.proto";
 
-// Message type used to send a command to figterm
-message FigtermMessage {
-    oneof command {
-        InterceptCommand intercept_command = 1;
-        InsertTextCommand insert_text_command = 2;
-        SetBufferCommand set_buffer_command = 3;
-        DiagnosticsCommand diagnostics_command = 4;
-        InsertOnNewCmdCommand insert_on_new_cmd_command = 5;
+// A request message to figterm
+message FigtermRequestMessage {
+    oneof request {
+        InterceptRequest intercept = 1;
+        InsertTextRequest insert_text = 2;
+        SetBufferRequest set_buffer = 3;
+        DiagnosticsRequest diagnostics = 4;
+        InsertOnNewCmdRequest insert_on_new_cmd = 5;
+        UpdateShellContextRequest update_shell_context = 6;
     }
 }
 
-// A response back from a command to figterm
-message FigtermResponse {
+// A response message back from figterm
+message FigtermResponseMessage {
   oneof response {
-    DiagnosticsResponse diagnostics_response = 1;    
+    DiagnosticsResponse diagnostics = 1;    
   }
 }
 
@@ -30,7 +31,9 @@ message Action {
 
 // Intercept command
 // Used to set which input is intercepted by figterm
-message InterceptCommand {
+message InterceptRequest {
+    reserved 1, 3, 4;
+
     // Set figterm to intercept default keys
     message SetInterceptAll { }
 
@@ -44,8 +47,6 @@ message InterceptCommand {
       repeated Action actions = 3;
     }
 
-    reserved 1, 3, 4;
-
     // The intercept command to execute
     oneof intercept_command {
         ClearIntercept clear_intercept = 2;
@@ -56,7 +57,7 @@ message InterceptCommand {
 
 // Insert text command
 // Used to insert text directly into the terminal
-message InsertTextCommand {
+message InsertTextRequest {
     // insert str at cursor, accounting for deletions
     optional string insertion = 1;
     // delete `n` characters to the left of the cursor
@@ -72,14 +73,14 @@ message InsertTextCommand {
 
 // Set buffer command
 // Used to set the line of text in the edit buffer
-message SetBufferCommand {
+message SetBufferRequest {
     // The text to set
     string text = 1;
     // The cursor position to set
     optional uint64 cursor_position = 2;
 }
 
-message DiagnosticsCommand { }
+message DiagnosticsRequest { }
 
 message TermColor {
   message Rgb {
@@ -114,8 +115,20 @@ message DiagnosticsResponse {
   optional uint32 cursor_position = 5;
 }
 
-message InsertOnNewCmdCommand {
+message InsertOnNewCmdRequest {
+  // text to insert on new command
   string text = 1;
+  // if to execute the command immediatly
   bool execute = 2;
+}
+
+// Command to update values in the shell context
+//
+// Each field needs an associated bool that indicates if it should be
+// updated since we want the ability to do partial updates (not all fields)
+// and there is no way to do optional optional fields in proto3
+message UpdateShellContextRequest {
+  bool update_environment_variables = 1;
+  repeated fig_common.EnvironmentVariable environment_variables = 2;
 }
 

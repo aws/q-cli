@@ -54,7 +54,7 @@ async fn main() -> Result<()> {
                 scope.set_tag("cli_version", &cli_version);
             });
 
-            match std::env::var_os("FIG_NO_RAN_COMMAND") {
+            match std::env::var_os("PROCESS_LAUNCHED_BY_FIG") {
                 None => (
                     Some(sentry),
                     Some(fig_telemetry::dispatch_emit_track(
