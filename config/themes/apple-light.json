@@ -1,0 +1,20 @@
+{
+  "author": {
+    "name": "Sebastian Danielsson",
+    "github": "SebDanielsson"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "#1C1C1E",
+    "backgroundColor": "#F2F2F7",
+    "matchBackgroundColor": "#E5E5EA",
+    "selection": {
+      "textColor": "#007AFF",
+      "backgroundColor": "#E5E5EA"
+    },
+    "description": {
+      "textColor": "#48484A",
+      "borderColor": "#007AFF"
+    }
+  }
+}

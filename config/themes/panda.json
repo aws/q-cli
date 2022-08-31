@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "Shy Ruparel",
+    "twitter": "@ShyRuparel",
+    "github": "Shy"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "#f3f3f3",
+    "backgroundColor": "#292A2B",
+    "matchBackgroundColor": "#B084eb",
+    "selection": {
+      "textColor": "#f3f3f3",
+      "backgroundColor": "#757474"
+    },
+    "description": {
+      "textColor": "#15fbdb",
+      "borderColor": "#f3f2f2"
+    }
+  }
+}

@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "Jamie Weavis",
+    "twitter": "@jamieweavis",
+    "github": "jamieweavis"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "#676e95",
+    "backgroundColor": "#292d3e",
+    "matchBackgroundColor": "#444267",
+    "selection": {
+      "textColor": "#ffffff",
+      "backgroundColor": "#717cb470"
+    },
+    "description": {
+      "textColor": "#515772",
+      "borderColor": "#515772"
+    }
+  }
+}

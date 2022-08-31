@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "Brendan Falk",
+    "twitter": "@brendanfalk",
+    "github": "brendanfalk"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "#c900ff",
+    "backgroundColor": "#160000",
+    "matchBackgroundColor": "#00000",
+    "selection": {
+      "textColor": "#2D6934",
+      "backgroundColor": "#E69229"
+    },
+    "description": {
+      "textColor": "#ECCA39",
+      "borderColor": "#C84C28"
+    }
+  }
+}

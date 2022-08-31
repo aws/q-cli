@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "Matt Kelly",
+    "twitter": "@mattkellyhacks",
+    "github": "mathisto"
+  },
+  "version": "1.0",
+  "theme": {
+    "backgroundColor": "#24283b",
+    "textColor": "#c0caf5",
+    "matchBackgroundColor": "#565f89",
+    "selection": {
+      "textColor": "#a9b1d6",
+      "backgroundColor": "#414868"
+    },
+    "description": {
+      "textColor": "#414868",
+      "borderColor": "#f7768e"
+    }
+  }
+}

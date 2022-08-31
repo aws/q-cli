@@ -1,0 +1,21 @@
+{
+  "$schema": "../schema.json",
+  "author": {
+    "name": "Tanner B. Hess Webber",
+    "github": "tbhesswebber"
+  },
+  "version": "1.0",
+  "theme": {
+    "backgroundColor": "#1b2b34",
+    "matchBackgroundColor": "#1b2b34",
+    "textColor": "#a7adba",
+    "selection": {
+      "textColor": "#d8dee9",
+      "backgroundColor": "#343d46"
+    },
+    "description": {
+      "textColor": "#5fafaf",
+      "borderColor": "#44475a"
+    }
+  }
+}
