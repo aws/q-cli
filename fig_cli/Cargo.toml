@@ -15,8 +15,8 @@ deno = ["dep:deno_core", "dep:deno_runtime"]
 # arboard = { version = "2.1.0", default-features = false, features = ["wayland-data-control"] }
 arboard = { version = "2.1.0", default-features = false }
 async-trait = "0.1.57"
-bytes = "1.2.1"
 bitflags = "1.3.2"
+bytes = "1.2.1"
 cfg-if = "1.0.0"
 clap = { version = "3.2.16", features = ["derive", "wrap_help"] }
 clap_complete = "3.2.2"
@@ -44,6 +44,7 @@ futures = "0.3.23"
 globset = "0.4.9"
 humantime = "2.1.0"
 once_cell = "1.13.1"
+owo-colors = "3.5.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.6.0"
@@ -79,7 +80,6 @@ url = "2.2.2"
 uuid = { version = "1.1.2", features = ["v4", "fast-rng"] }
 validator = "0.16.0"
 yaque = "0.6.4"
-owo-colors = "3.5.0"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.25.0"
