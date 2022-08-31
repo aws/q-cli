@@ -10,6 +10,7 @@ import Foundation
 import Socket
 import FigAPIBindings
 import Cocoa
+import SwiftProtobuf
 
 // 2. When we stop receiving messages on connection, cancel ping timer, remove
 //    outgoing handle from TerminalSessionLinkingService
@@ -211,7 +212,7 @@ class SecureIPC: UnixSocketServerDelegate {
 
   func makeInsertTextRequest(
     for sessionId: String,
-    with request: Figterm_InsertTextCommand
+    with request: Figterm_InsertTextRequest
   ) throws {
     let clientRequest = Secure_Clientbound.Request.with { req in
       req.insertText = request
@@ -239,7 +240,7 @@ class SecureIPC: UnixSocketServerDelegate {
     } else {
       let timer = Timer.scheduledTimer(withTimeInterval: 5, repeats: true) { [weak self] (_) in
         let ping = Secure_Clientbound.with { message in
-          message.ping = FigCommon_Empty()
+          message.ping = SwiftProtobuf.Google_Protobuf_Empty()
         }
         try? self?.server.send(ping, to: socket, encoding: encoding)
       }
