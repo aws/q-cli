@@ -23,7 +23,7 @@ class FigTerm {
   }
 
   static func updateBuffer(_ update: Fig_TextUpdate, into session: SessionId) throws {
-    let insertCommand = Figterm_InsertTextCommand.with({ insert in
+    let insertRequest = Figterm_InsertTextRequest.with({ insert in
       // Optional proto fields are not Swift optionals: https://github.com/apple/swift-protobuf/issues/644
       if update.hasDeletion {
         insert.deletion = UInt64(update.deletion)
@@ -43,9 +43,9 @@ class FigTerm {
     })
 
     // Try secureIPC first.
-    if (try? SecureIPC.shared.makeInsertTextRequest(for: session, with: insertCommand)) == nil {
-      let figtermMessage = Figterm_FigtermMessage.with { msg in
-        msg.insertTextCommand = insertCommand
+    if (try? SecureIPC.shared.makeInsertTextRequest(for: session, with: insertRequest)) == nil {
+      let figtermMessage = Figterm_FigtermRequestMessage.with { msg in
+        msg.insertText = insertRequest
       }
 
       let socket = UnixSocketClient(path: path(for: session))

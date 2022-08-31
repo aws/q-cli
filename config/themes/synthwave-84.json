@@ -1,0 +1,20 @@
+{
+  "author": {
+    "name": "Don Isaac",
+    "github": "DonIsaac"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "#e799ff",
+    "backgroundColor": "#2f003d",
+    "matchBackgroundColor": "#f4d7fa50",
+    "selection": {
+      "textColor": "#e799ff",
+      "backgroundColor": "#f4d7fa50"
+    },
+    "description": {
+      "textColor": "#fc28a8",
+      "borderColor": "#02A3AB"
+    }
+  }
+}

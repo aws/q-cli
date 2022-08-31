@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "Arun",
+    "twitter": "@imthedarkclown",
+    "github": "darkclown97"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "rgb(0, 255, 0)",
+    "backgroundColor": "rgb(0, 0, 0)",
+    "matchBackgroundColor": "rgb(255, 0, 0)",
+    "selection": {
+      "textColor": "#000",
+      "backgroundColor": "rgb(0, 255, 0)"
+    },
+    "description": {
+      "textColor": "rgb(0, 255, 0)",
+      "borderColor": "rgb(0, 255, 0)"
+    }
+  }
+}

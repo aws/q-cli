@@ -293,22 +293,19 @@ async fn send_figterm_response_hostbound(
 ) {
     use hostbound::response::Response;
 
-    match response {
-        Some(response) => {
-            let hostbound = Hostbound {
-                packet: Some(hostbound::Packet::Response(hostbound::Response {
-                    nonce,
-                    response: Some(match response {
-                        FigtermResponse::Diagnostics(diagnostics) => Response::Diagnostics(diagnostics),
-                    }),
-                })),
-            };
+    if let Some(response) = response {
+        let hostbound = Hostbound {
+            packet: Some(hostbound::Packet::Response(hostbound::Response {
+                nonce,
+                response: Some(match response {
+                    FigtermResponse::Diagnostics(diagnostics) => Response::Diagnostics(diagnostics),
+                }),
+            })),
+        };
 
-            if let Err(err) = response_tx.send_async(hostbound).await {
-                error!(%err, "Failed sending request response");
-            }
-        },
-        None => {},
+        if let Err(err) = response_tx.send_async(hostbound).await {
+            error!(%err, "Failed sending request response");
+        }
     }
 }
 

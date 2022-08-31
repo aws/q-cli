@@ -1,0 +1,21 @@
+{
+  "author": {
+    "name": "Shawn McClelland",
+    "twitter": "@gimballocked",
+    "github": "shawnmcclelland"
+  },
+  "version": "1.0",
+  "theme": {
+    "textColor": "#ffffff",
+    "backgroundColor": "#292b34",
+    "matchBackgroundColor": "#4ca8a3",
+    "selection": {
+      "textColor": "#ffffff",
+      "backgroundColor": "#43454f"
+    },
+    "description": {
+      "textColor": "#f7d0a2",
+      "borderColor": "#a9aab640"
+    }
+  }
+}
