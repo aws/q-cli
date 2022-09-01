@@ -7,10 +7,10 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
-aws-sdk-cognitoidentityprovider = { version = "0.17.0", default-features = false }
-aws-smithy-async = { version = "0.47.0", default-features = false }
-aws-smithy-client = { version = "0.47.0", default-features = false }
-aws-smithy-http = { version = "0.47.0", default-features = false }
+aws-sdk-cognitoidentityprovider = { version = "0.18.0", default-features = false }
+aws-smithy-async = { version = "0.48.0", default-features = false }
+aws-smithy-client = { version = "0.48.0", default-features = false }
+aws-smithy-http = { version = "0.48.0", default-features = false }
 base64 = "0.13.0"
 cfg-if = "1.0.0"
 fig_settings = { path = "../fig_settings" }
