@@ -84,7 +84,7 @@ yaque = "0.6.4"
 [target.'cfg(unix)'.dependencies]
 nix = "0.25.0"
 skim = { git = "https://github.com/grant0417/skim" }
-which = "4.2.5"
+which = "4.3.0"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 notify = "5.0.0-pre.15"
