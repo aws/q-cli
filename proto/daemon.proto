@@ -1,6 +1,7 @@
 syntax = "proto3";
 package daemon;
 
+import "google/protobuf/empty.proto";
 import "fig_common.proto";
 
 //
@@ -21,6 +22,8 @@ message DaemonMessage {
         SyncCommand sync = 103;
         // A request for the daemon to 
         TelemetryEmitTrackCommand telemetry_emit_track = 104;
+        // A request to get a pong
+        google.protobuf.Empty ping = 105;
     }
 }
 
@@ -35,6 +38,8 @@ message DaemonResponse {
         SelfUpdateResponse self_update = 102;
         // A response to a sync command
         SyncResponse sync = 103;
+        // A response to a ping command
+        google.protobuf.Empty pong = 105;
     }
 }
 

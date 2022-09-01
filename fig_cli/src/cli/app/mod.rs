@@ -24,7 +24,7 @@ use super::desktop_app_is_installed;
 use crate::util::{
     is_app_running,
     launch_fig,
-    LaunchOptions,
+    LaunchArgs,
 };
 
 #[derive(Debug, Subcommand)]
@@ -111,12 +111,20 @@ pub async fn quit_fig() -> Result<()> {
 
 pub async fn restart_fig() -> Result<()> {
     if !is_app_running() {
-        launch_fig(LaunchOptions::new().wait_for_activation().verbose())
+        launch_fig(LaunchArgs {
+            print_running: false,
+            print_launching: true,
+            wait_for_launch: true,
+        })
     } else {
         cfg_if! {
             if #[cfg(target_os = "linux")] {
                 quit_fig().await?;
-                launch_fig(LaunchOptions { wait_for_activation: true, verbose: true })?;
+                launch_fig(LaunchArgs {
+                    print_running: false,
+                    print_launching: true,
+                    wait_for_launch: true
+                })?;
             } else {
                 use eyre::Context;
 
@@ -144,7 +152,11 @@ impl AppSubcommand {
                         use std::process::Command;
                         use std::os::unix::process::CommandExt;
 
-                        launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                        launch_fig(LaunchArgs {
+                            print_running: false,
+                            print_launching: true,
+                            wait_for_launch: true
+                        })?;
                         if state::set_value("user.onboarding", true).is_ok() {
                             Command::new("bash")
                                 .args(["-c", include_str!("onboarding.sh")])
@@ -155,20 +167,22 @@ impl AppSubcommand {
                            state::set_value("doctor.prompt-restart-terminal", false).is_ok() {
                             println!(
                                 "
-                            
-                                \x1B[1m███████╗██╗ ██████╗
-                                ██╔════╝██║██╔════╝
-                                █████╗  ██║██║  ███╗
-                                ██╔══╝  ██║██║   ██║
-                                ██║     ██║╚██████╔╝
-                                ╚═╝     ╚═╝ ╚═════╝ Autocomplete\x1B[0m
-                            
-                                1. Type {} and suggestions will appear.
-                            
-                                2. Run {} to check for common bugs.
-                            
-                                ", "\"cd \"".bold(), "fig doctor".bold().magenta());
 
+  \x1B[1m███████╗██╗ ██████╗
+  ██╔════╝██║██╔════╝
+  █████╗  ██║██║  ███╗
+  ██╔══╝  ██║██║   ██║
+  ██║     ██║╚██████╔╝
+  ╚═╝     ╚═╝ ╚═════╝ Autocomplete\x1B[0m
+
+1. Type {} and suggestions will appear.
+
+2. Run {} to check for common bugs.
+
+",
+                                "\"cd \"".bold(),
+                                "fig doctor".bold().magenta()
+                            );
                         }
                     }
                 }
@@ -203,7 +217,12 @@ impl AppSubcommand {
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
                             trace!("launching updated version of Fig");
-                            launch_fig(LaunchOptions::new().wait_for_activation()).ok();
+                            launch_fig(LaunchArgs {
+                                print_running: false,
+                                print_launching: false,
+                                wait_for_launch: true,
+                            })
+                            .ok();
                         } else {
                             trace!("autoupdates are disabled.");
 
@@ -226,7 +245,11 @@ impl AppSubcommand {
                             fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?
                         }
 
-                        launch_fig(LaunchOptions::new())?;
+                        launch_fig(LaunchArgs {
+                            print_running: false,
+                            print_launching: false,
+                            wait_for_launch: false,
+                        })?;
                     }
                 }
             },
@@ -242,7 +265,11 @@ impl AppSubcommand {
             },
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => quit_fig().await?,
-            AppSubcommand::Launch => launch_fig(LaunchOptions::new().wait_for_activation().verbose())?,
+            AppSubcommand::Launch => launch_fig(LaunchArgs {
+                print_running: true,
+                print_launching: true,
+                wait_for_launch: true,
+            })?,
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             },

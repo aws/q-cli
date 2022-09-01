@@ -18,11 +18,14 @@ pub async fn uninstall_command() -> Result<()> {
             uninstall().await?;
         } else if #[cfg(target_os = "macos")] {
             if super::desktop_app_is_installed() {
-                use crate::util::{
-                    launch_fig,
-                    LaunchOptions,
-                };
-                let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
+                use crate::util::{LaunchArgs, launch_fig};
+                let success = if launch_fig(LaunchArgs {
+                    print_running: false,
+                    print_launching: true,
+                    wait_for_launch: true,
+                })
+                .is_ok()
+                {
                     fig_ipc::local::uninstall_command().await.is_ok()
                 } else {
                     false
@@ -35,7 +38,7 @@ pub async fn uninstall_command() -> Result<()> {
                 super::installation::uninstall_cli(super::installation::InstallComponents::all())?
             }
         } else if #[cfg(target_os = "windows")] {
-            println!("Please uninstall fig from the `Add or remove programs` menu for now.\n");
+            println!("Please uninstall fig from the `Add or remove programs` menu for now.");
             println!("If you're having issues uninstalling fig, run `fig issue` to let us know, and use the tool at the following link to remove fig:");
             println!("https://support.microsoft.com/en-us/topic/fix-problems-that-block-programs-from-being-installed-or-removed-cca7d1b6-65a9-3d98-426b-e9f927e1eb4d")
         }

@@ -7,7 +7,8 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
 pub async fn run_install() {
-    #[cfg(windows)]
+    // Update if there's a newer version
+    #[cfg(target_os = "windows")]
     tokio::spawn(async {
         let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
         if seconds < 0 {
@@ -19,6 +20,10 @@ pub async fn run_install() {
             crate::utils::update_check().await;
         }
     });
+
+    // remove the updater if it exists
+    #[cfg(target_os = "windows")]
+    std::fs::remove_file(fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe")).ok();
 
     tokio::spawn(async {
         if let Err(err) = fig_install::themes::clone_or_update().await {
@@ -90,13 +95,39 @@ pub async fn run_install() {
         }
     });
 
-    // Does this need to check if the daemon is already running like the ibus-daemon below @chay
     #[cfg(target_os = "windows")]
-    tokio::process::Command::new("fig")
-        .creation_flags(0x8)
-        .arg("daemon")
-        .spawn()
-        .ok();
+    tokio::spawn(async {
+        use fig_ipc::SendRecvMessage;
+
+        let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
+        loop {
+            interval.tick().await;
+
+            if let Ok(mut connection) = fig_ipc::BufferedUnixStream::connect_timeout(
+                fig_util::directories::daemon_socket_path().unwrap(),
+                std::time::Duration::from_secs(1),
+            )
+            .await
+            {
+                if connection
+                    .send_recv_message_timeout::<_, fig_proto::daemon::DaemonResponse>(
+                        fig_proto::daemon::new_ping_command(),
+                        std::time::Duration::from_secs(1),
+                    )
+                    .await
+                    .is_ok()
+                {
+                    continue;
+                }
+            }
+
+            tokio::process::Command::new("fig")
+                .creation_flags(0x8)
+                .arg("daemon")
+                .spawn()
+                .ok();
+        }
+    });
 
     #[cfg(target_os = "linux")]
     {

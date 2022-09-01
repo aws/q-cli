@@ -63,3 +63,15 @@ pub fn new_sync_response(result: Result<(), String>) -> daemon_response::Respons
         }),
     }
 }
+
+pub fn new_ping_command() -> DaemonMessage {
+    DaemonMessage {
+        id: None,
+        no_response: None,
+        command: Some(daemon_message::Command::Ping(())),
+    }
+}
+
+pub fn new_ping_response() -> daemon_response::Response {
+    daemon_response::Response::Pong(())
+}

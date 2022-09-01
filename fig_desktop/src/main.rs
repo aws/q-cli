@@ -141,13 +141,6 @@ async fn main() {
 
     install::run_install().await;
 
-    #[cfg(target_os = "windows")]
-    tokio::process::Command::new("fig")
-        .creation_flags(0x8)
-        .arg("daemon")
-        .spawn()
-        .ok();
-
     #[cfg(target_os = "linux")]
     {
         match std::env::var("FIG_BACKEND").ok().as_deref() {

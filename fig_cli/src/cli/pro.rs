@@ -1,9 +1,15 @@
 use fig_proto::local::UiElement;
 
+use crate::util::{
+    launch_fig,
+    LaunchArgs,
+};
+
 pub async fn execute() -> eyre::Result<()> {
-    crate::util::launch_fig(crate::util::LaunchOptions {
-        wait_for_activation: true,
-        verbose: false,
+    launch_fig(LaunchArgs {
+        print_running: false,
+        print_launching: false,
+        wait_for_launch: true,
     })
     .ok();
 
