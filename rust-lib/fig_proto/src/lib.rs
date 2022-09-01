@@ -10,7 +10,6 @@ pub(crate) mod proto;
 pub mod secure_hooks;
 pub mod util;
 use std::fmt::Debug;
-use std::io::Cursor;
 use std::mem::size_of;
 
 use bytes::{
@@ -76,10 +75,17 @@ pub struct FigMessage {
     pub message_type: FigMessageType,
 }
 
+#[derive(Debug)]
+pub enum FigMessageComponent {
+    Header,
+    BodySize,
+    Body,
+}
+
 #[derive(Debug, Error)]
 pub enum FigMessageParseError {
-    #[error("incomplete message")]
-    Incomplete,
+    #[error("incomplete message, missing {0:?}")]
+    Incomplete(FigMessageComponent),
     #[error("invalid message header {0} (raw type {1})")]
     InvalidHeader(String, String),
     #[error("invalid message type")]
@@ -134,9 +140,9 @@ impl FigMessage {
         Ok(inner.freeze())
     }
 
-    pub fn parse(src: &mut Cursor<&[u8]>) -> Result<FigMessage, FigMessageParseError> {
+    pub fn parse(src: &mut impl bytes::Buf) -> Result<(usize, FigMessage), FigMessageParseError> {
         if src.remaining() < 10 {
-            return Err(FigMessageParseError::Incomplete);
+            return Err(FigMessageParseError::Incomplete(FigMessageComponent::Header));
         }
 
         let mut header = [0; 2];
@@ -160,22 +166,24 @@ impl FigMessage {
         };
 
         if src.remaining() < size_of::<u64>() {
-            return Err(FigMessageParseError::Incomplete);
+            return Err(FigMessageParseError::Incomplete(FigMessageComponent::BodySize));
         }
 
         let len = src.get_u64();
 
         if src.remaining() < len as usize {
-            return Err(FigMessageParseError::Incomplete);
+            return Err(FigMessageParseError::Incomplete(FigMessageComponent::Body));
         }
 
         let mut inner = vec![0; len as usize];
         src.copy_to_slice(&mut inner);
 
-        Ok(FigMessage {
+        let message_len = 10 + size_of::<u64>() + len as usize;
+
+        Ok((message_len, FigMessage {
             inner: Bytes::from(inner),
             message_type,
-        })
+        }))
     }
 
     pub fn decode<T>(self) -> Result<T, FigMessageDecodeError>

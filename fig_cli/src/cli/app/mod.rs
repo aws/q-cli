@@ -7,7 +7,7 @@ use cfg_if::cfg_if;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_ipc::command::{
+use fig_ipc::local::{
     quit_command,
     update_command,
 };
@@ -120,7 +120,7 @@ pub async fn restart_fig() -> Result<()> {
             } else {
                 use eyre::Context;
 
-                use fig_ipc::command::restart_command;
+                use fig_ipc::local::restart_command;
 
                 println!("Restarting Fig");
                 restart_command().await.context("Unable to restart Fig")?;
@@ -136,7 +136,7 @@ impl AppSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             AppSubcommand::Install => {
-                fig_ipc::command::run_install_script_command().await?;
+                fig_ipc::local::run_install_script_command().await?;
             },
             AppSubcommand::Onboarding => {
                 cfg_if! {
@@ -252,7 +252,7 @@ impl AppSubcommand {
                         use std::process::Command;
 
                         use eyre::WrapErr;
-                        use fig_ipc::hook::send_hook_to_socket;
+                        use fig_ipc::local::send_hook_to_socket;
                         use fig_proto::hooks;
                         use serde_json::json;
 

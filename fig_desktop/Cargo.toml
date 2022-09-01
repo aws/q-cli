@@ -1,6 +1,6 @@
 [package]
 name = "fig_desktop"
-version = "2.3.15"
+version = "2.3.16"
 authors = ["fig developers"]
 edition = "2021"
 rust-version = "1.57"
@@ -48,12 +48,12 @@ semver = "1.0.13"
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.85"
 shellexpand = "2.1.2"
-sysinfo = "0.26.0"
+sysinfo = "0.26.1"
 time = { version = "=0.3.14" }
 tokio = { version = "1", features = [ "full" ] }
 tracing = "0.1.36"
 url = "2.2.2"
-which = "4.2.5"
+which = "4.3.0"
 whoami = "1.2.1"
 wry = { version = "0.20.1", default-features = false, features = ["tray", "protocol", "devtools", "transparent"] }
 

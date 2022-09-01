@@ -19,7 +19,7 @@ use eyre::{
     WrapErr,
 };
 use fig_install::dotfiles::download_and_notify;
-use fig_ipc::command::{
+use fig_ipc::local::{
     input_method_command,
     prompt_accessibility_command,
     run_build_command,

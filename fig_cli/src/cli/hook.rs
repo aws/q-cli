@@ -8,7 +8,7 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_ipc::hook::send_hook_to_socket;
+use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
 use fig_util::directories;
 use fig_util::terminal::CURRENT_TERMINAL;

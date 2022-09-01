@@ -10,7 +10,7 @@ use eyre::{
     eyre,
     Result,
 };
-use fig_ipc::command::restart_settings_listener;
+use fig_ipc::local::restart_settings_listener;
 use serde_json::json;
 
 use crate::cli::OutputFormat;

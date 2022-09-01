@@ -23,7 +23,7 @@ pub async fn uninstall_command() -> Result<()> {
                     LaunchOptions,
                 };
                 let success = if launch_fig(LaunchOptions::new().wait_for_activation().verbose()).is_ok() {
-                    fig_ipc::command::uninstall_command().await.is_ok()
+                    fig_ipc::local::uninstall_command().await.is_ok()
                 } else {
                     false
                 };

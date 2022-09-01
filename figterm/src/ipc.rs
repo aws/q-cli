@@ -10,8 +10,9 @@ use std::time::Duration;
 
 use anyhow::Result;
 use fig_ipc::{
-    recv_message,
-    send_message,
+    BufferedReader,
+    RecvMessage,
+    SendMessage,
 };
 use fig_proto::figterm::{
     FigtermRequestMessage,
@@ -138,7 +139,7 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
     }
 
     let socket = directories::secure_socket_path()?;
-    let stream = fig_ipc::connect_timeout(&socket, Duration::from_secs(5)).await?;
+    let stream = fig_ipc::socket_connect_timeout(&socket, Duration::from_secs(5)).await?;
     let (reader, writer) = tokio::io::split(stream);
     Ok((MessageSource::UnixStream(reader), MessageSink::UnixStream(writer), None))
 }
@@ -160,13 +161,14 @@ pub async fn spawn_figterm_ipc(
             if let Ok((stream, _)) = socket_listener.accept().await {
                 let incoming_tx = incoming_tx.clone();
 
-                let (mut read_half, mut write_half) = tokio::io::split(stream);
+                let (read_half, mut write_half) = tokio::io::split(stream);
                 let (response_tx, response_rx) = unbounded::<FigtermResponseMessage>();
 
                 tokio::spawn(async move {
+                    let mut read_half = BufferedReader::new(read_half);
                     let mut rx_thread = tokio::spawn(async move {
                         loop {
-                            match fig_ipc::recv_message::<FigtermRequestMessage, _>(&mut read_half).await {
+                            match read_half.recv_message::<FigtermRequestMessage>().await {
                                 Ok(Some(message)) => {
                                     // debug!("Received message: {message:?}");
                                     incoming_tx
@@ -237,9 +239,10 @@ pub async fn spawn_secure_ipc(
                     break;
                 }
                 res = get_forwarded_stream() => {
-                    if let Ok((mut reader, mut writer, child)) = res {
+                    if let Ok((reader, mut writer, child)) = res {
+                        let mut reader = BufferedReader::new(reader);
                         info!("Attempting handshake...");
-                        if let Err(err) = send_message(&mut writer, Hostbound {
+                        if let Err(err) = writer.send_message(Hostbound {
                             packet: Some(hostbound::Packet::Handshake(Handshake {
                                 id: session_id.clone(),
                                 secret: secret.clone(),
@@ -252,7 +255,7 @@ pub async fn spawn_secure_ipc(
                         }
                         let mut handshake_success = false;
                         info!("Awaiting handshake response...");
-                        while let Some(message) = recv_message::<Clientbound, _>(&mut reader).await.unwrap_or_else(|err| {
+                        while let Some(message) = reader.recv_message::<Clientbound>().await.unwrap_or_else(|err| {
                             error!("failed receiving handshake response: {err}");
                             None
                         }) {
@@ -273,7 +276,7 @@ pub async fn spawn_secure_ipc(
                         let main_loop_sender = main_loop_sender.clone();
                         let outgoing_task = tokio::spawn(async move {
                             while let Ok(message) = outgoing_rx.recv_async().await {
-                                match send_message(&mut writer, message.clone()).await {
+                                match writer.send_message(message.clone()).await {
                                     Ok(()) => {
                                         if let Err(err) = writer.flush().await {
                                             error!(%err, "Failed to flush socket");
@@ -303,7 +306,7 @@ pub async fn spawn_secure_ipc(
                         // receive incoming messages
                         let incoming_tx = incoming_tx.clone();
                         let incoming_task = tokio::spawn(async move {
-                            while let Some(message) = recv_message(&mut reader).await.unwrap_or_else(|err| {
+                            while let Some(message) = reader.recv_message().await.unwrap_or_else(|err| {
                                 error!("failed receiving message from host: {err}");
                                 None
                             }) {

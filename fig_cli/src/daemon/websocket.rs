@@ -8,7 +8,7 @@ use eyre::{
     WrapErr,
 };
 use fig_auth::get_email;
-use fig_ipc::hook::send_hook_to_socket;
+use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
 use fig_request::Request;
 use fig_settings::ws_host;
@@ -166,7 +166,7 @@ pub async fn process_websocket(
                             FigWebsocketMessage::Update { force } => {
                                 cfg_if! {
                                     if #[cfg(target_os = "macos")] {
-                                        if let Err(err) = fig_ipc::command::update_command(force).await {
+                                        if let Err(err) = fig_ipc::local::update_command(force).await {
                                             error!("Failed to update Fig: {err}");
                                         }
                                     } else {

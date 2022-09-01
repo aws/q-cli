@@ -6,6 +6,10 @@ use clap::Args;
 use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
+use fig_ipc::{
+    BufferedUnixStream,
+    SendMessage,
+};
 use serde::{
     Deserialize,
     Serialize,
@@ -104,8 +108,8 @@ fn theme() -> ColorfulTheme {
 
 async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     let session_id = std::env::var("TERM_SESSION_ID")?;
-    let mut conn = fig_ipc::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
-    fig_ipc::send_message(&mut conn, fig_proto::figterm::FigtermRequestMessage {
+    let mut conn = BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
+    conn.send_message(fig_proto::figterm::FigtermRequestMessage {
         request: Some(fig_proto::figterm::figterm_request_message::Request::InsertOnNewCmd(
             fig_proto::figterm::InsertOnNewCmdRequest {
                 text: format!("\x1b[200~{text}\x1b[201~"),
