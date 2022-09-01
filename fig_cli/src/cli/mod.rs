@@ -261,7 +261,7 @@ impl Cli {
                     if let internal::InstallArgs { input_method: true, .. } = args {
                         cfg_if::cfg_if! {
                             if #[cfg(target_os = "macos")] {
-                                use fig_ipc::command::open_ui_element;
+                                use fig_ipc::local::open_ui_element;
                                 use fig_proto::local::UiElement;
 
                                 open_ui_element(UiElement::InputMethodPrompt, None)
@@ -372,7 +372,7 @@ async fn root_command() -> Result<()> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             use fig_auth::is_logged_in;
-            use fig_ipc::command::{open_ui_element, quit_command};
+            use fig_ipc::local::{open_ui_element, quit_command};
             use fig_proto::local::UiElement;
             use std::time::Duration;
 
@@ -395,7 +395,7 @@ async fn root_command() -> Result<()> {
             }
         } else {
             use crossterm::style::Stylize;
-            use fig_ipc::command::open_ui_element;
+            use fig_ipc::local::open_ui_element;
             use fig_proto::local::UiElement;
             use std::io::{
                 stdout,

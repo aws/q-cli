@@ -34,15 +34,15 @@ use fig_integrations::shell::{
 };
 use fig_integrations::Error as InstallationError;
 use fig_ipc::{
-    connect_timeout,
-    send_recv_message_timeout,
+    BufferedUnixStream,
+    SendMessage,
+    SendRecvMessage,
 };
 use fig_proto::daemon::diagnostic_response::{
     settings_watcher_status,
     websocket_status,
 };
 use fig_proto::local::DiagnosticsResponse;
-use fig_proto::FigProtobufEncodable;
 use fig_telemetry::{
     TrackEventType,
     TrackSource,
@@ -64,11 +64,7 @@ use spinners::{
     Spinner,
     Spinners,
 };
-use tokio::io::{
-    AsyncBufReadExt,
-    AsyncWriteExt,
-};
-use tokio::net::UnixStream;
+use tokio::io::AsyncBufReadExt;
 
 use super::app::restart_fig;
 use crate::cli::diagnostics::verify_integration;
@@ -599,7 +595,7 @@ impl DoctorCheck for FigtermSocketCheck {
         }
 
         // Connect to the socket
-        let mut conn = match connect_timeout(&socket_path, Duration::from_secs(2)).await {
+        let mut conn = match BufferedUnixStream::connect_timeout(&socket_path, Duration::from_secs(2)).await {
             Ok(connection) => connection,
             Err(err) => return Err(doctor_error!("Socket exists but could not connect: {err}")),
         };
@@ -609,8 +605,7 @@ impl DoctorCheck for FigtermSocketCheck {
             "Your terminal doesn't support raw mode, which is required to verify that the figterm socket works",
         )?;
 
-        let write_handle: tokio::task::JoinHandle<Result<UnixStream, DoctorError>> = tokio::spawn(async move {
-            conn.writable().await.map_err(|e| doctor_error!("{e}"))?;
+        let write_handle: tokio::task::JoinHandle<Result<BufferedUnixStream, DoctorError>> = tokio::spawn(async move {
             tokio::time::sleep(Duration::from_secs_f32(0.2)).await;
 
             let message = fig_proto::figterm::FigtermRequestMessage {
@@ -625,9 +620,7 @@ impl DoctorCheck for FigtermSocketCheck {
                 )),
             };
 
-            let fig_message = message.encode_fig_protobuf().context("Failed to encode protobuf")?;
-
-            conn.write(&fig_message).await.map_err(|e| doctor_error!("{e}"))?;
+            conn.send_message(message).await.map_err(|err| doctor_error!("{err}"))?;
 
             Ok(conn)
         });
@@ -674,10 +667,10 @@ impl DoctorCheck for FigtermSocketCheck {
             )),
         };
 
-        let response: Result<Option<fig_proto::figterm::FigtermResponseMessage>> =
-            fig_ipc::send_recv_message_timeout(&mut conn, message, Duration::from_secs(1))
-                .await
-                .context("Failed to send/recv message");
+        let response: Result<Option<fig_proto::figterm::FigtermResponseMessage>> = conn
+            .send_recv_message_timeout(message, Duration::from_secs(1))
+            .await
+            .context("Failed to send/recv message");
 
         match response {
             Ok(Some(figterm_response)) => match figterm_response.response {
@@ -864,7 +857,7 @@ impl DoctorCheck for DaemonCheck {
             });
         }
 
-        let mut conn = match connect_timeout(&socket_path, Duration::from_secs(1)).await {
+        let mut conn = match BufferedUnixStream::connect_timeout(&socket_path, Duration::from_secs(1)).await {
             Ok(connection) => connection,
             Err(err) => {
                 return Err(DoctorError::Error {
@@ -879,13 +872,10 @@ impl DoctorCheck for DaemonCheck {
             },
         };
 
-        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = send_recv_message_timeout(
-            &mut conn,
-            fig_proto::daemon::new_diagnostic_message(),
-            Duration::from_secs(1),
-        )
-        .await
-        .context("Failed to send/recv message");
+        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = conn
+            .send_recv_message_timeout(fig_proto::daemon::new_diagnostic_message(), Duration::from_secs(1))
+            .await
+            .context("Failed to send/recv message");
 
         match diagnostic_response_result {
             Ok(Some(diagnostic_response)) => match diagnostic_response.response {

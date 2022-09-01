@@ -7,8 +7,9 @@ use eyre::{
 use fig_install::dotfiles::download_and_notify;
 use fig_install::plugins::fetch_installed_plugins;
 use fig_ipc::{
-    recv_message,
-    send_message,
+    BufferedUnixStream,
+    RecvMessage,
+    SendMessage,
 };
 use fig_proto::daemon::daemon_message::Command;
 use fig_proto::daemon::diagnostic_command::DiagnosticPart;
@@ -28,10 +29,7 @@ use fig_proto::daemon::{
 use fig_telemetry::TrackEvent;
 use fig_util::directories;
 use parking_lot::RwLock;
-use tokio::net::{
-    UnixListener,
-    UnixStream,
-};
+use tokio::net::UnixListener;
 use tokio::task::JoinHandle;
 use tracing::{
     error,
@@ -46,10 +44,13 @@ use crate::util::{
     LaunchOptions,
 };
 
-async fn spawn_system_handler(mut stream: UnixStream, daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<()> {
+async fn spawn_system_handler(
+    mut connection: BufferedUnixStream,
+    daemon_status: Arc<RwLock<DaemonStatus>>,
+) -> Result<()> {
     tokio::spawn(async move {
         loop {
-            match recv_message::<DaemonMessage, _>(&mut stream).await {
+            match connection.recv_message::<DaemonMessage>().await {
                 Ok(Some(message)) => {
                     trace!("Received message: {message:?}");
 
@@ -111,7 +112,7 @@ async fn spawn_system_handler(mut stream: UnixStream, daemon_status: Arc<RwLock<
                                 )
                             },
                             Command::SelfUpdate(_) => {
-                                let success = match fig_ipc::command::update_command(true).await {
+                                let success = match fig_ipc::local::update_command(true).await {
                                     Ok(()) => {
                                         tokio::task::spawn(async {
                                             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
@@ -179,7 +180,7 @@ async fn spawn_system_handler(mut stream: UnixStream, daemon_status: Arc<RwLock<
                                 response: Some(response),
                             };
 
-                            if let Err(err) = send_message(&mut stream, response).await {
+                            if let Err(err) = connection.send_message(response).await {
                                 error!("Error sending message: {err}");
                             }
                         }
@@ -218,7 +219,8 @@ pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatu
 
     Ok(tokio::spawn(async move {
         while let Ok((stream, _)) = daemon_socket.accept().await {
-            if let Err(err) = spawn_system_handler(stream, daemon_status.clone()).await {
+            let connection = BufferedUnixStream::new(stream);
+            if let Err(err) = spawn_system_handler(connection, daemon_status.clone()).await {
                 error!("Error while spawining daemon socket connection handler: {err}");
             }
         }

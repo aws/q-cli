@@ -7,6 +7,11 @@ use anyhow::{
     anyhow,
     Result,
 };
+use fig_ipc::{
+    BufferedUnixStream,
+    RecvMessage,
+    SendMessage,
+};
 use fig_proto::local::command_response::Response as CommandResponseTypes;
 use fig_proto::local::local_message::Type as LocalMessageType;
 use fig_proto::local::{
@@ -16,10 +21,6 @@ use fig_proto::local::{
     SuccessResponse,
 };
 use fig_util::directories;
-use tokio::io::{
-    AsyncRead,
-    AsyncWrite,
-};
 use tokio::net::UnixListener;
 use tracing::{
     debug,
@@ -52,26 +53,23 @@ pub async fn start_local_ipc(native_state: Arc<NativeState>, proxy: EventLoopPro
     let listener = UnixListener::bind(&socket_path)?;
 
     while let Ok((stream, _)) = listener.accept().await {
-        tokio::spawn(handle_local_ipc(stream, native_state.clone(), proxy.clone()));
+        tokio::spawn(handle_local_ipc(
+            BufferedUnixStream::new(stream),
+            native_state.clone(),
+            proxy.clone(),
+        ));
     }
 
     Ok(())
 }
 
-async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
-    mut stream: S,
-    native_state: Arc<NativeState>,
-    proxy: EventLoopProxy,
-) {
-    while let Some(message) = fig_ipc::recv_message::<LocalMessage, _>(&mut stream)
-        .await
-        .unwrap_or_else(|err| {
-            if !err.is_disconnect() {
-                error!("Failed receiving local message: {err}");
-            }
-            None
-        })
-    {
+async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<NativeState>, proxy: EventLoopProxy) {
+    while let Some(message) = stream.recv_message::<LocalMessage>().await.unwrap_or_else(|err| {
+        if !err.is_disconnect() {
+            error!("Failed receiving local message: {err}");
+        }
+        None
+    }) {
         trace!("Received local message: {message:?}");
         match message.r#type {
             Some(LocalMessageType::Command(command)) => {
@@ -132,7 +130,7 @@ async fn handle_local_ipc<S: AsyncRead + AsyncWrite + Unpin>(
                         };
 
                         // TODO: implement AsyncWrite trait for Windows sockets
-                        if let Err(err) = fig_ipc::send_message(&mut stream, message).await {
+                        if let Err(err) = stream.send_message(message).await {
                             error!(%err, "Failed sending local response");
                             break;
                         }

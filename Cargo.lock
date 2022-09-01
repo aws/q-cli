@@ -2430,7 +2430,6 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "ctrlc",
- "dbus",
  "deno_core",
  "deno_runtime",
  "dialoguer",
@@ -2479,7 +2478,6 @@ dependencies = [
  "winapi",
  "windows 0.39.0",
  "yaque",
- "zvariant",
 ]
 
 [[package]]
@@ -2591,10 +2589,12 @@ dependencies = [
 name = "fig_ipc"
 version = "0.1.0"
 dependencies = [
+ "async-trait",
  "bytes",
  "cfg-if 1.0.0",
  "fig_proto",
  "fig_util",
+ "pin-project-lite",
  "thiserror",
  "tokio",
  "tracing",

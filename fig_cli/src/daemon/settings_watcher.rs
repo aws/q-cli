@@ -5,7 +5,7 @@ use eyre::{
     eyre,
     Result,
 };
-use fig_ipc::hook::send_hook_to_socket;
+use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
 use fig_proto::local::file_changed_hook::FileChanged;
 use notify::{

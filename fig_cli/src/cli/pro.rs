@@ -7,7 +7,7 @@ pub async fn execute() -> eyre::Result<()> {
     })
     .ok();
 
-    if fig_ipc::command::open_ui_element(UiElement::MissionControl, Some("/settings/billing".into()))
+    if fig_ipc::local::open_ui_element(UiElement::MissionControl, Some("/settings/billing".into()))
         .await
         .is_err()
         && fig_util::open_url("https://fig.io/pricing").is_err()

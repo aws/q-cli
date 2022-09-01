@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use async_trait::async_trait;
 use fig_proto::local::{
     self,
     command,
@@ -17,14 +18,12 @@ use fig_proto::local::{
     UpdateCommand,
 };
 use fig_util::directories;
-use tokio::net::UnixStream;
 
-use super::{
-    connect_timeout,
-    recv_message,
-    send_message,
+use crate::{
+    BufferedUnixStream,
+    Error,
+    SendRecvMessage,
 };
-use crate::Error;
 
 type Result<T, E = crate::Error> = std::result::Result<T, E>;
 
@@ -101,36 +100,62 @@ pub async fn run_install_script_command() -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn send_command(connection: &mut UnixStream, command: local::command::Command, response: bool) -> Result<()> {
-    let message = local::LocalMessage {
-        r#type: Some(local::local_message::Type::Command(local::Command {
-            id: None,
-            no_response: Some(!response),
-            command: Some(command),
-        })),
-    };
-
-    Ok(send_message(connection, message).await?)
+#[async_trait]
+pub trait LocalIpc: SendRecvMessage {
+    async fn send_hook(&mut self, hook: local::Hook) -> Result<()>;
+    async fn send_command(&mut self, command: local::command::Command, response: bool) -> Result<()>;
+    async fn send_recv_command(&mut self, command: local::command::Command) -> Result<Option<local::CommandResponse>>;
 }
 
-pub async fn send_recv_command(
-    connection: &mut UnixStream,
-    command: local::command::Command,
-) -> Result<Option<local::CommandResponse>> {
-    send_command(connection, command, true).await?;
-    Ok(tokio::time::timeout(Duration::from_secs(2), recv_message(connection))
-        .await
-        .or(Err(Error::Timeout))??)
+#[async_trait]
+impl<C> LocalIpc for C
+where
+    C: SendRecvMessage + Send,
+{
+    /// Send a hook to the desktop app
+    async fn send_hook(&mut self, hook: local::Hook) -> Result<()> {
+        let message = local::LocalMessage {
+            r#type: Some(local::local_message::Type::Hook(hook)),
+        };
+        Ok(self.send_message(message).await?)
+    }
+
+    /// Send a command to the desktop app
+    async fn send_command(&mut self, command: local::command::Command, response: bool) -> Result<()> {
+        let message = local::LocalMessage {
+            r#type: Some(local::local_message::Type::Command(local::Command {
+                id: None,
+                no_response: Some(!response),
+                command: Some(command),
+            })),
+        };
+        Ok(self.send_message(message).await?)
+    }
+
+    /// Send a command to and recv a response from the desktop app
+    async fn send_recv_command(&mut self, command: local::command::Command) -> Result<Option<local::CommandResponse>> {
+        self.send_command(command, true).await?;
+        Ok(tokio::time::timeout(Duration::from_secs(2), self.recv_message())
+            .await
+            .or(Err(Error::Timeout))??)
+    }
+}
+
+/// Send a hook directly to the Fig socket
+pub async fn send_hook_to_socket(hook: local::Hook) -> Result<()> {
+    let path = directories::fig_socket_path()?;
+    let mut conn = BufferedUnixStream::connect_timeout(&path, Duration::from_secs(3)).await?;
+    conn.send_hook(hook).await
 }
 
 pub async fn send_command_to_socket(command: local::command::Command) -> Result<()> {
     let path = directories::fig_socket_path()?;
-    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    send_command(&mut conn, command, false).await
+    let mut conn = BufferedUnixStream::connect_timeout(&path, Duration::from_secs(3)).await?;
+    conn.send_command(command, false).await
 }
 
 pub async fn send_recv_command_to_socket(command: local::command::Command) -> Result<Option<local::CommandResponse>> {
     let path = directories::fig_socket_path()?;
-    let mut conn = connect_timeout(&path, Duration::from_secs(3)).await?;
-    send_recv_command(&mut conn, command).await
+    let mut conn = BufferedUnixStream::connect_timeout(&path, Duration::from_secs(3)).await?;
+    conn.send_recv_command(command).await
 }

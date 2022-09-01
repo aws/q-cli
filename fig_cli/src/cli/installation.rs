@@ -327,7 +327,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
         } else if #[cfg(any(target_os = "macos", target_os = "windows"))] {
             // Let desktop app handle updates on macOS
             use crate::util::{launch_fig, LaunchOptions};
-            use fig_ipc::command::update_command;
+            use fig_ipc::local::update_command;
 
             launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
 

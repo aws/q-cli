@@ -30,7 +30,7 @@ use fig_api_client::workflows::{
     TreeElement,
 };
 #[cfg(unix)]
-use fig_ipc::command::open_ui_element;
+use fig_ipc::local::open_ui_element;
 #[cfg(unix)]
 use fig_proto::local::UiElement;
 use fig_request::Request;

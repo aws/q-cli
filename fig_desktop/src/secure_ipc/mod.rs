@@ -7,6 +7,11 @@ use std::sync::atomic::{
 use std::sync::Arc;
 
 use anyhow::Result;
+use fig_ipc::{
+    BufferedReader,
+    RecvMessage,
+    SendMessage,
+};
 use fig_proto::figterm::{
     intercept_request,
     InsertTextRequest,
@@ -93,7 +98,7 @@ async fn handle_secure_ipc(
     notifications_state: Arc<NotificationsState>,
     proxy: EventLoopProxy,
 ) {
-    let (mut reader, writer) = tokio::io::split(stream);
+    let (reader, writer) = tokio::io::split(stream);
     let (clientbound_tx, clientbound_rx) = flume::unbounded();
 
     let (stop_pings_tx, stop_pings_rx) = oneshot::channel();
@@ -105,15 +110,13 @@ async fn handle_secure_ipc(
 
     let mut session_id: Option<FigtermSessionId> = None;
 
-    while let Some(message) = fig_ipc::recv_message::<Hostbound, _>(&mut reader)
-        .await
-        .unwrap_or_else(|err| {
-            if !err.is_disconnect() {
-                warn!(%err, "Failed receiving secure message");
-            }
-            None
-        })
-    {
+    let mut reader = BufferedReader::new(reader);
+    while let Some(message) = reader.recv_message::<Hostbound>().await.unwrap_or_else(|err| {
+        if !err.is_disconnect() {
+            warn!(%err, "Failed receiving secure message");
+        }
+        None
+    }) {
         trace!(?message, "Received secure message");
         if let Some(response) = match message.packet {
             Some(hostbound::Packet::Handshake(handshake)) => {
@@ -255,7 +258,7 @@ async fn handle_outgoing(
 ) {
     while let Ok(message) = outgoing.recv_async().await {
         trace!(?message, "Sending secure message");
-        if let Err(err) = fig_ipc::send_message(&mut writer, message).await {
+        if let Err(err) = writer.send_message(message).await {
             error!(%err, "Secure outgoing task send error");
             bad_connection.notify_one();
             return;

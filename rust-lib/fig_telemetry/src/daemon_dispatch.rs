@@ -1,5 +1,9 @@
 use std::time::Duration;
 
+use fig_ipc::{
+    BufferedUnixStream,
+    SendMessage,
+};
 use fig_proto::daemon::daemon_message::Command;
 use fig_proto::daemon::telemetry_emit_track_command::Source;
 use fig_proto::daemon::{
@@ -17,8 +21,8 @@ use crate::{
 
 async fn send_daemon_message(message: DaemonMessage) -> Result<(), fig_ipc::Error> {
     let daemon_socket_path = directories::daemon_socket_path()?;
-    let mut conn = fig_ipc::connect_timeout(daemon_socket_path, Duration::from_secs(1)).await?;
-    fig_ipc::send_message(&mut conn, message).await?;
+    let mut conn = BufferedUnixStream::connect_timeout(daemon_socket_path, Duration::from_secs(1)).await?;
+    conn.send_message(message).await?;
     Ok(())
 }
 

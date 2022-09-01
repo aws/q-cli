@@ -8,7 +8,7 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_ipc::command::send_recv_command_to_socket;
+use fig_ipc::local::send_recv_command_to_socket;
 use fig_proto::local::command_response::Response;
 use fig_proto::local::{
     command,

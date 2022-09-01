@@ -33,7 +33,12 @@ use eyre::{
 };
 use fig_auth::get_token;
 use fig_install::dotfiles::notify::TerminalNotification;
-use fig_ipc::hook::send_hook_to_socket;
+use fig_ipc::local::send_hook_to_socket;
+use fig_ipc::{
+    BufferedUnixStream,
+    SendMessage,
+    SendRecvMessage,
+};
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
@@ -466,12 +471,12 @@ impl InternalSubcommand {
                     bail!("No destination for message");
                 };
 
-                let mut conn = fig_ipc::connect(socket).await?;
+                let mut conn = BufferedUnixStream::connect(socket).await?;
 
                 if recv {
                     macro_rules! recv {
                         ($abc:path) => {{
-                            let response: Option<$abc> = fig_ipc::send_recv_message(&mut conn, message).await?;
+                            let response: Option<$abc> = conn.send_recv_message(message).await?;
                             match response {
                                 Some(response) => {
                                     let message = response.transcode_to_dynamic();
@@ -490,7 +495,7 @@ impl InternalSubcommand {
                         recv!(fig_proto::figterm::FigtermResponseMessage);
                     }
                 } else {
-                    fig_ipc::send_message(&mut conn, message).await?;
+                    conn.send_message(message).await?;
                 }
             },
             InternalSubcommand::FigSocketPath => {
@@ -526,7 +531,7 @@ impl InternalSubcommand {
                 let mut stream_buf = BytesMut::with_capacity(1024);
 
                 let socket = directories::secure_socket_path()?;
-                while let Ok(mut stream) = fig_ipc::connect_timeout(&socket, Duration::from_secs(5)).await {
+                while let Ok(mut stream) = BufferedUnixStream::connect_timeout(&socket, Duration::from_secs(5)).await {
                     loop {
                         select! {
                             n = stream.read_buf(&mut stdout_buf) => {
@@ -717,7 +722,7 @@ pub async fn pre_cmd() {
     let shell_state_join = tokio::spawn(async move {
         let session_id = session_id_clone;
         match figterm_socket_path(&session_id) {
-            Ok(figterm_path) => match fig_ipc::connect(figterm_path).await {
+            Ok(figterm_path) => match fig_ipc::socket_connect(figterm_path).await {
                 Ok(mut figterm_stream) => {
                     let message = FigtermRequestMessage {
                         request: Some(FigtermRequest::UpdateShellContext(UpdateShellContextRequest {
@@ -730,7 +735,7 @@ pub async fn pre_cmd() {
                                 .collect(),
                         })),
                     };
-                    if let Err(err) = fig_ipc::send_message(&mut figterm_stream, message).await {
+                    if let Err(err) = figterm_stream.send_message(message).await {
                         error!(%err, %session_id, "Failed to send UpdateShellContext to Figterm");
                     }
                 },
