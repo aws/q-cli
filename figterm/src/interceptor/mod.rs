@@ -90,22 +90,7 @@ impl KeyInterceptor {
             if let Some(default_bindings) = action.default_bindings {
                 for binding in default_bindings {
                     if let Some(binding) = key_from_text(binding) {
-                        if let Some(alt) = match binding.key {
-                            KeyCode::UpArrow => Some(KeyCode::ApplicationUpArrow),
-                            KeyCode::DownArrow => Some(KeyCode::ApplicationDownArrow),
-                            KeyCode::LeftArrow => Some(KeyCode::ApplicationLeftArrow),
-                            KeyCode::RightArrow => Some(KeyCode::ApplicationRightArrow),
-                            _ => None,
-                        } {
-                            self.mappings.insert(
-                                KeyEvent {
-                                    key: alt,
-                                    modifiers: binding.modifiers,
-                                },
-                                action.identifier.clone(),
-                            );
-                        }
-                        self.mappings.insert(binding, action.identifier.clone());
+                        self.insert_binding(binding, action.identifier.clone());
                     }
                 }
             }
@@ -130,10 +115,29 @@ impl KeyInterceptor {
         for Action { identifier, bindings } in actions {
             for binding in bindings {
                 if let Some(binding) = key_from_text(binding) {
-                    self.mappings.insert(binding, identifier.clone());
+                    self.insert_binding(binding, identifier.clone());
                 }
             }
         }
+    }
+
+    fn insert_binding(&mut self, binding: KeyEvent, identifier: String) {
+        if let Some(alt) = match binding.key {
+            KeyCode::UpArrow => Some(KeyCode::ApplicationUpArrow),
+            KeyCode::DownArrow => Some(KeyCode::ApplicationDownArrow),
+            KeyCode::LeftArrow => Some(KeyCode::ApplicationLeftArrow),
+            KeyCode::RightArrow => Some(KeyCode::ApplicationRightArrow),
+            _ => None,
+        } {
+            self.mappings.insert(
+                KeyEvent {
+                    key: alt,
+                    modifiers: binding.modifiers,
+                },
+                identifier.clone(),
+            );
+        };
+        self.mappings.insert(binding, identifier);
     }
 
     pub fn reset(&mut self) {
