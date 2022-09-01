@@ -74,7 +74,7 @@ use crate::util::{
     glob_dir,
     is_executable_in_path,
     launch_fig,
-    LaunchOptions,
+    LaunchArgs,
 };
 
 #[derive(Debug, Args)]
@@ -2078,7 +2078,12 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, launch fig.
-    launch_fig(LaunchOptions::new().wait_for_activation().verbose()).ok();
+    launch_fig(LaunchArgs {
+        print_running: false,
+        print_launching: false,
+        wait_for_launch: true,
+    })
+    .ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

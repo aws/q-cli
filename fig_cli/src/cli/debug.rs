@@ -37,7 +37,7 @@ use crate::cli::launch_fig;
 use crate::util::{
     glob,
     glob_dir,
-    LaunchOptions,
+    LaunchArgs,
 };
 
 #[derive(Debug, ValueEnum, Clone)]
@@ -331,7 +331,11 @@ impl DebugSubcommand {
                         .spawn()?
                         .wait()?;
 
-                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                    launch_fig(LaunchArgs {
+                        print_running: false,
+                        print_launching: true,
+                        wait_for_launch: true,
+                    })?;
                     // let result = prompt_accessibility_command().await;
                     // if result.is_err() {
                     //     println!("Could not prompt for accessibility permissions.");
@@ -347,7 +351,11 @@ impl DebugSubcommand {
                         .wait()?;
                 },
                 Some(AccessibilityAction::Prompt) => {
-                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+                    launch_fig(LaunchArgs {
+                        print_running: false,
+                        print_launching: true,
+                        wait_for_launch: true,
+                    })?;
                     let result = prompt_accessibility_command().await;
                     if result.is_err() {
                         println!("Could not prompt for accessibility permissions.");

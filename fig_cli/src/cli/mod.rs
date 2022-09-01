@@ -55,7 +55,7 @@ use crate::util::{
     dialoguer_theme,
     is_app_running,
     launch_fig,
-    LaunchOptions,
+    LaunchArgs,
 };
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
@@ -309,7 +309,11 @@ impl Cli {
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => launch_fig(LaunchOptions::new().wait_for_activation().verbose()),
+                CliRootCommands::Launch => launch_fig(LaunchArgs {
+                    print_running: true,
+                    print_launching: true,
+                    wait_for_launch: true,
+                }),
                 CliRootCommands::Quit => app::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,
@@ -379,19 +383,23 @@ async fn root_command() -> Result<()> {
             if !is_logged_in() && is_app_running() {
                 if quit_command().await.is_err() {
                     eyre::bail!(
-                        "\nFig is running but you are not logged in. Please quit Fig from the menu\
-                        bar and try again\n"
+                        "Fig is running but you are not logged in. Please quit Fig from the menu\
+                        bar and try again"
                     );
                 }
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }
 
-            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+            launch_fig(LaunchArgs {
+                print_running: false,
+                print_launching: true,
+                wait_for_launch: true,
+            })?;
 
             if is_logged_in() {
                 open_ui_element(UiElement::MissionControl, None)
                     .await
-                    .context("\nCould not launch fig\n")?;
+                    .context("Could not launch fig")?;
             }
         } else {
             use crossterm::style::Stylize;
@@ -402,16 +410,16 @@ async fn root_command() -> Result<()> {
                 Write,
             };
 
-            match launch_fig(LaunchOptions::new().wait_for_activation().verbose()) {
+            match launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true }) {
                 Ok(()) => {
                     open_ui_element(UiElement::MissionControl, None)
                         .await
-                        .context("\nCould not launch fig\n")?;
+                        .context("Could not launch fig")?;
                 }
                 Err(_) => {
                     writeln!(
                         stdout(),
-                        "\n→ Opening {}...\n",
+                        "Opening {}",
                         "https://app.fig.io".magenta().underlined()
                     ).ok();
                     fig_util::open_url("https://app.fig.io")?;

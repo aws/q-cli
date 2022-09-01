@@ -41,7 +41,7 @@ use yaque::Sender;
 use super::DaemonStatus;
 use crate::util::{
     launch_fig,
-    LaunchOptions,
+    LaunchArgs,
 };
 
 async fn spawn_system_handler(
@@ -118,7 +118,12 @@ async fn spawn_system_handler(
                                             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
                                             tokio::task::block_in_place(|| {
-                                                launch_fig(LaunchOptions::new().wait_for_activation()).ok();
+                                                launch_fig(LaunchArgs {
+                                                    print_running: false,
+                                                    print_launching: false,
+                                                    wait_for_launch: true,
+                                                })
+                                                .ok();
                                             });
                                         });
                                         true
@@ -172,6 +177,7 @@ async fn spawn_system_handler(
                                 });
                                 continue;
                             },
+                            Command::Ping(_) => fig_proto::daemon::new_ping_response(),
                         };
 
                         if !message.no_response() {

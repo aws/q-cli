@@ -26,7 +26,7 @@ use super::OutputFormat;
 use crate::util::{
     app_not_running_message,
     launch_fig,
-    LaunchOptions,
+    LaunchArgs,
 };
 
 #[derive(Debug, Subcommand)]
@@ -211,9 +211,11 @@ impl SettingsArgs {
                     _ => Ok(()),
                 },
                 None => {
-                    println!();
-                    launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-                    println!();
+                    launch_fig(LaunchArgs {
+                        print_running: false,
+                        print_launching: true,
+                        wait_for_launch: true,
+                    })?;
 
                     if is_logged_in() {
                         match open_ui_element(UiElement::Settings, None).await {

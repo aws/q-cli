@@ -326,10 +326,10 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
             Err(eyre::eyre!("Installation not properly handled"))
         } else if #[cfg(any(target_os = "macos", target_os = "windows"))] {
             // Let desktop app handle updates on macOS
-            use crate::util::{launch_fig, LaunchOptions};
+            use crate::util::{LaunchArgs, launch_fig};
             use fig_ipc::local::update_command;
 
-            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
+            launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true })?;
 
             match update_command(update_type == UpdateType::NoConfirm).await {
                 Ok(()) => {

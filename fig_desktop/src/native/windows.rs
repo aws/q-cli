@@ -129,7 +129,7 @@ impl NativeState {
             NativeEvent::EditBufferChanged => unsafe {
                 let console_state = UNMANAGED.lock().console_state;
                 match console_state {
-                    ConsoleState::None => (),
+                    ConsoleState::None => Ok(()),
                     ConsoleState::Console { hwnd } => {
                         let automation = &self.automation.0;
                         let window = automation.ElementFromHandle(hwnd)?;
@@ -154,30 +154,30 @@ impl NativeState {
                         if elements_len > 0 {
                             let bounds = *elements;
 
-                            self.proxy
-                                .send_event(Event::WindowEvent {
-                                    window_id: AUTOCOMPLETE_ID,
-                                    window_event: WindowEvent::Reposition {
-                                        x: bounds.left,
-                                        y: bounds.bottom,
-                                    },
-                                })
-                                .ok();
+                            self.proxy.send_event(Event::WindowEvent {
+                                window_id: AUTOCOMPLETE_ID,
+                                window_event: WindowEvent::Reposition {
+                                    x: bounds.left,
+                                    y: bounds.bottom,
+                                },
+                            })?;
+
+                            Ok(())
+                        } else {
+                            Err(anyhow!("Failed to acquire caret position"))
                         }
                     },
                     ConsoleState::Accessible { caret_x, caret_y } => {
-                        self.proxy
-                            .send_event(Event::WindowEvent {
-                                window_id: AUTOCOMPLETE_ID,
-                                window_event: WindowEvent::Reposition { x: caret_x, y: caret_y },
-                            })
-                            .ok();
+                        self.proxy.send_event(Event::WindowEvent {
+                            window_id: AUTOCOMPLETE_ID,
+                            window_event: WindowEvent::Reposition { x: caret_x, y: caret_y },
+                        })?;
+
+                        Ok(())
                     },
                 }
             },
         }
-
-        Err(anyhow!("Failed to acquire caret position"))
     }
 
     pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
@@ -319,8 +319,8 @@ unsafe fn update_focused_state(hwnd: HWND) {
     };
 
     match title {
-        title if ["Hyper", "Code"].contains(&title) => (),
-        title if ["bash", "cmd", "mintty", "powershell", "WindowsTerminal"].contains(&title) => {
+        title if ["Hyper", "Code", "Code - Insiders"].contains(&title) => (),
+        title if ["bash", "cmd", "mintty", "powershell", "ubuntu2004", "WindowsTerminal"].contains(&title) => {
             unmanaged.console_state = ConsoleState::Console { hwnd }
         },
         _ => {

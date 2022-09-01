@@ -4,7 +4,10 @@ use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
 use std::io::Cursor;
-use std::path::PathBuf;
+use std::path::{
+    Path,
+    PathBuf,
+};
 use std::sync::Arc;
 use std::time::Duration;
 
@@ -177,20 +180,28 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
             .or_else(|| pairs.get("type"))
             .map(|name| cached_asset_response(name)),
         None => {
-            let path = &*percent_decode_str(url.path()).decode_utf8()?;
+            let decoded_str = &*percent_decode_str(url.path()).decode_utf8()?;
+            let path: Cow<Path> = Cow::from(Path::new(decoded_str));
 
             #[cfg(windows)]
             let path = transform_unix_to_windows_path(path);
 
-            let meta = fs::metadata(path)?;
-            if meta.is_dir() {
-                Some(cached_asset_response("folder"))
-            } else if meta.is_file() {
-                Some(cached_asset_response("file"))
-            } else if meta.is_symlink() {
-                Some(cached_asset_response("symlink"))
-            } else {
-                None
+            match fs::metadata(&path) {
+                Ok(meta) => {
+                    if meta.is_dir() {
+                        Some(cached_asset_response("folder"))
+                    } else if meta.is_file() {
+                        Some(cached_asset_response("file"))
+                    } else if meta.is_symlink() {
+                        Some(cached_asset_response("symlink"))
+                    } else {
+                        None
+                    }
+                },
+                Err(_) => Some(match path.to_string_lossy().ends_with('/') {
+                    true => cached_asset_response("folder"),
+                    false => cached_asset_response("file"),
+                }),
             }
         },
         _ => None,
@@ -199,19 +210,30 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
 }
 
 /// Translate a unix style path into a windows style path assuming root dir is the drive
-#[cfg(windows)]
-fn transform_unix_to_windows_path(path: impl AsRef<std::path::Path>) -> PathBuf {
+#[cfg_attr(not(windows), allow(dead_code))]
+fn transform_unix_to_windows_path(path: Cow<'_, Path>) -> Cow<'_, Path> {
     use std::path::Component;
+
+    let string_path = path.as_ref().to_string_lossy();
+    let folder = string_path.ends_with('/') || string_path.ends_with('\\');
 
     let path_components: Vec<_> = path.as_ref().components().collect();
     match &path_components[..] {
         [Component::RootDir, Component::Normal(drive), rest @ ..] => {
             let mut root = std::ffi::OsString::from(drive);
-            root.push(":\\");
-            let mut path = PathBuf::from(root);
-            path.extend(rest);
-            path
+            root.push(":");
+
+            for component in rest {
+                root.push("\\");
+                root.push(component.as_os_str());
+            }
+
+            if folder {
+                root.push("/");
+            }
+
+            Cow::from(PathBuf::from(root))
         },
-        _ => path.as_ref().to_owned(),
+        _ => path,
     }
 }

@@ -119,12 +119,24 @@ fn create_command(executable: impl AsRef<OsStr>, working_directory: Option<impl 
         }
     }
 
-    cmd.envs(
-        (*SHELL_ENVIRONMENT_VARIABLES.lock())
-            .clone()
-            .into_iter()
-            .filter_map(|EnvironmentVariable { key, value }| value.map(|value| (key, value))),
-    );
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            if let Some(value) = SHELL_ENVIRONMENT_VARIABLES
+                .lock()
+                .iter()
+                .find_map(|EnvironmentVariable { key, value }| if key == "PATH" { value.as_ref() } else { None })
+            {
+                cmd.env("PATH", value);
+            }
+        } else {
+            cmd.envs(
+                (*SHELL_ENVIRONMENT_VARIABLES.lock())
+                    .clone()
+                    .into_iter()
+                    .filter_map(|EnvironmentVariable { key, value }| value.map(|value| (key, value))),
+            );
+        }
+    }
 
     cmd.envs([
         ("PROCESS_LAUNCHED_BY_FIG", "1"),

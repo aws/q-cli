@@ -28,6 +28,13 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use tracing::warn;
 
+#[derive(Debug)]
+pub struct LaunchArgs {
+    pub print_running: bool,
+    pub print_launching: bool,
+    pub wait_for_launch: bool,
+}
+
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
     cfg_if! {
@@ -140,7 +147,20 @@ pub fn is_app_running() -> bool {
                 if #[cfg(target_os = "windows")] {
                     let process_name = "fig_desktop.exe";
                 } else if #[cfg(target_os = "linux")] {
-                    let process_name = "fig_desktop";
+                    let process_name = match fig_util::wsl::is_wsl() {
+                        true => {
+                            let output = match std::process::Command::new("tasklist.exe").args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"]).output() {
+                                Ok(output) => output,
+                                Err(_) => return false,
+                            };
+
+                            return match std::str::from_utf8(&output.stdout) {
+                                Ok(result) => result.contains("fig_desktop.exe"),
+                                Err(_) => false,
+                            };
+                        },
+                        false => "fig_desktop",
+                    };
                 }
             }
 
@@ -151,38 +171,18 @@ pub fn is_app_running() -> bool {
     }
 }
 
-#[derive(Debug, Clone, Copy, Default)]
-#[must_use]
-pub struct LaunchOptions {
-    pub wait_for_activation: bool,
-    pub verbose: bool,
-}
-
-impl LaunchOptions {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    pub fn wait_for_activation(self) -> Self {
-        Self {
-            wait_for_activation: true,
-            ..self
-        }
-    }
-
-    pub fn verbose(self) -> Self {
-        Self { verbose: true, ..self }
-    }
-}
-
-pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
+pub fn launch_fig(args: LaunchArgs) -> Result<()> {
     use fig_util::directories::fig_socket_path;
 
     if is_app_running() {
+        if args.print_running {
+            println!("Fig is already running");
+        }
+
         return Ok(());
     }
 
-    if opts.verbose {
+    if args.print_launching {
         println!("Launching Fig");
     }
 
@@ -224,7 +224,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
         }
     }
 
-    if !opts.wait_for_activation {
+    if !args.wait_for_launch {
         return Ok(());
     }
 
@@ -264,7 +264,7 @@ pub fn launch_fig(opts: LaunchOptions) -> Result<()> {
         }
     }
 
-    bail!("\nUnable to finish launching Fig properly\n")
+    bail!("Unable to finish launching Fig properly")
 }
 
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
@@ -284,7 +284,7 @@ pub fn app_not_running_message() -> String {
 
 pub fn login_message() -> String {
     format!(
-        "\n{}\nLooks like you aren't logged in to fig, to login run: {}\n",
+        "{}\nLooks like you aren't logged in to fig, to login run: {}",
         "Not logged in".bold(),
         "fig login".magenta()
     )

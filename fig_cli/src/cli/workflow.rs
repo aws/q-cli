@@ -65,10 +65,7 @@ use tui::{
 };
 
 #[cfg(unix)]
-use crate::util::{
-    launch_fig,
-    LaunchOptions,
-};
+use crate::util::launch_fig;
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 1;
 
@@ -315,9 +312,11 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     match workflow {
                                         WorkflowAction::Run(workflow) => *workflow.clone(),
                                         WorkflowAction::Create => {
-                                            println!();
-                                            launch_fig(LaunchOptions::new().wait_for_activation().verbose())?;
-                                            println!();
+                                            launch_fig(crate::util::LaunchArgs {
+                                                print_running: false,
+                                                print_launching: true,
+                                                wait_for_launch: true
+                                            })?;
                                             return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
                                                 Ok(()) => Ok(()),
                                                 Err(err) => Err(err.into()),
