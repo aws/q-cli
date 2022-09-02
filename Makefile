@@ -58,9 +58,6 @@ fig_cli:
 figterm:
 	$(MAKE) -C $(MAKE_DIR)/$@
 
-fig_ibus_engine: 
-	$(MAKE) -C $(MAKE_DIR)/$@
-
 icons:
 	for res in 16 22 24 32 48 64 128 256 512; do \
 	  install -Dm644 "fig_desktop/icons/$${res}x$${res}.png" \
@@ -76,5 +73,5 @@ bundle:
 preview: archive
 	tar -tvf $(BUILD_DIR)/fig-$(ARCH)-linux.tar.gz
 
-.PHONY: all archive arch deb rpm bin fig_desktop figterm fig fig_cli fig_ibus_engine icons preview bundle
+.PHONY: all archive arch deb rpm bin fig_desktop figterm fig fig_cli icons preview bundle
 

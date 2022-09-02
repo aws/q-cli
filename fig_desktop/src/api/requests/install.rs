@@ -1,10 +1,7 @@
 use std::fmt::Display;
 
-use cfg_if::cfg_if;
 use fig_integrations::get_default_backup_dir;
 use fig_integrations::shell::ShellExt;
-#[cfg(target_os = "linux")]
-use fig_integrations::Integration;
 use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,
@@ -22,8 +19,8 @@ use fig_util::Shell;
 
 use super::RequestResult;
 
-#[cfg(target_os = "linux")]
-fn integration_status(integration: impl Integration) -> ServerOriginatedSubMessage {
+#[allow(dead_code)]
+fn integration_status(integration: impl fig_integrations::Integration) -> ServerOriginatedSubMessage {
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
         response: Some(Response::InstallationStatus(match integration.is_installed() {
             Ok(_) => InstallationStatus::InstallInstalled.into(),
@@ -88,28 +85,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 )),
             })
         },
-        (InstallComponent::Ibus, InstallAction::InstallAction) => {
-            cfg_if! {
-                if #[cfg(target_os = "linux")] {
-                    let integration = fig_integrations::ibus::IbusIntegration {};
-                    integration_result(integration.is_installed().or_else(|_| integration.install(None)))
-                } else {
-                    integration_result(Err("IBus cannot be installed"))
-                }
-            }
-        },
-        (InstallComponent::Ibus, InstallAction::StatusAction) => {
-            cfg_if! {
-                if #[cfg(target_os = "linux")] {
-                    integration_status(fig_integrations::ibus::IbusIntegration {})
-                } else {
-                    integration_result(Err("IBus status cannot be queried"))
-                }
-            }
-        },
-        (InstallComponent::Ibus, InstallAction::UninstallAction) => {
-            integration_result(Err("IBus cannot be uninstalled"))
-        },
+        (InstallComponent::Ibus, _) => integration_result(Err("IBus install is legacy")),
         (InstallComponent::Accessibility, InstallAction::InstallAction) => {
             integration_result(Err("Accessibility permissions cannot be installed"))
         },
