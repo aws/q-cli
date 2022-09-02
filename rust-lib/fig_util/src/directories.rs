@@ -76,7 +76,7 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
                 Ok(Path::new("/var/tmp/fig").join(name))
             }
         } else if #[cfg(target_os = "macos")] {
-            Ok(std::path::Path::new("/var/tmp/fig").join(named))
+            Ok(std::path::Path::new("/var/tmp/fig").join(name))
         } else if #[cfg(target_os = "windows")] {
             Ok(dirs::data_local_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?

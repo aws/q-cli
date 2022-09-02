@@ -131,17 +131,17 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
             }
         });
 
-        Ok((
+        return Ok((
             MessageSource::ChildStdout(stdout),
             MessageSink::ChildStdin(stdin),
             Some(child_task),
-        ))
-    } else {
-        let socket = directories::secure_socket_path()?;
-        let stream = fig_ipc::socket_connect_timeout(&socket, Duration::from_secs(5)).await?;
-        let (reader, writer) = tokio::io::split(stream);
-        Ok((MessageSource::UnixStream(reader), MessageSink::UnixStream(writer), None))
+        ));
     }
+
+    let socket = directories::secure_socket_path()?;
+    let stream = fig_ipc::socket_connect_timeout(&socket, Duration::from_secs(5)).await?;
+    let (reader, writer) = tokio::io::split(stream);
+    Ok((MessageSource::UnixStream(reader), MessageSink::UnixStream(writer), None))
 }
 
 /// Spawns a local unix socket for communicating with figterm on a local machine
