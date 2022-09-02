@@ -260,7 +260,7 @@ where
     let mut handle = INSERTION_LOCKED_AT.write();
     let insertion_locked = match handle.as_ref() {
         Some(at) => {
-            let lock_expired = at.elapsed().unwrap_or_else(|_| Duration::new(0, 0)) > Duration::from_millis(16);
+            let lock_expired = at.elapsed().unwrap_or(Duration::ZERO) > Duration::from_millis(16);
             let should_unlock = lock_expired
                 || term
                     .get_current_buffer()
@@ -415,15 +415,19 @@ fn figterm_main() -> Result<()> {
 
     let pty_name = pty.slave.get_name().unwrap_or_else(|| term_session_id.clone());
     logger::stdio_debug_log(format!("pty name: {}", pty_name));
+
     init_logger(&pty_name).context("Failed to init logger")?;
     logger::stdio_debug_log("Forking child shell process");
+
     let mut child = pty.slave.spawn_command(command)?;
+    info!("Shell: {:?}", child.process_id());
     if let Some(pid) = child.process_id() {
         logger::stdio_debug_log(format!("Child pid: {pid}"));
     }
+
     let (child_tx, mut child_rx) = oneshot::channel();
-    info!("Shell: {:?}", child.process_id());
     std::thread::spawn(move || child_tx.send(child.wait()));
+
     info!("Figterm: {}", Pid::current());
     info!("Pty name: {pty_name}");
 
@@ -442,7 +446,6 @@ fn figterm_main() -> Result<()> {
 
         let history_sender = history::spawn_history_task().await;
 
-
         // Spawn thread to handle figterm ipc
         let incoming_receiver = spawn_figterm_ipc(&term_session_id).await?;
 
@@ -457,9 +460,7 @@ fn figterm_main() -> Result<()> {
 
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
-
         let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx);
-
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
         #[cfg(windows)]

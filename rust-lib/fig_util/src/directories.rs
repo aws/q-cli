@@ -73,22 +73,10 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
                     .and_then(|p| p.parent()).ok_or(DirectoryError::NoHomeDirectory)?;
                 Ok(dir_path.join(name))
             } else {
-                Ok([
-                    Path::new("/var/tmp/fig"),
-                    Path::new(&name),
-                ]
-                .into_iter()
-                .collect())
+                Ok(Path::new("/var/tmp/fig").join(name))
             }
         } else if #[cfg(target_os = "macos")] {
-            use std::path::Path;
-
-            Ok([
-                Path::new("/var/tmp/fig"),
-                Path::new(&name),
-            ]
-            .into_iter()
-            .collect())
+            Ok(std::path::Path::new("/var/tmp/fig").join(named))
         } else if #[cfg(target_os = "windows")] {
             Ok(dirs::data_local_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
