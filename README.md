@@ -22,23 +22,19 @@ graph LR
     end
     end
 
-    term -->|stdin| figterm
-    term ---|stdout| figterm
+    term -- stdin/stdout --- figterm
 
-    autocomplete --> desktop
-    dashboard --> desktop
+    autocomplete & dashboard -- Fig.js --- desktop
 
-    desktop ===|secure proto| figterm
+    desktop == secure proto === figterm
 
-    figterm -->|stdin| pseudo
-    pseudo -->|stdout| figterm
+    figterm -- stdin/stdout --- pseudo
 
-    pseudo -->|stdin| shell
-    shell -->|stdout| pseudo
+    pseudo -- stdin/stdout --- shell
 
-    shell -.- |"fork()"| figterm
+    shell -.-|"fork()"| figterm
 
-    shell --> cli
+    shell --- cli
 
     cli ===|figterm ipc| figterm
 ```
