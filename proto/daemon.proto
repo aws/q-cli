@@ -10,148 +10,149 @@ import "fig_common.proto";
 
 // Message type used to send a command to daemon
 message DaemonMessage {
-    optional int64 id = 1;
-    optional bool no_response = 2;
+  optional int64 id = 1;
+  optional bool no_response = 2;
 
-    oneof command {
-        // A request to get diagnostic information from the daemon
-        DiagnosticCommand diagnostic = 101;
-        // A request to trigger a self-update if possible
-        SelfUpdateCommand self_update = 102;
-        // A request for the daemon to sync data
-        SyncCommand sync = 103;
-        // A request for the daemon to 
-        TelemetryEmitTrackCommand telemetry_emit_track = 104;
-        // A request to get a pong
-        google.protobuf.Empty ping = 105;
-    }
+  oneof command {
+    // A request to get diagnostic information from the daemon
+    DiagnosticCommand diagnostic = 101;
+    // A request to trigger a self-update if possible
+    SelfUpdateCommand self_update = 102;
+    // A request for the daemon to sync data
+    SyncCommand sync = 103;
+    // A request for the daemon to
+    TelemetryEmitTrackCommand telemetry_emit_track = 104;
+    // A request to get a pong
+    google.protobuf.Empty ping = 105;
+  }
 }
 
 // Response message type used to send a response to a command
 message DaemonResponse {
-    optional int64 id = 1;
+  optional int64 id = 1;
 
-    oneof response {
-        // A response to a diagnostic command
-        DiagnosticResponse diagnostic = 101;
-        // A response to a self-update command
-        SelfUpdateResponse self_update = 102;
-        // A response to a sync command
-        SyncResponse sync = 103;
-        // A response to a ping command
-        google.protobuf.Empty pong = 105;
-    }
+  oneof response {
+    // A response to a diagnostic command
+    DiagnosticResponse diagnostic = 101;
+    // A response to a self-update command
+    SelfUpdateResponse self_update = 102;
+    // A response to a sync command
+    SyncResponse sync = 103;
+    // A response to a ping command
+    google.protobuf.Empty pong = 105;
+  }
 }
 
 // Command to get diagnostics
 message DiagnosticCommand {
-    // Parts of the diagnostics to get
-    enum DiagnosticPart {
-        TIME_STARTED_EPOCH = 0;
-        SETTINGS_WATCHER_STATUS = 1;
-        WEBSOCKET_STATUS = 2;
-        SYSTEM_SOCKET_STATUS = 3;
-    }
+  // Parts of the diagnostics to get
+  enum DiagnosticPart {
+    TIME_STARTED_EPOCH = 0;
+    SETTINGS_WATCHER_STATUS = 1;
+    WEBSOCKET_STATUS = 2;
+    SYSTEM_SOCKET_STATUS = 3;
+  }
 
-    // If set only get the diagnostic part specified
-    repeated DiagnosticPart parts = 1;
+  // If set only get the diagnostic part specified
+  repeated DiagnosticPart parts = 1;
 }
 
 // Response to DiagnosticCommand
 message DiagnosticResponse {
-    // Status of the settings watcher
-    message SettingsWatcherStatus {
-        enum Status {
-            OK = 0;
-            ERROR = 1;
-        }
-    
-        Status status = 1;
-        optional string error = 2;
-    }
-
-    // Status of the websocket
-    message WebsocketStatus {
-        enum Status {
-            OK = 0;
-            ERROR = 1;
-        }
-    
-        Status status = 1;
-        optional string error = 2;
-    }
-
-    // Status of the system socket
-    message SystemSocketStatus {
-        enum Status {
-            OK = 0;
-            ERROR = 1;
-        }
-
-        Status status = 1;
-        optional string error = 2;
-    }
-
-    // The time that the settings debugwatcher was started in seconds since the epoch
-    optional uint64 time_started_epoch = 1;
-    // The status of the settings watcher
-    optional SettingsWatcherStatus settings_watcher_status = 2;
-    // The status of the websocket
-    optional WebsocketStatus websocket_status = 3;
-    // The status of the system socket
-    optional SystemSocketStatus system_socket_status = 4;
-}
-
-// Command to trigger the daemon to attempt to self-update Fig if possible
-message SelfUpdateCommand { }
-
-// Response to SelfUpdateCommand
-message SelfUpdateResponse {
-    // Status of the update
-    // This is out of order as Ok may be changed to a different type of
-    // status such as Updated or NotUpdated
+  // Status of the settings watcher
+  message SettingsWatcherStatus {
     enum Status {
-        ERROR = 0;
-        OK = 1;
+      OK = 0;
+      ERROR = 1;
     }
 
     Status status = 1;
     optional string error = 2;
+  }
+
+  // Status of the websocket
+  message WebsocketStatus {
+    enum Status {
+      OK = 0;
+      ERROR = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+  }
+
+  // Status of the system socket
+  message SystemSocketStatus {
+    enum Status {
+      OK = 0;
+      ERROR = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+  }
+
+  // The time that the settings debugwatcher was started in seconds since the
+  // epoch
+  optional uint64 time_started_epoch = 1;
+  // The status of the settings watcher
+  optional SettingsWatcherStatus settings_watcher_status = 2;
+  // The status of the websocket
+  optional WebsocketStatus websocket_status = 3;
+  // The status of the system socket
+  optional SystemSocketStatus system_socket_status = 4;
+}
+
+// Command to trigger the daemon to attempt to self-update Fig if possible
+message SelfUpdateCommand {}
+
+// Response to SelfUpdateCommand
+message SelfUpdateResponse {
+  // Status of the update
+  // This is out of order as Ok may be changed to a different type of
+  // status such as Updated or NotUpdated
+  enum Status {
+    ERROR = 0;
+    OK = 1;
+  }
+
+  Status status = 1;
+  optional string error = 2;
 }
 
 message SyncCommand {
-    enum SyncType {
-        // This will only clone new repositories
-        PLUGIN_CLONE = 0;
-        // This will clone and update all repositories
-        PLUGIN_UPDATE = 1;
-    }
+  enum SyncType {
+    // This will only clone new repositories
+    PLUGIN_CLONE = 0;
+    // This will clone and update all repositories
+    PLUGIN_UPDATE = 1;
+  }
 
-    SyncType type = 1;
+  SyncType type = 1;
 }
 
 message SyncResponse {
-    enum SyncStatus {
-        OK = 0;
-        ERROR = 1;
-    }
+  enum SyncStatus {
+    OK = 0;
+    ERROR = 1;
+  }
 
-    SyncStatus status = 1;
-    optional string error = 2;
+  SyncStatus status = 1;
+  optional string error = 2;
 }
 
 message TelemetryEmitTrackCommand {
-    enum Source {
-        APP = 0;
-        CLI = 1;
-        DAEMON = 2;
-    }
+  enum Source {
+    APP = 0;
+    CLI = 1;
+    DAEMON = 2;
+  }
 
-    string event = 1;  
-    map<string, fig_common.Json> properties = 2;
-    optional Source source = 3;
+  string event = 1;
+  map<string, fig_common.Json> properties = 2;
+  optional Source source = 3;
 
-    // Queue the event so that it is not dispatched immediately but rather
-    // is dispatched at a regularly scheduled interval by the daemon.
-    optional bool enqueue = 4;
+  // Queue the event so that it is not dispatched immediately but rather
+  // is dispatched at a regularly scheduled interval by the daemon.
+  optional bool enqueue = 4;
 }

@@ -58,7 +58,7 @@ where
         match opt {
             Some(v) => v.into(),
             None => Self {
-                value: Some(json::Value::Null(json::Null {})),
+                value: Some(json::Value::Null(())),
             },
         }
     }
@@ -95,7 +95,7 @@ impl From<Value> for Json {
     fn from(value: Value) -> Self {
         Self {
             value: Some(match value {
-                Value::Null => json::Value::Null(json::Null {}),
+                Value::Null => json::Value::Null(()),
                 Value::Bool(b) => json::Value::Bool(b),
                 Value::Number(n) => json::Value::Number(json::Number {
                     number: n

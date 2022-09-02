@@ -275,17 +275,13 @@ async fn handle_commands(
         let (request, nonce_channel) = match command {
             FigtermCommand::InterceptDefault => (
                 Request::Intercept(InterceptRequest {
-                    intercept_command: Some(intercept_request::InterceptCommand::SetInterceptAll(
-                        intercept_request::SetInterceptAll {},
-                    )),
+                    intercept_command: Some(intercept_request::InterceptCommand::SetInterceptAll(())),
                 }),
                 None,
             ),
             FigtermCommand::InterceptClear => (
                 Request::Intercept(InterceptRequest {
-                    intercept_command: Some(intercept_request::InterceptCommand::ClearIntercept(
-                        intercept_request::ClearIntercept {},
-                    )),
+                    intercept_command: Some(intercept_request::InterceptCommand::ClearIntercept(())),
                 }),
                 None,
             ),
