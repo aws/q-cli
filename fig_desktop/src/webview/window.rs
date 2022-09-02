@@ -10,7 +10,10 @@ use wry::application::dpi::{
     PhysicalSize,
     Position,
 };
-use wry::webview::WebView;
+use wry::webview::{
+    WebContext,
+    WebView,
+};
 
 use crate::event::WindowEvent;
 use crate::figterm::{
@@ -41,21 +44,23 @@ impl fmt::Display for WindowId {
 // TODO: Add state for the active terminal window
 pub struct WindowState {
     pub webview: WebView,
+    pub context: WebContext,
     pub window_id: WindowId,
     pub anchor: RwLock<PhysicalPosition<i32>>,
     pub position: RwLock<PhysicalPosition<i32>>,
 }
 
 impl WindowState {
-    pub fn new(window_id: WindowId, webview: WebView) -> Self {
+    pub fn new(window_id: WindowId, webview: WebView, context: WebContext) -> Self {
         let position = webview
             .window()
             .inner_position()
             .expect("Failed to acquire window position");
 
         Self {
-            window_id,
             webview,
+            context,
+            window_id,
             anchor: RwLock::new(PhysicalPosition::default()),
             position: RwLock::new(position),
         }

@@ -370,10 +370,10 @@ fn test() {
 
     let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
     cfg_if! {
-        if #[cfg(target_os = "windows")] {
+        if #[cfg(windows)] {
             let mut processes = s.processes_by_name("fig_desktop");
             assert!(processes.next().is_some());
-        } else if #[cfg(target_os = "linux")] {
+        } else {
             let mut processes = s.processes_by_exact_name("fig_desktop");
             assert!(processes.next().is_some());
         }

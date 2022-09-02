@@ -122,8 +122,8 @@ impl WebviewManager {
         Self::default()
     }
 
-    fn insert_webview(&mut self, window_id: WindowId, webview: WebView) {
-        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview));
+    fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext) {
+        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview, context));
         self.fig_id_map.insert(window_id, webview_arc.clone());
         self.window_id_map
             .insert(webview_arc.webview.window().id(), webview_arc);
@@ -134,13 +134,13 @@ impl WebviewManager {
         window_id: WindowId,
         builder: impl Fn(&mut WebContext, &EventLoop, T) -> wry::Result<WebView>,
         options: T,
-    ) -> wry::Result<()> {
-        let webview = builder(
-            &mut WebContext::new(directories::fig_data_dir().ok()),
-            &self.event_loop,
-            options,
-        )?;
-        self.insert_webview(window_id, webview);
+    ) -> anyhow::Result<()> {
+        let context_path = directories::fig_data_dir()?
+            .join("webcontexts")
+            .join(window_id.0.as_ref());
+        let mut context = WebContext::new(Some(context_path));
+        let webview = builder(&mut context, &self.event_loop, options)?;
+        self.insert_webview(window_id, webview, context);
         Ok(())
     }
 

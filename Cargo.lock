@@ -15,6 +15,24 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "955f37ac58af2416bac687c8ab66a4ccba282229bd7422a28d2281a5e66a6116"
 
 [[package]]
+name = "accessibility"
+version = "0.1.6"
+dependencies = [
+ "accessibility-sys",
+ "cocoa",
+ "core-foundation",
+ "objc",
+ "thiserror",
+]
+
+[[package]]
+name = "accessibility-sys"
+version = "0.1.3"
+dependencies = [
+ "core-foundation-sys",
+]
+
+[[package]]
 name = "addr2line"
 version = "0.17.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -151,6 +169,14 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "a26fa4d7e3f2eebadf743988fc8aec9fa9a9e82611acafd77c1462ed6262440a"
 dependencies = [
  "backtrace",
+]
+
+[[package]]
+name = "appkit-nsworkspace-bindings"
+version = "0.1.0"
+dependencies = [
+ "bindgen",
+ "objc",
 ]
 
 [[package]]
@@ -2558,6 +2584,7 @@ dependencies = [
  "hashbrown 0.12.3",
  "image",
  "imageproc",
+ "macos_accessibility_position",
  "moka",
  "notify",
  "once_cell",
@@ -4187,6 +4214,19 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b823e83b2affd8f40a9ee8c29dbc56404c1e34cd2710921f2801e2cf29527afa"
 dependencies = [
  "libc",
+]
+
+[[package]]
+name = "macos_accessibility_position"
+version = "0.1.0"
+dependencies = [
+ "accessibility",
+ "accessibility-sys",
+ "appkit-nsworkspace-bindings",
+ "cocoa",
+ "core-foundation",
+ "core-graphics",
+ "lazy_static",
 ]
 
 [[package]]
