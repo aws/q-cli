@@ -86,15 +86,13 @@ async fn main() {
         let url = Url::parse(&url).unwrap();
         assert_eq!(url.scheme(), "fig");
 
-        url.host_str().map(|s| {
-            if s == "dashboard" {
-                let mut path = String::new();
-                path.push_str(url.path());
-                path
-            } else {
+        url.host_str().and_then(|s| match s {
+            "dashboard" => Some(url.path().to_owned()),
+            "plugins" => Some(format!("plugins/{}", url.path())),
+            _ => {
                 warn!("Invalid deep link");
-                "".to_string()
-            }
+                None
+            },
         })
     });
 
