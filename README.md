@@ -3,6 +3,46 @@
 [![Rust CI](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml/badge.svg?branch=develop)](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml)
 [![codecov](https://codecov.io/gh/withfig/macos/branch/develop/graph/badge.svg?token=EFRYMRH32O)](https://codecov.io/gh/withfig/macos)
 
+```mermaid
+graph LR
+    term[Terminal]
+    autocomplete[Autocomplete Engine]
+    click autocomplete href "https://www.github.com/withfig/autocomplete-engine"
+    dashboard[Dashboard]
+    click dashboard href "https://www.github.com/withfig/mission-control"
+    desktop[Destkop App]
+    click desktop href "https://github.com/withfig/macos/tree/HEAD/fig_desktop"
+    subgraph Remote
+    figterm[Figterm]
+    click figterm href "https://github.com/withfig/macos/tree/HEAD/figterm"
+    shell[User Shell]
+    cli[Cli Commands]
+    subgraph Kernel
+    pseudo[Pseudoterminal]
+    end
+    end
+
+    term -->|stdin| figterm
+    term ---|stdout| figterm
+
+    autocomplete --> desktop
+    dashboard --> desktop
+
+    desktop ===|secure proto| figterm
+
+    figterm -->|stdin| pseudo
+    pseudo -->|stdout| figterm
+
+    pseudo -->|stdin| shell
+    shell -->|stdout| pseudo
+
+    shell -.- |"fork()"| figterm
+
+    shell --> cli
+
+    cli ===|figterm ipc| figterm
+```
+
 The Fig monorepo houses most of the core Fig code for the Fig desktop app
 and CLI. Several projects live here:
 
