@@ -19,7 +19,7 @@ import SwiftProtobuf
 //    responses twice
 //
 // 4. Listen for incoming hooks/responses on connection. Handle hooks as usual.
-//    Handle reponses to PTY execute and Process.run events as usual (notifications?).
+//    Handle responses to PTY execute and Process.run events as usual (notifications?).
 //    Store requests by handler id in a map in SecureIPC.
 
 struct SocketSession {
@@ -265,7 +265,7 @@ class SecureIPC: UnixSocketServerDelegate {
   }
 
   internal func handleHook(_ message: Secure_Hostbound.Hook) {
-    Logger.log(message: "Recieved secure hook message!", subsystem: .unix)
+    Logger.log(message: "Received secure hook message!", subsystem: .unix)
 
     let json = try? message.jsonString()
     Logger.log(message: json ?? "Could not decode message", subsystem: .unix)

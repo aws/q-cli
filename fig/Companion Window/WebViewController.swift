@@ -577,7 +577,7 @@ class WebView: WKWebView {
       return true
     }
 
-    // Prevent propogation of uncaught events
+    // Prevent propagation of uncaught events
     return true
   }
 

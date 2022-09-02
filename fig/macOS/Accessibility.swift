@@ -281,7 +281,7 @@ extension Accessibility {
     cursorCache = [:]
   }
   static func findXTermCursorInElectronWindow(_ window: ExternalWindow, skipCache: Bool = false) -> CGRect? {
-    guard let axElement = window.accesibilityElement else { return nil }
+    guard let axElement = window.accessibilityElement else { return nil }
 
     // remove invalid entries; this fixes the issue with VSCode where upon changing tabs, some cached cursors go stale
     cursorCache[window.hash] = cursorCache[window.hash]?.filter { isValidUIElement($0) }

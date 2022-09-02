@@ -42,7 +42,7 @@ use webview::{
 };
 pub use webview::{
     AUTOCOMPLETE_ID,
-    FIG_PROTO_MESSAGE_RECIEVED,
+    FIG_PROTO_MESSAGE_RECEIVED,
     MISSION_CONTROL_ID,
 };
 use wry::application::event_loop::{

@@ -117,7 +117,7 @@ class ShellInsertionProvider {
         }
     }
 
-    Defaults.shared.incrementKeystokesSaved(by: insertionText.count)
+    Defaults.shared.incrementKeystrokesSaved(by: insertionText.count)
 
   }
 
@@ -145,7 +145,7 @@ class ShellInsertionProvider {
       }
     }
 
-    Defaults.shared.incrementKeystokesSaved(by: deletion + insertion.count)
+    Defaults.shared.incrementKeystrokesSaved(by: deletion + insertion.count)
 
   }
 

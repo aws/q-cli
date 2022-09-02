@@ -237,7 +237,7 @@ impl Diagnostic for OSVersion {
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let response = send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
         .await?
-        .context("Recieved EOF while reading diagnostics")?;
+        .context("Received EOF while reading diagnostics")?;
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
@@ -397,7 +397,7 @@ pub async fn verify_integration(integration: impl Into<String>) -> Result<String
         action: IntegrationAction::VerifyInstall as i32,
     }))
     .await?
-    .context("Recieved EOF while getting terminal integration")?;
+    .context("Received EOF while getting terminal integration")?;
 
     let message = match response.response {
         Some(Response::Success(success)) => success.message,

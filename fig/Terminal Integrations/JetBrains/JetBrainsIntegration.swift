@@ -122,7 +122,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     } catch let error as InstallationStatus {
       return error
     } catch {
-      return .failed(error: "An unknown error occured determining the plugins folder")
+      return .failed(error: "An unknown error occurred determining the plugins folder")
     }
 
     let destinationURL = pluginsPathURL.appendingPathComponent(JetBrainsIntegration.plugin.slug,
@@ -175,7 +175,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     } catch let error as InstallationStatus {
       return error
     } catch {
-      return .failed(error: "An unknown error occured determining the plugins folder")
+      return .failed(error: "An unknown error occurred determining the plugins folder")
     }
 
     let applicationFolder = pluginsPathURL.deletingLastPathComponent()
@@ -185,7 +185,7 @@ class JetBrainsIntegration: InputMethodDependentTerminalIntegrationProvider & In
     }
 
     if !self.uninstall() {
-      Logger.log(message: "An error occured when removing previous version of the plugin")
+      Logger.log(message: "An error occurred when removing previous version of the plugin")
     }
 
     let destinationURL = pluginsPathURL.appendingPathComponent(JetBrainsIntegration.plugin.slug,

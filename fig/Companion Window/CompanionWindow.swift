@@ -168,7 +168,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
   }
 
   @objc func deactivateApp() {
-    print("didDectivateApp", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
+    print("didDeactivateApp", NSWorkspace.shared.frontmostApplication?.bundleIdentifier ?? "<none>")
     forceReposition()
   }
 
@@ -430,7 +430,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
 
       self.styleMask = [.titled]
 
-      // this must be explictly inserted... cannot be included in a styleMask array(?!)
+      // this must be explicitly inserted... cannot be included in a styleMask array(?!)
       self.styleMask.insert(.resizable)
 
       if let closeButton = self.standardWindowButton(NSWindow.ButtonType.closeButton) {
@@ -650,7 +650,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
     //            self.orderFront(nil)
 
     // sometimes we might want to move the window without showing it visible
-    // to make future updates less jaring.
+    // to make future updates less jarring.
     if makeVisible {
       self.makeKeyAndOrderFront(nil)
     }
@@ -672,7 +672,7 @@ class CompanionWindow: NSWindow, NSWindowDelegate {
     let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &window)
 
     if result == .apiDisabled {
-      print("Accesibility needs to be enabled.")
+      print("Accessibility needs to be enabled.")
       return .zero
     }
 

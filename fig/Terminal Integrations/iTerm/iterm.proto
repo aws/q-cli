@@ -1385,7 +1385,7 @@ message LineContents {
   //
   // Lines usually end with a series of uninitialized cells. These are not included.
   //
-  // Here is psuedocode to interpret code_points_per_cell:
+  // Here is pseudocode to interpret code_points_per_cell:
   //
   //   text_index_to_screen_coord = {}
   //   screen_coord_to_text_index = {}

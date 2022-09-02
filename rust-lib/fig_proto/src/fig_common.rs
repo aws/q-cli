@@ -1,4 +1,4 @@
-//! Fig.js Protocal Buffers
+//! Fig.js Protocol Buffers
 
 use serde_json::Value;
 

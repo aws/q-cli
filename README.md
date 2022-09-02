@@ -13,7 +13,7 @@
 flowchart LR
     term[fa:fa-terminal Terminal]
     click term href "https://en.wikipedia.org/wiki/Terminal_emulator"
-      desktop[fa:fa-laptop-code Destkop App]
+      desktop[fa:fa-laptop-code Desktop App]
     click desktop href "https://github.com/withfig/macos/tree/HEAD/fig_desktop"
     subgraph webview[Web View]
       style webview fill:transparent,stroke-dasharray: 5 5
@@ -137,6 +137,9 @@ rustup target add arm_64-apple-darwin
 ### 4. Setup precommit hooks
 
 ```bash
+# Required for spell-checking
+cargo install typos-cli
+
 # Run `yarn` in root directory to add pre-commit hooks
 yarn
 ```
@@ -181,7 +184,7 @@ This will build the project and copy it to the correct place.
 
 ## Publish 
 
-When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required bacause it is needed to automatically generate specs.
+When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required because it is needed to automatically generate specs.
 
 
 ## Git Branching Conventions

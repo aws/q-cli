@@ -24,7 +24,7 @@ impl Backoff {
         self.attempt = 0;
     }
 
-    /// The sleep uses the equal jitter algorithm as descibed
+    /// The sleep uses the equal jitter algorithm as described
     /// [here](https://aws.amazon.com/blogs/architecture/exponential-backoff-and-jitter)
     pub async fn sleep(&mut self) {
         let sleep = {

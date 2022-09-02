@@ -46,7 +46,7 @@ class KeypressProvider {
     registerKeystrokeHandler()
 
     NotificationCenter.default.addObserver(self,
-                                           selector: #selector(accesibilityPermissionsUpdated),
+                                           selector: #selector(accessibilityPermissionsUpdated),
                                            name: Accessibility.permissionDidUpdate,
                                            object: nil)
 
@@ -102,7 +102,7 @@ class KeypressProvider {
 
   func registerKeyInterceptor() -> CFMachPort? {
     guard AXIsProcessTrustedWithOptions(nil) else {
-      print("KeypressProvider: Could not register without accesibility permissions")
+      print("KeypressProvider: Could not register without accessibility permissions")
       return nil
     }
 
@@ -227,7 +227,7 @@ class KeypressProvider {
     Autocomplete.position(makeVisibleImmediately: false)
   }
 
-  @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
+  @objc func accessibilityPermissionsUpdated(_ notification: Notification) {
     guard let granted = notification.object as? Bool else { return }
 
     if granted {
@@ -290,7 +290,7 @@ class KeypressProvider {
       return .ignore
     }
 
-    // fig.keypress only recieves keyDown events
+    // fig.keypress only receives keyDown events
     guard event.type == .keyDown else {
       Autocomplete.position(makeVisibleImmediately: false)
       return .consume

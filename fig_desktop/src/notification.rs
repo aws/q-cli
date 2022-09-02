@@ -17,7 +17,7 @@ use crate::event::{
 use crate::webview::window::WindowId;
 use crate::{
     EventLoopProxy,
-    FIG_PROTO_MESSAGE_RECIEVED,
+    FIG_PROTO_MESSAGE_RECEIVED,
 };
 
 #[derive(Debug, Default)]
@@ -49,7 +49,7 @@ impl NotificationsState {
             proxy.send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
-                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    event: FIG_PROTO_MESSAGE_RECEIVED.into(),
                     payload: base64::encode(encoded),
                 },
             })?

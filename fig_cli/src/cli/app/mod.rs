@@ -41,7 +41,7 @@ pub enum AppSubcommand {
     Restart,
     /// Quit the Fig desktop app
     Quit,
-    /// Set the internal psudo-terminal path
+    /// Set the internal pseudo-terminal path
     SetPath,
     /// Uninstall the Fig app
     Uninstall(uninstall::UninstallArgs),

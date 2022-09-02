@@ -41,7 +41,7 @@ use crate::notification::NotificationsState;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
-    FIG_PROTO_MESSAGE_RECIEVED,
+    FIG_PROTO_MESSAGE_RECEIVED,
 };
 
 pub async fn edit_buffer(
@@ -132,7 +132,7 @@ pub async fn edit_buffer(
             .send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
-                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    event: FIG_PROTO_MESSAGE_RECEIVED.into(),
                     payload: base64::encode(encoded),
                 },
             })

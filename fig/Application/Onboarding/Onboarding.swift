@@ -69,7 +69,7 @@ class Onboarding {
 
   static let loginURL: URL = Remote.baseURL.appendingPathComponent("login", isDirectory: true)
 
-  static func setUpEnviroment(completion:( () -> Void)? = nil) {
+  static func setUpEnvironment(completion:( () -> Void)? = nil) {
 
     if Diagnostic.isRunningOnReadOnlyVolume {
       Logger.log(message: "Currently running on read only volume! App is translocated!")
@@ -128,7 +128,7 @@ class Onboarding {
       }
 
     } catch {
-      Logger.log(message: "An error occured when attempting to install Fig! " + error.localizedDescription)
+      Logger.log(message: "An error occurred when attempting to install Fig! " + error.localizedDescription)
       SentrySDK.capture(message: "Installation: " + error.localizedDescription)
       Defaults.shared.lastInstallationError = error.localizedDescription
     }
@@ -270,7 +270,7 @@ extension Onboarding {
 
     switch request.action {
     case .installationScript:
-      Onboarding.setUpEnviroment {
+      Onboarding.setUpEnvironment {
         callback(true)
       }
     case .promptForAccessibilityPermission:

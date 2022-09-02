@@ -76,7 +76,7 @@ extern "C" fn cursor_callback(x: i32, y: i32, w: i32, h: i32) {
 }
 
 extern "C" fn log_warning(level: u8, message: *const c_char) {
-    // SAFETY: All the messages we recieve can be seen in `engine.vala`. They do not contain invalid
+    // SAFETY: All the messages we receive can be seen in `engine.vala`. They do not contain invalid
     // characters and they properly end with a null byte (vala upholds this).
     let message = unsafe { CStr::from_ptr(message as *mut c_char) };
     if let Ok(message) = message.to_str() {

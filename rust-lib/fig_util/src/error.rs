@@ -6,7 +6,7 @@ pub enum Error {
     IoError(#[from] std::io::Error),
     #[error("unsupported platform")]
     UnsupportedPlatform,
-    #[error("unsupported archiecture")]
+    #[error("unsupported architecture")]
     UnsupportedArch,
     #[error(transparent)]
     Directory(#[from] crate::directories::DirectoryError),

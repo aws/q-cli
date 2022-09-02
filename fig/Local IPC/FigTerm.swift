@@ -59,7 +59,7 @@ class FigTerm {
       socket.disconnect()
     }
 
-    Defaults.shared.incrementKeystokesSaved(by: Int(update.deletion) + update.insertion.count)
+    Defaults.shared.incrementKeystrokesSaved(by: Int(update.deletion) + update.insertion.count)
 
     if update.immediate {
       NotificationCenter.default.post(name: Self.lineAcceptedInKeystrokeBufferNotification, object: nil)

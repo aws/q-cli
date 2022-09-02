@@ -160,7 +160,7 @@ pub enum InternalSubcommand {
     PreCmd,
     /// Change the local-state file
     LocalState(local_state::LocalStateArgs),
-    /// Callback used for the internal psudoterminal
+    /// Callback used for the internal pseudoterminal
     Callback(CallbackArgs),
     /// Install fig cli
     Install(InstallArgs),
@@ -482,7 +482,7 @@ impl InternalSubcommand {
                                     let message = response.transcode_to_dynamic();
                                     println!("{}", serde_json::to_string(&message)?)
                                 },
-                                None => bail!("Recieved EOF while waiting for response"),
+                                None => bail!("Received EOF while waiting for response"),
                             }
                         }};
                     }

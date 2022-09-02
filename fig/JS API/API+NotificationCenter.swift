@@ -233,7 +233,7 @@ extension Fig_Notification {
   }
 }
 
-// Convience methods for posting Notifications
+// Convenience methods for posting Notifications
 extension APINotificationCenter {
   func post(_ notification: Fig_EditBufferChangedNotification) {
     var wrapper = Fig_Notification()

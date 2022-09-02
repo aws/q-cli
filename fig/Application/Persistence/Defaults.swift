@@ -182,22 +182,22 @@ class Defaults {
   }
 
   let autocompletePreferenceUpdated = Notification.Name("autocompletePreferenceUpdated")
-  fileprivate var _useAutcomplete: Bool?
+  fileprivate var _useAutocomplete: Bool?
   var useAutocomplete: Bool {
     get {
-      if let flag = _useAutcomplete {
+      if let flag = _useAutocomplete {
         return flag
       } else {
         let flag = defaults.bool(forKey: "useAutocomplete")
-        _useAutcomplete = flag
+        _useAutocomplete = flag
         return flag
       }
     }
 
     set(flag) {
-      guard _useAutcomplete != flag else { return }
+      guard _useAutocomplete != flag else { return }
 
-      _useAutcomplete = flag
+      _useAutocomplete = flag
       NotificationCenter.default.post(name: autocompletePreferenceUpdated, object: flag)
       defaults.set(flag, forKey: "useAutocomplete")
       defaults.synchronize()
@@ -560,7 +560,7 @@ class Defaults {
 
   }
 
-  func incrementKeystokesSaved(by value: Int) {
+  func incrementKeystrokesSaved(by value: Int) {
      let prev = defaults.integer(forKey: "keystrokesSaved")
      defaults.set(prev + value, forKey: "keystrokesSaved")
   }
@@ -605,7 +605,7 @@ extension Defaults {
     case let string as String:
       fig_value = Fig_DefaultsValue.with { $0.string = string }
     default:
-      throw APIError.generic(message: "Value is an unsupport type.")
+      throw APIError.generic(message: "Value is an unsupported type.")
 
     }
 
@@ -636,7 +636,7 @@ extension Defaults {
     case .string(let string):
       defaults.set(string, forKey: request.key)
     default:
-      throw APIError.generic(message: "Value is an unsupport type.")
+      throw APIError.generic(message: "Value is an unsupported type.")
     }
 
     defaults.synchronize()

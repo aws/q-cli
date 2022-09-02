@@ -64,7 +64,7 @@ where
                 },
                 // On any other error, return the error
                 Err(err) => {
-                    // TODO(grant): add resyncing to message boundry
+                    // TODO(grant): add resyncing to message boundary
                     let position = cursor.position() as usize;
                     self.buffer.advance(position);
                     return Err(err.into());

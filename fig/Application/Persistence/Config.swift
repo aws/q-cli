@@ -13,7 +13,7 @@ class Config {
     configPath: URL(fileURLWithPath: "\(FileManager.default.homeDirectoryForCurrentUser.path)/.fig/user/config")
   )
 
-  static let userExplictlyQuitApp = "APP_TERMINATED_BY_USER"
+  static let userExplicitlyQuitApp = "APP_TERMINATED_BY_USER"
   static let userLoggedIn = "FIG_LOGGED_IN"
   private var userConfigPath: URL!
 

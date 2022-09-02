@@ -298,7 +298,7 @@ extension InputMethod: IntegrationProvider {
     self.updateStatus()
 
     // If we attempt to reinstall the input method before restarting,
-    // we'll recieve OSStatus -50 when trying to select the InputSource
+    // we'll receive OSStatus -50 when trying to select the InputSource
     InputMethod.log("After uninstalling the input method, the macOS app" +
                     "must be restarted before it can be installed again")
 
@@ -418,7 +418,7 @@ extension InputMethod {
 
     if status != noErr {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when selecting input method: \(err.localizedDescription)"
+      let message = "An error occurred when selecting input method: \(err.localizedDescription)"
       InputMethod.log(message)
 
       if !inputMethod.isEnabled {
@@ -444,7 +444,7 @@ extension InputMethod {
 
     if status != noErr {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when deselecting input method: \(err.localizedDescription)"
+      let message = "An error occurred when deselecting input method: \(err.localizedDescription)"
       InputMethod.log(message)
       return (err.localizedDescription, Int(status))
     }
@@ -462,7 +462,7 @@ extension InputMethod {
 
     if status != noErr {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when enabling input method: \(err.localizedDescription)"
+      let message = "An error occurred when enabling input method: \(err.localizedDescription)"
       InputMethod.log(message)
       return (err.localizedDescription, Int(status))
     }
@@ -479,7 +479,7 @@ extension InputMethod {
 
     if status != noErr {
       let err = NSError(domain: NSOSStatusErrorDomain, code: Int(status), userInfo: nil)
-      let message = "An error occured when disabling input method: \(err.localizedDescription)"
+      let message = "An error occurred when disabling input method: \(err.localizedDescription)"
       InputMethod.log(message)
       return (err.localizedDescription, Int(status))
     }

@@ -42,7 +42,7 @@ use crate::{
     DebugState,
     EventLoopProxy,
     InterceptState,
-    FIG_PROTO_MESSAGE_RECIEVED,
+    FIG_PROTO_MESSAGE_RECEIVED,
 };
 
 static FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
@@ -114,7 +114,7 @@ pub async fn api_request(
         },
     };
 
-    trace!(?request, "Recieved request from {window_id}");
+    trace!(?request, "Received request from {window_id}");
 
     let request_id = match request.id {
         Some(request_id) => request_id,
@@ -173,7 +173,7 @@ pub async fn api_request(
         .send_event(Event::WindowEvent {
             window_id,
             window_event: WindowEvent::Emit {
-                event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                event: FIG_PROTO_MESSAGE_RECEIVED.into(),
                 payload: base64::encode(message.encode_to_vec()),
             },
         })

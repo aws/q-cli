@@ -1,4 +1,4 @@
-//! Protocal buffer definitions
+//! Protocol buffer definitions
 
 pub mod daemon;
 pub mod fig;

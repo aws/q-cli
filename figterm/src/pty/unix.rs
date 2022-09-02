@@ -74,19 +74,19 @@ fn cloexec(fd: RawFd) -> Result<()> {
     Ok(())
 }
 
-/// Open a psudoterminal
+/// Open a pseudoterminal
 pub fn open_pty(pty_size: &PtySize) -> Result<PtyPair> {
-    // Open a new psudoterminal master
-    // The psudoterminal must be initalized with O_NONBLOCK since on macOS, the
+    // Open a new pseudoterminal master
+    // The pseudoterminal must be initialized with O_NONBLOCK since on macOS, the
     // it can not be safely set with fcntl() later on.
     // https://github.com/pkgw/stund/blob/master/tokio-pty-process/src/lib.rs#L127-L133
     let master_pty = posix_openpt(OFlag::O_RDWR | OFlag::O_NONBLOCK)?;
 
-    // Allow psudoterminal pair to be generated
+    // Allow pseudoterminal pair to be generated
     grantpt(&master_pty)?;
     unlockpt(&master_pty)?;
 
-    // Get the name of the psudoterminal
+    // Get the name of the pseudoterminal
     // SAFETY: This is done before any threads are spawned, thus it being
     // non thread safe is not an issue
     let pty_name = unsafe { ptsname(&master_pty) }?;

@@ -15,12 +15,12 @@ class PTY {
 
   init() {
     NotificationCenter.default.addObserver(self,
-                                           selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
-                                           name: PseudoTerminal.recievedEnvironmentVariablesFromShellNotification,
+                                           selector: #selector(receivedEnvironmentVariablesFromShell(_:)),
+                                           name: PseudoTerminal.receivedEnvironmentVariablesFromShellNotification,
                                            object: nil)
     NotificationCenter.default.addObserver(self,
-                                           selector: #selector(recievedCallbackNotification(_:)),
-                                           name: PseudoTerminal.recievedCallbackNotification,
+                                           selector: #selector(receivedCallbackNotification(_:)),
+                                           name: PseudoTerminal.receivedCallbackNotification,
                                            object: nil)
   }
 
@@ -41,7 +41,7 @@ class PTY {
 
   fileprivate func mergeFigSpecificEnvironmentVariables(with environment: [String: String]) -> [String] {
     // don't add shell hooks to pty
-    // Add TERM variable to supress warning for ZSH
+    // Add TERM variable to suppress warning for ZSH
     // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
     // Set FIG_PTY so that dotfiles can detect when they are being run in fig.pty
     let lang = NSLocale.current.languageCode ?? "en"
@@ -64,11 +64,11 @@ class PTY {
 }
 
 extension PTY {
-  @objc func recievedEnvironmentVariablesFromShell(_ notification: Notification) {
+  @objc func receivedEnvironmentVariablesFromShell(_ notification: Notification) {
 
   }
 
-  @objc func recievedCallbackNotification(_ notification: Notification) {
+  @objc func receivedCallbackNotification(_ notification: Notification) {
 
   }
 }

@@ -58,7 +58,7 @@ class Integrations {
     "com.raycast.macos"
   ]
 
-  static let jetbrainIDEs: Set = [
+  static let jetbrainsIDEs: Set = [
     IntellijCE,
     Intellij,
     WebStorm,
@@ -72,7 +72,7 @@ class Integrations {
     AndroidStudio,
     RubyMine
   ]
-  static let inputMethodDependentTerminals: Set = jetbrainIDEs.union([Alacritty, Kitty, Nova, WezTerm])
+  static let inputMethodDependentTerminals: Set = jetbrainsIDEs.union([Alacritty, Kitty, Nova, WezTerm])
 
   static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
   static var electronTerminals: Set<String> {

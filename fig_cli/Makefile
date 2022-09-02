@@ -121,7 +121,7 @@ install-native-usr: build-native
 install-native-usr-release: build-native-release
 	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
 
-### Generate Fig compleation spec
+### Generate Fig completion spec
 
 generate-spec: install-native
 	$(HOME)/.local/bin/$(BINARY_NAME) completion fig > spec.ts

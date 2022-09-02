@@ -185,7 +185,7 @@ class iTermIntegration: TerminalIntegrationProvider {
     didSet {
       if isConnectedToAPI {
         // signal that iTerm Integration has been set up successfully
-        self.runtimeValidationOccured()
+        self.runtimeValidationOccurred()
         // Remove legacy integration!
         try? FileManager.default.removeItem(at: URL(fileURLWithPath: iTermIntegration.legacyIntegrationPath))
       }
@@ -252,7 +252,7 @@ extension iTermIntegration {
     var allCredentials = contents.split(separator: "\n")
 
     guard allCredentials.count > 0 else {
-      Logger.log(message: "no credentials availible!", subsystem: .iterm)
+      Logger.log(message: "no credentials available!", subsystem: .iterm)
       return nil
     }
 
@@ -379,7 +379,7 @@ class iTermEventStream {
 extension iTermIntegration: UnixSocketDelegate {
 
   func socket(_ socket: UnixSocketClient, didReceive message: String) {
-    Logger.log(message: "recieved message, '\(message)'", subsystem: .iterm)
+    Logger.log(message: "received message, '\(message)'", subsystem: .iterm)
 
     guard !message.contains("HTTP/1.1 401 Unauthorized") else {
       Logger.log(message: "disconnecting because connection refused", subsystem: .iterm)
@@ -405,7 +405,7 @@ extension iTermIntegration: UnixSocketDelegate {
   }
 
   func socket(_ socket: UnixSocketClient, didReceive data: Data) {
-    Logger.log(message: "recieved data", subsystem: .iterm)
+    Logger.log(message: "received data", subsystem: .iterm)
     ws.add(data: data)
   }
 

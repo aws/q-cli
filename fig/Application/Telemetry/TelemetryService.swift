@@ -330,7 +330,7 @@ extension TelemetryProvider: LocalTelemetryService {
   func flushAll(includingCurrentDay: Bool = false) {
     let today = Date(timeIntervalSinceNow: 0).telemetryDayIdentifier
     self.pending.forEach {
-      // exclude current day unless explictly pushing all events
+      // exclude current day unless explicitly pushing all events
       if includingCurrentDay || $0 != today {
         self.flush(eventsFor: $0)
       }

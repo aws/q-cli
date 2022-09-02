@@ -705,10 +705,10 @@ impl DoctorCheck for FigtermSocketCheck {
                         }
                     }
                 },
-                _ => return Err(doctor_error!("Failed to recieve expected message from figterm")),
+                _ => return Err(doctor_error!("Failed to receive expected message from figterm")),
             },
-            Ok(None) => return Err(doctor_error!("Recieved EOF when trying to recieve figterm diagnostics")),
-            Err(err) => return Err(doctor_error!("Failed to recieve figterm diagnostics: {err}")),
+            Ok(None) => return Err(doctor_error!("Received EOF when trying to receive figterm diagnostics")),
+            Err(err) => return Err(doctor_error!("Failed to receive figterm diagnostics: {err}")),
         }
 
         Ok(())
@@ -725,16 +725,16 @@ impl DoctorCheck for InsertionLockCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let insetion_lock_path = directories::fig_dir()
+        let insertion_lock_path = directories::fig_dir()
             .map_err(eyre::Report::from)?
             .join("insertion-lock");
 
-        if insetion_lock_path.exists() {
+        if insertion_lock_path.exists() {
             return Err(DoctorError::Error {
                 reason: "Insertion lock exists".into(),
                 info: vec![],
                 fix: Some(DoctorFix::Sync(Box::new(move || {
-                    std::fs::remove_file(&insetion_lock_path)?;
+                    std::fs::remove_file(&insertion_lock_path)?;
                     Ok(())
                 }))),
                 error: None,
@@ -1822,7 +1822,7 @@ impl DoctorCheck for WindowsConsoleCheck {
             if stdin_ok != 1 || stdout_ok != 1 {
                 return Err(
                     DoctorError::Error {
-                        reason: "Windows Console APIs are not suppported in this terminal".into(),
+                        reason: "Windows Console APIs are not supported in this terminal".into(),
                         info: vec![
                             "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
                             "MinTTY and other TTY implementations may not work properly.".into(),
@@ -2064,7 +2064,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         })?;
     }
 
-    // Set psudoterminal path first so we avoid the check failing if it is not set
+    // Set pseudoterminal path first so we avoid the check failing if it is not set
     if let Ok(path) = std::env::var("PATH") {
         fig_settings::state::set_value("pty.path", json!(path)).ok();
     }

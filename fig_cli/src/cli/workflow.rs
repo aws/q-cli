@@ -824,9 +824,9 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
 
     tokio::fs::write(&file, script).await.unwrap();
 
-    let specificer = deno_core::ModuleSpecifier::from_file_path(file).unwrap();
+    let specifier = deno_core::ModuleSpecifier::from_file_path(file).unwrap();
 
-    let mut worker = MainWorker::bootstrap_from_options(specificer.clone(), permissions, options);
+    let mut worker = MainWorker::bootstrap_from_options(specifier.clone(), permissions, options);
 
     worker.execute_script("[fig-init]", "const args = {}").unwrap();
 
@@ -836,7 +836,7 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
             .unwrap();
     }
 
-    worker.execute_main_module(&specificer).await.unwrap();
+    worker.execute_main_module(&specifier).await.unwrap();
 
     worker.run_event_loop(false).await.unwrap();
 

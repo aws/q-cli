@@ -62,10 +62,10 @@ impl WindowState {
     }
 
     fn update_position(&self, native_state: &NativeState) {
-        let positon = *self.position.read();
+        let position = *self.position.read();
         let anchor = *self.anchor.read();
-        let x = positon.x + anchor.x;
-        let y = positon.y + anchor.y + 5;
+        let x = position.x + anchor.x;
+        let y = position.y + anchor.y + 5;
         self.webview.window().set_visible(true);
         native_state.position_window(&self.window_id, x, y, || {
             self.webview

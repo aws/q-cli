@@ -479,7 +479,7 @@ impl Credentials {
         Ok(directories::fig_data_dir()?.join("credentials.json"))
     }
 
-    /// Path to alternitive credentials file folder
+    /// Path to alternative credentials file folder
     pub fn account_credentials_dir() -> Result<PathBuf, fig_util::directories::DirectoryError> {
         Ok(directories::fig_data_dir()?.join("account_credentials"))
     }
@@ -660,7 +660,7 @@ impl Credentials {
         time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
     }
 
-    pub fn is_expired_epslion(&self, epsilon: time::Duration) -> bool {
+    pub fn is_expired_epsilon(&self, epsilon: time::Duration) -> bool {
         match self.get_expiration_time() {
             Some(expiration_time) => expiration_time + epsilon < time::OffsetDateTime::now_utc(),
             None => true,
@@ -668,7 +668,7 @@ impl Credentials {
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epslion(time::Duration::seconds(30))
+        self.is_expired_epsilon(time::Duration::seconds(30))
     }
 
     pub fn get_email(&self) -> Option<&String> {

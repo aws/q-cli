@@ -149,7 +149,7 @@ pub async fn handle_sway(
         tokio::select! {
             res = conn.read_buf(&mut buf) => {
                 res.unwrap();
-                handle_incomming(&mut conn, &mut buf, &sway_state).await;
+                handle_incoming(&mut conn, &mut buf, &sway_state).await;
             }
             // command = sway_rx.recv_async() => {
             //     command.unwrap().to_request().as_bytes()).await.unwrap();
@@ -163,7 +163,7 @@ pub async fn handle_sway(
     }
 }
 
-pub async fn handle_incomming(conn: &mut UnixStream, buf: &mut BytesMut, sway_state: &SwayState) {
+pub async fn handle_incoming(conn: &mut UnixStream, buf: &mut BytesMut, sway_state: &SwayState) {
     use tokio::io::AsyncReadExt;
 
     loop {
@@ -177,13 +177,13 @@ pub async fn handle_incomming(conn: &mut UnixStream, buf: &mut BytesMut, sway_st
                     Payload::Bytes(_) => todo!(),
                 };
 
-                trace!(%payload_type, %payload, "Recieved event");
+                trace!(%payload_type, %payload, "Received event");
                 buf.advance(size);
 
                 // Handle the message
                 match payload_type {
                     2 => match payload.get("success") {
-                        Some(Value::Bool(true)) => info!("Successfuly subscribed to sway events"),
+                        Some(Value::Bool(true)) => info!("Successfully subscribed to sway events"),
                         _ => warn!(%payload, "Failed to subscribe to sway events"),
                     },
                     0x80000003 => match payload.get("change") {
@@ -211,7 +211,7 @@ pub async fn handle_incomming(conn: &mut UnixStream, buf: &mut BytesMut, sway_st
                                     },
                                 };
 
-                                tracing::trace!(?geometey, ?app_id, "Recieved focus change");
+                                tracing::trace!(?geometey, ?app_id, "Received focus change");
 
                                 if let Some(app_id) = app_id {
                                     let terminal = GSE_WHITELIST.get(app_id);

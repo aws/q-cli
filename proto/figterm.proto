@@ -118,7 +118,7 @@ message DiagnosticsResponse {
 message InsertOnNewCmdRequest {
   // text to insert on new command
   string text = 1;
-  // if to execute the command immediatly
+  // if to execute the command immediately
   bool execute = 2;
 }
 

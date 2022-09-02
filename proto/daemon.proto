@@ -16,7 +16,7 @@ message DaemonMessage {
     oneof command {
         // A request to get diagnostic information from the daemon
         DiagnosticCommand diagnostic = 101;
-        // A request to tigger a self-update if possible
+        // A request to trigger a self-update if possible
         SelfUpdateCommand self_update = 102;
         // A request for the daemon to sync data
         SyncCommand sync = 103;
@@ -102,13 +102,13 @@ message DiagnosticResponse {
     optional SystemSocketStatus system_socket_status = 4;
 }
 
-// Command to tigger the daemon to attempt to self-update Fig if possible
+// Command to trigger the daemon to attempt to self-update Fig if possible
 message SelfUpdateCommand { }
 
 // Response to SelfUpdateCommand
 message SelfUpdateResponse {
     // Status of the update
-    // This is out of order as Ok may be changed to a diffrent type of
+    // This is out of order as Ok may be changed to a different type of
     // status such as Updated or NotUpdated
     enum Status {
         ERROR = 0;

@@ -219,7 +219,7 @@ pub async fn spawn_figterm_ipc(
     Ok(incoming_rx)
 }
 
-/// Conects to the desktop app and allows for a secure connection from remote hosts
+/// Connects to the desktop app and allows for a secure connection from remote hosts
 pub async fn spawn_secure_ipc(
     session_id: String,
     main_loop_sender: Sender<MainLoopEvent>,

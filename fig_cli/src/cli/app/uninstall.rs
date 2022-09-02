@@ -193,7 +193,7 @@ async fn uninstall_input_method() {
 async fn uninstall_terminal_integrations() {
     // Delete integrations
     if let Ok(home) = directories::home_dir() {
-        // Delete iTerm integratione
+        // Delete iTerm integration
         for path in &[
             "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py",
             ".config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py",

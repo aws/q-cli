@@ -155,7 +155,7 @@ extension ShellHookManager {
 
     if Integrations.providers.keys.contains(window.bundleId ?? ""),
        let provider = Integrations.providers[window.bundleId ?? ""] {
-      provider.runtimeValidationOccured()
+      provider.runtimeValidationOccurred()
     }
 
     DispatchQueue.main.async {
@@ -249,7 +249,7 @@ extension ShellHookManager {
     self.tty[hash] = device
     // }
     Logger.log(
-      message: "Transfering \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
+      message: "Transferring \(oldHash) metadata to \(hash).", priority: .info, subsystem: .tty)
 
   }
 
@@ -368,7 +368,7 @@ extension ShellHookManager {
     DispatchQueue.main.async {
       NotificationCenter.default.post(
         Notification(
-          name: PseudoTerminal.recievedEnvVarsFromShellNotification,
+          name: PseudoTerminal.receivedEnvVarsFromShellNotification,
           object: env))
     }
 

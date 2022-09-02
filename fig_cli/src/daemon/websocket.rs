@@ -92,7 +92,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         },
     };
 
-    let mut device_id = get_system_id().context("Cound not get machine_id")?;
+    let mut device_id = get_system_id().context("Could not get machine_id")?;
     if let Some(email) = get_email() {
         device_id.push(':');
         device_id.push_str(&email);

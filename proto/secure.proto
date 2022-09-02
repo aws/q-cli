@@ -55,7 +55,7 @@ message Clientbound {
 }
 
 // hooks removed:
-// OpenedSSHConnectionHook: not neccessary after multiplexing is no longer a requirement
+// OpenedSSHConnectionHook: not necessary after multiplexing is no longer a requirement
 // unused: CallbackHook, Hide, PostExecHook, TmuxPaneChangedHook, KeyboardFocusChangedHook, EventHook, FileChangedHook
 // not necessary over remote: IntegrationReadyHook, FocusChangeHook, CursorPositionHook
 

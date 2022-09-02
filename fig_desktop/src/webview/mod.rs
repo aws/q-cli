@@ -71,7 +71,7 @@ use crate::{
     InterceptState,
 };
 
-pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
+pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
 pub const MISSION_CONTROL_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
@@ -248,8 +248,8 @@ impl WebviewManager {
                                 );
                             },
                             None => {
-                                // TODO(grant): figure out how to handle this gracefuly
-                                warn!("No window {window_id} avaiable for event");
+                                // TODO(grant): figure out how to handle this gracefully
+                                warn!("No window {window_id} available for event");
                                 trace!(?window_event, "Event");
                             },
                         },
@@ -305,7 +305,7 @@ where
             true
         },
         Some(false) | None => {
-            warn!("{window_id} denyed url: {url}");
+            warn!("{window_id} denied url: {url}");
             false
         },
     }
