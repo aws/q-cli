@@ -24,7 +24,7 @@ flowchart LR
     end
     localCli[Fig CLI]
     click localCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
-    subgraph remote["Remote (SSH/WSL)"]
+    subgraph remote["Remote (SSH/WSL/Docker)"]
       style remote fill:transparent,stroke-dasharray: 5 5
       figterm[Figterm]
       click figterm href "https://github.com/withfig/macos/tree/HEAD/figterm"
