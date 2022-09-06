@@ -77,12 +77,14 @@ pub(crate) fn default_properties() -> Map<String, Value> {
         );
     }
 
+    #[cfg(target_os = "linux")]
     if let Ok(desktop) = std::env::var("XDG_SESSION_DESKTOP") {
         prop.insert("device_linux_environment_desktop".into(), desktop.into());
     } else if let Ok(desktop) = std::env::var("DESKTOP_SESSION") {
         prop.insert("device_linux_environment_desktop".into(), desktop.into());
     }
 
+    #[cfg(target_os = "linux")]
     prop.insert(
         "device_linux_environment_display_server".into(),
         match std::env::var("XDG_SESSION_TYPE") {
@@ -91,7 +93,11 @@ pub(crate) fn default_properties() -> Map<String, Value> {
         },
     );
 
-    // TODO(chay): add windows release
+    #[cfg(target_os = "windows")]
+    if let Some(fig_util::system_info::OSVersion::Windows { name, build }) = fig_util::system_info::os_version() {
+        prop.insert("device_windows_name".into(), name.to_owned().into());
+        prop.insert("device_windows_build".into(), build.to_owned().into());
+    }
 
     // TODO(matt): add macos release
 

@@ -47,10 +47,7 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
-use fig_util::system_info::{
-    OSVersion,
-    SupportLevel,
-};
+use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
     Shell,
@@ -1568,7 +1565,7 @@ impl DoctorCheck for SystemVersionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let os_version = OSVersion::new().wrap_err("Could not get OS Version")?;
+        let os_version = fig_util::system_info::os_version().wrap_err("Could not get OS Version")?;
         match os_version.support_level() {
             SupportLevel::Supported => Ok(()),
             SupportLevel::InDevelopment => Err(DoctorError::Warning(
