@@ -111,7 +111,7 @@ impl AsyncWrite for MessageSink {
 
 async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<JoinHandle<()>>)> {
     #[cfg(target_os = "linux")]
-    if fig_util::wsl::is_wsl() {
+    if fig_util::system_info::in_wsl() {
         use std::process::Stdio;
 
         use anyhow::Context as AnyhowContext;

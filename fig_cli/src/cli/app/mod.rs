@@ -6,7 +6,10 @@ use std::time::Duration;
 use cfg_if::cfg_if;
 use clap::Subcommand;
 use crossterm::style::Stylize;
-use eyre::Result;
+use eyre::{
+    bail,
+    Result,
+};
 use fig_ipc::local::{
     quit_command,
     update_command,
@@ -20,7 +23,6 @@ use tracing::{
     trace,
 };
 
-use super::desktop_app_is_installed;
 use crate::util::{
     is_app_running,
     launch_fig,
@@ -110,6 +112,10 @@ pub async fn quit_fig() -> Result<()> {
 }
 
 pub async fn restart_fig() -> Result<()> {
+    if fig_util::system_info::is_remote() {
+        bail!("Please restart Fig from your host machine");
+    }
+
     if !is_app_running() {
         launch_fig(LaunchArgs {
             print_running: false,
@@ -188,7 +194,8 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Prompts => {
-                if !desktop_app_is_installed() {
+                if fig_util::metadata::is_headless() {
+                    // TODO(mia): give users an annoying warning when they're not up to date ;)
                 } else if is_app_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {
@@ -233,7 +240,7 @@ impl AppSubcommand {
                 } else {
                     let no_autolaunch = settings::get_bool_or("app.disableAutolaunch", false);
                     let user_quit_app = state::get_bool_or("APP_TERMINATED_BY_USER", false);
-                    if !no_autolaunch && !user_quit_app && !fig_util::in_ssh() {
+                    if !no_autolaunch && !user_quit_app && !fig_util::system_info::in_ssh() {
                         let already_seen_hint: bool =
                             fig_settings::state::get_bool_or("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", false);
                         println!("Launching {}...", "Fig".magenta());

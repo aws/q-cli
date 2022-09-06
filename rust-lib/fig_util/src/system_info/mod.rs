@@ -1,6 +1,7 @@
 pub mod linux;
 
 use cfg_if::cfg_if;
+use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Serialize,
@@ -11,6 +12,46 @@ use sha2::{
 };
 
 use crate::Error;
+
+#[cfg(target_os = "linux")]
+static IN_WSL: Lazy<bool> = Lazy::new(|| {
+    if let Ok(b) = std::fs::read("/proc/sys/kernel/osrelease") {
+        if let Ok(s) = std::str::from_utf8(&b) {
+            let a = s.to_ascii_lowercase();
+            return a.contains("microsoft") || a.contains("wsl");
+        }
+    }
+    false
+});
+
+static IN_SSH: Lazy<bool> = Lazy::new(|| {
+    std::env::var_os("SSH_CLIENT").is_some()
+        || std::env::var_os("SSH_CONNECTION").is_some()
+        || std::env::var_os("SSH_TTY").is_some()
+});
+
+pub fn in_ssh() -> bool {
+    *IN_SSH
+}
+
+/// Test if the program is running under WSL
+pub fn in_wsl() -> bool {
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            false
+        } else if #[cfg(target_os = "linux")] {
+            *IN_WSL
+        } else if #[cfg(target_os = "windows")] {
+            false
+        }
+    }
+}
+
+/// Is Fig running on a remote instance
+pub fn is_remote() -> bool {
+    // TODO(chay): Add detection for inside docker container
+    in_ssh() || in_wsl()
+}
 
 pub fn get_system_id() -> Result<String, Error> {
     #[allow(unused_assignments)]

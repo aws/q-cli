@@ -8,7 +8,7 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 /// Run items at launch
 pub async fn run_install() {
     // Update if there's a newer version
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
     tokio::spawn(async {
         let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
         if seconds < 0 {

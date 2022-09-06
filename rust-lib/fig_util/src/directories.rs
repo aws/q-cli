@@ -63,7 +63,7 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
             use std::path::Path;
             use std::process::Command;
 
-            if crate::wsl::is_wsl() {
+            if crate::system_info::in_wsl() {
                 let socket_path = PathBuf::from(String::from_utf8_lossy(
                     &Command::new("wslpath").arg(String::from_utf8_lossy(
                         &Command::new("fig.exe").args(["_", "fig-socket-path"]
@@ -109,7 +109,7 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
         if #[cfg(target_os = "linux")] {
             use std::process::Command;
 
-            if crate::wsl::is_wsl() {
+            if crate::system_info::in_wsl() {
                 Ok(PathBuf::from(String::from_utf8_lossy(
                     &Command::new("wslpath").arg(String::from_utf8_lossy(
                         &Command::new("fig.exe").args(["_", "figterm-socket-path"]

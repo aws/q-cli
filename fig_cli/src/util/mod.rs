@@ -147,7 +147,7 @@ pub fn is_app_running() -> bool {
                 if #[cfg(target_os = "windows")] {
                     let process_name = "fig_desktop.exe";
                 } else if #[cfg(target_os = "linux")] {
-                    let process_name = match fig_util::wsl::is_wsl() {
+                    let process_name = match fig_util::system_info::in_wsl() {
                         true => {
                             let output = match std::process::Command::new("tasklist.exe").args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"]).output() {
                                 Ok(output) => output,
@@ -174,6 +174,10 @@ pub fn is_app_running() -> bool {
 pub fn launch_fig(args: LaunchArgs) -> Result<()> {
     use fig_util::directories::fig_socket_path;
 
+    if fig_util::system_info::is_remote() {
+        bail!("Launching Fig from headless installs is not yet supported");
+    }
+
     if is_app_running() {
         if args.print_running {
             println!("Fig is already running");
@@ -190,7 +194,7 @@ pub fn launch_fig(args: LaunchArgs) -> Result<()> {
 
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            if fig_util::wsl::is_wsl() {
+            if fig_util::system_info::in_wsl() {
                 let output = Command::new("fig_desktop.exe")
                     .output()
                     .context("Unable to launch Fig")?;

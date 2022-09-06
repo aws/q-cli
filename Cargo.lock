@@ -2765,6 +2765,7 @@ dependencies = [
  "sha2",
  "thiserror",
  "tokio",
+ "which",
  "whoami",
  "windows 0.39.0",
  "winreg 0.10.1",

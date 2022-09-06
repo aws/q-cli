@@ -4,6 +4,12 @@ use eyre::Result;
 use crate::util::dialoguer_theme;
 
 pub async fn uninstall_command() -> Result<()> {
+    if fig_util::system_info::in_wsl() {
+        println!("Refer to your package manager in order to uninstall Fig from WSL");
+        println!("If you're having issues uninstalling fig, run `fig issue`");
+        return Ok(());
+    }
+
     let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Are you sure you want to uninstall Fig?")
         .interact()?;
@@ -17,7 +23,7 @@ pub async fn uninstall_command() -> Result<()> {
         if #[cfg(target_os = "linux")] {
             uninstall().await?;
         } else if #[cfg(target_os = "macos")] {
-            if super::desktop_app_is_installed() {
+            if !fig_util::metadata::is_headless() {
                 use crate::util::{LaunchArgs, launch_fig};
                 let success = if launch_fig(LaunchArgs {
                     print_running: false,
@@ -57,7 +63,7 @@ async fn uninstall() -> Result<()> {
     }
 
     let package_name = env::var("FIG_PACKAGE_NAME").unwrap_or_else(|_| {
-        if super::desktop_app_is_installed() {
+        if !fig_util::metadata::is_headless() {
             "fig"
         } else {
             "fig-headless"

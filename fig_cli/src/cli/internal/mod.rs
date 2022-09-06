@@ -375,7 +375,7 @@ impl InternalSubcommand {
                 //   - 2 fallback to FIG_TERM env
                 cfg_if!(
                     if #[cfg(target_os = "linux")] {
-                        if fig_util::wsl::is_wsl() {
+                        if fig_util::system_info::in_wsl() {
                             exit(2)
                         } else {
                             use fig_util::process_info::PidExt;

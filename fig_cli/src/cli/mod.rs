@@ -278,7 +278,7 @@ impl Cli {
                     }
                 },
                 CliRootCommands::Uninstall => uninstall::uninstall_command().await,
-                CliRootCommands::Update { no_confirm } => installation::update_cli(no_confirm).await,
+                CliRootCommands::Update { no_confirm } => installation::update(no_confirm).await.map(|_| ()),
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
@@ -355,18 +355,6 @@ impl Cli {
             },
             // Root command
             None => root_command().await,
-        }
-    }
-}
-
-pub fn desktop_app_is_installed() -> bool {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            std::path::Path::new("/Applications/Fig.app/").exists()
-        } else if #[cfg(target_os = "linux")] {
-            which::which("fig_desktop").is_ok()
-        } else {
-            true
         }
     }
 }

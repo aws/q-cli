@@ -1391,7 +1391,7 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
     }
 }
 
-struct ItermIntegrationCheck {}
+struct ItermIntegrationCheck;
 
 #[async_trait]
 impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
@@ -1580,7 +1580,7 @@ impl DoctorCheck for SystemVersionCheck {
     }
 }
 
-struct VSCodeIntegrationCheck {}
+struct VSCodeIntegrationCheck;
 
 #[async_trait]
 impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
@@ -2077,7 +2077,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     )
     .await?;
 
-    // If user is logged in, launch fig.
+    // If user is logged in, try to launch fig
     launch_fig(LaunchArgs {
         print_running: false,
         print_launching: false,
@@ -2108,27 +2108,45 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await?;
 
         run_checks(
+            "Let's make sure Fig is setup correctly...".into(),
+            vec![
+                &FigBinCheck,
+                #[cfg(unix)]
+                &LocalBinPathCheck,
+                #[cfg(target_os = "macos")]
+                &FigBinPathCheck,
+                #[cfg(target_os = "windows")]
+                &WindowsConsoleCheck,
+                &FigIntegrationsCheck,
+            ],
+            config,
+            &mut spinner,
+        )
+        .await?;
+
+        run_checks(
             "Let's make sure Fig is running...".into(),
             vec![
-                &FigBinCheck {},
+                &AppRunningCheck,
+                &FigSocketCheck,
                 #[cfg(unix)]
-                &LocalBinPathCheck {},
-                #[cfg(target_os = "macos")]
-                &FigBinPathCheck {},
-                #[cfg(target_os = "windows")]
-                &WindowsConsoleCheck {},
-                &FigIntegrationsCheck {},
-                &AppRunningCheck {},
-                &FigSocketCheck {},
+                &DaemonCheck,
+            ],
+            config,
+            &mut spinner,
+        )
+        .await?;
+
+        run_checks(
+            "Let's see if Fig is in a working state".into(),
+            vec![
                 #[cfg(unix)]
-                &DaemonCheck {},
-                #[cfg(unix)]
-                &FigtermSocketCheck {},
-                &InsertionLockCheck {},
-                &PseudoTerminalPathCheck {},
-                &AutocompleteDevModeCheck {},
-                &PluginDevModeCheck {},
-                &MissionControlHostCheck {},
+                &FigtermSocketCheck,
+                &InsertionLockCheck,
+                &PseudoTerminalPathCheck,
+                &AutocompleteDevModeCheck,
+                &PluginDevModeCheck,
+                &MissionControlHostCheck,
             ],
             config,
             &mut spinner,
@@ -2137,7 +2155,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         run_checks(
             "Let's check if your system is compatible...".into(),
-            vec![&SystemVersionCheck {}],
+            vec![&SystemVersionCheck],
             config,
             &mut spinner,
         )
@@ -2151,14 +2169,14 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             run_checks_with_context(
                 format!("Let's check {}...", "fig diagnostic".bold()),
                 vec![
-                    &InstallationScriptCheck {},
-                    &ShellCompatibilityCheck {},
-                    &BundlePathCheck {},
-                    &AutocompleteEnabledCheck {},
-                    &FigCLIPathCheck {},
-                    &AccessibilityCheck {},
-                    &SecureKeyboardCheck {},
-                    &DotfilesSymlinkedCheck {},
+                    &InstallationScriptCheck,
+                    &ShellCompatibilityCheck,
+                    &BundlePathCheck,
+                    &AutocompleteEnabledCheck,
+                    &FigCLIPathCheck,
+                    &AccessibilityCheck,
+                    &SecureKeyboardCheck,
+                    &DotfilesSymlinkedCheck,
                 ],
                 get_diagnostics,
                 config,
@@ -2184,12 +2202,12 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         run_checks_with_context(
             "Let's check your terminal integrations...",
             vec![
-                &ItermIntegrationCheck {},
-                &ItermBashIntegrationCheck {},
-                &HyperIntegrationCheck {},
-                &VSCodeIntegrationCheck {},
+                &ItermIntegrationCheck,
+                &ItermBashIntegrationCheck,
+                &HyperIntegrationCheck,
+                &VSCodeIntegrationCheck,
                 #[cfg(target_os = "macos")]
-                &ImeStatusCheck {},
+                &ImeStatusCheck,
             ],
             get_terminal_context,
             config,
@@ -2202,8 +2220,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             run_checks(
                 "Let's check Linux integrations".into(),
                 vec![
-                    &IBusEnvCheck {},
-                    &IBusCheck {},
+                    &IBusEnvCheck,
+                    &IBusCheck,
                     // &DesktopCompatibilityCheck // we need a better way of getting the data
                 ],
                 config,
