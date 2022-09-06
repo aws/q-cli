@@ -24,7 +24,7 @@ thiserror = "1.0.34"
 nix = "0.25.0"
 
 [target.'cfg(target_os = "linux")'.build-dependencies]
-protobuf-src = "1.0.5"
+protobuf-src = "1.1.0"
 
 [build-dependencies]
 prost-build = "0.11.1"
