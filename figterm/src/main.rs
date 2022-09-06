@@ -463,6 +463,7 @@ fn figterm_main() -> Result<()> {
         let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx);
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
+        #[cfg(target_os = "windows")]
         if let Some(fig_util::system_info::OSVersion::Windows { build, .. }) = fig_util::system_info::os_version() {
             // Enable delay only on Windows 11+
             // https://github.com/microsoft/terminal/issues/11220
