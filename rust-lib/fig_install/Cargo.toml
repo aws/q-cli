@@ -15,7 +15,7 @@ fig_util = { path = "../fig_util" }
 flume = "0.10.14"
 futures = "0.3.23"
 git2 = { version = "0.15.0", features = ["vendored-openssl", "vendored-libgit2"] }
-once_cell = { version = "1.13.1", features = ["parking_lot"] }
+once_cell = { version = "1.14.0", features = ["parking_lot"] }
 parking_lot = "0.12.1"
 regex = "1.6.0"
 reqwest = { version = "0.11.10", default-features = false, features = ["json", "rustls-tls-webpki-roots"] }
