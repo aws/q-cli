@@ -5,6 +5,8 @@ use std::path::{
     Path,
     PathBuf,
 };
+#[cfg(target_os = "linux")]
+use std::str::FromStr;
 
 use thiserror::Error;
 
@@ -135,6 +137,17 @@ pub fn daemon_socket_path() -> Result<PathBuf> {
             Ok(std::env::temp_dir().join("fig").join("daemon.sock"))
         } else if #[cfg(target_os = "windows")] {
             dirs::data_local_dir().map(|path| path.join("Fig").join("daemon.socket")).ok_or(DirectoryError::NoHomeDirectory)
+        }
+    }
+}
+
+/// Get path to "/usr/share/fig/manifest.json"
+pub fn manifest_path() -> PathBuf {
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            PathBuf::from_str("/usr/share/fig/manifest.json").unwrap()
+        } else {
+            panic!("This platform does not support build manifests")
         }
     }
 }

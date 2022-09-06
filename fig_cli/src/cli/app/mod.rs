@@ -26,6 +26,7 @@ use tracing::{
 use crate::util::{
     is_app_running,
     launch_fig,
+    manifest,
     LaunchArgs,
 };
 
@@ -238,7 +239,8 @@ impl AppSubcommand {
                         }
                     }
                 } else {
-                    let no_autolaunch = settings::get_bool_or("app.disableAutolaunch", false);
+                    let no_autolaunch =
+                        settings::get_bool_or("app.disableAutolaunch", false) || manifest::is_headless();
                     let user_quit_app = state::get_bool_or("APP_TERMINATED_BY_USER", false);
                     if !no_autolaunch && !user_quit_app && !fig_util::system_info::in_ssh() {
                         let already_seen_hint: bool =
