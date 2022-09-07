@@ -29,8 +29,11 @@ use aws_sdk_cognitoidentityprovider::{
     Region,
     RetryConfig,
 };
-use aws_smithy_client::erase::DynMiddleware;
-use aws_smithy_http::result::ConnectorError;
+use aws_smithy_client::erase::{
+    DynConnector,
+    DynMiddleware,
+};
+use aws_smithy_client::hyper_ext;
 use fig_util::directories;
 use jwt::{
     Header,
@@ -48,7 +51,6 @@ use thiserror::Error;
 use crate::password::generate_password;
 use crate::{
     defaults,
-    reqwest_client,
     CLIENT_ID,
     REGION,
 };
@@ -78,28 +80,21 @@ pub enum Error {
 const APP_NAME_VALID_SYMBOLS: &str = "!#$%&'*+-.^_`|~";
 
 pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
-    use aws_smithy_http::body::SdkBody;
+    let https = hyper_rustls::HttpsConnectorBuilder::new()
+        .with_webpki_roots()
+        .https_only()
+        .enable_http1()
+        .build();
 
-    let mut client = aws_smithy_client::Builder::new()
-        .middleware(DynMiddleware::new(
-            aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
-        ))
-        .connector_fn(|req: http::Request<SdkBody>| async move {
-            let req = req.map(|b| b.bytes().unwrap().to_vec());
-            match reqwest_client().unwrap().execute(req.try_into().unwrap()).await {
-                Ok(response) => match response.bytes().await {
-                    Ok(bytes) => Ok(http::Response::new(SdkBody::from(bytes))),
-                    Err(err) => Err(ConnectorError::other(Box::new(err), None)),
-                },
-                Err(err) => match err {
-                    err if err.is_timeout() => Err(ConnectorError::timeout(Box::new(err))),
-                    err if err.is_connect() => Err(ConnectorError::io(Box::new(err))),
-                    err if err.is_builder() || err.is_body() => Err(ConnectorError::user(Box::new(err))),
-                    err => Err(ConnectorError::other(Box::new(err), None)),
-                },
-            }
-        })
-        .build_dyn();
+    let hyper_connector = hyper_ext::Adapter::builder().build(https);
+
+    let mut client: aws_smithy_client::Client<DynConnector, DynMiddleware<DynConnector>> =
+        aws_smithy_client::Builder::new()
+            .connector(DynConnector::new(hyper_connector))
+            .middleware(DynMiddleware::new(
+                aws_sdk_cognitoidentityprovider::middleware::DefaultMiddleware::new(),
+            ))
+            .build();
 
     client.set_sleep_impl(None);
     client.set_retry_config(RetryConfig::disabled().into());

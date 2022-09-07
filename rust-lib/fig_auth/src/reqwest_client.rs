@@ -1,3 +1,4 @@
+use std::env::current_exe;
 use std::path::Path;
 use std::time::Duration;
 
@@ -14,11 +15,36 @@ pub static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
         .ok()
         .or_else(|| fig_settings::state::get_string("FIG_CUSTOM_CERT").ok().flatten());
 
+    let mut name = current_exe()
+        .ok()
+        .and_then(|exe| exe.file_stem().and_then(|name| name.to_str().map(String::from)))
+        .unwrap_or_else(|| "rust-client".into());
+
+    if name == "fig" {
+        if let Some(arg1) = std::env::args().nth(1) {
+            if arg1 == "_" {
+                if let Some(arg2) = std::env::args().nth(2) {
+                    name = format!("{name}-internal-{arg2}");
+                }
+            } else if !arg1.starts_with('-') {
+                name = format!("{name}-{arg1}");
+            }
+        }
+    }
+
+    let os = std::env::consts::OS;
+    let arch = std::env::consts::ARCH;
+
+    let app_name: String = format!("{name}-{os}-{arch}")
+        .chars()
+        .filter(|c| c.is_ascii_graphic())
+        .collect();
+
     let mut client = Client::builder()
         .danger_accept_invalid_certs(danger_accept_invalid_certs)
-        .user_agent(concat!(env!("CARGO_PKG_NAME"), "/", env!("CARGO_PKG_VERSION")))
+        .user_agent(app_name)
         .cookie_store(true)
-        .timeout(Duration::from_secs(20));
+        .timeout(Duration::from_secs(30));
 
     if let Some(custom_cert) = custom_cert {
         let path = Path::new(&custom_cert);

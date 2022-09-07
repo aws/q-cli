@@ -509,6 +509,7 @@ dependencies = [
  "fastrand",
  "http",
  "http-body",
+ "hyper",
  "pin-project-lite",
  "tokio",
  "tower",
@@ -2444,6 +2445,7 @@ dependencies = [
  "fig_settings",
  "fig_util",
  "http",
+ "hyper-rustls",
  "jwt",
  "once_cell",
  "rand 0.8.5",
@@ -3671,9 +3673,11 @@ checksum = "d87c48c02e0dc5e3b849a2041db3029fd066650f8f717c07bf8ed78ccb895cac"
 dependencies = [
  "http",
  "hyper",
+ "log",
  "rustls",
  "tokio",
  "tokio-rustls",
+ "webpki-roots",
 ]
 
 [[package]]
