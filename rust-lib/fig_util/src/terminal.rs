@@ -223,7 +223,7 @@ impl Terminal {
             // Terminal::Konsole => Some("org.kde.konsole"),
             Terminal::Tilix => Some("tilix"),
             Terminal::Alacritty => Some("Alacritty"),
-            // Terminal::Kitty => Some("kitty"),
+            Terminal::Kitty => Some("kitty"),
             Terminal::XfceTerminal => Some("xfce4-terminal"),
             // Terminal::Terminator => Some("terminator"),
             // Terminal::Terminology => Some("terminology"),
