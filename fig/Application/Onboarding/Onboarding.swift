@@ -159,6 +159,8 @@ class Onboarding {
     // Install launch agent that watches for Fig.app being trashed
     LaunchAgent.uninstallWatcher.addIfNotPresent()
 
+    Logger.resetLogs(includingUnknownLogs: true)
+
     Process.runAsync(command: figcliPath,
                      args: ["install", "--no-confirm"]) { _ in
       completion?()

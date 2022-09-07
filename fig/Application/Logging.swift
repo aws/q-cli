@@ -113,10 +113,16 @@ class Logger {
 
   }
 
-  static func resetLogs() {
-    for system in Subsystem.allCases {
-      try? FileManager.default.removeItem(atPath: system.pathToLogFile().path)
+  static func resetLogs(includingUnknownLogs: Bool = false ) {
+
+    if includingUnknownLogs {
+      try? FileManager.default.removeItem(at: Logger.defaultLocation)
+    } else {
+      for system in Subsystem.allCases {
+        try? FileManager.default.removeItem(atPath: system.pathToLogFile().path)
+      }
     }
+
     try? FileManager.default.createDirectory(at: Logger.defaultLocation,
                                              withIntermediateDirectories: true,
                                              attributes: nil)
