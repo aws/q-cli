@@ -58,12 +58,17 @@ async fn uninstall() -> Result<()> {
     use std::env;
     use std::process::Command;
 
+    use crate::util::manifest::{
+        self,
+        ManagedBy,
+    };
+
     if !nix::unistd::getuid().is_root() {
         eyre::bail!("This command must be run as root");
     }
 
     let package_name = env::var("FIG_PACKAGE_NAME").unwrap_or_else(|_| {
-        if !fig_util::metadata::is_headless() {
+        if !manifest::is_headless() {
             "fig"
         } else {
             "fig-headless"
@@ -71,27 +76,19 @@ async fn uninstall() -> Result<()> {
         .to_owned()
     });
 
-    let package_manager = env::var("FIG_PACKAGE_MANAGER").or_else(|_| {
-        Ok(if which::which("apt").is_ok() {
-            "apt"
-        } else if which::which("dnf").is_ok() {
-            "dnf"
-        } else if which::which("pacman").is_ok() {
-            "pacman"
-        } else {
-            eyre::bail!("Couldn't detect a supported package manager.");
-        }
-        .to_string())
-    })?;
+    let package_manager = &manifest::manifest()
+        .as_ref()
+        .ok_or_else(|| eyre::eyre!("Failed getting installation manifest"))?
+        .managed_by;
 
     Command::new("killall").arg("fig_desktop").status()?;
 
-    match package_manager.as_str() {
-        "apt" => linux::uninstall_apt(package_name).await?,
-        "dnf" => linux::uninstall_dnf(package_name).await?,
-        "pacman" => linux::uninstall_pacman(package_name).await?,
-        _ => {
-            eyre::bail!("Unknown package manager.");
+    match package_manager {
+        ManagedBy::Apt => linux::uninstall_apt(package_name).await?,
+        ManagedBy::Dnf => linux::uninstall_dnf(package_name).await?,
+        ManagedBy::Pacman => linux::uninstall_pacman(package_name).await?,
+        ManagedBy::Other(mgr) => {
+            eyre::bail!("Unknown package manager {mgr}");
         },
     }
 
