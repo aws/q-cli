@@ -38,6 +38,7 @@ fig_proto = { path = "../rust-lib/fig_proto" }
 fig_request = { path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
+fig_update = { path = "../rust-lib/fig_update" }
 fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.14"
 futures = "0.3.23"

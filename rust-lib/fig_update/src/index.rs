@@ -9,6 +9,7 @@ use std::time::{
     UNIX_EPOCH,
 };
 
+use fig_util::manifest::manifest;
 use fig_util::system_info::{
     get_arch,
     get_platform,
@@ -41,25 +42,33 @@ pub struct Rollout {
     end: u64,
 }
 
+#[derive(Deserialize, Clone, Debug, Default)]
+pub struct RemotePackage {
+    pub download: String,
+    pub sha256: String,
+}
+
 #[derive(Deserialize, Clone, Debug)]
 /// Resolved update package
-pub struct Package {
+pub struct UpdatePackage {
     /// A link that can be used to download the package
     pub download: String,
     /// SHA256 of the entire downloaded object
     // todo(mia): automatically verify this instead of delegating to platform-specific code
     pub sha256: String,
+    /// Version of this release package
+    pub version: String,
 }
 
 #[derive(Deserialize)]
 pub struct Windows {
-    x86_64: Package,
+    x86_64: RemotePackage,
 }
 
 #[derive(Deserialize)]
 pub struct Macos {
-    x86_64: Package,
-    aarch64: Package,
+    x86_64: RemotePackage,
+    aarch64: RemotePackage,
 }
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
@@ -71,17 +80,30 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 
 const INDEX_ENDPOINT: &str = "https://pkg.fig.io/managed/index";
 
+pub fn local_manifest_version() -> Result<Version, Error> {
+    Ok(Version::parse(
+        &manifest()
+            .as_ref()
+            .map(|man| man.version.clone())
+            .ok_or(Error::UnclearVersion)?,
+    )?)
+}
+
 async fn pull() -> Result<Index, Error> {
     let response = CLIENT.get(INDEX_ENDPOINT).send().await?;
     let index = response.json().await?;
     Ok(index)
 }
 
-pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
+pub async fn check(current_version_hint: Option<String>) -> Result<Option<UpdatePackage>, Error> {
     let index = pull().await?;
 
+    let current_version = current_version_hint
+        .or_else(|| manifest().as_ref().map(|man| man.version.clone()))
+        .ok_or(Error::UnclearVersion)?;
+
     let remote_version = Version::parse(&index.latest_version)?;
-    let local_version = Version::parse(current_version)?;
+    let local_version = Version::parse(&current_version)?;
 
     if remote_version <= local_version {
         return Ok(None); // remote version isn't higher than current version
@@ -119,7 +141,7 @@ pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
             if let Some(rollout) = &entry.rollout {
                 if rollout.end < right_now {
                     trace!("accepted update candidate {remote_version} because rollout is over");
-                    chosen = Some(entry);
+                    chosen = Some((remote_version, entry));
                     break;
                 }
                 if rollout.start > right_now {
@@ -135,7 +157,7 @@ pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
 
                 if remote_threshold >= system_threshold {
                     // the rollout chose us
-                    chosen = Some(entry);
+                    chosen = Some((remote_version, entry));
                     trace!(
                         "accepted update candidate {remote_version} with remote_threshold {remote_threshold} and system_threshold {system_threshold}"
                     );
@@ -145,7 +167,7 @@ pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
                     );
                 }
             } else {
-                chosen = Some(entry);
+                chosen = Some((remote_version, entry));
                 break;
             }
         }
@@ -156,14 +178,19 @@ pub async fn check(current_version: &str) -> Result<Option<Package>, Error> {
         return Ok(None);
     }
 
-    let candidate = chosen.unwrap();
+    let (candidate_version, candidate_package) = chosen.unwrap();
 
     let package = match (get_platform(), get_arch()) {
-        ("windows", "x86_64") => candidate.windows.x86_64.clone(),
-        ("macos", "x86_64") => candidate.macos.x86_64.clone(),
-        ("macos", "aarch64") => candidate.macos.aarch64.clone(),
+        ("windows", "x86_64") => candidate_package.windows.x86_64.clone(),
+        ("macos", "x86_64") => candidate_package.macos.x86_64.clone(),
+        ("macos", "aarch64") => candidate_package.macos.aarch64.clone(),
+        ("linux", "x86_64") => Default::default(),
         _ => return Err(Error::UnsupportedPlatform),
     };
 
-    Ok(Some(package))
+    Ok(Some(UpdatePackage {
+        download: package.download,
+        sha256: package.sha256,
+        version: candidate_version.clone(),
+    }))
 }

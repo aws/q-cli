@@ -10,7 +10,7 @@ mod macos;
 mod windows;
 
 pub use index::check as check_for_updates;
-use index::Package;
+use index::RemotePackage;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -24,18 +24,20 @@ pub enum Error {
     Semver(#[from] semver::Error),
     #[error(transparent)]
     SystemTime(#[from] SystemTimeError),
+    #[error("could not determine fig version")]
+    UnclearVersion,
 }
 
 #[allow(clippy::needless_return)] // actually fairly needed
-pub fn apply_update(package: Package) -> Result<(), Error> {
+pub fn apply_update(package: RemotePackage) -> Result<(), Error> {
     cfg_if! {
-        if #[cfg(target_os = "windows")] {
-            return windows::update(package);
-        } else if #[cfg(target_os = "macos")] {
-            return macos::update(package);
-        } else {
+        if #[cfg(target_os = "linux")] {
             let _package = package;
             return Err(Error::UnsupportedPlatform);
+        } else if #[cfg(target_os = "macos")] {
+            return macos::update(package);
+        } else if #[cfg(target_os = "windows")] {
+            return windows::update(package);
         }
     }
 }

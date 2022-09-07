@@ -1,6 +1,4 @@
 use cfg_if::cfg_if;
-#[cfg(target_os = "linux")]
-use fig_util::directories;
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -59,7 +57,7 @@ where
 static CACHED: Lazy<Option<Manifest>> = Lazy::new(|| {
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            let text = match std::fs::read_to_string(directories::manifest_path()) {
+            let text = match std::fs::read_to_string(crate::directories::manifest_path()) {
                 Ok(s) => s,
                 Err(err) => {
                     warn!("Failed reading build manifest: {err}");
@@ -99,11 +97,27 @@ pub fn is_full() -> bool {
 /// Checks if this is a headless build according to the manifest. Note that this does not guarantee
 /// the value of is_full
 pub fn is_headless() -> bool {
-    matches!(
-        manifest(),
-        Some(Manifest {
-            variant: Variant::Headless,
-            ..
-        })
-    )
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            false
+        } else if #[cfg(target_os = "linux")] {
+            matches!(
+                manifest(),
+                Some(Manifest {
+                    variant: Variant::Headless,
+                    ..
+                })
+            )
+        } else if #[cfg(target_os = "windows")] {
+            false
+        }
+    }
+}
+
+/// Gets the version from the manifest
+pub fn version() -> Option<&'static str> {
+    match manifest() {
+        Some(manifest) => Some(&manifest.version),
+        None => None,
+    }
 }

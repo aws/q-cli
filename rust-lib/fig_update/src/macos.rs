@@ -1,9 +1,9 @@
 // use crate::api::file::{ArchiveFormat, Extract, Move};
 
-use crate::index::Package;
+use crate::index::RemotePackage;
 use crate::Error;
 
-pub(crate) fn update(_package: Package) -> Result<(), Error> {
+pub(crate) fn update(_package: RemotePackage) -> Result<(), Error> {
     // //Check for download
 
     // // We need an announced signature by the server

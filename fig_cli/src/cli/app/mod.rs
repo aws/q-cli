@@ -1,6 +1,8 @@
 pub mod uninstall;
 
+use std::io::Write;
 use std::iter::empty;
+use std::str::FromStr;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
@@ -18,7 +20,10 @@ use fig_settings::{
     settings,
     state,
 };
+use fig_update::index::local_manifest_version;
+use fig_util::manifest;
 use tracing::{
+    error,
     info,
     trace,
 };
@@ -26,7 +31,6 @@ use tracing::{
 use crate::util::{
     is_app_running,
     launch_fig,
-    manifest,
     LaunchArgs,
 };
 
@@ -195,8 +199,28 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Prompts => {
-                if fig_util::metadata::is_headless() {
-                    // TODO(mia): give users an annoying warning when they're not up to date ;)
+                if fig_util::manifest::is_headless() {
+                    if let Ok(Some(version)) = state::get_string("update.latestVersion") {
+                        if let Ok(local_version) = local_manifest_version() {
+                            if let Ok(remote_version) = semver::Version::from_str(&version) {
+                                if local_version < remote_version {
+                                    writeln!(
+                                        std::io::stdout(),
+                                        "A new version of Fig is available! Please update from your package manager."
+                                    )
+                                    .ok();
+                                }
+                            }
+                        }
+                    }
+
+                    match fig_update::check_for_updates(None).await {
+                        Ok(Some(remote)) => {
+                            state::set_value("update.latestVersion", remote.version).ok();
+                        },
+                        Ok(None) => {}, // no version available
+                        Err(err) => error!(%err, "Failed checking for updates"),
+                    }
                 } else if is_app_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {

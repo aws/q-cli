@@ -23,7 +23,7 @@ pub async fn uninstall_command() -> Result<()> {
         if #[cfg(target_os = "linux")] {
             uninstall().await?;
         } else if #[cfg(target_os = "macos")] {
-            if !fig_util::metadata::is_headless() {
+            if !fig_util::manifest::is_headless() {
                 use crate::util::{LaunchArgs, launch_fig};
                 let success = if launch_fig(LaunchArgs {
                     print_running: false,
@@ -58,7 +58,7 @@ async fn uninstall() -> Result<()> {
     use std::env;
     use std::process::Command;
 
-    use crate::util::manifest::{
+    use fig_util::manifest::{
         self,
         ManagedBy,
     };

@@ -1,5 +1,4 @@
 pub mod backoff;
-pub mod manifest;
 pub mod spinner;
 pub mod sync;
 

@@ -1,6 +1,6 @@
 pub mod directories;
 mod error;
-pub mod metadata;
+pub mod manifest;
 mod open;
 pub mod process_info;
 mod shell;
