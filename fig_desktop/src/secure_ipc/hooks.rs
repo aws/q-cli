@@ -84,7 +84,7 @@ pub async fn edit_buffer(
                 ("end_time", metrics.end_time.format(&Rfc3339)?.into()),
                 (
                     "duration",
-                    (metrics.start_time - metrics.end_time).whole_seconds().into(),
+                    (metrics.end_time - metrics.start_time).whole_seconds().into(),
                 ),
                 ("num_insertions", metrics.num_insertions.into()),
                 ("num_popups", metrics.num_popups.into()),
