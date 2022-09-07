@@ -105,7 +105,7 @@ pub enum SupportLevel {
     /// A fully supported platform
     Supported,
     /// A platform that is currently in development
-    InDevelopment,
+    InDevelopment { info: Option<String> },
     /// A platform that is not supported
     Unsupported,
 }
@@ -139,8 +139,22 @@ impl OSVersion {
                     SupportLevel::Unsupported
                 }
             },
-            OSVersion::Linux { .. } => SupportLevel::InDevelopment,
-            OSVersion::Windows { .. } => SupportLevel::InDevelopment,
+            OSVersion::Linux { .. } => SupportLevel::InDevelopment { info: None },
+            OSVersion::Windows { build, .. } => match build {
+                // Only Windows 11 is fully supported at the moment
+                build if *build >= 22000 => SupportLevel::Supported,
+                // Windows 10 development has known issues
+                build if *build >= 10240 => SupportLevel::InDevelopment {
+                    info: Some(
+                        "Since support for Windows 10 is still in progress,\
+Autocomplete only works in Git Bash with the default prompt.\
+Please upgrade to Windows 11 or wait for a fix while we work this issue out."
+                            .to_owned(),
+                    ),
+                },
+                // Earlier versions of Windows are not supported
+                _ => SupportLevel::Unsupported,
+            },
         }
     }
 }
@@ -167,7 +181,7 @@ impl std::fmt::Display for OSVersion {
                 Some(distro_name) => write!(f, "Linux {kernel_version} - {distro_name}"),
                 None => write!(f, "Linux {kernel_version}"),
             },
-            OSVersion::Windows { name, build } => write!(f, "{name} - build {build}"),
+            OSVersion::Windows { name, build } => write!(f, "{name} (or newer) - build {build}"),
         }
     }
 }
