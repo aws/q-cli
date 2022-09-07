@@ -17,6 +17,7 @@ pub struct Manifest {
     pub variant: Variant,
     pub packaged_at: String,
     pub packaged_by: String,
+    pub version: String,
 }
 
 pub enum ManagedBy {
