@@ -5606,7 +5606,6 @@ dependencies = [
  "pin-project-lite",
  "proc-macro-hack",
  "rustls",
- "rustls-native-certs",
  "rustls-pemfile 1.0.1",
  "serde",
  "serde_json",
