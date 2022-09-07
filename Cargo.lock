@@ -2462,7 +2462,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.4.11"
+version = "1.5.0"
 dependencies = [
  "arboard",
  "async-trait",

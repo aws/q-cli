@@ -3,6 +3,7 @@ use std::time::Duration;
 
 use cfg_if::cfg_if;
 use eyre::{
+    bail,
     eyre,
     Result,
     WrapErr,
@@ -10,6 +11,7 @@ use eyre::{
 use fig_auth::get_email;
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
+use fig_request::reqwest::StatusCode;
 use fig_request::Request;
 use fig_settings::ws_host;
 use fig_util::system_info::get_system_id;
@@ -29,6 +31,7 @@ use tracing::{
     debug,
     error,
     info,
+    warn,
 };
 use url::Url;
 
@@ -67,16 +70,41 @@ struct TicketBody {
     fly_instance: Option<String>,
 }
 
+#[derive(Debug, Default, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct RateLimitResponse {
+    error: Option<String>,
+    timeout: Option<u64>,
+}
+
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
-    let ticket_response = Request::get("/authenticate/ticket")
-        .query(&[("format", "v2")])
+    let ticket_response = match Request::get("/authenticate/ticket")
+        .query(&[
+            ("format", "v2"),
+            ("os", std::env::consts::OS),
+            ("arch", std::env::consts::ARCH),
+            ("version", env!("CARGO_PKG_VERSION")),
+        ])
         .auth()
         .send()
         .await?
-        .handle_fig_response()
-        .await?;
+    {
+        resp if resp.status() == StatusCode::TOO_MANY_REQUESTS => {
+            if let Ok(rate_limit) = resp.json::<RateLimitResponse>().await {
+                if let Some(timeout) = rate_limit.timeout {
+                    warn!(?rate_limit, "Timedout");
+                    tokio::time::sleep(Duration::from_secs(timeout)).await;
+                }
+                if let Some(error) = rate_limit.error {
+                    bail!(error);
+                }
+            }
+            bail!(StatusCode::TOO_MANY_REQUESTS.as_str());
+        },
+        resp => resp.handle_fig_response().await?,
+    };
 
     let ticket_body: TicketBody = match ticket_response
         .headers()
@@ -92,19 +120,18 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         },
     };
 
-    let mut device_id = get_system_id().context("Could not get machine_id")?;
-    if let Some(email) = get_email() {
-        device_id.push(':');
-        device_id.push_str(&email);
+    let mut params = vec![("ticket", ticket_body.ticket.clone())];
+
+    if let Ok(mut device_id) = get_system_id() {
+        if let Some(email) = get_email() {
+            device_id.push(':');
+            device_id.push_str(&email);
+        }
+        params.push(("deviceId", device_id));
     }
 
-    let mut params = vec![
-        ("deviceId", device_id.as_str()),
-        ("ticket", ticket_body.ticket.as_str()),
-    ];
-
     if let Some(ref fly_instance) = ticket_body.fly_instance {
-        params.push(("flyInstance", fly_instance));
+        params.push(("flyInstance", fly_instance.clone()));
     }
 
     let url = Url::parse_with_params(ws_host().as_str(), &params)?;

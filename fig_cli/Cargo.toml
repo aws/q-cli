@@ -1,6 +1,6 @@
 [package]
 name = "fig_cli"
-version = "1.4.11"
+version = "1.5.0"
 authors = ["fig developers"]
 edition = "2021"
 description = "The CLI for Fig"
