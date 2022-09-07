@@ -348,8 +348,8 @@ impl DotfileShellIntegration {
         let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
 
         match self.shell {
-            Shell::Fish => Ok(format!("if test -f {path}; . {path}; end")),
-            _ => Ok(format!("[[ -f {path} ]] && . {path}")),
+            Shell::Fish => Ok(format!("test -f {path}; and builtin source {path}")),
+            _ => Ok(format!("[[ -f {path} ]] && builtin source {path}")),
         }
     }
 
