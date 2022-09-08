@@ -54,8 +54,21 @@ struct Identity {
     remote_id: u64,
     display_name: String,
     username: String,
-    path_to_auth: String,
+    path_to_auth: Option<String>,
     namespace: String,
+    private_key: Option<String>,
+    authentication_type: AuthenticationType,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "snake_case")]
+enum AuthenticationType {
+    Path,
+    PrivateKey,
+    Password,
+    Agent,
+    #[serde(other)]
+    Other,
 }
 
 impl BufferedUnixStream {
@@ -188,24 +201,37 @@ impl SshSubcommand {
             id_matches.into_iter().next().unwrap()
         };
 
-        let apply_connection = |mut command: Command| -> Command {
+        let apply_connection = |mut command: Command| -> eyre::Result<Command> {
             command
                 .arg(format!("{}@{}", selected_identity.username, host.ip))
-                .arg("-i")
-                .arg(selected_identity.path_to_auth.clone())
                 .arg("-p")
                 .arg(connection.port().to_string());
-            command
+            match selected_identity.authentication_type {
+                AuthenticationType::Path => {
+                    command.arg("-i").arg(selected_identity.path_to_auth.as_ref().unwrap());
+                },
+                AuthenticationType::PrivateKey => {
+                    command
+                        .arg("-i")
+                        .arg(format!("~/.fig/access/{}.pem", selected_identity.remote_id));
+                },
+                AuthenticationType::Password => {},
+                AuthenticationType::Agent => {},
+                AuthenticationType::Other => {
+                    bail!("Unknown authentication type - please update fig!");
+                },
+            }
+            Ok(command)
         };
 
-        apply_connection(Command::new("ssh"))
+        apply_connection(Command::new("ssh"))?
             .arg("mkdir -p /var/tmp/fig/$USER/parent")
             .status()
             .await?;
 
         let parent_id = gen_hex_string();
 
-        let mut child = apply_connection(Command::new("ssh"))
+        let mut child = apply_connection(Command::new("ssh"))?
             .arg("-R")
             .arg(format!(
                 "{}:{}",
