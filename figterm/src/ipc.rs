@@ -118,8 +118,9 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
 
         let mut child = tokio::process::Command::new("fig.exe")
             .args(["_", "stream-from-socket"])
-            .stdout(Stdio::piped())
             .stdin(Stdio::piped())
+            .stdout(Stdio::piped())
+            .stderr(Stdio::null())
             .spawn()?;
 
         let stdin = child.stdin.take().context("Failed to open stdin")?;
