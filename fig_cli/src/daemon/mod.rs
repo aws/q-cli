@@ -480,12 +480,11 @@ pub async fn daemon() -> Result<()> {
             match websocket::connect_to_fig_websocket().await {
                 Ok(mut websocket_stream) => {
                     daemon_status.write().websocket_status = Ok(());
-                    backoff.reset();
                     loop {
                         select! {
                             next = websocket_stream.next() => {
                                 match process_websocket(&next, &mut scheduler).await {
-                                    Ok(()) => {}
+                                    Ok(()) => backoff.reset(),
                                     Err(err) => {
                                         error!("Error while processing websocket message: {err}");
                                         daemon_status.write().websocket_status = Err(err);
