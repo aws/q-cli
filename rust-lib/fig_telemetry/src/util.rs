@@ -33,6 +33,7 @@ pub fn telemetry_is_disabled() -> bool {
 pub(crate) fn default_properties() -> Map<String, Value> {
     let mut prop = Map::new();
 
+    // legacy, to remove
     if let Some(email) = fig_auth::get_email() {
         if let Some(domain) = email.split('@').last() {
             prop.insert("domain".into(), domain.into());
@@ -43,8 +44,8 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     #[cfg(target_os = "macos")]
     if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
         if let Some((version, build)) = version.split_once(',') {
-            prop.insert("app_version".into(), version.into());
-            prop.insert("app_build".into(), build.into());
+            prop.insert("desktop_version".into(), version.into());
+            prop.insert("desktop_legacy_build".into(), build.into());
         }
     }
 
@@ -113,6 +114,10 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     prop.insert("device_desktop".into(), true.into());
     prop.insert("device_os".into(), std::env::consts::OS.into());
     prop.insert("device_arch".into(), std::env::consts::ARCH.into());
+
+    if let Some(manifest_version) = fig_util::manifest::version() {
+        prop.insert("manifest_version".into(), manifest_version.into());
+    }
 
     prop
 }

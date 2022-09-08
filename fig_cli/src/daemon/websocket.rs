@@ -80,13 +80,26 @@ struct RateLimitResponse {
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
+    let mut params = vec![
+        ("os", std::env::consts::OS.into()),
+        ("arch", std::env::consts::ARCH.into()),
+        ("cliVersion", env!("CARGO_PKG_VERSION").into()),
+    ];
+
+    if let Some(version) = fig_util::manifest::version() {
+        params.push(("manifestVersion", version.into()));
+    }
+
+    if let Ok(mut device_id) = get_system_id() {
+        if let Some(email) = get_email() {
+            device_id.push(':');
+            device_id.push_str(&email);
+        }
+        params.push(("deviceId", device_id));
+    }
+
     let ticket_response = match Request::get("/authenticate/ticket")
-        .query(&[
-            ("format", "v2"),
-            ("os", std::env::consts::OS),
-            ("arch", std::env::consts::ARCH),
-            ("version", env!("CARGO_PKG_VERSION")),
-        ])
+        .query(&params)
         .auth()
         .send()
         .await?
@@ -120,15 +133,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         },
     };
 
-    let mut params = vec![("ticket", ticket_body.ticket.clone())];
-
-    if let Ok(mut device_id) = get_system_id() {
-        if let Some(email) = get_email() {
-            device_id.push(':');
-            device_id.push_str(&email);
-        }
-        params.push(("deviceId", device_id));
-    }
+    params.push(("ticket", ticket_body.ticket.clone()));
 
     if let Some(ref fly_instance) = ticket_body.fly_instance {
         params.push(("flyInstance", fly_instance.clone()));

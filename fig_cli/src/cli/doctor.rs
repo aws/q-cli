@@ -2125,21 +2125,23 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         )
         .await?;
 
-        run_checks(
-            "Let's make sure Fig is running...".into(),
-            vec![
-                &AppRunningCheck,
-                &FigSocketCheck,
-                #[cfg(unix)]
-                &DaemonCheck,
-            ],
-            config,
-            &mut spinner,
-        )
-        .await?;
+        if !fig_util::manifest::is_headless() {
+            run_checks(
+                "Let's make sure Fig is running...".into(),
+                vec![
+                    &AppRunningCheck,
+                    &FigSocketCheck,
+                    #[cfg(unix)]
+                    &DaemonCheck,
+                ],
+                config,
+                &mut spinner,
+            )
+            .await?;
+        }
 
         run_checks(
-            "Let's see if Fig is in a working state".into(),
+            "Let's see if Fig is in a working state...".into(),
             vec![
                 #[cfg(unix)]
                 &FigtermSocketCheck,

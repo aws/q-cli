@@ -318,9 +318,22 @@ unsafe fn update_focused_state(hwnd: HWND) {
         Err(_) => return,
     };
 
+    println!("title: {title}");
+
     match title {
         title if ["Hyper", "Code", "Code - Insiders"].contains(&title) => (),
-        title if ["bash", "cmd", "mintty", "powershell", "ubuntu2004", "WindowsTerminal"].contains(&title) => {
+        title
+            if [
+                "bash",
+                "cmd",
+                "mintty",
+                "powershell",
+                "ubuntu2004",
+                "ubuntu2204",
+                "WindowsTerminal",
+            ]
+            .contains(&title) =>
+        {
             unmanaged.console_state = ConsoleState::Console { hwnd }
         },
         _ => {
