@@ -95,7 +95,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
             if let Ok(rate_limit) = resp.json::<RateLimitResponse>().await {
                 if let Some(timeout) = rate_limit.timeout {
                     warn!(?rate_limit, "Timedout");
-                    tokio::time::sleep(Duration::from_secs(timeout)).await;
+                    tokio::time::sleep(Duration::from_millis(timeout)).await;
                 }
                 if let Some(error) = rate_limit.error {
                     bail!(error);
