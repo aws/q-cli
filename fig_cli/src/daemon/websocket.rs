@@ -61,6 +61,10 @@ enum FigWebsocketMessage {
     Update {
         force: bool,
     },
+    #[serde(rename_all = "camelCase")]
+    QuitDaemon {
+        status: Option<i32>,
+    },
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -208,6 +212,7 @@ pub async fn process_websocket(
 
                                 }
                             },
+                            FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),
                         },
                         Err(err) => error!("Could not parse json message: {err:?}"),
                     }
