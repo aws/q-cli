@@ -29,7 +29,7 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
                 insertion_buffer: update.insertion_buffer,
             },
         },
-        None => todo!(),
+        None => return RequestResult::error("InsertTextRequest expects a request type"),
     };
 
     if let Some(terminal_session_id) = request.terminal_session_id {

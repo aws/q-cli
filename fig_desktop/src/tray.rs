@@ -234,9 +234,7 @@ fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figte
 
     tray_menu.add_native_item(MenuItem::Separator);
 
-    // Disabled til it works
-    let _ = debugger_menu;
-    // tray_menu.add_submenu("Debugger", true, debugger_menu);
+    tray_menu.add_submenu("Debugger", true, debugger_menu);
 
     tray_menu.add_item(
         MenuItemAttributes::new(&format!("Version {}", env!("CARGO_PKG_VERSION"))).with_id(MenuId::new("version")),
