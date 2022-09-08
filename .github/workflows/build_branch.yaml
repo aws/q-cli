@@ -118,7 +118,7 @@ jobs:
 ############################################
       - name: Install needed tools
         run:  |
-          brew install protobuf swift-protobuf node yarn
+          brew install protobuf swift-protobuf node@16 yarn
           yarn
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
