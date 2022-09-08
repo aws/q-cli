@@ -24,7 +24,7 @@ const sendMessage = (request, handler) => {
 
 }
 
-const recievedMessage = (response) => {
+const receivedMessage = (response) => {
   if (response.id === undefined) {
     return;
   }
@@ -52,5 +52,5 @@ const makeRequest = async (message) => new Promise((resolve, reject) => {
 
 document.addEventListener(fig.constants.jsonMessageRecieved, (event) => {
   const message = event.detail
-  recievedMessage(message);
+  receivedMessage(message);
 });

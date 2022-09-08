@@ -11,7 +11,7 @@ use fig_install::dotfiles::notify::{
     TerminalNotification,
 };
 
-/// Download the lastest dotfiles
+/// Download the latest dotfiles
 pub async fn source_cli() -> Result<()> {
     if !is_logged_in() {
         eyre::bail!("Must be logged in to sync dotfiles");

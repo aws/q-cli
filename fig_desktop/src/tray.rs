@@ -107,7 +107,7 @@ fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
 #[cfg(not(target_os = "linux"))]
 fn load_from_memory() -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
-        // TODO: Use diffrent per platform icons
+        // TODO: Use different per platform icons
         let image = image::load_from_memory(include_bytes!("../icons/32x32.png"))
             .expect("Failed to open icon path")
             .into_rgba8();
@@ -234,9 +234,7 @@ fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figte
 
     tray_menu.add_native_item(MenuItem::Separator);
 
-    // Disabled til it works
-    let _ = debugger_menu;
-    // tray_menu.add_submenu("Debugger", true, debugger_menu);
+    tray_menu.add_submenu("Debugger", true, debugger_menu);
 
     tray_menu.add_item(
         MenuItemAttributes::new(&format!("Version {}", env!("CARGO_PKG_VERSION"))).with_id(MenuId::new("version")),

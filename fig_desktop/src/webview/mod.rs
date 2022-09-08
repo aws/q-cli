@@ -71,7 +71,7 @@ use crate::{
     InterceptState,
 };
 
-pub const FIG_PROTO_MESSAGE_RECIEVED: &str = "FigProtoMessageRecieved";
+pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
 pub const MISSION_CONTROL_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
@@ -122,8 +122,8 @@ impl WebviewManager {
         Self::default()
     }
 
-    fn insert_webview(&mut self, window_id: WindowId, webview: WebView) {
-        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview));
+    fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext) {
+        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview, context));
         self.fig_id_map.insert(window_id, webview_arc.clone());
         self.window_id_map
             .insert(webview_arc.webview.window().id(), webview_arc);
@@ -134,13 +134,13 @@ impl WebviewManager {
         window_id: WindowId,
         builder: impl Fn(&mut WebContext, &EventLoop, T) -> wry::Result<WebView>,
         options: T,
-    ) -> wry::Result<()> {
-        let webview = builder(
-            &mut WebContext::new(directories::fig_data_dir().ok()),
-            &self.event_loop,
-            options,
-        )?;
-        self.insert_webview(window_id, webview);
+    ) -> anyhow::Result<()> {
+        let context_path = directories::fig_data_dir()?
+            .join("webcontexts")
+            .join(window_id.0.as_ref());
+        let mut context = WebContext::new(Some(context_path));
+        let webview = builder(&mut context, &self.event_loop, options)?;
+        self.insert_webview(window_id, webview, context);
         Ok(())
     }
 
@@ -248,8 +248,8 @@ impl WebviewManager {
                                 );
                             },
                             None => {
-                                // TODO(grant): figure out how to handle this gracefuly
-                                warn!("No window {window_id} avaiable for event");
+                                // TODO(grant): figure out how to handle this gracefully
+                                warn!("No window {window_id} available for event");
                                 trace!(?window_event, "Event");
                             },
                         },
@@ -274,7 +274,8 @@ impl WebviewManager {
                 tokio::runtime::Handle::current().spawn(fig_telemetry::dispatch_emit_track(
                     fig_telemetry::TrackEvent::new(
                         fig_telemetry::TrackEventType::QuitApp,
-                        fig_telemetry::TrackSource::App,
+                        fig_telemetry::TrackSource::Desktop,
+                        env!("CARGO_PKG_VERSION").into(),
                         empty::<(&str, &str)>(),
                     ),
                     false,
@@ -305,7 +306,7 @@ where
             true
         },
         Some(false) | None => {
-            warn!("{window_id} denyed url: {url}");
+            warn!("{window_id} denied url: {url}");
             false
         },
     }

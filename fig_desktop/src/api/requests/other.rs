@@ -8,9 +8,9 @@ use super::{
 
 pub async fn open_in_external_application(request: OpenInExternalApplicationRequest) -> RequestResult {
     match request.url {
-        Some(url) => match open_url_async(url).await {
+        Some(url) => match open_url_async(&url).await {
             Ok(_) => RequestResult::success(),
-            Err(err) => RequestResult::error(format!("Failed to open url: {err}")),
+            Err(err) => RequestResult::error(format!("Failed to open url {url}: {err}")),
         },
         None => RequestResult::error("No url provided to open"),
     }

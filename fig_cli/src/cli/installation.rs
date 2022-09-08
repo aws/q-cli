@@ -7,6 +7,7 @@ use std::path::{
 
 use crossterm::style::Stylize;
 use eyre::{
+    bail,
     ContextCompat,
     Result,
     WrapErr,
@@ -214,34 +215,18 @@ fn uninstall_fig() -> Result<()> {
     Ok(())
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum UpdateType {
-    Confirm,
-    NoConfirm,
-}
-
 /// Self-update the fig binary
 /// Update will exit the binary if the update was successful
 #[allow(clippy::needless_return)]
-pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
+pub async fn update(no_confirm: bool) -> Result<UpdateStatus> {
     if option_env!("FIG_IS_PACKAGE_MANAGED").is_some() {
-        return Err(eyre::eyre!(
+        bail!(
             "This installation of Fig is managed by a package manager, please use the built-in method of updating packages"
-        ));
+        );
     }
 
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
-            let _confirm = match update_type {
-                UpdateType::Confirm => true,
-                UpdateType::NoConfirm => false,
-            };
-
-            let progress_output = match update_type {
-                UpdateType::Confirm => true,
-                UpdateType::NoConfirm => true,
-            };
-
             tokio::task::block_in_place(move || {
                 let current_version = env!("CARGO_PKG_VERSION");
 
@@ -253,7 +238,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                     .current_version(current_version)
                     .no_confirm(true)
                     .show_output(false)
-                    .show_download_progress(progress_output)
+                    .show_download_progress(!no_confirm)
                     .build()?;
 
                 let latest_release = update.get_latest_release()?;
@@ -263,16 +248,6 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
                     return Ok(UpdateStatus::UpToDate);
                 }
-
-                let confirm = match update_type {
-                    UpdateType::Confirm => true,
-                    UpdateType::NoConfirm => false,
-                };
-
-                let progress_output = match update_type {
-                    UpdateType::Confirm => true,
-                    UpdateType::NoConfirm => true,
-                };
 
                 tokio::task::block_in_place(move || {
                     let current_version = env!("CARGO_PKG_VERSION");
@@ -285,7 +260,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                         .current_version(current_version)
                         .no_confirm(true)
                         .show_output(false)
-                        .show_download_progress(progress_output)
+                        .show_download_progress(!no_confirm)
                         .build()?;
 
                     let latest_release = update.get_latest_release()?;
@@ -297,7 +272,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
                         return Ok(UpdateStatus::UpToDate);
                     }
 
-                    if confirm {
+                    if !no_confirm {
                         if !dialoguer::Confirm::with_theme(&dialoguer_theme())
                             .with_prompt(format!(
                                 "Do you want to update {} from {} to {}?",
@@ -331,7 +306,7 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
 
             launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true })?;
 
-            match update_command(update_type == UpdateType::NoConfirm).await {
+            match update_command(no_confirm).await {
                 Ok(()) => {
                     println!("Fig will now attempt to update. If Fig is already up to date, nothing else will be done.");
                     Ok(UpdateStatus::UpToDate)
@@ -346,15 +321,4 @@ pub async fn update(update_type: UpdateType) -> Result<UpdateStatus> {
             }
         }
     }
-}
-
-pub async fn update_cli(no_confirm: bool) -> Result<()> {
-    update(if no_confirm {
-        UpdateType::NoConfirm
-    } else {
-        UpdateType::Confirm
-    })
-    .await?;
-
-    Ok(())
 }

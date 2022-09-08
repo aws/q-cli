@@ -27,11 +27,11 @@
   },
   "homepage": "https://github.com/withfig/dotenv#readme",
   "dependencies": {
-    "@jest/console": "^28.1.0",
-    "@jest/globals": "^28.1.0",
-    "@jest/reporters": "^28.1.0",
-    "@jest/test-result": "^28.1.0",
-    "@jest/types": "^28.1.0",
+    "@jest/console": "^29.0.2",
+    "@jest/globals": "^29.0.2",
+    "@jest/reporters": "^29.0.2",
+    "@jest/test-result": "^29.0.2",
+    "@jest/types": "^29.0.2",
     "@types/jest": "^28.1.0",
     "@types/js-yaml": "^4.0.4",
     "@types/long": "^5.0.0",
@@ -45,7 +45,7 @@
     "protobufjs": "^7.0.0",
     "ts-node": "^10.4.0",
     "ts-proto": "^1.85.0",
-    "uuid": "^8.3.2"
+    "uuid": "^9.0.0"
   },
   "devDependencies": {
     "@typescript-eslint/eslint-plugin": "^5.25.0",

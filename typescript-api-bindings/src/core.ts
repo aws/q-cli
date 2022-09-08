@@ -65,7 +65,7 @@ export function sendMessage(
   }
 }
 
-const recievedMessage = (response: ServerOriginatedMessage): void => {
+const receivedMessage = (response: ServerOriginatedMessage): void => {
   if (response.id === undefined) {
     return;
   }
@@ -93,7 +93,7 @@ const setupEventListeners = (): void => {
     const raw = (event as CustomEvent).detail as string;
     const bytes = b64ToBytes(raw);
     const message = ServerOriginatedMessage.decode(bytes);
-    recievedMessage(message);
+    receivedMessage(message);
   });
 };
 

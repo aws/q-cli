@@ -151,7 +151,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
 
         if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
             // if no value, assume that we have seen onboarding already.
-            // this is explictly set in onboarding in macOS app.
+            // this is explicitly set in onboarding in macOS app.
             let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
 
             cfg_if! {
@@ -175,7 +175,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             } else {
                 cfg_if! {
                     if #[cfg(target_os = "linux")] {
-                        let show_prompts = !fig_util::wsl::is_wsl();
+                        let show_prompts = !fig_util::system_info::in_wsl();
                     } else {
                         let show_prompts = true;
                     }

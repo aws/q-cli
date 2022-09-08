@@ -11,11 +11,11 @@ import Cocoa
 import OSLog
 
 protocol ShellBridgeEventListener {
-  func recievedDataFromPipe(_ notification: Notification)
-  func recievedUserInputFromTerminal(_ notification: Notification)
-  func recievedStdoutFromTerminal(_ notification: Notification)
+  func receivedDataFromPipe(_ notification: Notification)
+  func receivedUserInputFromTerminal(_ notification: Notification)
+  func receivedStdoutFromTerminal(_ notification: Notification)
 
-  func recievedDataFromPty(_ notification: Notification)
+  func receivedDataFromPty(_ notification: Notification)
   func currentDirectoryDidChange(_ notification: Notification)
   func currentTabDidChange(_ notification: Notification)
   func startedNewTerminalSession(_ notification: Notification)
@@ -28,11 +28,11 @@ extension Notification.Name {
   static let startedNewTerminalSession = Notification.Name("startedNewTerminalSession")
   static let currentTabDidChange = Notification.Name("currentTabDidChange")
   static let currentDirectoryDidChange = Notification.Name("currentDirectoryDidChange")
-  static let recievedShellTrackingEvent = Notification.Name("recievedShellTrackingEvent")
-  static let recievedDataFromPipe = Notification.Name("recievedDataFromPipe")
-  static let recievedUserInputFromTerminal = Notification.Name("recievedUserInputFromTerminal")
-  static let recievedStdoutFromTerminal = Notification.Name("recievedStdoutFromTerminal")
-  static let recievedDataFromPty = Notification.Name("recievedDataFromPty")
+  static let receivedShellTrackingEvent = Notification.Name("receivedShellTrackingEvent")
+  static let receivedDataFromPipe = Notification.Name("receivedDataFromPipe")
+  static let receivedUserInputFromTerminal = Notification.Name("receivedUserInputFromTerminal")
+  static let receivedStdoutFromTerminal = Notification.Name("receivedStdoutFromTerminal")
+  static let receivedDataFromPty = Notification.Name("receivedDataFromPty")
 
 }
 
@@ -68,8 +68,8 @@ class ShellBridge {
     self.startWebSocketServer()
   }
 
-  let executeDelimeter = "-----------------"
-  let streamDelimeter = "================="
+  let executeDelimiter = "-----------------"
+  let streamDelimiter = "================="
 
   //http://www.physics.udel.edu/~watson/scen103/ascii.html
   enum ControlCode: String {
@@ -467,8 +467,8 @@ extension ShellBridge {
     completion?()
   }
 
-  static func promptForAccesibilityAccess() {
-    // get the value for accesibility
+  static func promptForAccessibilityAccess() {
+    // get the value for accessibility
     let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
     // set the options: false means it wont ask
     // true means it will popup and ask
@@ -478,13 +478,13 @@ extension ShellBridge {
     print(accessEnabled)
   }
 
-  static func testAccesibilityAccess(withPrompt: Bool? = false) -> Bool {
+  static func testAccessibilityAccess(withPrompt: Bool? = false) -> Bool {
     let checkOptPrompt = kAXTrustedCheckOptionPrompt.takeUnretainedValue() as NSString
     let options = [checkOptPrompt: withPrompt]
     return AXIsProcessTrustedWithOptions(options as CFDictionary?)
   }
 
-  static func resetAccesibilityPermissions( completion: (() -> Void)? = nil) {
+  static func resetAccessibilityPermissions( completion: (() -> Void)? = nil) {
     // reset permissions! (Make's sure check is toggled off!)
     if let bundleId = NSRunningApplication.current.bundleIdentifier {
       _ = "tccutil reset Accessibility \(bundleId)".runInBackground(completion: { (_) in
@@ -495,8 +495,8 @@ extension ShellBridge {
     }
   }
   static var hasBeenPrompted = false
-  static func promptForAccesibilityAccess( completion: @escaping (Bool) -> Void) {
-    guard testAccesibilityAccess(withPrompt: false) != true else {
+  static func promptForAccessibilityAccess( completion: @escaping (Bool) -> Void) {
+    guard testAccessibilityAccess(withPrompt: false) != true else {
       print("Accessibility Permission Granted!")
       completion(true)
       return
@@ -518,7 +518,7 @@ extension ShellBridge {
     observer = center.addObserver(forName: accessibilityChangedNotification, object: nil, queue: nil) { _ in
 
       DispatchQueue.main.asyncAfter(deadline: .now() + 0.1) {
-        let value = ShellBridge.testAccesibilityAccess()
+        let value = ShellBridge.testAccessibilityAccess()
         // only stop observing only when value is true
         if value {
           print("Accessibility Permission Granted!!!")

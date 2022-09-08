@@ -30,7 +30,7 @@
 			<dict>
 				<key>TISInputSourceID</key>
 				<string>$(PRODUCT_BUNDLE_IDENTIFIER).english</string>
-				<key>TISIntededLanguage</key>
+				<key>TISIntendedLanguage</key>
 				<string>en</string>
 				<key>tsInputModeAlternateMenuIconFileKey</key>
 				<string>FigMenuIcon</string>

@@ -193,7 +193,7 @@ class WindowServer: WindowService {
     let result = AXUIElementCopyAttributeValue(appRef, kAXFocusedWindowAttribute as CFString, &window)
 
     if result == .apiDisabled {
-      print("Accesibility needs to be enabled.")
+      print("Accessibility needs to be enabled.")
       return nil
     }
 
@@ -257,7 +257,7 @@ class ExternalWindow {
   let windowId: CGWindowID
   let windowLevel: CGWindowLevel?
   let app: App
-  let accesibilityElement: AXUIElement?
+  let accessibilityElement: AXUIElement?
   var windowMetadataService: WindowMetadataService = TerminalSessionLinker.shared// ShellHookManager.shared
   var lastTabId: String? {
     return windowMetadataService.getMostRecentFocusId(for: self.windowId)
@@ -279,7 +279,7 @@ class ExternalWindow {
     return windowMetadataService.getTerminalSessionId(for: windowId)
   }
 
-  init?(raw: [String: Any], accesibilityElement: AXUIElement? = nil) {
+  init?(raw: [String: Any], accessibilityElement: AXUIElement? = nil) {
     guard let pid = raw["kCGWindowOwnerPID"] as? pid_t,
           let rect = raw["kCGWindowBounds"] as? [String: Any],
           let windowId = raw["kCGWindowNumber"] as? CGWindowID else {
@@ -298,7 +298,7 @@ class ExternalWindow {
       return nil
     }
 
-    self.accesibilityElement = accesibilityElement
+    self.accessibilityElement = accessibilityElement
     self.windowLevel = raw["kCGWindowLayer"] as? CGWindowLevel
     self.app = app
     self.windowId = windowId
@@ -329,7 +329,7 @@ class ExternalWindow {
       self.windowId = windowId
       self.app = app
       self.windowLevel = ExternalWindow.getWindowLevel(for: windowId)
-      self.accesibilityElement = axElementRef
+      self.accessibilityElement = axElementRef
     } else {
       return nil
     }
@@ -345,12 +345,12 @@ class ExternalWindow {
     return matchingWindow.windowLevel
   }
 
-  init(_ frame: NSRect, _ windowId: CGWindowID, _ app: App, _ accesibilityElement: AXUIElement? = nil) {
+  init(_ frame: NSRect, _ windowId: CGWindowID, _ app: App, _ accessibilityElement: AXUIElement? = nil) {
     self.frame = frame
     self.windowId = windowId
     self.app = app
     self.windowLevel = ExternalWindow.getWindowLevel(for: windowId)
-    self.accesibilityElement = accesibilityElement
+    self.accessibilityElement = accessibilityElement
 
   }
 
@@ -376,7 +376,7 @@ class ExternalWindow {
   }
 
   var windowTitle: String? {
-    guard let axref = self.accesibilityElement else { return nil }
+    guard let axref = self.accessibilityElement else { return nil }
     var title: AnyObject?
     let res = AXUIElementCopyAttributeValue(axref, kAXTitleAttribute as CFString, &title)
 
@@ -402,7 +402,7 @@ class ExternalWindow {
   }
 
   var isFullScreen: Bool? {
-    guard let axref = self.accesibilityElement else { return nil }
+    guard let axref = self.accessibilityElement else { return nil }
     var isFullScreen: AnyObject?
     let res = AXUIElementCopyAttributeValue(axref, "AXFullScreen" as CFString, &isFullScreen)
 

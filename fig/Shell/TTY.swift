@@ -200,7 +200,7 @@ class TTY {
   fileprivate var preexecWorkItem: DispatchWorkItem?
 
   func preexec() {
-    // this delay is a necessary hack, because if we run immediately upon recieving the preexec call
+    // this delay is a necessary hack, because if we run immediately upon receiving the preexec call
     // the shell process is still active...
     // Short lived processes can return control to shell before delay is over,
     // so this closure is cancelled by the precmd function

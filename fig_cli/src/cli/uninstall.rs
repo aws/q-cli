@@ -4,6 +4,12 @@ use eyre::Result;
 use crate::util::dialoguer_theme;
 
 pub async fn uninstall_command() -> Result<()> {
+    if fig_util::system_info::in_wsl() {
+        println!("Refer to your package manager in order to uninstall Fig from WSL");
+        println!("If you're having issues uninstalling fig, run `fig issue`");
+        return Ok(());
+    }
+
     let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
         .with_prompt("Are you sure you want to uninstall Fig?")
         .interact()?;
@@ -17,7 +23,7 @@ pub async fn uninstall_command() -> Result<()> {
         if #[cfg(target_os = "linux")] {
             uninstall().await?;
         } else if #[cfg(target_os = "macos")] {
-            if super::desktop_app_is_installed() {
+            if !fig_util::manifest::is_headless() {
                 use crate::util::{LaunchArgs, launch_fig};
                 let success = if launch_fig(LaunchArgs {
                     print_running: false,
@@ -52,12 +58,17 @@ async fn uninstall() -> Result<()> {
     use std::env;
     use std::process::Command;
 
+    use fig_util::manifest::{
+        self,
+        ManagedBy,
+    };
+
     if !nix::unistd::getuid().is_root() {
         eyre::bail!("This command must be run as root");
     }
 
     let package_name = env::var("FIG_PACKAGE_NAME").unwrap_or_else(|_| {
-        if super::desktop_app_is_installed() {
+        if !manifest::is_headless() {
             "fig"
         } else {
             "fig-headless"
@@ -65,27 +76,19 @@ async fn uninstall() -> Result<()> {
         .to_owned()
     });
 
-    let package_manager = env::var("FIG_PACKAGE_MANAGER").or_else(|_| {
-        Ok(if which::which("apt").is_ok() {
-            "apt"
-        } else if which::which("dnf").is_ok() {
-            "dnf"
-        } else if which::which("pacman").is_ok() {
-            "pacman"
-        } else {
-            eyre::bail!("Couldn't detect a supported package manager.");
-        }
-        .to_string())
-    })?;
+    let package_manager = &manifest::manifest()
+        .as_ref()
+        .ok_or_else(|| eyre::eyre!("Failed getting installation manifest"))?
+        .managed_by;
 
     Command::new("killall").arg("fig_desktop").status()?;
 
-    match package_manager.as_str() {
-        "apt" => linux::uninstall_apt(package_name).await?,
-        "dnf" => linux::uninstall_dnf(package_name).await?,
-        "pacman" => linux::uninstall_pacman(package_name).await?,
-        _ => {
-            eyre::bail!("Unknown package manager.");
+    match package_manager {
+        ManagedBy::Apt => linux::uninstall_apt(package_name).await?,
+        ManagedBy::Dnf => linux::uninstall_dnf(package_name).await?,
+        ManagedBy::Pacman => linux::uninstall_pacman(package_name).await?,
+        ManagedBy::Other(mgr) => {
+            eyre::bail!("Unknown package manager {mgr}");
         },
     }
 

@@ -38,7 +38,7 @@ pub async fn handle_alias_request(request: TelemetryAliasRequest) -> RequestResu
 
     emit_alias(user_id)
         .await
-        .map_err(|e| anyhow!("Failed to emit alias, {e}"))?;
+        .map_err(|err| anyhow!("Failed to emit alias: {err}"))?;
 
     RequestResult::success()
 }
@@ -56,15 +56,13 @@ pub async fn handle_identify_request(request: TelemetryIdentifyRequest) -> Reque
             Ok(props) => {
                 traits.extend(props);
             },
-            Err(err) => {
-                bail!("Failed to decode json blob: {err}");
-            },
+            Err(err) => bail!("Failed to decode json blob: {err}"),
         }
     }
 
     emit_identify(traits)
         .await
-        .map_err(|e| anyhow!("Failed to emit identify, {e}"))?;
+        .map_err(|err| anyhow!("Failed to emit identify: {err}"))?;
 
     RequestResult::success()
 }
@@ -84,19 +82,18 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
             Ok(props) => {
                 properties.extend(props);
             },
-            Err(err) => {
-                bail!("Failed to decode json blob: {err}");
-            },
+            Err(err) => bail!("Failed to decode json blob: {err}"),
         }
     }
 
     emit_track(TrackEvent::new(
         TrackEventType::Other(event),
-        TrackSource::App,
+        TrackSource::Desktop,
+        env!("CARGO_PKG_VERSION").into(),
         properties,
     ))
     .await
-    .map_err(|e| anyhow!("Failed to emit track, {e}"))?;
+    .map_err(|err| anyhow!("Failed to emit track: {err}"))?;
 
     RequestResult::success()
 }
@@ -116,11 +113,11 @@ pub async fn handle_page_request(request: TelemetryPageRequest) -> RequestResult
     emit_page(
         request.category().into(),
         request.name().into(),
-        TrackSource::App,
+        TrackSource::Desktop,
         properties,
     )
     .await
-    .map_err(|e| anyhow!("Failed to emit track, {e}"))?;
+    .map_err(|err| anyhow!("Failed to emit track: {err}"))?;
 
     RequestResult::success()
 }
@@ -138,7 +135,7 @@ pub fn handle_aggregate_session_metric_action_request(
                             if field == "num_popups" {
                                 metrics.num_popups += amount.unwrap_or(1);
                             } else {
-                                bail!("Unknown field {}", field);
+                                bail!("Unknown field: {field}");
                             }
                         },
                     };

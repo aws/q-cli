@@ -227,7 +227,7 @@ pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatu
         while let Ok((stream, _)) = daemon_socket.accept().await {
             let connection = BufferedUnixStream::new(stream);
             if let Err(err) = spawn_system_handler(connection, daemon_status.clone()).await {
-                error!("Error while spawining daemon socket connection handler: {err}");
+                error!("Error while spawning daemon socket connection handler: {err}");
             }
         }
     }))

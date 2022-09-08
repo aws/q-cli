@@ -1,5 +1,5 @@
 # TS API Bindings
-The Typescript defintions for the Fig API.
+The Typescript definitions for the Fig API.
 
 Note: The protobuf definitions are updated automatically whenever withfig/proto-api is changed. 
 
@@ -42,7 +42,7 @@ We use [TSDocs](https://tsdoc.org) to comment the exported namespaces of the API
 
 ### What will appear in the documentation?
 Our API bindings export a list of named namespace objects each one exporting a group of Symbols.
-In our docs file we document each of the exported symbols grouped accoriding to their namespace.
+In our docs file we document each of the exported symbols grouped according to their namespace.
 
 
 ### Publishing

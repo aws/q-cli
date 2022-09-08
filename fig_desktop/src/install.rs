@@ -8,7 +8,7 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 /// Run items at launch
 pub async fn run_install() {
     // Update if there's a newer version
-    #[cfg(target_os = "windows")]
+    #[cfg(all(target_os = "windows", not(debug_assertions)))]
     tokio::spawn(async {
         let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
         if seconds < 0 {
@@ -48,7 +48,8 @@ pub async fn run_install() {
         tokio::spawn(async {
             fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::UpdatedApp,
-                fig_telemetry::TrackSource::App,
+                fig_telemetry::TrackSource::Desktop,
+                env!("CARGO_PKG_VERSION").into(),
                 empty::<(&str, &str)>(),
             ))
             .await

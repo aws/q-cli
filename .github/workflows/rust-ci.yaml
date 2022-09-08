@@ -37,8 +37,8 @@ env:
   RUSTFLAGS: -D warnings
 
 jobs:
-  fmt:
-    name: Fmt
+  cargo-fmt:
+    name: Cargo Format
     runs-on: ubuntu-latest
     if: github.event.pull_request.draft == false
     steps:
@@ -52,12 +52,23 @@ jobs:
           profile: minimal
           components: rustfmt
 
-      - name: Fmt
+      - name: Cargo Format Check
         uses: actions-rs/cargo@v1
         with:
           command: fmt
           toolchain: nightly
           args: --check
+
+  proto-format:
+    name: Proto Format
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Proto Format Check
+        run: clang-format -n --Werror proto/*.proto
 
   cargo-deny:
     name: Cargo Deny

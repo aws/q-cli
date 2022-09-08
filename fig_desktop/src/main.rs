@@ -42,7 +42,7 @@ use webview::{
 };
 pub use webview::{
     AUTOCOMPLETE_ID,
-    FIG_PROTO_MESSAGE_RECIEVED,
+    FIG_PROTO_MESSAGE_RECEIVED,
     MISSION_CONTROL_ID,
 };
 use wry::application::event_loop::{
@@ -86,15 +86,13 @@ async fn main() {
         let url = Url::parse(&url).unwrap();
         assert_eq!(url.scheme(), "fig");
 
-        url.host_str().map(|s| {
-            if s == "dashboard" {
-                let mut path = String::new();
-                path.push_str(url.path());
-                path
-            } else {
+        url.host_str().and_then(|s| match s {
+            "dashboard" => Some(url.path().to_owned()),
+            "plugins" => Some(format!("plugins/{}", url.path())),
+            _ => {
                 warn!("Invalid deep link");
-                "".to_string()
-            }
+                None
+            },
         })
     });
 
@@ -132,7 +130,8 @@ async fn main() {
     tokio::spawn(async {
         fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
             fig_telemetry::TrackEventType::LaunchedApp,
-            fig_telemetry::TrackSource::App,
+            fig_telemetry::TrackSource::Desktop,
+            env!("CARGO_PKG_VERSION").into(),
             empty::<(&str, &str)>(),
         ))
         .await

@@ -24,7 +24,7 @@ protocol TerminalIntegrationUI {
   func restart()
   func promptToInstall()
   func openSupportPage()
-  func runtimeValidationOccured()
+  func runtimeValidationOccurred()
 }
 // https://stackoverflow.com/a/51333906
 // Create typealias so we can inherit from superclass while also requiring certain methods to be implemented
@@ -297,7 +297,7 @@ class GenericTerminalIntegrationProvider {
     return nil
   }
 
-  func runtimeValidationOccured() {
+  func runtimeValidationOccurred() {
     if self.status == .pending(event: .applicationRestart) {
       self.verifyAndUpdateInstallationStatus()
     }

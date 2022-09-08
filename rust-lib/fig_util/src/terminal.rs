@@ -7,7 +7,7 @@ use serde::{
 };
 
 /// Terminals that macOS supports
-pub const MACOS_TERMINALS: &[Terminal] = &[];
+pub const MACOS_TERMINALS: &[Terminal] = &[Terminal::Iterm, Terminal::Vscode, Terminal::TerminalApp];
 
 /// Terminals that Linux supports
 pub const LINUX_TERMINALS: &[Terminal] = &[
@@ -223,7 +223,7 @@ impl Terminal {
             // Terminal::Konsole => Some("org.kde.konsole"),
             Terminal::Tilix => Some("tilix"),
             Terminal::Alacritty => Some("Alacritty"),
-            // Terminal::Kitty => Some("kitty"),
+            Terminal::Kitty => Some("kitty"),
             Terminal::XfceTerminal => Some("xfce4-terminal"),
             // Terminal::Terminator => Some("terminator"),
             // Terminal::Terminology => Some("terminology"),

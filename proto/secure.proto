@@ -11,15 +11,13 @@ import "google/protobuf/empty.proto";
 // be careful and keep security in mind
 
 message Clientbound {
-	oneof packet {
+  oneof packet {
     HandshakeResponse handshake_response = 100;
-		google.protobuf.Empty ping = 101;
-		Request request = 102;
-	}
+    google.protobuf.Empty ping = 101;
+    Request request = 102;
+  }
 
-	message HandshakeResponse {
-    bool success = 1;
-	}
+  message HandshakeResponse { bool success = 1; }
 
   message Request {
     optional uint64 nonce = 1;
@@ -55,21 +53,22 @@ message Clientbound {
 }
 
 // hooks removed:
-// OpenedSSHConnectionHook: not neccessary after multiplexing is no longer a requirement
-// unused: CallbackHook, Hide, PostExecHook, TmuxPaneChangedHook, KeyboardFocusChangedHook, EventHook, FileChangedHook
-// not necessary over remote: IntegrationReadyHook, FocusChangeHook, CursorPositionHook
+// OpenedSSHConnectionHook: not necessary after multiplexing is no longer a
+// requirement unused: CallbackHook, Hide, PostExecHook, TmuxPaneChangedHook,
+// KeyboardFocusChangedHook, EventHook, FileChangedHook not necessary over
+// remote: IntegrationReadyHook, FocusChangeHook, CursorPositionHook
 
 message Hostbound {
-	oneof packet {
+  oneof packet {
     Handshake handshake = 100;
-		Hook hook = 101;
-		Response response = 102;
-	}
+    Hook hook = 101;
+    Response response = 102;
+  }
 
-	message Handshake {
-		string id = 1;
-		string secret = 2;
-	}
+  message Handshake {
+    string id = 1;
+    string secret = 2;
+  }
 
   message Hook {
     oneof hook {
@@ -79,10 +78,10 @@ message Hostbound {
       local.InterceptedKeyHook intercepted_key = 104;
     }
   }
-  
+
   message Response {
     optional uint64 nonce = 1;
-  
+
     oneof response {
       string error = 100;
 
@@ -93,9 +92,7 @@ message Hostbound {
 
       ReadFileResponse read_file = 103;
     }
-  
-    message ReadFileResponse {
-      fig_common.FileData data = 1;
-    }
+
+    message ReadFileResponse { fig_common.FileData data = 1; }
   }
 }

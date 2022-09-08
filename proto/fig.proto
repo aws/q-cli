@@ -8,41 +8,43 @@ message ClientOriginatedMessage {
   optional int64 id = 1;
 
   oneof submessage {
-      PositionWindowRequest position_window_request = 101;
-      PseudoterminalExecuteRequest pseudoterminal_execute_request = 102;
-      PseudoterminalWriteRequest pseudoterminal_write_request = 103;
-      ReadFileRequest read_file_request = 104;
-      WriteFileRequest write_file_request = 105;
-      ContentsOfDirectoryRequest contents_of_directory_request = 106;
-      NotificationRequest notification_request = 107;
-      GetSettingsPropertyRequest get_settings_property_request = 108;
-      UpdateSettingsPropertyRequest update_settings_property_request = 109;
-      InsertTextRequest insert_text_request = 110;
-      UpdateApplicationPropertiesRequest update_application_properties_request = 111;
-      DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
-      GetDefaultsPropertyRequest get_defaults_property_request = 113;
-      UpdateDefaultsPropertyRequest update_defaults_property_request = 114;
-      TelemetryAliasRequest telemetry_alias_request = 115;
-      TelemetryIdentifyRequest telemetry_identify_request = 116;
-      TelemetryTrackRequest telemetry_track_request = 117;
-      OnboardingRequest onboarding_request = 118;
-      WindowFocusRequest window_focus_request = 119;
-      OpenInExternalApplicationRequest open_in_external_application_request = 120;
-      GetConfigPropertyRequest get_config_property_request = 121;
-      UpdateConfigPropertyRequest update_config_property_request = 122;
-      PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
-      TerminalSessionInfoRequest terminal_session_info_request = 124;
-      DebuggerUpdateRequest debugger_update_request = 125;
-      ApplicationUpdateStatusRequest application_update_status_request = 126;
-      AppendToFileRequest append_to_file_request = 127;
-      GetLocalStateRequest get_local_state_request = 128;
-      UpdateLocalStateRequest update_local_state_request = 129;
-      RunProcessRequest run_process_request = 130;
-      MacosInputMethodRequest macos_input_method_request = 131;
-      CreateDirectoryRequest create_directory_request = 132;
-      InstallRequest install_request = 133;
-      TelemetryPageRequest telemetry_page_request = 134;
-      AggregateSessionMetricActionRequest aggregate_session_metric_action_request = 135;
+    PositionWindowRequest position_window_request = 101;
+    PseudoterminalExecuteRequest pseudoterminal_execute_request = 102;
+    PseudoterminalWriteRequest pseudoterminal_write_request = 103;
+    ReadFileRequest read_file_request = 104;
+    WriteFileRequest write_file_request = 105;
+    ContentsOfDirectoryRequest contents_of_directory_request = 106;
+    NotificationRequest notification_request = 107;
+    GetSettingsPropertyRequest get_settings_property_request = 108;
+    UpdateSettingsPropertyRequest update_settings_property_request = 109;
+    InsertTextRequest insert_text_request = 110;
+    UpdateApplicationPropertiesRequest update_application_properties_request =
+        111;
+    DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
+    GetDefaultsPropertyRequest get_defaults_property_request = 113;
+    UpdateDefaultsPropertyRequest update_defaults_property_request = 114;
+    TelemetryAliasRequest telemetry_alias_request = 115;
+    TelemetryIdentifyRequest telemetry_identify_request = 116;
+    TelemetryTrackRequest telemetry_track_request = 117;
+    OnboardingRequest onboarding_request = 118;
+    WindowFocusRequest window_focus_request = 119;
+    OpenInExternalApplicationRequest open_in_external_application_request = 120;
+    GetConfigPropertyRequest get_config_property_request = 121;
+    UpdateConfigPropertyRequest update_config_property_request = 122;
+    PseudoterminalRestartRequest pseudoterminal_restart_request = 123;
+    TerminalSessionInfoRequest terminal_session_info_request = 124;
+    DebuggerUpdateRequest debugger_update_request = 125;
+    ApplicationUpdateStatusRequest application_update_status_request = 126;
+    AppendToFileRequest append_to_file_request = 127;
+    GetLocalStateRequest get_local_state_request = 128;
+    UpdateLocalStateRequest update_local_state_request = 129;
+    RunProcessRequest run_process_request = 130;
+    MacosInputMethodRequest macos_input_method_request = 131;
+    CreateDirectoryRequest create_directory_request = 132;
+    InstallRequest install_request = 133;
+    TelemetryPageRequest telemetry_page_request = 134;
+    AggregateSessionMetricActionRequest
+        aggregate_session_metric_action_request = 135;
   }
 }
 
@@ -51,14 +53,15 @@ message ServerOriginatedMessage {
 
   // Responses to ClientOriginatedMessages of the corresponding type
   oneof submessage {
-    string error = 2; 
+    string error = 2;
     bool success = 3;
     PositionWindowResponse position_window_response = 100;
     PseudoterminalExecuteResponse pseudoterminal_execute_response = 101;
     ReadFileResponse read_file_response = 102;
     ContentsOfDirectoryResponse contents_of_directory_response = 103;
     GetSettingsPropertyResponse get_settings_property_response = 104;
-    DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response = 105;
+    DestinationOfSymbolicLinkResponse destination_of_symbolic_link_response =
+        105;
     GetDefaultsPropertyResponse get_defaults_property_response = 106;
     GetConfigPropertyResponse get_config_property_response = 107;
     TerminalSessionInfoResponse terminal_session_info_response = 108;
@@ -67,11 +70,10 @@ message ServerOriginatedMessage {
     RunProcessResponse run_process_response = 111;
     MacosInputMethodResponse macos_input_method_response = 112;
     InstallResponse install_response = 113;
-    
+
     Notification notification = 1000;
   }
 }
-
 
 // Basic types
 
@@ -93,7 +95,7 @@ message Frame {
 message Process {
   optional int32 pid = 1;
   optional string executable = 2;
-  optional string directory = 3; 
+  optional string directory = 3;
   repeated fig_common.EnvironmentVariable env = 4;
 }
 
@@ -116,14 +118,11 @@ message KeyEvent {
   optional int32 appleKeyCode = 1;
   optional string characters = 2;
   optional string characters_ignoring_modifiers = 3;
-  repeated Modifiers modifiers = 4 ;
+  repeated Modifiers modifiers = 4;
   optional bool is_repeat = 5;
-
 }
 
-message Screen {
-  optional Frame frame = 1;
-}
+message Screen { optional Frame frame = 1; }
 
 message Session {
   optional string session_id = 1;
@@ -149,16 +148,16 @@ message Result {
     RESULT_OK = 0;
     RESULT_ERROR = 1;
   }
-  
+
   ResultEnum result = 1;
   optional string error = 2;
-} 
+}
 
 /// Requests
 
 message TextUpdate {
   optional string insertion = 1;
-  optional int64 deletion = 2; 
+  optional int64 deletion = 2;
   optional int64 offset = 3;
   optional bool immediate = 4;
   // client buffer at the time of the insertion request (prior to insertion)
@@ -192,7 +191,7 @@ message PseudoterminalExecuteRequest {
 message PseudoterminalExecuteResponse {
   string stdout = 1;
   optional string stderr = 2;
-  optional int32 exitCode = 3; 
+  optional int32 exitCode = 3;
 }
 
 message PseudoterminalRestartRequest {}
@@ -200,8 +199,8 @@ message PseudoterminalRestartRequest {}
 message PositionWindowRequest {
   Point anchor = 1;
   Size size = 2;
-  optional bool dryrun = 3; 
-} 
+  optional bool dryrun = 3;
+}
 
 message PositionWindowResponse {
   optional bool isAbove = 1;
@@ -215,7 +214,7 @@ message ReadFileRequest {
 
 message ReadFileResponse {
   oneof type {
-    bytes data = 1; 
+    bytes data = 1;
     string text = 2;
   }
 }
@@ -238,21 +237,13 @@ message AppendToFileRequest {
   }
 }
 
-message ContentsOfDirectoryRequest {
-  optional FilePath directory = 1;
-}
+message ContentsOfDirectoryRequest { optional FilePath directory = 1; }
 
-message ContentsOfDirectoryResponse {
-  repeated string file_names = 1;
-}
+message ContentsOfDirectoryResponse { repeated string file_names = 1; }
 
-message DestinationOfSymbolicLinkRequest {
-  optional FilePath path = 1;
-}
+message DestinationOfSymbolicLinkRequest { optional FilePath path = 1; }
 
-message DestinationOfSymbolicLinkResponse {
-  optional FilePath destination = 1;
-}
+message DestinationOfSymbolicLinkResponse { optional FilePath destination = 1; }
 
 message CreateDirectoryRequest {
   FilePath path = 1;
@@ -270,13 +261,11 @@ message DefaultsValue {
   }
 }
 
-message GetDefaultsPropertyRequest {
-    optional string key = 1;
-}
+message GetDefaultsPropertyRequest { optional string key = 1; }
 
 message GetDefaultsPropertyResponse {
-    optional string key = 1;
-    optional DefaultsValue value = 2;
+  optional string key = 1;
+  optional DefaultsValue value = 2;
 }
 
 message UpdateDefaultsPropertyRequest {
@@ -286,29 +275,22 @@ message UpdateDefaultsPropertyRequest {
 
 /// Config
 
-message GetConfigPropertyRequest {
-  optional string key = 1;
-}
+message GetConfigPropertyRequest { optional string key = 1; }
 
-message GetConfigPropertyResponse {
-  optional string value = 1;
-}
+message GetConfigPropertyResponse { optional string value = 1; }
 
 message UpdateConfigPropertyRequest {
   optional string key = 1;
   optional string value = 2;
 }
 
-
 /// Settings
 
-message GetSettingsPropertyRequest {
-  optional string key = 1;
-}
+message GetSettingsPropertyRequest { optional string key = 1; }
 
 message GetSettingsPropertyResponse {
   optional string jsonBlob = 1;
-  optional bool isDefault = 2; 
+  optional bool isDefault = 2;
 }
 
 message UpdateSettingsPropertyRequest {
@@ -323,18 +305,16 @@ message TelemetryProperty {
   string value = 2;
 }
 
-message TelemetryAliasRequest {
-  optional string userId = 1;
-}
+message TelemetryAliasRequest { optional string userId = 1; }
 
 message TelemetryTrackRequest {
   optional string event = 1;
-  repeated TelemetryProperty properties = 2 [deprecated=true];
+  repeated TelemetryProperty properties = 2 [ deprecated = true ];
   optional string jsonBlob = 4;
 }
 
 message TelemetryIdentifyRequest {
-  repeated TelemetryProperty traits = 2 [deprecated=true];
+  repeated TelemetryProperty traits = 2 [ deprecated = true ];
   optional string jsonBlob = 4;
 }
 
@@ -350,9 +330,7 @@ message AggregateSessionMetricActionRequest {
     optional int64 amount = 2;
   }
 
-  oneof action {
-    Increment increment = 2;
-  }
+  oneof action { Increment increment = 2; }
 }
 
 /// Onboarding
@@ -368,37 +346,35 @@ enum OnboardingAction {
   FINISH_ONBOARDING = 8;
 }
 
-message OnboardingRequest {
-  OnboardingAction action = 1;
-}
+message OnboardingRequest { OnboardingAction action = 1; }
 
 /// Installation
 
 enum InstallComponent {
-  DOTFILES      = 0;
-  IBUS          = 1;
+  DOTFILES = 0;
+  IBUS = 1;
   ACCESSIBILITY = 2;
 }
 
 enum InstallAction {
-  INSTALL_ACTION   = 0;
+  INSTALL_ACTION = 0;
   UNINSTALL_ACTION = 1;
-  STATUS_ACTION    = 2;
+  STATUS_ACTION = 2;
 }
 
 message InstallRequest {
   InstallComponent component = 1;
-  InstallAction    action    = 2;
+  InstallAction action = 2;
 }
 
 message InstallResponse {
   enum InstallationStatus {
-    INSTALL_INSTALLED     = 0;
+    INSTALL_INSTALLED = 0;
     INSTALL_NOT_INSTALLED = 1;
   }
 
   oneof response {
-    Result             result              = 1;
+    Result result = 1;
     InstallationStatus installation_status = 2;
   }
 }
@@ -410,38 +386,38 @@ enum FocusAction {
   RETURN_FOCUS = 1;
 }
 
-message WindowFocusRequest {
-  optional FocusAction type = 1;
-}
+message WindowFocusRequest { optional FocusAction type = 1; }
 
-message OpenInExternalApplicationRequest {
-  optional string url = 1;
-}
+message OpenInExternalApplicationRequest { optional string url = 1; }
 
 /// Actions
 
 enum ActionAvailability {
   ALWAYS = 0;
-  WHEN_FOCUSED = 1; // the action can only be performed when the app has keyboard focus
-  WHEN_VISIBLE = 2; // the action can only be performed when the app is visible
-  WHEN_HIDDEN = 3; // the action can only be performed when the app is hidden
+  // the action can only be performed when the app has keyboard focus
+  WHEN_FOCUSED = 1;
+  // the action can only be performed when the app is visible
+  WHEN_VISIBLE = 2;
+  // the action can only be performed when the app is hidden
+  WHEN_HIDDEN = 3;
 }
 
 message Action {
-  optional string identifier = 1; // unique identifier for the action; not user facing.
-  optional string name = 2; // name of action, will appear in user interfaces.
-  optional string description = 3; // a quick summary of what the action will do
-  optional string category = 4; 
-  optional ActionAvailability availability = 5; // when can this action be performed
-  repeated string default_bindings = 6; 
-
+  // unique identifier for the action; not user facing.
+  optional string identifier = 1;
+  // name of action, will appear in user interfaces.
+  optional string name = 2;
+  // a quick summary of what the action will do
+  optional string description = 3;
+  optional string category = 4;
+  // when can this action be performed
+  optional ActionAvailability availability = 5;
+  repeated string default_bindings = 6;
 }
 
 /// App properties
 
-message ActionList {
-  repeated Action actions = 1;
-}
+message ActionList { repeated Action actions = 1; }
 
 message UpdateApplicationPropertiesRequest {
   optional bool interceptBoundKeystrokes = 1;
@@ -454,9 +430,7 @@ message UpdateApplicationPropertiesRequest {
 
 /// Terminal Session
 
-message TerminalSessionInfoRequest {
-  string terminal_session_id = 1;
-}
+message TerminalSessionInfoRequest { string terminal_session_id = 1; }
 
 message TerminalSessionInfoResponse {
   optional fig_common.ShellContext context = 1;
@@ -471,10 +445,9 @@ message DebuggerUpdateRequest {
   repeated string layout = 2;
 }
 
-
 /// Application Update Status
 
-message ApplicationUpdateStatusRequest { }
+message ApplicationUpdateStatusRequest {}
 
 message ApplicationUpdateStatusResponse {
   optional bool available = 1;
@@ -485,13 +458,9 @@ message ApplicationUpdateStatusResponse {
 
 /// L
 
-message GetLocalStateRequest {
-  optional string key = 1;
-}
+message GetLocalStateRequest { optional string key = 1; }
 
-message GetLocalStateResponse {
-  optional string jsonBlob = 1;
-}
+message GetLocalStateResponse { optional string jsonBlob = 1; }
 
 message UpdateLocalStateRequest {
   optional string key = 1;
@@ -511,15 +480,15 @@ message RunProcessRequest {
 message RunProcessResponse {
   string stdout = 1;
   string stderr = 2;
-  int32 exitCode = 3; 
+  int32 exitCode = 3;
 }
 
 /// Macos Input Method
 
 enum InputMethodAction {
   REGISTER = 0;
-  ENABLE = 1; 
-  SELECT = 2; 
+  ENABLE = 1;
+  SELECT = 2;
   DISABLE = 3;
   DESELECT = 4;
   STATUS = 5;
@@ -527,22 +496,18 @@ enum InputMethodAction {
 
 enum InputMethodState {
   REGISTERED = 0;
-  ENABLED = 1; 
-  SELECTED = 2; 
+  ENABLED = 1;
+  SELECTED = 2;
   UNKNOWN = 3;
 }
 
-message MacosInputMethodRequest {
-  InputMethodAction action = 1;
-}
+message MacosInputMethodRequest { InputMethodAction action = 1; }
 
 message MacosInputMethodResponse {
   string message = 1;
-  int32 code = 2; 
+  int32 code = 2;
   InputMethodState state = 3;
-
 }
-
 
 /// Notifications
 
@@ -576,38 +541,37 @@ message Notification {
     KeybindingPressedNotification keybinding_pressed_notification = 6;
     WindowFocusChangedNotification window_focus_changed_notification = 7;
     HistoryUpdatedNotification history_updated_notification = 8;
-    ApplicationUpdateAvailableNotification application_update_available_notification = 9;
+    ApplicationUpdateAvailableNotification
+        application_update_available_notification = 9;
     LocalStateChangedNotification local_state_changed_notification = 10;
     EventNotification event_notification = 11;
   }
 }
 
 message EditBufferChangedNotification {
-    optional string session_id = 1;
-    optional int32 cursor = 2;
-    optional string buffer = 3;
-    optional fig_common.ShellContext context = 4;
+  optional string session_id = 1;
+  optional int32 cursor = 2;
+  optional string buffer = 3;
+  optional fig_common.ShellContext context = 4;
 }
 
-message SettingsChangedNotification {
-    optional string jsonBlob = 1;
-}
+message SettingsChangedNotification { optional string jsonBlob = 1; }
 
 message ShellPromptReturnedNotification {
-    optional string session_id = 1;
-    optional Process shell = 2;
+  optional string session_id = 1;
+  optional Process shell = 2;
 }
 
 message LocationChangedNotification {
-    optional string session_id = 1;
-    optional string host_name = 2;
-    optional string user_name = 3;
-    optional string directory = 4;
+  optional string session_id = 1;
+  optional string host_name = 2;
+  optional string user_name = 3;
+  optional string directory = 4;
 }
 
 message ProcessChangedNotification {
   optional string session_id = 1;
-  optional Process new_process = 2; 
+  optional Process new_process = 2;
 }
 
 message KeybindingPressedNotification {
@@ -616,26 +580,26 @@ message KeybindingPressedNotification {
   optional fig_common.ShellContext context = 3;
 }
 
-message WindowFocusChangedNotification {
-  optional Window window = 1;
-}
+message WindowFocusChangedNotification { optional Window window = 1; }
 
 message HistoryUpdatedNotification {
   optional string command = 1;
-  optional string process_name = 2; // the name of the process
-  optional string current_working_directory = 3; // the directory where the user ran the command
-  optional string session_id = 4; // the value of $TERM_SESSION_ID
+  // the name of the process
+  optional string process_name = 2;
+  // the directory where the user ran the command
+  optional string current_working_directory = 3;
+  // the value of $TERM_SESSION_ID
+  optional string session_id = 4;
   optional string hostname = 5;
-  optional int32 exit_code = 6; // the exit code of the command
+  // the exit code of the command
+  optional int32 exit_code = 6;
 }
 
 message ApplicationUpdateAvailableNotification {
   optional ApplicationUpdateStatusResponse status = 1;
 }
 
-message LocalStateChangedNotification {
-  optional string jsonBlob = 1;
-}
+message LocalStateChangedNotification { optional string jsonBlob = 1; }
 
 message EventNotification {
   optional string event_name = 1;
@@ -643,19 +607,29 @@ message EventNotification {
 }
 
 /// Constants
-// Can be found under fig.constants. Certain legacy constants are included at the top-level for backwards compatibility.
+// Can be found under fig.constants. Certain legacy constants are included at
+// the top-level for backwards compatibility.
 message Constants {
-  optional string version = 1; // the current version of Fig
-  optional string build = 2;  // the current build of Fig 
-  optional string cli = 3; // the path to the fig_cli executable
-  optional string bundlePath = 4; // the filepath of the macOS bundle
-  optional string remote = 5; // the remote URL where apps are loaded from
-  optional string home = 6; // the user's home directory 
-  optional string user = 7; // the user's name (equivalent to running `whoami`)
-  optional string defaultPath = 8; // the default macOS $PATH
+  // the current version of Fig
+  optional string version = 1;
+  // the current build of Fig
+  optional string build = 2;
+  // the path to the fig_cli executable
+  optional string cli = 3;
+  // the filepath of the macOS bundle
+  optional string bundlePath = 4;
+  // the remote URL where apps are loaded from
+  optional string remote = 5;
+  // the user's home directory
+  optional string home = 6;
+  // the user's name (equivalent to running `whoami`)
+  optional string user = 7;
+  // the default macOS $PATH
+  optional string defaultPath = 8;
   optional string jsonMessageRecieved = 9;
   optional string jsonMessageHandler = 10;
   optional string protoMessageRecieved = 11;
   optional string protoMessageHandler = 12;
-  optional string themes = 13; // a comma-separated list of all themes
+  // a comma-separated list of all themes
+  optional string themes = 13;
 }

@@ -47,10 +47,7 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
-use fig_util::system_info::{
-    OSVersion,
-    SupportLevel,
-};
+use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
     Shell,
@@ -705,10 +702,10 @@ impl DoctorCheck for FigtermSocketCheck {
                         }
                     }
                 },
-                _ => return Err(doctor_error!("Failed to recieve expected message from figterm")),
+                _ => return Err(doctor_error!("Failed to receive expected message from figterm")),
             },
-            Ok(None) => return Err(doctor_error!("Recieved EOF when trying to recieve figterm diagnostics")),
-            Err(err) => return Err(doctor_error!("Failed to recieve figterm diagnostics: {err}")),
+            Ok(None) => return Err(doctor_error!("Received EOF when trying to receive figterm diagnostics")),
+            Err(err) => return Err(doctor_error!("Failed to receive figterm diagnostics: {err}")),
         }
 
         Ok(())
@@ -725,16 +722,16 @@ impl DoctorCheck for InsertionLockCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let insetion_lock_path = directories::fig_dir()
+        let insertion_lock_path = directories::fig_dir()
             .map_err(eyre::Report::from)?
             .join("insertion-lock");
 
-        if insetion_lock_path.exists() {
+        if insertion_lock_path.exists() {
             return Err(DoctorError::Error {
                 reason: "Insertion lock exists".into(),
                 info: vec![],
                 fix: Some(DoctorFix::Sync(Box::new(move || {
-                    std::fs::remove_file(&insetion_lock_path)?;
+                    std::fs::remove_file(&insertion_lock_path)?;
                     Ok(())
                 }))),
                 error: None,
@@ -1391,7 +1388,7 @@ impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
     }
 }
 
-struct ItermIntegrationCheck {}
+struct ItermIntegrationCheck;
 
 #[async_trait]
 impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
@@ -1568,19 +1565,22 @@ impl DoctorCheck for SystemVersionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let os_version = OSVersion::new().wrap_err("Could not get OS Version")?;
+        let os_version = fig_util::system_info::os_version().wrap_err("Could not get OS Version")?;
         match os_version.support_level() {
             SupportLevel::Supported => Ok(()),
-            SupportLevel::InDevelopment => Err(DoctorError::Warning(
-                format!("Fig's support for {os_version} is in development. It may not work properly on your system.")
-                    .into(),
+            SupportLevel::InDevelopment { info } => Err(DoctorError::Warning(
+                format!(
+                    "Fig's support for {os_version} is in development. It may not work properly on your system.\n{}",
+                    info.unwrap_or_default()
+                )
+                .into(),
             )),
             SupportLevel::Unsupported => Err(doctor_error!("{os_version} is not supported")),
         }
     }
 }
 
-struct VSCodeIntegrationCheck {}
+struct VSCodeIntegrationCheck;
 
 #[async_trait]
 impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
@@ -1822,7 +1822,7 @@ impl DoctorCheck for WindowsConsoleCheck {
             if stdin_ok != 1 || stdout_ok != 1 {
                 return Err(
                     DoctorError::Error {
-                        reason: "Windows Console APIs are not suppported in this terminal".into(),
+                        reason: "Windows Console APIs are not supported in this terminal".into(),
                         info: vec![
                             "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
                             "MinTTY and other TTY implementations may not work properly.".into(),
@@ -1952,6 +1952,7 @@ where
             fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 TrackEventType::DoctorError,
                 TrackSource::Cli,
+                env!("CARGO_PKG_VERSION").into(),
                 properties,
             ))
             .await
@@ -2064,7 +2065,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         })?;
     }
 
-    // Set psudoterminal path first so we avoid the check failing if it is not set
+    // Set pseudoterminal path first so we avoid the check failing if it is not set
     if let Ok(path) = std::env::var("PATH") {
         fig_settings::state::set_value("pty.path", json!(path)).ok();
     }
@@ -2077,7 +2078,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     )
     .await?;
 
-    // If user is logged in, launch fig.
+    // If user is logged in, try to launch fig
     launch_fig(LaunchArgs {
         print_running: false,
         print_launching: false,
@@ -2108,27 +2109,45 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await?;
 
         run_checks(
+            "Let's make sure Fig is setup correctly...".into(),
+            vec![
+                &FigBinCheck,
+                #[cfg(unix)]
+                &LocalBinPathCheck,
+                #[cfg(target_os = "macos")]
+                &FigBinPathCheck,
+                #[cfg(target_os = "windows")]
+                &WindowsConsoleCheck,
+                &FigIntegrationsCheck,
+            ],
+            config,
+            &mut spinner,
+        )
+        .await?;
+
+        run_checks(
             "Let's make sure Fig is running...".into(),
             vec![
-                &FigBinCheck {},
+                &AppRunningCheck,
+                &FigSocketCheck,
                 #[cfg(unix)]
-                &LocalBinPathCheck {},
-                #[cfg(target_os = "macos")]
-                &FigBinPathCheck {},
-                #[cfg(target_os = "windows")]
-                &WindowsConsoleCheck {},
-                &FigIntegrationsCheck {},
-                &AppRunningCheck {},
-                &FigSocketCheck {},
+                &DaemonCheck,
+            ],
+            config,
+            &mut spinner,
+        )
+        .await?;
+
+        run_checks(
+            "Let's see if Fig is in a working state".into(),
+            vec![
                 #[cfg(unix)]
-                &DaemonCheck {},
-                #[cfg(unix)]
-                &FigtermSocketCheck {},
-                &InsertionLockCheck {},
-                &PseudoTerminalPathCheck {},
-                &AutocompleteDevModeCheck {},
-                &PluginDevModeCheck {},
-                &MissionControlHostCheck {},
+                &FigtermSocketCheck,
+                &InsertionLockCheck,
+                &PseudoTerminalPathCheck,
+                &AutocompleteDevModeCheck,
+                &PluginDevModeCheck,
+                &MissionControlHostCheck,
             ],
             config,
             &mut spinner,
@@ -2137,7 +2156,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         run_checks(
             "Let's check if your system is compatible...".into(),
-            vec![&SystemVersionCheck {}],
+            vec![&SystemVersionCheck],
             config,
             &mut spinner,
         )
@@ -2151,14 +2170,14 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             run_checks_with_context(
                 format!("Let's check {}...", "fig diagnostic".bold()),
                 vec![
-                    &InstallationScriptCheck {},
-                    &ShellCompatibilityCheck {},
-                    &BundlePathCheck {},
-                    &AutocompleteEnabledCheck {},
-                    &FigCLIPathCheck {},
-                    &AccessibilityCheck {},
-                    &SecureKeyboardCheck {},
-                    &DotfilesSymlinkedCheck {},
+                    &InstallationScriptCheck,
+                    &ShellCompatibilityCheck,
+                    &BundlePathCheck,
+                    &AutocompleteEnabledCheck,
+                    &FigCLIPathCheck,
+                    &AccessibilityCheck,
+                    &SecureKeyboardCheck,
+                    &DotfilesSymlinkedCheck,
                 ],
                 get_diagnostics,
                 config,
@@ -2184,12 +2203,12 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         run_checks_with_context(
             "Let's check your terminal integrations...",
             vec![
-                &ItermIntegrationCheck {},
-                &ItermBashIntegrationCheck {},
-                &HyperIntegrationCheck {},
-                &VSCodeIntegrationCheck {},
+                &ItermIntegrationCheck,
+                &ItermBashIntegrationCheck,
+                &HyperIntegrationCheck,
+                &VSCodeIntegrationCheck,
                 #[cfg(target_os = "macos")]
-                &ImeStatusCheck {},
+                &ImeStatusCheck,
             ],
             get_terminal_context,
             config,
@@ -2202,8 +2221,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             run_checks(
                 "Let's check Linux integrations".into(),
                 vec![
-                    &IBusEnvCheck {},
-                    &IBusCheck {},
+                    &IBusEnvCheck,
+                    &IBusCheck,
                     // &DesktopCompatibilityCheck // we need a better way of getting the data
                 ],
                 config,

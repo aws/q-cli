@@ -114,7 +114,7 @@ class UpdateService: NSObject {
     LocalState.shared.set(value: nil, forKey: configUpdateAvailableKey)
   }
 
-  func installUpdateIfAvailible() {
+  func installUpdateIfAvailable() {
     if self.updateIsAvailable {
       // This updates the status in the shell config and js
       self.update = nil

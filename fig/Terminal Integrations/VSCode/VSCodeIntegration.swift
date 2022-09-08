@@ -113,9 +113,9 @@ class VSCodeIntegration: TerminalIntegrationProvider {
       successfullyUpdatedSettings = true
     } catch {
       // NSApp.appDelegate.dialogOKCancel(question: "Fig could not install the VSCode Integration",
-      //                                 text: "An error occured when attempting to parse settings.json")
+      //                                 text: "An error occurred when attempting to parse settings.json")
 
-      Logger.log(message: "VSCode: An error occured when attempting to parse settings.json")
+      Logger.log(message: "VSCode: An error occurred when attempting to parse settings.json")
 
     }
 

@@ -6,7 +6,7 @@ use cfg_if::cfg_if;
 pub fn command(url: impl AsRef<str>) -> Command {
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            let executable = if crate::wsl::is_wsl() {
+            let executable = if crate::system_info::in_wsl() {
                 "wslview"
             } else {
                 "xdg-open"

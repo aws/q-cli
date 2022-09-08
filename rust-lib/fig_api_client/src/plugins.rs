@@ -153,11 +153,11 @@ pub struct InstalledPlugin {
 }
 
 pub async fn plugin(name: impl std::fmt::Display) -> Result<PluginData> {
-    let plugin_data_reponse: PluginDataResponse = Request::get(format!("/plugins/name/{name}"))
+    let plugin_data_response: PluginDataResponse = Request::get(format!("/plugins/name/{name}"))
         .auth()
         .deser_json()
         .await?;
-    Ok(plugin_data_reponse.plugin)
+    Ok(plugin_data_response.plugin)
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]

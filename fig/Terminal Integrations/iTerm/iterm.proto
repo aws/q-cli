@@ -5,12 +5,15 @@ package iterm2;
 // A note on session IDs:
 // In requests, session IDs may take one of three values;
 // 1. A unique ID as returned in ListSessionsResponse
-// 2. The special value "all", which applies to all sessions. This is sometimes not accepted. See
+// 2. The special value "all", which applies to all sessions. This is sometimes
+// not accepted. See
 //    comments in the request message for details.
-// 3. The special value "active", which applies to the session with keyboard focus.
+// 3. The special value "active", which applies to the session with keyboard
+// focus.
 
-// All requests are wrapped in this message. This encoded message is the entirety of the payload
-// of messages sent over WebSocket from client to iTerm2.
+// All requests are wrapped in this message. This encoded message is the
+// entirety of the payload of messages sent over WebSocket from client to
+// iTerm2.
 message ClientOriginatedMessage {
   optional int64 id = 1;
 
@@ -52,14 +55,15 @@ message ClientOriginatedMessage {
   }
 }
 
-// All responses are wrapped in this message. This encoded message is the entirety of the payload
-// of messages sent over WebSocket from iTerm2 to client.
+// All responses are wrapped in this message. This encoded message is the
+// entirety of the payload of messages sent over WebSocket from iTerm2 to
+// client.
 message ServerOriginatedMessage {
   optional int64 id = 1;
 
   // Responses to ClientOriginatedMessages of the corresponding type
   oneof submessage {
-    string error = 2;  // Set if request was malformed
+    string error = 2; // Set if request was malformed
 
     GetBufferResponse get_buffer_response = 100;
     GetPromptResponse get_prompt_response = 101;
@@ -80,7 +84,8 @@ message ServerOriginatedMessage {
     SavedArrangementResponse saved_arrangement_response = 116;
     FocusResponse focus_response = 117;
     ListProfilesResponse list_profiles_response = 118;
-    ServerOriginatedRPCResultResponse server_originated_rpc_result_response = 119;
+    ServerOriginatedRPCResultResponse server_originated_rpc_result_response =
+        119;
     RestartSessionResponse restart_session_response = 120;
     MenuItemResponse menu_item_response = 121;
     SetTabLayoutResponse set_tab_layout_response = 122;
@@ -96,34 +101,33 @@ message ServerOriginatedMessage {
     InvokeFunctionResponse invoke_function_response = 132;
     ListPromptsResponse list_prompts_response = 133;
 
-    // This is the only response that is sent spontaneously. The 'id' field will not be set.
+    // This is the only response that is sent spontaneously. The 'id' field will
+    // not be set.
     Notification notification = 1000;
   }
 }
 
 message InvokeFunctionRequest {
-  message Tab {
-    optional string tab_id = 1;
-  }
-  message Session {
-    optional string session_id = 1;
-  }
-  message Window {
-    optional string window_id = 1;
-  }
-  message App {
-  }
+  message Tab { optional string tab_id = 1; }
+  message Session { optional string session_id = 1; }
+  message Window { optional string window_id = 1; }
+  message App {}
   message Method {
     // The following methods are defined:
     // window.set_title(title: String)
     // session.set_name(name: String)
-    // session.run_tmux_command(command: String) throws  // Throws an exception if this is not a tmux session
-    // session.set_status_bar_component_unread_count(identifier: String, count: Int)
-    // session.stop_coprocess() -> Bool  // returns whether there was a coprocess to stop
-    // session.get_coprocess() -> String?  // returns the name of the command, or nil
-    // session.run_coprocess(commandLine: String, mute: Bool) -> Bool  // returns whether it attempted to start the coprocess. It'll fail only if there is already a coprocess.
-    // tab.set_title(title: String)
-    // tab.select_pane_in_direction(direction: String) throws -> String  // direction is 'left', 'right', 'above', or 'below'. If successful, it will return the ID of the newly active session. If you can't go that way, it returns null. Throws an exception if the direction is invalid.
+    // session.run_tmux_command(command: String) throws  // Throws an exception
+    // if this is not a tmux session
+    // session.set_status_bar_component_unread_count(identifier: String, count:
+    // Int) session.stop_coprocess() -> Bool  // returns whether there was a
+    // coprocess to stop session.get_coprocess() -> String?  // returns the name
+    // of the command, or nil session.run_coprocess(commandLine: String, mute:
+    // Bool) -> Bool  // returns whether it attempted to start the coprocess.
+    // It'll fail only if there is already a coprocess. tab.set_title(title:
+    // String) tab.select_pane_in_direction(direction: String) throws -> String
+    // // direction is 'left', 'right', 'above', or 'below'. If successful, it
+    // will return the ID of the newly active session. If you can't go that way,
+    // it returns null. Throws an exception if the direction is invalid.
     optional string receiver = 1;
   }
   oneof context {
@@ -134,7 +138,9 @@ message InvokeFunctionRequest {
     Method method = 7;
   }
   optional string invocation = 5;
-  optional double timeout = 6 [default=-1];  // If not given a reasonable default value will be used. Negative value means to use the default.
+  optional double timeout = 6
+      [ default = -1 ]; // If not given a reasonable default value will be used.
+                        // Negative value means to use the default.
 }
 
 message InvokeFunctionResponse {
@@ -148,9 +154,7 @@ message InvokeFunctionResponse {
     optional Status status = 1;
     optional string error_reason = 2;
   }
-  message Success {
-    optional string json_result = 1;
-  }
+  message Success { optional string json_result = 1; }
   oneof disposition {
     Error error = 1;
     Success success = 2;
@@ -158,15 +162,9 @@ message InvokeFunctionResponse {
 }
 
 message CloseRequest {
-  message CloseTabs {
-    repeated string tab_ids = 1;
-  }
-  message CloseSessions {
-    repeated string session_ids = 1;
-  }
-  message CloseWindows {
-    repeated string window_ids = 1;
-  }
+  message CloseTabs { repeated string tab_ids = 1; }
+  message CloseSessions { repeated string session_ids = 1; }
+  message CloseWindows { repeated string window_ids = 1; }
   oneof target {
     CloseTabs tabs = 1;
     CloseSessions sessions = 2;
@@ -201,13 +199,13 @@ message SetBroadcastDomainsResponse {
 message StatusBarComponentRequest {
   message OpenPopover {
     optional string session_id = 1;
-    optional string html = 2;  // HTML to show in a popover that opens from the component.
-    optional Size size = 3;  // Size in points of the content area of the popover.
+    optional string html =
+        2; // HTML to show in a popover that opens from the component.
+    optional Size size =
+        3; // Size in points of the content area of the popover.
   }
-  oneof request {
-    OpenPopover open_popover = 1;
-  }
-  optional string identifier = 2;  // ID of statusbar component
+  oneof request { OpenPopover open_popover = 1; }
+  optional string identifier = 2; // ID of statusbar component
 }
 
 message StatusBarComponentResponse {
@@ -240,14 +238,10 @@ message SubSelection {
   optional bool connected = 3;
 }
 
-message Selection {
-  repeated SubSelection sub_selections = 1;
-}
+message Selection { repeated SubSelection sub_selections = 1; }
 
 message SelectionRequest {
-  message GetSelectionRequest {
-    optional string session_id = 1;
-  }
+  message GetSelectionRequest { optional string session_id = 1; }
   message SetSelectionRequest {
     optional string session_id = 1;
     optional Selection selection = 2;
@@ -266,11 +260,8 @@ message SelectionResponse {
     REQUEST_MALFORMED = 3;
   }
   optional Status status = 1;
-  message GetSelectionResponse {
-    optional Selection selection = 2;
-  }
-  message SetSelectionResponse {
-  }
+  message GetSelectionResponse { optional Selection selection = 2; }
+  message SetSelectionResponse {}
   oneof response {
     GetSelectionResponse get_selection_response = 2;
     SetSelectionResponse set_selection_response = 3;
@@ -278,11 +269,8 @@ message SelectionResponse {
 }
 
 message ColorPresetRequest {
-  message ListPresets {
-  }
-  message GetPreset {
-    optional string name = 1;
-  }
+  message ListPresets {}
+  message GetPreset { optional string name = 1; }
   oneof request {
     ListPresets list_presets = 1;
     GetPreset get_preset = 2;
@@ -290,9 +278,7 @@ message ColorPresetRequest {
 }
 
 message ColorPresetResponse {
-  message ListPresets {
-    repeated string name = 1;
-  }
+  message ListPresets { repeated string name = 1; }
 
   message GetPreset {
     message ColorSetting {
@@ -325,14 +311,9 @@ message PreferencesRequest {
       optional string key = 1;
       optional string json_value = 2;
     }
-    message GetPreference {
-      optional string key = 1;
-    }
-    message SetDefaultProfile {
-      optional string guid = 1;
-    }
-    message GetDefaultProfile {
-    }
+    message GetPreference { optional string key = 1; }
+    message SetDefaultProfile { optional string guid = 1; }
+    message GetDefaultProfile {}
     oneof request {
       SetPreference set_preference_request = 1;
       GetPreference get_preference_request = 2;
@@ -349,12 +330,14 @@ message PreferencesResponse {
       enum Status {
         OK = 0;
         BAD_JSON = 1;
-        INVALID_VALUE = 2;  // Not legal for a plist
+        INVALID_VALUE = 2; // Not legal for a plist
       }
       optional Status status = 1;
     }
     message GetPreferenceResult {
-      optional string json_value = 1;  // Will be unset if no value assigned. Will always be set if there is a default value.
+      optional string json_value =
+          1; // Will be unset if no value assigned. Will always be set if there
+             // is a default value.
     }
     message SetDefaultProfileResult {
       enum Status {
@@ -363,11 +346,8 @@ message PreferencesResponse {
       }
       optional Status status = 1;
     }
-    message UnrecognizedResult {
-    }
-    message GetDefaultProfileResult {
-      optional string guid = 1;
-    }
+    message UnrecognizedResult {}
+    message GetDefaultProfileResult { optional string guid = 1; }
     oneof result {
       UnrecognizedResult unrecognized_request = 1;
       SetPreferenceResult set_preference_result = 2;
@@ -390,7 +370,7 @@ message ReorderTabsRequest {
 message ReorderTabsResponse {
   enum Status {
     OK = 0;
-    INVALID_ASSIGNMENT = 1;  // e.g., duplicate tab id
+    INVALID_ASSIGNMENT = 1; // e.g., duplicate tab id
     INVALID_WINDOW_ID = 2;
     INVALID_TAB_ID = 3;
   }
@@ -398,8 +378,7 @@ message ReorderTabsResponse {
 }
 
 message TmuxRequest {
-  message ListConnections {
-  }
+  message ListConnections {}
   message SendCommand {
     optional string connection_id = 1;
     optional string command = 2;
@@ -433,8 +412,7 @@ message TmuxResponse {
     // If not set, an error occurred.
     optional string output = 1;
   }
-  message SetWindowVisible {
-  }
+  message SetWindowVisible {}
   message CreateWindow {
     // This is an iTerm2 tab ID.
     optional string tab_id = 1;
@@ -446,7 +424,7 @@ message TmuxResponse {
     CreateWindow create_window = 5;
   }
 
-  enum Status{
+  enum Status {
     OK = 0;
     INVALID_REQUEST = 1;
     INVALID_CONNECTION_ID = 2;
@@ -455,21 +433,18 @@ message TmuxResponse {
   optional Status status = 4;
 }
 
-message GetBroadcastDomainsRequest {
-}
+message GetBroadcastDomainsRequest {}
 
-message BroadcastDomain {
-  repeated string session_ids = 1;
-}
+message BroadcastDomain { repeated string session_ids = 1; }
 
 message GetBroadcastDomainsResponse {
   repeated BroadcastDomain broadcast_domains = 1;
 }
 
 message SetTabLayoutRequest {
-  // The tree structure must exactly match the actual tree structure, including the `vertical`
-  // setting. Only the grid_sizes may change. They must still add up to the same value in every
-  // dimension.
+  // The tree structure must exactly match the actual tree structure, including
+  // the `vertical` setting. Only the grid_sizes may change. They must still add
+  // up to the same value in every dimension.
   optional SplitTreeNode root = 1;
   optional string tab_id = 2;
 }
@@ -505,10 +480,11 @@ message MenuItemResponse {
 }
 
 message RestartSessionRequest {
-  optional string session_id = 1;  // "all" not allowed.
+  optional string session_id = 1; // "all" not allowed.
 
-  // If set, then still-running sessions will fail to restart with SESSION_NOT_RESTARTABLE.
-  // If not set, then a still-running session gets killed and restarted.
+  // If set, then still-running sessions will fail to restart with
+  // SESSION_NOT_RESTARTABLE. If not set, then a still-running session gets
+  // killed and restarted.
   optional bool only_if_exited = 2;
 }
 
@@ -518,8 +494,8 @@ message RestartSessionResponse {
     SESSION_NOT_FOUND = 1;
 
     // Some sessions, such as tmux integration sessions, are not restartable.
-    // Also, when `only_if_exited` is set in the request and the session is still running then this
-    // status will be returned.
+    // Also, when `only_if_exited` is set in the request and the session is
+    // still running then this status will be returned.
     SESSION_NOT_RESTARTABLE = 2;
   }
   optional Status status = 1;
@@ -529,41 +505,37 @@ message RestartSessionResponse {
 message ServerOriginatedRPCResultRequest {
   optional string request_id = 1;
   oneof result {
-    // Exceptions should be dictionaries with a key of "reason" having a string value describing
-    // what went wrong.
+    // Exceptions should be dictionaries with a key of "reason" having a string
+    // value describing what went wrong.
     string json_exception = 2;
     string json_value = 3;
   }
 }
 
 // This simply acknowledges receipt of ServerOriginatedRPCResultRequest.
-message ServerOriginatedRPCResultResponse {
-}
+message ServerOriginatedRPCResultResponse {}
 
 // Requests a list of all profiles.
 message ListProfilesRequest {
-    // The profile properties to respond with. See SetProfilePropertyRequest for a list of values.
-    // If empty, all properties will be returned.
-    repeated string properties = 1;
+  // The profile properties to respond with. See SetProfilePropertyRequest for a
+  // list of values. If empty, all properties will be returned.
+  repeated string properties = 1;
 
-    // If empty, all profiles will be returned. Otherwise, only profiles with one of the listed
-    // GUIDs will be returned.
-    repeated string guids = 2;
+  // If empty, all profiles will be returned. Otherwise, only profiles with one
+  // of the listed GUIDs will be returned.
+  repeated string guids = 2;
 }
 
 message ListProfilesResponse {
-    message Profile {
-        repeated ProfileProperty properties = 1;
-    }
-    repeated Profile profiles = 1;
+  message Profile { repeated ProfileProperty properties = 1; }
+  repeated Profile profiles = 1;
 }
 
-message FocusRequest {
-}
+message FocusRequest {}
 
 message FocusResponse {
-  // A collection of notifications that completely describe the state of every tab and window and
-  // the application itself.
+  // A collection of notifications that completely describe the state of every
+  // tab and window and the application itself.
   repeated FocusChangedNotification notifications = 1;
 }
 
@@ -583,17 +555,17 @@ message SavedArrangementRequest {
   }
   optional Action action = 2;
 
-  // If given and the action is SAVE then only the tabs in the identified window are saved.
-  // If given and the action is RESTORE then the arrangement will be restored as tabs in the identified window.
-  // Not used for LIST
+  // If given and the action is SAVE then only the tabs in the identified window
+  // are saved. If given and the action is RESTORE then the arrangement will be
+  // restored as tabs in the identified window. Not used for LIST
   optional string window_id = 3;
 }
 
 message SavedArrangementResponse {
   enum Status {
     OK = 0;
-    ARRANGEMENT_NOT_FOUND = 1;  // Tried to restore, but name doesn't exist
-    WINDOW_NOT_FOUND = 2;  // Bad window ID provided
+    ARRANGEMENT_NOT_FOUND = 1; // Tried to restore, but name doesn't exist
+    WINDOW_NOT_FOUND = 2;      // Bad window ID provided
     REQUEST_MALFORMED = 3;
   }
   optional Status status = 1;
@@ -602,18 +574,21 @@ message SavedArrangementResponse {
 
 message VariableRequest {
   oneof scope {
-    string session_id = 1;  // "all" is allowed only if no gets (only sets allowed)
-    string tab_id = 4;  // "all" is allowed only if no gets (only sets allowed)
+    string session_id =
+        1;             // "all" is allowed only if no gets (only sets allowed)
+    string tab_id = 4; // "all" is allowed only if no gets (only sets allowed)
     bool app = 5;
-    string window_id = 6;  // "all" is allowed only if no gets (only sets allowed)
+    string window_id =
+        6; // "all" is allowed only if no gets (only sets allowed)
   }
 
   message Set {
     optional string name = 1;
-    optional string value = 2;  // JSON encoded
+    optional string value = 2; // JSON encoded
   }
   repeated Set set = 2;
-  repeated string get = 3;  // Set to special value "*" to get all in a JSON dictionary
+  repeated string get =
+      3; // Set to special value "*" to get all in a JSON dictionary
 }
 
 message VariableResponse {
@@ -621,13 +596,14 @@ message VariableResponse {
     OK = 0;
     SESSION_NOT_FOUND = 1;
     INVALID_NAME = 2;  // Names you set must begin with "user."
-    MISSING_SCOPE = 3;  // None of the scope oneof fields was set
+    MISSING_SCOPE = 3; // None of the scope oneof fields was set
     TAB_NOT_FOUND = 4;
     MULTI_GET_DISALLOWED = 5;
     WINDOW_NOT_FOUND = 6;
   }
   optional Status status = 1;
-  repeated string values = 2;  // 1:1 with get field in request.  JSON encoded, with null for unset variables.
+  repeated string values = 2; // 1:1 with get field in request.  JSON encoded,
+                              // with null for unset variables.
 }
 
 message ActivateRequest {
@@ -662,7 +638,8 @@ message ActivateResponse {
   optional Status status = 1;
 }
 
-// Injects bytes as input to the terminal, as though the running program had produced them.
+// Injects bytes as input to the terminal, as though the running program had
+// produced them.
 message InjectRequest {
   repeated string session_id = 1;
   optional bytes data = 2;
@@ -681,16 +658,17 @@ message GetPropertyRequest {
   // The kind of ID that's set determines the kind of object you're querying.
   oneof identifier {
     string window_id = 1;
-    string session_id = 3;  // Does not accept "all". Accepts "active".
+    string session_id = 3; // Does not accept "all". Accepts "active".
   }
   // For sessions:
   // "grid_size" -> { "width": number, "height": number }
   // "buried" -> boolean
-  // "number_of_lines" -> { "overflow": number, "grid": number, "history": number }
+  // "number_of_lines" -> { "overflow": number, "grid": number, "history":
+  // number }
   //
   // For windows:
-  // "frame" -> { "origin": { "x": number, "y": number }, "size": { "width": number, "height": number } }
-  // "fullscreen" -> boolean
+  // "frame" -> { "origin": { "x": number, "y": number }, "size": { "width":
+  // number, "height": number } } "fullscreen" -> boolean
   optional string name = 2;
 }
 
@@ -702,8 +680,8 @@ message GetPropertyResponse {
   }
   // Name           Example value
   // -------------  ---------------
-  // frame          { "origin": { "x": 0, "y": 0 }, "size": { "width": 1024, "height": 768 }}
-  // fullscreen     true, false
+  // frame          { "origin": { "x": 0, "y": 0 }, "size": { "width": 1024,
+  // "height": 768 }} fullscreen     true, false
   //
   // For sessions:
   // grid_size      { "width": 80, "height": 25 }
@@ -713,17 +691,17 @@ message GetPropertyResponse {
 }
 
 message SetPropertyRequest {
-  // Eventually you'll be able to set properties on other things besides The kind of ID that's set
-  // determines the kind of object you're updating.
+  // Eventually you'll be able to set properties on other things besides The
+  // kind of ID that's set determines the kind of object you're updating.
   oneof identifier {
     string window_id = 1;
-    string session_id = 5;  // Accepts "all" and "active"
+    string session_id = 5; // Accepts "all" and "active"
   }
   // For windows:
   // Name           Example JSON
   // -------------  ---------------
-  // frame          { "origin": { "x": 0, "y": 0 }, "size": { "width": 1024, "height": 768 }}
-  // fullscreen     true, false
+  // frame          { "origin": { "x": 0, "y": 0 }, "size": { "width": 1024,
+  // "height": 768 }} fullscreen     true, false
   //
   // For sessions:
   // grid_size      { "width": 80, "height": 25 }
@@ -737,10 +715,15 @@ message SetPropertyResponse {
     OK = 0;
     UNRECOGNIZED_NAME = 1;
     INVALID_VALUE = 2;  // e.g., bad JSON value
-    INVALID_TARGET = 3;  // e.g., bogus window_id
-    DEFERRED = 4;  // Operation can't be performed immediately. Will be tried later. For example, resizing a session during instant replay.
-    IMPOSSIBLE = 5;  // Can't be done. For example, resizing a session in a full-screen window.
-    FAILED = 6;  // Did our best and failed. For example, sometimes toggling full-screen fails if another window is also toggling. Maybe try again?
+    INVALID_TARGET = 3; // e.g., bogus window_id
+    DEFERRED =
+        4; // Operation can't be performed immediately. Will be tried later. For
+           // example, resizing a session during instant replay.
+    IMPOSSIBLE = 5; // Can't be done. For example, resizing a session in a
+                    // full-screen window.
+    FAILED = 6;     // Did our best and failed. For example, sometimes toggling
+                // full-screen fails if another window is also toggling. Maybe
+                // try again?
   }
   optional Status status = 1;
 }
@@ -750,20 +733,18 @@ message RegisterToolRequest {
   // This name is displayed to the user.
   optional string name = 1;
 
-  // The tool's identifier should be unique. Prefix it with your app bundle. For example:
-  // com.example.mytool
+  // The tool's identifier should be unique. Prefix it with your app bundle. For
+  // example: com.example.mytool
   optional string identifier = 2;
 
-  enum ToolType {
-    WEB_VIEW_TOOL = 1;
-  }
+  enum ToolType { WEB_VIEW_TOOL = 1; }
 
   // The first time a tool is registered iTerm2 automatically adds it to the
   // set of visible tools. To show it on subsequent re-registrations, set this
   // to true. If the toolbelt itself is hidden, it will not be opened.
-  optional bool reveal_if_already_registered = 5 [default = false];
+  optional bool reveal_if_already_registered = 5 [ default = false ];
 
-  optional ToolType tool_type = 3 [default = WEB_VIEW_TOOL];
+  optional ToolType tool_type = 3 [ default = WEB_VIEW_TOOL ];
 
   // For web view tools: The URL loaded at startup
   optional string URL = 4;
@@ -772,9 +753,7 @@ message RegisterToolRequest {
 // Describes an RPC from iTerm2 to script. I don't want to invent my own type
 // system so this is dynamically typed, which matches Python well enough.
 message RPCRegistrationRequest {
-  message RPCArgumentSignature {
-    optional string name = 1;
-  }
+  message RPCArgumentSignature { optional string name = 1; }
   optional string name = 1;
   repeated RPCArgumentSignature arguments = 2;
 
@@ -793,13 +772,14 @@ message RPCRegistrationRequest {
     STATUS_BAR_COMPONENT = 3;
     CONTEXT_MENU = 4;
   }
-  optional Role role = 5 [default=GENERIC];
+  optional Role role = 5 [ default = GENERIC ];
 
   message SessionTitleAttributes {
     // Used by SESSION_TITLE to control name in Preferences menu
     optional string display_name = 1;
-    // Identifies this title provider uniquely. Must not conflict with other title providers.
-    // Use a backwards domain name identifying yourself and the feature, like "com.example.featurename"
+    // Identifies this title provider uniquely. Must not conflict with other
+    // title providers. Use a backwards domain name identifying yourself and the
+    // feature, like "com.example.featurename"
     optional string unique_identifier = 6;
   }
   message StatusBarComponentAttributes {
@@ -825,8 +805,9 @@ message RPCRegistrationRequest {
     optional string exemplar = 4;
     optional float update_cadence = 5;
 
-    // Identifies this component uniquely. Must not conflict with other components.
-    // Use a backwards domain name identifying yourself and the feature, like "com.example.featurename"
+    // Identifies this component uniquely. Must not conflict with other
+    // components. Use a backwards domain name identifying yourself and the
+    // feature, like "com.example.featurename"
     optional string unique_identifier = 6;
 
     message Icon {
@@ -847,7 +828,7 @@ message RPCRegistrationRequest {
     ContextMenuAttributes context_menu_attributes = 9;
   }
 
-  optional string display_name = 6 [deprecated=true];
+  optional string display_name = 6 [ deprecated = true ];
 }
 
 message RegisterToolResponse {
@@ -865,10 +846,10 @@ enum NotificationType {
   NOTIFY_ON_KEYSTROKE = 1;
   NOTIFY_ON_SCREEN_UPDATE = 2;
   NOTIFY_ON_PROMPT = 3;
-  NOTIFY_ON_LOCATION_CHANGE = 4 [deprecated=true];
+  NOTIFY_ON_LOCATION_CHANGE = 4 [ deprecated = true ];
   NOTIFY_ON_CUSTOM_ESCAPE_SEQUENCE = 5;
   NOTIFY_ON_VARIABLE_CHANGE = 12;
-  KEYSTROKE_FILTER = 14;  // Does not send a notification
+  KEYSTROKE_FILTER = 14; // Does not send a notification
 
   // Notifications that ignore the `session` parameter.
   NOTIFY_ON_NEW_SESSION = 6;
@@ -890,7 +871,8 @@ enum Modifiers {
 }
 
 message KeystrokePattern {
-  // The keystroke matches the pattern if it has all the required and none of the forbidden modifiers.
+  // The keystroke matches the pattern if it has all the required and none of
+  // the forbidden modifiers.
   repeated Modifiers required_modifiers = 1;
   repeated Modifiers forbidden_modifiers = 2;
 
@@ -900,22 +882,25 @@ message KeystrokePattern {
   // The pattern matches if the keystroke equals of any of these characters:
   repeated string characters = 4;
 
-  // The pattern matches if the keystroke equals any of these characters ignoring modifiers.
-  // This is Apple parlance for "ignoring the shift key plus various other undocumented things"
+  // The pattern matches if the keystroke equals any of these characters
+  // ignoring modifiers. This is Apple parlance for "ignoring the shift key plus
+  // various other undocumented things"
   repeated string characters_ignoring_modifiers = 5;
 }
 
 message KeystrokeMonitorRequest {
   // KeystrokeFilterRequest was split from this to make a more sensible API.
-  repeated KeystrokePattern patterns_to_ignore = 1 [deprecated=true];
+  repeated KeystrokePattern patterns_to_ignore = 1 [ deprecated = true ];
 
-  // If false, then only key-down events are sent. If true, key-down, key-up, and flags-changed events are sent.
+  // If false, then only key-down events are sent. If true, key-down, key-up,
+  // and flags-changed events are sent.
   optional bool advanced = 2;
 }
 
 message KeystrokeFilterRequest {
-  // If a keystroke matches any of these patterns then they will not be handled by the application.
-  // A notification will be posted and the script can handle it as it pleases.
+  // If a keystroke matches any of these patterns then they will not be handled
+  // by the application. A notification will be posted and the script can handle
+  // it as it pleases.
   repeated KeystrokePattern patterns_to_ignore = 1;
 }
 
@@ -929,12 +914,10 @@ enum VariableScope {
 message VariableMonitorRequest {
   optional string name = 1;
   optional VariableScope scope = 2;
-  optional string identifier = 3;  // Session, Window, or Tab identifier.
+  optional string identifier = 3; // Session, Window, or Tab identifier.
 }
 
-message ProfileChangeRequest {
-  optional string guid = 1;
-}
+message ProfileChangeRequest { optional string guid = 1; }
 
 enum PromptMonitorMode {
   PROMPT = 1;
@@ -942,13 +925,12 @@ enum PromptMonitorMode {
   COMMAND_END = 3;
 }
 
-message PromptMonitorRequest {
-  repeated PromptMonitorMode modes = 1;
-}
+message PromptMonitorRequest { repeated PromptMonitorMode modes = 1; }
 
 message NotificationRequest {
-  // See documentation on session IDs. NOTIFY_ON_NEW_SESSION, NOTIFY_ON_TERMINATE_SESSION, and
-  // NOTIFY_ON_LAYOUT_CHANGE do not use the session ID and are posted on all such events.
+  // See documentation on session IDs. NOTIFY_ON_NEW_SESSION,
+  // NOTIFY_ON_TERMINATE_SESSION, and NOTIFY_ON_LAYOUT_CHANGE do not use the
+  // session ID and are posted on all such events.
   //
   // NOTE: This is not used for NOTIFY_ON_VARIABLE_CHANGE.
   optional string session = 1;
@@ -960,7 +942,8 @@ message NotificationRequest {
   optional NotificationType notification_type = 3;
 
   oneof arguments {
-    RPCRegistrationRequest rpc_registration_request = 4;  // For NOTIFY_ON_SERVER_ORIGINATED_RPC
+    RPCRegistrationRequest rpc_registration_request =
+        4; // For NOTIFY_ON_SERVER_ORIGINATED_RPC
     KeystrokeMonitorRequest keystroke_monitor_request = 5;
     VariableMonitorRequest variable_monitor_request = 6;
     ProfileChangeRequest profile_change_request = 7;
@@ -986,27 +969,29 @@ message Notification {
   optional KeystrokeNotification keystroke_notification = 1;
   optional ScreenUpdateNotification screen_update_notification = 2;
   optional PromptNotification prompt_notification = 3;
-  optional LocationChangeNotification location_change_notification = 4 [deprecated=true];
-  optional CustomEscapeSequenceNotification custom_escape_sequence_notification = 5;
+  optional LocationChangeNotification location_change_notification = 4
+      [ deprecated = true ];
+  optional CustomEscapeSequenceNotification
+      custom_escape_sequence_notification = 5;
   optional NewSessionNotification new_session_notification = 6;
   optional TerminateSessionNotification terminate_session_notification = 7;
   optional LayoutChangedNotification layout_changed_notification = 8;
   optional FocusChangedNotification focus_changed_notification = 9;
-  optional ServerOriginatedRPCNotification server_originated_rpc_notification = 10;
+  optional ServerOriginatedRPCNotification server_originated_rpc_notification =
+      10;
   optional BroadcastDomainsChangedNotification broadcast_domains_changed = 11;
   optional VariableChangedNotification variable_changed_notification = 12;
   optional ProfileChangedNotification profile_changed_notification = 13;
 }
 
-message ProfileChangedNotification {
-  optional string guid = 1;
-}
+message ProfileChangedNotification { optional string guid = 1; }
 
 message VariableChangedNotification {
   optional VariableScope scope = 1;
-  optional string identifier = 2;  // unset if app scope, otherwise is session, window, or tab ID
+  optional string identifier =
+      2; // unset if app scope, otherwise is session, window, or tab ID
   optional string name = 3;
-  optional string json_new_value = 4;  // Will be "null" if unset.
+  optional string json_new_value = 4; // Will be "null" if unset.
 }
 
 message BroadcastDomainsChangedNotification {
@@ -1038,28 +1023,20 @@ message KeystrokeNotification {
   enum Action {
     // These are used for non-modifier keys.
     KEY_DOWN = 0;
-    KEY_UP = 1;  // requires advanced=true in request
+    KEY_UP = 1; // requires advanced=true in request
     // This is used when only a modifier changes.
-    FLAGS_CHANGED = 2;  // requires advanced=true in request
+    FLAGS_CHANGED = 2; // requires advanced=true in request
   }
   optional Action action = 6;
 }
 
-message ScreenUpdateNotification {
-  optional string session = 1;
-}
+message ScreenUpdateNotification { optional string session = 1; }
 
-message PromptNotificationPrompt {
-  optional string placeholder = 1;
-}
+message PromptNotificationPrompt { optional string placeholder = 1; }
 
-message PromptNotificationCommandStart {
-  optional string command = 1;
-}
+message PromptNotificationCommandStart { optional string command = 1; }
 
-message PromptNotificationCommandEnd {
-  optional int32 status = 1;
-}
+message PromptNotificationCommandEnd { optional int32 status = 1; }
 
 message PromptNotification {
   optional string session = 1;
@@ -1086,20 +1063,20 @@ message CustomEscapeSequenceNotification {
 }
 
 // Sent when a new session is created or a closure is undone.
-message NewSessionNotification {
-  optional string session_id = 1;
-}
+message NewSessionNotification { optional string session_id = 1; }
 
-// Note this is sent when the app becomes/resigns active, the key window changes, the selected tab
-// of a window changes, or the active pane of a tab changes. Note that you may receive duplicate
-// notifications at times. Ignore those that do not signify a change.
+// Note this is sent when the app becomes/resigns active, the key window
+// changes, the selected tab of a window changes, or the active pane of a tab
+// changes. Note that you may receive duplicate notifications at times. Ignore
+// those that do not signify a change.
 message FocusChangedNotification {
   message Window {
     enum WindowStatus {
       // `window_id` became key
       TERMINAL_WINDOW_BECAME_KEY = 0;
 
-      // `window_id` is not key, but is the current terminal window. Some other non-terminal window is key.
+      // `window_id` is not key, but is the current terminal window. Some other
+      // non-terminal window is key.
       TERMINAL_WINDOW_IS_CURRENT = 1;
 
       // `window_id` is no longer key.
@@ -1126,9 +1103,7 @@ message FocusChangedNotification {
   }
 }
 
-message TerminateSessionNotification {
-  optional string session_id = 1;
-}
+message TerminateSessionNotification { optional string session_id = 1; }
 
 message LayoutChangedNotification {
   optional ListSessionsResponse list_sessions_response = 1;
@@ -1152,20 +1127,20 @@ message GetBufferResponse {
     REQUEST_MALFORMED = 3;
   }
 
-  optional Status status = 1 [default = OK];
+  optional Status status = 1 [ default = OK ];
 
   // Which lines were returned
-  optional Range range = 2 [deprecated=true];
+  optional Range range = 2 [ deprecated = true ];
 
   // Those lines' contents.
   repeated LineContents contents = 3;
 
   optional Coord cursor = 4;
 
-  // The number of lines (including lines lost from the head of scrollback history) that precede
-  // the screen. Subtract this from cursor.y to get the cursor's position on the screen when it
-  // is scrolled to the bottom.
-  optional int64 num_lines_above_screen = 5 [deprecated=true];
+  // The number of lines (including lines lost from the head of scrollback
+  // history) that precede the screen. Subtract this from cursor.y to get the
+  // cursor's position on the screen when it is scrolled to the bottom.
+  optional int64 num_lines_above_screen = 5 [ deprecated = true ];
 
   // The returned range
   optional WindowedCoordRange windowed_coord_range = 6;
@@ -1189,7 +1164,7 @@ message GetPromptResponse {
     PROMPT_UNAVAILABLE = 3;
   }
 
-  optional Status status = 1 [default = OK];
+  optional Status status = 1 [ default = OK ];
 
   optional CoordRange prompt_range = 2;
   optional CoordRange command_range = 3;
@@ -1201,11 +1176,12 @@ message GetPromptResponse {
   enum State {
     EDITING = 0;  // Command hasn't been started yet
     RUNNING = 1;  // Command is currently running
-    FINISHED = 2;  // Command has finished.
+    FINISHED = 2; // Command has finished.
   }
   optional State prompt_state = 7;
 
-  // Exit status. Equivalent to shell's $? variable. Only set if state is FINISHED.
+  // Exit status. Equivalent to shell's $? variable. Only set if state is
+  // FINISHED.
   optional uint32 exit_status = 9;
 
   optional string unique_prompt_id = 10;
@@ -1227,9 +1203,10 @@ message ListPromptsResponse {
     SESSION_NOT_FOUND = 1;
   }
 
-  optional Status status = 1 [default = OK];
+  optional Status status = 1 [ default = OK ];
 
-  // Chronological list of prompt IDs, suitable for GetPromptRequest.unique_prompt_id.
+  // Chronological list of prompt IDs, suitable for
+  // GetPromptRequest.unique_prompt_id.
   repeated string unique_prompt_id = 2;
 }
 
@@ -1242,8 +1219,8 @@ message GetProfilePropertyRequest {
 }
 
 message ProfileProperty {
-    optional string key = 1;
-    optional string json_value = 2;
+  optional string key = 1;
+  optional string json_value = 2;
 }
 
 message GetProfilePropertyResponse {
@@ -1254,24 +1231,23 @@ message GetProfilePropertyResponse {
     ERROR = 3;
   }
 
-  optional Status status = 1 [default = OK];
+  optional Status status = 1 [ default = OK ];
 
   repeated ProfileProperty properties = 3;
 }
 
-// Sets a value in a session's copy of the profile without modifying the underlying profile.
+// Sets a value in a session's copy of the profile without modifying the
+// underlying profile.
 message SetProfilePropertyRequest {
-  message GuidList {
-    repeated string guids = 1;
-  }
+  message GuidList { repeated string guids = 1; }
   oneof target {
     // See documentation on session IDs
     string session = 1;
     GuidList guid_list = 2;
   }
 
-  optional string key = 3;  // deprecated
-  optional string json_value = 4;  // deprecated
+  optional string key = 3;        // deprecated
+  optional string json_value = 4; // deprecated
 
   message Assignment {
     optional string key = 1;
@@ -1288,7 +1264,7 @@ message SetProfilePropertyResponse {
     BAD_GUID = 3;
   }
 
-  optional Status status = 1 [default = OK];
+  optional Status status = 1 [ default = OK ];
 }
 
 message TransactionRequest {
@@ -1304,7 +1280,7 @@ message TransactionResponse {
     NO_TRANSACTION = 1;
     ALREADY_IN_TRANSACTION = 2;
   }
-  optional Status status = 1 [default = OK];
+  optional Status status = 1 [ default = OK ];
 }
 
 // Describes a range of lines.
@@ -1330,9 +1306,9 @@ message Range {
 // Describes a range of cells.
 // |..xxxxx|
 // |xxxx...|
-// In the example above, the range of x's is: {start: {x:2, y:0}, end: {x:4, y:1}}
-// The end coordinate is the first cell *after* the end of the range described (so an empty range
-// has start == end)
+// In the example above, the range of x's is: {start: {x:2, y:0}, end: {x:4,
+// y:1}} The end coordinate is the first cell *after* the end of the range
+// described (so an empty range has start == end)
 message CoordRange {
   optional Coord start = 1;
   optional Coord end = 2;
@@ -1341,9 +1317,10 @@ message CoordRange {
 // Describes a cell's location.
 message Coord {
   optional int32 x = 1;
-  // y=0 describes the first line. When the scrollback buffer is full and history is lost, the first
-  // lines become unavailable, but the numbering is stable (so the Nth line is always the Nth line,
-  // even if it's not the Nth *visible* line).
+  // y=0 describes the first line. When the scrollback buffer is full and
+  // history is lost, the first lines become unavailable, but the numbering is
+  // stable (so the Nth line is always the Nth line, even if it's not the Nth
+  // *visible* line).
   optional int64 y = 2;
 }
 
@@ -1352,26 +1329,27 @@ message LineContents {
   optional string text = 1;
 
   // Some cells do not contain one code point. Use this to map code points in
-  // `text` to a screen position. If the line has no uninitialized cells at its end, then the
-  // sum of `repeats` equals the width of the display.
+  // `text` to a screen position. If the line has no uninitialized cells at its
+  // end, then the sum of `repeats` equals the width of the display.
   //
   // For example, consider a line of text that appears on your display like:
   //   xyz compañía
   //
   // The corresponding value of `text` would be:
   //   xyzcompan~i'a
-  // Note: ~ and ' are combining marks, but are shown uncombined for illustrative purposes.
+  // Note: ~ and ' are combining marks, but are shown uncombined for
+  // illustrative purposes.
   //
-  // Each code point in "xyz" as well as each of the non-accented letters in compañía takes one
-  // cell.
+  // Each code point in "xyz" as well as each of the non-accented letters in
+  // compañía takes one cell.
   //
   // The blank following 'z' is an uninitialized cell that has no code points,
-  // so the z and the c in `text` are adjacent. It's unusual for these to occur in the middle
-  // of a line, but it is possible.
+  // so the z and the c in `text` are adjacent. It's unusual for these to occur
+  // in the middle of a line, but it is possible.
   //
-  // The ñ is composed of the letter n and a combining tilde (U+0303) (indicated in our example
-  // as ~), while í is composed of the letter i and a combining acute accent (U+0301) (indicated in
-  // our example as ').
+  // The ñ is composed of the letter n and a combining tilde (U+0303) (indicated
+  // in our example as ~), while í is composed of the letter i and a combining
+  // acute accent (U+0301) (indicated in our example as ').
   //
   // To map code points in `text` to screen positions, `code_points_per_cell`
   // provides the number of code points in each cell. In our example you would
@@ -1380,12 +1358,13 @@ message LineContents {
   //   num_code_points=1, repeats=3     // x, y, z
   //   num_code_points=0, repeats=1     // uninitialized cell
   //   num_code_points=1, repeats=5     // c, o, m, p, a
-  //   num_code_points=2, repeats=2     // n + combining tilde, i + combining acute accent
-  //   num_code_points=1, repeats=1     // a
+  //   num_code_points=2, repeats=2     // n + combining tilde, i + combining
+  //   acute accent num_code_points=1, repeats=1     // a
   //
-  // Lines usually end with a series of uninitialized cells. These are not included.
+  // Lines usually end with a series of uninitialized cells. These are not
+  // included.
   //
-  // Here is psuedocode to interpret code_points_per_cell:
+  // Here is pseudocode to interpret code_points_per_cell:
   //
   //   text_index_to_screen_coord = {}
   //   screen_coord_to_text_index = {}
@@ -1409,19 +1388,19 @@ message LineContents {
     // The next line is a continuation of this line.
     CONTINUATION_SOFT_EOL = 2;
   }
-  optional Continuation continuation = 3 [default = CONTINUATION_HARD_EOL];
+  optional Continuation continuation = 3 [ default = CONTINUATION_HARD_EOL ];
 }
 
 message CodePointsPerCell {
   // Number of code points per cell
-  optional int32 num_code_points = 1 [default = 1];
+  optional int32 num_code_points = 1 [ default = 1 ];
 
-  // Number of adjacent cells with this number of code points (always one or more).
+  // Number of adjacent cells with this number of code points (always one or
+  // more).
   optional int32 repeats = 2;
 }
 
-message ListSessionsRequest {
-}
+message ListSessionsRequest {}
 
 message SendTextRequest {
   // See documentation on session IDs
@@ -1460,15 +1439,15 @@ message Frame {
 }
 
 message SessionSummary {
-    optional string unique_identifier = 1;
-    optional Frame frame = 2;  // will not be set for buried sessions
-    optional Size grid_size = 3;  // will not be set for buried sessions
-    optional string title = 4;
+  optional string unique_identifier = 1;
+  optional Frame frame = 2;    // will not be set for buried sessions
+  optional Size grid_size = 3; // will not be set for buried sessions
+  optional string title = 4;
 }
 
 message SplitTreeNode {
-  optional bool vertical = 1;  // Direction of split pane divider
-  repeated SplitTreeLink links = 2;  // Links to children
+  optional bool vertical = 1;       // Direction of split pane divider
+  repeated SplitTreeLink links = 2; // Links to children
 
   message SplitTreeLink {
     oneof child {
@@ -1502,11 +1481,13 @@ message CreateTabRequest {
   // Leave unset to create the tab in a new window.
   optional string window_id = 2;
 
-  // Valid to set only if window_id is set. Gives the desired index of the new tab.
+  // Valid to set only if window_id is set. Gives the desired index of the new
+  // tab.
   optional uint32 tab_index = 3;
 
-  // If not set, the profile's command will be used. Use custom_profile_properties instead.
-  optional string command = 4 [deprecated=true];
+  // If not set, the profile's command will be used. Use
+  // custom_profile_properties instead.
+  optional string command = 4 [ deprecated = true ];
 
   // Modifies the profile to customize its behavior just for this session.
   repeated ProfileProperty custom_profile_properties = 5;
@@ -1538,8 +1519,9 @@ message SplitPaneRequest {
   }
   optional SplitDirection split_direction = 2;
 
-  // If true, new session is above/left of the session being split. Otherwise, it goes below/right.
-  optional bool before = 3 [default=false];
+  // If true, new session is above/left of the session being split. Otherwise,
+  // it goes below/right.
+  optional bool before = 3 [ default = false ];
 
   // Leave unset to use the default profile.
   optional string profile_name = 4;
@@ -1553,18 +1535,19 @@ message SplitPaneResponse {
     OK = 0;
     SESSION_NOT_FOUND = 1;
     INVALID_PROFILE_NAME = 2;
-    // This can happen if the session to be split is too small. If splitting multiple sessions and
-    // one or more cannot be split, the status will be set to CANNOT_SPLIT, even if some did succeed
-    // (in which case there will be one or more session_id's).
+    // This can happen if the session to be split is too small. If splitting
+    // multiple sessions and one or more cannot be split, the status will be set
+    // to CANNOT_SPLIT, even if some did succeed (in which case there will be
+    // one or more session_id's).
     CANNOT_SPLIT = 3;
     // Couldn't decode JSON
     MALFORMED_CUSTOM_PROFILE_PROPERTY = 4;
   }
   optional Status status = 1;
 
-  // TODO(gln): this will not be set for tmux integration because the split happens only if/when the
-  // tmux server acts on the request.
-  // See documentation on session IDs.
-  // If more than one session was split, there will be multiple session_id's.
+  // TODO(gln): this will not be set for tmux integration because the split
+  // happens only if/when the tmux server acts on the request. See documentation
+  // on session IDs. If more than one session was split, there will be multiple
+  // session_id's.
   repeated string session_id = 2;
 }

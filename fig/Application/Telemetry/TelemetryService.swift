@@ -243,15 +243,22 @@ class TelemetryProvider: TelemetryService {
   ) -> [String: Any] {
     let email = defaults.email ?? ""
     let domain = String(email.split(separator: "@").last ?? "unregistered")
-    // swiftlint:disable identifier_name
-    let os = ProcessInfo.processInfo.operatingSystemVersion
 
     var defaultsProperties = [
+      "event_origination_source": "desktop",
+      "device_os": "macos",
+      "device_arch": Diagnostic.arch,
+      "device_install_method": "unknown",
+      "device_macos_release_version": Diagnostic.osReleaseVersion,
+      "desktop_version": defaults.version,
+      "desktop_legacy_build": Diagnostic.build,
+
+      // todo(mschrage): legacy fields to be removed
       "domain": domain,
       "email": email,
       "version": defaults.version,
       "build": Diagnostic.build,
-      "os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+      "os": Diagnostic.osReleaseVersion
     ]
 
     if let deviceId = deviceId {
@@ -330,7 +337,7 @@ extension TelemetryProvider: LocalTelemetryService {
   func flushAll(includingCurrentDay: Bool = false) {
     let today = Date(timeIntervalSinceNow: 0).telemetryDayIdentifier
     self.pending.forEach {
-      // exclude current day unless explictly pushing all events
+      // exclude current day unless explicitly pushing all events
       if includingCurrentDay || $0 != today {
         self.flush(eventsFor: $0)
       }
@@ -451,6 +458,7 @@ extension TelemetryProvider {
 
   @discardableResult
   func handleIdentifyRequest(_ request: Fig_TelemetryIdentifyRequest) throws -> Bool {
+
     let keys = request.traits.map { $0.key }
     let values = request.traits.map { $0.value }
     let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))

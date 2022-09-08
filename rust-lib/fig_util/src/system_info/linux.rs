@@ -26,7 +26,7 @@ pub fn get_display_server() -> Result<DisplayServer, Error> {
             "wayland" => Ok(DisplayServer::Wayland),
             _ => Err(Error::UnknownDisplayServer(session)),
         },
-        // x11 is not guarentee this var is set, so we just assume x11 if it is not set
+        // x11 is not guarantee this var is set, so we just assume x11 if it is not set
         _ => Ok(DisplayServer::X11),
     }
 }

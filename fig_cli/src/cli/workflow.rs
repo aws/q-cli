@@ -237,6 +237,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 TrackEvent::new(
                     TrackEventType::WorkflowSearchViewed,
                     TrackSource::Cli,
+                    env!("CARGO_PKG_VERSION").into(),
                     empty::<(&str, &str)>(),
                 ),
                 false,
@@ -643,10 +644,15 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 ControlFlow::Exit(0) => break,
                 ControlFlow::Exit(_) => {
                     fig_telemetry::dispatch_emit_track(
-                        TrackEvent::new(TrackEventType::WorkflowCancelled, TrackSource::Cli, [
-                            ("workflow", workflow_name.as_ref()),
-                            ("execution_method", execution_method),
-                        ]),
+                        TrackEvent::new(
+                            TrackEventType::WorkflowCancelled,
+                            TrackSource::Cli,
+                            env!("CARGO_PKG_VERSION").into(),
+                            [
+                                ("workflow", workflow_name.as_ref()),
+                                ("execution_method", execution_method),
+                            ],
+                        ),
                         false,
                     )
                     .await
@@ -677,10 +683,15 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     }
 
     fig_telemetry::dispatch_emit_track(
-        TrackEvent::new(TrackEventType::WorkflowExecuted, TrackSource::Cli, [
-            ("workflow", workflow_name.as_ref()),
-            ("execution_method", execution_method),
-        ]),
+        TrackEvent::new(
+            TrackEventType::WorkflowExecuted,
+            TrackSource::Cli,
+            env!("CARGO_PKG_VERSION").into(),
+            [
+                ("workflow", workflow_name.as_ref()),
+                ("execution_method", execution_method),
+            ],
+        ),
         false,
     )
     .await
@@ -824,9 +835,9 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
 
     tokio::fs::write(&file, script).await.unwrap();
 
-    let specificer = deno_core::ModuleSpecifier::from_file_path(file).unwrap();
+    let specifier = deno_core::ModuleSpecifier::from_file_path(file).unwrap();
 
-    let mut worker = MainWorker::bootstrap_from_options(specificer.clone(), permissions, options);
+    let mut worker = MainWorker::bootstrap_from_options(specifier.clone(), permissions, options);
 
     worker.execute_script("[fig-init]", "const args = {}").unwrap();
 
@@ -836,7 +847,7 @@ pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> R
             .unwrap();
     }
 
-    worker.execute_main_module(&specificer).await.unwrap();
+    worker.execute_main_module(&specifier).await.unwrap();
 
     worker.run_event_loop(false).await.unwrap();
 

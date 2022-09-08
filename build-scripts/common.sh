@@ -36,7 +36,7 @@ gen_manifest() {
     echo Generating install manifest
     mkdir -p build/usr/share/fig
     if [[ $IS_HEADLESS = 0 ]]; then
-        VARIANT=desktop
+        VARIANT=full
     else
         VARIANT=headless
     fi

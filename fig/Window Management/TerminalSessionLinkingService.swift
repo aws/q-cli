@@ -45,7 +45,7 @@ enum CommandContext {
 }
 
 extension ShellContext {
-  // todo(mschrage): this is for backwards compatiblity and can likely be removed
+  // todo(mschrage): this is for backwards compatibility and can likely be removed
   func isShell() -> Bool {
     return ["zsh", "fish", "bash"].reduce(into: false) { (res, shell) in
       res = res || self.executablePath.contains(shell)
@@ -102,7 +102,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
   fileprivate var windows: [ TerminalSessionId: WindowId ] = [:]
   fileprivate var sessions: [WindowId : [ TerminalSessionId: TerminalSession ]] = [:]
 
-  // MARK: - Lifecyle
+  // MARK: - Lifecycle
 
   init(windowService: WindowService) {
     self.windowService = windowService
@@ -257,7 +257,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
             focusId: FocusId?,
             isFocused: Bool?) {
 
-    // if focus state is not explictly passed attempt to use current state, if it exists.
+    // if focus state is not explicitly passed attempt to use current state, if it exists.
     let currentSession = self.getTerminalSession(for: terminalSessionId)
     let isFocused = isFocused ?? currentSession?.isFocused ?? false
 

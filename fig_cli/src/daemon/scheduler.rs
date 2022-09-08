@@ -135,7 +135,7 @@ impl ScheduleHeap {
 }
 
 pub struct Scheduler {
-    incomming_tasks: Sender<SchedulerMessages>,
+    incoming_tasks: Sender<SchedulerMessages>,
 }
 
 pub enum SchedulerMessages {
@@ -186,12 +186,7 @@ impl Scheduler {
             }
         });
 
-        (
-            Self {
-                incomming_tasks: sender,
-            },
-            join_handle,
-        )
+        (Self { incoming_tasks: sender }, join_handle)
     }
 
     pub fn schedule<T, B>(&mut self, task: T, when: Instant)
@@ -204,7 +199,7 @@ impl Scheduler {
             task.tag(),
             when.duration_since(Instant::now())
         );
-        self.incomming_tasks
+        self.incoming_tasks
             .send(SchedulerMessages::ScheduleTask(ScheduledTask::new(
                 when,
                 task.tag(),
@@ -239,7 +234,7 @@ impl Scheduler {
             tag,
             when.duration_since(Instant::now())
         );
-        self.incomming_tasks
+        self.incoming_tasks
             .send(SchedulerMessages::ScheduleTask(ScheduledTask::new(
                 when,
                 tag,
@@ -476,6 +471,7 @@ impl Task for SendDotfilesLineCountTelemetry {
         fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
             fig_telemetry::TrackEventType::DotfileLineCountsRecorded,
             fig_telemetry::TrackSource::Daemon,
+            env!("CARGO_PKG_VERSION").into(),
             stats,
         ))
         .await?;

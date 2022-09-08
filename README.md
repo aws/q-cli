@@ -3,6 +3,54 @@
 [![Rust CI](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml/badge.svg?branch=develop)](https://github.com/withfig/macos/actions/workflows/rust-ci.yaml)
 [![codecov](https://codecov.io/gh/withfig/macos/branch/develop/graph/badge.svg?token=EFRYMRH32O)](https://codecov.io/gh/withfig/macos)
 
+```mermaid
+%%{
+  init: {
+    "fontFamily": "monospace"
+  }
+}%%
+
+flowchart LR
+    term[fa:fa-terminal Terminal]
+    click term href "https://en.wikipedia.org/wiki/Terminal_emulator"
+      desktop[fa:fa-laptop-code Desktop App]
+    click desktop href "https://github.com/withfig/macos/tree/HEAD/fig_desktop"
+    subgraph webview[Web View]
+      style webview fill:transparent,stroke-dasharray: 5 5
+      autocomplete[fa:fa-window-restore Autocomplete]
+      click autocomplete href "https://www.github.com/withfig/autocomplete-engine"
+      dashboard[fa:fa-window-maximize Dashboard]
+      click dashboard href "https://www.github.com/withfig/mission-control"
+    end
+    localCli[Fig CLI]
+    click localCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
+    subgraph remote["Remote (SSH/WSL/Docker)"]
+      style remote fill:transparent,stroke-dasharray: 5 5
+      figterm[Figterm]
+      click figterm href "https://github.com/withfig/macos/tree/HEAD/figterm"
+      shell["Shell (bash)"]
+      click shell href "https://en.wikipedia.org/wiki/Unix_shell"
+      remoteCli[Fig CLI]
+      click remoteCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
+      subgraph kernel[Kernel]
+        style kernel fill:transparent,stroke-dasharray: 5 5
+        pseudo[Pseudoterminal]
+        click pseudo href "https://en.wikipedia.org/wiki/Pseudoterminal"
+      end
+    end
+
+    localCli <-->|local proto| desktop
+    term <-->|stdin/stdout| figterm
+    webview <-->|Fig.js| desktop
+    desktop <==>|secure proto| figterm 
+    figterm <-->|stdin/stdout| pseudo
+    pseudo <-->|stdin/stdout| shell
+    shell -.->|"fork()"| figterm
+    shell --> remoteCli
+    remoteCli ==>|figterm proto| figterm
+    desktop ===|secure proto| remoteCli
+```
+
 The Fig monorepo houses most of the core Fig code for the Fig desktop app
 and CLI. Several projects live here:
 
@@ -10,19 +58,6 @@ and CLI. Several projects live here:
 - `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the user’s terminal edit buffer.
 - `fig_cli/` - the fig CLI, allows users to interface with Fig from the command line
 - `fig_desktop/` - the Rust desktop app (currently working on Linux, with work being done on MacOS/Windows), uses [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/) for windowing/webviews
-- `rust-lib/` - Rust libraries
-    - `alacritty_terminal` - Our internal fork of the [alacritty internal terminal implementation](https://github.com/alacritty/alacritty/tree/master/alacritty_terminal), used for figterm ansi parsing and screen tracking
-    - `fig_auth` - AWS credential management, mostly used for fetching the current auth token
-    - `fig_color` - Used for figterm to parse colors in terminal output
-    - `fig_integrations` - Fig's system integrations (ssh, dotfiles, etc)
-    - `fig_ipc` - Defines the fig wire protocol and standard locations for sockets
-    - `fig_log` - Defines standard ways to log errors using [`tracing`](https://docs.rs/tracing/latest/tracing/)
-    - `fig_proto` - The protocol buffer definitions compiled to Rust
-    - `fig_settings` - Utilities for interacting with figs remote/local settings and local state
-    - `fig_telemetry` - Used to report telemetry to segment and [`sentry`](https://docs.rs/sentry/latest/sentry/)
-    - `fig_util` - Misc other utilites that are useful in mutiple projects (Directories, Terminal, Shell enums, etc)
-    - `system_socket` - A light wrapper over `UnixSockets` that allows them to be used in Windows projects as well
-    - `viu` - An internal fork of [`viu`](https://github.com/atanunq/viu) to provide displaying of images in the terminal
 - `typescript-api-bindings/` - The protocol buffer bindings for typescript
 - `fig/` - Core logic for the legacy macOS desktop app
 
@@ -102,6 +137,9 @@ rustup target add arm_64-apple-darwin
 ### 4. Setup precommit hooks
 
 ```bash
+# Required for spell-checking
+cargo install typos-cli
+
 # Run `yarn` in root directory to add pre-commit hooks
 yarn
 ```
@@ -146,7 +184,7 @@ This will build the project and copy it to the correct place.
 
 ## Publish 
 
-When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required bacause it is needed to automatically generate specs.
+When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required because it is needed to automatically generate specs.
 
 
 ## Git Branching Conventions

@@ -95,7 +95,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
         let response = timeout(Duration::from_secs(10), rx)
             .await
             .context("Figterm response timed out after 10 sec")?
-            .context("Figterm response failed to recive from sender")?;
+            .context("Figterm response failed to receive from sender")?;
 
         if let hostbound::response::Response::PseudoterminalExecute(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(

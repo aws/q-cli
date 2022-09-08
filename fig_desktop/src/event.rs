@@ -48,6 +48,6 @@ pub enum WindowEvent {
 
 #[derive(Debug)]
 pub enum NativeEvent {
-    #[cfg(target_os = "windows")]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     EditBufferChanged,
 }

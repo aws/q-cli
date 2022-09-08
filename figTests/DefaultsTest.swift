@@ -79,7 +79,7 @@ class DefaultsTest: XCTestCase {
     userDefaults.set(Date(), forKey: key)
     let request = createGetDefaultsPropertyRequest(key: key)
     XCTAssertThrowsError(try defaults.handleGetRequest(request)) { error in
-      XCTAssertEqual(error as? APIError, APIError.generic(message: "Value is an unsupport type."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Value is an unsupported type."))
     }
   }
 
@@ -150,7 +150,7 @@ class DefaultsTest: XCTestCase {
   func testSetDefaultsPropertyWrongType() {
     let request = createSetDefaultsPropertyRequest(key: key, type: .null(false))
     XCTAssertThrowsError(try defaults.handleSetRequest(request)) { error in
-      XCTAssertEqual(error as? APIError, APIError.generic(message: "Value is an unsupport type."))
+      XCTAssertEqual(error as? APIError, APIError.generic(message: "Value is an unsupported type."))
     }
   }
 

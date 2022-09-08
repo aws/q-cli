@@ -37,9 +37,9 @@ class PseudoTerminal {
 
   fileprivate static let CRLF = "\r\n"
 
-  static let recievedEnvVarsFromShellNotification =
-    NSNotification.Name("recievedEnvVarsFromShellNotification")
-  static let recievedCallbackNotification = NSNotification.Name("recievedCallbackNotification")
+  static let receivedEnvVarsFromShellNotification =
+    NSNotification.Name("receivedEnvVarsFromShellNotification")
+  static let receivedCallbackNotification = NSNotification.Name("receivedCallbackNotification")
 
   static let defaultPath = PathHelper.defaultPath
 
@@ -52,12 +52,12 @@ class PseudoTerminal {
 
   init() {
     NotificationCenter.default.addObserver(self,
-                                           selector: #selector(recievedEnvironmentVariablesFromShell(_:)),
-                                           name: PseudoTerminal.recievedEnvVarsFromShellNotification,
+                                           selector: #selector(receivedEnvironmentVariablesFromShell(_:)),
+                                           name: PseudoTerminal.receivedEnvVarsFromShellNotification,
                                            object: nil)
     NotificationCenter.default.addObserver(self,
-                                           selector: #selector(recievedCallbackNotification(_:)),
-                                           name: PseudoTerminal.recievedCallbackNotification,
+                                           selector: #selector(receivedCallbackNotification(_:)),
+                                           name: PseudoTerminal.receivedCallbackNotification,
                                            object: nil)
   }
 
@@ -102,7 +102,7 @@ class PseudoTerminal {
 
   fileprivate func mergeFigSpecificEnvironmentVariables(with environment: [String: String]) -> [String] {
     // don't add shell hooks to pty
-    // Add TERM variable to supress warning for ZSH
+    // Add TERM variable to suppress warning for ZSH
     // Set INPUTRC variable to prevent using a misconfigured inputrc file (https://linear.app/fig/issue/ENG-500)
     // Set FIG_PTY so that dotfiles can detect when they are being run in fig.pty
     let lang = NSLocale.current.languageCode ?? "en"
@@ -143,7 +143,7 @@ class PseudoTerminal {
 }
 
 extension PseudoTerminal {
-  @objc func recievedEnvironmentVariablesFromShell(_ notification: Notification) {
+  @objc func receivedEnvironmentVariablesFromShell(_ notification: Notification) {
 
     guard let env = notification.object as? [String: Any] else { return }
     // Update environment variables in autocomplete PTY
@@ -221,8 +221,8 @@ extension PseudoTerminal {
                         "\(options.contains(.backgroundJob) ? " in background" : "") with id \(cappedHandlerId)")
   }
 
-  @objc func recievedCallbackNotification(_ notification: Notification) {
-    PseudoTerminal.log("recieved callback")
+  @objc func receivedCallbackNotification(_ notification: Notification) {
+    PseudoTerminal.log("received callback")
     guard let info = notification.object as? [String: String?],
           let handlerId = info["handlerId"] as? String,
           let pathToFile = info["filepath"] as? String else {

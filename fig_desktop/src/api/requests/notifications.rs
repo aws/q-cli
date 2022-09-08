@@ -32,7 +32,7 @@ fn subscribe(
     state: &NotificationsState,
 ) -> RequestResult {
     if notification_type == NotificationType::All {
-        return RequestResult::error("Cannot subscribe to 'all' notification type");
+        return RequestResult::error("Cannot subscribe to All notification type");
     }
 
     let entry = state.subscriptions.entry(window_id).or_default();

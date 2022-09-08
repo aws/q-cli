@@ -94,7 +94,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       with: ["crashed": Defaults.shared.launchedFollowingCrash ? "true" : "false"]
     )
     Defaults.shared.launchedFollowingCrash = true
-    LocalState.shared.set(value: false, forKey: LocalState.userExplictlyQuitApp)
+    LocalState.shared.set(value: false, forKey: LocalState.userExplicitlyQuitApp)
     Accessibility.checkIfPermissionRevoked()
 
     //        AppMover.moveIfNecessary()
@@ -167,7 +167,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     }
 
     configureStatusBarItem()
-    setUpAccesibilityObserver()
+    setUpAccessibilityObserver()
     NotificationCenter.default.addObserver(self,
                                            selector: #selector(windowDidChange(_:)),
                                            name: AXWindowServer.windowDidChangeNotification,
@@ -243,7 +243,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
   func remindToSourceFigInExistingTerminals() {
 
-    // filter for native terminal windows (with hueristic to avoid menubar items + other window types)
+    // filter for native terminal windows (with heuristic to avoid menubar items + other window types)
     let nativeTerminals = NSWorkspace.shared.runningApplications.filter {
       Integrations.nativeTerminals.contains($0.bundleIdentifier ?? "")
     }
@@ -325,7 +325,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
     statusBarMenu.addItem(
       withTitle: "Turn on Accessibility",
-      action: #selector(AppDelegate.promptForAccesibilityAccess),
+      action: #selector(AppDelegate.promptForAccessibilityAccess),
       keyEquivalent: "")
 
     statusBarMenu.addItem(NSMenuItem.separator())
@@ -471,7 +471,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       keyEquivalent: "")
     developerMenu.addItem(
       withTitle: "Request Accessibility Permission",
-      action: #selector(AppDelegate.promptForAccesibilityAccess),
+      action: #selector(AppDelegate.promptForAccessibilityAccess),
       keyEquivalent: "")
     developerMenu.addItem(NSMenuItem.separator())
 
@@ -695,7 +695,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     configureStatusBarItem()
   }
 
-  func setUpAccesibilityObserver() {
+  func setUpAccessibilityObserver() {
 
     let center = DistributedNotificationCenter.default()
     let accessibilityChangedNotification = NSNotification.Name("com.apple.accessibility.api")
@@ -810,7 +810,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
   @objc func setupScript() {
     TelemetryProvider.shared.track(event: .runInstallationScript, with: [:])
-    Onboarding.setUpEnviroment()
+    Onboarding.setUpEnvironment()
   }
 
   @objc func toggleiTermIntegration(_ sender: NSMenuItem) {
@@ -849,7 +849,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       print("Update: First launch!")
       Logger.log(message: "First launch!")
       TelemetryProvider.shared.track(event: .firstTimeUser, with: [:])
-      Onboarding.setUpEnviroment()
+      Onboarding.setUpEnvironment()
       return
     }
 
@@ -865,7 +865,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     if previous != current {
       Credentials.shared.migrate()
       Defaults.shared.migrateUUID()
-      Onboarding.setUpEnviroment()
+      Onboarding.setUpEnvironment()
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])
 
@@ -1015,7 +1015,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       }
     }
   }
-  @objc func newAccesibilityAPI() {}
+  @objc func newAccessibilityAPI() {}
   var observer: AXObserver?
 
   @objc func addAccessibilityObserver() {
@@ -1077,8 +1077,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       )
     }
 
-    AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowMovedNotification as CFString, nil)
-    AXObserverAddNotification(observer!, first.accesibilityElement!, kAXWindowResizedNotification as CFString, nil)
+    AXObserverAddNotification(observer!, first.accessibilityElement!, kAXWindowMovedNotification as CFString, nil)
+    AXObserverAddNotification(observer!, first.accessibilityElement!, kAXWindowResizedNotification as CFString, nil)
 
     print(axErr)
     print(observer as Any)
@@ -1179,7 +1179,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       NSStatusBar.system.removeStatusItem(statusbar)
     }
 
-    LocalState.shared.set(value: true, forKey: LocalState.userExplictlyQuitApp)
+    LocalState.shared.set(value: true, forKey: LocalState.userExplicitlyQuitApp)
 
     TelemetryProvider.shared.track(event: .quitApp, with: [:]) { (_, _, _) in
       DispatchQueue.main.async {
@@ -1193,7 +1193,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     Defaults.shared.toggleDeveloperMode()
   }
 
-  @objc func promptForAccesibilityAccess() {
+  @objc func promptForAccessibilityAccess() {
     Accessibility.promptForPermission()
   }
 
@@ -1223,7 +1223,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     PseudoTerminal.shared.dispose()
     InputMethod.default.terminate()
 
-    // Ensure that fig.socket is deleted, so that if user switches acounts it can be recreated
+    // Ensure that fig.socket is deleted, so that if user switches accounts it can be recreated
     try? FileManager.default.removeItem(atPath: "/tmp/fig.socket")
     try? FileManager.default.removeItem(at: IPC.unixSocket)
 
@@ -1244,7 +1244,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
       // add error handling
 
       if result == .apiDisabled {
-        print("Accesibility needs to be enabled.")
+        print("Accessibility needs to be enabled.")
         return
       }
 
@@ -1662,7 +1662,7 @@ extension AppDelegate: NSMenuDelegate {
         NSMenuItem(title: "Unix socket does not exist", action: nil, keyEquivalent: ""),
         NSMenuItem.separator(),
         NSMenuItem(title: "This prevents Fig from", action: nil, keyEquivalent: ""),
-        NSMenuItem(title: "recieving data from the shell.", action: nil, keyEquivalent: ""),
+        NSMenuItem(title: "receiving data from the shell.", action: nil, keyEquivalent: ""),
         NSMenuItem.separator(),
         NSMenuItem(title: "Restart Fig", action: #selector(restart), keyEquivalent: "")
       ])
@@ -1682,7 +1682,7 @@ extension AppDelegate: NSMenuDelegate {
     }
     guard shellContext.isShell() else {
       let items = stringArrayToMenu(items: [
-        "Running proccess (\(shellContext.executablePath)) is not a shell.",
+        "Running process (\(shellContext.executablePath)) is not a shell.",
         "---",
         "Fix: exit current process",
         "---",

@@ -41,7 +41,7 @@ use crate::notification::NotificationsState;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
-    FIG_PROTO_MESSAGE_RECIEVED,
+    FIG_PROTO_MESSAGE_RECEIVED,
 };
 
 pub async fn edit_buffer(
@@ -84,7 +84,7 @@ pub async fn edit_buffer(
                 ("end_time", metrics.end_time.format(&Rfc3339)?.into()),
                 (
                     "duration",
-                    (metrics.start_time - metrics.end_time).whole_seconds().into(),
+                    (metrics.end_time - metrics.start_time).whole_seconds().into(),
                 ),
                 ("num_insertions", metrics.num_insertions.into()),
                 ("num_popups", metrics.num_popups.into()),
@@ -92,7 +92,8 @@ pub async fn edit_buffer(
             tokio::spawn(async {
                 if let Err(err) = fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                     fig_telemetry::TrackEventType::TerminalSessionMetricsRecorded,
-                    fig_telemetry::TrackSource::App,
+                    fig_telemetry::TrackSource::Desktop,
+                    env!("CARGO_PKG_VERSION").into(),
                     properties,
                 ))
                 .await
@@ -132,7 +133,7 @@ pub async fn edit_buffer(
             .send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
-                    event: FIG_PROTO_MESSAGE_RECIEVED.into(),
+                    event: FIG_PROTO_MESSAGE_RECEIVED.into(),
                     payload: base64::encode(encoded),
                 },
             })

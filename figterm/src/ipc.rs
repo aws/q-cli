@@ -111,7 +111,7 @@ impl AsyncWrite for MessageSink {
 
 async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<JoinHandle<()>>)> {
     #[cfg(target_os = "linux")]
-    if fig_util::wsl::is_wsl() {
+    if fig_util::system_info::in_wsl() {
         use std::process::Stdio;
 
         use anyhow::Context as AnyhowContext;
@@ -120,6 +120,7 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
             .args(["_", "stream-from-socket"])
             .stdout(Stdio::piped())
             .stdin(Stdio::piped())
+            .stdin(Stdio::null())
             .spawn()?;
 
         let stdin = child.stdin.take().context("Failed to open stdin")?;
@@ -219,7 +220,7 @@ pub async fn spawn_figterm_ipc(
     Ok(incoming_rx)
 }
 
-/// Conects to the desktop app and allows for a secure connection from remote hosts
+/// Connects to the desktop app and allows for a secure connection from remote hosts
 pub async fn spawn_secure_ipc(
     session_id: String,
     main_loop_sender: Sender<MainLoopEvent>,

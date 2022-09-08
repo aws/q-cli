@@ -4,4 +4,6 @@ export default {
     "cargo +nightly fmt --check -- --color always",
     "cargo +stable clippy --locked --color always -- -D warnings",
   ],
+  "*.proto": "clang-format -n --Werror",
+  "*": "typos"
 };

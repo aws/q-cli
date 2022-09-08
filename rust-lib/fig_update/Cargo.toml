@@ -7,10 +7,10 @@ publish = false
 [dependencies]
 cfg-if = "1.0.0"
 fig_util = { path = "../fig_util" }
-once_cell = "1.13.1"
+once_cell = "1.14.0"
 reqwest = { version = "0.11.10", default-features = false, features = ["rustls-tls-webpki-roots"] }
 semver = "1.0.13"
 serde = { version = "1.0.143", features = ["derive"] }
-thiserror = "1.0.32"
+thiserror = "1.0.34"
 tokio = "1.20.1"
 tracing = "0.1.36"

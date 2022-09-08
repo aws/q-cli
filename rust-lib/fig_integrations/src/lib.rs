@@ -1,8 +1,6 @@
 pub mod backup;
 pub mod error;
 pub mod file;
-#[cfg(target_os = "linux")]
-pub mod ibus;
 pub mod shell;
 pub mod ssh;
 

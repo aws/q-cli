@@ -10,7 +10,7 @@ import XCTest
 @testable import fig
 import FigAPIBindings
 
-private class TestableTelementryProvider: TelemetryProvider {
+private class TestableTelemetryProvider: TelemetryProvider {
     private var callback: ((String, [String: String]) -> Void)!
 
     init(_ defaults: Defaults, _ callback: @escaping (String, [String: String]) -> Void) {
@@ -49,7 +49,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = false
         let request = createAliasRequest(userId: "bar")
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { endpoint, body in
+        let provider = TestableTelemetryProvider(defaults) { endpoint, body in
             updateCalls += 1
             XCTAssertEqual(endpoint, "alias")
             XCTAssertEqual(body, ["previousId": self.defaults.uuid, "userId": "bar"])
@@ -69,7 +69,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = true
         let request = createAliasRequest(userId: "foo")
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { _, _ in
+        let provider = TestableTelemetryProvider(defaults) { _, _ in
             updateCalls += 1
         }
         try provider.handleAliasRequest(request)
@@ -92,7 +92,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = false
         let request = createTrackRequest(event: "some-event", properties: [createProperty("foo", "bar")])
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { endpoint, body in
+        let provider = TestableTelemetryProvider(defaults) { endpoint, body in
             updateCalls += 1
             XCTAssertEqual(endpoint, "track")
             XCTAssertEqual(body["userId"], self.defaults.uuid)
@@ -114,7 +114,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = true
         let request = createTrackRequest(event: "some-event")
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { _, _ in
+        let provider = TestableTelemetryProvider(defaults) { _, _ in
             updateCalls += 1
         }
         try provider.handleTrackRequest(request)
@@ -125,7 +125,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = true
         let request = createTrackRequest(event: TelemetryEvent.telemetryToggled.rawValue)
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { endpoint, body in
+        let provider = TestableTelemetryProvider(defaults) { endpoint, body in
             updateCalls += 1
             XCTAssertEqual(endpoint, "track")
             XCTAssertEqual(body["userId"], self.defaults.uuid)
@@ -145,7 +145,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = false
         let request = createIdentifyRequest(traits: [createProperty("foo", "bar")])
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { endpoint, body in
+        let provider = TestableTelemetryProvider(defaults) { endpoint, body in
             updateCalls += 1
             XCTAssertEqual(endpoint, "identify")
             XCTAssertEqual(body["userId"], self.defaults.uuid)
@@ -159,7 +159,7 @@ class TelemetryTests: XCTestCase {
         defaults.telemetryDisabled = true
         let request = createIdentifyRequest(traits: [createProperty("foo", "bar")])
         var updateCalls = 0
-        let provider = TestableTelementryProvider(defaults) { _, _ in
+        let provider = TestableTelemetryProvider(defaults) { _, _ in
             updateCalls += 1
         }
         try provider.handleIdentifyRequest(request)

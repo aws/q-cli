@@ -28,7 +28,7 @@ class MissionControl {
       case .plugins:
         return "plugins"
       case .home:
-        return ""
+        return "."
       case .onboarding:
         return "onboarding/welcome"
       }

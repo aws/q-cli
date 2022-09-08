@@ -110,7 +110,7 @@ extension String {
 
   }
 
-  func runWithElevatedPriviledgesFromAppleScript(completion: (() -> Void)? = nil) {
+  func runWithElevatedPrivilegesFromAppleScript(completion: (() -> Void)? = nil) {
     "cmd=\"do shell script \\\"\(self)\\\" with administrator privileges\" && osascript -e \"$cmd\""
       .runInBackground(completion: { (_) in
       if let completion = completion {

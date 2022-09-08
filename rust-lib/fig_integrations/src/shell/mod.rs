@@ -326,20 +326,41 @@ impl DotfileShellIntegration {
             regex::escape(&self.description(when)),
             regex::escape(&old_eval_source),
         );
-        let old_source_regex = format!(
+        let old_source_regex_1 = format!(
             r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
             regex::escape(&self.description(when)),
-            regex::escape(&self.legacy_source_text(when)?),
+            regex::escape(&self.legacy_source_text_1(when)?),
+        );
+        let old_source_regex_2 = format!(
+            r#"(?m)(?:{}\n)?^{}\n{{0,2}}"#,
+            regex::escape(&self.description(when)),
+            regex::escape(&self.legacy_source_text_2(when)?),
         );
 
-        Ok(RegexSet::new(&[old_file_regex, &old_eval_regex, &old_source_regex])?)
+        Ok(RegexSet::new(&[
+            old_file_regex,
+            &old_eval_regex,
+            &old_source_regex_1,
+            &old_source_regex_2,
+        ])?)
     }
 
-    fn legacy_source_text(&self, when: When) -> Result<String> {
+    fn legacy_source_text_1(&self, when: When) -> Result<String> {
         let home = directories::home_dir()?;
         let integration_path = self.script_integration(when)?.path;
         let path = integration_path.strip_prefix(home)?;
         Ok(format!(". \"$HOME/{}\"", path.display()))
+    }
+
+    fn legacy_source_text_2(&self, when: When) -> Result<String> {
+        let home = directories::home_dir()?;
+        let integration_path = self.script_integration(when)?.path;
+        let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
+
+        match self.shell {
+            Shell::Fish => Ok(format!("if test -f {path}; . {path}; end")),
+            _ => Ok(format!("[[ -f {path} ]] && . {path}")),
+        }
     }
 
     fn source_text(&self, when: When) -> Result<String> {
@@ -348,8 +369,8 @@ impl DotfileShellIntegration {
         let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
 
         match self.shell {
-            Shell::Fish => Ok(format!("if test -f {path}; . {path}; end")),
-            _ => Ok(format!("[[ -f {path} ]] && . {path}")),
+            Shell::Fish => Ok(format!("test -f {path}; and builtin source {path}")),
+            _ => Ok(format!("[[ -f {path} ]] && builtin source {path}")),
         }
     }
 

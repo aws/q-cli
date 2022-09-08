@@ -166,7 +166,7 @@ class API {
       case .macosInputMethodRequest(let request):
         response.macosInputMethodResponse = try InputMethod.default.handleAPIRequest(request)
       case .createDirectoryRequest:
-        throw APIError.generic(message: "Not implmented on MacOS")
+        throw APIError.generic(message: "Not implemented on MacOS")
       case .installRequest(let request):
         isAsync = true
 
@@ -178,15 +178,15 @@ class API {
         })
 
       case .aggregateSessionMetricActionRequest:
-        // todo(sean): Add aggergate request
-        throw APIError.generic(message: "Not implmented on MacOS")
+        // todo(sean): Add aggregate request
+        throw APIError.generic(message: "Not implemented on MacOS")
       case .none:
         throw APIError.generic(message: "No submessage was included in request.")
       }
     } catch APIError.generic(message: let message) {
       response.error = message
     } catch {
-      response.error = "An unknown error occured."
+      response.error = "An unknown error occurred."
     }
 
     // Send response immediately if request is completed synchronously

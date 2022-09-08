@@ -237,7 +237,7 @@ impl Diagnostic for OSVersion {
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let response = send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
         .await?
-        .context("Recieved EOF while reading diagnostics")?;
+        .context("Received EOF while reading diagnostics")?;
 
     match response.response {
         Some(Response::Diagnostics(diagnostics)) => Ok(diagnostics),
@@ -397,7 +397,7 @@ pub async fn verify_integration(integration: impl Into<String>) -> Result<String
         action: IntegrationAction::VerifyInstall as i32,
     }))
     .await?
-    .context("Recieved EOF while getting terminal integration")?;
+    .context("Received EOF while getting terminal integration")?;
 
     let message = match response.response {
         Some(Response::Success(success)) => success.message,
@@ -570,7 +570,7 @@ impl Diagnostics {
                                 is_running_on_read_only_volume: diagnostics.is_running_on_read_only_volume,
                             }),
                             hardware: HardwareInfo::new()?,
-                            os: OSVersion::new(),
+                            os: fig_util::system_info::os_version().cloned(),
                             user_env: current_env,
                             env_var: EnvVarDiagnostic::new(),
                             integrations: Some(integrations),
@@ -583,7 +583,7 @@ impl Diagnostics {
                         new_fig_details: NewFigDetails::new(),
                         version: None,
                         hardware: HardwareInfo::new()?,
-                        os: OSVersion::new(),
+                        os: fig_util::system_info::os_version().cloned(),
                         user_env: CurrentEnvironment::new(),
                         env_var: EnvVarDiagnostic::new(),
                         integrations: None,
@@ -596,7 +596,7 @@ impl Diagnostics {
                     fig_running: true,
                     new_fig_details: NewFigDetails::new(),
                     hardware: HardwareInfo::new()?,
-                    os: OSVersion::new(),
+                    os: fig_util::system_info::os_version().cloned(),
                     user_env: CurrentEnvironment::new(),
                     env_var: EnvVarDiagnostic::new(),
                     integrations: None,

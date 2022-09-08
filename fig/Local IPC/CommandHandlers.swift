@@ -48,7 +48,7 @@ extension CommandHandlers {
     DispatchQueue.main.async {
       if force {
         if UpdateService.provider.updateIsAvailable {
-          UpdateService.provider.installUpdateIfAvailible()
+          UpdateService.provider.installUpdateIfAvailable()
         }
       } else {
         UpdateService.provider.checkForUpdates(nil)
@@ -77,7 +77,7 @@ extension CommandHandlers {
         "\(Diagnostic.processForTopmostWindow) (\(Diagnostic.processIdForTopmostWindow))" +
         " - \(Diagnostic.ttyDescriptorForTopmostWindow)"
       response.diagnostics.onlytab = String(Defaults.shared.onlyInsertOnTab)
-      response.diagnostics.psudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
+      response.diagnostics.pseudoterminalPath = Diagnostic.pseudoTerminalPath ?? "<generated dynamically>"
       response.diagnostics.autocomplete = Defaults.shared.useAutocomplete
       response.diagnostics.unixSocketServerExists = Diagnostic.unixSocketServerExists
       response.diagnostics.currentSession = Diagnostic.sessionForTopmostWindow
@@ -147,7 +147,7 @@ extension CommandHandlers {
   }
 
   static func runInstallScriptCommand() -> CommandResponse {
-    Onboarding.setUpEnviroment()
+    Onboarding.setUpEnvironment()
 
     return CommandResponse.with { response in
       response.success.message = "running installation script"

@@ -143,7 +143,7 @@ class AXWindowServer: WindowService {
 
   func register(_ app: NSRunningApplication, fromActivation: Bool = false) {
     guard AXIsProcessTrustedWithOptions(nil) else {
-      AXWindowServer.log("cannot register to observe window events before accesibility permissions are enabled")
+      AXWindowServer.log("cannot register to observe window events before accessibility permissions are enabled")
       return
     }
 
@@ -160,7 +160,7 @@ class AXWindowServer: WindowService {
       return
     }
 
-    // Cannot track spotlight window, because we don't recieve a notification when it is dismissed.
+    // Cannot track spotlight window, because we don't receive a notification when it is dismissed.
     // Spotlight is handled by checking height of selectionRect (which goes to 30 when in spotlight!)
     //        guard app.bundleIdentifier != "com.apple.Spotlight" else {
     //            print("AXWindowServer: cannot register to observe window events on com.apple.Spotlight")
@@ -210,7 +210,7 @@ class AXWindowServer: WindowService {
       AXWindowServer.log("fromActivation!")
 
     }
-    // set up AXOberver tracking
+    // set up AXobserver tracking
     let success = appRef.registerObserver { (element, notification) in
       switch notification as String {
       case kAXFocusedWindowChangedNotification:
@@ -381,13 +381,13 @@ class AXWindowServer: WindowService {
                                                       object: nil)
 
     NotificationCenter.default.addObserver(self,
-                                           selector: #selector(accesibilityPermissionsUpdated),
+                                           selector: #selector(accessibilityPermissionsUpdated),
                                            name: Accessibility.permissionDidUpdate,
                                            object: nil)
 
   }
 
-  @objc func accesibilityPermissionsUpdated(_ notification: Notification) {
+  @objc func accessibilityPermissionsUpdated(_ notification: Notification) {
     guard let granted = notification.object as? Bool else { return }
 
     if granted {

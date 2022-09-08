@@ -38,7 +38,7 @@ then
 
   # Generated automatically by iTerm and Terminal, but needs to be
   # explicitly set for VSCode and Hyper. This variable is inherited when
-  # new ttys are created using Tmux of VSCode and must be explictly
+  # new ttys are created using Tmux of VSCode and must be explicitly
   # overwritten.
   if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
     if command -v uuidgen 1>/dev/null 2>&1; then

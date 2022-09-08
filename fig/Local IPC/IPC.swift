@@ -78,7 +78,7 @@ class IPC: UnixSocketServerDelegate {
   func handleCommand(_ message: Local_Command, from socket: Socket, using encoding: FigProtoEncoding)
   throws {
 
-    Logger.log(message: "Recieved command message!", subsystem: .unix)
+    Logger.log(message: "Received command message!", subsystem: .unix)
 
     let json = try? message.jsonString()
     Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
@@ -142,7 +142,7 @@ class IPC: UnixSocketServerDelegate {
   }
 
   func handleHook(_ message: Local_Hook) {
-    Logger.log(message: "Recieved hook message!", subsystem: .unix)
+    Logger.log(message: "Received hook message!", subsystem: .unix)
 
     let json = try? message.jsonString()
     Logger.log(message: json ?? "Could not decode message", subsystem: .unix)
@@ -189,7 +189,7 @@ class IPC: UnixSocketServerDelegate {
     case .callback(let hook):
       Logger.log(message: "Callback hook")
       NotificationCenter.default.post(
-        name: PseudoTerminal.recievedCallbackNotification,
+        name: PseudoTerminal.receivedCallbackNotification,
         object: [
           "handlerId": hook.handlerID,
           "filepath": hook.filepath,

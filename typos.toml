@@ -1,0 +1,41 @@
+# - Instead of using a dictionary of known-good words, it uses
+#   an efficient dictionary of known typos.
+# - It breaks down files into a list of words, using clever splitting
+#   algorithms
+# - "identifiers" are consecutive sequences of characters, eg. `source_regex`
+# - "words" are the parts of identifiers, eg. `source_regex` -> "source", "regex"
+
+[files]
+extend-exclude = [
+  "fig/settings/assets/*",
+  "*.html", # Any HTML, CSS, etc. files are legacy.
+  "*.css",
+  "*.svg",
+  "*.min.*",
+  "*.storyboard",
+  "typos.toml",
+]
+
+[default.extend-words]
+# These are correct in the context of Fig, but aren't normal words
+iterm = "iterm"
+preedit = "preedit"
+xmodifiers = "xmodifiers"
+zvariant = "zvariant"
+
+[default.extend-identifiers]
+# Originally mistakes, but will be too hard to fix now
+FigProtoMessageRecieved = "FigProtoMessageRecieved"
+FigJSONMessageRecieved = "FigJSONMessageRecieved"
+jsonMessageRecieved = "jsonMessageRecieved"
+protoMessageRecieved = "protoMessageRecieved"
+
+[type.rust.extend-identifiers]
+# typos really wanted to correct 2ND -> 2AND
+FROM_LEFT_2ND_BUTTON_PRESSED = "FROM_LEFT_2ND_BUTTON_PRESSED"
+# Flag of `systeminfo`
+FO = "FO"
+
+[type.swift.extend-identifiers]
+# looks like a typo of `input`, but this is a swift keyword
+inout = "inout"

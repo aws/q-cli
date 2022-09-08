@@ -142,7 +142,7 @@ class WindowManager: NSObject {
     case figWindowClosed
     case figWindowTethered
     case figWindowUntethered
-    case explictlyTriggered
+    case explicitlyTriggered
     case mouseDown
     case mouseUp
     case flagsChanged
@@ -157,14 +157,14 @@ class WindowManager: NSObject {
         return (true, false)
       case .windowChanged:
         return (true, false)
-      case .explictlyTriggered, .figWindowClosed, .spaceChanged, .figWindowUntethered, .figWindowTethered:
+      case .explicitlyTriggered, .figWindowClosed, .spaceChanged, .figWindowUntethered, .figWindowTethered:
         return (true, true)
       }
     }
   }
 
   @objc func requestWindowUpdate() {
-    self.updatePosition(for: .explictlyTriggered)
+    self.updatePosition(for: .explicitlyTriggered)
   }
 
   @objc func updatePositionTimer() {
@@ -282,7 +282,7 @@ class WindowManager: NSObject {
         if let app = delta.newValue,
            let bundleId = app?.bundleIdentifier,
            Integrations.nativeTerminals.contains(bundleId) {
-          Logger.log(message: "term: Openning new window in \(target.bundleIdentifier ?? "<none>")")
+          Logger.log(message: "term: Opening new window in \(target.bundleIdentifier ?? "<none>")")
           ShellBridge.simulate(keypress: .n, maskCommand: true)
           kvo?.invalidate()
           if let completion = completion {

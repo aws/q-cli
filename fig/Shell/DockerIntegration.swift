@@ -80,7 +80,7 @@ class DockerIntegration: CommandIntegration {
         print("Docker: event did not have an associated container id")
         return
       }
-      print("Docker: recieved event '\(event.status ?? "unknown")', setting container id = \(id)")
+      print("Docker: received event '\(event.status ?? "unknown")', setting container id = \(id)")
       self.container = id
       tty.update()
     }
@@ -186,7 +186,7 @@ class DockerEventStream {
   //      print("Docker: observe")
   //      if let oldValue = delta.oldValue {
   //        let newValue = workspace.runningApplications
-  //        let diff = Set(oldValue).subtracting(Set(newValue)) // symetricDifference
+  //        let diff = Set(oldValue).subtracting(Set(newValue)) // symmetricDifference
   //        print("Docker: \(diff)")
   //        if diff.filter({ app in
   //          return app.bundleIdentifier == DockerEventStream.dockerBundleId
@@ -240,7 +240,7 @@ class DockerEventStream {
 
 extension DockerEventStream: UnixSocketDelegate {
   func socket(_ socket: UnixSocketClient, didReceive message: String) {
-    Logger.log(message: "recieved message", subsystem: .docker)
+    Logger.log(message: "received message", subsystem: .docker)
 
     //
     guard !message.contains("connection refused") else {
