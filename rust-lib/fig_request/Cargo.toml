@@ -14,7 +14,7 @@ serde = "1.0.143"
 serde_json = "1.0.85"
 thiserror = "1.0.34"
 tracing = "0.1.36"
-url = "2.2.2"
+url = "2.3.0"
 
 [dev-dependencies]
 tokio = { version = "1.20.1", features = ["full"] }

@@ -26,5 +26,5 @@ thiserror = "1.0.34"
 time = { version = "=0.3.14", features = ["serde-human-readable"] }
 tokio = "1.20.1"
 tracing = "0.1.36"
-url = { version = "2.2.2", features = ["serde"] }
+url = { version = "2.3.0", features = ["serde"] }
 
