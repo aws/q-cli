@@ -106,8 +106,9 @@ pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
 
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
+    let version = fig_util::manifest::version().unwrap_or("unknown-version");
 
-    let app_name: std::borrow::Cow<str> = format!("{name}-{os}-{arch}")
+    let app_name: std::borrow::Cow<str> = format!("{name}-{os}-{arch}-{version}")
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || APP_NAME_VALID_SYMBOLS.contains(*c))
         .collect();

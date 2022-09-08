@@ -20,22 +20,23 @@ pub static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
         .and_then(|exe| exe.file_stem().and_then(|name| name.to_str().map(String::from)))
         .unwrap_or_else(|| "rust-client".into());
 
-    if name == "fig" {
+    if name == "fig" || name == "fig-darwin-universal" {
         if let Some(arg1) = std::env::args().nth(1) {
             if arg1 == "_" {
                 if let Some(arg2) = std::env::args().nth(2) {
-                    name = format!("{name}-internal-{arg2}");
+                    name = format!("fig-internal-{arg2}");
                 }
             } else if !arg1.starts_with('-') {
-                name = format!("{name}-{arg1}");
+                name = format!("fig-{arg1}");
             }
         }
     }
 
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
+    let version = fig_util::manifest::version().unwrap_or("unknown-version");
 
-    let app_name: String = format!("{name}-{os}-{arch}")
+    let app_name: String = format!("{name}-{os}-{arch}-{version}")
         .chars()
         .filter(|c| c.is_ascii_graphic())
         .collect();
