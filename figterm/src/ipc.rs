@@ -120,7 +120,6 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
             .args(["_", "stream-from-socket"])
             .stdout(Stdio::piped())
             .stdin(Stdio::piped())
-            .stdin(Stdio::null())
             .spawn()?;
 
         let stdin = child.stdin.take().context("Failed to open stdin")?;

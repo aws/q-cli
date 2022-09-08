@@ -398,6 +398,10 @@ async fn root_command() -> Result<()> {
                 Write,
             };
 
+            if fig_util::manifest::is_headless() {
+                eyre::bail!("Launching Fig from headless installs is not yet supported");
+            }
+
             match launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true }) {
                 Ok(()) => {
                     open_ui_element(UiElement::MissionControl, None)
