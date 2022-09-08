@@ -374,7 +374,7 @@ jobs:
           cd versions
           cp "fig $BUILD.dmg" fig@latest.dmg
           git add .
-          git commit -m "Deploy Build $BUILD"
+          git commit -m "Deploy Build $BUILD" --no-verify
           cd ..
 
       - name: Remove old versions
@@ -397,7 +397,7 @@ jobs:
           ls | grep '.dmg\|.delta' | grep -v -x -F -f $TMPDIR/safe | xargs -I{} rm -v {}
           git status
           # git add .
-          # git commit -m "Remove old versions" --allow-empty
+          # git commit -m "Remove old versions" --allow-empty --no-verify
           cd ..
         env:
           size_of_archive: 37 
@@ -447,7 +447,7 @@ jobs:
           git pull
           agvtool bump
           git add fig.xcodeproj/project.pbxproj
-          git commit -m "Bump build to $BUILD [skip ci]"
+          git commit -m "Bump build to $BUILD [skip ci]" --no-verify
           git push origin ${GITHUB_REF##*/}
       - name: Notify \#macos channel on Discord
         run: |
