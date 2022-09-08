@@ -243,15 +243,22 @@ class TelemetryProvider: TelemetryService {
   ) -> [String: Any] {
     let email = defaults.email ?? ""
     let domain = String(email.split(separator: "@").last ?? "unregistered")
-    // swiftlint:disable identifier_name
-    let os = ProcessInfo.processInfo.operatingSystemVersion
 
     var defaultsProperties = [
+      "event_origination_source": "desktop",
+      "device_os": "macos",
+      "device_arch": Diagnostic.arch,
+      "device_install_method": "unknown",
+      "device_macos_release_version": Diagnostic.osReleaseVersion,
+      "desktop_version": defaults.version,
+      "desktop_legacy_build": Diagnostic.build,
+
+      // todo(mschrage): legacy fields to be removed
       "domain": domain,
       "email": email,
       "version": defaults.version,
       "build": Diagnostic.build,
-      "os": "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+      "os": Diagnostic.osReleaseVersion
     ]
 
     if let deviceId = deviceId {
@@ -451,6 +458,7 @@ extension TelemetryProvider {
 
   @discardableResult
   func handleIdentifyRequest(_ request: Fig_TelemetryIdentifyRequest) throws -> Bool {
+
     let keys = request.traits.map { $0.key }
     let values = request.traits.map { $0.value }
     let payload = Dictionary(uniqueKeysWithValues: zip(keys, values))

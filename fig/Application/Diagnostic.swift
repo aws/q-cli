@@ -248,6 +248,16 @@ class Diagnostic {
     }
   }
 
+  static var arch: String {
+    return ProcessInfo.processInfo.isAppleSilicon ? "aarch64" : "x86_64"
+  }
+
+  static var osReleaseVersion: String {
+    // swiftlint:disable identifier_name
+    let os = ProcessInfo.processInfo.operatingSystemVersion
+    return "\(os.majorVersion).\(os.minorVersion).\(os.patchVersion)"
+  }
+
   //https://github.com/sparkle-project/Sparkle/blob/3a5c620b60f483b71f8c28573ac29bf85fda6193/Sparkle/SUHost.m#L178-L183
 
   // Check if app is translocated
