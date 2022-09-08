@@ -114,10 +114,45 @@ pub fn is_headless() -> bool {
     }
 }
 
+#[cfg(target_os = "macos")]
+static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
+    let version = option_env!("VERSION");
+    let build = option_env!("BUILD");
+    match (version, build) {
+        (Some(version), Some(build)) => Some(format!("{version}+{build}")),
+        (Some(version), None) => Some(version.into()),
+        _ => None,
+    }
+});
+
+#[cfg(target_os = "windows")]
+static WINDOWS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
+    let output = std::process::Command::new("fig_desktop.exe").arg("--version").output();
+    match output {
+        Ok(output) => {
+            let stdout = String::from_utf8_lossy(&output.stdout);
+            let version = stdout.replace("fig_desktop", "").trim().to_owned();
+            Some(version)
+        },
+        Err(_) => None,
+    }
+});
+
 /// Gets the version from the manifest
 pub fn version() -> Option<&'static str> {
     match manifest() {
         Some(manifest) => Some(&manifest.version),
-        None => None,
+        None => {
+            cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    MACOS_VERSION.as_deref()
+                } else if #[cfg(target_os = "windows")] {
+                    // TODO(mia): add actual manifest version for windows
+                    WINDOWS_VERSION.as_deref()
+                } else {
+                    None
+                }
+            }
+        },
     }
 }

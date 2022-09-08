@@ -362,26 +362,6 @@ pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
         .interact()?)
 }
 
-pub fn macos_version() -> Option<&'static str> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            option_env!("VERSION")
-        } else {
-            None
-        }
-    }
-}
-
-pub fn macos_build() -> Option<&'static str> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            option_env!("BUILD")
-        } else {
-            None
-        }
-    }
-}
-
 #[ignore]
 #[test]
 fn test() {

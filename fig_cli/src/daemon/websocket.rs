@@ -39,10 +39,6 @@ use crate::daemon::scheduler::{
     Scheduler,
     SyncDotfiles,
 };
-use crate::util::{
-    macos_build,
-    macos_version,
-};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -90,12 +86,8 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         ("cliVersion", env!("CARGO_PKG_VERSION").into()),
     ];
 
-    if let Some(macos_build) = macos_build() {
-        params.push(("macosBuild", macos_build.into()));
-    }
-
-    if let Some(macos_version) = macos_version() {
-        params.push(("macosVersion", macos_version.into()));
+    if let Some(version) = fig_util::manifest::version() {
+        params.push(("manifestVersion", version.into()));
     }
 
     if let Ok(mut device_id) = get_system_id() {
