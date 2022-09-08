@@ -116,12 +116,15 @@ jobs:
 ############################################
 # Install Build Tools
 ############################################
-      - name: Install needed tools
+      - name: Install brew tools
         run:  |
           brew install protobuf swift-protobuf node@16 yarn
-          yarn
+          echo '/usr/local/opt/node@16/bin' >> $GITHUB_PATH
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
+
+      - name: Install yarn tools
+        run: yarn
 
 ############################################
 # Generate Protobuf Artifacts
