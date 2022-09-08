@@ -66,7 +66,8 @@ pub async fn quit_fig() -> Result<()> {
         fig_telemetry::dispatch_emit_track(
             fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::QuitApp,
-                fig_telemetry::TrackSource::App,
+                fig_telemetry::TrackSource::Cli,
+                env!("CARGO_PKG_VERSION").into(),
                 empty::<(&str, &str)>(),
             ),
             false,

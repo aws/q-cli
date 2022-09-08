@@ -1952,6 +1952,7 @@ where
             fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 TrackEventType::DoctorError,
                 TrackSource::Cli,
+                env!("CARGO_PKG_VERSION").into(),
                 properties,
             ))
             .await

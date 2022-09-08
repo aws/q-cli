@@ -92,7 +92,8 @@ pub async fn edit_buffer(
             tokio::spawn(async {
                 if let Err(err) = fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                     fig_telemetry::TrackEventType::TerminalSessionMetricsRecorded,
-                    fig_telemetry::TrackSource::App,
+                    fig_telemetry::TrackSource::Desktop,
+                    env!("CARGO_PKG_VERSION").into(),
                     properties,
                 ))
                 .await

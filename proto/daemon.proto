@@ -142,15 +142,24 @@ message SyncResponse {
 }
 
 message TelemetryEmitTrackCommand {
+  // The original source of a telemetry event
   enum Source {
-    APP = 0;
+    // An event originating in the desktop app
+    DESKTOP = 0;
+    // An event originating in the CLI
     CLI = 1;
+    // An event originating in the daemon
     DAEMON = 2;
   }
 
+  // The name of the track event
   string event = 1;
+  // Properties of the track event
   map<string, fig_common.Json> properties = 2;
+  // Originating source of the track event
   optional Source source = 3;
+  // Version of the source
+  optional string source_version = 5;
 
   // Queue the event so that it is not dispatched immediately but rather
   // is dispatched at a regularly scheduled interval by the daemon.

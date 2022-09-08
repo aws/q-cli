@@ -134,18 +134,23 @@ impl RootUserSubcommand {
                                 )?;
                             }
 
+                            let mut login_body = serde_json::Map::new();
+                            login_body.insert("loginSource".into(), "cli".into());
+                            if let Ok(Some(anonymous_id)) = state::get_string("anonymousId") {
+                                login_body.insert("anonymousId".into(), anonymous_id.into());
+                            };
+
                             let (telem_join, login_join) = tokio::join!(
                                 fig_telemetry::dispatch_emit_track(
-                                    TrackEvent::new(TrackEventType::Login, TrackSource::Cli, empty::<(&str, &str)>()),
+                                    TrackEvent::new(
+                                        TrackEventType::Login,
+                                        TrackSource::Cli,
+                                        env!("CARGO_PKG_VERSION").into(),
+                                        empty::<(&str, &str)>()
+                                    ),
                                     false,
                                 ),
-                                Request::post("/user/login")
-                                    .auth()
-                                    .body(match state::get_string("anonymousId") {
-                                        Ok(Some(anonymous_id)) => json!({ "anonymousId": anonymous_id }),
-                                        _ => json!({}),
-                                    })
-                                    .send()
+                                Request::post("/user/login").auth().body(login_body).send()
                             );
 
                             telem_join.ok();
@@ -171,7 +176,12 @@ impl RootUserSubcommand {
             },
             Self::Logout => {
                 fig_telemetry::dispatch_emit_track(
-                    TrackEvent::new(TrackEventType::Logout, TrackSource::Cli, empty::<(&str, &str)>()),
+                    TrackEvent::new(
+                        TrackEventType::Logout,
+                        TrackSource::Cli,
+                        env!("CARGO_PKG_VERSION").into(),
+                        empty::<(&str, &str)>(),
+                    ),
                     false,
                 )
                 .await

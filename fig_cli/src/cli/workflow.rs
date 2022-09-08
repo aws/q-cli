@@ -237,6 +237,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 TrackEvent::new(
                     TrackEventType::WorkflowSearchViewed,
                     TrackSource::Cli,
+                    env!("CARGO_PKG_VERSION").into(),
                     empty::<(&str, &str)>(),
                 ),
                 false,
@@ -643,10 +644,15 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 ControlFlow::Exit(0) => break,
                 ControlFlow::Exit(_) => {
                     fig_telemetry::dispatch_emit_track(
-                        TrackEvent::new(TrackEventType::WorkflowCancelled, TrackSource::Cli, [
-                            ("workflow", workflow_name.as_ref()),
-                            ("execution_method", execution_method),
-                        ]),
+                        TrackEvent::new(
+                            TrackEventType::WorkflowCancelled,
+                            TrackSource::Cli,
+                            env!("CARGO_PKG_VERSION").into(),
+                            [
+                                ("workflow", workflow_name.as_ref()),
+                                ("execution_method", execution_method),
+                            ],
+                        ),
                         false,
                     )
                     .await
@@ -677,10 +683,15 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     }
 
     fig_telemetry::dispatch_emit_track(
-        TrackEvent::new(TrackEventType::WorkflowExecuted, TrackSource::Cli, [
-            ("workflow", workflow_name.as_ref()),
-            ("execution_method", execution_method),
-        ]),
+        TrackEvent::new(
+            TrackEventType::WorkflowExecuted,
+            TrackSource::Cli,
+            env!("CARGO_PKG_VERSION").into(),
+            [
+                ("workflow", workflow_name.as_ref()),
+                ("execution_method", execution_method),
+            ],
+        ),
         false,
     )
     .await

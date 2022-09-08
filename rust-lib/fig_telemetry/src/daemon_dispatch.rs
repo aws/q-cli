@@ -44,12 +44,13 @@ pub async fn dispatch_emit_track(event: TrackEvent, enqueue: bool) -> Result<(),
                 .collect(),
             source: Some(
                 match event.source {
-                    TrackSource::App => Source::App,
+                    TrackSource::Desktop => Source::Desktop,
                     TrackSource::Cli => Source::Cli,
                     TrackSource::Daemon => Source::Daemon,
                 }
                 .into(),
             ),
+            source_version: event.source_version.clone(),
             enqueue: Some(enqueue),
         })),
     };

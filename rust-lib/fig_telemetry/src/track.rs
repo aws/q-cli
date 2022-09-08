@@ -61,7 +61,7 @@ impl std::fmt::Display for TrackEventType {
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TrackSource {
-    App,
+    Desktop,
     Cli,
     Daemon,
 }
@@ -69,7 +69,7 @@ pub enum TrackSource {
 impl std::fmt::Display for TrackSource {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::App => "app",
+            Self::Desktop => "desktop",
             Self::Cli => "cli",
             Self::Daemon => "daemon",
         })
@@ -80,11 +80,12 @@ impl std::fmt::Display for TrackSource {
 pub struct TrackEvent {
     pub event: TrackEventType,
     pub source: TrackSource,
+    pub source_version: Option<String>,
     pub properties: Map<String, Value>,
 }
 
 impl TrackEvent {
-    pub fn new<I, K, V>(event: TrackEventType, source: TrackSource, properties: I) -> Self
+    pub fn new<I, K, V>(event: TrackEventType, source: TrackSource, source_version: String, properties: I) -> Self
     where
         I: IntoIterator<Item = (K, V)>,
         K: Into<String>,
@@ -93,6 +94,7 @@ impl TrackEvent {
         TrackEvent {
             event,
             source,
+            source_version: Some(source_version),
             properties: properties.into_iter().map(|(k, v)| (k.into(), v.into())).collect(),
         }
     }
@@ -101,7 +103,10 @@ impl TrackEvent {
         let mut res: Map<String, Value> = Map::new();
 
         let mut props = props.clone();
-        props.insert("source".into(), self.source.to_string().into());
+        props.insert("event_origination_source".into(), self.source.to_string().into());
+        if let Some(ref source_version) = self.source_version {
+            props.insert(format!("{}_version", self.source), source_version.clone().into());
+        }
         props.extend(self.properties.clone());
 
         res.insert("event".into(), self.event.to_string().into());
@@ -115,19 +120,26 @@ impl From<&TelemetryEmitTrackCommand> for TrackEvent {
     fn from(command: &TelemetryEmitTrackCommand) -> Self {
         let event = TrackEventType::Other(command.event.clone());
 
-        let properties: Vec<(String, serde_json::Value)> = command
+        let properties: Map<String, serde_json::Value> = command
             .properties
             .iter()
             .map(|(key, value)| (key.clone(), value.clone().into()))
             .collect();
 
         let source = match Source::from_i32(command.source.unwrap_or_default()).unwrap_or_default() {
-            Source::App => TrackSource::App,
+            Source::Desktop => TrackSource::Desktop,
             Source::Cli => TrackSource::Cli,
             Source::Daemon => TrackSource::Daemon,
         };
 
-        TrackEvent::new(event, source, properties)
+        let source_version = command.source_version.clone();
+
+        TrackEvent {
+            event,
+            source,
+            source_version,
+            properties,
+        }
     }
 }
 

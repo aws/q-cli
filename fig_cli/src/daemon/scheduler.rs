@@ -471,6 +471,7 @@ impl Task for SendDotfilesLineCountTelemetry {
         fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
             fig_telemetry::TrackEventType::DotfileLineCountsRecorded,
             fig_telemetry::TrackSource::Daemon,
+            env!("CARGO_PKG_VERSION").into(),
             stats,
         ))
         .await?;

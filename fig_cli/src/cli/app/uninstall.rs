@@ -76,6 +76,7 @@ pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
             } else {
                 TrackSource::Cli
             },
+            env!("CARGO_PKG_VERSION").into(),
             [("source", "fig app uninstall")],
         ))
         .await

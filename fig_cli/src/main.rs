@@ -32,9 +32,12 @@ async fn main() -> Result<()> {
         args.get(1).map(String::as_str),
         args.get(2).map(String::as_str),
     ) {
-        (_, Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux"), _) => (None, None),
+        (_, Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running"), _) => {
+            (None, None)
+        },
         (Some("/Applications/Fig.app/Contents/MacOS/fig-darwin-universal"), _, _)
-        | (_, Some("app"), Some("prompts")) => (
+        | (_, Some("app"), Some("prompts"))
+        | (_, Some("settings"), Some("init")) => (
             Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false)),
             None,
         ),
@@ -46,9 +49,10 @@ async fn main() -> Result<()> {
             let terminal = fig_util::Terminal::parent_terminal()
                 .map_or_else(|| "<unknown>".into(), |terminal| terminal.internal_id());
             let cli_version = env!("CARGO_PKG_VERSION");
+            let args_no_exe: Vec<_> = std::env::args().skip(1).collect();
 
             configure_scope(|scope| {
-                scope.set_tag("arguments", &args.join(" "));
+                scope.set_tag("arguments", &args_no_exe.join(" "));
                 scope.set_tag("shell", &shell);
                 scope.set_tag("terminal", &terminal);
                 scope.set_tag("cli_version", &cli_version);
@@ -61,13 +65,15 @@ async fn main() -> Result<()> {
                         fig_telemetry::TrackEvent::new(
                             fig_telemetry::TrackEventType::RanCommand,
                             fig_telemetry::TrackSource::Cli,
+                            env!("CARGO_PKG_VERSION").into(),
                             [
-                                ("arguments", json!(args)),
+                                ("arguments", json!(args_no_exe.join(" "))),
+                                ("arguments_json", json!(args_no_exe)),
+                                ("arg0", json!(args.get(0))),
+                                ("arg1", json!(args.get(1))),
                                 ("shell", json!(shell)),
                                 ("terminal", json!(terminal)),
                                 ("cli_version", json!(cli_version)),
-                                ("arg0", json!(args.get(0))),
-                                ("arg1", json!(args.get(1))),
                             ],
                         ),
                         false,

@@ -92,7 +92,8 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
 
     emit_track(TrackEvent::new(
         TrackEventType::Other(event),
-        TrackSource::App,
+        TrackSource::Desktop,
+        env!("CARGO_PKG_VERSION").into(),
         properties,
     ))
     .await
@@ -116,7 +117,7 @@ pub async fn handle_page_request(request: TelemetryPageRequest) -> RequestResult
     emit_page(
         request.category().into(),
         request.name().into(),
-        TrackSource::App,
+        TrackSource::Desktop,
         properties,
     )
     .await
