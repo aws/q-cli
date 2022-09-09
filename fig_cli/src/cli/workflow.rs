@@ -479,6 +479,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
         loop {
             let mut header = Paragraph::new();
+            header.push_line_break();
             header.push_styled_text(
                 workflow.display_name.as_ref().unwrap_or(&workflow.name),
                 None,
@@ -486,14 +487,17 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 true,
             );
             header.push_styled_text(
-                format!(" | @{}", workflow.namespace),
+                format!(" • @{}", workflow.namespace),
                 Some(Color::DarkGrey),
                 None,
                 false,
             );
-            header.push_line_break();
+
             if let Some(description) = &workflow.description {
-                header.push_text(description);
+                if !description.is_empty() {
+                    header.push_line_break();
+                    header.push_styled_text(description, Some(Color::Grey), None, false);
+                }
             }
 
             let mut components = vec![Component::from(header).with_margin_bottom(1)];
@@ -623,16 +627,30 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     }
                 },
             };
-            components.push(
-                Component::from(Label::new(
-                    "Preview: CTRL+O | Next: TAB | Prev: SHIFT+TAB | Select: SPACE | Execute: ENTER",
-                    false,
-                ))
-                .with_color(Color::DarkGrey)
-                .with_background_color(Color::White)
-                .with_margin_left(0)
-                .with_width(110),
-            );
+
+            let mut keybindings = Paragraph::new();
+
+            keybindings.push_styled_text("enter", Some(Color::Grey), None, false);
+
+            keybindings.push_styled_text(" select • ", Some(Color::DarkGrey), None, false);
+
+            keybindings.push_styled_text("tab", Some(Color::Grey), None, false);
+
+            keybindings.push_styled_text(" next • ", Some(Color::DarkGrey), None, false);
+
+            keybindings.push_styled_text("shift+tab", Some(Color::Grey), None, false);
+
+            keybindings.push_styled_text(" previous • ", Some(Color::DarkGrey), None, false);
+
+            keybindings.push_styled_text("⎵", Some(Color::Grey), None, false);
+
+            keybindings.push_styled_text(" toggle • ", Some(Color::DarkGrey), None, false);
+
+            keybindings.push_styled_text("⌃o", Some(Color::Grey), None, false);
+
+            keybindings.push_styled_text(" preview", Some(Color::DarkGrey), None, false);
+
+            components.push(Component::from(keybindings).with_margin_left(0).with_width(110));
 
             let mut view = Component::from(Container::new(components))
                 .with_border_style(BorderStyle::None)
