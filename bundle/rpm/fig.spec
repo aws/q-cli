@@ -28,6 +28,9 @@ rm -rf %{buildroot}
 %preun
 fig _ uninstall-for-all-users
 
+%postun
+killall fig_desktop
+
 %posttrans
 (ls /etc/yum.repos.d/fig.repo>/dev/null && sed -i 's/f$releasever\///' '/etc/yum.repos.d/fig.repo') || true
 
