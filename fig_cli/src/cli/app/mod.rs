@@ -1,9 +1,7 @@
 pub mod uninstall;
 
 use std::io::Write;
-use std::iter::empty;
 use std::str::FromStr;
-use std::time::Duration;
 
 use cfg_if::cfg_if;
 use clap::Subcommand;
@@ -12,10 +10,7 @@ use eyre::{
     bail,
     Result,
 };
-use fig_ipc::local::{
-    quit_command,
-    update_command,
-};
+use fig_ipc::local::update_command;
 use fig_settings::{
     settings,
     state,
@@ -56,67 +51,6 @@ pub enum AppSubcommand {
     Prompts,
 }
 
-pub async fn quit_fig() -> Result<()> {
-    if !is_app_running() {
-        println!("Fig is not running");
-        return Ok(());
-    }
-
-    let telem_join = tokio::spawn(async {
-        fig_telemetry::dispatch_emit_track(
-            fig_telemetry::TrackEvent::new(
-                fig_telemetry::TrackEventType::QuitApp,
-                fig_telemetry::TrackSource::Cli,
-                env!("CARGO_PKG_VERSION").into(),
-                empty::<(&str, &str)>(),
-            ),
-            false,
-        )
-        .await
-        .ok();
-    });
-
-    println!("Quitting Fig");
-    if quit_command().await.is_err() {
-        tokio::time::sleep(Duration::from_millis(500)).await;
-        let second_try = quit_command().await;
-        if second_try.is_err() {
-            #[cfg(unix)]
-            {
-                use std::process::Command;
-
-                use regex::Regex;
-
-                use crate::cli::debug::get_app_info;
-
-                if let Ok(info) = get_app_info() {
-                    let pid = Regex::new(r"pid = (\S+)")
-                        .unwrap()
-                        .captures(&info)
-                        .and_then(|c| c.get(1));
-                    if let Some(pid) = pid {
-                        let success = Command::new("kill")
-                            .arg("-KILL")
-                            .arg(pid.as_str())
-                            .status()
-                            .map(|res| res.success());
-                        if let Ok(true) = success {
-                            return Ok(());
-                        }
-                    }
-                }
-            }
-
-            println!("Unable to quit Fig");
-            second_try?;
-        }
-    }
-
-    telem_join.await.ok();
-
-    Ok(())
-}
-
 pub async fn restart_fig() -> Result<()> {
     if fig_util::system_info::is_remote() {
         bail!("Please restart Fig from your host machine");
@@ -131,7 +65,7 @@ pub async fn restart_fig() -> Result<()> {
     } else {
         cfg_if! {
             if #[cfg(target_os = "linux")] {
-                quit_fig().await?;
+                crate::util::quit_fig().await?;
                 launch_fig(LaunchArgs {
                     print_running: false,
                     print_launching: true,
@@ -144,7 +78,7 @@ pub async fn restart_fig() -> Result<()> {
 
                 println!("Restarting Fig");
                 restart_command().await.context("Unable to restart Fig")?;
-                tokio::time::sleep(Duration::from_millis(1000)).await;
+                tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
             }
         }
 
@@ -298,7 +232,7 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Restart => restart_fig().await?,
-            AppSubcommand::Quit => quit_fig().await?,
+            AppSubcommand::Quit => crate::util::quit_fig().await?,
             AppSubcommand::Launch => launch_fig(LaunchArgs {
                 print_running: true,
                 print_launching: true,

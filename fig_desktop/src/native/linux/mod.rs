@@ -11,10 +11,17 @@ use std::sync::atomic::{
 use std::sync::Arc;
 
 use anyhow::Result;
+use fig_util::system_info::linux::{
+    get_desktop_environment,
+    get_display_server,
+    DesktopEnvironment,
+    DisplayServer,
+};
 use parking_lot::Mutex;
 use tracing::{
     error,
     info,
+    warn,
 };
 
 use self::x11::X11State;
@@ -87,23 +94,9 @@ impl NativeState {
     }
 }
 
-enum DisplayServer {
-    X11,
-    Wayland,
-}
-
-impl DisplayServer {
-    fn detect() -> Result<Self> {
-        match std::env::var("XDG_SESSION_TYPE") {
-            Ok(ref session_type) if session_type == "wayland" => Ok(Self::Wayland),
-            _ => Ok(Self::X11),
-        }
-    }
-}
-
 pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Result<()> {
     let proxy_ = proxy.clone();
-    match DisplayServer::detect() {
+    match get_display_server() {
         Ok(DisplayServer::X11) => {
             info!("Detected X11 server");
 
@@ -117,21 +110,23 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
         Ok(DisplayServer::Wayland) => {
             info!("Detected Wayland server");
 
-            if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
-                info!(%sway_socket, "Detected sway");
-
-                let (sway_tx, sway_rx) = flume::unbounded();
-
-                let sway_state = Arc::new(SwayState {
-                    active_window_rect: Mutex::new(None),
-                    active_terminal: Mutex::new(None),
-                    sway_tx,
-                });
-                *native_state.display_server_state.lock() = Some(DisplayServerState::Sway(sway_state.clone()));
-
-                tokio::spawn(async { sway::handle_sway(proxy_, sway_state, sway_socket, sway_rx).await });
-            } else {
-                error!("Unknown wayland compositor");
+            match get_desktop_environment() {
+                Ok(env @ DesktopEnvironment::Gnome | env @ DesktopEnvironment::Plasma) => info!("Detected {env:?}"),
+                Ok(DesktopEnvironment::Sway) => {
+                    if let Ok(sway_socket) = std::env::var("SWAYSOCK") {
+                        info!(%sway_socket, "Detected sway");
+                        let (sway_tx, sway_rx) = flume::unbounded();
+                        let sway_state = Arc::new(SwayState {
+                            active_window_rect: Mutex::new(None),
+                            active_terminal: Mutex::new(None),
+                            sway_tx,
+                        });
+                        *native_state.display_server_state.lock() = Some(DisplayServerState::Sway(sway_state.clone()));
+                        tokio::spawn(async { sway::handle_sway(proxy_, sway_state, sway_socket, sway_rx).await });
+                    }
+                },
+                Ok(env) => warn!("Detected non wayland compositor {env:?}"),
+                Err(err) => error!(%err, "Unknown wayland compositor"),
             }
         },
         Err(err) => error!(%err, "Unable to detect display server"),

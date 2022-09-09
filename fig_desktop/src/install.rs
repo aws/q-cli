@@ -131,36 +131,94 @@ pub async fn run_install() {
     });
 
     #[cfg(target_os = "linux")]
-    {
-        use std::process::Output;
+    launch_ibus().await
+}
 
-        use sysinfo::{
-            ProcessRefreshKind,
-            RefreshKind,
-            System,
-            SystemExt,
-        };
-        use tokio::process::Command;
-        use tracing::info;
+#[cfg(target_os = "linux")]
+#[derive(Debug)]
+enum SystemdUserService {
+    IBusGeneric,
+    IBusGnome,
+}
 
-        let system = tokio::task::block_in_place(|| {
-            System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
-        });
-        if system.processes_by_name("ibus-daemon").next().is_none() {
-            info!("Launching 'ibus-daemon'");
-            match Command::new("ibus-daemon").arg("-drxR").output().await {
-                Ok(Output { status, stdout, stderr }) if !status.success() => {
-                    error!({
-                        ?status,
-                        stdout = %String::from_utf8_lossy(&stdout),
-                        stderr = %String::from_utf8_lossy(&stderr)
-                    }, "Failed to run 'ibus-daemon -drxR'");
-                },
-                Err(err) => error!(%err, "Failed to run 'ibus-daemon -drxR'"),
-                Ok(_) => tokio::time::sleep(std::time::Duration::from_millis(500)).await,
-            };
+#[cfg(target_os = "linux")]
+impl SystemdUserService {
+    fn service_name(&self) -> &'static str {
+        match self {
+            SystemdUserService::IBusGeneric => "org.freedesktop.IBus.session.generic.service",
+            SystemdUserService::IBusGnome => "org.freedesktop.IBus.session.GNOME.service",
         }
     }
+}
+
+#[cfg(target_os = "linux")]
+impl std::fmt::Display for SystemdUserService {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(self.service_name())
+    }
+}
+
+#[cfg(target_os = "linux")]
+async fn launch_systemd_user_service(service: SystemdUserService) -> anyhow::Result<()> {
+    use tokio::process::Command;
+    let output = Command::new("systemctl")
+        .args(&["--user", "restart", service.service_name()])
+        .output()
+        .await?;
+    if !output.status.success() {
+        anyhow::bail!("{}", String::from_utf8_lossy(&output.stderr))
+    }
+    Ok(())
+}
+
+#[cfg(target_os = "linux")]
+async fn launch_ibus() {
+    use sysinfo::{
+        ProcessRefreshKind,
+        RefreshKind,
+        System,
+        SystemExt,
+    };
+    use tokio::process::Command;
+    use tracing::info;
+
+    let system = tokio::task::block_in_place(|| {
+        System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))
+    });
+    if system.processes_by_name("ibus-daemon").next().is_none() {
+        info!("Launching ibus via systemd");
+
+        match Command::new("systemctl")
+            .args(&["--user", "is-active", "gnome-session-initialized.target"])
+            .output()
+            .await
+        {
+            Ok(gnome_session_output) => match std::str::from_utf8(&gnome_session_output.stdout).map(|s| s.trim()) {
+                Ok("active") => match launch_systemd_user_service(SystemdUserService::IBusGnome).await {
+                    Ok(_) => info!("Launched '{}", SystemdUserService::IBusGnome),
+                    Err(err) => error!(%err, "Failed to launch '{}'", SystemdUserService::IBusGnome),
+                },
+                Ok("inactive") => match launch_systemd_user_service(SystemdUserService::IBusGeneric).await {
+                    Ok(_) => info!("Launched '{}'", SystemdUserService::IBusGeneric),
+                    Err(err) => error!(%err, "Failed to launch '{}'", SystemdUserService::IBusGeneric),
+                },
+                result => error!(
+                    ?result,
+                    "Failed to determine if gnome-session-initialized.target is running"
+                ),
+            },
+            Err(err) => error!(%err, "Failed to run 'systemctl --user is-active gnome-session-initialized.target'"),
+        }
+    }
+
+    // Wait up to 2 sec for ibus activation
+    for _ in 0..10 {
+        if dbus::ibus::ibus_address().await.is_ok() {
+            return;
+        }
+        tokio::time::sleep(std::time::Duration::from_millis(200)).await;
+    }
+    error!("Timed out after 2 sec waiting for ibus activation");
 }
 
 fn should_run_install_script() -> bool {

@@ -20,6 +20,7 @@ pub enum DesktopEnvironment {
     Gnome,
     Plasma,
     I3,
+    Sway,
 }
 
 pub fn get_display_server() -> Result<DisplayServer, Error> {
@@ -43,6 +44,7 @@ pub fn get_desktop_environment() -> Result<DesktopEnvironment, Error> {
                 "gnome" | "gnome-xorg" | "ubuntu" | "pop" => Ok(DesktopEnvironment::Gnome),
                 "kde" | "plasma" => Ok(DesktopEnvironment::Plasma),
                 "i3" => Ok(DesktopEnvironment::I3),
+                "sway" => Ok(DesktopEnvironment::Sway),
                 _ => Err(Error::UnknownDesktop(current)),
             }
         },

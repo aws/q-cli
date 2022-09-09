@@ -4,11 +4,13 @@ pub mod sync;
 
 use std::env;
 use std::ffi::OsStr;
+use std::iter::empty;
 use std::path::{
     Path,
     PathBuf,
 };
 use std::process::Command;
+use std::time::Duration;
 
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
@@ -16,9 +18,11 @@ use dialoguer::theme::ColorfulTheme;
 use dialoguer::FuzzySelect;
 use eyre::{
     bail,
+    ContextCompat,
     Result,
     WrapErr,
 };
+use fig_ipc::local::quit_command;
 use globset::{
     Glob,
     GlobSet,
@@ -271,6 +275,69 @@ pub fn launch_fig(args: LaunchArgs) -> Result<()> {
     bail!("Unable to finish launching Fig properly")
 }
 
+pub async fn quit_fig() -> Result<()> {
+    if !is_app_running() {
+        println!("Fig is not running");
+        return Ok(());
+    }
+
+    let telem_join = tokio::spawn(async {
+        fig_telemetry::dispatch_emit_track(
+            fig_telemetry::TrackEvent::new(
+                fig_telemetry::TrackEventType::QuitApp,
+                fig_telemetry::TrackSource::Cli,
+                env!("CARGO_PKG_VERSION").into(),
+                empty::<(&str, &str)>(),
+            ),
+            false,
+        )
+        .await
+        .ok();
+    });
+
+    println!("Quitting Fig");
+    if quit_command().await.is_err() {
+        tokio::time::sleep(Duration::from_millis(500)).await;
+        let second_try = quit_command().await;
+        if second_try.is_err() {
+            cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    if let Ok(output) = Command::new("killall").arg("fig_desktop").output() {
+                        if output.status.success() {
+                            return Ok(());
+                        }
+                    }
+                } else if #[cfg(target_os = "macos")] {
+                    if let Ok(info) = get_app_info() {
+                        let pid = Regex::new(r"pid = (\S+)")
+                            .unwrap()
+                            .captures(&info)
+                            .and_then(|c| c.get(1));
+                        if let Some(pid) = pid {
+                            let success = Command::new("kill")
+                                .arg("-KILL")
+                                .arg(pid.as_str())
+                                .status()
+                                .map(|res| res.success());
+                            if let Ok(true) = success {
+                                return Ok(());
+                            }
+                        }
+                    }
+                } else if #[cfg(target_os = "windows")] {
+                    // TODO(chay): Add windows behavior here
+                }
+            }
+            println!("Unable to quit Fig");
+            second_try?;
+        }
+    }
+
+    telem_join.await.ok();
+
+    Ok(())
+}
+
 pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
     match env::var_os("PATH") {
         Some(path) => env::split_paths(&path).any(|p| p.join(&program).is_file()),
@@ -360,6 +427,27 @@ pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
         .default(0)
         .with_prompt(prompt)
         .interact()?)
+}
+
+pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
+    let info = Command::new("lsappinfo")
+        .args(["info", "-only", field.as_ref(), "-app", bundle_id.as_ref()])
+        .output()?;
+    let info = String::from_utf8(info.stdout)?;
+    let value = info
+        .split('=')
+        .nth(1)
+        .context(eyre::eyre!("Could not get field value for {}", field.as_ref()))?
+        .replace('"', "");
+    Ok(value.trim().into())
+}
+
+pub fn get_app_info() -> Result<String> {
+    let output = Command::new("lsappinfo")
+        .args(["info", "-app", "com.mschrage.fig"])
+        .output()?;
+    let result = String::from_utf8(output.stdout)?;
+    Ok(result.trim().into())
 }
 
 #[ignore]
