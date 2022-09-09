@@ -231,6 +231,9 @@ pub enum InternalSubcommand {
     Uuidgen,
     #[cfg(target_os = "linux")]
     IbusBootstrap,
+    #[cfg(target_os = "linux")]
+    /// Checks for sandboxing
+    DetectSandbox,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -600,6 +603,18 @@ impl InternalSubcommand {
                 } else {
                     writeln!(stdout(), "ibus-daemon is already running").ok();
                 }
+            },
+            #[cfg(target_os = "linux")]
+            InternalSubcommand::DetectSandbox => {
+                use fig_util::system_info::linux::SandboxKind;
+                match fig_util::system_info::linux::detect_sandbox() {
+                    SandboxKind::None => println!("No sandbox detected"),
+                    SandboxKind::Flatpak => println!("You are in a Flatpak"),
+                    SandboxKind::Snap => println!("You are in a Snap"),
+                    SandboxKind::Docker => println!("You are in a Docker container"),
+                    SandboxKind::Container(None) => println!("You are in a generic container"),
+                    SandboxKind::Container(Some(engine)) => println!("You are in a {engine} container"),
+                };
             },
         }
 
