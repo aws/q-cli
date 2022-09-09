@@ -2197,6 +2197,10 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await
         .ok();
 
+        if fig_util::manifest::is_headless() {
+            return Ok(());
+        }
+
         #[cfg(target_os = "macos")]
         {
             use super::diagnostics::get_diagnostics;
