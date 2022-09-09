@@ -2125,7 +2125,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         )
         .await?;
 
-        if !fig_util::manifest::is_headless() {
+        if fig_util::manifest::is_full() {
             run_checks(
                 "Let's make sure Fig is running...".into(),
                 vec![

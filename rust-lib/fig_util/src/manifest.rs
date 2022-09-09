@@ -82,20 +82,28 @@ pub fn manifest() -> &'static Option<Manifest> {
     &CACHED
 }
 
-/// Checks if this is a full build according to the manifest. Note that this does not guarantee the
-/// value of is_headless
+/// Checks if this is a full build according to the manifest.
+/// Note that this does not guarantee the value of is_headless
 pub fn is_full() -> bool {
-    matches!(
-        manifest(),
-        Some(Manifest {
-            variant: Variant::Full,
-            ..
-        })
-    )
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            true
+        } else if #[cfg(target_os = "linux")] {
+            matches!(
+                manifest(),
+                Some(Manifest {
+                    variant: Variant::Full,
+                    ..
+                })
+            )
+        } else if #[cfg(target_os = "windows")] {
+            true
+        }
+    }
 }
 
-/// Checks if this is a headless build according to the manifest. Note that this does not guarantee
-/// the value of is_full
+/// Checks if this is a headless build according to the manifest.
+/// Note that this does not guarantee the value of is_full
 pub fn is_headless() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
