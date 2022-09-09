@@ -1,12 +1,14 @@
 Name: fig-headless
 Version: $VERSION
 Release: 1
-Buildarch: $ARCH
 Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
 URL: https://fig.io
 Conflicts: fig
+
+# disable stripping
+%define __strip /bin/true
 
 %description
 %{summary}
@@ -30,7 +32,6 @@ fig _ uninstall-for-all-users
 "/usr/bin/bash (figterm)"
 "/usr/bin/fish (figterm)"
 /usr/bin/figterm
-/usr/lib/systemd/user/fig.service
 /usr/share/fig/manifest.json
 /usr/share/licenses/fig/LICENSE
 

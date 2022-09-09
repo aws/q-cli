@@ -1,10 +1,3 @@
-supports_mold: &supports_mold
-  or:
-    - equal: [<< parameters.platform >>, kinetic]
-    - equal: [<< parameters.platform >>, jammy]
-    - equal: [<< parameters.platform >>, f36]
-    - equal: [<< parameters.platform >>, archlinux]
-
 version: 2.1
 
 orbs:
@@ -35,26 +28,40 @@ workflows:
       equal: [<< pipeline.trigger_source >>, api]
     jobs:
       - update-version
+
       - windows:
           requires: [update-version]
       - linux-headless-x86_64:
           requires: [update-version]
+      - linux-headless-aarch64:
+          requires: [update-version]
       - linux-desktop-x86_64:
           requires: [update-version]
-      - package-tarball-x86_64:
-          requires: [linux-headless-x86_64, linux-desktop-x86_64]
-      - package-deb-x86_64:
-          requires: [linux-headless-x86_64, linux-desktop-x86_64]
-      - package-rpm-x86_64:
-          requires: [linux-headless-x86_64, linux-desktop-x86_64]
-      - sentry:
+
+      - package-tarball:
           requires:
             [
-              package-tarball-x86_64,
-              package-deb-x86_64,
-              package-rpm-x86_64,
-              windows,
+              linux-desktop-x86_64,
+              linux-headless-aarch64,
+              linux-headless-x86_64,
             ]
+      - package-rpm:
+          requires:
+            [
+              linux-desktop-x86_64,
+              linux-headless-aarch64,
+              linux-headless-x86_64,
+            ]
+      - package-deb:
+          requires:
+            [
+              linux-desktop-x86_64,
+              linux-headless-aarch64,
+              linux-headless-x86_64,
+            ]
+
+      - sentry:
+          requires: [package-tarball, package-deb, package-rpm, windows]
           context:
             - sentry
   noop:
@@ -65,257 +72,13 @@ workflows:
       - noop
 
 jobs:
-  ubuntu-x86_64:
-    parameters:
-      platform:
-        type: string
-    docker:
-      - image: ubuntu:<< parameters.platform >>
-    resource_class: large
-    steps:
-      - build-ubuntu:
-          platform: << parameters.platform >>
-          arch: x86_64
-
-  ubuntu-x86_64-cli-only:
-    parameters:
-      platform:
-        type: string
-    docker:
-      - image: ubuntu:<< parameters.platform >>
-    resource_class: large
-    steps:
-      - build-ubuntu-cli-only:
-          platform: << parameters.platform >>
-          arch: x86_64
-
-  ubuntu-aarch64-focal-cli-only:
-    machine:
-      image: ubuntu-2004:current
-    resource_class: arm.large
-    steps:
-      - build-ubuntu-cli-only:
-          platform: focal
-          arch: aarch64
-
-  fedora-x86_64:
-    parameters:
-      version:
-        type: string
-    docker:
-      - image: fedora:<< parameters.version >>
-    resource_class: large
-    steps:
-      - build-fedora:
-          platform: f<< parameters.version >>
-          arch: x86_64
-
-  archlinux-x86_64:
-    docker:
-      - image: archlinux
-    resource_class: large
-    steps:
-      - build-archlinux:
-          arch: x86_64
-
-  windows:
-    environment:
-      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
-    executor:
-      name: win/server-2022
-      size: large
-      shell: bash.exe
-    steps:
-      - run:
-          name: Install dependencies
-          command: |
-            curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
-            ./rustup-init.exe -y --profile minimal --default-host x86_64-pc-windows-msvc --default-toolchain stable
-            PATH="$PATH:$HOME/.cargo/bin"
-
-            choco install protoc -y
-
-            choco install wixtoolset -y
-            PATH="$PATH:/c/Program Files (x86)/WiX Toolset v3.11/bin"
-
-            echo "export PATH=\"$PATH\"" >> $BASH_ENV
-      - checkout-desktop
-      - run:
-          name: Build and bundle
-          command: |
-            cd desktop
-            ./bundle.bat
-      - store_artifacts:
-          path: desktop/target/wix/fig_installer.exe
-          destination: windows/exe
-
-  linux-headless-x86_64:
-    docker:
-      - image: messense/rust-musl-cross:x86_64-musl
-    resource_class: large
-    steps:
-      - prepare-debian:
-          platform: focal
-          arch: x86_64
-          include_desktop_deps: false
-          fourth: musl
-          native-linker: true
-      - run:
-          name: Install musl stuff
-          command: apt install -y musl-dev
-      - run:
-          name: Install Rust toolchain
-          command: rustup target add x86_64-unknown-linux-musl
-      - run:
-          name: Build fig_cli
-          command: cd desktop && cargo build -rp fig_cli
-      - run:
-          name: Build figterm
-          command: cd desktop && cargo build -rp figterm
-      - run:
-          name: Prepare binaries
-          command: |
-            mkdir -p bin/linux/x86_64/
-            mv desktop/target/x86_64-unknown-linux-musl/release/fig_cli bin/linux/x86_64/fig_cli
-            mv desktop/target/x86_64-unknown-linux-musl/release/figterm bin/linux/x86_64/figterm
-      - persist_to_workspace:
-          root: .
-          paths:
-            - bin/linux/x86_64/fig_cli
-            - bin/linux/x86_64/figterm
-
-  linux-desktop-x86_64:
-    docker:
-      - image: ubuntu:bionic
-    resource_class: large
-    steps:
-      - prepare-debian:
-          platform: bionic
-          arch: x86_64
-          include_desktop_deps: true
-      - run:
-          name: Build fig_desktop
-          command: cd desktop && cargo build -rp fig_desktop
-      - run:
-          name: Prepare binaries
-          command: |
-            mkdir -p bin/linux/x86_64/
-            mv desktop/target/release/fig_desktop bin/linux/x86_64/fig_desktop
-      - persist_to_workspace:
-          root: .
-          paths:
-            - bin/linux/x86_64/fig_desktop
-
-  package-tarball-x86_64:
-    docker:
-      - image: cimg/base:edge-22.04
-    resource_class: small
-    environment:
-      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
-      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
-      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
-    steps:
-      - checkout-desktop
-      - attach_workspace:
-          at: /tmp/ws
-      - run:
-          name: Package full
-          command: |
-            cd desktop
-            IS_HEADLESS=0 build-scripts/tarball.sh
-      - store_artifacts:
-          path: desktop/fig.tar.xz
-          destination: pkg/os=linux,arch=x86_64,kind=tar,variant=full
-      - run:
-          name: Package headless
-          command: |
-            cd desktop
-            IS_HEADLESS=1 build-scripts/tarball.sh
-      - store_artifacts:
-          path: desktop/fig.tar.xz
-          destination: pkg/os=linux,arch=x86_64,kind=tar,variant=headless
-
-  package-rpm-x86_64:
-    docker:
-      - image: fedora:36
-    resource_class: small
-    environment:
-      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
-      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
-      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
-      ARCH: x86_64
-    steps:
-      - run:
-          name: Install tools
-          command: dnf install -y git jq rpmdevtools
-      - checkout-desktop
-      - attach_workspace:
-          at: /tmp/ws
-      - run:
-          name: Package full
-          command: |
-            cd desktop
-            IS_HEADLESS=0 build-scripts/rpm.sh
-      - store_artifacts:
-          path: desktop/fig.rpm
-          destination: pkg/os=linux,arch=x86_64,kind=rpm,variant=full
-      - run:
-          name: Collect full rpm info
-          command: |
-            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
-            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;full;$(cat /tmp/rpm.xml)"
-      - run:
-          name: Package headless
-          command: |
-            cd desktop
-            IS_HEADLESS=1 build-scripts/rpm.sh
-      - store_artifacts:
-          path: desktop/fig.rpm
-          destination: pkg/os=linux,arch=x86_64,kind=rpm,variant=headless
-      - run:
-          name: Collect headless rpm info
-          command: |
-            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
-            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;headless;$(cat /tmp/rpm.xml)"
-
-  package-deb-x86_64:
-    docker:
-      - image: cimg/base:edge-22.04
-    resource_class: small
-    environment:
-      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
-      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
-      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
-      ARCH: x86_64
-    steps:
-      - checkout-desktop
-      - attach_workspace:
-          at: /tmp/ws
-      - run:
-          name: Package full
-          command: |
-            cd desktop
-            IS_HEADLESS=0 build-scripts/deb.sh
-      - store_artifacts:
-          path: desktop/fig.deb
-          destination: pkg/os=linux,arch=x86_64,kind=deb,variant=full
-      - run:
-          name: Package headless
-          command: |
-            cd desktop
-            IS_HEADLESS=1 build-scripts/deb.sh
-      - store_artifacts:
-          path: desktop/fig.deb
-          destination: pkg/os=linux,arch=x86_64,kind=deb,variant=headless
-
   # Creates tag on specified revision
   update-version:
     docker:
       - image: ubuntu:22.04
     resource_class: small
     steps:
-      - configure-apt:
-          platform: jammy
+      - configure-apt
       - run:
           name: Install dependencies
           command: |
@@ -375,6 +138,208 @@ jobs:
             COMMIT_HASH=`git log -n 1 --pretty=format:"%H"`
             curl -X POST << pipeline.parameters.callback_url >> -d "commit;$COMMIT_HASH"
 
+  windows:
+    environment:
+      CARGO_NET_GIT_FETCH_WITH_CLI: "true"
+    executor:
+      name: win/server-2022
+      size: large
+      shell: bash.exe
+    steps:
+      - run:
+          name: Install dependencies
+          command: |
+            curl https://static.rust-lang.org/rustup/dist/x86_64-pc-windows-msvc/rustup-init.exe -o rustup-init.exe
+            ./rustup-init.exe -y --profile minimal --default-host x86_64-pc-windows-msvc --default-toolchain stable
+            PATH="$PATH:$HOME/.cargo/bin"
+
+            choco install protoc -y
+
+            choco install wixtoolset -y
+            PATH="$PATH:/c/Program Files (x86)/WiX Toolset v3.11/bin"
+
+            echo "export PATH=\"$PATH\"" >> $BASH_ENV
+      - checkout-desktop
+      - run:
+          name: Build and bundle
+          command: |
+            cd desktop
+            ./bundle.bat
+      - store_artifacts:
+          path: desktop/target/wix/fig_installer.exe
+          destination: pkg/os=windows,arch=x86_64,kind=exe
+
+  linux-headless-x86_64:
+    docker:
+      - image: messense/rust-musl-cross:x86_64-musl
+    resource_class: large
+    steps:
+      - prepare-build:
+          arch: x86_64
+          include_desktop_deps: false
+      - run:
+          name: Install musl stuff
+          command: apt install -y musl-dev
+      - run:
+          name: Install Rust toolchain
+          command: rustup target add x86_64-unknown-linux-musl
+      - run:
+          name: Build fig_cli
+          command: cd desktop && cargo build -rp fig_cli
+      - run:
+          name: Build figterm
+          command: cd desktop && cargo build -rp figterm
+      - run:
+          name: Prepare binaries
+          command: |
+            mkdir -p bin/linux/x86_64/
+            mv desktop/target/x86_64-unknown-linux-musl/release/fig_cli bin/linux/x86_64/fig_cli
+            mv desktop/target/x86_64-unknown-linux-musl/release/figterm bin/linux/x86_64/figterm
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bin/linux/x86_64/fig_cli
+            - bin/linux/x86_64/figterm
+
+  linux-headless-aarch64:
+    docker:
+      - image: messense/rust-musl-cross:aarch64-musl
+    resource_class: large
+    steps:
+      - prepare-build:
+          arch: aarch64
+          include_desktop_deps: false
+      - run:
+          name: Install musl stuff
+          command: apt install -y musl-dev
+      - run:
+          name: Install Rust toolchain
+          command: rustup target add aarch64-unknown-linux-musl
+      - run:
+          name: Build fig_cli
+          command: cd desktop && cargo build -rp fig_cli
+      - run:
+          name: Build figterm
+          command: cd desktop && cargo build -rp figterm
+      - run:
+          name: Prepare binaries
+          command: |
+            mkdir -p bin/linux/aarch64/
+            mv desktop/target/aarch64-unknown-linux-musl/release/fig_cli bin/linux/aarch64/fig_cli
+            mv desktop/target/aarch64-unknown-linux-musl/release/figterm bin/linux/aarch64/figterm
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bin/linux/aarch64/fig_cli
+            - bin/linux/aarch64/figterm
+
+  linux-desktop-x86_64:
+    docker:
+      - image: ubuntu:bionic
+    resource_class: large
+    steps:
+      - prepare-build:
+          arch: x86_64
+          include_desktop_deps: true
+      - run:
+          name: Build fig_desktop
+          command: cd desktop && cargo build -rp fig_desktop
+      - run:
+          name: Prepare binaries
+          command: |
+            mkdir -p bin/linux/x86_64/
+            mv desktop/target/release/fig_desktop bin/linux/x86_64/fig_desktop
+      - persist_to_workspace:
+          root: .
+          paths:
+            - bin/linux/x86_64/fig_desktop
+
+  package-tarball:
+    docker:
+      - image: cimg/base:edge-22.04
+    resource_class: small
+    steps:
+      - checkout-desktop
+      - attach_workspace:
+          at: /tmp/ws
+      - package:
+          arch: x86_64
+          kind: tar
+          variant: full
+      - package:
+          arch: x86_64
+          kind: tar
+          variant: headless
+      - package:
+          arch: aarch64
+          kind: tar
+          variant: headless
+
+  package-rpm:
+    docker:
+      - image: fedora:36
+    resource_class: small
+    environment:
+      FIG_CLI: /tmp/ws/bin/linux/x86_64/fig_cli
+      FIGTERM: /tmp/ws/bin/linux/x86_64/figterm
+      FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
+      ARCH: x86_64
+    steps:
+      - run:
+          name: Install tools
+          command: dnf install -y git jq rpmdevtools
+      - checkout-desktop
+      - attach_workspace:
+          at: /tmp/ws
+      - package:
+          arch: x86_64
+          kind: rpm
+          variant: full
+      - run:
+          name: Collect full x86_64 rpm info
+          command: |
+            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;full;$(cat /tmp/rpm.xml)"
+      - package:
+          arch: x86_64
+          kind: rpm
+          variant: headless
+      - run:
+          name: Collect headless x86_64 rpm info
+          command: |
+            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;headless;$(cat /tmp/rpm.xml)"
+      - package:
+          arch: aarch64
+          kind: rpm
+          variant: headless
+      - run:
+          name: Collect headless aarch64 rpm info
+          command: |
+            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;aarch64;headless;$(cat /tmp/rpm.xml)"
+
+  package-deb:
+    docker:
+      - image: cimg/base:edge-22.04
+    resource_class: small
+    steps:
+      - checkout-desktop
+      - attach_workspace:
+          at: /tmp/ws
+      - package:
+          arch: x86_64
+          kind: deb
+          variant: full
+      - package:
+          arch: x86_64
+          kind: deb
+          variant: headless
+      - package:
+          arch: aarch64
+          kind: deb
+          variant: headless
+
   # Does sentry
   sentry:
     docker:
@@ -409,6 +374,35 @@ jobs:
       - run: echo noop
 
 commands:
+  package:
+    parameters:
+      arch:
+        type: string
+      kind:
+        type: string
+      variant:
+        type: string
+    steps:
+      - run:
+          name: Package << parameters.variant >> for << parameters.arch >>
+          command: |
+            if [[ '<< parameters.variant >>' = 'full' ]]; then
+              export IS_HEADLESS=0
+            elif [[ '<< parameters.variant >>' = 'headless' ]]; then
+              export IS_HEADLESS=1
+            fi
+
+            export FIG_CLI=/tmp/ws/bin/linux/<< parameters.arch >>/fig_cli
+            export FIGTERM=/tmp/ws/bin/linux/<< parameters.arch >>/figterm
+            export FIG_DESKTOP=/tmp/ws/bin/linux/<< parameters.arch >>/fig_desktop
+            export ARCH=<< parameters.arch >>
+
+            cd desktop
+            build-scripts/<< parameters.kind >>.sh
+      - store_artifacts:
+          path: desktop/fig.<< parameters.kind >>
+          destination: pkg/os=linux,arch=<< parameters.arch >>,kind=<< parameters.kind >>,variant=<< parameters.variant >>
+
   callback:
     parameters:
       command:
@@ -418,22 +412,6 @@ commands:
         default: ""
     steps:
       - run: curl -X POST << pipeline.parameters.callback_url >> -d "<< parameters.command >>;<< parameters.args >>"
-
-  prepare-post:
-    parameters:
-      platform:
-        type: string
-      rust-target:
-        type: string
-      native-linker:
-        type: boolean
-        default: false
-    steps:
-      - checkout-desktop
-      - configure-rust:
-          platform: << parameters.platform >>
-          target: << parameters.rust-target >>
-          native-linker: << parameters.native-linker >>
 
   # this should be the last step before you start building in
   # order to give github some time to process the new commit
@@ -453,50 +431,7 @@ commands:
           command: |
             cd desktop && git reset --hard HEAD && git checkout << parameters.checkout >>
 
-  configure-rust:
-    parameters:
-      platform:
-        type: string
-      target:
-        type: string
-      native-linker:
-        type: boolean
-    steps:
-      - rust/install:
-          version: 1.63.0
-      - when:
-          condition: *supports_mold
-          steps:
-            - run:
-                name: Configure rust
-                command: ./desktop/build-scripts/rust-init.sh
-                environment:
-                  LINKER: mold
-      - when:
-          condition:
-            and:
-              - not: *supports_mold
-              - not: << parameters.native-linker >>
-          steps:
-            - run:
-                name: Configure rust
-                command: ./desktop/build-scripts/rust-init.sh
-                environment:
-                  LINKER: lld
-      - when:
-          condition:
-            and:
-              - not: *supports_mold
-              - << parameters.native-linker >>
-          steps:
-            - run:
-                name: Configure rust
-                command: ./desktop/build-scripts/rust-init.sh
-
   configure-apt:
-    parameters:
-      platform:
-        type: string
     steps:
       - run:
           name: Install sudo
@@ -520,40 +455,16 @@ commands:
             echo 'tzdata tzdata/Areas select America' | sudo debconf-set-selections
             echo 'tzdata tzdata/Zones/America select Los_Angeles' | sudo debconf-set-selections
             sudo DEBIAN_FRONTEND=noninteractive TZ=America/Los_Angeles apt install -y tzdata keyboard-configuration
-      - when:
-          condition:
-            equal: [<< parameters.platform >>, xenial]
-          steps:
-            - run:
-                name: Configure cmake and clang repositories
-                command: |
-                  sudo apt install -y apt-transport-https ca-certificates gnupg wget
-                  wget -O - https://apt.kitware.com/keys/kitware-archive-latest.asc 2>/dev/null | sudo apt-key add -
-                  sudo echo "deb http://apt.kitware.com/ubuntu/ << parameters.platform >> main" >> /etc/apt/sources.list
 
-                  wget -O - https://apt.llvm.org/llvm-snapshot.gpg.key | sudo apt-key add -
-                  sudo echo "deb http://apt.llvm.org/<< parameters.platform >>/ llvm-toolchain-<< parameters.platform >> main" >> /etc/apt/sources.list
-
-                  sudo apt update
-
-  prepare-debian:
+  prepare-build:
     parameters:
-      platform:
-        type: string
       arch:
         type: string
       include_desktop_deps:
         type: boolean
         default: true
-      fourth:
-        type: string
-        default: gnu
-      native-linker:
-        type: boolean
-        default: false
     steps:
-      - configure-apt:
-          platform: << parameters.platform >>
+      - configure-apt
       - run:
           name: Update
           command: |
@@ -570,177 +481,9 @@ commands:
                   sudo apt install -y \
                     libayatana-appindicator3-dev \
                     libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.0-dev valac
-      - when:
-          condition:
-            equal: [<< parameters.platform >>, xenial]
-          steps:
-            - run:
-                name: Set cc to clang
-                command: sudo update-alternatives --install /usr/bin/cc cc /usr/bin/clang 30
-      - when:
-          condition: *supports_mold
-          steps:
-            - run:
-                name: Install mold
-                command: sudo apt install -y mold
-      - when:
-          condition:
-            and:
-              - not: *supports_mold
-          steps:
-            - run:
-                name: Install lld
-                command: sudo apt install -y lld
-      - prepare-post:
-          platform: << parameters.platform >>
-          rust-target: << parameters.arch >>-unknown-linux-<< parameters.fourth >>
-          native-linker: << parameters.native-linker >>
-
-  prepare-fedora:
-    parameters:
-      platform:
-        type: string
-      arch:
-        type: string
-    steps:
+      - rust/install:
+          version: 1.63.0
+      - checkout-desktop
       - run:
-          name: Configure DNF
-          command: |
-            printf \nfastestmirror=1 >>/etc/dnf/dnf.conf
-            sudo dnf clean all
-      - run:
-          name: Update
-          command: sudo dnf upgrade -y
-      - run:
-          name: Install dependencies
-          command: |
-            sudo dnf install -y clang cmake curl gcc git gtk3-devel g++ ibus-devel jq libappindicator-gtk3-devel make mold \
-                           openssl-devel perl-FindBin rpmdevtools vala webkit2gtk3-devel
-      - run:
-          # this *should not* be necessary, but it doesn't appear to work without this
-          name: Configure git
-          command: git config --global --add safe.directory /tmp/_circleci_local_build_repo
-      - prepare-post:
-          platform: << parameters.platform >>
-          rust-target: << parameters.arch >>-unknown-linux-gnu
-
-  prepare-archlinux:
-    parameters:
-      arch:
-        type: string
-    steps:
-      - run:
-          name: Update
-          command: |
-            pacman -Syyu --noconfirm
-      - run:
-          name: Install dependencies
-          command: |
-            pacman -S --noconfirm --needed webkit2gtk base-devel curl wget openssl appmenu-gtk-module \
-              gtk3 libappindicator-gtk3 librsvg libvips make vala git openssh jq ibus cmake mold clang
-      - prepare-post:
-          platform: "archlinux"
-          rust-target: << parameters.arch >>-unknown-linux-gnu
-
-  # Builds packages for Ubuntu
-  build-ubuntu:
-    parameters:
-      platform:
-        type: string
-      arch:
-        type: string
-    steps:
-      - prepare-debian:
-          platform: << parameters.platform >>
-          arch: << parameters.arch >>
-      - callback:
-          command: dependencies
-          args: << parameters.platform >>;libwebkit2gtk-4.0-37 libgtk-3-0 libayatana-appindicator3-1 libayatana-appindicator3-dev ibus util-linux
-      - run:
-          name: Build
-          command: cd desktop && FIG_IS_PACKAGE_MANAGED=1 make ARCH=<< parameters.arch >> deb
-      - store_artifacts:
-          path: desktop/build/fig-<< parameters.arch >>-linux.deb
-          destination: << parameters.platform >>/<< parameters.arch >>/deb
-      - run:
-          name: Build
-          command: cd desktop && make ARCH=<< parameters.arch >> deb
-      - store_artifacts:
-          path: desktop/build/usr/bin/fig
-          destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
-
-  build-ubuntu-cli-only:
-    parameters:
-      platform:
-        type: string
-      arch:
-        type: string
-    steps:
-      - prepare-debian:
-          platform: << parameters.platform >>
-          arch: << parameters.arch >>
-          include_desktop_deps: false
-      - run:
-          name: Build CLI
-          command: cd desktop && make ARCH=<< parameters.arch >> fig
-          environment:
-            CARGO_PROFILE_RELEASE_DEBUG: 0
-      - store_artifacts:
-          path: desktop/build/usr/bin/fig
-          destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
-
-  build-fedora:
-    parameters:
-      platform:
-        type: string
-      arch:
-        type: string
-    steps:
-      - prepare-fedora:
-          platform: << parameters.platform >>
-          arch: << parameters.arch >>
-      - run:
-          name: Build
-          command: cd desktop && FIG_IS_PACKAGE_MANAGED=1 make ARCH=<< parameters.arch >> rpm
-      - run:
-          name: Gather RPM metadata
-          command: |
-            rpm --query --requires desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/requires.txt
-            rpm --query --provides desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/provides.txt
-            rpm --query --info desktop/build/fig-<< parameters.arch >>-linux.rpm | grep Size | egrep -o '[0-9]*' > /tmp/installed-size.txt
-            rpm --query --xml desktop/build/fig-<< parameters.arch >>-linux.rpm > /tmp/dump.xml
-      - callback:
-          command: dependencies
-          args: << parameters.platform >>;webkit2gtk3 gtk3 libappindicator-gtk3 ibus
-      - callback:
-          command: rpm_requires
-          args: << parameters.platform >>;$(cat /tmp/requires.txt)
-      - callback:
-          command: rpm_provides
-          args: << parameters.platform >>;$(cat /tmp/provides.txt)
-      - callback:
-          command: rpm_installed_size
-          args: << parameters.platform >>;$(cat /tmp/installed-size.txt)
-      - callback:
-          command: rpm_xml
-          args: << parameters.platform >>;$(cat /tmp/dump.xml)
-      - store_artifacts:
-          path: desktop/build/fig-<< parameters.arch >>-linux.rpm
-          destination: << parameters.platform >>/<< parameters.arch >>/rpm
-      - store_artifacts:
-          path: desktop/build/fig
-          destination: << parameters.platform >>/<< parameters.arch >>-unknown-linux-gnu/bin
-
-  build-archlinux:
-    parameters:
-      arch:
-        type: string
-    steps:
-      - prepare-archlinux:
-          arch: << parameters.arch >>
-      - run:
-          name: Build
-          command: cd desktop && FIG_IS_PACKAGE_MANAGED=1 make ARCH=<< parameters.arch >> arch
-      - store_artifacts:
-          path: desktop/build/fig-<< parameters.arch >>-linux-archlinux.tar.gz
-          destination: archlinux/<< parameters.arch >>/archlinux
+          name: Configure rust
+          command: ./desktop/build-scripts/rust-init.sh

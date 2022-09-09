@@ -2530,9 +2530,7 @@ dependencies = [
 name = "fig_color"
 version = "0.1.0"
 dependencies = [
- "bindgen",
  "bitflags",
- "cc",
 ]
 
 [[package]]
