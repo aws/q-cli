@@ -266,14 +266,17 @@ jobs:
           arch: x86_64
           kind: tar
           variant: full
+          ext: tar.xz
       - package:
           arch: x86_64
           kind: tar
           variant: headless
+          ext: tar.xz
       - package:
           arch: aarch64
           kind: tar
           variant: headless
+          ext: tar.xz
 
   package-rpm:
     docker:
@@ -382,6 +385,9 @@ commands:
         type: string
       variant:
         type: string
+      ext:
+        type: string
+        default: << parameters.variant >>
     steps:
       - run:
           name: Package << parameters.variant >> for << parameters.arch >>
