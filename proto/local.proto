@@ -34,6 +34,7 @@ message Command {
     PromptAccessibilityCommand prompt_accessibility = 114;
     InputMethodCommand input_method = 115;
     UninstallCommand uninstall = 116;
+    OpenBrowserCommand open_browser = 117;
   }
 }
 
@@ -132,6 +133,8 @@ enum InputMethodAction {
 message InputMethodCommand { optional InputMethodAction actions = 1; }
 
 message PromptAccessibilityCommand {}
+
+message OpenBrowserCommand { string url = 1; }
 
 // == Hooks ==
 

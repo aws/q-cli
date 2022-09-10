@@ -3,16 +3,20 @@ use eyre::Result;
 
 use crate::util::dialoguer_theme;
 
-pub async fn uninstall_command() -> Result<()> {
+pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
     if fig_util::system_info::in_wsl() {
         println!("Refer to your package manager in order to uninstall Fig from WSL");
         println!("If you're having issues uninstalling fig, run `fig issue`");
         return Ok(());
     }
 
-    let should_uninstall = dialoguer::Confirm::with_theme(&dialoguer_theme())
-        .with_prompt("Are you sure you want to uninstall Fig?")
-        .interact()?;
+    let should_uninstall = if no_confirm {
+        true
+    } else {
+        dialoguer::Confirm::with_theme(&dialoguer_theme())
+            .with_prompt("Are you sure you want to uninstall Fig?")
+            .interact()?
+    };
 
     if !should_uninstall {
         println!("Phew...");
@@ -63,33 +67,41 @@ async fn uninstall() -> Result<()> {
         ManagedBy,
     };
 
-    if !nix::unistd::getuid().is_root() {
-        eyre::bail!("This command must be run as root");
-    }
+    if nix::unistd::getuid().is_root() {
+        let package_name = env::var("FIG_PACKAGE_NAME").unwrap_or_else(|_| {
+            if !manifest::is_headless() {
+                "fig"
+            } else {
+                "fig-headless"
+            }
+            .to_owned()
+        });
 
-    let package_name = env::var("FIG_PACKAGE_NAME").unwrap_or_else(|_| {
-        if !manifest::is_headless() {
-            "fig"
-        } else {
-            "fig-headless"
+        let package_manager = &manifest::manifest()
+            .as_ref()
+            .ok_or_else(|| eyre::eyre!("Failed getting installation manifest"))?
+            .managed_by;
+
+        Command::new("killall").arg("fig_desktop").status()?;
+
+        match package_manager {
+            ManagedBy::Apt => linux::uninstall_apt(package_name).await?,
+            ManagedBy::Dnf => linux::uninstall_dnf(package_name).await?,
+            ManagedBy::Pacman => linux::uninstall_pacman(package_name).await?,
+            ManagedBy::Other(mgr) => {
+                eyre::bail!("Unknown package manager {mgr}");
+            },
         }
-        .to_owned()
-    });
-
-    let package_manager = &manifest::manifest()
-        .as_ref()
-        .ok_or_else(|| eyre::eyre!("Failed getting installation manifest"))?
-        .managed_by;
-
-    Command::new("killall").arg("fig_desktop").status()?;
-
-    match package_manager {
-        ManagedBy::Apt => linux::uninstall_apt(package_name).await?,
-        ManagedBy::Dnf => linux::uninstall_dnf(package_name).await?,
-        ManagedBy::Pacman => linux::uninstall_pacman(package_name).await?,
-        ManagedBy::Other(mgr) => {
-            eyre::bail!("Unknown package manager {mgr}");
-        },
+    } else if which::which("sudo").is_ok() {
+        // note: this does not trigger a race condition because any user that can replace fig_cli could just
+        // replace it with a malicious executable before we are even run
+        Command::new("sudo")
+            .arg(std::env::current_exe()?)
+            .arg("uninstall")
+            .arg("-y")
+            .status()?;
+    } else {
+        eyre::bail!("This command must be run as root");
     }
 
     println!("Goodbye!");

@@ -87,6 +87,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<Nati
                             Quit(command) => commands::quit(command, &proxy).await,
                             Diagnostics(command) => commands::diagnostic(command).await,
                             Update(command) => commands::update(command).await,
+                            OpenBrowser(command) => commands::open_browser(command).await,
                             Logout(_)
                             | TerminalIntegration(_)
                             | ListTerminalIntegrations(_)

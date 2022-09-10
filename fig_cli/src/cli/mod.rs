@@ -101,7 +101,11 @@ pub enum CliRootCommands {
     Ssh(ssh::SshSubcommand),
     /// Uninstall fig
     #[clap(hide = true)]
-    Uninstall,
+    Uninstall {
+        /// Force uninstall
+        #[clap(long, short = 'y', value_parser)]
+        no_confirm: bool,
+    },
     /// Update dotfiles
     Update {
         /// Force update
@@ -277,7 +281,7 @@ impl Cli {
                         internal::install_cli_from_args(args)
                     }
                 },
-                CliRootCommands::Uninstall => uninstall::uninstall_command().await,
+                CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
                 CliRootCommands::Update { no_confirm } => installation::update(no_confirm).await.map(|_| ()),
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,

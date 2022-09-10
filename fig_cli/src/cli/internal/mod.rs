@@ -234,6 +234,9 @@ pub enum InternalSubcommand {
     #[cfg(target_os = "linux")]
     /// Checks for sandboxing
     DetectSandbox,
+    /// Uses the desktop app to open the uninstall page
+    #[cfg(target_os = "linux")]
+    OpenUninstallPage,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -522,8 +525,10 @@ impl InternalSubcommand {
                 {
                     Command::new("sudo")
                         .args(&["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
-                        .spawn()?
-                        .wait()?;
+                        .status()?;
+                    Command::new("sudo")
+                        .args(&["-u", user, "--", "fig", "_", "open-uninstall-page"])
+                        .status()?;
                 }
             },
             InternalSubcommand::StreamFromSocket => {
@@ -615,6 +620,19 @@ impl InternalSubcommand {
                     SandboxKind::Container(None) => println!("You are in a generic container"),
                     SandboxKind::Container(Some(engine)) => println!("You are in a {engine} container"),
                 };
+            },
+            #[cfg(target_os = "linux")]
+            InternalSubcommand::OpenUninstallPage => {
+                if let Some(email) = fig_auth::get_email() {
+                    let url = format!(
+                        "https://fig.io/uninstall?email={email}&version={}",
+                        fig_util::manifest::version().unwrap()
+                    );
+                    fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
+                        fig_proto::local::OpenBrowserCommand { url },
+                    ))
+                    .await?;
+                }
             },
         }
 
