@@ -15,6 +15,7 @@ deno = ["dep:deno_core", "dep:deno_runtime"]
 # arboard = { version = "2.1.0", default-features = false, features = ["wayland-data-control"] }
 arboard = { version = "2.1.0", default-features = false }
 async-trait = "0.1.57"
+atty = "0.2.14"
 bitflags = "1.3.2"
 bytes = "1.2.1"
 cfg-if = "1.0.0"
