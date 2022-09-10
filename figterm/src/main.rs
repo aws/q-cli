@@ -464,14 +464,7 @@ fn figterm_main() -> Result<()> {
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
 
         #[cfg(target_os = "windows")]
-        if let Some(fig_util::system_info::OSVersion::Windows { build, .. }) = fig_util::system_info::os_version() {
-            // Enable delay only on Windows 11+
-            // https://github.com/microsoft/terminal/issues/11220
-            // Even after this is resolved, the solution may not be backported
-            if *build >= 22000 {
-                term.set_windows_delay_end_prompt(true);
-            }
-        }
+        term.set_windows_delay_end_prompt(true);
 
         let mut write_buffer: Vec<u8> = vec![0; BUFFER_SIZE];
 
