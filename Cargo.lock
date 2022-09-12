@@ -1672,12 +1672,12 @@ dependencies = [
 
 [[package]]
 name = "deno_core"
-version = "0.149.0"
+version = "0.150.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79b0fbe1787762b87506922f9b4f3493c28c5f67fd71391bbdeeb11c77e2c8e2"
+checksum = "e61abd13539870f0417b18e54c56cf7905976735b4e87a9e828fcac2bfda4a4b"
 dependencies = [
  "anyhow",
- "deno_ops 0.27.0",
+ "deno_ops 0.28.0",
  "futures",
  "indexmap",
  "libc",
@@ -1687,7 +1687,7 @@ dependencies = [
  "pin-project",
  "serde",
  "serde_json",
- "serde_v8 0.60.0",
+ "serde_v8 0.61.0",
  "sourcemap",
  "url",
  "v8",
@@ -1848,9 +1848,9 @@ dependencies = [
 
 [[package]]
 name = "deno_ops"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27aa39afc249c59dabc4f207278380502012afcbac7aff13cfa879f794402dbd"
+checksum = "8ea4f6ae41994d2757253ca09cb00b54ed7ce062076c6d4b6e9ccc343f387e3f"
 dependencies = [
  "once_cell",
  "proc-macro-crate",
@@ -2476,7 +2476,7 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "ctrlc",
- "deno_core 0.149.0",
+ "deno_core 0.150.0",
  "deno_runtime",
  "dialoguer",
  "eyre",
@@ -6210,9 +6210,9 @@ dependencies = [
 
 [[package]]
 name = "serde_v8"
-version = "0.60.0"
+version = "0.61.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7248a65d40bbc0326da39fba39f91b23b84a855fc24bd1917de980cf2ec5f07d"
+checksum = "a3cba6bdf3570f21f6ce4f7a2d714a60f23ccdbc32b71cf6fd5bc091509b3175"
 dependencies = [
  "bytes",
  "derive_more",
