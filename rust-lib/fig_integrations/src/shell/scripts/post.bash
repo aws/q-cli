@@ -26,6 +26,7 @@ fi
 # fi
 
 export TTY=$(tty)
+export FIG_PID="$$"
 
 FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
