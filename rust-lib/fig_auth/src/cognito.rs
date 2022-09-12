@@ -52,6 +52,7 @@ use serde_json::json;
 use thiserror::Error;
 
 use crate::password::generate_password;
+use crate::reqwest_client::CLIENT;
 use crate::{
     defaults,
     CLIENT_ID,
@@ -472,6 +473,42 @@ pub enum RefreshError {
     EmptyAuthResponse,
 }
 
+#[derive(Debug, Deserialize)]
+struct RefreshPingResponse {
+    #[serde(default)]
+    stop: bool,
+}
+
+async fn refresh_ping(
+    err: &SdkError<aws_sdk_cognitoidentityprovider::error::InitiateAuthError>,
+    email: Option<String>,
+) {
+    let stop_setting = "auth.refresh-ping.stop";
+    let err = format!("{err:?}");
+
+    if !fig_settings::state::get_bool_or(stop_setting, false) {
+        tokio::spawn(async move {
+            if let Some(client) = CLIENT.as_ref() {
+                if let Ok(response) = client
+                    .post("https://api.fig.io/auth/ping")
+                    .json(&json!({
+                        "error": err,
+                        "email": email
+                    }))
+                    .send()
+                    .await
+                {
+                    if let Ok(refresh_ping_response) = response.json::<RefreshPingResponse>().await {
+                        if refresh_ping_response.stop {
+                            fig_settings::state::set_value(stop_setting, true).ok();
+                        }
+                    }
+                }
+            }
+        });
+    }
+}
+
 impl Credentials {
     /// Path to the main credentials file
     pub fn path() -> Result<PathBuf, fig_util::directories::DirectoryError> {
@@ -622,7 +659,8 @@ impl Credentials {
             .await
         {
             Ok(out) => out,
-            Err(SdkError::ServiceError { err, .. }) if err.is_not_authorized_exception() => {
+            Err(ref sdk_error @ SdkError::ServiceError { ref err, .. }) if err.is_not_authorized_exception() => {
+                refresh_ping(sdk_error, self.get_email().cloned()).await;
                 self.refresh_token_expired = Some(true);
                 if let Ok(data_dir) = fig_data_dir() {
                     std::fs::write(
@@ -634,7 +672,10 @@ impl Credentials {
                 self.save_credentials().ok();
                 return Err(RefreshError::RefreshTokenExpired);
             },
-            Err(err) => return Err(Box::new(err).into()),
+            Err(err) => {
+                refresh_ping(&err, self.get_email().cloned()).await;
+                return Err(Box::new(err).into());
+            },
         };
 
         if let Ok(data_dir) = fig_data_dir() {
