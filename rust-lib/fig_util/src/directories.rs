@@ -84,8 +84,6 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
                 .ok_or(DirectoryError::NoHomeDirectory)?
                 .join("fig")
                 .join(name))
-        } else {
-            compile_error!("Unsupported platform");
         }
     }
 }
@@ -109,23 +107,11 @@ pub fn parent_socket_path(user_name: String, parent: &String) -> Result<PathBuf>
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
-            use std::process::Command;
-
-            if crate::system_info::in_wsl() {
-                Ok(PathBuf::from(String::from_utf8_lossy(
-                    &Command::new("wslpath").arg(String::from_utf8_lossy(
-                        &Command::new("fig.exe").args(["_", "figterm-socket-path"]
-                    ).output()?.stdout).to_string()
-                ).output()?.stdout).to_string()))
-            } else {
-                Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
-            }
+            Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
         } else if #[cfg(target_os = "macos")] {
             Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
         } else if #[cfg(target_os = "windows")] {
             dirs::data_local_dir().map(|path| path.join("Fig").join(format!("figterm-{session_id}.socket"))).ok_or(DirectoryError::NoHomeDirectory)
-        } else {
-            compile_error!("Unsupported platform");
         }
     }
 }

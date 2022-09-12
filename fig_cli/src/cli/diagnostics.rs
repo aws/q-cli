@@ -1,8 +1,17 @@
 use std::fmt::Display;
 use std::process::Command;
 
+use atty;
 use cfg_if::cfg_if;
 use clap::Args;
+use crossterm::terminal::{
+    Clear,
+    ClearType,
+};
+use crossterm::{
+    cursor,
+    execute,
+};
 use eyre::{
     ContextCompat,
     Result,
@@ -30,9 +39,12 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use spinners::{
+    Spinner,
+    Spinners,
+};
 
 use crate::cli::OutputFormat;
-
 #[derive(Debug, Args)]
 pub struct DiagnosticArgs {
     /// The format of the output
@@ -57,7 +69,28 @@ impl DiagnosticArgs {
             return Ok(());
         }
 
+        let spinner = if atty::is(atty::Stream::Stdout) {
+            Some(Spinner::new(Spinners::Dots, "Generating...".into()))
+        } else {
+            None
+        };
+
+        if spinner.is_some() {
+            execute!(std::io::stdout(), cursor::Hide)?;
+
+            ctrlc::set_handler(move || {
+                execute!(std::io::stdout(), cursor::Show).ok();
+                std::process::exit(1);
+            })?;
+        }
+
         let diagnostics = Diagnostics::new().await?;
+
+        if let Some(mut sp) = spinner {
+            sp.stop();
+            execute!(std::io::stdout(), Clear(ClearType::CurrentLine), cursor::Show)?;
+            println!();
+        }
 
         match self.format {
             OutputFormat::Plain => println!("{}", diagnostics.user_readable()?.join("\n")),

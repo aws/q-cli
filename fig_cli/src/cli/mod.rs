@@ -101,7 +101,11 @@ pub enum CliRootCommands {
     Ssh(ssh::SshSubcommand),
     /// Uninstall fig
     #[clap(hide = true)]
-    Uninstall,
+    Uninstall {
+        /// Force uninstall
+        #[clap(long, short = 'y', value_parser)]
+        no_confirm: bool,
+    },
     /// Update dotfiles
     Update {
         /// Force update
@@ -277,7 +281,7 @@ impl Cli {
                         internal::install_cli_from_args(args)
                     }
                 },
-                CliRootCommands::Uninstall => uninstall::uninstall_command().await,
+                CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
                 CliRootCommands::Update { no_confirm } => installation::update(no_confirm).await.map(|_| ()),
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
@@ -314,7 +318,7 @@ impl Cli {
                     print_launching: true,
                     wait_for_launch: true,
                 }),
-                CliRootCommands::Quit => app::quit_fig().await,
+                CliRootCommands::Quit => crate::util::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,
                     Processes::Daemon => get_daemon().and_then(|d| d.restart()),
@@ -390,34 +394,15 @@ async fn root_command() -> Result<()> {
                     .context("Could not launch fig")?;
             }
         } else {
-            use crossterm::style::Stylize;
             use fig_ipc::local::open_ui_element;
             use fig_proto::local::UiElement;
-            use std::io::{
-                stdout,
-                Write,
-            };
 
             if fig_util::manifest::is_headless() {
                 eyre::bail!("Launching Fig from headless installs is not yet supported");
             }
 
-            match launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true }) {
-                Ok(()) => {
-                    open_ui_element(UiElement::MissionControl, None)
-                        .await
-                        .context("Could not launch fig")?;
-                }
-                Err(_) => {
-                    writeln!(
-                        stdout(),
-                        "Opening {}",
-                        "https://app.fig.io".magenta().underlined()
-                    ).ok();
-                    fig_util::open_url("https://app.fig.io")?;
-                }
-            }
-
+            launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true }).context("Failed to launch Fig")?;
+            open_ui_element(UiElement::MissionControl, None).await.context("Failed to open Fig")?;
         }
     }
 

@@ -5,6 +5,7 @@ use fig_proto::local::{
     DebugModeCommand,
     DiagnosticsCommand,
     DiagnosticsResponse,
+    OpenBrowserCommand,
     OpenUiElementCommand,
     QuitCommand,
     UiElement,
@@ -26,7 +27,6 @@ use crate::{
     EventLoopProxy,
     MISSION_CONTROL_ID,
 };
-
 pub async fn debug(_: DebugModeCommand) -> LocalResult {
     todo!()
 }
@@ -94,7 +94,14 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
 }
 
 pub async fn update(_command: UpdateCommand) -> LocalResult {
-    #[cfg(windows)]
+    #[cfg(target_os = "windows")]
     crate::utils::update_check().await;
+    Ok(LocalResponse::Success(None))
+}
+
+pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
+    if let Err(err) = fig_util::open_url(command.url) {
+        error!(%err, "Error opening browser");
+    }
     Ok(LocalResponse::Success(None))
 }

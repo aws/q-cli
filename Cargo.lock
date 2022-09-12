@@ -178,9 +178,9 @@ dependencies = [
 
 [[package]]
 name = "arbitrary"
-version = "1.1.5"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5b0d87f4e4aaa9f3a00706edc7cbbeab0e3cc45ff1062b1160bc0204d6481ad4"
+checksum = "f44124848854b941eafdb34f05b3bcf59472f643c7e151eba7c2b69daa469ed5"
 dependencies = [
  "derive_arbitrary",
 ]
@@ -1278,7 +1278,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2e4b6aa369f41f5faa04bb80c9b1f4216ea81646ed6124d76ba5c49a7aafd9cd"
 dependencies = [
  "cookie",
- "idna",
+ "idna 0.2.3",
  "log",
  "publicsuffix",
  "serde",
@@ -1672,12 +1672,12 @@ dependencies = [
 
 [[package]]
 name = "deno_core"
-version = "0.149.0"
+version = "0.150.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79b0fbe1787762b87506922f9b4f3493c28c5f67fd71391bbdeeb11c77e2c8e2"
+checksum = "e61abd13539870f0417b18e54c56cf7905976735b4e87a9e828fcac2bfda4a4b"
 dependencies = [
  "anyhow",
- "deno_ops 0.27.0",
+ "deno_ops 0.28.0",
  "futures",
  "indexmap",
  "libc",
@@ -1687,7 +1687,7 @@ dependencies = [
  "pin-project",
  "serde",
  "serde_json",
- "serde_v8 0.60.0",
+ "serde_v8 0.61.0",
  "sourcemap",
  "url",
  "v8",
@@ -1848,9 +1848,9 @@ dependencies = [
 
 [[package]]
 name = "deno_ops"
-version = "0.27.0"
+version = "0.28.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "27aa39afc249c59dabc4f207278380502012afcbac7aff13cfa879f794402dbd"
+checksum = "8ea4f6ae41994d2757253ca09cb00b54ed7ce062076c6d4b6e9ccc343f387e3f"
 dependencies = [
  "once_cell",
  "proc-macro-crate",
@@ -2028,9 +2028,9 @@ dependencies = [
 
 [[package]]
 name = "derive_arbitrary"
-version = "1.1.5"
+version = "1.1.6"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d12f7983d7849dbd48d7754de36d4a5edc919806c8a54eba6281f6d7af4446fc"
+checksum = "226ad66541d865d7a7173ad6a9e691c33fdb910ac723f4bc734b3e5294a1f931"
 dependencies = [
  "proc-macro2 1.0.43",
  "quote 1.0.21",
@@ -2466,6 +2466,7 @@ version = "1.5.0"
 dependencies = [
  "arboard",
  "async-trait",
+ "atty",
  "bitflags",
  "bytes",
  "cfg-if 1.0.0",
@@ -2475,7 +2476,7 @@ dependencies = [
  "color-eyre",
  "crossterm",
  "ctrlc",
- "deno_core 0.149.0",
+ "deno_core 0.150.0",
  "deno_runtime",
  "dialoguer",
  "eyre",
@@ -2488,8 +2489,8 @@ dependencies = [
  "fig_proto",
  "fig_request",
  "fig_settings",
+ "fig_sync",
  "fig_telemetry",
- "fig_update",
  "fig_util",
  "flume",
  "futures",
@@ -2530,14 +2531,12 @@ dependencies = [
 name = "fig_color"
 version = "0.1.0"
 dependencies = [
- "bindgen",
  "bitflags",
- "cc",
 ]
 
 [[package]]
 name = "fig_desktop"
-version = "2.4.2"
+version = "2.4.6"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
@@ -2556,8 +2555,8 @@ dependencies = [
  "fig_proto",
  "fig_request",
  "fig_settings",
+ "fig_sync",
  "fig_telemetry",
- "fig_update",
  "fig_util",
  "flume",
  "fnv",
@@ -2595,28 +2594,19 @@ name = "fig_install"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "crossterm",
- "fig_api_client",
- "fig_auth",
- "fig_request",
- "fig_settings",
  "fig_util",
- "flume",
- "futures",
- "git2",
  "once_cell",
- "parking_lot 0.12.1",
- "regex",
  "reqwest",
+ "semver 1.0.13",
  "serde",
- "serde_json",
- "tempfile",
  "thiserror",
- "time 0.3.14",
  "tokio",
  "tracing",
- "url",
 ]
+
+[[package]]
+name = "fig_installer"
+version = "0.1.0"
 
 [[package]]
 name = "fig_integrations"
@@ -2718,6 +2708,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig_sync"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossterm",
+ "fig_api_client",
+ "fig_auth",
+ "fig_request",
+ "fig_settings",
+ "fig_util",
+ "flume",
+ "futures",
+ "git2",
+ "once_cell",
+ "parking_lot 0.12.1",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time 0.3.14",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
 name = "fig_telemetry"
 version = "0.2.1"
 dependencies = [
@@ -2735,21 +2753,6 @@ dependencies = [
  "thiserror",
  "tracing",
  "uuid",
-]
-
-[[package]]
-name = "fig_update"
-version = "0.1.0"
-dependencies = [
- "cfg-if 1.0.0",
- "fig_util",
- "once_cell",
- "reqwest",
- "semver 1.0.13",
- "serde",
- "thiserror",
- "tokio",
- "tracing",
 ]
 
 [[package]]
@@ -2907,11 +2910,10 @@ checksum = "00b0228411908ca8685dba7fc2cdd70ec9990a6e753e89b6ac91a84c40fbaf4b"
 
 [[package]]
 name = "form_urlencoded"
-version = "1.0.1"
+version = "1.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5fc25a87fa4fd2094bffb06925852034d90a17f0d1e05197d4956d3555752191"
+checksum = "a9c384f161156f5260c24a097c56119f9be8c798586aecc13afbcbe7b7e26bf8"
 dependencies = [
- "matches",
  "percent-encoding",
 ]
 
@@ -3722,6 +3724,16 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "418a0a6fab821475f634efe3ccc45c013f742efe03d853e8d3355d5cb850ecf8"
 dependencies = [
  "matches",
+ "unicode-bidi",
+ "unicode-normalization",
+]
+
+[[package]]
+name = "idna"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "e14ddfc70884202db2244c223200c204c2bda1bc6e0998d11b5e024d657209e6"
+dependencies = [
  "unicode-bidi",
  "unicode-normalization",
 ]
@@ -5317,7 +5329,7 @@ version = "2.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "aeeedb0b429dc462f30ad27ef3de97058b060016f47790c066757be38ef792b4"
 dependencies = [
- "idna",
+ "idna 0.2.3",
  "psl-types",
 ]
 
@@ -6198,9 +6210,9 @@ dependencies = [
 
 [[package]]
 name = "serde_v8"
-version = "0.60.0"
+version = "0.61.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7248a65d40bbc0326da39fba39f91b23b84a855fc24bd1917de980cf2ec5f07d"
+checksum = "a3cba6bdf3570f21f6ce4f7a2d714a60f23ccdbc32b71cf6fd5bc091509b3175"
 dependencies = [
  "bytes",
  "derive_more",
@@ -7273,7 +7285,7 @@ dependencies = [
  "futures-channel",
  "futures-io",
  "futures-util",
- "idna",
+ "idna 0.2.3",
  "ipnet",
  "lazy_static",
  "log",
@@ -7533,12 +7545,12 @@ checksum = "a156c684c91ea7d62626509bce3cb4e1d9ed5c4d978f7b4352658f96a4c26b4a"
 
 [[package]]
 name = "url"
-version = "2.3.0"
+version = "2.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "22fe195a4f217c25b25cb5058ced57059824a678474874038dc88d211bf508d3"
+checksum = "0d68c799ae75762b8c3fe375feb6600ef5602c883c5d21eb51c09f22b83c4643"
 dependencies = [
  "form_urlencoded",
- "idna",
+ "idna 0.3.0",
  "percent-encoding",
  "serde",
 ]
@@ -7598,7 +7610,7 @@ version = "0.16.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "32ad5bf234c7d3ad1042e5252b7eddb2c4669ee23f32c7dd0e9b7705f07ef591"
 dependencies = [
- "idna",
+ "idna 0.2.3",
  "lazy_static",
  "regex",
  "serde",

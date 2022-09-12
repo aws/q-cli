@@ -2,7 +2,6 @@
 
 mod color;
 
-use std::ffi::CString;
 use std::fmt::Debug;
 
 use bitflags::bitflags;
@@ -26,20 +25,11 @@ pub enum VTermColor {
     Indexed(u8),
 }
 
-impl TryFrom<color::VTermColor> for VTermColor {
-    type Error = u8;
-
-    fn try_from(value: color::VTermColor) -> Result<Self, Self::Error> {
-        if unsafe { color::vterm_color_is_indexed(&value as *const _) } {
-            Ok(VTermColor::Indexed(unsafe { value.indexed.idx }))
-        } else if unsafe { color::vterm_color_is_rgb(&value as *const _) } {
-            Ok(VTermColor::Rgb(
-                unsafe { value.rgb.red },
-                unsafe { value.rgb.green },
-                unsafe { value.rgb.blue },
-            ))
-        } else {
-            Err(unsafe { value.type_ })
+impl From<color::VTermColor> for VTermColor {
+    fn from(value: color::VTermColor) -> Self {
+        match value {
+            color::VTermColor::Rgb { red, green, blue } => Self::Rgb(red, green, blue),
+            color::VTermColor::Indexed { idx } => Self::Indexed(idx),
         }
     }
 }
@@ -51,17 +41,11 @@ pub struct SuggestionColor {
 
 impl SuggestionColor {
     pub fn fg(&self) -> Option<VTermColor> {
-        match self.inner.fg.is_null() {
-            false => VTermColor::try_from(unsafe { *self.inner.fg }).ok(),
-            true => None,
-        }
+        self.inner.fg.clone().map(VTermColor::from)
     }
 
     pub fn bg(&self) -> Option<VTermColor> {
-        match self.inner.bg.is_null() {
-            false => VTermColor::try_from(unsafe { *self.inner.bg }).ok(),
-            true => None,
-        }
+        self.inner.bg.clone().map(VTermColor::from)
     }
 }
 
@@ -74,41 +58,20 @@ impl Debug for SuggestionColor {
     }
 }
 
-impl Drop for SuggestionColor {
-    fn drop(&mut self) {
-        unsafe { color::free_suggestion_color(&mut self.inner as *mut _) }
-    }
-}
-
 pub fn get_color_support() -> ColorSupport {
-    let color_support = unsafe { color::get_color_support() };
+    let color_support = color::get_color_support();
     ColorSupport::from_bits_truncate(color_support)
 }
 
-pub fn parse_suggestion_color_fish(
-    suggestion_str: impl Into<Vec<u8>>,
-    color_support: ColorSupport,
-) -> Option<SuggestionColor> {
-    let c_str = CString::new(suggestion_str).unwrap();
-    let inner = unsafe { color::parse_suggestion_color_fish(c_str.as_ptr(), color_support.into()) };
-    match inner.is_null() {
-        true => None,
-        false => Some(SuggestionColor {
-            inner: unsafe { *inner },
-        }),
-    }
+pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
+    let inner = color::parse_suggestion_color_fish(suggestion_str, color_support.into());
+    inner.map(|inner| SuggestionColor { inner })
 }
 
 pub fn parse_suggestion_color_zsh_autosuggest(
-    suggestion_str: impl Into<Vec<u8>>,
+    suggestion_str: &str,
     color_support: ColorSupport,
 ) -> Option<SuggestionColor> {
-    let c_str = CString::new(suggestion_str).unwrap();
-    let inner = unsafe { color::parse_suggestion_color_zsh_autosuggest(c_str.as_ptr(), color_support.into()) };
-    match inner.is_null() {
-        true => None,
-        false => Some(SuggestionColor {
-            inner: unsafe { *inner },
-        }),
-    }
+    let inner = color::parse_suggestion_color_zsh_autosuggest(suggestion_str, color_support.into());
+    inner.map(|inner| SuggestionColor { inner })
 }

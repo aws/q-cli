@@ -18,7 +18,6 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_install::dotfiles::download_and_notify;
 use fig_ipc::local::{
     input_method_command,
     prompt_accessibility_command,
@@ -27,16 +26,18 @@ use fig_ipc::local::{
     toggle_debug_mode,
 };
 use fig_proto::local::InputMethodAction;
+use fig_sync::dotfiles::download_and_notify;
 use fig_util::directories;
 use serde_json::json;
 
-use crate::cli::app::quit_fig;
 #[cfg(target_os = "macos")]
 use crate::cli::diagnostics::get_diagnostics;
 use crate::cli::launch_fig;
 use crate::util::{
+    get_app_info,
     glob,
     glob_dir,
+    quit_fig,
     LaunchArgs,
 };
 
@@ -121,27 +122,6 @@ pub enum DebugSubcommand {
     KeyTester,
 }
 
-fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
-    let info = Command::new("lsappinfo")
-        .args(["info", "-only", field.as_ref(), "-app", bundle_id.as_ref()])
-        .output()?;
-    let info = String::from_utf8(info.stdout)?;
-    let value = info
-        .split('=')
-        .nth(1)
-        .context(eyre!("Could not get field value for {}", field.as_ref()))?
-        .replace('"', "");
-    Ok(value.trim().into())
-}
-
-pub fn get_app_info() -> Result<String> {
-    let output = Command::new("lsappinfo")
-        .args(["info", "-app", "com.mschrage.fig"])
-        .output()?;
-    let result = String::from_utf8(output.stdout)?;
-    Ok(result.trim().into())
-}
-
 impl DebugSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
@@ -159,11 +139,11 @@ impl DebugSubcommand {
                         return Ok(());
                     }
                 }
-                let fig_path = get_running_app_info("com.mschrage.fig", "bundlepath")?;
+                let fig_path = crate::util::get_running_app_info("com.mschrage.fig", "bundlepath")?;
                 let front_app = Command::new("lsappinfo").arg("front").output()?;
                 let terminal_name = String::from_utf8(front_app.stdout)
                     .ok()
-                    .and_then(|app| get_running_app_info(app, "name").ok());
+                    .and_then(|app| crate::util::get_running_app_info(app, "name").ok());
                 let terminal_text = match terminal_name {
                     Some(terminal) => format!(" ({})", terminal),
                     None => "".into(),

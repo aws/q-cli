@@ -43,6 +43,14 @@
                                 Name="fig.exe"
                                 Source="target/release/fig_cli.exe"
                             />
+                            <File
+                                Name="conpty.dll"
+                                Source="bundle/windows/conpty.dll"
+                            />
+                            <File
+                                Name="OpenConsole.exe"
+                                Source="bundle/windows/OpenConsole.exe"
+                            />
                             <RemoveFolder
                                 Id="RemoveTargetFolder"
                                 Directory="TargetFolder"

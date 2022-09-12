@@ -1891,6 +1891,38 @@ impl DoctorCheck for MissionControlHostCheck {
     }
 }
 
+#[cfg(target_os = "linux")]
+struct SandboxCheck;
+
+#[async_trait]
+#[cfg(target_os = "linux")]
+impl DoctorCheck for SandboxCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Fig is not running in a sandbox".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        use fig_util::system_info::linux::SandboxKind;
+
+        let kind = fig_util::system_info::linux::detect_sandbox();
+
+        match kind {
+            SandboxKind::None => Ok(()),
+            SandboxKind::Flatpak => Err(doctor_error!("Running Fig under Flatpak is not supported.")),
+            SandboxKind::Snap => Err(doctor_error!("Running Fig under Snap is not supported.")),
+            SandboxKind::Docker => Err(doctor_warning!(
+                "Fig's support for Docker is in development. It may not work properly on your system."
+            )),
+            SandboxKind::Container(Some(engine)) => Err(doctor_error!(
+                "Running Fig under `{engine}` containers is not supported."
+            )),
+            SandboxKind::Container(None) => Err(doctor_error!(
+                "Running Fig under non-docker containers is not supported."
+            )),
+        }
+    }
+}
+
 async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
@@ -2125,7 +2157,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         )
         .await?;
 
-        if !fig_util::manifest::is_headless() {
+        if fig_util::manifest::is_full() {
             run_checks(
                 "Let's make sure Fig is running...".into(),
                 vec![
@@ -2165,6 +2197,10 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await
         .ok();
 
+        if fig_util::manifest::is_headless() {
+            return Ok(());
+        }
+
         #[cfg(target_os = "macos")]
         {
             use super::diagnostics::get_diagnostics;
@@ -2192,14 +2228,16 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             use super::diagnostics::get_diagnostics;
 
-            run_checks_with_context(
-                format!("Let's check {}...", "fig diagnostic".bold()),
-                vec![&AutocompleteActiveCheck],
-                get_diagnostics,
-                config,
-                &mut spinner,
-            )
-            .await?;
+            if fig_util::manifest::is_full() {
+                run_checks_with_context(
+                    format!("Let's check {}...", "fig diagnostic".bold()),
+                    vec![&AutocompleteActiveCheck],
+                    get_diagnostics,
+                    config,
+                    &mut spinner,
+                )
+                .await?;
+            }
         }
 
         run_checks_with_context(
@@ -2225,7 +2263,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 vec![
                     &IBusEnvCheck,
                     &IBusCheck,
-                    // &DesktopCompatibilityCheck // we need a better way of getting the data
+                    // &DesktopCompatibilityCheck, // we need a better way of getting the data
+                    &SandboxCheck,
                 ],
                 config,
                 &mut spinner,

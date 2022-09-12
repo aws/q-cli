@@ -32,7 +32,6 @@ use eyre::{
     Result,
 };
 use fig_auth::get_token;
-use fig_install::dotfiles::notify::TerminalNotification;
 use fig_ipc::local::send_hook_to_socket;
 use fig_ipc::{
     BufferedUnixStream,
@@ -51,6 +50,7 @@ use fig_proto::hooks::{
 use fig_proto::local::EnvironmentVariable;
 use fig_proto::ReflectMessage;
 use fig_request::Request;
+use fig_sync::dotfiles::notify::TerminalNotification;
 use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
@@ -231,6 +231,12 @@ pub enum InternalSubcommand {
     Uuidgen,
     #[cfg(target_os = "linux")]
     IbusBootstrap,
+    #[cfg(target_os = "linux")]
+    /// Checks for sandboxing
+    DetectSandbox,
+    /// Uses the desktop app to open the uninstall page
+    #[cfg(target_os = "linux")]
+    OpenUninstallPage,
 }
 
 pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -519,8 +525,10 @@ impl InternalSubcommand {
                 {
                     Command::new("sudo")
                         .args(&["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
-                        .spawn()?
-                        .wait()?;
+                        .status()?;
+                    Command::new("sudo")
+                        .args(&["-u", user, "--", "fig", "_", "open-uninstall-page"])
+                        .status()?;
                 }
             },
             InternalSubcommand::StreamFromSocket => {
@@ -599,6 +607,31 @@ impl InternalSubcommand {
                     };
                 } else {
                     writeln!(stdout(), "ibus-daemon is already running").ok();
+                }
+            },
+            #[cfg(target_os = "linux")]
+            InternalSubcommand::DetectSandbox => {
+                use fig_util::system_info::linux::SandboxKind;
+                match fig_util::system_info::linux::detect_sandbox() {
+                    SandboxKind::None => println!("No sandbox detected"),
+                    SandboxKind::Flatpak => println!("You are in a Flatpak"),
+                    SandboxKind::Snap => println!("You are in a Snap"),
+                    SandboxKind::Docker => println!("You are in a Docker container"),
+                    SandboxKind::Container(None) => println!("You are in a generic container"),
+                    SandboxKind::Container(Some(engine)) => println!("You are in a {engine} container"),
+                };
+            },
+            #[cfg(target_os = "linux")]
+            InternalSubcommand::OpenUninstallPage => {
+                if let Some(email) = fig_auth::get_email() {
+                    let url = format!(
+                        "https://fig.io/uninstall?email={email}&version={}",
+                        fig_util::manifest::version().unwrap()
+                    );
+                    fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
+                        fig_proto::local::OpenBrowserCommand { url },
+                    ))
+                    .await?;
                 }
             },
         }

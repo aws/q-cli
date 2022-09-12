@@ -8,14 +8,15 @@ use std::io::{
 };
 use std::process::exit;
 
+use clap::error::ContextKind;
 use clap::StructOpt;
-use crossterm::style::Stylize;
 use eyre::Result;
 use fig_log::FIG_LOG_LEVEL;
 use fig_telemetry::sentry::{
     configure_scope,
     release_name,
 };
+use owo_colors::OwoColorize;
 use serde_json::json;
 use tracing::metadata::LevelFilter;
 
@@ -88,17 +89,28 @@ async fn main() -> Result<()> {
 
     let parsed = match cli::Cli::try_parse() {
         Ok(cli) => cli,
-        Err(err) if matches!(err.kind, clap::ErrorKind::UnknownArgument) => {
+        Err(err)
+            if matches!(
+                err.kind,
+                clap::ErrorKind::UnknownArgument | clap::ErrorKind::UnrecognizedSubcommand
+            ) && !err.context().any(|(context_kind, _)| {
+                matches!(
+                    context_kind,
+                    ContextKind::SuggestedSubcommand | ContextKind::SuggestedArg
+                )
+            }) =>
+        {
             err.print()?;
+            println!();
             println!(
-                "This command may be valid in newer versions of the Fig CLI. Try running {}",
+                "This command may be valid in newer versions of the Fig CLI. Try running {}.",
                 "fig update".magenta()
             );
-            return Ok(());
+            exit(2);
         },
         Err(err) => {
             err.print()?;
-            return Ok(());
+            exit(2);
         },
     };
 

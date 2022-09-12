@@ -18,11 +18,10 @@ else
     cp bundle/rpm/fig-headless.spec ~/rpmbuild/SPECS/fig.spec
 fi
 sed -i "s/\$VERSION/${VERSION}/" ~/rpmbuild/SPECS/fig.spec
-sed -i "s/\$ARCH/${ARCH}/" ~/rpmbuild/SPECS/fig.spec
 mkdir -p ~/rpmbuild/BUILD/fig-${VERSION}-1.${ARCH}/
 rm -r ~/rpmbuild/BUILD/fig-${VERSION}-1.${ARCH}/
 cp -r build/ ~/rpmbuild/BUILD/fig-${VERSION}-1.${ARCH}/
-rpmbuild -bb ~/rpmbuild/SPECS/fig.spec
+rpmbuild -bb --target "$ARCH" ~/rpmbuild/SPECS/fig.spec
 
 if [[ $IS_HEADLESS = 0 ]]; then
     cp ~/rpmbuild/RPMS/${ARCH}/fig-${VERSION}-1.${ARCH}.rpm fig.rpm

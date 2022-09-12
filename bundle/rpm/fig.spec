@@ -1,7 +1,6 @@
 Name: fig
 Version: $VERSION
 Release: 1
-Buildarch: $ARCH
 Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
@@ -12,6 +11,9 @@ Requires: webkit2gtk3
 Requires: gtk3
 Requires: libappindicator-gtk3-devel
 Requires: ibus
+
+# disable stripping
+%define __strip /bin/true
 
 %description
 %{summary}
@@ -25,6 +27,9 @@ rm -rf %{buildroot}
 
 %preun
 fig _ uninstall-for-all-users
+
+%postun
+killall fig_desktop
 
 %posttrans
 (ls /etc/yum.repos.d/fig.repo>/dev/null && sed -i 's/f$releasever\///' '/etc/yum.repos.d/fig.repo') || true

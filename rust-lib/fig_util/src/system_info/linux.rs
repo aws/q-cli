@@ -1,4 +1,7 @@
+use std::path::Path;
+
 use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::{
     Deserialize,
     Serialize,
@@ -17,6 +20,7 @@ pub enum DesktopEnvironment {
     Gnome,
     Plasma,
     I3,
+    Sway,
 }
 
 pub fn get_display_server() -> Result<DisplayServer, Error> {
@@ -40,6 +44,7 @@ pub fn get_desktop_environment() -> Result<DesktopEnvironment, Error> {
                 "gnome" | "gnome-xorg" | "ubuntu" | "pop" => Ok(DesktopEnvironment::Gnome),
                 "kde" | "plasma" => Ok(DesktopEnvironment::Plasma),
                 "i3" => Ok(DesktopEnvironment::I3),
+                "sway" => Ok(DesktopEnvironment::Sway),
                 _ => Err(Error::UnknownDesktop(current)),
             }
         },
@@ -98,6 +103,52 @@ impl OsRelease {
             },
             Err(_) => None,
         }
+    }
+}
+
+static CONTAINERENV_ENGINE: Lazy<Regex> = Lazy::new(|| Regex::new(r#"engine="([^"\s]+)""#).unwrap());
+
+pub enum SandboxKind {
+    None,
+    Flatpak,
+    Snap,
+    Docker,
+    Container(Option<String>),
+}
+
+pub fn detect_sandbox() -> SandboxKind {
+    if Path::new("/.flatpak-info").exists() {
+        return SandboxKind::Flatpak;
+    }
+    if std::env::var("SNAP").is_ok() {
+        return SandboxKind::Snap;
+    }
+    if Path::new("/.dockerenv").exists() {
+        return SandboxKind::Docker;
+    }
+    if let Ok(env) = std::fs::read_to_string("/var/run/.containerenv") {
+        return SandboxKind::Container(
+            CONTAINERENV_ENGINE
+                .captures(&env)
+                .and_then(|x| x.get(1))
+                .map(|x| x.as_str().to_string()),
+        );
+    }
+
+    SandboxKind::None
+}
+
+impl SandboxKind {
+    pub fn is_container(&self) -> bool {
+        matches!(self, SandboxKind::Docker | SandboxKind::Container(_))
+    }
+
+    pub fn is_app_runtime(&self) -> bool {
+        matches!(self, SandboxKind::Flatpak | SandboxKind::Snap)
+    }
+
+    pub fn is_none(&self) -> bool {
+        matches!(self, SandboxKind::None)
     }
 }
 
