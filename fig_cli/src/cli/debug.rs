@@ -18,7 +18,6 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_install::dotfiles::download_and_notify;
 use fig_ipc::local::{
     input_method_command,
     prompt_accessibility_command,
@@ -27,6 +26,7 @@ use fig_ipc::local::{
     toggle_debug_mode,
 };
 use fig_proto::local::InputMethodAction;
+use fig_sync::dotfiles::download_and_notify;
 use fig_util::directories;
 use serde_json::json;
 

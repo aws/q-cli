@@ -2489,8 +2489,8 @@ dependencies = [
  "fig_proto",
  "fig_request",
  "fig_settings",
+ "fig_sync",
  "fig_telemetry",
- "fig_update",
  "fig_util",
  "flume",
  "futures",
@@ -2555,8 +2555,8 @@ dependencies = [
  "fig_proto",
  "fig_request",
  "fig_settings",
+ "fig_sync",
  "fig_telemetry",
- "fig_update",
  "fig_util",
  "flume",
  "fnv",
@@ -2594,28 +2594,19 @@ name = "fig_install"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "crossterm",
- "fig_api_client",
- "fig_auth",
- "fig_request",
- "fig_settings",
  "fig_util",
- "flume",
- "futures",
- "git2",
  "once_cell",
- "parking_lot 0.12.1",
- "regex",
  "reqwest",
+ "semver 1.0.13",
  "serde",
- "serde_json",
- "tempfile",
  "thiserror",
- "time 0.3.14",
  "tokio",
  "tracing",
- "url",
 ]
+
+[[package]]
+name = "fig_installer"
+version = "0.1.0"
 
 [[package]]
 name = "fig_integrations"
@@ -2717,6 +2708,34 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig_sync"
+version = "0.1.0"
+dependencies = [
+ "cfg-if 1.0.0",
+ "crossterm",
+ "fig_api_client",
+ "fig_auth",
+ "fig_request",
+ "fig_settings",
+ "fig_util",
+ "flume",
+ "futures",
+ "git2",
+ "once_cell",
+ "parking_lot 0.12.1",
+ "regex",
+ "reqwest",
+ "serde",
+ "serde_json",
+ "tempfile",
+ "thiserror",
+ "time 0.3.14",
+ "tokio",
+ "tracing",
+ "url",
+]
+
+[[package]]
 name = "fig_telemetry"
 version = "0.2.1"
 dependencies = [
@@ -2734,21 +2753,6 @@ dependencies = [
  "thiserror",
  "tracing",
  "uuid",
-]
-
-[[package]]
-name = "fig_update"
-version = "0.1.0"
-dependencies = [
- "cfg-if 1.0.0",
- "fig_util",
- "once_cell",
- "reqwest",
- "semver 1.0.13",
- "serde",
- "thiserror",
- "tokio",
- "tracing",
 ]
 
 [[package]]

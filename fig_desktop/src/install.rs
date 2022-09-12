@@ -26,19 +26,19 @@ pub async fn run_install() {
     std::fs::remove_file(fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe")).ok();
 
     tokio::spawn(async {
-        if let Err(err) = fig_install::themes::clone_or_update().await {
+        if let Err(err) = fig_sync::themes::clone_or_update().await {
             error!(%err, "Failed to clone or update themes");
         }
     });
 
     tokio::spawn(async {
-        if let Err(err) = fig_install::plugins::fetch_installed_plugins(false).await {
+        if let Err(err) = fig_sync::plugins::fetch_installed_plugins(false).await {
             error!(%err, "Failed to fetch installed plugins");
         }
     });
 
     tokio::spawn(async {
-        if let Err(err) = fig_install::dotfiles::download_and_notify(false).await {
+        if let Err(err) = fig_sync::dotfiles::download_and_notify(false).await {
             error!(%err, "Failed to download installed plugins");
         }
     });

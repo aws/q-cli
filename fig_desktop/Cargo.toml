@@ -37,7 +37,7 @@ camino = { version = "1.0.9", features = ["serde1"] }
 cfg-if = "1.0.0"
 clap = "3.2.20"
 dashmap = "5.3.4"
-fig_api_client = { version = "0.1.0", path = "../rust-lib/fig_api_client" }
+fig_api_client = { path = "../rust-lib/fig_api_client" }
 fig_auth = { path = "../rust-lib/fig_auth" }
 fig_install = { path = "../rust-lib/fig_install" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }
@@ -46,8 +46,8 @@ fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_request = { path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }
+fig_sync = { path = "../rust-lib/fig_sync" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }
-fig_update = { version = "0.1.0", path = "../rust-lib/fig_update" }
 fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.14"
 fnv = "1.0.7"

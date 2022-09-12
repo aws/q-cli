@@ -90,7 +90,7 @@ pub async fn update_check() {
 
     info!("Checking for updates...");
 
-    match fig_update::check_for_updates(Some(env!("CARGO_PKG_VERSION").to_string())).await {
+    match fig_install::check_for_updates(Some(env!("CARGO_PKG_VERSION").to_string())).await {
         Ok(Some(package)) => {
             info!("Updating Fig...");
 

@@ -5,8 +5,8 @@ use eyre::{
     WrapErr,
 };
 use fig_auth::is_logged_in;
-use fig_install::dotfiles::download_and_notify;
-use fig_install::dotfiles::notify::{
+use fig_sync::dotfiles::download_and_notify;
+use fig_sync::dotfiles::notify::{
     notify_terminal,
     TerminalNotification,
 };

@@ -10,12 +10,12 @@ use eyre::{
     bail,
     Result,
 };
+use fig_install::index::local_manifest_version;
 use fig_ipc::local::update_command;
 use fig_settings::{
     settings,
     state,
 };
-use fig_update::index::local_manifest_version;
 use fig_util::manifest;
 use tracing::{
     error,
@@ -149,7 +149,7 @@ impl AppSubcommand {
                         }
                     }
 
-                    match fig_update::check_for_updates(None).await {
+                    match fig_install::check_for_updates(None).await {
                         Ok(Some(remote)) => {
                             state::set_value("update.latestVersion", remote.version).ok();
                         },

@@ -85,7 +85,7 @@ impl PluginsSubcommands {
             PluginsSubcommands::Sync => {
                 let mut spinner = spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
 
-                let fetch_result = fig_install::plugins::fetch_installed_plugins(false).await;
+                let fetch_result = fig_sync::plugins::fetch_installed_plugins(false).await;
 
                 match fetch_result {
                     Ok(_) => {
@@ -101,7 +101,7 @@ impl PluginsSubcommands {
             PluginsSubcommands::Update => {
                 let mut spinner = spinners::Spinner::new(spinners::Spinners::Dots, "Syncing plugins".into());
 
-                let fetch_result = fig_install::plugins::fetch_installed_plugins(true).await;
+                let fetch_result = fig_sync::plugins::fetch_installed_plugins(true).await;
 
                 match fetch_result {
                     Ok(_) => {

@@ -3,6 +3,7 @@ resolver = "2"
 members = [
     "fig_cli",
     "fig_desktop",
+    "fig_installer",
     "figterm",
     "rust-lib/*",
 ]

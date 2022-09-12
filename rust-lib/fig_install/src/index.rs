@@ -73,7 +73,7 @@ pub struct Macos {
 
 static CLIENT: Lazy<Client> = Lazy::new(|| {
     Client::builder()
-        .user_agent(concat!("fig_update/", env!("CARGO_PKG_VERSION")))
+        .user_agent(concat!("fig_install/", env!("CARGO_PKG_VERSION")))
         .build()
         .expect("Failed building update client")
 });

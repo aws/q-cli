@@ -14,9 +14,9 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_install::dotfiles::api::DotfileData;
-use fig_install::dotfiles::download_and_notify;
-use fig_install::plugins::fetch_installed_plugins;
+use fig_sync::dotfiles::api::DotfileData;
+use fig_sync::dotfiles::download_and_notify;
+use fig_sync::plugins::fetch_installed_plugins;
 use fig_telemetry::TrackEvent;
 use fig_util::{
     directories,
