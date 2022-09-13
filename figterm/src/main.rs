@@ -471,6 +471,8 @@ fn figterm_main() -> Result<()> {
         let mut key_interceptor = KeyInterceptor::new();
         key_interceptor.load_key_intercepts()?;
 
+        let mut edit_buffer_interval = tokio::time::interval(Duration::from_millis(16));
+
         let mut first_time = true;
 
         let input_rx = terminal.read_input()?;
@@ -726,17 +728,17 @@ fn figterm_main() -> Result<()> {
                     }
                     Ok(())
                 }
-                // // Check if to send the edit buffer because of timeout
-                // _ = edit_buffer_interval.tick() => {
-                //     let send_eb = INSERTION_LOCKED_AT.read().is_some();
-                //     if send_eb && can_send_edit_buffer(&term) {
-                //         let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                //         if let Err(e) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
-                //             warn!("Failed to send edit buffer: {}", e);
-                //         }
-                //     }
-                //     Ok(())
-                // }
+                // Check if to send the edit buffer because of timeout
+                _ = edit_buffer_interval.tick() => {
+                    let send_eb = INSERTION_LOCKED_AT.read().is_some();
+                    if send_eb && can_send_edit_buffer(&term) {
+                        let cursor_coordinates = get_cursor_coordinates(&mut terminal);
+                        if let Err(err) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
+                            warn!("Failed to send edit buffer: {err}");
+                        }
+                    }
+                    Ok(())
+                }
                 _ = &mut child_rx => {
                     trace!("Shell process exited");
                     break 'select_loop Ok(());
