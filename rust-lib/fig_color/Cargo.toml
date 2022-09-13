@@ -8,5 +8,6 @@ publish = false
 
 [dependencies]
 bitflags = "1"
+heapless = "0.7.16"
 
 [build-dependencies]

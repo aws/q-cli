@@ -171,73 +171,46 @@ fn convert_color(rgb: [u8; 3], colors: &[u32]) -> u8 {
     best_index
 }
 
+/// We support the following style of rgb formats (case insensitive):
+/// `#FA3`, `#F3A035`, `FA3`, `F3A035`
 fn try_parse_rgb(name: &str) -> Option<Color> {
-    // We support the following style of rgb formats (case insensitive):
-    //  #FA3, #F3A035, FA3, F3A035
-    let mut digit_idx = 0;
-
     // Skip any leading #.
-    if !name.is_empty() && name.starts_with('#') {
-        digit_idx += 1;
-    }
+    let name = match name.strip_prefix('#') {
+        Some(name) => name,
+        None => name,
+    };
 
-    let mut success = false;
-    let mut i = 0;
     let mut color = Color {
         r#type: ColorType::Rgb,
         name_idx: 0,
         rgb: [0, 0, 0],
     };
-    if name.len() - digit_idx == 3 {
+
+    let mut chars: heapless::Vec<char, 6> = heapless::Vec::new();
+    for c in name.chars() {
+        chars.push(c).ok()?;
+    }
+
+    match chars.len() {
         // Format: FA3
-        for _ in 0..3 {
-            i += 1;
-            digit_idx += 1;
-            let val = name
-                .chars()
-                .nth(digit_idx)
-                .unwrap()
-                .to_digit(16)
-                .map(|x| x as i32)
-                .unwrap_or(-1);
-            if val < 0 {
-                break;
+        3 => {
+            for i in 0..3 {
+                let val = chars[i].to_digit(16)? as u8;
+                color.rgb[i] = val * 16 + val;
             }
-            color.rgb[i] = (val * 16 + val) as u8;
-        }
-        success = i == 3;
-    } else if name.len() - digit_idx == 6 {
+            Some(color)
+        },
         // Format: F3A035
-        for _ in 0..3 {
-            i += 1;
-            digit_idx += 1;
-            let hi = name
-                .chars()
-                .nth(digit_idx)
-                .unwrap()
-                .to_digit(16)
-                .map(|x| x as i32)
-                .unwrap_or(-1);
-            digit_idx += 1;
-            let lo = name
-                .chars()
-                .nth(digit_idx)
-                .unwrap()
-                .to_digit(16)
-                .map(|x| x as i32)
-                .unwrap_or(-1);
-            if hi < 0 || lo < 0 {
-                break;
+        6 => {
+            for i in 0..3 {
+                let val_hi = chars[i * 2].to_digit(16)? as u8;
+                let val_low = chars[i * 2 + 1].to_digit(16)? as u8;
+                color.rgb[i] = val_hi * 16 + val_low;
             }
-            color.rgb[i] = (hi * 16 + lo) as u8;
-        }
+            Some(color)
+        },
+        _ => None,
     }
-
-    if !success {
-        return None;
-    }
-
-    Some(color)
 }
 
 struct named_color_t {
@@ -441,4 +414,34 @@ pub fn parse_suggestion_color_zsh_autosuggest(r#str: &str, color_support: color_
     }
 
     Some(sc)
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[test]
+    fn parse_color() {
+        // Should parse
+        assert!(try_parse_rgb("#ffffff").is_some());
+        assert!(try_parse_rgb("#000000").is_some());
+        assert!(try_parse_rgb("#ababab").is_some());
+        assert!(try_parse_rgb("000000").is_some());
+        assert!(try_parse_rgb("ffffff").is_some());
+        assert!(try_parse_rgb("abcabc").is_some());
+        assert!(try_parse_rgb("#123").is_some());
+        assert!(try_parse_rgb("#fff").is_some());
+        assert!(try_parse_rgb("abc").is_some());
+        assert!(try_parse_rgb("123").is_some());
+        assert!(try_parse_rgb("fff").is_some());
+        assert!(try_parse_rgb("000").is_some());
+
+        // Should not parse
+        assert!(try_parse_rgb("#xyz").is_none());
+        assert!(try_parse_rgb("12").is_none());
+        assert!(try_parse_rgb("abcdeh").is_none());
+        assert!(try_parse_rgb("#ffff").is_none());
+        assert!(try_parse_rgb("12345").is_none());
+        assert!(try_parse_rgb("1234567").is_none());
+    }
 }
