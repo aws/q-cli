@@ -1,7 +1,6 @@
 use std::io::Write;
 use std::time::Duration;
 
-use cfg_if::cfg_if;
 use eyre::{
     bail,
     eyre,
@@ -9,11 +8,17 @@ use eyre::{
     WrapErr,
 };
 use fig_auth::get_email;
-use fig_ipc::local::send_hook_to_socket;
+use fig_ipc::local::{
+    send_hook_to_socket,
+    update_command,
+};
 use fig_proto::hooks::new_event_hook;
 use fig_request::reqwest::StatusCode;
 use fig_request::Request;
-use fig_settings::ws_host;
+use fig_settings::{
+    settings,
+    ws_host,
+};
 use fig_util::system_info::get_system_id;
 use serde::{
     Deserialize,
@@ -39,6 +44,10 @@ use crate::daemon::scheduler::{
     Scheduler,
     SyncDotfiles,
 };
+use crate::util::{
+    launch_fig,
+    LaunchArgs,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
@@ -58,9 +67,7 @@ enum FigWebsocketMessage {
         apps: Option<Vec<String>>,
     },
     #[serde(rename_all = "camelCase")]
-    Update {
-        force: bool,
-    },
+    TriggerAutoUpdate,
     #[serde(rename_all = "camelCase")]
     QuitDaemon {
         status: Option<i32>,
@@ -199,17 +206,21 @@ pub async fn process_websocket(
                                     send_hook_to_socket(hook).await.ok();
                                 },
                             },
-                            FigWebsocketMessage::Update { force } => {
-                                cfg_if! {
-                                    if #[cfg(target_os = "macos")] {
-                                        if let Err(err) = fig_ipc::local::update_command(force).await {
-                                            error!("Failed to update Fig: {err}");
-                                        }
-                                    } else {
-                                        let _force = force;
-                                        error!("Cannot trigger update on this platform");
-                                    }
+                            FigWebsocketMessage::TriggerAutoUpdate => {
+                                if !settings::get_bool_or("app.disableAutoupdates", false) {
+                                    // trigger forced update. This will QUIT the macOS app, it must be relaunched...
+                                    update_command(true).await.ok();
 
+                                    // Sleep for a bit
+                                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
+
+                                    // Relaunch the app
+                                    launch_fig(LaunchArgs {
+                                        print_running: false,
+                                        print_launching: false,
+                                        wait_for_launch: true,
+                                    })
+                                    .ok();
                                 }
                             },
                             FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),
