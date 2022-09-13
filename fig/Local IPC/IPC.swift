@@ -129,6 +129,9 @@ class IPC: UnixSocketServerDelegate {
       DispatchQueue.main.sync {
         NSApp.appDelegate.uninstall(showDialog: false)
       }
+    case .openBrowser:
+      // Only used on linux
+      break
     case .none:
       break
     }

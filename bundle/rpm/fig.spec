@@ -25,8 +25,10 @@ cp -r %{_builddir}/fig-%{version}-%{release}.$ARCH/ %{buildroot}
 %clean
 rm -rf %{buildroot}
 
-%preun
-fig _ uninstall-for-all-users
+# temporarily disabled as dnf runs this on upgrade as well
+# im having flashbacks to homebrew!
+# %preun
+# fig _ uninstall-for-all-users
 
 %postun
 killall fig_desktop
