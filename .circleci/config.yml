@@ -406,7 +406,7 @@ commands:
             cd desktop
             build-scripts/<< parameters.kind >>.sh
       - store_artifacts:
-          path: desktop/fig.<< parameters.kind >>
+          path: desktop/fig.<< parameters.kind >>.<< parameters.ext >>
           destination: pkg/os=linux,arch=<< parameters.arch >>,kind=<< parameters.kind >>,variant=<< parameters.variant >>
 
   callback:
