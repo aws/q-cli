@@ -67,6 +67,8 @@ pub type EventLoopProxy = WryEventLoopProxy<Event>;
 
 #[tokio::main]
 async fn main() {
+    let cli = cli::Cli::parse();
+
     let _logger_guard = Logger::new()
         .with_stdout()
         .with_file("fig_desktop.log")
@@ -79,8 +81,6 @@ async fn main() {
         1.0,
         true,
     );
-
-    let cli = cli::Cli::parse();
 
     let page = cli.url_link.and_then(|url| {
         let url = Url::parse(&url).unwrap();
