@@ -33,19 +33,23 @@ pub fn init_sentry(
             ..sentry::ClientOptions::default()
         }));
 
-        #[cfg(target_os = "macos")]
-        let terminal = Terminal::parent_terminal().map(|s| s.to_string());
-        #[cfg(not(target_os = "macos"))]
-        let terminal: Option<Terminal> = None;
-
         sentry::configure_scope(|scope| {
             scope.set_user(Some(sentry::User {
                 email: fig_auth::get_email(),
                 ..sentry::User::default()
             }));
 
-            if let Some(terminal) = terminal {
-                scope.set_tag("terminal", terminal);
+            if let Some(terminal) = Terminal::parent_terminal() {
+                scope.set_tag("terminal", terminal.internal_id());
+            }
+
+            scope.set_tag("ssh", fig_util::system_info::in_ssh());
+
+            #[cfg(target_os = "linux")]
+            scope.set_tag("os.wsl", fig_util::system_info::in_wsl());
+
+            if let Some(version) = fig_util::manifest::version() {
+                scope.set_tag("fig.version", version);
             }
         });
 
