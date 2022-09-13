@@ -5,11 +5,6 @@ use eyre::{
     Result,
 };
 use fig_request::Request;
-use fig_util::directories::{
-    parent_socket_path,
-    secure_socket_path,
-};
-use fig_util::gen_hex_string;
 use once_cell::sync::Lazy;
 use regex::Regex;
 use serde::{
@@ -201,48 +196,30 @@ impl SshSubcommand {
             id_matches.into_iter().next().unwrap()
         };
 
-        let apply_connection = |mut command: Command| -> eyre::Result<Command> {
-            command
-                .arg(format!("{}@{}", selected_identity.username, host.ip))
-                .arg("-p")
-                .arg(connection.port().to_string());
-            match selected_identity.authentication_type {
-                AuthenticationType::Path => {
-                    command.arg("-i").arg(selected_identity.path_to_auth.as_ref().unwrap());
-                },
-                AuthenticationType::PrivateKey => {
-                    command
-                        .arg("-i")
-                        .arg(format!("~/.fig/access/{}.pem", selected_identity.remote_id));
-                },
-                AuthenticationType::Password => {},
-                AuthenticationType::Agent => {},
-                AuthenticationType::Other => {
-                    bail!("Unknown authentication type - please update fig!");
-                },
-            }
-            Ok(command)
-        };
+        let mut command = Command::new("ssh");
 
-        apply_connection(Command::new("ssh"))?
-            .arg("mkdir -p /var/tmp/fig/$USER/parent")
-            .status()
-            .await?;
+        command
+            .arg(format!("{}@{}", selected_identity.username, host.ip))
+            .arg("-p")
+            .arg(connection.port().to_string());
 
-        let parent_id = gen_hex_string();
+        match selected_identity.authentication_type {
+            AuthenticationType::Path => {
+                command.arg("-i").arg(selected_identity.path_to_auth.as_ref().unwrap());
+            },
+            AuthenticationType::PrivateKey => {
+                command
+                    .arg("-i")
+                    .arg(format!("~/.fig/access/{}.pem", selected_identity.remote_id));
+            },
+            AuthenticationType::Password => {},
+            AuthenticationType::Agent => {},
+            AuthenticationType::Other => {
+                bail!("Unknown authentication type - please update fig!");
+            },
+        }
 
-        let mut child = apply_connection(Command::new("ssh"))?
-            .arg("-R")
-            .arg(format!(
-                "{}:{}",
-                parent_socket_path(selected_identity.username, &parent_id)?.to_string_lossy(),
-                secure_socket_path()?.to_string_lossy(),
-            ))
-            .arg("-o")
-            .arg(format!("SetEnv FIG_PARENT={parent_id}"))
-            .spawn()?;
-
-        let status = child.wait().await?;
+        let status = command.spawn()?.wait().await?;
 
         if !status.success() {
             if let Some(code) = status.code() {
