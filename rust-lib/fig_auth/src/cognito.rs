@@ -1,5 +1,4 @@
 use std::collections::HashMap;
-use std::env::current_exe;
 use std::fmt::Display;
 use std::fs::{
     self,
@@ -52,7 +51,11 @@ use serde_json::json;
 use thiserror::Error;
 
 use crate::password::generate_password;
-use crate::reqwest_client::CLIENT;
+use crate::reqwest_client::{
+    create_client_config,
+    CLIENT,
+    USER_AGENT,
+};
 use crate::{
     defaults,
     CLIENT_ID,
@@ -85,13 +88,12 @@ const APP_NAME_VALID_SYMBOLS: &str = "!#$%&'*+-.^_`|~";
 
 pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     let https = hyper_rustls::HttpsConnectorBuilder::new()
-        .with_webpki_roots()
+        .with_tls_config(create_client_config())
         .https_only()
         .enable_http1()
         .build();
 
     let hyper_connector = hyper_ext::Adapter::builder().build(https);
-
     let mut client: aws_smithy_client::Client<DynConnector, DynMiddleware<DynConnector>> =
         aws_smithy_client::Builder::new()
             .connector(DynConnector::new(hyper_connector))
@@ -103,16 +105,7 @@ pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     client.set_sleep_impl(None);
     client.set_retry_config(RetryConfig::disabled().into());
 
-    let name = current_exe()
-        .ok()
-        .and_then(|exe| exe.file_stem().and_then(|name| name.to_str().map(String::from)))
-        .unwrap_or_else(|| "rust-client".into());
-
-    let os = std::env::consts::OS;
-    let arch = std::env::consts::ARCH;
-    let version = fig_util::manifest::version().unwrap_or("unknown-version");
-
-    let app_name: std::borrow::Cow<str> = format!("{name}-{os}-{arch}-{version}")
+    let app_name: std::borrow::Cow<str> = USER_AGENT
         .chars()
         .filter(|c| c.is_ascii_alphanumeric() || APP_NAME_VALID_SYMBOLS.contains(*c))
         .collect();

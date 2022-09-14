@@ -14,6 +14,10 @@ pub use defaults::{
     remove_default,
     set_default,
 };
+pub use reqwest_client::{
+    reqwest_client,
+    user_agent,
+};
 pub use thiserror::Error;
 use tokio::time::error::Elapsed;
 
@@ -32,10 +36,6 @@ pub enum Error {
     Defaults(#[from] defaults::DefaultsError),
     #[error("timeout")]
     Timeout(#[from] Elapsed),
-}
-
-pub fn reqwest_client() -> Option<&'static reqwest::Client> {
-    reqwest_client::CLIENT.as_ref()
 }
 
 pub fn logout() -> Result<(), Error> {

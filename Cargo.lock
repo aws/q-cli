@@ -2516,7 +2516,9 @@ dependencies = [
  "once_cell",
  "rand 0.8.5",
  "reqwest",
+ "rustls",
  "rustls-native-certs",
+ "rustls-pemfile 1.0.1",
  "serde",
  "serde_json",
  "thiserror",
@@ -2524,6 +2526,7 @@ dependencies = [
  "tokio",
  "tracing",
  "uuid",
+ "webpki-roots",
 ]
 
 [[package]]

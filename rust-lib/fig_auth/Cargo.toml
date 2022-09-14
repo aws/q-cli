@@ -28,7 +28,9 @@ reqwest = { version = "0.11.11", default-features = false, features = [
   "socks",
   "cookies",
 ] }
+rustls = "0.20.6"
 rustls-native-certs = "0.6.2"
+rustls-pemfile = "1.0.1"
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.85"
 thiserror = "1.0.34"
@@ -36,4 +38,5 @@ time = { version = "0.3.14", features = ["serde-human-readable", "local-offset",
 tokio = { version = "1.20.1", features = ["time"] }
 tracing = "0.1.36"
 uuid = { version = "1.1.2", features = ["v4"] }
+webpki-roots = "0.22.4"
 
