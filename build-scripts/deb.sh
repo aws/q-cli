@@ -18,7 +18,7 @@ else
     cp bundle/deb/control_headless build/DEBIAN/control
 fi
 cp bundle/deb/prerm build/DEBIAN/prerm
-cp bundle/deb/prerm build/DEBIAN/postrm
+cp bundle/deb/postrm build/DEBIAN/postrm
 cp bundle/deb/postinst build/DEBIAN/postinst
 sed -i "s/^Version:.*/Version: ${VERSION}/" build/DEBIAN/control
 chmod 755 build/DEBIAN/prerm
