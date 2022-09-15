@@ -751,7 +751,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       NSWorkspace.shared.open(
         URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +
-            "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")")!)
+            "version=\(Diagnostic.distribution.addingPercentEncoding(withAllowedCharacters: .urlQueryAllowed) ?? "")&channel=\(Defaults.shared.beta ? "beta" : "prod")")!)
       LoginItems.shared.removeAllItemsMatchingBundleURL()
 
       let domain = Bundle.main.bundleIdentifier!
