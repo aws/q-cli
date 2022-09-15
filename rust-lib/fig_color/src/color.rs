@@ -1,7 +1,3 @@
-// note(mia): this is hand-transpiled c code, which is why it looks so messy
-// if you want to make it better, be my guest
-#![allow(non_camel_case_types, non_upper_case_globals)]
-
 #[derive(Clone)]
 pub enum VTermColor {
     Rgb { red: u8, green: u8, blue: u8 },
@@ -16,10 +12,12 @@ pub fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
     VTermColor::Rgb { red, green, blue }
 }
 
-pub const color_support_term256: u32 = 1 << 1;
-pub const color_support_term24bit: u32 = 1 << 2;
-
-pub type color_support_t = u32;
+bitflags::bitflags! {
+    pub struct ColorSupport: u32 {
+        const TERM256 = 1 << 1;
+        const TERM24BIT = 1 << 2;
+    }
+}
 
 #[derive(Clone)]
 pub struct SuggestionColor {
@@ -41,13 +39,16 @@ pub struct Color {
 }
 
 pub fn bool_from_string(x: &str) -> bool {
-    "YTyt1".contains(x.chars().next().unwrap())
+    match x.chars().next() {
+        Some(first) => "YTyt1".contains(first),
+        None => false,
+    }
 }
 
 // don't want to deviate too much from original logic
 #[allow(clippy::if_same_then_else)]
 // Updates our idea of whether we support term256 and term24bit (see issue #10222).
-pub fn get_color_support() -> color_support_t {
+pub fn get_color_support() -> ColorSupport {
     // Detect or infer term256 support. If fish_term256 is set, we respect it;
     // otherwise infer it from the TERM variable or use terminfo.
     let mut support_term256 = false;
@@ -84,9 +85,9 @@ pub fn get_color_support() -> color_support_t {
         // Screen and emacs' ansi-term swallow truecolor sequences,
         // so we ignore them unless force-enabled.
         support_term24bit = false;
-    } else if ct.is_some() {
+    } else if let Some(ct) = ct {
         // If someone set $COLORTERM, that's the sort of color they want.
-        if ct.as_ref().unwrap() == "truecolor" || ct.as_ref().unwrap() == "24bit" {
+        if ct == "truecolor" || ct == "24bit" {
             support_term24bit = true;
         }
     } else if std::env::var("KONSOLE_VERSION").is_ok() || std::env::var("KONSOLE_PROFILE_NAME").is_ok() {
@@ -106,14 +107,14 @@ pub fn get_color_support() -> color_support_t {
         support_term24bit = true;
     }
 
-    let mut support = 0;
+    let mut support = ColorSupport::empty();
 
     if support_term256 {
-        support |= color_support_term256;
+        support |= ColorSupport::TERM256;
     }
 
     if support_term24bit {
-        support |= color_support_term24bit;
+        support |= ColorSupport::TERM24BIT;
     }
 
     support
@@ -213,7 +214,7 @@ fn try_parse_rgb(name: &str) -> Option<Color> {
     }
 }
 
-struct named_color_t {
+struct NamedColor {
     name: &'static str,
     idx: u8,
     _rgb: [u8; 3],
@@ -223,7 +224,7 @@ macro_rules! decl_named_colors {
     ($({$name: expr, $idx: expr, { $r: expr, $g: expr, $b: expr }}),*,) => {
         &[
             $(
-                named_color_t {
+                NamedColor {
                     name: $name,
                     idx: $idx,
                     _rgb: [$r, $g, $b],
@@ -234,7 +235,7 @@ macro_rules! decl_named_colors {
 }
 
 // Keep this sorted alphabetically
-static named_colors: &[named_color_t] = decl_named_colors! {
+static NAMED_COLORS: &[NamedColor] = decl_named_colors! {
     {"black", 0, {0x00, 0x00, 0x00}},      {"blue", 4, {0x00, 0x00, 0x80}},
     {"brblack", 8, {0x80, 0x80, 0x80}},    {"brblue", 12, {0x00, 0x00, 0xFF}},
     {"brbrown", 11, {0xFF, 0xFF, 0x00}},    {"brcyan", 14, {0x00, 0xFF, 0xFF}},
@@ -252,11 +253,11 @@ fn find_named_color(l: i32, r: i32, x: &str) -> i32 {
     if r >= l {
         let mid = l + (r - l) / 2;
 
-        if simple_icase_compare(named_colors[mid as usize].name, x) == 0 {
+        if simple_icase_compare(NAMED_COLORS[mid as usize].name, x) == 0 {
             return mid;
         }
 
-        if simple_icase_compare(named_colors[mid as usize].name, x) > 0 {
+        if simple_icase_compare(NAMED_COLORS[mid as usize].name, x) > 0 {
             return find_named_color(l, mid - 1, x);
         }
 
@@ -266,21 +267,20 @@ fn find_named_color(l: i32, r: i32, x: &str) -> i32 {
     -1
 }
 
-fn try_parse_named(r#str: &str) -> Option<Color> {
-    let idx = find_named_color(0, named_colors.len() as i32, r#str);
-    if idx != -1 && simple_icase_compare(named_colors[idx as usize].name, r#str) == 0 {
+fn try_parse_named(s: &str) -> Option<Color> {
+    let idx = find_named_color(0, NAMED_COLORS.len() as i32, s);
+    if idx != -1 && simple_icase_compare(NAMED_COLORS[idx as usize].name, s) == 0 {
         return Some(Color {
             r#type: ColorType::Named,
-            name_idx: named_colors[idx as usize].idx,
+            name_idx: NAMED_COLORS[idx as usize].idx,
             rgb: [0, 0, 0],
         });
     }
-
     None
 }
 
 pub fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
-    const kColors: &[u32] = &[
+    const K_COLORS: &[u32] = &[
         0x000000, // Black
         0x800000, // Red
         0x008000, // Green
@@ -298,11 +298,11 @@ pub fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
         0x00ffff, // Bright Cyan
         0xffffff, // Bright White
     ];
-    convert_color(rgb, kColors)
+    convert_color(rgb, K_COLORS)
 }
 
 pub fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
-    const kColors: &[u32] = &[
+    const K_COLORS: &[u32] = &[
         0x000000, 0x00005f, 0x000087, 0x0000af, 0x0000d7, 0x0000ff, 0x005f00, 0x005f5f, 0x005f87, 0x005faf, 0x005fd7,
         0x005fff, 0x008700, 0x00875f, 0x008787, 0x0087af, 0x0087d7, 0x0087ff, 0x00af00, 0x00af5f, 0x00af87, 0x00afaf,
         0x00afd7, 0x00afff, 0x00d700, 0x00d75f, 0x00d787, 0x00d7af, 0x00d7d7, 0x00d7ff, 0x00ff00, 0x00ff5f, 0x00ff87,
@@ -326,14 +326,14 @@ pub fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
         0x303030, 0x3a3a3a, 0x444444, 0x4e4e4e, 0x585858, 0x626262, 0x6c6c6c, 0x767676, 0x808080, 0x8a8a8a, 0x949494,
         0x9e9e9e, 0xa8a8a8, 0xb2b2b2, 0xbcbcbc, 0xc6c6c6, 0xd0d0d0, 0xdadada, 0xe4e4e4, 0xeeeeee,
     ];
-    16 + convert_color(rgb, kColors)
+    16 + convert_color(rgb, K_COLORS)
 }
 
-pub fn parse_fish_color_from_string(r#str: &str, color_support: color_support_t) -> Option<Color> {
+pub fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Option<Color> {
     let mut first_rgb = None;
     let mut first_named = None;
 
-    for color_name in r#str.to_string().split(|x| x == ' ' || x == '\t') {
+    for color_name in s.to_string().split(|x| x == ' ' || x == '\t') {
         if color_name.starts_with('-') {
             let color = try_parse_named(color_name);
             if let Some(color) = color {
@@ -346,18 +346,18 @@ pub fn parse_fish_color_from_string(r#str: &str, color_support: color_support_t)
         }
     }
 
-    if (first_rgb.is_some() && color_support & color_support_term256 > 0) || first_named.is_none() {
+    if (first_rgb.is_some() && color_support.contains(ColorSupport::TERM256)) || first_named.is_none() {
         return first_rgb;
     }
     first_named
 }
 
-pub fn color_to_vterm_color(c: Option<Color>, color_support: color_support_t) -> Option<VTermColor> {
+pub fn color_to_vterm_color(c: Option<Color>, color_support: ColorSupport) -> Option<VTermColor> {
     let c = c?;
     if c.r#type == ColorType::Rgb {
-        if color_support & color_support_term24bit > 0 {
+        if color_support.contains(ColorSupport::TERM24BIT) {
             Some(vterm_color_rgb(c.rgb[0], c.rgb[1], c.rgb[2]))
-        } else if color_support & color_support_term256 > 0 {
+        } else if color_support.contains(ColorSupport::TERM256) {
             Some(vterm_color_indexed(term256_color_for_rgb(c.rgb)))
         } else {
             Some(vterm_color_indexed(term16_color_for_rgb(c.rgb)))
@@ -367,16 +367,16 @@ pub fn color_to_vterm_color(c: Option<Color>, color_support: color_support_t) ->
     }
 }
 
-pub fn parse_suggestion_color_fish(r#str: &str, color_support: color_support_t) -> Option<SuggestionColor> {
-    let c = parse_fish_color_from_string(r#str, color_support);
+pub fn parse_suggestion_color_fish(s: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
+    let c = parse_fish_color_from_string(s, color_support);
     let vc = color_to_vterm_color(c, color_support)?;
     Some(SuggestionColor { fg: Some(vc), bg: None })
 }
 
-pub fn parse_suggestion_color_zsh_autosuggest(r#str: &str, color_support: color_support_t) -> Option<SuggestionColor> {
+pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
     let mut sc = SuggestionColor { fg: None, bg: None };
 
-    for mut color_name in r#str.to_string().split(',') {
+    for mut color_name in s.to_string().split(',') {
         let is_fg = color_name.starts_with("fg=");
         let is_bg = color_name.starts_with("bg=");
         if is_fg || is_bg {
@@ -393,7 +393,11 @@ pub fn parse_suggestion_color_zsh_autosuggest(r#str: &str, color_support: color_
             if color.is_none() {
                 // custom zsh logic - try 256 indexed colors first.
                 let index = color_name.parse::<u64>().unwrap_or(0);
-                let index_supported = if color_support == 0 { index < 16 } else { index < 256 };
+                let index_supported = if color_support.is_empty() {
+                    index < 16
+                } else {
+                    index < 256
+                };
                 if index_supported {
                     let vc = vterm_color_indexed(index as u8);
                     if is_fg {
@@ -419,6 +423,11 @@ pub fn parse_suggestion_color_zsh_autosuggest(r#str: &str, color_support: color_
 #[cfg(test)]
 mod test {
     use super::*;
+
+    #[test]
+    fn color_support() {
+        get_color_support();
+    }
 
     #[test]
     fn parse_color() {

@@ -1,23 +1,15 @@
-//! A safe wrapper for the old figterm `color.c`
+//! Parsing for terminal color
+
+// todos:
+// - More test coverage
+// - Combining color.rs and lib.rs
+// - Moving this whole crate into alacritty_terminal
 
 mod color;
 
 use std::fmt::Debug;
 
-use bitflags::bitflags;
-
-bitflags! {
-    pub struct ColorSupport: u32 {
-        const TERM256   = 0b0000_0000_0000_0000_0001;
-        const TERM24BIT = 0b0000_0000_0000_0000_0010;
-    }
-}
-
-impl From<ColorSupport> for color::color_support_t {
-    fn from(val: ColorSupport) -> Self {
-        val.bits
-    }
-}
+pub use color::ColorSupport;
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq)]
 pub enum VTermColor {
@@ -59,12 +51,11 @@ impl Debug for SuggestionColor {
 }
 
 pub fn get_color_support() -> ColorSupport {
-    let color_support = color::get_color_support();
-    ColorSupport::from_bits_truncate(color_support)
+    color::get_color_support()
 }
 
 pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
-    let inner = color::parse_suggestion_color_fish(suggestion_str, color_support.into());
+    let inner = color::parse_suggestion_color_fish(suggestion_str, color_support);
     inner.map(|inner| SuggestionColor { inner })
 }
 
@@ -72,6 +63,6 @@ pub fn parse_suggestion_color_zsh_autosuggest(
     suggestion_str: &str,
     color_support: ColorSupport,
 ) -> Option<SuggestionColor> {
-    let inner = color::parse_suggestion_color_zsh_autosuggest(suggestion_str, color_support.into());
+    let inner = color::parse_suggestion_color_zsh_autosuggest(suggestion_str, color_support);
     inner.map(|inner| SuggestionColor { inner })
 }
