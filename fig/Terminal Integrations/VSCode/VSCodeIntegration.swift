@@ -23,6 +23,11 @@ class VSCodeIntegration: TerminalIntegrationProvider {
                                           applicationSupportFolderName: "VSCodium",
                                           applicationName: "VSCodium",
                                           cliExecutableName: "codium")
+  static let vscodiumLegacy = VSCodeIntegration(bundleIdentifier: Integrations.VSCodiumLegacy,
+                                          configFolderName: ".vscode-oss",
+                                          applicationSupportFolderName: "VSCodium",
+                                          applicationName: "VSCodium",
+                                          cliExecutableName: "codium")
 
   static let supportURL: URL = URL(string: "https://fig.io/docs/support/vscode-integration")!
 

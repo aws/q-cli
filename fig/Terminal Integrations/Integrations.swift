@@ -15,7 +15,8 @@ class Integrations {
   static let Hyper = "co.zeit.hyper"
   static let VSCode = "com.microsoft.VSCode"
   static let VSCodeInsiders = "com.microsoft.VSCodeInsiders"
-  static let VSCodium = "com.visualstudio.code.oss"
+  static let VSCodiumLegacy = "com.visualstudio.code.oss"
+  static let VSCodium = "com.vscodium"
   static let Kitty = "net.kovidgoyal.kitty"
   static let Alacritty = "io.alacritty"
   static let Tabby = "org.tabby"
@@ -74,7 +75,7 @@ class Integrations {
   ]
   static let inputMethodDependentTerminals: Set = jetbrainsIDEs.union([Alacritty, Kitty, Nova, WezTerm])
 
-  static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium]
+  static let electronIDEs: Set = [VSCode, VSCodeInsiders, VSCodium, VSCodiumLegacy]
   static var electronTerminals: Set<String> {
     let additions = Set(
       Settings.shared.getValue(forKey: Settings.additionalElectronTerminalsKey) as? [String] ?? [])
@@ -155,6 +156,7 @@ class Integrations {
     Integrations.VSCode: VSCodeIntegration.default,
     Integrations.VSCodeInsiders: VSCodeIntegration.insiders,
     Integrations.VSCodium: VSCodeIntegration.vscodium,
+    Integrations.VSCodiumLegacy: VSCodeIntegration.vscodiumLegacy,
     Integrations.Terminal: AppleTerminalIntegration.default,
     Integrations.Tabby: TabbyIntegration.default
   ]

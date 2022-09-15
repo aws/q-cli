@@ -189,7 +189,7 @@ extension ShellHookManager {
           }
 
           let VSCodeTerminal =
-            [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium].contains(
+          [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium, Integrations.VSCodiumLegacy].contains(
               window.bundleId) && id.hasPrefix("code:")
           let hyperTab = window.bundleId == Integrations.Hyper && id.hasPrefix("hyper:")
           let iTermTab =
@@ -213,7 +213,7 @@ extension ShellHookManager {
         // todo(mschrage): remove codepath for handling legacy VSCode extension
         // that does not distinguish which type of VSCode instance is running
         let codeTerminal =
-          [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium]
+          [Integrations.VSCode, Integrations.VSCodeInsiders, Integrations.VSCodium, Integrations.VSCodiumLegacy]
           .contains(window.bundleId)
           && applicationIdentifier == "code"
 
