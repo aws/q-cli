@@ -120,31 +120,6 @@ pub fn get_color_support() -> ColorSupport {
     support
 }
 
-// don't want to deviate too much from original logic
-#[allow(clippy::comparison_chain)]
-pub fn simple_icase_compare(s1: &str, s2: &str) -> i32 {
-    if s1.len() < s2.len() {
-        return -1;
-    } else if s1.len() > s2.len() {
-        return 1;
-    }
-
-    for (c1, c2) in s1.chars().zip(s1.chars()) {
-        let c1 = c1.to_ascii_lowercase();
-        let c2 = c2.to_ascii_lowercase();
-
-        if c1 != c2 {
-            if c1 < c2 {
-                return -1;
-            } else {
-                return 1;
-            }
-        }
-    }
-
-    0
-}
-
 fn squared_difference(p1: i64, p2: i64) -> u64 {
     let diff = (p1 - p2).unsigned_abs();
     diff * diff
@@ -249,27 +224,9 @@ static NAMED_COLORS: &[NamedColor] = decl_named_colors! {
     {"white", 7, {0xC0, 0xC0, 0xC0}},      {"yellow", 3, {0x80, 0x80, 0x00}},
 };
 
-fn find_named_color(l: i32, r: i32, x: &str) -> i32 {
-    if r >= l {
-        let mid = l + (r - l) / 2;
-
-        if simple_icase_compare(NAMED_COLORS[mid as usize].name, x) == 0 {
-            return mid;
-        }
-
-        if simple_icase_compare(NAMED_COLORS[mid as usize].name, x) > 0 {
-            return find_named_color(l, mid - 1, x);
-        }
-
-        return find_named_color(mid + 1, r, x);
-    }
-
-    -1
-}
-
 fn try_parse_named(s: &str) -> Option<Color> {
-    let idx = find_named_color(0, NAMED_COLORS.len() as i32, s);
-    if idx != -1 && simple_icase_compare(NAMED_COLORS[idx as usize].name, s) == 0 {
+    let idx_res = NAMED_COLORS.binary_search_by(|elem| elem.name.cmp(&s.to_ascii_lowercase()));
+    if let Ok(idx) = idx_res {
         return Some(Color {
             r#type: ColorType::Named,
             name_idx: NAMED_COLORS[idx as usize].idx,
@@ -430,7 +387,15 @@ mod test {
     }
 
     #[test]
+    fn assert_named_colors_sort() {
+        NAMED_COLORS
+            .windows(2)
+            .for_each(|elems| assert!(elems[0].name.cmp(elems[1].name).is_lt()));
+    }
+
+    #[test]
     fn parse_color() {
+        // parse_rgb
         // Should parse
         assert!(try_parse_rgb("#ffffff").is_some());
         assert!(try_parse_rgb("#000000").is_some());
@@ -452,5 +417,18 @@ mod test {
         assert!(try_parse_rgb("#ffff").is_none());
         assert!(try_parse_rgb("12345").is_none());
         assert!(try_parse_rgb("1234567").is_none());
+
+        // parse_named
+        // Should parse
+        assert!(try_parse_named("blue").is_some());
+        assert!(try_parse_named("white").is_some());
+        assert!(try_parse_named("yellow").is_some());
+        assert!(try_parse_named("brblack").is_some());
+        assert!(try_parse_named("BrBlue").is_some());
+        assert!(try_parse_named("bRYelLow").is_some());
+
+        assert!(try_parse_named("aaa").is_none());
+        assert!(try_parse_named("blu").is_none());
+        assert!(try_parse_named("other").is_none());
     }
 }
