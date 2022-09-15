@@ -2,13 +2,8 @@ use super::constants::Constants;
 
 pub fn javascript_init() -> String {
     vec![
-        "if (!window.fig) {\n\
-            window.fig = {}\n\
-        }\n\
-        if (!window.fig.constants) {\n\
-            fig.constants = {}\n\
-        }\n"
-        .into(),
+        "if (!window.fig) window.fig = {};".into(),
+        "if (!window.fig.constants) fig.constants = {};".into(),
         Constants::default().script(),
         r#"console.log("[fig] declaring constants...");"#.into(),
     ]

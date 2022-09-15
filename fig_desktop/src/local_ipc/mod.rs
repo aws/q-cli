@@ -82,7 +82,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<Nati
                         use fig_proto::local::command::Command::*;
 
                         match command {
-                            DebugMode(command) => commands::debug(command).await,
+                            DebugMode(command) => commands::debug(command, &proxy).await,
                             OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
                             Quit(command) => commands::quit(command, &proxy).await,
                             Diagnostics(command) => commands::diagnostic(command).await,

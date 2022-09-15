@@ -140,7 +140,8 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
-    #[cfg(target_os = "windows")]
+    // todo(grant): is there a reason why we don't send this event on linux?
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     proxy.send_event(Event::NativeEvent(crate::event::NativeEvent::EditBufferChanged))?;
 
     proxy.send_event(Event::WindowEvent {

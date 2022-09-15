@@ -71,7 +71,7 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
                                         proxy
                                             .send_event(Event::WindowEvent {
                                                 window_id: AUTOCOMPLETE_ID.clone(),
-                                                window_event: WindowEvent::Reposition {
+                                                window_event: WindowEvent::PositionAbsolute {
                                                     x: body.0,
                                                     y: body.1 + body.3,
                                                 },
@@ -118,7 +118,7 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
                                     proxy
                                         .send_event(Event::WindowEvent {
                                             window_id: AUTOCOMPLETE_ID.clone(),
-                                            window_event: WindowEvent::Reposition {
+                                            window_event: WindowEvent::PositionAbsolute {
                                                 x: abs.0,
                                                 y: abs.1 + body.3,
                                             },
@@ -136,6 +136,7 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
                 },
                 Err(err) => {
                     error!(%err, "Failed receiving message from stream");
+                    break;
                 },
             }
         }

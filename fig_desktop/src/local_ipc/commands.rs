@@ -11,6 +11,7 @@ use fig_proto::local::{
     UiElement,
     UpdateCommand,
 };
+use parking_lot::Mutex;
 use tracing::error;
 use wry::application::event_loop::ControlFlow;
 
@@ -25,10 +26,36 @@ use crate::event::{
 use crate::{
     native,
     EventLoopProxy,
+    AUTOCOMPLETE_ID,
     MISSION_CONTROL_ID,
 };
-pub async fn debug(_: DebugModeCommand) -> LocalResult {
-    todo!()
+
+pub async fn debug(command: DebugModeCommand, proxy: &EventLoopProxy) -> LocalResult {
+    static DEBUG_MODE: Mutex<bool> = Mutex::new(false);
+
+    let debug_mode = match command.set_debug_mode {
+        Some(b) => {
+            *DEBUG_MODE.lock() = b;
+            b
+        },
+        None => match command.toggle_debug_mode {
+            Some(true) => {
+                let mut locked_debug = DEBUG_MODE.lock();
+                *locked_debug = !*locked_debug;
+                *locked_debug
+            },
+            _ => *DEBUG_MODE.lock(),
+        },
+    };
+
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID.clone(),
+            window_event: WindowEvent::DebugMode(debug_mode),
+        })
+        .unwrap();
+
+    Ok(LocalResponse::Success(None))
 }
 
 pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
@@ -54,8 +81,8 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: MISSION_CONTROL_ID.clone(),
-                    window_event: WindowEvent::Navigate {
-                        url: url::Url::parse("https://desktop.fig.io/settings/general/application").unwrap(),
+                    window_event: WindowEvent::NatigateRelative {
+                        path: "/settings/general/application".into(),
                     },
                 })
                 .unwrap();
@@ -67,14 +94,11 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
                 .unwrap();
         },
         UiElement::MissionControl => {
-            if let Some(route) = command.route {
-                let mut url = url::Url::parse("https://desktop.fig.io").unwrap();
-                url.set_path(&route);
-
+            if let Some(path) = command.route {
                 proxy
                     .send_event(Event::WindowEvent {
                         window_id: MISSION_CONTROL_ID.clone(),
-                        window_event: WindowEvent::Navigate { url },
+                        window_event: WindowEvent::NatigateRelative { path },
                     })
                     .unwrap();
             }

@@ -6,13 +6,18 @@ use anyhow::{
 };
 use macos_accessibility_position::mac::caret::caret_position::CaretPosition;
 use macos_accessibility_position::mac::caret::get_caret_position;
-use macos_accessibility_position::register_observer;
+use macos_accessibility_position::{
+    get_active_window,
+    register_observer,
+};
 use once_cell::sync::Lazy;
 use parking_lot::RwLock;
 
+use super::WindowGeometry;
 use crate::event::{
     Event,
     NativeEvent,
+    RelativeDirection,
     WindowEvent,
 };
 use crate::webview::window::WindowId;
@@ -21,6 +26,7 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
+pub const DEFAULT_CARET_WIDTH: i32 = 10;
 pub const SHELL: &str = "/bin/bash";
 
 #[derive(Debug, Default)]
@@ -35,7 +41,25 @@ impl NativeState {
         match event {
             NativeEvent::EditBufferChanged => unsafe {
                 let caret_position: CaretPosition = get_caret_position(true);
+                let is_above = match self.get_window_geometry() {
+                    Some(window_frame) => {
+                        window_frame.y + window_frame.height
+                            < (caret_position.y as i32)
+                                + (caret_position.height as i32)
+                                + fig_settings::settings::get_int_or("autocomplete.height", 140) as i32
+                    },
+                    None => false,
+                };
+
                 if caret_position.valid {
+                    let x = (caret_position.x * 2.0) as i32;
+                    let y = (caret_position.y * 2.0) as i32;
+                    let height = caret_position.height as i32 * 2;
+
+                    let direction = match is_above {
+                        true => RelativeDirection::Above,
+                        false => RelativeDirection::Below,
+                    };
                     UNMANAGED
                         .event_sender
                         .read()
@@ -43,9 +67,12 @@ impl NativeState {
                         .unwrap()
                         .send_event(Event::WindowEvent {
                             window_id: AUTOCOMPLETE_ID,
-                            window_event: WindowEvent::Reposition {
-                                x: ((caret_position.x + 5.0) * 2.0) as i32,
-                                y: ((caret_position.y + caret_position.height) * 2.0) as i32,
+                            window_event: WindowEvent::PositionRelativeToRect {
+                                x,
+                                y,
+                                width: DEFAULT_CARET_WIDTH,
+                                height,
+                                direction,
                             },
                         })
                         .ok();
@@ -56,7 +83,15 @@ impl NativeState {
     }
 
     pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
-        None
+        match get_active_window() {
+            Some(window) => Some(WindowGeometry {
+                x: window.position.x as i32,
+                y: window.position.y as i32,
+                width: window.position.height as i32,
+                height: window.position.height as i32,
+            }),
+            None => None,
+        }
     }
 
     pub fn position_window(&self, _window_id: &WindowId, _x: i32, _y: i32, fallback: impl FnOnce()) {

@@ -74,8 +74,7 @@ impl NativeState {
                 .lock()
                 .as_ref()
                 .and_then(|window| window.window_geometry.clone()),
-            Some(DisplayServerState::Sway(_)) => None,
-            None => None,
+            _ => None,
         }
     }
 

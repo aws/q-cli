@@ -14,13 +14,55 @@ pub enum Event {
     NativeEvent(NativeEvent),
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum RelativeDirection {
+    Above,
+    Below,
+}
+
+#[derive(Debug, Clone, Copy)]
+pub struct Rect {
+    pub x: i32,
+    pub y: i32,
+    pub width: i32,
+    pub height: i32,
+}
+
+impl Rect {
+    #[allow(dead_code)]
+    pub fn max_x(&self) -> i32 {
+        self.x + self.width
+    }
+
+    pub fn max_y(&self) -> i32 {
+        self.y + self.height
+    }
+}
+
+#[derive(Debug, Clone, Copy)]
+pub enum Placement {
+    Absolute,
+    RelativeTo((Rect, RelativeDirection)),
+}
+
 #[derive(Debug)]
 pub enum WindowEvent {
     Reanchor {
         x: i32,
         y: i32,
     },
-    Reposition {
+    PositionRelativeToRect {
+        /// x position of cursor
+        x: i32,
+        /// y position of cursor
+        y: i32,
+        /// width of cursor
+        width: i32,
+        /// height of cursor
+        height: i32,
+        direction: RelativeDirection,
+    },
+    PositionAbsolute {
         x: i32,
         y: i32,
     },
@@ -37,13 +79,18 @@ pub enum WindowEvent {
         event: String,
         payload: String,
     },
-    Navigate {
+    NatigateRelative {
+        path: String,
+    },
+    NavigateAbsolute {
         url: url::Url,
     },
     Api {
+        /// A base64 encoded protobuf
         payload: String,
     },
     Devtools,
+    DebugMode(bool),
 }
 
 #[derive(Debug)]

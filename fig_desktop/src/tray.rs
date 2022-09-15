@@ -3,7 +3,6 @@ use tracing::{
     error,
     trace,
 };
-use url::Url;
 use wry::application::event_loop::ControlFlow;
 use wry::application::menu::{
     ContextMenu,
@@ -64,8 +63,8 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: MISSION_CONTROL_ID,
-                    window_event: WindowEvent::Navigate {
-                        url: Url::parse("https://desktop.fig.io/settings").unwrap(),
+                    window_event: WindowEvent::NatigateRelative {
+                        path: "/settings".into(),
                     },
                 })
                 .unwrap();

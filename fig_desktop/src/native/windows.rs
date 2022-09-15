@@ -61,6 +61,7 @@ use windows::Win32::UI::WindowsAndMessaging::{
 use crate::event::{
     Event,
     NativeEvent,
+    RelativeDirection,
     WindowEvent,
 };
 use crate::webview::window::WindowId;
@@ -153,12 +154,16 @@ impl NativeState {
 
                         if elements_len > 0 {
                             let bounds = *elements;
+                            let height = bounds.top - bounds.bottom;
 
                             self.proxy.send_event(Event::WindowEvent {
                                 window_id: AUTOCOMPLETE_ID,
-                                window_event: WindowEvent::Reposition {
+                                window_event: WindowEvent::PositionRelativeToRect {
                                     x: bounds.left,
-                                    y: bounds.bottom,
+                                    y: bounds.bottom - height,
+                                    width: bounds.right - bounds.left,
+                                    height,
+                                    direction: RelativeDirection::Below,
                                 },
                             })?;
 
@@ -167,10 +172,16 @@ impl NativeState {
                             Err(anyhow!("Failed to acquire caret position"))
                         }
                     },
-                    ConsoleState::Accessible { caret_x, caret_y } => {
+                    ConsoleState::Accessible { x, y, width, height } => {
                         self.proxy.send_event(Event::WindowEvent {
                             window_id: AUTOCOMPLETE_ID,
-                            window_event: WindowEvent::Reposition { x: caret_x, y: caret_y },
+                            window_event: WindowEvent::PositionRelativeToRect {
+                                x,
+                                y,
+                                width,
+                                height,
+                                direction: RelativeDirection::Below,
+                            },
                         })?;
 
                         Ok(())
@@ -193,7 +204,7 @@ impl NativeState {
 enum ConsoleState {
     None,
     Console { hwnd: HWND },
-    Accessible { caret_x: i32, caret_y: i32 },
+    Accessible { x: i32, y: i32, width: i32, height: i32 },
 }
 
 struct Unmanaged {
@@ -318,8 +329,6 @@ unsafe fn update_focused_state(hwnd: HWND) {
         Err(_) => return,
     };
 
-    println!("title: {title}");
-
     match title {
         title if ["Hyper", "Code", "Code - Insiders"].contains(&title) => (),
         title
@@ -398,8 +407,10 @@ unsafe extern "system" fn win_event_proc(
                         .is_ok()
                     {
                         UNMANAGED.lock().console_state = ConsoleState::Accessible {
-                            caret_x: left,
-                            caret_y: top + height,
+                            x: left,
+                            y: top,
+                            width,
+                            height,
                         }
                     }
                 }

@@ -5,6 +5,7 @@ use fig_proto::fig::{
     PositionWindowResponse,
     WindowFocusRequest,
 };
+use tracing::debug;
 
 use super::{
     RequestResult,
@@ -25,6 +26,7 @@ pub async fn position_window(
     native_state: &NativeState,
     proxy: &EventLoopProxy,
 ) -> RequestResult {
+    debug!(?request, %window_id, "Position Window Request");
     if request.dryrun.unwrap_or(false) {
         match native_state.get_window_geometry() {
             Some(_) => {
@@ -101,6 +103,7 @@ pub async fn position_window(
 }
 
 pub async fn focus(request: WindowFocusRequest, window_id: WindowId, proxy: &EventLoopProxy) -> RequestResult {
+    debug!(?request, %window_id, "Window Focus Request");
     match request.r#type() {
         FocusAction::TakeFocus => {
             proxy
