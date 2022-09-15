@@ -105,7 +105,7 @@ impl Style {
 
     field!(with_border_top_width, border_top_width, i32, 0);
 
-    field!(with_color, color, Color, Color::White);
+    field!(with_color, color, Color, Color::Reset);
 
     field!(with_margin_bottom, margin_bottom, i32, 0);
 

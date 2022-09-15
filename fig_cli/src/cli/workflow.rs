@@ -14,10 +14,6 @@ use std::rc::Rc;
 use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::style::Stylize;
-use crossterm::{
-    cursor,
-    execute,
-};
 use eyre::{
     bail,
     eyre,
@@ -194,11 +190,9 @@ impl SkimItem for WorkflowAction {
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Get workflows early
-    execute!(std::io::stdout(), cursor::Hide)?;
-    let mut spinner = Spinner::new(Spinners::Dots, "Getting workflows...".to_owned());
+    let mut spinner = Spinner::new(Spinners::Dots, "Getting workflows... ".to_owned());
     let mut workflows = workflows().await?;
     spinner.stop_with_message(String::new());
-    execute!(std::io::stdout(), cursor::Show)?;
 
     // Parse args
     let workflow_name = env_args.first().map(String::from);
@@ -424,11 +418,11 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             };
         },
         "*:focus" => {
-            color: Color::White;
-            border_left_color: Color::White;
-            border_right_color: Color::White;
-            border_top_color: Color::White;
-            border_bottom_color: Color::White;
+            color: Color::DarkYellow;
+            border_left_color: Color::DarkYellow;
+            border_right_color: Color::DarkYellow;
+            border_top_color: Color::DarkYellow;
+            border_bottom_color: Color::DarkYellow;
             border_style: BorderStyle::Ascii {
                 top_left: '┏',
                 top: '━',
@@ -496,7 +490,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             if let Some(description) = &workflow.description {
                 if !description.is_empty() {
                     header.push_line_break();
-                    header.push_styled_text(description, Some(Color::Grey), None, false);
+                    header.push_styled_text(description, Some(Color::DarkYellow), None, false);
                 }
             }
 
@@ -630,25 +624,16 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
             let mut keybindings = Paragraph::new();
 
-            keybindings.push_styled_text("enter", Some(Color::Grey), None, false);
-
-            keybindings.push_styled_text(" select • ", Some(Color::DarkGrey), None, false);
-
-            keybindings.push_styled_text("tab", Some(Color::Grey), None, false);
-
-            keybindings.push_styled_text(" next • ", Some(Color::DarkGrey), None, false);
-
-            keybindings.push_styled_text("shift+tab", Some(Color::Grey), None, false);
-
-            keybindings.push_styled_text(" previous • ", Some(Color::DarkGrey), None, false);
-
-            keybindings.push_styled_text("⎵", Some(Color::Grey), None, false);
-
-            keybindings.push_styled_text(" toggle • ", Some(Color::DarkGrey), None, false);
-
-            keybindings.push_styled_text("⌃o", Some(Color::Grey), None, false);
-
-            keybindings.push_styled_text(" preview", Some(Color::DarkGrey), None, false);
+            keybindings.push_styled_text("enter", Some(Color::DarkYellow), None, false);
+            keybindings.push_styled_text(" select • ", Some(Color::Reset), None, false);
+            keybindings.push_styled_text("tab", Some(Color::DarkYellow), None, false);
+            keybindings.push_styled_text(" next • ", Some(Color::Reset), None, false);
+            keybindings.push_styled_text("shift+tab", Some(Color::DarkYellow), None, false);
+            keybindings.push_styled_text(" previous • ", Some(Color::Reset), None, false);
+            keybindings.push_styled_text("⎵", Some(Color::DarkYellow), None, false);
+            keybindings.push_styled_text(" toggle • ", Some(Color::Reset), None, false);
+            keybindings.push_styled_text("⌃o", Some(Color::DarkYellow), None, false);
+            keybindings.push_styled_text(" preview", Some(Color::Reset), None, false);
 
             components.push(Component::from(keybindings).with_margin_left(0).with_width(110));
 

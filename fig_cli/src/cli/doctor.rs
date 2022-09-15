@@ -199,17 +199,6 @@ macro_rules! doctor_fix_async {
     };
 }
 
-// impl From<eyre::Report> for DoctorError {
-//    fn from(err: eyre::Report) -> Self {
-//        DoctorError::Error {
-//            reason: err.to_string().into(),
-//            info: vec![],
-//            fix: None,
-//            error: Some(Box::new(err)),
-//        }
-//    }
-//}
-
 fn check_file_exists(path: impl AsRef<Path>) -> Result<()> {
     if !path.as_ref().exists() {
         eyre::bail!("No file at path {}", path.as_ref().display())
@@ -480,6 +469,27 @@ impl DoctorCheck for FigIntegrationsCheck {
                 fix: None,
                 error: None,
             });
+        }
+
+        #[cfg(target_os = "windows")]
+        if let Some(exe) = fig_util::get_parent_process_exe() {
+            if exe.ends_with("cmd.exe") {
+                return Err(DoctorError::Error {
+                    reason: "CMD isn't supported yet, please use Git Bash or WSL in order to use Fig".into(),
+                    info: vec![],
+                    fix: None,
+                    error: None,
+                });
+            }
+
+            if exe.ends_with("powershell.exe") {
+                return Err(DoctorError::Error {
+                    reason: "Powershell isn't supported yet, please use Git Bash or WSL in order to use Fig".into(),
+                    info: vec![],
+                    fix: None,
+                    error: None,
+                });
+            }
         }
 
         if std::env::var_os("__PWSH_LOGIN_CHECKED").is_some() {
