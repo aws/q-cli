@@ -3,9 +3,9 @@ use clap::Parser;
 #[derive(Parser, Debug)]
 #[clap(author, version, about, long_about = None)]
 pub struct Cli {
-    /// Force dashboard to be open on launch
+    /// Do not launch the dashboard when starting
     #[clap(long, action)]
-    pub dashboard: bool,
+    pub no_dashboard: bool,
     /// Kill old instances of `fig_desktop`
     #[clap(long, action)]
     pub kill_old: bool,

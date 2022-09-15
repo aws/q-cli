@@ -159,8 +159,6 @@ extension LocalState {
 
   static let inputMethodInstalled = "input-method.enabled"
   static let showIconInDock = "mission-control.showIconInDock"
-  static let showMissionControlOnLaunch = "mission-control.showOnLaunch"
-
 }
 
 import FigAPIBindings

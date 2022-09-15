@@ -160,7 +160,7 @@ async fn main() {
     webview_manager
         .build_webview(MISSION_CONTROL_ID, build_dashboard, MissionControlOptions {
             show_onboarding,
-            force_visible: cli.dashboard || page.is_some(),
+            force_visible: !cli.no_dashboard || page.is_some(),
             page,
         })
         .unwrap();

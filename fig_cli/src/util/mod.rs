@@ -218,7 +218,7 @@ pub fn launch_fig(args: LaunchArgs) -> Result<()> {
             }
         } else if #[cfg(target_os = "macos")] {
             Command::new("open")
-                .args(["-g", "-b", "com.mschrage.fig"])
+                .args(["-g", "-b", "com.mschrage.fig", "--args", "--no-dashboard"])
                 .output()
                 .context("Unable to launch Fig")?;
         } else if #[cfg(target_os = "windows")] {

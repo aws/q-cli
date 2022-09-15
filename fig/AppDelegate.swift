@@ -160,8 +160,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       let args = ProcessInfo.processInfo.arguments
 
-      if let showOnLaunch = LocalState.shared.getValue(forKey: LocalState.showMissionControlOnLaunch) as? Bool,
-         showOnLaunch && !args.contains("--headless") {
+      if !args.contains("--no-dashboard") {
           MissionControl.openUI()
       }
     }

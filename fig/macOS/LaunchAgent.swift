@@ -21,7 +21,10 @@ class LaunchAgent {
   static let launchOnStartup = LaunchAgent(fileName: "io.fig.launcher.plist",
                                            plist: [
                                               "Label": "io.fig.launcher",
-                                              "Program": Bundle.main.executablePath!,
+                                              "ProgramArguments": [
+                                                Bundle.main.executablePath!,
+                                                "--no-dashboard"
+                                                ],
                                               "RunAtLoad": true
                                            ])
 
