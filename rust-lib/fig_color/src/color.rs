@@ -1,4 +1,4 @@
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub enum VTermColor {
     Rgb { red: u8, green: u8, blue: u8 },
     Indexed { idx: u8 },
@@ -19,7 +19,7 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SuggestionColor {
     pub fg: Option<VTermColor>,
     pub bg: Option<VTermColor>,
@@ -344,7 +344,7 @@ pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSuppo
             // 2. false negatives that aren't supported in fish (e.g. abbreviations like bl for black)
             // note (mia): this todo was in the old c code - maybe it isn't needed anymore?
             let mut color = try_parse_named(color_name);
-            if color.is_none() && !color_name.starts_with('#') {
+            if color.is_none() && color_name.starts_with('#') {
                 color = try_parse_rgb(color_name);
             }
             if color.is_none() {

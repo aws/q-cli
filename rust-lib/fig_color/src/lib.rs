@@ -26,7 +26,7 @@ impl From<color::VTermColor> for VTermColor {
     }
 }
 
-#[derive(Clone)]
+#[derive(Clone, PartialEq, Eq)]
 pub struct SuggestionColor {
     inner: color::SuggestionColor,
 }
