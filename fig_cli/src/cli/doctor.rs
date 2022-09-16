@@ -585,7 +585,7 @@ impl DoctorCheck for FigtermSocketCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // Check that the socket exists
         let term_session = std::env::var("TERM_SESSION_ID").context("No TERM_SESSION_ID")?;
-        let socket_path = PathBuf::from("/tmp").join(format!("figterm-{term_session}.socket"));
+        let socket_path = fig_util::directories::figterm_socket_path(term_session).context("No figterm path")?;
 
         if let Err(err) = check_file_exists(&socket_path) {
             return Err(DoctorError::Error {
@@ -1618,29 +1618,29 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
             .context("Could not verify VSCode integration")?;
 
         if integration != "installed!" {
-            // Check if withfig.fig exists
-            let extensions = directories::home_dir()
-                .context("Could not get home dir")?
-                .join(".vscode")
-                .join("extensions");
+            let mut missing = true;
 
-            let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
+            for dir in [".vscode", ".vscode-insiders"] {
+                // Check if withfig.fig exists
+                let extensions = directories::home_dir()
+                    .context("Could not get home dir")?
+                    .join(dir)
+                    .join("extensions");
 
-            let extensions = extensions.as_path();
-            let fig_extensions = glob_dir(&glob_set, &extensions).map_err(|err| {
-                DoctorError::Warning(
-                    format!(
-                        "Could not read VSCode extensions in dir {}: {}",
-                        extensions.to_string_lossy(),
-                        err
-                    )
-                    .into(),
-                )
-            })?;
+                let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 
-            if fig_extensions.is_empty() {
-                return Err(doctor_error!("VSCode extension is missing!"));
+                let extensions = extensions.as_path();
+                if let Ok(fig_extensions) = glob_dir(&glob_set, &extensions) {
+                    if fig_extensions.is_empty() {
+                        missing = false;
+                    }
+                }
             }
+
+            if missing {
+                return Err(doctor_error!("VSCode integration is missing!"));
+            }
+
             return Err(doctor_error!("Unknown error with integration!"));
         }
         Ok(())
