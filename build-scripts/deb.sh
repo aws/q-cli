@@ -20,10 +20,10 @@ fi
 cp bundle/deb/prerm build/DEBIAN/prerm
 if [[ $IS_HEADLESS = 0 ]]; then
     cp bundle/deb/postrm build/DEBIAN/postrm
+    chmod 755 build/DEBIAN/postrm
 fi
 cp bundle/deb/postinst build/DEBIAN/postinst
 sed -i "s/^Version:.*/Version: ${VERSION}/" build/DEBIAN/control
 chmod 755 build/DEBIAN/prerm
-chmod 755 build/DEBIAN/postrm
 chmod 755 build/DEBIAN/postinst
 dpkg-deb --build --root-owner-group -Zxz build fig.deb
