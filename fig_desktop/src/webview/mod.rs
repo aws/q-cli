@@ -379,9 +379,11 @@ pub fn build_dashboard(
         })
         .with_devtools(true)
         .with_navigation_handler(navigation_handler(MISSION_CONTROL_ID, &[
+            // Main domain
+            r"^desktop\.fig\.io$",
+            // Dev domains
             r"^localhost$",
             r"^127\.0\.0\.1$",
-            r"^desktop\.fig\.io$",
             r"-withfig\.vercel\.app$",
         ]))
         .with_initialization_script(&javascript_init())
@@ -447,7 +449,7 @@ pub fn build_autocomplete(
         .with_web_context(web_context)
         .with_url(&fig_settings::settings::get_string_or(
             "developer.autocomplete.host",
-            "https://fig-autocomplete.vercel.app/".into(),
+            "https://autocomplete.fig.io/".into(),
         ))?
         .with_ipc_handler(move |_window, payload| {
             proxy
@@ -462,11 +464,15 @@ pub fn build_autocomplete(
         .with_transparent(true)
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
+            // Main domain
+            r"^autocomplete\.fig\.io$",
+            // Dev domains
             r"^localhost$",
             r"^127\.0\.0\.1$",
-            r"^staging\.withfig\.com$",
-            r"^app\.withfig\.com$",
             r"-withfig\.vercel\.app$",
+            // Legacy domains
+            r"^app\.withfig\.com$",
+            r"^staging\.withfig\.com$",
             r"^fig-autocomplete\.vercel\.app$",
         ]))
         .with_clipboard(true)
