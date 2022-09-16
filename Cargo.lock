@@ -2679,7 +2679,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.4.13"
+version = "2.4.14"
 dependencies = [
  "anyhow",
  "base64 0.13.0",
