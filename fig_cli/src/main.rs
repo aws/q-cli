@@ -101,16 +101,15 @@ async fn main() -> Result<()> {
             }) =>
         {
             err.print()?;
-            println!();
-            println!(
+            eprintln!();
+            eprintln!(
                 "This command may be valid in newer versions of the Fig CLI. Try running {}.",
                 "fig update".magenta()
             );
             exit(2);
         },
         Err(err) => {
-            err.print()?;
-            exit(2);
+            err.exit();
         },
     };
 
