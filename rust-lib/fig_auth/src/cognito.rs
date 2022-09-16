@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::collections::HashMap;
 use std::fmt::Display;
 use std::fs::{
@@ -86,7 +87,7 @@ pub enum Error {
 
 const APP_NAME_VALID_SYMBOLS: &str = "!#$%&'*+-.^_`|~";
 
-pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
+pub fn get_client_with_name(app_name: Cow<'static, str>) -> Result<aws_sdk_cognitoidentityprovider::Client> {
     let https = hyper_rustls::HttpsConnectorBuilder::new()
         .with_tls_config(create_client_config())
         .https_only()
@@ -105,17 +106,21 @@ pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
     client.set_sleep_impl(None);
     client.set_retry_config(RetryConfig::disabled().into());
 
-    let app_name: std::borrow::Cow<str> = USER_AGENT
-        .chars()
-        .filter(|c| c.is_ascii_alphanumeric() || APP_NAME_VALID_SYMBOLS.contains(*c))
-        .collect();
-
     let config = Config::builder()
         .region(Region::new(REGION))
         .app_name(AppName::new(app_name).unwrap())
         .build();
 
     Ok(aws_sdk_cognitoidentityprovider::Client::with_config(client, config))
+}
+
+pub fn get_client() -> Result<aws_sdk_cognitoidentityprovider::Client> {
+    let app_name: std::borrow::Cow<str> = USER_AGENT
+        .chars()
+        .filter(|c| c.is_ascii_alphanumeric() || APP_NAME_VALID_SYMBOLS.contains(*c))
+        .collect();
+
+    get_client_with_name(app_name)
 }
 
 #[derive(Debug, Serialize, Deserialize)]

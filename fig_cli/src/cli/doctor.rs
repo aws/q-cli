@@ -891,11 +891,8 @@ impl DoctorCheck for DaemonCheck {
                         if let Some(status) = diagnostics.settings_watcher_status {
                             if status.status() != settings_watcher_status::Status::Ok {
                                 return Err(DoctorError::Error {
-                                    reason: status
-                                        .error
-                                        .unwrap_or_else(|| "Daemon settings watcher error".into())
-                                        .into(),
-                                    info: vec![],
+                                    reason: "Daemon settings watcher error".into(),
+                                    info: status.error.map(|e| vec![e.into()]).unwrap_or_default(),
                                     fix: daemon_fix!(),
                                     error: None,
                                 });
@@ -905,8 +902,8 @@ impl DoctorCheck for DaemonCheck {
                         if let Some(status) = diagnostics.websocket_status {
                             if status.status() != websocket_status::Status::Ok {
                                 return Err(DoctorError::Error {
-                                    reason: status.error.unwrap_or_else(|| "Daemon websocket error".into()).into(),
-                                    info: vec![],
+                                    reason: "Daemon websocket error".into(),
+                                    info: status.error.map(|e| vec![e.into()]).unwrap_or_default(),
                                     fix: daemon_fix!(),
                                     error: None,
                                 });

@@ -44,7 +44,11 @@ pub fn fig_dir() -> Result<PathBuf> {
     }
 }
 
-/// The $DATA/fig directory
+/// The fig data directory
+///
+/// - Linux: `$XDG_DATA_HOME/fig or $HOME/.local/share/fig`
+/// - MacOS: `$HOME/Library/Application Support/fig`
+/// - Windows: `%APPDATA%/fig`
 pub fn fig_data_dir() -> Result<PathBuf> {
     match std::env::var_os("FIG_DATA_DIR") {
         Some(data_dir) => map_env_dir(&data_dir),
@@ -54,7 +58,10 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
-/// Get path to "/var/tmp/fig/$USERNAME"
+/// The ephemeral fig state directory
+///
+/// - Linux/MacOS: `/var/tmp/fig/$USER`
+/// - Windows: ???
 pub fn fig_ephemeral_dir() -> Result<PathBuf> {
     named_fig_ephemeral_dir(whoami::username())
 }
@@ -82,47 +89,62 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
         } else if #[cfg(target_os = "windows")] {
             Ok(dirs::data_local_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
-                .join("fig")
+                .join("Fig")
                 .join(name))
         }
     }
 }
 
+/// The desktop app socket path
+///
+/// - Linux/MacOS: `/var/tmp/fig/$USER/fig.socket`
+/// - Windows: `%APPDATA%/Fig/fig.sock`
 pub fn fig_socket_path() -> Result<PathBuf> {
     fig_ephemeral_dir().map(|x| x.join("fig.socket"))
 }
 
+/// The path to secure socket
+///
+/// - Linux/MacOS: `/var/tmp/fig/$USER/secure.socket`
+/// - Windows: `%APPDATA%/Fig/secure.sock`
 pub fn secure_socket_path() -> Result<PathBuf> {
     if let Ok(parent) = env::var("FIG_PARENT") {
         parent_socket_path(whoami::username(), &parent)
     } else {
-        fig_ephemeral_dir().map(|x| x.join("secure.socket"))
+        Ok(fig_ephemeral_dir()?.join("secure.socket"))
     }
 }
 
 pub fn parent_socket_path(user_name: String, parent: &String) -> Result<PathBuf> {
-    named_fig_ephemeral_dir(user_name).map(|x| x.join(format!("parent/{parent}.socket")))
+    Ok(named_fig_ephemeral_dir(user_name)?
+        .join("parent")
+        .join(format!("{parent}.socket")))
 }
 
+/// Get path to a figterm socket
+///
+/// - Linux/Macos: `/var/tmp/fig/%USERNAME%/figterm/$SESSION_ID.socket`
+/// - Windows: `%APPDATA%\Fig\$SESSION_ID.socket`
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     cfg_if::cfg_if! {
-        if #[cfg(target_os = "linux")] {
-            Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
-        } else if #[cfg(target_os = "macos")] {
-            Ok(PathBuf::from(format!("/tmp/figterm-{session_id}.socket")))
-        } else if #[cfg(target_os = "windows")] {
+        if #[cfg(target_os = "windows")] {
             dirs::data_local_dir().map(|path| path.join("Fig").join(format!("figterm-{session_id}.socket"))).ok_or(DirectoryError::NoHomeDirectory)
+        } else {
+            Ok(fig_ephemeral_dir()?.join("figterm").join(format!("{session_id}.socket")))
         }
     }
 }
 
-/// Get path to "$TMPDIR/fig/daemon.sock"
+/// Get path to the daemon socket
+///
+/// - Linux/MacOS: `/var/tmp/fig/$USERNAME/daemon.socket`
+/// - Windows: `%LOCALAPPDATA%\Fig\daemon.socket`
 pub fn daemon_socket_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
-        if #[cfg(not(target_os = "windows"))] {
-            Ok(std::env::temp_dir().join("fig").join("daemon.sock"))
-        } else if #[cfg(target_os = "windows")] {
+        if #[cfg(target_os = "windows")] {
             dirs::data_local_dir().map(|path| path.join("Fig").join("daemon.socket")).ok_or(DirectoryError::NoHomeDirectory)
+        } else {
+            Ok(fig_ephemeral_dir()?.join("daemon.sock"))
         }
     }
 }

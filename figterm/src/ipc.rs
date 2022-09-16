@@ -127,8 +127,8 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
         let stdout = child.stdout.take().context("Failed to open stdout")?;
 
         let child_task = tokio::spawn(async move {
-            if let Err(e) = child.wait().await {
-                error!("Error waiting for child {e:?}");
+            if let Err(err) = child.wait().await {
+                error!(%err, "Error waiting for child");
             }
         });
 
@@ -200,11 +200,11 @@ pub async fn spawn_figterm_ipc(
                                         match response.encode_fig_protobuf() {
                                             Ok(protobuf) => {
                                                 if let Err(err) = write_half.write_all(&protobuf).await {
-                                                    error!("Failed to send response: {err}");
+                                                    error!(%err, "Failed to send response");
                                                     break;
                                                 }
                                             },
-                                            Err(err) => error!("Failed to encode protobuf: {err}")
+                                            Err(err) => error!(%err, "Failed to encode protobuf")
                                         }
                                     }
                                     Err(_) => break,
@@ -251,13 +251,13 @@ pub async fn spawn_secure_ipc(
                         })
                         .await
                         {
-                            error!("error sending handshake: {err}");
+                            error!(%err, "error sending handshake");
                             continue;
                         }
                         let mut handshake_success = false;
                         info!("Awaiting handshake response...");
                         while let Some(message) = reader.recv_message::<Clientbound>().await.unwrap_or_else(|err| {
-                            error!("failed receiving handshake response: {err}");
+                            error!(%err, "failed receiving handshake response");
                             None
                         }) {
                             if let Some(clientbound::Packet::HandshakeResponse(response)) = message.packet {

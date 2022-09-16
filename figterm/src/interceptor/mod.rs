@@ -146,7 +146,7 @@ impl KeyInterceptor {
     }
 
     pub fn intercept_key(&self, key_event: &KeyEvent) -> Option<String> {
-        trace!("Intercepting key: {key_event:?}");
+        trace!(?key_event, "Intercepting key");
         if self.intercept_all || self.intercept_bind {
             if let Some(action) = self.mappings.get(key_event) {
                 return Some(action.value().to_string());

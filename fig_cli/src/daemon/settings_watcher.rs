@@ -1,10 +1,7 @@
 use std::sync::Arc;
 use std::time::Duration;
 
-use eyre::{
-    eyre,
-    Result,
-};
+use eyre::eyre;
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
 use fig_proto::local::file_changed_hook::FileChanged;
@@ -24,7 +21,7 @@ use super::DaemonStatus;
 use crate::cli::app::uninstall::UninstallArgs;
 use crate::util::fig_bundle;
 
-pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> Result<JoinHandle<()>> {
+pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> JoinHandle<()> {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     let mut watcher = notify::recommended_watcher(move |res| match res {
@@ -41,29 +38,36 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         .configure(notify::Config::OngoingEvents(Some(Duration::from_secs_f32(0.25))))
         .unwrap();
 
-    let application_path = "/Applications/Fig.app";
+    let application_path = std::path::Path::new("/Applications/Fig.app");
     let application_path_clone = std::path::PathBuf::from(application_path);
 
-    match watcher.watch(application_path_clone.as_path(), RecursiveMode::NonRecursive) {
-        Ok(()) => trace!("watching settings file at {application_path:?}"),
-        Err(err) => {
-            error!(%err, "failed to watch application path dir");
-            daemon_status.write().settings_watcher_status = Err(eyre!(err));
-        },
+    if application_path.exists() {
+        match watcher.watch(application_path_clone.as_path(), RecursiveMode::NonRecursive) {
+            Ok(()) => trace!("watching bundle at {application_path:?}"),
+            Err(err) => {
+                error!(%err, "failed to watch application path dir");
+                daemon_status.write().settings_watcher_status = Err(eyre!(err));
+            },
+        }
     }
 
     let settings_path = match fig_settings::settings::settings_path().ok() {
         Some(settings_path) => match settings_path.parent() {
-            Some(settings_dir) => match watcher.watch(settings_dir, RecursiveMode::NonRecursive) {
-                Ok(()) => {
-                    trace!("watching settings file at {settings_dir:?}");
-                    Some(settings_path)
-                },
-                Err(err) => {
-                    error!(%err, "failed to watch settings dir");
-                    daemon_status.write().settings_watcher_status = Err(eyre!(err));
-                    None
-                },
+            Some(settings_dir) => {
+                if let Err(err) = std::fs::create_dir_all(&settings_dir) {
+                    error!(%err, "failed to create settings dir");
+                }
+                match watcher.watch(settings_dir, RecursiveMode::NonRecursive) {
+                    Ok(()) => {
+                        trace!("watching settings file at {settings_dir:?}");
+                        Some(settings_path)
+                    },
+                    Err(err) => {
+                        error!(%err, "failed to watch settings dir");
+                        daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                        None
+                    },
+                }
             },
             None => {
                 error!("failed to get settings file dir");
@@ -80,16 +84,21 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
 
     let state_path = match fig_settings::state::state_path().ok() {
         Some(state_path) => match state_path.parent() {
-            Some(state_dir) => match watcher.watch(state_dir, RecursiveMode::NonRecursive) {
-                Ok(()) => {
-                    trace!("watching state dir at {state_dir:?}");
-                    Some(state_path)
-                },
-                Err(err) => {
-                    error!(%err, "failed to watch state dir");
-                    daemon_status.write().settings_watcher_status = Err(eyre!(err));
-                    None
-                },
+            Some(state_dir) => {
+                if let Err(err) = std::fs::create_dir_all(&state_dir) {
+                    error!(%err, "failed to create state dir");
+                }
+                match watcher.watch(state_dir, RecursiveMode::NonRecursive) {
+                    Ok(()) => {
+                        trace!("watching state dir at {state_dir:?}");
+                        Some(state_path)
+                    },
+                    Err(err) => {
+                        error!(%err, "failed to watch state dir");
+                        daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                        None
+                    },
+                }
             },
             None => {
                 error!("failed to get state file dir");
@@ -104,7 +113,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         },
     };
 
-    let tokio_join = tokio::spawn(async move {
+    tokio::spawn(async move {
         let _watcher = watcher;
         while let Some(event) = rx.recv().await {
             trace!(?event, "Settings event");
@@ -157,7 +166,5 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                 }
             }
         }
-    });
-
-    Ok(tokio_join)
+    })
 }
