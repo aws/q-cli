@@ -154,6 +154,11 @@ pub async fn spawn_figterm_ipc(
     let (incoming_tx, incoming_rx) = unbounded();
 
     let socket_path = directories::figterm_socket_path(session_id)?;
+    if let Some(parent) = socket_path.parent() {
+        if let Err(err) = std::fs::create_dir_all(parent) {
+            error!(%err, "Failed to create figterm socket directory");
+        }
+    }
     tokio::fs::remove_file(&socket_path).await.ok();
     let socket_listener = tokio::net::UnixListener::bind(&socket_path)?;
 
