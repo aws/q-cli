@@ -215,13 +215,27 @@ impl WindowState {
                 }
             },
             WindowEvent::DebugMode(debug_mode) => {
-                self.webview
-                    .evaluate_script(if debug_mode {
-                        "document.querySelector(':root').style.setProperty('background-color', 'red');"
+                // Macos does not support setting the webview background color so we have
+                // to set the css background root color to see the window
+                cfg_if::cfg_if! {
+                    if #[cfg(target_os = "macos")] {
+                        self.webview
+                            .evaluate_script(if debug_mode {
+                                "document.querySelector(':root').style.setProperty('background-color', 'red');"
+                            } else {
+                                "document.querySelector(':root').style.removeProperty('background-color');"
+                            })
+                            .unwrap();
                     } else {
-                        "document.querySelector(':root').style.removeProperty('background-color');"
-                    })
-                    .unwrap();
+                        self.webview
+                            .set_background_color(if debug_mode {
+                                (0xff, 0, 0, 0xff)
+                            } else {
+                                (0, 0, 0, 0) }
+                            ).unwrap();
+                    }
+
+                }
             },
         }
     }

@@ -71,7 +71,7 @@ tracing = "0.1.36"
 url = "2.3.1"
 which = "4.3.0"
 whoami = "1.2.1"
-wry = { version = "0.20.1", default-features = false, features = ["tray", "protocol", "devtools", "transparent"] }
+wry = { version = "0.21.1", default-features = false, features = ["tray", "protocol", "devtools", "transparent"] }
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
 version = "0.39.0"
