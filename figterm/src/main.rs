@@ -419,6 +419,12 @@ fn figterm_main() -> Result<()> {
     init_logger(&pty_name).context("Failed to init logger")?;
     logger::stdio_debug_log("Forking child shell process");
 
+    #[cfg(unix)]
+    {
+        let pid = nix::unistd::getpid();
+        logger::stdio_debug_log(format!("Parent pid: {pid}"));
+    }
+
     let mut child = pty.slave.spawn_command(command)?;
     info!("Shell: {:?}", child.process_id());
     if let Some(pid) = child.process_id() {

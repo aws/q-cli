@@ -68,6 +68,12 @@ impl EventListener for EventHandler {
                     lock_val
                 };
 
+                if let Some(cwd) = &shell_state.local_context.current_working_directory {
+                    if cwd.exists() {
+                        std::env::set_current_dir(&cwd).ok();
+                    }
+                }
+
                 if let Some(text) = insert_on_new_cmd {
                     let mut insert: Vec<u8> = text.into_bytes();
                     if execute_on_new_cmd {
