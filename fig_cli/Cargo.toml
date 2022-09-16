@@ -25,7 +25,7 @@ clap_complete_fig = "3.2.4"
 color-eyre = "0.6.2"
 crossterm = "0.25.0"
 ctrlc = "3.2.3"
-deno_core = { version = "0.150.0", optional = true }
+deno_core = { version = "0.151.0", optional = true }
 deno_runtime = { version = "0.74.0", optional = true }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 eyre = "0.6.8"
