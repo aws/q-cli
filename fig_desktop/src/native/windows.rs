@@ -22,8 +22,8 @@ use windows::Win32::System::Com::{
     VARIANT_0,
     VARIANT_0_0,
     VARIANT_0_0_0,
+    VT_BOOL,
 };
-use windows::Win32::System::Ole::VT_BOOL;
 use windows::Win32::System::ProcessStatus::K32GetProcessImageFileNameA;
 use windows::Win32::System::Threading::{
     OpenProcess,
@@ -75,7 +75,7 @@ pub const SHELL: &str = "bash";
 const VT_TRUE: VARIANT = VARIANT {
     Anonymous: VARIANT_0 {
         Anonymous: ManuallyDrop::new(VARIANT_0_0 {
-            vt: VT_BOOL.0 as u16,
+            vt: VT_BOOL,
             wReserved1: 0,
             wReserved2: 0,
             wReserved3: 0,
@@ -146,11 +146,11 @@ impl NativeState {
                         let caret = selection.GetElement(0)?;
                         caret.ExpandToEnclosingUnit(TextUnit_Character)?;
 
-                        let bounds = caret.GetBoundingRectangles()?;
+                        let bounds = *caret.GetBoundingRectangles()?;
                         let mut elements = std::ptr::null_mut::<RECT>();
                         let mut elements_len = 0;
 
-                        automation.SafeArrayToRectNativeArray(bounds, &mut elements, &mut elements_len)?;
+                        automation.SafeArrayToRectNativeArray(&bounds, &mut elements, &mut elements_len)?;
 
                         if elements_len > 0 {
                             let bounds = *elements;
@@ -301,8 +301,9 @@ unsafe fn update_focused_state(hwnd: HWND) {
         })
         .ok();
 
-    let mut process_id: u32 = 0;
-    let thread_id = GetWindowThreadProcessId(hwnd, &mut process_id);
+    let mut process_id = 0;
+    let thread_id = GetWindowThreadProcessId(hwnd, Some(&mut process_id));
+
     let process_handle = match OpenProcess(PROCESS_QUERY_LIMITED_INFORMATION, false, process_id) {
         Ok(process_handle) => process_handle,
         Err(e) => {

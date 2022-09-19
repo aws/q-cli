@@ -5,7 +5,6 @@ use std::mem::{
 };
 use std::ops::Deref;
 use std::path::PathBuf;
-use std::ptr::null_mut;
 
 use windows::core::PSTR;
 use windows::Win32::Foundation::{
@@ -83,12 +82,13 @@ impl PidExt for Pid {
 
         unsafe {
             let mut info: MaybeUninit<PROCESS_BASIC_INFORMATION> = MaybeUninit::uninit();
+            let mut len = 0;
             if NtQueryInformationProcess(
                 *handle,
                 ProcessBasicInformation,
                 info.as_mut_ptr() as *mut _,
                 size_of::<PROCESS_BASIC_INFORMATION>() as _,
-                null_mut(),
+                &mut len,
             )
             .is_err()
             {
@@ -120,7 +120,7 @@ impl PidExt for Pid {
                 handle,
                 PROCESS_NAME_FORMAT(0),
                 PSTR(process_name.as_mut_ptr()),
-                (&mut len) as *mut u32,
+                &mut len,
             )
             .as_bool()
             {
