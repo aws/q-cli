@@ -39,6 +39,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_daemon::Daemon;
 use fig_log::Logger;
 use fig_util::directories;
 use tracing::debug;
@@ -47,10 +48,7 @@ use tracing::level_filters::LevelFilter;
 use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
 use self::plugins::PluginsSubcommands;
-use crate::daemon::{
-    daemon,
-    get_daemon,
-};
+use crate::daemon::daemon;
 use crate::util::{
     dialoguer_theme,
     is_app_running,
@@ -278,7 +276,7 @@ impl Cli {
 
                         Ok(())
                     } else {
-                        internal::install_cli_from_args(args)
+                        internal::install_cli_from_args(args).await
                     }
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
@@ -321,7 +319,7 @@ impl Cli {
                 CliRootCommands::Quit => crate::util::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,
-                    Processes::Daemon => get_daemon().and_then(|d| d.restart()),
+                    Processes::Daemon => Daemon::default().restart().await.context("Failed to restart daemon"),
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,

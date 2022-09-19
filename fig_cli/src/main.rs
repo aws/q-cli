@@ -17,7 +17,6 @@ use fig_telemetry::sentry::{
     release_name,
 };
 use owo_colors::OwoColorize;
-use serde_json::json;
 use tracing::metadata::LevelFilter;
 
 const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
@@ -62,23 +61,26 @@ async fn main() -> Result<()> {
             match std::env::var_os("PROCESS_LAUNCHED_BY_FIG") {
                 None => (
                     Some(sentry),
+                    #[cfg(any(target_os = "linux", target_os = "macos"))]
                     Some(fig_telemetry::dispatch_emit_track(
                         fig_telemetry::TrackEvent::new(
                             fig_telemetry::TrackEventType::RanCommand,
                             fig_telemetry::TrackSource::Cli,
                             env!("CARGO_PKG_VERSION").into(),
                             [
-                                ("arguments", json!(args_no_exe.join(" "))),
-                                ("arguments_json", json!(args_no_exe)),
-                                ("arg0", json!(args.get(0))),
-                                ("arg1", json!(args.get(1))),
-                                ("shell", json!(shell)),
-                                ("terminal", json!(terminal)),
-                                ("cli_version", json!(cli_version)),
+                                ("arguments", serde_json::json!(args_no_exe.join(" "))),
+                                ("arguments_json", serde_json::json!(args_no_exe)),
+                                ("arg0", serde_json::json!(args.get(0))),
+                                ("arg1", serde_json::json!(args.get(1))),
+                                ("shell", serde_json::json!(shell)),
+                                ("terminal", serde_json::json!(terminal)),
+                                ("cli_version", serde_json::json!(cli_version)),
                             ],
                         ),
                         false,
                     )),
+                    #[cfg(target_os = "windows")]
+                    Some(async { Result::<()>::Ok(()) }),
                 ),
                 Some(_) => (Some(sentry), None),
             }

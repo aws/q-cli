@@ -24,6 +24,8 @@ message DaemonMessage {
     TelemetryEmitTrackCommand telemetry_emit_track = 104;
     // A request to get a pong
     google.protobuf.Empty ping = 105;
+    // A request to quit the daemon
+    google.protobuf.Empty quit = 106;
   }
 }
 
@@ -40,6 +42,8 @@ message DaemonResponse {
     SyncResponse sync = 103;
     // A response to a ping command
     google.protobuf.Empty pong = 105;
+    // A response to a quit command
+    google.protobuf.Empty quit = 106;
   }
 }
 

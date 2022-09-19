@@ -1,13 +1,9 @@
+use std::convert::TryInto;
 use std::env;
-use std::ffi::OsStr;
 use std::fmt::Display;
-use std::path::{
-    Path,
-    PathBuf,
-};
-#[cfg(target_os = "linux")]
-use std::str::FromStr;
+use std::path::PathBuf;
 
+use camino::Utf8PathBuf;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -18,12 +14,17 @@ pub enum DirectoryError {
     NonAbsolutePath(PathBuf),
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Utf8FromPath(#[from] camino::FromPathError),
+    #[error(transparent)]
+    Utf8FromPathBuf(#[from] camino::FromPathBufError),
 }
 
 type Result<T, E = DirectoryError> = std::result::Result<T, E>;
 
-fn map_env_dir(path: &OsStr) -> Result<PathBuf> {
-    let path = Path::new(path);
+#[cfg(any(target_os = "linux", target_os = "macos"))]
+fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
+    let path = std::path::Path::new(path);
     path.is_absolute()
         .then(|| path.to_path_buf())
         .ok_or_else(|| DirectoryError::NonAbsolutePath(path.to_owned()))
@@ -36,11 +37,17 @@ pub fn home_dir() -> Result<PathBuf> {
 
 /// The $HOME/.fig directory
 pub fn fig_dir() -> Result<PathBuf> {
-    match std::env::var_os("FIG_DOT_DIR") {
-        Some(dot_dir) => map_env_dir(&dot_dir),
-        None => dirs::home_dir()
-            .ok_or(DirectoryError::NoHomeDirectory)
-            .map(|p| p.join(".fig")),
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            match std::env::var_os("FIG_DOT_DIR") {
+                Some(dot_dir) => map_env_dir(&dot_dir),
+                None => dirs::home_dir()
+                    .ok_or(DirectoryError::NoHomeDirectory)
+                    .map(|p| p.join(".fig")),
+            }
+        } else if #[cfg(target_os = "windows")] {
+            Ok(dirs::data_local_dir().ok_or(DirectoryError::NoHomeDirectory)?.join("Fig"))
+        }
     }
 }
 
@@ -50,11 +57,17 @@ pub fn fig_dir() -> Result<PathBuf> {
 /// - MacOS: `$HOME/Library/Application Support/fig`
 /// - Windows: `%APPDATA%/fig`
 pub fn fig_data_dir() -> Result<PathBuf> {
-    match std::env::var_os("FIG_DATA_DIR") {
-        Some(data_dir) => map_env_dir(&data_dir),
-        None => dirs::data_local_dir()
-            .map(|path| path.join("fig"))
-            .ok_or(DirectoryError::NoHomeDirectory),
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            match std::env::var_os("FIG_DATA_DIR") {
+                Some(data_dir) => map_env_dir(&data_dir),
+                None => dirs::data_local_dir()
+                    .map(|path| path.join("fig"))
+                    .ok_or(DirectoryError::NoHomeDirectory),
+            }
+        } else if #[cfg(target_os = "windows")] {
+            Ok(fig_dir()?.join("userdata"))
+        }
     }
 }
 
@@ -100,7 +113,15 @@ pub fn named_fig_ephemeral_dir(name: String) -> Result<PathBuf> {
 /// - Linux/MacOS: `/var/tmp/fig/$USER/fig.socket`
 /// - Windows: `%APPDATA%/Fig/fig.sock`
 pub fn fig_socket_path() -> Result<PathBuf> {
-    fig_ephemeral_dir().map(|x| x.join("fig.socket"))
+    Ok(fig_ephemeral_dir()?.join("fig.socket"))
+}
+
+/// Get path to the daemon socket
+///
+/// - Linux/MacOS: `/var/tmp/fig/$USERNAME/daemon.socket`
+/// - Windows: `%LOCALAPPDATA%\Fig\daemon.socket`
+pub fn daemon_socket_path() -> Result<PathBuf> {
+    Ok(fig_ephemeral_dir()?.join("daemon.socket"))
 }
 
 /// The path to secure socket
@@ -115,7 +136,7 @@ pub fn secure_socket_path() -> Result<PathBuf> {
     }
 }
 
-pub fn parent_socket_path(user_name: String, parent: &String) -> Result<PathBuf> {
+pub fn parent_socket_path(user_name: String, parent: impl Display) -> Result<PathBuf> {
     Ok(named_fig_ephemeral_dir(user_name)?
         .join("parent")
         .join(format!("{parent}.socket")))
@@ -135,30 +156,68 @@ pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     }
 }
 
-/// Get path to the daemon socket
-///
-/// - Linux/MacOS: `/var/tmp/fig/$USERNAME/daemon.socket`
-/// - Windows: `%LOCALAPPDATA%\Fig\daemon.socket`
-pub fn daemon_socket_path() -> Result<PathBuf> {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "windows")] {
-            dirs::data_local_dir().map(|path| path.join("Fig").join("daemon.socket")).ok_or(DirectoryError::NoHomeDirectory)
-        } else {
-            Ok(fig_ephemeral_dir()?.join("daemon.sock"))
-        }
-    }
-}
-
 /// Get path to "/usr/share/fig/manifest.json"
-pub fn manifest_path() -> PathBuf {
+pub fn manifest_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
-            PathBuf::from_str("/usr/share/fig/manifest.json").unwrap()
+            Ok(std::path::Path::new("/usr/share/fig/manifest.json").into())
         } else {
             panic!("This platform does not support build manifests")
         }
     }
 }
+
+/// Path to the managed binary directory
+///
+/// Note this is not implemented on Linux or MacOS
+pub fn managed_binaries_dir() -> Result<PathBuf> {
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            todo!();
+        } else if #[cfg(target_os = "windows")] {
+            Ok(fig_dir()?.join("bin"))
+        }
+    }
+}
+
+/// The path to the managed fig cli binary
+///
+/// Note this is not implemented on Linux or MacOS
+pub fn managed_fig_cli_path() -> Result<PathBuf> {
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            todo!();
+        } else if #[cfg(target_os = "windows")] {
+            Ok(managed_binaries_dir()?.join("fig.exe"))
+        }
+    }
+}
+
+macro_rules! utf8_dir {
+    ($name:ident, $($arg:ident: $type:ty),*) => {
+        paste::paste! {
+            pub fn [<$name _utf8>]($($arg: $type),*) -> Result<Utf8PathBuf> {
+                Ok($name($($arg),*)?.try_into()?)
+            }
+        }
+    };
+    ($name:ident) => {
+        utf8_dir!($name,);
+    };
+}
+
+utf8_dir!(home_dir);
+utf8_dir!(fig_dir);
+utf8_dir!(fig_data_dir);
+utf8_dir!(fig_ephemeral_dir);
+utf8_dir!(secure_socket_path);
+utf8_dir!(named_fig_ephemeral_dir, name: String);
+utf8_dir!(parent_socket_path, user_name: String, parent: impl Display);
+utf8_dir!(figterm_socket_path, session_id: impl Display);
+utf8_dir!(daemon_socket_path);
+utf8_dir!(manifest_path);
+utf8_dir!(managed_binaries_dir);
+utf8_dir!(managed_fig_cli_path);
 
 #[cfg(test)]
 mod test {

@@ -1,5 +1,6 @@
 //! Installation, uninstallation, and update of the CLI.
 
+use std::convert::TryInto;
 use std::path::{
     Path,
     PathBuf,
@@ -12,6 +13,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::{
@@ -24,7 +26,6 @@ use fig_util::{
 };
 use self_update::update::UpdateStatus;
 
-use crate::daemon;
 use crate::util::dialoguer_theme;
 
 bitflags::bitflags! {
@@ -45,7 +46,7 @@ pub fn get_ssh_config_path() -> Result<PathBuf> {
 }
 
 #[cfg_attr(windows, allow(unused_variables))]
-pub fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<()> {
+pub async fn install_cli(install_components: InstallComponents, no_confirm: bool, force: bool) -> Result<()> {
     #[cfg(unix)]
     {
         use nix::unistd::geteuid;
@@ -112,7 +113,8 @@ pub fn install_cli(install_components: InstallComponents, no_confirm: bool, forc
     // }
 
     if install_components.contains(InstallComponents::DAEMON) {
-        daemon::install_daemon()?;
+        let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+        Daemon::default().install(&path).await?;
     }
 
     Ok(())
@@ -144,9 +146,10 @@ fn install_fig(_modify_files: bool) -> Result<()> {
     }
 }
 
-pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
+pub async fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
     let daemon_result = if install_components.contains(InstallComponents::DAEMON) {
-        uninstall_daemon()
+        Daemon::default().uninstall().await?;
+        Ok(())
     } else {
         Ok(())
     };
@@ -189,20 +192,6 @@ pub fn uninstall_cli(install_components: InstallComponents) -> Result<()> {
     daemon_result
         .and(dotfiles_result)
         .and(ssh_result.map_err(eyre::Report::from))
-}
-
-fn uninstall_daemon() -> Result<()> {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            daemon::LaunchService::launchd()?.uninstall()?;
-        } else if #[cfg(target_os = "linux")] {
-            daemon::LaunchService::systemd()?.uninstall()?;
-        } else if #[cfg(target_os = "windows")] {
-            daemon::LaunchService::default().uninstall()?;
-        }
-    }
-
-    Ok(())
 }
 
 fn uninstall_fig() -> Result<()> {

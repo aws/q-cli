@@ -173,7 +173,8 @@ impl LaunchdPlist {
     }
 
     /// Set the environment variables
-    pub fn _environment_variables<I, K, V>(mut self, environment_variables: I) -> LaunchdPlist
+    #[cfg(test)]
+    pub fn environment_variables<I, K, V>(mut self, environment_variables: I) -> LaunchdPlist
     where
         I: IntoIterator<Item = (K, V)>,
         K: Into<String>,
@@ -206,7 +207,8 @@ impl LaunchdPlist {
     }
 
     /// Set the standard in path
-    pub fn _standard_in_path(mut self, path: impl Into<String>) -> LaunchdPlist {
+    #[cfg(test)]
+    pub fn standard_in_path(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.standard_in_path = Some(path.into());
         self
     }

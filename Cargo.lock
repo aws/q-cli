@@ -2610,6 +2610,7 @@ dependencies = [
  "atty",
  "bitflags",
  "bytes",
+ "camino",
  "cfg-if 1.0.0",
  "clap",
  "clap_complete",
@@ -2623,6 +2624,7 @@ dependencies = [
  "eyre",
  "fig_api_client",
  "fig_auth",
+ "fig_daemon",
  "fig_install",
  "fig_integrations",
  "fig_ipc",
@@ -2675,6 +2677,20 @@ version = "0.1.0"
 dependencies = [
  "bitflags",
  "heapless",
+]
+
+[[package]]
+name = "fig_daemon"
+version = "0.1.0"
+dependencies = [
+ "camino",
+ "fig_ipc",
+ "fig_proto",
+ "fig_telemetry",
+ "fig_util",
+ "thiserror",
+ "tokio",
+ "winreg 0.10.1",
 ]
 
 [[package]]
@@ -2902,12 +2918,14 @@ dependencies = [
 name = "fig_util"
 version = "0.1.0"
 dependencies = [
+ "camino",
  "cfg-if 1.0.0",
  "clap",
  "dirs",
  "hex",
  "nix 0.25.0",
  "once_cell",
+ "paste",
  "rand 0.8.5",
  "regex",
  "serde",

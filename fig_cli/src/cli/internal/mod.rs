@@ -239,7 +239,7 @@ pub enum InternalSubcommand {
     OpenUninstallPage,
 }
 
-pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
+pub async fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
     let InstallArgs {
         daemon,
         dotfiles,
@@ -258,7 +258,7 @@ pub fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
         InstallComponents::all()
     };
 
-    installation::install_cli(install_components, no_confirm, force)
+    installation::install_cli(install_components, no_confirm, force).await
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -266,7 +266,7 @@ const BUFFER_SIZE: usize = 1024;
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            InternalSubcommand::Install(args) => install_cli_from_args(args)?,
+            InternalSubcommand::Install(args) => install_cli_from_args(args).await?,
             InternalSubcommand::Uninstall {
                 daemon,
                 dotfiles,
@@ -284,7 +284,7 @@ impl InternalSubcommand {
                     InstallComponents::all()
                 };
 
-                installation::uninstall_cli(uninstall_components)?
+                installation::uninstall_cli(uninstall_components).await?
             },
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
             InternalSubcommand::PreCmd => pre_cmd().await,

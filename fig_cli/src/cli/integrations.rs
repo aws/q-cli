@@ -6,6 +6,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::{
@@ -17,8 +18,6 @@ use fig_util::{
     Shell,
 };
 use tracing::debug;
-
-use crate::daemon;
 
 #[derive(Debug, Subcommand)]
 pub enum IntegrationsSubcommands {
@@ -129,8 +128,10 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             }
         },
         Integration::Daemon => {
+            let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+            Daemon::default().install(&path).await?;
             installed = true;
-            daemon::install_daemon()
+            Ok(())
         },
         Integration::Ssh => {
             let ssh_integration = SshIntegration {
@@ -198,8 +199,9 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             }
         },
         Integration::Daemon => {
+            Daemon::default().uninstall().await?;
             uninstalled = true;
-            daemon::uninstall_daemon()
+            Ok(())
         },
         Integration::Ssh => {
             let ssh_integration = SshIntegration {

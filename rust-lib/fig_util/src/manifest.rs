@@ -57,7 +57,7 @@ where
 static CACHED: Lazy<Option<Manifest>> = Lazy::new(|| {
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            let text = match std::fs::read_to_string(crate::directories::manifest_path()) {
+            let text = match std::fs::read_to_string(crate::directories::manifest_path().unwrap()) {
                 Ok(s) => s,
                 Err(err) => {
                     warn!("Failed reading build manifest: {err}");

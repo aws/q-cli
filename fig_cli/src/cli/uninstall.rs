@@ -45,7 +45,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
                     println!("Fig is not running. Please launch Fig and try again to complete uninstall.");
                 }
             } else {
-                super::installation::uninstall_cli(super::installation::InstallComponents::all())?
+                super::installation::uninstall_cli(super::installation::InstallComponents::all()).await?
             }
         } else if #[cfg(target_os = "windows")] {
             println!("Please uninstall fig from the `Add or remove programs` menu for now.");

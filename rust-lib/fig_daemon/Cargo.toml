@@ -1,0 +1,25 @@
+[package]
+name = "fig_daemon"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[features]
+unsafe-tests = []
+
+[dependencies]
+camino = "1.1.1"
+fig_telemetry = { path = "../fig_telemetry" }
+fig_util = { path = "../fig_util" }
+thiserror = "1.0.34"
+
+[target.'cfg(unix)'.dependencies]
+tokio = { version = "1.20.1", features = ["full"] }
+
+[target.'cfg(target_os = "windows")'.dependencies]
+fig_ipc = { path = "../fig_ipc" }
+fig_proto = { path = "../fig_proto" }
+winreg = "0.10.1"
+
+[dev-dependencies]
+tokio = { version = "1.20.1", features = ["macros", "rt-multi-thread"] }

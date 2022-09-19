@@ -96,40 +96,6 @@ pub async fn run_install() {
         }
     });
 
-    #[cfg(target_os = "windows")]
-    tokio::spawn(async {
-        use fig_ipc::SendRecvMessage;
-
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(60));
-        loop {
-            interval.tick().await;
-
-            if let Ok(mut connection) = fig_ipc::BufferedUnixStream::connect_timeout(
-                fig_util::directories::daemon_socket_path().unwrap(),
-                std::time::Duration::from_secs(1),
-            )
-            .await
-            {
-                if connection
-                    .send_recv_message_timeout::<_, fig_proto::daemon::DaemonResponse>(
-                        fig_proto::daemon::new_ping_command(),
-                        std::time::Duration::from_secs(1),
-                    )
-                    .await
-                    .is_ok()
-                {
-                    continue;
-                }
-            }
-
-            tokio::process::Command::new("fig")
-                .creation_flags(0x8)
-                .arg("daemon")
-                .spawn()
-                .ok();
-        }
-    });
-
     #[cfg(target_os = "linux")]
     launch_ibus().await
 }

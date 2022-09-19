@@ -75,3 +75,15 @@ pub fn new_ping_command() -> DaemonMessage {
 pub fn new_ping_response() -> daemon_response::Response {
     daemon_response::Response::Pong(())
 }
+
+pub fn new_quit_command() -> DaemonMessage {
+    DaemonMessage {
+        id: None,
+        no_response: None,
+        command: Some(daemon_message::Command::Quit(())),
+    }
+}
+
+pub fn new_quit_response() -> daemon_response::Response {
+    daemon_response::Response::Quit(())
+}

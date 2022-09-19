@@ -54,6 +54,8 @@ async fn spawn_system_handler(
                 Ok(Some(message)) => {
                     trace!("Received message: {message:?}");
 
+                    let mut quit = false;
+
                     if let Some(command) = &message.command {
                         let response = match command {
                             Command::Diagnostic(diagnostic_command) => {
@@ -178,6 +180,10 @@ async fn spawn_system_handler(
                                 continue;
                             },
                             Command::Ping(_) => fig_proto::daemon::new_ping_response(),
+                            Command::Quit(_) => {
+                                quit = true;
+                                fig_proto::daemon::new_quit_response()
+                            },
                         };
 
                         if !message.no_response() {
@@ -189,6 +195,10 @@ async fn spawn_system_handler(
                             if let Err(err) = connection.send_message(response).await {
                                 error!("Error sending message: {err}");
                             }
+                        }
+
+                        if quit {
+                            std::process::exit(0);
                         }
                     }
                 },

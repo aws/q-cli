@@ -8,18 +8,20 @@ homepage = "https://fig.io"
 publish = false
 
 [dependencies]
+camino = "1.1.1"
 cfg-if = "1.0.0"
 clap = { version = "3.2.20", features = ["derive"] }
 dirs = "4.0.0"
 hex = "0.4.3"
 once_cell = "1.14.0"
+paste = "1.0.9"
 rand = "0.8.5"
 regex = "1.6.0"
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.85"
 sha2 = "0.10.6"
 thiserror = "1.0.35"
-tokio = { version = "1", features = ["process"] }
+tokio = { version = "1.20.1", features = ["process"] }
 tracing = "0.1.36"
 whoami = "1.2.1"
 

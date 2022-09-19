@@ -107,16 +107,16 @@ pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
     }
 
     if uninstall_args.dotfiles {
-        uninstall_dotfiles();
+        uninstall_dotfiles().await;
     }
 
     if uninstall_args.ssh {
-        uninstall_ssh();
+        uninstall_ssh().await;
     }
 
     // Daemon must come last
     if uninstall_args.daemon {
-        uninstall_daemon();
+        uninstall_daemon().await
     }
 
     tel_join.await.ok();
@@ -139,7 +139,7 @@ async fn uninstall_app_bundle() {
         warn!("Could not find home directory");
     }
 
-    if let Err(err) = uninstall_cli(InstallComponents::BINARY) {
+    if let Err(err) = uninstall_cli(InstallComponents::BINARY).await {
         warn!("Could not uninstall CLI: {err}");
     }
 }
@@ -289,20 +289,23 @@ async fn uninstall_terminal_integrations() {
     }
 }
 
-fn uninstall_daemon() {
+async fn uninstall_daemon() {
     uninstall_cli(InstallComponents::DAEMON)
+        .await
         .map_err(|err| warn!("Could not uninstall daemon: {err}"))
         .ok();
 }
 
-fn uninstall_dotfiles() {
+async fn uninstall_dotfiles() {
     uninstall_cli(InstallComponents::DOTFILES)
+        .await
         .map_err(|err| warn!("Could not uninstall dotfiles: {err}"))
         .ok();
 }
 
-fn uninstall_ssh() {
+async fn uninstall_ssh() {
     uninstall_cli(InstallComponents::SSH)
+        .await
         .map_err(|err| warn!("Could not uninstall SSH: {err}"))
         .ok();
 }

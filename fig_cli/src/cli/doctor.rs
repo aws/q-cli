@@ -28,6 +28,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_daemon::Daemon;
 use fig_integrations::shell::{
     ShellExt,
     ShellIntegration,
@@ -54,6 +55,7 @@ use fig_util::{
     Terminal,
 };
 use futures::future::BoxFuture;
+use futures::FutureExt;
 use regex::Regex;
 use semver::Version;
 use serde_json::json;
@@ -140,6 +142,17 @@ impl From<eyre::Report> for DoctorError {
 
 impl From<fig_util::Error> for DoctorError {
     fn from(err: fig_util::Error) -> Self {
+        DoctorError::Error {
+            reason: err.to_string().into(),
+            info: vec![],
+            fix: None,
+            error: Some(eyre::Report::from(err)),
+        }
+    }
+}
+
+impl From<fig_daemon::Error> for DoctorError {
+    fn from(err: fig_daemon::Error) -> Self {
         DoctorError::Error {
             reason: err.to_string().into(),
             info: vec![],
@@ -761,21 +774,30 @@ impl DoctorCheck for DaemonCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        // Check if the daemon is running
-        let init_system = crate::daemon::InitSystem::get_init_system().context("Could not get init system")?;
-
-        let daemon_fix_sleep_sec = 5;
+        let delay_in_seconds = 5;
 
         macro_rules! daemon_fix {
             () => {
-                Some(DoctorFix::Sync(Box::new(move || {
-                    crate::daemon::install_daemon()?;
-                    // Sleep for a second to give the daemon time to install and start
-                    std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
-                    Ok(())
-                })))
+                Some(DoctorFix::Async(
+                    async move {
+                        let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+                        Daemon::default().install(&path).await?;
+                        // Sleep for a few seconds to give the daemon time to install and start
+                        std::thread::sleep(std::time::Duration::from_secs(delay_in_seconds));
+                        Ok(())
+                    }
+                    .boxed(),
+                ))
             };
         }
+
+        // Make sure the daemon is running
+        Daemon::default().start().await.map_err(|_| DoctorError::Error {
+            reason: "Daemon is not running".into(),
+            info: vec![],
+            fix: daemon_fix!(),
+            error: None,
+        })?;
 
         #[cfg(target_os = "macos")]
         {
@@ -789,12 +811,16 @@ impl DoctorCheck for DaemonCheck {
                 return Err(DoctorError::Error {
                     reason: format!("LaunchAgents directory does not exist at {:?}", launch_agents_path).into(),
                     info: vec![],
-                    fix: Some(DoctorFix::Sync(Box::new(move || {
-                        std::fs::create_dir_all(&launch_agents_path)?;
-                        crate::daemon::install_daemon()?;
-                        std::thread::sleep(std::time::Duration::from_secs(daemon_fix_sleep_sec));
-                        Ok(())
-                    }))),
+                    fix: Some(DoctorFix::Async(
+                        async move {
+                            std::fs::create_dir_all(&launch_agents_path)?;
+                            let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+                            fig_daemon::Daemon::default().install(&path).await?;
+                            std::thread::sleep(std::time::Duration::from_secs(delay_in_seconds));
+                            Ok(())
+                        }
+                        .boxed(),
+                    )),
                     error: None,
                 });
             }
@@ -821,7 +847,7 @@ impl DoctorCheck for DaemonCheck {
             })?;
         }
 
-        match init_system.daemon_status()? {
+        match Daemon::default().status().await? {
             Some(0) => Ok(()),
             Some(n) => {
                 let error_message = tokio::fs::read_to_string(
@@ -837,7 +863,6 @@ impl DoctorCheck for DaemonCheck {
                     reason: "Daemon is not running".into(),
                     info: vec![
                         format!("Daemon status: {n}").into(),
-                        format!("Init system: {:?}", init_system).into(),
                         format!("Error message: {}", error_message.unwrap_or_default()).into(),
                     ],
                     fix: daemon_fix!(),
@@ -846,7 +871,7 @@ impl DoctorCheck for DaemonCheck {
             },
             None => Err(DoctorError::Error {
                 reason: "Daemon is not running".into(),
-                info: vec![format!("Init system: {:?}", init_system).into()],
+                info: vec![],
                 fix: daemon_fix!(),
                 error: None,
             }),
@@ -855,7 +880,20 @@ impl DoctorCheck for DaemonCheck {
         // Get diagnostics from the daemon
         let socket_path = directories::daemon_socket_path().unwrap();
 
-        if !socket_path.exists() {
+        cfg_if::cfg_if! {
+            if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+                let socket_exists = socket_path.exists();
+            } else if #[cfg(target_os = "windows")] {
+                let socket_exists = match socket_path.metadata() {
+                    Ok(_) => true,
+                    // Windows can't query socket file existence
+                    // Check against arbitrary error code
+                    Err(err) => matches!(err.raw_os_error(), Some(1920)),
+                };
+            }
+        }
+
+        if !socket_exists {
             return Err(DoctorError::Error {
                 reason: "Daemon socket does not exist".into(),
                 info: vec![],
@@ -2167,12 +2205,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         if fig_util::manifest::is_full() {
             run_checks(
                 "Let's make sure Fig is running...".into(),
-                vec![
-                    &AppRunningCheck,
-                    &FigSocketCheck,
-                    #[cfg(unix)]
-                    &DaemonCheck,
-                ],
+                vec![&AppRunningCheck, &FigSocketCheck, &DaemonCheck],
                 config,
                 &mut spinner,
             )
