@@ -28,6 +28,8 @@ resource = "./autocomplete-icons/*"
 [features]
 default = []
 console = ["tokio/tracing", "fig_log/console"]
+# Required for cargo-tauri CLI
+custom-protocol = []
 
 [dependencies]
 anyhow = "1.0.65"

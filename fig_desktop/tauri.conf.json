@@ -1,0 +1,22 @@
+{
+  "build": {
+    "distDir": []
+  },
+  "package": {
+    "productName": "fig"
+  },
+  "tauri": {
+    "allowlist": {},
+    "bundle": {
+      "targets": "app",
+      "active": true,
+      "identifier": "com.mschrage.fig",
+      "icon": [],
+      "resources": [],
+      "category": "DeveloperTool"
+    },
+    "security": {},
+    "updater": {},
+    "windows": []
+  }
+}

@@ -29,6 +29,10 @@ workflows:
     jobs:
       - update-version
 
+      - macos:
+          requires: [update-version]
+          context:
+            - macos-signing
       - windows:
           requires: [update-version]
       - linux-headless-x86_64:
@@ -253,6 +257,125 @@ jobs:
           root: .
           paths:
             - bin/linux/x86_64/fig_desktop
+
+  macos:
+    macos:
+      xcode: 13.4.1
+      # machine: true
+      # resource_class: withfig/mac-mini
+    environment:
+      HOMEBREW_NO_AUTO_UPDATE: 1
+    steps:
+      - checkout-desktop
+      - run:
+          name: Remove gitconfig
+          command: rm ~/.gitconfig
+      - run:
+          name: Install Build Dependencies
+          command: brew install jq protobuf node
+      - rust/install:
+          version: 1.63.0
+      - run:
+          name: Configure rust
+          command: |
+            LINKER=ld ./desktop/build-scripts/rust-init.sh
+            rustup target add aarch64-apple-darwin
+            rustup target add x86_64-apple-darwin
+      - run:
+          name: Install tauri CLI
+          command: cargo install tauri-cli
+      - run:
+          name: Build fig_cli
+          command: cd desktop && make fig
+      - run:
+          name: Build figterm
+          command: cd desktop && make figterm
+      - run:
+          name: Create app bundle
+          command: |
+            cd desktop
+            cp "$PRODUCTS_DIR/fig-darwin-universal" "$PRODUCTS_DIR/fig-darwin-universal-$TARGET"
+            cp "$PRODUCTS_DIR/figterm" "$PRODUCTS_DIR/figterm-$TARGET"
+            config=$(jq -n \
+              --arg fig_cli "$(pwd)/$PRODUCTS_DIR/fig-darwin-universal" \
+              --arg figterm "$(pwd)/$PRODUCTS_DIR/figterm" \
+              '{"package": {"productName": "Fig"}, "tauri": {"bundle": {"externalBin": [$fig_cli, $figterm]}}}'
+            )
+            cd fig_desktop
+            echo $config > build-config.json
+            cargo-tauri build --config ./build-config.json --target "$TARGET"
+            rm build-config.json
+            cd ..
+            bundle_path="$(pwd)/target/universal-apple-darwin/release/bundle/macos/Fig.app"
+            echo "export BUNDLE_PATH=$bundle_path" >> $BASH_ENV
+          environment:
+            PRODUCTS_DIR: build/usr/bin
+            TARGET: universal-apple-darwin
+      - setup-signing-identity-macos
+      - run:
+          name: Codesign Bundle
+          command: |
+            codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/fig-darwin-universal"
+            codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/figterm" 
+            codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
+            codesign --verify --verbose --strict "$BUNDLE_PATH"
+      - run:
+          name: Notarize and Staple Bundle
+          command: |
+            ditto -c -k --keepParent "$BUNDLE_PATH" Fig.zip
+            xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+            rm Fig.zip
+            xcrun stapler staple "$BUNDLE_PATH"
+            # Verify notarization ticket
+            spctl -a -v "$BUNDLE_PATH"
+      - run:
+          name: Create DMG
+          command: |
+            npm install -g appdmg
+            FILE_CONTENTS=$(jq -n \
+              --arg bundle "$BUNDLE_PATH" \
+              --arg identity "$CODESIGNING_IDENTITY" \
+              '{
+                "title": "Fig",
+                "icon": "VolumeIcon.icns",
+                "background": "dmg-background.png",
+                "icon-size": 160,
+                "format": "ULFO",
+                "window": {
+                  "size": {
+                    "width": 660,
+                    "height": 400
+                  }
+                },
+                "contents": [
+                  {
+                    "x": 180,
+                    "y": 170,
+                    "type": "file",
+                    "path": $bundle
+                  },
+                  {
+                    "x": 480,
+                    "y": 170,
+                    "type": "link",
+                    "path": "/Applications"
+                  }
+                ],
+                "code-sign": {
+                  "signing-identity": $identity
+                }
+              }'
+            )
+            echo "$FILE_CONTENTS" > ./desktop/dmg/dmg-spec.json
+            appdmg ./desktop/dmg/dmg-spec.json fig.dmg
+      - run:
+          name: Notarize DMG
+          command: |
+            xcrun notarytool submit fig.dmg --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+            spctl -a -t open --context context:primary-signature -v fig.dmg 
+      - store_artifacts:
+          path: fig.dmg
+          destination: macos/dmg
 
   package-tarball:
     docker:
@@ -488,3 +611,31 @@ commands:
       - run:
           name: Configure rust
           command: ./desktop/build-scripts/rust-init.sh
+
+  setup-signing-identity-macos:
+    parameters:
+      keychain_name:
+        type: string
+        default: fig-certificates-macos
+      keychain_password:
+        type: string
+        default: hunter2
+    steps:
+      - run:
+          name: Setup codesigning keychain
+          command: |
+            security create-keychain -p << parameters.keychain_password >> << parameters.keychain_name >> || echo "already exists"
+
+            certificate_path="/tmp/certificate.p12"
+            echo "$SIGNING_CERTIFICATE_P12_DATA" | base64 -d > $certificate_path
+            security default-keychain -d user -s << parameters.keychain_name >>
+
+            security unlock-keychain -p << parameters.keychain_password >> << parameters.keychain_name >>
+            security import "$certificate_path" -f pkcs12 -k << parameters.keychain_name >> -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -x 
+            rm "$certificate_path"
+            security set-key-partition-list -S apple-tool:,apple: -s -k << parameters.keychain_password >> << parameters.keychain_name >>
+
+            identity=$(security find-identity -v -p codesigning | grep -o "Developer ID Application.*(${NOTARIZE_TEAM_ID})")
+            echo "export CODESIGNING_IDENTITY='$identity'" >> $BASH_ENV
+
+            security set-keychain-settings -lut 1200
