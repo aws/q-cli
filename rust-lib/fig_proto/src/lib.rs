@@ -35,6 +35,10 @@ pub mod secure {
     pub use crate::proto::secure::*;
 }
 
+pub mod stress {
+    pub use crate::proto::stress::*;
+}
+
 // This is not used explicitly, but it must be here for the derive
 // impls on the protos for dynamic message
 static DESCRIPTOR_POOL: Lazy<DescriptorPool> = Lazy::new(|| {

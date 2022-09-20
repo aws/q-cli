@@ -1,0 +1,29 @@
+syntax = "proto3";
+package stress;
+import "google/protobuf/empty.proto";
+
+message Serverbound {
+  oneof inner {
+    Setup setup = 1;
+    google.protobuf.Empty request_report = 2;
+    IncrementTest increment_test = 3;
+  }
+
+  enum StressKind { increment = 0; }
+
+  message Setup {
+    StressKind kind = 1;
+    int64 i = 2;
+  }
+
+  message IncrementTest { int64 number = 1; }
+}
+
+message Clientbound {
+  oneof inner {
+    google.protobuf.Empty ready = 1;
+    Report report = 2;
+  }
+
+  message Report { optional string message = 1; }
+}

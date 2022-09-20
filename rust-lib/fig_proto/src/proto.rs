@@ -37,3 +37,9 @@ pub(crate) mod secure {
     pub use crate::fig_common::*;
     include!(concat!(env!("OUT_DIR"), "/secure.rs"));
 }
+
+/// Stress Testing Protocol Buffers
+pub(crate) mod stress {
+    pub use crate::fig_common::*;
+    include!(concat!(env!("OUT_DIR"), "/stress.rs"));
+}

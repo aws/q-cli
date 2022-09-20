@@ -31,24 +31,6 @@ where
     where
         M: Message + ReflectMessage + Default,
     {
-        macro_rules! read_buffer {
-            () => {{
-                let bytes = self.inner.read_buf(&mut self.buffer).await?;
-
-                // If the buffer is empty, we've reached EOF
-                if bytes == 0 {
-                    if self.buffer.is_empty() {
-                        return Ok(None);
-                    } else {
-                        return Err(RecvError::Io(io::Error::from(io::ErrorKind::UnexpectedEof)));
-                    }
-                }
-            }};
-        }
-
-        // Read into buffer the first time
-        read_buffer!();
-
         loop {
             // Try to parse the message until the buffer is a valid message
             let mut cursor = io::Cursor::new(&self.buffer);
@@ -60,7 +42,16 @@ where
                 },
                 // If the message is incomplete, read more into the buffer
                 Err(fig_proto::FigMessageParseError::Incomplete(_)) => {
-                    read_buffer!()
+                    let bytes = self.inner.read_buf(&mut self.buffer).await?;
+
+                    // If the buffer is empty, we've reached EOF
+                    if bytes == 0 {
+                        if self.buffer.is_empty() {
+                            return Ok(None);
+                        } else {
+                            return Err(RecvError::Io(io::Error::from(io::ErrorKind::UnexpectedEof)));
+                        }
+                    }
                 },
                 // On any other error, return the error
                 Err(err) => {
