@@ -9,8 +9,7 @@ repository = "https://github.com/eiz/accessibility"
 description = "Accessibility query"
 publish = false
 
-[dependencies]
+[target.'cfg(target_os = "macos")'.dependencies]
+accessibility = { path = "../accessibility", version = "0.1.6" }
 core-foundation = "0.9"
 structopt = "0.3"
-
-accessibility = { path = "../accessibility", version = "0.1.6" }

@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-use fig_integrations::get_default_backup_dir;
 use fig_integrations::shell::ShellExt;
 use fig_proto::fig::install_response::{
     InstallationStatus,
@@ -15,7 +14,10 @@ use fig_proto::fig::{
     InstallResponse,
     Result as ProtoResult,
 };
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
 
 use super::RequestResult;
 
@@ -54,7 +56,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                         for integration in integrations {
                             let res = match action {
                                 InstallAction::InstallAction => {
-                                    let backup_dir = get_default_backup_dir().unwrap();
+                                    let backup_dir = directories::backups_dir().unwrap();
                                     integration.install(Some(&backup_dir))
                                 },
                                 InstallAction::UninstallAction => integration.uninstall(),

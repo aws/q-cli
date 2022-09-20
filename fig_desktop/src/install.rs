@@ -7,6 +7,21 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
 pub async fn run_install() {
+    // todo(chay): This is legacy yo, remove it around 10/20/2022 yo
+    #[cfg(target_os = "windows")]
+    {
+        let old_credentials_path = fig_util::directories::fig_dir().unwrap().join("credentials.json");
+        let new_credentials_path = fig_util::directories::fig_data_dir().unwrap().join("credentials.json");
+        if !new_credentials_path.exists() {
+            std::fs::copy(old_credentials_path, new_credentials_path).ok();
+        }
+
+        std::process::Command::new("fig")
+            .args(["install", "--daemon"])
+            .spawn()
+            .ok();
+    }
+
     // Update if there's a newer version
     #[cfg(all(target_os = "windows", not(debug_assertions)))]
     tokio::spawn(async {

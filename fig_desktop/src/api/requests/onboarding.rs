@@ -1,11 +1,12 @@
-use anyhow::Context;
-use fig_integrations::get_default_backup_dir;
 use fig_integrations::shell::ShellExt;
 use fig_proto::fig::{
     OnboardingAction,
     OnboardingRequest,
 };
-use fig_util::Shell;
+use fig_util::{
+    directories,
+    Shell,
+};
 use tokio::process::Command;
 
 use super::{
@@ -21,14 +22,14 @@ use crate::{
 pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
     match request.action() {
         OnboardingAction::InstallationScript => {
-            let backup_dir = get_default_backup_dir().context("Failed to get backup dir")?;
+            let backups_dir = directories::backups_dir()?;
 
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
-                            if let Err(err) = integration.install(Some(&backup_dir)) {
+                            if let Err(err) = integration.install(Some(&backups_dir)) {
                                 errs.push(format!("{integration}: {err}"));
                             }
                         }

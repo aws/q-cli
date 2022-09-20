@@ -7,7 +7,6 @@ use crate::cli::diagnostics::{
     Diagnostic,
     Diagnostics,
 };
-use crate::util::dialoguer_theme;
 
 #[derive(Debug, Args)]
 pub struct IssueArgs {
@@ -35,7 +34,7 @@ impl IssueArgs {
         let joined_description = self.description.join(" ").trim().to_owned();
 
         let issue_title = match joined_description.len() {
-            0 => dialoguer::Input::with_theme(&dialoguer_theme())
+            0 => dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
                 .with_prompt("Issue Title")
                 .interact_text()?,
             _ => joined_description,

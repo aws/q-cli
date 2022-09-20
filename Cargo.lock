@@ -2797,7 +2797,6 @@ dependencies = [
  "serde",
  "sysinfo 0.26.2",
  "thiserror",
- "time 0.3.14",
 ]
 
 [[package]]
@@ -2951,6 +2950,7 @@ dependencies = [
  "serde_json",
  "sha2",
  "thiserror",
+ "time 0.3.14",
  "tokio",
  "tracing",
  "which",

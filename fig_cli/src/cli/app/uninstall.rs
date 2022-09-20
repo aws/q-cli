@@ -70,7 +70,7 @@ pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
     // Send uninstall telemetry event
     let tel_join = tokio::task::spawn(async move {
         fig_telemetry::emit_track(TrackEvent::new(
-            TrackEventType::UninstallApp,
+            TrackEventType::UninstalledApp,
             if *IS_RUNNING_DAEMON.lock() {
                 TrackSource::Daemon
             } else {

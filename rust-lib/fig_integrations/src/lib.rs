@@ -6,10 +6,7 @@ pub mod ssh;
 
 use std::path::Path;
 
-pub use backup::{
-    backup_file,
-    get_default_backup_dir,
-};
+pub use backup::backup_file;
 pub use error::{
     Error,
     Result,

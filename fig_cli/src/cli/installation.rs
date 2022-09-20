@@ -9,17 +9,13 @@ use std::path::{
 use crossterm::style::Stylize;
 use eyre::{
     bail,
-    ContextCompat,
     Result,
     WrapErr,
 };
 use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_integrations::{
-    get_default_backup_dir,
-    Integration,
-};
+use fig_integrations::Integration;
 use fig_util::{
     directories,
     Shell,
@@ -121,7 +117,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
 }
 
 fn install_fig(_modify_files: bool) -> Result<()> {
-    let backup_dir = get_default_backup_dir().context("Could not get backup dir")?;
+    let backup_dir = directories::backups_dir()?;
 
     let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {

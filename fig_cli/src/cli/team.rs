@@ -16,7 +16,6 @@ use serde::{
 use serde_json::json;
 
 use super::OutputFormat;
-use crate::cli::dialoguer_theme;
 
 #[derive(Debug, Args)]
 pub struct TeamsArgs {
@@ -77,7 +76,8 @@ impl TeamCommand {
                 Ok(())
             } else if self.args.delete {
                 println!("Type the team name again to confirm: ");
-                let confirmation = dialoguer::Input::<String>::with_theme(&dialoguer_theme()).interact()?;
+                let confirmation =
+                    dialoguer::Input::<String>::with_theme(&crate::util::dialoguer_theme()).interact()?;
                 if &confirmation == team {
                     Request::delete(format!("/teams/{team}")).auth().send().await?;
                     println!("Deleted team {team}");

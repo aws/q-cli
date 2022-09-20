@@ -2,17 +2,13 @@ use std::path::PathBuf;
 
 use clap::Subcommand;
 use eyre::{
-    ContextCompat,
     Result,
     WrapErr,
 };
 use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
-use fig_integrations::{
-    get_default_backup_dir,
-    Integration as _,
-};
+use fig_integrations::Integration as _;
 use fig_util::{
     directories,
     Shell,
@@ -85,7 +81,7 @@ impl IntegrationsSubcommands {
 }
 
 async fn install(integration: Integration, silent: bool) -> Result<()> {
-    let backup_dir = get_default_backup_dir().context("Could not get backup dir")?;
+    let backup_dir = directories::backups_dir().context("Could not get backup dir")?;
 
     let mut installed = false;
 

@@ -29,7 +29,6 @@ use serde_json::{
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
-use crate::cli::dialoguer_theme;
 
 #[derive(Subcommand, Debug)]
 pub enum RootUserSubcommand {
@@ -78,7 +77,7 @@ impl RootUserSubcommand {
 
                 let email: String = match email {
                     Some(email) => email,
-                    None => dialoguer::Input::with_theme(&dialoguer_theme())
+                    None => dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
                         .with_prompt("Email")
                         .validate_with(|input: &String| -> Result<(), &str> {
                             if validator::validate_email(input.trim()) {
@@ -108,7 +107,7 @@ impl RootUserSubcommand {
                 };
 
                 loop {
-                    let login_code: String = dialoguer::Input::with_theme(&dialoguer_theme())
+                    let login_code: String = dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
                         .with_prompt("Login code")
                         .validate_with(|input: &String| -> Result<(), &str> {
                             if input.len() == 6 && input.chars().all(|c| c.is_ascii_digit()) {

@@ -39,7 +39,7 @@ pub fn stdio_debug_log(s: impl Display) {
 fn log_path(ptc_name: impl AsRef<str>) -> Result<PathBuf> {
     let log_file_name = format!("figterm{}.log", ptc_name.as_ref().replace('/', "_"));
 
-    let mut dir = directories::fig_dir()?.join("logs");
+    let mut dir = directories::logs_dir()?;
     dir.push(log_file_name);
     Ok(dir)
 }

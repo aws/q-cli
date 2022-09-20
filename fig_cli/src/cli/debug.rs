@@ -203,14 +203,14 @@ impl DebugSubcommand {
                     std::process::exit(code);
                 })?;
 
-                let log_dir = directories::fig_dir()?.join("logs");
+                let logs_dir = directories::logs_dir()?;
 
                 let mut files = files.clone();
 
                 let log_paths = if files.is_empty() {
-                    let pattern = log_dir.join("*.log");
+                    let pattern = logs_dir.join("*.log");
                     let globset = glob(&[pattern.to_str().unwrap()])?;
-                    glob_dir(&globset, &log_dir)?
+                    glob_dir(&globset, &logs_dir)?
                 } else {
                     let mut paths = Vec::new();
 
@@ -219,14 +219,14 @@ impl DebugSubcommand {
                         files.retain(|f| f != "figterm");
 
                         // Add figterm*.log to the list of files to open
-                        let pattern = log_dir.join("figterm*.log");
+                        let pattern = logs_dir.join("figterm*.log");
                         let globset = glob(&[pattern.to_str().unwrap()])?;
-                        let figterm_logs = glob_dir(&globset, &log_dir)?;
+                        let figterm_logs = glob_dir(&globset, &logs_dir)?;
                         paths.extend(figterm_logs);
                     }
 
                     // Push any remaining files to open
-                    paths.extend(files.iter().map(|file| log_dir.join(format!("{}.log", file))));
+                    paths.extend(files.iter().map(|file| logs_dir.join(format!("{}.log", file))));
 
                     paths
                 };

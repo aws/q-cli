@@ -20,19 +20,20 @@ use crate::{
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub enum TrackEventType {
-    RanCommand,
+    InstalledApp,
+    UpdatedApp,
+    UninstalledApp,
+    LaunchedApp,
+    QuitApp,
+    Login,
+    Logout,
     DoctorError,
+    RanCommand,
     WorkflowSearchViewed,
     WorkflowExecuted,
     WorkflowCancelled,
-    LaunchedApp,
-    QuitApp,
-    UninstallApp,
-    UpdatedApp,
     TerminalSessionMetricsRecorded,
     DotfileLineCountsRecorded,
-    Login,
-    Logout,
     /// Prefer not using this directly and instead define an enum value, this is only for
     /// internal use by `fig_telemetry`
     Other(String),
@@ -41,19 +42,20 @@ pub enum TrackEventType {
 impl std::fmt::Display for TrackEventType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         f.write_str(match self {
-            Self::RanCommand => "Ran CLI command",
+            Self::InstalledApp => "Installed App",
+            Self::UpdatedApp => "Updated App",
+            Self::UninstalledApp => "Uninstall App",
+            Self::LaunchedApp => "Launched App",
+            Self::QuitApp => "Quit App",
+            Self::Login => "login",
+            Self::Logout => "User Logged Out",
             Self::DoctorError => "Doctor Error",
+            Self::RanCommand => "Ran CLI command",
             Self::WorkflowSearchViewed => "Workflow Search Viewed",
             Self::WorkflowExecuted => "Workflow Executed",
             Self::WorkflowCancelled => "Workflow Cancelled",
-            Self::LaunchedApp => "Launched App",
-            Self::QuitApp => "Quit App",
-            Self::UninstallApp => "Uninstall App",
-            Self::UpdatedApp => "Updated App",
             Self::TerminalSessionMetricsRecorded => "Terminal Session Metrics Recorded",
             Self::DotfileLineCountsRecorded => "Dotfile Line Counts Recorded",
-            Self::Login => "login",
-            Self::Logout => "User Logged Out",
             Self::Other(s) => s,
         })
     }

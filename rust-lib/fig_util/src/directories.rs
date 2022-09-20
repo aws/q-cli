@@ -4,6 +4,7 @@ use std::path::PathBuf;
 
 use camino::Utf8PathBuf;
 use thiserror::Error;
+use time::OffsetDateTime;
 
 #[derive(Debug, Error)]
 pub enum DirectoryError {
@@ -13,6 +14,8 @@ pub enum DirectoryError {
     NonAbsolutePath(PathBuf),
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
+    #[error(transparent)]
+    TimeFormat(#[from] time::error::Format),
     #[error(transparent)]
     Utf8FromPath(#[from] camino::FromPathError),
     #[error(transparent)]
@@ -116,7 +119,13 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
 
 /// The path to all of the themes
 pub fn themes_dir() -> Result<PathBuf> {
-    Ok(themes_repo_dir()?.join("themes"))
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "windows"))] {
+            Ok(themes_repo_dir()?.join("themes"))
+        } else if #[cfg(target_os = "macos")] {
+            deprecated::legacy_themes_dir()
+        }
+    }
 }
 
 /// The path to the cloned repo containing the themes
@@ -131,6 +140,25 @@ pub fn plugins_dir() -> Result<PathBuf> {
             Ok(fig_data_dir()?.join("plugins"))
         } else if #[cfg(target_os = "macos")] {
             home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
+        }
+    }
+}
+
+/// The directory to all the fig logs
+pub fn logs_dir() -> Result<PathBuf> {
+    Ok(fig_dir()?.join("logs"))
+}
+
+pub fn backups_dir() -> Result<PathBuf> {
+    let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
+        "[year]-[month]-[day]_[hour]-[minute]-[second]"
+    ))?;
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            Ok(home_dir()?.join(".fig.dotfiles.bak").join(now))
+        } else if #[cfg(target_os = "windows")] {
+            Ok(fig_data_dir()?.join("backups").join(now))
         }
     }
 }
@@ -219,6 +247,22 @@ utf8_dir!(daemon_socket_path);
 utf8_dir!(manifest_path);
 utf8_dir!(managed_binaries_dir);
 utf8_dir!(managed_fig_cli_path);
+utf8_dir!(plugins_dir);
+utf8_dir!(backups_dir);
+utf8_dir!(logs_dir);
+
+#[cfg(target_os = "macos")]
+mod deprecated {
+    use super::*;
+
+    pub fn legacy_themes_dir() -> Result<PathBuf> {
+        let new_theme_dir = themes_dir()?;
+        match new_theme_dir.exists() {
+            true => Ok(new_theme_dir),
+            false => Ok(themes_repo_dir()?.join("themes")),
+        }
+    }
+}
 
 #[cfg(test)]
 mod test {

@@ -392,13 +392,6 @@ pub fn get_fig_version() -> Result<String> {
     }
 }
 
-pub fn dialoguer_theme() -> ColorfulTheme {
-    ColorfulTheme {
-        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
-        ..ColorfulTheme::default()
-    }
-}
-
 pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<String> {
     Some(
         Regex::new(regex.as_ref())
@@ -448,6 +441,13 @@ pub fn get_app_info() -> Result<String> {
         .output()?;
     let result = String::from_utf8(output.stdout)?;
     Ok(result.trim().into())
+}
+
+pub fn dialoguer_theme() -> ColorfulTheme {
+    ColorfulTheme {
+        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
+        ..ColorfulTheme::default()
+    }
 }
 
 #[ignore]

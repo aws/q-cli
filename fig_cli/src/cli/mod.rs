@@ -50,7 +50,6 @@ use self::integrations::IntegrationsSubcommands;
 use self::plugins::PluginsSubcommands;
 use crate::daemon::daemon;
 use crate::util::{
-    dialoguer_theme,
     is_app_running,
     launch_fig,
     LaunchArgs,

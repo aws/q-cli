@@ -44,9 +44,7 @@ pub fn stdio_debug_log(s: impl Display) {
 }
 
 fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
-    Ok(directories::fig_dir()?
-        .join("logs")
-        .join(log_file_name.as_ref().replace('/', "_").replace('\\', "_")))
+    Ok(directories::logs_dir()?.join(log_file_name.as_ref().replace('/', "_").replace('\\', "_")))
 }
 
 #[must_use]

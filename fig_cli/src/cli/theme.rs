@@ -1,6 +1,5 @@
 use std::fmt::Write;
 use std::fs;
-use std::path::PathBuf;
 
 use clap::Args;
 use crossterm::style::{
@@ -35,14 +34,6 @@ struct Theme {
     version: Option<String>,
 }
 
-fn theme_folder() -> Result<PathBuf> {
-    let new_theme_dir = directories::themes_dir()?;
-    match new_theme_dir.exists() {
-        true => Ok(new_theme_dir),
-        false => Ok(directories::home_dir()?.join(".fig").join("themes")),
-    }
-}
-
 #[derive(Debug, Args)]
 pub struct ThemeArgs {
     #[clap(long, value_parser, conflicts_with_all = &["folder", "theme"])]
@@ -55,7 +46,7 @@ pub struct ThemeArgs {
 
 impl ThemeArgs {
     pub async fn execute(&self) -> Result<()> {
-        let theme_dir = theme_folder().context("Could not get theme directory")?;
+        let theme_dir = directories::themes_dir().context("Could not get theme directory")?;
 
         if self.folder {
             println!("{}", theme_dir.display());

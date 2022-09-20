@@ -15,7 +15,6 @@ use serde::{
     Serialize,
 };
 
-use crate::util::dialoguer_theme;
 use crate::util::spinner::{
     Spinner,
     SpinnerComponent,
@@ -102,7 +101,7 @@ fn theme() -> ColorfulTheme {
     ColorfulTheme {
         success_prefix: dialoguer::console::style(" ".into()),
         values_style: dialoguer::console::Style::new().magenta().bright(),
-        ..dialoguer_theme()
+        ..crate::util::dialoguer_theme()
     }
 }
 
@@ -316,7 +315,7 @@ impl AiArgs {
                             })
                             .collect();
 
-                        let selected = dialoguer::Select::with_theme(&dialoguer_theme())
+                        let selected = dialoguer::Select::with_theme(&crate::util::dialoguer_theme())
                             .default(0)
                             .items(&actions)
                             .interact_opt()?;
@@ -341,7 +340,7 @@ impl AiArgs {
                             DialogActions::Cancel,
                         ]);
 
-                        let selected = dialoguer::Select::with_theme(&dialoguer_theme())
+                        let selected = dialoguer::Select::with_theme(&crate::util::dialoguer_theme())
                             .default(0)
                             .items(&actions)
                             .interact_opt()?;
