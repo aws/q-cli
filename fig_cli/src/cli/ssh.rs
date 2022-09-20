@@ -31,14 +31,14 @@ pub struct SshSubcommand {
 struct Host {
     nick_name: String,
     ip: String,
-    connections: Vec<BufferedUnixStream>,
+    connections: Vec<Connection>,
     #[serde(default)]
     namespace: Option<String>,
 }
 
 #[derive(Deserialize, Debug)]
 #[serde(tag = "connectionType")]
-enum BufferedUnixStream {
+enum Connection {
     #[serde(rename = "ssh", rename_all = "camelCase")]
     Ssh { port: u16, identity_ids: Vec<String> },
 }
@@ -66,16 +66,16 @@ enum AuthenticationType {
     Other,
 }
 
-impl BufferedUnixStream {
+impl Connection {
     fn identity_ids(&self) -> &Vec<String> {
         match self {
-            BufferedUnixStream::Ssh { identity_ids, .. } => identity_ids,
+            Connection::Ssh { identity_ids, .. } => identity_ids,
         }
     }
 
     fn port(&self) -> u16 {
         match self {
-            BufferedUnixStream::Ssh { port, .. } => *port,
+            Connection::Ssh { port, .. } => *port,
         }
     }
 }
@@ -128,8 +128,8 @@ impl SshSubcommand {
         let connections = host
             .connections
             .iter()
-            .filter(|conn| matches!(conn, BufferedUnixStream::Ssh { .. }))
-            .collect::<Vec<&BufferedUnixStream>>();
+            .filter(|conn| matches!(conn, Connection::Ssh { .. }))
+            .collect::<Vec<&Connection>>();
         if connections.is_empty() {
             bail!("Host has no ssh connections");
         } else if connections.len() > 1 {
@@ -140,7 +140,7 @@ impl SshSubcommand {
 
         let identities = connection.identity_ids();
         if identities.is_empty() {
-            bail!("BufferedUnixStream has no identities");
+            bail!("Connection has no identities");
         }
         let selected_identity = if let Some(identity) = &self.auth {
             let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
