@@ -1,4 +1,4 @@
 **/node_modules
 **/Dockerfile
 **/.dockerignore
-dotenv/src/local.ts
+tests/dotenv/src/local.ts

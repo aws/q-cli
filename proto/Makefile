@@ -27,7 +27,7 @@ SECURE = "./secure.proto"
 ARTIFACTS           = "./bin"
 TS_API_BINDINGS     = $(ROOT)/../typescript-api-bindings/src
 SWIFT_API_BINDINGS  = $(ROOT)/../swift-api-bindings/Sources/FigAPIBindings
-DOTENV             ?= $(ROOT)/../dotenv/src
+DOTENV             ?= $(ROOT)/../tests/dotenv/src
 
 DESTINATIONS = $(ARTIFACTS) \
 					     $(TS_API_BINDINGS) \
