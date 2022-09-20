@@ -36,7 +36,7 @@ struct Theme {
 }
 
 fn theme_folder() -> Result<PathBuf> {
-    let new_theme_dir = fig_sync::themes::themes_directory()?;
+    let new_theme_dir = directories::themes_dir()?;
     match new_theme_dir.exists() {
         true => Ok(new_theme_dir),
         false => Ok(directories::home_dir()?.join(".fig").join("themes")),

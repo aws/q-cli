@@ -1,5 +1,4 @@
 use std::ffi::OsString;
-use std::path::PathBuf;
 
 use fig_api_client::plugins::plugin as fetch_plugin;
 use fig_util::directories;
@@ -54,16 +53,6 @@ pub enum PluginError {
     Collected(#[from] CollectedError),
 }
 
-pub fn plugin_data_dir() -> Result<PathBuf, fig_util::directories::DirectoryError> {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            directories::home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
-        } else {
-            Ok(directories::fig_data_dir()?.join("plugins"))
-        }
-    }
-}
-
 pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
     let dotfiles_path = dotfiles::api::all_file_path()?;
     let dotfiles_file = std::fs::File::open(dotfiles_path)?;
@@ -74,7 +63,7 @@ pub async fn fetch_installed_plugins(update: bool) -> Result<()> {
         tokio::spawn(async move {
             match fetch_plugin(plugin.name).await {
                 Ok(plugin) => {
-                    if let Ok(plugins_directory) = plugin_data_dir() {
+                    if let Ok(plugins_directory) = directories::plugins_dir() {
                         let plugin_directory = plugins_directory.join(&plugin.name);
 
                         if !git::check_if_git_repo(&plugin_directory).await {

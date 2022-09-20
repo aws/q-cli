@@ -34,10 +34,7 @@ use aws_smithy_client::erase::{
     DynMiddleware,
 };
 use aws_smithy_client::hyper_ext;
-use fig_util::directories::{
-    self,
-    fig_data_dir,
-};
+use fig_util::directories;
 use jwt::{
     Header,
     RegisteredClaims,
@@ -633,7 +630,7 @@ impl Credentials {
         client: &Client,
         client_id: Option<String>,
     ) -> Result<(), RefreshError> {
-        if let Ok(data_dir) = fig_data_dir() {
+        if let Ok(data_dir) = directories::fig_data_dir() {
             if let Ok(token) = std::fs::read_to_string(data_dir.join("token_is_expired")) {
                 if self.refresh_token.as_deref().unwrap_or_default() == token {
                     return Err(RefreshError::RefreshTokenExpired);
@@ -660,7 +657,7 @@ impl Credentials {
             Err(ref sdk_error @ SdkError::ServiceError { ref err, .. }) if err.is_not_authorized_exception() => {
                 refresh_ping(sdk_error, self.get_email().cloned()).await;
                 self.refresh_token_expired = Some(true);
-                if let Ok(data_dir) = fig_data_dir() {
+                if let Ok(data_dir) = directories::fig_data_dir() {
                     std::fs::write(
                         data_dir.join("token_is_expired"),
                         self.refresh_token.as_deref().unwrap_or_default(),
@@ -676,7 +673,7 @@ impl Credentials {
             },
         };
 
-        if let Ok(data_dir) = fig_data_dir() {
+        if let Ok(data_dir) = directories::fig_data_dir() {
             std::fs::remove_file(data_dir.join("token_is_expired")).ok();
         }
 

@@ -23,7 +23,7 @@ pub async fn run_install() {
 
     // remove the updater if it exists
     #[cfg(target_os = "windows")]
-    std::fs::remove_file(fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe")).ok();
+    std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
 
     tokio::spawn(async {
         if let Err(err) = fig_sync::themes::clone_or_update().await {

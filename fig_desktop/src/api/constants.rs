@@ -36,7 +36,7 @@ pub struct Constants {
 
 impl Default for Constants {
     fn default() -> Self {
-        let themes_folder = fig_sync::themes::themes_directory()
+        let themes_folder = directories::themes_dir()
             .ok()
             .and_then(|dir| Utf8PathBuf::try_from(dir).ok());
 

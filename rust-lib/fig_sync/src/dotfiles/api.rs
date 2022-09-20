@@ -81,9 +81,7 @@ pub enum UpdateStatus {
 
 pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
     let device_uniqueid = get_system_id().ok();
-    let plugins_directory = crate::plugins::plugin_data_dir()
-        .map(|p| p.to_string_lossy().to_string())
-        .ok();
+    let plugins_directory = directories::plugins_dir().map(|p| p.to_string_lossy().to_string()).ok();
 
     let debug_dotfiles = match fig_settings::state::get_value("developer.dotfiles.debug") {
         Ok(Some(serde_json::Value::Bool(true))) => Some("true"),

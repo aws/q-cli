@@ -204,7 +204,7 @@ pub enum InternalSubcommand {
         #[clap(long, value_parser)]
         namespace: Option<String>,
     },
-    FigSocketPath,
+    SocketsDir,
     StreamFromSocket,
     FigtermSocketPath {
         session_id: String,
@@ -504,8 +504,8 @@ impl InternalSubcommand {
                     conn.send_message(message).await?;
                 }
             },
-            InternalSubcommand::FigSocketPath => {
-                writeln!(stdout(), "{}", directories::fig_socket_path()?.to_string_lossy()).ok();
+            InternalSubcommand::SocketsDir => {
+                writeln!(stdout(), "{}", directories::sockets_dir_utf8()?).ok();
             },
             InternalSubcommand::FigtermSocketPath { session_id } => {
                 writeln!(

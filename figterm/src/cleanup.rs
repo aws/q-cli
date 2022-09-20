@@ -12,7 +12,7 @@ use procfs::net::UnixState;
 
 pub fn cleanup() -> Result<()> {
     if fig_util::system_info::in_ssh() {
-        let lockfile = File::create(directories::fig_ephemeral_dir()?.join("cleanup.lock"))?;
+        let lockfile = File::create(directories::sockets_dir()?.join("cleanup.lock"))?;
         flock(lockfile.as_raw_fd(), FlockArg::LockExclusive)?;
 
         let secure_path = directories::secure_socket_path()?;
