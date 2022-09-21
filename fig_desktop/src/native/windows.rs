@@ -146,11 +146,11 @@ impl NativeState {
                         let caret = selection.GetElement(0)?;
                         caret.ExpandToEnclosingUnit(TextUnit_Character)?;
 
-                        let bounds = *caret.GetBoundingRectangles()?;
+                        let bounds = caret.GetBoundingRectangles()?;
                         let mut elements = std::ptr::null_mut::<RECT>();
                         let mut elements_len = 0;
 
-                        automation.SafeArrayToRectNativeArray(&bounds, &mut elements, &mut elements_len)?;
+                        automation.SafeArrayToRectNativeArray(&*bounds, &mut elements, &mut elements_len)?;
 
                         if elements_len > 0 {
                             let bounds = *elements;
