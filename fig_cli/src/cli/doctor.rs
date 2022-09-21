@@ -1378,7 +1378,7 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
             Ok(())
         } else {
             Err(doctor_error!(
-                "Autocomplete is currently disabled. Your desktop integration(s) may be broken!"
+                "Autocomplete is currently inactive. Your desktop integration(s) may be broken!"
             ))
         }
     }
