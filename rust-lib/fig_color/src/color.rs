@@ -1,4 +1,4 @@
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub enum VTermColor {
     Rgb { red: u8, green: u8, blue: u8 },
     Indexed { idx: u8 },
@@ -19,21 +19,22 @@ bitflags::bitflags! {
     }
 }
 
-#[derive(Clone, PartialEq, Eq)]
+#[derive(Clone, PartialEq, Eq, Debug)]
 pub struct SuggestionColor {
     pub fg: Option<VTermColor>,
     pub bg: Option<VTermColor>,
 }
 
-#[derive(PartialEq, Eq)]
+#[derive(PartialEq, Eq, Debug)]
 #[repr(u8)]
 pub enum ColorType {
     Named = 1,
     Rgb   = 2,
 }
 
+#[derive(Debug, PartialEq, Eq)]
 pub struct Color {
-    r#type: ColorType,
+    kind: ColorType,
     name_idx: u8,
     rgb: [u8; 3],
 }
@@ -157,7 +158,7 @@ fn try_parse_rgb(name: &str) -> Option<Color> {
     };
 
     let mut color = Color {
-        r#type: ColorType::Rgb,
+        kind: ColorType::Rgb,
         name_idx: 0,
         rgb: [0, 0, 0],
     };
@@ -228,7 +229,7 @@ fn try_parse_named(s: &str) -> Option<Color> {
     let idx_res = NAMED_COLORS.binary_search_by(|elem| elem.name.cmp(&s.to_ascii_lowercase()));
     if let Ok(idx) = idx_res {
         return Some(Color {
-            r#type: ColorType::Named,
+            kind: ColorType::Named,
             name_idx: NAMED_COLORS[idx as usize].idx,
             rgb: [0, 0, 0],
         });
@@ -291,12 +292,15 @@ pub fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Opt
     let mut first_named = None;
 
     for color_name in s.to_string().split(|x| x == ' ' || x == '\t') {
-        if color_name.starts_with('-') {
-            let color = try_parse_named(color_name);
+        if !color_name.starts_with('-') {
+            let mut color = try_parse_named(color_name);
+            if color.is_none() {
+                color = try_parse_rgb(color_name);
+            }
             if let Some(color) = color {
-                if first_rgb.is_none() && color.r#type == ColorType::Rgb {
+                if first_rgb.is_none() && color.kind == ColorType::Rgb {
                     first_rgb = Some(color);
-                } else if first_named.is_none() && color.r#type == ColorType::Named {
+                } else if first_named.is_none() && color.kind == ColorType::Named {
                     first_named = Some(color);
                 }
             }
@@ -311,7 +315,7 @@ pub fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Opt
 
 pub fn color_to_vterm_color(c: Option<Color>, color_support: ColorSupport) -> Option<VTermColor> {
     let c = c?;
-    if c.r#type == ColorType::Rgb {
+    if c.kind == ColorType::Rgb {
         if color_support.contains(ColorSupport::TERM24BIT) {
             Some(vterm_color_rgb(c.rgb[0], c.rgb[1], c.rgb[2]))
         } else if color_support.contains(ColorSupport::TERM256) {
@@ -330,7 +334,7 @@ pub fn parse_suggestion_color_fish(s: &str, color_support: ColorSupport) -> Opti
     Some(SuggestionColor { fg: Some(vc), bg: None })
 }
 
-pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSupport) -> Option<SuggestionColor> {
+pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSupport) -> SuggestionColor {
     let mut sc = SuggestionColor { fg: None, bg: None };
 
     for mut color_name in s.to_string().split(',') {
@@ -374,16 +378,89 @@ pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSuppo
         }
     }
 
-    Some(sc)
+    sc
 }
 
 #[cfg(test)]
 mod test {
     use super::*;
 
+    /// run closure with set environment variables
+    fn with_env<T>(new_variables: &[(&str, &str)], f: impl FnOnce() -> T) -> T {
+        let original_variables = std::env::vars().collect::<Vec<(String, String)>>();
+        for (key, _) in &original_variables {
+            std::env::remove_var(key);
+        }
+        for (key, value) in new_variables {
+            std::env::set_var(key, value);
+        }
+        let res = f();
+        for (key, _) in new_variables {
+            std::env::remove_var(key);
+        }
+        for (key, value) in original_variables {
+            std::env::set_var(key, value);
+        }
+        res
+    }
+
     #[test]
     fn color_support() {
+        // make sure it doesn't panic
         get_color_support();
+
+        let assert_supports =
+            |vars: &[(&str, &str)], expected: ColorSupport| assert_eq!(with_env(vars, get_color_support), expected);
+
+        // no env
+        assert_supports(&[], ColorSupport::empty());
+
+        // TERM256
+        // fish_term256
+        assert_supports(&[("fish_term256", "y")], ColorSupport::TERM256);
+        assert_supports(&[("fish_term256", "n")], ColorSupport::empty());
+        // TERM=*256color*
+        assert_supports(&[("TERM", "foo_256color_bar")], ColorSupport::TERM256);
+        // xterm
+        assert_supports(&[("TERM", "xterm")], ColorSupport::TERM256);
+        // recent Terminal.app
+        assert_supports(
+            &[
+                ("TERM", "xterm"),
+                ("TERM_PROGRAM", "Apple_Terminal"),
+                ("TERM_PROGRAM_VERSION", "300"),
+            ],
+            ColorSupport::TERM256,
+        );
+        // old Terminal.app
+        assert_supports(
+            &[
+                ("TERM", "xterm"),
+                ("TERM_PROGRAM", "Apple_Terminal"),
+                ("TERM_PROGRAM_VERSION", "200"),
+            ],
+            ColorSupport::empty(),
+        );
+
+        // TERM24BIT
+        // fish_term24bit
+        assert_supports(&[("fish_term24bit", "y")], ColorSupport::TERM24BIT);
+        assert_supports(&[("fish_term24bit", "n")], ColorSupport::empty());
+        // screen/emacs
+        assert_supports(&[("TERM", "eterm"), ("STY", "foo")], ColorSupport::empty());
+        // colorterm
+        assert_supports(&[("COLORTERM", "truecolor")], ColorSupport::TERM24BIT);
+        assert_supports(&[("COLORTERM", "24bit")], ColorSupport::TERM24BIT);
+        assert_supports(&[("COLORTERM", "foo")], ColorSupport::empty());
+        // konsole
+        assert_supports(&[("KONSOLE_VERSION", "foo")], ColorSupport::TERM24BIT);
+        // iterm
+        assert_supports(&[("ITERM_SESSION_ID", "1:2")], ColorSupport::TERM24BIT);
+        // st
+        assert_supports(&[("TERM", "st-foo")], ColorSupport::TERM24BIT);
+        // vte
+        assert_supports(&[("VTE_VERSION", "3500")], ColorSupport::empty());
+        assert_supports(&[("VTE_VERSION", "3700")], ColorSupport::TERM24BIT);
     }
 
     #[test]
@@ -427,8 +504,77 @@ mod test {
         assert!(try_parse_named("BrBlue").is_some());
         assert!(try_parse_named("bRYelLow").is_some());
 
+        // Should not parse
         assert!(try_parse_named("aaa").is_none());
         assert!(try_parse_named("blu").is_none());
         assert!(try_parse_named("other").is_none());
+    }
+
+    #[test]
+    fn parse_fish_autosuggest() {
+        assert_eq!(
+            parse_fish_color_from_string("cyan", ColorSupport::TERM256),
+            Some(Color {
+                kind: ColorType::Named,
+                name_idx: 6,
+                rgb: [0, 0, 0]
+            })
+        );
+        assert_eq!(
+            parse_fish_color_from_string("#123", ColorSupport::TERM256),
+            Some(Color {
+                kind: ColorType::Rgb,
+                name_idx: 0,
+                rgb: [0x11, 0x22, 0x33]
+            })
+        );
+        assert_eq!(
+            parse_fish_color_from_string("-ignore\t-white\t-#123\tcyan", ColorSupport::TERM256),
+            Some(Color {
+                kind: ColorType::Named,
+                name_idx: 6,
+                rgb: [0, 0, 0]
+            })
+        );
+        assert_eq!(
+            parse_fish_color_from_string("-ignore -all", ColorSupport::TERM256),
+            None
+        );
+    }
+
+    #[test]
+    fn parse_zsh_autosuggest() {
+        assert_eq!(
+            // color support supports rgb
+            parse_suggestion_color_zsh_autosuggest("fg=#123,bg=#456", ColorSupport::TERM24BIT),
+            SuggestionColor {
+                fg: Some(vterm_color_rgb(0x11, 0x22, 0x33)),
+                bg: Some(vterm_color_rgb(0x44, 0x55, 0x66)),
+            }
+        );
+        assert_eq!(
+            // color support doesn't support rgb
+            parse_suggestion_color_zsh_autosuggest("fg=#123,bg=#456", ColorSupport::empty()),
+            SuggestionColor {
+                fg: Some(vterm_color_indexed(0)),
+                bg: Some(vterm_color_indexed(8)),
+            }
+        );
+        assert_eq!(
+            // default
+            parse_suggestion_color_zsh_autosuggest("fg=8", ColorSupport::empty()),
+            SuggestionColor {
+                fg: Some(vterm_color_indexed(8)),
+                bg: None,
+            }
+        );
+        assert_eq!(
+            // ignore and recover from invalid data
+            parse_suggestion_color_zsh_autosuggest("invalid=!,,=,bg=cyan", ColorSupport::empty()),
+            SuggestionColor {
+                fg: None,
+                bg: Some(vterm_color_indexed(6))
+            }
+        );
     }
 }

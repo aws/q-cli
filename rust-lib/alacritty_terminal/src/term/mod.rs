@@ -1857,7 +1857,7 @@ impl<T: EventListener> Handler for Term<T> {
 
         if let Some(color_support) = self.shell_state().color_support {
             self.shell_state.zsh_autosuggestion_color =
-                fig_color::parse_suggestion_color_zsh_autosuggest(color, color_support);
+                Some(fig_color::parse_suggestion_color_zsh_autosuggest(color, color_support));
         }
     }
 

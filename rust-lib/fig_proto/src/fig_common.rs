@@ -135,7 +135,52 @@ impl From<Json> for Value {
                     .map(|(key, value)| (key, Value::from(value)))
                     .collect(),
             ),
-            None => todo!(),
+            None => Value::Null,
         }
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use serde_json::json;
+
+    use super::*;
+
+    #[test]
+    fn into_value() {
+        let type_hint_value = |x: Value| x;
+        let type_hint_json = |x: Json| x;
+
+        assert_eq!(type_hint_value(Json { value: None }.into()), json! {null});
+        assert_eq!(
+            type_hint_value(
+                Json {
+                    value: Some(json::Value::String("hello".into()))
+                }
+                .into()
+            ),
+            json! {"hello"}
+        );
+        assert_eq!(
+            type_hint_value(
+                Json::from_iter(
+                    [
+                        ("null".to_string(), type_hint_json(None::<bool>.into())),
+                        ("bool".to_string(), type_hint_json(true.into())),
+                        ("i64".to_string(), type_hint_json((-123_i64).into())),
+                        ("u64".to_string(), type_hint_json(123_u64.into())),
+                        ("f64".to_string(), type_hint_json(1.2_f64.into())),
+                        ("string".to_string(), type_hint_json("value".to_string().into())),
+                        (
+                            "array".to_string(),
+                            Json::from_iter(["foo".to_string(), "bar".to_string(), "baz".to_string()].into_iter())
+                        ),
+                    ]
+                    .into_iter()
+                )
+                .into()
+            ),
+            json! {{"null": null, "bool": true, "i64": -123, "u64": 123, "f64": 1.2, "string": "value", "array": ["foo", "bar", "baz"]}}
+        );
     }
 }

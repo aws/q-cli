@@ -25,3 +25,22 @@ impl InsertTextRequest {
         out
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn to_term_string() {
+        assert_eq!(
+            InsertTextRequest {
+                deletion: Some(3),
+                insertion: Some("hello".to_string()),
+                offset: Some(2),
+                ..Default::default()
+            }
+            .to_term_string(),
+            "\u{1b}[C\u{1b}[C\u{08}\u{08}\u{08}hello"
+        );
+    }
+}

@@ -100,7 +100,7 @@ pub enum FigMessageParseError {
 
 #[derive(Debug, Error)]
 pub enum FigMessageDecodeError {
-    #[error("name is a valid protobuf: {0}")]
+    #[error("name is not a valid protobuf: {0}")]
     NameNotValid(String),
     #[error(transparent)]
     ProstDecode(#[from] DecodeError),
@@ -313,10 +313,10 @@ mod tests {
     #[test]
     fn rmp_round_trip() {
         let message = test_message();
-        let json = rmp_serde::to_vec(&message.transcode_to_dynamic()).unwrap();
+        let mpack = rmp_serde::to_vec(&message.transcode_to_dynamic()).unwrap();
 
         let msg = FigMessage {
-            inner: Bytes::from(json),
+            inner: Bytes::from(mpack),
             message_type: FigMessageType::MessagePack,
         };
         let decoded_message: local::LocalMessage = msg.decode().unwrap();

@@ -56,3 +56,15 @@ impl RecvError {
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn is_disconnect() {
+        assert!(!RecvError::Decode(fig_proto::FigMessageDecodeError::NameNotValid("test".to_string())).is_disconnect());
+        assert!(RecvError::Io(std::io::Error::new(std::io::ErrorKind::ConnectionAborted, "error")).is_disconnect());
+        assert!(!RecvError::Io(std::io::Error::new(std::io::ErrorKind::WouldBlock, "error")).is_disconnect());
+    }
+}

@@ -59,10 +59,7 @@ pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSup
     inner.map(|inner| SuggestionColor { inner })
 }
 
-pub fn parse_suggestion_color_zsh_autosuggest(
-    suggestion_str: &str,
-    color_support: ColorSupport,
-) -> Option<SuggestionColor> {
+pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_support: ColorSupport) -> SuggestionColor {
     let inner = color::parse_suggestion_color_zsh_autosuggest(suggestion_str, color_support);
-    inner.map(|inner| SuggestionColor { inner })
+    SuggestionColor { inner }
 }

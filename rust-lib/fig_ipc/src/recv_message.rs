@@ -64,3 +64,83 @@ where
         }
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use std::io::Cursor;
+
+    use super::*;
+    use crate::SendMessage;
+
+    fn mock(initial: Vec<u8>) -> BufferedReader<Cursor<Vec<u8>>> {
+        let size = initial.len();
+        let mut inner = Cursor::new(initial);
+        inner.set_position(size as u64);
+        BufferedReader::new(inner)
+    }
+
+    fn test_message_small() -> fig_proto::local::LocalMessage {
+        fig_proto::hooks::hook_to_message(fig_proto::hooks::new_hide_hook())
+    }
+
+    fn test_message_large() -> fig_proto::local::LocalMessage {
+        fig_proto::hooks::hook_to_message(fig_proto::hooks::new_edit_buffer_hook(
+            None,
+            "A".repeat(10000),
+            0,
+            0,
+            None,
+        ))
+    }
+
+    #[tokio::test]
+    async fn single_message_small() {
+        let mut mock = mock(vec![]);
+        mock.send_message(test_message_small()).await.unwrap();
+        mock.inner.set_position(0);
+        assert_eq!(mock.recv_message().await.unwrap(), Some(test_message_small()));
+    }
+
+    #[tokio::test]
+    async fn single_message_large() {
+        let mut mock = mock(vec![]);
+        mock.send_message(test_message_large()).await.unwrap();
+        mock.inner.set_position(0);
+        assert_eq!(mock.recv_message().await.unwrap(), Some(test_message_large()));
+    }
+
+    #[tokio::test]
+    async fn mutlti_message_small() {
+        let mut mock = mock(vec![]);
+        for _ in 0..500 {
+            mock.send_message(test_message_small()).await.unwrap();
+        }
+        mock.inner.set_position(0);
+        for _ in 0..500 {
+            assert_eq!(mock.recv_message().await.unwrap(), Some(test_message_small()));
+        }
+        assert_eq!(mock.read(&mut [0u8]).await.unwrap(), 0);
+        assert_eq!(mock.buffer.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn mutlti_message_large() {
+        let mut mock = mock(vec![]);
+        for _ in 0..500 {
+            mock.send_message(test_message_large()).await.unwrap();
+        }
+        mock.inner.set_position(0);
+        for _ in 0..500 {
+            assert_eq!(mock.recv_message().await.unwrap(), Some(test_message_large()));
+        }
+        assert_eq!(mock.read(&mut [0u8]).await.unwrap(), 0);
+        assert_eq!(mock.buffer.len(), 0);
+    }
+
+    #[tokio::test]
+    async fn invalid_header() {
+        let mut mock = mock(vec!['f' as u8, 'o' as u8, 'o' as u8]);
+        mock.inner.set_position(0);
+        assert!(mock.recv_message::<fig_proto::local::LocalMessage>().await.is_err());
+    }
+}
