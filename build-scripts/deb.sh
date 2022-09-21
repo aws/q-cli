@@ -21,6 +21,9 @@ cp bundle/deb/prerm build/DEBIAN/prerm
 if [[ $IS_HEADLESS = 0 ]]; then
     cp bundle/deb/postrm build/DEBIAN/postrm
     chmod 755 build/DEBIAN/postrm
+else
+    printf '#!/bin/bash\n# dpkg crashes if we upgrade from a bad postrm to a package without a postrm' > build/DEBIAN/postrm
+    chmod 755 build/DEBIAN/postrm
 fi
 cp bundle/deb/postinst build/DEBIAN/postinst
 sed -i "s/^Version:.*/Version: ${VERSION}/" build/DEBIAN/control
