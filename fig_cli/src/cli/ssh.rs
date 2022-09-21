@@ -80,6 +80,23 @@ impl Connection {
     }
 }
 
+#[derive(Serialize)]
+#[serde(rename_all = "camelCase")]
+struct SSHStringRequest {
+    authentication_type: AuthenticationType,
+    path_to_auth: Option<String>,
+    identity_remote_id: u64,
+    username: String,
+    hostname: String,
+    port: u16,
+}
+
+#[derive(Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct SSHStringResponse {
+    ssh_string: String,
+}
+
 static HOST_NAMESPACE_REGEX: Lazy<Regex> =
     Lazy::new(|| Regex::new(r"^(?:@([^/]+)/)?(.+)$").expect("Failed compiling host namespace regex"));
 
@@ -196,27 +213,25 @@ impl SshSubcommand {
             id_matches.into_iter().next().unwrap()
         };
 
-        let mut command = Command::new("ssh");
+        let req = SSHStringRequest {
+            authentication_type: selected_identity.authentication_type,
+            path_to_auth: selected_identity.path_to_auth,
+            identity_remote_id: selected_identity.remote_id,
+            username: selected_identity.username,
+            hostname: host.ip,
+            port: connection.port(),
+        };
 
-        command
-            .arg(format!("{}@{}", selected_identity.username, host.ip))
-            .arg("-p")
-            .arg(connection.port().to_string());
+        let resp: SSHStringResponse = Request::get("/access/ssh_string").auth().body(req).deser_json().await?;
 
-        match selected_identity.authentication_type {
-            AuthenticationType::Path => {
-                command.arg("-i").arg(selected_identity.path_to_auth.as_ref().unwrap());
-            },
-            AuthenticationType::PrivateKey => {
-                command
-                    .arg("-i")
-                    .arg(format!("~/.fig/access/{}.pem", selected_identity.remote_id));
-            },
-            AuthenticationType::Password => {},
-            AuthenticationType::Agent => {},
-            AuthenticationType::Other => {
-                bail!("Unknown authentication type - please update fig!");
-            },
+        let mut parts = shlex::split(&resp.ssh_string)
+            .context("got no built ssh string from api")?
+            .into_iter();
+
+        let mut command = Command::new(parts.next().context("didn't get root command")?);
+
+        for arg in parts {
+            command.arg(arg);
         }
 
         let status = command.spawn()?.wait().await?;

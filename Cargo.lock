@@ -2682,6 +2682,7 @@ dependencies = [
  "semver 1.0.14",
  "serde",
  "serde_json",
+ "shlex",
  "skim",
  "spinners",
  "sysinfo 0.26.2",
