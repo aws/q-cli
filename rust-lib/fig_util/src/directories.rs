@@ -87,12 +87,13 @@ pub fn sockets_dir() -> Result<PathBuf> {
             use std::process::Command;
             use std::os::unix::prelude::OsStrExt;
             use std::ffi::OsStr;
+            use bstr::ByteSlice;
 
             match crate::system_info::in_wsl() {
                 true => {
                     let socket_dir = Command::new("fig.exe").args(["_", "sockets-dir"]).output()?;
-                    let wsl_socket = Command::new("wslpath").arg(OsStr::from_bytes(&socket_dir.stdout)).output()?;
-                    Ok(PathBuf::from(OsStr::from_bytes(&wsl_socket.stdout)).join(whoami::username()))
+                    let wsl_socket = Command::new("wslpath").arg(OsStr::from_bytes(socket_dir.stdout.trim())).output()?;
+                    Ok(PathBuf::from(OsStr::from_bytes(wsl_socket.stdout.trim())))
                 },
                 false => Ok(Path::new("/var/tmp/fig").join(whoami::username()))
             }
