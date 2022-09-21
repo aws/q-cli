@@ -187,9 +187,9 @@ dependencies = [
 
 [[package]]
 name = "arboard"
-version = "3.0.0"
+version = "3.1.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2eff52e7dcf6d4fbdc12375dc61f3337044a66e813901346af0d89842fb23d16"
+checksum = "79e8af4eff708b72e371acd4625ad3d01a88c946b9e8d6868cb5bb6e4d0d923c"
 dependencies = [
  "clipboard-win",
  "log",
