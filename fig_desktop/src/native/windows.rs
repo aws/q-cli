@@ -239,8 +239,8 @@ impl IUIAutomationFocusChangedEventHandler_Impl for FocusChangedEventHandler {
     ) -> windows::core::Result<()> {
         if let Some(sender) = sender {
             unsafe {
-                if let Ok(name) = sender.CurrentName() {
-                    if name != "Fig Autocomplete" {
+                if let Ok(control_type) = sender.CurrentLocalizedControlType() {
+                    if control_type == "terminal" {
                         self.event_loop_proxy
                             .send_event(Event::WindowEvent {
                                 window_id: AUTOCOMPLETE_ID,
