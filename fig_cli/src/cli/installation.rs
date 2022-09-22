@@ -117,7 +117,7 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
 }
 
 fn install_fig(_modify_files: bool) -> Result<()> {
-    let backup_dir = directories::backups_dir()?;
+    let backup_dir = directories::utc_backup_dir()?;
 
     let mut errs: Vec<String> = vec![];
     for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {

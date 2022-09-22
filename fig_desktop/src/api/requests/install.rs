@@ -56,7 +56,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                         for integration in integrations {
                             let res = match action {
                                 InstallAction::InstallAction => {
-                                    let backup_dir = directories::backups_dir().unwrap();
+                                    let backup_dir = directories::utc_backup_dir().unwrap();
                                     integration.install(Some(&backup_dir))
                                 },
                                 InstallAction::UninstallAction => integration.uninstall(),

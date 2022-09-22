@@ -11,7 +11,7 @@ pub fn backup_file(path: impl AsRef<Path>, backup_dir: Option<impl Into<PathBuf>
         let name: String = pathref.file_name().unwrap().to_string_lossy().into_owned();
         let dir = match backup_dir {
             Some(dir) => dir.into(),
-            None => directories::backups_dir().unwrap(),
+            None => directories::utc_backup_dir().unwrap(),
         };
         std::fs::create_dir_all(&dir)?;
         std::fs::copy(path, dir.join(name).as_path())?;

@@ -81,7 +81,7 @@ impl IntegrationsSubcommands {
 }
 
 async fn install(integration: Integration, silent: bool) -> Result<()> {
-    let backup_dir = directories::backups_dir().context("Could not get backup dir")?;
+    let backup_dir = directories::utc_backup_dir().context("Could not get backup dir")?;
 
     let mut installed = false;
 

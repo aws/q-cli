@@ -6,6 +6,28 @@ use camino::Utf8PathBuf;
 use thiserror::Error;
 use time::OffsetDateTime;
 
+macro_rules! debug_env_binding {
+    ($path:literal) => {
+        #[cfg(debug_assertions)]
+        if let Some(dir) = std::env::var_os($path) {
+            return map_env_dir(&dir);
+        }
+    };
+}
+
+macro_rules! utf8_dir {
+    ($name:ident, $($arg:ident: $type:ty),*) => {
+        paste::paste! {
+            pub fn [<$name _utf8>]($($arg: $type),*) -> Result<Utf8PathBuf> {
+                Ok($name($($arg),*)?.try_into()?)
+            }
+        }
+    };
+    ($name:ident) => {
+        utf8_dir!($name,);
+    };
+}
+
 #[derive(Debug, Error)]
 pub enum DirectoryError {
     #[error("home directory not found")]
@@ -24,33 +46,32 @@ pub enum DirectoryError {
 
 type Result<T, E = DirectoryError> = std::result::Result<T, E>;
 
-fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
-    let path = std::path::Path::new(path);
-    path.is_absolute()
-        .then(|| path.to_path_buf())
-        .ok_or_else(|| DirectoryError::NonAbsolutePath(path.to_owned()))
-}
-
-/// The $HOME directory
+/// The directory of the users home
+///
+/// - Linux: /home/Alice
+/// - MacOS: /Users/Alice
+/// - Windows: C:\Users\Alice
 pub fn home_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_HOME_DIR");
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
-/// The $HOME/.fig directory
+/// The fig directory
+///
+/// - Linux: /home/Alice/.fig
+/// - MacOS: /Users/Alice/.fig
+/// - Windows: C:\Users\Alice\AppData\Local\Fig
 pub fn fig_dir() -> Result<PathBuf> {
-    match std::env::var_os("FIG_DOT_DIR") {
-        Some(dot_dir) => map_env_dir(&dot_dir),
-        None => {
-            cfg_if::cfg_if! {
-                if #[cfg(any(target_os = "linux", target_os = "macos"))] {
-                    dirs::home_dir()
-                        .ok_or(DirectoryError::NoHomeDirectory)
-                        .map(|p| p.join(".fig"))
-                } else if #[cfg(target_os = "windows")] {
-                    Ok(dirs::data_local_dir().ok_or(DirectoryError::NoHomeDirectory)?.join("Fig"))
-                }
-            }
-        },
+    debug_env_binding!("FIG_DIRECTORIES_FIG_DIR");
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            dirs::home_dir()
+                .ok_or(DirectoryError::NoHomeDirectory)
+                .map(|p| p.join(".fig"))
+        } else if #[cfg(target_os = "windows")] {
+            Ok(dirs::data_local_dir().ok_or(DirectoryError::NoHomeDirectory)?.join("Fig"))
+        }
     }
 }
 
@@ -58,29 +79,29 @@ pub fn fig_dir() -> Result<PathBuf> {
 ///
 /// - Linux: `$XDG_DATA_HOME/fig or $HOME/.local/share/fig`
 /// - MacOS: `$HOME/Library/Application Support/fig`
-/// - Windows: `%APPDATA%/Fig/userdata`
+/// - Windows: `%LOCALAPPDATA%/Fig/userdata`
 pub fn fig_data_dir() -> Result<PathBuf> {
-    match std::env::var_os("FIG_DATA_DIR") {
-        Some(data_dir) => map_env_dir(&data_dir),
-        None => {
-            cfg_if::cfg_if! {
-                if #[cfg(any(target_os = "linux", target_os = "macos"))] {
-                    dirs::data_local_dir()
-                        .map(|path| path.join("fig"))
-                        .ok_or(DirectoryError::NoHomeDirectory)
-                } else if #[cfg(target_os = "windows")] {
-                    Ok(fig_dir()?.join("userdata"))
-                }
-            }
-        },
+    debug_env_binding!("FIG_DIRECTORIES_FIG_DATA_DIR");
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            dirs::data_local_dir()
+                .map(|path| path.join("fig"))
+                .ok_or(DirectoryError::NoHomeDirectory)
+        } else if #[cfg(target_os = "windows")] {
+            Ok(fig_dir()?.join("userdata"))
+        }
     }
 }
 
-/// The ephermeral fig sockets directory
+/// The ephemeral fig sockets directory
 ///
-/// - Linux: /var/tmp/fig/$USER
+/// - Linux: /var/tmp/fig/Alice
+/// - MacOS: /var/tmp/fig/Alice
 /// - Windows: %LOCALAPPDATA%/Fig/sockets
 pub fn sockets_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_SOCKETS_DIR");
+
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             use std::path::Path;
@@ -107,8 +128,12 @@ pub fn sockets_dir() -> Result<PathBuf> {
 
 /// Path to the managed binaries directory
 ///
-/// Note this is not implemented on Linux or MacOS
+/// - Linux: UNIMPLEMENTED
+/// - MacOS: UNIMPLEMENTED
+/// - Windows: %LOCALAPPDATA%\Fig\bin
 pub fn managed_binaries_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
+
     cfg_if::cfg_if! {
         if #[cfg(any(target_os = "linux", target_os = "macos"))] {
             todo!();
@@ -120,6 +145,8 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
 
 /// The path to all of the themes
 pub fn themes_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_THEMES_DIR");
+
     cfg_if::cfg_if! {
         if #[cfg(any(target_os = "linux", target_os = "windows"))] {
             Ok(themes_repo_dir()?.join("themes"))
@@ -131,11 +158,14 @@ pub fn themes_dir() -> Result<PathBuf> {
 
 /// The path to the cloned repo containing the themes
 pub fn themes_repo_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_THEMES_REPO_DIR");
     Ok(fig_data_dir()?.join("themes"))
 }
 
 /// The path to the fig plugins
 pub fn plugins_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_PLUGINS_DIR");
+
     cfg_if::cfg_if! {
         if #[cfg(any(target_os = "linux", target_os = "windows"))] {
             Ok(fig_data_dir()?.join("plugins"))
@@ -147,21 +177,34 @@ pub fn plugins_dir() -> Result<PathBuf> {
 
 /// The directory to all the fig logs
 pub fn logs_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_LOGS_DIR");
     Ok(fig_dir()?.join("logs"))
 }
 
+/// The directory where fig places all data-sensitive backups
 pub fn backups_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_BACKUPS_DIR");
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            Ok(home_dir()?.join(".fig.dotfiles.bak"))
+        } else if #[cfg(target_os = "windows")] {
+            Ok(fig_data_dir()?.join("backups"))
+        }
+    }
+}
+
+/// The directory for time based data-sensitive backups
+///
+/// NOTE: This changes every second and cannot be cached
+pub fn utc_backup_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_UTC_BACKUP_DIR");
+
     let now = OffsetDateTime::now_utc().format(time::macros::format_description!(
         "[year]-[month]-[day]_[hour]-[minute]-[second]"
     ))?;
 
-    cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
-            Ok(home_dir()?.join(".fig.dotfiles.bak").join(now))
-        } else if #[cfg(target_os = "windows")] {
-            Ok(fig_data_dir()?.join("backups").join(now))
-        }
-    }
+    Ok(backups_dir()?.join(now))
 }
 
 /// The desktop app socket path
@@ -169,6 +212,7 @@ pub fn backups_dir() -> Result<PathBuf> {
 /// - Linux/MacOS: `/var/tmp/fig/$USER/fig.socket`
 /// - Windows: `%APPDATA%/Fig/fig.sock`
 pub fn fig_socket_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_FIG_SOCKET_PATH");
     Ok(sockets_dir()?.join("fig.socket"))
 }
 
@@ -177,6 +221,7 @@ pub fn fig_socket_path() -> Result<PathBuf> {
 /// - Linux/MacOS: `/var/tmp/fig/$USERNAME/daemon.socket`
 /// - Windows: `%LOCALAPPDATA%\Fig\daemon.socket`
 pub fn daemon_socket_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
     Ok(sockets_dir()?.join("daemon.socket"))
 }
 
@@ -185,6 +230,7 @@ pub fn daemon_socket_path() -> Result<PathBuf> {
 /// - Linux/MacOS: `/var/tmp/fig/$USER/secure.socket`
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
 pub fn secure_socket_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_SECURE_SOCKET_PATH");
     Ok(sockets_dir()?.join("secure.socket"))
 }
 
@@ -193,14 +239,17 @@ pub fn secure_socket_path() -> Result<PathBuf> {
 /// - Linux/Macos: `/var/tmp/fig/%USERNAME%/figterm/$SESSION_ID.socket`
 /// - Windows: `%APPDATA%\Fig\$SESSION_ID.socket`
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_FIGTERM_SOCKET_PATH");
     Ok(sockets_dir()?.join("figterm").join(format!("{session_id}.socket")))
 }
 
 /// The path to the fig install manifest
 ///
 /// - Linux: "/usr/share/fig/manifest.json"
-/// - Windows: "%APPDATA%/Local/Fig/bin/manifest.json"
+/// - Windows: "%LOCALAPPDATA%/Fig/bin/manifest.json"
 pub fn manifest_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_MANIFEST_PATH");
+
     cfg_if::cfg_if! {
         if #[cfg(target_os = "linux")] {
             Ok(std::path::Path::new("/usr/share/fig/manifest.json").into())
@@ -216,6 +265,8 @@ pub fn manifest_path() -> Result<PathBuf> {
 ///
 /// Note this is not implemented on Linux or MacOS
 pub fn managed_fig_cli_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
+
     cfg_if::cfg_if! {
         if #[cfg(any(target_os = "linux", target_os = "macos"))] {
             todo!();
@@ -223,19 +274,6 @@ pub fn managed_fig_cli_path() -> Result<PathBuf> {
             Ok(managed_binaries_dir()?.join("fig.exe"))
         }
     }
-}
-
-macro_rules! utf8_dir {
-    ($name:ident, $($arg:ident: $type:ty),*) => {
-        paste::paste! {
-            pub fn [<$name _utf8>]($($arg: $type),*) -> Result<Utf8PathBuf> {
-                Ok($name($($arg),*)?.try_into()?)
-            }
-        }
-    };
-    ($name:ident) => {
-        utf8_dir!($name,);
-    };
 }
 
 utf8_dir!(home_dir);
@@ -251,6 +289,13 @@ utf8_dir!(managed_fig_cli_path);
 utf8_dir!(plugins_dir);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
+
+fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
+    let path = std::path::Path::new(path);
+    path.is_absolute()
+        .then(|| path.to_path_buf())
+        .ok_or_else(|| DirectoryError::NonAbsolutePath(path.to_owned()))
+}
 
 #[cfg(target_os = "macos")]
 mod deprecated {
@@ -269,36 +314,72 @@ mod deprecated {
 mod test {
     use super::*;
 
-    #[ignore]
     #[test]
     fn path_names() {
+        macro_rules! test_path_name {
+            ($path:expr, $name:expr) => {
+                assert_eq!(
+                    $path().unwrap().file_name().unwrap().to_str().unwrap(),
+                    $name
+                );
+            };
+        }
+
         cfg_if::cfg_if! {
             if #[cfg(any(target_os = "linux", target_os = "macos"))] {
-                assert_eq!(fig_dir().unwrap().file_name().unwrap(), ".fig");
-                assert_eq!(fig_data_dir().unwrap().file_name().unwrap(), "fig");
+                test_path_name!(fig_dir, ".fig");
+                test_path_name!(fig_data_dir, "fig");
+                test_path_name!(sockets_dir, whoami::username());
+                test_path_name!(backups_dir, ".fig.dotfiles.bak");
             } else if #[cfg(target_os = "windows")] {
-                assert_eq!(fig_dir().unwrap().file_name().unwrap(), "Fig");
-                assert_eq!(fig_data_dir().unwrap().file_name().unwrap(), "userdata");
+                test_path_name!(fig_dir, "Fig");
+                test_path_name!(fig_data_dir, "userdata");
+                test_path_name!(sockets_dir, "sockets");
+                test_path_name!(managed_binaries_dir, "bin");
+                test_path_name!(backups_dir, "backups");
+                test_path_name!(managed_fig_cli_path, "fig.exe");
             }
         }
+
+        test_path_name!(themes_dir, "themes");
+        test_path_name!(themes_repo_dir, "themes");
+        test_path_name!(plugins_dir, "plugins");
+        test_path_name!(logs_dir, "logs");
+        test_path_name!(fig_socket_path, "fig.socket");
+        test_path_name!(daemon_socket_path, "daemon.socket");
+        test_path_name!(secure_socket_path, "secure.socket");
+        test_path_name!(manifest_path, "manifest.json");
     }
 
-    #[ignore]
     #[test]
     fn environment_paths() {
-        let dir = dirs::home_dir().unwrap();
-        let name = dir.file_name().unwrap();
+        macro_rules! test_environment_path {
+            ($path:expr, $name:literal) => {
+                #[cfg(any(target_os = "linux", target_os = "macos"))]
+                let path = "/testing";
+                #[cfg(target_os = "windows")]
+                let path = "C://testing";
 
-        std::env::set_var("FIG_DOT_DIR", &dir);
-        std::env::set_var("FIG_DATA_DIR", &dir);
+                std::env::set_var($name, path);
+                assert_eq!($path().unwrap(), PathBuf::from(path));
+                std::env::remove_var($name);
+            };
+        }
 
-        assert_eq!(fig_dir().unwrap().file_name().unwrap(), name);
-        assert_eq!(fig_data_dir().unwrap().file_name().unwrap(), name);
-
-        std::env::set_var("FIG_DOT_DIR", "abc");
-        std::env::set_var("FIG_DATA_DIR", "def");
-
-        fig_dir().unwrap_err();
-        fig_data_dir().unwrap_err();
+        test_environment_path!(home_dir, "FIG_DIRECTORIES_HOME_DIR");
+        test_environment_path!(fig_dir, "FIG_DIRECTORIES_FIG_DIR");
+        test_environment_path!(fig_data_dir, "FIG_DIRECTORIES_FIG_DATA_DIR");
+        test_environment_path!(sockets_dir, "FIG_DIRECTORIES_SOCKETS_DIR");
+        test_environment_path!(managed_binaries_dir, "FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
+        test_environment_path!(themes_dir, "FIG_DIRECTORIES_THEMES_DIR");
+        test_environment_path!(themes_repo_dir, "FIG_DIRECTORIES_THEMES_REPO_DIR");
+        test_environment_path!(plugins_dir, "FIG_DIRECTORIES_PLUGINS_DIR");
+        test_environment_path!(logs_dir, "FIG_DIRECTORIES_LOGS_DIR");
+        test_environment_path!(backups_dir, "FIG_DIRECTORIES_BACKUPS_DIR");
+        test_environment_path!(utc_backup_dir, "FIG_DIRECTORIES_UTC_BACKUP_DIR");
+        test_environment_path!(fig_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
+        test_environment_path!(daemon_socket_path, "FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
+        test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
+        test_environment_path!(managed_fig_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
     }
 }
