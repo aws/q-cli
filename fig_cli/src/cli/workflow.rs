@@ -23,6 +23,9 @@ use fig_api_client::workflows::{
     workflows,
     Generator,
     ParameterType,
+    Predicate,
+    Rule,
+    RuleType,
     TreeElement,
 };
 #[cfg(unix)]
@@ -343,6 +346,10 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             }
         },
     };
+
+    if let Some(ruleset) = workflow.rules {
+        rules_met(&ruleset)?;
+    }
 
     let mut env_args = env_args.into_iter().skip(1);
     let args: Rc<RefCell<HashMap<String, String>>> = Rc::new(RefCell::new(HashMap::new()));
@@ -881,4 +888,228 @@ pub fn escape(s: Cow<str>) -> Cow<str> {
     }
     es.push('\'');
     es.into()
+}
+
+fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<()> {
+    for set in ruleset {
+        let mut set_met = !set.is_empty();
+        for rule in set {
+            let query = match rule.key {
+                RuleType::WorkingDirectory => std::env::current_dir()?.to_string_lossy().to_string(),
+                RuleType::GitRemote => String::from_utf8(
+                    Command::new("git")
+                        .args(["remote", "get-url", "origin"])
+                        .output()?
+                        .stdout,
+                )?,
+                RuleType::ContentsOfDirectory => {
+                    std::env::current_dir()?
+                        .read_dir()?
+                        .fold(String::new(), |acc, path| match path {
+                            Ok(path) => format!("{acc}{}\n", path.file_name().to_string_lossy()),
+                            Err(_) => acc,
+                        })
+                },
+                RuleType::GitRootDirectory => String::from_utf8(
+                    Command::new("git")
+                        .args(["rev-parse", "--show-toplevel"])
+                        .output()?
+                        .stdout,
+                )?,
+                RuleType::EnvironmentVariable => todo!(),
+                RuleType::CurrentBranch => String::from_utf8(
+                    Command::new("git")
+                        .args(["rev-parse", "--abbrev-ref", "HEAD"])
+                        .output()?
+                        .stdout,
+                )?,
+            };
+
+            let mut rule_met = match rule.predicate {
+                Predicate::Contains => query.contains(&rule.value),
+                Predicate::Equals => query == rule.value,
+                Predicate::Matches => regex::Regex::new(&rule.value)?.is_match(&query),
+                Predicate::StartsWith => query.starts_with(&rule.value),
+                Predicate::EndsWith => query.ends_with(&rule.value),
+                Predicate::Exists => !query.is_empty(),
+            };
+
+            if rule.inverted {
+                rule_met = !rule_met;
+            }
+
+            set_met |= rule_met;
+        }
+
+        if !set_met {
+            bail!("Workflow preconditions not met: {:?}", set);
+        }
+    }
+
+    Ok(())
+}
+
+#[cfg(test)]
+mod test {
+    use fig_api_client::workflows::Workflow;
+
+    use super::*;
+
+    #[test]
+    fn test_rules() -> Result<()> {
+        let json = serde_json::json!(
+            {
+                "name": "eekum-bokum",
+                "displayName": "Eekum Bokum",
+                "description": "Quick snippet for git push",
+                "templateVersion": 0,
+                "tags": [
+                    "git"
+                ],
+                "rules": [
+                    [
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "EQUALS"
+                        },
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "EQUALS"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "CONTAINS"
+                        },
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "CONTAINS"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "STARTSWITH"
+                        },
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "STARTSWITH"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "ENDSWITH"
+                        },
+                        {
+                            "key": "Working-Directory",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "ENDSWITH"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Working-Directory",
+                            "value": ".",
+                            "inverted": false,
+                            "predicate": "MATCHES"
+                        },
+                        {
+                            "key": "Working-Directory",
+                            "value": ".",
+                            "inverted": true,
+                            "predicate": "MATCHES"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Current-Branch",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "CONTAINS"
+                        },
+                        {
+                            "key": "Current-Branch",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "CONTAINS"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Contents-Of-Directory",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "CONTAINS"
+                        },
+                        {
+                            "key": "Contents-Of-Directory",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "CONTAINS"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Git-Remote",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "CONTAINS"
+                        },
+                        {
+                            "key": "Git-Remote",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "CONTAINS"
+                        }
+                    ],
+                    [
+                        {
+                            "key": "Git-Root-Directory",
+                            "value": "package.json",
+                            "inverted": false,
+                            "predicate": "CONTAINS"
+                        },
+                        {
+                            "key": "Git-Root-Directory",
+                            "value": "package.json",
+                            "inverted": true,
+                            "predicate": "CONTAINS"
+                        }
+                    ]
+                ],
+                "namespace": "chay-at-fig",
+                "parameters": [],
+                "template": "echo \"hello :)\"",
+                "tree": [
+                    "echo \"hello :)\""
+                ],
+                "isOwnedByUser": true
+            }
+        );
+
+        let workflow = serde_json::from_value::<Workflow>(json)?;
+        assert!(workflow.rules.is_some());
+
+        let ruleset = workflow.rules.unwrap();
+        rules_met(&ruleset)?;
+
+        Ok(())
+    }
 }

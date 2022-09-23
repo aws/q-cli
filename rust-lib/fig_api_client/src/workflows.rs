@@ -44,6 +44,43 @@ pub struct Parameter {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum RuleType {
+    #[serde(rename = "Working-Directory")]
+    WorkingDirectory,
+    #[serde(rename = "Git-Remote")]
+    GitRemote,
+    #[serde(rename = "Contents-Of-Directory")]
+    ContentsOfDirectory,
+    #[serde(rename = "Git-Root-Directory")]
+    GitRootDirectory,
+    #[serde(rename = "Environment-Variable")]
+    EnvironmentVariable,
+    #[serde(rename = "Current-Branch")]
+    CurrentBranch,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Predicate {
+    Contains,
+    Equals,
+    Matches,
+    StartsWith,
+    EndsWith,
+    Exists,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+pub struct Rule {
+    pub key: RuleType,
+    pub specifier: Option<String>,
+    pub predicate: Predicate,
+    pub inverted: bool,
+    pub value: String,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 #[serde(untagged)]
 pub enum TreeElement {
@@ -60,8 +97,9 @@ pub struct Workflow {
     pub template_version: u32,
     pub last_invoked_at: Option<String>,
     pub tags: Option<Vec<String>>,
-    pub parameters: Vec<Parameter>,
+    pub rules: Option<Vec<Vec<Rule>>>,
     pub namespace: String,
+    pub parameters: Vec<Parameter>,
     pub template: String,
     pub tree: Vec<TreeElement>,
     pub is_owned_by_user: Option<bool>,
