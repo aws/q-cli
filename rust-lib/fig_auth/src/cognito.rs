@@ -442,7 +442,7 @@ where
     Ok(time::serde::rfc3339::option::deserialize(d).ok().flatten())
 }
 
-#[derive(Debug, Clone, Default, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Credentials {
     pub email: Option<String>,
     pub access_token: Option<String>,
@@ -738,5 +738,31 @@ impl Credentials {
             })
             .to_string(),
         )
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_credentials() -> Credentials {
+        Credentials::new("test@fig.io", Some("access_token".to_string()), None, None, 123, false)
+    }
+
+    #[test]
+    fn test_get_client() {
+        get_client().unwrap();
+    }
+
+    #[test]
+    fn save_load_credentials() {
+        let original = Credentials::load_credentials();
+        let mock = mock_credentials();
+        mock.save_credentials().unwrap();
+        let from_disk = Credentials::load_credentials().unwrap();
+        if let Ok(original) = original {
+            original.save_credentials().unwrap()
+        }
+        assert_eq!(mock, from_disk);
     }
 }

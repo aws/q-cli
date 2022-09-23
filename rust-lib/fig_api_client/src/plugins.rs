@@ -235,3 +235,36 @@ where
     let installed_plugins: InstalledPlugins = Request::get("/dotfiles/plugins").auth().deser_json().await?;
     Ok(installed_plugins.plugins)
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_github() -> GitHub {
+        GitHub::new("withfig", "autocomplete")
+    }
+
+    fn mock_gist() -> Gist {
+        Gist::new("2203becba6e69ec1b01ae213015077a1")
+    }
+
+    #[test]
+    fn github_urls() {
+        let gh = mock_github();
+        assert_eq!(
+            gh.readme_url().as_str(),
+            "https://raw.githubusercontent.com/withfig/autocomplete/HEAD/README.md"
+        );
+        assert_eq!(gh.repository_url().as_str(), "https://github.com/withfig/autocomplete");
+        assert_eq!(gh.git_url().as_str(), "https://github.com/withfig/autocomplete.git");
+    }
+
+    #[test]
+    fn gist_urls() {
+        let gist = mock_gist();
+        assert_eq!(
+            gist.raw_url().as_str(),
+            "https://gist.githubusercontent.com/raw/2203becba6e69ec1b01ae213015077a1"
+        );
+    }
+}

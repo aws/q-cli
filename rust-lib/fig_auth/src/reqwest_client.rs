@@ -150,3 +150,13 @@ pub static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
 pub fn reqwest_client() -> Option<&'static reqwest::Client> {
     CLIENT.as_ref()
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn get_client() {
+        reqwest_client().unwrap();
+    }
+}

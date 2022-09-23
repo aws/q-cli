@@ -15,7 +15,7 @@ on:
       - "fig_desktop/**"
       - "proto/**"
       - ".github/workflows/rust-ci.yaml"
-    branches: 
+    branches:
       - develop
   push:
     paths:
@@ -174,18 +174,19 @@ jobs:
               libayatana-appindicator3-dev \
               librsvg2-dev \
               libwebkit2gtk-4.0-dev \
-              protobuf-compiler
+              protobuf-compiler \
+              fish
 
       - name: Install macOS dependencies
         if: startsWith(matrix.os,'macos')
         run: |
           brew update || brew update
-          brew install protobuf
+          brew install protobuf fish
 
       - name: Install Windows dependencies
         if: startsWith(matrix.os,'windows')
         run: |
-          choco install protoc
+          choco install protoc shellcheck
 
       - name: Install Stable Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -200,7 +201,7 @@ jobs:
 
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
-        
+
       - name: Test & Codecov
         uses: actions-rs/cargo@v1
         with:
@@ -213,4 +214,3 @@ jobs:
           token: ${{ secrets.CODECOV_TOKEN }}
           files: lcov.info
           env_vars: OS
-

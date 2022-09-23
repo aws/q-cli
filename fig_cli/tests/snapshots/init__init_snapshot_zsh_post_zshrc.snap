@@ -1,3 +1,7 @@
+---
+source: fig_cli/tests/init.rs
+expression: init
+---
 if [[ -n "$ZSH_NAME" ]]; then
 
 pathadd() {
@@ -201,3 +205,5 @@ if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
 fi
 
 fi
+
+

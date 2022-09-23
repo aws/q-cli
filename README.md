@@ -42,7 +42,7 @@ flowchart LR
     localCli <-->|local proto| desktop
     term <-->|stdin/stdout| figterm
     webview <-->|Fig.js| desktop
-    desktop <==>|secure proto| figterm 
+    desktop <==>|secure proto| figterm
     figterm <-->|stdin/stdout| pseudo
     pseudo <-->|stdin/stdout| shell
     shell -.->|"fork()"| figterm
@@ -63,7 +63,7 @@ and CLI. Several projects live here:
 
 ## Setup
 
-### Prerequisites 
+### Prerequisites
 
 - MacOS
   - Xcode 13 or later
@@ -78,6 +78,7 @@ gh repo clone withfig/macos
 ```
 
 Using Git SSH:
+
 ```bash
 git clone git@github.com:withfig/macos
 ```
@@ -119,7 +120,7 @@ brew install swiftlint yarn jq cmake
 
 See [proto/README.md](https://github.com/withfig/macos/blob/develop/proto/README.md)
 
-### 3. Install Rust toolchain using [Rustup](https://rustup.rs): 
+### 3. Install Rust toolchain using [Rustup](https://rustup.rs):
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
@@ -145,8 +146,9 @@ yarn
 ```
 
 ### 5. XCode (MacOS)
- - You MUST be [added](https://appstoreconnect.apple.com/access/users) to Fig's Apple Developer account. 
- - Setup Xcode signing credentials
+
+- You MUST be [added](https://appstoreconnect.apple.com/access/users) to Fig's Apple Developer account.
+- Setup Xcode signing credentials
 
 ## Building and Running Projects
 
@@ -162,6 +164,7 @@ Before building you may need to:
    ```
 
 You can build from the XCode UI directly or from the terminal:
+
 ```bash
 xcodebuild -scheme fig build
 ```
@@ -169,31 +172,33 @@ xcodebuild -scheme fig build
 ### figterm
 
 Run
+
 ```
 make install
 ```
+
 This will build the project and copy it to the correct place.
 
 ### fig CLI
 
 Run
+
 ```
 make install-native
 ```
+
 This will build the project and copy it to the correct place.
 
-## Publish 
+## Publish
 
 When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required because it is needed to automatically generate specs.
-
 
 ## Git Branching Conventions
 
 - Feature branches
-    - `name/feature-name`
-    - e.g. `grant/bug-fix`
-- `develop` branch 
+  - `name/feature-name`
+  - e.g. `grant/bug-fix`
+- `develop` branch
   - should be buildable and pass all lints
 - `staging` branch is auto pushed to beta/staging
 - `master` branch is auto pushed to prod
-

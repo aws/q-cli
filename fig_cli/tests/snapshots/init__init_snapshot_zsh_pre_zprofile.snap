@@ -1,3 +1,7 @@
+---
+source: fig_cli/tests/init.rs
+expression: init
+---
 #!/usr/bin/env bash
 
 mkdir -p ~/.fig/bin > /dev/null
@@ -90,3 +94,5 @@ then
 # else
 #   FIG_DID_NOT_EXEC_FIGTERM=1
 fi
+
+

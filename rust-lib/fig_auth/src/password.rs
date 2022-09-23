@@ -41,8 +41,8 @@ mod tests {
 
     #[test]
     fn test_generate_password() {
-        for _ in 0..64 {
-            let password = generate_password(32);
+        for length in 4..64 {
+            let password = generate_password(length);
             assert!(password.chars().any(|c| c.is_numeric()));
             assert!(password.chars().any(|c| c.is_ascii_uppercase()));
             assert!(password.chars().any(|c| c.is_ascii_lowercase()));

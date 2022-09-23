@@ -103,3 +103,61 @@ pub async fn account() -> fig_request::Result<Account> {
 pub async fn plans() -> fig_request::Result<Plans> {
     fig_request::Request::get("/user/plan").auth().deser_json().await
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    fn mock_user_plan(level: CustomerPlan) -> UserPlan {
+        UserPlan {
+            id: 0,
+            email: String::new(),
+            username: None,
+            plan: Some(Plan {
+                free_trial_elapsed: false,
+                customer_plan: level,
+                customer_status: CustomerStatus::Active,
+            }),
+        }
+    }
+
+    fn mock_team_plan(level: CustomerPlan) -> TeamPlan {
+        TeamPlan {
+            id: 0,
+            name: String::new(),
+            role: TeamRole::Member,
+            plan: Some(Plan {
+                free_trial_elapsed: false,
+                customer_plan: level,
+                customer_status: CustomerStatus::Active,
+            }),
+        }
+    }
+
+    #[test]
+    fn is_pro() {
+        assert!(!CustomerPlan::Free.is_pro());
+        assert!(CustomerPlan::Pro.is_pro());
+        assert!(CustomerPlan::Enterprise.is_pro());
+    }
+
+    #[test]
+    fn highest_plan() {
+        assert_eq!(
+            Plans {
+                user_plan: mock_user_plan(CustomerPlan::Free),
+                team_plans: vec![mock_team_plan(CustomerPlan::Free), mock_team_plan(CustomerPlan::Pro)]
+            }
+            .highest_plan(),
+            CustomerPlan::Pro
+        );
+        assert_eq!(
+            Plans {
+                user_plan: mock_user_plan(CustomerPlan::Enterprise),
+                team_plans: vec![mock_team_plan(CustomerPlan::Free), mock_team_plan(CustomerPlan::Pro)]
+            }
+            .highest_plan(),
+            CustomerPlan::Enterprise
+        );
+    }
+}

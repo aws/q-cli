@@ -34,13 +34,20 @@ pub struct InitArgs {
     when: When,
     #[clap(long, value_parser)]
     rcfile: Option<String>,
+    /// Whether to skip loading dotfiles
+    #[clap(long, action)]
+    skip_dotfiles: bool,
 }
 
 impl InitArgs {
     pub async fn execute(&self) -> Result<()> {
-        let InitArgs { shell, when, rcfile } = self;
-        writeln!(stdout(), "# {when} for {shell}").ok();
-        match shell_init(shell, when, rcfile) {
+        let InitArgs {
+            shell,
+            when,
+            rcfile,
+            skip_dotfiles,
+        } = self;
+        match shell_init(shell, when, rcfile, *skip_dotfiles) {
             Ok(source) => writeln!(stdout(), "{source}"),
             Err(err) => writeln!(stdout(), "# Could not load source: {err}"),
         }
@@ -106,7 +113,7 @@ fn guard_source(
     output.join("\n")
 }
 
-fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<String> {
+fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles: bool) -> Result<String> {
     // Do not print any shell integrations for `.profile` as it can cause issues on launch
     if std::env::consts::OS == "linux" && matches!(rcfile.as_deref(), Some("profile")) {
         return Ok("".into());
@@ -129,6 +136,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>) -> Result<Str
             (shell, rcfile.as_deref()),
             (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile") | Some("bash_profile"))
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
+            && !skip_dotfiles
         {
             // Add dotfiles sourcing
             let data_path = shell.get_data_path()?;

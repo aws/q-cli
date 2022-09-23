@@ -25,7 +25,8 @@ fi
 #   return
 # fi
 
-export TTY=$(tty)
+TTY=$(tty)
+export TTY
 export FIG_PID="$$"
 
 FIG_LAST_PS1="$PS1"
@@ -44,7 +45,7 @@ else
 fi
 
 # Construct Operating System Command.
-function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
+function fig_osc { printf "\033]697;%s\007" "$1" "${@:2}"; }
 
 function __fig_preexec() {
   fig_osc PreExec
@@ -70,7 +71,7 @@ function __fig_preexec() {
 function __fig_preexec_preserve_status() {
   __fig_ret_value="$?"
   __fig_preexec "$@"
-  __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
+  __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command:?}"
 }
 
 function __fig_pre_prompt () {

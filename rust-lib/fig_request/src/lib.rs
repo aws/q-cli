@@ -270,7 +270,15 @@ impl Response {
 
 #[cfg(test)]
 mod test {
+    use serde_json::json;
+
     use super::*;
+
+    fn mock_value(part: &str) -> Value {
+        json! {{
+            "part": part,
+        }}
+    }
 
     #[tokio::test]
     async fn text() {
@@ -284,5 +292,27 @@ mod test {
         let value = Request::get("/user/account").auth().json().await.unwrap();
         assert!(value.get("email").is_some());
         assert!(value.get("username").is_some());
+    }
+
+    #[tokio::test]
+    async fn api_get() {
+        #[derive(Deserialize)]
+        struct Response {
+            body: Value,
+            query: Value,
+        }
+
+        let body = mock_value("body");
+        let query = mock_value("query");
+
+        let resp: Response = Request::get("/test/fig_request")
+            .body(body.clone())
+            .query(&query)
+            .deser_json()
+            .await
+            .unwrap();
+
+        assert_eq!(resp.body, body);
+        assert_eq!(resp.query, query);
     }
 }
