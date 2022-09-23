@@ -127,7 +127,7 @@ rustup toolchain install nightly
 rustup toolchain default stable
 ```
 
-For MacOS development make sure the right targests are installed:
+For MacOS development make sure the right targets are installed:
 
 ```bash
 rustup target add x86_64-apple-darwin

@@ -10,4 +10,5 @@ publish = false
 bitflags = "1"
 heapless = "0.7.16"
 
-[build-dependencies]
+[dev-dependencies]
+fig_test = { path = "../fig_test" }

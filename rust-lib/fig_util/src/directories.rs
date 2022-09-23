@@ -66,11 +66,11 @@ pub fn fig_dir() -> Result<PathBuf> {
 
     cfg_if::cfg_if! {
         if #[cfg(any(target_os = "linux", target_os = "macos"))] {
-            dirs::home_dir()
-                .ok_or(DirectoryError::NoHomeDirectory)
-                .map(|p| p.join(".fig"))
+            Ok(home_dir()?.join(".fig"))
         } else if #[cfg(target_os = "windows")] {
-            Ok(dirs::data_local_dir().ok_or(DirectoryError::NoHomeDirectory)?.join("Fig"))
+            Ok(dirs::data_local_dir()
+                .ok_or(DirectoryError::NoHomeDirectory)?
+                .join("Fig"))
         }
     }
 }
@@ -85,9 +85,9 @@ pub fn fig_data_dir() -> Result<PathBuf> {
 
     cfg_if::cfg_if! {
         if #[cfg(any(target_os = "linux", target_os = "macos"))] {
-            dirs::data_local_dir()
-                .map(|path| path.join("fig"))
-                .ok_or(DirectoryError::NoHomeDirectory)
+            Ok(dirs::data_local_dir()
+                .ok_or(DirectoryError::NoHomeDirectory)?
+                .join("fig"))
         } else if #[cfg(target_os = "windows")] {
             Ok(fig_dir()?.join("userdata"))
         }

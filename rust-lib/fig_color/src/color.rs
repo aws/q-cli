@@ -385,23 +385,10 @@ pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSuppo
 mod test {
     use super::*;
 
-    /// run closure with set environment variables
     fn with_env<T>(new_variables: &[(&str, &str)], f: impl FnOnce() -> T) -> T {
-        let original_variables = std::env::vars().collect::<Vec<(String, String)>>();
-        for (key, _) in &original_variables {
-            std::env::remove_var(key);
-        }
-        for (key, value) in new_variables {
-            std::env::set_var(key, value);
-        }
-        let res = f();
-        for (key, _) in new_variables {
-            std::env::remove_var(key);
-        }
-        for (key, value) in original_variables {
-            std::env::set_var(key, value);
-        }
-        res
+        fig_test::TestBuilder::new()
+            .with_env(new_variables.to_vec(), true)
+            .execute_sync(f)
     }
 
     #[test]
