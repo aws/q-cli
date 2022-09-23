@@ -76,7 +76,7 @@ whoami = "1.2.1"
 wry = { version = "0.21.1", default-features = false, features = ["tray", "protocol", "devtools", "transparent"] }
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
-version = "0.40.0"
+version = "0.41.0"
 features = [
     "implement",
     "Win32_Foundation",

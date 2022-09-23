@@ -104,7 +104,7 @@ pub struct NativeState {
 impl NativeState {
     pub fn new(proxy: EventLoopProxy) -> Self {
         unsafe {
-            CoInitialize(std::ptr::null_mut()).unwrap();
+            CoInitialize(None).unwrap();
             let automation = Automation(CoCreateInstance(&CUIAutomation, None, CLSCTX_INPROC_SERVER).unwrap());
 
             let focus_changed_event_handler: IUIAutomationFocusChangedEventHandler = FocusChangedEventHandler {
@@ -136,12 +136,19 @@ impl NativeState {
                         let window = automation.ElementFromHandle(hwnd)?;
 
                         let interest = automation.CreateAndCondition(
-                            &automation.CreatePropertyCondition(UIA_HasKeyboardFocusPropertyId, &VT_TRUE)?,
-                            &automation.CreatePropertyCondition(UIA_IsTextPatternAvailablePropertyId, &VT_TRUE)?,
+                            &automation.CreatePropertyCondition(
+                                UIA_HasKeyboardFocusPropertyId.0.try_into().unwrap(),
+                                &VT_TRUE,
+                            )?,
+                            &automation.CreatePropertyCondition(
+                                UIA_IsTextPatternAvailablePropertyId.0.try_into().unwrap(),
+                                &VT_TRUE,
+                            )?,
                         )?;
 
                         let inner = window.FindFirst(TreeScope_Descendants, &interest)?;
-                        let text_pattern = inner.GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId)?;
+                        let text_pattern = inner
+                            .GetCurrentPatternAs::<IUIAutomationTextPattern>(UIA_TextPatternId.0.try_into().unwrap())?;
                         let selection = text_pattern.GetSelection()?;
                         let caret = selection.GetElement(0)?;
                         caret.ExpandToEnclosingUnit(TextUnit_Character)?;
