@@ -1,8 +1,15 @@
-use accessibility::{
-    AXAttribute, AXUIElement, AXUIElementAttributes, TreeVisitor, TreeWalker, TreeWalkerFlow,
-};
-use core_foundation::{array::CFArray, string::CFString};
 use std::cell::Cell;
+
+use accessibility::{
+    AXAttribute,
+    AXUIElement,
+    AXUIElementAttributes,
+    TreeVisitor,
+    TreeWalker,
+    TreeWalkerFlow,
+};
+use core_foundation::array::CFArray;
+use core_foundation::string::CFString;
 use structopt::StructOpt;
 
 struct PrintyBoi {
@@ -27,12 +34,7 @@ impl TreeVisitor for PrintyBoi {
         let role = element.role().unwrap_or_else(|_| CFString::new(""));
 
         self.level.replace(self.level.get() + 1);
-        println![
-            "{}- {} ({} children)",
-            indent,
-            role,
-            element.children().unwrap().len()
-        ];
+        println!["{}- {} ({} children)", indent, role, element.children().unwrap().len()];
 
         if let Ok(names) = element.attribute_names() {
             for name in names.into_iter() {
