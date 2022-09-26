@@ -186,6 +186,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
        !shouldLaunchOnStartup {
       LaunchAgent.launchOnStartup.remove()
     } else {
+      // Ensure most recent version of agent plist is being used.
+      LaunchAgent.launchOnStartup.remove()
       LaunchAgent.launchOnStartup.addIfNotPresent()
     }
 
@@ -864,6 +866,7 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
     if previous != current {
       Credentials.shared.migrate()
       Defaults.shared.migrateUUID()
+      LaunchAgent.launchOnStartup.remove()
       Onboarding.setUpEnvironment()
 
       TelemetryProvider.shared.track(event: .updatedApp, with: [:])
