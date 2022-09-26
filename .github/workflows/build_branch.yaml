@@ -447,7 +447,7 @@ jobs:
           git pull
           agvtool bump
           git add fig.xcodeproj/project.pbxproj
-          git commit -m "ci: Bump macOS build to $BUILD\n[skip ci]" --no-verify
+          git commit -m "chore: Bump macOS build to $BUILD [skip ci]" --no-verify
           git push origin ${GITHUB_REF##*/}
       - name: Notify \#macos channel on Discord
         run: |
