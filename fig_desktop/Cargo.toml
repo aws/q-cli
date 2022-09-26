@@ -54,7 +54,7 @@ fig_util = { path = "../rust-lib/fig_util" }
 flume = "0.10.14"
 fnv = "1.0.7"
 hashbrown = "0.12.3"
-image = "0.24.3"
+image = "0.24.4"
 imageproc = "0.23.0"
 moka = "0.9.4"
 notify = "5.0.0-pre.15"
@@ -104,4 +104,4 @@ zbus = "3.1.0"
 macos_accessibility_position = { path = "../rust-lib/macos_accessibility_position" }
 
 [build-dependencies]
-image = "0.24.3"
+image = "0.24.4"
