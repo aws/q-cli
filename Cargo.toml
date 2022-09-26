@@ -8,8 +8,8 @@ members = [
     "tests/stress/stress_server",
     "tests/stress/stress_client",
     "rust-lib/*",
-    "rust-lib/macos_accessibility_position/accessibility-master/*",
-    "rust-lib/macos_accessibility_position/appkit-nsworkspace-bindings",
+    # "rust-lib/macos_accessibility_position/accessibility-master/*",
+    # "rust-lib/macos_accessibility_position/appkit-nsworkspace-bindings",
 ]
 exclude = [
     "fig_ibus_engine",
