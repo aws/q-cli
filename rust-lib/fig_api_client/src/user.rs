@@ -104,6 +104,19 @@ pub async fn plans() -> fig_request::Result<Plans> {
     fig_request::Request::get("/user/plan").auth().deser_json().await
 }
 
+#[derive(Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct Team {
+    pub id: u64,
+    pub name: String,
+    pub namespace_id: u64,
+    pub specs: Vec<String>,
+}
+
+pub async fn teams() -> fig_request::Result<Vec<Team>> {
+    fig_request::Request::get("/teams").auth().deser_json().await
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

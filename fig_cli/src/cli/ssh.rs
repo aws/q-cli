@@ -4,97 +4,31 @@ use eyre::{
     ContextCompat,
     Result,
 };
-use fig_request::Request;
+use fig_api_client::access::{
+    Connection,
+    ConnectionType,
+    Host,
+};
+use fig_util::directories;
 use once_cell::sync::Lazy;
 use regex::Regex;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 use tokio::process::Command;
+use tracing::warn;
 
 use crate::util::choose;
 
 #[derive(Debug, Parser)]
 pub struct SshSubcommand {
     /// Host to connect to
-    host: String,
+    host: Option<String>,
     /// Identity to connect with
     #[clap(short = 'a', long = "auth")]
     auth: Option<String>,
     #[clap(long, hide = true)]
     get_identities: bool,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct Host {
-    nick_name: String,
-    ip: String,
-    connections: Vec<Connection>,
-    #[serde(default)]
-    namespace: Option<String>,
-}
-
-#[derive(Deserialize, Debug)]
-#[serde(tag = "connectionType")]
-enum Connection {
-    #[serde(rename = "ssh", rename_all = "camelCase")]
-    Ssh { port: u16, identity_ids: Vec<String> },
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "camelCase")]
-struct Identity {
-    remote_id: u64,
-    display_name: String,
-    username: String,
-    path_to_auth: Option<String>,
-    namespace: String,
-    private_key: Option<String>,
-    authentication_type: AuthenticationType,
-}
-
-#[derive(Serialize, Deserialize, Debug)]
-#[serde(rename_all = "snake_case")]
-enum AuthenticationType {
-    Path,
-    PrivateKey,
-    Password,
-    Agent,
-    #[serde(other)]
-    Other,
-}
-
-impl Connection {
-    fn identity_ids(&self) -> &Vec<String> {
-        match self {
-            Connection::Ssh { identity_ids, .. } => identity_ids,
-        }
-    }
-
-    fn port(&self) -> u16 {
-        match self {
-            Connection::Ssh { port, .. } => *port,
-        }
-    }
-}
-
-#[derive(Serialize)]
-#[serde(rename_all = "camelCase")]
-struct SSHStringRequest {
-    authentication_type: AuthenticationType,
-    path_to_auth: Option<String>,
-    identity_remote_id: u64,
-    username: String,
-    hostname: String,
-    port: u16,
-}
-
-#[derive(Deserialize)]
-#[serde(rename_all = "camelCase")]
-struct SSHStringResponse {
-    ssh_string: String,
+    /// Ignore saved identities
+    #[clap(long)]
+    ignore_saved: bool,
 }
 
 static HOST_NAMESPACE_REGEX: Lazy<Regex> =
@@ -102,129 +36,184 @@ static HOST_NAMESPACE_REGEX: Lazy<Regex> =
 
 impl SshSubcommand {
     pub async fn execute(&self) -> Result<()> {
-        let parsed = HOST_NAMESPACE_REGEX
-            .captures(&self.host)
-            .with_context(|| "invalid host")?;
-        let namespace = parsed.get(1).map(|c| c.as_str());
-        let host_name = parsed.get(2).unwrap().as_str();
-        let hosts: Vec<Host> = if let Some(namespace) = namespace {
-            Request::get("/access/hosts")
-                .auth()
-                .namespace(Some(namespace))
-                .deser_json()
-                .await?
-        } else {
-            Request::get("/access/hosts/all").auth().deser_json().await?
-        };
-        let matching = hosts
-            .into_iter()
-            .filter(|host| host.nick_name == host_name)
-            .collect::<Vec<Host>>();
-        let host = match matching.len() {
-            0 => {
-                bail!("No host matches")
+        if which::which("ssh").is_err() {
+            bail!("Couldn't find `ssh`. Please install the OpenSSH client!")
+        }
+
+        let mut user = None;
+
+        let saved_identities_path = directories::ssh_saved_identities()?;
+        if let Some(parent) = saved_identities_path.parent() {
+            if !parent.exists() {
+                std::fs::create_dir_all(&parent)?;
+            }
+        }
+        if !saved_identities_path.exists() {
+            std::fs::write(&saved_identities_path, "")?;
+        }
+
+        let (namespace, mut host_name) = match &self.host {
+            Some(host) => {
+                let parsed = HOST_NAMESPACE_REGEX.captures(host).with_context(|| "invalid host")?;
+                let namespace = parsed.get(1).map(|c| c.as_str());
+                let host_name = parsed.get(2).unwrap().as_str();
+                (namespace.map(|ns| ns.to_string()), Some(host_name))
             },
-            1 => matching.into_iter().next().unwrap(),
-            _ => {
-                let chosen = choose(
-                    "select host",
-                    matching
-                        .iter()
-                        .map(|host| {
-                            if let Some(ns) = &host.namespace {
-                                format!("{} ({})", host.nick_name, ns)
-                            } else {
-                                host.nick_name.clone()
-                            }
-                        })
-                        .collect(),
-                )?;
-                matching.into_iter().nth(chosen).unwrap()
-            },
+            None => (None, None),
         };
+        let mut hosts = fig_api_client::access::hosts(namespace.clone()).await?;
+        if host_name.is_none() || namespace.is_none() {
+            let teams = fig_api_client::user::teams().await?;
+            let mut tasks = vec![];
+            for team in teams {
+                tasks.push(tokio::spawn(fig_api_client::access::hosts(Some(team.name))));
+            }
+            for task in tasks {
+                hosts.extend(task.await??);
+            }
+        }
+
+        let host = loop {
+            match host_name {
+                Some(host_name_str) => {
+                    let filtered = hosts
+                        .into_iter()
+                        .filter(|host| host.nick_name == host_name_str)
+                        .collect::<Vec<Host>>();
+                    match filtered.len() {
+                        0 => bail!("No hosts found with that name"),
+                        1 => break filtered.into_iter().next().unwrap(),
+                        _ => {
+                            hosts = filtered;
+                            host_name = None;
+                        },
+                    }
+                },
+                None => {
+                    user = Some(fig_api_client::user::account().await?);
+                    let idx = choose(
+                        "Choose a host to connection to",
+                        hosts
+                            .iter()
+                            .map(|host| {
+                                format!(
+                                    "{} ({})",
+                                    host.nick_name,
+                                    host.namespace.as_deref().unwrap_or_else(|| user
+                                        .as_ref()
+                                        .unwrap()
+                                        .username
+                                        .as_deref()
+                                        .unwrap_or("you"))
+                                )
+                            })
+                            .collect(),
+                    )?;
+                    break hosts.into_iter().nth(idx).unwrap();
+                },
+            }
+        };
+
         let connections = host
             .connections
             .iter()
-            .filter(|conn| matches!(conn, Connection::Ssh { .. }))
+            .filter(|conn| conn.connection_type == ConnectionType::Ssh)
             .collect::<Vec<&Connection>>();
         if connections.is_empty() {
-            bail!("Host has no ssh connections");
+            bail!("Host is not configured for ssh");
         } else if connections.len() > 1 {
-            // note(mia): is this ever supposed to happen??
-            bail!("Host has multiple ssh connections");
+            bail!("Host has multiple ssh connections, please contact support");
         }
         let connection = connections.into_iter().next().unwrap();
 
-        let identities = connection.identity_ids();
-        if identities.is_empty() {
-            bail!("Connection has no identities");
-        }
-        let selected_identity = if let Some(identity) = &self.auth {
-            let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
-            let name_matches = remote_identities
-                .into_iter()
-                .filter(|iden| identities.contains(&iden.remote_id.to_string()))
-                .filter(|iden| &iden.display_name == identity)
-                .collect::<Vec<Identity>>();
-
-            if name_matches.is_empty() {
-                bail!("Host has no identity by that name");
-            } else if name_matches.len() > 1 {
-                let chosen = choose(
-                    "select identity",
-                    name_matches
-                        .iter()
-                        .map(|iden| format!("{} ({})", iden.display_name, iden.username))
-                        .collect(),
-                )?;
-                name_matches.into_iter().nth(chosen).unwrap()
-            } else {
-                name_matches.into_iter().next().unwrap()
-            }
+        let selected_identity = if connection.identity_ids.is_empty() && self.auth.is_none() {
+            None
         } else {
-            let id = identities.iter().next().unwrap();
-            let remote_identities: Vec<Identity> = Request::get("/access/identities").auth().deser_json().await?;
+            let mut identities = Vec::new();
+
+            identities.extend(
+                fig_api_client::access::identities(host.namespace.clone())
+                    .await?
+                    .into_iter(),
+            );
+            if self.auth.is_none() && connection.default_identity_id.is_some() {
+                let default = connection.default_identity_id.unwrap();
+                if identities.iter().any(|iden| iden.remote_id == default) {
+                    identities.retain(|iden| iden.remote_id == default);
+                }
+            } else {
+                identities.retain(|iden| connection.identity_ids.contains(&iden.remote_id));
+            }
+
+            if host.namespace.is_some() {
+                if user.is_none() {
+                    user = Some(fig_api_client::user::account().await?);
+                }
+                if user.as_ref().unwrap().username != host.namespace {
+                    identities.extend(fig_api_client::access::identities(None).await?.into_iter());
+                }
+            }
+
+            if let Some(auth) = &self.auth {
+                let auth_lower = auth.to_lowercase();
+                if !identities.iter().any(|x| x.display_name.to_lowercase() == auth_lower) {
+                    bail!("Identity {auth} not found");
+                }
+                identities.retain(|x| x.display_name.to_lowercase() == auth_lower);
+            }
+
             if self.get_identities {
-                let user_namespace = fig_api_client::user::account().await?.username;
-                println!(
-                    "{}",
-                    serde_json::to_string_pretty(
-                        &remote_identities
-                            .into_iter()
-                            .filter(|iden| Some(&iden.namespace) == user_namespace.as_ref()
-                                || identities.contains(&iden.remote_id.to_string()))
-                            .collect::<Vec<Identity>>()
-                    )?
-                );
+                println!("{}", serde_json::to_string_pretty(&identities)?);
                 return Ok(());
             }
-            let id_matches = remote_identities
-                .into_iter()
-                .filter(|iden| &iden.remote_id.to_string() == id)
-                .collect::<Vec<Identity>>();
-
-            if id_matches.is_empty() {
-                bail!("Host has an invalid identity");
-            } else if id_matches.len() > 1 {
-                // note(mia): this is definitely never supposed to happen
-                bail!("Multiple identities with same id!!!");
+            if identities.len() > 1 && !self.ignore_saved {
+                let saved = std::fs::read_to_string(&saved_identities_path)?;
+                if let Some((_, saved_identity)) = saved
+                    .lines()
+                    .filter_map(|l| l.split_once('='))
+                    .filter_map(|(h, i)| Some((h.parse::<u64>().ok()?, i.parse::<u64>().ok()?)))
+                    .find(|(h, i)| *h == host.remote_id && identities.iter().any(|iden| iden.remote_id == *i))
+                {
+                    identities.retain(|iden| iden.remote_id == saved_identity);
+                }
             }
 
-            id_matches.into_iter().next().unwrap()
+            match identities.len() {
+                0 => {
+                    warn!("No identities found!");
+                    None
+                },
+                1 => identities.into_iter().next(),
+                _ => {
+                    if user.is_none() {
+                        user = Some(fig_api_client::user::account().await?);
+                    }
+                    let idx = choose(
+                        "Choose an identity to",
+                        identities
+                            .iter()
+                            .map(|iden| {
+                                format!(
+                                    "{} ({})",
+                                    iden.display_name,
+                                    iden.namespace.as_deref().unwrap_or_else(|| user
+                                        .as_ref()
+                                        .unwrap()
+                                        .username
+                                        .as_deref()
+                                        .unwrap_or("you"))
+                                )
+                            })
+                            .collect(),
+                    )?;
+                    identities.into_iter().nth(idx)
+                },
+            }
         };
 
-        let req = SSHStringRequest {
-            authentication_type: selected_identity.authentication_type,
-            path_to_auth: selected_identity.path_to_auth,
-            identity_remote_id: selected_identity.remote_id,
-            username: selected_identity.username,
-            hostname: host.ip,
-            port: connection.port(),
-        };
+        let ssh_string = fig_api_client::access::ssh_string(&host, connection, &selected_identity).await?;
 
-        let resp: SSHStringResponse = Request::get("/access/ssh_string").auth().body(req).deser_json().await?;
-
-        let mut parts = shlex::split(&resp.ssh_string)
+        let mut parts = shlex::split(&ssh_string)
             .context("got no built ssh string from api")?
             .into_iter();
 
@@ -234,6 +223,16 @@ impl SshSubcommand {
             command.arg(arg);
         }
 
+        println!(
+            "Connecting to {}{}{}",
+            host.namespace.map(|ns| format!("@{ns}/")).unwrap_or_default(),
+            host.nick_name,
+            selected_identity
+                .as_ref()
+                .map(|iden| format!(" with identity {}", iden.display_name))
+                .unwrap_or_default()
+        );
+
         let status = command.spawn()?.wait().await?;
 
         if !status.success() {
@@ -241,6 +240,29 @@ impl SshSubcommand {
                 std::process::exit(code);
             }
             bail!("SSH process was not successful");
+        }
+
+        if let Some(selected_identity) = selected_identity {
+            let saved = std::fs::read_to_string(&saved_identities_path)?;
+            let mut did_update = false;
+            let mut updated = saved
+                .lines()
+                .filter(|line| !line.is_empty())
+                .filter_map(|line| line.trim().split_once('='))
+                .filter_map(|(h, i)| Some((h.parse::<u64>().ok()?, i.parse::<u64>().ok()?)))
+                .map(|(h, i)| {
+                    if h == host.remote_id {
+                        did_update = true;
+                        format!("{h}={}\n", selected_identity.remote_id)
+                    } else {
+                        format!("{h}={i}\n")
+                    }
+                })
+                .collect::<String>();
+            if !did_update {
+                updated.push_str(&format!("{}={}\n", host.remote_id, selected_identity.remote_id));
+            }
+            std::fs::write(saved_identities_path, updated)?;
         }
 
         Ok(())

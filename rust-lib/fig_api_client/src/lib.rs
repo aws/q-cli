@@ -1,3 +1,4 @@
+pub mod access;
 pub mod plugins;
 pub mod settings;
 pub mod user;

@@ -1,5 +1,7 @@
+use serde::de::Unexpected;
 use serde::{
     Deserialize,
+    Deserializer,
     Serialize,
 };
 
@@ -84,3 +86,46 @@ impl<T> Iterator for ElementOrListIntoIter<T> {
 }
 
 impl<T> ExactSizeIterator for ElementOrListIntoIter<T> {}
+
+pub fn string_as_u64<'de, D>(deserializer: D) -> Result<u64, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    String::deserialize(deserializer).and_then(|s| {
+        s.parse()
+            .map_err(|_| serde::de::Error::invalid_value(Unexpected::Other("invalid u64"), &"valid u64"))
+    })
+}
+
+pub fn string_as_option_u64<'de, D>(deserializer: D) -> Result<Option<u64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Option::deserialize(deserializer).and_then(|s: Option<String>| {
+        if let Some(s) = s {
+            match s.parse() {
+                Ok(s) => Ok(Some(s)),
+                Err(_) => Err(serde::de::Error::invalid_value(
+                    Unexpected::Other("invalid u64"),
+                    &"valid u64",
+                )),
+            }
+        } else {
+            Ok(None)
+        }
+    })
+}
+
+pub fn string_as_vec_u64<'de, D>(deserializer: D) -> Result<Vec<u64>, D::Error>
+where
+    D: Deserializer<'de>,
+{
+    Vec::deserialize(deserializer).and_then(|v: Vec<String>| {
+        v.into_iter()
+            .map(|s| {
+                s.parse()
+                    .map_err(|_| serde::de::Error::invalid_value(Unexpected::Other("invalid u64"), &"valid u64"))
+            })
+            .collect()
+    })
+}

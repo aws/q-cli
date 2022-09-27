@@ -303,6 +303,17 @@ pub fn managed_fig_cli_path() -> Result<PathBuf> {
     }
 }
 
+/// The path to the saved ssh identities file
+///
+/// - Linux: `$XDG_DATA_HOME/fig or $HOME/.local/share/fig/access/ssh_saved_identities`
+/// - MacOS: `$HOME/Library/Application Support/fig/access/ssh_saved_identities`
+/// - Windows: `%LOCALAPPDATA%/Fig/userdata/access/ssh_saved_identities`
+pub fn ssh_saved_identities() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
+
+    Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
+}
+
 utf8_dir!(home_dir);
 utf8_dir!(fig_dir);
 utf8_dir!(fig_data_dir);
@@ -316,6 +327,7 @@ utf8_dir!(managed_fig_cli_path);
 utf8_dir!(plugins_dir);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
+utf8_dir!(ssh_saved_identities);
 
 fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
     let path = std::path::Path::new(path);
@@ -376,6 +388,7 @@ mod test {
         test_path_name!(daemon_socket_path, "daemon.socket");
         test_path_name!(local_secure_socket_path, "secure.socket");
         test_path_name!(manifest_path, "manifest.json");
+        test_path_name!(ssh_saved_identities, "ssh_saved_identities");
     }
 
     #[test]
@@ -408,5 +421,6 @@ mod test {
         test_environment_path!(daemon_socket_path, "FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
         test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
         test_environment_path!(managed_fig_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
+        test_environment_path!(ssh_saved_identities, "FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
     }
 }
