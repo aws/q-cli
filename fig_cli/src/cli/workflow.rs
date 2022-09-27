@@ -348,7 +348,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     };
 
     if let Some(ruleset) = workflow.rules {
-        rules_met(&ruleset)?;
+        if !rules_met(&ruleset)? {
+            return Ok(());
+        }
     }
 
     let mut env_args = env_args.into_iter().skip(1);
@@ -890,9 +892,9 @@ pub fn escape(s: Cow<str>) -> Cow<str> {
     es.into()
 }
 
-fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<()> {
+fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
     for set in ruleset {
-        let mut set_met = !set.is_empty();
+        let mut set_met = set.is_empty();
         for rule in set {
             let query = match rule.key {
                 RuleType::WorkingDirectory => std::env::current_dir()?.to_string_lossy().to_string(),
@@ -942,11 +944,26 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<()> {
         }
 
         if !set_met {
-            bail!("Workflow preconditions not met: {:?}", set);
+            println!(
+                "{}",
+                match set.len() == 1 {
+                    true => "The following rule must be met:",
+                    false => "One of the following rules must be met:",
+                }
+                .red()
+            );
+
+            for rule in set {
+                println!("- {rule}");
+            }
+
+            println!();
+
+            return Ok(false);
         }
     }
 
-    Ok(())
+    Ok(true)
 }
 
 #[cfg(test)]

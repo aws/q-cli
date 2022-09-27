@@ -1,3 +1,5 @@
+use std::fmt::Display;
+
 use serde::{
     Deserialize,
     Serialize,
@@ -59,6 +61,19 @@ pub enum RuleType {
     CurrentBranch,
 }
 
+impl Display for RuleType {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            RuleType::WorkingDirectory => "Working directory",
+            RuleType::GitRemote => "Git remote",
+            RuleType::ContentsOfDirectory => "Contents of directory",
+            RuleType::GitRootDirectory => "Git root directory",
+            RuleType::EnvironmentVariable => "Environment",
+            RuleType::CurrentBranch => "Current branch",
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum Predicate {
@@ -70,6 +85,19 @@ pub enum Predicate {
     Exists,
 }
 
+impl Display for Predicate {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{}", match self {
+            Predicate::Contains => "contain",
+            Predicate::Equals => "equal",
+            Predicate::Matches => "match with",
+            Predicate::StartsWith => "start with",
+            Predicate::EndsWith => "end with",
+            Predicate::Exists => "exist",
+        })
+    }
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Rule {
@@ -78,6 +106,25 @@ pub struct Rule {
     pub predicate: Predicate,
     pub inverted: bool,
     pub value: String,
+}
+
+impl Display for Rule {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(
+            f,
+            "{} {} {}{}",
+            self.key,
+            match self.inverted {
+                true => "must not",
+                false => "must",
+            },
+            self.predicate,
+            match self.value.is_empty() {
+                true => "".to_owned(),
+                false => format!(" \"{}\"", self.value),
+            }
+        )
+    }
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
