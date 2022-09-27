@@ -51,7 +51,7 @@ pub async fn edit_buffer(
     notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
-    let old_metrics = figterm_state.with_mut(session_id.clone(), |session| {
+    let old_metrics = figterm_state.with_update(session_id.clone(), |session| {
         session.edit_buffer.text = hook.text.clone();
         session.edit_buffer.cursor = hook.cursor;
         session.terminal_cursor_coordinates = hook.terminal_cursor_coordinates.clone();
@@ -75,7 +75,6 @@ pub async fn edit_buffer(
             None
         }
     });
-    figterm_state.set_most_recent_session(session_id.clone());
 
     if let Some(metrics) = old_metrics.flatten() {
         if metrics.end_time > metrics.start_time {

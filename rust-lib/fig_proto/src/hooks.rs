@@ -46,8 +46,6 @@ pub fn generate_shell_context(
         wsl_distro: None,
         terminal: None,
         hostname: None,
-        remote_context: None,
-        remote_context_type: None,
         environment_variables: vec![],
     })
 }

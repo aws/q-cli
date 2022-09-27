@@ -126,49 +126,56 @@ async fn handle_secure_ipc(
                         success: false,
                     }))
                 } else {
-                    let id = FigtermSessionId(handshake.id);
-                    match figterm_state.sessions.get_mut(&id) {
-                        Some(mut session) => {
-                            if session.secret == handshake.secret {
-                                session_id = Some(id);
-                                session.writer = Some(clientbound_tx.clone());
-                                session.dead_since = None;
-                                debug!("Client auth accepted because of secret match");
-                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                                    success: true,
-                                }))
-                            } else {
-                                debug!("Client auth rejected because of secret mismatch");
-                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                                    success: false,
-                                }))
-                            }
-                        },
-                        None => {
-                            session_id = Some(id.clone());
-                            let (command_tx, command_rx) = flume::unbounded();
-                            tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
-                            figterm_state.insert(id, FigtermSession {
-                                secret: handshake.secret,
-                                sender: command_tx,
-                                writer: Some(clientbound_tx.clone()),
-                                dead_since: None,
-                                last_receive: Instant::now(),
-                                edit_buffer: EditBuffer {
-                                    text: "".to_string(),
-                                    cursor: 0,
-                                },
-                                context: None,
-                                terminal_cursor_coordinates: None,
-                                current_session_metrics: None,
-                                response_map: HashMap::new(),
-                                nonce_counter: Arc::new(AtomicU64::new(0)),
-                            });
-                            debug!("Client auth accepted because of new id");
-                            Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                                success: true,
-                            }))
-                        },
+                    let id = FigtermSessionId(handshake.id.clone());
+
+                    if let Some(success) = figterm_state.with_update(id.clone(), |session| {
+                        if session.secret == handshake.secret {
+                            session_id = Some(id);
+                            session.writer = Some(clientbound_tx.clone());
+                            session.dead_since = None;
+                            debug!(
+                                "Client auth for {} accepted because of secret match ({} = {})",
+                                handshake.id, session.secret, handshake.secret
+                            );
+                            true
+                        } else {
+                            debug!(
+                                "Client auth for {} rejected because of secret mismatch ({} =/= {})",
+                                handshake.id, session.secret, handshake.secret
+                            );
+                            false
+                        }
+                    }) {
+                        Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success }))
+                    } else {
+                        let id = FigtermSessionId(handshake.id.clone());
+                        session_id = Some(id.clone());
+                        let (command_tx, command_rx) = flume::unbounded();
+                        tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
+                        figterm_state.insert(FigtermSession {
+                            id,
+                            secret: handshake.secret.clone(),
+                            sender: command_tx,
+                            writer: Some(clientbound_tx.clone()),
+                            dead_since: None,
+                            last_receive: Instant::now(),
+                            edit_buffer: EditBuffer {
+                                text: "".to_string(),
+                                cursor: 0,
+                            },
+                            context: None,
+                            terminal_cursor_coordinates: None,
+                            current_session_metrics: None,
+                            response_map: HashMap::new(),
+                            nonce_counter: Arc::new(AtomicU64::new(0)),
+                        });
+                        debug!(
+                            "Client auth for {} accepted because of new id with secret {}",
+                            handshake.id, handshake.secret
+                        );
+                        Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
+                            success: true,
+                        }))
                     }
                 }
             },
@@ -214,7 +221,7 @@ async fn handle_secure_ipc(
                     session_id
                         .as_ref()
                         .and_then(|session_id| {
-                            figterm_state.with_mut(session_id.clone(), |session| session.response_map.remove(&nonce))
+                            figterm_state.with(session_id, |session| session.response_map.remove(&nonce))
                         })
                         .flatten()
                         .map(|channel| channel.send(response));
@@ -234,10 +241,10 @@ async fn handle_secure_ipc(
     drop(clientbound_tx);
 
     if let Some(session_id) = &session_id {
-        if let Some(mut session) = figterm_state.sessions.get_mut(session_id) {
+        figterm_state.with_update(session_id.clone(), |session| {
             session.writer = None;
             session.dead_since = Some(Instant::now());
-        }
+        });
     }
 
     if let Err(err) = ping_task.await {
@@ -257,7 +264,7 @@ async fn handle_outgoing(
     bad_connection: Arc<Notify>,
 ) {
     while let Ok(message) = outgoing.recv_async().await {
-        trace!(?message, "Sending secure message");
+        debug!(?message, "Sending secure message");
         if let Err(err) = writer.send_message(message).await {
             error!(%err, "Secure outgoing task send error");
             bad_connection.notify_one();
@@ -355,7 +362,7 @@ async fn handle_commands(
         };
 
         let nonce = if let Some(channel) = nonce_channel {
-            Some(figterm_state.with_mut(session_id.clone(), |session| {
+            Some(figterm_state.with(&session_id, |session| {
                 let nonce = session.nonce_counter.fetch_add(1, Ordering::Relaxed);
                 session.response_map.insert(nonce, channel);
                 nonce
@@ -365,7 +372,7 @@ async fn handle_commands(
         };
 
         let is_insert_request = matches!(request, Request::InsertText(_));
-        figterm_state.with_mut(session_id.clone(), |session| {
+        figterm_state.with(&session_id, |session| {
             if let Some(writer) = &session.writer {
                 if writer
                     .try_send(Clientbound {

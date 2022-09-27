@@ -36,16 +36,9 @@ FIG_LAST_PS3="$PS3"
 FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
 FIG_SHELL_PATH=$(fig _ get-shell)
 
-if [[ -e /proc/1/cgroup ]] && grep -q docker /proc/1/cgroup; then
-  FIG_IN_DOCKER=1
-elif [[ -f /.dockerenv ]]; then
-  FIG_IN_DOCKER=1
-else
-  FIG_IN_DOCKER=0
-fi
-
 # Construct Operating System Command.
-function fig_osc { printf "\033]697;%s\007" "$1" "${@:2}"; }
+# shellcheck disable=SC2059
+function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
 
 function __fig_preexec() {
   fig_osc PreExec
@@ -77,12 +70,6 @@ function __fig_preexec_preserve_status() {
 function __fig_pre_prompt () {
   __fig_ret_value="$?"
 
-  if [[ -n "${SSH_TTY}" ]]; then
-    fig_osc "SSH=1"
-  else
-    fig_osc "SSH=0"
-  fi
-  fig_osc "Docker=%d" "${FIG_IN_DOCKER}"
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
   fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"

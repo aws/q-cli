@@ -24,17 +24,11 @@ set --query FIG_WORKFLOWS_KEYBIND || set FIG_WORKFLOWS_KEYBIND '\cf'
 
 set --export TTY (command tty)
 set --export FIG_PID $fish_pid
+set --export FIG_SET_PARENT $TERM_SESSION_ID
+set --export LC_FIG_SET_PARENT $TERM_SESSION_ID
 
 set FIG_HOSTNAME (fig _ hostname; or command hostname -f 2> /dev/null; or command hostname)
 set FIG_SHELL_PATH (fig _ get-shell)
-
-if test -e /proc/1/cgroup; and command grep -q docker /proc/1/cgroup
-    set FIG_IN_DOCKER 1
-else if test -f /.dockerenv
-    set FIG_IN_DOCKER 1
-else
-    set FIG_IN_DOCKER 0
-end
 
 function fig_osc
     builtin printf "\033]697;$argv[1]\007" $argv[2..-1]
@@ -80,13 +74,6 @@ end
 function fig_precmd --on-event fish_prompt
     set -l last_status $status
 
-    if test -n "$SSH_TTY"
-        fig_osc "SSH=1"
-    else
-        fig_osc "SSH=0"
-    end
-
-    fig_osc "Docker=%d" "$FIG_IN_DOCKER"
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
     fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"

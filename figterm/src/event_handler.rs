@@ -102,11 +102,7 @@ impl EventListener for EventHandler {
                 }
             },
             Event::ShellChanged => {
-                let shell = if shell_state.in_ssh || shell_state.in_docker {
-                    shell_state.remote_context.shell.as_ref()
-                } else {
-                    shell_state.local_context.shell.as_ref()
-                };
+                let shell = &shell_state.local_context.shell;
                 configure_scope(|scope| {
                     if let Some(shell) = shell {
                         scope.set_tag("shell", shell);

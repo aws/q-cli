@@ -139,90 +139,29 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     let terminal = FigTerminal::parent_terminal().map(|s| s.to_string());
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
-        .map(|s| s.parse().ok())
         .ok()
-        .flatten()
+        .and_then(|s| s.parse().ok())
         .unwrap_or(8);
 
-    let remote_context_type = if shell_state.in_ssh {
-        Some(local::shell_context::RemoteContextType::Ssh)
-    } else if shell_state.in_docker {
-        Some(local::shell_context::RemoteContextType::Docker)
-    } else {
-        None
-    };
-
-    let remote_context = remote_context_type.is_some().then(|| {
-        Box::new(local::ShellContext {
-            pid: shell_state.remote_context.pid,
-            ttys: shell_state.remote_context.tty.clone(),
-            process_name: shell_state.remote_context.shell.clone(),
-            shell_path: shell_state
-                .remote_context
-                .shell_path
-                .clone()
-                .map(|path| path.display().to_string()),
-            wsl_distro: shell_state.remote_context.wsl_distro.clone(),
-            current_working_directory: shell_state
-                .remote_context
-                .current_working_directory
-                .clone()
-                .map(|cwd| cwd.display().to_string()),
-            session_id: shell_state.remote_context.session_id.clone(),
-            integration_version: Some(integration_version),
-            terminal: terminal.clone(),
-            hostname: shell_state.remote_context.hostname.clone(),
-            remote_context: None,
-            remote_context_type: None,
-            environment_variables: vec![],
-        })
-    });
-
-    // note(mia): lord have mercy
-    // todo(mia): clean this up
     local::ShellContext {
-        pid: shell_state.local_context.pid.or(shell_state.remote_context.pid),
-        ttys: shell_state
-            .local_context
-            .tty
-            .clone()
-            .or_else(|| shell_state.remote_context.tty.clone()),
-        process_name: shell_state
-            .local_context
-            .shell
-            .clone()
-            .or_else(|| shell_state.remote_context.shell.clone()),
+        pid: shell_state.local_context.pid,
+        ttys: shell_state.local_context.tty.clone(),
+        process_name: shell_state.local_context.shell.clone(),
         shell_path: shell_state
             .local_context
             .shell_path
             .clone()
-            .or_else(|| shell_state.remote_context.shell_path.clone())
             .map(|path| path.display().to_string()),
-        wsl_distro: shell_state
-            .local_context
-            .wsl_distro
-            .clone()
-            .or_else(|| shell_state.remote_context.wsl_distro.clone()),
+        wsl_distro: shell_state.local_context.wsl_distro.clone(),
         current_working_directory: shell_state
             .local_context
             .current_working_directory
             .clone()
-            .or_else(|| shell_state.remote_context.current_working_directory.clone())
             .map(|cwd| cwd.display().to_string()),
-        session_id: shell_state
-            .local_context
-            .session_id
-            .clone()
-            .or_else(|| shell_state.remote_context.session_id.clone()),
+        session_id: shell_state.local_context.session_id.clone(),
         integration_version: Some(integration_version),
         terminal,
-        hostname: shell_state
-            .local_context
-            .hostname
-            .clone()
-            .or_else(|| shell_state.remote_context.hostname.clone()),
-        remote_context,
-        remote_context_type: remote_context_type.map(|x| x.into()),
+        hostname: shell_state.local_context.hostname.clone(),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
     }
 }
@@ -252,7 +191,6 @@ fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
 {
-    let in_docker_ssh = term.shell_state().in_docker || term.shell_state().in_ssh;
     let shell_enabled = [Some("bash"), Some("zsh"), Some("fish"), Some("nu")]
         .contains(&term.shell_state().get_context().shell.as_deref());
     let prexec = term.shell_state().preexec;
@@ -281,9 +219,7 @@ where
     };
     drop(handle);
 
-    trace!(
-        "in_docker_ssh: {in_docker_ssh}, shell_enabled: {shell_enabled}, prexec: {prexec}, insertion_locked: {insertion_locked}"
-    );
+    trace!("shell_enabled: {shell_enabled}, prexec: {prexec}, insertion_locked: {insertion_locked}");
 
     shell_enabled && !insertion_locked && !prexec
 }
@@ -309,7 +245,7 @@ where
                     new_edit_buffer_hook(Some(context), edit_buffer.buffer, cursor_idx, 0, cursor_coordinates);
                 let message = hook_to_message(edit_buffer_hook);
 
-                debug!("Sending: {message:?}");
+                trace!("Sending: {message:?}");
 
                 sender.send_async(message).await?;
             }
@@ -396,9 +332,16 @@ fn figterm_main() -> Result<()> {
         Err(_) => {
             let term_session_id = uuid::Uuid::new_v4().to_string();
             std::env::set_var("TERM_SESSION_ID", &term_session_id);
+            if env::var("FIGTERM_SESSION_ID").is_err() {
+                std::env::set_var("FIGTERM_SESSION_ID", &term_session_id);
+            }
             term_session_id
         },
     };
+
+    if env::var("FIGTERM_SESSION_ID").is_err() {
+        std::env::set_var("FIGTERM_SESSION_ID", uuid::Uuid::new_v4().to_string());
+    }
 
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
@@ -701,7 +644,7 @@ fn figterm_main() -> Result<()> {
                 msg = secure_receiver.recv_async() => {
                     match msg {
                         Ok(message) => {
-                            debug!("Received message from socket: {message:?}");
+                            trace!("Received message from socket: {message:?}");
                             process_secure_message(
                                 message,
                                 secure_sender.clone(),

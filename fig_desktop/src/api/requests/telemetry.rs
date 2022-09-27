@@ -126,25 +126,23 @@ pub fn handle_aggregate_session_metric_action_request(
     request: AggregateSessionMetricActionRequest,
     state: &FigtermState,
 ) -> RequestResult {
-    if let Some(session_id) = state.most_recent_session_id() {
-        if let Some(result) = state.with_mut(session_id, |session| {
-            if let Some(ref mut metrics) = session.current_session_metrics {
-                if let Some(action) = request.action {
-                    match action {
-                        Action::Increment(Increment { field, amount }) => {
-                            if field == "num_popups" {
-                                metrics.num_popups += amount.unwrap_or(1);
-                            } else {
-                                bail!("Unknown field: {field}");
-                            }
-                        },
-                    };
-                }
+    if let Some(result) = state.with_most_recent(|session| {
+        if let Some(ref mut metrics) = session.current_session_metrics {
+            if let Some(action) = request.action {
+                match action {
+                    Action::Increment(Increment { field, amount }) => {
+                        if field == "num_popups" {
+                            metrics.num_popups += amount.unwrap_or(1);
+                        } else {
+                            bail!("Unknown field: {field}");
+                        }
+                    },
+                };
             }
-            Ok(())
-        }) {
-            result?
-        };
+        }
+        Ok(())
+    }) {
+        result?;
     }
 
     RequestResult::success()

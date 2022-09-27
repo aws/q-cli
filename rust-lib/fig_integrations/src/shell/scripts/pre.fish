@@ -13,6 +13,14 @@ if not test -z "$FIG_NEW_SESSION"
     set --erase FIG_NEW_SESSION
 end
 
+# Load parent from env variables
+if test -n "$FIG_SET_PARENT"; and test -z "$LC_FIG_SET_PARENT"
+    set --export FIG_SET_PARENT $LC_FIG_SET_PARENT
+end
+if test -n "$FIG_PARENT"; and test -z "$FIG_SET_PARENT"
+    set --export FIG_PARENT $FIG_SET_PARENT
+end
+
 if test "$TERM_PROGRAM" != WarpTerminal
     and test -z "$INSIDE_EMACS"
     and test "$__CFBundleIdentifier" != "com.vandyke.SecureCRT"
@@ -26,9 +34,11 @@ if test "$TERM_PROGRAM" != WarpTerminal
     # Generated automatically by iTerm and Terminal But needs to be
     # explicitly set for VSCode and Hyper. This variable is inherited when
     # new ttys are created using tmux and must be explicitly overwritten.
-    if test -z "$TERM_SESSION_ID"; or test -n "$TMUX"
-        set --export TERM_SESSION_ID (fig _ uuidgen)
-    end
+    # Temporary note: we have started always overwriting this value.
+    # If this breaks your app, please contact us!
+    # if test -z "$TERM_SESSION_ID"; or test -n "$TMUX"
+    set --export TERM_SESSION_ID (fig _ uuidgen)
+    # end
     set --export FIG_INTEGRATION_VERSION 8
 
     set FIG_SHELL (fig _ get-shell)
@@ -51,12 +61,12 @@ if test "$TERM_PROGRAM" != WarpTerminal
             end
         else
             set FIG_TERM_NAME figterm
-            set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME")
+            set FIG_SHELL_PATH figterm
         end
 
         # Need to exec bash because we're using 'exec -a <name>'
         # to set argv[0] and fish's exec doesn't have this option
-        exec bash -c "FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
+        exec bash -c "FIG_PARENT=$FIG_PARENT FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
     end
     # else
     #     set -g FIG_DID_NOT_EXEC_FIGTERM 1

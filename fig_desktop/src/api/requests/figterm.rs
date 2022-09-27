@@ -32,27 +32,15 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
         None => return RequestResult::error("InsertTextRequest expects a request type"),
     };
 
-    if let Some(terminal_session_id) = request.terminal_session_id {
-        match state.sessions.get(&FigtermSessionId(terminal_session_id)) {
-            Some(session) => {
-                session
-                    .sender
-                    .send(figterm_command)
-                    .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
-                return RequestResult::success();
-            },
-            None => return RequestResult::error("No terminal session with specified id"),
-        }
+    match state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
+        session.sender.clone()
+    }) {
+        Some(sender) => {
+            sender
+                .send(figterm_command)
+                .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
+            RequestResult::success()
+        },
+        None => RequestResult::error("No figterm sessions"),
     }
-
-    if let Some(session) = state.most_recent_session() {
-        session
-            .sender
-            .send(figterm_command)
-            .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
-    } else {
-        return RequestResult::error("No figterm sessions");
-    }
-
-    RequestResult::success()
 }

@@ -1,4 +1,6 @@
-ControlPath ~/.ssh/%C
-ControlMaster auto
-PermitLocalCommand yes
-LocalCommand fig hook ssh --prompt "$FIG_PID" "$TTY" '~/.ssh/%C' '%r@%n' 1>&2
+Match user="!git,!aur,*"
+  RemoteForward /var/tmp/fig-parent-${TERM_SESSION_ID}.socket /var/tmp/fig/${USER}/secure.socket
+  SendEnv LC_FIG_SET_PARENT FIG_SET_PARENT
+  StreamLocalBindMask 600
+  StreamLocalBindUnlink yes
+  LocalCommand /home/mia/Fig/desktop/target/debug/fig_cli _ prompt-ssh '%r@%n' 1>&2

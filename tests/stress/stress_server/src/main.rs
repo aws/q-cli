@@ -5,12 +5,14 @@ use fig_ipc::{
     BufferedReader,
     RecvMessage,
     SendMessage,
+    SendRecvMessage,
 };
 use fig_proto::stress::serverbound::{
     self,
     StressKind,
 };
 use fig_proto::stress::{
+    build_clientbound,
     clientbound,
     Clientbound,
     Serverbound,
@@ -69,14 +71,20 @@ async fn handle_stream(mut stream: BufferedReader<UnixStream>) -> eyre::Result<(
         .await?
         .context("client didn't send setup packet")?;
 
-    let (kind, i) = if let serverbound::Inner::Setup(setup) = setup.inner.unwrap() {
-        (setup.kind(), setup.i as u64)
+    let (kind, i, cycles, payload_size) = if let serverbound::Inner::Setup(setup) = setup.inner.unwrap() {
+        (
+            setup.kind(),
+            setup.i as u64,
+            setup.cycles as u64,
+            setup.payload_size as u64,
+        )
     } else {
         eyre::bail!("client skipped setup packet");
     };
 
     let message = match kind {
         StressKind::Increment => run_test_increment(&mut stream, i).await?,
+        StressKind::Echo => run_test_echo(&mut stream, i, cycles, payload_size).await?,
     };
     info!("[{i}] test complete, sending report");
     stream
@@ -101,6 +109,38 @@ async fn run_test_increment(stream: &mut BufferedReader<UnixStream>, i: u64) -> 
                 warn!("[{i}] increment test: failure {number} != {expected}");
             }
             expected += 1;
+        }
+    }
+
+    Ok(failure)
+}
+
+async fn run_test_echo(
+    stream: &mut BufferedReader<UnixStream>,
+    i: u64,
+    cycles: u64,
+    payload_size: u64,
+) -> eyre::Result<Option<String>> {
+    ready(stream, "echo", i).await?;
+
+    let mut failure = None;
+
+    for _ in 0..cycles {
+        let mut payload = vec![0u8; payload_size as usize];
+        payload.fill_with(rand::random);
+        let payload = hex::encode(payload);
+        let echoed: Serverbound = stream
+            .send_recv_message(build_clientbound(clientbound::Inner::EchoTest(clientbound::EchoTest {
+                payload: payload.clone(),
+            })))
+            .await?
+            .context("missing echo response")?;
+        if let Some(serverbound::Inner::EchoResponse(echo)) = echoed.inner {
+            if echo.payload != payload {
+                failure = Some(format!("echo mismatch: got {}, expect {payload}", echo.payload));
+            }
+        } else {
+            failure = Some("received invalid echo response".to_string());
         }
     }
 

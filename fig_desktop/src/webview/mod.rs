@@ -163,6 +163,8 @@ impl WebviewManager {
             self.event_loop.create_proxy(),
         ));
 
+        tokio::spawn(crate::figterm::clean_figterm_cache(self.figterm_state.clone()));
+
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
 
         {

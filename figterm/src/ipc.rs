@@ -282,6 +282,7 @@ pub async fn spawn_secure_ipc(
                         let main_loop_sender = main_loop_sender.clone();
                         let outgoing_task = tokio::spawn(async move {
                             while let Ok(message) = outgoing_rx.recv_async().await {
+                                trace!(?message, "Sending secure message");
                                 match writer.send_message(message.clone()).await {
                                     Ok(()) => {
                                         if let Err(err) = writer.flush().await {
@@ -307,6 +308,7 @@ pub async fn spawn_secure_ipc(
                                     }
                                 }
                             }
+                            debug!("outgoing_task exited");
                         });
 
                         // receive incoming messages
@@ -316,11 +318,13 @@ pub async fn spawn_secure_ipc(
                                 error!("failed receiving message from host: {err}");
                                 None
                             }) {
+                                debug!(?message, "Received secure message");
                                 if let Err(err) = incoming_tx.send(message) {
                                     error!("no more listeners for incoming messages: {err}");
                                     break;
                                 }
                             }
+                            debug!("incoming_task exited");
                         });
 
                         if let Some(child) = child {

@@ -11,9 +11,6 @@ members = [
     # "rust-lib/macos_accessibility_position/accessibility-master/*",
     # "rust-lib/macos_accessibility_position/appkit-nsworkspace-bindings",
 ]
-exclude = [
-    "fig_ibus_engine",
-]
 
 [profile.release]
 debug = 1

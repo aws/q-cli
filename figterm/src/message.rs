@@ -397,8 +397,10 @@ pub async fn process_secure_message(
                 }
 
                 tokio::spawn(async move {
+                    debug!("running command");
                     match cmd.output() {
                         Ok(output) => {
+                            debug!("command successfully ran");
                             let response = make_response(Response::RunProcess(RunProcessResponse {
                                 stdout: String::from_utf8_lossy(&output.stdout).to_string(),
                                 stderr: String::from_utf8_lossy(&output.stderr).to_string(),
@@ -409,6 +411,7 @@ pub async fn process_secure_message(
                             }
                         },
                         Err(err) => {
+                            debug!("command unsuccessfully ran");
                             warn!(%err, command = request.executable, "Failed running command");
                         },
                     }
@@ -441,6 +444,7 @@ pub async fn process_secure_message(
                 }
 
                 tokio::spawn(async move {
+                    debug!("pseudoterminal executing");
                     match cmd.output() {
                         Err(err) => {
                             warn!(%err, command = request.command, "Failed running command");

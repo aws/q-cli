@@ -139,7 +139,7 @@ pub fn build_tray(
 }
 
 fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figterm_state: &FigtermState) {
-    let figterm_session = figterm_state.most_recent_session();
+    let figterm_session = figterm_state.with_most_recent(|session| session.get_info());
 
     // Debugger Menu
 

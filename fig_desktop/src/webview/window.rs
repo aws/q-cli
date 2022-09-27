@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::fmt;
 
 use parking_lot::RwLock;
-use tokio::runtime::Handle;
 use tokio::sync::mpsc::UnboundedSender;
 use wry::application::dpi::{
     LogicalSize,
@@ -147,11 +146,8 @@ impl WindowState {
                 }
             },
             WindowEvent::Hide => {
-                for session in figterm_state.sessions.iter() {
-                    let sender = session.sender.clone();
-                    Handle::current().spawn(async move {
-                        let _ = sender.send(FigtermCommand::InterceptClear);
-                    });
+                for session in figterm_state.linked_sessions.lock().iter() {
+                    let _ = session.sender.send(FigtermCommand::InterceptClear);
                 }
                 self.webview.window().set_visible(false);
                 #[cfg(not(target_os = "linux"))]
@@ -167,11 +163,8 @@ impl WindowState {
                 self.webview.window().set_resizable(false);
             },
             WindowEvent::HideSoft => {
-                for session in figterm_state.sessions.iter() {
-                    let sender = session.sender.clone();
-                    Handle::current().spawn(async move {
-                        let _ = sender.send(FigtermCommand::InterceptClear);
-                    });
+                for session in figterm_state.linked_sessions.lock().iter() {
+                    let _ = session.sender.send(FigtermCommand::InterceptClear);
                 }
             },
             WindowEvent::Show => {

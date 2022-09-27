@@ -22,6 +22,16 @@ if [[ -n "${FIG_NEW_SESSION}" ]]; then
   unset FIG_NEW_SESSION
 fi
 
+# Load parent from env variables
+if [[ "$FIG_SET_PARENT" = "" && "$LC_FIG_SET_PARENT" != "" ]]; then
+  export FIG_SET_PARENT=$LC_FIG_SET_PARENT
+  unset -v LC_FIG_SET_PARENT
+fi
+if [[ "$FIG_PARENT" = "" && "$FIG_SET_PARENT" != "" ]]; then
+  export FIG_PARENT=$FIG_SET_PARENT
+  unset -v FIG_SET_PARENT
+fi
+
 # 0 = Yes, 1 = No, 2 = Fallback to FIG_TERM
 fig _ should-figterm-launch 1>/dev/null 2>&1
 SHOULD_FIGTERM_LAUNCH=$?
@@ -44,12 +54,12 @@ then
   # explicitly set for VSCode and Hyper. This variable is inherited when
   # new ttys are created using Tmux of VSCode and must be explicitly
   # overwritten.
-  if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
-    if command -v uuidgen 1>/dev/null 2>&1; then
-      TERM_SESSION_ID="$(fig _ uuidgen)"
-      export TERM_SESSION_ID
-    fi
-  fi
+  # Temporary note: we have started always overwriting this value.
+  # If this breaks your app, please contact us!
+  # if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
+  TERM_SESSION_ID="$(fig _ uuidgen)"
+  export TERM_SESSION_ID
+  # fi
   export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
   FIG_SHELL=$(fig _ get-shell)
@@ -73,7 +83,7 @@ then
         fi
     else
       FIG_TERM_NAME="figterm"
-      FIG_SHELL_PATH="$(command -v figterm)"
+      FIG_SHELL_PATH="figterm"
     fi
 
     FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"

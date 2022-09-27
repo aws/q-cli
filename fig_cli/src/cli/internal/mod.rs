@@ -1,5 +1,6 @@
 pub mod local_state;
 use std::fmt::Display;
+use std::fs::OpenOptions;
 use std::io::{
     stderr,
     stdout,
@@ -28,6 +29,7 @@ use clap::{
 use crossterm::style::Stylize;
 use eyre::{
     bail,
+    Context,
     ContextCompat,
     Result,
 };
@@ -237,6 +239,10 @@ pub enum InternalSubcommand {
     /// Uses the desktop app to open the uninstall page
     #[cfg(target_os = "linux")]
     OpenUninstallPage,
+    /// Displays prompt to install remote shell integrations
+    PromptSsh {
+        remote_dest: String,
+    },
 }
 
 pub async fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
@@ -632,6 +638,32 @@ impl InternalSubcommand {
                         fig_proto::local::OpenBrowserCommand { url },
                     ))
                     .await?;
+                }
+            },
+            InternalSubcommand::PromptSsh { remote_dest } => {
+                if !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
+                    let installed_hosts_file = directories::fig_dir()
+                        .context("Can't get fig dir")?
+                        .join("ssh_hostnames");
+                    let mut installed_hosts = OpenOptions::new()
+                        .create(true)
+                        .read(true)
+                        .append(true)
+                        .open(installed_hosts_file)?;
+
+                    let mut contents = String::new();
+                    installed_hosts.read_to_string(&mut contents)?;
+
+                    if !contents.contains(&remote_dest) {
+                        let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
+                        println!(
+                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n  \
+                            $ curl -fSsL https://fig.io/install-headless.sh | bash\n{bar}",
+                            "Fig".magenta(),
+                        );
+                        let new_line = format!("\n{}", remote_dest);
+                        installed_hosts.write_all(&new_line.into_bytes())?;
+                    }
                 }
             },
         }

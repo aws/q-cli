@@ -8,6 +8,7 @@ pub mod hooks;
 pub mod local;
 pub(crate) mod proto;
 pub mod secure_hooks;
+pub mod stress;
 pub mod util;
 use std::fmt::Debug;
 use std::mem::size_of;
@@ -33,10 +34,6 @@ use thiserror::Error;
 
 pub mod secure {
     pub use crate::proto::secure::*;
-}
-
-pub mod stress {
-    pub use crate::proto::stress::*;
 }
 
 // This is not used explicitly, but it must be here for the derive
@@ -244,8 +241,6 @@ mod tests {
             integration_version: None,
             terminal: None,
             hostname: None,
-            remote_context: None,
-            remote_context_type: None,
             shell_path: Some("/bin/bash".into()),
             wsl_distro: None,
             environment_variables: vec![],

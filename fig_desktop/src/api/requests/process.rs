@@ -32,10 +32,6 @@ use crate::figterm::{
 };
 use crate::native::SHELL;
 
-fn get_shell_path_from_state(state: &FigtermState) -> Option<String> {
-    state.most_recent_session()?.context.as_ref()?.shell_path.clone()
-}
-
 fn shell_args(shell_path: &str) -> &'static [&'static str] {
     let (_, shell_name) = shell_path
         .rsplit_once(|c| c == '/' || c == '\\')
@@ -65,7 +61,6 @@ fn set_fig_vars(cmd: &mut Command) {
     cmd.env("TERM", "xterm-256color");
 }
 
-// todo(mia): implement actual pseudoterminal stuff
 pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
     debug!({
         term_session =? request.terminal_session_id,
@@ -76,10 +71,11 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
         pipelined = request.is_pipelined
     }, "Executing command");
 
-    if let Some(session) = match request.terminal_session_id {
-        Some(session) => state.sessions.get(&FigtermSessionId(session)),
-        None => state.most_recent_session(),
-    } {
+    let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
+        session.sender.clone()
+    });
+
+    if let Some(session_sender) = session_sender {
         let (message, rx) = FigtermCommand::pseudoterminal_execute(
             request.command,
             request.working_directory,
@@ -87,10 +83,10 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
             request.is_pipelined,
             request.env,
         );
-        if let Err(err) = session.sender.send(message) {
+        if let Err(err) = session_sender.send(message) {
             bail!("failed sending command to figterm: {err}");
         }
-        drop(session);
+        drop(session_sender);
 
         let response = timeout(Duration::from_secs(10), rx)
             .await
@@ -109,13 +105,12 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
             bail!("invalid response type");
         }
     } else {
-        // fall back to executing locally
-        // todo(mia): move this code into it's own crate so the logic is shared
+        debug!("executing locally");
 
-        let shell = get_shell_path_from_state(state).unwrap_or_else(|| SHELL.into());
-        let args = shell_args(&shell);
+        // note(mia): we don't know what shell they use because we don't have any figterm sessions to check
+        let args = shell_args(SHELL);
 
-        let mut cmd = Command::new(shell);
+        let mut cmd = Command::new(SHELL);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
         // TODO(sean): better SHELL_ARGs handling here based on shell.
@@ -164,20 +159,21 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         env =? request.env
     }, "Running command");
 
-    if let Some(session) = match request.terminal_session_id {
-        Some(session) => state.sessions.get(&FigtermSessionId(session)),
-        None => state.most_recent_session(),
-    } {
+    let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
+        session.sender.clone()
+    });
+
+    if let Some(session_sender) = session_sender {
         let (message, rx) = FigtermCommand::run_process(
             request.executable,
             request.arguments,
             request.working_directory,
             request.env,
         );
-        if let Err(err) = session.sender.send(message) {
+        if let Err(err) = session_sender.send(message) {
             bail!("failed sending command to figterm: {err}");
         }
-        drop(session);
+        drop(session_sender);
 
         let response = timeout(Duration::from_secs(10), rx).await??;
 
@@ -189,8 +185,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
             bail!("invalid response type");
         }
     } else {
-        // fall back to executing locally
-        // todo(mia): move this code into it's own crate so the logic is shared
+        debug!("running locally");
 
         // TODO(sean) we can infer shell as above for execute if no executable is provided.
         let mut cmd = Command::new(&request.executable);

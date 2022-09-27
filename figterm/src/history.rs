@@ -148,8 +148,6 @@ impl History {
                         cwd,
                         time: cap[6].parse().ok(),
                         hostname: None,
-                        in_ssh: false,
-                        in_docker: false,
                         exit_code: cap[2].parse().ok(),
                     }
                 })
@@ -175,8 +173,8 @@ impl History {
         if let Some(command) = &command_info.command {
             if !command.is_empty() {
                 self.connection.execute(
-                    "INSERT INTO history (command, shell, pid, session_id, cwd, time, in_ssh, in_docker, hostname, \
-                     exit_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO history (command, shell, pid, session_id, cwd, time, hostname, \
+                     exit_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
                     params![
                         &command_info.command,
                         &command_info.shell,
@@ -184,8 +182,6 @@ impl History {
                         &command_info.session_id,
                         &command_info.cwd.as_ref().map(|p| p.to_string_lossy().into_owned()),
                         &command_info.time,
-                        &command_info.in_ssh,
-                        &command_info.in_docker,
                         &command_info.hostname,
                         &command_info.exit_code,
                     ],
@@ -257,6 +253,13 @@ fn migrate_history_db(conn: &Connection) -> Result<()> {
              INTEGER, session_id TEXT, cwd TEXT, time INTEGER , in_ssh INTEGER, in_docker INTEGER, hostname TEXT, \
              exit_code INTEGER); INSERT INTO migrations(version, migration_time) VALUES (1, strftime('%s', 'now')); \
              COMMIT;",
+        )?;
+    }
+
+    if max_migration_version < 2 {
+        conn.execute_batch(
+            "BEGIN; ALTER TABLE history DROP COLUMN in_ssh; ALTER TABLE history DROP COLUMN in_docker; INSERT \
+            INTO migrations(version, migration_time) VALUES (2, strftime('%s', 'now')); COMMIT;",
         )?;
     }
 

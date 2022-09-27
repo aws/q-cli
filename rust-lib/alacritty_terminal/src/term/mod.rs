@@ -166,8 +166,6 @@ pub struct CommandInfo {
     pub time: Option<u64>,
 
     pub hostname: Option<String>,
-    pub in_ssh: bool,
-    pub in_docker: bool,
 
     pub exit_code: Option<i32>,
 }
@@ -197,12 +195,6 @@ pub struct ShellContext {
 pub struct ShellState {
     /// Local context for shell
     pub local_context: ShellContext,
-    /// Remote context for shell
-    pub remote_context: ShellContext,
-    /// If the shell is running in a ssh session
-    pub in_ssh: bool,
-    /// If the shell is running in a docker session
-    pub in_docker: bool,
     /// If the prompt has been seen
     pub has_seen_prompt: bool,
     /// PreExec
@@ -230,20 +222,12 @@ impl ShellState {
 impl ShellState {
     /// Get the current [`ShellContext`]
     pub fn get_context(&self) -> &ShellContext {
-        if self.in_ssh || self.in_docker {
-            &self.remote_context
-        } else {
-            &self.local_context
-        }
+        &self.local_context
     }
 
     /// Get the current [`ShellContext`]
     pub fn get_mut_context(&mut self) -> &mut ShellContext {
-        if self.in_ssh || self.in_docker {
-            &mut self.remote_context
-        } else {
-            &mut self.local_context
-        }
+        &mut self.local_context
     }
 }
 
@@ -1791,8 +1775,6 @@ impl<T: EventListener> Handler for Term<T> {
                 .duration_since(std::time::SystemTime::UNIX_EPOCH)
                 .ok()
                 .map(|d| d.as_secs()),
-            in_ssh: self.shell_state.in_ssh,
-            in_docker: self.shell_state.in_docker,
             hostname: context.hostname.clone(),
             exit_code: None,
         });
@@ -1879,18 +1861,6 @@ impl<T: EventListener> Handler for Term<T> {
         let session_id = session_id.trim().to_owned();
         trace!("Fig session_id: {session_id:?}");
         self.shell_state.get_mut_context().session_id = Some(session_id);
-    }
-
-    #[inline]
-    fn docker(&mut self, in_docker: bool) {
-        trace!("Fig in_docker: {in_docker}");
-        self.shell_state.in_docker = in_docker;
-    }
-
-    #[inline]
-    fn ssh(&mut self, in_ssh: bool) {
-        trace!("Fig in_ssh: {in_ssh}");
-        self.shell_state.in_ssh = in_ssh;
     }
 
     #[inline]

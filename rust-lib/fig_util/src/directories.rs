@@ -1,6 +1,9 @@
 use std::convert::TryInto;
 use std::fmt::Display;
-use std::path::PathBuf;
+use std::path::{
+    Path,
+    PathBuf,
+};
 
 use camino::Utf8PathBuf;
 use thiserror::Error;
@@ -227,10 +230,34 @@ pub fn daemon_socket_path() -> Result<PathBuf> {
 
 /// The path to secure socket
 ///
-/// - Linux/MacOS: `/var/tmp/fig/$USER/secure.socket`
+/// - Linux/MacOS on ssh: `/var/tmp/fig-parent-$USER.socket`
+/// - Linux/MacOS not on ssh: `/var/tmp/fig/$USER/secure.socket`
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
 pub fn secure_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SECURE_SOCKET_PATH");
+    if let Ok(parent_id) = std::env::var("FIG_PARENT") {
+        if !parent_id.is_empty() {
+            return parent_socket_path(&parent_id);
+        }
+    }
+    local_secure_socket_path()
+}
+
+/// The path to fig parent socket
+///
+/// - Linux/MacOS: `/var/tmp/fig-parent-$FIG_PARENT.socket`
+/// - Windows: unused
+pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
+    Ok(Path::new(&format!("/var/tmp/fig-parent-{}.socket", parent_id)).to_path_buf())
+}
+
+/// The path to local secure socket
+///
+/// - Linux/MacOS: `/var/tmp/fig/$USER/secure.socket`
+/// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
+pub fn local_secure_socket_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_LOCAL_SECURE_SOCKET_PATH");
     Ok(sockets_dir()?.join("secure.socket"))
 }
 
@@ -347,7 +374,7 @@ mod test {
         test_path_name!(logs_dir, "logs");
         test_path_name!(fig_socket_path, "fig.socket");
         test_path_name!(daemon_socket_path, "daemon.socket");
-        test_path_name!(secure_socket_path, "secure.socket");
+        test_path_name!(local_secure_socket_path, "secure.socket");
         test_path_name!(manifest_path, "manifest.json");
     }
 

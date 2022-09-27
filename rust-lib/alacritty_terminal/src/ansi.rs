@@ -511,12 +511,6 @@ pub trait Handler {
     /// Fig SessionId Osc
     fn session_id(&mut self, _: &str) {}
 
-    /// Fig Docker Osc
-    fn docker(&mut self, _: bool) {}
-
-    /// Fig Ssh Osc
-    fn ssh(&mut self, _: bool) {}
-
     /// Fig Hostname Osc
     fn hostname(&mut self, _: &str) {}
 
@@ -1249,9 +1243,6 @@ where
                                         Ok(s) => self.handler.session_id(s),
                                         Err(err) => log::error!("Error decoding SessionId: {err}"),
                                     },
-                                    b"Docker" => {
-                                        self.handler.docker(!(val.len() <= 2 && val[1] == b'0'));
-                                    },
                                     b"Hostname" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.hostname(s),
                                         Err(err) => log::error!("Error decoding Hostname: {err}"),
@@ -1259,9 +1250,6 @@ where
                                     b"Log" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.log(s),
                                         Err(err) => log::error!("Error decoding Log: {err}"),
-                                    },
-                                    b"SSH" => {
-                                        self.handler.ssh(!(val.len() <= 2 && val[1] == b'0'));
                                     },
                                     _ => unhandled!(),
                                 }
