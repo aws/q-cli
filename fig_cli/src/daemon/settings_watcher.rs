@@ -34,10 +34,6 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     })
     .unwrap();
 
-    watcher
-        .configure(notify::Config::OngoingEvents(Some(Duration::from_secs_f32(0.25))))
-        .unwrap();
-
     let application_path = std::path::Path::new("/Applications/Fig.app");
     let application_path_clone = std::path::PathBuf::from(application_path);
 

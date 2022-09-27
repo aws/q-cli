@@ -25,8 +25,8 @@ clap_complete_fig = "3.2.4"
 color-eyre = "0.6.2"
 crossterm = "0.25.0"
 ctrlc = "3.2.3"
-deno_core = { version = "0.151.0", optional = true }
-deno_runtime = { version = "0.74.0", optional = true }
+deno_core = { version = "0.152.0", optional = true }
+deno_runtime = { version = "0.78.0", optional = true }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 eyre = "0.6.8"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
@@ -91,7 +91,7 @@ nix = "0.25.0"
 skim = { git = "https://github.com/grant0417/skim" }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-notify = "5.0.0-pre.15"
+notify = "5.0.0"
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.41.0", features = ["Win32_System_Threading"] }
@@ -99,6 +99,6 @@ winapi = { version = "0.3", features = ["consoleapi"] }
 
 [dev-dependencies]
 assert_cmd = "2.0"
+insta = "1.20.0"
 paste = "1.0.9"
 predicates = "2.1"
-insta = "1.20.0"

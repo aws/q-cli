@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use fig_proto::fig::notification::Type as NotificationEnum;
 use fig_proto::fig::{
@@ -43,12 +42,6 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
         Err(err) => error!(%err, "notify watcher"),
     })
     .unwrap();
-
-    // watcher.configure(notify::Config::PreciseEvents(true)).unwrap();
-    // watcher.configure(notify::Config::NoticeEvents(true)).unwrap();
-    watcher
-        .configure(notify::Config::OngoingEvents(Some(Duration::from_secs_f32(2.25))))
-        .unwrap();
 
     let settings_path = match fig_settings::settings::settings_path().ok() {
         Some(settings_path) => match settings_path.parent() {
