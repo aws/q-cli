@@ -1251,6 +1251,8 @@ where
                                         Ok(s) => self.handler.log(s),
                                         Err(err) => log::error!("Error decoding Log: {err}"),
                                     },
+                                    b"Docker" => {},
+                                    b"SSH" => {},
                                     _ => unhandled!(),
                                 }
                             }

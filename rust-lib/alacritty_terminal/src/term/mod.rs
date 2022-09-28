@@ -1788,7 +1788,7 @@ impl<T: EventListener> Handler for Term<T> {
         self.shell_state.get_mut_context().current_working_directory = Some(directory.to_path_buf());
         match env::set_current_dir(directory) {
             Ok(_) => {},
-            Err(e) => log::error!("Failed to set current dir: {}", e),
+            Err(err) => log::error!("Failed to set current dir ({}): {}", directory.display(), err),
         }
     }
 
