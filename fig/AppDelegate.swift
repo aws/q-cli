@@ -1693,24 +1693,6 @@ extension AppDelegate: NSMenuDelegate {
       return (NSColor.cyan, items)
     }
 
-    var figtermSocketExists: Bool = false
-
-    if let session = window?.session {
-      let path = FigTerm.path(for: session)
-      figtermSocketExists = FileManager.default.fileExists(atPath: path)
-
-      guard figtermSocketExists else {
-        let items = stringArrayToMenu(items: [
-          "Inserting text into the terminal will fail.",
-          "---",
-          "figterm socket does not exist for session:",
-          "\(session)"
-        ])
-        return (NSColor.yellow, items)
-      }
-
-    }
-
     if let (color, layout) = Diagnostic.debuggerStatusFromWeb {
       let items = stringArrayToMenu(items: layout)
       return (color, items)
