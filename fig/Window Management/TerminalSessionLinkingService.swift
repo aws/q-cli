@@ -199,24 +199,7 @@ class TerminalSessionLinker: TerminalSessionLinkingService {
       return
     }
 
-    if !event.context.hasRemoteContext {
-      self.setCommandContext(for: event.context.sessionID, context: nil)
-    } else if event.context.hasRemoteContextType,
-        event.context.remoteContextType == FigCommon_ShellContext.RemoteContextType.docker {
-      let userHostname = event.context.remoteContext.hostname.split(separator: "@", maxSplits: 1).map(String.init)
-      var hostname: String
-      var user: String?
-      if userHostname.count == 2 {
-        user = userHostname[0]
-        hostname = userHostname[1]
-      } else {
-        hostname = userHostname[0]
-      }
-      self.setCommandContext(
-        for: event.context.sessionID,
-           context: .docker(user: user, remoteHostname: hostname)
-      )
-    }
+    self.setCommandContext(for: event.context.sessionID, context: nil)
     self.setShellContext(for: event.context.sessionID, context: shellContext)
   }
 
@@ -363,11 +346,8 @@ extension FigCommon_ShellContext {
       return nil
     }
 
-    let context = self.hasRemoteContext ? self.remoteContext : self
-
-    let workingDirectory = self.hasCurrentWorkingDirectory || self.hasRemoteContext
-      ? context.currentWorkingDirectory
-      : ProcessStatus.workingDirectory(for: self.pid)
+    let workingDirectory = self.hasCurrentWorkingDirectory ? self.currentWorkingDirectory
+      : "/"
 
     return ShellContext(processId: context.pid,
                         executablePath: context.processName,
