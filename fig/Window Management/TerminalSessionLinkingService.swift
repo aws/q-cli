@@ -349,9 +349,9 @@ extension FigCommon_ShellContext {
     let workingDirectory = self.hasCurrentWorkingDirectory ? self.currentWorkingDirectory
       : "/"
 
-    return ShellContext(processId: context.pid,
-                        executablePath: context.processName,
-                        ttyDescriptor: context.ttys,
+    return ShellContext(processId: self.pid,
+                        executablePath: self.processName,
+                        ttyDescriptor: self.ttys,
                         workingDirectory: workingDirectory,
                         integrationVersion: Int(self.integrationVersion))
   }
