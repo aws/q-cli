@@ -595,7 +595,7 @@ commands:
             sudo apt upgrade -y
       - run:
           name: Install dependencies
-          command: sudo apt install -y clang cmake curl git jq
+          command: sudo apt install -y clang cmake curl git jq unzip
       - when:
           condition: << parameters.include_desktop_deps >>
           steps:
@@ -605,6 +605,7 @@ commands:
                   sudo apt install -y \
                     libayatana-appindicator3-dev \
                     libgtk-3-dev libibus-1.0-dev libwebkit2gtk-4.0-dev valac
+      - install-protobuf
       - rust/install:
           version: 1.64.0
       - checkout-desktop
@@ -639,3 +640,14 @@ commands:
             echo "export CODESIGNING_IDENTITY='$identity'" >> $BASH_ENV
 
             security set-keychain-settings -lut 1200
+
+  install-protobuf:
+    steps:
+      - run:
+          name: Install protobuf
+          command: |
+            curl -L -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v21.6/protoc-21.6-linux-x86_64.zip
+            unzip /tmp/protoc.zip -d /tmp/protoc
+            sudo cp /tmp/protoc/bin/protoc /usr/local/bin/
+            sudo cp -r /tmp/protoc/include/google /usr/local/include/
+            sudo rm -r /tmp/protoc
