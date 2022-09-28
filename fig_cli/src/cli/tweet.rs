@@ -11,12 +11,12 @@ const TWEET_OPTIONS: &[(&str, bool)] = &[
         true,
     ),
     (
-        "I just added autocomplete to my terminal using @fig! It supports 300+ CLI tools and fits into my workflow \
+        "I just added autocomplete to my terminal using @fig! It supports 500+ CLI tools and fits into my workflow \
          seamlessly!\n\n🛠🆕👉️",
         true,
     ),
     (
-        "I just added IDE-style autocomplete to my terminal using @fig. It supports 300+ CLI tools and works with my \
+        "I just added IDE-style autocomplete to my terminal using @fig. It supports 500+ CLI tools and works with my \
          existing terminal! Try it out\n\n🛠🆕🔥",
         false,
     ),
