@@ -70,6 +70,33 @@ jobs:
       - name: Proto Format Check
         run: clang-format -n --Werror proto/*.proto
 
+  toml-sort:
+    name: Cargo.toml Sort
+    runs-on: ubuntu-latest
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Install cargo-sort
+        uses: actions-rs/cargo@v1
+        with:
+          command: install
+          args: --debug --locked cargo-sort@1.0.7
+
+      - name: Cargo.toml Sort Check
+        uses: actions-rs/cargo@v1
+        with:
+          command: sort
+          args: --check --workspace
+
   cargo-deny:
     name: Cargo Deny
     runs-on: ubuntu-latest
