@@ -36,8 +36,10 @@ pub fn wrap_custom_protocol(
 pub static ICON: Lazy<Icon> = Lazy::new(|| {
     cfg_if::cfg_if!(
         if #[cfg(target_os = "linux")] {
-            let icon_path = "/usr/share/icons/hicolor/512x512/apps/fig.png";
-            return load_icon(icon_path);
+            return load_icon(
+                fig_util::search_xdg_data_dirs("icons/hicolor/512x512/apps/fig.png")
+                    .unwrap_or_else(|| "/usr/share/icons/hicolor/512x512/apps/fig.png".into()),
+            );
         } else {
             return load_from_memory();
         }

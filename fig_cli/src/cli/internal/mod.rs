@@ -868,7 +868,7 @@ pub async fn pre_cmd() {
                         "\nYou just updated your dotfiles in {}!\nAutomatically applying changes in this terminal.\n",
                         "◧ Fig".bold()
                     )
-                    .ok();
+                        .ok();
                     }
                     0
                 } else {
