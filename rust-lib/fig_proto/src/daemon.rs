@@ -1,10 +1,19 @@
 pub use crate::proto::daemon::*;
 
 pub fn new_diagnostic_message() -> DaemonMessage {
+    use diagnostic_command::DiagnosticPart;
+
     DaemonMessage {
         id: None,
         no_response: None,
-        command: Some(daemon_message::Command::Diagnostic(DiagnosticCommand { parts: vec![] })),
+        command: Some(daemon_message::Command::Diagnostic(DiagnosticCommand {
+            parts: vec![
+                DiagnosticPart::TimeStartedEpoch.into(),
+                DiagnosticPart::SettingsWatcherStatus.into(),
+                DiagnosticPart::WebsocketStatus.into(),
+                DiagnosticPart::SystemSocketStatus.into(),
+            ],
+        })),
     }
 }
 

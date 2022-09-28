@@ -765,6 +765,21 @@ impl DoctorCheck for InsertionLockCheck {
     }
 }
 
+macro_rules! daemon_fix {
+    () => {
+        Some(DoctorFix::Async(
+            async move {
+                let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+                Daemon::default().install(&path).await?;
+                // Sleep for a few seconds to give the daemon time to install and start
+                std::thread::sleep(std::time::Duration::from_secs(5));
+                Ok(())
+            }
+            .boxed(),
+        ))
+    };
+}
+
 struct DaemonCheck;
 
 #[async_trait]
@@ -774,23 +789,6 @@ impl DoctorCheck for DaemonCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let delay_in_seconds = 5;
-
-        macro_rules! daemon_fix {
-            () => {
-                Some(DoctorFix::Async(
-                    async move {
-                        let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
-                        Daemon::default().install(&path).await?;
-                        // Sleep for a few seconds to give the daemon time to install and start
-                        std::thread::sleep(std::time::Duration::from_secs(delay_in_seconds));
-                        Ok(())
-                    }
-                    .boxed(),
-                ))
-            };
-        }
-
         // Make sure the daemon is running
         Daemon::default().start().await.map_err(|_| DoctorError::Error {
             reason: "Daemon is not running".into(),
@@ -816,7 +814,7 @@ impl DoctorCheck for DaemonCheck {
                             std::fs::create_dir_all(&launch_agents_path)?;
                             let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
                             fig_daemon::Daemon::default().install(&path).await?;
-                            std::thread::sleep(std::time::Duration::from_secs(delay_in_seconds));
+                            std::thread::sleep(std::time::Duration::from_secs(5));
                             Ok(())
                         }
                         .boxed(),
@@ -877,7 +875,19 @@ impl DoctorCheck for DaemonCheck {
             }),
         }?;
 
-        // Get diagnostics from the daemon
+        Ok(())
+    }
+}
+
+struct DaemonDiagnosticsCheck;
+
+#[async_trait]
+impl DoctorCheck for DaemonDiagnosticsCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Daemon diagnostics".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let socket_path = directories::daemon_socket_path().unwrap();
 
         cfg_if::cfg_if! {
@@ -2205,7 +2215,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         if fig_util::manifest::is_full() {
             run_checks(
                 "Let's make sure Fig is running...".into(),
-                vec![&AppRunningCheck, &FigSocketCheck, &DaemonCheck],
+                vec![&AppRunningCheck, &FigSocketCheck, &DaemonCheck, &DaemonDiagnosticsCheck],
                 config,
                 &mut spinner,
             )
