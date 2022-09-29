@@ -9,6 +9,8 @@ use camino::Utf8PathBuf;
 use thiserror::Error;
 use time::OffsetDateTime;
 
+use crate::system_info::in_ssh;
+
 macro_rules! debug_env_binding {
     ($path:literal) => {
         #[cfg(debug_assertions)]
@@ -235,9 +237,11 @@ pub fn daemon_socket_path() -> Result<PathBuf> {
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
 pub fn secure_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SECURE_SOCKET_PATH");
-    if let Ok(parent_id) = std::env::var("FIG_PARENT") {
-        if !parent_id.is_empty() {
-            return parent_socket_path(&parent_id);
+    if in_ssh() {
+        if let Ok(parent_id) = std::env::var("FIG_PARENT") {
+            if !parent_id.is_empty() {
+                return parent_socket_path(&parent_id);
+            }
         }
     }
     local_secure_socket_path()
@@ -249,7 +253,7 @@ pub fn secure_socket_path() -> Result<PathBuf> {
 /// - Windows: unused
 pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
-    Ok(Path::new(&format!("/var/tmp/fig-parent-{}.socket", parent_id)).to_path_buf())
+    Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.socket")).to_path_buf())
 }
 
 /// The path to local secure socket
