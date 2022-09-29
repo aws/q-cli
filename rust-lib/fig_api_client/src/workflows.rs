@@ -152,6 +152,10 @@ pub struct Workflow {
     pub is_owned_by_user: bool,
 }
 
-pub async fn workflows() -> fig_request::Result<Vec<Workflow>> {
-    fig_request::Request::get("/workflows").auth().deser_json().await
+pub async fn workflows(schema_version: u32) -> fig_request::Result<Vec<Workflow>> {
+    fig_request::Request::get("/workflows")
+        .query(&[("schema-version", schema_version)])
+        .auth()
+        .deser_json()
+        .await
 }

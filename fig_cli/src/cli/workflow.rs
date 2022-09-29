@@ -22,6 +22,7 @@ use eyre::{
 use fig_api_client::workflows::{
     workflows,
     Generator,
+    Parameter,
     ParameterType,
     Predicate,
     Rule,
@@ -31,6 +32,10 @@ use fig_api_client::workflows::{
 };
 #[cfg(unix)]
 use fig_ipc::local::open_ui_element;
+use fig_ipc::{
+    BufferedUnixStream,
+    SendMessage,
+};
 #[cfg(unix)]
 use fig_proto::local::UiElement;
 use fig_request::Request;
@@ -72,7 +77,7 @@ use tui::{
 #[cfg(unix)]
 use crate::util::launch_fig;
 
-const SUPPORTED_SCHEMA_VERSION: u32 = 1;
+const SUPPORTED_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Args)]
 pub struct WorkflowArgs {
@@ -210,7 +215,7 @@ enum WriteWorkflowsError {
 }
 
 async fn write_workflows() -> Result<(), WriteWorkflowsError> {
-    for workflow in workflows().await? {
+    for workflow in workflows(SUPPORTED_SCHEMA_VERSION).await? {
         let mut file = tokio::fs::File::create(
             directories::workflows_cache_dir()?.join(format!("{}.{}.json", workflow.namespace, workflow.name)),
         )
@@ -416,8 +421,17 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         },
     };
 
-    if let Some(ruleset) = workflow.rules {
-        if !rules_met(&ruleset)? {
+    let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
+    if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
+        return Err(eyre!(
+            "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
+            Please update to the latest version by running {} and try again.",
+            "fig update".magenta(),
+        ));
+    }
+
+    if let Some(ruleset) = &workflow.rules {
+        if !rules_met(ruleset)? {
             return Ok(());
         }
     }
@@ -469,13 +483,17 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
-    if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
-        return Err(eyre!(
-            "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
-            Please update to the latest version by running {} and try again.",
-            "fig update".magenta(),
-        ));
+    let map = parse_args(args.borrow(), &workflow.parameters);
+    if let Ok(map) = map {
+        if execution_method == "invoke" {
+            execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map).await?;
+        } else if execution_method == "search" {
+            let args = &args.take();
+            if send_figterm(map_args_to_command(&workflow, args), true).await.is_err() {
+                execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, args).await?;
+            }
+        }
+        return Ok(());
     }
 
     let style_sheet = tui::style_sheet! {
@@ -746,22 +764,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    let mut command = format!("fig run {}", match workflow.is_owned_by_user {
-        true => workflow.name.clone(),
-        false => format!("@{}/{}", &workflow.namespace, &workflow.name),
-    });
-    for (arg, val) in &*args.borrow() {
-        use std::fmt::Write;
-
-        match val {
-            val if val == "true" => write!(command, " --{arg}").ok(),
-            val => write!(command, " --{arg} {}", escape(val.into())).ok(),
-        };
-    }
-
-    if !workflow.parameters.is_empty() {
-        eprintln!("{} {command}", "Executing:".bold().magenta());
-    }
+    let command = map_args_to_command(&workflow, &args.borrow());
 
     fig_telemetry::dispatch_emit_track(
         TrackEvent::new(
@@ -789,26 +792,69 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             let map = args.into_iter().map(|(key, (v, _))| (key, v)).collect();
             execute_js_workflow(&workflow.template, &map)?;
         } else {
-            let mut map = HashMap::new();
-            for parameter in &workflow.parameters {
-                let args = args.borrow();
-                let value = args.get(&parameter.name);
-                map.insert(parameter.name.as_str(), match value {
-                    Some(value) => match &parameter.parameter_type {
-                        ParameterType::Checkbox { true_value_substitution, false_value_substitution } => match value {
-                            value if value == "true" => true_value_substitution.to_owned(),
-                            _ => false_value_substitution.to_owned(),
-                        },
-                        _ => value.to_owned(),
-                    },
-                    None => return Err(eyre!("Missing execution args")),
-                });
+            if send_figterm(command, true).await.is_err() {
+                execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &args.take()).await?;
             }
-
-            execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map).await?;
         }
     }
 
+    Ok(())
+}
+
+fn parse_args(
+    args: core::cell::Ref<HashMap<String, String>>,
+    parameters: &Vec<Parameter>,
+) -> Result<HashMap<String, String>> {
+    let mut map = HashMap::new();
+    for parameter in parameters {
+        let value = args.get(&parameter.name);
+        map.insert(parameter.name.clone(), match value {
+            Some(value) => match &parameter.parameter_type {
+                ParameterType::Checkbox {
+                    true_value_substitution,
+                    false_value_substitution,
+                } => match value {
+                    value if value == "true" => true_value_substitution.to_owned(),
+                    _ => false_value_substitution.to_owned(),
+                },
+                _ => value.to_owned(),
+            },
+            None => return Err(eyre!("Missing execution args")),
+        });
+    }
+
+    Ok(map)
+}
+
+fn map_args_to_command(workflow: &Workflow, args: &HashMap<String, String>) -> String {
+    let mut command = format!("fig run {}", match workflow.is_owned_by_user {
+        true => workflow.name.clone(),
+        false => format!("@{}/{}", &workflow.namespace, &workflow.name),
+    });
+    for (arg, val) in args {
+        use std::fmt::Write;
+
+        match val {
+            val if val == "true" => write!(command, " --{arg}").ok(),
+            val => write!(command, " --{arg} {}", escape(val.into())).ok(),
+        };
+    }
+
+    command
+}
+
+async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
+    let session_id = std::env::var("TERM_SESSION_ID")?;
+    let mut conn = BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
+    conn.send_message(fig_proto::figterm::FigtermRequestMessage {
+        request: Some(fig_proto::figterm::figterm_request_message::Request::InsertOnNewCmd(
+            fig_proto::figterm::InsertOnNewCmdRequest {
+                text: format!("\x1b[200~{text}\x1b[201~"),
+                execute,
+            },
+        )),
+    })
+    .await?;
     Ok(())
 }
 
@@ -816,7 +862,7 @@ async fn execute_bash_workflow(
     name: &str,
     namespace: &str,
     tree: &[TreeElement],
-    args: &HashMap<&str, String>,
+    args: &HashMap<String, String>,
 ) -> Result<()> {
     let start_time = time::OffsetDateTime::now_utc();
     let mut command = Command::new("bash");
