@@ -19,6 +19,7 @@ use fig_settings::{
     settings,
     ws_host,
 };
+use fig_util::directories;
 use fig_util::system_info::get_system_id;
 use serde::{
     Deserialize,
@@ -60,6 +61,9 @@ enum FigWebsocketMessage {
         #[serde(with = "time::serde::rfc3339::option")]
         updated_at: Option<time::OffsetDateTime>,
     },
+    InvalidateWorkflows {
+        workflows: Vec<WorkflowIdentifier>,
+    },
     #[serde(rename_all = "camelCase")]
     Event {
         event_name: String,
@@ -86,6 +90,13 @@ struct TicketBody {
 struct RateLimitResponse {
     error: Option<String>,
     timeout: Option<u64>,
+}
+
+#[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
+#[serde(rename_all = "camelCase")]
+struct WorkflowIdentifier {
+    namespace: String,
+    name: String,
 }
 
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
@@ -195,6 +206,21 @@ pub async fn process_websocket(
                                     }
                                 }
                             },
+                            FigWebsocketMessage::InvalidateWorkflows { workflows } => {
+                                if workflows.is_empty() {
+                                    tokio::fs::remove_dir_all(directories::workflows_cache_dir()?).await?;
+                                    tokio::fs::create_dir(directories::workflows_cache_dir()?).await?;
+                                    return Ok(());
+                                }
+
+                                for workflow in workflows {
+                                    tokio::fs::remove_file(
+                                        directories::workflows_cache_dir()?
+                                            .join(format!("{}.{}.json", workflow.namespace, workflow.name)),
+                                    )
+                                    .await?;
+                                }
+                            },
                             FigWebsocketMessage::Event {
                                 event_name,
                                 payload,
@@ -227,6 +253,7 @@ pub async fn process_websocket(
                         },
                         Err(err) => error!("Could not parse json message: {err:?}"),
                     }
+
                     Ok(())
                 },
                 Message::Close(close_frame) => match close_frame {

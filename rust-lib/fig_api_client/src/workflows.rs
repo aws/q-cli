@@ -149,7 +149,7 @@ pub struct Workflow {
     pub parameters: Vec<Parameter>,
     pub template: String,
     pub tree: Vec<TreeElement>,
-    pub is_owned_by_user: Option<bool>,
+    pub is_owned_by_user: bool,
 }
 
 pub async fn workflows() -> fig_request::Result<Vec<Workflow>> {

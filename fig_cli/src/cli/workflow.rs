@@ -27,6 +27,7 @@ use fig_api_client::workflows::{
     Rule,
     RuleType,
     TreeElement,
+    Workflow,
 };
 #[cfg(unix)]
 use fig_ipc::local::open_ui_element;
@@ -38,15 +39,20 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::directories::{
+    self,
+    DirectoryError,
+};
 use serde_json::Value;
 #[cfg(unix)]
 use skim::SkimItem;
-use spinners::{
-    Spinner,
-    Spinners,
-};
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
+use tokio::io::AsyncWriteExt;
+use tracing::log::{
+    error,
+    warn,
+};
 use tui::{
     BorderStyle,
     CheckBox,
@@ -191,45 +197,102 @@ impl SkimItem for WorkflowAction {
     }
 }
 
+#[derive(Debug, thiserror::Error)]
+enum WriteWorkflowsError {
+    #[error(transparent)]
+    Directory(#[from] DirectoryError),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Json(#[from] serde_json::Error),
+    #[error(transparent)]
+    Request(#[from] fig_request::Error),
+}
+
+async fn write_workflows() -> Result<(), WriteWorkflowsError> {
+    for workflow in workflows().await? {
+        let mut file = tokio::fs::File::create(
+            directories::workflows_cache_dir()?.join(format!("{}.{}.json", workflow.namespace, workflow.name)),
+        )
+        .await?;
+        file.write_all(serde_json::to_string_pretty(&workflow)?.as_bytes())
+            .await?;
+    }
+    Ok(())
+}
+
+async fn get_workflows() -> Result<Vec<Workflow>> {
+    let mut workflows = vec![];
+    for file in directories::workflows_cache_dir()?.read_dir()?.flatten() {
+        if let Some(name) = file.file_name().to_str() {
+            if name.ends_with(".json") {
+                workflows.push(serde_json::from_slice::<Workflow>(
+                    &tokio::fs::read(file.path()).await?,
+                )?);
+            }
+        }
+    }
+    Ok(workflows)
+}
+
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
-    // Get workflows early
-    let mut spinner = Spinner::new(Spinners::Dots, "Getting workflows... ".to_owned());
-    let mut workflows = workflows().await?;
-    spinner.stop_with_message(String::new());
+    // Create cache dir
+    tokio::fs::create_dir_all(directories::workflows_cache_dir()?).await?;
+
+    let workflows = get_workflows().await?;
+
+    // Must come after we get workflows
+    let mut write_workflows: Option<tokio::task::JoinHandle<Result<(), _>>> = Some(tokio::spawn(write_workflows()));
 
     // Parse args
     let workflow_name = env_args.first().map(String::from);
-    let execution_method = match workflow_name {
-        Some(_) => "invoke",
-        None => "search",
-    };
+    let (execution_method, workflow) = match workflow_name {
+        Some(name) => {
+            let (namespace, name) = match name.strip_prefix('@') {
+                Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
+                    [namespace, name] => (Some(namespace), name),
+                    _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
+                },
+                None => (None, name.as_ref()),
+            };
 
-    // Get matching workflows
-    if let Some(workflow_name) = workflow_name {
-        let (namespace, name) = match workflow_name.strip_prefix('@') {
-            Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
-                [namespace, name] => (Some(namespace), name),
-                _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
-            },
-            None => (None, workflow_name.as_ref()),
-        };
+            let workflow = match namespace {
+                Some(namespace) => workflows
+                    .into_iter()
+                    .find(|workflow| workflow.name == name && workflow.namespace == namespace),
+                None => workflows
+                    .into_iter()
+                    .find(|workflow| workflow.name == name && workflow.is_owned_by_user),
+            };
 
-        workflows.retain(|workflow| {
-            workflow.name == name
-                && match namespace {
-                    Some(namespace) => workflow.namespace == namespace,
-                    None => true,
-                }
-        });
+            let workflow = match workflow {
+                Some(workflow) => workflow,
+                None => {
+                    write_workflows.take().unwrap().await??;
 
-        if workflows.is_empty() {
-            bail!("No matching workflows for {workflow_name}");
-        }
-    };
+                    let workflows = get_workflows().await?;
 
-    let workflow = match workflows.len() {
-        1 => workflows.pop().unwrap(),
-        _ => {
+                    let workflow = match namespace {
+                        Some(namespace) => workflows
+                            .into_iter()
+                            .find(|workflow| workflow.name == name && workflow.namespace == namespace),
+                        None => workflows
+                            .into_iter()
+                            .find(|workflow| workflow.name == name && workflow.is_owned_by_user),
+                    };
+
+                    if workflow.is_none() {
+                        eprintln!("Workflow not found");
+                        return Ok(());
+                    }
+
+                    workflow.unwrap()
+                },
+            };
+
+            ("invoke", workflow)
+        },
+        None => {
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
                     TrackEventType::WorkflowSearchViewed,
@@ -242,6 +305,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
+            if let Err(err) = write_workflows.take().unwrap().await? {
+                eprintln!("Could not load remote workflows!\nFalling back to local cache.");
+                warn!("Failed to acquire remote workflow definitions: {err}");
+            }
+
+            let mut workflows = get_workflows().await?;
             workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
                 (None, None) => StdOrdering::Equal,
                 (None, Some(_)) => StdOrdering::Greater,
@@ -308,7 +377,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 .next() {
                                 Some(workflow) => {
                                     match workflow {
-                                        WorkflowAction::Run(workflow) => *workflow.clone(),
+                                        WorkflowAction::Run(workflow) => ("search", *workflow.clone()),
                                         WorkflowAction::Create => {
                                             launch_fig(crate::util::LaunchArgs {
                                                 print_running: false,
@@ -341,7 +410,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         .interact()
                         .unwrap();
 
-                    workflows.remove(selection)
+                    ("search", workflows.remove(selection))
                 }
             }
         },
@@ -677,7 +746,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    let mut command = format!("fig run {}", match workflow.is_owned_by_user.unwrap_or(false) {
+    let mut command = format!("fig run {}", match workflow.is_owned_by_user {
         true => workflow.name.clone(),
         false => format!("@{}/{}", &workflow.namespace, &workflow.name),
     });
@@ -691,7 +760,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     }
 
     if !workflow.parameters.is_empty() {
-        println!("{} {command}", "Executing:".bold().magenta());
+        eprintln!("{} {command}", "Executing:".bold().magenta());
     }
 
     fig_telemetry::dispatch_emit_track(
@@ -708,6 +777,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     )
     .await
     .ok();
+
+    if let Some(task) = write_workflows {
+        if let Err(err) = task.await? {
+            error!("Failed to update workflows from remote: {err}");
+        }
+    }
 
     cfg_if! {
         if #[cfg(feature = "deno")] {
@@ -769,7 +844,8 @@ async fn execute_bash_workflow(
                 }))
                 .auth()
                 .send()
-                .await?;
+                .await
+                .ok();
         }
     }
 
@@ -927,10 +1003,12 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
                 )?,
             };
 
+            let query = query.trim();
+
             let mut rule_met = match rule.predicate {
                 Predicate::Contains => query.contains(&rule.value),
                 Predicate::Equals => query == rule.value,
-                Predicate::Matches => regex::Regex::new(&rule.value)?.is_match(&query),
+                Predicate::Matches => regex::Regex::new(&rule.value)?.is_match(query),
                 Predicate::StartsWith => query.starts_with(&rule.value),
                 Predicate::EndsWith => query.ends_with(&rule.value),
                 Predicate::Exists => !query.is_empty(),
@@ -944,7 +1022,7 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
         }
 
         if !set_met {
-            println!(
+            eprintln!(
                 "{}",
                 match set.len() == 1 {
                     true => "The following rule must be met:",
@@ -954,10 +1032,10 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
             );
 
             for rule in set {
-                println!("- {rule}");
+                eprintln!("- {rule}");
             }
 
-            println!();
+            eprintln!();
 
             return Ok(false);
         }

@@ -212,6 +212,12 @@ pub fn utc_backup_dir() -> Result<PathBuf> {
     Ok(backups_dir()?.join(now))
 }
 
+/// The directory where cached workflows are stored
+pub fn workflows_cache_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_WORKFLOWS_CACHE_DIR");
+    Ok(fig_dir()?.join("cache").join("workflows"))
+}
+
 /// The desktop app socket path
 ///
 /// - Linux/MacOS: `/var/tmp/fig/$USER/fig.socket`
@@ -388,6 +394,7 @@ mod test {
         test_path_name!(themes_repo_dir, "themes");
         test_path_name!(plugins_dir, "plugins");
         test_path_name!(logs_dir, "logs");
+        test_path_name!(workflows_cache_dir, "workflows");
         test_path_name!(fig_socket_path, "fig.socket");
         test_path_name!(daemon_socket_path, "daemon.socket");
         test_path_name!(local_secure_socket_path, "secure.socket");
@@ -421,6 +428,7 @@ mod test {
         test_environment_path!(logs_dir, "FIG_DIRECTORIES_LOGS_DIR");
         test_environment_path!(backups_dir, "FIG_DIRECTORIES_BACKUPS_DIR");
         test_environment_path!(utc_backup_dir, "FIG_DIRECTORIES_UTC_BACKUP_DIR");
+        test_environment_path!(workflows_cache_dir, "FIG_DIRECTORIES_WORKFLOWS_CACHE_DIR");
         test_environment_path!(fig_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
         test_environment_path!(daemon_socket_path, "FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
         test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
