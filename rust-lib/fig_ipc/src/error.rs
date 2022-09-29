@@ -45,9 +45,12 @@ impl RecvError {
         if let RecvError::Io(io) = self {
             #[cfg(windows)]
             {
-                use windows_sys::Win32::Networking::WinSock::WSAECONNRESET;
-                if let Some(WSAECONNRESET) = io.raw_os_error() {
-                    return true;
+                // Windows error code
+                let wsaeconnreset = 10054;
+                if let Some(err) = io.raw_os_error() {
+                    if err == wsaeconnreset {
+                        return true;
+                    }
                 }
             }
             matches!(io.kind(), std::io::ErrorKind::ConnectionAborted)

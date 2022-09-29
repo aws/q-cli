@@ -2807,7 +2807,6 @@ dependencies = [
  "tokio",
  "tracing",
  "whoami",
- "windows-sys",
 ]
 
 [[package]]
