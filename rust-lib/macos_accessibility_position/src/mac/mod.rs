@@ -6,8 +6,8 @@ mod window_server;
 use platform_api::MacPlatformApi;
 use window_server::WindowServerApi;
 
-use crate::macos::general::platform_api::PlatformApi;
-use crate::macos::general::window_server::WindowServer;
+use crate::general::platform_api::PlatformApi;
+use crate::general::window_server::WindowServer;
 
 pub fn init_platform_api() -> impl PlatformApi {
     MacPlatformApi {}

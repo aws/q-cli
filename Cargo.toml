@@ -6,8 +6,9 @@ members = [
     "fig_installer",
     "figterm",
     "rust-lib/*",
-    # "rust-lib/macos_accessibility_position/accessibility-master/*",
-    # "rust-lib/macos_accessibility_position/appkit-nsworkspace-bindings",
+    "rust-lib/macos_accessibility_position/accessibility-master/accessibility",
+    "rust-lib/macos_accessibility_position/accessibility-master/accessibility-sys",
+    "rust-lib/macos_accessibility_position/appkit-nsworkspace-bindings",
     "tests/stress/stress_client",
     "tests/stress/stress_server",
 ]

@@ -1,3 +1,5 @@
+#![cfg(target_os = "macos")]
+
 use std::cell::Cell;
 
 use accessibility::{
@@ -60,6 +62,8 @@ impl TreeVisitor for PrintyBoi {
 pub struct Opt {
     pub pid: i32,
 }
+
+fn main() -> Result<(), i32> {
 
 fn main() -> Result<(), i32> {
     let opt = Opt::from_args();

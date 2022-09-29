@@ -1,6 +1,6 @@
 use core_graphics::display::CGRect;
 
-use crate::macos::general::window_position::WindowPosition;
+use crate::general::window_position::WindowPosition;
 
 pub trait FromCgRect {
     fn from_cg_rect(cgrect: &CGRect) -> WindowPosition;

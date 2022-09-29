@@ -34,7 +34,7 @@ use core_foundation::string::{
     CFStringRef,
 };
 
-use crate::macos::general::window_server::WindowServer;
+use crate::general::window_server::WindowServer;
 
 pub struct WindowServerApi {}
 

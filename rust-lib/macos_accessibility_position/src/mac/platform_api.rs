@@ -35,9 +35,9 @@ use core_graphics::display::*;
 
 use super::core_graphics_patch::CGRectMakeWithDictionaryRepresentation;
 use super::window_position::FromCgRect;
-use crate::macos::general::active_window::ActiveWindow;
-use crate::macos::general::platform_api::PlatformApi;
-use crate::macos::general::window_position::WindowPosition;
+use crate::general::active_window::ActiveWindow;
+use crate::general::platform_api::PlatformApi;
+use crate::general::window_position::WindowPosition;
 
 #[allow(non_upper_case_globals)]
 pub const kCFNumberSInt32Type: CFNumberType = 3;
