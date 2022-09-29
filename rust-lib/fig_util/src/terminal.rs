@@ -186,6 +186,7 @@ impl Terminal {
             Terminal::XfceTerminal => &["xfce4-terminal"],
             Terminal::Terminology => &["terminology"],
             Terminal::WezTerm => &["wezterm", "wezterm-gui"],
+            Terminal::Hyper => &["hyper"],
 
             Terminal::Ssh => &["sshd"],
 
