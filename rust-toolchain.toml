@@ -1,4 +1,4 @@
 # For latest rust version see: https://www.whatrustisit.com
 [toolchain]
 channel = "1.64.0"
-components = ["rustc", "cargo", "rust-std"]
+components = [ "rustc", "cargo", "rustfmt", "rust-std", "clippy" ]
