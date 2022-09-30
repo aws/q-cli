@@ -38,24 +38,15 @@ export function sendMessage(
   const buffer = ClientOriginatedMessage.encode(request).finish();
   const b64 = bytesToBase64(buffer);
 
-  /* eslint-disable @typescript-eslint/ban-ts-comment */
-  /* eslint-disable no-underscore-dangle */
-  // @ts-ignore
   if (window.ipc && window.ipc.postMessage) {
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
     window.ipc.postMessage(b64);
-    // eslint-disable-next-line @typescript-eslint/ban-ts-comment
-    // @ts-ignore
   } else if (window.webkit) {
-    // @ts-ignore
-    if (!window.webkit.messageHandlers.proto) {
+    if (!window.webkit?.messageHandlers?.proto) {
       console.error(
         "This version of Fig does not support using protocol buffers. Please update."
       );
       return;
     }
-    // @ts-ignore
     window.webkit.messageHandlers.proto.postMessage(b64);
   } else {
     console.warn(
@@ -98,5 +89,7 @@ const setupEventListeners = (): void => {
 };
 
 // We want this to be run automatically
-console.log('[fig] setting up event listeners...');
+if (!window?.fig?.quiet) {
+  console.log('[fig] setting up event listeners...');
+}
 setupEventListeners();

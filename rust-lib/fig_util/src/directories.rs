@@ -82,7 +82,7 @@ pub fn fig_dir() -> Result<PathBuf> {
 
 /// The fig data directory
 ///
-/// - Linux: `$XDG_DATA_HOME/fig or $HOME/.local/share/fig`
+/// - Linux: `$XDG_DATA_HOME/fig` or `$HOME/.local/share/fig`
 /// - MacOS: `$HOME/Library/Application Support/fig`
 /// - Windows: `%LOCALAPPDATA%/Fig/userdata`
 pub fn fig_data_dir() -> Result<PathBuf> {

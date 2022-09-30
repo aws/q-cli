@@ -139,7 +139,7 @@ mod tests {
 
     #[tokio::test]
     async fn invalid_header() {
-        let mut mock = mock(vec!['f' as u8, 'o' as u8, 'o' as u8]);
+        let mut mock = mock(vec![b'f', b'o', b'o']);
         mock.inner.set_position(0);
         assert!(mock.recv_message::<fig_proto::local::LocalMessage>().await.is_err());
     }

@@ -11,7 +11,7 @@
   "workspaces": [
     "typescript-api-bindings",
     "proto",
-    "tests/dotenv"
+    "tests/fig-api"
   ],
   "scripts": {
     "prepare": "husky install",

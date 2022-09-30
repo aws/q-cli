@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use fig_proto::fig::InsertTextRequest;
 
 use super::{
@@ -38,7 +37,7 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
         Some(sender) => {
             sender
                 .send(figterm_command)
-                .map_err(|_| anyhow!("Failed sending command to figterm session"))?;
+                .map_err(|_| "Failed sending command to figterm session")?;
             RequestResult::success()
         },
         None => RequestResult::error("No figterm sessions"),

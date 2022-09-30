@@ -88,3 +88,13 @@ impl Constants {
         format!("fig.constants = {};", json!(self))
     }
 }
+
+pub fn javascript_init() -> String {
+    vec![
+        r#"if (!window.fig.quiet) console.log("[fig] declaring constants...");"#.into(),
+        "if (!window.fig) window.fig = {};".into(),
+        "if (!window.fig.constants) fig.constants = {};".into(),
+        Constants::default().script(),
+    ]
+    .join("\n")
+}

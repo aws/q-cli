@@ -7,6 +7,7 @@ use std::sync::Arc;
 
 use cfg_if::cfg_if;
 use dashmap::DashMap;
+use fig_desktop_api::init_script::javascript_init;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
 use once_cell::sync::Lazy;
@@ -45,10 +46,7 @@ use wry::webview::{
     WebViewBuilder,
 };
 
-use crate::api::{
-    api_request,
-    javascript_init,
-};
+use crate::api::api_request;
 use crate::event::{
     Event,
     WindowEvent,

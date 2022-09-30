@@ -19,7 +19,6 @@ use crate::native::NativeState;
 use crate::webview::window::WindowId;
 use crate::EventLoopProxy;
 
-/// TODO(vikram): implement is_above, is_clipped and corresponding window behavior
 pub async fn position_window(
     request: PositionWindowRequest,
     window_id: WindowId,

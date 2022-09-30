@@ -24,7 +24,8 @@ FIGTERM = "./figterm.proto"
 SECURE = "./secure.proto"
 
 # Destinations
-ARTIFACTS           = "./bin"
+ARTIFACTS           = bin
+ARTIFACTS_TS        = bin/ts
 TS_API_BINDINGS     = $(ROOT)/../typescript-api-bindings/src
 SWIFT_API_BINDINGS  = $(ROOT)/../swift-api-bindings/Sources/FigAPIBindings
 DOTENV             ?= $(ROOT)/../tests/dotenv/src
@@ -36,6 +37,7 @@ DESTINATIONS = $(ARTIFACTS) \
 
 # Ensure $ARTIFACTS directory exists
 $(shell mkdir -p $(ARTIFACTS))
+$(shell mkdir -p $(ARTIFACTS_TS))
 
 all: api local figterm secure
 
@@ -54,9 +56,9 @@ api-swift: check-swift
 	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
 
 api-ts: check-ts
-	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS) $(API)
+	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS_TS) $(API)
 	mkdir -p $(TS_API_BINDINGS)
-	cp $(ARTIFACTS)/*.pb.ts $(TS_API_BINDINGS)
+	cp -r $(ARTIFACTS_TS)/** $(TS_API_BINDINGS)
 
 api: api-swift api-ts
 

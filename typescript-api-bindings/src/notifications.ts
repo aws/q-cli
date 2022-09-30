@@ -98,5 +98,8 @@ const unsubscribeFromAll = () => {
   });
 };
 
-console.log('[fig] unsubscribing any existing notifications...');
+// eslint-disable-next-line @typescript-eslint/ban-ts-comment
+if (!window?.fig?.quiet) {
+  console.log('[fig] unsubscribing any existing notifications...');
+}
 unsubscribeFromAll();

@@ -1,4 +1,3 @@
-use anyhow::anyhow;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     GetSettingsPropertyRequest,
@@ -16,15 +15,15 @@ use super::{
 pub async fn get(request: GetSettingsPropertyRequest) -> RequestResult {
     let value = match request.key {
         Some(key) => settings::get_value(&key)
-            .map_err(|err| anyhow!("Failed getting settings value for {key}: {err}"))?
-            .ok_or_else(|| anyhow!("No value for key '{key}'"))?,
+            .map_err(|err| format!("Failed getting settings value for {key}: {err}"))?
+            .ok_or_else(|| format!("No value for key '{key}'"))?,
         None => settings::local_settings()
             .map(|s| Value::Object(s.inner))
-            .map_err(|_| anyhow!("Failed getting settings"))?,
+            .map_err(|_| "Failed getting settings".to_string())?,
     };
 
     let json_blob =
-        serde_json::to_string(&value).map_err(|err| anyhow!("Could not convert value for key to JSON: {err}"))?;
+        serde_json::to_string(&value).map_err(|err| format!("Could not convert value for key to JSON: {err}"))?;
 
     let response = ServerOriginatedSubMessage::GetSettingsPropertyResponse(GetSettingsPropertyResponse {
         json_blob: Some(json_blob),
@@ -40,11 +39,11 @@ pub async fn update(request: UpdateSettingsPropertyRequest) -> RequestResult {
             let value = serde_json::from_str(&value).unwrap_or(serde_json::Value::String(value));
             fig_api_client::settings::update(key, value)
                 .await
-                .map_err(|err| anyhow!("Failed setting {key}: {err}"))?;
+                .map_err(|err| format!("Failed setting {key}: {err}"))?;
         },
         (Some(key), None) => fig_api_client::settings::delete(key)
             .await
-            .map_err(|err| anyhow!("Failed removing {key}: {err}"))?,
+            .map_err(|err| format!("Failed removing {key}: {err}"))?,
         (None, _) => {
             return RequestResult::error("No key provided with request");
         },

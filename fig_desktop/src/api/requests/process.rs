@@ -1,10 +1,6 @@
 use std::time::Duration;
 
-use anyhow::{
-    anyhow,
-    bail,
-    Context,
-};
+use fig_desktop_api::requests::Error;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     EnvironmentVariable,
@@ -83,15 +79,15 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
             request.is_pipelined,
             request.env,
         );
-        if let Err(err) = session_sender.send(message) {
-            bail!("failed sending command to figterm: {err}");
-        }
+        session_sender
+            .send(message)
+            .map_err(|err| format!("failed sending command to figterm: {err}"))?;
         drop(session_sender);
 
         let response = timeout(Duration::from_secs(10), rx)
             .await
-            .context("Figterm response timed out after 10 sec")?
-            .context("Figterm response failed to receive from sender")?;
+            .map_err(|err| Error::from_std(err).wrap_err("Figterm response timed out after 10 sec"))?
+            .map_err(|err| Error::from_std(err).wrap_err("Figterm response failed to receive from sender"))?;
 
         if let hostbound::response::Response::PseudoterminalExecute(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
@@ -102,7 +98,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
                 },
             )))
         } else {
-            bail!("invalid response type");
+            Err("invalid response type".to_string().into())
         }
     } else {
         debug!("executing locally");
@@ -134,7 +130,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
         let output = cmd
             .output()
             .await
-            .map_err(|_| anyhow!("Failed running command: {:?}", request.command))?;
+            .map_err(|_| format!("Failed running command: {:?}", request.command))?;
 
         RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PseudoterminalExecuteResponse(
             PseudoterminalExecuteResponse {
@@ -170,19 +166,22 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
             request.working_directory,
             request.env,
         );
-        if let Err(err) = session_sender.send(message) {
-            bail!("failed sending command to figterm: {err}");
-        }
+        session_sender
+            .send(message)
+            .map_err(|err| format!("failed sending command to figterm: {err}"))?;
         drop(session_sender);
 
-        let response = timeout(Duration::from_secs(10), rx).await??;
+        let response = timeout(Duration::from_secs(10), rx)
+            .await
+            .map_err(|_| "Timed out waiting for figterm response")?
+            .map_err(|_| "Failed to receive figterm response")?;
 
         if let hostbound::response::Response::RunProcess(response) = response {
             RequestResult::Ok(Box::new(ServerOriginatedSubMessage::RunProcessResponse(
                 RunProcessResponse { ..response },
             )))
         } else {
-            bail!("invalid response type");
+            Err("invalid response type".into())
         }
     } else {
         debug!("running locally");
@@ -210,7 +209,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         let output = cmd
             .output()
             .await
-            .map_err(|_| anyhow!("Failed running command: {:?}", request.executable))?;
+            .map_err(|_| format!("Failed running command: {:?}", request.executable))?;
 
         RequestResult::Ok(Box::new(ServerOriginatedSubMessage::RunProcessResponse(
             RunProcessResponse {

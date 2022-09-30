@@ -9,6 +9,7 @@ members = [
     "rust-lib/macos_accessibility_position/accessibility-master/accessibility",
     "rust-lib/macos_accessibility_position/accessibility-master/accessibility-sys",
     "rust-lib/macos_accessibility_position/appkit-nsworkspace-bindings",
+    "tests/fig-api/fig-api-mock",
     "tests/stress/stress_client",
     "tests/stress/stress_server",
 ]

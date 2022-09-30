@@ -1,0 +1,12 @@
+[package]
+name = "fig-api-mock"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+async-trait = "0.1.57"
+clap = { version = "3.2.22", features = ["derive"] }
+fig_desktop_api = { version = "0.1.0", path = "../../../rust-lib/fig_desktop_api" }
+fig_proto = { version = "0.1.0", path = "../../../rust-lib/fig_proto" }
+tokio = { version = "1", features = ["full"] }

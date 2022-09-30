@@ -22,7 +22,7 @@ use crate::{
 pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
     match request.action() {
         OnboardingAction::InstallationScript => {
-            let backups_dir = directories::utc_backup_dir()?;
+            let backups_dir = directories::utc_backup_dir().map_err(|err| err.to_string())?;
 
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {

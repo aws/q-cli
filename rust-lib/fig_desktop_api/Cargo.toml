@@ -1,0 +1,29 @@
+[package]
+name = "fig_desktop_api"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+async-trait = "0.1.57"
+base64 = "0.13.0"
+camino = { version = "1.1.1", features = ["serde1"] }
+cfg-if = "1.0.0"
+dashmap = "5.4.0"
+fig_api_client = { version = "0.1.0", path = "../fig_api_client" }
+fig_integrations = { version = "0.1.0", path = "../fig_integrations" }
+fig_proto = { version = "0.1.0", path = "../fig_proto" }
+fig_settings = { version = "0.1.0", path = "../fig_settings" }
+fig_sync = { version = "0.1.0", path = "../fig_sync" }
+fig_telemetry = { version = "0.2.1", path = "../fig_telemetry" }
+fig_util = { version = "0.1.0", path = "../fig_util" }
+fnv = "1.0.7"
+serde = { version = "1.0.144", features = ["derive"] }
+serde_json = "1.0.85"
+shellexpand = "2.1.2"
+thiserror = "1.0.35"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1.36"
+which = "4.3.0"
+whoami = "1.2.3"
+

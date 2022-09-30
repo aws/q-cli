@@ -2619,6 +2619,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig-api-mock"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "clap",
+ "fig_desktop_api",
+ "fig_proto",
+ "tokio",
+]
+
+[[package]]
 name = "fig_api_client"
 version = "0.1.0"
 dependencies = [
@@ -2764,6 +2775,7 @@ name = "fig_desktop"
 version = "2.5.1"
 dependencies = [
  "anyhow",
+ "async-trait",
  "base64",
  "bytes",
  "camino",
@@ -2773,6 +2785,7 @@ dependencies = [
  "dbus",
  "fig_api_client",
  "fig_auth",
+ "fig_desktop_api",
  "fig_install",
  "fig_integrations",
  "fig_ipc",
@@ -2812,6 +2825,33 @@ dependencies = [
  "wry",
  "x11rb",
  "zbus",
+]
+
+[[package]]
+name = "fig_desktop_api"
+version = "0.1.0"
+dependencies = [
+ "async-trait",
+ "base64",
+ "camino",
+ "cfg-if 1.0.0",
+ "dashmap",
+ "fig_api_client",
+ "fig_integrations",
+ "fig_proto",
+ "fig_settings",
+ "fig_sync",
+ "fig_telemetry",
+ "fig_util",
+ "fnv",
+ "serde",
+ "serde_json",
+ "shellexpand",
+ "thiserror",
+ "tokio",
+ "tracing",
+ "which",
+ "whoami",
 ]
 
 [[package]]

@@ -28,21 +28,22 @@
   "name": "@withfig/api-bindings",
   "author": "The Fig Team",
   "devDependencies": {
+    "@fig/eslint-config-fig": "^1.0.0",
+    "@tsconfig/recommended": "^1.0.1",
+    "@types/node": "^18.7.23",
+    "@typescript-eslint/eslint-plugin": "^5.15.0",
+    "@typescript-eslint/parser": "^5.38.1",
+    "eslint": "^8.11.0",
+    "lint-staged": "^13.0.0",
+    "prettier": "^2.7.1",
     "ts-morph": "^16.0.0",
     "ts-node": "^10.3.0",
+    "ts-proto": "^1.82.5",
     "tslib": "^2.3.1",
-    "typescript": "^4.3.5"
+    "typescript": "^4.8.4"
   },
   "eslintConfig": {
     "extends": "@fig/eslint-config-fig"
-  },
-  "dependencies": {
-    "@fig/eslint-config-fig": "^1.0.0",
-    "@tsconfig/recommended": "^1.0.1",
-    "@typescript-eslint/eslint-plugin": "^5.15.0",
-    "eslint": "^8.11.0",
-    "lint-staged": "^13.0.0",
-    "ts-proto": "^1.82.5"
   },
   "lint-staged": {
     "*.{ts,tsx}": "npx eslint --cache --fix"

@@ -14,10 +14,8 @@ use fig_proto::fig::{
     InstallResponse,
     Result as ProtoResult,
 };
-use fig_util::{
-    directories,
-    Shell,
-};
+use fig_util::directories::utc_backup_dir;
+use fig_util::Shell;
 
 use super::RequestResult;
 
@@ -55,10 +53,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     Ok(integrations) => {
                         for integration in integrations {
                             let res = match action {
-                                InstallAction::InstallAction => {
-                                    let backup_dir = directories::utc_backup_dir().unwrap();
-                                    integration.install(Some(&backup_dir))
-                                },
+                                InstallAction::InstallAction => integration.install(utc_backup_dir().ok().as_deref()),
                                 InstallAction::UninstallAction => integration.uninstall(),
                                 InstallAction::StatusAction => unreachable!(),
                             };
