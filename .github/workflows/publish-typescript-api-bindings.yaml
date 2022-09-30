@@ -17,21 +17,27 @@ jobs:
       - name: Checkout Project
         uses: actions/checkout@v3
 
+      - name: Install Protobuf on Ubuntu
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          curl -L -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v21.6/protoc-21.6-linux-x86_64.zip \
+          && unzip /tmp/protoc.zip -d /tmp/protoc \
+          && sudo cp /tmp/protoc/bin/protoc /usr/local/bin/ \
+          && sudo cp -r /tmp/protoc/include/google /usr/local/include/
+
       - name: Install Protobuf tooling
-        run:  |
-          brew install protobuf
-          cd typescript-api-bindings
-          yarn install --frozen-lockfile
+        working-directory: ./typescript-api-bindings
         env:
           HOMEBREW_NO_AUTO_UPDATE: 1
+        run: yarn install --frozen-lockfile
 
       - name: Generate Protobuf Artifacts
         run: make api-ts
         working-directory: ./proto
           
       - name: Generate Requests and Lint
+        working-directory: ./typescript-api-bindings
         run: |
-          cd typescript-api-bindings
           yarn generate-requests
           yarn lint --fix
 
