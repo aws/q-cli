@@ -97,6 +97,8 @@ pub enum DebugSubcommand {
     },
     /// Show fig debug logs
     Logs {
+        #[clap(long)]
+        level: Option<String>,
         #[clap(value_parser)]
         files: Vec<String>,
     },
@@ -192,26 +194,49 @@ impl DebugSubcommand {
                     return result.map(|_| ()).map_err(eyre::Report::from);
                 }
             },
-            DebugSubcommand::Logs { files } => {
+            DebugSubcommand::Logs { level, files } => {
+                let level = std::sync::Arc::new(level.clone());
+                let files = std::sync::Arc::new(files.clone());
+
                 fig_settings::state::set_value("developer.logging", json!(true))?;
 
-                ctrlc::set_handler(|| {
+                // Communicate with active fig processes to set log level
+                if files.is_empty() || files.iter().any(|f| f == "daemon") {
+                    if let Err(err) = fig_ipc::daemon::send_recv_message(fig_proto::daemon::new_log_level_command(
+                        level.as_ref().clone().unwrap_or_else(|| "DEBUG".into()),
+                    ))
+                    .await
+                    {
+                        println!("Could not set log level for daemon: {err}");
+                    }
+                }
+
+                tokio::spawn(async move {
+                    tokio::signal::ctrl_c().await.unwrap();
                     let code = match fig_settings::state::set_value("developer.logging", json!(false)) {
                         Ok(_) => 0,
                         Err(_) => 1,
                     };
+
+                    // tokio handle to runtime
+                    if let Err(err) =
+                        fig_ipc::daemon::send_recv_message(fig_proto::daemon::new_log_level_command("INFO".into()))
+                            .await
+                    {
+                        println!("Could not restore log level for daemon: {err}");
+                    }
+
                     std::process::exit(code);
-                })?;
+                });
 
                 let logs_dir = directories::logs_dir()?;
-
-                let mut files = files.clone();
 
                 let log_paths = if files.is_empty() {
                     let pattern = logs_dir.join("*.log");
                     let globset = glob(&[pattern.to_str().unwrap()])?;
                     glob_dir(&globset, &logs_dir)?
                 } else {
+                    let mut files = files.as_ref().clone();
                     let mut paths = Vec::new();
 
                     if files.iter().any(|f| f == "figterm") {

@@ -44,11 +44,9 @@ pub struct Daemon {
 
 impl Daemon {
     /// Install the daemon
-    ///
-    /// Note: This should NOT start the daemon.
     pub async fn install(&self, executable: &Utf8Path) -> Result<()> {
         self.inner.install(executable).await?;
-        self.start().await
+        self.restart().await
     }
 
     /// Uninstall the daemon

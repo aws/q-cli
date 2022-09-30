@@ -26,6 +26,8 @@ message DaemonMessage {
     google.protobuf.Empty ping = 105;
     // A request to quit the daemon
     google.protobuf.Empty quit = 106;
+    // A request to set the daemon's log level
+    LogLevelCommand log_level = 107;
   }
 }
 
@@ -44,6 +46,8 @@ message DaemonResponse {
     google.protobuf.Empty pong = 105;
     // A response to a quit command
     google.protobuf.Empty quit = 106;
+    // A response to a log level command
+    LogLevelResponse log_level = 107;
   }
 }
 
@@ -168,4 +172,17 @@ message TelemetryEmitTrackCommand {
   // Queue the event so that it is not dispatched immediately but rather
   // is dispatched at a regularly scheduled interval by the daemon.
   optional bool enqueue = 4;
+}
+
+message LogLevelCommand { string level = 1; }
+
+message LogLevelResponse {
+  enum Status {
+    OK = 0;
+    ERROR = 1;
+  }
+
+  Status status = 1;
+  optional string old_level = 2;
+  optional string error = 3;
 }

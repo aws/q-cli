@@ -43,7 +43,8 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
             Ok(()) => trace!("watching bundle at {application_path:?}"),
             Err(err) => {
                 error!(%err, "failed to watch application path dir");
-                daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                daemon_status.write().settings_watcher_status =
+                    Err(eyre!("Failed to watch application path dir\n{err}"));
             },
         }
     }
@@ -61,20 +62,21 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                     },
                     Err(err) => {
                         error!(%err, "failed to watch settings dir");
-                        daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                        daemon_status.write().settings_watcher_status =
+                            Err(eyre!("Failed to watch settings dir\n{err}"));
                         None
                     },
                 }
             },
             None => {
                 error!("failed to get settings file dir");
-                daemon_status.write().settings_watcher_status = Err(eyre!("failed to get settings dir"));
+                daemon_status.write().settings_watcher_status = Err(eyre!("Failed to get settings dir"));
                 None
             },
         },
         None => {
             error!("failed to get settings file path");
-            daemon_status.write().settings_watcher_status = Err(eyre!("no settings path"));
+            daemon_status.write().settings_watcher_status = Err(eyre!("No settings path"));
             None
         },
     };
@@ -92,14 +94,14 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                     },
                     Err(err) => {
                         error!(%err, "failed to watch state dir");
-                        daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                        daemon_status.write().settings_watcher_status = Err(eyre!("Failed to watch state dir\n{err}"));
                         None
                     },
                 }
             },
             None => {
                 error!("failed to get state file dir");
-                daemon_status.write().settings_watcher_status = Err(eyre!("failed to get state dir"));
+                daemon_status.write().settings_watcher_status = Err(eyre!("Failed to get state dir"));
                 None
             },
         },
@@ -122,9 +124,17 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                         FileChanged::Settings,
                         settings_path.as_path().display().to_string(),
                     );
-                    if let Err(err) = send_hook_to_socket(hook.clone()).await {
-                        error!("Failed to send hook: {err}");
-                        daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                    match send_hook_to_socket(hook.clone()).await {
+                        Ok(()) => {
+                            info!("Sent settings hook to daemon");
+                            daemon_status.write().settings_watcher_status = Ok(());
+                        },
+                        Err(err) => {
+                            error!("Failed to send hook: {err}");
+                            daemon_status.write().settings_watcher_status = Err(eyre!(
+                                "Failed to send settings hook to desktop app, is Fig running?\n{err}"
+                            ));
+                        },
                     }
                 }
             }
@@ -134,9 +144,17 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                     info!("State file changed");
                     let hook =
                         hooks::new_file_changed_hook(FileChanged::State, state_path.as_path().display().to_string());
-                    if let Err(err) = send_hook_to_socket(hook.clone()).await {
-                        error!("Failed to send hook: {err}");
-                        daemon_status.write().settings_watcher_status = Err(eyre!(err));
+                    match send_hook_to_socket(hook.clone()).await {
+                        Ok(_) => {
+                            info!("Sent state hook to daemon");
+                            daemon_status.write().settings_watcher_status = Ok(());
+                        },
+                        Err(err) => {
+                            error!("Failed to send hook: {err}");
+                            daemon_status.write().settings_watcher_status = Err(eyre!(
+                                "Failed to send state hook to desktop app, is Fig running?\n{err}"
+                            ));
+                        },
                     }
                 }
             }

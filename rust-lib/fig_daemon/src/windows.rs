@@ -81,7 +81,7 @@ impl Daemon {
     }
 
     pub async fn restart(&self) -> Result<()> {
-        self.stop().await?;
+        self.stop().await.ok();
         self.start().await
     }
 

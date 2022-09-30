@@ -23,6 +23,7 @@ use fig_proto::daemon::sync_command::SyncType;
 use fig_proto::daemon::{
     DaemonMessage,
     DaemonResponse,
+    LogLevelCommand,
 };
 use fig_sync::dotfiles::download_and_notify;
 use fig_sync::plugins::fetch_installed_plugins;
@@ -32,8 +33,8 @@ use parking_lot::RwLock;
 use tokio::net::UnixListener;
 use tokio::task::JoinHandle;
 use tracing::{
+    debug,
     error,
-    info,
     trace,
 };
 use yaque::Sender;
@@ -184,6 +185,11 @@ async fn spawn_system_handler(
                                 quit = true;
                                 fig_proto::daemon::new_quit_response()
                             },
+                            Command::LogLevel(LogLevelCommand { level }) => {
+                                let res = fig_log::set_fig_log_level(level.clone())
+                                    .map_err(|err| format!("Error setting log level: {err}"));
+                                fig_proto::daemon::new_log_level_response(res)
+                            },
                         };
 
                         if !message.no_response() {
@@ -203,7 +209,7 @@ async fn spawn_system_handler(
                     }
                 },
                 Ok(None) => {
-                    info!("Received EOF while reading message");
+                    debug!("Received EOF while reading message");
                     break;
                 },
                 Err(err) => {

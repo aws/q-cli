@@ -11,7 +11,7 @@ use std::process::exit;
 use clap::error::ContextKind;
 use clap::StructOpt;
 use eyre::Result;
-use fig_log::FIG_LOG_LEVEL;
+use fig_log::get_max_fig_log_level;
 use fig_telemetry::sentry::{
     configure_scope,
     release_name,
@@ -123,7 +123,7 @@ async fn main() -> Result<()> {
     };
 
     if let Err(err) = result {
-        if *FIG_LOG_LEVEL > LevelFilter::INFO {
+        if get_max_fig_log_level() > LevelFilter::INFO {
             writeln!(stderr(), "{} {err:?}", "error:".bold().red()).ok();
         } else {
             writeln!(stderr(), "{} {err}", "error:".bold().red()).ok();

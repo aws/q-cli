@@ -38,16 +38,11 @@ impl InitSystem {
             InitSystem::Systemd => {
                 let path = InitSystem::Systemd.daemon_path()?;
 
-                let log_path = fig_util::directories::fig_dir_utf8()?.join("logs").join("daemon.log");
-                let log_path_str = format!("file:{log_path}");
-
                 let unit = SystemdUnit::new("Fig Daemon")
                     .exec_start(format!("{} daemon", cli_path.as_ref()))
                     .restart("always")
                     .restart_sec(5)
                     .wanted_by("default.target")
-                    .standard_output(&*log_path_str)
-                    .standard_error(&*log_path_str)
                     .unit();
 
                 if let Some(parent) = path.parent() {

@@ -173,7 +173,7 @@ impl LaunchdPlist {
     }
 
     /// Set the environment variables
-    #[cfg(test)]
+    #[allow(dead_code)]
     pub fn environment_variables<I, K, V>(mut self, environment_variables: I) -> LaunchdPlist
     where
         I: IntoIterator<Item = (K, V)>,
@@ -190,6 +190,7 @@ impl LaunchdPlist {
     }
 
     /// Insert an environment variable
+    #[allow(dead_code)]
     pub fn environment_variable<K, V>(mut self, key: K, value: V) -> LaunchdPlist
     where
         K: Into<String>,
@@ -207,26 +208,29 @@ impl LaunchdPlist {
     }
 
     /// Set the standard in path
-    #[cfg(test)]
+    #[allow(dead_code)]
     pub fn standard_in_path(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.standard_in_path = Some(path.into());
         self
     }
 
     /// Set the standard out path
+    #[allow(dead_code)]
     pub fn standard_out_path(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.standard_out_path = Some(path.into());
         self
     }
 
     /// Set the standard error path
+    #[allow(dead_code)]
     pub fn standard_error_path(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.standard_error_path = Some(path.into());
         self
     }
 
     /// Set the working directory
-    pub fn _working_directory(mut self, path: impl Into<String>) -> LaunchdPlist {
+    #[allow(dead_code)]
+    pub fn working_directory(mut self, path: impl Into<String>) -> LaunchdPlist {
         self.working_directory = Some(path.into());
         self
     }

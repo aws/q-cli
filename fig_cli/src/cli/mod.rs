@@ -230,7 +230,7 @@ impl Cli {
         match self.subcommand {
             Some(CliRootCommands::Daemon) => {
                 // Remove the daemon log file if it is >10Mb
-                let daemon_log_file = fig_util::directories::fig_dir()?.join("logs").join("daemon.log");
+                let daemon_log_file = fig_util::directories::fig_dir()?.join("logs").join("");
                 if daemon_log_file.exists() {
                     let metadata = std::fs::metadata(&daemon_log_file)?;
                     if metadata.len() > 10_000_000 {
@@ -238,16 +238,13 @@ impl Cli {
                     }
                 }
 
-                if fig_settings::state::get_bool_or("logging.daemon", false) {
-                    // The daemon prints all logs to stdout
-                    logger = logger.with_stdout();
-                }
+                logger = logger.with_file("daemon.log").with_stdout();
             },
             _ => {
                 // All other cli commands print logs to ~/.fig/logs/cli.log
                 if std::env::var_os("FIG_LOG_STDOUT").is_some() {
                     logger = logger.with_file("cli.log").with_max_file_size(10_000_000).with_stdout();
-                } else if *fig_log::FIG_LOG_LEVEL >= LevelFilter::DEBUG {
+                } else if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
                     logger = logger.with_file("cli.log").with_max_file_size(10_000_000);
                 }
             },

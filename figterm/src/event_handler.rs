@@ -1,5 +1,3 @@
-use std::str::FromStr;
-
 use alacritty_terminal::event::{
     Event,
     EventListener,
@@ -23,7 +21,6 @@ use tracing::{
 };
 
 use crate::{
-    logger,
     shell_state_to_context,
     MainLoopEvent,
     EXECUTE_ON_NEW_CMD,
@@ -85,7 +82,7 @@ impl EventListener for EventHandler {
                 }
 
                 if let Err(err) = self.socket_sender.send(message) {
-                    error!("Sender error: {err:?}");
+                    error!(%err, "Sender error");
                 }
             },
             Event::PreExec => {
@@ -93,12 +90,12 @@ impl EventListener for EventHandler {
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
                 if let Err(err) = self.socket_sender.send(message) {
-                    error!("Sender error: {err:?}");
+                    error!(%err, "Sender error");
                 }
             },
             Event::CommandInfo(command_info) => {
                 if let Err(err) = self.history_sender.send(command_info.clone()) {
-                    error!("Sender error: {err:?}");
+                    error!(%err, "Sender error");
                 }
             },
             Event::ShellChanged => {
@@ -113,10 +110,8 @@ impl EventListener for EventHandler {
     }
 
     fn log_level_event(&self, level: Option<String>) {
-        logger::set_log_level(
-            level
-                .and_then(|level| LevelFilter::from_str(&level).ok())
-                .unwrap_or(LevelFilter::INFO),
-        );
+        if let Err(err) = fig_log::set_fig_log_level(level.unwrap_or_else(|| LevelFilter::INFO.to_string())) {
+            error!(%err, "Failed to set log level");
+        }
     }
 }

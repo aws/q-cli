@@ -4,7 +4,6 @@ use camino::{
     Utf8Path,
     Utf8PathBuf,
 };
-use fig_util::directories;
 use launchd_plist::LaunchdPlist;
 use tokio::process::Command;
 
@@ -20,18 +19,12 @@ pub struct Daemon;
 
 impl Daemon {
     pub async fn install(&self, executable: &Utf8Path) -> Result<(), Error> {
-        let log_path = directories::fig_dir()?.join("logs").join("daemon.log");
-        let log_path_str = log_path.to_string_lossy();
-
         let daemon = LaunchdPlist::new(DAEMON_NAME)
             .program(executable.as_str())
             .program_arguments([executable.as_str(), "daemon"])
             .keep_alive(true)
             .run_at_load(true)
-            .throttle_interval(20)
-            .standard_out_path(&*log_path_str)
-            .standard_error_path(&*log_path_str)
-            .environment_variable("FIG_LOG_LEVEL", "debug")
+            .throttle_interval(30)
             .plist();
 
         tokio::fs::create_dir_all(&daemon_dir()?).await?;
@@ -80,7 +73,7 @@ impl Daemon {
     }
 
     pub async fn restart(&self) -> Result<()> {
-        self.stop().await?;
+        self.stop().await.ok();
         self.start().await
     }
 

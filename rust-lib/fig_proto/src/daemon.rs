@@ -96,3 +96,26 @@ pub fn new_quit_command() -> DaemonMessage {
 pub fn new_quit_response() -> daemon_response::Response {
     daemon_response::Response::Quit(())
 }
+
+pub fn new_log_level_command(level: String) -> DaemonMessage {
+    DaemonMessage {
+        id: None,
+        no_response: None,
+        command: Some(daemon_message::Command::LogLevel(LogLevelCommand { level })),
+    }
+}
+
+pub fn new_log_level_response(result: Result<String, String>) -> daemon_response::Response {
+    match result {
+        Ok(level) => daemon_response::Response::LogLevel(LogLevelResponse {
+            status: log_level_response::Status::Ok.into(),
+            old_level: Some(level),
+            error: None,
+        }),
+        Err(err) => daemon_response::Response::LogLevel(LogLevelResponse {
+            status: log_level_response::Status::Error.into(),
+            old_level: None,
+            error: Some(err),
+        }),
+    }
+}

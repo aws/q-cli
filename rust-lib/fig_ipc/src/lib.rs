@@ -1,3 +1,4 @@
+pub mod daemon;
 pub mod local;
 
 mod error;

@@ -1,4 +1,3 @@
-use std::fmt::Display;
 use std::fs::{
     self,
     File,
@@ -6,16 +5,25 @@ use std::fs::{
 use std::path::PathBuf;
 
 use fig_util::directories;
-use once_cell::sync::Lazy;
+use parking_lot::Mutex;
 use thiserror::Error;
+use tracing::info;
 use tracing::level_filters::LevelFilter;
-use tracing::Level;
 use tracing_appender::non_blocking::WorkerGuard;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{
     fmt,
     EnvFilter,
+    Registry,
 };
+
+const DEFAULT_MAX_FILE_SIZE: u64 = 10 * 1024 * 1024;
+const DEFAULT_FILTER: LevelFilter = LevelFilter::ERROR;
+
+static FIG_LOG_LEVEL: Mutex<Option<String>> = Mutex::new(None);
+static MAX_LEVEL: Mutex<Option<LevelFilter>> = Mutex::new(None);
+static ENV_FILTER_RELOADABLE_HANDLE: Mutex<Option<tracing_subscriber::reload::Handle<EnvFilter, Registry>>> =
+    Mutex::new(None);
 
 type Result<T, E = Error> = std::result::Result<T, E>;
 
@@ -25,30 +33,63 @@ pub enum Error {
     Io(#[from] std::io::Error),
     #[error(transparent)]
     Dir(#[from] fig_util::directories::DirectoryError),
-}
-
-fn filter_layer() -> EnvFilter {
-    EnvFilter::builder()
-        .with_default_directive(LevelFilter::ERROR.into())
-        .with_env_var("FIG_LOG_LEVEL")
-        .from_env_lossy()
-}
-
-pub static FIG_LOG_LEVEL: Lazy<LevelFilter> =
-    Lazy::new(|| filter_layer().max_level_hint().unwrap_or(LevelFilter::ERROR));
-
-pub fn stdio_debug_log(s: impl Display) {
-    if *FIG_LOG_LEVEL >= Level::DEBUG {
-        println!("{s}");
-    }
+    #[error(transparent)]
+    TracingReload(#[from] tracing_subscriber::reload::Error),
 }
 
 fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
     Ok(directories::logs_dir()?.join(log_file_name.as_ref().replace('/', "_").replace('\\', "_")))
 }
 
+fn fig_log_level() -> String {
+    FIG_LOG_LEVEL
+        .lock()
+        .clone()
+        .unwrap_or_else(|| std::env::var("FIG_LOG_LEVEL").unwrap_or_else(|_| DEFAULT_FILTER.to_string()))
+}
+
+fn create_filter_layer() -> EnvFilter {
+    EnvFilter::builder()
+        .with_default_directive(DEFAULT_FILTER.into())
+        .parse_lossy(&fig_log_level())
+}
+
+pub fn set_fig_log_level(level: String) -> Result<String> {
+    info!("Setting log level to {level:?}");
+
+    let old_level = fig_log_level();
+    *FIG_LOG_LEVEL.lock() = Some(level);
+
+    let filter_layer = create_filter_layer();
+    *MAX_LEVEL.lock() = filter_layer.max_level_hint();
+
+    ENV_FILTER_RELOADABLE_HANDLE
+        .lock()
+        .as_ref()
+        .expect("set_fig_log_level called before init_logger")
+        .reload(filter_layer)?;
+
+    Ok(old_level)
+}
+
+pub fn get_fig_log_level() -> String {
+    fig_log_level()
+}
+
+pub fn get_max_fig_log_level() -> LevelFilter {
+    let max_level = *MAX_LEVEL.lock();
+    match max_level {
+        Some(level) => level,
+        None => {
+            let filter_layer = create_filter_layer();
+            *MAX_LEVEL.lock() = filter_layer.max_level_hint();
+            filter_layer.max_level_hint().unwrap_or(DEFAULT_FILTER)
+        },
+    }
+}
+
 #[must_use]
-pub struct LoggerGuard<const N: usize> {
+pub struct LoggerGuard {
     _file_guard: Option<WorkerGuard>,
     _stdout_guard: Option<WorkerGuard>,
 }
@@ -80,35 +121,43 @@ impl Logger {
         self
     }
 
-    pub fn init(self) -> Result<LoggerGuard<2>> {
-        let filter_layer = filter_layer();
+    pub fn init(self) -> Result<LoggerGuard> {
         let registry = tracing_subscriber::registry();
 
         #[cfg(feature = "console")]
         let registry = registry.with(console_subscriber::spawn());
 
-        let registry = registry.with(filter_layer);
+        let filter_layer = create_filter_layer();
+        let (reloadable_filter_layer, reloadable_handle) = tracing_subscriber::reload::Layer::new(filter_layer);
+        ENV_FILTER_RELOADABLE_HANDLE.lock().replace(reloadable_handle);
+        let registry = registry.with(reloadable_filter_layer);
 
         let (file_layer, _file_guard) = match self.log_file_name {
             Some(log_file_name) => {
                 let log_path = log_path(log_file_name)?;
 
                 // Make folder if it doesn't exist
-                if !log_path.parent().unwrap().exists() {
-                    stdio_debug_log(format!("Creating log folder: {:?}", log_path.parent().unwrap()));
-                    fs::create_dir_all(log_path.parent().unwrap())?;
+                if let Some(parent) = log_path.parent() {
+                    fs::create_dir_all(parent)?;
                 }
 
-                if let Some(max_file_size) = self.max_file_size {
-                    if log_path.exists() {
-                        let metadata = std::fs::metadata(&log_path)?;
-                        if metadata.len() > max_file_size {
-                            std::fs::remove_file(&log_path)?;
-                        }
+                if log_path.exists() {
+                    let metadata = std::fs::metadata(&log_path)?;
+                    if metadata.len() > self.max_file_size.unwrap_or(DEFAULT_MAX_FILE_SIZE) {
+                        std::fs::remove_file(&log_path)?;
                     }
                 }
 
                 let file = File::options().append(true).create(true).open(log_path)?;
+
+                #[cfg(unix)]
+                {
+                    use std::os::unix::fs::PermissionsExt;
+                    let mut perms = file.metadata()?.permissions();
+                    perms.set_mode(0o600);
+                    file.set_permissions(perms)?;
+                }
+
                 let (non_blocking, guard) = tracing_appender::non_blocking(file);
                 let file_layer = fmt::layer().with_line_number(true).with_writer(non_blocking);
 
@@ -116,7 +165,6 @@ impl Logger {
             },
             None => (None, None),
         };
-
         let registry = registry.with(file_layer);
 
         let (stdout_layer, _stdout_guard) = if self.stdout_logger {
@@ -126,8 +174,8 @@ impl Logger {
         } else {
             (None, None)
         };
-
         let registry = registry.with(stdout_layer);
+
         let registry = registry.with(tracing_error::ErrorLayer::default());
 
         registry.init();

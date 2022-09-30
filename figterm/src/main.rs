@@ -102,7 +102,6 @@ use crate::ipc::{
     spawn_figterm_ipc,
     spawn_secure_ipc,
 };
-use crate::logger::init_logger;
 use crate::message::{
     process_figterm_message,
     process_secure_message,
@@ -357,9 +356,13 @@ fn figterm_main() -> Result<()> {
     let command = build_shell_command()?;
 
     let pty_name = pty.slave.get_name().unwrap_or_else(|| term_session_id.clone());
-    logger::stdio_debug_log(format!("pty name: {}", pty_name));
 
-    init_logger(&pty_name).context("Failed to init logger")?;
+    let _logger_guard = fig_log::Logger::new()
+        .with_file(format!("figterm{pty_name}.log"))
+        .init()
+        .context("Failed to init logger")?;
+
+    logger::stdio_debug_log(format!("pty name: {pty_name}"));
     logger::stdio_debug_log("Forking child shell process");
 
     #[cfg(unix)]
@@ -727,7 +730,7 @@ fn main() {
 
     Cli::parse();
 
-    logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", logger::get_log_level()));
+    logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", fig_log::get_fig_log_level()));
 
     if !state::get_bool_or("figterm.enabled", true) {
         println!("[NOTE] figterm is disabled. Autocomplete will not work.");

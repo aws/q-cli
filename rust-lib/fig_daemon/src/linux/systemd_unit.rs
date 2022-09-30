@@ -63,11 +63,13 @@ impl SystemdUnit {
         self
     }
 
+    #[allow(dead_code)]
     pub fn standard_output(mut self, standard_output: impl Into<String>) -> SystemdUnit {
         self.service.standard_output = Some(standard_output.into());
         self
     }
 
+    #[allow(dead_code)]
     pub fn standard_error(mut self, standard_error: impl Into<String>) -> SystemdUnit {
         self.service.standard_error = Some(standard_error.into());
         self

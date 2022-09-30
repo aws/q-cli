@@ -13,7 +13,7 @@ use crate::system_info::in_ssh;
 
 macro_rules! debug_env_binding {
     ($path:literal) => {
-        #[cfg(debug_assertions)]
+        #[cfg(any(debug_assertions, test))]
         if let Some(dir) = std::env::var_os($path) {
             return map_env_dir(&dir);
         }
@@ -196,9 +196,20 @@ pub fn plugins_dir() -> Result<PathBuf> {
 }
 
 /// The directory to all the fig logs
+/// - Linux: `/tmp/fig/$USER/logs`
+/// - MacOS: `~/.fig/logs`
+/// - Windows: `%TEMP%\fig\logs`
 pub fn logs_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_LOGS_DIR");
-    Ok(fig_dir()?.join("logs"))
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "linux")] {
+            Ok(std::env::temp_dir().join("fig").join(whoami::username()).join("logs"))
+        } else if #[cfg(target_os = "macos")] {
+            deprecated::legacy_logs_dir()
+        } else if #[cfg(target_os = "windows")] {
+            Ok(std::env::temp_dir().join("fig").join("logs"))
+        }
+    }
 }
 
 /// The directory where fig places all data-sensitive backups
@@ -373,6 +384,7 @@ utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(ssh_saved_identities);
 
+#[cfg(any(debug_assertions, test))]
 fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
     let path = std::path::Path::new(path);
     path.is_absolute()
@@ -390,6 +402,10 @@ mod deprecated {
             true => Ok(new_theme_dir),
             false => Ok(themes_repo_dir()?.join("themes")),
         }
+    }
+
+    pub fn legacy_logs_dir() -> Result<PathBuf> {
+        Ok(fig_dir()?.join("logs"))
     }
 }
 

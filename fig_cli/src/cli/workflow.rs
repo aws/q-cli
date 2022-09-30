@@ -44,20 +44,14 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
-use fig_util::directories::{
-    self,
-    DirectoryError,
-};
+use fig_util::directories;
 use serde_json::Value;
 #[cfg(unix)]
 use skim::SkimItem;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use tokio::io::AsyncWriteExt;
-use tracing::log::{
-    error,
-    warn,
-};
+use tracing::log::warn;
 use tui::{
     BorderStyle,
     CheckBox,
@@ -202,19 +196,7 @@ impl SkimItem for WorkflowAction {
     }
 }
 
-#[derive(Debug, thiserror::Error)]
-enum WriteWorkflowsError {
-    #[error(transparent)]
-    Directory(#[from] DirectoryError),
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-    #[error(transparent)]
-    Json(#[from] serde_json::Error),
-    #[error(transparent)]
-    Request(#[from] fig_request::Error),
-}
-
-async fn write_workflows() -> Result<(), WriteWorkflowsError> {
+async fn write_workflows() -> Result<(), eyre::Report> {
     for workflow in workflows(SUPPORTED_SCHEMA_VERSION).await? {
         let mut file = tokio::fs::File::create(
             directories::workflows_cache_dir()?.join(format!("{}.{}.json", workflow.namespace, workflow.name)),
@@ -783,7 +765,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
     if let Some(task) = write_workflows {
         if let Err(err) = task.await? {
-            error!("Failed to update workflows from remote: {err}");
+            eprintln!("Failed to update workflows from remote: {err}");
         }
     }
 
