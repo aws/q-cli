@@ -115,7 +115,7 @@ class InputMethod {
 
   // defaults read ~/Library/Preferences/com.apple.HIToolbox.plist
   //https://developer.apple.com/library/archive/qa/qa1810/_index.html
-  var source: TISInputSource? {
+  func source() -> TISInputSource? {
     let properties = [
       kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier
     ] as CFDictionary
@@ -266,7 +266,7 @@ extension InputMethod: IntegrationProvider {
       return .failed(error: "input method is not running.")
     }
 
-    guard let source = self.source else {
+    guard let source = self.source() else {
       return .failed(error: "could not initialize input source")
     }
 
@@ -404,7 +404,7 @@ extension InputMethod {
   }
 
   @discardableResult func select() -> InputMethodStatus {
-    guard let inputMethod = self.source else {
+    guard let inputMethod = self.source() else {
       return InputMethodError.SourceNotFound.status
     }
 
@@ -436,7 +436,7 @@ extension InputMethod {
   }
 
   @discardableResult func deselect() -> InputMethodStatus {
-    guard let inputMethod = self.source else {
+    guard let inputMethod = self.source() else {
       return InputMethodError.SourceNotFound.status
     }
 
@@ -454,7 +454,7 @@ extension InputMethod {
 
   // On macOS Monterrey, this opens System Preferences > Input Sources and prompts user!
   @discardableResult func enable() -> (message: String, code: Int) {
-    guard let inputMethod = self.source else {
+    guard let inputMethod = self.source() else {
       return InputMethodError.SourceNotFound.status
     }
 
@@ -471,7 +471,7 @@ extension InputMethod {
   }
 
   @discardableResult func disable() -> (message: String, code: Int) {
-    guard let inputMethod = self.source else {
+    guard let inputMethod = self.source() else {
       return InputMethodError.SourceNotFound.status
     }
 
@@ -526,11 +526,11 @@ extension InputMethod {
     case .status:
       if self.isInstalled {
         status = ("installed!", 0)
-      } else if self.source?.isEnabled ?? false {
+      } else if self.source()?.isEnabled ?? false {
         status = ("enabled!", 0)
-      } else if self.source?.isSelected ?? false {
+      } else if self.source()?.isSelected ?? false {
         status = ("selected!", 0)
-      } else if self.source == nil {
+      } else if self.source() == nil {
         status = ("uninstalled!", 0)
       } else {
         status = ("unknown!", 0)
