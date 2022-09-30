@@ -11,6 +11,7 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::restart_settings_listener;
+use fig_util::directories;
 use serde_json::json;
 
 use crate::cli::OutputFormat;
@@ -73,7 +74,7 @@ impl LocalStateArgs {
                 },
             },
             Some(LocalStateSubcommand::Open) => {
-                let path = fig_settings::state::state_path()?;
+                let path = directories::state_path()?;
                 match Command::new("open").arg(path).status()?.success() {
                     true => Ok(()),
                     false => Err(eyre!("Could not open state file")),

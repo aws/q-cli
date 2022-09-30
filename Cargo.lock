@@ -2919,6 +2919,7 @@ name = "fig_settings"
 version = "0.1.0"
 dependencies = [
  "fd-lock",
+ "fig_test",
  "fig_util",
  "parking_lot 0.12.1",
  "serde",
@@ -2981,8 +2982,17 @@ dependencies = [
 name = "fig_test"
 version = "0.1.0"
 dependencies = [
+ "fig_test_macro",
  "tempfile",
  "tokio",
+]
+
+[[package]]
+name = "fig_test_macro"
+version = "0.1.0"
+dependencies = [
+ "quote 1.0.21",
+ "syn 1.0.101",
 ]
 
 [[package]]

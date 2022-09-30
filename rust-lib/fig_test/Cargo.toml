@@ -1,10 +1,13 @@
 [package]
 name = "fig_test"
 version = "0.1.0"
+authors = ["fig developers"]
 edition = "2021"
+homepage = "https://fig.io"
 publish = false
 
 [dependencies]
+fig_test_macro = { path = "../fig_test_macro" }
 tempfile = "3.3.0"
 tokio = { version = "1", features = [
     "macros",

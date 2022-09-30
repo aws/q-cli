@@ -13,37 +13,24 @@ use std::io::{
 use std::path::PathBuf;
 
 use fd_lock::RwLock as FileRwLock;
+use fig_util::directories;
 use parking_lot::RwLock;
 use serde_json::Value;
 use thiserror::Error;
 use url::Url;
 
-fn get_host_string(key: impl AsRef<str>) -> Option<Url> {
-    state::get_value(key)
-        .ok()
-        .flatten()
-        .and_then(|v| v.as_str().and_then(|s| Url::parse(s).ok()))
-}
-
-pub fn api_host() -> Url {
-    get_host_string("developer.apiHost")
-        .or_else(|| get_host_string("developer.cli.apiHost"))
-        .unwrap_or_else(|| Url::parse("https://api.fig.io").unwrap())
-}
-
-pub fn ws_host() -> Url {
-    get_host_string("developer.wsHost")
-        .or_else(|| get_host_string("developer.cli.wsHost"))
-        .unwrap_or_else(|| {
-            let mut host = api_host();
-            host.set_scheme(match host.scheme() {
-                "http" => "ws",
-                "https" => "wss",
-                _ => "wss",
-            })
-            .unwrap();
-            host
-        })
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error(transparent)]
+    IoError(#[from] std::io::Error),
+    #[error(transparent)]
+    JsonError(#[from] serde_json::Error),
+    #[error(transparent)]
+    FigUtilError(#[from] fig_util::Error),
+    #[error("settings file is not a json object")]
+    SettingsNotObject,
+    #[error(transparent)]
+    DirectoryError(#[from] directories::DirectoryError),
 }
 
 pub type Map = serde_json::Map<String, Value>;
@@ -51,7 +38,7 @@ pub type Map = serde_json::Map<String, Value>;
 static STATE_LOCK: RwLock<()> = RwLock::new(());
 static SETTINGS_LOCK: RwLock<()> = RwLock::new(());
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Copy)]
 pub enum JsonType {
     State,
     Settings,
@@ -60,8 +47,8 @@ pub enum JsonType {
 impl JsonType {
     pub fn path(&self) -> Result<PathBuf, Error> {
         match self {
-            JsonType::State => state::state_path(),
-            JsonType::Settings => settings::settings_path(),
+            JsonType::State => Ok(directories::state_path()?),
+            JsonType::Settings => Ok(directories::settings_path()?),
         }
     }
 
@@ -77,20 +64,6 @@ impl JsonType {
 pub struct LocalJson {
     pub inner: Map,
     pub json_type: JsonType,
-}
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-    #[error(transparent)]
-    JsonError(#[from] serde_json::Error),
-    #[error(transparent)]
-    FigUtilError(#[from] fig_util::Error),
-    #[error("settings file is not a json object")]
-    SettingsNotObject,
-    #[error("could not get path to settings file")]
-    SettingsPathNotFound,
 }
 
 impl LocalJson {
@@ -174,53 +147,79 @@ impl LocalJson {
     }
 }
 
-// #[cfg(test)]
-// mod test {
-//     use super::*;
-//
-//     #[test]
-//     fn local_json() {
-//         let dir = tempfile::tempdir().unwrap();
-//         let local_json_path = dir.path().join("local.json");
-//
-//         let mut local_json = LocalJson::load(&local_json_path).unwrap();
-//
-//         assert_eq!(fs::read_to_string(&local_json_path).unwrap(), "");
-//         assert_eq!(local_json.inner, serde_json::Map::new());
-//
-//         local_json.save().unwrap();
-//         assert_eq!(fs::read_to_string(&local_json_path).unwrap(), "{}");
-//
-//         local_json.set("a", 123);
-//         local_json.set("b", "hello");
-//         local_json.set("c", false);
-//
-//         local_json.save().unwrap();
-//         assert_eq!(
-//             fs::read_to_string(&local_json_path).unwrap(),
-//             "{\n  \"a\": 123,\n  \"b\": \"hello\",\n  \"c\": false\n}"
-//         );
-//
-//         local_json.remove("a").unwrap();
-//
-//         local_json.save().unwrap();
-//         assert_eq!(
-//             fs::read_to_string(&local_json_path).unwrap(),
-//             "{\n  \"b\": \"hello\",\n  \"c\": false\n}"
-//         );
-//
-//         assert_eq!(local_json.get("b").unwrap(), "hello");
-//     }
-//
-//     #[test]
-//     fn local_json_errors() {
-//         let dir = tempfile::tempdir().unwrap();
-//         let local_json_path = dir.path().join("local.json");
-//
-//         fs::write(&local_json_path, "hey").unwrap();
-//         assert!(matches!(
-//             LocalJson::load(&local_json_path).unwrap_err(),
-//             Error::SettingsNotObject
-//         ));
-//     }
-// }
+pub fn api_host() -> Url {
+    get_host_string("developer.apiHost")
+        .or_else(|| get_host_string("developer.cli.apiHost"))
+        .unwrap_or_else(|| Url::parse("https://api.fig.io").unwrap())
+}
+
+pub fn ws_host() -> Url {
+    get_host_string("developer.wsHost")
+        .or_else(|| get_host_string("developer.cli.wsHost"))
+        .unwrap_or_else(|| {
+            let mut host = api_host();
+            host.set_scheme(match host.scheme() {
+                "http" => "ws",
+                "https" => "wss",
+                _ => "wss",
+            })
+            .unwrap();
+            host
+        })
+}
+
+fn get_host_string(key: impl AsRef<str>) -> Option<Url> {
+    state::get_value(key)
+        .ok()
+        .flatten()
+        .and_then(|v| v.as_str().and_then(|s| Url::parse(s).ok()))
+}
+
+#[cfg(test)]
+mod test {
+    use std::path::Path;
+
+    use super::*;
+
+    fn test_store_type(path: &Path, store: JsonType) {
+        let mut local_json = LocalJson::load(store).unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "");
+        assert_eq!(local_json.inner, serde_json::Map::new());
+        local_json.save().unwrap();
+        assert_eq!(fs::read_to_string(&path).unwrap(), "{}");
+
+        local_json.set("a", 123);
+        local_json.set("b", "hello");
+        local_json.set("c", false);
+        local_json.save().unwrap();
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "{\n  \"a\": 123,\n  \"b\": \"hello\",\n  \"c\": false\n}"
+        );
+
+        local_json.remove("a").unwrap();
+        local_json.save().unwrap();
+        assert_eq!(
+            fs::read_to_string(&path).unwrap(),
+            "{\n  \"b\": \"hello\",\n  \"c\": false\n}"
+        );
+        assert_eq!(local_json.get("b").unwrap(), "hello");
+
+        fs::write(&path, "invalid json").unwrap();
+        assert!(matches!(LocalJson::load(store).unwrap_err(), Error::SettingsNotObject));
+    }
+
+    #[fig_test::test]
+    fn test_settings_raw() {
+        let path = tempfile::tempdir().unwrap().into_path().join("local.json");
+        std::env::set_var("FIG_DIRECTORIES_SETTINGS_PATH", &path);
+        test_store_type(&path, JsonType::Settings);
+    }
+
+    #[fig_test::test]
+    fn test_state_raw() {
+        let path = tempfile::tempdir().unwrap().into_path().join("local.json");
+        std::env::set_var("FIG_DIRECTORIES_STATE_PATH", &path);
+        test_store_type(&path, JsonType::State);
+    }
+}

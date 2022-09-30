@@ -1,4 +1,5 @@
 use fig_request::Result;
+use fig_util::directories;
 use serde::{
     Deserialize,
     Serialize,
@@ -10,7 +11,7 @@ use serde_json::{
 };
 
 pub async fn update_all(settings: Map<String, Value>) -> Result<()> {
-    if let Ok(path) = fig_settings::settings::settings_path() {
+    if let Ok(path) = directories::settings_path() {
         if let Ok(file) = std::fs::File::open(path) {
             serde_json::to_writer_pretty(file, &settings).ok();
         }

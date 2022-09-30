@@ -99,7 +99,7 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
-/// The ephemeral fig sockets directory
+/// The fig sockets directory of the local fig installation
 ///
 /// - Linux: /var/tmp/fig/Alice
 /// - MacOS: /var/tmp/fig/Alice
@@ -108,27 +108,42 @@ pub fn sockets_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SOCKETS_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(target_os = "linux")] {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
             use std::path::Path;
-            use std::process::Command;
-            use std::os::unix::prelude::OsStrExt;
-            use std::ffi::OsStr;
-            use bstr::ByteSlice;
-
-            match crate::system_info::in_wsl() {
-                true => {
-                    let socket_dir = Command::new("fig.exe").args(["_", "sockets-dir"]).output()?;
-                    let wsl_socket = Command::new("wslpath").arg(OsStr::from_bytes(socket_dir.stdout.trim())).output()?;
-                    Ok(PathBuf::from(OsStr::from_bytes(wsl_socket.stdout.trim())))
-                },
-                false => Ok(Path::new("/var/tmp/fig").join(whoami::username()))
-            }
-        } else if #[cfg(target_os = "macos")] {
-            Ok(std::path::Path::new("/var/tmp/fig").join(whoami::username()))
+            Ok(Path::new("/var/tmp/fig").join(whoami::username()))
         } else if #[cfg(target_os = "windows")] {
             Ok(fig_dir()?.join("sockets"))
         }
     }
+}
+
+/// The directory on the host machine where socket files are stored
+///
+/// In WSL, this will correctly return the host machine socket path.
+/// In other remote environments, it returns the same as `sockets_dir`
+///
+/// - Linux: /var/tmp/fig/Alice
+/// - MacOS: /var/tmp/fig/Alice
+/// - Windows: %LOCALAPPDATA%/Fig/sockets
+pub fn host_sockets_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_HOST_SOCKETS_DIR");
+
+    #[cfg(target_os = "linux")]
+    if crate::system_info::in_wsl() {
+        use std::ffi::OsStr;
+        use std::os::unix::prelude::OsStrExt;
+        use std::process::Command;
+
+        use bstr::ByteSlice;
+
+        let socket_dir = Command::new("fig.exe").args(["_", "sockets-dir"]).output()?;
+        let wsl_socket = Command::new("wslpath")
+            .arg(OsStr::from_bytes(socket_dir.stdout.trim()))
+            .output()?;
+        return Ok(PathBuf::from(OsStr::from_bytes(wsl_socket.stdout.trim())));
+    }
+
+    sockets_dir()
 }
 
 /// Path to the managed binaries directory
@@ -224,7 +239,7 @@ pub fn workflows_cache_dir() -> Result<PathBuf> {
 /// - Windows: `%APPDATA%/Fig/fig.sock`
 pub fn fig_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIG_SOCKET_PATH");
-    Ok(sockets_dir()?.join("fig.socket"))
+    Ok(host_sockets_dir()?.join("fig.socket"))
 }
 
 /// Get path to the daemon socket
@@ -268,7 +283,7 @@ pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
 pub fn local_secure_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_LOCAL_SECURE_SOCKET_PATH");
-    Ok(sockets_dir()?.join("secure.socket"))
+    Ok(host_sockets_dir()?.join("secure.socket"))
 }
 
 /// Get path to a figterm socket
@@ -311,6 +326,25 @@ pub fn managed_fig_cli_path() -> Result<PathBuf> {
             Ok(managed_binaries_dir()?.join("fig.exe"))
         }
     }
+}
+
+/// The path to the fig settings file
+pub fn settings_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_SETTINGS_PATH");
+
+    cfg_if::cfg_if! {
+        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            Ok(fig_dir()?.join("settings.json"))
+        } else if #[cfg(target_os = "windows")] {
+            Ok(fig_data_dir()?.join("settings.json"))
+        }
+    }
+}
+
+/// The path to the fig state file
+pub fn state_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_STATE_PATH");
+    Ok(fig_data_dir()?.join("state.json"))
 }
 
 /// The path to the saved ssh identities file
@@ -379,11 +413,13 @@ mod test {
                 test_path_name!(fig_dir, ".fig");
                 test_path_name!(fig_data_dir, "fig");
                 test_path_name!(sockets_dir, whoami::username());
+                test_path_name!(host_sockets_dir, whoami::username());
                 test_path_name!(backups_dir, ".fig.dotfiles.bak");
             } else if #[cfg(target_os = "windows")] {
                 test_path_name!(fig_dir, "Fig");
                 test_path_name!(fig_data_dir, "userdata");
                 test_path_name!(sockets_dir, "sockets");
+                test_path_name!(host_sockets_dir, "sockets");
                 test_path_name!(managed_binaries_dir, "bin");
                 test_path_name!(backups_dir, "backups");
                 test_path_name!(managed_fig_cli_path, "fig.exe");
@@ -399,6 +435,8 @@ mod test {
         test_path_name!(daemon_socket_path, "daemon.socket");
         test_path_name!(local_secure_socket_path, "secure.socket");
         test_path_name!(manifest_path, "manifest.json");
+        test_path_name!(settings_path, "settings.json");
+        test_path_name!(state_path, "state.json");
         test_path_name!(ssh_saved_identities, "ssh_saved_identities");
     }
 
@@ -421,6 +459,7 @@ mod test {
         test_environment_path!(fig_dir, "FIG_DIRECTORIES_FIG_DIR");
         test_environment_path!(fig_data_dir, "FIG_DIRECTORIES_FIG_DATA_DIR");
         test_environment_path!(sockets_dir, "FIG_DIRECTORIES_SOCKETS_DIR");
+        test_environment_path!(host_sockets_dir, "FIG_DIRECTORIES_HOST_SOCKETS_DIR");
         test_environment_path!(managed_binaries_dir, "FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
         test_environment_path!(themes_dir, "FIG_DIRECTORIES_THEMES_DIR");
         test_environment_path!(themes_repo_dir, "FIG_DIRECTORIES_THEMES_REPO_DIR");
@@ -433,6 +472,8 @@ mod test {
         test_environment_path!(daemon_socket_path, "FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
         test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");
         test_environment_path!(managed_fig_cli_path, "FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
+        test_environment_path!(settings_path, "FIG_DIRECTORIES_SETTINGS_PATH");
+        test_environment_path!(state_path, "FIG_DIRECTORIES_STATE_PATH");
         test_environment_path!(ssh_saved_identities, "FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
     }
 }

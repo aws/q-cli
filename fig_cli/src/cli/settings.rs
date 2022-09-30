@@ -17,7 +17,7 @@ use fig_ipc::local::{
     restart_settings_listener,
 };
 use fig_proto::local::UiElement;
-use fig_settings::settings::settings_path;
+use fig_util::directories;
 use globset::Glob;
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
@@ -102,7 +102,7 @@ impl SettingsArgs {
             Some(SettingsSubcommands::Open) => {
                 let mut url = String::from("file://");
                 url.push_str(
-                    &settings_path()
+                    &directories::settings_path()
                         .context("Could not get settings path")?
                         .to_string_lossy(),
                 );
@@ -112,7 +112,7 @@ impl SettingsArgs {
             Some(SettingsSubcommands::Sync) => {
                 let settings::Settings { settings, updated_at } = settings::get().await?;
 
-                let path = settings_path().context("Could not get settings path")?;
+                let path = directories::settings_path().context("Could not get settings path")?;
 
                 let mut settings_file = std::fs::File::create(&path)?;
                 let settings_json = serde_json::to_string_pretty(&settings)?;

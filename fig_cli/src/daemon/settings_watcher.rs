@@ -5,6 +5,7 @@ use eyre::eyre;
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
 use fig_proto::local::file_changed_hook::FileChanged;
+use fig_util::directories;
 use notify::{
     RecursiveMode,
     Watcher,
@@ -47,7 +48,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         }
     }
 
-    let settings_path = match fig_settings::settings::settings_path().ok() {
+    let settings_path = match directories::settings_path().ok() {
         Some(settings_path) => match settings_path.parent() {
             Some(settings_dir) => {
                 if let Err(err) = std::fs::create_dir_all(&settings_dir) {
@@ -78,7 +79,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
         },
     };
 
-    let state_path = match fig_settings::state::state_path().ok() {
+    let state_path = match directories::state_path().ok() {
         Some(state_path) => match state_path.parent() {
             Some(state_dir) => {
                 if let Err(err) = std::fs::create_dir_all(&state_dir) {

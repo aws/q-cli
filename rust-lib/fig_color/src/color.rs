@@ -385,19 +385,26 @@ pub fn parse_suggestion_color_zsh_autosuggest(s: &str, color_support: ColorSuppo
 mod test {
     use super::*;
 
-    fn with_env<T>(new_variables: &[(&str, &str)], f: impl FnOnce() -> T) -> T {
-        fig_test::TestBuilder::new()
-            .with_env(new_variables.to_vec(), true)
-            .execute_sync(f)
-    }
-
-    #[test]
+    #[fig_test::test]
     fn color_support() {
         // make sure it doesn't panic
         get_color_support();
 
-        let assert_supports =
-            |vars: &[(&str, &str)], expected: ColorSupport| assert_eq!(with_env(vars, get_color_support), expected);
+        for (key, _) in std::env::vars() {
+            std::env::remove_var(key);
+        }
+
+        let assert_supports = |vars: &[(&str, &str)], expected: ColorSupport| {
+            for (key, value) in vars {
+                std::env::set_var(key, value);
+            }
+
+            assert_eq!(get_color_support(), expected);
+
+            for (key, _) in vars {
+                std::env::remove_var(key);
+            }
+        };
 
         // no env
         assert_supports(&[], ColorSupport::empty());

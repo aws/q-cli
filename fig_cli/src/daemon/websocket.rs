@@ -191,8 +191,7 @@ pub async fn process_websocket(
                             FigWebsocketMessage::DotfilesUpdated => scheduler.schedule_now(SyncDotfiles),
                             FigWebsocketMessage::SettingsUpdated { settings, updated_at } => {
                                 // Write settings to disk
-                                let path =
-                                    fig_settings::settings::settings_path().context("Could not get settings path")?;
+                                let path = directories::settings_path().context("Could not get settings path")?;
 
                                 info!("Settings updated: Writing settings to disk at {path:?}");
 

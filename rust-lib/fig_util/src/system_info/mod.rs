@@ -197,11 +197,9 @@ pub fn in_ssh() -> bool {
 /// Test if the program is running under WSL
 pub fn in_wsl() -> bool {
     cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            false
-        } else if #[cfg(target_os = "linux")] {
+        if #[cfg(target_os = "linux")] {
             *IN_WSL
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(any(target_os = "macos", target_os = "windows"))] {
             false
         }
     }

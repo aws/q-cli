@@ -6,6 +6,7 @@ use fig_proto::fig::{
     NotificationType,
     SettingsChangedNotification,
 };
+use fig_util::directories;
 use notify::{
     RecursiveMode,
     Watcher,
@@ -43,7 +44,7 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
     })
     .unwrap();
 
-    let settings_path = match fig_settings::settings::settings_path().ok() {
+    let settings_path = match directories::settings_path().ok() {
         Some(settings_path) => match settings_path.parent() {
             Some(settings_dir) => match watcher.watch(settings_dir, RecursiveMode::NonRecursive) {
                 Ok(()) => {
@@ -66,7 +67,7 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
         },
     };
 
-    let state_path = match fig_settings::state::state_path().ok() {
+    let state_path = match directories::state_path().ok() {
         Some(state_path) => match state_path.parent() {
             Some(state_dir) => match watcher.watch(state_dir, RecursiveMode::NonRecursive) {
                 Ok(()) => {
