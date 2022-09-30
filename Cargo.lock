@@ -2761,7 +2761,6 @@ dependencies = [
  "camino",
  "fig_ipc",
  "fig_proto",
- "fig_telemetry",
  "fig_util",
  "thiserror",
  "tokio",
@@ -2838,7 +2837,6 @@ dependencies = [
  "fig_integrations",
  "fig_proto",
  "fig_settings",
- "fig_sync",
  "fig_telemetry",
  "fig_util",
  "fnv",
@@ -2880,7 +2878,6 @@ dependencies = [
  "fig_util",
  "regex",
  "serde",
- "sysinfo 0.26.4",
  "thiserror",
 ]
 
@@ -3022,7 +3019,6 @@ name = "fig_test"
 version = "0.1.0"
 dependencies = [
  "fig_test_macro",
- "tempfile",
  "tokio",
 ]
 
@@ -3057,7 +3053,6 @@ dependencies = [
  "time 0.3.14",
  "tokio",
  "tracing",
- "which",
  "whoami",
  "windows 0.42.0",
  "winreg 0.10.1",
@@ -3095,7 +3090,6 @@ dependencies = [
  "parking_lot 0.12.1",
  "pin-project",
  "portable-pty",
- "procfs",
  "regex",
  "rusqlite",
  "shared_library",
@@ -5751,21 +5745,6 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "94e2ef8dbfc347b10c094890f778ee2e36ca9bb4262e86dc99cd217e35f3470b"
 dependencies = [
  "unicode-ident",
-]
-
-[[package]]
-name = "procfs"
-version = "0.14.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2dfb6451c91904606a1abe93e83a8ec851f45827fa84273f256ade45dc095818"
-dependencies = [
- "bitflags",
- "byteorder",
- "chrono",
- "flate2",
- "hex",
- "lazy_static",
- "rustix",
 ]
 
 [[package]]

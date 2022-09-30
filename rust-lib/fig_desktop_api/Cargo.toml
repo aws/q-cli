@@ -14,7 +14,6 @@ fig_api_client = { version = "0.1.0", path = "../fig_api_client" }
 fig_integrations = { version = "0.1.0", path = "../fig_integrations" }
 fig_proto = { version = "0.1.0", path = "../fig_proto" }
 fig_settings = { version = "0.1.0", path = "../fig_settings" }
-fig_sync = { version = "0.1.0", path = "../fig_sync" }
 fig_telemetry = { version = "0.2.1", path = "../fig_telemetry" }
 fig_util = { version = "0.1.0", path = "../fig_util" }
 fnv = "1.0.7"

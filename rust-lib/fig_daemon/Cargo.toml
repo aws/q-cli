@@ -9,7 +9,6 @@ unsafe-tests = []
 
 [dependencies]
 camino = "1.1.1"
-fig_telemetry = { path = "../fig_telemetry" }
 fig_util = { path = "../fig_util" }
 thiserror = "1.0.36"
 

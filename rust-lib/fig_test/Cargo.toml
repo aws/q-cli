@@ -8,7 +8,6 @@ publish = false
 
 [dependencies]
 fig_test_macro = { path = "../fig_test_macro" }
-tempfile = "3.3.0"
 tokio = { version = "1", features = [
     "macros",
     "rt-multi-thread",
