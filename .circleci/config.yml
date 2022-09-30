@@ -181,6 +181,7 @@ jobs:
       - prepare-build:
           arch: x86_64
           include_desktop_deps: false
+          install_rust: false
       - run:
           name: Install musl stuff
           command: apt install -y musl-dev
@@ -213,6 +214,7 @@ jobs:
       - prepare-build:
           arch: aarch64
           include_desktop_deps: false
+          install_rust: false
       - run:
           name: Install musl stuff
           command: apt install -y musl-dev
@@ -245,6 +247,7 @@ jobs:
       - prepare-build:
           arch: x86_64
           include_desktop_deps: true
+          install_rust: true
       - run:
           name: Build fig_desktop
           command: cd desktop && cargo build -rp fig_desktop
@@ -587,6 +590,8 @@ commands:
       include_desktop_deps:
         type: boolean
         default: true
+      install_rust:
+        type: boolean
     steps:
       - configure-apt
       - run:
@@ -609,9 +614,12 @@ commands:
       - rust/install:
           version: 1.64.0
       - checkout-desktop
-      - run:
-          name: Configure rust
-          command: ./desktop/build-scripts/rust-init.sh
+      - when:
+          condition: << parameters.install_rust >>
+          steps:
+            - run:
+                name: Configure rust
+                command: ./desktop/build-scripts/rust-init.sh
 
   setup-signing-identity-macos:
     parameters:
