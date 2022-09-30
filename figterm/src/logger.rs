@@ -5,7 +5,6 @@ use tracing::Level;
 
 pub fn stdio_debug_log(s: impl Display) {
     let max_level = get_max_fig_log_level();
-    println!("max_level: {:?}", max_level);
     if get_max_fig_log_level() >= Level::DEBUG {
         println!("{s}");
     }
