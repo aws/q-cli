@@ -26,6 +26,12 @@ use core_foundation::base::{
 };
 use core_foundation::string::CFString;
 use core_graphics::geometry::CGRect;
+use tracing::{
+    error,
+    trace,
+};
+
+#[derive(Debug)]
 pub struct CaretPosition {
     pub valid: bool,
     pub x: f64,
@@ -42,13 +48,14 @@ const INVALID_CARET_POSITION: CaretPosition = CaretPosition {
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
+    trace!("Getting caret position...");
     let system_wide_element: AXUIElement = AXUIElement::system_wide();
 
     // Get the focused element
     let focused_element: AXUIElement = match system_wide_element.attribute(&AXAttribute::focused_ui()) {
         Ok(focused_element) => focused_element,
         Err(err) => {
-            println!("Couldn't get focused element, error code {:?}", err);
+            error!("Couldn't get focused element, error code {:?}", err);
             return INVALID_CARET_POSITION;
         },
     };
@@ -57,7 +64,7 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
     let selected_range_value: CFType = match focused_element.attribute(&AXAttribute::selected_range()) {
         Ok(selected_range_value) => selected_range_value,
         Err(err) => {
-            println!("Couldn't get selected range value, error code {:?}", err);
+            error!("Couldn't get selected range value, error code {:?}", err);
             return INVALID_CARET_POSITION;
         },
     };
@@ -74,7 +81,7 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
     let selected_text_range: CFRange = match selected_range_result {
         Ok(selected_text_range) => selected_text_range,
         Err(err) => {
-            println!("Couldn't get selected text range, did types match {:?}", err);
+            error!("Couldn't get selected text range, did types match {:?}", err);
             return INVALID_CARET_POSITION;
         },
     };
@@ -88,7 +95,7 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
 
     // https://linear.app/fig/issue/ENG-109/ - autocomplete-popup-shows-when-copying-and-pasting-in-terminal
     if selected_text_range.length > 1 {
-        println!("selectedRange length > 1");
+        error!("selectedRange length > 1");
         return INVALID_CARET_POSITION;
     }
 
@@ -104,7 +111,7 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
     let select_bounds: AXValueRef = match select_bounds_result {
         Ok(select_bounds) => select_bounds as AXValueRef,
         Err(err) => {
-            println!("Selected bounds error, error code {:?}", err);
+            error!("Selected bounds error, error code {:?}", err);
             return INVALID_CARET_POSITION;
         },
     };
@@ -115,21 +122,23 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
     let select_rect = match selected_rect_result {
         Ok(select_rect) => select_rect,
         Err(err) => {
-            println!("Couldn't get selected range, did types match {:?}", err);
+            error!("Couldn't get selected range, did types match {:?}", err);
             return INVALID_CARET_POSITION;
         },
     };
     // Sanity check: prevents flashing autocomplete in bottom corner
     if select_rect.size.width == 0.0 && select_rect.size.height == 0.0 {
-        println!("Prevents flashing autocomplete in bottom corner");
+        error!("Prevents flashing autocomplete in bottom corner");
         return INVALID_CARET_POSITION;
     }
 
     // Tauri uses Quartz coordinates (don't need to convert coordinates to Cocoa like macos)
-    CaretPosition {
+    let result = CaretPosition {
         valid: true,
         x: select_rect.origin.x,
         y: select_rect.origin.y,
         height: select_rect.size.height,
-    }
+    };
+    trace!("Got position {result:?}");
+    result
 }

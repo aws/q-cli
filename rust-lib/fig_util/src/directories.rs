@@ -171,6 +171,13 @@ pub fn themes_dir() -> Result<PathBuf> {
         if #[cfg(any(target_os = "linux", target_os = "windows"))] {
             Ok(themes_repo_dir()?.join("themes"))
         } else if #[cfg(target_os = "macos")] {
+            /*
+            let new_theme_dir = themes_dir()?;
+            match new_theme_dir.exists() {
+                true => Ok(new_theme_dir),
+                false => Ok(themes_repo_dir()?.join("themes"))
+            }
+            */
             deprecated::legacy_themes_dir()
         }
     }
@@ -397,11 +404,7 @@ mod deprecated {
     use super::*;
 
     pub fn legacy_themes_dir() -> Result<PathBuf> {
-        let new_theme_dir = themes_dir()?;
-        match new_theme_dir.exists() {
-            true => Ok(new_theme_dir),
-            false => Ok(themes_repo_dir()?.join("themes")),
-        }
+        Ok(fig_dir()?.join("themes"))
     }
 
     pub fn legacy_logs_dir() -> Result<PathBuf> {
