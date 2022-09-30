@@ -20,9 +20,7 @@ package-lock.json
 *.info
 *.swp
 *.swo
-
-*.swp
-*.swo
+*.pending-snap
 
 # Ignore all compiled protobuf artifacts
 **/*.pb.ts

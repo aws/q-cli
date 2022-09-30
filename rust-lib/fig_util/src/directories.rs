@@ -6,10 +6,60 @@ use std::path::{
 };
 
 use camino::Utf8PathBuf;
+#[cfg(test)]
+use insta;
 use thiserror::Error;
 use time::OffsetDateTime;
 
 use crate::system_info::in_ssh;
+// Testing
+
+#[cfg(test)]
+fn sanitized_directory_path(path: Result<PathBuf>) -> String {
+    let user = whoami::username();
+    path.ok()
+        .unwrap()
+        .into_os_string()
+        .into_string()
+        .unwrap()
+        .replace(&user, "$USER")
+}
+
+#[cfg(test)]
+macro_rules! assert_directory {
+    ($value:expr, @ $snapshot:literal) => {
+        insta::assert_snapshot!(
+            insta::_macro_support::ReferenceValue::Inline($snapshot),
+            sanitized_directory_path($value),
+            stringify!(sanitized_directory_path($value))
+        )
+    };
+}
+
+#[cfg(test)]
+macro_rules! macos {
+    ($value:expr, @$snapshot:literal) => {
+        #[cfg(target_os = "macos")]
+        assert_directory!($value, @$snapshot)
+    };
+}
+
+#[cfg(test)]
+macro_rules! linux {
+    ($value:expr, @$snapshot:literal) => {
+        #[cfg(target_os = "linux")]
+        assert_directory!($value, @$snapshot)
+    };
+}
+
+#[cfg(test)]
+macro_rules! windows {
+    ($value:expr, @$snapshot:literal) => {
+        #[cfg(target_os = "windows")]
+        assert_directory!($value, @$snapshot)
+
+    };
+}
 
 macro_rules! debug_env_binding {
     ($path:literal) => {
@@ -80,6 +130,13 @@ pub fn fig_dir() -> Result<PathBuf> {
     }
 }
 
+#[test]
+fn _snapshot_fig_dir() {
+    linux!(fig_dir(), @"/home/$USER/.fig");
+    macos!(fig_dir(), @"/Users/$USER/.fig");
+    windows!(fig_dir(), @r"C:\Users\$USER\AppData\Local\Fig");
+}
+
 /// The fig data directory
 ///
 /// - Linux: `$XDG_DATA_HOME/fig` or `$HOME/.local/share/fig`
@@ -99,6 +156,14 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_fig_data_dir() {
+    linux!(fig_data_dir(), @"/home/$USER/.local/share/fig");
+    macos!(fig_data_dir(), @"/Users/$USER/Library/Application Support/fig");
+    windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
+}
+
 /// The fig sockets directory of the local fig installation
 ///
 /// - Linux: /var/tmp/fig/Alice
@@ -115,6 +180,14 @@ pub fn sockets_dir() -> Result<PathBuf> {
             Ok(fig_dir()?.join("sockets"))
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_sockets_dir() {
+    linux!(sockets_dir(), @"/var/tmp/fig/$USER");
+    macos!(sockets_dir(), @"/var/tmp/fig/$USER");
+    windows!(sockets_dir(), @r"C:\Users\$USER\AppData\Local\Fig\sockets");
 }
 
 /// The directory on the host machine where socket files are stored
@@ -183,10 +256,25 @@ pub fn themes_dir() -> Result<PathBuf> {
     }
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_themes_dir() {
+    linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
+    macos!(themes_dir(), @"/Users/$USER/.fig/themes");
+    windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\themes\themes");
+}
+
 /// The path to the cloned repo containing the themes
 pub fn themes_repo_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_THEMES_REPO_DIR");
     Ok(fig_data_dir()?.join("themes"))
+}
+
+#[test]
+fn _snapshot_themes_repo_dir() {
+    linux!(themes_repo_dir(), @"/home/$USER/.local/share/fig/themes");
+    macos!(themes_repo_dir(), @"/Users/$USER/Library/Application Support/fig/themes");
+    windows!(themes_repo_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes");
 }
 
 /// The path to the fig plugins
@@ -200,6 +288,14 @@ pub fn plugins_dir() -> Result<PathBuf> {
             home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
         }
     }
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_plugins_dir() {
+    linux!(plugins_dir(), @"/home/$USER/.local/share/fig/plugins");
+    macos!(plugins_dir(), @"/Users/$USER/.local/share/fig/plugins");
+    windows!(plugins_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\plugins");
 }
 
 /// The directory to all the fig logs
@@ -232,6 +328,14 @@ pub fn backups_dir() -> Result<PathBuf> {
     }
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_backups_dir() {
+    linux!(backups_dir(), @"/home/$USER/.fig.dotfiles.bak");
+    macos!(backups_dir(), @"/Users/$USER/.fig.dotfiles.bak");
+    windows!(backups_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\backups");
+}
+
 /// The directory for time based data-sensitive backups
 ///
 /// NOTE: This changes every second and cannot be cached
@@ -260,6 +364,14 @@ pub fn fig_socket_path() -> Result<PathBuf> {
     Ok(host_sockets_dir()?.join("fig.socket"))
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_fig_socket_path() {
+    linux!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
+    macos!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
+    windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.sock");
+}
+
 /// Get path to the daemon socket
 ///
 /// - Linux/MacOS: `/var/tmp/fig/$USERNAME/daemon.socket`
@@ -267,6 +379,14 @@ pub fn fig_socket_path() -> Result<PathBuf> {
 pub fn daemon_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
     Ok(sockets_dir()?.join("daemon.socket"))
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_daemon_socket_path() {
+    linux!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
+    macos!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
+    windows!(daemon_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\daemon.socket");
 }
 
 /// The path to secure socket
@@ -286,6 +406,14 @@ pub fn secure_socket_path() -> Result<PathBuf> {
     local_secure_socket_path()
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_secure_socket_path() {
+    linux!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+    macos!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+    windows!(secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.sock");
+}
+
 /// The path to fig parent socket
 ///
 /// - Linux/MacOS: `/var/tmp/fig-parent-$FIG_PARENT.socket`
@@ -293,6 +421,14 @@ pub fn secure_socket_path() -> Result<PathBuf> {
 pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
     Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.socket")).to_path_buf())
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_parent_socket_path() {
+    linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
+    macos!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
+    // windows does not have a parent socket
 }
 
 /// The path to local secure socket
@@ -304,6 +440,14 @@ pub fn local_secure_socket_path() -> Result<PathBuf> {
     Ok(host_sockets_dir()?.join("secure.socket"))
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_local_secure_socket_path() {
+    linux!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+    macos!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+    windows!(local_secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.sock");
+}
+
 /// Get path to a figterm socket
 ///
 /// - Linux/Macos: `/var/tmp/fig/%USERNAME%/figterm/$SESSION_ID.socket`
@@ -311,6 +455,14 @@ pub fn local_secure_socket_path() -> Result<PathBuf> {
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIGTERM_SOCKET_PATH");
     Ok(sockets_dir()?.join("figterm").join(format!("{session_id}.socket")))
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_figterm_socket_path() {
+    linux!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
+    macos!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
+    windows!(figterm_socket_path("$SESSION_ID"), @r"C:\Users\$USER\AppData\Local\Fig\sockets\figterm\$SESSION_ID.socket");
 }
 
 /// The path to the fig install manifest
@@ -376,6 +528,14 @@ pub fn ssh_saved_identities() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_ssh_saved_identities() {
+    linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");
+    macos!(ssh_saved_identities(), @"/Users/$USER/Library/Application Support/fig/access/ssh_saved_identities");
+    windows!(ssh_saved_identities(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\access\ssh_saved_identities");
+}
+
 utf8_dir!(home_dir);
 utf8_dir!(fig_dir);
 utf8_dir!(fig_data_dir);
@@ -428,13 +588,19 @@ mod test {
         }
 
         cfg_if::cfg_if! {
-            if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            if #[cfg(target_os = "linux")] {
+                test_path_name!(fig_dir, ".fig");
+                test_path_name!(fig_data_dir, "fig");
+                test_path_name!(sockets_dir, whoami::username());
+                test_path_name!(backups_dir, ".fig.dotfiles.bak");
+                test_path_name!(manifest_path, "manifest.json");
+            } else if #[cfg(target_os = "macos")] {
                 test_path_name!(fig_dir, ".fig");
                 test_path_name!(fig_data_dir, "fig");
                 test_path_name!(sockets_dir, whoami::username());
                 test_path_name!(host_sockets_dir, whoami::username());
                 test_path_name!(backups_dir, ".fig.dotfiles.bak");
-            } else if #[cfg(target_os = "windows")] {
+            }  else if #[cfg(target_os = "windows")] {
                 test_path_name!(fig_dir, "Fig");
                 test_path_name!(fig_data_dir, "userdata");
                 test_path_name!(sockets_dir, "sockets");
@@ -442,6 +608,7 @@ mod test {
                 test_path_name!(managed_binaries_dir, "bin");
                 test_path_name!(backups_dir, "backups");
                 test_path_name!(managed_fig_cli_path, "fig.exe");
+                test_path_name!(manifest_path, "manifest.json");
             }
         }
 
@@ -453,7 +620,6 @@ mod test {
         test_path_name!(fig_socket_path, "fig.socket");
         test_path_name!(daemon_socket_path, "daemon.socket");
         test_path_name!(local_secure_socket_path, "secure.socket");
-        test_path_name!(manifest_path, "manifest.json");
         test_path_name!(settings_path, "settings.json");
         test_path_name!(state_path, "state.json");
         test_path_name!(ssh_saved_identities, "ssh_saved_identities");

@@ -3041,6 +3041,7 @@ dependencies = [
  "dirs",
  "fig_test",
  "hex",
+ "insta",
  "nix 0.25.0",
  "once_cell",
  "paste",
