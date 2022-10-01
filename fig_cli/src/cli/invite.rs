@@ -1,7 +1,7 @@
 use arboard::Clipboard;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_auth::get_email;
+use fig_request::auth::get_email;
 
 pub async fn invite_cli() -> Result<()> {
     match get_email() {

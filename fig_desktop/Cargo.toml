@@ -41,8 +41,7 @@ cfg-if = "1.0.0"
 clap = "3.2.20"
 dashmap = "5.3.4"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
-fig_auth = { path = "../rust-lib/fig_auth" }
-fig_desktop_api = { version = "0.1.0", path = "../rust-lib/fig_desktop_api" }
+fig_desktop_api = { path = "../rust-lib/fig_desktop_api" }
 fig_install = { path = "../rust-lib/fig_install" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }

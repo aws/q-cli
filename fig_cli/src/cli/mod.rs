@@ -361,7 +361,7 @@ async fn root_command() -> Result<()> {
     // Launch fig if it is not running
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            use fig_auth::is_logged_in;
+            use fig_request::auth::is_logged_in;
             use fig_ipc::local::{open_ui_element, quit_command};
             use fig_proto::local::UiElement;
             use std::time::Duration;

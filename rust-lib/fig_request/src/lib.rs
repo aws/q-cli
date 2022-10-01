@@ -1,4 +1,8 @@
-use fig_auth::get_token;
+pub mod auth;
+pub mod defaults;
+pub mod reqwest_client;
+
+use auth::get_token;
 use fig_settings::api_host;
 pub use reqwest;
 use reqwest::cookie::Cookie;
@@ -18,7 +22,7 @@ use serde_json::Value;
 use thiserror::Error;
 
 pub fn client() -> Option<&'static Client> {
-    fig_auth::reqwest_client()
+    reqwest_client::reqwest_client()
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
@@ -35,12 +39,22 @@ pub enum Error {
     Graphql(#[from] GraphqlError),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
-    #[error(transparent)]
-    Auth(#[from] fig_auth::Error),
     #[error("Status {0}")]
     Status(StatusCode),
+    #[error(transparent)]
+    Serde(#[from] serde_json::Error),
+    #[error(transparent)]
+    Defaults(#[from] defaults::DefaultsError),
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
+    #[error(transparent)]
+    Dir(#[from] fig_util::directories::DirectoryError),
+    #[error(transparent)]
+    RefreshError(#[from] auth::RefreshError),
     #[error("No client")]
     NoClient,
+    #[error("No token")]
+    NoToken,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -72,12 +86,20 @@ pub enum GraphqlResponse<T> {
     Errors(GraphqlError),
 }
 
-pub struct Request {
+pub trait Auth {}
+
+pub struct AddAuth;
+impl Auth for AddAuth {}
+
+pub struct NoAuth;
+impl Auth for NoAuth {}
+
+pub struct Request<A: Auth> {
     builder: Option<RequestBuilder>,
-    auth: bool,
+    _auth: A,
 }
 
-impl Request {
+impl Request<NoAuth> {
     pub fn new(method: Method, endpoint: impl AsRef<str>) -> Self {
         let mut url = api_host();
         url.set_path(endpoint.as_ref());
@@ -86,7 +108,7 @@ impl Request {
             builder: client()
                 .as_ref()
                 .map(|client| client.request(method, url).header("Accept", "application/json")),
-            auth: false,
+            _auth: NoAuth,
         }
     }
 
@@ -102,51 +124,11 @@ impl Request {
         Self::new(Method::DELETE, endpoint)
     }
 
-    pub fn body(self, body: impl Serialize) -> Self {
-        Self {
-            builder: self.builder.map(|builder| builder.json(&body)),
-            ..self
-        }
-    }
-
-    pub fn query<Q: Serialize + ?Sized>(self, query: &Q) -> Self {
-        Self {
-            builder: self.builder.map(|builder| builder.query(query)),
-            ..self
-        }
-    }
-
-    /// Adds fig auth to the request, this can be expensive if the token needs to be
-    /// refreshed so only use when needed.
-    pub fn auth(self) -> Self {
-        Self { auth: true, ..self }
-    }
-
-    /// Adds namespace to request. Pass `None` to use the user namespace
-    pub fn namespace(self, namespace: Option<impl AsRef<str>>) -> Self {
-        if let Some(namespace) = namespace {
-            return self.query(&[("namespace", namespace.as_ref())]);
-        }
-        self
-    }
-
     pub async fn send(self) -> Result<Response> {
         match self.builder {
-            Some(builder) => {
-                let builder = match self.auth {
-                    true => {
-                        let token = match std::env::var("FIG_TOKEN") {
-                            Ok(token) => token,
-                            Err(_) => get_token().await?,
-                        };
-                        builder.bearer_auth(token)
-                    },
-                    false => builder,
-                };
-                Ok(Response {
-                    inner: builder.send().await?,
-                })
-            },
+            Some(builder) => Ok(Response {
+                inner: builder.send().await?,
+            }),
             None => Err(Error::NoClient),
         }
     }
@@ -163,10 +145,17 @@ impl Request {
         self.deser_json().await
     }
 
-    /// Raw body text
+    /// Body text (parses fig errors)
     pub async fn text(self) -> Result<String> {
         let response = self.send().await?;
         let text = response.handle_fig_response().await?.text().await?;
+        Ok(text)
+    }
+
+    /// Raw text (does not parse fig errors)
+    pub async fn raw_text(self) -> Result<String> {
+        let response = self.send().await?;
+        let text = response.inner.text().await?;
         Ok(text)
     }
 
@@ -188,6 +177,103 @@ impl Request {
 
     pub async fn response(self) -> Result<Response> {
         self.send().await
+    }
+}
+
+impl Request<AddAuth> {
+    pub async fn send(self) -> Result<Response> {
+        match self.builder {
+            Some(builder) => {
+                let token = match std::env::var("FIG_TOKEN") {
+                    Ok(token) => token,
+                    Err(_) => get_token().await?,
+                };
+                let builder = builder.bearer_auth(token);
+                Ok(Response {
+                    inner: builder.send().await?,
+                })
+            },
+            None => Err(Error::NoClient),
+        }
+    }
+
+    /// Deserialize json to `T: [DeserializeOwned]`
+    pub async fn deser_json<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
+        let response = self.send().await?;
+        let json = response.handle_fig_response().await?.json().await?;
+        Ok(json)
+    }
+
+    /// Deserialize json to a [`serde_json::Value`]
+    pub async fn json(self) -> Result<Value> {
+        self.deser_json().await
+    }
+
+    /// Body text (parses fig errors)
+    pub async fn text(self) -> Result<String> {
+        let response = self.send().await?;
+        let text = response.handle_fig_response().await?.text().await?;
+        Ok(text)
+    }
+
+    /// Raw text (does not parse fig errors)
+    pub async fn raw_text(self) -> Result<String> {
+        let response = self.send().await?;
+        let text = response.inner.text().await?;
+        Ok(text)
+    }
+
+    /// Raw body bytes
+    pub async fn bytes(self) -> Result<bytes::Bytes> {
+        let response = self.send().await?;
+        let bytes = response.handle_fig_response().await?.bytes().await?;
+        Ok(bytes)
+    }
+
+    pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
+        let response = self.send().await?;
+        match response.json::<GraphqlResponse<T>>().await {
+            Ok(GraphqlResponse::Data(data)) => Ok(data),
+            Ok(GraphqlResponse::Errors(err)) => Err(err.into()),
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    pub async fn response(self) -> Result<Response> {
+        self.send().await
+    }
+}
+
+impl<A: Auth> Request<A> {
+    pub fn body(self, body: impl Serialize) -> Self {
+        Self {
+            builder: self.builder.map(|builder| builder.json(&body)),
+            ..self
+        }
+    }
+
+    pub fn query<Q: Serialize + ?Sized>(self, query: &Q) -> Self {
+        Self {
+            builder: self.builder.map(|builder| builder.query(query)),
+            ..self
+        }
+    }
+
+    /// Adds fig auth to the request, this can be expensive if the token needs to be
+    /// refreshed so only use when needed.
+    pub fn auth(self) -> Request<AddAuth> {
+        Request {
+            builder: self.builder,
+            _auth: AddAuth,
+        }
+    }
+
+    /// Adds namespace to request. Pass `None` to use the user namespace
+    pub fn namespace(self, namespace: Option<impl AsRef<str>>) -> Self {
+        if let Some(namespace) = namespace {
+            return self.query(&[("namespace", namespace.as_ref())]);
+        }
+        self
     }
 }
 
@@ -265,6 +351,29 @@ impl Response {
                 Err(_) => status_err!(),
             }
         }
+    }
+}
+
+fn parse_fig_error_response(status: StatusCode, text: String) -> Error {
+    assert!(!status.is_success());
+
+    match serde_json::from_str::<ErrorResponse>(&text) {
+        Ok(ErrorResponse { error, sentry_id }) => Error::Fig {
+            error,
+            status,
+            sentry_id,
+        },
+        Err(_) => {
+            if !text.is_empty() {
+                Error::Fig {
+                    error: text,
+                    status,
+                    sentry_id: None,
+                }
+            } else {
+                Error::Status(status)
+            }
+        },
     }
 }
 

@@ -8,7 +8,7 @@ use fig_proto::local::FocusedWindowDataHook;
 use fig_util::Terminal;
 use hashbrown::HashMap;
 use once_cell::sync::Lazy;
-use tracing::log::debug;
+use tracing::debug;
 
 use super::{
     NativeState,

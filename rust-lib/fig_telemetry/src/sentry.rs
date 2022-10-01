@@ -35,7 +35,7 @@ pub fn init_sentry(
 
         sentry::configure_scope(|scope| {
             scope.set_user(Some(sentry::User {
-                email: fig_auth::get_email(),
+                email: fig_request::auth::get_email(),
                 ..sentry::User::default()
             }));
 

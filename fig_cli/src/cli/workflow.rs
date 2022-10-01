@@ -51,7 +51,7 @@ use skim::SkimItem;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use tokio::io::AsyncWriteExt;
-use tracing::log::warn;
+use tracing::warn;
 use tui::{
     BorderStyle,
     CheckBox,

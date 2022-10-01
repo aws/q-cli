@@ -14,7 +14,12 @@ pub async fn emit_alias(user_id: String) -> Result<(), Error> {
 
     let alias = [
         #[cfg(target_os = "macos")]
-        ("previousId".into(), fig_auth::get_default("anonymousId")?.into()),
+        (
+            "previousId".into(),
+            fig_request::defaults::get_default("anonymousId")
+                .map_err(fig_request::Error::from)?
+                .into(),
+        ),
         ("userId".into(), user_id.into()),
     ]
     .into_iter()

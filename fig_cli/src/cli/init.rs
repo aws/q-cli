@@ -11,11 +11,11 @@ use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::tty::IsTty;
 use eyre::Result;
-use fig_auth::is_logged_in;
 use fig_integrations::shell::{
     ShellExt,
     When,
 };
+use fig_request::auth::is_logged_in;
 use fig_sync::dotfiles::api::DotfileData;
 use fig_util::{
     Shell,

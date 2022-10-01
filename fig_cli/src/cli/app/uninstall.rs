@@ -85,8 +85,8 @@ pub async fn uninstall_mac_app(uninstall_args: &UninstallArgs) {
 
     if !uninstall_args.no_open {
         // Open the uninstallation page
-        let email = fig_auth::get_email().unwrap_or_default();
-        let version = fig_auth::get_default("versionAtPreviousLaunch").unwrap_or_default();
+        let email = fig_request::auth::get_email().unwrap_or_default();
+        let version = fig_request::defaults::get_default("versionAtPreviousLaunch").unwrap_or_default();
         fig_util::open_url(format!("https://fig.io/uninstall?email={email}&version={version}",)).ok();
     }
 

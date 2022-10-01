@@ -4,7 +4,7 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_auth::is_logged_in;
+use fig_request::auth::is_logged_in;
 use fig_sync::dotfiles::download_and_notify;
 use fig_sync::dotfiles::notify::{
     notify_terminal,

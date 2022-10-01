@@ -7,12 +7,12 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_auth::get_email;
 use fig_ipc::local::{
     send_hook_to_socket,
     update_command,
 };
 use fig_proto::hooks::new_event_hook;
+use fig_request::auth::get_email;
 use fig_request::reqwest::StatusCode;
 use fig_request::Request;
 use fig_settings::{

@@ -5,8 +5,6 @@ pub enum Error {
     #[error("telemetry is disabled")]
     TelemetryDisabled,
     #[error(transparent)]
-    DefaultsError(#[from] fig_auth::defaults::DefaultsError),
-    #[error(transparent)]
     Request(#[from] fig_request::Error),
     #[error(transparent)]
     SettingsError(#[from] fig_settings::Error),

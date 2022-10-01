@@ -33,7 +33,6 @@ use eyre::{
     ContextCompat,
     Result,
 };
-use fig_auth::get_token;
 use fig_ipc::local::send_hook_to_socket;
 use fig_ipc::{
     BufferedUnixStream,
@@ -51,6 +50,7 @@ use fig_proto::hooks::{
 };
 use fig_proto::local::EnvironmentVariable;
 use fig_proto::ReflectMessage;
+use fig_request::auth::get_token;
 use fig_request::Request;
 use fig_sync::dotfiles::notify::TerminalNotification;
 use fig_util::directories::figterm_socket_path;
@@ -629,7 +629,7 @@ impl InternalSubcommand {
             },
             #[cfg(target_os = "linux")]
             InternalSubcommand::OpenUninstallPage => {
-                if let Some(email) = fig_auth::get_email() {
+                if let Some(email) = fig_request::auth::get_email() {
                     let url = format!(
                         "https://fig.io/uninstall?email={email}&version={}",
                         fig_util::manifest::version().unwrap()

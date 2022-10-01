@@ -11,12 +11,12 @@ use eyre::{
     WrapErr,
 };
 use fig_api_client::settings;
-use fig_auth::is_logged_in;
 use fig_ipc::local::{
     open_ui_element,
     restart_settings_listener,
 };
 use fig_proto::local::UiElement;
+use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use globset::Glob;
 use serde_json::json;

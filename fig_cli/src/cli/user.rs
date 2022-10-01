@@ -7,13 +7,10 @@ use eyre::{
     bail,
     Result,
 };
-use fig_auth::cognito::{
-    get_client,
+use fig_request::auth::{
     Credentials,
     SignInConfirmError,
-    SignInError,
     SignInInput,
-    SignUpInput,
 };
 use fig_request::Request;
 use fig_settings::state;
@@ -60,12 +57,10 @@ impl RootUserSubcommand {
                 hard_refresh,
                 switchable,
             } => {
-                let client = get_client()?;
-
                 if refresh || hard_refresh {
                     let mut creds = Credentials::load_credentials()?;
                     if creds.is_expired() || hard_refresh {
-                        creds.refresh_credentials(&client, None).await?;
+                        creds.refresh_credentials().await?;
                         creds.save_credentials()?;
                     }
                     return Ok(());
@@ -90,21 +85,12 @@ impl RootUserSubcommand {
                 };
 
                 let trimmed_email = email.trim();
-                let sign_in_input = SignInInput::new(&client, trimmed_email, None);
+                let sign_in_input = SignInInput::new(trimmed_email);
 
                 println!("Sending login code to {trimmed_email}...");
                 println!("Please check your email for the code");
 
-                let mut sign_in_output = match sign_in_input.sign_in().await {
-                    Ok(out) => out,
-                    Err(err) => match err {
-                        SignInError::UserNotFound(_) => {
-                            SignUpInput::new(&client, &email, None).sign_up().await?;
-                            sign_in_input.sign_in().await?
-                        },
-                        err => return Err(err.into()),
-                    },
-                };
+                let mut sign_in_output = sign_in_input.sign_in().await?;
 
                 loop {
                     let login_code: String = dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
@@ -159,11 +145,11 @@ impl RootUserSubcommand {
                             return Ok(());
                         },
                         Err(err) => match err {
-                            SignInConfirmError::ErrorCodeMismatch => {
+                            SignInConfirmError::InvalidCode => {
                                 println!("Code mismatch, try again...");
                                 continue;
                             },
-                            SignInConfirmError::NotAuthorized => {
+                            SignInConfirmError::TooManyAttempts => {
                                 return Err(eyre::eyre!(
                                     "Not authorized, you may have entered the wrong code too many times."
                                 ));
@@ -251,7 +237,7 @@ impl UserSubcommand {
         match self {
             Self::Root(cmd) => cmd.execute().await,
             Self::Tokens(cmd) => cmd.execute().await,
-            Self::Whoami { format, only_email } => match fig_auth::get_email() {
+            Self::Whoami { format, only_email } => match fig_request::auth::get_email() {
                 Some(email) => {
                     if only_email {
                         match format {

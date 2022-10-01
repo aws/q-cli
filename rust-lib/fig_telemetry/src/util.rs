@@ -34,7 +34,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     let mut prop = Map::new();
 
     // legacy, to remove
-    if let Some(email) = fig_auth::get_email() {
+    if let Some(email) = fig_request::auth::get_email() {
         if let Some(domain) = email.split('@').last() {
             prop.insert("domain".into(), domain.into());
         }
@@ -42,7 +42,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     }
 
     #[cfg(target_os = "macos")]
-    if let Ok(version) = fig_auth::get_default("versionAtPreviousLaunch") {
+    if let Ok(version) = fig_request::defaults::get_default("versionAtPreviousLaunch") {
         if let Some((version, build)) = version.split_once(',') {
             prop.insert("desktop_version".into(), version.into());
             prop.insert("desktop_legacy_build".into(), build.into());

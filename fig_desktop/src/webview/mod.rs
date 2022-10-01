@@ -327,7 +327,7 @@ pub fn build_dashboard(
         page,
     }: MissionControlOptions,
 ) -> wry::Result<WebView> {
-    let is_visible = !fig_auth::is_logged_in() || force_visible || show_onboarding;
+    let is_visible = !fig_request::auth::is_logged_in() || force_visible || show_onboarding;
 
     let mut window = WindowBuilder::new()
         .with_title("Fig")

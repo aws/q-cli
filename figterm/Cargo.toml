@@ -21,7 +21,6 @@ cfg-if = "1.0.0"
 clap = { version = "3.2.20", features = ["derive"] }
 dashmap = "5.3.4"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
-fig_auth = { path = "../rust-lib/fig_auth" }
 fig_color = { path = "../rust-lib/fig_color" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_log = { version = "0.1.0", path = "../rust-lib/fig_log" }

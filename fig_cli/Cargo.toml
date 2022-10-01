@@ -30,7 +30,6 @@ deno_runtime = { version = "0.79.0", optional = true }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 eyre = "0.6.8"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
-fig_auth = { path = "../rust-lib/fig_auth" }
 fig_daemon = { path = "../rust-lib/fig_daemon" }
 fig_install = { path = "../rust-lib/fig_install" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }
