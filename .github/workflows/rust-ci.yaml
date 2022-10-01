@@ -249,7 +249,7 @@ jobs:
         uses: actions-rs/cargo@v1
         with:
           command: llvm-cov
-          args: --workspace --locked --lcov --output-path lcov.info
+          args: --workspace --jobs 1 --locked --lcov --output-path lcov.info
 
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
