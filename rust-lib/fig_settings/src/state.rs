@@ -80,7 +80,7 @@ mod test {
     use super::*;
 
     /// General read/write state test
-    #[test]
+    #[fig_test::test]
     fn test_state() -> Result<()> {
         let path = tempfile::tempdir().unwrap().into_path().join("local.json");
         std::env::set_var("FIG_DIRECTORIES_STATE_PATH", &path);

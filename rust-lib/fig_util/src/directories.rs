@@ -57,7 +57,6 @@ macro_rules! windows {
     ($value:expr, @$snapshot:literal) => {
         #[cfg(target_os = "windows")]
         assert_directory!($value, @$snapshot)
-
     };
 }
 
@@ -261,7 +260,7 @@ pub fn themes_dir() -> Result<PathBuf> {
 fn _snapshot_themes_dir() {
     linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
     macos!(themes_dir(), @"/Users/$USER/.fig/themes");
-    windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\themes\themes");
+    windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
 }
 
 /// The path to the cloned repo containing the themes
@@ -369,7 +368,7 @@ pub fn fig_socket_path() -> Result<PathBuf> {
 fn _snapshot_fig_socket_path() {
     linux!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
     macos!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
-    windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.sock");
+    windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.socket");
 }
 
 /// Get path to the daemon socket
@@ -411,7 +410,7 @@ pub fn secure_socket_path() -> Result<PathBuf> {
 fn _snapshot_secure_socket_path() {
     linux!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
     macos!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-    windows!(secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.sock");
+    windows!(secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
 }
 
 /// The path to fig parent socket
@@ -445,7 +444,7 @@ pub fn local_secure_socket_path() -> Result<PathBuf> {
 fn _snapshot_local_secure_socket_path() {
     linux!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
     macos!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-    windows!(local_secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.sock");
+    windows!(local_secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
 }
 
 /// Get path to a figterm socket
@@ -625,7 +624,7 @@ mod test {
         test_path_name!(ssh_saved_identities, "ssh_saved_identities");
     }
 
-    #[test]
+    #[fig_test::test]
     fn environment_paths() {
         macro_rules! test_environment_path {
             ($path:expr, $name:literal) => {
