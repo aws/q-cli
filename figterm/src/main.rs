@@ -42,6 +42,7 @@ use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::StructOpt;
 use cli::Cli;
+use crossterm::style::Stylize;
 use fig_proto::local::{
     self,
     EnvironmentVariable,
@@ -71,6 +72,11 @@ use parking_lot::{
     RwLock,
 };
 use portable_pty::PtySize;
+use regex::Regex;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use tokio::io::{
     self,
     AsyncWriteExt,
@@ -325,6 +331,63 @@ fn launch_shell() -> Result<()> {
     unreachable!()
 }
 
+#[derive(Debug, Serialize, Deserialize)]
+struct Lint {
+    pub name: String,
+    pub level: Option<String>,
+    pub description: Option<String>,
+    pub regex: String,
+    #[serde(default)]
+    pub confirm: bool,
+}
+
+async fn fig_lint(current_line: &str) {
+    if let Ok(lints) = tokio::fs::read_to_string(".fig/lints.json").await {
+        let lints: Option<Vec<Lint>> = serde_json::from_str(&lints).ok();
+        if let Some(lints) = lints {
+            for lint in lints {
+                if let Ok(regex) = Regex::new(&lint.regex) {
+                    if regex.is_match(current_line) {
+                        let level = match lint.level.as_deref() {
+                            Some("error") => "error",
+                            Some("warning") => "warning",
+                            _ => "info",
+                        };
+
+                        let output = match &lint.description {
+                            Some(description) => format!("{}\n{}", lint.name, description),
+                            None => lint.name,
+                        };
+
+                        let output = match level {
+                            "error" => format!("{}: {}", "ERROR".red(), output),
+                            "warning" => format!("{}: {}", "WARNING".yellow(), output),
+                            _ => output,
+                        };
+
+                        crossterm::queue!(
+                            std::io::stdout(),
+                            crossterm::terminal::ScrollUp(1),
+                            crossterm::cursor::MoveToNextLine(1),
+                        )
+                        .ok();
+
+                        for line in output.lines() {
+                            crossterm::queue!(
+                                std::io::stdout(),
+                                crossterm::style::Print(line),
+                                crossterm::terminal::ScrollUp(1),
+                                crossterm::cursor::MoveToNextLine(1),
+                            )
+                            .ok();
+                        }
+                    }
+                }
+            }
+        }
+    }
+}
+
 fn figterm_main() -> Result<()> {
     let term_session_id = match env::var("TERM_SESSION_ID") {
         Ok(term_session_id) => term_session_id,
@@ -462,6 +525,8 @@ fn figterm_main() -> Result<()> {
             }
         }
 
+        let lints_enabled = fig_settings::settings::get_bool_or("product-gate.fig.lints.enabled", false);
+
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
@@ -509,6 +574,12 @@ fn figterm_main() -> Result<()> {
                                                     master.write_all(&write_buffer).await?;
                                                     continue 'select_loop;
                                                 }
+                                            }
+                                        }
+
+                                        if lints_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                                            if let Some(TextBuffer { buffer, .. }) = term.get_current_buffer() {
+                                                fig_lint(buffer.trim()).await;
                                             }
                                         }
 

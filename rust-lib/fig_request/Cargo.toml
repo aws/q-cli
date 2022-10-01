@@ -25,7 +25,7 @@ rustls-pemfile = "1.0.1"
 serde = { version = "1.0.143", features = ["derive"] }
 serde_json = "1.0.85"
 thiserror = "1.0.36"
-time = { version = "0.3.14", features = ["local-offset"] }
+time = { version = "0.3.14", features = ["local-offset", "serde-well-known"] }
 tracing = "0.1.36"
 url = "2.3.1"
 webpki-roots = "0.22.5"

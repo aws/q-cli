@@ -1,0 +1,2 @@
+[alias]
+fig-test = "test -j 1"

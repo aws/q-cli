@@ -1,0 +1,8 @@
+[
+  {
+    "name": "Cargo test can leak environment variables between tests",
+    "description": "\nIf you want to run a test that sets an environment variable\nyou should run `cargo fig-test`\n",
+    "level": "warning",
+    "regex": "^cargo test$"
+  }
+]
