@@ -1,7 +1,6 @@
 #![allow(non_upper_case_globals)]
 use core_foundation_sys::base::CFIndex;
 
-// hi grant
 pub const kAXMainWindowChangedNotification: &str = "AXMainWindowChanged";
 pub const kAXFocusedWindowChangedNotification: &str = "AXFocusedWindowChanged";
 pub const kAXFocusedUIElementChangedNotification: &str = "AXFocusedUIElementChanged";

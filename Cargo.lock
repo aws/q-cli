@@ -596,6 +596,11 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0d8c1fef690941d3e7788d328517591fecc684c084084702d6ff1641e993699a"
 
 [[package]]
+name = "block"
+version = "0.1.6"
+source = "git+https://github.com/sullivan-sean/rust-block#185601949b75cf260110d9422e2ee1f9e71b1478"
+
+[[package]]
 name = "block-buffer"
 version = "0.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -951,7 +956,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6f63902e9223530efb4e26ccd0cf55ec30d592d3b42e21a28defc42a9586e832"
 dependencies = [
  "bitflags",
- "block",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "cocoa-foundation",
  "core-foundation",
  "core-graphics",
@@ -967,7 +972,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "7ade49b65d560ca58c403a479bb396592b155c0185eada742ee323d1d68d6318"
 dependencies = [
  "bitflags",
- "block",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "core-foundation",
  "core-graphics-types",
  "foreign-types",
@@ -2540,6 +2545,7 @@ dependencies = [
 name = "fig_desktop"
 version = "2.5.2"
 dependencies = [
+ "accessibility-sys",
  "anyhow",
  "async-trait",
  "base64",
@@ -2547,6 +2553,7 @@ dependencies = [
  "camino",
  "cfg-if 1.0.0",
  "clap",
+ "core-foundation",
  "dashmap",
  "dbus",
  "fig_api_client",
@@ -4365,10 +4372,16 @@ dependencies = [
  "accessibility",
  "accessibility-sys",
  "appkit-nsworkspace-bindings",
+ "block 0.1.6 (git+https://github.com/sullivan-sean/rust-block)",
  "cocoa",
  "core-foundation",
  "core-graphics",
+ "dashmap",
+ "flume",
+ "fnv",
  "lazy_static",
+ "objc",
+ "parking_lot 0.12.1",
  "tracing",
 ]
 
@@ -4480,7 +4493,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "de11355d1f6781482d027a3b4d4de7825dcedb197bf573e0596d00008402d060"
 dependencies = [
  "bitflags",
- "block",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "core-graphics-types",
  "foreign-types",
  "log",
@@ -4912,7 +4925,7 @@ version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1add1b659e36c9607c7aab864a76c7a4c2760cd0cd2e120f3fb8b952c7e22bf9"
 dependencies = [
- "block",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "objc",
  "objc_id",
 ]
@@ -8498,7 +8511,7 @@ dependencies = [
  "ash",
  "bit-set",
  "bitflags",
- "block",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "core-graphics-types",
  "d3d12",
  "foreign-types",
@@ -8855,7 +8868,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "ff5c1352b4266fdf92c63479d2f58ab4cd29dc4e78fbc1b62011ed1227926945"
 dependencies = [
  "base64",
- "block",
+ "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
  "cocoa",
  "core-graphics",
  "crossbeam-channel 0.5.6",

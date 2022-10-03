@@ -27,8 +27,8 @@ use core_foundation::base::{
 use core_foundation::string::CFString;
 use core_graphics::geometry::CGRect;
 use tracing::{
+    debug,
     error,
-    trace,
 };
 
 #[derive(Debug)]
@@ -48,7 +48,6 @@ const INVALID_CARET_POSITION: CaretPosition = CaretPosition {
 
 #[allow(clippy::missing_safety_doc)]
 pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
-    trace!("Getting caret position...");
     let system_wide_element: AXUIElement = AXUIElement::system_wide();
 
     // Get the focused element
@@ -139,6 +138,6 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
         y: select_rect.origin.y,
         height: select_rect.size.height,
     };
-    trace!("Got position {result:?}");
+    debug!("Got position {result:?}");
     result
 }

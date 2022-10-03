@@ -6,10 +6,16 @@ publish = false
 
 [target.'cfg(target_os = "macos")'.dependencies]
 lazy_static = "1.4"
+block = { git = "https://github.com/sullivan-sean/rust-block" }
 core-graphics = "0.22"
 core-foundation = "0.9"
 cocoa = "0.24"
+objc = "0.2"
+dashmap = "5.3.4"
+flume = "0.10.14"
+fnv = "1.0.7"
 accessibility-sys = { path = "./accessibility-master/accessibility-sys", version = "0.1.3" }
+parking_lot = "0.12.1"
 accessibility = { path = "./accessibility-master/accessibility", version = "0.1.6" }
 appkit-nsworkspace-bindings = { path = "./appkit-nsworkspace-bindings", version = "0.1.0" }
 tracing = "0.1.36"

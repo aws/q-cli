@@ -34,10 +34,11 @@ use core_foundation::string::{
 use core_graphics::display::*;
 
 use super::core_graphics_patch::CGRectMakeWithDictionaryRepresentation;
-use super::window_position::FromCgRect;
-use crate::general::active_window::ActiveWindow;
-use crate::general::platform_api::PlatformApi;
-use crate::general::window_position::WindowPosition;
+use super::window_position::{
+    FromCgRect,
+    WindowPosition,
+};
+use super::ActiveWindow;
 
 #[allow(non_upper_case_globals)]
 pub const kCFNumberSInt32Type: CFNumberType = 3;
@@ -53,18 +54,18 @@ enum DictEntryValue {
     Unknown,
 }
 
-pub struct MacPlatformApi {}
+pub struct PlatformApi {}
 
-impl PlatformApi for MacPlatformApi {
-    fn get_position(&self) -> Result<WindowPosition, ()> {
-        if let Ok(active_window) = self.get_active_window() {
+impl PlatformApi {
+    pub fn get_position() -> Result<WindowPosition, &'static str> {
+        if let Ok(active_window) = PlatformApi::get_active_window() {
             return Ok(active_window.position);
         }
 
-        Err(())
+        Err("Could not get active window position")
     }
 
-    fn get_active_window(&self) -> Result<ActiveWindow, ()> {
+    pub fn get_active_window() -> Result<ActiveWindow, &'static str> {
         const OPTIONS: CGWindowListOption = kCGWindowListOptionOnScreenOnly | kCGWindowListExcludeDesktopElements;
         let window_list_info = unsafe { CGWindowListCopyWindowInfo(OPTIONS, kCGNullWindowID) };
 
@@ -119,7 +120,7 @@ impl PlatformApi for MacPlatformApi {
 
         unsafe { CFRelease(window_list_info as CFTypeRef) }
 
-        Err(())
+        Err("Could not get active window")
     }
 }
 

@@ -4,14 +4,22 @@ use anyhow::{
     anyhow,
     Result,
 };
-use macos_accessibility_position::mac::caret::caret_position::CaretPosition;
-use macos_accessibility_position::mac::caret::get_caret_position;
+use macos_accessibility_position::caret_position::{
+    get_caret_position,
+    CaretPosition,
+};
 use macos_accessibility_position::{
     get_active_window,
     register_observer,
+    WindowServer,
+    WindowServerEvent,
 };
 use once_cell::sync::Lazy;
-use parking_lot::RwLock;
+use parking_lot::{
+    Mutex,
+    RwLock,
+};
+use tracing::warn;
 
 use super::WindowGeometry;
 use crate::event::{
@@ -30,7 +38,7 @@ pub const DEFAULT_CARET_WIDTH: i32 = 10;
 pub const SHELL: &str = "/bin/bash";
 
 #[derive(Debug, Default)]
-pub struct NativeState;
+pub struct NativeState {}
 
 impl NativeState {
     pub fn new(_proxy: EventLoopProxy) -> Self {
@@ -101,17 +109,34 @@ impl NativeState {
 
 static UNMANAGED: Lazy<Unmanaged> = Lazy::new(|| Unmanaged {
     event_sender: RwLock::new(Option::<EventLoopProxy>::None),
+    window_server: RwLock::new(Option::<Arc<Mutex<WindowServer>>>::None),
 });
 
 struct Unmanaged {
     event_sender: RwLock<Option<EventLoopProxy>>,
+    window_server: RwLock<Option<Arc<Mutex<WindowServer>>>>,
 }
 
 pub async fn init(proxy: EventLoopProxy, _native_state: Arc<NativeState>) -> Result<()> {
+    let observer_proxy = proxy.clone();
     UNMANAGED.event_sender.write().replace(proxy);
-    // tokio::spawn(async { handle_macos().await });
     unsafe {
-        register_observer();
+        let (tx, rx) = flume::unbounded::<WindowServerEvent>();
+        UNMANAGED.window_server.write().replace(register_observer(tx));
+        tokio::spawn(async move {
+            while let Ok(result) = rx.recv_async().await {
+                match result {
+                    WindowServerEvent::FocusChanged { .. } => {
+                        if let Err(e) = observer_proxy.send_event(Event::WindowEvent {
+                            window_id: AUTOCOMPLETE_ID,
+                            window_event: WindowEvent::Hide,
+                        }) {
+                            warn!("Error sending event: {e:?}");
+                        }
+                    },
+                }
+            }
+        });
     }
     Ok(())
 }

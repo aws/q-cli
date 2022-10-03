@@ -1,29 +1,51 @@
 #![cfg(target_os = "macos")]
 
-mod general;
+pub mod platform_api;
+mod util;
+mod window_position;
+pub mod window_server;
 
-pub mod mac;
-pub use general::active_window::ActiveWindow;
-use general::platform_api::PlatformApi;
-pub use general::window_position::WindowPosition;
-use general::window_server::WindowServer;
-use mac::{
-    init_platform_api,
-    init_window_server,
+use window_position::WindowPosition;
+
+pub mod caret_position;
+mod core_graphics_patch;
+use std::sync::Arc;
+
+use flume::Sender;
+use parking_lot::Mutex;
+use platform_api::PlatformApi;
+use window_server::subscribe_to_all;
+pub use window_server::{
+    WindowServer,
+    WindowServerEvent,
 };
 
+#[derive(Debug)]
+pub struct ActiveWindow {
+    pub window_id: String,
+    // Or pass complete application object???
+    pub process_id: u64,
+    pub position: WindowPosition,
+    pub bundle_id: String,
+}
+
 pub fn get_position() -> Option<WindowPosition> {
-    let api = init_platform_api();
-    api.get_position().ok()
+    PlatformApi::get_position().ok()
 }
 
 pub fn get_active_window() -> Option<ActiveWindow> {
-    let api = init_platform_api();
-    api.get_active_window().ok()
+    PlatformApi::get_active_window().ok()
 }
 
 #[allow(clippy::missing_safety_doc)]
-pub unsafe fn register_observer() {
-    let api = init_window_server();
-    api.register_observer();
+pub unsafe fn register_observer(sender: Sender<WindowServerEvent>) -> Arc<Mutex<WindowServer>> {
+    let server = WindowServer::new(sender);
+    let window_server = Arc::new(Mutex::new(server));
+    subscribe_to_all(&window_server);
+
+    let server = window_server.clone();
+    let mut locked = server.lock();
+    locked.init();
+
+    window_server
 }

@@ -1,3 +1,5 @@
+use core_graphics::display::CGRect;
+
 #[derive(Debug)]
 pub struct WindowPosition {
     pub x: f64,
@@ -14,5 +16,15 @@ impl WindowPosition {
             width: w,
             height: h,
         }
+    }
+}
+
+pub trait FromCgRect {
+    fn from_cg_rect(cgrect: &CGRect) -> WindowPosition;
+}
+
+impl FromCgRect for WindowPosition {
+    fn from_cg_rect(cgrect: &CGRect) -> Self {
+        Self::new(cgrect.origin.x, cgrect.origin.y, cgrect.size.width, cgrect.size.height)
     }
 }

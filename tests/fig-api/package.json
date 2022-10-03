@@ -13,6 +13,7 @@
     "typescript": "^4.8.4"
   },
   "scripts": {
-    "test": "jest"
+    "test": "jest",
+    "precommit": "exit 0"
   }
 }
