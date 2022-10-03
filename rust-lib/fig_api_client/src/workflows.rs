@@ -15,22 +15,35 @@ pub enum Generator {
     Script { script: String },
 }
 
+#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[serde(rename_all = "kebab-case")]
+pub enum FileType {
+    Any,
+    FileOnly,
+    FolderOnly,
+}
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type", content = "typeData")]
 #[serde(rename_all = "camelCase")]
 pub enum ParameterType {
+    #[serde(rename_all = "camelCase")]
+    Selector {
+        placeholder: Option<String>,
+        suggestions: Option<Vec<String>>,
+        generators: Option<Vec<Generator>>,
+    },
+    #[serde(rename_all = "camelCase")]
+    Text { placeholder: Option<String> },
     #[serde(rename_all = "camelCase")]
     Checkbox {
         true_value_substitution: String,
         false_value_substitution: String,
     },
     #[serde(rename_all = "camelCase")]
-    Text { placeholder: Option<String> },
-    #[serde(rename_all = "camelCase")]
-    Selector {
-        placeholder: Option<String>,
-        suggestions: Option<Vec<String>>,
-        generators: Option<Vec<Generator>>,
+    Path {
+        file_type: FileType,
+        extensions: Vec<String>,
     },
 }
 

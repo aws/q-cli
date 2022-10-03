@@ -46,40 +46,40 @@ impl StyleSheet {
         let mut style = Style::default();
 
         if let Some(all) = self.0.get("*") {
-            style = style.apply(all);
+            style.apply(all);
         }
         if hovered {
             if let Some(all_hover) = self.0.get("*:hover") {
-                style = style.apply(all_hover);
+                style.apply(all_hover);
             }
         }
         if focused {
             if let Some(all_focus) = self.0.get("*:focus") {
-                style = style.apply(all_focus);
+                style.apply(all_focus);
             }
         }
         if active {
             if let Some(all_active) = self.0.get("*:active") {
-                style = style.apply(all_active);
+                style.apply(all_active);
             }
         }
 
         if let Some(all) = self.0.get(&selector.as_ref().to_string()) {
-            style = style.apply(all);
+            style.apply(all);
         }
         if hovered {
             if let Some(all_hover) = self.0.get(&format!("{}:hover", selector.as_ref())) {
-                style = style.apply(all_hover);
+                style.apply(all_hover);
             }
         }
         if focused {
             if let Some(all_focus) = self.0.get(&format!("{}:focus", selector.as_ref())) {
-                style = style.apply(all_focus);
+                style.apply(all_focus);
             }
         }
         if active {
             if let Some(all_active) = self.0.get(&format!("{}:active", selector.as_ref())) {
-                style = style.apply(all_active);
+                style.apply(all_active);
             }
         }
 

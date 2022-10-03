@@ -574,55 +574,6 @@ mod deprecated {
 mod test {
     use super::*;
 
-    #[test]
-    fn path_names() {
-        macro_rules! test_path_name {
-            ($path:expr, $name:expr) => {
-                assert_eq!(
-                    $path().unwrap().file_name().unwrap().to_str().unwrap(),
-                    $name
-                );
-            };
-        }
-
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "linux")] {
-                test_path_name!(fig_dir, ".fig");
-                test_path_name!(fig_data_dir, "fig");
-                test_path_name!(sockets_dir, whoami::username());
-                test_path_name!(backups_dir, ".fig.dotfiles.bak");
-                test_path_name!(manifest_path, "manifest.json");
-            } else if #[cfg(target_os = "macos")] {
-                test_path_name!(fig_dir, ".fig");
-                test_path_name!(fig_data_dir, "fig");
-                test_path_name!(sockets_dir, whoami::username());
-                test_path_name!(host_sockets_dir, whoami::username());
-                test_path_name!(backups_dir, ".fig.dotfiles.bak");
-            }  else if #[cfg(target_os = "windows")] {
-                test_path_name!(fig_dir, "Fig");
-                test_path_name!(fig_data_dir, "userdata");
-                test_path_name!(sockets_dir, "sockets");
-                test_path_name!(host_sockets_dir, "sockets");
-                test_path_name!(managed_binaries_dir, "bin");
-                test_path_name!(backups_dir, "backups");
-                test_path_name!(managed_fig_cli_path, "fig.exe");
-                test_path_name!(manifest_path, "manifest.json");
-            }
-        }
-
-        test_path_name!(themes_dir, "themes");
-        test_path_name!(themes_repo_dir, "themes");
-        test_path_name!(plugins_dir, "plugins");
-        test_path_name!(logs_dir, "logs");
-        test_path_name!(workflows_cache_dir, "workflows");
-        test_path_name!(fig_socket_path, "fig.socket");
-        test_path_name!(daemon_socket_path, "daemon.socket");
-        test_path_name!(local_secure_socket_path, "secure.socket");
-        test_path_name!(settings_path, "settings.json");
-        test_path_name!(state_path, "state.json");
-        test_path_name!(ssh_saved_identities, "ssh_saved_identities");
-    }
-
     #[fig_test::test]
     fn environment_paths() {
         macro_rules! test_environment_path {

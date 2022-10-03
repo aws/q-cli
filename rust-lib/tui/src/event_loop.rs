@@ -65,7 +65,9 @@ impl EventLoop {
                     for input_action in InputAction::from_key(input_method, code, modifiers) {
                         match input_action {
                             InputAction::Submit => {
-                                if component.next(style_sheet, false).is_none() {
+                                if component.on_input_action(style_sheet, input_action)
+                                    && component.next(style_sheet, false).is_none()
+                                {
                                     *control_flow = ControlFlow::Exit(0);
                                 }
                             },
@@ -81,7 +83,9 @@ impl EventLoop {
                             InputAction::Reenter => {
                                 *control_flow = ControlFlow::Reenter(1);
                             },
-                            _ => component.on_input_action(style_sheet, input_action),
+                            _ => {
+                                component.on_input_action(style_sheet, input_action);
+                            },
                         }
                     }
                 },

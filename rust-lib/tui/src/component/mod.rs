@@ -1,5 +1,6 @@
 mod check_box;
 mod container;
+mod file_picker;
 mod label;
 mod paragraph;
 mod select;
@@ -7,11 +8,9 @@ mod text_field;
 
 pub use check_box::CheckBox;
 pub use container::Container;
+pub use file_picker::FilePicker;
 pub use label::Label;
-use newton::{
-    Color,
-    DisplayState,
-};
+use newton::DisplayState;
 pub use paragraph::Paragraph;
 pub use select::Select;
 pub use text_field::TextField;
@@ -23,18 +22,10 @@ use crate::{
     StyleSheet,
 };
 
-macro_rules! with_style_field {
-    ($i:ident, $k:ident, $v:ident) => {
-        pub fn $i(mut self, $k: $v) -> Self {
-            self.style = self.style.$i($k);
-            self
-        }
-    };
-}
-
 pub enum ComponentType {
     CheckBox(CheckBox),
     Container(Box<Container>),
+    FilePicker(FilePicker),
     Label(Label),
     Paragraph(Paragraph),
     Select(Select),
@@ -43,7 +34,7 @@ pub enum ComponentType {
 
 pub struct Component {
     inner: ComponentType,
-    style: Style,
+    pub style: Style,
     pub(crate) width: i32,
     pub(crate) height: i32,
     hovered: bool,
@@ -52,56 +43,6 @@ pub struct Component {
 }
 
 impl Component {
-    with_style_field!(with_color, color, Color);
-
-    with_style_field!(with_background_color, background_color, Color);
-
-    with_style_field!(with_margin_top, margin_top, i32);
-
-    with_style_field!(with_margin_bottom, margin_bottom, i32);
-
-    with_style_field!(with_margin_left, margin_left, i32);
-
-    with_style_field!(with_margin_right, margin_right, i32);
-
-    with_style_field!(with_border_top_width, border_top_width, i32);
-
-    with_style_field!(with_border_bottom_width, border_bottom_width, i32);
-
-    with_style_field!(with_border_left_width, border_left_width, i32);
-
-    with_style_field!(with_border_right_width, border_right_width, i32);
-
-    with_style_field!(with_border_style, border_style, BorderStyle);
-
-    with_style_field!(with_border_top_color, border_top_color, Color);
-
-    with_style_field!(with_border_bottom_color, border_bottom_color, Color);
-
-    with_style_field!(with_border_left_color, border_left_color, Color);
-
-    with_style_field!(with_border_right_color, border_right_color, Color);
-
-    with_style_field!(with_height, height, i32);
-
-    with_style_field!(with_max_height, max_height, i32);
-
-    with_style_field!(with_max_width, max_width, i32);
-
-    with_style_field!(with_min_height, min_height, i32);
-
-    with_style_field!(with_min_width, min_width, i32);
-
-    with_style_field!(with_padding_top, padding_top, i32);
-
-    with_style_field!(with_padding_bottom, padding_bottom, i32);
-
-    with_style_field!(with_padding_left, padding_left, i32);
-
-    with_style_field!(with_padding_right, padding_right, i32);
-
-    with_style_field!(with_width, width, i32);
-
     pub fn with_style(mut self, style: Style) -> Self {
         self.style = style;
         self
@@ -123,6 +64,7 @@ impl Component {
         match &mut self.inner {
             ComponentType::CheckBox(c) => c.initialize(&mut self.width, &mut self.height),
             ComponentType::Container(c) => c.initialize(style_sheet, &mut self.width, &mut self.height),
+            ComponentType::FilePicker(c) => c.initialize(&mut self.width, &mut self.height),
             ComponentType::Label(c) => c.initialize(&mut self.width, &mut self.height),
             ComponentType::Paragraph(c) => c.initialize(&mut self.width, &mut self.height),
             ComponentType::Select(c) => c.initialize(&mut self.width, &mut self.height),
@@ -267,6 +209,7 @@ impl Component {
                 screen_width,
                 screen_height,
             ),
+            ComponentType::FilePicker(c) => c.draw(renderer, &style, x, y, width, height),
             ComponentType::Label(c) => c.draw(renderer, &style, x, y, width, height),
             ComponentType::Paragraph(c) => c.draw(renderer, &style, x, y, width, height),
             ComponentType::Select(c) => c.draw(renderer, &style, x, y, width, height),
@@ -294,6 +237,7 @@ impl Component {
         match &self.inner {
             ComponentType::CheckBox(_) => true,
             ComponentType::Container(c) => c.interactive(),
+            ComponentType::FilePicker(_) => true,
             ComponentType::Label(_) => false,
             ComponentType::Paragraph(_) => false,
             ComponentType::Select(_) => true,
@@ -305,6 +249,7 @@ impl Component {
         match &self.inner {
             ComponentType::CheckBox(_) => "input:checkbox",
             ComponentType::Container(_) => "div",
+            ComponentType::FilePicker(_) => "select",
             ComponentType::Label(_) => "h1",
             ComponentType::Paragraph(_) => "p",
             ComponentType::Select(_) => "select",
@@ -313,22 +258,24 @@ impl Component {
     }
 
     pub(crate) fn style(&self, style_sheet: &StyleSheet) -> Style {
-        let style = style_sheet
+        style_sheet
             .get_style(self.class(), self.hovered, self.focused, self.active)
-            .apply(&self.style);
-        style.apply(&self.style)
+            .applied(&self.style)
     }
 
-    pub(crate) fn on_input_action(&mut self, style_sheet: &StyleSheet, input_action: InputAction) {
+    pub(crate) fn on_input_action(&mut self, style_sheet: &StyleSheet, input_action: InputAction) -> bool {
         match &mut self.inner {
             ComponentType::CheckBox(c) => c.on_input_action(input_action),
             ComponentType::Container(c) => {
                 c.on_input_action(style_sheet, &mut self.width, &mut self.height, input_action)
             },
+            ComponentType::FilePicker(c) => return c.on_input_action(&mut self.height, input_action),
             ComponentType::Select(c) => c.on_input_action(&mut self.height, input_action),
             ComponentType::TextField(c) => c.on_input_action(input_action),
             _ => (),
         }
+
+        true
     }
 
     pub(crate) fn on_focus(&mut self, style_sheet: &StyleSheet, focused: bool) {
@@ -336,6 +283,7 @@ impl Component {
 
         match &mut self.inner {
             ComponentType::Container(c) => c.on_focus(focused, style_sheet, &mut self.width, &mut self.height),
+            ComponentType::FilePicker(c) => c.on_focus(&mut self.height, focused),
             ComponentType::Select(c) => c.on_focus(&mut self.height, focused),
             ComponentType::TextField(c) => c.on_focus(focused),
             _ => (),
@@ -361,6 +309,12 @@ impl From<CheckBox> for Component {
 impl From<Container> for Component {
     fn from(from: Container) -> Self {
         Self::new(ComponentType::Container(Box::new(from)))
+    }
+}
+
+impl From<FilePicker> for Component {
+    fn from(from: FilePicker) -> Self {
+        Self::new(ComponentType::FilePicker(from))
     }
 }
 

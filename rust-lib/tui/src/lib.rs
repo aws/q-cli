@@ -13,6 +13,7 @@ pub use component::{
     CheckBox,
     Component,
     Container,
+    FilePicker,
     Label,
     Paragraph,
     Select,

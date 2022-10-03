@@ -21,6 +21,7 @@ use eyre::{
 };
 use fig_api_client::workflows::{
     workflows,
+    FileType,
     Generator,
     Parameter,
     ParameterType,
@@ -61,6 +62,7 @@ use tui::{
     ControlFlow,
     DisplayMode,
     EventLoop,
+    FilePicker,
     InputMethod,
     Label,
     Paragraph,
@@ -518,7 +520,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         },
         "div" => {
             color: Color::DarkGrey;
-            width: 110;
+            width: Some(100);
             padding_top: -1;
             border_left_width: 1;
             border_top_width: 1;
@@ -539,7 +541,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             padding_right: 1;
         },
         "input:text" => {
-            width: 108;
+            width: Some(98);
             padding_left: 1;
             padding_right: 2;
         }
@@ -572,7 +574,10 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 }
             }
 
-            let mut components = vec![Component::from(header).with_margin_bottom(1)];
+            let mut header = Component::from(header);
+            header.style.with_margin_bottom(1);
+
+            let mut components = vec![header];
 
             let input_method;
             match preview {
@@ -621,40 +626,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 false,
                             )),
                             match &parameter.parameter_type {
-                                ParameterType::Checkbox {
-                                    true_value_substitution,
-                                    false_value_substitution,
-                                } => {
-                                    let true_value = true_value_substitution.clone();
-                                    let false_value = false_value_substitution.clone();
-                                    let checked = args
-                                        .borrow_mut()
-                                        .get(&parameter_name)
-                                        .map(|c| c == &true_value)
-                                        .unwrap_or(false);
-
-                                    if !checked {
-                                        args.borrow_mut().insert(parameter_name.clone(), false_value.clone());
-                                    }
-
-                                    Component::from(CheckBox::new(
-                                        parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
-                                        checked,
-                                        move |signal| {
-                                            args.borrow_mut().insert(parameter_name.clone(), match signal {
-                                                true => true_value.clone(),
-                                                false => false_value.clone(),
-                                            });
-                                        },
-                                    ))
-                                },
-                                ParameterType::Text { placeholder } => Component::from(
-                                    TextField::new(move |signal| {
-                                        args.borrow_mut().insert(parameter_name.clone(), signal);
-                                    })
-                                    .with_text(parameter_value)
-                                    .with_hint(placeholder.to_owned().unwrap_or_else(|| "".to_string())),
-                                ),
                                 ParameterType::Selector {
                                     placeholder,
                                     suggestions,
@@ -694,6 +665,58 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                         .with_hint(placeholder.as_deref().unwrap_or("Search...")),
                                     )
                                 },
+                                ParameterType::Text { placeholder } => Component::from(
+                                    TextField::new(move |signal| {
+                                        args.borrow_mut().insert(parameter_name.clone(), signal);
+                                    })
+                                    .with_text(parameter_value)
+                                    .with_hint(placeholder.to_owned().unwrap_or_else(|| "".to_string())),
+                                ),
+                                ParameterType::Checkbox {
+                                    true_value_substitution,
+                                    false_value_substitution,
+                                } => {
+                                    let true_value = true_value_substitution.clone();
+                                    let false_value = false_value_substitution.clone();
+                                    let checked = args
+                                        .borrow_mut()
+                                        .get(&parameter_name)
+                                        .map(|c| c == &true_value)
+                                        .unwrap_or(false);
+
+                                    if !checked {
+                                        args.borrow_mut().insert(parameter_name.clone(), false_value.clone());
+                                    }
+
+                                    Component::from(CheckBox::new(
+                                        parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
+                                        checked,
+                                        move |signal| {
+                                            args.borrow_mut().insert(parameter_name.clone(), match signal {
+                                                true => true_value.clone(),
+                                                false => false_value.clone(),
+                                            });
+                                        },
+                                    ))
+                                },
+                                ParameterType::Path { file_type, extensions } => {
+                                    let (files, folders) = match file_type {
+                                        FileType::Any => (true, true),
+                                        FileType::FileOnly => (true, false),
+                                        FileType::FolderOnly => (false, true),
+                                    };
+
+                                    Component::from(FilePicker::new(
+                                        std::env::current_dir()?,
+                                        files,
+                                        folders,
+                                        extensions.clone(),
+                                        move |signal| {
+                                            args.borrow_mut()
+                                                .insert(parameter_name.clone(), signal.to_string_lossy().to_string());
+                                        },
+                                    ))
+                                },
                             },
                         ])));
                     }
@@ -713,9 +736,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             keybindings.push_styled_text("⌃o", Some(Color::DarkYellow), None, false);
             keybindings.push_styled_text(" preview", Some(Color::Reset), None, false);
 
-            components.push(Component::from(keybindings).with_margin_left(0).with_width(110));
+            let mut keybindings = Component::from(keybindings);
+            keybindings.style.with_margin_left(0).with_width(Some(110));
+            components.push(keybindings);
 
-            let mut view = Component::from(Container::new(components))
+            let mut view = Component::from(Container::new(components));
+            view.style
                 .with_border_style(BorderStyle::None)
                 .with_padding_top(0)
                 .with_margin_left(2)
