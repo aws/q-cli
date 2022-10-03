@@ -148,9 +148,9 @@ pub fn is_app_running() -> bool {
             };
 
             cfg_if! {
-                if #[cfg(target_os = "windows")] {
+                if #[cfg(windows)] {
                     let process_name = "fig_desktop.exe";
-                } else if #[cfg(target_os = "linux")] {
+                } else if #[cfg(unix)] {
                     let process_name = match fig_util::system_info::in_wsl() {
                         true => {
                             let output = match std::process::Command::new("tasklist.exe").args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"]).output() {
@@ -229,6 +229,8 @@ pub fn launch_fig(args: LaunchArgs) -> Result<()> {
                 .creation_flags(DETACHED_PROCESS.0)
                 .spawn()
                 .context("Unable to launch Fig")?;
+        } else {
+            bail!("Launching Fig is not supported on this platform");
         }
     }
 

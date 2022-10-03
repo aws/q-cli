@@ -5,7 +5,7 @@ use cfg_if::cfg_if;
 
 pub fn command(url: impl AsRef<str>) -> Command {
     cfg_if! {
-        if #[cfg(target_os = "linux")] {
+        if #[cfg(any(target_os = "linux", target_os = "freebsd"))] {
             let executable = if crate::system_info::in_wsl() {
                 "wslview"
             } else {

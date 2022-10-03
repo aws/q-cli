@@ -24,7 +24,7 @@ use fig_proto::local::{
     IntegrationAction,
     TerminalIntegrationCommand,
 };
-#[cfg(not(target_os = "windows"))]
+#[cfg(unix)]
 use fig_proto::local::{
     DiagnosticsCommand,
     DiagnosticsResponse,
@@ -266,7 +266,7 @@ impl Diagnostic for OSVersion {
     }
 }
 
-#[cfg(any(target_os = "macos", target_os = "linux"))]
+#[cfg(unix)]
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let response = send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
         .await?

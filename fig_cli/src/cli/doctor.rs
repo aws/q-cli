@@ -891,9 +891,9 @@ impl DoctorCheck for DaemonDiagnosticsCheck {
         let socket_path = directories::daemon_socket_path().unwrap();
 
         cfg_if::cfg_if! {
-            if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+            if #[cfg(unix)] {
                 let socket_exists = socket_path.exists();
-            } else if #[cfg(target_os = "windows")] {
+            } else if #[cfg(windows)] {
                 let socket_exists = match socket_path.metadata() {
                     Ok(_) => true,
                     // Windows can't query socket file existence

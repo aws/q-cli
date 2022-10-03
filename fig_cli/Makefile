@@ -23,7 +23,7 @@ endif
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 ifneq "$(PLATFORM)" "windows"
-SHELL := env "PATH=$(PATH)" /bin/bash
+SHELL := env "PATH=$(PATH)" bash
 endif
 
 ifeq "$(PLATFORM)" "windows"

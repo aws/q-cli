@@ -4,8 +4,6 @@ use serde::{
     Deserialize,
     Deserializer,
 };
-#[cfg(target_os = "linux")]
-use tracing::warn;
 
 #[derive(Deserialize)]
 pub struct Manifest {
@@ -56,18 +54,18 @@ where
 
 static CACHED: Lazy<Option<Manifest>> = Lazy::new(|| {
     cfg_if! {
-        if #[cfg(target_os = "linux")] {
+        if #[cfg(all(unix, not(target_os = "macos")))] {
             let text = match std::fs::read_to_string(crate::directories::manifest_path().unwrap()) {
                 Ok(s) => s,
                 Err(err) => {
-                    warn!("Failed reading build manifest: {err}");
+                    tracing::warn!("Failed reading build manifest: {err}");
                     return None;
                 },
             };
             match serde_json::from_str(&text) {
                 Ok(s) => Some(s),
                 Err(err) => {
-                    warn!("Failed deserializing build manifest: {err:?}");
+                    tracing::warn!("Failed deserializing build manifest: {err:?}");
                     None
                 },
             }
@@ -88,7 +86,7 @@ pub fn is_full() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             true
-        } else if #[cfg(target_os = "linux")] {
+        } else if #[cfg(unix)] {
             matches!(
                 manifest(),
                 Some(Manifest {
@@ -96,7 +94,7 @@ pub fn is_full() -> bool {
                     ..
                 })
             )
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             true
         }
     }
@@ -108,7 +106,7 @@ pub fn is_headless() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
             false
-        } else if #[cfg(target_os = "linux")] {
+        } else if #[cfg(unix)] {
             matches!(
                 manifest(),
                 Some(Manifest {
@@ -116,7 +114,7 @@ pub fn is_headless() -> bool {
                     ..
                 })
             )
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             false
         }
     }

@@ -1,3 +1,5 @@
+#[cfg(target_os = "freebsd")]
+mod freebsd;
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(target_os = "macos")]
@@ -8,6 +10,8 @@ mod windows;
 use std::process::ExitStatus;
 
 use camino::Utf8Path;
+#[cfg(target_os = "freebsd")]
+use freebsd as os;
 #[cfg(target_os = "linux")]
 use linux as os;
 #[cfg(target_os = "macos")]
@@ -35,6 +39,9 @@ pub enum Error {
     #[cfg(target_os = "linux")]
     #[error("Unsupported init system: {0}")]
     UnsupportedInitSystem(linux::InitSystem),
+    #[cfg(target_os = "freebsd")]
+    #[error("Unimplemented")]
+    Unimplemented,
 }
 
 #[derive(Debug, Default)]

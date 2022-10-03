@@ -23,7 +23,7 @@ endif
 export PATH := $(HOME)/.cargo/bin:$(PATH)
 
 ifneq "$(PLATFORM)" "windows"
-SHELL := env PATH=$(PATH) /bin/bash
+SHELL := env PATH=$(PATH) bash
 endif
 
 ifeq "$(PLATFORM)" "windows"
@@ -118,13 +118,13 @@ install-native-release: build-native-release
 	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
 
 install-native-usr: build-native
-	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n"); do \
+	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n") figterm; do \
 		sudo rm -f "/usr/bin/$${exe}"; \
 		sudo install $(TARGET_DIR)/debug/$(CRATE_NAME) "/usr/bin/$${exe}"; \
 	done
 
 install-native-usr-release: build-native-release
-	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n"); do \
+	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n") figterm; do \
 		sudo rm -f "/usr/bin/$${exe}"; \
 		sudo install $(TARGET_DIR)/release/$(CRATE_NAME) "/usr/bin/$${exe}"; \
 	done

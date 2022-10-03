@@ -6,20 +6,25 @@ use std::{
 
 use cfg_if::cfg_if;
 
-cfg_if!(
-    if #[cfg(target_os = "linux")] {
-        mod linux;
-        pub use linux::*;
-    } else if #[cfg(target_os = "macos")] {
-        mod macos;
-        pub use macos::*;
-    } else if #[cfg(target_os = "windows")] {
-        mod windows;
-        pub use self::windows::*;
-    } else {
-        compile_error!("Unsupported platform");
-    }
-);
+#[cfg(target_os = "linux")]
+mod linux;
+#[cfg(target_os = "linux")]
+pub use linux::*;
+
+#[cfg(target_os = "macos")]
+mod macos;
+#[cfg(target_os = "macos")]
+pub use macos::*;
+
+#[cfg(target_os = "windows")]
+mod windows;
+#[cfg(target_os = "windows")]
+pub use self::windows::*;
+
+#[cfg(target_os = "freebsd")]
+mod freebsd;
+#[cfg(target_os = "freebsd")]
+pub use self::freebsd::*;
 
 macro_rules! pid_decl {
     ($typ:ty) => {
@@ -53,7 +58,7 @@ macro_rules! pid_decl {
 }
 
 cfg_if! {
-    if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+    if #[cfg(unix)] {
         use nix::libc::pid_t;
 
         pid_decl!(pid_t);
@@ -69,10 +74,8 @@ cfg_if! {
                 nix::unistd::Pid::from_raw(pid.0)
             }
         }
-    } else if #[cfg(target_os = "windows")] {
+    } else if #[cfg(windows)] {
         pid_decl!(u32);
-    } else {
-        compile_error!("Unsupported platform");
     }
 }
 

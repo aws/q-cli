@@ -119,9 +119,9 @@ pub fn fig_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIG_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             Ok(home_dir()?.join(".fig"))
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(dirs::data_local_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
                 .join("Fig"))
@@ -145,11 +145,11 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIG_DATA_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             Ok(dirs::data_local_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
                 .join("fig"))
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("userdata"))
         }
     }
@@ -172,10 +172,10 @@ pub fn sockets_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SOCKETS_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             use std::path::Path;
             Ok(Path::new("/var/tmp/fig").join(whoami::username()))
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("sockets"))
         }
     }
@@ -227,9 +227,9 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             todo!();
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("bin"))
         }
     }
@@ -240,9 +240,7 @@ pub fn themes_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_THEMES_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "windows"))] {
-            Ok(themes_repo_dir()?.join("themes"))
-        } else if #[cfg(target_os = "macos")] {
+        if #[cfg(target_os = "macos")] {
             /*
             let new_theme_dir = themes_dir()?;
             match new_theme_dir.exists() {
@@ -251,6 +249,8 @@ pub fn themes_dir() -> Result<PathBuf> {
             }
             */
             deprecated::legacy_themes_dir()
+        } else {
+            Ok(themes_repo_dir()?.join("themes"))
         }
     }
 }
@@ -281,10 +281,10 @@ pub fn plugins_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_PLUGINS_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "windows"))] {
-            Ok(fig_data_dir()?.join("plugins"))
-        } else if #[cfg(target_os = "macos")] {
+        if #[cfg(target_os = "macos")] {
             home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
+        } else {
+            Ok(fig_data_dir()?.join("plugins"))
         }
     }
 }
@@ -304,11 +304,11 @@ fn _snapshot_plugins_dir() {
 pub fn logs_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_LOGS_DIR");
     cfg_if::cfg_if! {
-        if #[cfg(target_os = "linux")] {
-            Ok(std::env::temp_dir().join("fig").join(whoami::username()).join("logs"))
-        } else if #[cfg(target_os = "macos")] {
+        if #[cfg(target_os = "macos")] {
             deprecated::legacy_logs_dir()
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(unix)] {
+            Ok(std::env::temp_dir().join("fig").join(whoami::username()).join("logs"))
+        } else if #[cfg(windows)] {
             Ok(std::env::temp_dir().join("fig").join("logs"))
         }
     }
@@ -319,9 +319,9 @@ pub fn backups_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_BACKUPS_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             Ok(home_dir()?.join(".fig.dotfiles.bak"))
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(fig_data_dir()?.join("backups"))
         }
     }
@@ -472,7 +472,7 @@ pub fn manifest_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_MANIFEST_PATH");
 
     cfg_if::cfg_if! {
-        if #[cfg(target_os = "linux")] {
+        if #[cfg(all(unix, not(target_os = "macos")))] {
             Ok(std::path::Path::new("/usr/share/fig/manifest.json").into())
         } else if #[cfg(target_os = "macos")] {
             panic!("This platform does not support build manifests")
@@ -489,9 +489,9 @@ pub fn managed_fig_cli_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_MANAGED_FIG_CLI_PATH");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             todo!();
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(managed_binaries_dir()?.join("fig.exe"))
         }
     }
@@ -502,9 +502,9 @@ pub fn settings_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SETTINGS_PATH");
 
     cfg_if::cfg_if! {
-        if #[cfg(any(target_os = "linux", target_os = "macos"))] {
+        if #[cfg(unix)] {
             Ok(fig_dir()?.join("settings.json"))
-        } else if #[cfg(target_os = "windows")] {
+        } else if #[cfg(windows)] {
             Ok(fig_data_dir()?.join("settings.json"))
         }
     }
@@ -523,7 +523,6 @@ pub fn state_path() -> Result<PathBuf> {
 /// - Windows: `%LOCALAPPDATA%/Fig/userdata/access/ssh_saved_identities`
 pub fn ssh_saved_identities() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
-
     Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
 }
 
@@ -628,9 +627,9 @@ mod test {
     fn environment_paths() {
         macro_rules! test_environment_path {
             ($path:expr, $name:literal) => {
-                #[cfg(any(target_os = "linux", target_os = "macos"))]
+                #[cfg(unix)]
                 let path = "/testing";
-                #[cfg(target_os = "windows")]
+                #[cfg(windows)]
                 let path = "C://testing";
 
                 std::env::set_var($name, path);

@@ -61,7 +61,7 @@ async fn main() -> Result<()> {
             match std::env::var_os("PROCESS_LAUNCHED_BY_FIG") {
                 None => (
                     Some(sentry),
-                    #[cfg(any(target_os = "linux", target_os = "macos"))]
+                    #[cfg(unix)]
                     Some(fig_telemetry::dispatch_emit_track(
                         fig_telemetry::TrackEvent::new(
                             fig_telemetry::TrackEventType::RanCommand,
@@ -79,7 +79,7 @@ async fn main() -> Result<()> {
                         ),
                         false,
                     )),
-                    #[cfg(target_os = "windows")]
+                    #[cfg(windows)]
                     Some(async { Result::<()>::Ok(()) }),
                 ),
                 Some(_) => (Some(sentry), None),

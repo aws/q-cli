@@ -31,13 +31,13 @@ pub enum Error {
 #[allow(clippy::needless_return)] // actually fairly needed
 pub fn apply_update(package: RemotePackage) -> Result<(), Error> {
     cfg_if! {
-        if #[cfg(target_os = "linux")] {
-            let _package = package;
-            return Err(Error::UnsupportedPlatform);
-        } else if #[cfg(target_os = "macos")] {
+        if #[cfg(target_os = "macos")] {
             return macos::update(package);
         } else if #[cfg(target_os = "windows")] {
             return windows::update(package);
+        } else {
+            let _package = package;
+            return Err(Error::UnsupportedPlatform);
         }
     }
 }
