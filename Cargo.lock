@@ -2543,7 +2543,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.5.2"
+version = "2.5.3"
 dependencies = [
  "accessibility-sys",
  "anyhow",
