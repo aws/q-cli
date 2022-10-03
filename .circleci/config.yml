@@ -29,10 +29,10 @@ workflows:
     jobs:
       - update-version
 
-      - macos:
-          requires: [update-version]
-          context:
-            - macos-signing
+      # - macos:
+      #     requires: [update-version]
+      #     context:
+      #       - macos-signing
       - windows:
           requires: [update-version]
       - linux-headless-x86_64:
