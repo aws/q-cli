@@ -189,6 +189,9 @@ jobs:
           name: Install Rust toolchain
           command: rustup target add x86_64-unknown-linux-musl
       - run:
+          name: Ignore Rust toolchain
+          command: rm desktop/rust-toolchain.toml
+      - run:
           name: Build fig_cli
           command: cd desktop && cargo build -rp fig_cli
       - run:
@@ -221,6 +224,9 @@ jobs:
       - run:
           name: Install Rust toolchain
           command: rustup target add aarch64-unknown-linux-musl
+      - run:
+          name: Ignore Rust toolchain
+          command: rm desktop/rust-toolchain.toml
       - run:
           name: Build fig_cli
           command: cd desktop && cargo build -rp fig_cli
