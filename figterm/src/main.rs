@@ -40,7 +40,7 @@ use anyhow::{
 };
 use bytes::BytesMut;
 use cfg_if::cfg_if;
-use clap::StructOpt;
+use clap::Parser;
 use cli::Cli;
 use crossterm::style::Stylize;
 use fig_proto::local::{

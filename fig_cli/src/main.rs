@@ -9,7 +9,7 @@ use std::io::{
 use std::process::exit;
 
 use clap::error::ContextKind;
-use clap::StructOpt;
+use clap::Parser;
 use eyre::Result;
 use fig_log::get_max_fig_log_level;
 use fig_telemetry::sentry::{
@@ -93,8 +93,8 @@ async fn main() -> Result<()> {
         Ok(cli) => cli,
         Err(err)
             if matches!(
-                err.kind,
-                clap::ErrorKind::UnknownArgument | clap::ErrorKind::UnrecognizedSubcommand
+                err.kind(),
+                clap::error::ErrorKind::UnknownArgument | clap::error::ErrorKind::InvalidSubcommand
             ) && !err.context().any(|(context_kind, _)| {
                 matches!(
                     context_kind,

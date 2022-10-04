@@ -20,22 +20,21 @@ use super::OutputFormat;
 #[derive(Debug, Args)]
 pub struct TeamsArgs {
     // List all teams that the user is part of
-    #[clap(long, value_parser, conflicts_with_all = &["new", "delete"])]
+    #[clap(long, conflicts_with_all = &["new", "delete"])]
     list: bool,
     // Create a new team
-    #[clap(long, value_parser, conflicts_with_all = &["list", "delete"])]
+    #[clap(long, conflicts_with_all = &["list", "delete"])]
     new: bool,
     // Delete an existing team
-    #[clap(long, value_parser, conflicts_with_all = &["list", "new"])]
+    #[clap(long, conflicts_with_all = &["list", "new"])]
     delete: bool,
     // Format of output
-    #[clap(long, short, value_enum, value_parser, default_value_t)]
+    #[clap(long, short, value_enum, default_value_t)]
     format: OutputFormat,
 }
 
 #[derive(Debug, Args)]
 pub struct TeamCommand {
-    #[clap(value_parser)]
     pub team: Option<String>,
     #[clap(subcommand)]
     pub subcommand: Option<TeamSubcommand>,
@@ -121,24 +120,17 @@ pub enum TeamSubcommand {
     /// List all members on a team
     Members,
     /// Remove a member from a team
-    Remove {
-        #[clap(value_parser)]
-        email: String,
-    },
+    Remove { email: String },
     /// Invite a member to a team
     Add {
-        #[clap(value_parser)]
         email: String,
-        #[clap(long, value_enum, value_parser)]
+        #[clap(long, value_enum)]
         role: Option<Role>,
     },
     /// List pending invitations to a team
     Invitations,
     /// Revoke an invitation to a team
-    Revoke {
-        #[clap(value_parser)]
-        email: String,
-    },
+    Revoke { email: String },
 }
 
 #[derive(Debug, Serialize, Deserialize)]

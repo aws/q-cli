@@ -48,10 +48,10 @@ use crate::cli::OutputFormat;
 #[derive(Debug, Args)]
 pub struct DiagnosticArgs {
     /// The format of the output
-    #[clap(long, short, value_enum, value_parser, default_value_t)]
+    #[clap(long, short, value_enum, default_value_t)]
     format: OutputFormat,
     /// Force limited diagnostic output
-    #[clap(long, value_parser)]
+    #[clap(long)]
     force: bool,
 }
 

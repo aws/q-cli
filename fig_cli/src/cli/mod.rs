@@ -29,7 +29,7 @@ mod workflow;
 
 use cfg_if::cfg_if;
 use clap::{
-    IntoApp,
+    CommandFactory,
     Parser,
     Subcommand,
     ValueEnum,
@@ -100,20 +100,20 @@ pub enum CliRootCommands {
     #[clap(hide = true)]
     Uninstall {
         /// Force uninstall
-        #[clap(long, short = 'y', value_parser)]
+        #[clap(long, short = 'y')]
         no_confirm: bool,
     },
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short = 'y', value_parser)]
+        #[clap(long, short = 'y')]
         no_confirm: bool,
     },
     /// Run the daemon
     #[clap(hide = true)]
     Daemon,
     /// Run diagnostic tests
-    #[clap(alias("diagnostic"))]
+    #[clap(alias("diagnostics"))]
     Diagnostic(diagnostics::DiagnosticArgs),
     /// Generate the dotfiles for the given shell
     Init(init::InitArgs),
@@ -150,7 +150,7 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(value_enum, value_parser, default_value_t = Processes::App, hide = true)]
+        #[clap(value_enum, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     /// Run the Fig tutorial
@@ -186,7 +186,6 @@ pub enum CliRootCommands {
     #[clap(name = "bg:tmux", hide = true)]
     LegacyBgTmux {
         /// Tmux args
-        #[clap(value_parser)]
         args: Vec<String>,
     },
 }
@@ -194,7 +193,7 @@ pub enum CliRootCommands {
 #[derive(Debug, Parser)]
 #[clap(version, about)]
 #[clap(help_template = "
-  \x1B[1m███████╗██╗ ██████╗
+ㅤ\x1B[1m███████╗██╗ ██████╗
   ██╔════╝██║██╔════╝
   █████╗  ██║██║  ███╗
   ██╔══╝  ██║██║   ██║

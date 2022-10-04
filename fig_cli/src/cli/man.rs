@@ -4,7 +4,6 @@ use url::Url;
 
 #[derive(Debug, Args)]
 pub struct ManArgs {
-    #[clap(value_parser)]
     command: Vec<String>,
 }
 

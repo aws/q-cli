@@ -86,38 +86,37 @@ use crate::cli::installation::{
 #[derive(Debug, Args)]
 #[clap(group(
         ArgGroup::new("output")
-            .args(&["filename", "exit-code"])
+            .args(&["filename", "exit_code"])
             .multiple(true)
-            .requires_all(&["filename", "exit-code"])
+            .requires_all(&["filename", "exit_code"])
             ))]
 pub struct CallbackArgs {
-    #[clap(value_parser)]
     handler_id: String,
-    #[clap(value_parser, group = "output")]
+    #[clap(group = "output")]
     filename: Option<String>,
-    #[clap(value_parser, group = "output")]
+    #[clap(group = "output")]
     exit_code: Option<i64>,
 }
 
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, value_parser, conflicts_with_all = &["input-method"])]
+    #[clap(long, conflicts_with_all = &["input_method"])]
     pub daemon: bool,
     /// Install only the shell integrations
-    #[clap(long, value_parser, conflicts_with_all = &["input-method"])]
+    #[clap(long, conflicts_with_all = &["input_method"])]
     pub dotfiles: bool,
     /// Prompt input method installation
-    #[clap(long, value_parser, conflicts_with_all = &["daemon", "dotfiles"])]
+    #[clap(long, conflicts_with_all = &["daemon", "dotfiles"])]
     pub input_method: bool,
     /// Don't confirm automatic installation.
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub no_confirm: bool,
     /// Force installation of fig
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub force: bool,
     /// Install only the ssh integration.
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub ssh: bool,
 }
 
@@ -169,16 +168,16 @@ pub enum InternalSubcommand {
     /// Uninstall fig cli
     Uninstall {
         /// Uninstall only the daemon
-        #[clap(long, value_parser)]
+        #[clap(long)]
         daemon: bool,
         /// Uninstall only the shell integrations
-        #[clap(long, value_parser)]
+        #[clap(long)]
         dotfiles: bool,
         /// Uninstall only the binary
-        #[clap(long, value_parser)]
+        #[clap(long)]
         binary: bool,
         /// Uninstall only the ssh integration
-        #[clap(long, value_parser)]
+        #[clap(long)]
         ssh: bool,
     },
     GetShell,
@@ -186,24 +185,24 @@ pub enum InternalSubcommand {
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         name: String,
         /// Payload of the event as a JSON string.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         payload: Option<String>,
         /// Apps to send the event to.
-        #[clap(long, value_parser)]
+        #[clap(long)]
         apps: Vec<String>,
     },
     AuthToken,
     Request {
-        #[clap(long, value_parser)]
+        #[clap(long)]
         route: String,
-        #[clap(long, value_parser, default_value_t = Method::Get)]
+        #[clap(long, default_value_t = Method::Get)]
         method: Method,
-        #[clap(long, value_parser)]
+        #[clap(long)]
         body: Option<String>,
-        #[clap(long, value_parser)]
+        #[clap(long)]
         namespace: Option<String>,
     },
     SocketsDir,
@@ -217,15 +216,15 @@ pub enum InternalSubcommand {
             .required(true)
     ))]
     Ipc {
-        #[clap(long, value_parser, group = "target")]
+        #[clap(long, group = "target")]
         app: bool,
-        #[clap(long, value_parser, group = "target")]
+        #[clap(long, group = "target")]
         daemon: bool,
-        #[clap(long, value_parser, group = "target")]
+        #[clap(long, group = "target")]
         figterm: Option<String>,
-        #[clap(long, value_parser)]
+        #[clap(long)]
         json: String,
-        #[clap(long, value_parser)]
+        #[clap(long)]
         recv: bool,
     },
     /// Linux only

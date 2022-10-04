@@ -23,56 +23,41 @@ pub enum PluginsSubcommands {
     /// Install a specific plugin from the plugin store
     Add {
         /// The plugin to install
-        #[clap(value_parser)]
         plugin: String,
     },
     /// Uninstall a specific plugin
     Remove {
         /// The plugin to uninstall
-        #[clap(value_parser)]
         plugin: String,
     },
     /// List all plugins available in the plugin store
     List {
         /// Only list plugins that are installed
-        #[clap(long, short, value_parser)]
+        #[clap(long, short)]
         installed: bool,
         /// Fields to include in the output
-        #[clap(
-            long,
-            value_delimiter = ',',
-            default_value = "name,displayName,icon,description",
-            value_parser
-        )]
+        #[clap(long, value_delimiter = ',', default_value = "name,displayName,icon,description")]
         fields: Vec<String>,
         /// The output format
-        #[clap(long, short, arg_enum, default_value_t, value_parser)]
+        #[clap(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// Info about a specific plugin
     Info {
         /// The plugin to get info about
-        #[clap(value_parser)]
         plugin: String,
         /// Fields to include in the output
-        #[clap(
-            long,
-            value_delimiter = ',',
-            default_value = "name,displayName,description",
-            value_parser
-        )]
+        #[clap(long, value_delimiter = ',', default_value = "name,displayName,description")]
         fields: Vec<String>,
         /// The output format
-        #[clap(long, short, arg_enum, default_value_t, value_parser)]
+        #[clap(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// Configure a specific plugin
     Configure {
         /// The plugin to configure
-        #[clap(value_parser)]
         plugin: Option<String>,
         /// The configuration options to set
-        #[clap(value_parser)]
         config: Option<String>,
         // The value to set the configuration option to
         // value: Option<String>,

@@ -82,29 +82,28 @@ pub enum DebugSubcommand {
     /// Debug dotfiles
     Dotfiles {
         /// Disable debug mode
-        #[clap(long, value_parser)]
+        #[clap(long)]
         disable: bool,
     },
     /// Switch build
     Build {
-        #[clap(value_enum, value_parser)]
+        #[clap(value_enum)]
         build: Build,
     },
     /// Toggle/set autocomplete window debug mode
     AutocompleteWindow {
-        #[clap(value_enum, value_parser)]
+        #[clap(value_enum)]
         mode: Option<AutocompleteWindowDebug>,
     },
     /// Show fig debug logs
     Logs {
         #[clap(long)]
         level: Option<String>,
-        #[clap(value_parser)]
         files: Vec<String>,
     },
     /// Fig input method editor
     Ime {
-        #[clap(value_enum, value_parser)]
+        #[clap(value_enum)]
         command: ImeCommand,
     },
     /// Prompt accessibility
@@ -117,7 +116,7 @@ pub enum DebugSubcommand {
     VerifyCodesign,
     /// Accessibility
     Accessibility {
-        #[clap(value_enum, value_parser)]
+        #[clap(value_enum)]
         action: Option<AccessibilityAction>,
     },
     /// Key Tester

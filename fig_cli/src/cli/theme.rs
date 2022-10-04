@@ -36,9 +36,9 @@ struct Theme {
 
 #[derive(Debug, Args)]
 pub struct ThemeArgs {
-    #[clap(long, value_parser, conflicts_with_all = &["folder", "theme"])]
+    #[clap(long, conflicts_with_all = &["folder", "theme"])]
     list: bool,
-    #[clap(long, value_parser, conflicts_with_all = &["list", "theme"])]
+    #[clap(long, conflicts_with_all = &["list", "theme"])]
     folder: bool,
     #[clap(value_parser, conflicts_with_all = &["list", "folder"])]
     theme: Option<String>,

@@ -32,16 +32,15 @@ pub enum RootUserSubcommand {
     /// Login to Fig
     Login {
         /// Refresh the auth token if expired
-        #[clap(long, short, value_parser)]
+        #[clap(long, short)]
         refresh: bool,
         /// Force a refresh of the auth token
-        #[clap(long, value_parser)]
+        #[clap(long)]
         hard_refresh: bool,
         /// Email to login to
-        #[clap(value_parser)]
         email: Option<String>,
         ///
-        #[clap(long, value_parser, hide = true)]
+        #[clap(long, hide = true)]
         switchable: bool,
     },
     /// Logout of Fig
@@ -202,32 +201,31 @@ pub enum UserSubcommand {
     /// Prints details about the current user
     Whoami {
         /// Output format to use
-        #[clap(long, short, value_enum, value_parser, default_value_t)]
+        #[clap(long, short, value_enum, default_value_t)]
         format: OutputFormat,
         /// Only print the user's email address, this is quicker since it doesn't require a network
         /// request
-        #[clap(long, short = 'e', value_parser)]
+        #[clap(long, short = 'e')]
         only_email: bool,
     },
     /// Prints details about the user's plan
     #[clap(hide = true)]
     Plan {
         /// Output format to use
-        #[clap(long, short, value_enum, value_parser, default_value_t)]
+        #[clap(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// List all accounts that can be switch to
     #[clap(hide = true)]
     ListAccounts {
         /// Output format to use
-        #[clap(long, short, value_enum, value_parser, default_value_t)]
+        #[clap(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// Switch to a switchable account
     #[clap(hide = true)]
     Switch {
         /// Email to switch to
-        #[clap(value_parser)]
         email: String,
     },
 }
@@ -309,37 +307,34 @@ impl UserSubcommand {
 pub enum TokensSubcommand {
     New {
         /// The name of the token
-        #[clap(value_parser)]
         name: String,
         /// The expiration date of the token in RFC3339 format
-        #[clap(long, value_parser, conflicts_with = "expires-in")]
+        #[clap(long, conflicts_with = "expires_in")]
         expires_date: Option<String>,
         /// The time till the token expires (e.g. "90d")
-        #[clap(long, value_parser, conflicts_with = "expires-date")]
+        #[clap(long, conflicts_with = "expires_date")]
         expires_in: Option<String>,
         /// The team namespace to create the token for
-        #[clap(long, short, value_parser)]
+        #[clap(long, short)]
         team: String,
     },
     List {
         /// The team namespace to list the tokens for
-        #[clap(long, short, value_parser)]
+        #[clap(long, short)]
         team: String,
-        #[clap(long, short, value_enum, value_parser, default_value_t)]
+        #[clap(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     Revoke {
         /// The name of the token to revoke
-        #[clap(value_parser)]
         name: String,
         /// The team namespace to revoke the token for
-        #[clap(long, short, value_parser)]
+        #[clap(long, short)]
         team: String,
     },
     /// Validate a token is valid
     Validate {
         /// The token to validate
-        #[clap(value_parser)]
         token: String,
     },
 }

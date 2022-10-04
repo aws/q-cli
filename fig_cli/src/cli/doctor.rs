@@ -79,10 +79,10 @@ use crate::util::{
 #[derive(Debug, Args)]
 pub struct DoctorArgs {
     /// Run all doctor tests, with no fixes
-    #[clap(long, value_parser)]
+    #[clap(long)]
     verbose: bool,
     /// Error on warnings
-    #[clap(long, value_parser)]
+    #[clap(long)]
     strict: bool,
 }
 

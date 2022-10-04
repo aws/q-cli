@@ -40,28 +40,28 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 #[derive(Debug, Args)]
 pub struct UninstallArgs {
     /// Remove configuration and data files
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub user_data: bool,
     /// Remove executable and
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub app_bundle: bool,
     /// Remove input method
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub input_method: bool,
     /// Remove terminal integrations (i.e. VSCode, iTerm2, etc.)
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub terminal_integrations: bool,
     /// Remove Fig daemon
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub daemon: bool,
     /// Remove dotfile shell integration
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub dotfiles: bool,
     /// Remove SSH integration
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub ssh: bool,
     /// Do not open the uninstallation page
-    #[clap(long, value_parser)]
+    #[clap(long)]
     pub no_open: bool,
 }
 

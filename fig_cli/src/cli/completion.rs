@@ -5,7 +5,7 @@ use std::io::{
 
 use clap::{
     Args,
-    IntoApp,
+    CommandFactory,
     ValueEnum,
 };
 use eyre::Result;
@@ -27,7 +27,7 @@ pub enum Shells {
 #[derive(Debug, Args)]
 pub struct CompletionArgs {
     /// Shell to generate the completion spec for
-    #[clap(value_enum, value_parser, default_value_t = Shells::Zsh)]
+    #[clap(value_enum, default_value_t = Shells::Zsh)]
     shell: Shells,
 }
 

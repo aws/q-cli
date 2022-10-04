@@ -532,7 +532,7 @@ dependencies = [
  "bitflags",
  "cexpr",
  "clang-sys",
- "clap",
+ "clap 3.2.22",
  "env_logger",
  "lazy_static",
  "lazycell",
@@ -887,40 +887,53 @@ checksum = "86447ad904c7fb335a790c9d7fe3d0d971dc523b8ccd1561a520de9a85302750"
 dependencies = [
  "atty",
  "bitflags",
- "clap_derive",
- "clap_lex",
+ "clap_lex 0.2.4",
  "indexmap",
- "once_cell",
  "strsim",
  "termcolor",
- "terminal_size 0.2.1",
  "textwrap",
 ]
 
 [[package]]
-name = "clap_complete"
-version = "3.2.5"
+name = "clap"
+version = "4.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3f7a2e0a962c45ce25afce14220bc24f9dade0a1787f185cecf96bfba7847cd8"
+checksum = "30607dd93c420c6f1f80b544be522a0238a7db35e6a12968d28910983fee0df0"
 dependencies = [
- "clap",
+ "atty",
+ "bitflags",
+ "clap_derive",
+ "clap_lex 0.3.0",
+ "once_cell",
+ "strsim",
+ "termcolor",
+ "terminal_size 0.2.1",
+]
+
+[[package]]
+name = "clap_complete"
+version = "4.0.2"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "11cba7abac9b56dfe2f035098cdb3a43946f276e6db83b72c4e692343f9aab9a"
+dependencies = [
+ "clap 4.0.9",
 ]
 
 [[package]]
 name = "clap_complete_fig"
-version = "3.2.4"
+version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ed37b4c0c1214673eba6ad8ea31666626bf72be98ffb323067d973c48b4964b9"
+checksum = "cf2fc15aa585faf3c59b96c40923b2f4d119c710a84e8a81251eed54ba75335c"
 dependencies = [
- "clap",
+ "clap 4.0.9",
  "clap_complete",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "3.2.18"
+version = "4.0.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ea0c8bce528c4be4da13ea6fead8965e95b6073585a2f05204bd8f4119f82a65"
+checksum = "a4a307492e1a34939f79d3b6b9650bd2b971513cd775436bf2b78defeb5af00b"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -934,6 +947,15 @@ name = "clap_lex"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
+dependencies = [
+ "os_str_bytes",
+]
+
+[[package]]
+name = "clap_lex"
+version = "0.3.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0d4198f73e42b4936b35b5bb248d81d2b595ecb170da0bac7655c54eedfa8da8"
 dependencies = [
  "os_str_bytes",
 ]
@@ -2427,7 +2449,7 @@ name = "fig-api-mock"
 version = "0.1.0"
 dependencies = [
  "async-trait",
- "clap",
+ "clap 4.0.9",
  "fig_desktop_api",
  "fig_proto",
  "tokio",
@@ -2458,7 +2480,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap",
+ "clap 4.0.9",
  "clap_complete",
  "clap_complete_fig",
  "color-eyre",
@@ -2552,7 +2574,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap",
+ "clap 4.0.9",
  "core-foundation",
  "dashmap",
  "dbus",
@@ -2649,7 +2671,7 @@ name = "fig_integrations"
 version = "0.1.0"
 dependencies = [
  "cfg-if 1.0.0",
- "clap",
+ "clap 4.0.9",
  "fig_util",
  "regex",
  "serde",
@@ -2818,7 +2840,7 @@ dependencies = [
  "bstr 1.0.1",
  "camino",
  "cfg-if 1.0.0",
- "clap",
+ "clap 4.0.9",
  "dirs",
  "fig_test",
  "hex",
@@ -2850,7 +2872,7 @@ dependencies = [
  "bitflags",
  "bytes",
  "cfg-if 1.0.0",
- "clap",
+ "clap 4.0.9",
  "crossterm",
  "dashmap",
  "fig_api_client",
@@ -6814,7 +6836,7 @@ dependencies = [
  "beef",
  "bitflags",
  "chrono",
- "clap",
+ "clap 3.2.22",
  "crossbeam",
  "defer-drop",
  "derive_builder",
@@ -7305,9 +7327,6 @@ name = "textwrap"
 version = "0.15.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "949517c0cf1bf4ee812e2e07e08ab448e3ae0d23472aee8a06c985f0c8815b16"
-dependencies = [
- "terminal_size 0.2.1",
-]
 
 [[package]]
 name = "thin-slice"
