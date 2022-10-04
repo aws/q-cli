@@ -1,8 +1,10 @@
 [package]
 name = "newton"
-version = "0.1.0"
-edition = "2021"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 crossterm = { version = "0.25.0", features = ["serde"] }

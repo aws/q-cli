@@ -1,11 +1,10 @@
 [package]
 name = "fig_cli"
-version = "1.5.0"
-authors = ["fig developers"]
-edition = "2021"
-description = "The CLI for Fig"
-homepage = "https://fig.io"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [features]
 default = []

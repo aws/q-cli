@@ -1,8 +1,10 @@
 [package]
 name = "fig_request"
-version = "0.2.0"
-edition = "2021"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 base64 = "0.13.0"

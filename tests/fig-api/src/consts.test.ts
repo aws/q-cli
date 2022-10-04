@@ -1,4 +1,5 @@
 import os from "node:os";
+import fs from "node:fs";
 
 describe("constants", () => {
   it("os", () => {
@@ -29,8 +30,10 @@ describe("constants", () => {
   });
 
   it("version", () => {
-    // This is from the mock exe version
-    expect(window.fig.constants?.version).toBe("0.1.0");
+    const workspaceToml = fs.readFileSync(__dirname + "/../../../Cargo.toml", "utf8");
+    const version = workspaceToml.match(/version = "([^"]+)"/)?.[1];
+    expect(version).toBeTruthy();
+    expect(window.fig.constants?.version).toBe(version);
   });
 
   

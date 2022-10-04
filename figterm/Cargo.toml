@@ -1,11 +1,10 @@
 [package]
 name = "figterm"
-version = "5.2.0"
-authors = ["fig developers"]
-edition = "2021"
-description = "A layer between the terminal and shell."
-homepage = "https://fig.io"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [features]
 # Tests that do not work on CI
@@ -24,7 +23,7 @@ dashmap = "5.3.4"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
 fig_color = { path = "../rust-lib/fig_color" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
-fig_log = { version = "0.1.0", path = "../rust-lib/fig_log" }
+fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_settings = { path = "../rust-lib/fig_settings" }
 fig_telemetry = { path = "../rust-lib/fig_telemetry" }

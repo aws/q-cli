@@ -1,13 +1,10 @@
 [package]
 name = "fig_desktop"
-version = "2.5.3"
-authors = ["fig developers"]
-edition = "2021"
-rust-version = "1.57"
-description = "Fig adds IDE-style autocomplete to your existing terminal"
-homepage = "https://fig.io"
-publish = false
-default-run = "fig_desktop"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [package.metadata.bundle]
 name = "Fig"

@@ -1,15 +1,15 @@
 [package]
 name = "fig_proto"
-version = "0.1.0"
-authors = ["fig developers"]
-edition = "2021"
-homepage = "https://fig.io"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 arbitrary = { version = "1.1.6", optional = true, features = ["derive"] }
 bytes = "1.2.1"
-fig_util = { version = "0.1.0", path = "../fig_util" }
+fig_util = { path = "../fig_util" }
 hex = "0.4.3"
 once_cell = "1.15.0"
 prost = "0.11.0"

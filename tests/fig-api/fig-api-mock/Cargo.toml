@@ -1,12 +1,14 @@
 [package]
 name = "fig-api-mock"
-version = "0.1.0"
-edition = "2021"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 async-trait = "0.1.57"
 clap = { version = "4.0.6", features = ["derive", "deprecated"] }
-fig_desktop_api = { version = "0.1.0", path = "../../../rust-lib/fig_desktop_api" }
-fig_proto = { version = "0.1.0", path = "../../../rust-lib/fig_proto" }
+fig_desktop_api = { path = "../../../rust-lib/fig_desktop_api" }
+fig_proto = { path = "../../../rust-lib/fig_proto" }
 tokio = { version = "1", features = ["full"] }

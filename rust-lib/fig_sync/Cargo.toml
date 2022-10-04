@@ -1,13 +1,15 @@
 [package]
 name = "fig_sync"
-version = "0.1.0"
-edition = "2021"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 cfg-if = "1.0.0"
 crossterm = "0.25.0"
-fig_api_client = { version = "0.1.0", path = "../fig_api_client" }
+fig_api_client = { path = "../fig_api_client" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }

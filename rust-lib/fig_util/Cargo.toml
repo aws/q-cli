@@ -1,11 +1,10 @@
 [package]
 name = "fig_util"
-version = "0.1.0"
-authors = ["fig developers"]
-edition = "2021"
-description = "A layer between the terminal and shell."
-homepage = "https://fig.io"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 bstr = "1.0.1"

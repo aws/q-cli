@@ -1549,7 +1549,7 @@ dependencies = [
 
 [[package]]
 name = "dbus"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "once_cell",
  "thiserror",
@@ -2446,7 +2446,7 @@ dependencies = [
 
 [[package]]
 name = "fig-api-mock"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "async-trait",
  "clap 4.0.9",
@@ -2457,7 +2457,7 @@ dependencies = [
 
 [[package]]
 name = "fig_api_client"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "fig_request",
  "fig_settings",
@@ -2470,7 +2470,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "1.5.0"
+version = "2.5.3"
 dependencies = [
  "arboard",
  "assert_cmd",
@@ -2543,7 +2543,7 @@ dependencies = [
 
 [[package]]
 name = "fig_color"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "bitflags",
  "fig_test",
@@ -2552,7 +2552,7 @@ dependencies = [
 
 [[package]]
 name = "fig_daemon"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "camino",
  "fig_ipc",
@@ -2623,7 +2623,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop_api"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "async-trait",
  "base64",
@@ -2649,7 +2649,7 @@ dependencies = [
 
 [[package]]
 name = "fig_install"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "cfg-if 1.0.0",
  "fig_util",
@@ -2664,11 +2664,11 @@ dependencies = [
 
 [[package]]
 name = "fig_installer"
-version = "0.1.0"
+version = "2.5.3"
 
 [[package]]
 name = "fig_integrations"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "cfg-if 1.0.0",
  "clap 4.0.9",
@@ -2680,7 +2680,7 @@ dependencies = [
 
 [[package]]
 name = "fig_ipc"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2696,7 +2696,7 @@ dependencies = [
 
 [[package]]
 name = "fig_log"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "console-subscriber",
  "fig_util",
@@ -2711,7 +2711,7 @@ dependencies = [
 
 [[package]]
 name = "fig_proto"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "arbitrary",
  "bytes",
@@ -2732,7 +2732,7 @@ dependencies = [
 
 [[package]]
 name = "fig_request"
-version = "0.2.0"
+version = "2.5.3"
 dependencies = [
  "base64",
  "bytes",
@@ -2757,7 +2757,7 @@ dependencies = [
 
 [[package]]
 name = "fig_settings"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "fd-lock",
  "fig_test",
@@ -2773,7 +2773,7 @@ dependencies = [
 
 [[package]]
 name = "fig_sync"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "cfg-if 1.0.0",
  "crossterm",
@@ -2800,7 +2800,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "0.2.1"
+version = "2.5.3"
 dependencies = [
  "fig_ipc",
  "fig_proto",
@@ -2819,7 +2819,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "fig_test_macro",
  "tokio",
@@ -2827,7 +2827,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test_macro"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "quote 1.0.21",
  "syn 1.0.101",
@@ -2835,7 +2835,7 @@ dependencies = [
 
 [[package]]
 name = "fig_util"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "bstr 1.0.1",
  "camino",
@@ -2864,7 +2864,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "5.2.0"
+version = "2.5.3"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -4389,7 +4389,7 @@ dependencies = [
 
 [[package]]
 name = "macos_accessibility_position"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "accessibility",
  "accessibility-sys",
@@ -4688,7 +4688,7 @@ checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
 
 [[package]]
 name = "newton"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "crossterm",
  "rand 0.8.5",
@@ -7827,7 +7827,7 @@ checksum = "3e5d7cd7ab3e47dda6e56542f4bbf3824c15234958c6e1bd6aaa347e93499fdc"
 
 [[package]]
 name = "tui"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "newton",
  "paste",

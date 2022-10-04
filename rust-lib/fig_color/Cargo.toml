@@ -1,10 +1,10 @@
 [package]
 name = "fig_color"
-version = "0.1.0"
-authors = ["fig developers"]
-edition = "2021"
-homepage = "https://fig.io"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 bitflags = "1"

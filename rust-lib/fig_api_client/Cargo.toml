@@ -1,8 +1,10 @@
 [package]
 name = "fig_api_client"
-version = "0.1.0"
-edition = "2021"
-publish = false
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
 
 [dependencies]
 fig_request = { path = "../fig_request" }
