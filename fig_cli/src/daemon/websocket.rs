@@ -14,6 +14,7 @@ use fig_ipc::local::{
 use fig_proto::hooks::new_event_hook;
 use fig_request::auth::get_email;
 use fig_request::reqwest::StatusCode;
+use fig_request::reqwest_client::client_config;
 use fig_request::Request;
 use fig_settings::{
     settings,
@@ -165,10 +166,13 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     debug!("Connecting to {url}");
 
-    let (websocket_stream, _) = tokio::time::timeout(Duration::from_secs(30), tokio_tungstenite::connect_async(url))
-        .await
-        .context("Websocket connection timedout")?
-        .context("Failed to connect to websocket")?;
+    let (websocket_stream, _) = tokio_tungstenite::connect_async_tls_with_config(
+        url,
+        None,
+        Some(tokio_tungstenite::Connector::Rustls(client_config())),
+    )
+    .await
+    .context("Failed to connect to websocket")?;
 
     info!("Websocket connected");
 

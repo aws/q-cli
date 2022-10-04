@@ -1,13 +1,19 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use fig_request::reqwest_client::reqwest_client;
 use fig_util::Terminal;
 pub use sentry::integrations::anyhow::capture_anyhow;
+use sentry::transports::ReqwestHttpTransport;
 pub use sentry::{
     configure_scope,
     end_session,
     release_name,
     start_session,
+};
+use sentry::{
+    ClientOptions,
+    Transport,
 };
 
 use crate::util::telemetry_is_disabled;
@@ -30,6 +36,12 @@ pub fn init_sentry(
             )),
             sample_rate,
             auto_session_tracking: session_tracking,
+            transport: Some(Arc::new(move |opts: &ClientOptions| -> Arc<dyn Transport> {
+                Arc::new(match reqwest_client().cloned() {
+                    Some(client) => ReqwestHttpTransport::with_client(opts, client),
+                    None => ReqwestHttpTransport::new(opts),
+                })
+            })),
             ..sentry::ClientOptions::default()
         }));
 

@@ -156,16 +156,7 @@ pub fn api_host() -> Url {
 pub fn ws_host() -> Url {
     get_host_string("developer.wsHost")
         .or_else(|| get_host_string("developer.cli.wsHost"))
-        .unwrap_or_else(|| {
-            let mut host = api_host();
-            host.set_scheme(match host.scheme() {
-                "http" => "ws",
-                "https" => "wss",
-                _ => "wss",
-            })
-            .unwrap();
-            host
-        })
+        .unwrap_or_else(|| Url::parse("wss://ws.fig.io").unwrap())
 }
 
 fn get_host_string(key: impl AsRef<str>) -> Option<Url> {

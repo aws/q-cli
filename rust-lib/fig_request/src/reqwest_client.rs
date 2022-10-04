@@ -90,22 +90,30 @@ pub fn create_default_root_cert_store() -> RootCertStore {
     root_cert_store
 }
 
-pub fn create_client_config() -> ClientConfig {
+static CLIENT_CONFIG: Lazy<Arc<ClientConfig>> = Lazy::new(|| {
     // note(grant): we may need to deal with client auth ??
 
     if std::env::var_os("FIG_DANGER_ACCEPT_INVALID_CERTS").is_some()
         || fig_settings::state::get_bool_or("FIG_DANGER_ACCEPT_INVALID_CERTS", false)
     {
-        ClientConfig::builder()
-            .with_safe_defaults()
-            .with_custom_certificate_verifier(Arc::new(NoVerifier))
-            .with_no_client_auth()
+        Arc::new(
+            ClientConfig::builder()
+                .with_safe_defaults()
+                .with_custom_certificate_verifier(Arc::new(NoVerifier))
+                .with_no_client_auth(),
+        )
     } else {
-        ClientConfig::builder()
-            .with_safe_defaults()
-            .with_root_certificates(create_default_root_cert_store())
-            .with_no_client_auth()
+        Arc::new(
+            ClientConfig::builder()
+                .with_safe_defaults()
+                .with_root_certificates(create_default_root_cert_store())
+                .with_no_client_auth(),
+        )
     }
+});
+
+pub fn client_config() -> Arc<ClientConfig> {
+    CLIENT_CONFIG.clone()
 }
 
 pub static USER_AGENT: Lazy<String> = Lazy::new(|| {
@@ -139,7 +147,7 @@ pub fn user_agent() -> &'static str {
 
 pub static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
     Client::builder()
-        .use_preconfigured_tls(create_client_config())
+        .use_preconfigured_tls((*client_config()).clone())
         .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
         .cookie_store(true)
         .timeout(Duration::from_secs(30))
