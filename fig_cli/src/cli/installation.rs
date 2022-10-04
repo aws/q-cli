@@ -307,7 +307,7 @@ pub async fn update(no_confirm: bool) -> Result<UpdateStatus> {
         } else {
             let _no_confirm = no_confirm;
             bail!(
-                "This installation of Fig is managed by a package manager, please use the built-in method of updating packages"
+                "This installation of Fig is managed by a package manager. To update, please use the built-in method of updating packages"
             );
         }
     }

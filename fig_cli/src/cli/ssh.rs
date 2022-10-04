@@ -92,7 +92,7 @@ impl SshSubcommand {
                 None => {
                     user = Some(fig_api_client::user::account().await?);
                     let idx = choose(
-                        "Choose a host to connection to",
+                        "Choose a host to connect to",
                         hosts
                             .iter()
                             .map(|host| {
@@ -122,7 +122,7 @@ impl SshSubcommand {
         if connections.is_empty() {
             bail!("Host is not configured for ssh");
         } else if connections.len() > 1 {
-            bail!("Host has multiple ssh connections, please contact support");
+            bail!("Host has multiple ssh connections, please contact support (hello@fig.io)");
         }
         let connection = connections.into_iter().next().unwrap();
 
@@ -189,7 +189,7 @@ impl SshSubcommand {
                         user = Some(fig_api_client::user::account().await?);
                     }
                     let idx = choose(
-                        "Choose an identity to",
+                        "Choose an identity to connect with",
                         identities
                             .iter()
                             .map(|iden| {

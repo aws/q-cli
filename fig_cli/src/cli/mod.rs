@@ -200,23 +200,24 @@ pub enum CliRootCommands {
   ██║     ██║╚██████╔╝
   ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m
 
- \x1B[1;90mUsage:\x1B[0;90m fig [command]\x1B[0m
+╭────────────────────────────────────────────────────╮
+│ \x1B[1mfig\x1B[0m            \x1B[0;90mOpen the Fig Dashboard\x1B[0m              │ 
+│ \x1B[1mfig doctor\x1B[0m     \x1B[0;90mDebug Fig installation issues\x1B[0m       │ 
+╰────────────────────────────────────────────────────╯
 
- \x1B[1;95mCommon Subcommands\x1B[0m
-╭──────────────────────────────────────────────────╮
-│ \x1B[1mdoctor\x1B[0m         \x1B[0;90mCheck Fig is properly configured\x1B[0m  │
-│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m   │
-│ \x1B[1missue\x1B[0m          \x1B[0;90mCreate a new GitHub issue\x1B[0m         │
-│ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                   │
-│ \x1B[1mupdate\x1B[0m         \x1B[0;90mUpdate Fig\x1B[0m                        │
-│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the Fig app\x1B[0m                  │
-│ \x1B[1muninstall\x1B[0m      \x1B[0;90mUninstall Fig\x1B[0m                     │
-╰──────────────────────────────────────────────────╯
+ \x1B[1;95mPopular Subcommands\x1B[0m           \x1B[1;90mUsage:\x1B[0;90m fig [subcommand]\x1B[0m
+╭────────────────────────────────────────────────────╮
+│ \x1B[1mai\x1B[0m             \x1B[0;90mTranslate English → Bash\x1B[0m            │
+│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m     │
+│ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                     │
+│ \x1B[1mupdate\x1B[0m         \x1B[0;90mCheck for updates\x1B[0m                   │
+│ \x1B[1missue\x1B[0m          \x1B[0;90mCreate a new GitHub issue\x1B[0m           │
+│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the Fig app\x1B[0m                    │
+╰────────────────────────────────────────────────────╯
 
- \x1B[0;90mFor more info on a specific command, use:\x1B[0m
-  > fig help [command]
-
- Run \x1B[1;95mfig\x1B[0m to get started
+ \x1B[0;90mTo see all subcommands, use:\x1B[0m
+  > fig help-all
+ㅤ
 ")]
 pub struct Cli {
     #[command(subcommand)]
