@@ -22,12 +22,12 @@ pub struct SshSubcommand {
     /// Host to connect to
     host: Option<String>,
     /// Identity to connect with
-    #[clap(short = 'a', long = "auth")]
+    #[arg(short = 'a', long = "auth")]
     auth: Option<String>,
-    #[clap(long, hide = true)]
+    #[arg(long, hide = true)]
     get_identities: bool,
     /// Ignore saved identities
-    #[clap(long)]
+    #[arg(long)]
     ignore_saved: bool,
 }
 

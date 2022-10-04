@@ -29,7 +29,7 @@ const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 pub struct AiArgs {
     input: Vec<String>,
     /// Number of completions to generate (must be <=5)
-    #[clap(short, long, hide = true)]
+    #[arg(short, long, hide = true)]
     n: Option<usize>,
 }
 

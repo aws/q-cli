@@ -27,7 +27,7 @@ pub enum Shells {
 #[derive(Debug, Args)]
 pub struct CompletionArgs {
     /// Shell to generate the completion spec for
-    #[clap(value_enum, default_value_t = Shells::Zsh)]
+    #[arg(value_enum, default_value_t = Shells::Zsh)]
     shell: Shells,
 }
 

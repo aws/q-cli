@@ -79,41 +79,41 @@ pub enum Processes {
 #[derive(Debug, Subcommand)]
 pub enum CliRootCommands {
     /// Interact with the desktop app
-    #[clap(subcommand)]
+    #[command(subcommand)]
     App(app::AppSubcommand),
     /// Hook commands
-    #[clap(subcommand, hide = true)]
+    #[command(subcommand, hide = true)]
     Hook(hook::HookSubcommand),
     /// Debug Fig
-    #[clap(subcommand)]
+    #[command(subcommand)]
     Debug(debug::DebugSubcommand),
     /// Customize appearance & behavior
     Settings(settings::SettingsArgs),
     /// Enable/disable fig tips
-    #[clap(subcommand)]
+    #[command(subcommand)]
     Tips(tips::TipsSubcommand),
     /// Install fig cli components
     Install(internal::InstallArgs),
     /// Enable/disable fig SSH integration
     Ssh(ssh::SshSubcommand),
     /// Uninstall fig
-    #[clap(hide = true)]
+    #[command(hide = true)]
     Uninstall {
         /// Force uninstall
-        #[clap(long, short = 'y')]
+        #[arg(long, short = 'y')]
         no_confirm: bool,
     },
     /// Update dotfiles
     Update {
         /// Force update
-        #[clap(long, short = 'y')]
+        #[arg(long, short = 'y')]
         no_confirm: bool,
     },
     /// Run the daemon
-    #[clap(hide = true)]
+    #[command(hide = true)]
     Daemon,
     /// Run diagnostic tests
-    #[clap(alias("diagnostics"))]
+    #[command(alias("diagnostics"))]
     Diagnostic(diagnostics::DiagnosticArgs),
     /// Generate the dotfiles for the given shell
     Init(init::InitArgs),
@@ -128,20 +128,20 @@ pub enum CliRootCommands {
     /// Create a new Github issue
     Issue(issue::IssueArgs),
     /// Root level user subcommands
-    #[clap(flatten)]
+    #[command(flatten)]
     RootUser(user::RootUserSubcommand),
     /// Manage your fig user
-    #[clap(subcommand)]
+    #[command(subcommand)]
     User(user::UserSubcommand),
     /// Manage your fig team
     Team(team::TeamCommand),
     /// Check Fig is properly configured
     Doctor(doctor::DoctorArgs),
     /// Generate the completion spec for Fig
-    #[clap(hide = true)]
+    #[command(hide = true)]
     Completion(completion::CompletionArgs),
     /// Internal subcommands used for Fig
-    #[clap(subcommand, hide = true)]
+    #[command(subcommand, hide = true)]
     Internal(internal::InternalSubcommand),
     /// Launch the Fig desktop app
     Launch,
@@ -150,22 +150,22 @@ pub enum CliRootCommands {
     /// Restart the Fig desktop app
     Restart {
         /// The process to restart
-        #[clap(value_enum, default_value_t = Processes::App, hide = true)]
+        #[arg(value_enum, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
     /// Run the Fig tutorial
-    #[clap(hide = true)]
+    #[command(hide = true)]
     Onboarding,
     /// Manage your shell plugins with Fig
-    #[clap(subcommand)]
+    #[command(subcommand)]
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man(man::ManArgs),
     /// Fig Workflows
-    #[clap(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
+    #[command(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
     Workflow(workflow::WorkflowArgs),
     /// Manage system integrations
-    #[clap(subcommand, alias("integration"))]
+    #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
     /// English -> Bash translation
     Ai(ai::AiArgs),
@@ -177,13 +177,13 @@ pub enum CliRootCommands {
     HelpAll,
 
     /// (LEGACY) Old hook that was being used somewhere
-    #[clap(name = "app:running", hide = true)]
+    #[command(name = "app:running", hide = true)]
     LegacyAppRunning,
     /// (LEGACY) Old ssh hook that might be in ~/.ssh/config
-    #[clap(name = "bg:ssh", hide = true)]
+    #[command(name = "bg:ssh", hide = true)]
     LegacyBgSsh,
     /// (LEGACY) Old tmux hook that might be in ~/.tmux.conf
-    #[clap(name = "bg:tmux", hide = true)]
+    #[command(name = "bg:tmux", hide = true)]
     LegacyBgTmux {
         /// Tmux args
         args: Vec<String>,
@@ -191,8 +191,8 @@ pub enum CliRootCommands {
 }
 
 #[derive(Debug, Parser)]
-#[clap(version, about)]
-#[clap(help_template = "
+#[command(version, about)]
+#[command(help_template = "
 ㅤ\x1B[1m███████╗██╗ ██████╗
   ██╔════╝██║██╔════╝
   █████╗  ██║██║  ███╗
@@ -219,7 +219,7 @@ pub enum CliRootCommands {
  Run \x1B[1;95mfig\x1B[0m to get started
 ")]
 pub struct Cli {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub subcommand: Option<CliRootCommands>,
 }
 

@@ -13,7 +13,7 @@ use fig_proto::fig::NotificationRequest;
 enum Cli {
     Request {
         request_b64: String,
-        #[clap(long)]
+        #[arg(long)]
         cwd: Option<String>,
     },
     Init,

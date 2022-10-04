@@ -84,7 +84,7 @@ use crate::cli::installation::{
 };
 
 #[derive(Debug, Args)]
-#[clap(group(
+#[command(group(
         ArgGroup::new("output")
             .args(&["filename", "exit_code"])
             .multiple(true)
@@ -92,36 +92,36 @@ use crate::cli::installation::{
             ))]
 pub struct CallbackArgs {
     handler_id: String,
-    #[clap(group = "output")]
+    #[arg(group = "output")]
     filename: Option<String>,
-    #[clap(group = "output")]
+    #[arg(group = "output")]
     exit_code: Option<i64>,
 }
 
 #[derive(Debug, Args)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[clap(long, conflicts_with_all = &["input_method"])]
+    #[arg(long, conflicts_with_all = &["input_method"])]
     pub daemon: bool,
     /// Install only the shell integrations
-    #[clap(long, conflicts_with_all = &["input_method"])]
+    #[arg(long, conflicts_with_all = &["input_method"])]
     pub dotfiles: bool,
     /// Prompt input method installation
-    #[clap(long, conflicts_with_all = &["daemon", "dotfiles"])]
+    #[arg(long, conflicts_with_all = &["daemon", "dotfiles"])]
     pub input_method: bool,
     /// Don't confirm automatic installation.
-    #[clap(long)]
+    #[arg(long)]
     pub no_confirm: bool,
     /// Force installation of fig
-    #[clap(long)]
+    #[arg(long)]
     pub force: bool,
     /// Install only the ssh integration.
-    #[clap(long)]
+    #[arg(long)]
     pub ssh: bool,
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
-#[clap(rename_all = "UPPER")]
+#[value(rename_all = "UPPER")]
 pub enum Method {
     Get,
     Post,
@@ -151,7 +151,7 @@ impl Display for Method {
 }
 
 #[derive(Debug, Subcommand)]
-#[clap(hide = true, alias = "_")]
+#[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     /// Prompt the user that the dotfiles have changes
     /// Also use for `fig source` internals
@@ -168,16 +168,16 @@ pub enum InternalSubcommand {
     /// Uninstall fig cli
     Uninstall {
         /// Uninstall only the daemon
-        #[clap(long)]
+        #[arg(long)]
         daemon: bool,
         /// Uninstall only the shell integrations
-        #[clap(long)]
+        #[arg(long)]
         dotfiles: bool,
         /// Uninstall only the binary
-        #[clap(long)]
+        #[arg(long)]
         binary: bool,
         /// Uninstall only the ssh integration
-        #[clap(long)]
+        #[arg(long)]
         ssh: bool,
     },
     GetShell,
@@ -185,24 +185,24 @@ pub enum InternalSubcommand {
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
-        #[clap(long)]
+        #[arg(long)]
         name: String,
         /// Payload of the event as a JSON string.
-        #[clap(long)]
+        #[arg(long)]
         payload: Option<String>,
         /// Apps to send the event to.
-        #[clap(long)]
+        #[arg(long)]
         apps: Vec<String>,
     },
     AuthToken,
     Request {
-        #[clap(long)]
+        #[arg(long)]
         route: String,
-        #[clap(long, default_value_t = Method::Get)]
+        #[arg(long, default_value_t = Method::Get)]
         method: Method,
-        #[clap(long)]
+        #[arg(long)]
         body: Option<String>,
-        #[clap(long)]
+        #[arg(long)]
         namespace: Option<String>,
     },
     SocketsDir,
@@ -210,21 +210,21 @@ pub enum InternalSubcommand {
     FigtermSocketPath {
         session_id: String,
     },
-    #[clap(group(
+    #[command(group(
         ArgGroup::new("target")
             .multiple(false)
             .required(true)
     ))]
     Ipc {
-        #[clap(long, group = "target")]
+        #[arg(long, group = "target")]
         app: bool,
-        #[clap(long, group = "target")]
+        #[arg(long, group = "target")]
         daemon: bool,
-        #[clap(long, group = "target")]
+        #[arg(long, group = "target")]
         figterm: Option<String>,
-        #[clap(long)]
+        #[arg(long)]
         json: String,
-        #[clap(long)]
+        #[arg(long)]
         recv: bool,
     },
     /// Linux only

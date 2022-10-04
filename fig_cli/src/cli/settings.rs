@@ -42,30 +42,30 @@ pub enum SettingsSubcommands {
     /// List all the settings
     All {
         /// List the remote settings
-        #[clap(long, short)]
+        #[arg(long, short)]
         remote: bool,
         /// Format of the output
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
 }
 
 #[derive(Debug, Args)]
-#[clap(subcommand_negates_reqs = true)]
-#[clap(args_conflicts_with_subcommands = true)]
-#[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]
+#[command(subcommand_negates_reqs = true)]
+#[command(args_conflicts_with_subcommands = true)]
+#[command(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]
 pub struct SettingsArgs {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     cmd: Option<SettingsSubcommands>,
     /// key
     key: Option<String>,
     /// value
     value: Option<String>,
     /// Delete a value
-    #[clap(long, short)]
+    #[arg(long, short)]
     delete: bool,
     /// Format of the output
-    #[clap(long, short, value_enum, default_value_t)]
+    #[arg(long, short, value_enum, default_value_t)]
     format: OutputFormat,
 }
 

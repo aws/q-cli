@@ -1,16 +1,16 @@
 use clap::Parser;
 
 #[derive(Parser, Debug)]
-#[clap(author, version, about, long_about = None)]
+#[command(author, version, about, long_about = None)]
 pub struct Cli {
     /// Do not launch the dashboard when starting
-    #[clap(long)]
+    #[arg(long)]
     pub no_dashboard: bool,
     /// Kill old instances of `fig_desktop`
-    #[clap(long)]
+    #[arg(long)]
     pub kill_old: bool,
     /// Allow launching multiple instances of `fig_desktop`
-    #[clap(long)]
+    #[arg(long)]
     pub allow_multiple: bool,
     /// Url to open
     pub url_link: Option<String>,

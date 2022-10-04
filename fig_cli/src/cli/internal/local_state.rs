@@ -24,26 +24,26 @@ pub enum LocalStateSubcommand {
     Open,
     /// List all the settings
     All {
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
 }
 
 #[derive(Debug, Args)]
-#[clap(subcommand_negates_reqs = true)]
-#[clap(args_conflicts_with_subcommands = true)]
-#[clap(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]
+#[command(subcommand_negates_reqs = true)]
+#[command(args_conflicts_with_subcommands = true)]
+#[command(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]
 pub struct LocalStateArgs {
-    #[clap(subcommand)]
+    #[command(subcommand)]
     cmd: Option<LocalStateSubcommand>,
     /// Key of the state
     key: Option<String>,
     /// Value of the state
     value: Option<String>,
-    #[clap(long, short)]
+    #[arg(long, short)]
     /// Delete the state
     delete: bool,
-    #[clap(long, short, value_enum, default_value_t)]
+    #[arg(long, short, value_enum, default_value_t)]
     /// Format of the output
     format: OutputFormat,
 }

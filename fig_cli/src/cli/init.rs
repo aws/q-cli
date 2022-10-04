@@ -27,15 +27,15 @@ use crate::util::app_path_from_bundle_id;
 #[derive(Debug, Args)]
 pub struct InitArgs {
     /// The shell to generate the dotfiles for
-    #[clap(value_enum)]
+    #[arg(value_enum)]
     shell: Shell,
     /// When to generate the dotfiles for
-    #[clap(value_enum)]
+    #[arg(value_enum)]
     when: When,
-    #[clap(long)]
+    #[arg(long)]
     rcfile: Option<String>,
     /// Whether to skip loading dotfiles
-    #[clap(long)]
+    #[arg(long)]
     skip_dotfiles: bool,
 }
 

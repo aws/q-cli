@@ -33,13 +33,13 @@ pub enum PluginsSubcommands {
     /// List all plugins available in the plugin store
     List {
         /// Only list plugins that are installed
-        #[clap(long, short)]
+        #[arg(long, short)]
         installed: bool,
         /// Fields to include in the output
-        #[clap(long, value_delimiter = ',', default_value = "name,displayName,icon,description")]
+        #[arg(long, value_delimiter = ',', default_value = "name,displayName,icon,description")]
         fields: Vec<String>,
         /// The output format
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// Info about a specific plugin
@@ -47,10 +47,10 @@ pub enum PluginsSubcommands {
         /// The plugin to get info about
         plugin: String,
         /// Fields to include in the output
-        #[clap(long, value_delimiter = ',', default_value = "name,displayName,description")]
+        #[arg(long, value_delimiter = ',', default_value = "name,displayName,description")]
         fields: Vec<String>,
         /// The output format
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// Configure a specific plugin

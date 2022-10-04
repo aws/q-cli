@@ -20,25 +20,25 @@ use super::OutputFormat;
 #[derive(Debug, Args)]
 pub struct TeamsArgs {
     // List all teams that the user is part of
-    #[clap(long, conflicts_with_all = &["new", "delete"])]
+    #[arg(long, conflicts_with_all = &["new", "delete"])]
     list: bool,
     // Create a new team
-    #[clap(long, conflicts_with_all = &["list", "delete"])]
+    #[arg(long, conflicts_with_all = &["list", "delete"])]
     new: bool,
     // Delete an existing team
-    #[clap(long, conflicts_with_all = &["list", "new"])]
+    #[arg(long, conflicts_with_all = &["list", "new"])]
     delete: bool,
     // Format of output
-    #[clap(long, short, value_enum, default_value_t)]
+    #[arg(long, short, value_enum, default_value_t)]
     format: OutputFormat,
 }
 
 #[derive(Debug, Args)]
 pub struct TeamCommand {
     pub team: Option<String>,
-    #[clap(subcommand)]
+    #[command(subcommand)]
     pub subcommand: Option<TeamSubcommand>,
-    #[clap(flatten)]
+    #[command(flatten)]
     pub args: TeamsArgs,
 }
 
@@ -99,7 +99,7 @@ impl TeamCommand {
 #[derive(ValueEnum, Debug, Clone, Copy, PartialEq, Eq, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
 pub enum Role {
-    #[clap(hide = true)]
+    #[value(hide = true)]
     Owner,
     Admin,
     Member,
@@ -124,7 +124,7 @@ pub enum TeamSubcommand {
     /// Invite a member to a team
     Add {
         email: String,
-        #[clap(long, value_enum)]
+        #[arg(long, value_enum)]
         role: Option<Role>,
     },
     /// List pending invitations to a team

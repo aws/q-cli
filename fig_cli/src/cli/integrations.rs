@@ -19,18 +19,18 @@ use tracing::debug;
 pub enum IntegrationsSubcommands {
     Install {
         /// Integration to install
-        #[clap(subcommand)]
+        #[command(subcommand)]
         integration: Integration,
         /// Suppress status messages
-        #[clap(long, short)]
+        #[arg(long, short)]
         silent: bool,
     },
     Uninstall {
         /// Integration to uninstall
-        #[clap(subcommand)]
+        #[command(subcommand)]
         integration: Integration,
         /// Suppress status messages
-        #[clap(long, short)]
+        #[arg(long, short)]
         silent: bool,
     },
 }
@@ -39,7 +39,7 @@ pub enum IntegrationsSubcommands {
 pub enum Integration {
     Dotfiles {
         /// Only install the integrations for a single shell
-        #[clap(value_enum)]
+        #[arg(value_enum)]
         shell: Option<Shell>,
     },
     Daemon,

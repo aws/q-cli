@@ -11,7 +11,7 @@ use crate::cli::diagnostics::{
 #[derive(Debug, Args)]
 pub struct IssueArgs {
     /// Force issue creation
-    #[clap(long, short = 'f')]
+    #[arg(long, short = 'f')]
     force: bool,
     /// Issue description
     description: Vec<String>,

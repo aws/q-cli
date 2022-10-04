@@ -78,7 +78,7 @@ const SUPPORTED_SCHEMA_VERSION: u32 = 2;
 #[derive(Debug, Args)]
 pub struct WorkflowArgs {
     // Flags can be added here
-    #[clap(allow_hyphen_values = true)]
+    #[arg(allow_hyphen_values = true)]
     args: Vec<String>,
 }
 

@@ -15,7 +15,7 @@ use fig_util::terminal::CURRENT_TERMINAL;
 use once_cell::sync::Lazy;
 
 #[derive(Debug, Subcommand)]
-#[clap(hide = true)]
+#[command(hide = true)]
 pub enum HookSubcommand {
     Editbuffer {
         session_id: String,
@@ -51,7 +51,7 @@ pub enum HookSubcommand {
         tty: String,
         control_path: String,
         remote_dest: String,
-        #[clap(long)]
+        #[arg(long)]
         prompt: bool,
     },
 }

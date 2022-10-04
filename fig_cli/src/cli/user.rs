@@ -32,15 +32,15 @@ pub enum RootUserSubcommand {
     /// Login to Fig
     Login {
         /// Refresh the auth token if expired
-        #[clap(long, short)]
+        #[arg(long, short)]
         refresh: bool,
         /// Force a refresh of the auth token
-        #[clap(long)]
+        #[arg(long)]
         hard_refresh: bool,
         /// Email to login to
         email: Option<String>,
         ///
-        #[clap(long, hide = true)]
+        #[arg(long, hide = true)]
         switchable: bool,
     },
     /// Logout of Fig
@@ -193,37 +193,37 @@ impl RootUserSubcommand {
 
 #[derive(Subcommand, Debug)]
 pub enum UserSubcommand {
-    #[clap(flatten)]
+    #[command(flatten)]
     Root(RootUserSubcommand),
     /// Subcommand for dealing with tokens
-    #[clap(subcommand)]
+    #[command(subcommand)]
     Tokens(TokensSubcommand),
     /// Prints details about the current user
     Whoami {
         /// Output format to use
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
         /// Only print the user's email address, this is quicker since it doesn't require a network
         /// request
-        #[clap(long, short = 'e')]
+        #[arg(long, short = 'e')]
         only_email: bool,
     },
     /// Prints details about the user's plan
-    #[clap(hide = true)]
+    #[command(hide = true)]
     Plan {
         /// Output format to use
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// List all accounts that can be switch to
-    #[clap(hide = true)]
+    #[command(hide = true)]
     ListAccounts {
         /// Output format to use
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     /// Switch to a switchable account
-    #[clap(hide = true)]
+    #[command(hide = true)]
     Switch {
         /// Email to switch to
         email: String,
@@ -309,27 +309,27 @@ pub enum TokensSubcommand {
         /// The name of the token
         name: String,
         /// The expiration date of the token in RFC3339 format
-        #[clap(long, conflicts_with = "expires_in")]
+        #[arg(long, conflicts_with = "expires_in")]
         expires_date: Option<String>,
         /// The time till the token expires (e.g. "90d")
-        #[clap(long, conflicts_with = "expires_date")]
+        #[arg(long, conflicts_with = "expires_date")]
         expires_in: Option<String>,
         /// The team namespace to create the token for
-        #[clap(long, short)]
+        #[arg(long, short)]
         team: String,
     },
     List {
         /// The team namespace to list the tokens for
-        #[clap(long, short)]
+        #[arg(long, short)]
         team: String,
-        #[clap(long, short, value_enum, default_value_t)]
+        #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
     },
     Revoke {
         /// The name of the token to revoke
         name: String,
         /// The team namespace to revoke the token for
-        #[clap(long, short)]
+        #[arg(long, short)]
         team: String,
     },
     /// Validate a token is valid
