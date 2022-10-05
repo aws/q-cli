@@ -1,0 +1,8 @@
+[Trigger]
+Operation = Remove
+Type = Package
+Target = fig
+
+[Action]
+When = PostTransaction
+Exec = killall fig_desktop

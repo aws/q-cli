@@ -19,8 +19,11 @@ all: archive deb
 archive: bin icons bundle
 	cd $(BUILD_DIR) && tar -cjf fig-$(ARCH)-linux.tar.gz usr install.sh
 
-arch: archive
-	cp $(BUILD_DIR)/fig-$(ARCH)-linux.tar.gz $(BUILD_DIR)/fig-$(ARCH)-linux-archlinux.tar.gz
+arch: bin icons bundle
+	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux
+	cp -r $(BUILD_DIR)/usr $(BUILD_DIR)/fig-$(ARCH)-linux
+	cp -r $(MAKE_DIR)/bundle/archlinux/. $(BUILD_DIR)/fig-$(ARCH)-linux
+	cd $(BUILD_DIR) && tar -cjf fig-$(ARCH)-linux-archlinux.tar.gz fig-$(ARCH)-linux
 
 deb: bin icons bundle
 	mkdir -p $(BUILD_DIR)/fig-$(ARCH)-linux

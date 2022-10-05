@@ -119,3 +119,15 @@ pub fn new_log_level_response(result: Result<String, String>) -> daemon_response
         }),
     }
 }
+
+pub fn new_open_browser_command(url: String) -> DaemonMessage {
+    DaemonMessage {
+        id: None,
+        no_response: None,
+        command: Some(daemon_message::Command::OpenBrowser(OpenBrowserCommand { url })),
+    }
+}
+
+pub fn new_open_browser_response() -> daemon_response::Response {
+    daemon_response::Response::OpenBrowser(())
+}

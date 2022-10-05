@@ -24,6 +24,7 @@ use fig_proto::daemon::{
     DaemonMessage,
     DaemonResponse,
     LogLevelCommand,
+    OpenBrowserCommand,
 };
 use fig_sync::dotfiles::download_and_notify;
 use fig_sync::plugins::fetch_installed_plugins;
@@ -183,6 +184,12 @@ async fn spawn_system_handler(
                                 let res = fig_log::set_fig_log_level(level.clone())
                                     .map_err(|err| format!("Error setting log level: {err}"));
                                 fig_proto::daemon::new_log_level_response(res)
+                            },
+                            Command::OpenBrowser(OpenBrowserCommand { url }) => {
+                                if let Err(err) = fig_util::open_url_async(url).await {
+                                    error!(%err, "Failed to open browser");
+                                }
+                                fig_proto::daemon::new_open_browser_response()
                             },
                         };
 

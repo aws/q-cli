@@ -28,6 +28,8 @@ message DaemonMessage {
     google.protobuf.Empty quit = 106;
     // A request to set the daemon's log level
     LogLevelCommand log_level = 107;
+    // Open a url in the default browser
+    OpenBrowserCommand open_browser = 108;
   }
 }
 
@@ -48,6 +50,8 @@ message DaemonResponse {
     google.protobuf.Empty quit = 106;
     // A response to a log level command
     LogLevelResponse log_level = 107;
+    // A response to an open browser command
+    google.protobuf.Empty open_browser = 108;
   }
 }
 
@@ -186,3 +190,5 @@ message LogLevelResponse {
   optional string old_level = 2;
   optional string error = 3;
 }
+
+message OpenBrowserCommand { string url = 1; }

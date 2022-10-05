@@ -25,7 +25,15 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 
     cfg_if! {
         if #[cfg(target_os = "linux")] {
-            uninstall().await?;
+            let emit = tokio::spawn(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                fig_telemetry::TrackEventType::UninstalledApp,
+                fig_telemetry::TrackSource::Cli,
+                env!("CARGO_PKG_VERSION").into(),
+                std::iter::empty::<(&str, &str)>(),
+            )));
+            let (emit_join, uninstall_join) = tokio::join!(emit, uninstall());
+            emit_join?.ok();
+            uninstall_join?;
         } else if #[cfg(target_os = "macos")] {
             if fig_util::manifest::is_full() {
                 let success = if fig_util::launch_fig(true, true)
@@ -106,12 +114,15 @@ async fn uninstall() -> Result<()> {
 
 #[cfg(target_os = "linux")]
 mod linux {
-    use std::process::Command;
-
     use eyre::Result;
 
     pub async fn uninstall_apt(pkg: String) -> Result<()> {
-        Command::new("apt").arg("remove").arg("-y").arg(pkg).status()?;
+        tokio::process::Command::new("apt")
+            .arg("remove")
+            .arg("-y")
+            .arg(pkg)
+            .status()
+            .await?;
         std::fs::remove_file("/etc/apt/sources.list.d/fig.list")?;
         std::fs::remove_file("/etc/apt/keyrings/fig.gpg")?;
 
@@ -119,14 +130,23 @@ mod linux {
     }
 
     pub async fn uninstall_dnf(pkg: String) -> Result<()> {
-        Command::new("dnf").arg("remove").arg("-y").arg(pkg).status()?;
+        tokio::process::Command::new("dnf")
+            .arg("remove")
+            .arg("-y")
+            .arg(pkg)
+            .status()
+            .await?;
         std::fs::remove_file("/etc/yum.repos.d/fig.repo")?;
 
         Ok(())
     }
 
     pub async fn uninstall_pacman(pkg: String) -> Result<()> {
-        Command::new("pacman").arg("-Rs").arg(pkg).status()?;
+        tokio::process::Command::new("pacman")
+            .arg("-Rs")
+            .arg(pkg)
+            .status()
+            .await?;
 
         Ok(())
     }

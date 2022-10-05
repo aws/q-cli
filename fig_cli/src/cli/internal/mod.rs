@@ -53,6 +53,11 @@ use fig_proto::ReflectMessage;
 use fig_request::auth::get_token;
 use fig_request::Request;
 use fig_sync::dotfiles::notify::TerminalNotification;
+use fig_telemetry::{
+    TrackEvent,
+    TrackEventType,
+    TrackSource,
+};
 use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
@@ -235,9 +240,10 @@ pub enum InternalSubcommand {
     #[cfg(target_os = "linux")]
     /// Checks for sandboxing
     DetectSandbox,
-    /// Uses the desktop app to open the uninstall page
-    #[cfg(target_os = "linux")]
-    OpenUninstallPage,
+    OpenUninstallPage {
+        #[arg(long)]
+        verbose: bool,
+    },
     /// Displays prompt to install remote shell integrations
     PromptSsh {
         remote_dest: String,
@@ -521,19 +527,54 @@ impl InternalSubcommand {
                 .ok();
             },
             InternalSubcommand::UninstallForAllUsers => {
+                println!("Uninstalling additional components...");
+
                 let out = Command::new("users").output()?;
                 let users = String::from_utf8_lossy(&out.stdout);
+
+                let mut uninstall_success = false;
+                let mut open_page_success = false;
+
+                let emit = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
+                    TrackEventType::UninstalledApp,
+                    TrackSource::Cli,
+                    env!("CARGO_PKG_VERSION").into(),
+                    std::iter::empty::<(&str, &str)>(),
+                )));
+
                 for user in users
                     .split('\n')
                     .map(|line| line.trim())
                     .filter(|line| !line.is_empty())
                 {
-                    Command::new("sudo")
-                        .args(&["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
-                        .status()?;
-                    Command::new("sudo")
+                    if let Ok(exit_status) = tokio::process::Command::new("runuser")
                         .args(&["-u", user, "--", "fig", "_", "open-uninstall-page"])
-                        .status()?;
+                        .status()
+                        .await
+                    {
+                        if exit_status.success() {
+                            open_page_success = true;
+                        }
+                    }
+                    if let Ok(exit_status) = tokio::process::Command::new("runuser")
+                        .args(&["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
+                        .status()
+                        .await
+                    {
+                        if exit_status.success() {
+                            uninstall_success = true;
+                        }
+                    }
+                }
+
+                emit.await.ok();
+
+                if !uninstall_success {
+                    bail!("Failed to uninstall properly");
+                }
+
+                if !open_page_success {
+                    bail!("Failed to uninstall completely");
                 }
             },
             InternalSubcommand::StreamFromSocket => {
@@ -626,17 +667,35 @@ impl InternalSubcommand {
                     SandboxKind::Container(Some(engine)) => println!("You are in a {engine} container"),
                 };
             },
-            #[cfg(target_os = "linux")]
-            InternalSubcommand::OpenUninstallPage => {
-                if let Some(email) = fig_request::auth::get_email() {
-                    let url = format!(
-                        "https://fig.io/uninstall?email={email}&version={}",
-                        fig_util::manifest::version().unwrap()
-                    );
-                    fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
-                        fig_proto::local::OpenBrowserCommand { url },
-                    ))
-                    .await?;
+            InternalSubcommand::OpenUninstallPage { verbose } => {
+                let email = fig_request::auth::get_email().unwrap_or_else(|| "".into());
+                let version = env!("CARGO_PKG_VERSION");
+                let os = std::env::consts::OS;
+                let url = format!("https://fig.io/uninstall?email={email}&version={version}&os={os}");
+
+                if let Err(err) = fig_util::open_url_async(url.clone()).await {
+                    if verbose {
+                        eprintln!("Failed to open uninstall directly, trying daemon proxy: {err}");
+                    }
+                    if let Err(err) =
+                        fig_ipc::daemon::send_recv_message(fig_proto::daemon::new_open_browser_command(url.clone()))
+                            .await
+                    {
+                        if verbose {
+                            eprintln!("Failed to open uninstall via daemon, trying desktop: {err}");
+                        }
+                        if let Err(err) =
+                            fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
+                                fig_proto::local::OpenBrowserCommand { url },
+                            ))
+                            .await
+                        {
+                            if verbose {
+                                eprintln!("Failed to open uninstall via desktop, no more options: {err}");
+                            }
+                            std::process::exit(1);
+                        }
+                    }
                 }
             },
             InternalSubcommand::PromptSsh { remote_dest } => {

@@ -74,7 +74,7 @@ impl InitSystem {
                     .arg("--user")
                     .arg("--now")
                     .arg("enable")
-                    .arg(&path)
+                    .arg(format!("{DAEMON_NAME}.service"))
                     .output()
                     .await?;
 
@@ -99,7 +99,7 @@ impl InitSystem {
                     .arg("--user")
                     .arg("--now")
                     .arg("disable")
-                    .arg(InitSystem::Systemd.daemon_path()?)
+                    .arg(format!("{DAEMON_NAME}.service"))
                     .output()
                     .await?;
                 Ok(())
@@ -113,8 +113,13 @@ impl InitSystem {
             InitSystem::Systemd => {
                 Command::new("systemctl")
                     .arg("--user")
+                    .arg("daemon-reload")
+                    .output()
+                    .await?;
+                Command::new("systemctl")
+                    .arg("--user")
                     .arg("restart")
-                    .arg(InitSystem::Systemd.daemon_path()?)
+                    .arg(format!("{DAEMON_NAME}.service"))
                     .output()
                     .await?;
                 Ok(())
