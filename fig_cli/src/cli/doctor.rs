@@ -51,6 +51,7 @@ use fig_telemetry::{
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
+    launch_fig,
     Shell,
     Terminal,
 };
@@ -72,8 +73,6 @@ use crate::util::{
     glob,
     glob_dir,
     is_executable_in_path,
-    launch_fig,
-    LaunchArgs,
 };
 
 #[derive(Debug, Args)]
@@ -2166,12 +2165,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, try to launch fig
-    launch_fig(LaunchArgs {
-        print_running: false,
-        print_launching: false,
-        wait_for_launch: true,
-    })
-    .ok();
+    launch_fig(true, false).ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

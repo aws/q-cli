@@ -70,9 +70,6 @@ use tui::{
     TextField,
 };
 
-#[cfg(unix)]
-use crate::util::launch_fig;
-
 const SUPPORTED_SCHEMA_VERSION: u32 = 2;
 
 #[derive(Debug, Args)]
@@ -368,11 +365,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     match workflow {
                                         WorkflowAction::Run(workflow) => ("search", *workflow.clone()),
                                         WorkflowAction::Create => {
-                                            launch_fig(crate::util::LaunchArgs {
-                                                print_running: false,
-                                                print_launching: true,
-                                                wait_for_launch: true
-                                            })?;
+                                            fig_util::launch_fig(true, true)?;
                                             return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
                                                 Ok(()) => Ok(()),
                                                 Err(err) => Err(err.into()),

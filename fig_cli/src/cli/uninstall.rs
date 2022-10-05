@@ -28,12 +28,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             uninstall().await?;
         } else if #[cfg(target_os = "macos")] {
             if fig_util::manifest::is_full() {
-                use crate::util::{LaunchArgs, launch_fig};
-                let success = if launch_fig(LaunchArgs {
-                    print_running: false,
-                    print_launching: true,
-                    wait_for_launch: true,
-                })
+                let success = if fig_util::launch_fig(true, true)
                 .is_ok()
                 {
                     fig_ipc::local::uninstall_command().await.is_ok()

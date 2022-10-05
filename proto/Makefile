@@ -5,7 +5,7 @@ export BUILT_PRODUCTS_DIR ?= $(ROOT)
 # Add brew executables to PATH
 export PATH := /opt/homebrew/bin:/opt/homebrew/sbin:$(PATH)
 
-SHELL := env PATH=$(PATH) /bin/bash
+SHELL := env "PATH=$(PATH)" bash
 
 TS_PROTO = $(shell yarn bin)/protoc-gen-ts_proto
 

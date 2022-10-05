@@ -20,9 +20,9 @@ use eyre::{
     bail,
     ContextCompat,
     Result,
-    WrapErr,
 };
 use fig_ipc::local::quit_command;
+use fig_util::is_app_running;
 use globset::{
     Glob,
     GlobSet,
@@ -31,13 +31,6 @@ use globset::{
 use once_cell::sync::Lazy;
 use regex::Regex;
 use tracing::warn;
-
-#[derive(Debug)]
-pub struct LaunchArgs {
-    pub print_running: bool,
-    pub print_launching: bool,
-    pub wait_for_launch: bool,
-}
 
 #[must_use]
 pub fn fig_bundle() -> Option<PathBuf> {
@@ -121,160 +114,6 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
             None
         }
     }
-}
-
-#[must_use]
-pub fn is_app_running() -> bool {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            let output = match std::process::Command::new("lsappinfo")
-                .args(["info", "-app", "com.mschrage.fig"])
-                .output()
-            {
-                Ok(output) => output,
-                Err(_) => return false,
-            };
-
-            match std::str::from_utf8(&output.stdout) {
-                Ok(result) => !result.trim().is_empty(),
-                Err(_) => false,
-            }
-        } else {
-            use sysinfo::{
-                ProcessRefreshKind,
-                RefreshKind,
-                System,
-                SystemExt,
-            };
-
-            cfg_if! {
-                if #[cfg(windows)] {
-                    let process_name = "fig_desktop.exe";
-                } else if #[cfg(unix)] {
-                    let process_name = match fig_util::system_info::in_wsl() {
-                        true => {
-                            let output = match std::process::Command::new("tasklist.exe").args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"]).output() {
-                                Ok(output) => output,
-                                Err(_) => return false,
-                            };
-
-                            return match std::str::from_utf8(&output.stdout) {
-                                Ok(result) => result.contains("fig_desktop.exe"),
-                                Err(_) => false,
-                            };
-                        },
-                        false => "fig_desktop",
-                    };
-                }
-            }
-
-            let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name(process_name);
-            processes.next().is_some()
-        }
-    }
-}
-
-pub fn launch_fig(args: LaunchArgs) -> Result<()> {
-    use fig_util::directories::fig_socket_path;
-
-    if fig_util::system_info::is_remote() {
-        bail!("Launching Fig from headless installs is not yet supported");
-    }
-
-    if is_app_running() {
-        if args.print_running {
-            println!("Fig is already running");
-        }
-
-        return Ok(());
-    }
-
-    if args.print_launching {
-        println!("Launching Fig");
-    }
-
-    std::fs::remove_file(fig_socket_path()?).ok();
-
-    cfg_if! {
-        if #[cfg(target_os = "linux")] {
-            if fig_util::system_info::in_wsl() {
-                let output = Command::new("fig_desktop.exe")
-                    .output()
-                    .context("Unable to launch Fig")?;
-
-                if !output.status.success() {
-                    bail!("Failed to launch Fig: {}", String::from_utf8_lossy(&output.stderr));
-                }
-            } else {
-                let output = Command::new("systemctl")
-                    .args(&["--user", "start", "fig"])
-                    .output()
-                    .context("Unable to launch Fig")?;
-
-                if !output.status.success() {
-                    bail!("Failed to launch Fig: {}", String::from_utf8_lossy(&output.stderr));
-                }
-            }
-        } else if #[cfg(target_os = "macos")] {
-            Command::new("open")
-                .args(["-g", "-b", "com.mschrage.fig", "--args", "--no-dashboard"])
-                .output()
-                .context("Unable to launch Fig")?;
-        } else if #[cfg(target_os = "windows")] {
-            use std::os::windows::process::CommandExt;
-            use windows::Win32::System::Threading::DETACHED_PROCESS;
-
-            Command::new("fig_desktop")
-                .creation_flags(DETACHED_PROCESS.0)
-                .spawn()
-                .context("Unable to launch Fig")?;
-        } else {
-            bail!("Launching Fig is not supported on this platform");
-        }
-    }
-
-    if !args.wait_for_launch {
-        return Ok(());
-    }
-
-    #[cfg(not(target_os = "windows"))]
-    if !is_app_running() {
-        eyre::bail!("Unable to launch Fig");
-    }
-
-    // Wait for socket to exist
-    let path = fig_socket_path()?;
-
-    cfg_if! {
-        if #[cfg(not(target_os = "windows"))] {
-            for _ in 0..10 {
-                // Wait for socket to exist
-                if path.exists() {
-                    return Ok(());
-                }
-
-                std::thread::sleep(std::time::Duration::from_millis(500));
-            }
-        } else if #[cfg(target_os = "windows")] {
-            for _ in 0..20 {
-                match path.metadata() {
-                    Ok(_) => return Ok(()),
-                    Err(err) => if let Some(code) = err.raw_os_error() {
-                        // Windows can't query socket file existence
-                        // Check against arbitrary error code
-                        if code == 1920 {
-                            return Ok(())
-                        }
-                    },
-                }
-
-                std::thread::sleep(std::time::Duration::from_millis(500));
-            }
-        }
-    }
-
-    bail!("Unable to finish launching Fig properly")
 }
 
 pub async fn quit_fig() -> Result<()> {

@@ -21,7 +21,7 @@ impl IssueArgs {
     pub async fn execute(&self) -> Result<()> {
         // Check if fig is running
         #[cfg(target_os = "macos")]
-        if !self.force && !crate::util::is_app_running() {
+        if !self.force && !fig_util::is_app_running() {
             println!(
                 "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
                 "fig launch".magenta(),

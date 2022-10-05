@@ -1,19 +1,29 @@
-use std::time::SystemTimeError;
-
-use cfg_if::cfg_if;
-use thiserror::Error;
-
+#[cfg(target_os = "freebsd")]
+mod freebsd;
 pub mod index;
+#[cfg(target_os = "linux")]
+mod linux;
 #[cfg(target_os = "macos")]
 mod macos;
 #[cfg(windows)]
 mod windows;
 
-pub use index::check as check_for_updates;
-use index::RemotePackage;
+use std::time::SystemTimeError;
+
+#[cfg(target_os = "freebsd")]
+use freebsd as os;
+#[cfg(target_os = "linux")]
+use linux as os;
+#[cfg(target_os = "macos")]
+use macos as os;
+use thiserror::Error;
+#[cfg(windows)]
+use windows as os;
 
 #[derive(Debug, Error)]
 pub enum Error {
+    #[error(transparent)]
+    Io(#[from] std::io::Error),
     #[error("unsupported platform")]
     UnsupportedPlatform,
     #[error(transparent)]
@@ -26,18 +36,23 @@ pub enum Error {
     SystemTime(#[from] SystemTimeError),
     #[error("could not determine fig version")]
     UnclearVersion,
+    #[error("please update from your package manager")]
+    PackageManaged,
+    #[error("failed to update fig: `{0}`")]
+    LegacyUpdateFailed(String),
 }
 
-#[allow(clippy::needless_return)] // actually fairly needed
-pub fn apply_update(package: RemotePackage) -> Result<(), Error> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            return macos::update(package);
-        } else if #[cfg(target_os = "windows")] {
-            return windows::update(package);
-        } else {
-            let _package = package;
-            return Err(Error::UnsupportedPlatform);
-        }
+pub async fn check_for_updates() -> Result<Option<String>, Error> {
+    Ok(index::check_for_updates(env!("CARGO_PKG_VERSION"))
+        .await?
+        .map(|update| update.version))
+}
+
+/// Attempt to update if there is a newer version of Fig
+pub async fn update(deprecated_no_confirm: bool) -> Result<(), Error> {
+    if let Some(update) = index::check_for_updates(env!("CARGO_PKG_VERSION")).await? {
+        os::update(update, deprecated_no_confirm).await?;
     }
+
+    Ok(())
 }

@@ -2652,6 +2652,7 @@ name = "fig_install"
 version = "2.5.3"
 dependencies = [
  "cfg-if 1.0.0",
+ "fig_ipc",
  "fig_util",
  "once_cell",
  "reqwest",
@@ -2853,6 +2854,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "sysinfo 0.26.4",
  "thiserror",
  "time 0.3.14",
  "tokio",
@@ -4546,7 +4548,7 @@ dependencies = [
 [[package]]
 name = "mio"
 version = "0.8.4"
-source = "git+https://github.com/sullivan-sean/mio#26a060b235a083336661f4fa2e79be055a05da4b"
+source = "git+https://github.com/sullivan-sean/mio#fd8ddc181c7cd0b83d7ea1174a63a3b474005e9e"
 dependencies = [
  "libc",
  "log",

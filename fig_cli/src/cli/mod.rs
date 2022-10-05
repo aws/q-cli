@@ -41,7 +41,11 @@ use eyre::{
 };
 use fig_daemon::Daemon;
 use fig_log::Logger;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    is_app_running,
+    launch_fig,
+};
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
 
@@ -49,11 +53,6 @@ use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
 use self::plugins::PluginsSubcommands;
 use crate::daemon::daemon;
-use crate::util::{
-    is_app_running,
-    launch_fig,
-    LaunchArgs,
-};
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
@@ -276,7 +275,10 @@ impl Cli {
                     }
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
-                CliRootCommands::Update { no_confirm } => installation::update(no_confirm).await.map(|_| ()),
+                CliRootCommands::Update { no_confirm } => {
+                    fig_install::update(no_confirm).await?;
+                    Ok(())
+                },
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
@@ -307,11 +309,14 @@ impl Cli {
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => launch_fig(LaunchArgs {
-                    print_running: true,
-                    print_launching: true,
-                    wait_for_launch: true,
-                }),
+                CliRootCommands::Launch => {
+                    if is_app_running() {
+                        println!("Fig is already running!");
+                        return Ok(());
+                    }
+                    launch_fig(true, true)?;
+                    Ok(())
+                },
                 CliRootCommands::Quit => crate::util::quit_fig().await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,
@@ -376,11 +381,7 @@ async fn root_command() -> Result<()> {
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }
 
-            launch_fig(LaunchArgs {
-                print_running: false,
-                print_launching: true,
-                wait_for_launch: true,
-            })?;
+            launch_fig(true, true)?;
 
             if is_logged_in() {
                 open_ui_element(UiElement::MissionControl, None)
@@ -395,7 +396,7 @@ async fn root_command() -> Result<()> {
                 eyre::bail!("Launching Fig from headless installs is not yet supported");
             }
 
-            launch_fig(LaunchArgs { print_running: false, print_launching: true, wait_for_launch: true }).context("Failed to launch Fig")?;
+            launch_fig(true, true)?;
             open_ui_element(UiElement::MissionControl, None).await.context("Failed to open Fig")?;
         }
     }

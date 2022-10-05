@@ -16,17 +16,15 @@ use fig_settings::{
     settings,
     state,
 };
-use fig_util::manifest;
+use fig_util::{
+    is_app_running,
+    launch_fig,
+    manifest,
+};
 use tracing::{
     error,
     info,
     trace,
-};
-
-use crate::util::{
-    is_app_running,
-    launch_fig,
-    LaunchArgs,
 };
 
 #[derive(Debug, Subcommand)]
@@ -57,20 +55,13 @@ pub async fn restart_fig() -> Result<()> {
     }
 
     if !is_app_running() {
-        launch_fig(LaunchArgs {
-            print_running: false,
-            print_launching: true,
-            wait_for_launch: true,
-        })
+        launch_fig(true, true)?;
+        Ok(())
     } else {
         cfg_if! {
             if #[cfg(target_os = "linux")] {
                 crate::util::quit_fig().await?;
-                launch_fig(LaunchArgs {
-                    print_running: false,
-                    print_launching: true,
-                    wait_for_launch: true
-                })?;
+                launch_fig(true, true)?;
             } else {
                 use eyre::Context;
 
@@ -98,11 +89,8 @@ impl AppSubcommand {
                         use std::process::Command;
                         use std::os::unix::process::CommandExt;
 
-                        launch_fig(LaunchArgs {
-                            print_running: false,
-                            print_launching: true,
-                            wait_for_launch: true
-                        })?;
+                        launch_fig(true, true)?;
+
                         if state::set_value("user.onboarding", true).is_ok() {
                             Command::new("bash")
                                 .args(["-c", include_str!("onboarding.sh")])
@@ -149,9 +137,9 @@ impl AppSubcommand {
                         }
                     }
 
-                    match fig_install::check_for_updates(None).await {
-                        Ok(Some(remote)) => {
-                            state::set_value("update.latestVersion", remote.version).ok();
+                    match fig_install::check_for_updates().await {
+                        Ok(Some(version)) => {
+                            state::set_value("update.latestVersion", version).ok();
                         },
                         Ok(None) => {}, // no version available
                         Err(err) => error!(%err, "Failed checking for updates"),
@@ -184,12 +172,7 @@ impl AppSubcommand {
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
                             trace!("launching updated version of Fig");
-                            launch_fig(LaunchArgs {
-                                print_running: false,
-                                print_launching: false,
-                                wait_for_launch: true,
-                            })
-                            .ok();
+                            launch_fig(true, false).ok();
                         } else {
                             trace!("autoupdates are disabled.");
 
@@ -213,11 +196,7 @@ impl AppSubcommand {
                             fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?
                         }
 
-                        launch_fig(LaunchArgs {
-                            print_running: false,
-                            print_launching: false,
-                            wait_for_launch: false,
-                        })?;
+                        launch_fig(false, false)?;
                     }
                 }
             },
@@ -233,11 +212,13 @@ impl AppSubcommand {
             },
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => crate::util::quit_fig().await?,
-            AppSubcommand::Launch => launch_fig(LaunchArgs {
-                print_running: true,
-                print_launching: true,
-                wait_for_launch: true,
-            })?,
+            AppSubcommand::Launch => {
+                if is_app_running() {
+                    println!("Fig is already running!");
+                    return Ok(());
+                }
+                launch_fig(true, true)?
+            },
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             },

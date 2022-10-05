@@ -28,7 +28,10 @@ use fig_proto::daemon::{
 use fig_sync::dotfiles::download_and_notify;
 use fig_sync::plugins::fetch_installed_plugins;
 use fig_telemetry::TrackEvent;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    launch_fig,
+};
 use parking_lot::RwLock;
 use tokio::net::UnixListener;
 use tokio::task::JoinHandle;
@@ -40,10 +43,6 @@ use tracing::{
 use yaque::Sender;
 
 use super::DaemonStatus;
-use crate::util::{
-    launch_fig,
-    LaunchArgs,
-};
 
 async fn spawn_system_handler(
     mut connection: BufferedUnixStream,
@@ -121,12 +120,7 @@ async fn spawn_system_handler(
                                             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
                                             tokio::task::block_in_place(|| {
-                                                launch_fig(LaunchArgs {
-                                                    print_running: false,
-                                                    print_launching: false,
-                                                    wait_for_launch: true,
-                                                })
-                                                .ok();
+                                                launch_fig(true, false).ok();
                                             });
                                         });
                                         true

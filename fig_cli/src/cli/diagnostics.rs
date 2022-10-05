@@ -58,7 +58,7 @@ pub struct DiagnosticArgs {
 impl DiagnosticArgs {
     pub async fn execute(&self) -> Result<()> {
         #[cfg(target_os = "macos")]
-        if !self.force && !crate::util::is_app_running() {
+        if !self.force && !fig_util::is_app_running() {
             use owo_colors::OwoColorize;
 
             println!(

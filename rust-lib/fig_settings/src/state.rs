@@ -99,7 +99,7 @@ mod test {
 
         assert!(!get_bool_or("bool", false));
         set_value("bool", true).unwrap();
-        assert!(get_bool("bool").unwrap().unwrap() == true);
+        assert!(get_bool("bool").unwrap().unwrap());
 
         assert!(get_string_or("string", "hi") == "hi");
         set_value("string", "hi").unwrap();

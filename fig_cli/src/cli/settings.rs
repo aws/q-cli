@@ -17,17 +17,16 @@ use fig_ipc::local::{
 };
 use fig_proto::local::UiElement;
 use fig_request::auth::is_logged_in;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    launch_fig,
+};
 use globset::Glob;
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
-use crate::util::{
-    app_not_running_message,
-    launch_fig,
-    LaunchArgs,
-};
+use crate::util::app_not_running_message;
 
 #[derive(Debug, Subcommand)]
 pub enum SettingsSubcommands {
@@ -209,11 +208,7 @@ impl SettingsArgs {
                     _ => Ok(()),
                 },
                 None => {
-                    launch_fig(LaunchArgs {
-                        print_running: false,
-                        print_launching: true,
-                        wait_for_launch: true,
-                    })?;
+                    launch_fig(true, true)?;
 
                     if is_logged_in() {
                         match open_ui_element(UiElement::Settings, None).await {

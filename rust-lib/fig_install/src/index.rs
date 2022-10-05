@@ -19,7 +19,10 @@ use once_cell::sync::Lazy;
 use reqwest::Client;
 use semver::Version;
 use serde::Deserialize;
-use tracing::trace;
+use tracing::{
+    info,
+    trace,
+};
 
 use crate::Error;
 
@@ -95,15 +98,11 @@ async fn pull() -> Result<Index, Error> {
     Ok(index)
 }
 
-pub async fn check(current_version_hint: Option<String>) -> Result<Option<UpdatePackage>, Error> {
+pub async fn check_for_updates(current_version: &str) -> Result<Option<UpdatePackage>, Error> {
     let index = pull().await?;
 
-    let current_version = current_version_hint
-        .or_else(|| manifest().as_ref().map(|man| man.version.clone()))
-        .ok_or(Error::UnclearVersion)?;
-
+    let local_version = Version::parse(current_version)?;
     let remote_version = Version::parse(&index.latest_version)?;
-    let local_version = Version::parse(&current_version)?;
 
     if remote_version <= local_version {
         return Ok(None); // remote version isn't higher than current version
@@ -158,11 +157,11 @@ pub async fn check(current_version_hint: Option<String>) -> Result<Option<Update
                 if remote_threshold >= system_threshold {
                     // the rollout chose us
                     chosen = Some((remote_version, entry));
-                    trace!(
+                    info!(
                         "accepted update candidate {remote_version} with remote_threshold {remote_threshold} and system_threshold {system_threshold}"
                     );
                 } else {
-                    trace!(
+                    info!(
                         "rejected update candidate {remote_version} because remote_threshold {remote_threshold} is below system_threshold {system_threshold}"
                     );
                 }
@@ -181,10 +180,10 @@ pub async fn check(current_version_hint: Option<String>) -> Result<Option<Update
     let (candidate_version, candidate_package) = chosen.unwrap();
 
     let package = match (get_platform(), get_arch()) {
-        ("windows", "x86_64") => candidate_package.windows.x86_64.clone(),
+        ("linux", "x86_64") => Default::default(),
         ("macos", "x86_64") => candidate_package.macos.x86_64.clone(),
         ("macos", "aarch64") => candidate_package.macos.aarch64.clone(),
-        ("linux", "x86_64") => Default::default(),
+        ("windows", "x86_64") => candidate_package.windows.x86_64.clone(),
         _ => return Err(Error::UnsupportedPlatform),
     };
 

@@ -9,7 +9,6 @@ use fig_proto::local::{
     OpenUiElementCommand,
     QuitCommand,
     UiElement,
-    UpdateCommand,
 };
 use parking_lot::Mutex;
 use tracing::error;
@@ -114,12 +113,6 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
         UiElement::InputMethodPrompt => error!("Opening input method prompt is unimplemented"),
     };
 
-    Ok(LocalResponse::Success(None))
-}
-
-pub async fn update(_command: UpdateCommand) -> LocalResult {
-    #[cfg(target_os = "windows")]
-    crate::utils::update_check().await;
     Ok(LocalResponse::Success(None))
 }
 

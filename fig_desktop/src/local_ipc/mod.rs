@@ -86,7 +86,6 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<Nati
                             OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
                             Quit(command) => commands::quit(command, &proxy).await,
                             Diagnostics(command) => commands::diagnostic(command).await,
-                            Update(command) => commands::update(command).await,
                             OpenBrowser(command) => commands::open_browser(command).await,
                             Logout(_)
                             | TerminalIntegration(_)
@@ -95,6 +94,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<Nati
                             | ReportWindow(_)
                             | RestartSettingsListener(_)
                             | RunInstallScript(_)
+                            | Update(_)
                             | Build(_)
                             | ResetCache(_)
                             | PromptAccessibility(_)

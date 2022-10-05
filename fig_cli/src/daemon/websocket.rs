@@ -20,8 +20,11 @@ use fig_settings::{
     settings,
     ws_host,
 };
-use fig_util::directories;
 use fig_util::system_info::get_system_id;
+use fig_util::{
+    directories,
+    launch_fig,
+};
 use serde::{
     Deserialize,
     Serialize,
@@ -45,10 +48,6 @@ use url::Url;
 use crate::daemon::scheduler::{
     Scheduler,
     SyncDotfiles,
-};
-use crate::util::{
-    launch_fig,
-    LaunchArgs,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
@@ -244,12 +243,7 @@ pub async fn process_websocket(
                                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
 
                                     // Relaunch the app
-                                    launch_fig(LaunchArgs {
-                                        print_running: false,
-                                        print_launching: false,
-                                        wait_for_launch: true,
-                                    })
-                                    .ok();
+                                    launch_fig(true, false).ok();
                                 }
                             },
                             FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),
