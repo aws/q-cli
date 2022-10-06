@@ -222,6 +222,11 @@ jobs:
           name: Install musl stuff
           command: apt install -y musl-dev
       - run:
+          name: Update rust
+          # rustup update can throw error on missing folder:
+          # https://github.com/rust-lang/rustup/issues/1480
+          command: rustup toolchain uninstall stable && rustup toolchain install stable
+      - run:
           name: Install Rust toolchain
           command: rustup target add aarch64-unknown-linux-musl
       - run:
