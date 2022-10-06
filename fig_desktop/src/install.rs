@@ -14,18 +14,20 @@ pub async fn run_install() {
         .ok();
 
     // Update if there's a newer version
-    #[cfg(all(target_os = "windows", not(debug_assertions)))]
-    tokio::spawn(async {
-        let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
-        if seconds < 0 {
-            return;
-        }
-        let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
-        loop {
-            interval.tick().await;
-            crate::utils::update_check().await;
-        }
-    });
+    #[cfg(windows)]
+    if !cfg!(debug_assertions) {
+        tokio::spawn(async {
+            let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
+            if seconds < 0 {
+                return;
+            }
+            let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
+            loop {
+                interval.tick().await;
+                fig_install::update(true).await.ok();
+            }
+        });
+    }
 
     // remove the updater if it exists
     #[cfg(target_os = "windows")]
