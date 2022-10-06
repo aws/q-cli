@@ -187,6 +187,7 @@ impl Terminal {
             Terminal::Terminology => &["terminology"],
             Terminal::WezTerm => &["wezterm", "wezterm-gui"],
             Terminal::Hyper => &["hyper"],
+            Terminal::Tabby => &["tabby"],
 
             Terminal::Ssh => &["sshd"],
 
@@ -211,6 +212,7 @@ impl Terminal {
             Terminal::Terminator => Some("Terminator"),
             Terminal::Terminology => Some("terminology"),
             Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
+            Terminal::Tabby => Some("tabby"),
             _ => None,
         }
     }
@@ -229,6 +231,7 @@ impl Terminal {
             // Terminal::Terminator => Some("terminator"),
             // Terminal::Terminology => Some("terminology"),
             // Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
+            // Terminal::Tabby => Some("tabby"),
             _ => None,
         }
     }
