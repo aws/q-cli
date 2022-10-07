@@ -31,11 +31,30 @@ pub struct Connection {
     pub default_identity_id: Option<u64>,
     #[serde(deserialize_with = "string_as_vec_u64")]
     pub identity_ids: Vec<u64>,
+    pub port_forwards: Vec<PortForward>,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "camelCase")]
+pub struct PortForward {
+    pub remote_id: u64,
+    pub forwarded_ip: String,
+    pub forwarded_port: u16,
+    pub ip: String,
+    pub port: u16,
+    pub port_forward_type: PortForwardType,
+}
+
+#[derive(Serialize, Deserialize, Debug)]
+#[serde(rename_all = "lowercase")]
+pub enum PortForwardType {
+    Local,
+    Remote,
 }
 
 #[derive(Deserialize, Debug, PartialEq, Eq)]
+#[serde(rename_all = "lowercase")]
 pub enum ConnectionType {
-    #[serde(rename = "ssh")]
     Ssh,
 }
 
@@ -88,6 +107,7 @@ struct SshStringRequest<'a> {
     username: Option<&'a str>,
     hostname: &'a str,
     port: u16,
+    port_forwards: &'a [PortForward],
 }
 
 #[derive(Deserialize)]
@@ -110,6 +130,7 @@ pub async fn ssh_string(
             username: identity.as_ref().map(|iden| iden.username.as_ref()),
             hostname: &host.ip,
             port: connection.port,
+            port_forwards: &connection.port_forwards,
         })
         .deser_json::<SshStringResponse>()
         .await?
