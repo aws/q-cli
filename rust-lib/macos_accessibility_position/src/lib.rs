@@ -1,10 +1,15 @@
 #![cfg(target_os = "macos")]
 
+pub mod accessibility;
 pub mod platform_api;
 mod util;
 mod window_position;
 pub mod window_server;
-
+pub use util::{
+    NSString,
+    NotificationCenter,
+    Subscription,
+};
 use window_position::WindowPosition;
 
 pub mod caret_position;

@@ -8,6 +8,7 @@ pub const kAXValueAttribute: &str = "AXValue";
 pub const kAXValueDescriptionAttribute: &str = "AXValueDescription";
 pub const kAXMinValueAttribute: &str = "AXMinValue";
 pub const kAXMaxValueAttribute: &str = "AXMaxValue";
+pub const kAXFullScreenAttribute: &str = "AXFullScreen";
 pub const kAXValueIncrementAttribute: &str = "AXValueIncrement";
 pub const kAXAllowedValuesAttribute: &str = "AXAllowedValues";
 pub const kAXPlaceholderValueAttribute: &str = "AXPlaceholderValue";

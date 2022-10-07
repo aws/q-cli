@@ -6,7 +6,11 @@ use wry::application::dpi::Position;
 use crate::icons::ProcessedAsset;
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
-use crate::EventLoopProxy;
+use crate::webview::FigWindowMap;
+use crate::{
+    EventLoopProxy,
+    EventLoopWindowTarget,
+};
 
 cfg_if::cfg_if! {
     if #[cfg(target_os="linux")] {
@@ -40,8 +44,13 @@ impl PlatformState {
     }
 
     /// Handle a [`PlatformBoundEvent`]
-    pub fn handle(self: &Arc<Self>, event: PlatformBoundEvent) -> anyhow::Result<()> {
-        self.clone().0.handle(event)
+    pub fn handle(
+        self: &Arc<Self>,
+        event: PlatformBoundEvent,
+        window_target: &EventLoopWindowTarget,
+        window_map: &FigWindowMap,
+    ) -> anyhow::Result<()> {
+        self.clone().0.handle(event, window_target, window_map)
     }
 
     /// Position the window at the given coordinates
@@ -80,4 +89,5 @@ impl PlatformState {
 pub enum PlatformBoundEvent {
     Initialize,
     EditBufferChanged,
+    FullscreenStateUpdated { fullscreen: bool },
 }

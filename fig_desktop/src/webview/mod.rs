@@ -88,8 +88,10 @@ pub static THEME: Lazy<Option<Theme>> = Lazy::new(|| {
     }
 });
 
+pub type FigWindowMap = DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>;
+
 pub struct WebviewManager {
-    fig_id_map: DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>,
+    fig_id_map: FigWindowMap,
     window_id_map: DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>,
     event_loop: EventLoop,
     debug_state: Arc<DebugState>,
@@ -146,7 +148,7 @@ impl WebviewManager {
 
     pub async fn run(self) -> wry::Result<()> {
         self.platform_state
-            .handle(PlatformBoundEvent::Initialize)
+            .handle(PlatformBoundEvent::Initialize, &self.event_loop, &self.fig_id_map)
             .expect("Failed to initialize platform state");
 
         // TODO(mia): implement
@@ -208,7 +210,7 @@ impl WebviewManager {
         };
 
         let proxy = self.event_loop.create_proxy();
-        self.event_loop.run(move |event, _, control_flow| {
+        self.event_loop.run(move |event, window_target, control_flow| {
             trace!(?event, "Main loop event");
 
             *control_flow = ControlFlow::Wait;
@@ -262,7 +264,10 @@ impl WebviewManager {
                             // TODO(grant): Refresh the debugger
                         },
                         Event::PlatformBoundEvent(native_event) => {
-                            if let Err(err) = self.platform_state.handle(native_event) {
+                            if let Err(err) = self
+                                .platform_state
+                                .handle(native_event, window_target, &self.fig_id_map)
+                            {
                                 debug!("Failed to handle native event: {err}");
                             }
                         },

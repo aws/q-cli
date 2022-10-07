@@ -6,7 +6,10 @@ use std::sync::Arc;
 use anyhow::anyhow;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
-use tracing::debug;
+use tracing::{
+    debug,
+    trace,
+};
 use windows::core::implement;
 use windows::Win32::Foundation::{
     HWND,
@@ -69,8 +72,10 @@ use crate::platform::{
 };
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
+use crate::webview::FigWindowMap;
 use crate::{
     EventLoopProxy,
+    EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
 };
 
@@ -127,7 +132,12 @@ impl PlatformStateImpl {
         }
     }
 
-    pub fn handle(self: &Arc<Self>, event: PlatformBoundEvent) -> anyhow::Result<()> {
+    pub fn handle(
+        self: &Arc<Self>,
+        event: PlatformBoundEvent,
+        _: &EventLoopWindowTarget,
+        _: &FigWindowMap,
+    ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {
                 UNMANAGED.lock().event_sender.replace(self.proxy.clone());
@@ -215,6 +225,10 @@ impl PlatformStateImpl {
                         Ok(())
                     },
                 }
+            },
+            PlatformBoundEvent::FullscreenStateUpdated { .. } => {
+                trace!("Ignoring full screen state updated event");
+                Ok(())
             },
         }
     }

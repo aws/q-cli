@@ -19,6 +19,10 @@ use parking_lot::{
 };
 use tracing::warn;
 use wry::application::dpi::Position;
+use wry::application::platform::macos::{
+    ActivationPolicy,
+    EventLoopWindowTargetExtMacOS,
+};
 
 use super::{
     PlatformBoundEvent,
@@ -33,9 +37,12 @@ use crate::event::{
 use crate::icons::ProcessedAsset;
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
+use crate::webview::FigWindowMap;
 use crate::{
     EventLoopProxy,
+    EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
+    MISSION_CONTROL_ID,
 };
 
 pub const DEFAULT_CARET_WIDTH: i32 = 10;
@@ -60,7 +67,12 @@ impl PlatformStateImpl {
         Self { proxy }
     }
 
-    pub fn handle(self: &Arc<Self>, event: PlatformBoundEvent) -> anyhow::Result<()> {
+    pub fn handle(
+        self: &Arc<Self>,
+        event: PlatformBoundEvent,
+        window_target: &EventLoopWindowTarget,
+        window_map: &FigWindowMap,
+    ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {
                 let observer_proxy = self.proxy.clone();
@@ -71,13 +83,27 @@ impl PlatformStateImpl {
                     .write()
                     .replace(unsafe { register_observer(tx) });
                 tokio::runtime::Handle::current().spawn(async move {
+                    let update_fullscreen = |fullscreen: bool| {
+                        Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated { fullscreen })
+                    };
                     while let Ok(result) = rx.recv_async().await {
                         match result {
-                            WindowServerEvent::FocusChanged { .. } => {
+                            WindowServerEvent::FocusChanged { window, .. } => {
                                 if let Err(e) = observer_proxy.send_event(Event::WindowEvent {
                                     window_id: AUTOCOMPLETE_ID,
                                     window_event: WindowEvent::Hide,
                                 }) {
+                                    warn!("Error sending event: {e:?}");
+                                }
+                                if let Some(window) = window {
+                                    let is_fullscreen = unsafe { window.is_fullscreen().unwrap_or(false) };
+                                    if let Err(e) = observer_proxy.send_event(update_fullscreen(is_fullscreen)) {
+                                        warn!("Error sending event: {e:?}");
+                                    }
+                                }
+                            },
+                            WindowServerEvent::ActiveSpaceChanged { is_fullscreen } => {
+                                if let Err(e) = observer_proxy.send_event(update_fullscreen(is_fullscreen)) {
                                     warn!("Error sending event: {e:?}");
                                 }
                             },
@@ -125,6 +151,24 @@ impl PlatformStateImpl {
                         .ok();
                 }
                 Err(anyhow!("Failed to acquire caret position"))
+            },
+            PlatformBoundEvent::FullscreenStateUpdated { fullscreen } => {
+                let policy = if fullscreen {
+                    ActivationPolicy::Accessory
+                } else {
+                    let mission_control_visible = window_map
+                        .get(&MISSION_CONTROL_ID)
+                        .map(|window| window.webview.window().is_visible())
+                        .unwrap_or(false);
+
+                    if mission_control_visible {
+                        ActivationPolicy::Regular
+                    } else {
+                        ActivationPolicy::Accessory
+                    }
+                };
+                window_target.set_activation_policy_at_runtime(policy);
+                Ok(())
             },
         }
     }

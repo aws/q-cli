@@ -10,6 +10,8 @@ use wry::application::menu::{
     MenuItem,
     MenuItemAttributes,
 };
+#[cfg(target_os = "macos")]
+use wry::application::platform::macos::SystemTrayBuilderExtMacOS;
 use wry::application::system_tray::{
     Icon,
     SystemTray,
@@ -103,7 +105,7 @@ fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
 
-#[cfg(not(target_os = "linux"))]
+#[cfg(target_os = "windows")]
 fn load_from_memory() -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         // TODO: Use different per platform icons
@@ -114,6 +116,22 @@ fn load_from_memory() -> Icon {
         let rgba = image.into_raw();
         (rgba, width, height)
     };
+    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+}
+
+#[cfg(target_os = "macos")]
+fn load_from_memory() -> Icon {
+    let (icon_rgba, icon_width, icon_height) = {
+        // TODO: Use different per platform icons
+        let image = image::load_from_memory(include_bytes!("../icons/macos-menubar-template-icon@2x.png"))
+            .expect("Failed to open icon path")
+            .into_rgba8();
+        let (width, height) = image.dimensions();
+        let rgba = image.into_raw();
+        (rgba, width, height)
+    };
+
+    // TODO: account for retina display (currently image is too large!)
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
 
@@ -135,7 +153,16 @@ pub fn build_tray(
         }
     );
 
-    Ok(SystemTrayBuilder::new(icon, Some(tray_menu)).build(event_loop)?)
+    #[allow(unused_mut)]
+    let mut tray_builder = SystemTrayBuilder::new(icon, Some(tray_menu));
+
+    cfg_if!(
+        if #[cfg(target_os = "macos")] {
+            tray_builder = tray_builder.with_icon_as_template(true);
+        }
+    );
+
+    Ok(tray_builder.build(event_loop)?)
 }
 
 fn create_tray_menu(tray_menu: &mut ContextMenu, debug_state: &DebugState, figterm_state: &FigtermState) {

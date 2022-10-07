@@ -46,6 +46,7 @@ pub use webview::{
 use wry::application::event_loop::{
     EventLoop as WryEventLoop,
     EventLoopProxy as WryEventLoopProxy,
+    EventLoopWindowTarget as WryEventLoopWindowTarget,
 };
 
 #[derive(Debug, Default)]
@@ -62,6 +63,7 @@ pub struct InterceptState {
 
 pub type EventLoop = WryEventLoop<Event>;
 pub type EventLoopProxy = WryEventLoopProxy<Event>;
+pub type EventLoopWindowTarget = WryEventLoopWindowTarget<Event>;
 
 #[tokio::main]
 async fn main() {

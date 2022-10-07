@@ -34,6 +34,8 @@ pub enum TrackEventType {
     WorkflowCancelled,
     TerminalSessionMetricsRecorded,
     DotfileLineCountsRecorded,
+    PromptedForAXPermission,
+    GrantedAXPermission,
     /// Prefer not using this directly and instead define an enum value, this is only for
     /// internal use by `fig_telemetry`
     Other(String),
@@ -56,6 +58,8 @@ impl std::fmt::Display for TrackEventType {
             Self::WorkflowCancelled => "Workflow Cancelled",
             Self::TerminalSessionMetricsRecorded => "Terminal Session Metrics Recorded",
             Self::DotfileLineCountsRecorded => "Dotfile Line Counts Recorded",
+            Self::PromptedForAXPermission => "Prompted for AX Permission",
+            Self::GrantedAXPermission => "Granted AX Permission",
             Self::Other(s) => s,
         })
     }

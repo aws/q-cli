@@ -84,13 +84,53 @@ pub async fn install(request: InstallRequest) -> RequestResult {
         },
         (InstallComponent::Ibus, _) => integration_result(Err("IBus install is legacy")),
         (InstallComponent::Accessibility, InstallAction::InstallAction) => {
-            integration_result(Err("Accessibility permissions cannot be installed"))
+            cfg_if::cfg_if!(
+                if #[cfg(target_os = "macos")] {
+                    use fig_integrations::{accessibility::AccessibilityIntegration, Integration};
+
+                    let integration = AccessibilityIntegration {};
+                    let res = match integration.install(None) {
+                        Ok(()) => Ok(()),
+                        Err(_) => Err("Accessibility integration failed to install"),
+                    };
+
+                    return RequestResult::Ok(Box::new(integration_result(res)))
+                } else {
+                    return RequestResult::Ok(
+                        Box::new(integration_result(Err("Accessibility permissions cannot be queried")))
+                    )
+                }
+            );
         },
         (InstallComponent::Accessibility, InstallAction::StatusAction) => {
-            integration_result(Err("Accessibility permissions cannot be queried"))
+            cfg_if::cfg_if!(
+                if #[cfg(target_os = "macos")] {
+                    use fig_integrations::accessibility::AccessibilityIntegration;
+
+                    let integration = AccessibilityIntegration {};
+                    return RequestResult::Ok(Box::new(integration_status(integration)))
+                } else {
+                    return RequestResult::Ok(Box::new(
+                        integration_result(Err("Accessibility permissions cannot be queried"))
+                    ));
+                }
+            );
         },
         (InstallComponent::Accessibility, InstallAction::UninstallAction) => {
-            integration_result(Err("Accessibility permissions cannot be uninstalled"))
+            cfg_if::cfg_if!(
+                if #[cfg(target_os = "macos")] {
+                    use fig_integrations::{accessibility::AccessibilityIntegration, Integration};
+
+                    let integration = AccessibilityIntegration {};
+                    return RequestResult::Ok(Box::new(
+                        integration_result(integration.uninstall())
+                    ));
+                } else {
+                    return RequestResult::Ok(Box::new(
+                        integration_result(Err("Accessibility permissions cannot be queried"))
+                    ));
+                }
+            );
         },
     };
 

@@ -1,7 +1,7 @@
 #![allow(non_upper_case_globals)]
 
 mod ax_observer;
-mod window;
+mod ui_element;
 use std::ffi::c_void;
 use std::hash::Hash;
 use std::sync::Arc;
@@ -19,16 +19,18 @@ use accessibility_sys::{
     AXError,
     AXIsProcessTrusted,
     AXObserverRef,
+    AXUIElement,
     AXUIElementCreateApplication,
     AXUIElementRef,
 };
 use appkit_nsworkspace_bindings::{
+    INSNotification,
     INSRunningApplication,
     INSWorkspace,
     NSApplicationActivationPolicy_NSApplicationActivationPolicyProhibited as ActivationPolicy_Prohibited,
-    NSNotification,
     NSRunningApplication,
     NSWorkspace,
+    NSWorkspaceActiveSpaceDidChangeNotification,
     NSWorkspaceDidActivateApplicationNotification,
     NSWorkspaceDidLaunchApplicationNotification,
     NSWorkspaceDidTerminateApplicationNotification,
@@ -42,7 +44,7 @@ use cocoa::base::nil;
 use core_foundation::base::TCFType;
 use core_foundation::string::{
     CFString,
-    __CFString,
+    CFStringRef,
 };
 use dashmap::DashMap;
 use flume::Sender;
@@ -54,7 +56,7 @@ use tracing::{
     trace,
     warn,
 };
-use window::Window;
+use ui_element::UIElement;
 
 use super::util::notification_center::get_app_from_notification;
 use super::util::{
@@ -94,11 +96,13 @@ pub struct WindowServer {
     sender: Sender<WindowServerEvent>,
 }
 
-#[derive(Debug)]
 pub enum WindowServerEvent {
     FocusChanged {
         app: Option<ApplicationSpecifier>,
-        window: Option<Window>,
+        window: Option<UIElement>,
+    },
+    ActiveSpaceChanged {
+        is_fullscreen: bool,
     },
 }
 
@@ -141,10 +145,6 @@ impl WindowServer {
         };
 
         let ax_ref = AXUIElementCreateApplication(pid);
-        // Trigger screenReaderMode for supported electron terminals (probably should be moved somewhere
-        // else) if Integrations.electronTerminals.contains(bundle_id) {
-        //      Accessibility.triggerScreenReaderModeInChromiumApplication(appRef)
-        // }
 
         for blocked_bundle in BLOCKED_BUNDLE_IDS {
             if *blocked_bundle == bundle_id {
@@ -165,7 +165,7 @@ impl WindowServer {
 
         if from_activation {
             // In Swift had 0.25s delay before this...?
-            if let Ok(window) = Window::new_with_focused_attribute(ax_ref, &key) {
+            if let Ok(window) = UIElement::new_with_focused_attribute(ax_ref, &key) {
                 if let Err(e) = self.sender.send(WindowServerEvent::FocusChanged {
                     app: Some(key.clone()),
                     window: Some(window),
@@ -228,25 +228,36 @@ pub unsafe fn subscribe_to_all(server: &Arc<Mutex<WindowServer>>) {
 
     // Previously (in Swift) subscribed to the following as no-ops / log only:
     // - NSWorkspaceDidDeactivateApplicationNotification
-    // - NSWorkspaceActiveSpaceDidChangeNotification
 
     let closure_server = server.clone();
-    center.subscribe(
-        NSWorkspaceDidActivateApplicationNotification,
-        move |notification: NSNotification| {
-            if let Some(app) = get_app_from_notification(notification) {
-                let bundle_id = app_bundle_id(&app);
-                trace!("Activated application {bundle_id:?}");
-                let mut server = closure_server.lock();
-                server.register(app, true)
+    center.subscribe(NSWorkspaceActiveSpaceDidChangeNotification, move |notification, _| {
+        let ax_ref = notification.object() as AXUIElementRef;
+        let elem: UIElement = ax_ref.into();
+        if let Ok(is_fullscreen) = elem.is_fullscreen() {
+            let server = closure_server.lock();
+            if let Err(e) = server
+                .sender
+                .send(WindowServerEvent::ActiveSpaceChanged { is_fullscreen })
+            {
+                warn!("Error sending active space changed notif: {e:?}");
             }
-        },
-    );
+        }
+    });
+
+    let closure_server = server.clone();
+    center.subscribe(NSWorkspaceDidActivateApplicationNotification, move |notification, _| {
+        if let Some(app) = get_app_from_notification(notification) {
+            let bundle_id = app_bundle_id(&app);
+            trace!("Activated application {bundle_id:?}");
+            let mut server = closure_server.lock();
+            server.register(app, true)
+        }
+    });
 
     let closure_server = server.clone();
     center.subscribe(
         NSWorkspaceDidTerminateApplicationNotification,
-        move |notification: NSNotification| {
+        move |notification, _| {
             if let Some(ns_app) = get_app_from_notification(notification) {
                 if let Some(bundle_id) = app_bundle_id(&ns_app) {
                     trace!("Terminated application - {bundle_id:?}");
@@ -270,24 +281,21 @@ pub unsafe fn subscribe_to_all(server: &Arc<Mutex<WindowServer>>) {
     );
 
     let closure_server = server.clone();
-    center.subscribe(
-        NSWorkspaceDidLaunchApplicationNotification,
-        move |notification: NSNotification| {
-            if let Some(app) = get_app_from_notification(notification) {
-                let bundle_id = app_bundle_id(&app);
-                trace!("Launched application - {bundle_id:?}");
-                let mut server = closure_server.lock();
-                server.register(app, true)
-            }
-        },
-    );
+    center.subscribe(NSWorkspaceDidLaunchApplicationNotification, move |notification, _| {
+        if let Some(app) = get_app_from_notification(notification) {
+            let bundle_id = app_bundle_id(&app);
+            trace!("Launched application - {bundle_id:?}");
+            let mut server = closure_server.lock();
+            server.register(app, true)
+        }
+    });
 }
 
 #[no_mangle]
 unsafe extern "C" fn ax_callback(
     _observer: AXObserverRef,
     element: AXUIElementRef,
-    notification_name: *const __CFString,
+    notification_name: CFStringRef,
     refcon: *mut c_void,
 ) {
     if refcon.is_null() {
@@ -296,90 +304,54 @@ unsafe extern "C" fn ax_callback(
     }
 
     let cb_data: &mut AccessibilityCallbackData = &mut *(refcon as *mut AccessibilityCallbackData);
+    // get_rule will call CFRetain to increment the RC in objc to make sure element is not freed
+    // before we are done with it. CFRelease is called automatically on drop.
+    let element = AXUIElement::wrap_under_get_rule(element);
 
     let name = CFString::wrap_under_get_rule(notification_name);
     let app = &cb_data.app;
 
     let event = match name.to_string().as_str() {
-        kAXFocusedWindowChangedNotification => {
-            Some(WindowServerEvent::FocusChanged {
-                app: Some(app.clone()),
-                window: Some(Window::new(element, app))
-            })
-        },
-        kAXMainWindowChangedNotification => {
-            Some(WindowServerEvent::FocusChanged {
-                app: None,
-                window: Some(Window::new(element, app))
-            })
-        },
+        kAXFocusedWindowChangedNotification => Some(WindowServerEvent::FocusChanged {
+            app: Some(app.clone()),
+            window: Some(UIElement::new_with_app(element, app)),
+        }),
+        kAXMainWindowChangedNotification => Some(WindowServerEvent::FocusChanged {
+            app: None,
+            window: Some(UIElement::new_with_app(element, app)),
+        }),
         kAXApplicationActivatedNotification | kAXApplicationShownNotification => {
-            Window::new_with_focused_attribute(cb_data.ax_ref, app)
+            UIElement::new_with_focused_attribute(cb_data.ax_ref, app)
                 .ok()
-                .map(|window| {
-                    WindowServerEvent::FocusChanged {
-                        app: Some(app.clone()),
-                        window: Some(window)
-                    }
+                .map(|window| WindowServerEvent::FocusChanged {
+                    app: Some(app.clone()),
+                    window: Some(window),
                 })
         },
         kAXWindowResizedNotification | kAXWindowMovedNotification => {
             // fixes issue where opening app from spotlight loses window tracking
             let frontmost = NSWorkspace::sharedWorkspace().frontmostApplication();
             let bundle_id = app_bundle_id(&frontmost);
-            if bundle_id.as_deref().map(|a| a == cb_data.app.bundle_id).unwrap_or(false) {
-                Window::new_with_focused_attribute(cb_data.ax_ref, app)
+            if bundle_id
+                .as_deref()
+                .map(|a| a == cb_data.app.bundle_id)
+                .unwrap_or(false)
+            {
+                UIElement::new_with_focused_attribute(cb_data.ax_ref, app)
                     .ok()
-                    .map(|window| {
-                        WindowServerEvent::FocusChanged {
-                            app: Some(app.clone()),
-                            window: Some(window)
-                        }
+                    .map(|window| WindowServerEvent::FocusChanged {
+                        app: Some(app.clone()),
+                        window: Some(window),
                     })
             } else {
                 info!("Resized window ({bundle_id:?}) not associated with frontmost app.");
                 None
             }
         },
-        /*
-        kAXUIElementDestroyedNotification => {
-            if let Ok(pid) = ax_call(|pid: *mut pid_t| AXUIElementGetPid(element, pid)) {
-                // determine if AXUIElement is window???
-                let element_app = NSRunningApplication::runningApplicationWithProcessIdentifier_(pid);
-                let element_app = NSRunningApplication(element_app);
-                /*
-                let elem_bundle_id = bundle_id(element_app).or("");
-
-                // spotlight style app
-                if Integrations.search_bar_apps.contains(elem_bundle_id) {
-                    let frontmost = NSWorkspace::sharedWorkspace.frontmostApplication();
-                    let front_bundle_id = bundle_id(frontmost).or("<none>");
-                    info!("AXWindowServer: spotlightStyleAppDestroyed! frontmost = {front_bundle_id}")
-
-                    let ax_ref = AXUIElementCreateApplication(frontmost.processIdentifier);
-                    with_renamed_window(ax_ref, |window: AXUIElementRef| {
-                        // TODO: why is this not frontmost_app
-                        top_application = cb_data.app;
-                        let frontmost_app = AccessibilityApplication(frontmost);
-                        top_window = ExternalWindow(window, frontmost_app)
-                    });
-                }
-                */
-            }
-        },
-        */
-        /*
-        kAXWindowCreatedNotification => {
-            if "com.apple.Spotlight" == bundle_id {
-                info!("Spotlight Created");
-            }
-            None
-        },
-        */
         unknown => {
             info!("Unhandled AX event: {unknown}");
             None
-        }
+        },
     };
     if let Some(event) = event {
         if let Err(e) = cb_data.sender.send(event) {

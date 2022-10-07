@@ -1,6 +1,11 @@
 #![allow(non_upper_case_globals, non_camel_case_types)]
 use std::ffi::c_void;
 
+use core_foundation::base::TCFType;
+use core_foundation::{
+    declare_TCFType,
+    impl_TCFType,
+};
 use core_foundation_sys::array::CFArrayRef;
 use core_foundation_sys::base::{
     CFIndex,
@@ -15,6 +20,11 @@ use crate::AXError;
 
 pub enum __AXUIElement {}
 pub type AXUIElementRef = *mut __AXUIElement;
+
+declare_TCFType! {
+    AXUIElement, AXUIElementRef
+}
+impl_TCFType!(AXUIElement, AXUIElementRef, AXUIElementGetTypeID);
 
 pub enum __AXObserver {}
 pub type AXObserverRef = *mut __AXObserver;

@@ -13,6 +13,9 @@ pub use error::{
 };
 pub use file::FileIntegration;
 
+#[cfg(target_os = "macos")]
+pub mod accessibility;
+
 pub trait Integration {
     fn describe(&self) -> String;
     fn install(&self, backup_dir: Option<&Path>) -> Result<()>;

@@ -37,6 +37,7 @@ pub fn build() {
     };
 
     println!("cargo:rustc-link-lib=framework=AppKit");
+    println!("cargo:rustc-link-lib=framework=Foundation");
 
     let builder = bindgen::Builder::default()
         .rustfmt_bindings(true)
@@ -45,6 +46,12 @@ pub fn build() {
             "
             #include<AppKit/NSWorkspace.h>
             #include<AppKit/NSRunningApplication.h>
+        ",
+        )
+        .header_contents(
+            "NSDistributedNotificationCenter.h",
+            "
+            #include<Foundation/NSDistributedNotificationCenter.h>
         ",
         )
         .clang_arg(format!("--target={}", target))

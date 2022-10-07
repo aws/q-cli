@@ -122,3 +122,35 @@ pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
     }
     Ok(LocalResponse::Success(None))
 }
+
+pub async fn prompt_for_accessibility_permission() -> LocalResult {
+    cfg_if::cfg_if!(
+        if #[cfg(target_os = "macos")] {
+            use fig_integrations::{
+                accessibility::AccessibilityIntegration,
+                Integration
+            };
+
+            let integration = AccessibilityIntegration {};
+            match integration.install(None) {
+                Ok(()) => {
+                    #[allow(clippy::needless_return)]
+                    return Ok(LocalResponse::Success(None));
+                }
+                Err(_) => {
+                    #[allow(clippy::needless_return)]
+                    return Err(LocalResponse::Error {
+                        code: None,
+                        message: Some("Accessibility API not supported on this platform".to_owned()),
+                    });
+                }
+            }
+        } else {
+            #[allow(clippy::needless_return)]
+            return Err(LocalResponse::Error {
+                code: None,
+                message: Some("Accessibility API not supported on this platform".to_owned()),
+            });
+        }
+    );
+}

@@ -34,7 +34,11 @@ use self::x11::X11State;
 use super::PlatformBoundEvent;
 use crate::platform::linux::sway::SwayState;
 use crate::webview::window::WindowId;
-use crate::EventLoopProxy;
+use crate::webview::FigWindowMap;
+use crate::{
+    EventLoopProxy,
+    EventLoopWindowTarget,
+};
 
 static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
 
@@ -69,7 +73,12 @@ impl PlatformStateImpl {
         }
     }
 
-    pub(super) fn handle(self: &Arc<Self>, event: PlatformBoundEvent) -> anyhow::Result<()> {
+    pub(super) fn handle(
+        self: &Arc<Self>,
+        event: PlatformBoundEvent,
+        _: &EventLoopWindowTarget,
+        _: &FigWindowMap,
+    ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {
                 let platform_state = self.clone();
@@ -128,6 +137,9 @@ impl PlatformStateImpl {
             },
             PlatformBoundEvent::EditBufferChanged => {
                 trace!("Ignoring edit buffer changed event");
+            },
+            PlatformBoundEvent::FullscreenStateUpdated { .. } => {
+                trace!("Ignoring full screen state updated event");
             },
         }
         Ok(())

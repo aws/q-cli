@@ -1,9 +1,12 @@
+use std::sync::Arc;
+
 use appkit_nsworkspace_bindings::{
     INSDictionary,
     INSNotification,
     INSNotificationCenter,
     INSWorkspace,
     NSDictionary,
+    NSDistributedNotificationCenter,
     NSNotification,
     NSNotificationCenter,
     NSOperationQueue,
@@ -13,8 +16,40 @@ use appkit_nsworkspace_bindings::{
 };
 use block;
 use cocoa::base::nil as NIL;
+use objc::runtime::Object;
+use parking_lot::Mutex;
 
 use super::NSString;
+
+pub struct Subscription {
+    observer: Mutex<Option<*mut Object>>,
+    center: NSNotificationCenter,
+}
+
+// SAFETY: Pointer for *mut Object is send + sync
+unsafe impl Send for Subscription {}
+unsafe impl Sync for Subscription {}
+
+impl Subscription {
+    pub fn empty(center: NSNotificationCenter) -> Self {
+        Self {
+            observer: Mutex::new(None::<*mut Object>),
+            center,
+        }
+    }
+
+    pub fn set_observer(&mut self, observer: *mut Object) {
+        self.observer.lock().replace(observer);
+    }
+
+    pub fn cancel(&mut self) {
+        if let Some(observer) = self.observer.lock().take() {
+            unsafe {
+                self.center.removeObserver_(observer);
+            }
+        }
+    }
+}
 
 pub struct NotificationCenter {
     inner: NSNotificationCenter,
@@ -30,19 +65,30 @@ impl NotificationCenter {
         Self::new(shared)
     }
 
-    pub fn subscribe<F>(&mut self, notification_name: impl Into<AppkitNSString>, f: F)
+    pub fn distributed() -> Self {
+        let distributed_default = unsafe { NSDistributedNotificationCenter::defaultCenter() };
+        Self::new(distributed_default)
+    }
+
+    pub fn subscribe<F>(&mut self, notification_name: impl Into<AppkitNSString>, mut f: F)
     where
-        F: FnMut(NSNotification),
+        F: FnMut(NSNotification, Arc<Mutex<Subscription>>),
     {
-        let mut block = block::ConcreteBlock::new(f);
+        let subscription = Arc::new(Mutex::new(Subscription::empty(self.inner)));
+        let block_sub = subscription.clone();
+        let mut block = block::ConcreteBlock::new(move |notif: NSNotification| {
+            f(notif, block_sub.clone());
+        });
         unsafe {
             // addObserverForName copies block for us.
-            self.inner.addObserverForName_object_queue_usingBlock_(
+            let observer = self.inner.addObserverForName_object_queue_usingBlock_(
                 notification_name.into(),
                 NIL,
                 NSOperationQueue(NIL),
                 &mut block as *mut _ as *mut std::os::raw::c_void,
-            );
+            ) as *mut Object;
+            let mut subscription = subscription.lock();
+            subscription.set_observer(observer);
         }
     }
 }
