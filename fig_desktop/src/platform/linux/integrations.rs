@@ -10,15 +10,15 @@ use hashbrown::HashMap;
 use once_cell::sync::Lazy;
 use tracing::debug;
 
-use super::{
-    NativeState,
-    WM_REVICED_DATA,
-};
+use super::WM_REVICED_DATA;
 use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::native::ActiveWindowData;
+use crate::platform::{
+    ActiveWindowData,
+    PlatformState,
+};
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
@@ -52,7 +52,7 @@ fn from_source(from: &str) -> Option<&HashMap<&'static str, Terminal>> {
     }
 }
 
-pub fn from_hook(hook: FocusedWindowDataHook, native_state: &NativeState, proxy: &EventLoopProxy) -> Result<()> {
+pub fn from_hook(hook: FocusedWindowDataHook, platform_state: &PlatformState, proxy: &EventLoopProxy) -> Result<()> {
     WM_REVICED_DATA.store(true, Ordering::Relaxed);
 
     if hook.hide() {
@@ -70,7 +70,7 @@ pub fn from_hook(hook: FocusedWindowDataHook, native_state: &NativeState, proxy:
     {
         let inner = hook.inner.unwrap();
         let outer = hook.outer.unwrap();
-        let mut handle = native_state.active_window_data.lock();
+        let mut handle = platform_state.0.active_window_data.lock();
         *handle = Some(ActiveWindowData {
             inner_x: inner.x,
             inner_y: inner.y,

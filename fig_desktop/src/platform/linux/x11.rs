@@ -31,7 +31,7 @@ use x11rb::rust_connection::RustConnection;
 use super::integrations::WM_CLASS_WHITELIST;
 use super::WM_REVICED_DATA;
 use crate::event::WindowEvent;
-use crate::native::WindowGeometry;
+use crate::platform::WindowGeometry;
 use crate::{
     Event,
     EventLoopProxy,

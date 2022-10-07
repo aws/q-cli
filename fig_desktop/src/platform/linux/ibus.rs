@@ -11,18 +11,18 @@ use zbus::export::futures_util::TryStreamExt;
 use zbus::fdo::DBusProxy;
 use zbus::MessageStream;
 
-use super::NativeState;
+use super::PlatformStateImpl;
 use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::native::ActiveWindowData;
+use crate::platform::ActiveWindowData;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
 
-pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Result<()> {
+pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {
     let ibus_connection = ibus_bus_new().await?;
     debug!("Connected to ibus");
     DBusProxy::new(&ibus_connection)
@@ -99,7 +99,7 @@ pub async fn init(proxy: EventLoopProxy, native_state: Arc<NativeState>) -> Resu
                                         path.as_str()
                                     );
                                     let abs: (i32, i32) = {
-                                        let handle = native_state.active_window_data.lock();
+                                        let handle = platform_state.active_window_data.lock();
                                         match *handle {
                                             Some(ActiveWindowData {
                                                 outer_x,

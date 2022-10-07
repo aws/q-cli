@@ -32,7 +32,7 @@ use wry::http::{
     ResponseBuilder,
 };
 
-use crate::native;
+use crate::platform::PlatformState;
 
 static ASSETS: Lazy<HashMap<&str, Arc<Vec<u8>>>> = Lazy::new(|| {
     let mut map = HashMap::new();
@@ -103,7 +103,7 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
 }
 
 fn resolve_asset(name: &str) -> (Arc<Vec<u8>>, AssetKind) {
-    native::icons::lookup(name).unwrap_or_else(|| {
+    PlatformState::icon_lookup(name).unwrap_or_else(|| {
         (
             ASSETS
                 .get(name)

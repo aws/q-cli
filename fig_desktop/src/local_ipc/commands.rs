@@ -23,7 +23,7 @@ use crate::event::{
     WindowEvent,
 };
 use crate::{
-    native,
+    platform,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
     MISSION_CONTROL_ID,
@@ -66,7 +66,7 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
 
 pub async fn diagnostic(_: DiagnosticsCommand) -> LocalResult {
     let response = DiagnosticsResponse {
-        autocomplete_active: Some(native::autocomplete_active()),
+        autocomplete_active: Some(platform::autocomplete_active()),
         ..Default::default()
     };
     Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(

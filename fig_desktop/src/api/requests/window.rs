@@ -15,19 +15,19 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::native::NativeState;
+use crate::platform::PlatformState;
 use crate::webview::window::WindowId;
 use crate::EventLoopProxy;
 
 pub async fn position_window(
     request: PositionWindowRequest,
     window_id: WindowId,
-    native_state: &NativeState,
+    platform_state: &PlatformState,
     proxy: &EventLoopProxy,
 ) -> RequestResult {
     debug!(?request, %window_id, "Position Window Request");
     if request.dryrun.unwrap_or(false) {
-        match native_state.get_window_geometry() {
+        match platform_state.get_active_window() {
             Some(_) => {
                 // TODO(grant): do something with geometry
                 return RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(

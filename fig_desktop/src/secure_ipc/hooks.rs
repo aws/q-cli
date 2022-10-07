@@ -38,6 +38,7 @@ use crate::figterm::{
     SessionMetrics,
 };
 use crate::notification::NotificationsState;
+use crate::platform::PlatformBoundEvent;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
@@ -139,9 +140,7 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
-    // todo(grant): is there a reason why we don't send this event on linux?
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
-    proxy.send_event(Event::NativeEvent(crate::event::NativeEvent::EditBufferChanged))?;
+    proxy.send_event(Event::PlatformBoundEvent(PlatformBoundEvent::EditBufferChanged))?;
 
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,

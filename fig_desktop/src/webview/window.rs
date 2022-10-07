@@ -16,7 +16,6 @@ use wry::webview::{
 
 use crate::event::{
     Placement,
-    Rect,
     RelativeDirection,
     WindowEvent,
 };
@@ -24,10 +23,11 @@ use crate::figterm::{
     FigtermCommand,
     FigtermState,
 };
-use crate::native::{
+use crate::platform::{
     self,
-    NativeState,
+    PlatformState,
 };
+use crate::utils::Rect;
 use crate::AUTOCOMPLETE_ID;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -70,7 +70,7 @@ impl WindowState {
         }
     }
 
-    fn update_position(&self, native_state: &NativeState) {
+    fn update_position(&self, platform_state: &PlatformState) {
         let position = *self.position.read();
         let anchor = *self.anchor.read();
         let size = *self.size.read();
@@ -92,31 +92,31 @@ impl WindowState {
             Placement::RelativeTo((caret, RelativeDirection::Below)) => caret.max_y() + vertical_padding,
         };
 
-        // Some environments may require positioning the window via a method besides tauri's native
-        // `set_outer_position`, most platforms should just call `fallback()` in `position_window`
-        native_state.position_window(&self.window_id, x, y, || {
-            self.webview
-                .window()
-                .set_outer_position(Position::Physical(PhysicalPosition { x, y }))
-        })
+        if let Err(err) = platform_state.position_window(
+            self.webview.window(),
+            &self.window_id,
+            Position::Physical(PhysicalPosition { x, y }),
+        ) {
+            tracing::error!(%err, window_id =% self.window_id, "Failed to position window");
+        }
     }
 
     pub fn handle(
         &self,
         event: WindowEvent,
         figterm_state: &FigtermState,
-        native_state: &NativeState,
+        platform_state: &PlatformState,
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
             WindowEvent::Reanchor { x, y } => {
                 *self.anchor.write() = PhysicalPosition { x, y };
-                self.update_position(native_state);
+                self.update_position(platform_state);
             },
             WindowEvent::PositionAbsolute { x, y } => {
                 *self.placement.write() = Placement::Absolute;
                 *self.position.write() = PhysicalPosition { x, y };
-                self.update_position(native_state);
+                self.update_position(platform_state);
             },
             WindowEvent::PositionRelativeToRect {
                 x,
@@ -126,11 +126,11 @@ impl WindowState {
                 direction,
             } => {
                 *self.placement.write() = Placement::RelativeTo((Rect { x, y, width, height }, direction));
-                self.update_position(native_state);
+                self.update_position(platform_state);
             },
             WindowEvent::Resize { width, height } => {
                 *self.size.write() = PhysicalSize { width, height };
-                self.update_position(native_state);
+                self.update_position(platform_state);
                 cfg_if::cfg_if! {
                     if #[cfg(target_os = "linux")] {
                         if self.window_id == AUTOCOMPLETE_ID {
@@ -169,7 +169,7 @@ impl WindowState {
             },
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
-                    if native::autocomplete_active() {
+                    if platform::autocomplete_active() {
                         self.webview.window().set_visible(true);
                         self.webview.window().set_always_on_top(true);
                         #[cfg(target_os = "windows")]

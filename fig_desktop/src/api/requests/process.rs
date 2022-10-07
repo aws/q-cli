@@ -26,7 +26,7 @@ use crate::figterm::{
     FigtermSessionId,
     FigtermState,
 };
-use crate::native::SHELL;
+use crate::platform::PlatformState;
 
 fn shell_args(shell_path: &str) -> &'static [&'static str] {
     let (_, shell_name) = shell_path
@@ -57,7 +57,7 @@ fn set_fig_vars(cmd: &mut Command) {
     cmd.env("TERM", "xterm-256color");
 }
 
-pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState) -> RequestResult {
+pub async fn execute(request: PseudoterminalExecuteRequest, figterm_state: &FigtermState) -> RequestResult {
     debug!({
         term_session =? request.terminal_session_id,
         command = request.command,
@@ -67,7 +67,7 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
         pipelined = request.is_pipelined
     }, "Executing command");
 
-    let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
+    let session_sender = figterm_state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
         session.sender.clone()
     });
 
@@ -103,10 +103,12 @@ pub async fn execute(request: PseudoterminalExecuteRequest, state: &FigtermState
     } else {
         debug!("executing locally");
 
-        // note(mia): we don't know what shell they use because we don't have any figterm sessions to check
-        let args = shell_args(SHELL);
+        let shell = PlatformState::shell();
 
-        let mut cmd = Command::new(SHELL);
+        // note(mia): we don't know what shell they use because we don't have any figterm sessions to check
+        let args = shell_args(&shell);
+
+        let mut cmd = Command::new(&*shell);
         #[cfg(target_os = "windows")]
         cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
         // TODO(sean): better SHELL_ARGs handling here based on shell.

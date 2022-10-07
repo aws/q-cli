@@ -8,7 +8,7 @@ use fig_proto::local::{
 use tracing::debug;
 
 use crate::event::WindowEvent;
-use crate::native::NativeState;
+use crate::platform::PlatformState;
 use crate::{
     Event,
     EventLoopProxy,
@@ -41,15 +41,15 @@ pub async fn file_changed(_file_changed_hook: FileChangedHook) -> Result<()> {
 
 pub async fn focused_window_data(
     hook: FocusedWindowDataHook,
-    native_state: &NativeState,
+    platform_state: &PlatformState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     #[cfg(target_os = "linux")]
-    return crate::native::integrations::from_hook(hook, native_state, proxy);
+    return crate::platform::integrations::from_hook(hook, platform_state, proxy);
     #[cfg(not(target_os = "linux"))]
     {
         let _hook = hook;
-        let _native_state = native_state;
+        let _platform_state = platform_state;
         let _proxy = proxy;
         Ok(())
     }

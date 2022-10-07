@@ -39,8 +39,8 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::native::NativeState;
 use crate::notification::NotificationsState;
+use crate::platform::PlatformState;
 use crate::webview::window::WindowId;
 use crate::{
     DebugState,
@@ -56,7 +56,7 @@ struct Context<'a> {
     figterm_state: &'a FigtermState,
     intercept_state: &'a InterceptState,
     notifications_state: &'a NotificationsState,
-    native_state: &'a NativeState,
+    platform_state: &'a PlatformState,
     proxy: &'a EventLoopProxy,
     window_id: &'a WindowId,
 }
@@ -99,7 +99,7 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
         window::position_window(
             request.request,
             request.context.window_id.clone(),
-            request.context.native_state,
+            request.context.platform_state,
             request.context.proxy,
         )
         .await
@@ -150,7 +150,7 @@ pub async fn api_request(
     figterm_state: &FigtermState,
     intercept_state: &InterceptState,
     notifications_state: &NotificationsState,
-    native_state: &NativeState,
+    platform_state: &PlatformState,
     proxy: &EventLoopProxy,
 ) {
     let response = match fig_desktop_api::handler::request_from_b64(&client_originated_message_b64) {
@@ -164,7 +164,7 @@ pub async fn api_request(
                     figterm_state,
                     intercept_state,
                     notifications_state,
-                    native_state,
+                    platform_state,
                     proxy,
                     window_id: &window_id,
                 },

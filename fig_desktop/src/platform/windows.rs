@@ -1,11 +1,9 @@
+use std::borrow::Cow;
 use std::ffi::CStr;
 use std::mem::ManuallyDrop;
 use std::sync::Arc;
 
-use anyhow::{
-    anyhow,
-    Result,
-};
+use anyhow::anyhow;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use tracing::debug;
@@ -57,20 +55,24 @@ use windows::Win32::UI::WindowsAndMessaging::{
     WINEVENT_OUTOFCONTEXT,
     WINEVENT_SKIPOWNPROCESS,
 };
+use wry::application::dpi::Position;
 
 use crate::event::{
     Event,
-    NativeEvent,
     RelativeDirection,
     WindowEvent,
 };
+use crate::platform::{
+    PlatformBoundEvent,
+    PlatformWindow,
+    ProcessedAsset,
+};
+use crate::utils::Rect;
 use crate::webview::window::WindowId;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
 };
-
-pub const SHELL: &str = "bash";
 
 const VT_TRUE: VARIANT = VARIANT {
     Anonymous: VARIANT_0 {
@@ -95,13 +97,13 @@ static UNMANAGED: Lazy<Mutex<Unmanaged>> = Lazy::new(|| {
 });
 
 #[derive(Debug)]
-pub struct NativeState {
+pub struct PlatformStateImpl {
     proxy: EventLoopProxy,
     automation: Automation,
     _focus_changed_event_handler: AutomationEventHandler,
 }
 
-impl NativeState {
+impl PlatformStateImpl {
     pub fn new(proxy: EventLoopProxy) -> Self {
         unsafe {
             CoInitialize(None).unwrap();
@@ -125,9 +127,28 @@ impl NativeState {
         }
     }
 
-    pub fn handle(&self, event: NativeEvent) -> Result<()> {
+    pub fn handle(self: &Arc<Self>, event: PlatformBoundEvent) -> anyhow::Result<()> {
         match event {
-            NativeEvent::EditBufferChanged => unsafe {
+            PlatformBoundEvent::Initialize => {
+                UNMANAGED.lock().event_sender.replace(self.proxy.clone());
+
+                unsafe {
+                    update_focused_state(GetForegroundWindow());
+
+                    SetWinEventHook(
+                        EVENT_SYSTEM_FOREGROUND,
+                        EVENT_SYSTEM_FOREGROUND,
+                        None,
+                        Some(win_event_proc),
+                        0,
+                        0,
+                        WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
+                    );
+                }
+
+                Ok(())
+            },
+            PlatformBoundEvent::EditBufferChanged => unsafe {
                 let console_state = UNMANAGED.lock().console_state;
                 match console_state {
                     ConsoleState::None => Ok(()),
@@ -198,12 +219,31 @@ impl NativeState {
         }
     }
 
-    pub fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
+    pub fn position_window(
+        &self,
+        webview_window: &wry::application::window::Window,
+        _window_id: &WindowId,
+        position: Position,
+    ) -> wry::Result<()> {
+        webview_window.set_outer_position(position);
+        Ok(())
+    }
+
+    #[allow(dead_code)]
+    pub fn get_cursor_position(&self) -> Option<Rect<i32, i32>> {
         None
     }
 
-    pub fn position_window(&self, _window_id: &WindowId, _x: i32, _y: i32, fallback: impl FnOnce()) {
-        fallback();
+    pub fn get_active_window(&self) -> Option<PlatformWindow> {
+        None
+    }
+
+    pub fn icon_lookup(_name: &str) -> Option<ProcessedAsset> {
+        None
+    }
+
+    pub fn shell() -> Cow<'static, str> {
+        "bash".into()
     }
 }
 
@@ -261,34 +301,6 @@ impl IUIAutomationFocusChangedEventHandler_Impl for FocusChangedEventHandler {
 
         Ok(())
     }
-}
-
-pub mod icons {
-    use crate::icons::ProcessedAsset;
-
-    pub fn lookup(_name: &str) -> Option<ProcessedAsset> {
-        None
-    }
-}
-
-pub async fn init(proxy: EventLoopProxy, _native_state: Arc<NativeState>) -> Result<()> {
-    UNMANAGED.lock().event_sender.replace(proxy);
-
-    unsafe {
-        update_focused_state(GetForegroundWindow());
-
-        SetWinEventHook(
-            EVENT_SYSTEM_FOREGROUND,
-            EVENT_SYSTEM_FOREGROUND,
-            None,
-            Some(win_event_proc),
-            0,
-            0,
-            WINEVENT_OUTOFCONTEXT | WINEVENT_SKIPOWNPROCESS,
-        );
-    }
-
-    Ok(())
 }
 
 unsafe fn update_focused_state(hwnd: HWND) {

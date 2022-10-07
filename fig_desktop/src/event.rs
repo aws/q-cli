@@ -1,5 +1,7 @@
 use wry::application::event_loop::ControlFlow;
 
+use crate::platform::PlatformBoundEvent;
+use crate::utils::Rect;
 use crate::webview::window::WindowId;
 
 #[allow(clippy::enum_variant_names)]
@@ -9,9 +11,17 @@ pub enum Event {
         window_id: WindowId,
         window_event: WindowEvent,
     },
+    PlatformBoundEvent(PlatformBoundEvent),
+
     ControlFlow(ControlFlow),
+
     RefreshDebugger,
-    NativeEvent(NativeEvent),
+}
+
+impl From<PlatformBoundEvent> for Event {
+    fn from(event: PlatformBoundEvent) -> Self {
+        Self::PlatformBoundEvent(event)
+    }
 }
 
 #[derive(Debug, Clone, Copy)]
@@ -20,21 +30,16 @@ pub enum RelativeDirection {
     Below,
 }
 
-#[derive(Debug, Clone, Copy)]
-pub struct Rect {
-    pub x: i32,
-    pub y: i32,
-    pub width: i32,
-    pub height: i32,
-}
-
-impl Rect {
+impl<T> Rect<T, T>
+where
+    T: std::ops::Add<Output = T> + Copy,
+{
     #[allow(dead_code)]
-    pub fn max_x(&self) -> i32 {
+    pub fn max_x(&self) -> T {
         self.x + self.width
     }
 
-    pub fn max_y(&self) -> i32 {
+    pub fn max_y(&self) -> T {
         self.y + self.height
     }
 }
@@ -42,7 +47,7 @@ impl Rect {
 #[derive(Debug, Clone, Copy)]
 pub enum Placement {
     Absolute,
-    RelativeTo((Rect, RelativeDirection)),
+    RelativeTo((Rect<i32, i32>, RelativeDirection)),
 }
 
 #[derive(Debug)]
@@ -91,10 +96,4 @@ pub enum WindowEvent {
     },
     Devtools,
     DebugMode(bool),
-}
-
-#[derive(Debug)]
-pub enum NativeEvent {
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
-    EditBufferChanged,
 }

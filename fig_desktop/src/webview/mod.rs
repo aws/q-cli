@@ -52,8 +52,11 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::native::NativeState;
 use crate::notification::NotificationsState;
+use crate::platform::{
+    PlatformBoundEvent,
+    PlatformState,
+};
 use crate::tray::{
     self,
     build_tray,
@@ -61,7 +64,6 @@ use crate::tray::{
 use crate::{
     icons,
     local_ipc,
-    native,
     secure_ipc,
     settings,
     DebugState,
@@ -93,7 +95,7 @@ pub struct WebviewManager {
     debug_state: Arc<DebugState>,
     figterm_state: Arc<FigtermState>,
     intercept_state: Arc<InterceptState>,
-    native_state: Arc<NativeState>,
+    platform_state: Arc<PlatformState>,
     notifications_state: Arc<NotificationsState>,
 }
 
@@ -109,7 +111,7 @@ impl Default for WebviewManager {
             debug_state: Arc::new(DebugState::default()),
             figterm_state: Arc::new(FigtermState::default()),
             intercept_state: Arc::new(InterceptState::default()),
-            native_state: Arc::new(NativeState::new(proxy)),
+            platform_state: Arc::new(PlatformState::new(proxy)),
             notifications_state: Arc::new(NotificationsState::default()),
         }
     }
@@ -143,15 +145,15 @@ impl WebviewManager {
     }
 
     pub async fn run(self) -> wry::Result<()> {
-        native::init(self.event_loop.create_proxy(), self.native_state.clone())
-            .await
-            .expect("Failed to initialize native integrations");
+        self.platform_state
+            .handle(PlatformBoundEvent::Initialize)
+            .expect("Failed to initialize platform state");
 
         // TODO(mia): implement
         // tokio::spawn(figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         tokio::spawn(local_ipc::start_local_ipc(
-            self.native_state.clone(),
+            self.platform_state.clone(),
             self.event_loop.create_proxy(),
         ));
 
@@ -171,7 +173,7 @@ impl WebviewManager {
             let figterm_state = self.figterm_state.clone();
             let intercept_state = self.intercept_state.clone();
             let notifications_state = self.notifications_state.clone();
-            let native_state = self.native_state.clone();
+            let platform_state = self.platform_state.clone();
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
                     let proxy = proxy.clone();
@@ -179,7 +181,7 @@ impl WebviewManager {
                     let figterm_state = figterm_state.clone();
                     let intercept_state = intercept_state.clone();
                     let notifications_state = notifications_state.clone();
-                    let native_state = native_state.clone();
+                    let platform_state = platform_state.clone();
                     tokio::spawn(async move {
                         api_request(
                             fig_id,
@@ -188,7 +190,7 @@ impl WebviewManager {
                             &figterm_state,
                             &intercept_state,
                             &notifications_state,
-                            &native_state,
+                            &platform_state,
                             &proxy.clone(),
                         )
                         .await;
@@ -243,7 +245,7 @@ impl WebviewManager {
                                 window_state.handle(
                                     window_event,
                                     &self.figterm_state,
-                                    &self.native_state,
+                                    &self.platform_state,
                                     &api_handler_tx,
                                 );
                             },
@@ -259,8 +261,8 @@ impl WebviewManager {
                         Event::RefreshDebugger => {
                             // TODO(grant): Refresh the debugger
                         },
-                        Event::NativeEvent(native_event) => {
-                            if let Err(err) = self.native_state.handle(native_event) {
+                        Event::PlatformBoundEvent(native_event) => {
+                            if let Err(err) = self.platform_state.handle(native_event) {
                                 debug!("Failed to handle native event: {err}");
                             }
                         },

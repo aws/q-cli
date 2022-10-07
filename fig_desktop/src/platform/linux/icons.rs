@@ -59,7 +59,7 @@ fn get_theme() -> String {
     SELECTED_THEME.lock().to_string()
 }
 
-pub fn lookup(name: &str) -> Option<ProcessedAsset> {
+pub(super) fn lookup(name: &str) -> Option<ProcessedAsset> {
     freedesktop_icons::lookup(name)
         .with_theme(&get_theme())
         .with_cache()

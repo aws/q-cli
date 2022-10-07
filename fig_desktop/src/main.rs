@@ -5,8 +5,8 @@ mod figterm;
 mod icons;
 mod install;
 mod local_ipc;
-mod native;
 mod notification;
+mod platform;
 mod secure_ipc;
 mod settings;
 mod tray;
@@ -146,7 +146,7 @@ async fn main() {
             None => std::env::set_var("GDK_BACKEND", "x11"),
         }
 
-        native::gtk::init().expect("Failed initializing GTK");
+        platform::gtk::init().expect("Failed initializing GTK");
     }
 
     let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);

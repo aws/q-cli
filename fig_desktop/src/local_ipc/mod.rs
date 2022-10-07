@@ -29,7 +29,7 @@ use tracing::{
     warn,
 };
 
-use crate::native::NativeState;
+use crate::platform::PlatformState;
 use crate::EventLoopProxy;
 
 pub enum LocalResponse {
@@ -40,7 +40,7 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(native_state: Arc<NativeState>, proxy: EventLoopProxy) -> Result<()> {
+pub async fn start_local_ipc(platform_state: Arc<PlatformState>, proxy: EventLoopProxy) -> Result<()> {
     let socket_path = directories::fig_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -55,7 +55,7 @@ pub async fn start_local_ipc(native_state: Arc<NativeState>, proxy: EventLoopPro
     while let Ok((stream, _)) = listener.accept().await {
         tokio::spawn(handle_local_ipc(
             BufferedUnixStream::new(stream),
-            native_state.clone(),
+            platform_state.clone(),
             proxy.clone(),
         ));
     }
@@ -63,7 +63,7 @@ pub async fn start_local_ipc(native_state: Arc<NativeState>, proxy: EventLoopPro
     Ok(())
 }
 
-async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<NativeState>, proxy: EventLoopProxy) {
+async fn handle_local_ipc(mut stream: BufferedUnixStream, platform_state: Arc<PlatformState>, proxy: EventLoopProxy) {
     while let Some(message) = stream.recv_message::<LocalMessage>().await.unwrap_or_else(|err| {
         if !err.is_disconnect() {
             error!("Failed receiving local message: {err}");
@@ -160,7 +160,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, native_state: Arc<Nati
                     Some(InterceptedKey(_)) => legacy_hook!("InterceptedKey"),
                     Some(FileChanged(request)) => hooks::file_changed(request).await,
                     Some(FocusedWindowData(request)) => {
-                        hooks::focused_window_data(request, &native_state, &proxy).await
+                        hooks::focused_window_data(request, &platform_state, &proxy).await
                     },
                     err => {
                         match &err {
