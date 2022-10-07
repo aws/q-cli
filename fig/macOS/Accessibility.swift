@@ -125,18 +125,18 @@ class Accessibility {
   // swiftlint:disable line_length
   // https://github.com/chromium/chromium/blob/99314be8152e688bafbbf9a615536bdbb289ea87/chrome/browser/chrome_browser_application_mac.mm
   // https://github.com/electron/electron/blob/462de5f97a302987dc5fa5c222781ceed040f390/docs/tutorial/accessibility.md
+  static let kAXEnhancedUserInterface = "AXEnhancedUserInterface" as CFString
   static let kAXManualAccessibility = "AXManualAccessibility" as CFString
   static func triggerScreenReaderModeInChromiumApplication(_ app: ExternalApplication) {
-    //    var one: NSInteger = 1;
-    //    let cfOne: CFNumber = CFNumberCreate(kCFAllocatorDefault, .nsIntegerType, &one);
-    //    AXUIElementSetAttributeValue(app.axAppRef, "AXEnhancedUserInterface" as CFString, cfOne)
-    //
-    //    var role : AnyObject?
-    //    let roleError = AXUIElementCopyAttributeValue(app.axAppRef, kAXRoleAttribute as CFString, &role)
-    //    print(roleError)
 
-    //    CFBooleanRef value = enable ? kCFBooleanTrue : kCFBooleanFalse;
-    AXUIElementSetAttributeValue(app.axAppRef, kAXManualAccessibility, kCFBooleanTrue)
+    // Trigger Electron Accessibility
+    let status = AXUIElementSetAttributeValue(app.axAppRef, kAXManualAccessibility, kCFBooleanTrue)
+
+    // If not working, fallback to AX event sent by VoiceOver
+    if status == AXError.attributeUnsupported {
+      AXUIElementSetAttributeValue(app.axAppRef, kAXEnhancedUserInterface, kCFBooleanTrue)
+    }
+
   }
 
   static func triggerScreenReaderModeInFrontmostApplication() {
