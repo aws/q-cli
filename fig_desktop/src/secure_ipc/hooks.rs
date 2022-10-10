@@ -144,7 +144,12 @@ pub async fn edit_buffer(
 
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,
-        window_event: WindowEvent::Show,
+        // If editbuffer is empty, hide the autocomplete window to avoid flickering
+        window_event: if hook.text.is_empty() {
+            WindowEvent::Hide
+        } else {
+            WindowEvent::Show
+        },
     })?;
 
     Ok(())
