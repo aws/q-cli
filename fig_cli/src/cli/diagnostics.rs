@@ -201,7 +201,7 @@ impl HardwareInfo {
                         sys.physical_core_count()
                             .map_or_else(|| "Unknown".into(), |cores| format!("{cores}")),
                     ),
-                    memory: Some(format!("{} GB", (sys.total_memory() / 1024) as f32 / 1024.0)),
+                    memory: Some(format!("{:0.2} GB", sys.total_memory() as f32 / 2.0_f32.powi(30))),
                 };
 
                 if let Some(processor) = sys.cpus().first() {
