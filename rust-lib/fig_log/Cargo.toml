@@ -19,4 +19,4 @@ thiserror = "1.0.36"
 tracing = "0.1.36"
 tracing-appender = "0.2.2"
 tracing-error = "0.2.0"
-tracing-subscriber = { version = "0.3.15", features = ["env-filter", "parking_lot"] }
+tracing-subscriber = { version = "0.3.16", features = ["env-filter", "parking_lot"] }
