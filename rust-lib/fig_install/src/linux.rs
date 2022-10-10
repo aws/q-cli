@@ -1,3 +1,5 @@
+use fig_util::manifest::manifest;
+
 use crate::index::UpdatePackage;
 use crate::Error;
 
