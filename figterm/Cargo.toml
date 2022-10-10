@@ -45,7 +45,7 @@ shell-words = "1.1"
 tokio = { version = "1.20.1", features = ["full"] }
 tracing = "0.1.36"
 tracing-subscriber = { version = "0.3.15", features = ["fmt", "time", "parking_lot"] }
-uuid = { version = "1.1.2", features = ["v4", "fast-rng"] }
+uuid = { version = "1.2.1", features = ["v4", "fast-rng"] }
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.25.0"
