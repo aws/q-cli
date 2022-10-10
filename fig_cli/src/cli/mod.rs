@@ -41,7 +41,6 @@ use eyre::{
 };
 use fig_daemon::Daemon;
 use fig_log::Logger;
-use fig_util::manifest::manifest;
 use fig_util::{
     directories,
     is_app_running,
@@ -276,16 +275,7 @@ impl Cli {
                     }
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
-                CliRootCommands::Update { no_confirm } => {
-                    if manifest().is_none() {
-                        return Err(eyre::eyre!(
-                            "Please remove `~/.local/bin/fig` and reinstall Fig with `curl -fSsL https://fig.io/install-headless.sh | bash`"
-                        ));
-                    } else {
-                        fig_install::update(no_confirm).await?;
-                    }
-                    Ok(())
-                },
+                CliRootCommands::Update { no_confirm } => Ok(fig_install::update(no_confirm).await?),
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
