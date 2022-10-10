@@ -3,7 +3,7 @@ use crate::Error;
 
 pub(crate) async fn update(_package: UpdatePackage, _deprecated: bool) -> Result<(), Error> {
     if manifest().is_none() {
-        Error::LegacyUpdateFailed("Please remove `~/.local/bin/fig` and reinstall Fig with `curl -fSsL https://fig.io/install-headless.sh | bash`".into())
+        Err(Error::LegacyUpdateFailed("Please remove `~/.local/bin/fig` and reinstall Fig with `curl -fSsL https://fig.io/install-headless.sh | bash`".into()))
     } else {
         Err(Error::PackageManaged)
     }
