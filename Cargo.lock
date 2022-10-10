@@ -897,9 +897,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.10"
+version = "4.0.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3b1a0a4208c6c483b952ad35c6eed505fc13b46f08f631b81e828084a9318d74"
+checksum = "4ed45cc2c62a3eff523e718d8576ba762c83a3146151093283ac62ae11933a73"
 dependencies = [
  "atty",
  "bitflags",
@@ -917,7 +917,7 @@ version = "4.0.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "11cba7abac9b56dfe2f035098cdb3a43946f276e6db83b72c4e692343f9aab9a"
 dependencies = [
- "clap 4.0.10",
+ "clap 4.0.11",
 ]
 
 [[package]]
@@ -926,7 +926,7 @@ version = "4.0.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "cf2fc15aa585faf3c59b96c40923b2f4d119c710a84e8a81251eed54ba75335c"
 dependencies = [
- "clap 4.0.10",
+ "clap 4.0.11",
  "clap_complete",
 ]
 
@@ -2456,7 +2456,7 @@ name = "fig-api-mock"
 version = "2.5.3"
 dependencies = [
  "async-trait",
- "clap 4.0.10",
+ "clap 4.0.11",
  "fig_desktop_api",
  "fig_proto",
  "tokio",
@@ -2487,7 +2487,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.10",
+ "clap 4.0.11",
  "clap_complete",
  "clap_complete_fig",
  "color-eyre",
@@ -2581,7 +2581,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.10",
+ "clap 4.0.11",
  "core-foundation",
  "dashmap",
  "dbus",
@@ -2680,7 +2680,7 @@ version = "2.5.3"
 dependencies = [
  "accessibility-sys",
  "cfg-if 1.0.0",
- "clap 4.0.10",
+ "clap 4.0.11",
  "fig_telemetry",
  "fig_util",
  "macos_accessibility_position",
@@ -2852,7 +2852,7 @@ dependencies = [
  "bstr 1.0.1",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.10",
+ "clap 4.0.11",
  "dirs",
  "fig_test",
  "hex",
@@ -2885,7 +2885,7 @@ dependencies = [
  "bitflags",
  "bytes",
  "cfg-if 1.0.0",
- "clap 4.0.10",
+ "clap 4.0.11",
  "crossterm",
  "dashmap",
  "fig_api_client",

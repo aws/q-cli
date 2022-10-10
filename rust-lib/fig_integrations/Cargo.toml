@@ -8,7 +8,7 @@ version.workspace = true
 
 [dependencies]
 cfg-if = "1.0.0"
-clap = { version = "4.0.6", features = ["derive", "deprecated"] }
+clap = { version = "4.0.11", features = ["derive", "deprecated"] }
 fig_util = { path = "../fig_util" }
 regex = "1.6.0"
 serde = { version = "1.0.143", features = ["derive"] }
