@@ -1,3 +1,4 @@
+pub mod menu;
 mod util;
 pub mod window;
 
@@ -60,6 +61,7 @@ use crate::platform::{
 use crate::tray::{
     self,
     build_tray,
+    get_context_menu,
 };
 use crate::{
     icons,
@@ -203,7 +205,8 @@ impl WebviewManager {
 
         settings::settings_listener(self.notifications_state.clone(), self.event_loop.create_proxy()).await;
 
-        let tray = if !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false) {
+        let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
+        let mut tray = if tray_enabled {
             Some(build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap())
         } else {
             None
@@ -228,12 +231,12 @@ impl WebviewManager {
                         }
                     }
                 },
-                WryEvent::MenuEvent {
-                    menu_id,
-                    origin: MenuType::ContextMenu,
-                    ..
-                } => {
-                    if tray.is_some() {
+                WryEvent::MenuEvent { menu_id, origin, .. } => {
+                    if let Some(tray) = tray.as_mut() {
+                        tray.set_menu(&get_context_menu());
+                    }
+
+                    if origin == MenuType::ContextMenu {
                         tray::handle_event(menu_id, &proxy)
                     }
                 },
@@ -260,21 +263,23 @@ impl WebviewManager {
                         Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
                         },
-                        Event::RefreshDebugger => {
-                            // TODO(grant): Refresh the debugger
+                        Event::ReloadTray => {
+                            if let Some(tray) = tray.as_mut() {
+                                tray.set_menu(&get_context_menu());
+                            }
                         },
                         Event::PlatformBoundEvent(native_event) => {
                             if let Err(err) = self
                                 .platform_state
                                 .handle(native_event, window_target, &self.fig_id_map)
                             {
-                                debug!("Failed to handle native event: {err}");
+                                debug!(%err, "Failed to handle native event");
                             }
                         },
                     }
                 },
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
-                event => trace!("Unhandled event {event:?}"),
+                event => trace!(?event, "Unhandled event"),
             }
 
             if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
@@ -415,6 +420,7 @@ pub fn build_autocomplete(
         .with_always_on_top(true)
         .with_visible(false)
         .with_window_icon(Some(util::ICON.clone()))
+        .with_menu(menu::menu_bar())
         .with_theme(*THEME);
 
     cfg_if!(

@@ -15,7 +15,7 @@ pub enum Event {
 
     ControlFlow(ControlFlow),
 
-    RefreshDebugger,
+    ReloadTray,
 }
 
 impl From<PlatformBoundEvent> for Event {
@@ -84,7 +84,7 @@ pub enum WindowEvent {
         event: String,
         payload: String,
     },
-    NatigateRelative {
+    NavigateRelative {
         path: String,
     },
     NavigateAbsolute {

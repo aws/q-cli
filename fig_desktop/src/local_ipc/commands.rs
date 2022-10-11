@@ -80,8 +80,8 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: MISSION_CONTROL_ID.clone(),
-                    window_event: WindowEvent::NatigateRelative {
-                        path: "/settings/general/application".into(),
+                    window_event: WindowEvent::NavigateRelative {
+                        path: "/settings".into(),
                     },
                 })
                 .unwrap();
@@ -97,7 +97,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
                 proxy
                     .send_event(Event::WindowEvent {
                         window_id: MISSION_CONTROL_ID.clone(),
-                        window_event: WindowEvent::NatigateRelative { path },
+                        window_event: WindowEvent::NavigateRelative { path },
                     })
                     .unwrap();
             }

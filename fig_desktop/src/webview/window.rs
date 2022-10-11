@@ -185,7 +185,7 @@ impl WindowState {
                     .evaluate_script(&format!("window.location.href = '{url}';"))
                     .unwrap();
             },
-            WindowEvent::NatigateRelative { path } => {
+            WindowEvent::NavigateRelative { path } => {
                 self.webview
                     .evaluate_script(&format!("window.location.pathname = '{path}';"))
                     .unwrap();

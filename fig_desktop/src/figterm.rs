@@ -173,6 +173,7 @@ pub struct FigtermSessionInfo {
 }
 
 impl FigtermSession {
+    #[allow(dead_code)]
     pub fn get_info(&self) -> FigtermSessionInfo {
         FigtermSessionInfo {
             edit_buffer: self.edit_buffer.clone(),

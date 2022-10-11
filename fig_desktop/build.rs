@@ -12,12 +12,14 @@ fn main() {
 
 fn build_assets() {
     resize_directory(
-        "autocomplete-icons",
+        "icons/autocomplete",
         "AUTOCOMPLETE_ICONS_PROCESSED",
         32,
         32,
-        FilterType::Nearest,
+        FilterType::Lanczos3,
     );
+
+    resize_directory("icons/tray", "TRAY_ICONS_PROCESSED", 16, 16, FilterType::Lanczos3);
 }
 
 fn resize_directory(name: &str, var: &str, width: u32, height: u32, filter: FilterType) {
