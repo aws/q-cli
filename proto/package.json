@@ -2,6 +2,8 @@
   "name": "proto",
   "version": "1.0.0",
   "scripts": {
+    "lint": "clang-format -n --Werror *.proto",
+    "lint:fix": "clang-format -i *.proto",
     "precommit": "exit 0"
   },
   "devDependencies": {
