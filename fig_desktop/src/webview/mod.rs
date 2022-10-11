@@ -420,7 +420,6 @@ pub fn build_autocomplete(
         .with_always_on_top(true)
         .with_visible(false)
         .with_window_icon(Some(util::ICON.clone()))
-        .with_menu(menu::menu_bar())
         .with_theme(*THEME);
 
     cfg_if!(
