@@ -17,7 +17,7 @@ use serde_json::json;
 
 use super::OutputFormat;
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct TeamsArgs {
     // List all teams that the user is part of
     #[arg(long, conflicts_with_all = &["new", "delete"])]
@@ -33,7 +33,7 @@ pub struct TeamsArgs {
     format: OutputFormat,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct TeamCommand {
     pub team: Option<String>,
     #[command(subcommand)]
@@ -115,7 +115,7 @@ impl std::fmt::Display for Role {
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum TeamSubcommand {
     /// List all members on a team
     Members,

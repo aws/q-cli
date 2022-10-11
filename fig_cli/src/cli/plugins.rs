@@ -14,7 +14,7 @@ use fig_request::Request;
 use super::OutputFormat;
 use crate::util::dialoguer_theme;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, PartialEq, Eq)]
 pub enum PluginsSubcommands {
     /// Sync the current plugins (this will not update plugins that are already installed)
     Sync,

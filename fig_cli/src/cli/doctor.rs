@@ -75,7 +75,7 @@ use crate::util::{
     is_executable_in_path,
 };
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct DoctorArgs {
     /// Run all doctor tests, with no fixes
     #[arg(long)]

@@ -15,7 +15,7 @@ use fig_util::{
 };
 use tracing::debug;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum IntegrationsSubcommands {
     Install {
         /// Integration to install
@@ -35,7 +35,7 @@ pub enum IntegrationsSubcommands {
     },
 }
 
-#[derive(Debug, Subcommand, Clone, Copy)]
+#[derive(Debug, Subcommand, Clone, Copy, PartialEq, Eq)]
 pub enum Integration {
     Dotfiles {
         /// Only install the integrations for a single shell

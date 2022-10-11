@@ -40,14 +40,14 @@ use crate::util::{
     quit_fig,
 };
 
-#[derive(Debug, ValueEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum Build {
     Dev,
     Prod,
     Staging,
 }
 
-#[derive(Debug, ValueEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum ImeCommand {
     Install,
     Uninstall,
@@ -59,13 +59,13 @@ pub enum ImeCommand {
     Register,
 }
 
-#[derive(Debug, ValueEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum AutocompleteWindowDebug {
     On,
     Off,
 }
 
-#[derive(Debug, ValueEnum, Clone)]
+#[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum AccessibilityAction {
     Refresh,
     Reset,
@@ -74,7 +74,7 @@ pub enum AccessibilityAction {
     Status,
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum DebugSubcommand {
     /// Debug fig app
     App,

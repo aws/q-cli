@@ -24,7 +24,7 @@ use fig_util::{
 
 use crate::util::app_path_from_bundle_id;
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct InitArgs {
     /// The shell to generate the dotfiles for
     #[arg(value_enum)]

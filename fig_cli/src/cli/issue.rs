@@ -8,7 +8,7 @@ use crate::cli::diagnostics::{
     Diagnostics,
 };
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct IssueArgs {
     /// Force issue creation
     #[arg(long, short = 'f')]

@@ -72,7 +72,7 @@ use tui::{
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 2;
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct WorkflowArgs {
     // Flags can be added here
     #[arg(allow_hyphen_values = true)]

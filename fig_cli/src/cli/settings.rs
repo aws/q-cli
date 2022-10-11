@@ -25,7 +25,7 @@ use serde_json::json;
 use super::OutputFormat;
 use crate::util::app_not_running_message;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, PartialEq, Eq)]
 pub enum SettingsSubcommands {
     /// Reload the settings listener
     Init,
@@ -46,7 +46,7 @@ pub enum SettingsSubcommands {
     },
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 #[command(subcommand_negates_reqs = true)]
 #[command(args_conflicts_with_subcommands = true)]
 #[command(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]

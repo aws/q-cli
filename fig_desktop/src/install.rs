@@ -38,7 +38,7 @@ pub async fn run_install() {
         .ok();
 
     // Update if there's a newer version
-    #[cfg(windows)]
+    #[cfg(any(target_os = "windows", target_os = "macos"))]
     if !cfg!(debug_assertions) {
         tokio::spawn(async {
             let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);

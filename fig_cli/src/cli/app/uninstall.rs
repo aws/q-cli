@@ -37,7 +37,7 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
     }
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct UninstallArgs {
     /// Remove configuration and data files
     #[arg(long)]

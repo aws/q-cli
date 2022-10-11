@@ -75,7 +75,7 @@ pub enum Processes {
 
 /// Top level cli commands
 #[deny(missing_docs)]
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum CliRootCommands {
     /// Interact with the desktop app
     #[command(subcommand)]
@@ -403,11 +403,31 @@ async fn root_command() -> Result<()> {
 
 #[cfg(test)]
 mod test {
-
     use super::*;
 
     #[test]
     fn debug_assert() {
         Cli::command().debug_assert();
+    }
+
+    /// This test validates that the restart command maintains the same CLI facing definition
+    ///
+    /// If this changes, you must also change how it is called from within fig_install
+    /// and (possibly) other locations as well
+    #[test]
+    fn test_restart() {
+        assert_eq!(
+            Cli::parse_from(["fig", "restart", "app"]).subcommand,
+            Some(CliRootCommands::Restart {
+                process: Processes::App
+            })
+        );
+
+        assert_eq!(
+            Cli::parse_from(["fig", "restart", "daemon"]).subcommand,
+            Some(CliRootCommands::Restart {
+                process: Processes::Daemon
+            })
+        );
     }
 }

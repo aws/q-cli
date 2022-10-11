@@ -27,7 +27,7 @@ use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, PartialEq, Eq)]
 pub enum RootUserSubcommand {
     /// Login to Fig
     Login {
@@ -191,7 +191,7 @@ impl RootUserSubcommand {
     }
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Subcommand, Debug, PartialEq, Eq)]
 pub enum UserSubcommand {
     #[command(flatten)]
     Root(RootUserSubcommand),
@@ -303,7 +303,7 @@ impl UserSubcommand {
     }
 }
 
-#[derive(Subcommand, Debug)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum TokensSubcommand {
     New {
         /// The name of the token

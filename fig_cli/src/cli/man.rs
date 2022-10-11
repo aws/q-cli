@@ -2,7 +2,7 @@ use clap::Args;
 use eyre::Result;
 use url::Url;
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct ManArgs {
     command: Vec<String>,
 }

@@ -279,6 +279,7 @@ jobs:
       # resource_class: withfig/mac-mini
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
+      FIG_MACOS_BACKPORT: 1
     steps:
       - checkout-desktop
       - run:
@@ -315,6 +316,10 @@ jobs:
               --arg figterm "$(pwd)/$PRODUCTS_DIR/figterm" \
               '{"package": {"productName": "Fig"}, "tauri": {"bundle": {"externalBin": [$fig_cli, $figterm]}}}'
             )
+            tomlq -t -n \
+                --argjson f1 "$(tomlq .workspace.package Cargo.toml)" \
+                --argjson f2 "$(tomlq . fig_desktop/Cargo.toml)" \
+                '$f2 * {"package": $f1}' > fig_desktop/Cargo.toml
             cd fig_desktop
             echo $config > build-config.json
             cargo-tauri build --config ./build-config.json --target "$TARGET"

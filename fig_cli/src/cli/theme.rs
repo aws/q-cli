@@ -34,7 +34,7 @@ struct Theme {
     version: Option<String>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct ThemeArgs {
     #[arg(long, conflicts_with_all = &["folder", "theme"])]
     list: bool,

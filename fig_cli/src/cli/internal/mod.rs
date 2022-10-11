@@ -88,7 +88,7 @@ use crate::cli::installation::{
     InstallComponents,
 };
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 #[command(group(
         ArgGroup::new("output")
             .args(&["filename", "exit_code"])
@@ -103,7 +103,7 @@ pub struct CallbackArgs {
     exit_code: Option<i64>,
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct InstallArgs {
     /// Install only the daemon
     #[arg(long, conflicts_with_all = &["input_method"])]
@@ -155,7 +155,7 @@ impl Display for Method {
     }
 }
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
     /// Prompt the user that the dotfiles have changes

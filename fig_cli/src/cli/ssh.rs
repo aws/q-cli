@@ -17,7 +17,7 @@ use tracing::warn;
 
 use crate::util::choose;
 
-#[derive(Debug, Parser)]
+#[derive(Debug, Parser, PartialEq, Eq)]
 pub struct SshSubcommand {
     /// Host to connect to
     host: Option<String>,

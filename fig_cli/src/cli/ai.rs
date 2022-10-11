@@ -25,7 +25,7 @@ const MAX_QUESTION_LEN: usize = 250;
 const SEEN_ONBOARDING_KEY: &str = "ai.seen-onboarding";
 const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 pub struct AiArgs {
     input: Vec<String>,
     /// Number of completions to generate (must be <=5)

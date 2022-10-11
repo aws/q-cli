@@ -16,7 +16,7 @@ use serde_json::json;
 
 use crate::cli::OutputFormat;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum LocalStateSubcommand {
     /// Reload the state listener
     Init,
@@ -29,7 +29,7 @@ pub enum LocalStateSubcommand {
     },
 }
 
-#[derive(Debug, Args)]
+#[derive(Debug, Args, PartialEq, Eq)]
 #[command(subcommand_negates_reqs = true)]
 #[command(args_conflicts_with_subcommands = true)]
 #[command(group(ArgGroup::new("vals").requires("key").args(&["value", "delete", "format"])))]

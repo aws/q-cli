@@ -14,7 +14,7 @@ use fig_util::directories;
 use fig_util::terminal::CURRENT_TERMINAL;
 use once_cell::sync::Lazy;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true)]
 pub enum HookSubcommand {
     Editbuffer {

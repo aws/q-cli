@@ -2,6 +2,7 @@ pub mod uninstall;
 
 use std::io::Write;
 use std::str::FromStr;
+use std::time::Duration;
 
 use cfg_if::cfg_if;
 use clap::Subcommand;
@@ -27,7 +28,7 @@ use tracing::{
     trace,
 };
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum AppSubcommand {
     /// Install the Fig app
     Install,
@@ -59,17 +60,27 @@ pub async fn restart_fig() -> Result<()> {
         Ok(())
     } else {
         cfg_if! {
-            if #[cfg(target_os = "linux")] {
-                crate::util::quit_fig().await?;
-                launch_fig(true, true)?;
+            if #[cfg(target_os = "macos")] {
+                match option_env!("FIG_MACOS_BACKPORT") {
+                    Some(_) => {
+                        crate::util::quit_fig().await?;
+                        tokio::time::sleep(Duration::from_millis(1000)).await;
+                        launch_fig(true, true)?;
+                    },
+                    None => {
+                        use eyre::Context;
+
+                        use fig_ipc::local::restart_command;
+
+                        println!("Restarting Fig");
+                        restart_command().await.context("Unable to restart Fig")?;
+                        tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+                    },
+                }
             } else {
-                use eyre::Context;
-
-                use fig_ipc::local::restart_command;
-
-                println!("Restarting Fig");
-                restart_command().await.context("Unable to restart Fig")?;
-                tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
+                crate::util::quit_fig().await?;
+                tokio::time::sleep(Duration::from_millis(1000)).await;
+                launch_fig(true, true)?;
             }
         }
 

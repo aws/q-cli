@@ -39,7 +39,7 @@ pub enum Error {
     #[error("please update from your package manager")]
     PackageManaged,
     #[error("failed to update fig: `{0}`")]
-    LegacyUpdateFailed(String),
+    UpdateFailed(String),
 }
 
 pub async fn check_for_updates() -> Result<Option<String>, Error> {

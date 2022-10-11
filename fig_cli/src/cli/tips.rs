@@ -13,7 +13,7 @@ use serde::{
 };
 use serde_json::json;
 
-#[derive(Debug, Subcommand)]
+#[derive(Debug, Subcommand, PartialEq, Eq)]
 pub enum TipsSubcommand {
     /// Enable fig tips
     Enable,
