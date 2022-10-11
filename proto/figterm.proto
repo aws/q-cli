@@ -65,6 +65,9 @@ message InsertTextRequest {
   optional bool immediate = 4;
   // client buffer at the time of the insertion request (prior to insertion)
   optional string insertion_buffer = 5;
+  // if figterm should insert while a command is running, if false and a command
+  // is running the insertion will be ignored
+  optional bool insert_during_command = 6;
 }
 
 // Set buffer command

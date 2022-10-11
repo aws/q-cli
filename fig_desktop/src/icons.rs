@@ -168,7 +168,7 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
                 }
             }
 
-            // todo: add baged
+            // todo: add badge
             // if let Some(badge) = query_pairs.get("badge") {}
 
             let mut png_bytes = std::io::Cursor::new(Vec::new());

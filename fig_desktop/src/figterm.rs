@@ -198,6 +198,7 @@ pub enum FigtermCommand {
         offset: Option<i64>,
         immediate: Option<bool>,
         insertion_buffer: Option<String>,
+        insert_during_command: Option<bool>,
     },
     SetBuffer {
         text: String,

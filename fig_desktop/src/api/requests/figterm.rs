@@ -19,6 +19,7 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
                 immediate: None,
                 offset: None,
                 insertion_buffer: None,
+                insert_during_command: None,
             },
             fig_proto::fig::insert_text_request::Type::Update(update) => FigtermCommand::InsertText {
                 insertion: update.insertion,
@@ -26,6 +27,7 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
                 immediate: update.immediate,
                 offset: update.offset,
                 insertion_buffer: update.insertion_buffer,
+                insert_during_command: None,
             },
         },
         None => return RequestResult::error("InsertTextRequest expects a request type"),

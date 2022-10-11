@@ -522,7 +522,7 @@ pub trait Handler {
         HandledStatus::Unhandled
     }
 
-    /// Unhandled `hook` fallthough
+    /// Unhandled `hook` fallthrough
     fn unhandled_hook(
         &mut self,
         _params: &Params,

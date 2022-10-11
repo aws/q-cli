@@ -197,7 +197,8 @@ pub struct ShellState {
     pub local_context: ShellContext,
     /// If the prompt has been seen
     pub has_seen_prompt: bool,
-    /// PreExec
+    /// Preexec is true whenever the user is not interactive with the shell,
+    /// i.e. while printing the prompt or running a command
     pub preexec: bool,
     /// Position of start of cmd
     pub cmd_cursor: Option<Point>,

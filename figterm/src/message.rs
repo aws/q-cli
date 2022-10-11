@@ -157,6 +157,12 @@ pub async fn process_figterm_request(
 ) -> Result<Option<FigtermResponse>> {
     match figterm_request {
         FigtermRequest::InsertText(request) => {
+            // If the shell is in prompt or a command is being executed, insert the text only
+            // if the insert during command option is enabled.
+            if term.shell_state().preexec && !request.insert_during_command() {
+                return Ok(None);
+            }
+
             let current_buffer = term.get_current_buffer().map(|buff| (buff.buffer, buff.cursor_idx));
             let mut insertion_string = String::new();
             if let Some((buffer, Some(position))) = current_buffer {
@@ -176,8 +182,8 @@ pub async fn process_figterm_request(
                     // let (left, right) = buffer.split_at(position);
 
                     INSERTION_LOCKED_AT.write().replace(SystemTime::now());
-                    let expected = format!("{}{}", buffer, text_to_insert);
-                    trace!("lock set, expected buffer: {:?}", expected);
+                    let expected = format!("{buffer}{text_to_insert}");
+                    trace!(?expected, "lock set, expected buffer");
                     *EXPECTED_BUFFER.lock() = expected;
                 }
                 if let Some(ref insertion_buffer) = request.insertion_buffer {
@@ -262,7 +268,7 @@ pub async fn process_figterm_request(
             *EXECUTE_ON_NEW_CMD.lock() = command.execute;
             Ok(None)
         },
-        FigtermRequest::SetBuffer(_) => todo!(),
+        FigtermRequest::SetBuffer(_) => Err(anyhow::anyhow!("SetBuffer is not supported in figterm")),
         FigtermRequest::UpdateShellContext(request) => {
             if request.update_environment_variables {
                 *SHELL_ENVIRONMENT_VARIABLES.lock() = request.environment_variables;

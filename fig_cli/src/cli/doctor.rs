@@ -635,6 +635,7 @@ impl DoctorCheck for FigtermSocketCheck {
                         offset: None,
                         immediate: Some(true),
                         insertion_buffer: None,
+                        insert_during_command: Some(true),
                     },
                 )),
             };

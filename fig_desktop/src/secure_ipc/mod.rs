@@ -314,6 +314,7 @@ async fn handle_commands(
                 offset,
                 immediate,
                 insertion_buffer,
+                insert_during_command,
             } => (
                 Request::InsertText(InsertTextRequest {
                     insertion,
@@ -321,6 +322,7 @@ async fn handle_commands(
                     offset,
                     immediate,
                     insertion_buffer,
+                    insert_during_command,
                 }),
                 None,
             ),

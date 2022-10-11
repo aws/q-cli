@@ -40,6 +40,9 @@ class FigTerm {
       if update.hasInsertionBuffer {
         insert.insertionBuffer = update.insertionBuffer
       }
+      if update.insertDuringCommand {
+        insert.insertDuringCommand = update.insertDuringCommand
+      }
     })
 
     // Try secureIPC first.
@@ -87,6 +90,7 @@ class FigTerm {
         update.offset = 0
         update.immediate = false
         update.clearInsertionBuffer()
+        update.insertDuringCommand = false
       }), into: session)
     case .update:
       try FigTerm.updateBuffer(request.update, into: session)
