@@ -33,9 +33,10 @@ message Command {
     DebugModeCommand debug_mode = 113;
     PromptAccessibilityCommand prompt_accessibility = 114;
     InputMethodCommand input_method = 115;
-    UninstallCommand uninstall = 116;
     OpenBrowserCommand open_browser = 117;
   }
+
+  reserved 116;
 }
 
 message Hook {

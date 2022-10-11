@@ -1091,28 +1091,6 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
     }
 }
 
-struct InstallationScriptCheck;
-
-#[async_trait]
-impl DoctorCheck<DiagnosticsResponse> for InstallationScriptCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Installation script".into()
-    }
-
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
-        if diagnostics.installscript == "true" {
-            Ok(())
-        } else {
-            Err(DoctorError::Error {
-                reason: "Install script not run".into(),
-                info: vec![],
-                fix: command_fix(vec!["fig", "app", "install"], None),
-                error: None,
-            })
-        }
-    }
-}
-
 #[cfg(target_os = "macos")]
 pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
     let username_command = Command::new("id").arg("-un").output().context("Could not get id")?;
@@ -1208,8 +1186,8 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
         "Autocomplete is enabled".into()
     }
 
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
-        if diagnostics.autocomplete {
+    async fn check(&self, _diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
+        if !fig_settings::settings::get_bool_or("autocomplete.disable", false) {
             Ok(())
         } else {
             Err(DoctorError::Error {
@@ -1394,55 +1372,6 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
     }
 }
 
-struct SecureKeyboardCheck;
-
-#[async_trait]
-impl DoctorCheck<DiagnosticsResponse> for SecureKeyboardCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Secure keyboard input disabled".into()
-    }
-
-    async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
-        if diagnostics.securekeyboard == "false" {
-            return Ok(());
-        }
-
-        let mut info = vec![format!("Secure keyboard process is {}", diagnostics.securekeyboard_path).into()];
-
-        if is_installed("com.bitwarden.desktop") {
-            let version = app_version("com.bitwarden.desktop");
-            match version {
-                Some(version) => {
-                    if version <= Version::new(1, 27, 0) {
-                        return Err(DoctorError::Error {
-                            reason: "Secure keyboard input is on".into(),
-                            info: vec![
-                                "Bitwarden may be enabling secure keyboard entry even when not focused.".into(),
-                                "This was fixed in version 1.28.0. See \
-                                 https://github.com/bitwarden/desktop/issues/991 for details."
-                                    .into(),
-                                "To fix: upgrade Bitwarden to the latest version".into(),
-                            ],
-                            fix: None,
-                            error: None,
-                        });
-                    }
-                },
-                None => {
-                    info.insert(0, "Could not get Bitwarden version".into());
-                },
-            }
-        }
-
-        Err(DoctorError::Error {
-            reason: "Secure keyboard input is on".into(),
-            info,
-            fix: None,
-            error: None,
-        })
-    }
-}
-
 struct ItermIntegrationCheck;
 
 #[async_trait]
@@ -1604,7 +1533,7 @@ impl DoctorCheck<Option<Terminal>> for HyperIntegrationCheck {
                     "fig-hyper-integration plugin needs to be added to localPlugins!"
                 ));
             }
-            return Err(doctor_error!("Unknown error with integration!"));
+            return Err(doctor_error!("Unknown error with Hyper integration"));
         }
 
         Ok(())
@@ -1686,7 +1615,7 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
                 return Err(doctor_error!("VSCode integration is missing!"));
             }
 
-            return Err(doctor_error!("Unknown error with integration!"));
+            return Err(doctor_error!("Unknown error with VSCode integration!"));
         }
         Ok(())
     }
@@ -2253,13 +2182,11 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             run_checks_with_context(
                 format!("Let's check {}...", "fig diagnostic".bold()),
                 vec![
-                    &InstallationScriptCheck,
                     &ShellCompatibilityCheck,
                     &BundlePathCheck,
                     &AutocompleteEnabledCheck,
                     &FigCLIPathCheck,
                     &AccessibilityCheck,
-                    &SecureKeyboardCheck,
                     &DotfilesSymlinkedCheck,
                 ],
                 get_diagnostics,
@@ -2288,7 +2215,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         run_checks_with_context(
             "Let's check your terminal integrations...",
             vec![
-                &ItermIntegrationCheck,
+                // &ItermIntegrationCheck,
                 &ItermBashIntegrationCheck,
                 &HyperIntegrationCheck,
                 &VSCodeIntegrationCheck,

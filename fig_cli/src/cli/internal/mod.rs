@@ -33,6 +33,7 @@ use eyre::{
     ContextCompat,
     Result,
 };
+use fig_install::InstallComponents;
 use fig_ipc::local::send_hook_to_socket;
 use fig_ipc::{
     BufferedUnixStream,
@@ -83,10 +84,7 @@ use tracing::{
     trace,
 };
 
-use crate::cli::installation::{
-    self,
-    InstallComponents,
-};
+use crate::cli::installation::install_cli;
 
 #[derive(Debug, Args, PartialEq, Eq)]
 #[command(group(
@@ -123,6 +121,27 @@ pub struct InstallArgs {
     /// Install only the ssh integration.
     #[arg(long)]
     pub ssh: bool,
+}
+
+impl From<InstallArgs> for InstallComponents {
+    fn from(args: InstallArgs) -> Self {
+        let InstallArgs {
+            daemon,
+            dotfiles,
+            input_method,
+            ssh,
+            ..
+        } = args;
+        if daemon || dotfiles || ssh || input_method {
+            let mut install_components = InstallComponents::empty();
+            install_components.set(InstallComponents::DAEMON, daemon);
+            install_components.set(InstallComponents::SHELL_INTEGRATIONS, dotfiles);
+            install_components.set(InstallComponents::SSH, ssh);
+            install_components
+        } else {
+            InstallComponents::all()
+        }
+    }
 }
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
@@ -250,52 +269,51 @@ pub enum InternalSubcommand {
     },
 }
 
-pub async fn install_cli_from_args(install_args: InstallArgs) -> Result<()> {
-    let InstallArgs {
-        daemon,
-        dotfiles,
-        no_confirm,
-        force,
-        ssh,
-        ..
-    } = install_args;
-    let install_components = if daemon || dotfiles || ssh {
-        let mut install_components = InstallComponents::empty();
-        install_components.set(InstallComponents::DAEMON, daemon);
-        install_components.set(InstallComponents::DOTFILES, dotfiles);
-        install_components.set(InstallComponents::SSH, ssh);
-        install_components
-    } else {
-        InstallComponents::all()
-    };
-
-    installation::install_cli(install_components, no_confirm, force).await
-}
-
 const BUFFER_SIZE: usize = 1024;
 
 impl InternalSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            InternalSubcommand::Install(args) => install_cli_from_args(args).await?,
+            InternalSubcommand::Install(args) => {
+                let no_confirm = args.no_confirm;
+                let force = args.force;
+                install_cli(args.into(), no_confirm, force).await?
+            },
             InternalSubcommand::Uninstall {
                 daemon,
                 dotfiles,
                 binary,
                 ssh,
             } => {
-                let uninstall_components = if daemon || dotfiles || binary || ssh {
+                let components = if daemon || dotfiles || binary || ssh {
                     let mut uninstall_components = InstallComponents::empty();
                     uninstall_components.set(InstallComponents::DAEMON, daemon);
-                    uninstall_components.set(InstallComponents::DOTFILES, dotfiles);
+                    uninstall_components.set(InstallComponents::SHELL_INTEGRATIONS, dotfiles);
                     uninstall_components.set(InstallComponents::BINARY, binary);
                     uninstall_components.set(InstallComponents::SSH, ssh);
                     uninstall_components
                 } else {
                     InstallComponents::all()
                 };
+                if components.contains(InstallComponents::BINARY) {
+                    if option_env!("FIG_IS_PACKAGE_MANAGED").is_some() {
+                        println!("Uninstall Fig via your package manager");
+                    } else {
+                        fig_install::uninstall(InstallComponents::BINARY).await?;
+                        println!("\n{}\n", "Fig binary has been uninstalled".bold())
+                    }
+                }
 
-                installation::uninstall_cli(uninstall_components).await?
+                let mut components = components;
+                components.set(InstallComponents::BINARY, false);
+                fig_install::uninstall(components).await?;
+
+                #[cfg(target_os = "macos")]
+                if components.contains(InstallComponents::DESKTOP_APP) {
+                    if let Err(err) = Command::new("killall").args(["fig_desktop"]).output() {
+                        tracing::warn!("Failed to quit running Fig app: {err}");
+                    }
+                }
             },
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
             InternalSubcommand::PreCmd => pre_cmd().await,
@@ -668,12 +686,8 @@ impl InternalSubcommand {
                 };
             },
             InternalSubcommand::OpenUninstallPage { verbose } => {
-                let email = fig_request::auth::get_email().unwrap_or_else(|| "".into());
-                let version = env!("CARGO_PKG_VERSION");
-                let os = std::env::consts::OS;
-                let url = format!("https://fig.io/uninstall?email={email}&version={version}&os={os}");
-
-                if let Err(err) = fig_util::open_url_async(url.clone()).await {
+                let url = fig_install::get_uninstall_url();
+                if let Err(err) = fig_util::open_url(&url) {
                     if verbose {
                         eprintln!("Failed to open uninstall directly, trying daemon proxy: {err}");
                     }

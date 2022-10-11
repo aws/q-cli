@@ -24,7 +24,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
     }
 
     cfg_if! {
-        if #[cfg(target_os = "linux")] {
+        if #[cfg(unix)] {
             let emit = tokio::spawn(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::UninstalledApp,
                 fig_telemetry::TrackSource::Cli,
@@ -34,22 +34,6 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             let (emit_join, uninstall_join) = tokio::join!(emit, uninstall());
             emit_join?.ok();
             uninstall_join?;
-        } else if #[cfg(target_os = "macos")] {
-            if fig_util::manifest::is_full() {
-                let success = if fig_util::launch_fig(true, true)
-                .is_ok()
-                {
-                    fig_ipc::local::uninstall_command().await.is_ok()
-                } else {
-                    false
-                };
-
-                if !success {
-                    println!("Fig is not running. Please launch Fig and try again to complete uninstall.");
-                }
-            } else {
-                super::installation::uninstall_cli(super::installation::InstallComponents::all()).await?
-            }
         } else if #[cfg(target_os = "windows")] {
             println!("Please uninstall fig from the `Add or remove programs` menu for now.");
             println!("If you're having issues uninstalling fig, run `fig issue` to let us know, and use the tool at the following link to remove fig:");
@@ -57,6 +41,27 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
         }
     }
 
+    Ok(())
+}
+
+#[cfg(target_os = "macos")]
+async fn uninstall() -> Result<()> {
+    use fig_install::InstallComponents;
+    use tokio::process::Command;
+    use tracing::warn;
+
+    let url = fig_install::get_uninstall_url();
+    fig_util::open_url(url).ok();
+    fig_install::uninstall(InstallComponents::all()).await?;
+
+    // TODO(sean)
+    // 1. Remove login items
+    // 2. Set title of running ttys "Restart this terminal to finish uninstalling Fig..."
+    // 3. Delete webview cache
+
+    if let Err(err) = Command::new("killall").args(["fig_desktop"]).output().await {
+        warn!("Failed to quit running Fig app: {err}");
+    }
     Ok(())
 }
 

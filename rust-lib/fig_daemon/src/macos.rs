@@ -1,10 +1,8 @@
-mod launchd_plist;
-
-use camino::{
-    Utf8Path,
-    Utf8PathBuf,
+use camino::Utf8Path;
+use fig_util::launchd_plist::{
+    create_launch_agent,
+    LaunchdPlist,
 };
-use launchd_plist::LaunchdPlist;
 use tokio::process::Command;
 
 use crate::{
@@ -24,17 +22,15 @@ impl Daemon {
             .program_arguments([executable.as_str(), "daemon"])
             .keep_alive(true)
             .run_at_load(true)
-            .throttle_interval(30)
-            .plist();
+            .throttle_interval(30);
 
-        tokio::fs::create_dir_all(&daemon_dir()?).await?;
-        tokio::fs::write(&daemon_path()?, daemon.as_bytes()).await?;
+        create_launch_agent(&daemon)?;
 
         Ok(())
     }
 
     pub async fn uninstall(&self) -> Result<()> {
-        let path = daemon_path()?;
+        let path = LaunchdPlist::new(DAEMON_NAME).get_file_path()?;
         if path.exists() {
             tokio::fs::remove_file(&path).await?;
         }
@@ -43,7 +39,7 @@ impl Daemon {
     }
 
     pub async fn start(&self) -> Result<()> {
-        let path = daemon_path()?;
+        let path = LaunchdPlist::new(DAEMON_NAME).get_file_path()?;
         let output = Command::new("launchctl").arg("load").arg(&path).output().await?;
 
         if !output.status.success() {
@@ -58,7 +54,7 @@ impl Daemon {
     }
 
     pub async fn stop(&self) -> Result<()> {
-        let path = daemon_path()?;
+        let path = LaunchdPlist::new(DAEMON_NAME).get_file_path()?;
         let output = Command::new("launchctl").arg("unload").arg(&path).output().await?;
 
         if !output.status.success() {
@@ -90,14 +86,4 @@ impl Daemon {
 
         Ok(status)
     }
-}
-
-fn daemon_dir() -> Result<Utf8PathBuf> {
-    Ok(fig_util::directories::home_dir_utf8()?
-        .join("Library")
-        .join("LaunchAgents"))
-}
-
-fn daemon_path() -> Result<Utf8PathBuf> {
-    Ok(daemon_dir()?.join(format!("{DAEMON_NAME}.plist")))
 }

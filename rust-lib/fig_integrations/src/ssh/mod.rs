@@ -20,10 +20,15 @@ use crate::{
 
 #[derive(Debug, Clone)]
 pub struct SshIntegration {
-    pub path: PathBuf,
+    path: PathBuf,
 }
 
 impl SshIntegration {
+    pub fn default() -> Result<Self, Error> {
+        let path = directories::home_dir()?.join(".ssh").join("config");
+        Ok(SshIntegration { path })
+    }
+
     fn get_integration_path(&self) -> Result<PathBuf> {
         Ok(directories::fig_dir()?.join("ssh"))
     }

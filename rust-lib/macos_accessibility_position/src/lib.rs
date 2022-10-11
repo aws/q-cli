@@ -1,6 +1,7 @@
 #![cfg(target_os = "macos")]
 
 pub mod accessibility;
+pub mod bundle;
 pub mod platform_api;
 mod util;
 mod window_position;

@@ -149,8 +149,10 @@ impl PlatformStateImpl {
                             },
                         })
                         .ok();
+                    Ok(())
+                } else {
+                    Err(anyhow!("Failed to acquire caret position"))
                 }
-                Err(anyhow!("Failed to acquire caret position"))
             },
             PlatformBoundEvent::FullscreenStateUpdated { fullscreen } => {
                 let policy = if fullscreen {

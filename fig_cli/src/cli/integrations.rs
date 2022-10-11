@@ -1,5 +1,3 @@
-use std::path::PathBuf;
-
 use clap::Subcommand;
 use eyre::{
     Result,
@@ -46,13 +44,6 @@ pub enum Integration {
     Ssh,
     #[doc(hidden)]
     All,
-}
-
-pub fn get_ssh_config_path() -> Result<PathBuf> {
-    Ok(directories::home_dir()
-        .context("Could not get home directory")?
-        .join(".ssh")
-        .join("config"))
 }
 
 impl IntegrationsSubcommands {
@@ -130,9 +121,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             Ok(())
         },
         Integration::Ssh => {
-            let ssh_integration = SshIntegration {
-                path: get_ssh_config_path()?,
-            };
+            let ssh_integration = SshIntegration::default()?;
             if ssh_integration.is_installed().is_err() {
                 installed = true;
                 ssh_integration.install(Some(&backup_dir)).map_err(eyre::Report::from)
@@ -200,9 +189,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             Ok(())
         },
         Integration::Ssh => {
-            let ssh_integration = SshIntegration {
-                path: get_ssh_config_path()?,
-            };
+            let ssh_integration = SshIntegration::default()?;
             if ssh_integration.is_installed().is_ok() {
                 uninstalled = true;
                 ssh_integration.uninstall().map_err(eyre::Report::from)

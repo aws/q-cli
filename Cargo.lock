@@ -2660,7 +2660,11 @@ dependencies = [
 name = "fig_install"
 version = "2.5.3"
 dependencies = [
+ "bitflags",
+ "camino",
  "cfg-if 1.0.0",
+ "fig_daemon",
+ "fig_integrations",
  "fig_ipc",
  "fig_request",
  "fig_util",

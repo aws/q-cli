@@ -1,6 +1,8 @@
 use std::collections::BTreeMap;
 use std::fmt::Write;
 
+use camino::Utf8PathBuf;
+
 #[derive(Debug, Clone, Default)]
 pub struct LaunchdPlist {
     label: String,
@@ -14,6 +16,7 @@ pub struct LaunchdPlist {
     run_at_load: Option<bool>,
     keep_alive: Option<bool>,
     throttle_interval: Option<i64>,
+    watch_paths: Option<Vec<String>>,
 }
 
 impl LaunchdPlist {
@@ -22,6 +25,15 @@ impl LaunchdPlist {
             label: label.into(),
             ..LaunchdPlist::default()
         }
+    }
+
+    pub fn get_file_path(&self) -> Result<Utf8PathBuf, super::Error> {
+        let path = super::directories::home_dir_utf8()?
+            .join("Library")
+            .join("LaunchAgents")
+            .join(format!("{}.plist", self.label));
+
+        Ok(path)
     }
 
     /// Generate the plist as a string
@@ -140,6 +152,10 @@ impl LaunchdPlist {
                 if let Some(throttle_interval) = &self.throttle_interval {
                     push_key_val!("ThrottleInterval", i64, *throttle_interval);
                 }
+
+                if let Some(watch_paths) = &self.watch_paths {
+                    push_key_val!("WatchPaths", &[String], watch_paths);
+                }
             });
 
             push_line!("</dict>");
@@ -252,6 +268,27 @@ impl LaunchdPlist {
         self.throttle_interval = Some(interval);
         self
     }
+
+    /// Set the watch paths
+    pub fn watch_paths<I, T>(mut self, watch_paths: I) -> LaunchdPlist
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<String>,
+    {
+        self.watch_paths = Some(watch_paths.into_iter().map(|s| s.into()).collect());
+        self
+    }
+}
+
+pub fn create_launch_agent(launchd_plist: &LaunchdPlist) -> Result<(), super::Error> {
+    let path = launchd_plist.get_file_path()?;
+    let contents = launchd_plist.plist();
+    if let Some(parent_dir) = path.parent() {
+        std::fs::create_dir_all(parent_dir)?;
+    }
+    std::fs::write(&path, contents.as_bytes())?;
+
+    Ok(())
 }
 
 #[cfg(test)]

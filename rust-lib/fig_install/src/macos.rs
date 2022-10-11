@@ -9,11 +9,18 @@ use std::path::{
 use std::process::exit;
 
 use fig_ipc::local::update_command;
-use fig_util::launch_fig;
+use fig_util::{
+    directories,
+    launch_fig,
+};
 use regex::Regex;
 use reqwest::IntoUrl;
 use tempdir::TempDir;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{
+    AsyncReadExt,
+    AsyncWriteExt,
+};
+use tracing::warn;
 
 use crate::index::UpdatePackage;
 use crate::Error;
@@ -129,6 +136,172 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
     }
 
     Ok(())
+}
+
+async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl Fn(&str) -> bool) {
+    if let Ok(mut entries) = tokio::fs::read_dir(dir).await {
+        while let Ok(Some(entry)) = entries.next_entry().await {
+            if let Some(name) = entry.file_name().to_str() {
+                if name.starts_with(prefix) && !unless(name) {
+                    tokio::fs::remove_file(entry.path()).await.ok();
+                    tokio::fs::remove_dir_all(entry.path()).await.ok();
+                }
+            }
+        }
+    }
+}
+
+pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
+    let app_path = PathBuf::from("Applications").join("Fig.app");
+    if app_path.exists() {
+        tokio::fs::remove_dir_all(&app_path)
+            .await
+            .map_err(|err| warn!("Failed to remove Fig.app: {err}"))
+            .ok();
+    }
+
+    // Remove launch agents
+    if let Ok(home) = directories::home_dir() {
+        let launch_agents = home.join("Library").join("LaunchAgents");
+        remove_in_dir_with_prefix_unless(&launch_agents, "io.fig.", |p| p.contains("daemon")).await;
+    } else {
+        warn!("Could not find home directory");
+    }
+
+    // Delete Fig defaults on macOS
+    tokio::process::Command::new("defaults")
+        .args(["delete", "com.mschrage.fig"])
+        .output()
+        .await
+        .map_err(|err| warn!("Failed to delete defaults: {err}"))
+        .ok();
+
+    tokio::process::Command::new("defaults")
+        .args(["delete", "com.mschrage.fig.shared"])
+        .output()
+        .await
+        .map_err(|err| warn!("Failed to delete defaults: {err}"))
+        .ok();
+
+    // Delete data dir
+    if let Ok(fig_data_dir) = directories::fig_data_dir() {
+        tokio::fs::remove_dir_all(&fig_data_dir)
+            .await
+            .map_err(|err| warn!("Could not remove {}: {err}", fig_data_dir.display()))
+            .ok();
+    }
+
+    // Delete the ~/.fig folder
+    if let Ok(fig_dir) = directories::fig_dir() {
+        tokio::fs::remove_dir_all(fig_dir)
+            .await
+            .map_err(|err| warn!("Could not remove ~/.fig folder: {err}"))
+            .ok();
+    } else {
+        warn!("Could not find .fig folder");
+    }
+
+    uninstall_terminal_integrations().await;
+
+    Ok(())
+}
+
+async fn uninstall_terminal_integrations() {
+    // Delete integrations
+    if let Ok(home) = directories::home_dir() {
+        // Delete iTerm integration
+        for path in &[
+            "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py",
+            ".config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py",
+            "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt",
+        ] {
+            tokio::fs::remove_file(home.join(path))
+                .await
+                .map_err(|err| warn!("Could not remove iTerm integration {path}: {err}"))
+                .ok();
+        }
+
+        // Delete VSCode integration
+        for (folder, prefix) in &[
+            (".vscode/extensions", "withfig.fig-"),
+            (".vscode-insiders/extensions", "withfig.fig-"),
+            (".vscode-oss/extensions", "withfig.fig-"),
+        ] {
+            let folder = home.join(folder);
+            remove_in_dir_with_prefix_unless(&folder, prefix, |_| false).await;
+        }
+
+        // Remove Hyper integration
+        let hyper_path = home.join(".hyper.js");
+        if hyper_path.exists() {
+            // Read the config file
+            match tokio::fs::File::open(&hyper_path).await {
+                Ok(mut file) => {
+                    let mut contents = String::new();
+                    match file.read_to_string(&mut contents).await {
+                        Ok(_) => {
+                            contents = contents.replace("\"fig-hyper-integration\",", "");
+                            contents = contents.replace("\"fig-hyper-integration\"", "");
+
+                            // Write the config file
+                            match tokio::fs::File::create(&hyper_path).await {
+                                Ok(mut file) => {
+                                    file.write_all(contents.as_bytes())
+                                        .await
+                                        .map_err(|err| warn!("Could not write to Hyper config: {err}"))
+                                        .ok();
+                                },
+                                Err(err) => {
+                                    warn!("Could not create Hyper config: {err}")
+                                },
+                            }
+                        },
+                        Err(err) => {
+                            warn!("Could not read Hyper config: {err}");
+                        },
+                    }
+                },
+                Err(err) => {
+                    warn!("Could not open Hyper config: {err}");
+                },
+            }
+        }
+
+        // Remove Kitty integration
+        let kitty_path = home.join(".config").join("kitty").join("kitty.conf");
+        if kitty_path.exists() {
+            // Read the config file
+            match tokio::fs::File::open(&kitty_path).await {
+                Ok(mut file) => {
+                    let mut contents = String::new();
+                    match file.read_to_string(&mut contents).await {
+                        Ok(_) => {
+                            contents = contents.replace("watcher ${HOME}/.fig/tools/kitty-integration.py", "");
+                            // Write the config file
+                            match tokio::fs::File::create(&kitty_path).await {
+                                Ok(mut file) => {
+                                    file.write_all(contents.as_bytes())
+                                        .await
+                                        .map_err(|err| warn!("Could not write to Kitty config: {err}"))
+                                        .ok();
+                                },
+                                Err(err) => {
+                                    warn!("Could not create Kitty config: {err}")
+                                },
+                            }
+                        },
+                        Err(err) => {
+                            warn!("Could not read Kitty config: {err}");
+                        },
+                    }
+                },
+                Err(err) => {
+                    warn!("Could not open Kitty config: {err}");
+                },
+            }
+        }
+        // TODO: Add Jetbrains integration
+    }
 }
 
 async fn download_dmg(src: impl IntoUrl, dst: impl AsRef<Path>) -> Result<(), Error> {

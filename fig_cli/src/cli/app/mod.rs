@@ -1,17 +1,20 @@
-pub mod uninstall;
-
 use std::io::Write;
 use std::str::FromStr;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
-use clap::Subcommand;
+use clap::{
+    arg,
+    Args,
+    Subcommand,
+};
 use crossterm::style::Stylize;
 use eyre::{
     bail,
     Result,
 };
 use fig_install::index::local_manifest_version;
+use fig_install::InstallComponents;
 use fig_ipc::local::update_command;
 use fig_settings::{
     settings,
@@ -27,6 +30,28 @@ use tracing::{
     info,
     trace,
 };
+
+#[derive(Debug, Args, PartialEq, Eq)]
+pub struct UninstallArgs {
+    /// Remove executable and user data
+    #[arg(long)]
+    pub app_bundle: bool,
+    /// Remove input method
+    #[arg(long)]
+    pub input_method: bool,
+    /// Remove Fig daemon
+    #[arg(long)]
+    pub daemon: bool,
+    /// Remove dotfile shell integration
+    #[arg(long)]
+    pub dotfiles: bool,
+    /// Remove SSH integration
+    #[arg(long)]
+    pub ssh: bool,
+    /// Do not open the uninstallation page
+    #[arg(long)]
+    pub no_open: bool,
+}
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 pub enum AppSubcommand {
@@ -45,9 +70,25 @@ pub enum AppSubcommand {
     /// Set the internal pseudo-terminal path
     SetPath,
     /// Uninstall the Fig app
-    Uninstall(uninstall::UninstallArgs),
+    Uninstall(UninstallArgs),
     /// Prompts shown on terminal startup
     Prompts,
+}
+
+impl From<&UninstallArgs> for InstallComponents {
+    fn from(args: &UninstallArgs) -> Self {
+        if args.input_method || args.dotfiles || args.ssh || args.daemon || args.app_bundle {
+            let mut flags = InstallComponents::empty();
+            flags.set(InstallComponents::INPUT_METHOD, args.input_method);
+            flags.set(InstallComponents::SHELL_INTEGRATIONS, args.dotfiles);
+            flags.set(InstallComponents::SSH, args.ssh);
+            flags.set(InstallComponents::DAEMON, args.daemon);
+            flags.set(InstallComponents::DESKTOP_APP, args.app_bundle);
+            flags
+        } else {
+            InstallComponents::all()
+        }
+    }
 }
 
 pub async fn restart_fig() -> Result<()> {
@@ -92,7 +133,7 @@ impl AppSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             AppSubcommand::Install => {
-                fig_ipc::local::run_install_script_command().await?;
+                // TODO(sean) install MacOS specific script
             },
             AppSubcommand::Onboarding => {
                 cfg_if! {
@@ -214,7 +255,27 @@ impl AppSubcommand {
             AppSubcommand::Uninstall(args) => {
                 cfg_if! {
                     if #[cfg(target_os = "macos")] {
-                        uninstall::uninstall_mac_app(args).await;
+                        use fig_telemetry::{TrackSource, TrackEvent, TrackEventType};
+                        fig_telemetry::emit_track(TrackEvent::new(
+                            TrackEventType::UninstalledApp,
+                            TrackSource::Cli,
+                            env!("CARGO_PKG_VERSION").into(),
+                            [("source", "fig app uninstall")],
+                        )).await.ok();
+
+                        if !args.no_open {
+                            let url = fig_install::get_uninstall_url();
+                            fig_util::open_url(url).ok();
+                        }
+
+                        let components: InstallComponents = args.into();
+                        fig_install::uninstall(components).await?;
+                        if components.contains(InstallComponents::DESKTOP_APP) {
+                            use tokio::process::Command;
+                            if let Err(err) = Command::new("killall").args(["fig_desktop"]).output().await {
+                                tracing::warn!("Failed to quit running Fig app: {err}");
+                            }
+                        }
                     } else {
                         let _args = args;
                         eyre::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)

@@ -314,7 +314,7 @@ jobs:
             config=$(jq -n \
               --arg fig_cli "$(pwd)/$PRODUCTS_DIR/fig-darwin-universal" \
               --arg figterm "$(pwd)/$PRODUCTS_DIR/figterm" \
-              '{"package": {"productName": "Fig"}, "tauri": {"bundle": {"externalBin": [$fig_cli, $figterm]}}}'
+              '{"tauri": {"bundle": {"externalBin": [$fig_cli, $figterm]}}}'
             )
             tomlq -t -n \
                 --argjson f1 "$(tomlq .workspace.package Cargo.toml)" \
@@ -325,8 +325,13 @@ jobs:
             cargo-tauri build --config ./build-config.json --target "$TARGET"
             rm build-config.json
             cd ..
-            bundle_path="$(pwd)/target/universal-apple-darwin/release/bundle/macos/Fig.app"
-            echo "export BUNDLE_PATH=$bundle_path" >> $BASH_ENV
+            mv fig_desktop/Cargo.toml.tmp fig_desktop/Cargo.toml
+
+            bundle_dir="$(pwd)/target/universal-apple-darwin/release/bundle/macos/"
+            rm -rf "${bundle_dir}/Fig.app"
+            mv "${bundle_dir}/fig_desktop.app" "${bundle_dir}/Fig.app"
+            cp -r ./config "${bundle_dir}/Fig.app/Contents/Resources"
+            echo "export BUNDLE_PATH=${bundle_dir}/Fig.app" >> $BASH_ENV
           environment:
             PRODUCTS_DIR: build/usr/bin
             TARGET: universal-apple-darwin

@@ -67,6 +67,16 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
 pub async fn diagnostic(_: DiagnosticsCommand) -> LocalResult {
     let response = DiagnosticsResponse {
         autocomplete_active: Some(platform::autocomplete_active()),
+        #[cfg(target_os = "macos")]
+        path_to_bundle: macos_accessibility_position::bundle::get_bundle_path()
+            .and_then(|path| path.to_str().map(|s| s.to_owned()))
+            .unwrap_or_default(),
+        #[cfg(target_os = "macos")]
+        accessibility: if macos_accessibility_position::accessibility::accessibility_is_enabled() {
+            "true".into()
+        } else {
+            "false".into()
+        },
         ..Default::default()
     };
     Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(

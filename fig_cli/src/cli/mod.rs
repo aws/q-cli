@@ -271,7 +271,9 @@ impl Cli {
 
                         Ok(())
                     } else {
-                        internal::install_cli_from_args(args).await
+                        let no_confirm = args.no_confirm;
+                        let force = args.force;
+                        installation::install_cli(args.into(), no_confirm, force).await
                     }
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,

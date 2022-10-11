@@ -7,8 +7,8 @@ use fig_util::{
     directories,
     Shell,
 };
-use tokio::process::Command;
 use tracing::error;
+use wry::application::event_loop::ControlFlow;
 
 use super::{
     RequestResult,
@@ -47,15 +47,20 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             }
         },
         OnboardingAction::Uninstall => {
-            // TODO(grant): Move uninstall to a common lib and call directly
-            match Command::new("fig")
-                .args(["_", "uninstall", "--dotfiles", "--daemon"])
-                .output()
-                .await
-            {
+            use fig_install::{
+                uninstall,
+                InstallComponents,
+            };
+
+            let result = match uninstall(InstallComponents::all()).await {
                 Ok(_) => RequestResult::success(),
                 Err(err) => RequestResult::error(err.to_string()),
-            }
+            };
+            let url = fig_install::get_uninstall_url();
+            fig_util::open_url(url).ok();
+
+            proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).ok();
+            result
         },
         OnboardingAction::FinishOnboarding => {
             // Sync all of the user's files when they finish onboarding
@@ -117,8 +122,23 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 }
             }
         },
-        OnboardingAction::PromptForAccessibilityPermission
-        | OnboardingAction::CloseAccessibilityPromptWindow
+        OnboardingAction::PromptForAccessibilityPermission => {
+            use crate::local_ipc::{
+                commands,
+                LocalResponse,
+            };
+            let res = commands::prompt_for_accessibility_permission()
+                .await
+                .unwrap_or_else(|e| e);
+            match res {
+                LocalResponse::Success(_) => RequestResult::success(),
+                LocalResponse::Error {
+                    message: Some(message), ..
+                } => RequestResult::error(message),
+                _ => RequestResult::error("Failed to prompt for accessibility permissions"),
+            }
+        },
+        OnboardingAction::CloseAccessibilityPromptWindow
         | OnboardingAction::RequestRestart
         | OnboardingAction::CloseInputMethodPromptWindow => RequestResult::error("Unimplemented"),
     }

@@ -3,7 +3,7 @@
     "distDir": []
   },
   "package": {
-    "productName": "fig"
+    "productName": "fig_desktop"
   },
   "tauri": {
     "allowlist": {},

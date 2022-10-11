@@ -5,6 +5,11 @@ use eyre::eyre;
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks;
 use fig_proto::local::file_changed_hook::FileChanged;
+use fig_telemetry::{
+    TrackEvent,
+    TrackEventType,
+    TrackSource,
+};
 use fig_util::directories;
 use notify::{
     RecursiveMode,
@@ -19,7 +24,6 @@ use tracing::{
 };
 
 use super::DaemonStatus;
-use crate::cli::app::uninstall::UninstallArgs;
 use crate::util::fig_bundle;
 
 pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> JoinHandle<()> {
@@ -166,17 +170,22 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
 
                 if let Some(app_bundle_exists) = fig_bundle() {
                     if !app_bundle_exists.is_dir() {
-                        crate::cli::app::uninstall::uninstall_mac_app(&UninstallArgs {
-                            user_data: true,
-                            app_bundle: true,
-                            input_method: true,
-                            terminal_integrations: true,
-                            daemon: true,
-                            dotfiles: true,
-                            ssh: true,
-                            no_open: false,
-                        })
-                        .await;
+                        // Send uninstall telemetry event
+                        let tel_join = tokio::task::spawn(async move {
+                            fig_telemetry::emit_track(TrackEvent::new(
+                                TrackEventType::UninstalledApp,
+                                TrackSource::Daemon,
+                                env!("CARGO_PKG_VERSION").into(),
+                                [("source", "daemon settings watcher")],
+                            ))
+                            .await
+                            .ok();
+                        });
+
+                        let url = fig_install::get_uninstall_url();
+                        fig_util::open_url(url).ok();
+                        fig_install::uninstall(fig_install::InstallComponents::all()).await.ok();
+                        tel_join.await.ok();
                     }
                 }
             }

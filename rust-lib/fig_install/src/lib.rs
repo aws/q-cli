@@ -20,6 +20,13 @@ use thiserror::Error;
 #[cfg(windows)]
 use windows as os;
 
+mod common;
+pub use common::{
+    install,
+    uninstall,
+    InstallComponents,
+};
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error(transparent)]
@@ -29,7 +36,13 @@ pub enum Error {
     #[error(transparent)]
     Util(#[from] fig_util::Error),
     #[error(transparent)]
+    Integration(#[from] fig_integrations::Error),
+    #[error(transparent)]
+    Daemon(#[from] fig_daemon::Error),
+    #[error(transparent)]
     Reqwest(#[from] reqwest::Error),
+    #[error("error converting path")]
+    PathConversionError(#[from] camino::FromPathBufError),
     #[error(transparent)]
     Semver(#[from] semver::Error),
     #[error(transparent)]
@@ -40,6 +53,12 @@ pub enum Error {
     PackageManaged,
     #[error("failed to update fig: `{0}`")]
     UpdateFailed(String),
+}
+
+impl From<fig_util::directories::DirectoryError> for Error {
+    fn from(err: fig_util::directories::DirectoryError) -> Self {
+        fig_util::Error::Directory(err).into()
+    }
 }
 
 pub async fn check_for_updates() -> Result<Option<String>, Error> {
@@ -55,4 +74,12 @@ pub async fn update(deprecated_no_confirm: bool) -> Result<(), Error> {
     }
 
     Ok(())
+}
+
+pub fn get_uninstall_url() -> String {
+    // Open the uninstallation page
+    let os = std::env::consts::OS;
+    let email = fig_request::auth::get_email().unwrap_or_default();
+    let version = env!("CARGO_PKG_VERSION");
+    format!("https://fig.io/uninstall?email={email}&version={version}&os={os}")
 }

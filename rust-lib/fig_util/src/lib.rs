@@ -6,6 +6,9 @@ mod shell;
 pub mod system_info;
 pub mod terminal;
 
+#[cfg(target_os = "macos")]
+pub mod launchd_plist;
+
 use std::path::{
     Path,
     PathBuf,

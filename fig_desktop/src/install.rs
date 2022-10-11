@@ -1,5 +1,6 @@
 use std::iter::empty;
 
+use cfg_if::cfg_if;
 use semver::Version;
 use tracing::error;
 
@@ -30,32 +31,6 @@ pub async fn run_install() {
             Err(err) => error!(%err, "Failed to get {name} path"),
         }
     }
-
-    #[cfg(target_os = "windows")]
-    std::process::Command::new("fig")
-        .args(["install", "--daemon"])
-        .status()
-        .ok();
-
-    // Update if there's a newer version
-    #[cfg(any(target_os = "windows", target_os = "macos"))]
-    if !cfg!(debug_assertions) {
-        tokio::spawn(async {
-            let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
-            if seconds < 0 {
-                return;
-            }
-            let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
-            loop {
-                interval.tick().await;
-                fig_install::update(true).await.ok();
-            }
-        });
-    }
-
-    // remove the updater if it exists
-    #[cfg(target_os = "windows")]
-    std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
 
     tokio::spawn(async {
         if let Err(err) = fig_sync::themes::clone_or_update().await {
@@ -88,48 +63,161 @@ pub async fn run_install() {
             .ok()
         });
 
-        #[cfg(target_os = "linux")]
         tokio::spawn(async {
-            use tokio::process::Command;
-            match Command::new("fig").args(&["_", "install", "--daemon"]).output().await {
-                Ok(std::process::Output { status, stderr, .. }) if !status.success() => {
-                    error!(?status, stderr = %String::from_utf8_lossy(&stderr), "Failed to init fig daemon");
-                },
-                Err(err) => error!(%err, "Failed to init fig daemon"),
-                Ok(_) => {},
-            }
+            use fig_install::{
+                install,
+                InstallComponents,
+            };
+            install(InstallComponents::DAEMON).await.ok();
         });
+
+        cfg_if!(
+            if #[cfg(target_os = "macos")] {
+                initialize_fig_dir().ok();
+            }
+        );
     }
 
     if let Err(err) = set_previous_version(current_version()) {
         error!(%err, "Failed to set previous version");
     }
 
-    #[cfg(target_os = "linux")]
-    // todo(mia): make this part of onboarding
-    tokio::spawn(async {
-        use sysinfo::{
-            ProcessRefreshKind,
-            SystemExt,
-        };
-        let mut s = sysinfo::System::new();
-        s.refresh_processes_specifics(ProcessRefreshKind::new());
-        if s.processes_by_exact_name("/usr/bin/gnome-shell").next().is_some() {
-            drop(s);
-            match dbus::gnome_shell::has_extension().await {
-                Ok(true) => tracing::debug!("shell extension already installed"),
-                Ok(false) => {
-                    if let Err(err) = dbus::gnome_shell::install_extension().await {
-                        error!(%err, "Failed to install shell extension")
+    cfg_if!(
+        if #[cfg(target_os = "linux")] {
+            // todo(mia): make this part of onboarding
+            tokio::spawn(async {
+                use sysinfo::{
+                    ProcessRefreshKind,
+                    SystemExt,
+                };
+                let mut s = sysinfo::System::new();
+                s.refresh_processes_specifics(ProcessRefreshKind::new());
+                if s.processes_by_exact_name("/usr/bin/gnome-shell").next().is_some() {
+                    drop(s);
+                    match dbus::gnome_shell::has_extension().await {
+                        Ok(true) => tracing::debug!("shell extension already installed"),
+                        Ok(false) => {
+                            if let Err(err) = dbus::gnome_shell::install_extension().await {
+                                error!(%err, "Failed to install shell extension")
+                            }
+                        },
+                        Err(err) => error!(%err, "Failed to check shell extensions"),
                     }
-                },
-                Err(err) => error!(%err, "Failed to check shell extensions"),
+                }
+            });
+
+            // Has to be at the end of this function -- will block until ibus has launched.
+            launch_ibus().await;
+        } else if #[cfg(target_os = "windows")] {
+            // Update if there's a newer version
+            if !cfg!(debug_assertions) {
+                tokio::spawn(async {
+                    let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
+                    if seconds < 0 {
+                        return;
+                    }
+                    let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
+                    loop {
+                        interval.tick().await;
+                        fig_install::update(true).await.ok();
+                    }
+                });
+            }
+
+            // remove the updater if it exists
+            std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
+        }
+    );
+}
+
+#[cfg(target_os = "macos")]
+pub fn initialize_fig_dir() -> anyhow::Result<()> {
+    use std::path::Path;
+    use std::{
+        fs,
+        io,
+    };
+
+    use fig_util::directories::{
+        fig_dir,
+        home_dir,
+    };
+    use fig_util::launchd_plist::{
+        create_launch_agent,
+        LaunchdPlist,
+    };
+    use macos_accessibility_position::bundle::{
+        get_bundle_path,
+        get_bundle_path_for_executable,
+        get_bundle_resource_path,
+    };
+
+    fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
+        fs::create_dir_all(&dst)?;
+        for entry in fs::read_dir(src)? {
+            let entry = entry?;
+            let ty = entry.file_type()?;
+            if ty.is_dir() {
+                copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
+            } else {
+                fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
             }
         }
-    });
+        Ok(())
+    }
 
-    #[cfg(target_os = "linux")]
-    launch_ibus().await
+    let fig_dir = fig_dir()?;
+    let bin_dir = fig_dir.join("bin");
+    fs::remove_dir_all(&bin_dir).ok();
+    fs::create_dir_all(&bin_dir).ok();
+    fs::create_dir_all(fig_dir.join("apps")).ok();
+
+    if let Some(resources) = get_bundle_resource_path() {
+        let source = resources.join("config");
+        let dest = fig_dir.join("config");
+        copy_dir_all(&source, &dest).ok();
+    }
+
+    if let Some(figterm_path) = get_bundle_path_for_executable("figterm") {
+        let dest = bin_dir.join("figterm");
+        std::os::unix::fs::symlink(&figterm_path, &dest).ok();
+    }
+
+    if let Some(fig_cli_path) = get_bundle_path_for_executable("fig-darwin-universal") {
+        let dest = bin_dir.join("fig");
+        std::os::unix::fs::symlink(&fig_cli_path, &dest).ok();
+
+        if let Ok(home) = home_dir() {
+            let local_bin = home.join(".local").join("bin");
+            fs::create_dir_all(&local_bin).ok();
+            let dest = local_bin.join("fig");
+            std::os::unix::fs::symlink(&fig_cli_path, &dest).ok();
+        }
+    }
+
+    if let Some(bundle_path) = get_bundle_path() {
+        let resources = bundle_path.join("Contents").join("Resources");
+        let script_path = resources.join("config").join("tools").join("uninstaller.scpt");
+
+        let uninstall_agent = LaunchdPlist::new("io.fig.uninstall")
+            .program_arguments([
+                "osascript",
+                &script_path.to_string_lossy(),
+                &bundle_path.to_string_lossy(),
+            ])
+            .watch_paths(["~/.Trash"])
+            .keep_alive(false);
+
+        create_launch_agent(&uninstall_agent)?;
+
+        let path = uninstall_agent.get_file_path()?;
+        std::process::Command::new("launchctl")
+            .arg("load")
+            .arg(&path)
+            .status()?;
+    }
+
+    Ok(())
 }
 
 #[cfg(target_os = "linux")]

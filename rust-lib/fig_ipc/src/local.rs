@@ -14,7 +14,6 @@ use fig_proto::local::{
     RestartCommand,
     RestartSettingsListenerCommand,
     UiElement,
-    UninstallCommand,
     UpdateCommand,
 };
 use fig_util::directories;
@@ -80,11 +79,6 @@ pub async fn update_command(force: bool) -> Result<()> {
     send_command_to_socket(command).await
 }
 
-pub async fn uninstall_command() -> Result<()> {
-    let command = command::Command::Uninstall(UninstallCommand {});
-    send_command_to_socket(command).await
-}
-
 pub async fn restart_command() -> Result<()> {
     let command = command::Command::Restart(RestartCommand {});
     send_command_to_socket(command).await
@@ -92,11 +86,6 @@ pub async fn restart_command() -> Result<()> {
 
 pub async fn quit_command() -> Result<()> {
     let command = command::Command::Quit(QuitCommand {});
-    send_command_to_socket(command).await
-}
-
-pub async fn run_install_script_command() -> Result<()> {
-    let command = command::Command::RunInstallScript(local::RunInstallScriptCommand {});
     send_command_to_socket(command).await
 }
 

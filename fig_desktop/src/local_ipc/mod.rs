@@ -1,4 +1,4 @@
-mod commands;
+pub(crate) mod commands;
 mod hooks;
 
 use std::sync::Arc;
@@ -99,8 +99,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, platform_state: Arc<Pl
                             | Update(_)
                             | Build(_)
                             | ResetCache(_)
-                            | InputMethod(_)
-                            | Uninstall(_) => {
+                            | InputMethod(_) => {
                                 debug!(?command, "Unhandled command");
                                 Err(LocalResponse::Error {
                                     code: None,
