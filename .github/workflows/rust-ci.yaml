@@ -140,17 +140,34 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
-      - name: Check
+      - name: Check (MacOS)
         uses: actions-rs/cargo@v1
+        if: startsWith(matrix.os,'macos')
         with:
           command: check
           args: --workspace --locked
 
-      - name: Clippy
+      - name: Check (Other)
+        uses: actions-rs/cargo@v1
+        if: ${{ !startsWith(matrix.os,'macos') }}
+        with:
+          command: check
+          args: --workspace --locked --exclude fig_desktop
+
+      - name: Clippy (MacOS)
         uses: actions-rs/clippy-check@v1
+        if: startsWith(matrix.os,'macos')
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --workspace --locked -- -D warnings
+          name: Clippy ${{ matrix.os }} Report
+
+      - name: Clippy (Other)
+        uses: actions-rs/clippy-check@v1
+        if: ${{ !startsWith(matrix.os,'macos') }}
+        with:
+          token: ${{ secrets.GITHUB_TOKEN }}
+          args: --workspace --locked --exclude fig_desktop -- -D warnings
           name: Clippy ${{ matrix.os }} Report
 
   test-code-cov:
@@ -218,12 +235,20 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Test & Codecov
+      - name: Test & Codecov (MacOS)
         uses: actions-rs/cargo@v1
+        if: startsWith(matrix.os,'macos')
         with:
           command: llvm-cov
           args: --workspace --jobs 1 --locked --lcov --output-path lcov.info
 
+      - name: Test & Codecov (Other)
+        uses: actions-rs/cargo@v1
+        if: ${{ !startsWith(matrix.os,'macos') }}
+        with:
+          command: llvm-cov
+          args: --workspace --jobs 1 --locked --exclude fig_desktop --lcov --output-path lcov.info    
+      
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:
