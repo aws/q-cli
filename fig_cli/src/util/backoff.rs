@@ -1,5 +1,4 @@
 use std::cmp;
-use std::future::Future;
 use std::time::Duration;
 
 use rand::Rng;
@@ -35,16 +34,24 @@ impl Backoff {
         self.attempt += 1;
         tokio::time::sleep(sleep).await;
     }
+}
 
-    // This will execute the future with the backoff and should never return
-    pub async fn execute<F, Fut>(&mut self, mut f: F) -> !
-    where
-        F: FnMut(&mut Backoff) -> Fut,
-        Fut: Future<Output = ()>,
-    {
+#[cfg(test)]
+mod tests {
+    use std::time::Duration;
+
+    use super::*;
+
+    #[tokio::test]
+    async fn test_backoff() {
+        let mut backoff = Backoff::new(Duration::from_millis(1), Duration::from_millis(16));
+        let mut count = 0;
         loop {
-            f(self).await;
-            self.sleep().await;
+            count += 1;
+            if count == 10 {
+                break;
+            }
+            backoff.sleep().await;
         }
     }
 }

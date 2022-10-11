@@ -291,24 +291,57 @@ pub fn dialoguer_theme() -> ColorfulTheme {
     }
 }
 
-#[ignore]
-#[test]
-fn test() {
-    use sysinfo::{
-        ProcessRefreshKind,
-        RefreshKind,
-        System,
-        SystemExt,
-    };
+#[cfg(test)]
+mod tests {
+    use super::*;
 
-    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-    cfg_if! {
-        if #[cfg(windows)] {
-            let mut processes = s.processes_by_name("fig_desktop");
-            assert!(processes.next().is_some());
-        } else {
-            let mut processes = s.processes_by_exact_name("fig_desktop");
-            assert!(processes.next().is_some());
+    #[test]
+    fn regex() {
+        let regex_test = |regex: &str, input: &str, expected: Option<&str>| {
+            assert_eq!(match_regex(regex, input), expected.map(|s| s.into()));
+        };
+
+        regex_test(r"foo=(\S+)", "foo=bar", Some("bar"));
+        regex_test(r"foo=(\S+)", "bar=foo", None);
+        regex_test(r"foo=(\S+)", "foo=bar baz", Some("bar"));
+        regex_test(r"foo=(\S+)", "foo=", None);
+    }
+
+    #[test]
+    fn exe_path() {
+        #[cfg(unix)]
+        assert!(is_executable_in_path("cargo"));
+
+        #[cfg(windows)]
+        assert!(is_executable_in_path("cargo.exe"));
+    }
+
+    #[test]
+    fn globs() {
+        let set = glob(["*.txt", "*.md"]).unwrap();
+        assert!(set.is_match("README.md"));
+        assert!(set.is_match("LICENSE.txt"));
+    }
+
+    #[ignore]
+    #[test]
+    fn sysinfo_test() {
+        use sysinfo::{
+            ProcessRefreshKind,
+            RefreshKind,
+            System,
+            SystemExt,
+        };
+
+        let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+        cfg_if! {
+            if #[cfg(windows)] {
+                let mut processes = s.processes_by_name("fig_desktop");
+                assert!(processes.next().is_some());
+            } else {
+                let mut processes = s.processes_by_exact_name("fig_desktop");
+                assert!(processes.next().is_some());
+            }
         }
     }
 }

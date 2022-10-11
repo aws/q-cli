@@ -237,3 +237,17 @@ fn transform_unix_to_windows_path(path: Cow<'_, Path>) -> Cow<'_, Path> {
         _ => path,
     }
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn unix_to_windows_path_transform() {
+        assert_eq!(
+            transform_unix_to_windows_path(Path::new(r"/c/User/chay/Downloads").into()),
+            Path::new(r"c:\User\chay\Downloads")
+        );
+        assert_eq!(transform_unix_to_windows_path(Path::new(r"/").into()), Path::new(r"/"));
+    }
+}

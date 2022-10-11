@@ -473,3 +473,13 @@ pub async fn process_secure_message(
 
     Ok(())
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn command() {
+        create_command("cargo", None::<&str>).output().unwrap();
+    }
+}

@@ -40,11 +40,11 @@ pub async fn spawn_history_task() -> Sender<CommandInfo> {
                     }
                 }
             },
-            Ok(Err(e)) => {
-                error!("Failed to load history: {}", e);
+            Ok(Err(err)) => {
+                error!("Failed to load history: {err}");
             },
-            Err(e) => {
-                error!("Failed to join history thread: {}", e);
+            Err(err) => {
+                error!("Failed to join history thread: {err}");
             },
         }
     });
@@ -264,4 +264,34 @@ fn migrate_history_db(conn: &Connection) -> Result<()> {
     }
 
     Ok(())
+}
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[test]
+    fn migrate_and_insert() {
+        let conn = Connection::open_in_memory().unwrap();
+
+        create_migrations_table(&conn).unwrap();
+        migrate_history_db(&conn).unwrap();
+
+        let history = History { connection: conn };
+        history
+            .insert_command_history(
+                &CommandInfo {
+                    command: Some("fig".into()),
+                    shell: Some("bash".into()),
+                    pid: Some(123),
+                    session_id: Some("session-id".into()),
+                    cwd: Some("/home/grant/".into()),
+                    time: Some(123123),
+                    hostname: Some("laptop".into()),
+                    exit_code: None,
+                },
+                false,
+            )
+            .unwrap();
+    }
 }

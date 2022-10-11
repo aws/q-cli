@@ -70,3 +70,14 @@ fn load_from_memory() -> Icon {
     };
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
+
+#[cfg(test)]
+mod tests {
+    use super::*;
+
+    #[cfg_attr(target_os = "linux", ignore)]
+    #[test]
+    fn icon() {
+        let _icon = &*ICON;
+    }
+}
