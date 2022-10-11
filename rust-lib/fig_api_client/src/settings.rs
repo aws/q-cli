@@ -1,3 +1,5 @@
+use std::io::Write;
+
 use fig_request::Result;
 use fig_util::directories;
 use serde::{
@@ -9,6 +11,7 @@ use serde_json::{
     Map,
     Value,
 };
+use time::format_description::well_known::Rfc3339;
 
 pub async fn update_all(settings: Map<String, Value>) -> Result<()> {
     if let Ok(path) = directories::settings_path() {
@@ -54,4 +57,20 @@ pub struct Settings {
 
 pub async fn get() -> Result<Settings> {
     fig_request::Request::get("/settings").auth().deser_json().await
+}
+
+pub async fn sync() -> Result<()> {
+    let Settings { settings, updated_at } = get().await?;
+
+    let path = directories::settings_path()?;
+
+    let mut settings_file = std::fs::File::create(&path)?;
+    let settings_json = serde_json::to_string_pretty(&settings)?;
+    settings_file.write_all(settings_json.as_bytes())?;
+
+    if let Ok(updated_at) = updated_at.format(&Rfc3339) {
+        fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
+    }
+
+    Ok(())
 }

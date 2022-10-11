@@ -8,6 +8,7 @@ use fig_util::{
     Shell,
 };
 use tokio::process::Command;
+use tracing::error;
 
 use super::{
     RequestResult,
@@ -57,6 +58,27 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             }
         },
         OnboardingAction::FinishOnboarding => {
+            // Sync all of the user's files when they finish onboarding
+            tokio::spawn(async {
+                // Settings has to be synced first because it contains information that might
+                // modify the behavior of other syncs
+                if let Err(err) = fig_api_client::settings::sync().await {
+                    error!(%err, "Failed to sync settings");
+                }
+
+                tokio::spawn(async {
+                    if let Err(err) = fig_sync::dotfiles::download_and_notify(false).await {
+                        error!(%err, "Failed to download dotfiles");
+                    }
+                });
+
+                tokio::spawn(async {
+                    if let Err(err) = fig_sync::plugins::fetch_installed_plugins(false).await {
+                        error!(%err, "Failed to fetch installed plugins");
+                    }
+                });
+            });
+
             match proxy.send_event(Event::WindowEvent {
                 window_id: MISSION_CONTROL_ID,
                 window_event: crate::event::WindowEvent::Resize {

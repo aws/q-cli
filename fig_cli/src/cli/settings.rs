@@ -1,5 +1,3 @@
-use std::io::Write;
-
 use clap::{
     ArgGroup,
     Args,
@@ -23,7 +21,6 @@ use fig_util::{
 };
 use globset::Glob;
 use serde_json::json;
-use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
 use crate::util::app_not_running_message;
@@ -107,18 +104,7 @@ impl SettingsArgs {
                 Ok(())
             },
             Some(SettingsSubcommands::Sync) => {
-                let settings::Settings { settings, updated_at } = settings::get().await?;
-
-                let path = directories::settings_path().context("Could not get settings path")?;
-
-                let mut settings_file = std::fs::File::create(&path)?;
-                let settings_json = serde_json::to_string_pretty(&settings)?;
-                settings_file.write_all(settings_json.as_bytes())?;
-
-                if let Ok(updated_at) = updated_at.format(&Rfc3339) {
-                    fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
-                }
-
+                settings::sync().await?;
                 Ok(())
             },
             Some(SettingsSubcommands::All { remote, format }) => {

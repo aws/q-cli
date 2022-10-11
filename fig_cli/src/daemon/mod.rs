@@ -174,15 +174,18 @@ pub async fn daemon() -> Result<()> {
         }
     });
 
-    // Spawn settings watcher
-    #[cfg(target_os = "macos")]
-    let settings_watcher_join = spawn_settings_watcher(daemon_status.clone()).await;
-
     info!("Daemon is now running");
 
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join, settings_watcher_join)?;
+            if option_env!("FIG_MACOS_BACKPORT").is_none() {
+                // Spawn settings watcher
+                let settings_watcher_join = spawn_settings_watcher(daemon_status.clone()).await;
+                tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join, settings_watcher_join)?;
+            } else {
+                tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
+            }
+
         } else {
             tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
         }

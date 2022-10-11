@@ -241,14 +241,10 @@ pub fn themes_dir() -> Result<PathBuf> {
 
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            /*
-            let new_theme_dir = themes_dir()?;
-            match new_theme_dir.exists() {
-                true => Ok(new_theme_dir),
-                false => Ok(themes_repo_dir()?.join("themes"))
+            match option_env!("FIG_MACOS_BACKPORT") {
+                Some(_) => Ok(themes_repo_dir()?.join("themes")),
+                None => deprecated::legacy_themes_dir()
             }
-            */
-            deprecated::legacy_themes_dir()
         } else {
             Ok(themes_repo_dir()?.join("themes"))
         }

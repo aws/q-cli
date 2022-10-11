@@ -7,6 +7,30 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
 pub async fn run_install() {
+    // Create files needed for other parts of the app to run
+    for (path_result, name, default) in [
+        (fig_util::directories::settings_path(), "settings", "{}"),
+        (fig_util::directories::state_path(), "state", "{}"),
+    ] {
+        match path_result {
+            Ok(path) => {
+                if let Some(path_parent) = path.parent() {
+                    if !path_parent.exists() {
+                        if let Err(err) = std::fs::create_dir_all(path_parent) {
+                            error!(%err, "Failed to create {name} directory");
+                        }
+                    }
+                }
+                if !path.exists() {
+                    if let Err(err) = std::fs::write(&path, default) {
+                        error!(%err, "Failed to create {name} file");
+                    }
+                }
+            },
+            Err(err) => error!(%err, "Failed to get {name} path"),
+        }
+    }
+
     #[cfg(target_os = "windows")]
     std::process::Command::new("fig")
         .args(["install", "--daemon"])
