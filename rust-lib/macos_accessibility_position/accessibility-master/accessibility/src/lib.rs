@@ -71,7 +71,7 @@ impl TreeWalker {
         if flow == TreeWalkerFlow::Continue {
             if let Ok(children) = root.attribute(&self.attr_children) {
                 for child in children.into_iter() {
-                    let child_flow = self.walk_one(&*child, visitor);
+                    let child_flow = self.walk_one(&child, visitor);
 
                     if child_flow == TreeWalkerFlow::Exit {
                         flow = child_flow;

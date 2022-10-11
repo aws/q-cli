@@ -247,7 +247,7 @@ impl CommandBuilder {
 
             if let Some(path) = self.resolve_path() {
                 for path in std::env::split_paths(&path) {
-                    let candidate = path.join(&exe);
+                    let candidate = path.join(exe);
                     if candidate.exists() {
                         return Ok(candidate.into_os_string());
                     }

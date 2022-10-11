@@ -38,7 +38,7 @@ pub enum Error {
 }
 
 fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
-    Ok(directories::logs_dir()?.join(log_file_name.as_ref().replace('/', "_").replace('\\', "_")))
+    Ok(directories::logs_dir()?.join(log_file_name.as_ref().replace(['/', '\\'], "_")))
 }
 
 fn fig_log_level() -> String {

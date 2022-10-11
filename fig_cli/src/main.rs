@@ -55,7 +55,7 @@ async fn main() -> Result<()> {
                 scope.set_tag("arguments", &args_no_exe.join(" "));
                 scope.set_tag("shell", &shell);
                 scope.set_tag("terminal", &terminal);
-                scope.set_tag("cli_version", &cli_version);
+                scope.set_tag("cli_version", cli_version);
             });
 
             match std::env::var_os("PROCESS_LAUNCHED_BY_FIG") {

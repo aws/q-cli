@@ -174,29 +174,29 @@ mod test {
 
     fn test_store_type(path: &Path, store: JsonType) {
         let mut local_json = LocalJson::load(store).unwrap();
-        assert_eq!(fs::read_to_string(&path).unwrap(), "");
+        assert_eq!(fs::read_to_string(path).unwrap(), "");
         assert_eq!(local_json.inner, serde_json::Map::new());
         local_json.save().unwrap();
-        assert_eq!(fs::read_to_string(&path).unwrap(), "{}");
+        assert_eq!(fs::read_to_string(path).unwrap(), "{}");
 
         local_json.set("a", 123);
         local_json.set("b", "hello");
         local_json.set("c", false);
         local_json.save().unwrap();
         assert_eq!(
-            fs::read_to_string(&path).unwrap(),
+            fs::read_to_string(path).unwrap(),
             "{\n  \"a\": 123,\n  \"b\": \"hello\",\n  \"c\": false\n}"
         );
 
         local_json.remove("a").unwrap();
         local_json.save().unwrap();
         assert_eq!(
-            fs::read_to_string(&path).unwrap(),
+            fs::read_to_string(path).unwrap(),
             "{\n  \"b\": \"hello\",\n  \"c\": false\n}"
         );
         assert_eq!(local_json.get("b").unwrap(), "hello");
 
-        fs::write(&path, "invalid json").unwrap();
+        fs::write(path, "invalid json").unwrap();
         assert!(matches!(LocalJson::load(store).unwrap_err(), Error::SettingsNotObject));
     }
 

@@ -319,7 +319,7 @@ mod tests {
 
         // Check that the branch is correct
         let branch_output = Command::new("git")
-            .args(&["branch", "--show-current"])
+            .args(["branch", "--show-current"])
             .current_dir(directory.path().join("fig"))
             .output()
             .await
@@ -348,7 +348,7 @@ mod tests {
 
         // Check that the commit is correct
         let commit_output = Command::new("git")
-            .args(&["rev-parse", "HEAD"])
+            .args(["rev-parse", "HEAD"])
             .current_dir(directory.path().join("fig"))
             .output()
             .await

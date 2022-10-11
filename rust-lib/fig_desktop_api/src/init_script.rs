@@ -46,7 +46,7 @@ impl Default for Constants {
         let themes: Vec<String> = themes_folder
             .as_ref()
             .and_then(|path| {
-                std::fs::read_dir(&path).ok().map(|dir| {
+                std::fs::read_dir(path).ok().map(|dir| {
                     dir.filter_map(|file| {
                         file.ok().and_then(|file| {
                             file.file_name()

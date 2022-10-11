@@ -231,7 +231,7 @@ impl DebugSubcommand {
 
                 let log_paths = if files.is_empty() {
                     let pattern = logs_dir.join("*.log");
-                    let globset = glob(&[pattern.to_str().unwrap()])?;
+                    let globset = glob([pattern.to_str().unwrap()])?;
                     glob_dir(&globset, &logs_dir)?
                 } else {
                     let mut files = files.as_ref().clone();
@@ -243,7 +243,7 @@ impl DebugSubcommand {
 
                         // Add figterm*.log to the list of files to open
                         let pattern = logs_dir.join("figterm*.log");
-                        let globset = glob(&[pattern.to_str().unwrap()])?;
+                        let globset = glob([pattern.to_str().unwrap()])?;
                         let figterm_logs = glob_dir(&globset, &logs_dir)?;
                         paths.extend(figterm_logs);
                     }

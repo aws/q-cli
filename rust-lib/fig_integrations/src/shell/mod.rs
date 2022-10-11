@@ -337,7 +337,7 @@ impl DotfileShellIntegration {
             regex::escape(&self.legacy_source_text_2(when)?),
         );
 
-        Ok(RegexSet::new(&[
+        Ok(RegexSet::new([
             old_file_regex,
             &old_eval_regex,
             &old_source_regex_1,

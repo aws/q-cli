@@ -1675,7 +1675,7 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
                 let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 
                 let extensions = extensions.as_path();
-                if let Ok(fig_extensions) = glob_dir(&glob_set, &extensions) {
+                if let Ok(fig_extensions) = glob_dir(&glob_set, extensions) {
                     if fig_extensions.is_empty() {
                         missing = false;
                     }

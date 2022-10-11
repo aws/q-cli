@@ -42,7 +42,7 @@ fn main() -> Result<()> {
 
     let mut config = prost_build::Config::new();
 
-    config.bytes(&["."]);
+    config.bytes(["."]);
 
     #[cfg(feature = "arbitrary")]
     config.type_attribute(

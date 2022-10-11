@@ -52,7 +52,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     let settings_path = match directories::settings_path().ok() {
         Some(settings_path) => match settings_path.parent() {
             Some(settings_dir) => {
-                if let Err(err) = std::fs::create_dir_all(&settings_dir) {
+                if let Err(err) = std::fs::create_dir_all(settings_dir) {
                     error!(%err, "failed to create settings dir");
                 }
                 match watcher.watch(settings_dir, RecursiveMode::NonRecursive) {
@@ -84,7 +84,7 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     let state_path = match directories::state_path().ok() {
         Some(state_path) => match state_path.parent() {
             Some(state_dir) => {
-                if let Err(err) = std::fs::create_dir_all(&state_dir) {
+                if let Err(err) = std::fs::create_dir_all(state_dir) {
                     error!(%err, "failed to create state dir");
                 }
                 match watcher.watch(state_dir, RecursiveMode::NonRecursive) {

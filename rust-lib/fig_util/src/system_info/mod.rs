@@ -228,7 +228,7 @@ pub fn is_remote() -> bool {
 #[cfg(target_os = "macos")]
 fn raw_system_id() -> Result<String, Error> {
     let output = std::process::Command::new("ioreg")
-        .args(&["-rd1", "-c", "IOPlatformExpertDevice"])
+        .args(["-rd1", "-c", "IOPlatformExpertDevice"])
         .output()?;
 
     let output = String::from_utf8_lossy(&output.stdout);

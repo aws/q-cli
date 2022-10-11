@@ -663,7 +663,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                         args.borrow_mut().insert(parameter_name.clone(), signal);
                                     })
                                     .with_text(parameter_value)
-                                    .with_hint(placeholder.to_owned().unwrap_or_else(|| "".to_string())),
+                                    .with_hint(placeholder.to_owned().unwrap_or_default()),
                                 ),
                                 ParameterType::Checkbox {
                                     true_value_substitution,

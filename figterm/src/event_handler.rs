@@ -67,7 +67,7 @@ impl EventListener for EventHandler {
 
                 if let Some(cwd) = &shell_state.local_context.current_working_directory {
                     if cwd.exists() {
-                        std::env::set_current_dir(&cwd).ok();
+                        std::env::set_current_dir(cwd).ok();
                     }
                 }
 

@@ -49,7 +49,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
         OnboardingAction::Uninstall => {
             // TODO(grant): Move uninstall to a common lib and call directly
             match Command::new("fig")
-                .args(&["_", "uninstall", "--dotfiles", "--daemon"])
+                .args(["_", "uninstall", "--dotfiles", "--daemon"])
                 .output()
                 .await
             {

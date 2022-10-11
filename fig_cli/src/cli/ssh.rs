@@ -45,7 +45,7 @@ impl SshSubcommand {
         let saved_identities_path = directories::ssh_saved_identities()?;
         if let Some(parent) = saved_identities_path.parent() {
             if !parent.exists() {
-                std::fs::create_dir_all(&parent)?;
+                std::fs::create_dir_all(parent)?;
             }
         }
         if !saved_identities_path.exists() {

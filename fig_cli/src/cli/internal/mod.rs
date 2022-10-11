@@ -548,7 +548,7 @@ impl InternalSubcommand {
                     .filter(|line| !line.is_empty())
                 {
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
-                        .args(&["-u", user, "--", "fig", "_", "open-uninstall-page"])
+                        .args(["-u", user, "--", "fig", "_", "open-uninstall-page"])
                         .status()
                         .await
                     {
@@ -557,7 +557,7 @@ impl InternalSubcommand {
                         }
                     }
                     if let Ok(exit_status) = tokio::process::Command::new("runuser")
-                        .args(&["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
+                        .args(["-u", user, "--", "fig", "integrations", "uninstall", "--silent", "all"])
                         .status()
                         .await
                     {

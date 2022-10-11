@@ -179,7 +179,7 @@ impl WindowServer {
         if let Ok(mut observer) = AXObserver::create(key.clone(), ax_ref, self.sender.clone(), ax_callback) {
             let result: Result<Vec<_>, AXError> = TRACKED_NOTIFICATIONS
                 .iter()
-                .map(|notification| observer.subscribe(*notification))
+                .map(|notification| observer.subscribe(notification))
                 .collect();
 
             if result.is_ok() {

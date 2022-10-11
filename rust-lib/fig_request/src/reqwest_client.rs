@@ -73,7 +73,7 @@ pub fn create_default_root_cert_store() -> RootCertStore {
         .or_else(|| fig_settings::state::get_string("FIG_CUSTOM_CERT").ok().flatten());
 
     if let Some(custom_cert) = custom_cert {
-        match File::open(&Path::new(&custom_cert)) {
+        match File::open(Path::new(&custom_cert)) {
             Ok(file) => {
                 let reader = &mut BufReader::new(file);
                 match rustls_pemfile::certs(reader) {

@@ -114,7 +114,7 @@ impl RootUserSubcommand {
                                 }
                                 std::fs::copy(
                                     Credentials::path()?,
-                                    Credentials::account_credentials_path(&trimmed_email)?,
+                                    Credentials::account_credentials_path(trimmed_email)?,
                                 )?;
                             }
 
