@@ -15,8 +15,6 @@ use fig_util::system_info::{
     get_platform,
     get_system_id,
 };
-use once_cell::sync::Lazy;
-use reqwest::Client;
 use semver::Version;
 use serde::Deserialize;
 use tracing::{
@@ -74,13 +72,6 @@ pub struct Macos {
     aarch64: RemotePackage,
 }
 
-static CLIENT: Lazy<Client> = Lazy::new(|| {
-    Client::builder()
-        .user_agent(concat!("fig_install/", env!("CARGO_PKG_VERSION")))
-        .build()
-        .expect("Failed building update client")
-});
-
 const INDEX_ENDPOINT: &str = "https://pkg.fig.io/managed/index";
 
 pub fn local_manifest_version() -> Result<Version, Error> {
@@ -93,7 +84,11 @@ pub fn local_manifest_version() -> Result<Version, Error> {
 }
 
 async fn pull() -> Result<Index, Error> {
-    let response = CLIENT.get(INDEX_ENDPOINT).send().await?;
+    let response = fig_request::client()
+        .expect("Unable to create HTTP client")
+        .get(INDEX_ENDPOINT)
+        .send()
+        .await?;
     let index = response.json().await?;
     Ok(index)
 }

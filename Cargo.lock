@@ -2662,6 +2662,7 @@ version = "2.5.3"
 dependencies = [
  "cfg-if 1.0.0",
  "fig_ipc",
+ "fig_request",
  "fig_util",
  "once_cell",
  "reqwest",
