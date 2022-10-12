@@ -29,10 +29,11 @@ workflows:
     jobs:
       - update-version
 
-      # - macos:
-      #     requires: [update-version]
-      #     context:
-      #       - macos-signing
+      - macos:
+          requires: [update-version]
+          context:
+            - macos-signing
+            - github
       - windows:
           requires: [update-version]
       - linux-headless-x86_64:
@@ -65,7 +66,7 @@ workflows:
             ]
 
       - sentry:
-          requires: [package-tarball, package-deb, package-rpm, windows]
+          requires: [package-tarball, package-deb, package-rpm, windows, macos]
           context:
             - sentry
   noop:
@@ -275,8 +276,7 @@ jobs:
   macos:
     macos:
       xcode: 13.4.1
-      # machine: true
-      # resource_class: withfig/mac-mini
+    resource_class: macos.x86.medium.gen2
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
       FIG_MACOS_BACKPORT: 1
@@ -287,30 +287,54 @@ jobs:
           command: rm ~/.gitconfig
       - run:
           name: Install Build Dependencies
-          command: brew install jq protobuf node
+          command: brew install jq protobuf node gh
       - rust/install:
           version: 1.64.0
       - run:
+          name: Install zld
+          command: |
+            cd `mktemp -d`
+            curl -LO https://github.com/michaeleisel/zld/releases/download/1.3.8/zld.zip
+            unzip zld.zip
+            mv zld /usr/local/bin/zld
+      - run:
           name: Configure rust
           command: |
-            LINKER=ld ./desktop/build-scripts/rust-init.sh
+            LINKER=`which zld` ./desktop/build-scripts/rust-init.sh
             rustup target add aarch64-apple-darwin
             rustup target add x86_64-apple-darwin
       - run:
           name: Install tauri CLI
-          command: cargo install tauri-cli
+          command: |
+            cd desktop
+            gh release download tauri-cli-macos
+            chmod +x cargo-tauri
+            mv cargo-tauri /usr/local/bin/cargo-tauri
       - run:
           name: Build fig_cli
-          command: cd desktop && make fig
+          command: |
+            cd desktop
+            mkdir -p "$PRODUCTS_DIR"
+            cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package fig_cli
+            lipo -create -output "$PRODUCTS_DIR/fig-darwin-universal" target/{x86_64,aarch64}-apple-darwin/release/fig_cli
+          environment:
+            PRODUCTS_DIR: build/usr/bin
+            TARGET: universal-apple-darwin
       - run:
           name: Build figterm
-          command: cd desktop && make figterm
+          command: |
+            cd desktop
+            cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package figterm
+            lipo -create -output "$PRODUCTS_DIR/figterm-darwin-universal" target/{x86_64,aarch64}-apple-darwin/release/figterm
+          environment:
+            PRODUCTS_DIR: build/usr/bin
+            TARGET: universal-apple-darwin
       - run:
           name: Create app bundle
           command: |
             cd desktop
-            cp "$PRODUCTS_DIR/fig-darwin-universal" "$PRODUCTS_DIR/fig-darwin-universal-$TARGET"
-            cp "$PRODUCTS_DIR/figterm" "$PRODUCTS_DIR/figterm-$TARGET"
+            mv "$PRODUCTS_DIR/fig-darwin-universal" "$PRODUCTS_DIR/fig-darwin-universal-$TARGET"
+            mv "$PRODUCTS_DIR/figterm-darwin-universal" "$PRODUCTS_DIR/figterm-$TARGET"
             config=$(jq -n \
               --arg fig_cli "$(pwd)/$PRODUCTS_DIR/fig-darwin-universal" \
               --arg figterm "$(pwd)/$PRODUCTS_DIR/figterm" \
@@ -322,7 +346,11 @@ jobs:
                 '$f2 * {"package": $f1}' > fig_desktop/Cargo.toml
             cd fig_desktop
             echo $config > build-config.json
-            cargo-tauri build --config ./build-config.json --target "$TARGET"
+            for entry in "authors" "homepage" "version"; do
+              new=`grep "^$entry = .*\$" ../Cargo.toml`
+              sed -i '' "s#$entry\.workspace = true#$new#g" Cargo.toml
+            done
+            PRODUCTS_DIR="../$PRODUCTS_DIR" cargo-tauri build --config ./build-config.json --target "$TARGET"
             rm build-config.json
             cd ..
             mv fig_desktop/Cargo.toml.tmp fig_desktop/Cargo.toml
@@ -396,10 +424,10 @@ jobs:
           name: Notarize DMG
           command: |
             xcrun notarytool submit fig.dmg --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
-            spctl -a -t open --context context:primary-signature -v fig.dmg 
+            spctl -a -t open --context context:primary-signature -v fig.dmg
       - store_artifacts:
           path: fig.dmg
-          destination: macos/dmg
+          destination: pkg/os=macos,arch=universal,kind=dmg
 
   package-tarball:
     docker:
