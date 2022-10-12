@@ -75,7 +75,7 @@ use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
-    MISSION_CONTROL_ID,
+    DASHBOARD_ID,
 };
 
 pub const DEFAULT_CARET_WIDTH: i32 = 10;
@@ -314,7 +314,7 @@ impl PlatformStateImpl {
                     ActivationPolicy::Accessory
                 } else {
                     let mission_control_visible = window_map
-                        .get(&MISSION_CONTROL_ID)
+                        .get(&DASHBOARD_ID)
                         .map(|window| window.webview.window().is_visible())
                         .unwrap_or(false);
 

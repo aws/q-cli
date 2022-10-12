@@ -42,7 +42,7 @@ pub use webview::{
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
     FIG_PROTO_MESSAGE_RECEIVED,
-    MISSION_CONTROL_ID,
+    DASHBOARD_ID,
 };
 use wry::application::event_loop::{
     EventLoop as WryEventLoop,
@@ -159,7 +159,7 @@ async fn main() {
 
     let mut webview_manager = WebviewManager::new();
     webview_manager
-        .build_webview(MISSION_CONTROL_ID, build_dashboard, MissionControlOptions {
+        .build_webview(DASHBOARD_ID, build_dashboard, MissionControlOptions {
             show_onboarding,
             force_visible: !cli.no_dashboard || page.is_some(),
             page,

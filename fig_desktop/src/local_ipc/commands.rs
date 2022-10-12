@@ -26,7 +26,7 @@ use crate::{
     platform,
     EventLoopProxy,
     AUTOCOMPLETE_ID,
-    MISSION_CONTROL_ID,
+    DASHBOARD_ID,
 };
 
 pub async fn debug(command: DebugModeCommand, proxy: &EventLoopProxy) -> LocalResult {
@@ -89,7 +89,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
         UiElement::Settings => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::NavigateRelative {
                         path: "/settings".into(),
                     },
@@ -97,7 +97,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
                 .unwrap();
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Show,
                 })
                 .unwrap();
@@ -106,7 +106,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
             if let Some(path) = command.route {
                 proxy
                     .send_event(Event::WindowEvent {
-                        window_id: MISSION_CONTROL_ID.clone(),
+                        window_id: DASHBOARD_ID.clone(),
                         window_event: WindowEvent::NavigateRelative { path },
                     })
                     .unwrap();
@@ -114,7 +114,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
 
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Show,
                 })
                 .unwrap();

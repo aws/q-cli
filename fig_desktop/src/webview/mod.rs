@@ -9,6 +9,7 @@ use std::sync::Arc;
 use cfg_if::cfg_if;
 use dashmap::DashMap;
 use fig_desktop_api::init_script::javascript_init;
+use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
 use once_cell::sync::Lazy;
@@ -75,7 +76,7 @@ use crate::{
 
 pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
-pub const MISSION_CONTROL_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
+pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
@@ -224,7 +225,13 @@ impl WebviewManager {
                 WryEvent::WindowEvent { event, window_id, .. } => {
                     if let Some(window_state) = self.window_id_map.get(&window_id) {
                         match event {
-                            WryWindowEvent::CloseRequested => window_state.webview.window().set_visible(false),
+                            WryWindowEvent::CloseRequested => {
+                                window_state.webview.window().set_visible(false);
+
+                                if window_id == DASHBOARD_ID && !is_logged_in() {
+                                    *control_flow = ControlFlow::Exit;
+                                } 
+                            },
                             WryWindowEvent::ThemeChanged(_theme) => {
                                 // TODO: handle this
                             },
@@ -385,13 +392,13 @@ pub fn build_dashboard(
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID.clone(),
+                    window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Api { payload },
                 })
                 .unwrap();
         })
         .with_devtools(true)
-        .with_navigation_handler(navigation_handler(MISSION_CONTROL_ID, &[
+        .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[
             // Main domain
             r"^desktop\.fig\.io$",
             // Dev domains

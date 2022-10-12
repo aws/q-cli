@@ -28,7 +28,7 @@ use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
-    MISSION_CONTROL_ID,
+    DASHBOARD_ID,
 };
 
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
@@ -50,7 +50,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
         id if id == MenuId::new("dashboard") || id == MenuId::new("accessibility") || id == MenuId::new("login") => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID,
+                    window_id: DASHBOARD_ID,
                     window_event: WindowEvent::Show,
                 })
                 .unwrap();
@@ -58,13 +58,13 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
         id if id == MenuId::new("settings") => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID,
+                    window_id: DASHBOARD_ID,
                     window_event: WindowEvent::Show,
                 })
                 .unwrap();
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: MISSION_CONTROL_ID,
+                    window_id: DASHBOARD_ID,
                     window_event: WindowEvent::NavigateRelative {
                         path: "/settings".into(),
                     },

@@ -17,7 +17,7 @@ use super::{
 use crate::event::Event;
 use crate::{
     EventLoopProxy,
-    MISSION_CONTROL_ID,
+    DASHBOARD_ID,
 };
 
 pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
@@ -85,7 +85,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             });
 
             match proxy.send_event(Event::WindowEvent {
-                window_id: MISSION_CONTROL_ID,
+                window_id: DASHBOARD_ID,
                 window_event: crate::event::WindowEvent::Resize {
                     width: 1030,
                     height: 720,
