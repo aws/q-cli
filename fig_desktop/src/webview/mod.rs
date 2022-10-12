@@ -235,6 +235,13 @@ impl WebviewManager {
                             WryWindowEvent::ThemeChanged(_theme) => {
                                 // TODO: handle this
                             },
+                            WryWindowEvent::Focused(true) => {
+                                if window_state.window_id == DASHBOARD_ID {
+                                    if let Some(autocomplete) = self.fig_id_map.get(&AUTOCOMPLETE_ID) {
+                                        autocomplete.webview.window().set_visible(false);
+                                    }
+                                }
+                            },
                             _ => (),
                         }
                     }
