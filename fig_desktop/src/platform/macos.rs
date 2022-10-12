@@ -1,7 +1,10 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
-use anyhow::anyhow;
+use anyhow::{
+    anyhow,
+    Ok,
+};
 use macos_accessibility_position::caret_position::{
     get_caret_position,
     CaretPosition,
@@ -18,7 +21,11 @@ use parking_lot::{
     RwLock,
 };
 use tracing::warn;
-use wry::application::dpi::Position;
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
+    Position,
+};
 use wry::application::platform::macos::{
     ActivationPolicy,
     EventLoopWindowTargetExtMacOS,
@@ -30,6 +37,7 @@ use super::{
     WindowGeometry,
 };
 use crate::event::{
+    ClippingBehavior,
     Event,
     RelativeDirection,
     WindowEvent,
@@ -86,7 +94,7 @@ impl PlatformStateImpl {
                     let update_fullscreen = |fullscreen: bool| {
                         Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated { fullscreen })
                     };
-                    while let Ok(result) = rx.recv_async().await {
+                    while let std::result::Result::Ok(result) = rx.recv_async().await {
                         match result {
                             WindowServerEvent::FocusChanged { window, .. } => {
                                 if let Err(e) = observer_proxy.send_event(Event::WindowEvent {
@@ -112,47 +120,60 @@ impl PlatformStateImpl {
                 });
                 Ok(())
             },
-            PlatformBoundEvent::EditBufferChanged => unsafe {
-                let caret_position: CaretPosition = get_caret_position(true);
-                let is_above = match self.get_window_geometry() {
-                    Some(window_frame) => {
-                        window_frame.y + window_frame.height
-                            < (caret_position.y as i32)
-                                + (caret_position.height as i32)
-                                + fig_settings::settings::get_int_or("autocomplete.height", 140) as i32
-                    },
-                    None => false,
+            PlatformBoundEvent::EditBufferChanged => {
+                // todo(mschrage): move all positioning logic into cross platform `windows.rs` file
+                // This event should only update the position of the "relative rect"
+                let caret = match self.get_cursor_position() {
+                    Some(frame) => frame,
+                    None => return Err(anyhow!("Failed to acquire caret position")),
                 };
 
-                if caret_position.valid {
-                    let x = (caret_position.x * 2.0) as i32;
-                    let y = (caret_position.y * 2.0) as i32;
-                    let height = caret_position.height as i32 * 2;
+                let monitor_frame = match window_map.get(&AUTOCOMPLETE_ID) {
+                    Some(window) => match self.get_current_monitor_frame(window.webview.window()) {
+                        Some(frame) => frame,
+                        None => return Err(anyhow!("Failed to acquire monitor frame")),
+                    },
+                    None => return Err(anyhow!("Failed to acquire autocomplete window reference")),
+                };
 
-                    let direction = match is_above {
-                        true => RelativeDirection::Above,
-                        false => RelativeDirection::Below,
-                    };
-                    UNMANAGED
-                        .event_sender
-                        .read()
-                        .clone()
-                        .unwrap()
-                        .send_event(Event::WindowEvent {
-                            window_id: AUTOCOMPLETE_ID,
-                            window_event: WindowEvent::PositionRelativeToRect {
-                                x,
-                                y,
-                                width: DEFAULT_CARET_WIDTH,
-                                height,
-                                direction,
-                            },
-                        })
-                        .ok();
-                    Ok(())
-                } else {
-                    Err(anyhow!("Failed to acquire caret position"))
-                }
+                let window_frame = match self.get_window_geometry() {
+                    Some(frame) => frame,
+                    None => return Err(anyhow!("Failed to acquire current window frame")),
+                };
+
+                // Caret origin will always be less than window origin (if coordinate system origin is top-left)
+                assert!(caret.y >= window_frame.y);
+
+                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as i32;
+
+                // TODO: this calculation does not take into account anchor offset (or default vertical padding)
+                let is_above = window_frame.max_y() < caret.max_y() + max_height && // If positioned below, will popup appear inside of window frame?
+                                          monitor_frame.y < caret.y - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
+
+                let direction = match is_above {
+                    true => RelativeDirection::Above,
+                    false => RelativeDirection::Below,
+                };
+
+                UNMANAGED
+                    .event_sender
+                    .read()
+                    .clone()
+                    .unwrap()
+                    .send_event(Event::WindowEvent {
+                        window_id: AUTOCOMPLETE_ID,
+                        window_event: WindowEvent::PositionRelativeToRect {
+                            x: caret.x,
+                            y: caret.y,
+                            width: caret.width,
+                            height: caret.height,
+                            direction,
+                            clipping_behavior: ClippingBehavior::KeepInFrame,
+                        },
+                    })
+                    .ok();
+
+                Ok(())
             },
             PlatformBoundEvent::FullscreenStateUpdated { fullscreen } => {
                 let policy = if fullscreen {
@@ -182,12 +203,39 @@ impl PlatformStateImpl {
         position: Position,
     ) -> wry::Result<()> {
         webview_window.set_outer_position(position);
-        Ok(())
+        std::result::Result::Ok(())
     }
 
-    #[allow(dead_code)]
     pub(super) fn get_cursor_position(&self) -> Option<Rect<i32, i32>> {
-        None
+        let caret: CaretPosition = unsafe { get_caret_position(true) };
+
+        if caret.valid {
+            Some(Rect {
+                x: caret.x as i32,
+                y: caret.y as i32,
+                width: DEFAULT_CARET_WIDTH,
+                height: caret.height as i32,
+            })
+        } else {
+            None
+        }
+    }
+
+    pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect<i32, i32>> {
+        match window.current_monitor() {
+            Some(monitor) => {
+                let origin = monitor.position().to_logical(monitor.scale_factor()) as LogicalPosition<i32>;
+                let size = monitor.size().to_logical(monitor.scale_factor()) as LogicalSize<i32>;
+
+                Some(Rect {
+                    x: origin.x,
+                    y: origin.y,
+                    width: size.width as i32,
+                    height: size.height as i32,
+                })
+            },
+            None => None,
+        }
     }
 
     /// Gets the currently active window on the platform
@@ -208,7 +256,7 @@ impl PlatformStateImpl {
             Some(window) => Some(WindowGeometry {
                 x: window.position.x as i32,
                 y: window.position.y as i32,
-                width: window.position.height as i32,
+                width: window.position.width as i32,
                 height: window.position.height as i32,
             }),
             None => None,

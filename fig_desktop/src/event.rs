@@ -30,6 +30,14 @@ pub enum RelativeDirection {
     Below,
 }
 
+#[derive(Debug, Clone, Copy)]
+pub enum ClippingBehavior {
+    // Allow window to be clipped
+    Allow,
+    // Offset window position to keep it in screen frame
+    KeepInFrame,
+}
+
 impl<T> Rect<T, T>
 where
     T: std::ops::Add<Output = T> + Copy,
@@ -47,7 +55,7 @@ where
 #[derive(Debug, Clone, Copy)]
 pub enum Placement {
     Absolute,
-    RelativeTo((Rect<i32, i32>, RelativeDirection)),
+    RelativeTo((Rect<i32, i32>, RelativeDirection, ClippingBehavior)),
 }
 
 #[derive(Debug)]
@@ -56,6 +64,7 @@ pub enum WindowEvent {
         x: i32,
         y: i32,
     },
+    // todo(mschrage): move direction and clipping behavior out of this struct into WindowState
     PositionRelativeToRect {
         /// x position of cursor
         x: i32,
@@ -66,6 +75,8 @@ pub enum WindowEvent {
         /// height of cursor
         height: i32,
         direction: RelativeDirection,
+        // Defines behavior when desired window position is outside of screen
+        clipping_behavior: ClippingBehavior,
     },
     PositionAbsolute {
         x: i32,

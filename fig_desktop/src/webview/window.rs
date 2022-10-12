@@ -4,6 +4,7 @@ use std::fmt;
 use parking_lot::RwLock;
 use tokio::sync::mpsc::UnboundedSender;
 use wry::application::dpi::{
+    LogicalPosition,
     LogicalSize,
     PhysicalPosition,
     PhysicalSize,
@@ -15,6 +16,7 @@ use wry::webview::{
 };
 
 use crate::event::{
+    ClippingBehavior,
     Placement,
     RelativeDirection,
     WindowEvent,
@@ -40,6 +42,7 @@ impl fmt::Display for WindowId {
 }
 
 // TODO: Add state for the active terminal window
+// TODO: Switch to using LogicalPosition and LogicalSize
 pub struct WindowState {
     pub webview: WebView,
     pub context: WebContext,
@@ -76,26 +79,41 @@ impl WindowState {
         let size = *self.size.read();
         let placement = *self.placement.read();
 
+        // TODO: this should be handled directly by client apps (eg. autocomplete engine) rather than being
+        // hardcoded
         let vertical_padding = anchor.y + 5;
+
+        let monitor_frame = platform_state.get_current_monitor_frame(self.webview.window());
 
         let x = match placement {
             Placement::Absolute => position.x,
-            Placement::RelativeTo((caret, RelativeDirection::Above | RelativeDirection::Below)) => caret.x + anchor.x,
+            Placement::RelativeTo((caret, RelativeDirection::Above | RelativeDirection::Below, clipping_behavior)) => {
+                match (clipping_behavior, monitor_frame) {
+                    (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => caret.x + anchor.x,
+                    (ClippingBehavior::KeepInFrame, Some(frame)) => {
+                        let origin_x = caret.x + anchor.x;
+                        let offset_x = frame.max_x() - (origin_x + size.width as i32);
+                        if offset_x < 0 { origin_x + offset_x } else { origin_x }
+                    },
+                }
+            },
         };
 
         let y = match placement {
             Placement::Absolute => position.y,
-            Placement::RelativeTo((caret, RelativeDirection::Above)) => {
-                // todo(mschrage): where do we handle different DPIs? (It should not be here!)
-                caret.y - vertical_padding - (size.height * 2) as i32
+            Placement::RelativeTo((caret, RelativeDirection::Above, _)) => {
+                caret.y - vertical_padding - size.height as i32
             },
-            Placement::RelativeTo((caret, RelativeDirection::Below)) => caret.max_y() + vertical_padding,
+            Placement::RelativeTo((caret, RelativeDirection::Below, _)) => caret.max_y() + vertical_padding,
         };
 
         if let Err(err) = platform_state.position_window(
             self.webview.window(),
             &self.window_id,
-            Position::Physical(PhysicalPosition { x, y }),
+            Position::Logical(LogicalPosition {
+                x: x.into(),
+                y: y.into(),
+            }),
         ) {
             tracing::error!(%err, window_id =% self.window_id, "Failed to position window");
         }
@@ -124,8 +142,10 @@ impl WindowState {
                 width,
                 height,
                 direction,
+                clipping_behavior,
             } => {
-                *self.placement.write() = Placement::RelativeTo((Rect { x, y, width, height }, direction));
+                *self.placement.write() =
+                    Placement::RelativeTo((Rect { x, y, width, height }, direction, clipping_behavior));
                 self.update_position(platform_state);
             },
             WindowEvent::Resize { width, height } => {

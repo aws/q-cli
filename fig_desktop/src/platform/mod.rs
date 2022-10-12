@@ -69,6 +69,11 @@ impl PlatformState {
         self.0.get_cursor_position()
     }
 
+    // TODO: implement on Linux & Windows
+    pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect<i32, i32>> {
+        self.0.get_current_monitor_frame(window)
+    }
+
     /// Gets the currently active window on the platform
     pub fn get_active_window(&self) -> Option<PlatformWindow> {
         self.0.get_active_window()
