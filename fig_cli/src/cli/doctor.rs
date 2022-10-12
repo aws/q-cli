@@ -582,6 +582,26 @@ impl DoctorCheck for FigIntegrationsCheck {
             },
         };
 
+        match std::env::var("FIG_INTEGRATION_VERSION").as_deref() {
+            Ok("9") => {},
+            _ => {
+                return Err(DoctorError::Error {
+                    reason:
+                        "This terminal is not running with the latest Fig integration, please restart your terminal"
+                            .into(),
+                    info: vec![
+                        format!(
+                            "FIG_INTEGRATION_VERSION={:?}",
+                            std::env::var_os("FIG_INTEGRATION_VERSION")
+                        )
+                        .into(),
+                    ],
+                    fix: None,
+                    error: None,
+                });
+            },
+        };
+
         Ok(())
     }
 }

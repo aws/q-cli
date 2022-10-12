@@ -77,6 +77,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use sysinfo::SystemExt;
 use tokio::io::{
     self,
     AsyncWriteExt,
@@ -145,8 +146,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
 
     let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
         .ok()
-        .and_then(|s| s.parse().ok())
-        .unwrap_or(8);
+        .and_then(|s| s.parse().ok());
 
     local::ShellContext {
         pid: shell_state.local_context.pid,
@@ -164,7 +164,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .clone()
             .map(|cwd| cwd.display().to_string()),
         session_id: shell_state.local_context.session_id.clone(),
-        integration_version: Some(integration_version),
+        integration_version,
         terminal,
         hostname: shell_state.local_context.hostname.clone(),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
@@ -292,6 +292,10 @@ fn build_shell_command() -> Result<CommandBuilder> {
     builder.env("FIG_TERM_VERSION", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
         builder.env("FIG_TERM_TMUX", "1");
+    }
+
+    if let Some(hostname) = sysinfo::System::new().host_name() {
+        builder.env("FIG_HOSTNAME", hostname);
     }
 
     // Clean up environment and launch shell.

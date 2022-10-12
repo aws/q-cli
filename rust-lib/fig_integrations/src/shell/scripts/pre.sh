@@ -45,7 +45,7 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && command -v figterm 1>/dev/null 2>&1 \
   && [[ ("${SHOULD_FIGTERM_LAUNCH}" -eq 0) || (("${SHOULD_FIGTERM_LAUNCH}" -eq 2) && (-z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}"))) ]]
 then
-  export FIG_INTEGRATION_VERSION=8
+  export FIG_INTEGRATION_VERSION=9
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
   FIG_SHELL=$(fig _ get-shell)
   FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL:='0'}"

@@ -2925,6 +2925,7 @@ dependencies = [
  "serde_json",
  "shared_library",
  "shell-words",
+ "sysinfo 0.26.4",
  "tokio",
  "tracing",
  "tracing-subscriber",

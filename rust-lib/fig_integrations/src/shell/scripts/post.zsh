@@ -30,14 +30,21 @@ pathadd ~/.local/bin
 #   return
 # fi
 
-TTY=$(tty)
+if [[ -z "${TTY}" ]]; then
+  TTY=$(tty)
+fi
 export TTY
+
 export FIG_PID="$$"
 export FIG_SET_PARENT=$FIGTERM_SESSION_ID
 export LC_FIG_SET_PARENT=$FIGTERM_SESSION_ID
 
-FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
-FIG_SHELL_PATH=$(fig _ get-shell)
+if [[ -z "${FIG_HOSTNAME}" ]]; then
+  FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
+fi
+if [[ -z "${FIG_SHELL_PATH}" ]]; then
+  FIG_SHELL_PATH=$(fig _ get-shell)
+fi
 
 # shellcheck disable=SC2059
 function fig_osc { printf "\033]697;$1\007" "${@:2}"; }

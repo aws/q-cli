@@ -31,7 +31,7 @@ if test "$TERM_PROGRAM" != WarpTerminal
     and test -z "$FIG_TERM"
     or test -z "$FIG_TERM_TMUX" -a -n "$TMUX"
 
-    set --export FIG_INTEGRATION_VERSION 8
+    set --export FIG_INTEGRATION_VERSION 9
 
     set FIG_SHELL (fig _ get-shell)
     set FIG_IS_LOGIN_SHELL 0

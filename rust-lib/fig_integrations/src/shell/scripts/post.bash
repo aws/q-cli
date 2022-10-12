@@ -25,16 +25,23 @@ fi
 #   return
 # fi
 
-TTY=$(tty)
+if [[ -z "${TTY}" ]]; then
+  TTY=$(tty)
+fi
 export TTY
+
 export FIG_PID="$$"
 
 FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
 
-FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
-FIG_SHELL_PATH=$(fig _ get-shell)
+if [[ -z "${FIG_HOSTNAME}" ]]; then
+  FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
+fi
+if [[ -z "${FIG_SHELL_PATH}" ]]; then
+  FIG_SHELL_PATH=$(fig _ get-shell)
+fi
 
 # Construct Operating System Command.
 # shellcheck disable=SC2059
