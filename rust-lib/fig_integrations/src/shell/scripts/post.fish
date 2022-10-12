@@ -133,3 +133,5 @@ set fig_has_set_prompt 0
 if test -n "$PROCESS_LAUNCHED_BY_FIG"
     fig_osc DoneSourcing
 end
+
+fig _ pre-cmd &>/dev/null &

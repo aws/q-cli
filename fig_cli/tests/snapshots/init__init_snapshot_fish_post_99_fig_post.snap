@@ -138,4 +138,6 @@ if test -n "$PROCESS_LAUNCHED_BY_FIG"
     fig_osc DoneSourcing
 end
 
+fig _ pre-cmd &>/dev/null &
+
 

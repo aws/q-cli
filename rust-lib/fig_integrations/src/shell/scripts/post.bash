@@ -194,3 +194,5 @@ if [[ -n "${PROCESS_LAUNCHED_BY_FIG}" ]]; then
 fi
 
 fi
+
+fig _ pre-cmd > /dev/null 2>&1 &
