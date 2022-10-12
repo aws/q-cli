@@ -1,10 +1,7 @@
-pub mod terminal_input_parser;
-
 use anyhow::Result;
 use dashmap::DashMap;
 use fig_proto::figterm::Action;
 use fig_settings::keybindings::KeyBindings;
-pub use terminal_input_parser::parse_code;
 use tracing::trace;
 
 use crate::input::{
@@ -59,7 +56,13 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
         },
         c => {
             let mut chars = c.chars();
-            let first_char = chars.next()?;
+            let mut first_char = chars.next()?;
+
+            if modifiers.contains(Modifiers::SHIFT) && first_char.is_ascii_lowercase() {
+                first_char = first_char.to_ascii_uppercase();
+                modifiers.remove(Modifiers::SHIFT);
+            }
+
             if chars.next().is_some() {
                 return None;
             }
@@ -122,7 +125,7 @@ impl KeyInterceptor {
     }
 
     fn insert_binding(&mut self, binding: KeyEvent, identifier: String) {
-        if let Some(alt) = match binding.key {
+        if let Some(key) = match binding.key {
             KeyCode::UpArrow => Some(KeyCode::ApplicationUpArrow),
             KeyCode::DownArrow => Some(KeyCode::ApplicationDownArrow),
             KeyCode::LeftArrow => Some(KeyCode::ApplicationLeftArrow),
@@ -131,12 +134,36 @@ impl KeyInterceptor {
         } {
             self.mappings.insert(
                 KeyEvent {
-                    key: alt,
+                    key,
                     modifiers: binding.modifiers,
                 },
                 identifier.clone(),
             );
         };
+
+        if let KeyCode::Char(key) = binding.key {
+            // Fill in other case if there is a ctrl or alt, i.e. ctrl+r is the same as ctrl+R
+            //
+            // This will prevent ctrl+shift+r from being the same as ctrl+r but that is probably
+            // fine since we lose context due to parsing ambiguity in the original xterm spec
+            // when other modifiers are present
+            if (binding.modifiers.contains(Modifiers::CTRL) || binding.modifiers.contains(Modifiers::ALT))
+                && key.is_ascii_alphabetic()
+            {
+                self.mappings.insert(
+                    KeyEvent {
+                        key: KeyCode::Char(if key.is_ascii_uppercase() {
+                            key.to_ascii_lowercase()
+                        } else {
+                            key.to_ascii_uppercase()
+                        }),
+                        modifiers: binding.modifiers,
+                    },
+                    identifier.clone(),
+                );
+            }
+        }
+
         self.mappings.insert(binding, identifier);
     }
 
