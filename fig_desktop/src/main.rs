@@ -41,8 +41,8 @@ use webview::{
 pub use webview::{
     AUTOCOMPLETE_ID,
     AUTOCOMPLETE_WINDOW_TITLE,
-    FIG_PROTO_MESSAGE_RECEIVED,
     DASHBOARD_ID,
+    FIG_PROTO_MESSAGE_RECEIVED,
 };
 use wry::application::event_loop::{
     EventLoop as WryEventLoop,

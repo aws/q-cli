@@ -228,9 +228,9 @@ impl WebviewManager {
                             WryWindowEvent::CloseRequested => {
                                 window_state.webview.window().set_visible(false);
 
-                                if window_id == DASHBOARD_ID && !is_logged_in() {
+                                if window_state.window_id == DASHBOARD_ID && !is_logged_in() {
                                     *control_flow = ControlFlow::Exit;
-                                } 
+                                }
                             },
                             WryWindowEvent::ThemeChanged(_theme) => {
                                 // TODO: handle this
