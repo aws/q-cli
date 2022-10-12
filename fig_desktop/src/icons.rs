@@ -3,6 +3,7 @@ use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::ffi::OsStr;
 use std::fs;
+use std::hash::Hash;
 use std::io::Cursor;
 use std::path::{
     Path,
@@ -34,7 +35,13 @@ use wry::http::{
 
 use crate::platform::PlatformState;
 
-static ASSETS: Lazy<HashMap<&str, Arc<Vec<u8>>>> = Lazy::new(|| {
+#[derive(Hash, Eq, PartialEq, Debug)]
+pub enum AssetSpecifier {
+    Named(String),
+    PathBased(PathBuf),
+}
+
+static ASSETS: Lazy<HashMap<AssetSpecifier, Arc<Vec<u8>>>> = Lazy::new(|| {
     let mut map = HashMap::new();
 
     macro_rules! load_assets {
@@ -43,7 +50,7 @@ static ASSETS: Lazy<HashMap<&str, Arc<Vec<u8>>>> = Lazy::new(|| {
                 let mut vec = Vec::new();
                 vec.extend_from_slice(include_bytes!(concat!(env!("AUTOCOMPLETE_ICONS_PROCESSED"), "/", $name, ".png")));
                 map.insert(
-                    $name,
+                    AssetSpecifier::Named($name.into()),
                     Arc::new(vec),
                 );
             )*
@@ -102,12 +109,13 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     Ok(built)
 }
 
-fn resolve_asset(name: &str) -> (Arc<Vec<u8>>, AssetKind) {
-    PlatformState::icon_lookup(name).unwrap_or_else(|| {
+fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Vec<u8>>, AssetKind) {
+    let fallback = fallback.unwrap_or("template");
+    PlatformState::icon_lookup(asset).unwrap_or_else(|| {
         (
             ASSETS
-                .get(name)
-                .unwrap_or_else(|| ASSETS.get("template").unwrap())
+                .get(asset)
+                .unwrap_or_else(|| ASSETS.get(&AssetSpecifier::Named(fallback.into())).unwrap())
                 .clone(),
             AssetKind::Png, // bundled assets are PNGs
         )
@@ -126,14 +134,14 @@ fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response {
         .unwrap()
 }
 
-fn cached_asset_response(name: &str) -> Response {
-    trace!("building response for asset {name}");
-    let (data, asset_kind) = resolve_asset(name);
+fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response {
+    trace!("building response for asset {asset:?}");
+    let (data, asset_kind) = resolve_asset(asset, fallback);
     build_asset_response(data.to_vec(), asset_kind)
 }
 
 fn build_default() -> Response {
-    cached_asset_response("template")
+    cached_asset_response(&AssetSpecifier::Named("template".into()), None)
 }
 
 fn scale(a: u8, b: u8) -> u8 {
@@ -151,8 +159,8 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
         Some("template") => {
             let query_pairs: HashMap<Cow<str>, Cow<str>> = url.query_pairs().collect();
 
-            let mut image =
-                image::load_from_memory_with_format(ASSETS.get("template").unwrap(), image::ImageFormat::Png).unwrap();
+            let asset = ASSETS.get(&AssetSpecifier::Named("template".into())).unwrap();
+            let mut image = image::load_from_memory_with_format(asset, image::ImageFormat::Png).unwrap();
 
             if let Some(color) = query_pairs.get("color") {
                 if color.len() == 6 {
@@ -178,7 +186,7 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
         Some("icon") | Some("asset") => pairs
             .get("asset")
             .or_else(|| pairs.get("type"))
-            .map(|name| cached_asset_response(name)),
+            .map(|name| cached_asset_response(&AssetSpecifier::Named(name.to_string()), None)),
         None => {
             let decoded_str = &*percent_decode_str(url.path()).decode_utf8()?;
             let path: Cow<Path> = Cow::from(Path::new(decoded_str));
@@ -186,23 +194,28 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
             #[cfg(windows)]
             let path = transform_unix_to_windows_path(path);
 
-            match fs::metadata(&path) {
+            let fallback = match fs::metadata(&path) {
                 Ok(meta) => {
                     if meta.is_dir() {
-                        Some(cached_asset_response("folder"))
+                        Some("folder")
                     } else if meta.is_file() {
-                        Some(cached_asset_response("file"))
+                        Some("file")
                     } else if meta.is_symlink() {
-                        Some(cached_asset_response("symlink"))
+                        Some("symlink")
                     } else {
                         None
                     }
                 },
-                Err(_) => Some(match path.to_string_lossy().ends_with('/') {
-                    true => cached_asset_response("folder"),
-                    false => cached_asset_response("file"),
+                Err(_) => Some(if path.to_string_lossy().ends_with('/') {
+                    "folder"
+                } else {
+                    "file"
                 }),
-            }
+            };
+            Some(cached_asset_response(
+                &AssetSpecifier::PathBased(path.to_path_buf()),
+                fallback,
+            ))
         },
         _ => None,
     }

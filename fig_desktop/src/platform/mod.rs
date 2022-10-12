@@ -3,7 +3,10 @@ use std::sync::Arc;
 
 use wry::application::dpi::Position;
 
-use crate::icons::ProcessedAsset;
+use crate::icons::{
+    AssetSpecifier,
+    ProcessedAsset,
+};
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
 use crate::webview::FigWindowMap;
@@ -80,7 +83,7 @@ impl PlatformState {
     }
 
     /// Looks up icons by name on the platform
-    pub fn icon_lookup(name: &str) -> Option<ProcessedAsset> {
+    pub fn icon_lookup(name: &AssetSpecifier) -> Option<ProcessedAsset> {
         PlatformStateImpl::icon_lookup(name)
     }
 

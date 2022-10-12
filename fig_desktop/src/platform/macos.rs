@@ -66,7 +66,11 @@ use crate::event::{
     RelativeDirection,
     WindowEvent,
 };
-use crate::icons::ProcessedAsset;
+use crate::icons::{
+    AssetKind,
+    AssetSpecifier,
+    ProcessedAsset,
+};
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
 use crate::webview::FigWindowMap;
@@ -377,8 +381,14 @@ impl PlatformStateImpl {
         None
     }
 
-    pub(super) fn icon_lookup(_name: &str) -> Option<ProcessedAsset> {
-        None
+    pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
+        match asset {
+            AssetSpecifier::Named(_) => None,
+            AssetSpecifier::PathBased(path) => {
+                let data = unsafe { macos_accessibility_position::image::png_for_path(path)? };
+                Some((data.into(), AssetKind::Png))
+            },
+        }
     }
 
     pub(super) fn shell() -> Cow<'static, str> {

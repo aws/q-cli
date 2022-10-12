@@ -2,24 +2,25 @@
 
 pub mod accessibility;
 pub mod bundle;
+pub mod caret_position;
+mod core_graphics_patch;
+pub mod image;
 pub mod platform_api;
 mod util;
 mod window_position;
 pub mod window_server;
+
+use std::sync::Arc;
+
+use flume::Sender;
+use parking_lot::Mutex;
+use platform_api::PlatformApi;
 pub use util::{
     NSString,
     NotificationCenter,
     Subscription,
 };
 use window_position::WindowPosition;
-
-pub mod caret_position;
-mod core_graphics_patch;
-use std::sync::Arc;
-
-use flume::Sender;
-use parking_lot::Mutex;
-use platform_api::PlatformApi;
 use window_server::subscribe_to_all;
 pub use window_server::{
     WindowServer,

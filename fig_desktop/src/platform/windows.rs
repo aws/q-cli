@@ -65,10 +65,13 @@ use crate::event::{
     RelativeDirection,
     WindowEvent,
 };
+use crate::icons::{
+    AssetSpecifier,
+    ProcessedAsset,
+};
 use crate::platform::{
     PlatformBoundEvent,
     PlatformWindow,
-    ProcessedAsset,
 };
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
@@ -252,7 +255,7 @@ impl PlatformStateImpl {
         None
     }
 
-    pub fn icon_lookup(_name: &str) -> Option<ProcessedAsset> {
+    pub fn icon_lookup(_asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         None
     }
 

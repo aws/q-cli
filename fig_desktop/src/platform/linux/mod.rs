@@ -32,6 +32,10 @@ use wry::application::dpi::{
 
 use self::x11::X11State;
 use super::PlatformBoundEvent;
+use crate::icons::{
+    AssetSpecifier,
+    ProcessedAsset,
+};
 use crate::platform::linux::sway::SwayState;
 use crate::webview::window::WindowId;
 use crate::webview::FigWindowMap;
@@ -194,8 +198,11 @@ impl PlatformStateImpl {
         None
     }
 
-    pub(super) fn icon_lookup(name: &str) -> Option<crate::icons::ProcessedAsset> {
-        icons::lookup(name)
+    pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
+        match asset {
+            AssetSpecifier::Named(name) => icons::lookup(&name),
+            AssetSpecifier::PathBased(_) => None,
+        }
     }
 
     pub(super) fn shell() -> Cow<'static, str> {
