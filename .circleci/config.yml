@@ -291,16 +291,9 @@ jobs:
       - rust/install:
           version: 1.64.0
       - run:
-          name: Install zld
-          command: |
-            cd `mktemp -d`
-            curl -LO https://github.com/michaeleisel/zld/releases/download/1.3.8/zld.zip
-            unzip zld.zip
-            mv zld /usr/local/bin/zld
-      - run:
           name: Configure rust
           command: |
-            LINKER=`which zld` ./desktop/build-scripts/rust-init.sh
+            ./desktop/build-scripts/rust-init.sh
             rustup target add aarch64-apple-darwin
             rustup target add x86_64-apple-darwin
       - run:
