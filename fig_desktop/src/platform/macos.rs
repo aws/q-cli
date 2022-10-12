@@ -1,9 +1,13 @@
 use std::borrow::Cow;
+use std::ffi::CString;
+use std::slice;
 use std::sync::Arc;
 
-use anyhow::{
-    anyhow,
-    Ok,
+use anyhow::anyhow;
+use cocoa::base::{
+    id,
+    NO,
+    YES,
 };
 use macos_accessibility_position::caret_position::{
     get_caret_position,
@@ -15,12 +19,32 @@ use macos_accessibility_position::{
     WindowServer,
     WindowServerEvent,
 };
+use objc::declare::MethodImplementation;
+use objc::runtime::{
+    class_addMethod,
+    objc_getClass,
+    Class,
+    Object,
+    Sel,
+    BOOL,
+};
+use objc::{
+    msg_send,
+    sel,
+    sel_impl,
+    Encode,
+    EncodeArguments,
+    Encoding,
+};
 use once_cell::sync::Lazy;
 use parking_lot::{
     Mutex,
     RwLock,
 };
-use tracing::warn;
+use tracing::{
+    debug,
+    warn,
+};
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
@@ -50,6 +74,7 @@ use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
+    AUTOCOMPLETE_WINDOW_TITLE,
     MISSION_CONTROL_ID,
 };
 
@@ -73,6 +98,47 @@ pub struct PlatformStateImpl {
 impl PlatformStateImpl {
     pub fn new(proxy: EventLoopProxy) -> Self {
         Self { proxy }
+    }
+
+    //
+    fn count_args(sel: Sel) -> usize {
+        sel.name().chars().filter(|&c| c == ':').count()
+    }
+
+    fn method_type_encoding(ret: &Encoding, args: &[Encoding]) -> CString {
+        let mut types = ret.as_str().to_owned();
+        // First two arguments are always self and the selector
+        types.push_str(<*mut Object>::encode().as_str());
+        types.push_str(Sel::encode().as_str());
+        types.extend(args.iter().map(|e| e.as_str()));
+        CString::new(types).unwrap()
+    }
+
+    // Add an implementation for an ObjC selector, which will override default WKWebView & WryWebView
+    // behavior
+    fn override_webview_method<F>(sel: Sel, func: F)
+    where
+        F: MethodImplementation<Callee = Object>,
+    {
+        let encs = F::Args::encodings();
+        let encs = encs.as_ref();
+        let sel_args = Self::count_args(sel);
+        assert!(
+            sel_args == encs.len(),
+            "Selector accepts {} arguments, but function accepts {}",
+            sel_args,
+            encs.len(),
+        );
+
+        let types = Self::method_type_encoding(&F::Ret::encode(), encs);
+
+        // https://github.com/tauri-apps/wry/blob/17d324b70e4d580c43c9d4ab37bd265005356bf4/src/webview/wkwebview/mod.rs#L258
+        let name = CString::new("WryWebView").unwrap();
+
+        unsafe {
+            let cls = objc_getClass(name.as_ptr()) as *mut Class;
+            class_addMethod(cls, sel, func.imp(), types.as_ptr());
+        }
     }
 
     pub fn handle(
@@ -118,6 +184,74 @@ impl PlatformStateImpl {
                         }
                     }
                 });
+
+                fn to_s<'a>(nsstring_obj: *mut Object) -> Option<&'a str> {
+                    const UTF8_ENCODING: libc::c_uint = 4;
+
+                    let bytes = unsafe {
+                        let length = msg_send![nsstring_obj, lengthOfBytesUsingEncoding: UTF8_ENCODING];
+                        let utf8_str: *const u8 = msg_send![nsstring_obj, UTF8String];
+                        slice::from_raw_parts(utf8_str, length)
+                    };
+                    std::str::from_utf8(bytes).ok()
+                }
+
+                extern "C" fn should_delay_window_ordering(this: &Object, _cmd: Sel, _event: id) -> BOOL {
+                    debug!("should_delay_window_ordering");
+
+                    unsafe {
+                        let window: id = msg_send![this, window];
+                        let title: id = msg_send![window, title];
+
+                        // TODO: implement better method for determining if WebView belongs to autocomplete
+                        if let Some(title) = to_s(title) {
+                            if title == AUTOCOMPLETE_WINDOW_TITLE {
+                                return YES;
+                            }
+                        }
+                    }
+
+                    NO
+                }
+
+                extern "C" fn mouse_down(this: &Object, _cmd: Sel, event: id) {
+                    let application = Class::get("NSApplication").unwrap();
+
+                    unsafe {
+                        let window: id = msg_send![this, window];
+                        let title: id = msg_send![window, title];
+
+                        // TODO: implement better method for determining if WebView belongs to autocomplete
+                        if let Some(title) = to_s(title) {
+                            if title == AUTOCOMPLETE_WINDOW_TITLE {
+                                // Prevent clicked window from taking focus
+                                let app: id = msg_send![application, sharedApplication];
+                                let _: () = msg_send![app, preventWindowOrdering];
+                            }
+                        }
+
+                        // Invoke superclass implementation
+                        let supercls = msg_send![this, superclass];
+                        let _: () = msg_send![super(this, supercls), mouseDown: event];
+                    }
+                }
+
+                extern "C" fn accepts_first_mouse(_this: &Object, _cmd: Sel, _event: id) -> BOOL {
+                    debug!("accepts_first_mouse");
+                    YES
+                }
+
+                // Use objc runtime to override WryWebview methods
+                Self::override_webview_method(
+                    sel!(shouldDelayWindowOrderingForEvent:),
+                    should_delay_window_ordering as extern "C" fn(&Object, Sel, id) -> BOOL,
+                );
+                Self::override_webview_method(sel!(mouseDown:), mouse_down as extern "C" fn(&Object, Sel, id));
+                Self::override_webview_method(
+                    sel!(acceptsFirstMouse:),
+                    accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
+                );
+
                 Ok(())
             },
             PlatformBoundEvent::EditBufferChanged => {

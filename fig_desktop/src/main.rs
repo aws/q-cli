@@ -40,6 +40,7 @@ use webview::{
 };
 pub use webview::{
     AUTOCOMPLETE_ID,
+    AUTOCOMPLETE_WINDOW_TITLE,
     FIG_PROTO_MESSAGE_RECEIVED,
     MISSION_CONTROL_ID,
 };

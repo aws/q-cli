@@ -77,6 +77,7 @@ pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
 pub const MISSION_CONTROL_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
+pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
 pub static THEME: Lazy<Option<Theme>> = Lazy::new(|| {
     match fig_settings::settings::get_string("app.theme")
@@ -414,7 +415,7 @@ pub fn build_autocomplete(
     _autocomplete_options: AutocompleteOptions,
 ) -> wry::Result<WebView> {
     let mut window_builder = WindowBuilder::new()
-        .with_title("Fig Autocomplete")
+        .with_title(AUTOCOMPLETE_WINDOW_TITLE)
         .with_transparent(true)
         .with_decorations(false)
         .with_always_on_top(true)
