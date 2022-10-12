@@ -104,7 +104,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
 
                     for terminal_executable in LINUX_TERMINALS.iter().flat_map(|term| term.executable_names()) {
                         if let Ok(terminal_executable_path) = which::which(terminal_executable) {
-                            tokio::spawn(Command::new(terminal_executable_path).output());
+                            tokio::spawn(tokio::process::Command::new(terminal_executable_path).output());
                             return RequestResult::success();
                         }
                     }

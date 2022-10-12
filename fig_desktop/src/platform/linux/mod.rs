@@ -37,6 +37,7 @@ use crate::icons::{
     ProcessedAsset,
 };
 use crate::platform::linux::sway::SwayState;
+use crate::utils::Rect;
 use crate::webview::window::WindowId;
 use crate::webview::FigWindowMap;
 use crate::{
@@ -48,7 +49,7 @@ static WM_REVICED_DATA: AtomicBool = AtomicBool::new(false);
 
 #[derive(Debug)]
 #[allow(dead_code)] // we will definitely need inner_x and inner_y at some point
-pub struct ActiveWindowData {
+pub(super) struct ActiveWindowData {
     inner_x: i32,
     inner_y: i32,
     outer_x: i32,
@@ -57,15 +58,15 @@ pub struct ActiveWindowData {
 }
 
 #[derive(Debug)]
-pub enum DisplayServerState {
+pub(super) enum DisplayServerState {
     X11(Arc<x11::X11State>),
     Sway(Arc<sway::SwayState>),
 }
 
 pub(super) struct PlatformStateImpl {
-    pub proxy: EventLoopProxy,
-    pub active_window_data: Mutex<Option<ActiveWindowData>>,
-    pub display_server_state: Mutex<Option<DisplayServerState>>,
+    pub(super) proxy: EventLoopProxy,
+    pub(super) active_window_data: Mutex<Option<ActiveWindowData>>,
+    pub(super) display_server_state: Mutex<Option<DisplayServerState>>,
 }
 
 impl PlatformStateImpl {
@@ -185,6 +186,13 @@ impl PlatformStateImpl {
         None
     }
 
+    pub(super) fn get_current_monitor_frame(
+        &self,
+        _window: &wry::application::window::Window,
+    ) -> Option<Rect<i32, i32>> {
+        None
+    }
+
     pub(super) fn get_active_window(&self) -> Option<super::PlatformWindow> {
         // TODO: make this correct
         // match &*self.display_server_state.lock() {
@@ -200,7 +208,7 @@ impl PlatformStateImpl {
 
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         match asset {
-            AssetSpecifier::Named(name) => icons::lookup(&name),
+            AssetSpecifier::Named(name) => icons::lookup(name),
             AssetSpecifier::PathBased(_) => None,
         }
     }

@@ -201,4 +201,4 @@ fi
 
 fi
 
-fig _ pre-cmd > /dev/null 2>&1 &
+(fig _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1

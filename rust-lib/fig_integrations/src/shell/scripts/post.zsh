@@ -180,12 +180,12 @@ fig_precmd() {
 fig_reset_hooks() {
   # shellcheck disable=SC1087,SC2193
   if [[ "$precmd_functions[-1]" != fig_precmd ]]; then
-    # shellcheck disable=SC2206
+    # shellcheck disable=SC2206,SC2296
     precmd_functions=(${(@)precmd_functions:#fig_precmd} fig_precmd)
   fi
   # shellcheck disable=SC1087,SC2193
   if [[ "$preexec_functions[1]" != fig_preexec ]]; then
-    # shellcheck disable=SC2206
+    # shellcheck disable=SC2206,SC2296
     preexec_functions=(fig_preexec ${(@)preexec_functions:#fig_preexec})
   fi
 }
@@ -197,4 +197,4 @@ fi
 
 fi
 
-fig _ pre-cmd > /dev/null 2>&1 &
+(fig _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1

@@ -95,12 +95,12 @@ struct Unmanaged {
 }
 
 #[derive(Debug)]
-pub struct PlatformStateImpl {
+pub(super) struct PlatformStateImpl {
     proxy: EventLoopProxy,
 }
 
 impl PlatformStateImpl {
-    pub fn new(proxy: EventLoopProxy) -> Self {
+    pub(super) fn new(proxy: EventLoopProxy) -> Self {
         Self { proxy }
     }
 
@@ -145,7 +145,7 @@ impl PlatformStateImpl {
         }
     }
 
-    pub fn handle(
+    pub(super) fn handle(
         self: &Arc<Self>,
         event: PlatformBoundEvent,
         window_target: &EventLoopWindowTarget,
@@ -359,7 +359,10 @@ impl PlatformStateImpl {
         }
     }
 
-    pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect<i32, i32>> {
+    pub(super) fn get_current_monitor_frame(
+        &self,
+        window: &wry::application::window::Window,
+    ) -> Option<Rect<i32, i32>> {
         match window.current_monitor() {
             Some(monitor) => {
                 let origin = monitor.position().to_logical(monitor.scale_factor()) as LogicalPosition<i32>;

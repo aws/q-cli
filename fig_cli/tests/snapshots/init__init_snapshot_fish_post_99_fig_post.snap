@@ -17,7 +17,7 @@ or set --append PATH $HOME/.local/bin
 
 
 # Open workflows on keyboard shortcut
-set --query FIG_WORKFLOWS_KEYBIND || set FIG_WORKFLOWS_KEYBIND '\cf'
+set --query FIG_WORKFLOWS_KEYBIND; or set FIG_WORKFLOWS_KEYBIND '\cf'
 
 # function fig-open-workflows
 #     fig run
@@ -26,13 +26,15 @@ set --query FIG_WORKFLOWS_KEYBIND || set FIG_WORKFLOWS_KEYBIND '\cf'
 
 # bind (string unescape $FIG_WORKFLOWS_KEYBIND) fig-open-workflows
 
-set --export TTY (command tty)
+set --query TTY; or set TTY (command tty)
+set --export TTY
+
 set --export FIG_PID $fish_pid
 set --export FIG_SET_PARENT $TERM_SESSION_ID
 set --export LC_FIG_SET_PARENT $TERM_SESSION_ID
 
-set FIG_HOSTNAME (fig _ hostname; or command hostname -f 2> /dev/null; or command hostname)
-set FIG_SHELL_PATH (fig _ get-shell)
+set --query FIG_HOSTNAME; or set FIG_HOSTNAME (fig _ hostname; or command hostname -f 2> /dev/null; or command hostname)
+set --query FIG_SHELL_PATH; or set FIG_SHELL_PATH (fig _ get-shell)
 
 function fig_osc
     builtin printf "\033]697;$argv[1]\007" $argv[2..-1]

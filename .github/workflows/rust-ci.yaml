@@ -108,7 +108,8 @@ jobs:
               libayatana-appindicator3-dev \
               librsvg2-dev \
               libwebkit2gtk-4.0-dev \
-              protobuf-compiler
+              protobuf-compiler \
+              fish
 
       - name: Install Protobuf on Ubuntu
         if: startsWith(matrix.os,'ubuntu')

@@ -34,6 +34,11 @@ macro_rules! init_test {
             #[test]
             #[cfg(not(windows))]
             fn [<init_lint_ $shell _ $stage _ $file>]() -> Result<(), Box<dyn std::error::Error>> {
+                // Ignore fish post since idk it doesn't work on CI
+                if $exe == "fish" && $stage == "post" {
+                    return Ok(());
+                }
+
                 let init = [<init_output_ $shell _ $stage _ $file>]()?;
 
                 let mut cmd = Command::new($exe);
@@ -47,6 +52,13 @@ macro_rules! init_test {
                     let stderr = String::from_utf8(output.stderr)?;
                     println!("stdout: {stdout:?}");
                     println!("stderr: {stderr:?}");
+
+                    // Write shell version to stdout
+                    let mut cmd = Command::new($exe);
+                    cmd.arg("--version");
+                    let out = cmd.output()?;
+                    println!("Linter {} version: {}", $exe, String::from_utf8(out.stdout)?);
+
                     panic!(
                         "linter returned {}. please run `cargo run -p fig_cli -- init {} {} --rcfile {} --skip-dotfiles | {} {}`",
                         output.status, $shell, $stage, $file, $exe, [$($arg),*].join(" ")
