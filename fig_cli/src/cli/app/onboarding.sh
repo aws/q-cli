@@ -36,7 +36,6 @@ function prepare_prompt {
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
   fig_osc "PID=%d" "$$"
-  fig_osc "SessionId=%s" "${TERM_SESSION_ID}"
   fig_osc "TTY=%s" "${TTY}"
 }
 

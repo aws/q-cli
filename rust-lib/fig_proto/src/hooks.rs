@@ -30,7 +30,7 @@ pub fn hook_to_message(hook: Hook) -> LocalMessage {
 pub fn generate_shell_context(
     pid: impl Into<i32>,
     tty: impl Into<String>,
-    session_id: impl Into<Option<String>>,
+    session_id: Option<impl Into<String>>,
     integration_version: impl Into<Option<i32>>,
 ) -> Result<ShellContext> {
     let cwd = std::env::current_dir()?;
@@ -38,7 +38,7 @@ pub fn generate_shell_context(
     Ok(ShellContext {
         pid: Some(pid.into()),
         ttys: Some(tty.into()),
-        session_id: session_id.into().or_else(|| std::env::var("TERM_SESSION_ID").ok()),
+        session_id: session_id.map(|s| s.into()),
         integration_version: Some(integration_version.into().unwrap_or(CURRENT_INTEGRATION_VERSION)),
         process_name: Some(shell),
         current_working_directory: Some(cwd.to_string_lossy().into()),

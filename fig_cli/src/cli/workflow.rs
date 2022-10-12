@@ -845,7 +845,7 @@ fn map_args_to_command(workflow: &Workflow, args: &HashMap<String, String>) -> S
 }
 
 async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
-    let session_id = std::env::var("TERM_SESSION_ID")?;
+    let session_id = std::env::var("FIGTERM_SESSION_ID")?;
     let mut conn = BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
     conn.send_message(fig_proto::figterm::FigtermRequestMessage {
         request: Some(fig_proto::figterm::figterm_request_message::Request::InsertOnNewCmd(

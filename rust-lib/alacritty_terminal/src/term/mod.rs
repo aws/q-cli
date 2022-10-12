@@ -297,7 +297,7 @@ impl<T> Term<T> {
         self.grid.scroll_display(scroll);
     }
 
-    pub fn new(size: SizeInfo, event_proxy: T, max_scroll_limit: usize) -> Term<T> {
+    pub fn new(size: SizeInfo, event_proxy: T, max_scroll_limit: usize, session_id: String) -> Term<T> {
         let num_cols = size.columns;
         let num_lines = size.screen_lines;
 
@@ -310,7 +310,7 @@ impl<T> Term<T> {
         let scroll_region = Line(0)..Line(grid.screen_lines() as i32);
 
         let mut shell_state = ShellState::new();
-        shell_state.get_mut_context().session_id = std::env::var("TERM_SESSION_ID").ok();
+        shell_state.get_mut_context().session_id = Some(session_id);
         shell_state.color_support = Some(fig_color::get_color_support());
 
         Term {
@@ -1858,13 +1858,6 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     #[inline]
-    fn session_id(&mut self, session_id: &str) {
-        let session_id = session_id.trim().to_owned();
-        trace!("Fig session_id: {session_id:?}");
-        self.shell_state.get_mut_context().session_id = Some(session_id);
-    }
-
-    #[inline]
     fn hostname(&mut self, hostname: &str) {
         let hostname = hostname.trim().to_owned();
         trace!("Fig hostname: {hostname:?}");
@@ -2010,7 +2003,7 @@ pub mod test {
 
         // Create terminal with the appropriate dimensions.
         let size = SizeInfo::new(lines.len(), num_cols);
-        let mut term = Term::new(size, (), 100);
+        let mut term = Term::new(size, (), 100, "1234567890".into());
 
         // Fill terminal with content.
         for (line, text) in lines.iter().enumerate() {

@@ -755,7 +755,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
     // An exit code of 0 will source the new changes
     // An exit code of 1 will not source the new changes
 
-    let session_id = match std::env::var_os("TERM_SESSION_ID") {
+    let session_id = match std::env::var_os("FIGTERM_SESSION_ID") {
         Some(session_id) => session_id,
         None => exit(1),
     };
@@ -850,7 +850,7 @@ pub async fn prompt_dotfiles_changed() -> Result<()> {
 }
 
 pub async fn pre_cmd() {
-    let session_id = match std::env::var("TERM_SESSION_ID") {
+    let session_id = match std::env::var("FIGTERM_SESSION_ID") {
         Ok(session_id) => session_id,
         Err(_) => exit(1),
     };

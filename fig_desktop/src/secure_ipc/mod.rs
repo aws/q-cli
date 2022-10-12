@@ -18,6 +18,7 @@ use fig_proto::figterm::{
     InterceptRequest,
     SetBufferRequest,
 };
+use fig_proto::local::ShellContext;
 use fig_proto::secure::clientbound::request::Request;
 use fig_proto::secure::clientbound::{
     self,
@@ -181,8 +182,10 @@ async fn handle_secure_ipc(
             },
             Some(hostbound::Packet::Hook(hostbound::Hook { hook: Some(hook) })) => {
                 if let Some(session_id) = &session_id {
+                    let sanatize_fn = get_sanatize_fn(session_id.0.clone());
                     if let Err(err) = match hook {
-                        hostbound::hook::Hook::EditBuffer(edit_buffer) => {
+                        hostbound::hook::Hook::EditBuffer(mut edit_buffer) => {
+                            sanatize_fn(&mut edit_buffer.context);
                             hooks::edit_buffer(
                                 &edit_buffer,
                                 session_id,
@@ -192,13 +195,16 @@ async fn handle_secure_ipc(
                             )
                             .await
                         },
-                        hostbound::hook::Hook::Prompt(prompt) => {
-                            hooks::prompt(&prompt, &notifications_state, &proxy).await
+                        hostbound::hook::Hook::Prompt(mut prompt) => {
+                            sanatize_fn(&mut prompt.context);
+                            hooks::prompt(&prompt, session_id, &notifications_state, &proxy).await
                         },
-                        hostbound::hook::Hook::PreExec(pre_exec) => {
-                            hooks::pre_exec(&pre_exec, &notifications_state, &proxy).await
+                        hostbound::hook::Hook::PreExec(mut pre_exec) => {
+                            sanatize_fn(&mut pre_exec.context);
+                            hooks::pre_exec(&pre_exec, session_id, &notifications_state, &proxy).await
                         },
-                        hostbound::hook::Hook::InterceptedKey(intercepted_key) => {
+                        hostbound::hook::Hook::InterceptedKey(mut intercepted_key) => {
+                            sanatize_fn(&mut intercepted_key.context);
                             hooks::intercepted_key(intercepted_key, &notifications_state, &proxy).await
                         },
                     } {
@@ -412,6 +418,16 @@ async fn send_pings(outgoing: flume::Sender<Clientbound>, mut stop_pings: onesho
                 });
             }
             _ = &mut stop_pings => break
+        }
+    }
+}
+
+// This has to be used to sanitize as a hook can contain an invalid session_id and it must
+// be sanitized before being sent to any consumers
+fn get_sanatize_fn(session_id: String) -> impl FnOnce(&mut Option<ShellContext>) {
+    |context| {
+        if let Some(context) = context {
+            context.session_id = Some(session_id);
         }
     }
 }

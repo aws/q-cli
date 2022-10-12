@@ -11,7 +11,7 @@ builtin contains $HOME/.local/bin $PATH
 or set --append PATH $HOME/.local/bin
 
 if not test -z "$FIG_NEW_SESSION"
-    set --erase TERM_SESSION_ID
+    set --erase FIGTERM_SESSION_ID
     set --erase FIG_TERM
     set --erase FIG_ENV_VAR
     set --erase FIG_NEW_SESSION
@@ -35,14 +35,6 @@ if test "$TERM_PROGRAM" != WarpTerminal
     and test -z "$FIG_TERM"
     or test -z "$FIG_TERM_TMUX" -a -n "$TMUX"
 
-    # Generated automatically by iTerm and Terminal But needs to be
-    # explicitly set for VSCode and Hyper. This variable is inherited when
-    # new ttys are created using tmux and must be explicitly overwritten.
-    # Temporary note: we have started always overwriting this value.
-    # If this breaks your app, please contact us!
-    # if test -z "$TERM_SESSION_ID"; or test -n "$TMUX"
-    set --export TERM_SESSION_ID (fig _ uuidgen)
-    # end
     set --export FIG_INTEGRATION_VERSION 8
 
     set FIG_SHELL (fig _ get-shell)

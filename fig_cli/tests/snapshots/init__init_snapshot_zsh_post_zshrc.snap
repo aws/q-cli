@@ -37,8 +37,8 @@ pathadd ~/.local/bin
 TTY=$(tty)
 export TTY
 export FIG_PID="$$"
-export FIG_SET_PARENT=$TERM_SESSION_ID
-export LC_FIG_SET_PARENT=$TERM_SESSION_ID
+export FIG_SET_PARENT=$FIGTERM_SESSION_ID
+export LC_FIG_SET_PARENT=$FIGTERM_SESSION_ID
 
 FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
 FIG_SHELL_PATH=$(fig _ get-shell)
@@ -85,7 +85,6 @@ fig_precmd() {
     fig_osc "WSLDistro=%s" "${WSL_DISTRO_NAME}"
   fi
   fig_osc "PID=%d" "$$"
-  fig_osc "SessionId=%s" "${TERM_SESSION_ID}"
   fig_osc "ExitCode=%s" "${LAST_STATUS}"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"

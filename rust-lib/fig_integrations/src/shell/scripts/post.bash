@@ -77,7 +77,6 @@ function __fig_pre_prompt () {
     fig_osc "WSLDistro=%s" "${WSL_DISTRO_NAME}"
   fi
   fig_osc "PID=%d" "$$"
-  fig_osc "SessionId=%s" "${TERM_SESSION_ID}"
   fig_osc "ExitCode=%s" "$__fig_ret_value"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"

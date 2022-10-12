@@ -12,7 +12,7 @@ pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
 if [[ -n "${FIG_NEW_SESSION}" ]]; then
-  unset TERM_SESSION_ID
+  unset FIGTERM_SESSION_ID
   unset FIG_TERM
   unset FIG_ENV_VAR
   unset FIG_NEW_SESSION
@@ -45,17 +45,6 @@ if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
   && command -v figterm 1>/dev/null 2>&1 \
   && [[ ("${SHOULD_FIGTERM_LAUNCH}" -eq 0) || (("${SHOULD_FIGTERM_LAUNCH}" -eq 2) && (-z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}"))) ]]
 then
-
-  # Generated automatically by iTerm and Terminal, but needs to be
-  # explicitly set for VSCode and Hyper. This variable is inherited when
-  # new ttys are created using Tmux of VSCode and must be explicitly
-  # overwritten.
-  # Temporary note: we have started always overwriting this value.
-  # If this breaks your app, please contact us!
-  # if [[ -z "${TERM_SESSION_ID}" || -n "${TMUX}" ]]; then
-  TERM_SESSION_ID="$(fig _ uuidgen)"
-  export TERM_SESSION_ID
-  # fi
   export FIG_INTEGRATION_VERSION=8
   # Pty module sets FIG_TERM or FIG_TERM_TMUX to avoid running twice.
   FIG_SHELL=$(fig _ get-shell)

@@ -19,7 +19,7 @@ pub async fn source_cli() -> Result<()> {
     download_and_notify(true)
         .await
         .context("Could not sync remote dotfiles")?;
-    if let Ok(session_id) = std::env::var("TERM_SESSION_ID") {
+    if let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") {
         notify_terminal(session_id, TerminalNotification::Source)?;
     }
     Ok(())

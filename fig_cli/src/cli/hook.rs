@@ -75,6 +75,8 @@ impl HookSubcommand {
     }
 
     pub async fn execute_hook(&self) -> Result<()> {
+        let session_id = std::env::var("FIGTERM_SESSION_ID").ok();
+
         let hook = match self {
             HookSubcommand::Editbuffer {
                 session_id,
@@ -85,12 +87,12 @@ impl HookSubcommand {
                 cursor,
                 text,
             } => {
-                let context = hooks::generate_shell_context(*pid, tty, session_id.clone(), *integration)?;
+                let context = hooks::generate_shell_context(*pid, tty, Some(session_id.clone()), *integration)?;
                 Ok(hooks::new_edit_buffer_hook(context, text, *histno, *cursor, None))
             },
             HookSubcommand::Hide => Ok(hooks::new_hide_hook()),
             HookSubcommand::Init { pid, tty } => {
-                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                let context = hooks::generate_shell_context(*pid, tty, session_id, None)?;
                 hooks::new_init_hook(context)
             },
             HookSubcommand::IntegrationReady { integration } => Ok(hooks::new_integration_ready_hook(integration)),
@@ -102,11 +104,11 @@ impl HookSubcommand {
                 focused_session_id,
             )),
             HookSubcommand::PreExec { pid, tty } => {
-                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                let context = hooks::generate_shell_context(*pid, tty, session_id, None)?;
                 Ok(hooks::new_preexec_hook(context))
             },
             HookSubcommand::Prompt { pid, tty } => {
-                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                let context = hooks::generate_shell_context(*pid, tty, session_id, None)?;
                 Ok(hooks::new_prompt_hook(context))
             },
             HookSubcommand::Ssh {
@@ -143,7 +145,7 @@ impl HookSubcommand {
                         installed_hosts.write_all(&new_line.into_bytes())?;
                     }
                 }
-                let context = hooks::generate_shell_context(*pid, tty, None, None)?;
+                let context = hooks::generate_shell_context(*pid, tty, session_id, None)?;
                 hooks::new_ssh_hook(context, control_path, remote_dest)
             },
         };

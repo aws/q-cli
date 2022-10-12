@@ -155,14 +155,19 @@ pub async fn edit_buffer(
     Ok(())
 }
 
-pub async fn prompt(hook: &PromptHook, notifications_state: &NotificationsState, proxy: &EventLoopProxy) -> Result<()> {
+pub async fn prompt(
+    hook: &PromptHook,
+    session_id: &FigtermSessionId,
+    notifications_state: &NotificationsState,
+    proxy: &EventLoopProxy,
+) -> Result<()> {
     notifications_state
         .send_notification(
             &NotificationType::NotifyOnPrompt,
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::ShellPromptReturnedNotification(
                     ShellPromptReturnedNotification {
-                        session_id: hook.context.as_ref().and_then(|ctx| ctx.session_id.clone()),
+                        session_id: Some(session_id.0.clone()),
                         shell: hook.context.as_ref().map(|ctx| Process {
                             pid: ctx.pid,
                             executable: ctx.process_name.clone(),
@@ -179,6 +184,7 @@ pub async fn prompt(hook: &PromptHook, notifications_state: &NotificationsState,
 
 pub async fn pre_exec(
     hook: &PreExecHook,
+    session_id: &FigtermSessionId,
     notifications_state: &NotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
@@ -188,7 +194,7 @@ pub async fn pre_exec(
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::ProcessChangeNotification(
                     ProcessChangedNotification {
-                    session_id: hook.context.as_ref().and_then(|ctx| ctx.session_id.clone()),
+                    session_id: Some(session_id.0.clone()),
                     new_process: // TODO: determine active application based on tty
                     hook.context.as_ref().map(|ctx| Process {
                         pid: ctx.pid,

@@ -389,21 +389,8 @@ async fn fig_lint(current_line: &str) {
 }
 
 fn figterm_main() -> Result<()> {
-    let term_session_id = match env::var("TERM_SESSION_ID") {
-        Ok(term_session_id) => term_session_id,
-        Err(_) => {
-            let term_session_id = uuid::Uuid::new_v4().to_string();
-            std::env::set_var("TERM_SESSION_ID", &term_session_id);
-            if env::var("FIGTERM_SESSION_ID").is_err() {
-                std::env::set_var("FIGTERM_SESSION_ID", &term_session_id);
-            }
-            term_session_id
-        },
-    };
-
-    if env::var("FIGTERM_SESSION_ID").is_err() {
-        std::env::set_var("FIGTERM_SESSION_ID", uuid::Uuid::new_v4().to_string());
-    }
+    let session_id = uuid::Uuid::new_v4().to_string();
+    std::env::set_var("FIGTERM_SESSION_ID", &session_id);
 
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
@@ -418,7 +405,7 @@ fn figterm_main() -> Result<()> {
     let pty = open_pty(&pty_size).context("Failed to open pty")?;
     let command = build_shell_command()?;
 
-    let pty_name = pty.slave.get_name().unwrap_or_else(|| term_session_id.clone());
+    let pty_name = pty.slave.get_name().unwrap_or_else(|| session_id.clone());
 
     let _logger_guard = fig_log::Logger::new()
         .with_file(format!("figterm{pty_name}.log"))
@@ -462,11 +449,11 @@ fn figterm_main() -> Result<()> {
         let history_sender = history::spawn_history_task().await;
 
         // Spawn thread to handle figterm ipc
-        let incoming_receiver = spawn_figterm_ipc(&term_session_id).await?;
+        let incoming_receiver = spawn_figterm_ipc(&session_id).await?;
 
         // Spawn thread to handle secure ipc
         let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_secure_ipc(
-            term_session_id.clone(),
+            session_id.clone(),
             main_loop_tx.clone()
         ).await?;
 
@@ -476,7 +463,7 @@ fn figterm_main() -> Result<()> {
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
         let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx);
-        let mut term = alacritty_terminal::Term::new(size, event_sender, 1);
+        let mut term = alacritty_terminal::Term::new(size, event_sender, 1, session_id);
 
         #[cfg(target_os = "windows")]
         term.set_windows_delay_end_prompt(true);
@@ -492,7 +479,7 @@ fn figterm_main() -> Result<()> {
 
         let input_rx = terminal.read_input()?;
 
-        let modes = KeyCodeEncodeModes {
+        let key_code_encode_mode = KeyCodeEncodeModes {
             #[cfg(unix)]
             encoding: KeyboardEncoding::Xterm,
             #[cfg(windows)]
@@ -584,7 +571,7 @@ fn figterm_main() -> Result<()> {
                                         }
 
                                         let raw = raw.or_else(|| {
-                                            event.key.encode(event.modifiers, modes, true)
+                                            event.key.encode(event.modifiers, key_code_encode_mode, true)
                                                 .ok()
                                                 .map(|s| s.into_bytes().into())
                                         });

@@ -68,6 +68,7 @@ pub enum AppSubcommand {
     /// Quit the Fig desktop app
     Quit,
     /// Set the internal pseudo-terminal path
+    #[deprecated]
     SetPath,
     /// Uninstall the Fig app
     Uninstall(UninstallArgs),
@@ -294,51 +295,8 @@ impl AppSubcommand {
             AppSubcommand::Running => {
                 println!("{}", if is_app_running() { "1" } else { "0" });
             },
-            AppSubcommand::SetPath => {
-                cfg_if! {
-                    if #[cfg(unix)] {
-                        use std::process::Command;
-
-                        use eyre::WrapErr;
-                        use fig_ipc::local::send_hook_to_socket;
-                        use fig_proto::hooks;
-                        use serde_json::json;
-
-                        println!("\nSetting $PATH variable in Fig pseudo-terminal...\n");
-                        let path = std::env::var("PATH")?;
-                        fig_settings::state::set_value("pty.path", json!(path))?;
-                        println!(
-                            "Fig will now use the following path to locate the fig executable:\n{}\n",
-                            path.magenta()
-                        );
-
-
-                        let output = Command::new("tty").output().context(format!(
-                            "{} Unable to reload. Restart terminal to apply changes.",
-                            "Error:".red()
-                        ))?;
-
-
-                        let tty = String::from_utf8(output.stdout)?;
-                        let pid = nix::unistd::getppid();
-
-                        let hook = hooks::generate_shell_context(pid, tty, None, None)
-                            .and_then(hooks::new_init_hook)
-                            .context(format!(
-                                "{} Unable to reload. Restart terminal to apply changes.",
-                                "Error:".red()
-                            ))?;
-
-                        send_hook_to_socket(hook).await.context(format!(
-                            "\n{}\nFig might not be running to launch Fig run: {}\n",
-                            "Unable to Connect to Fig:".bold(),
-                            "fig launch".magenta()
-                        ))?;
-                    } else {
-                        eyre::bail!("Not implemented on this platform");
-                    }
-                }
-            },
+            #[allow(deprecated)]
+            AppSubcommand::SetPath => {},
         }
         Ok(())
     }
