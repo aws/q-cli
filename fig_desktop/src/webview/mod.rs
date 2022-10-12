@@ -238,7 +238,10 @@ impl WebviewManager {
                             WryWindowEvent::Focused(true) => {
                                 if window_state.window_id == DASHBOARD_ID {
                                     if let Some(autocomplete) = self.fig_id_map.get(&AUTOCOMPLETE_ID) {
-                                        autocomplete.webview.window().set_visible(false);
+                                        proxy.send_event(Event::WindowEvent {
+                                            window_id: AUTOCOMPLETE_ID,
+                                            window_event: WindowEvent::Hide,
+                                        }).unwrap();
                                     }
                                 }
                             },
