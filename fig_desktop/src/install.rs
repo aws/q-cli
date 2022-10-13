@@ -108,7 +108,7 @@ pub async fn run_install() {
 
             // Has to be at the end of this function -- will block until ibus has launched.
             launch_ibus().await;
-        } else if #[cfg(target_os = "windows")] {
+        } else {
             // Update if there's a newer version
             if !cfg!(debug_assertions) {
                 tokio::spawn(async {
@@ -122,10 +122,11 @@ pub async fn run_install() {
                         fig_install::update(true).await.ok();
                     }
                 });
-            }
 
-            // remove the updater if it exists
-            std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
+                // remove the updater if it exists
+                #[cfg(target_os = "windows")]
+                std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
+            }
         }
     );
 }
