@@ -474,6 +474,7 @@ struct IntegrationDiagnostics {
     integrations: Vec<(Integrations, IntegrationStatus)>,
 }
 
+#[allow(dead_code)]
 impl IntegrationDiagnostics {
     #[cfg(target_os = "macos")]
     async fn new() -> IntegrationDiagnostics {
@@ -585,8 +586,10 @@ impl Diagnostics {
             if #[cfg(target_os = "macos")] {
                 match get_diagnostics().await {
                     Ok(diagnostics) => {
-                        let mut integrations = IntegrationDiagnostics::new().await;
-                        integrations.docker(&diagnostics.docker);
+                        // TODO(sean) add back integration information once we have a better
+                        // understanding of IME/terminal integrations.
+                        // let mut integrations = IntegrationDiagnostics::new().await;
+                        // integrations.docker(&diagnostics.docker);
 
                         let current_env = CurrentEnvironment::new();
 
@@ -606,7 +609,7 @@ impl Diagnostics {
                             os: fig_util::system_info::os_version().cloned(),
                             user_env: current_env,
                             env_var: EnvVarDiagnostic::new(),
-                            integrations: Some(integrations),
+                            integrations: None,
                             dotfiles: DotfilesDiagnostics::new()?,
                         })
                     },
@@ -677,12 +680,12 @@ impl Diagnostic for Diagnostics {
         lines.extend(print_indent(&self.user_env.user_readable()?, "  ", 1));
         lines.push("  - env-vars:".into());
         lines.extend(print_indent(&self.env_var.user_readable()?, "  ", 2));
-        #[cfg(target_os = "macos")]
-        lines.push("- integrations:".into());
-        #[cfg(target_os = "macos")]
-        if let Some(integrations) = &self.integrations {
-            lines.extend(print_indent(&integrations.user_readable()?, "  ", 1));
-        }
+        // #[cfg(target_os = "macos")]
+        // lines.push("- integrations:".into());
+        // #[cfg(target_os = "macos")]
+        // if let Some(integrations) = &self.integrations {
+        // lines.extend(print_indent(&integrations.user_readable()?, "  ", 1));
+        // }
         Ok(lines)
     }
 }

@@ -91,6 +91,11 @@ impl PlatformState {
     pub fn shell() -> Cow<'static, str> {
         PlatformStateImpl::shell()
     }
+
+    /// Whether or not accessibility is enabled
+    pub fn accessibility_is_enabled(&self) -> Option<bool> {
+        self.0.accessibility_is_enabled()
+    }
 }
 
 #[derive(Debug)]
@@ -98,4 +103,5 @@ pub enum PlatformBoundEvent {
     Initialize,
     EditBufferChanged,
     FullscreenStateUpdated { fullscreen: bool },
+    AccessibilityUpdated { enabled: bool },
 }

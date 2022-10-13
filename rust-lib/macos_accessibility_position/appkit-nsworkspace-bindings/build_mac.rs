@@ -48,12 +48,6 @@ pub fn build() {
             #include<AppKit/NSRunningApplication.h>
         ",
         )
-        .header_contents(
-            "NSDistributedNotificationCenter.h",
-            "
-            #include<Foundation/NSDistributedNotificationCenter.h>
-        ",
-        )
         .clang_arg(format!("--target={}", target))
         .clang_args(&["-isysroot", sdk_path.as_ref()])
         .block_extern_crate(true)

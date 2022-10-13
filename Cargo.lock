@@ -2649,6 +2649,7 @@ dependencies = [
  "fig_telemetry",
  "fig_util",
  "fnv",
+ "macos_accessibility_position",
  "serde",
  "serde_json",
  "shellexpand",

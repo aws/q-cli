@@ -307,13 +307,6 @@ impl InternalSubcommand {
                 let mut components = components;
                 components.set(InstallComponents::BINARY, false);
                 fig_install::uninstall(components).await?;
-
-                #[cfg(target_os = "macos")]
-                if components.contains(InstallComponents::DESKTOP_APP) {
-                    if let Err(err) = Command::new("killall").args(["fig_desktop"]).output() {
-                        tracing::warn!("Failed to quit running Fig app: {err}");
-                    }
-                }
             },
             InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
             InternalSubcommand::PreCmd => pre_cmd().await,

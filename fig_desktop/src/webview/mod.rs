@@ -209,7 +209,15 @@ impl WebviewManager {
 
         let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
         let mut tray = if tray_enabled {
-            Some(build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap())
+            Some(
+                build_tray(
+                    &self.event_loop,
+                    &self.debug_state,
+                    &self.figterm_state,
+                    &self.platform_state,
+                )
+                .unwrap(),
+            )
         } else {
             None
         };
@@ -251,7 +259,7 @@ impl WebviewManager {
                 },
                 WryEvent::MenuEvent { menu_id, origin, .. } => {
                     if let Some(tray) = tray.as_mut() {
-                        tray.set_menu(&get_context_menu());
+                        tray.set_menu(&get_context_menu(&self.platform_state));
                     }
 
                     if origin == MenuType::ContextMenu {
@@ -283,7 +291,7 @@ impl WebviewManager {
                         },
                         Event::ReloadTray => {
                             if let Some(tray) = tray.as_mut() {
-                                tray.set_menu(&get_context_menu());
+                                tray.set_menu(&get_context_menu(&self.platform_state));
                             }
                         },
                         Event::PlatformBoundEvent(native_event) => {

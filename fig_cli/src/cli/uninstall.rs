@@ -47,21 +47,11 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 #[cfg(target_os = "macos")]
 async fn uninstall() -> Result<()> {
     use fig_install::InstallComponents;
-    use tokio::process::Command;
-    use tracing::warn;
 
     let url = fig_install::get_uninstall_url();
     fig_util::open_url(url).ok();
     fig_install::uninstall(InstallComponents::all()).await?;
 
-    // TODO(sean)
-    // 1. Remove login items
-    // 2. Set title of running ttys "Restart this terminal to finish uninstalling Fig..."
-    // 3. Delete webview cache
-
-    if let Err(err) = Command::new("killall").args(["fig_desktop"]).output().await {
-        warn!("Failed to quit running Fig app: {err}");
-    }
     Ok(())
 }
 

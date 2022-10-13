@@ -65,23 +65,34 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
 }
 
 pub async fn diagnostic(_: DiagnosticsCommand) -> LocalResult {
-    let response = DiagnosticsResponse {
-        autocomplete_active: Some(platform::autocomplete_active()),
-        #[cfg(target_os = "macos")]
-        path_to_bundle: macos_accessibility_position::bundle::get_bundle_path()
-            .and_then(|path| path.to_str().map(|s| s.to_owned()))
-            .unwrap_or_default(),
-        #[cfg(target_os = "macos")]
-        accessibility: if macos_accessibility_position::accessibility::accessibility_is_enabled() {
-            "true".into()
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let response = DiagnosticsResponse {
+                autocomplete_active: Some(platform::autocomplete_active()),
+                path_to_bundle: macos_accessibility_position::bundle::get_bundle_path()
+                    .and_then(|path| path.to_str().map(|s| s.to_owned()))
+                    .unwrap_or_default(),
+                accessibility: if macos_accessibility_position::accessibility::accessibility_is_enabled() {
+                    "true".into()
+                } else {
+                    "false".into()
+                },
+                ..Default::default()
+            };
+
+            Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
+                response,
+            ))))
         } else {
-            "false".into()
-        },
-        ..Default::default()
-    };
-    Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
-        response,
-    ))))
+            let response = DiagnosticsResponse {
+                autocomplete_active: Some(platform::autocomplete_active()),
+                ..Default::default()
+            };
+            Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
+                response,
+            ))))
+        }
+    }
 }
 
 pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy) -> LocalResult {
@@ -134,33 +145,21 @@ pub async fn open_browser(command: OpenBrowserCommand) -> LocalResult {
 }
 
 pub async fn prompt_for_accessibility_permission() -> LocalResult {
-    cfg_if::cfg_if!(
+    cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            use fig_integrations::{
-                accessibility::AccessibilityIntegration,
-                Integration
-            };
+            use fig_desktop_api::requests::install::install;
+            use fig_proto::fig::{InstallRequest, InstallComponent, InstallAction};
 
-            let integration = AccessibilityIntegration {};
-            match integration.install(None) {
-                Ok(()) => {
-                    #[allow(clippy::needless_return)]
-                    return Ok(LocalResponse::Success(None));
-                }
-                Err(_) => {
-                    #[allow(clippy::needless_return)]
-                    return Err(LocalResponse::Error {
-                        code: None,
-                        message: Some("Accessibility API not supported on this platform".to_owned()),
-                    });
-                }
-            }
+            install(InstallRequest {
+                component: InstallComponent::Accessibility.into(),
+                action: InstallAction::InstallAction.into()
+            }).await.ok();
+            Ok(LocalResponse::Success(None))
         } else {
-            #[allow(clippy::needless_return)]
-            return Err(LocalResponse::Error {
+            Err(LocalResponse::Error {
                 code: None,
                 message: Some("Accessibility API not supported on this platform".to_owned()),
-            });
+            })
         }
-    );
+    }
 }

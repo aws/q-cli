@@ -333,10 +333,6 @@ jobs:
               --arg figterm "$(pwd)/$PRODUCTS_DIR/figterm" \
               '{"tauri": {"bundle": {"externalBin": [$fig_cli, $figterm]}}}'
             )
-            tomlq -t -n \
-                --argjson f1 "$(tomlq .workspace.package Cargo.toml)" \
-                --argjson f2 "$(tomlq . fig_desktop/Cargo.toml)" \
-                '$f2 * {"package": $f1}' > fig_desktop/Cargo.toml
             cd fig_desktop
             echo $config > build-config.json
             for entry in "authors" "homepage" "version"; do

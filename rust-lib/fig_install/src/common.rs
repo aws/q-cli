@@ -59,11 +59,6 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     };
 
     #[cfg(target_os = "macos")]
-    if components.contains(InstallComponents::DESKTOP_APP) {
-        super::os::uninstall_desktop().await?;
-    }
-
-    #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::INPUT_METHOD) {
         let fig_input_method_app = directories::home_dir()?
             .join("Library")
@@ -72,6 +67,20 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
 
         if fig_input_method_app.exists() {
             std::fs::remove_dir_all(fig_input_method_app)?;
+        }
+    }
+
+    #[cfg(target_os = "macos")]
+    if components.contains(InstallComponents::DESKTOP_APP) {
+        super::os::uninstall_desktop().await?;
+        // Must be last -- this will kill the running desktop process if this is
+        // called from the desktop app.
+        let quit_res = tokio::process::Command::new("killall")
+            .args(["fig_desktop"])
+            .output()
+            .await;
+        if let Err(err) = quit_res {
+            tracing::warn!("Failed to quit running Fig app: {err}");
         }
     }
 

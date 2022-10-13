@@ -1,14 +1,23 @@
 use std::borrow::Cow;
 use std::ffi::CString;
 use std::slice;
+use std::sync::atomic::{
+    AtomicBool,
+    Ordering,
+};
 use std::sync::Arc;
 
+use accessibility_sys::{
+    AXUIElementCreateSystemWide,
+    AXUIElementSetMessagingTimeout,
+};
 use anyhow::anyhow;
 use cocoa::base::{
     id,
     NO,
     YES,
 };
+use macos_accessibility_position::accessibility::accessibility_is_enabled;
 use macos_accessibility_position::caret_position::{
     get_caret_position,
     CaretPosition,
@@ -16,6 +25,8 @@ use macos_accessibility_position::caret_position::{
 use macos_accessibility_position::{
     get_active_window,
     register_observer,
+    NSString,
+    NotificationCenter,
     WindowServer,
     WindowServerEvent,
 };
@@ -97,11 +108,15 @@ struct Unmanaged {
 #[derive(Debug)]
 pub(super) struct PlatformStateImpl {
     proxy: EventLoopProxy,
+    accessibility_enabled: AtomicBool,
 }
 
 impl PlatformStateImpl {
     pub(super) fn new(proxy: EventLoopProxy) -> Self {
-        Self { proxy }
+        Self {
+            proxy,
+            accessibility_enabled: AtomicBool::new(accessibility_is_enabled()),
+        }
     }
 
     //
@@ -153,13 +168,34 @@ impl PlatformStateImpl {
     ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {
-                let observer_proxy = self.proxy.clone();
                 UNMANAGED.event_sender.write().replace(self.proxy.clone());
                 let (tx, rx) = flume::unbounded::<WindowServerEvent>();
                 UNMANAGED
                     .window_server
                     .write()
                     .replace(unsafe { register_observer(tx) });
+
+                let accessibility_proxy = self.proxy.clone();
+                let mut distributed = NotificationCenter::distributed();
+                let ax_notification_name: NSString = "com.apple.accessibility.api".into();
+                distributed.subscribe(ax_notification_name, move |_, _| {
+                    let enabled = accessibility_is_enabled();
+                    accessibility_proxy
+                        .clone()
+                        .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::AccessibilityUpdated {
+                            enabled,
+                        }))
+                        .ok();
+                    if enabled {
+                        unsafe {
+                            // This prevents Fig from becoming unresponsive if one of the applications
+                            // we are tracking becomes unresponsive.
+                            AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.25);
+                        }
+                    }
+                });
+
+                let observer_proxy = self.proxy.clone();
                 tokio::runtime::Handle::current().spawn(async move {
                     let update_fullscreen = |fullscreen: bool| {
                         Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated { fullscreen })
@@ -331,6 +367,27 @@ impl PlatformStateImpl {
                 window_target.set_activation_policy_at_runtime(policy);
                 Ok(())
             },
+            PlatformBoundEvent::AccessibilityUpdated { enabled } => {
+                let was_enabled = self.accessibility_enabled.swap(enabled, Ordering::Relaxed);
+                if enabled && !was_enabled {
+                    tokio::runtime::Handle::current().spawn(async move {
+                        fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                            fig_telemetry::TrackEventType::GrantedAXPermission,
+                            fig_telemetry::TrackSource::Desktop,
+                            env!("CARGO_PKG_VERSION").into(),
+                            std::iter::empty::<(&str, &str)>(),
+                        ))
+                        .await
+                        .ok();
+                    });
+                }
+
+                if enabled != was_enabled {
+                    self.proxy.send_event(Event::ReloadTray).ok();
+                }
+
+                Ok(())
+            },
         }
     }
 
@@ -408,6 +465,10 @@ impl PlatformStateImpl {
             }),
             None => None,
         }
+    }
+
+    pub fn accessibility_is_enabled(&self) -> Option<bool> {
+        Some(self.accessibility_enabled.load(Ordering::Relaxed))
     }
 }
 

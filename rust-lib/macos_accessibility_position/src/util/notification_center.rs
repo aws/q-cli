@@ -6,7 +6,6 @@ use appkit_nsworkspace_bindings::{
     INSNotificationCenter,
     INSWorkspace,
     NSDictionary,
-    NSDistributedNotificationCenter,
     NSNotification,
     NSNotificationCenter,
     NSOperationQueue,
@@ -66,8 +65,15 @@ impl NotificationCenter {
     }
 
     pub fn distributed() -> Self {
-        let distributed_default = unsafe { NSDistributedNotificationCenter::defaultCenter() };
-        Self::new(distributed_default)
+        use objc::{
+            class,
+            msg_send,
+            sel,
+            sel_impl,
+        };
+        let distributed_default: *mut Object =
+            unsafe { msg_send![class!(NSDistributedNotificationCenter), defaultCenter] };
+        Self::new(appkit_nsworkspace_bindings::NSNotificationCenter(distributed_default))
     }
 
     pub fn subscribe<F>(&mut self, notification_name: impl Into<AppkitNSString>, mut f: F)

@@ -2237,7 +2237,10 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             vec![
                 // &ItermIntegrationCheck,
                 &ItermBashIntegrationCheck,
+                // TODO(sean) re-enable on macos once IME/terminal integrations are sorted
+                #[cfg(not(target_os = "macos"))]
                 &HyperIntegrationCheck,
+                #[cfg(not(target_os = "macos"))]
                 &VSCodeIntegrationCheck,
                 #[cfg(target_os = "macos")]
                 &ImeStatusCheck,

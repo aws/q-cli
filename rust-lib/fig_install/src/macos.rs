@@ -152,13 +152,10 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 }
 
 pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
-    let app_path = PathBuf::from("Applications").join("Fig.app");
-    if app_path.exists() {
-        tokio::fs::remove_dir_all(&app_path)
-            .await
-            .map_err(|err| warn!("Failed to remove Fig.app: {err}"))
-            .ok();
-    }
+    // TODO(sean)
+    // 1. Remove login items
+    // 2. Set title of running ttys "Restart this terminal to finish uninstalling Fig..."
+    // 3. Delete webview cache
 
     // Remove launch agents
     if let Ok(home) = directories::home_dir() {
@@ -202,6 +199,14 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
     }
 
     uninstall_terminal_integrations().await;
+
+    let app_path = PathBuf::from("/Applications/Fig.app");
+    if app_path.exists() {
+        tokio::fs::remove_dir_all(&app_path)
+            .await
+            .map_err(|err| warn!("Failed to remove Fig.app: {err}"))
+            .ok();
+    }
 
     Ok(())
 }

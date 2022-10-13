@@ -269,14 +269,7 @@ impl AppSubcommand {
                             fig_util::open_url(url).ok();
                         }
 
-                        let components: InstallComponents = args.into();
-                        fig_install::uninstall(components).await?;
-                        if components.contains(InstallComponents::DESKTOP_APP) {
-                            use tokio::process::Command;
-                            if let Err(err) = Command::new("killall").args(["fig_desktop"]).output().await {
-                                tracing::warn!("Failed to quit running Fig app: {err}");
-                            }
-                        }
+                        fig_install::uninstall(args.into()).await?;
                     } else {
                         let _args = args;
                         eyre::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)

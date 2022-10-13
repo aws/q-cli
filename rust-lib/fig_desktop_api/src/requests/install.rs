@@ -84,53 +84,59 @@ pub async fn install(request: InstallRequest) -> RequestResult {
         },
         (InstallComponent::Ibus, _) => integration_result(Err("IBus install is legacy")),
         (InstallComponent::Accessibility, InstallAction::InstallAction) => {
-            cfg_if::cfg_if!(
+            cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
-                    use fig_integrations::{accessibility::AccessibilityIntegration, Integration};
-
-                    let integration = AccessibilityIntegration {};
-                    let res = match integration.install(None) {
-                        Ok(()) => Ok(()),
-                        Err(_) => Err("Accessibility integration failed to install"),
+                    use macos_accessibility_position::accessibility::{
+                        open_accessibility,
+                        accessibility_is_enabled
                     };
 
-                    return RequestResult::Ok(Box::new(integration_result(res)))
+                    if !accessibility_is_enabled() {
+                        open_accessibility();
+
+                        tokio::spawn(async move {
+                            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                                fig_telemetry::TrackEventType::PromptedForAXPermission,
+                                fig_telemetry::TrackSource::Desktop,
+                                env!("CARGO_PKG_VERSION").into(),
+                                std::iter::empty::<(&str, &str)>(),
+                            ))
+                            .await
+                            .ok();
+                        });
+                    }
+
+                    integration_result(Ok::<(), &str>(()))
                 } else {
-                    return RequestResult::Ok(
-                        Box::new(integration_result(Err("Accessibility permissions cannot be queried")))
-                    )
+                    integration_result(Err("Accessibility permissions cannot be queried"))
                 }
-            );
+            }
         },
         (InstallComponent::Accessibility, InstallAction::StatusAction) => {
-            cfg_if::cfg_if!(
+            cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
-                    use fig_integrations::accessibility::AccessibilityIntegration;
+                    use macos_accessibility_position::accessibility::accessibility_is_enabled;
 
-                    let integration = AccessibilityIntegration {};
-                    return RequestResult::Ok(Box::new(integration_status(integration)))
+                    ServerOriginatedSubMessage::InstallResponse(InstallResponse {
+                        response: Some(Response::InstallationStatus(if accessibility_is_enabled() {
+                            InstallationStatus::InstallInstalled.into()
+                        } else {
+                            InstallationStatus::InstallNotInstalled.into()
+                        })),
+                    })
                 } else {
-                    return RequestResult::Ok(Box::new(
-                        integration_result(Err("Accessibility permissions cannot be queried"))
-                    ));
+                    integration_result(Err("Accessibility permissions cannot be queried"))
                 }
-            );
+            }
         },
         (InstallComponent::Accessibility, InstallAction::UninstallAction) => {
-            cfg_if::cfg_if!(
+            cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
-                    use fig_integrations::{accessibility::AccessibilityIntegration, Integration};
-
-                    let integration = AccessibilityIntegration {};
-                    return RequestResult::Ok(Box::new(
-                        integration_result(integration.uninstall())
-                    ));
+                    integration_result(Ok::<(), &str>(()))
                 } else {
-                    return RequestResult::Ok(Box::new(
-                        integration_result(Err("Accessibility permissions cannot be queried"))
-                    ));
+                    integration_result(Err("Accessibility permissions cannot be queried"))
                 }
-            );
+            }
         },
     };
 

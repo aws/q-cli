@@ -146,6 +146,9 @@ impl PlatformStateImpl {
             PlatformBoundEvent::FullscreenStateUpdated { .. } => {
                 trace!("Ignoring full screen state updated event");
             },
+            PlatformBoundEvent::AccessibilityUpdated { .. } => {
+                trace!("Ignoring accessibility updated event");
+            },
         }
         Ok(())
     }
@@ -215,6 +218,10 @@ impl PlatformStateImpl {
 
     pub(super) fn shell() -> Cow<'static, str> {
         "/bin/bash".into()
+    }
+
+    pub fn accessibility_is_enabled(&self) -> Option<bool> {
+        None
     }
 }
 
