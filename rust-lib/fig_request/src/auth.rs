@@ -202,7 +202,7 @@ pub enum RefreshError {
 impl Credentials {
     /// Path to the main credentials file
     pub fn path() -> Result<PathBuf, fig_util::directories::DirectoryError> {
-        Ok(directories::fig_data_dir()?.join("credentials.json"))
+        fig_util::directories::credentials_path()
     }
 
     /// Path to alternative credentials file folder

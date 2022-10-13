@@ -22,6 +22,7 @@ use tracing::{
     trace,
 };
 
+use crate::event::Event;
 use crate::notification::NotificationsState;
 use crate::EventLoopProxy;
 
@@ -31,7 +32,7 @@ static SETTINGS: Lazy<Mutex<Map<String, Value>>> =
 static STATE: Lazy<Mutex<Map<String, Value>>> =
     Lazy::new(|| Mutex::new(fig_settings::state::get_map().unwrap_or_default()));
 
-pub async fn settings_listener(notifications_state: Arc<NotificationsState>, proxy: EventLoopProxy) {
+pub async fn user_data_listener(notifications_state: Arc<NotificationsState>, proxy: EventLoopProxy) {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     let mut watcher = notify::recommended_watcher(move |res| match res {
@@ -86,6 +87,29 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
         },
         None => {
             error!("failed to get state file path");
+            None
+        },
+    };
+
+    let credentials_path = match directories::credentials_path().ok() {
+        Some(credentials_path) => match credentials_path.parent() {
+            Some(credentials_dir) => match watcher.watch(credentials_dir, RecursiveMode::NonRecursive) {
+                Ok(()) => {
+                    trace!("watching credentials dir at {credentials_dir:?}");
+                    Some(credentials_path)
+                },
+                Err(err) => {
+                    error!(%err, "failed to watch credentials dir");
+                    None
+                },
+            },
+            None => {
+                error!("failed to get credentials file dir");
+                None
+            },
+        },
+        None => {
+            error!("failed to get credentials file path");
             None
         },
     };
@@ -147,6 +171,16 @@ pub async fn settings_listener(notifications_state: Arc<NotificationsState>, pro
                             },
                             Err(err) => error!(%err, "Failed to get state"),
                         }
+                    }
+                }
+            }
+
+            if let Some(ref credentials_path) = credentials_path {
+                if event.paths.contains(credentials_path) {
+                    if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_) =
+                        event.kind
+                    {
+                        proxy.send_event(Event::ReloadTray).ok();
                     }
                 }
             }

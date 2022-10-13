@@ -512,6 +512,11 @@ pub fn state_path() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("state.json"))
 }
 
+/// Path to the main credentials file
+pub fn credentials_path() -> Result<PathBuf> {
+    Ok(fig_data_dir()?.join("credentials.json"))
+}
+
 /// The path to the saved ssh identities file
 ///
 /// - Linux: `$XDG_DATA_HOME/fig or $HOME/.local/share/fig/access/ssh_saved_identities`

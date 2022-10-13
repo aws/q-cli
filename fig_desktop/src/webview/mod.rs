@@ -65,10 +65,10 @@ use crate::tray::{
     get_context_menu,
 };
 use crate::{
+    file_watcher,
     icons,
     local_ipc,
     secure_ipc,
-    settings,
     DebugState,
     EventLoop,
     InterceptState,
@@ -205,7 +205,7 @@ impl WebviewManager {
             });
         }
 
-        settings::settings_listener(self.notifications_state.clone(), self.event_loop.create_proxy()).await;
+        file_watcher::user_data_listener(self.notifications_state.clone(), self.event_loop.create_proxy()).await;
 
         let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
         let mut tray = if tray_enabled {
