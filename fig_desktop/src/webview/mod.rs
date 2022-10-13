@@ -257,14 +257,15 @@ impl WebviewManager {
                         }
                     }
                 },
-                WryEvent::MenuEvent { menu_id, origin, .. } => {
-                    if let Some(tray) = tray.as_mut() {
-                        tray.set_menu(&get_context_menu(&self.platform_state));
-                    }
-
-                    if origin == MenuType::ContextMenu {
+                WryEvent::MenuEvent { menu_id, origin, .. } => match origin {
+                    MenuType::MenuBar => menu::handle_event(menu_id, &proxy),
+                    MenuType::ContextMenu => {
+                        if let Some(tray) = tray.as_mut() {
+                            tray.set_menu(&get_context_menu(&self.platform_state));
+                        }
                         tray::handle_event(menu_id, &proxy)
-                    }
+                    },
+                    _ => {},
                 },
                 WryEvent::UserEvent(event) => {
                     match event {
@@ -373,6 +374,7 @@ pub fn build_dashboard(
         .with_visible(is_visible)
         .with_always_on_top(false)
         .with_window_icon(Some(util::ICON.clone()))
+        .with_menu(menu::menu_bar())
         .with_theme(*THEME);
 
     match show_onboarding {
@@ -446,7 +448,6 @@ pub fn build_autocomplete(
         .with_always_on_top(true)
         .with_visible(false)
         .with_window_icon(Some(util::ICON.clone()))
-        .with_menu(menu::menu_bar())
         .with_theme(*THEME);
 
     cfg_if!(
