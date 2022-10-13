@@ -121,14 +121,17 @@ pub fn is_headless() -> bool {
 }
 
 #[cfg(target_os = "macos")]
-static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
-    let version = option_env!("VERSION");
-    let build = option_env!("BUILD");
-    match (version, build) {
-        (Some(version), Some(build)) => Some(format!("{version}+{build}")),
-        (Some(version), None) => Some(version.into()),
-        _ => None,
-    }
+static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| match option_env!("FIG_MACOS_BACKPORT") {
+    Some(_) => Some(env!("CARGO_PKG_VERSION").to_string()),
+    None => {
+        let version = option_env!("VERSION");
+        let build = option_env!("BUILD");
+        match (version, build) {
+            (Some(version), Some(build)) => Some(format!("{version}+{build}")),
+            (Some(version), None) => Some(version.into()),
+            _ => None,
+        }
+    },
 });
 
 #[cfg(target_os = "windows")]

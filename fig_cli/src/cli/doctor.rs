@@ -616,7 +616,7 @@ impl DoctorCheck for FigtermSocketCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // Check that the socket exists
-        let term_session = std::env::var("FIGTERM_SESSION_ID").context("No TERM_SESSION_ID")?;
+        let term_session = std::env::var("FIGTERM_SESSION_ID").context("No FIGTERM_SESSION_ID")?;
         let socket_path = fig_util::directories::figterm_socket_path(term_session).context("No figterm path")?;
 
         if let Err(err) = check_file_exists(&socket_path) {

@@ -327,7 +327,7 @@ impl DebugSubcommand {
             },
             DebugSubcommand::Accessibility { action } => match action {
                 Some(AccessibilityAction::Refresh) => {
-                    quit_fig().await?;
+                    quit_fig(true).await?;
 
                     Command::new("tccutil")
                         .args(["reset", "Accessibility", "com.mschrage.fig"])
@@ -337,7 +337,7 @@ impl DebugSubcommand {
                     launch_fig(true, true)?;
                 },
                 Some(AccessibilityAction::Reset) => {
-                    quit_fig().await?;
+                    quit_fig(true).await?;
 
                     Command::new("tccutil")
                         .args(["reset", "Accessibility", "com.mschrage.fig"])

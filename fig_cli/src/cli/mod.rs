@@ -316,7 +316,7 @@ impl Cli {
                     launch_fig(true, true)?;
                     Ok(())
                 },
-                CliRootCommands::Quit => crate::util::quit_fig().await,
+                CliRootCommands::Quit => crate::util::quit_fig(true).await,
                 CliRootCommands::Restart { process } => match process {
                     Processes::App => app::restart_fig().await,
                     Processes::Daemon => Daemon::default().restart().await.context("Failed to restart daemon"),

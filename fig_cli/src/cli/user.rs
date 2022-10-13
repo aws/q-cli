@@ -26,6 +26,7 @@ use serde_json::{
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
+use crate::util::quit_fig;
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
 pub enum RootUserSubcommand {
@@ -159,7 +160,7 @@ impl RootUserSubcommand {
                 }
             },
             Self::Logout => {
-                fig_telemetry::dispatch_emit_track(
+                let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
                     TrackEvent::new(
                         TrackEventType::Logout,
                         TrackSource::Cli,
@@ -167,9 +168,9 @@ impl RootUserSubcommand {
                         empty::<(&str, &str)>(),
                     ),
                     false,
-                )
-                .await
-                .ok();
+                ));
+
+                let quit_join = tokio::spawn(quit_fig(false));
 
                 let mut creds = Credentials::load_credentials()?;
                 creds.clear_credentials();
@@ -183,6 +184,8 @@ impl RootUserSubcommand {
                         .await
                         .ok();
                 }
+
+                let (_, _) = tokio::join!(telem_join, quit_join);
 
                 println!("Logged out");
                 Ok(())

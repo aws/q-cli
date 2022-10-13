@@ -38,16 +38,7 @@ pub async fn get_token() -> Result<String> {
 }
 
 pub fn get_email() -> Option<String> {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            Credentials::load_credentials()
-                .map(|creds| creds.email)
-                .ok()
-                .or_else(|| Some(crate::defaults::get_default("userEmail").ok()))?
-        } else {
-            Credentials::load_credentials().ok().and_then(|creds| creds.email)
-        }
-    }
+    Credentials::load_credentials().ok().and_then(|creds| creds.email)
 }
 
 pub fn is_logged_in() -> bool {
@@ -259,7 +250,9 @@ impl Credentials {
 
             match &self.id_token {
                 Some(id) => {
-                    set_default("id_token", id)?;
+                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
+                        set_default("id_token", id)?;
+                    }
                 },
                 None => {
                     remove_default("id_token").ok();
@@ -268,7 +261,9 @@ impl Credentials {
 
             match &self.access_token {
                 Some(access) => {
-                    set_default("access_token", access)?;
+                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
+                        set_default("access_token", access)?;
+                    }
                 },
                 None => {
                     remove_default("access_token").ok();
@@ -277,7 +272,9 @@ impl Credentials {
 
             match &self.refresh_token {
                 Some(refresh) => {
-                    set_default("refresh_token", refresh)?;
+                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
+                        set_default("refresh_token", refresh)?;
+                    }
                 },
                 None => {
                     remove_default("refresh_token").ok();
@@ -286,7 +283,9 @@ impl Credentials {
 
             match &self.email {
                 Some(email) => {
-                    set_default("userEmail", email)?;
+                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
+                        set_default("userEmail", email)?;
+                    }
                 },
                 None => {
                     remove_default("userEmail").ok();

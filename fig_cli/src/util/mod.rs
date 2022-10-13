@@ -116,9 +116,11 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
     }
 }
 
-pub async fn quit_fig() -> Result<()> {
+pub async fn quit_fig(verbose: bool) -> Result<()> {
     if !is_app_running() {
-        println!("Fig is not running");
+        if verbose {
+            println!("Fig is not running");
+        }
         return Ok(());
     }
 
@@ -136,7 +138,10 @@ pub async fn quit_fig() -> Result<()> {
         .ok();
     });
 
-    println!("Quitting Fig");
+    if verbose {
+        println!("Quitting Fig");
+    }
+
     if quit_command().await.is_err() {
         tokio::time::sleep(Duration::from_millis(500)).await;
         let second_try = quit_command().await;
@@ -169,7 +174,10 @@ pub async fn quit_fig() -> Result<()> {
                     // TODO(chay): Add windows behavior here
                 }
             }
-            println!("Unable to quit Fig");
+            if verbose {
+                println!("Unable to quit Fig");
+            }
+
             second_try?;
         }
     }

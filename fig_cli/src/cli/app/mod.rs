@@ -105,7 +105,7 @@ pub async fn restart_fig() -> Result<()> {
             if #[cfg(target_os = "macos")] {
                 match option_env!("FIG_MACOS_BACKPORT") {
                     Some(_) => {
-                        crate::util::quit_fig().await?;
+                        crate::util::quit_fig(true).await?;
                         tokio::time::sleep(Duration::from_millis(1000)).await;
                         launch_fig(true, true)?;
                     },
@@ -120,7 +120,7 @@ pub async fn restart_fig() -> Result<()> {
                     },
                 }
             } else {
-                crate::util::quit_fig().await?;
+                crate::util::quit_fig(true).await?;
                 tokio::time::sleep(Duration::from_millis(1000)).await;
                 launch_fig(true, true)?;
             }
@@ -284,7 +284,7 @@ impl AppSubcommand {
                 }
             },
             AppSubcommand::Restart => restart_fig().await?,
-            AppSubcommand::Quit => crate::util::quit_fig().await?,
+            AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
                 if is_app_running() {
                     println!("Fig is already running!");

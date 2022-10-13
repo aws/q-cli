@@ -152,7 +152,8 @@ async fn main() {
         platform::gtk::init().expect("Failed initializing GTK");
     }
 
-    let show_onboarding = !fig_settings::state::get_bool_or("desktop.completedOnboarding", false);
+    let show_onboarding =
+        !fig_settings::state::get_bool_or("desktop.completedOnboarding", false) || !fig_request::auth::is_logged_in();
     if show_onboarding {
         tracing::info!("Showing onboarding");
     }
