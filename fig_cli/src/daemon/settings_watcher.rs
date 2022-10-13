@@ -24,7 +24,6 @@ use tracing::{
 };
 
 use super::DaemonStatus;
-use crate::util::fig_bundle;
 
 pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) -> JoinHandle<()> {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
@@ -39,11 +38,10 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     })
     .unwrap();
 
-    let application_path = std::path::Path::new("/Applications/Fig.app");
-    let application_path_clone = std::path::PathBuf::from(application_path);
+    let application_path = std::path::Path::new("/Applications");
 
     if application_path.exists() {
-        match watcher.watch(application_path_clone.as_path(), RecursiveMode::NonRecursive) {
+        match watcher.watch(application_path, RecursiveMode::NonRecursive) {
             Ok(()) => trace!("watching bundle at {application_path:?}"),
             Err(err) => {
                 error!(%err, "failed to watch application path dir");
@@ -163,13 +161,13 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                 }
             }
 
-            if event.paths.contains(&application_path_clone) {
-                info!("Application path changed");
+            let app_bundle_path = std::path::PathBuf::from("/Applications/Fig.app");
+            if event.paths.contains(&app_bundle_path) {
+                info!("application path changed");
 
-                tokio::time::sleep(Duration::from_secs(1)).await;
-
-                if let Some(app_bundle_exists) = fig_bundle() {
-                    if !app_bundle_exists.is_dir() {
+                if event.kind.is_remove() {
+                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    if !app_bundle_path.exists() {
                         // Send uninstall telemetry event
                         let tel_join = tokio::task::spawn(async move {
                             fig_telemetry::emit_track(TrackEvent::new(
