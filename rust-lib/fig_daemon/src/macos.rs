@@ -40,11 +40,15 @@ impl Daemon {
 
     pub async fn start(&self) -> Result<()> {
         let path = LaunchdPlist::new(DAEMON_NAME).get_file_path()?;
-        let output = Command::new("launchctl").arg("load").arg(&path).output().await?;
+        let output = Command::new("launchctl")
+            .args(["load", "-w"])
+            .arg(&path)
+            .output()
+            .await?;
 
         if !output.status.success() {
             return Err(Error::CommandFailed {
-                command: format!("launchctl load {path}"),
+                command: format!("launchctl load -w {path}"),
                 status: output.status,
                 stderr: String::from_utf8_lossy(&output.stderr).into(),
             });
@@ -55,11 +59,15 @@ impl Daemon {
 
     pub async fn stop(&self) -> Result<()> {
         let path = LaunchdPlist::new(DAEMON_NAME).get_file_path()?;
-        let output = Command::new("launchctl").arg("unload").arg(&path).output().await?;
+        let output = Command::new("launchctl")
+            .args(["unload", "-w"])
+            .arg(&path)
+            .output()
+            .await?;
 
         if !output.status.success() {
             return Err(Error::CommandFailed {
-                command: format!("launchctl unload {path}"),
+                command: format!("launchctl unload -w {path}"),
                 status: output.status,
                 stderr: String::from_utf8_lossy(&output.stderr).into(),
             });
