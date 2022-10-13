@@ -74,17 +74,33 @@ pub fn search_xdg_data_dirs(ext: impl AsRef<std::path::Path>) -> Option<PathBuf>
 pub fn is_app_running() -> bool {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let output = match std::process::Command::new("lsappinfo")
-                .args(["info", "-app", "com.mschrage.fig"])
-                .output()
-            {
-                Ok(output) => output,
-                Err(_) => return false,
-            };
+            match option_env!("RUST_MACOS_BACKPORT").is_some() {
+                true => {
+                    use sysinfo::{
+                        ProcessRefreshKind,
+                        RefreshKind,
+                        System,
+                        SystemExt,
+                    };
 
-            match std::str::from_utf8(&output.stdout) {
-                Ok(result) => !result.trim().is_empty(),
-                Err(_) => false,
+                    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+                    let mut processes = s.processes_by_exact_name("fig_desktop");
+                    processes.next().is_some()
+                },
+                false => {
+                    let output = match std::process::Command::new("lsappinfo")
+                    .args(["info", "-app", "com.mschrage.fig"])
+                    .output()
+                    {
+                        Ok(output) => output,
+                        Err(_) => return false,
+                    };
+
+                    match std::str::from_utf8(&output.stdout) {
+                        Ok(result) => !result.trim().is_empty(),
+                        Err(_) => false,
+                    }
+                }
             }
         } else {
             cfg_if! {

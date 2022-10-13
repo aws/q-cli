@@ -84,8 +84,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
         },
         id if id == MenuId::new("issue") => {
             std::process::Command::new("fig")
-                .arg("issue")
-                .arg("Title")
+                .args(["issue", "--force", "bug: "])
                 .output()
                 .ok();
         },

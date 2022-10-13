@@ -569,7 +569,7 @@ pub struct Diagnostics {
 
     fig_running: bool,
     hardware: HardwareInfo,
-    os: Option<OSVersion>,
+    pub os: Option<OSVersion>,
     user_env: CurrentEnvironment,
     env_var: EnvVarDiagnostic,
     integrations: Option<IntegrationDiagnostics>,

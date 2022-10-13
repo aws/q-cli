@@ -26,9 +26,6 @@ tokio = { version = "1.20.1", features = ["process"] }
 tracing = "0.1.36"
 whoami = "1.2.1"
 
-[target.'cfg(target_os = "linux")'.dependencies]
-sysinfo = "0.26.4"
-
 [target.'cfg(target_os = "macos")'.dependencies]
 regex = "1.6.0"
 
@@ -43,6 +40,7 @@ winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.25.0"
+sysinfo = "0.26.4"
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }

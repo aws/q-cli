@@ -20,7 +20,6 @@ pub struct IssueArgs {
 impl IssueArgs {
     pub async fn execute(&self) -> Result<()> {
         // Check if fig is running
-        #[cfg(target_os = "macos")]
         if !self.force && !fig_util::is_app_running() {
             println!(
                 "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
@@ -71,27 +70,25 @@ impl IssueArgs {
             labels.push("integration:ssh".into());
         }
 
-        let environment = Diagnostics::new().await?.user_readable()?.join("\n");
+        let environment = Diagnostics::new().await?;
 
-        println!();
-        println!("{}", "> Environment".bold());
-        println!("```");
-        println!("{environment}");
-        println!("```");
-        println!();
+        let os = match &environment.os {
+            Some(os) => os.to_string(),
+            None => "None".to_owned(),
+        };
+
+        let env_string = environment.user_readable()?.join("\n");
 
         let url = url::Url::parse_with_params("https://github.com/withfig/fig/issues/new", &[
             ("template", "1_main_issue_template.yml"),
             ("title", &issue_title),
             ("labels", &labels.join(",")),
             ("assignees", &assignees.join(",")),
-            (
-                "issue_details",
-                "<!-- Include a detailed description of the issue, and a screenshot/video if you can! -->\n\n",
-            ),
-            ("environment", &environment),
+            ("os", &os),
+            ("environment", &env_string),
         ])?;
 
+        println!("Heading over to GitHub...");
         if fig_util::open_url(url.as_str()).is_err() {
             println!("Issue Url: {}", url.as_str().underlined());
         }
