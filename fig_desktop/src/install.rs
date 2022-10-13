@@ -217,6 +217,20 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
             .status()?;
     }
 
+    if let Ok(home) = home_dir() {
+        let iterm_integration_path = home
+            .join("Library")
+            .join("Application Support")
+            .join("iTerm2")
+            .join("Scripts")
+            .join("AutoLaunch")
+            .join("fig-iterm-integration.scpt");
+
+        if iterm_integration_path.exists() {
+            std::fs::remove_file(&iterm_integration_path).ok();
+        }
+    }
+
     Ok(())
 }
 
