@@ -132,6 +132,9 @@ class IPC: UnixSocketServerDelegate {
     case .openBrowser:
       // Only used on linux
       break
+    case .logLevel:
+      // Only used on linux
+      break
     case .none:
       break
     }

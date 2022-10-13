@@ -4,10 +4,14 @@ use async_trait::async_trait;
 use fig_proto::local::{
     self,
     command,
+    command_response,
     BuildCommand,
+    CommandResponse,
     DebugModeCommand,
     InputMethodAction,
     InputMethodCommand,
+    LogLevelCommand,
+    LogLevelResponse,
     OpenUiElementCommand,
     PromptAccessibilityCommand,
     QuitCommand,
@@ -21,6 +25,7 @@ use fig_util::directories;
 use crate::{
     BufferedUnixStream,
     Error,
+    RecvError,
     SendRecvMessage,
 };
 
@@ -60,6 +65,19 @@ pub async fn set_debug_mode(debug_mode: bool) -> Result<Option<local::CommandRes
         toggle_debug_mode: None,
     });
     send_recv_command_to_socket(command).await
+}
+
+pub async fn set_log_level(level: String) -> Result<Option<String>> {
+    let command = command::Command::LogLevel(LogLevelCommand { level });
+    let resp: Option<local::CommandResponse> = send_recv_command_to_socket(command).await?;
+
+    match resp {
+        Some(CommandResponse {
+            response: Some(command_response::Response::LogLevel(LogLevelResponse { old_level })),
+            ..
+        }) => Ok(old_level),
+        _ => Err(RecvError::InvalidMessageType.into()),
+    }
 }
 
 pub async fn input_method_command(action: InputMethodAction) -> Result<()> {

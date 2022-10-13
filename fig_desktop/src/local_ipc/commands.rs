@@ -5,6 +5,8 @@ use fig_proto::local::{
     DebugModeCommand,
     DiagnosticsCommand,
     DiagnosticsResponse,
+    LogLevelCommand,
+    LogLevelResponse,
     OpenBrowserCommand,
     OpenUiElementCommand,
     QuitCommand,
@@ -162,4 +164,17 @@ pub async fn prompt_for_accessibility_permission() -> LocalResult {
             })
         }
     }
+}
+
+pub fn log_level(LogLevelCommand { level }: LogLevelCommand) -> LocalResult {
+    let old_level = fig_log::set_fig_log_level(level).map_err(|err| LocalResponse::Error {
+        code: None,
+        message: Some(format!("Error setting log level: {err}")),
+    })?;
+
+    Ok(LocalResponse::Message(Box::new(CommandResponseTypes::LogLevel(
+        LogLevelResponse {
+            old_level: Some(old_level),
+        },
+    ))))
 }

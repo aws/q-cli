@@ -38,6 +38,8 @@ pub enum RecvError {
     Parse(#[from] fig_proto::FigMessageParseError),
     #[error(transparent)]
     Decode(#[from] fig_proto::FigMessageDecodeError),
+    #[error("invalid message type")]
+    InvalidMessageType,
 }
 
 impl RecvError {

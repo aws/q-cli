@@ -209,6 +209,12 @@ impl DebugSubcommand {
                     }
                 }
 
+                if files.is_empty() || files.iter().any(|f| f == "fig_desktop") {
+                    if let Err(err) = fig_ipc::local::set_log_level("DEBUG".into()).await {
+                        println!("Could not set log level for fig_desktop: {err}");
+                    }
+                }
+
                 tokio::spawn(async move {
                     tokio::signal::ctrl_c().await.unwrap();
                     let code = match fig_settings::state::set_value("developer.logging", json!(false)) {
@@ -222,6 +228,10 @@ impl DebugSubcommand {
                             .await
                     {
                         println!("Could not restore log level for daemon: {err}");
+                    }
+
+                    if let Err(err) = fig_ipc::local::set_log_level("INFO".into()).await {
+                        println!("Could not restore log level for fig_desktop: {err}");
                     }
 
                     std::process::exit(code);
