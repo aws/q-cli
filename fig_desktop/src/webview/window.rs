@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::fmt;
+use std::sync::atomic::AtomicBool;
 
 use parking_lot::RwLock;
 use tokio::sync::mpsc::UnboundedSender;
@@ -10,6 +11,7 @@ use wry::application::dpi::{
     PhysicalSize,
     Position,
 };
+use wry::application::window::Theme;
 use wry::webview::{
     WebContext,
     WebView,
@@ -51,10 +53,11 @@ pub struct WindowState {
     pub position: RwLock<PhysicalPosition<i32>>,
     pub size: RwLock<PhysicalSize<u32>>,
     pub placement: RwLock<Placement>,
+    pub enabled: AtomicBool,
 }
 
 impl WindowState {
-    pub fn new(window_id: WindowId, webview: WebView, context: WebContext) -> Self {
+    pub fn new(window_id: WindowId, webview: WebView, context: WebContext, enabled: bool) -> Self {
         let position = webview
             .window()
             .inner_position()
@@ -70,6 +73,7 @@ impl WindowState {
             position: RwLock::new(position),
             size: RwLock::new(size),
             placement: RwLock::new(Placement::Absolute),
+            enabled: AtomicBool::new(enabled),
         }
     }
 
@@ -246,10 +250,10 @@ impl WindowState {
                     .evaluate_script(&format!("window.location.pathname = '{path}';"))
                     .unwrap();
             },
-            WindowEvent::Emit { event, payload } => {
+            WindowEvent::Emit { event_name, payload } => {
                 self.webview
                     .evaluate_script(&format!(
-                        "document.dispatchEvent(new CustomEvent('{event}', {{'detail': `{payload}`}}));"
+                        "document.dispatchEvent(new CustomEvent('{event_name}', {{'detail': `{payload}`}}));"
                     ))
                     .unwrap();
             },
@@ -286,6 +290,20 @@ impl WindowState {
 
                 }
             },
+            WindowEvent::SetEnabled(enabled) => self.set_enabled(enabled),
+            WindowEvent::SetTheme(theme) => self.set_theme(theme),
         }
+    }
+
+    pub fn set_enabled(&self, enabled: bool) {
+        self.enabled.store(enabled, std::sync::atomic::Ordering::SeqCst);
+    }
+
+    pub fn enabled(&self) -> bool {
+        self.enabled.load(std::sync::atomic::Ordering::SeqCst)
+    }
+
+    pub fn set_theme(&self, _theme: Option<Theme>) {
+        // unimplemented!();
     }
 }

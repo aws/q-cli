@@ -23,7 +23,8 @@ use tracing::{
 };
 
 use crate::event::Event;
-use crate::notification::NotificationsState;
+use crate::notification_bus::NOTIFICATION_BUS;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::EventLoopProxy;
 
 static SETTINGS: Lazy<Mutex<Map<String, Value>>> =
@@ -32,7 +33,13 @@ static SETTINGS: Lazy<Mutex<Map<String, Value>>> =
 static STATE: Lazy<Mutex<Map<String, Value>>> =
     Lazy::new(|| Mutex::new(fig_settings::state::get_map().unwrap_or_default()));
 
-pub async fn user_data_listener(notifications_state: Arc<NotificationsState>, proxy: EventLoopProxy) {
+pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsState>, proxy: EventLoopProxy) {
+    // We need to initialize the settings and state here because the diffing logic depends it
+    {
+        let _ = *SETTINGS.lock();
+        let _ = *STATE.lock();
+    }
+
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     let mut watcher = notify::recommended_watcher(move |res| match res {
@@ -139,6 +146,25 @@ pub async fn user_data_listener(notifications_state: Arc<NotificationsState>, pr
                                     .await
                                     .unwrap();
 
+                                println!("settings changed");
+
+                                json_map_diff(
+                                    &SETTINGS.lock(),
+                                    &settings,
+                                    |key, value| {
+                                        println!("Setting changed: {} = {}", key, value);
+                                        NOTIFICATION_BUS.send_settings_new(key, value);
+                                    },
+                                    |key, old, new| {
+                                        println!("Setting changed: {} = {} -> {}", key, old, new);
+                                        NOTIFICATION_BUS.send_settings_changed(key, old, new);
+                                    },
+                                    |key, value| {
+                                        println!("Setting removed: {} = {}", key, value);
+                                        NOTIFICATION_BUS.send_settings_remove(key, value);
+                                    },
+                                );
+
                                 *SETTINGS.lock() = settings;
                             },
                             Err(err) => error!(%err, "Failed to get settings"),
@@ -167,6 +193,20 @@ pub async fn user_data_listener(notifications_state: Arc<NotificationsState>, pr
                                     .await
                                     .unwrap();
 
+                                json_map_diff(
+                                    &STATE.lock(),
+                                    &state,
+                                    |key, value| {
+                                        NOTIFICATION_BUS.send_state_new(key, value);
+                                    },
+                                    |key, old, new| {
+                                        NOTIFICATION_BUS.send_state_changed(key, old, new);
+                                    },
+                                    |key, value| {
+                                        NOTIFICATION_BUS.send_state_remove(key, value);
+                                    },
+                                );
+
                                 *STATE.lock() = state;
                             },
                             Err(err) => error!(%err, "Failed to get state"),
@@ -186,4 +226,29 @@ pub async fn user_data_listener(notifications_state: Arc<NotificationsState>, pr
             }
         }
     });
+}
+
+// Diffs the old and new settings and calls the appropriate callbacks
+fn json_map_diff(
+    map_a: &Map<String, Value>,
+    map_b: &Map<String, Value>,
+    on_new: impl Fn(&str, &Value),
+    on_changed: impl Fn(&str, &Value, &Value),
+    on_removed: impl Fn(&str, &Value),
+) {
+    for (key, value) in map_a {
+        if let Some(other_value) = map_b.get(key) {
+            if value != other_value {
+                on_changed(key, value, other_value);
+            }
+        } else {
+            on_removed(key, value);
+        }
+    }
+
+    for (key, value) in map_b {
+        if !map_a.contains_key(key) {
+            on_new(key, value);
+        }
+    }
 }

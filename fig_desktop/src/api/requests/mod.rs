@@ -35,27 +35,25 @@ use tracing::{
 };
 
 use crate::event::{
+    EmitEventName,
     Event,
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::notification::NotificationsState;
 use crate::platform::PlatformState;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::window::WindowId;
 use crate::{
     DebugState,
     EventLoopProxy,
     InterceptState,
-    FIG_PROTO_MESSAGE_RECEIVED,
 };
-
-static FIG_GLOBAL_ERROR_OCCURRED: &str = "FigGlobalErrorOccurred";
 
 struct Context<'a> {
     debug_state: &'a DebugState,
     figterm_state: &'a FigtermState,
     intercept_state: &'a InterceptState,
-    notifications_state: &'a NotificationsState,
+    notifications_state: &'a WebviewNotificationsState,
     platform_state: &'a PlatformState,
     proxy: &'a EventLoopProxy,
     window_id: &'a WindowId,
@@ -149,7 +147,7 @@ pub async fn api_request(
     debug_state: &DebugState,
     figterm_state: &FigtermState,
     intercept_state: &InterceptState,
-    notifications_state: &NotificationsState,
+    notifications_state: &WebviewNotificationsState,
     platform_state: &PlatformState,
     proxy: &EventLoopProxy,
 ) {
@@ -195,9 +193,9 @@ pub async fn api_request(
         .send_event(Event::WindowEvent {
             window_id,
             window_event: WindowEvent::Emit {
-                event: match response.id {
-                    Some(_) => FIG_PROTO_MESSAGE_RECEIVED.into(),
-                    None => FIG_GLOBAL_ERROR_OCCURRED.into(),
+                event_name: match response.id {
+                    Some(_) => EmitEventName::ProtoMessageReceived,
+                    None => EmitEventName::GlobalErrorOccurred,
                 },
                 payload: fig_desktop_api::handler::response_to_b64(response),
             },

@@ -62,12 +62,12 @@ use crate::figterm::{
     FigtermSessionId,
     FigtermState,
 };
-use crate::notification::NotificationsState;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::EventLoopProxy;
 
 pub async fn start_secure_ipc(
     figterm_state: Arc<FigtermState>,
-    notifications_state: Arc<NotificationsState>,
+    notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
 ) -> Result<()> {
     let socket_path = directories::secure_socket_path()?;
@@ -96,7 +96,7 @@ pub async fn start_secure_ipc(
 async fn handle_secure_ipc(
     stream: UnixStream,
     figterm_state: Arc<FigtermState>,
-    notifications_state: Arc<NotificationsState>,
+    notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
 ) {
     let (reader, writer) = tokio::io::split(stream);

@@ -6,7 +6,7 @@ mod file_watcher;
 mod icons;
 mod install;
 mod local_ipc;
-mod notification;
+pub mod notification_bus;
 mod platform;
 mod secure_ipc;
 mod tray;
@@ -20,7 +20,6 @@ use event::Event;
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
 use fig_util::consts::FIG_DESKTOP_PROCESS_NAME;
-use notification::NotificationsState;
 use parking_lot::RwLock;
 use sysinfo::{
     get_current_pid,
@@ -32,6 +31,7 @@ use sysinfo::{
 };
 use tracing::warn;
 use url::Url;
+use webview::notification::WebviewNotificationsState;
 use webview::{
     build_autocomplete,
     build_dashboard,
@@ -155,24 +155,33 @@ async fn main() {
 
     let show_onboarding =
         !fig_settings::state::get_bool_or("desktop.completedOnboarding", false) || !fig_request::auth::is_logged_in();
+
     if show_onboarding {
         tracing::info!("Showing onboarding");
     }
 
     let mut webview_manager = WebviewManager::new();
     webview_manager
-        .build_webview(DASHBOARD_ID, build_dashboard, MissionControlOptions {
-            show_onboarding,
-            force_visible: !cli.no_dashboard || page.is_some(),
-            page,
-        })
+        .build_webview(
+            DASHBOARD_ID,
+            build_dashboard,
+            MissionControlOptions {
+                show_onboarding,
+                force_visible: !cli.no_dashboard || page.is_some(),
+                page,
+            },
+            true,
+        )
         .unwrap();
 
-    if !fig_settings::settings::get_bool_or("autocomplete.disable", false) {
-        webview_manager
-            .build_webview(AUTOCOMPLETE_ID, build_autocomplete, AutocompleteOptions {})
-            .unwrap();
-    }
+    webview_manager
+        .build_webview(
+            AUTOCOMPLETE_ID,
+            build_autocomplete,
+            AutocompleteOptions {},
+            !fig_settings::settings::get_bool_or("autocomplete.disable", false),
+        )
+        .unwrap();
 
     webview_manager.run().await.unwrap();
 }

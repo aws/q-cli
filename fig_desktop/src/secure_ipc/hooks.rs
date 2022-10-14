@@ -29,6 +29,7 @@ use tracing::{
 };
 
 use crate::event::{
+    EmitEventName,
     Event,
     WindowEvent,
 };
@@ -37,19 +38,18 @@ use crate::figterm::{
     FigtermState,
     SessionMetrics,
 };
-use crate::notification::NotificationsState;
 use crate::platform::PlatformBoundEvent;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
-    FIG_PROTO_MESSAGE_RECEIVED,
 };
 
 pub async fn edit_buffer(
     hook: &EditBufferHook,
     session_id: &FigtermSessionId,
     figterm_state: Arc<FigtermState>,
-    notifications_state: &NotificationsState,
+    notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     let old_metrics = figterm_state.with_update(session_id.clone(), |session| {
@@ -133,7 +133,7 @@ pub async fn edit_buffer(
             .send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
-                    event: FIG_PROTO_MESSAGE_RECEIVED.into(),
+                    event_name: EmitEventName::ProtoMessageReceived,
                     payload: base64::encode(encoded),
                 },
             })
@@ -158,7 +158,7 @@ pub async fn edit_buffer(
 pub async fn prompt(
     hook: &PromptHook,
     session_id: &FigtermSessionId,
-    notifications_state: &NotificationsState,
+    notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     notifications_state
@@ -185,7 +185,7 @@ pub async fn prompt(
 pub async fn pre_exec(
     hook: &PreExecHook,
     session_id: &FigtermSessionId,
-    notifications_state: &NotificationsState,
+    notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     notifications_state
@@ -212,7 +212,7 @@ pub async fn pre_exec(
 
 pub async fn intercepted_key(
     InterceptedKeyHook { action, context, .. }: InterceptedKeyHook,
-    notifications_state: &NotificationsState,
+    notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     debug!(%action, "Intercepted Key Action");

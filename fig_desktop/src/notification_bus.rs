@@ -1,0 +1,127 @@
+use dashmap::DashMap;
+use fnv::FnvBuildHasher;
+use once_cell::sync::Lazy;
+use tokio::sync::broadcast::{
+    Receiver,
+    Sender,
+};
+
+const CHANNEL_SIZE: usize = 16;
+
+pub static NOTIFICATION_BUS: Lazy<NotificationBus> = Lazy::new(NotificationBus::default);
+
+#[derive(Debug, Clone)]
+pub enum JsonNotification {
+    NewValue {
+        new: serde_json::Value,
+    },
+    ChangedValue {
+        old: serde_json::Value,
+        new: serde_json::Value,
+    },
+    RemoveValue {
+        old: serde_json::Value,
+    },
+}
+
+impl JsonNotification {
+    pub fn value(self) -> Option<serde_json::Value> {
+        match self {
+            JsonNotification::NewValue { new } => Some(new),
+            JsonNotification::ChangedValue { new, .. } => Some(new),
+            JsonNotification::RemoveValue { .. } => None,
+        }
+    }
+
+    pub fn as_bool(self) -> Option<bool> {
+        self.value().and_then(|value| value.as_bool())
+    }
+
+    pub fn as_string(self) -> Option<String> {
+        self.value().and_then(|value| value.as_str().map(|s| s.into()))
+    }
+}
+
+#[derive(Debug, Default)]
+pub struct NotificationBus {
+    state_channels: DashMap<String, Sender<JsonNotification>, FnvBuildHasher>,
+    settings_channels: DashMap<String, Sender<JsonNotification>, FnvBuildHasher>,
+}
+
+impl NotificationBus {
+    pub fn subscribe_state(&self, key: String) -> Receiver<JsonNotification> {
+        self.state_channels
+            .entry(key)
+            .or_insert_with(|| {
+                let (tx, _) = tokio::sync::broadcast::channel(CHANNEL_SIZE);
+                tx
+            })
+            .subscribe()
+    }
+
+    pub fn subscribe_settings(&self, key: String) -> Receiver<JsonNotification> {
+        self.settings_channels
+            .entry(key)
+            .or_insert_with(|| {
+                let (tx, _) = tokio::sync::broadcast::channel(CHANNEL_SIZE);
+                tx
+            })
+            .subscribe()
+    }
+
+    pub fn send_state(&self, key: impl AsRef<str>, value: JsonNotification) {
+        if let Some(tx) = self.state_channels.get(key.as_ref()) {
+            tx.send(value).ok();
+        }
+    }
+
+    pub fn send_settings(&self, key: impl AsRef<str>, value: JsonNotification) {
+        if let Some(tx) = self.settings_channels.get(key.as_ref()) {
+            tx.send(value).ok();
+        }
+    }
+
+    pub fn send_state_new(&self, key: impl AsRef<str>, value: &serde_json::Value) {
+        if let Some(tx) = self.state_channels.get(key.as_ref()) {
+            tx.send(JsonNotification::NewValue { new: value.clone() }).ok();
+        }
+    }
+
+    pub fn send_state_remove(&self, key: impl AsRef<str>, value: &serde_json::Value) {
+        if let Some(tx) = self.state_channels.get(key.as_ref()) {
+            tx.send(JsonNotification::RemoveValue { old: value.clone() }).ok();
+        }
+    }
+
+    pub fn send_state_changed(&self, key: impl AsRef<str>, old: &serde_json::Value, new: &serde_json::Value) {
+        if let Some(tx) = self.state_channels.get(key.as_ref()) {
+            tx.send(JsonNotification::ChangedValue {
+                old: old.clone(),
+                new: new.clone(),
+            })
+            .ok();
+        }
+    }
+
+    pub fn send_settings_new(&self, key: impl AsRef<str>, value: &serde_json::Value) {
+        if let Some(tx) = self.settings_channels.get(key.as_ref()) {
+            tx.send(JsonNotification::NewValue { new: value.clone() }).ok();
+        }
+    }
+
+    pub fn send_settings_remove(&self, key: impl AsRef<str>, value: &serde_json::Value) {
+        if let Some(tx) = self.settings_channels.get(key.as_ref()) {
+            tx.send(JsonNotification::RemoveValue { old: value.clone() }).ok();
+        }
+    }
+
+    pub fn send_settings_changed(&self, key: impl AsRef<str>, old: &serde_json::Value, new: &serde_json::Value) {
+        if let Some(tx) = self.settings_channels.get(key.as_ref()) {
+            tx.send(JsonNotification::ChangedValue {
+                old: old.clone(),
+                new: new.clone(),
+            })
+            .ok();
+        }
+    }
+}

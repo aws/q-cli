@@ -8,13 +8,13 @@ use super::{
     RequestResultImpl,
 };
 use crate::webview::window::WindowId;
-use crate::NotificationsState;
+use crate::WebviewNotificationsState;
 
 pub async fn handle_request(
     request: NotificationRequest,
     window_id: WindowId,
     message_id: i64,
-    state: &NotificationsState,
+    state: &WebviewNotificationsState,
 ) -> RequestResult {
     let notification_type = NotificationType::from_i32(request.r#type.unwrap()).unwrap();
 
@@ -29,7 +29,7 @@ fn subscribe(
     window_id: WindowId,
     channel: i64,
     notification_type: NotificationType,
-    state: &NotificationsState,
+    state: &WebviewNotificationsState,
 ) -> RequestResult {
     if notification_type == NotificationType::All {
         return RequestResult::error("Cannot subscribe to All notification type");
@@ -45,7 +45,11 @@ fn subscribe(
     RequestResult::success()
 }
 
-fn unsubscribe(window_id: &WindowId, notification_type: NotificationType, state: &NotificationsState) -> RequestResult {
+fn unsubscribe(
+    window_id: &WindowId,
+    notification_type: NotificationType,
+    state: &WebviewNotificationsState,
+) -> RequestResult {
     if notification_type == NotificationType::All {
         return unsubscribe_all(window_id, state);
     }
@@ -65,7 +69,7 @@ fn unsubscribe(window_id: &WindowId, notification_type: NotificationType, state:
     RequestResult::success()
 }
 
-fn unsubscribe_all(window_id: &WindowId, state: &NotificationsState) -> RequestResult {
+fn unsubscribe_all(window_id: &WindowId, state: &WebviewNotificationsState) -> RequestResult {
     if let Some(subscriptions) = state.subscriptions.get(window_id) {
         subscriptions.clear();
     }

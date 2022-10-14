@@ -1,4 +1,5 @@
 pub mod menu;
+pub mod notification;
 mod util;
 pub mod window;
 
@@ -48,13 +49,17 @@ use wry::webview::{
     WebViewBuilder,
 };
 
+use self::notification::WebviewNotificationsState;
 use crate::api::api_request;
 use crate::event::{
     Event,
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::notification::NotificationsState;
+use crate::notification_bus::{
+    JsonNotification,
+    NOTIFICATION_BUS,
+};
 use crate::platform::{
     PlatformBoundEvent,
     PlatformState,
@@ -71,6 +76,7 @@ use crate::{
     secure_ipc,
     DebugState,
     EventLoop,
+    EventLoopProxy,
     InterceptState,
 };
 
@@ -80,29 +86,34 @@ pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
+fn map_theme(theme: &str) -> Option<Theme> {
+    match theme {
+        "dark" => Some(Theme::Dark),
+        "light" => Some(Theme::Light),
+        _ => None,
+    }
+}
+
 pub static THEME: Lazy<Option<Theme>> = Lazy::new(|| {
-    match fig_settings::settings::get_string("app.theme")
+    fig_settings::settings::get_string("app.theme")
         .ok()
         .flatten()
         .as_deref()
-    {
-        Some("light") => Some(Theme::Light),
-        Some("dark") => Some(Theme::Dark),
-        _ => None,
-    }
+        .and_then(map_theme)
 });
 
-pub type FigWindowMap = DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>;
+pub type FigIdMap = DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>;
+pub type WryIdMap = DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>;
 
 pub struct WebviewManager {
-    fig_id_map: FigWindowMap,
-    window_id_map: DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>,
+    fig_id_map: Arc<FigIdMap>,
+    window_id_map: Arc<WryIdMap>,
     event_loop: EventLoop,
     debug_state: Arc<DebugState>,
     figterm_state: Arc<FigtermState>,
     intercept_state: Arc<InterceptState>,
     platform_state: Arc<PlatformState>,
-    notifications_state: Arc<NotificationsState>,
+    notifications_state: Arc<WebviewNotificationsState>,
 }
 
 impl Default for WebviewManager {
@@ -118,7 +129,7 @@ impl Default for WebviewManager {
             figterm_state: Arc::new(FigtermState::default()),
             intercept_state: Arc::new(InterceptState::default()),
             platform_state: Arc::new(PlatformState::new(proxy)),
-            notifications_state: Arc::new(NotificationsState::default()),
+            notifications_state: Arc::new(WebviewNotificationsState::default()),
         }
     }
 }
@@ -128,8 +139,8 @@ impl WebviewManager {
         Self::default()
     }
 
-    fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext) {
-        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview, context));
+    fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext, enabled: bool) {
+        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview, context, enabled));
         self.fig_id_map.insert(window_id, webview_arc.clone());
         self.window_id_map
             .insert(webview_arc.webview.window().id(), webview_arc);
@@ -140,13 +151,14 @@ impl WebviewManager {
         window_id: WindowId,
         builder: impl Fn(&mut WebContext, &EventLoop, T) -> wry::Result<WebView>,
         options: T,
+        enabled: bool,
     ) -> anyhow::Result<()> {
         let context_path = directories::fig_data_dir()?
             .join("webcontexts")
             .join(window_id.0.as_ref());
         let mut context = WebContext::new(Some(context_path));
         let webview = builder(&mut context, &self.event_loop, options)?;
-        self.insert_webview(window_id, webview, context);
+        self.insert_webview(window_id, webview, context, enabled);
         Ok(())
     }
 
@@ -207,6 +219,8 @@ impl WebviewManager {
 
         file_watcher::user_data_listener(self.notifications_state.clone(), self.event_loop.create_proxy()).await;
 
+        init_webview_notification_listeners(self.event_loop.create_proxy()).await;
+
         let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
         let mut tray = if tray_enabled {
             Some(
@@ -240,9 +254,7 @@ impl WebviewManager {
                                     *control_flow = ControlFlow::Exit;
                                 }
                             },
-                            WryWindowEvent::ThemeChanged(_theme) => {
-                                // TODO: handle this
-                            },
+                            WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(Some(theme)),
                             WryWindowEvent::Focused(true) => {
                                 if window_state.window_id == DASHBOARD_ID {
                                     proxy
@@ -274,12 +286,14 @@ impl WebviewManager {
                             window_event,
                         } => match self.fig_id_map.get(&window_id) {
                             Some(window_state) => {
-                                window_state.handle(
-                                    window_event,
-                                    &self.figterm_state,
-                                    &self.platform_state,
-                                    &api_handler_tx,
-                                );
+                                if window_state.enabled() || window_event.is_allowed_while_disabled() {
+                                    window_state.handle(
+                                        window_event,
+                                        &self.figterm_state,
+                                        &self.platform_state,
+                                        &api_handler_tx,
+                                    );
+                                }
                             },
                             None => {
                                 // TODO(grant): figure out how to handle this gracefully
@@ -287,12 +301,41 @@ impl WebviewManager {
                                 trace!(?window_event, "Event");
                             },
                         },
+                        Event::WindowEventAll { event } => {
+                            for window_state in self.window_id_map.iter() {
+                                if window_state.enabled() || event.is_allowed_while_disabled() {
+                                    window_state.handle(
+                                        event.clone(),
+                                        &self.figterm_state,
+                                        &self.platform_state,
+                                        &api_handler_tx,
+                                    );
+                                }
+                            }
+                        },
                         Event::ControlFlow(new_control_flow) => {
                             *control_flow = new_control_flow;
                         },
                         Event::ReloadTray => {
                             if let Some(tray) = tray.as_mut() {
                                 tray.set_menu(&get_context_menu(&self.platform_state));
+                            }
+                        },
+                        Event::SetTrayEnabled(enabled) => {
+                            if enabled {
+                                if tray.is_none() {
+                                    tray = Some(
+                                        build_tray(
+                                            window_target,
+                                            &self.debug_state,
+                                            &self.figterm_state,
+                                            &self.platform_state,
+                                        )
+                                        .unwrap(),
+                                    );
+                                }
+                            } else {
+                                tray = None;
                             }
                         },
                         Event::PlatformBoundEvent(native_event) => {
@@ -401,7 +444,7 @@ pub fn build_dashboard(
         format!("{base_url}/onboarding/welcome")
     } else {
         match page {
-            Some(page) => format!("{base_url}/{}", page),
+            Some(page) => format!("{base_url}/{page}"),
             None => base_url,
         }
     };
@@ -520,4 +563,62 @@ pub fn build_autocomplete(
         .build()?;
 
     Ok(webview)
+}
+
+async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
+    macro_rules! settings_watcher {
+        ($name:expr, $on_update:expr) => {{
+            let proxy = proxy.clone();
+            tokio::spawn(async move {
+                let mut rx = NOTIFICATION_BUS.subscribe_settings($name.into());
+                loop {
+                    let res = rx.recv().await;
+                    match res {
+                        Ok(val) => {
+                            #[allow(clippy::redundant_closure_call)]
+                            ($on_update)(val, &proxy);
+                        },
+                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                            warn!("Notification bus '{}' lagged by {n} messages", $name);
+                        },
+                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                    }
+                }
+            });
+        };};
+    }
+
+    // This one isnt working properly and permanently locks autocomplete :(
+    // settings_watcher!(
+    //     "autocomplete.disable",
+    //     |notification: JsonNotification, proxy: &EventLoopProxy| {
+    //         let enabled = !notification.as_bool().unwrap_or(false);
+    //         debug!(%enabled, "Autocomplete");
+    //         proxy
+    //             .send_event(Event::WindowEvent {
+    //                 window_id: AUTOCOMPLETE_ID,
+    //                 window_event: WindowEvent::SetEnabled(enabled),
+    //             })
+    //             .unwrap();
+    //     }
+    // );
+
+    settings_watcher!("app.theme", |notification: JsonNotification, proxy: &EventLoopProxy| {
+        let theme = notification.as_string().as_deref().and_then(map_theme);
+        debug!(?theme, "Theme changed");
+        proxy
+            .send_event(Event::WindowEventAll {
+                event: WindowEvent::SetTheme(theme),
+            })
+            .unwrap();
+    });
+
+    settings_watcher!(
+        "app.hideMenubarIcon",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let enabled = !notification.as_bool().unwrap_or(false);
+            debug!(%enabled, "Tray icon");
+            proxy.send_event(Event::SetTrayEnabled(enabled)).unwrap();
+        }
+    );
 }

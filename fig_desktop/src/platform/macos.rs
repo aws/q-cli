@@ -83,7 +83,7 @@ use crate::icons::{
 };
 use crate::utils::Rect;
 use crate::webview::window::WindowId;
-use crate::webview::FigWindowMap;
+use crate::webview::FigIdMap;
 use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,
@@ -163,7 +163,7 @@ impl PlatformStateImpl {
         self: &Arc<Self>,
         event: PlatformBoundEvent,
         window_target: &EventLoopWindowTarget,
-        window_map: &FigWindowMap,
+        window_map: &FigIdMap,
     ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {

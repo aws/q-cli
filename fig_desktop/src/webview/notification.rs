@@ -11,21 +11,19 @@ use fig_proto::prost::Message;
 use fnv::FnvBuildHasher;
 
 use crate::event::{
+    EmitEventName,
     Event,
     WindowEvent,
 };
 use crate::webview::window::WindowId;
-use crate::{
-    EventLoopProxy,
-    FIG_PROTO_MESSAGE_RECEIVED,
-};
+use crate::EventLoopProxy;
 
 #[derive(Debug, Default)]
-pub struct NotificationsState {
+pub struct WebviewNotificationsState {
     pub subscriptions: DashMap<WindowId, DashMap<NotificationType, i64, FnvBuildHasher>, FnvBuildHasher>,
 }
 
-impl NotificationsState {
+impl WebviewNotificationsState {
     pub async fn send_notification(
         &self,
         notification_type: &NotificationType,
@@ -49,7 +47,7 @@ impl NotificationsState {
             proxy.send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
-                    event: FIG_PROTO_MESSAGE_RECEIVED.into(),
+                    event_name: EmitEventName::ProtoMessageReceived,
                     payload: base64::encode(encoded),
                 },
             })?

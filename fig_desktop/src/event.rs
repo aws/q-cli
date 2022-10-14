@@ -1,4 +1,5 @@
 use wry::application::event_loop::ControlFlow;
+use wry::application::window::Theme;
 
 use crate::platform::PlatformBoundEvent;
 use crate::utils::Rect;
@@ -11,11 +12,14 @@ pub enum Event {
         window_id: WindowId,
         window_event: WindowEvent,
     },
+    WindowEventAll {
+        event: WindowEvent,
+    },
+
     PlatformBoundEvent(PlatformBoundEvent),
-
     ControlFlow(ControlFlow),
-
     ReloadTray,
+    SetTrayEnabled(bool),
 }
 
 impl From<PlatformBoundEvent> for Event {
@@ -58,8 +62,25 @@ pub enum Placement {
     RelativeTo((Rect<i32, i32>, RelativeDirection, ClippingBehavior)),
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
+pub enum EmitEventName {
+    ProtoMessageReceived,
+    GlobalErrorOccurred,
+}
+
+impl std::fmt::Display for EmitEventName {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        f.write_str(match self {
+            Self::ProtoMessageReceived => "FigProtoMessageRecieved",
+            Self::GlobalErrorOccurred => "FigGlobalErrorOccurred",
+        })
+    }
+}
+
+#[derive(Debug, Clone)]
 pub enum WindowEvent {
+    SetEnabled(bool),
+    SetTheme(Option<Theme>),
     Reanchor {
         x: i32,
         y: i32,
@@ -95,7 +116,7 @@ pub enum WindowEvent {
     HideSoft,
     Show,
     Emit {
-        event: String,
+        event_name: EmitEventName,
         payload: String,
     },
     NavigateRelative {
@@ -110,4 +131,10 @@ pub enum WindowEvent {
     },
     Devtools,
     DebugMode(bool),
+}
+
+impl WindowEvent {
+    pub fn is_allowed_while_disabled(&self) -> bool {
+        matches!(self, WindowEvent::Hide | WindowEvent::HideSoft)
+    }
 }

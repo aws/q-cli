@@ -17,7 +17,7 @@ icon = [
     "./icons/32x32.png",
     "./icons/48x48.png",
     "./icons/512x512.png",
-    "./icons/64x64.png"
+    "./icons/64x64.png",
 ]
 identifier = "com.mschrage.fig"
 resource = "./autocomplete-icons/*"
@@ -66,12 +66,17 @@ serde_json = "1.0.86"
 shellexpand = "2.1.2"
 sysinfo = "0.26.3"
 time = { version = "=0.3.15" }
-tokio = { version = "1", features = [ "full" ] }
+tokio = { version = "1", features = ["full"] }
 tracing = "0.1.36"
 url = "2.3.1"
 which = "4.3.0"
 whoami = "1.2.1"
-wry = { version = "0.21.1", default-features = false, features = ["tray", "protocol", "devtools", "transparent"] }
+wry = { version = "0.21.1", default-features = false, features = [
+    "tray",
+    "protocol",
+    "devtools",
+    "transparent",
+] }
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
 version = "0.42.0"
@@ -94,7 +99,7 @@ features = [
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus = { path = "../rust-lib/dbus" }
 freedesktop-icons = "0.2.1"
-gtk = { version = "0.15", features = [ "v3_22" ] }
+gtk = { version = "0.15", features = ["v3_22"] }
 x11rb = "0.10.1"
 zbus = "3.2.0"
 
