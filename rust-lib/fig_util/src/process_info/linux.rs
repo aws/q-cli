@@ -1,6 +1,10 @@
 use std::path::PathBuf;
 use std::str::FromStr;
 
+pub trait LinuxExt {
+    fn cmdline(&self) -> Option<String>;
+}
+
 use super::{
     Pid,
     PidExt,
@@ -25,5 +29,13 @@ impl PidExt for Pid {
 
     fn exe(&self) -> Option<PathBuf> {
         std::path::PathBuf::from(format!("/proc/{self}/exe")).read_link().ok()
+    }
+}
+
+impl LinuxExt for Pid {
+    fn cmdline(&self) -> Option<String> {
+        std::fs::read_to_string(&format!("/proc/{self}/cmdline"))
+            .ok()
+            .map(|s| s.replace('\0', ""))
     }
 }

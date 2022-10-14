@@ -407,6 +407,8 @@ impl InternalSubcommand {
                             exit(2)
                         } else {
                             use fig_util::process_info::PidExt;
+                            use fig_util::process_info::LinuxExt;
+
                             match (|| {
                                 let current_pid = fig_util::process_info::Pid::current();
 
@@ -416,13 +418,24 @@ impl InternalSubcommand {
 
                                 let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
+                                if fig_util::system_info::in_ssh() {
+                                    if std::env::var_os("FIG_TERM").is_some() {
+                                        return Some((false, "❌ In SSH and FIG_TERM is set".into()));
+                                    } else {
+                                        return Some((true, "✅ In SSH and FIG_TERM is not set".into()));
+                                    }
+                                }
+
                                 let grandparent_pid = parent_pid.parent()?;
                                 let grandparent_path = grandparent_pid.exe()?;
                                 let grandparent_name = grandparent_path.file_name()?.to_str()?;
+                                let grandparent_cmdline = grandparent_pid.cmdline()?;
+                                let grandparent_exe = grandparent_cmdline.split('/').last()?;
 
                                 let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
                                     .iter().chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
-                                    .any(|terminal| terminal.executable_names().contains(&grandparent_name));
+                                    .any(|terminal| terminal.executable_names().contains(&grandparent_name)
+                                        || terminal.executable_names().contains(&grandparent_exe));
 
                                 let ancestry = format!(
                                     "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",

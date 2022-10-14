@@ -188,9 +188,9 @@ impl Terminal {
             Terminal::WezTerm => &["wezterm", "wezterm-gui"],
             Terminal::Hyper => &["hyper"],
             Terminal::Tabby => &["tabby"],
+            Terminal::Terminator => &["terminator"],
 
             Terminal::Ssh => &["sshd"],
-
             Terminal::Tmux => &["tmux"],
             Terminal::Nvim => &["nvim"],
             Terminal::Zellij => &["zellij"],

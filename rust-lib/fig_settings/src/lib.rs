@@ -148,13 +148,19 @@ impl LocalJson {
 }
 
 pub fn api_host() -> Url {
-    get_host_string("developer.apiHost")
+    std::env::var("FIG_API_HOST")
+        .ok()
+        .map(|host| Url::parse(&host).unwrap())
+        .or_else(|| get_host_string("developer.apiHost"))
         .or_else(|| get_host_string("developer.cli.apiHost"))
         .unwrap_or_else(|| Url::parse("https://api.fig.io").unwrap())
 }
 
 pub fn ws_host() -> Url {
-    get_host_string("developer.wsHost")
+    std::env::var("FIG_WS_HOST")
+        .ok()
+        .map(|host| Url::parse(&host).unwrap())
+        .or_else(|| get_host_string("developer.wsHost"))
         .or_else(|| get_host_string("developer.cli.wsHost"))
         .unwrap_or_else(|| Url::parse("wss://ws.fig.io").unwrap())
 }

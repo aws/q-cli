@@ -102,8 +102,6 @@ async fn uninstall() -> Result<()> {
         eyre::bail!("This command must be run as root");
     }
 
-    println!("Goodbye!");
-
     Ok(())
 }
 

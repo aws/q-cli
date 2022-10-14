@@ -103,11 +103,12 @@ async fn main() -> Result<()> {
             }) =>
         {
             err.print()?;
-            eprintln!();
-            eprintln!(
-                "This command may be valid in newer versions of the Fig CLI. Try running {}.",
+            writeln!(
+                stderr(),
+                "\nThis command may be valid in newer versions of the Fig CLI. Try running {}.",
                 "fig update".magenta()
-            );
+            )
+            .ok();
             exit(2);
         },
         Err(err) => {

@@ -2213,7 +2213,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             use super::diagnostics::get_diagnostics;
 
-            if fig_util::manifest::is_full() {
+            if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
                 run_checks_with_context(
                     format!("Let's check {}...", "fig diagnostic".bold()),
                     vec![&AutocompleteActiveCheck],
@@ -2246,18 +2246,21 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         #[cfg(target_os = "linux")]
         {
-            run_checks(
-                "Let's check Linux integrations".into(),
-                vec![
-                    &IBusEnvCheck,
-                    &IBusCheck,
-                    // &DesktopCompatibilityCheck, // we need a better way of getting the data
-                    &SandboxCheck,
-                ],
-                config,
-                &mut spinner,
-            )
-            .await?;
+            // Linux desktop checks
+            if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
+                run_checks(
+                    "Let's check Linux integrations".into(),
+                    vec![
+                        &IBusEnvCheck,
+                        &IBusCheck,
+                        // &DesktopCompatibilityCheck, // we need a better way of getting the data
+                        &SandboxCheck,
+                    ],
+                    config,
+                    &mut spinner,
+                )
+                .await?;
+            }
         }
 
         Ok(())
