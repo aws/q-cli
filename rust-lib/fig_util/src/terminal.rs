@@ -174,8 +174,9 @@ impl Terminal {
         }
     }
 
-    pub fn from_bundle_id(bundle_id: &str) -> Option<Self> {
-        let res = match bundle_id {
+    pub fn from_bundle_id(bundle: impl AsRef<str>) -> Option<Self> {
+        let bundle = bundle.as_ref();
+        let res = match bundle {
             "com.googlecode.iterm2" => Terminal::Iterm,
             "com.apple.Terminal" => Terminal::TerminalApp,
             "com.zeit.hyper" => Terminal::Hyper,
@@ -186,13 +187,8 @@ impl Terminal {
             "org.tabby" => Terminal::Tabby,
             "com.panic.Nova" => Terminal::Nova,
             "com.github.wez.wezterm" => Terminal::WezTerm,
-            bundle => {
-                if bundle.starts_with("com.jetbrains") {
-                    Terminal::JediTerm(bundle.into())
-                } else {
-                    return None;
-                }
-            },
+            _ if bundle.starts_with("com.jetbrains") => Terminal::JediTerm(bundle.into()),
+            _ => return None,
         };
 
         Some(res)
@@ -206,6 +202,7 @@ impl Terminal {
                 | Terminal::Vscode
                 | Terminal::VSCodeInsiders
                 | Terminal::Hyper
+                | Terminal::WezTerm
                 | Terminal::JediTerm(_)
         )
     }

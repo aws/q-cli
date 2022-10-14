@@ -1,53 +1,30 @@
-use appkit_nsworkspace_bindings::{
-    id as Id,
-    NSURL as AppkitNSURL,
-};
-use cocoa::foundation::{
-    NSAutoreleasePool,
-    NSURL as CocoaNSURL,
-};
-use objc::runtime::Object;
+use cocoa::base::nil;
+use cocoa::foundation::NSURL as CocoaNSURL;
 
+use super::Id;
 use crate::NSString;
 
+/// An owned NSURL
 #[repr(transparent)]
-pub struct NSURL(*mut Object);
-
-impl NSURL {
-    fn id(&self) -> Id {
-        self.0
-    }
-}
+#[derive(Clone)]
+pub struct NSURL(Id);
 
 impl<S> From<S> for NSURL
 where
     S: Into<NSString>,
 {
     fn from(s: S) -> Self {
-        let string = s.into();
-        let nsurl = AppkitNSURL::alloc();
-        let obj = unsafe { nsurl.0.initWithString_(string.id()).autorelease() };
-        assert!(!obj.is_null());
-        Self(obj)
-    }
-}
-
-impl From<NSURL> for AppkitNSURL {
-    fn from(s: NSURL) -> Self {
-        AppkitNSURL(s.id())
-    }
-}
-
-impl From<NSURL> for Id {
-    fn from(s: NSURL) -> Self {
-        s.id()
+        let string: NSString = s.into();
+        let nsurl = unsafe { CocoaNSURL::alloc(nil).initWithString_(***string) };
+        assert!(!nsurl.is_null());
+        Self(unsafe { Id::new(nsurl) })
     }
 }
 
 impl std::ops::Deref for NSURL {
-    type Target = Object;
+    type Target = Id;
 
     fn deref(&self) -> &Self::Target {
-        unsafe { &*self.id() }
+        &self.0
     }
 }

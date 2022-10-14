@@ -57,7 +57,7 @@ pub unsafe fn png_for_path(path: &Path) -> Option<Vec<u8>> {
     let shared = NSWorkspace::sharedWorkspace();
     let image = if path.exists() {
         let file_path: NSString = path.to_str()?.into();
-        shared.iconForFile_(file_path.into()).0
+        shared.iconForFile_(file_path.to_appkit_nsstring()).0
     } else {
         let is_dir = std::fs::metadata(&path).ok().map(|meta| meta.is_dir()).unwrap_or(false);
         let file_type: NSString = if is_dir {
@@ -65,7 +65,7 @@ pub unsafe fn png_for_path(path: &Path) -> Option<Vec<u8>> {
         } else {
             path.extension()?.to_str()?.into()
         };
-        shared.iconForFileType_(file_type.into()).0
+        shared.iconForFileType_(file_type.to_appkit_nsstring()).0
     };
 
     let image = resize_image(image, NSSize {

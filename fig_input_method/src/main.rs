@@ -1,29 +1,32 @@
-use cocoa::appkit::{
-    NSApp,
-    NSApplication,
-};
-use cocoa::base::{
-    id,
-    nil,
-    BOOL,
-};
-use cocoa::foundation::{
-    NSAutoreleasePool,
-    NSString,
-};
-use fig_log::{
-    set_fig_log_level,
-    Logger,
-};
-use tracing::info;
-
+#[cfg(target_os = "macos")]
 #[macro_use]
 extern crate objc;
 
+#[cfg(target_os = "macos")]
 mod imk;
 
+#[cfg(target_os = "macos")]
 #[tokio::main]
 async fn main() {
+    use cocoa::appkit::{
+        NSApp,
+        NSApplication,
+    };
+    use cocoa::base::{
+        id,
+        nil,
+        BOOL,
+    };
+    use cocoa::foundation::{
+        NSAutoreleasePool,
+        NSString,
+    };
+    use fig_log::{
+        set_fig_log_level,
+        Logger,
+    };
+    use tracing::info;
+
     let logger = Logger::new().with_file("imk.log").with_stdout();
     let _logger_guard = logger.init().expect("Failed to init logger");
     set_fig_log_level("trace".to_string()).ok();
@@ -56,4 +59,9 @@ async fn main() {
         info!("RUNNING {loaded_nib:?}!");
         app.run()
     }
+}
+
+#[cfg(not(target_os = "macos"))]
+fn main() {
+    println!("Fig input method is only supported on macOS");
 }

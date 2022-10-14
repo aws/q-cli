@@ -1,6 +1,7 @@
 pub mod backup;
 pub mod error;
 pub mod file;
+#[cfg(target_os = "macos")]
 pub mod input_method;
 pub mod shell;
 pub mod ssh;

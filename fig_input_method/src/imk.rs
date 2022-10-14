@@ -1,4 +1,3 @@
-use std::convert::TryInto;
 use std::ffi::CStr;
 
 use cocoa::base::{
@@ -15,7 +14,7 @@ use cocoa::foundation::{
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_cursor_position_hook;
 use macos_accessibility_position::{
-    NSString,
+    NSStringRef,
     NotificationCenter,
 };
 use objc::declare::ClassDecl;
@@ -103,10 +102,8 @@ client: client];
 }
 
 fn bundle_identifier(client: id) -> Option<String> {
-    let bundle_id: id = unsafe { msg_send![client, bundleIdentifier] };
-    let bundle_id: NSString = bundle_id.into();
-    let bundle_id: &str = bundle_id.try_into().ok()?;
-    Some(bundle_id.into())
+    let bundle_id: NSStringRef = unsafe { msg_send![client, bundleIdentifier] };
+    bundle_id.as_str().map(|s| s.into())
 }
 
 extern "C" fn activate_server(this: &mut Object, _cmd: Sel, client: id) {

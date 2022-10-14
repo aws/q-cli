@@ -61,9 +61,9 @@ use ui_element::UIElement;
 use super::util::notification_center::get_app_from_notification;
 use super::util::{
     NSArray,
-    NSString,
     NotificationCenter,
 };
+use crate::NSStringRef;
 
 static BLOCKED_BUNDLE_IDS: &[&str] = &[
     "com.apple.ViewBridgeAuxiliary",
@@ -110,9 +110,8 @@ unsafe fn app_bundle_id(app: &NSRunningApplication) -> Option<String> {
     if matches!(app, NSRunningApplication(nil)) {
         return None;
     }
-    let bundle_id: NSString = app.bundleIdentifier().into();
-    let s: Result<&str, _> = bundle_id.try_into();
-    s.ok().map(|s| s.to_owned())
+    let bundle_id = NSStringRef::new(app.bundleIdentifier().0);
+    bundle_id.as_str().map(|s| s.into())
 }
 
 impl WindowServer {
@@ -206,7 +205,7 @@ impl WindowServer {
 
             let apps: NSArray<NSRunningApplication> = workspace.runningApplications().into();
             for app in apps.iter() {
-                self.register(NSRunningApplication(app), false)
+                self.register(NSRunningApplication(*app as *mut _), false)
             }
         }
 
@@ -266,7 +265,7 @@ pub unsafe fn subscribe_to_all(server: &Arc<Mutex<WindowServer>>) {
                         NSWorkspace::sharedWorkspace().runningApplications().into();
 
                     let has_running = apps.iter().any(|running| {
-                        let running = NSRunningApplication(running);
+                        let running = NSRunningApplication(*running as *mut _);
                         app_bundle_id(&running).map(|id| id == bundle_id).unwrap_or(false)
                     });
 

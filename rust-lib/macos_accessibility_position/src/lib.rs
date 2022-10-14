@@ -1,5 +1,8 @@
 #![cfg(target_os = "macos")]
 
+#[macro_use]
+extern crate objc;
+
 pub mod accessibility;
 pub mod bundle;
 pub mod caret_position;
@@ -18,6 +21,7 @@ use platform_api::PlatformApi;
 pub use util::{
     NSArray,
     NSString,
+    NSStringRef,
     NotificationCenter,
     Subscription,
     NSURL,

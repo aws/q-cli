@@ -65,12 +65,6 @@ impl NotificationCenter {
     }
 
     pub fn distributed() -> Self {
-        use objc::{
-            class,
-            msg_send,
-            sel,
-            sel_impl,
-        };
         let distributed_default: *mut Object =
             unsafe { msg_send![class!(NSDistributedNotificationCenter), defaultCenter] };
         Self::new(appkit_nsworkspace_bindings::NSNotificationCenter(distributed_default))
@@ -86,12 +80,7 @@ impl NotificationCenter {
         unsafe {
             let (keys, objs): (Vec<id>, Vec<id>) = info
                 .into_iter()
-                .map(|(k, v)| {
-                    (
-                        <NSString as Into<id>>::into(k.into()),
-                        <NSString as Into<id>>::into(v.into()),
-                    )
-                })
+                .map(|(k, v)| (k.into().into_inner().autorelease(), v.into().into_inner().autorelease()))
                 .unzip();
 
             use cocoa::foundation as cf;
@@ -101,7 +90,7 @@ impl NotificationCenter {
             let user_info = cf::NSDictionary::dictionaryWithObjects_forKeys_(NIL, objs_array, keys_array);
 
             self.inner
-                .postNotificationName_object_userInfo_(name.into(), NIL, NSDictionary(user_info));
+                .postNotificationName_object_userInfo_(name.to_appkit_nsstring(), NIL, NSDictionary(user_info));
         }
     }
 
@@ -114,7 +103,7 @@ impl NotificationCenter {
     ) {
         let name: NSString = notification_name.into();
         self.inner
-            .addObserver_selector_name_object_(observer, callback, name.into(), NIL);
+            .addObserver_selector_name_object_(observer, callback, name.to_appkit_nsstring(), NIL);
     }
 
     pub fn subscribe<F>(&mut self, notification_name: impl Into<NSString>, mut f: F)
@@ -130,7 +119,7 @@ impl NotificationCenter {
             let name: NSString = notification_name.into();
             // addObserverForName copies block for us.
             let observer = self.inner.addObserverForName_object_queue_usingBlock_(
-                name.into(),
+                name.to_appkit_nsstring(),
                 NIL,
                 NSOperationQueue(NIL),
                 &mut block as *mut _ as *mut std::os::raw::c_void,
@@ -149,7 +138,10 @@ pub unsafe fn get_app_from_notification(notification: NSNotification) -> Option<
 
     let bundle_id_str: NSString = "NSWorkspaceApplicationKey".into();
 
-    let app = <NSDictionary as INSDictionary<NSString, id>>::objectForKey_(&user_info, bundle_id_str.into());
+    let app = <NSDictionary as INSDictionary<NSString, id>>::objectForKey_(
+        &user_info,
+        bundle_id_str.into_inner().autorelease(),
+    );
     if app == NIL {
         None
     } else {

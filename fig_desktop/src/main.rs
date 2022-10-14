@@ -117,9 +117,11 @@ async fn main() {
                                 Some(ref page) => eprintln!("Opening /{page}..."),
                                 None => eprintln!("Opening Fig Window..."),
                             }
-                            fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page)
-                                .await
-                                .unwrap();
+                            if let Err(err) =
+                                fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page).await
+                            {
+                                eprintln!("Failed to open Fig: {err}");
+                            }
                             return;
                         }
                     }

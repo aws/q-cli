@@ -1,72 +1,80 @@
-use std::convert::TryFrom;
-
-use appkit_nsworkspace_bindings::{
-    id,
-    NSString as AppkitNSString,
-    NSString_NSStringExtensionMethods,
-    NSUTF8StringEncoding,
-};
+use appkit_nsworkspace_bindings::NSString as AppkitNSString;
 use cocoa::base::nil as NIL;
-use cocoa::foundation::{
-    NSAutoreleasePool,
-    NSString as CocoaNSString,
-};
+use cocoa::foundation::NSString as CocoaNSString;
 use objc::runtime::Object;
 
+use super::{
+    Id,
+    IdRef,
+};
+
+/// This is an owned NSString
 #[repr(transparent)]
-pub struct NSString(*mut Object);
+pub struct NSString(Id);
 
 impl NSString {
-    pub(crate) fn id(&self) -> id {
+    pub fn into_inner(self) -> Id {
         self.0
+    }
+
+    pub fn to_appkit_nsstring(self) -> AppkitNSString {
+        AppkitNSString(self.0.autorelease())
     }
 }
 
 impl From<AppkitNSString> for NSString {
     fn from(s: AppkitNSString) -> Self {
-        Self(s.0)
-    }
-}
-
-impl From<*mut Object> for NSString {
-    fn from(s: *mut Object) -> Self {
-        Self(s)
+        Self(unsafe { Id::new(s.0) })
     }
 }
 
 impl From<&str> for NSString {
     fn from(s: &str) -> Self {
-        let inner = unsafe { CocoaNSString::alloc(NIL).init_str(s).autorelease() };
-        inner.into()
+        let inner = unsafe { CocoaNSString::alloc(NIL).init_str(s) };
+        Self(unsafe { Id::new(inner) })
     }
 }
 
-impl From<NSString> for AppkitNSString {
-    fn from(s: NSString) -> Self {
-        AppkitNSString(s.id())
+impl std::ops::Deref for NSString {
+    type Target = Id;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }
 
-impl From<NSString> for *mut Object {
-    fn from(s: NSString) -> Self {
-        s.id()
+/// This is a borrowed NSString
+#[repr(transparent)]
+pub struct NSStringRef(IdRef);
+
+impl NSStringRef {
+    /// # Safety
+    ///
+    /// This is unsafe because the caller must ensure that the pointer is valid
+    /// for the lifetime of the returned object.
+    pub unsafe fn new(inner: *const Object) -> Self {
+        Self(IdRef::new(inner))
     }
-}
 
-impl TryFrom<NSString> for &str {
-    type Error = &'static str;
-
-    fn try_from(s: NSString) -> Result<Self, Self::Error> {
-        let s: AppkitNSString = s.into();
-        if matches!(s, AppkitNSString(NIL)) {
-            Err("Cannot convert nil NSString")
+    pub fn as_str(&self) -> Option<&str> {
+        if self.0.is_nil() {
+            None
         } else {
             unsafe {
-                let bytes: *const std::os::raw::c_char = s.UTF8String();
-                let len = s.lengthOfBytesUsingEncoding_(NSUTF8StringEncoding);
+                let obj = *self.0 as *mut Object;
+                let bytes: *const std::os::raw::c_char = obj.UTF8String();
+                let len = obj.len();
                 let bytes = std::slice::from_raw_parts(bytes as *const u8, len as usize);
-                Ok(std::str::from_utf8_unchecked(bytes))
+                Some(std::str::from_utf8_unchecked(bytes))
             }
         }
+    }
+}
+
+impl std::ops::Deref for NSStringRef {
+    type Target = *const Object;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
     }
 }

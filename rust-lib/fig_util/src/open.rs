@@ -3,7 +3,7 @@ use std::io;
 use cfg_if::cfg_if;
 
 #[cfg(target_os = "macos")]
-fn open_macos(url_str: &str) -> io::Result<bool> {
+fn open_macos(url_str: impl AsRef<str>) -> io::Result<bool> {
     use macos_accessibility_position::NSURL;
     use objc::runtime::{
         Object,
@@ -17,7 +17,7 @@ fn open_macos(url_str: &str) -> io::Result<bool> {
         sel_impl,
     };
 
-    let url: *mut Object = NSURL::from(url_str).into();
+    let url = NSURL::from(url_str.as_ref());
     let res: BOOL = unsafe {
         let shared: *mut Object = msg_send![class!(NSWorkspace), sharedWorkspace];
         msg_send![shared, openURL: url]
@@ -53,7 +53,7 @@ fn open_command(url: impl AsRef<str>) -> std::process::Command {
 pub fn open_url(url: impl AsRef<str>) -> io::Result<bool> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            open_macos(url.as_ref())
+            open_macos(url)
         } else {
             open_command(url)
                 .stdout(std::process::Stdio::null())
@@ -67,7 +67,7 @@ pub fn open_url(url: impl AsRef<str>) -> io::Result<bool> {
 pub async fn open_url_async(url: impl AsRef<str>) -> io::Result<bool> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
-            open_macos(url.as_ref())
+            open_macos(url)
         } else {
             tokio::process::Command::from(open_command(url))
                 .stdout(std::process::Stdio::null())

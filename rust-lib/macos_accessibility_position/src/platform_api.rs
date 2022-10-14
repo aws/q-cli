@@ -37,10 +37,8 @@ use super::window_position::{
     FromCgRect,
     WindowPosition,
 };
-use super::{
-    ActiveWindow,
-    NSString,
-};
+use super::ActiveWindow;
+use crate::NSStringRef;
 
 #[allow(non_upper_case_globals)]
 pub const kCFNumberSInt32Type: CFNumberType = 3;
@@ -82,8 +80,8 @@ impl PlatformApi {
         let active_window_pid = unsafe { active_app.processIdentifier() as i64 };
 
         let bundle_id: String = unsafe {
-            let bundle_id: NSString = active_app.bundleIdentifier().into();
-            let str_slice: &str = bundle_id.try_into().unwrap_or_default();
+            let bundle_id = NSStringRef::new(active_app.bundleIdentifier().0);
+            let str_slice = bundle_id.as_str().unwrap_or_default();
             str_slice.to_owned()
         };
 

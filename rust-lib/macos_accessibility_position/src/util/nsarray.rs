@@ -1,28 +1,34 @@
 use std::marker::PhantomData;
 
-use appkit_nsworkspace_bindings::{
-    id,
-    INSArray,
-    NSArray as InnerNSArray,
+use appkit_nsworkspace_bindings::NSArray as AppkitNSArray;
+use cocoa::foundation::{
+    NSArray as CocoaNSArray,
+    NSUInteger,
+};
+
+use super::{
+    Id,
+    IdRef,
 };
 
 pub struct NSArray<T: 'static> {
-    inner: InnerNSArray,
+    inner: Id,
     phantom: PhantomData<T>,
 }
 
 impl<T: 'static> NSArray<T> {
-    pub fn iter(&self) -> NSArrayIter<'_, T> {
+    pub fn iter(self) -> NSArrayIter<T> {
+        let count = self.len();
         NSArrayIter {
-            inner: &self.inner,
-            count: self.len(),
+            inner: self.inner,
+            count,
             index: 0,
             phantom: PhantomData,
         }
     }
 
     pub fn len(&self) -> u64 {
-        unsafe { <InnerNSArray as INSArray<T>>::count(&self.inner) }
+        unsafe { self.inner.count() }
     }
 
     pub fn is_empty(&self) -> bool {
@@ -30,39 +36,47 @@ impl<T: 'static> NSArray<T> {
     }
 }
 
-impl<T: 'static> From<InnerNSArray> for NSArray<T> {
-    fn from(arr: InnerNSArray) -> NSArray<T> {
-        NSArray {
-            inner: arr,
+impl<T> std::ops::Deref for NSArray<T> {
+    type Target = Id;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<T> From<AppkitNSArray> for NSArray<T> {
+    fn from(a: AppkitNSArray) -> Self {
+        Self {
+            inner: unsafe { Id::new(a.0) },
             phantom: PhantomData,
         }
     }
 }
 
-pub struct NSArrayIter<'a, T: 'static> {
-    inner: &'a InnerNSArray,
-    count: u64,
-    index: u64,
+pub struct NSArrayIter<T: 'static> {
+    inner: Id,
+    count: NSUInteger,
+    index: NSUInteger,
     phantom: PhantomData<T>,
 }
 
-impl<'a, T: 'static> Iterator for NSArrayIter<'a, T> {
-    type Item = id;
+impl<T: 'static> Iterator for NSArrayIter<T> {
+    type Item = IdRef;
 
     fn next(&mut self) -> Option<Self::Item> {
         if self.index >= self.count {
             None
         } else {
-            let item = unsafe { <InnerNSArray as INSArray<T>>::objectAtIndex_(self.inner, self.index) };
+            let item = unsafe { self.inner.objectAtIndex(self.index) };
             self.index += 1;
-            Some(item)
+            Some(unsafe { IdRef::new(item) })
         }
     }
 }
 
-impl<'a, T> IntoIterator for &'a NSArray<T> {
-    type IntoIter = NSArrayIter<'a, T>;
-    type Item = id;
+impl<T> IntoIterator for NSArray<T> {
+    type IntoIter = NSArrayIter<T>;
+    type Item = IdRef;
 
     fn into_iter(self) -> Self::IntoIter {
         self.iter()

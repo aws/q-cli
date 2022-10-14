@@ -3,11 +3,10 @@ use std::path::Path;
 
 use thiserror::Error;
 
-use crate::input_method::InputMethodError;
-
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Error, Debug)]
+#[non_exhaustive]
 pub enum Error {
     #[error("Legacy integration: {0}")]
     LegacyInstallation(Cow<'static, str>),
@@ -27,6 +26,7 @@ pub enum Error {
     StripPrefix(#[from] std::path::StripPrefixError),
     #[error("{0}")]
     Custom(Cow<'static, str>),
+    #[cfg(target_os = "macos")]
     #[error(transparent)]
-    InputMethod(#[from] InputMethodError),
+    InputMethod(#[from] crate::input_method::InputMethodError),
 }
