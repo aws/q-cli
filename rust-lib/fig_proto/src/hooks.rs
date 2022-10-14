@@ -169,6 +169,20 @@ pub fn new_intercepted_key_hook(
     }))
 }
 
+pub fn new_cursor_position_hook(
+    x: impl Into<i32>,
+    y: impl Into<i32>,
+    width: impl Into<i32>,
+    height: impl Into<i32>,
+) -> Hook {
+    hook_enum_to_hook(hook::Hook::CursorPosition(CursorPositionHook {
+        x: x.into(),
+        y: y.into(),
+        width: width.into(),
+        height: height.into(),
+    }))
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;

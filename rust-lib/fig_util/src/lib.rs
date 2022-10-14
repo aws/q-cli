@@ -83,7 +83,35 @@ pub fn current_exe_origin() -> Result<PathBuf, Error> {
     while path.is_symlink() {
         path = std::fs::read_link(&path)?;
     }
+
     Ok(path)
+}
+
+#[must_use]
+pub fn fig_bundle() -> Option<PathBuf> {
+    cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let current_exe = current_exe_origin().ok()?;
+
+            // Verify we have .../Bundle.app/Contents/MacOS/binary-name
+            let parts: PathBuf = current_exe
+                .components()
+                .rev()
+                .skip(1)
+                .take(3)
+                .collect();
+
+            let path: PathBuf = "Fig.app/MacOS/Contents".to_owned().into();
+            if parts != path {
+                return None;
+            }
+
+            // .../Bundle.app/Contents/MacOS/binary-name -> .../Bundle.app
+            current_exe.ancestors().nth(4).map(|s| s.into())
+        } else {
+            None
+        }
+    }
 }
 
 pub fn launch_fig_desktop(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {

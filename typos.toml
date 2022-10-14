@@ -22,6 +22,7 @@ iterm = "iterm"
 preedit = "preedit"
 xmodifiers = "xmodifiers"
 zvariant = "zvariant"
+ser = "ser"
 
 [default.extend-identifiers]
 # Originally mistakes, but will be too hard to fix now

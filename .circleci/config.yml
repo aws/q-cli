@@ -342,12 +342,19 @@ jobs:
             PRODUCTS_DIR="../$PRODUCTS_DIR" cargo-tauri build --config ./build-config.json --target "$TARGET"
             rm build-config.json
             cd ..
-            mv fig_desktop/Cargo.toml.tmp fig_desktop/Cargo.toml
 
             bundle_dir="$(pwd)/target/universal-apple-darwin/release/bundle/macos/"
             rm -rf "${bundle_dir}/Fig.app"
             mv "${bundle_dir}/fig_desktop.app" "${bundle_dir}/Fig.app"
             cp -r ./config "${bundle_dir}/Fig.app/Contents/Resources"
+
+            cd fig_input_method
+            cargo build && make
+            cd ..
+
+            mkdir -p "${bundle_dir}/Fig.app/Contents/Helpers/"
+            cp -r ./fig_input_method/build/FigInputMethod.app "${bundle_dir}/Fig.app/Contents/Helpers/"
+
             echo "export BUNDLE_PATH=${bundle_dir}/Fig.app" >> $BASH_ENV
           environment:
             PRODUCTS_DIR: build/usr/bin
@@ -358,6 +365,7 @@ jobs:
           command: |
             codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/fig-darwin-universal"
             codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/figterm" 
+            codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
             codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
             codesign --verify --verbose --strict "$BUNDLE_PATH"
       - run:

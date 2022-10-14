@@ -1,0 +1,42 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<!DOCTYPE plist PUBLIC "-//Apple//DTD PLIST 1.0//EN" "http://www.apple.com/DTDs/PropertyList-1.0.dtd">
+<plist version="1.0">
+<dict>
+	<key>CFBundlePackageType</key>
+	<string>APPL</string>
+	<key>CFBundleIdentifier</key>
+	<string>io.fig.caret</string>
+	<key>CFBundleName</key>
+	<string>FigInputMethod</string>
+	<key>CFBundleVersion</key>
+	<string>0.1.0</string>
+	<key>CFBundleShortVersionString</key>
+	<string>0.1.0</string>
+	<key>CFBundleInfoDictionaryVersion</key>
+	<string>6.0</string>
+	<key>NSHumanReadableCopyright</key>
+	<string>Copyright © 2022 Fig developers All rights reserved.</string>
+	<key>CFBundleDevelopmentRegion</key>
+	<string>en</string>
+	<key>CFBundleExecutable</key>
+	<string>fig_input_method</string>
+	<key>LSBackgroundOnly</key>
+	<true/>
+	<key>NSSupportsSuddenTermination</key>
+	<true/>
+	<key>InputMethodConnectionName</key>
+	<string>io.fig.caret_Connection</string>
+	<key>InputMethodServerControllerClass</key>
+	<string>RustInputMethodServerController</string>
+	<key>TISInputSourceID</key>
+	<string>io.fig.caret</string>
+	<key>InputMethodType</key>
+	<string>palette</string>
+	<key>ComponentInvisibleInSystemUI</key>
+	<false/>
+	<key>tsInputMethodIconFileKey</key>
+	<string>AppIcon</string>
+	<key>TISIntendedLanguage</key>
+	<string>en</string>
+</dict>
+</plist>

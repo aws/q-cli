@@ -64,6 +64,9 @@ pub enum WindowEvent {
         x: i32,
         y: i32,
     },
+    PositionRelativeToCaret {
+        caret: Rect<i32, i32>,
+    },
     // todo(mschrage): move direction and clipping behavior out of this struct into WindowState
     PositionRelativeToRect {
         /// x position of cursor

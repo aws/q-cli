@@ -79,5 +79,15 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
         install(InstallComponents::DAEMON).await?;
     }
 
+    if install_components.contains(InstallComponents::INPUT_METHOD) {
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                install(InstallComponents::INPUT_METHOD).await?;
+            } else {
+                println!("input method is only implemented on macOS");
+            }
+        }
+    }
+
     Ok(())
 }

@@ -60,14 +60,8 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
 
     #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::INPUT_METHOD) {
-        let fig_input_method_app = directories::home_dir()?
-            .join("Library")
-            .join("Input Methods")
-            .join("FigInputMethod.app");
-
-        if fig_input_method_app.exists() {
-            std::fs::remove_dir_all(fig_input_method_app)?;
-        }
+        use fig_integrations::input_method::InputMethod;
+        InputMethod::default().uninstall()?;
     }
 
     #[cfg(target_os = "macos")]
@@ -121,6 +115,12 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
     if components.contains(InstallComponents::DAEMON) {
         let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
         Daemon::default().install(&path).await?;
+    }
+
+    #[cfg(target_os = "macos")]
+    if components.contains(InstallComponents::INPUT_METHOD) {
+        use fig_integrations::input_method::InputMethod;
+        InputMethod::default().install(None)?
     }
 
     Ok(())

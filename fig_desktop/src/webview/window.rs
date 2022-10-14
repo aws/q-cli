@@ -136,6 +136,42 @@ impl WindowState {
                 *self.position.write() = PhysicalPosition { x, y };
                 self.update_position(platform_state);
             },
+            WindowEvent::PositionRelativeToCaret { caret } => {
+                let monitor_frame = match platform_state.get_current_monitor_frame(self.webview.window()) {
+                    Some(monitor) => monitor,
+                    None => return,
+                };
+
+                let window_frame = match platform_state.get_active_window() {
+                    Some(active_window) => active_window.geometry,
+                    None => return,
+                };
+
+                // Caret origin will always be less than window origin (if coordinate system origin is top-left)
+                // assert!(caret.y >= window_frame.y);
+
+                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as i32;
+
+                // TODO: this calculation does not take into account anchor offset (or default vertical padding)
+                let is_above = window_frame.max_y() < caret.max_y() + max_height && // If positioned below, will popup appear inside of window frame?
+                                            monitor_frame.y < caret.y - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
+
+                *self.placement.write() = Placement::RelativeTo((
+                    Rect {
+                        x: caret.x,
+                        y: caret.y,
+                        width: caret.width,
+                        height: caret.height,
+                    },
+                    if is_above {
+                        RelativeDirection::Above
+                    } else {
+                        RelativeDirection::Below
+                    },
+                    ClippingBehavior::KeepInFrame,
+                ));
+                self.update_position(platform_state);
+            },
             WindowEvent::PositionRelativeToRect {
                 x,
                 y,

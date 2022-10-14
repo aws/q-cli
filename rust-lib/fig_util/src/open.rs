@@ -6,6 +6,7 @@ use cfg_if::cfg_if;
 fn open_macos(url_str: &str) -> io::Result<bool> {
     use macos_accessibility_position::NSURL;
     use objc::runtime::{
+        Object,
         BOOL,
         NO,
     };
@@ -16,9 +17,12 @@ fn open_macos(url_str: &str) -> io::Result<bool> {
         sel_impl,
     };
 
-    let url = NSURL::from(url_str);
-    let bool: BOOL = unsafe { msg_send![class!(NSWorkspace), openURL: url] };
-    Ok(bool != NO)
+    let url: *mut Object = NSURL::from(url_str).into();
+    let res: BOOL = unsafe {
+        let shared: *mut Object = msg_send![class!(NSWorkspace), sharedWorkspace];
+        msg_send![shared, openURL: url]
+    };
+    Ok(res != NO)
 }
 
 #[cfg(target_os = "windows")]

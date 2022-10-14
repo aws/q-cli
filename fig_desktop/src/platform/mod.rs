@@ -34,6 +34,7 @@ cfg_if::cfg_if! {
 pub type WindowGeometry = Rect<i32, i32>;
 
 pub struct PlatformWindow {
+    pub geometry: WindowGeometry,
     // TODO: add a platform specific impl of things like name, is_terminal(), etc
     // pub inner: ExternalPlatformWindowImpl
 }

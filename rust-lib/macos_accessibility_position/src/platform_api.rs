@@ -7,7 +7,6 @@ use std::str;
 use appkit_nsworkspace_bindings::{
     INSRunningApplication,
     INSWorkspace,
-    NSString_NSStringExtensionMethods,
     NSWorkspace,
 };
 use core_foundation::base::{
@@ -38,7 +37,10 @@ use super::window_position::{
     FromCgRect,
     WindowPosition,
 };
-use super::ActiveWindow;
+use super::{
+    ActiveWindow,
+    NSString,
+};
 
 #[allow(non_upper_case_globals)]
 pub const kCFNumberSInt32Type: CFNumberType = 3;
@@ -80,10 +82,8 @@ impl PlatformApi {
         let active_window_pid = unsafe { active_app.processIdentifier() as i64 };
 
         let bundle_id: String = unsafe {
-            let bundle_id_cfstring = active_app.bundleIdentifier();
-            let c_buf: *const ::std::os::raw::c_char = bundle_id_cfstring.UTF8String();
-            let c_str: &CStr = CStr::from_ptr(c_buf);
-            let str_slice: &str = c_str.to_str().unwrap();
+            let bundle_id: NSString = active_app.bundleIdentifier().into();
+            let str_slice: &str = bundle_id.try_into().unwrap_or_default();
             str_slice.to_owned()
         };
 

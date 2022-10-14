@@ -1,6 +1,7 @@
 use std::sync::Arc;
 
 use appkit_nsworkspace_bindings::{
+    id,
     INSDictionary,
     INSNotification,
     INSNotificationCenter,
@@ -10,7 +11,6 @@ use appkit_nsworkspace_bindings::{
     NSNotificationCenter,
     NSOperationQueue,
     NSRunningApplication,
-    NSString as AppkitNSString,
     NSWorkspace,
 };
 use block;
@@ -76,7 +76,48 @@ impl NotificationCenter {
         Self::new(appkit_nsworkspace_bindings::NSNotificationCenter(distributed_default))
     }
 
-    pub fn subscribe<F>(&mut self, notification_name: impl Into<AppkitNSString>, mut f: F)
+    pub fn post_notification<I, K, V>(&self, notification_name: impl Into<NSString>, info: I)
+    where
+        I: IntoIterator<Item = (K, V)>,
+        K: Into<NSString>,
+        V: Into<NSString>,
+    {
+        let name: NSString = notification_name.into();
+        unsafe {
+            let (keys, objs): (Vec<id>, Vec<id>) = info
+                .into_iter()
+                .map(|(k, v)| {
+                    (
+                        <NSString as Into<id>>::into(k.into()),
+                        <NSString as Into<id>>::into(v.into()),
+                    )
+                })
+                .unzip();
+
+            use cocoa::foundation as cf;
+            let keys_array = cf::NSArray::arrayWithObjects(NIL, &keys);
+            let objs_array = cf::NSArray::arrayWithObjects(NIL, &objs);
+
+            let user_info = cf::NSDictionary::dictionaryWithObjects_forKeys_(NIL, objs_array, keys_array);
+
+            self.inner
+                .postNotificationName_object_userInfo_(name.into(), NIL, NSDictionary(user_info));
+        }
+    }
+
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn subscribe_with_observer(
+        &mut self,
+        notification_name: impl Into<NSString>,
+        observer: id,
+        callback: objc::runtime::Sel,
+    ) {
+        let name: NSString = notification_name.into();
+        self.inner
+            .addObserver_selector_name_object_(observer, callback, name.into(), NIL);
+    }
+
+    pub fn subscribe<F>(&mut self, notification_name: impl Into<NSString>, mut f: F)
     where
         F: FnMut(NSNotification, Arc<Mutex<Subscription>>),
     {
@@ -86,9 +127,10 @@ impl NotificationCenter {
             f(notif, block_sub.clone());
         });
         unsafe {
+            let name: NSString = notification_name.into();
             // addObserverForName copies block for us.
             let observer = self.inner.addObserverForName_object_queue_usingBlock_(
-                notification_name.into(),
+                name.into(),
                 NIL,
                 NSOperationQueue(NIL),
                 &mut block as *mut _ as *mut std::os::raw::c_void,
@@ -107,10 +149,7 @@ pub unsafe fn get_app_from_notification(notification: NSNotification) -> Option<
 
     let bundle_id_str: NSString = "NSWorkspaceApplicationKey".into();
 
-    let app = <NSDictionary as INSDictionary<NSString, appkit_nsworkspace_bindings::id>>::objectForKey_(
-        &user_info,
-        bundle_id_str.into(),
-    );
+    let app = <NSDictionary as INSDictionary<NSString, id>>::objectForKey_(&user_info, bundle_id_str.into());
     if app == NIL {
         None
     } else {

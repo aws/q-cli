@@ -13,6 +13,7 @@ use cocoa::foundation::{
 };
 use objc::runtime::Object;
 
+#[repr(transparent)]
 pub struct NSString(*mut Object);
 
 impl NSString {

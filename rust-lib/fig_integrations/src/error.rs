@@ -3,6 +3,8 @@ use std::path::Path;
 
 use thiserror::Error;
 
+use crate::input_method::InputMethodError;
+
 pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 #[derive(Error, Debug)]
@@ -25,4 +27,6 @@ pub enum Error {
     StripPrefix(#[from] std::path::StripPrefixError),
     #[error("{0}")]
     Custom(Cow<'static, str>),
+    #[error(transparent)]
+    InputMethod(#[from] InputMethodError),
 }

@@ -217,7 +217,8 @@ class IPC: UnixSocketServerDelegate {
     case .focusedWindowData:
       // Used in Fig Tauri
       break
-    case .cursorPosition:
+    case .cursorPosition(let hook):
+      print("input-method: received hook \(hook.x),\(hook.y) \(hook.width),\(hook.height)")
       // Used in Fig Tauri
       break
     case .focusChange:

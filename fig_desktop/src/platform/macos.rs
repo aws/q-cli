@@ -11,12 +11,13 @@ use accessibility_sys::{
     AXUIElementCreateSystemWide,
     AXUIElementSetMessagingTimeout,
 };
-use anyhow::anyhow;
+use anyhow::Context;
 use cocoa::base::{
     id,
     NO,
     YES,
 };
+use fig_util::Terminal;
 use macos_accessibility_position::accessibility::accessibility_is_enabled;
 use macos_accessibility_position::caret_position::{
     get_caret_position,
@@ -72,9 +73,7 @@ use super::{
     WindowGeometry,
 };
 use crate::event::{
-    ClippingBehavior,
     Event,
-    RelativeDirection,
     WindowEvent,
 };
 use crate::icons::{
@@ -295,57 +294,34 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::EditBufferChanged => {
-                // todo(mschrage): move all positioning logic into cross platform `windows.rs` file
-                // This event should only update the position of the "relative rect"
-                let caret = match self.get_cursor_position() {
-                    Some(frame) => frame,
-                    None => return Err(anyhow!("Failed to acquire caret position")),
-                };
+                tracing::warn!("Sending notif io.fig.edit_buffer_updated");
+                let current_terminal =
+                    get_active_window().and_then(|window| Terminal::from_bundle_id(window.bundle_id.as_str()));
 
-                let monitor_frame = match window_map.get(&AUTOCOMPLETE_ID) {
-                    Some(window) => match self.get_current_monitor_frame(window.webview.window()) {
-                        Some(frame) => frame,
-                        None => return Err(anyhow!("Failed to acquire monitor frame")),
-                    },
-                    None => return Err(anyhow!("Failed to acquire autocomplete window reference")),
-                };
+                let supports_ime = current_terminal
+                    .map(|t| t.supports_macos_input_method())
+                    .unwrap_or(false);
 
-                let window_frame = match self.get_window_geometry() {
-                    Some(frame) => frame,
-                    None => return Err(anyhow!("Failed to acquire current window frame")),
-                };
+                // let supports_accessibility = current_terminal
+                // .map(|t| t.supports_macos_accessibility())
+                // .unwrap_or(false);
 
-                // Caret origin will always be less than window origin (if coordinate system origin is top-left)
-                assert!(caret.y >= window_frame.y);
-
-                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as i32;
-
-                // TODO: this calculation does not take into account anchor offset (or default vertical padding)
-                let is_above = window_frame.max_y() < caret.max_y() + max_height && // If positioned below, will popup appear inside of window frame?
-                                          monitor_frame.y < caret.y - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
-
-                let direction = match is_above {
-                    true => RelativeDirection::Above,
-                    false => RelativeDirection::Below,
-                };
-
-                UNMANAGED
-                    .event_sender
-                    .read()
-                    .clone()
-                    .unwrap()
-                    .send_event(Event::WindowEvent {
-                        window_id: AUTOCOMPLETE_ID,
-                        window_event: WindowEvent::PositionRelativeToRect {
-                            x: caret.x,
-                            y: caret.y,
-                            width: caret.width,
-                            height: caret.height,
-                            direction,
-                            clipping_behavior: ClippingBehavior::KeepInFrame,
-                        },
-                    })
-                    .ok();
+                if supports_ime {
+                    NotificationCenter::distributed()
+                        .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
+                } else {
+                    let caret = self.get_cursor_position().context("Failed to get cursor position")?;
+                    UNMANAGED
+                        .event_sender
+                        .read()
+                        .clone()
+                        .unwrap()
+                        .send_event(Event::WindowEvent {
+                            window_id: AUTOCOMPLETE_ID,
+                            window_event: WindowEvent::PositionRelativeToCaret { caret },
+                        })
+                        .ok();
+                }
 
                 Ok(())
             },
@@ -438,7 +414,15 @@ impl PlatformStateImpl {
 
     /// Gets the currently active window on the platform
     pub(super) fn get_active_window(&self) -> Option<PlatformWindow> {
-        None
+        let window = get_active_window()?;
+        let geometry = WindowGeometry {
+            x: window.position.x as i32,
+            y: window.position.y as i32,
+            width: window.position.width as i32,
+            height: window.position.height as i32,
+        };
+
+        Some(PlatformWindow { geometry })
     }
 
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
@@ -453,18 +437,6 @@ impl PlatformStateImpl {
 
     pub(super) fn shell() -> Cow<'static, str> {
         "/bin/bash".into()
-    }
-
-    fn get_window_geometry(&self) -> Option<super::WindowGeometry> {
-        match get_active_window() {
-            Some(window) => Some(WindowGeometry {
-                x: window.position.x as i32,
-                y: window.position.y as i32,
-                width: window.position.width as i32,
-                height: window.position.height as i32,
-            }),
-            None => None,
-        }
     }
 
     pub fn accessibility_is_enabled(&self) -> Option<bool> {

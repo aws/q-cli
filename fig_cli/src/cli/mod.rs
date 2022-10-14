@@ -255,26 +255,9 @@ impl Cli {
         match self.subcommand {
             Some(subcommand) => match subcommand {
                 CliRootCommands::Install(args) => {
-                    if let internal::InstallArgs { input_method: true, .. } = args {
-                        cfg_if::cfg_if! {
-                            if #[cfg(target_os = "macos")] {
-                                use fig_ipc::local::open_ui_element;
-                                use fig_proto::local::UiElement;
-
-                                open_ui_element(UiElement::InputMethodPrompt, None)
-                                    .await
-                                    .context("\nCould not launch fig\n")?;
-                            } else {
-                                Err(eyre::eyre!("input method is only implemented on macOS"))?;
-                            }
-                        }
-
-                        Ok(())
-                    } else {
-                        let no_confirm = args.no_confirm;
-                        let force = args.force;
-                        installation::install_cli(args.into(), no_confirm, force).await
-                    }
+                    let no_confirm = args.no_confirm;
+                    let force = args.force;
+                    installation::install_cli(args.into(), no_confirm, force).await
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
                 CliRootCommands::Update { no_confirm } => Ok(fig_install::update(no_confirm).await?),

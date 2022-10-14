@@ -20,6 +20,9 @@ import FigAPIBindings
  <key>InputSourceKind</key><string>Non Keyboard Input Method</string></dict>'
  */
 
+// IMPORTANT!!
+// If permissions are stuck in a bad state, run `sudo rm com.apple.IntlDataCache.le*`
+
 class InputMethod {
   static let inputMethodDirectory = URL(fileURLWithPath: "\(NSHomeDirectory())/Library/Input Methods/")
   static let statusDidChange = Notification.Name("inputMethodStatusDidChange")
@@ -117,11 +120,13 @@ class InputMethod {
   //https://developer.apple.com/library/archive/qa/qa1810/_index.html
   func source() -> TISInputSource? {
     let properties = [
-      kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier
+//      kTISPropertyInputSourceID as String: self.bundle.bundleIdentifier,
+      kTISPropertyBundleID as String: self.bundle.bundleIdentifier
     ] as CFDictionary
 
     // https://stackoverflow.com/questions/34120142/swift-cfarray-get-values-as-utf-strings/34121525
     // Use takeRetainedValue rather than takeUnretainedValue
+    // This can fail unexpectedly, based on caching(?). Sometimes newly registered InputMethods are not yet included in this list.
     guard let rawSourceList = TISCreateInputSourceList(properties, true)?.takeRetainedValue() else {
       InputMethod.log("TISCreateInputSourceList failed. \(errno)")
       return nil

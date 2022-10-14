@@ -33,17 +33,6 @@ use once_cell::sync::Lazy;
 use regex::Regex;
 use tracing::warn;
 
-#[must_use]
-pub fn fig_bundle() -> Option<PathBuf> {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            Some(PathBuf::from("/Applications/Fig.app/"))
-        } else {
-            None
-        }
-    }
-}
-
 /// Glob patterns against full paths
 pub fn glob_dir(glob: &GlobSet, directory: impl AsRef<Path>) -> Result<Vec<PathBuf>> {
     let mut files = Vec::new();

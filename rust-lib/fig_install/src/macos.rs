@@ -1,5 +1,4 @@
 use std::borrow::BorrowMut;
-use std::env::current_exe;
 use std::ffi::OsString;
 use std::os::unix::process::CommandExt;
 use std::path::{
@@ -46,12 +45,6 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
             }
             let plist = String::from_utf8_lossy(&output.stdout).to_string();
 
-            // extract the app bundle
-            let mut current_exe = current_exe()?;
-            if current_exe.is_symlink() {
-                current_exe = std::fs::read_link(current_exe)?;
-            }
-
             let regex = Regex::new(r"<key>mount-point</key>\s*<\S+>([^<]+)</\S+>").unwrap();
             let mount_point = PathBuf::from(
                 regex
@@ -63,22 +56,14 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
             );
 
             // /Applications/Fig.app/Contents/MacOS/{binary}
-            let fig_app_path = current_exe.parent().unwrap().parent().unwrap().parent().unwrap();
-
-            match fig_app_path.file_name() {
-                Some(file_name) => {
-                    if file_name != "Fig.app" {
-                        return Err(Error::UpdateFailed(format!(
-                            "the app bundle did not have the expected name, got {file_name:#?}, expected Fig.app"
-                        )));
-                    }
-                },
-                None => {
+            let fig_app_path = match fig_util::fig_bundle() {
+                Some(path) => path,
+                _ => {
                     return Err(Error::UpdateFailed(
-                        "the current binary is not within the expected app bundle".to_owned(),
+                        "Binary invoked does not reside in valid app bundle.".into(),
                     ));
                 },
-            }
+            };
 
             tokio::fs::remove_dir_all(&fig_app_path).await?;
 
@@ -101,7 +86,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
 
-            let cli_path = current_exe.parent().unwrap().join("fig-darwin-universal");
+            let cli_path = fig_app_path.join("Contents").join("MacOS").join("fig-darwin-universal");
 
             if !cli_path.exists() {
                 return Err(Error::UpdateFailed(

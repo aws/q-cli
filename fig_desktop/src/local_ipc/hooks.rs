@@ -5,10 +5,10 @@ use fig_proto::local::{
     FocusChangeHook,
     FocusedWindowDataHook,
 };
-use tracing::debug;
 
 use crate::event::WindowEvent;
 use crate::platform::PlatformState;
+use crate::utils::Rect;
 use crate::{
     Event,
     EventLoopProxy,
@@ -17,9 +17,16 @@ use crate::{
 
 pub async fn caret_position(
     CursorPositionHook { x, y, width, height }: CursorPositionHook,
-    _proxy: &EventLoopProxy,
+    proxy: &EventLoopProxy,
 ) -> Result<()> {
-    debug!({ x, y, width, height }, "Cursor Position (ignored!)");
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id: AUTOCOMPLETE_ID,
+            window_event: WindowEvent::PositionRelativeToCaret {
+                caret: Rect { x, y, width, height },
+            },
+        })
+        .ok();
 
     Ok(())
 }

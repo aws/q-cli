@@ -10,6 +10,7 @@ use objc::runtime::Object;
 
 use crate::NSString;
 
+#[repr(transparent)]
 pub struct NSURL(*mut Object);
 
 impl NSURL {
@@ -34,6 +35,12 @@ where
 impl From<NSURL> for AppkitNSURL {
     fn from(s: NSURL) -> Self {
         AppkitNSURL(s.id())
+    }
+}
+
+impl From<NSURL> for Id {
+    fn from(s: NSURL) -> Self {
+        s.id()
     }
 }
 

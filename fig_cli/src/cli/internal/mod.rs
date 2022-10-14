@@ -104,13 +104,13 @@ pub struct CallbackArgs {
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct InstallArgs {
     /// Install only the daemon
-    #[arg(long, conflicts_with_all = &["input_method"])]
+    #[arg(long)]
     pub daemon: bool,
     /// Install only the shell integrations
-    #[arg(long, conflicts_with_all = &["input_method"])]
+    #[arg(long)]
     pub dotfiles: bool,
     /// Prompt input method installation
-    #[arg(long, conflicts_with_all = &["daemon", "dotfiles"])]
+    #[arg(long)]
     pub input_method: bool,
     /// Don't confirm automatic installation.
     #[arg(long)]
@@ -136,6 +136,7 @@ impl From<InstallArgs> for InstallComponents {
             let mut install_components = InstallComponents::empty();
             install_components.set(InstallComponents::DAEMON, daemon);
             install_components.set(InstallComponents::SHELL_INTEGRATIONS, dotfiles);
+            install_components.set(InstallComponents::INPUT_METHOD, input_method);
             install_components.set(InstallComponents::SSH, ssh);
             install_components
         } else {
@@ -197,6 +198,9 @@ pub enum InternalSubcommand {
         /// Uninstall only the shell integrations
         #[arg(long)]
         dotfiles: bool,
+        /// Uninstall only the input method
+        #[arg(long)]
+        input_method: bool,
         /// Uninstall only the binary
         #[arg(long)]
         binary: bool,
@@ -282,13 +286,15 @@ impl InternalSubcommand {
             InternalSubcommand::Uninstall {
                 daemon,
                 dotfiles,
+                input_method,
                 binary,
                 ssh,
             } => {
-                let components = if daemon || dotfiles || binary || ssh {
+                let components = if daemon || dotfiles || binary || ssh || input_method {
                     let mut uninstall_components = InstallComponents::empty();
                     uninstall_components.set(InstallComponents::DAEMON, daemon);
                     uninstall_components.set(InstallComponents::SHELL_INTEGRATIONS, dotfiles);
+                    uninstall_components.set(InstallComponents::INPUT_METHOD, input_method);
                     uninstall_components.set(InstallComponents::BINARY, binary);
                     uninstall_components.set(InstallComponents::SSH, ssh);
                     uninstall_components

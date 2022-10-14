@@ -174,6 +174,49 @@ impl Terminal {
         }
     }
 
+    pub fn from_bundle_id(bundle_id: &str) -> Option<Self> {
+        let res = match bundle_id {
+            "com.googlecode.iterm2" => Terminal::Iterm,
+            "com.apple.Terminal" => Terminal::TerminalApp,
+            "com.zeit.hyper" => Terminal::Hyper,
+            "com.alacritty" => Terminal::Alacritty,
+            "net.kovidgoyal.kitty" => Terminal::Kitty,
+            "com.microsoft.VSCode" => Terminal::Vscode,
+            "com.microsoft.VSCodeInsiders" => Terminal::VSCodeInsiders,
+            "org.tabby" => Terminal::Tabby,
+            "com.panic.Nova" => Terminal::Nova,
+            "com.github.wez.wezterm" => Terminal::WezTerm,
+            bundle => {
+                if bundle.starts_with("com.jetbrains") {
+                    Terminal::JediTerm(bundle.into())
+                } else {
+                    return None;
+                }
+            },
+        };
+
+        Some(res)
+    }
+
+    pub fn supports_macos_input_method(&self) -> bool {
+        matches!(
+            self,
+            Terminal::Alacritty
+                | Terminal::Kitty
+                | Terminal::Vscode
+                | Terminal::VSCodeInsiders
+                | Terminal::Hyper
+                | Terminal::JediTerm(_)
+        )
+    }
+
+    pub fn supports_macos_accessibility(&self) -> bool {
+        matches!(
+            self,
+            Terminal::Iterm | Terminal::TerminalApp | Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper
+        )
+    }
+
     pub fn executable_names(&self) -> &'static [&'static str] {
         match self {
             Terminal::Vscode => &["code"],
