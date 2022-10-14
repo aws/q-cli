@@ -1,7 +1,10 @@
 use anyhow::Result;
 use dashmap::DashMap;
 use fig_proto::figterm::Action;
-use fig_settings::keybindings::KeyBindings;
+use fig_settings::keybindings::{
+    KeyBinding,
+    KeyBindings,
+};
 use tracing::trace;
 
 use crate::input::{
@@ -87,18 +90,12 @@ impl KeyInterceptor {
     }
 
     pub fn load_key_intercepts(&mut self) -> Result<()> {
-        let actions = KeyBindings::load_hardcoded();
-
-        for action in actions.0 {
-            if let Some(default_bindings) = action.default_bindings {
-                for binding in default_bindings {
-                    if let Some(binding) = key_from_text(binding) {
-                        self.insert_binding(binding, action.identifier.clone());
-                    }
-                }
+        let key_bindings = KeyBindings::load_hardcoded();
+        for KeyBinding { identifier, binding } in key_bindings {
+            if let Some(binding) = key_from_text(binding) {
+                self.insert_binding(binding, identifier);
             }
         }
-
         Ok(())
     }
 
