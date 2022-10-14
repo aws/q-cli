@@ -2717,7 +2717,7 @@ dependencies = [
 
 [[package]]
 name = "fig_input_method"
-version = "0.1.0"
+version = "2.5.3"
 dependencies = [
  "apple-bundle",
  "cocoa",

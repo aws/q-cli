@@ -11,15 +11,17 @@ use serde::{
 
 #[derive(Debug, Serialize, Deserialize)]
 struct CargoToml {
-    bundle: BundleConfig,
+    package: CargoTomlPackage,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
-struct InfoPlist {
-    #[serde(flatten)]
-    apple: AppleInfoPlist,
-    #[serde(flatten)]
-    input_method: InputMethod,
+struct CargoTomlPackage {
+    metadata: CargoTomlPackageMetadata,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct CargoTomlPackageMetadata {
+    bundle: BundleConfig,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -30,6 +32,14 @@ struct BundleConfig {
     bundle_name: String,
     // #[serde(rename(serialize = "CFBundleShortVersionString"))]
     // version: String,
+    #[serde(flatten)]
+    input_method: InputMethod,
+}
+
+#[derive(Debug, Serialize, Deserialize)]
+struct InfoPlist {
+    #[serde(flatten)]
+    apple: AppleInfoPlist,
     #[serde(flatten)]
     input_method: InputMethod,
 }
@@ -86,28 +96,29 @@ fn intended_language_default() -> String {
 }
 
 fn main() {
-    println!("cargo:warning=Running build.rs");
+    // println!("cargo:warning=Running build.rs");
     // Tell Cargo that if the given file changes, to rerun this build script.
     println!("cargo:rerun-if-changed=Cargo.toml");
 
     // Read Cargo.toml and load [bundle]
     let config = fs::read("Cargo.toml").unwrap();
 
-    let mut manifest = toml::from_slice::<CargoToml>(&config).unwrap();
+    let manifest = toml::from_slice::<CargoToml>(&config).unwrap();
+    let mut bundle = manifest.package.metadata.bundle;
 
     // Set InputMethodServerControllerClass env var which is used by Input Method at compile time
     println!(
         "cargo:rustc-env=InputMethodServerControllerClass={}",
-        manifest.bundle.input_method.input_method_server_controller_class
+        bundle.input_method.input_method_server_controller_class
     );
 
     // Derieve InputMethodConnectionName from bundle identifier
-    let connection_name = match manifest.bundle.input_method.input_method_connection_name {
+    let connection_name = match bundle.input_method.input_method_connection_name {
         Some(name) => name,
-        None => format!("{}_Connection", manifest.bundle.bundle_identifier),
+        None => format!("{}_Connection", bundle.bundle_identifier),
     };
 
-    manifest.bundle.input_method.input_method_connection_name = Some(connection_name.clone());
+    bundle.input_method.input_method_connection_name = Some(connection_name.clone());
 
     println!("cargo:rustc-env=InputMethodConnectionName={}", connection_name);
 
@@ -122,7 +133,7 @@ fn main() {
                 ..Default::default()
             },
             identification: Identification {
-                bundle_identifier: manifest.bundle.bundle_identifier,
+                bundle_identifier: bundle.bundle_identifier,
                 ..Default::default()
             },
             bundle_version: BundleVersion {
@@ -135,7 +146,7 @@ fn main() {
                 )),
             },
             naming: Naming {
-                bundle_name: Some(manifest.bundle.bundle_name),
+                bundle_name: Some(bundle.bundle_name),
                 ..Default::default()
             },
             categorization: Categorization {
@@ -152,10 +163,10 @@ fn main() {
             },
             ..Default::default()
         },
-        input_method: manifest.bundle.input_method,
+        input_method: bundle.input_method,
     };
 
-    println!("cargo:warning=Regenerating Info.plist");
+    // println!("cargo:warning=Regenerating Info.plist");
 
     // Create Info.plist file
     let file = std::fs::File::create("Info.plist").unwrap();
