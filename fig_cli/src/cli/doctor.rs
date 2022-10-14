@@ -51,7 +51,8 @@ use fig_telemetry::{
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
-    launch_fig,
+    is_fig_desktop_running,
+    launch_fig_desktop,
     Shell,
     Terminal,
 };
@@ -393,24 +394,16 @@ impl DoctorCheck for AppRunningCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let result = Command::new("lsappinfo")
-            .arg("info")
-            .arg("-app")
-            .arg("com.mschrage.fig")
-            .output();
-
-        if let Ok(output) = result {
-            if !String::from_utf8_lossy(&output.stdout).trim().is_empty() {
-                return Ok(());
-            }
+        if !is_fig_desktop_running() {
+            Err(DoctorError::Error {
+                reason: "Fig app is not running".into(),
+                info: vec![],
+                fix: command_fix(vec!["fig", "launch"], Duration::from_secs(3)),
+                error: None,
+            })
+        } else {
+            Ok(())
         }
-
-        Err(DoctorError::Error {
-            reason: "Fig app is not running".into(),
-            info: vec![],
-            fix: command_fix(vec!["fig", "launch"], Duration::from_secs(3)),
-            error: None,
-        })
     }
 
     fn get_type(&self, _: &(), platform: Platform) -> DoctorCheckType {
@@ -2115,7 +2108,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, try to launch fig
-    launch_fig(true, false).ok();
+    launch_fig_desktop(true, false).ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

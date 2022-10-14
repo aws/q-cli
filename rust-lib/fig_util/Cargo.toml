@@ -27,7 +27,11 @@ tracing = "0.1.36"
 whoami = "1.2.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
+appkit-nsworkspace-bindings = { path = "../macos_accessibility_position/appkit-nsworkspace-bindings" }
+core-foundation = "0.9.3"
+macos_accessibility_position = { path = "../macos_accessibility_position" }
 regex = "1.6.0"
+objc = "0.2.7"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.42.0", features = [

@@ -24,6 +24,10 @@ impl<T: 'static> NSArray<T> {
     pub fn len(&self) -> u64 {
         unsafe { <InnerNSArray as INSArray<T>>::count(&self.inner) }
     }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
 }
 
 impl<T: 'static> From<InnerNSArray> for NSArray<T> {

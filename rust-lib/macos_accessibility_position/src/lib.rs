@@ -16,9 +16,11 @@ use flume::Sender;
 use parking_lot::Mutex;
 use platform_api::PlatformApi;
 pub use util::{
+    NSArray,
     NSString,
     NotificationCenter,
     Subscription,
+    NSURL,
 };
 use window_position::WindowPosition;
 use window_server::subscribe_to_all;

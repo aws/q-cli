@@ -27,12 +27,13 @@ use fig_ipc::local::{
 };
 use fig_proto::local::InputMethodAction;
 use fig_sync::dotfiles::download_and_notify;
+use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::directories;
 use serde_json::json;
 
 #[cfg(target_os = "macos")]
 use crate::cli::diagnostics::get_diagnostics;
-use crate::cli::launch_fig;
+use crate::cli::launch_fig_desktop;
 use crate::util::{
     get_app_info,
     glob,
@@ -130,7 +131,7 @@ impl DebugSubcommand {
                 if app_info.is_empty() {
                     println!("Fig app is not currently running. Attempting to start...");
                     if Command::new("open")
-                        .args(["-g", "-b", "com.mschrage.fig"])
+                        .args(["-g", "-b", FIG_BUNDLE_ID])
                         .spawn()?
                         .wait()
                         .is_err()
@@ -139,7 +140,7 @@ impl DebugSubcommand {
                         return Ok(());
                     }
                 }
-                let fig_path = crate::util::get_running_app_info("com.mschrage.fig", "bundlepath")?;
+                let fig_path = crate::util::get_running_app_info(FIG_BUNDLE_ID, "bundlepath")?;
                 let front_app = Command::new("lsappinfo").arg("front").output()?;
                 let terminal_name = String::from_utf8(front_app.stdout)
                     .ok()
@@ -297,7 +298,7 @@ impl DebugSubcommand {
             },
             DebugSubcommand::Sample => {
                 let output = Command::new("lsappinfo")
-                    .args(["info", "-only", "-pid", "-app", "com.mschrage.fig"])
+                    .args(["info", "-only", "-pid", "-app", FIG_BUNDLE_ID])
                     .output()?;
                 let pid_str = String::from_utf8(output.stdout)?;
                 let pid = pid_str.split('=').nth(1).context("Could not get Fig app pid")?.trim();
@@ -340,22 +341,22 @@ impl DebugSubcommand {
                     quit_fig(true).await?;
 
                     Command::new("tccutil")
-                        .args(["reset", "Accessibility", "com.mschrage.fig"])
+                        .args(["reset", "Accessibility", FIG_BUNDLE_ID])
                         .spawn()?
                         .wait()?;
 
-                    launch_fig(true, true)?;
+                    launch_fig_desktop(true, true)?;
                 },
                 Some(AccessibilityAction::Reset) => {
                     quit_fig(true).await?;
 
                     Command::new("tccutil")
-                        .args(["reset", "Accessibility", "com.mschrage.fig"])
+                        .args(["reset", "Accessibility", FIG_BUNDLE_ID])
                         .spawn()?
                         .wait()?;
                 },
                 Some(AccessibilityAction::Prompt) => {
-                    launch_fig(true, true)?;
+                    launch_fig_desktop(true, true)?;
                     let result = prompt_accessibility_command().await;
                     if result.is_err() {
                         println!("Could not prompt for accessibility permissions.");

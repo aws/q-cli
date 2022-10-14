@@ -31,7 +31,7 @@ use fig_sync::plugins::fetch_installed_plugins;
 use fig_telemetry::TrackEvent;
 use fig_util::{
     directories,
-    launch_fig,
+    launch_fig_desktop,
 };
 use parking_lot::RwLock;
 use tokio::net::UnixListener;
@@ -121,7 +121,7 @@ async fn spawn_system_handler(
                                             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
                                             tokio::task::block_in_place(|| {
-                                                launch_fig(true, false).ok();
+                                                launch_fig_desktop(true, false).ok();
                                             });
                                         });
                                         true

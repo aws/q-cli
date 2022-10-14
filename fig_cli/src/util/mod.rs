@@ -22,7 +22,8 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::quit_command;
-use fig_util::is_app_running;
+use fig_util::consts::FIG_BUNDLE_ID;
+use fig_util::is_fig_desktop_running;
 use globset::{
     Glob,
     GlobSet,
@@ -117,7 +118,7 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 }
 
 pub async fn quit_fig(verbose: bool) -> Result<()> {
-    if !is_app_running() {
+    if !is_fig_desktop_running() {
         if verbose {
             println!("Fig is not running");
         }
@@ -286,7 +287,7 @@ pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) 
 
 pub fn get_app_info() -> Result<String> {
     let output = Command::new("lsappinfo")
-        .args(["info", "-app", "com.mschrage.fig"])
+        .args(["info", "-app", FIG_BUNDLE_ID])
         .output()?;
     let result = String::from_utf8(output.stdout)?;
     Ok(result.trim().into())

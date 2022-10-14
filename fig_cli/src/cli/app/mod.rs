@@ -21,8 +21,8 @@ use fig_settings::{
     state,
 };
 use fig_util::{
-    is_app_running,
-    launch_fig,
+    is_fig_desktop_running,
+    launch_fig_desktop,
     manifest,
 };
 use tracing::{
@@ -97,8 +97,8 @@ pub async fn restart_fig() -> Result<()> {
         bail!("Please restart Fig from your host machine");
     }
 
-    if !is_app_running() {
-        launch_fig(true, true)?;
+    if !is_fig_desktop_running() {
+        launch_fig_desktop(true, true)?;
         Ok(())
     } else {
         cfg_if! {
@@ -107,7 +107,7 @@ pub async fn restart_fig() -> Result<()> {
                     Some(_) => {
                         crate::util::quit_fig(true).await?;
                         tokio::time::sleep(Duration::from_millis(1000)).await;
-                        launch_fig(true, true)?;
+                        launch_fig_desktop(true, true)?;
                     },
                     None => {
                         use eyre::Context;
@@ -122,7 +122,7 @@ pub async fn restart_fig() -> Result<()> {
             } else {
                 crate::util::quit_fig(true).await?;
                 tokio::time::sleep(Duration::from_millis(1000)).await;
-                launch_fig(true, true)?;
+                launch_fig_desktop(true, true)?;
             }
         }
 
@@ -142,7 +142,7 @@ impl AppSubcommand {
                         use std::process::Command;
                         use std::os::unix::process::CommandExt;
 
-                        launch_fig(true, true)?;
+                        launch_fig_desktop(true, true)?;
 
                         if state::set_value("user.onboarding", true).is_ok() {
                             Command::new("bash")
@@ -197,7 +197,7 @@ impl AppSubcommand {
                         Ok(None) => {}, // no version available
                         Err(err) => error!(%err, "Failed checking for updates"),
                     }
-                } else if is_app_running() {
+                } else if is_fig_desktop_running() {
                     let new_version = state::get_string("NEW_VERSION_AVAILABLE").ok().flatten();
                     if let Some(version) = new_version {
                         info!("New version {} is available", version);
@@ -225,7 +225,7 @@ impl AppSubcommand {
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
                             trace!("launching updated version of Fig");
-                            launch_fig(true, false).ok();
+                            launch_fig_desktop(true, false).ok();
                         } else {
                             trace!("autoupdates are disabled.");
 
@@ -249,7 +249,7 @@ impl AppSubcommand {
                             fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?
                         }
 
-                        launch_fig(false, false)?;
+                        launch_fig_desktop(false, false)?;
                     }
                 }
             },
@@ -279,14 +279,14 @@ impl AppSubcommand {
             AppSubcommand::Restart => restart_fig().await?,
             AppSubcommand::Quit => crate::util::quit_fig(true).await?,
             AppSubcommand::Launch => {
-                if is_app_running() {
+                if is_fig_desktop_running() {
                     println!("Fig is already running!");
                     return Ok(());
                 }
-                launch_fig(true, true)?
+                launch_fig_desktop(true, true)?
             },
             AppSubcommand::Running => {
-                println!("{}", if is_app_running() { "1" } else { "0" });
+                println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
             },
             #[allow(deprecated)]
             AppSubcommand::SetPath => {},

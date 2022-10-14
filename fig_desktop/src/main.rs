@@ -19,6 +19,7 @@ use clap::Parser;
 use event::Event;
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
+use fig_util::consts::FIG_DESKTOP_PROCESS_NAME;
 use notification::NotificationsState;
 use parking_lot::RwLock;
 use sysinfo::{
@@ -101,7 +102,7 @@ async fn main() {
         match get_current_pid() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                let processes = system.processes_by_name("fig_desktop");
+                let processes = system.processes_by_name(FIG_DESKTOP_PROCESS_NAME);
                 for process in processes {
                     let pid = process.pid();
                     if current_pid != pid {

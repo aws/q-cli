@@ -2862,15 +2862,19 @@ dependencies = [
 name = "fig_util"
 version = "2.5.3"
 dependencies = [
+ "appkit-nsworkspace-bindings",
  "bstr 1.0.1",
  "camino",
  "cfg-if 1.0.0",
  "clap 4.0.14",
+ "core-foundation",
  "dirs",
  "fig_test",
  "hex",
  "insta",
+ "macos_accessibility_position",
  "nix 0.25.0",
+ "objc",
  "once_cell",
  "paste",
  "rand 0.8.5",

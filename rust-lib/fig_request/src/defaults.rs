@@ -1,6 +1,7 @@
 use std::ffi::OsStr;
 use std::process::Command;
 
+use fig_util::consts::FIG_BUNDLE_ID;
 use thiserror::Error;
 
 #[derive(Debug, Error)]
@@ -16,7 +17,7 @@ pub enum DefaultsError {
 pub fn get_default(key: impl AsRef<OsStr>) -> Result<String, DefaultsError> {
     let output = Command::new("defaults")
         .arg("read")
-        .arg("com.mschrage.fig")
+        .arg(FIG_BUNDLE_ID)
         .arg(key)
         .output()?;
 
@@ -30,7 +31,7 @@ pub fn get_default(key: impl AsRef<OsStr>) -> Result<String, DefaultsError> {
 pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(), DefaultsError> {
     let output = Command::new("defaults")
         .arg("write")
-        .arg("com.mschrage.fig")
+        .arg(FIG_BUNDLE_ID)
         .arg(key)
         .arg(value)
         .output()?;
@@ -45,7 +46,7 @@ pub fn set_default(key: impl AsRef<OsStr>, value: impl AsRef<OsStr>) -> Result<(
 pub fn remove_default(key: impl AsRef<OsStr>) -> Result<(), DefaultsError> {
     let output = Command::new("defaults")
         .arg("delete")
-        .arg("com.mschrage.fig")
+        .arg(FIG_BUNDLE_ID)
         .arg(key)
         .output()?;
 

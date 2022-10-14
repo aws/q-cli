@@ -365,7 +365,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     match workflow {
                                         WorkflowAction::Run(workflow) => ("search", *workflow.clone()),
                                         WorkflowAction::Create => {
-                                            fig_util::launch_fig(true, true)?;
+                                            fig_util::launch_fig_desktop(true, true)?;
                                             return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
                                                 Ok(()) => Ok(()),
                                                 Err(err) => Err(err.into()),

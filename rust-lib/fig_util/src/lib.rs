@@ -6,6 +6,8 @@ mod shell;
 pub mod system_info;
 pub mod terminal;
 
+pub mod app_running;
+pub mod consts;
 #[cfg(target_os = "macos")]
 pub mod launchd_plist;
 
@@ -25,6 +27,10 @@ use rand::Rng;
 pub use shell::Shell;
 pub use terminal::Terminal;
 use thiserror::Error;
+
+pub use crate::app_running::is_fig_desktop_running;
+#[cfg(target_os = "macos")]
+use crate::consts::FIG_BUNDLE_ID;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -71,82 +77,16 @@ pub fn search_xdg_data_dirs(ext: impl AsRef<std::path::Path>) -> Option<PathBuf>
     None
 }
 
-pub fn is_app_running() -> bool {
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            match option_env!("RUST_MACOS_BACKPORT").is_some() {
-                true => {
-                    use sysinfo::{
-                        ProcessRefreshKind,
-                        RefreshKind,
-                        System,
-                        SystemExt,
-                    };
-
-                    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                    let mut processes = s.processes_by_exact_name("fig_desktop");
-                    processes.next().is_some()
-                },
-                false => {
-                    let output = match std::process::Command::new("lsappinfo")
-                    .args(["info", "-app", "com.mschrage.fig"])
-                    .output()
-                    {
-                        Ok(output) => output,
-                        Err(_) => return false,
-                    };
-
-                    match std::str::from_utf8(&output.stdout) {
-                        Ok(result) => !result.trim().is_empty(),
-                        Err(_) => false,
-                    }
-                }
-            }
-        } else {
-            cfg_if! {
-                if #[cfg(windows)] {
-                    let output = match std::process::Command::new("tasklist.exe").args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"]).output() {
-                        Ok(output) => output,
-                        Err(_) => return false,
-                    };
-
-                    match std::str::from_utf8(&output.stdout) {
-                        Ok(result) => result.contains("fig_desktop.exe"),
-                        Err(_) => false,
-                    }
-                } else if #[cfg(unix)] {
-                    use sysinfo::{
-                        ProcessRefreshKind,
-                        RefreshKind,
-                        System,
-                        SystemExt,
-                    };
-
-                    let process_name = match system_info::in_wsl() {
-                        true => {
-                            let output = match std::process::Command::new("tasklist.exe").args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"]).output() {
-                                Ok(output) => output,
-                                Err(_) => return false,
-                            };
-
-                            return match std::str::from_utf8(&output.stdout) {
-                                Ok(result) => result.contains("fig_desktop.exe"),
-                                Err(_) => false,
-                            };
-                        },
-                        false => "fig_desktop",
-                    };
-
-                    let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                    let mut processes = s.processes_by_exact_name(process_name);
-                    processes.next().is_some()
-                }
-            }
-        }
+/// Returns the path to the original executable, not the symlink
+pub fn current_exe_origin() -> Result<PathBuf, Error> {
+    let mut path = std::env::current_exe()?;
+    while path.is_symlink() {
+        path = std::fs::read_link(&path)?;
     }
+    Ok(path)
 }
 
-pub fn launch_fig(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
+pub fn launch_fig_desktop(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
     use directories::fig_socket_path;
 
     if system_info::is_remote() {
@@ -155,7 +95,7 @@ pub fn launch_fig(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
         ));
     }
 
-    match is_app_running() {
+    match is_fig_desktop_running() {
         true => return Ok(()),
         false => {
             if verbose {
@@ -171,7 +111,7 @@ pub fn launch_fig(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
             cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     let output = Command::new("open")
-                        .args(["-g", "-b", "com.mschrage.fig", "--args", "--no-dashboard"])
+                        .args(["-g", "-b", FIG_BUNDLE_ID, "--args", "--no-dashboard"])
                         .output()?;
 
                     if !output.status.success() {
@@ -179,7 +119,7 @@ pub fn launch_fig(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
                     }
                 } else {
                     if system_info::in_wsl() {
-                        let output = Command::new("fig_desktop.exe")
+                        let output = Command::new(crate::consts::FIG_DESKTOP_PROCESS_NAME_WINDOWS)
                             .output()?;
 
                         if !output.status.success() {
@@ -210,7 +150,7 @@ pub fn launch_fig(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
         return Ok(());
     }
 
-    if !is_app_running() {
+    if !is_fig_desktop_running() {
         return Err(Error::LaunchError("fig was unable launch successfully".to_owned()));
     }
 

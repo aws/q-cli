@@ -20,7 +20,7 @@ pub struct IssueArgs {
 impl IssueArgs {
     pub async fn execute(&self) -> Result<()> {
         // Check if fig is running
-        if !self.force && !fig_util::is_app_running() {
+        if !self.force && !fig_util::is_fig_desktop_running() {
             println!(
                 "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
                 "fig launch".magenta(),

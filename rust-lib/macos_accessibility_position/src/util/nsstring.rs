@@ -16,7 +16,7 @@ use objc::runtime::Object;
 pub struct NSString(*mut Object);
 
 impl NSString {
-    fn id(&self) -> id {
+    pub(crate) fn id(&self) -> id {
         self.0
     }
 }

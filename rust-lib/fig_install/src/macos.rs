@@ -9,9 +9,10 @@ use std::path::{
 use std::process::exit;
 
 use fig_ipc::local::update_command;
+use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::{
     directories,
-    launch_fig,
+    launch_fig_desktop,
 };
 use regex::Regex;
 use reqwest::IntoUrl;
@@ -125,7 +126,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
         },
         None => {
             // Let desktop app handle updates on macOS
-            launch_fig(true, true)?;
+            launch_fig_desktop(true, true)?;
 
             if update_command(deprecated).await.is_err() {
                 return Err(Error::UpdateFailed(
@@ -167,7 +168,7 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
 
     // Delete Fig defaults on macOS
     tokio::process::Command::new("defaults")
-        .args(["delete", "com.mschrage.fig"])
+        .args(["delete", FIG_BUNDLE_ID])
         .output()
         .await
         .map_err(|err| warn!("Failed to delete defaults: {err}"))

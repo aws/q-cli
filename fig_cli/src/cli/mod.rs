@@ -43,8 +43,8 @@ use fig_daemon::Daemon;
 use fig_log::Logger;
 use fig_util::{
     directories,
-    is_app_running,
-    launch_fig,
+    is_fig_desktop_running,
+    launch_fig_desktop,
 };
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
@@ -309,11 +309,11 @@ impl Cli {
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
                 CliRootCommands::Launch => {
-                    if is_app_running() {
+                    if is_fig_desktop_running() {
                         println!("Fig is already running!");
                         return Ok(());
                     }
-                    launch_fig(true, true)?;
+                    launch_fig_desktop(true, true)?;
                     Ok(())
                 },
                 CliRootCommands::Quit => crate::util::quit_fig(true).await,
@@ -349,7 +349,7 @@ impl Cli {
                 },
 
                 CliRootCommands::LegacyAppRunning => {
-                    println!("{}", if is_app_running() { "1" } else { "0" });
+                    println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
                     Ok(())
                 },
                 CliRootCommands::LegacyBgSsh => Ok(()),
@@ -370,7 +370,7 @@ async fn root_command() -> Result<()> {
             use fig_proto::local::UiElement;
             use std::time::Duration;
 
-            if !is_logged_in() && is_app_running() {
+            if !is_logged_in() && is_fig_desktop_running() {
                 if quit_command().await.is_err() {
                     eyre::bail!(
                         "Fig is running but you are not logged in. Please quit Fig from the menu\
@@ -380,7 +380,7 @@ async fn root_command() -> Result<()> {
                 tokio::time::sleep(Duration::from_millis(1000)).await;
             }
 
-            launch_fig(true, true)?;
+            launch_fig_desktop(true, true)?;
 
             if is_logged_in() {
                 open_ui_element(UiElement::MissionControl, None)
@@ -395,7 +395,7 @@ async fn root_command() -> Result<()> {
                 eyre::bail!("Launching Fig from headless installs is not yet supported");
             }
 
-            launch_fig(true, true)?;
+            launch_fig_desktop(true, true)?;
             open_ui_element(UiElement::MissionControl, None).await.context("Failed to open Fig")?;
         }
     }

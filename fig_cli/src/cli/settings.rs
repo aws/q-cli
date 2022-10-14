@@ -17,7 +17,7 @@ use fig_proto::local::UiElement;
 use fig_request::auth::is_logged_in;
 use fig_util::{
     directories,
-    launch_fig,
+    launch_fig_desktop,
 };
 use globset::Glob;
 use serde_json::json;
@@ -194,7 +194,7 @@ impl SettingsArgs {
                     _ => Ok(()),
                 },
                 None => {
-                    launch_fig(true, true)?;
+                    launch_fig_desktop(true, true)?;
 
                     if is_logged_in() {
                         match open_ui_element(UiElement::Settings, None).await {

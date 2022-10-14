@@ -23,7 +23,7 @@ use fig_settings::{
 use fig_util::system_info::get_system_id;
 use fig_util::{
     directories,
-    launch_fig,
+    launch_fig_desktop,
 };
 use serde::{
     Deserialize,
@@ -243,7 +243,7 @@ pub async fn process_websocket(
                                     tokio::time::sleep(std::time::Duration::from_secs(3)).await;
 
                                     // Relaunch the app
-                                    launch_fig(true, false).ok();
+                                    launch_fig_desktop(true, false).ok();
                                 }
                             },
                             FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),

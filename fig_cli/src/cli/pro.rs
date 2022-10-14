@@ -1,8 +1,8 @@
 use fig_proto::local::UiElement;
-use fig_util::launch_fig;
+use fig_util::launch_fig_desktop;
 
 pub async fn execute() -> eyre::Result<()> {
-    launch_fig(true, false).ok();
+    launch_fig_desktop(true, false).ok();
 
     if fig_ipc::local::open_ui_element(UiElement::MissionControl, Some("/settings/billing".into()))
         .await
