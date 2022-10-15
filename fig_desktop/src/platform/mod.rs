@@ -103,6 +103,15 @@ impl PlatformState {
 pub enum PlatformBoundEvent {
     Initialize,
     EditBufferChanged,
-    FullscreenStateUpdated { fullscreen: bool },
-    AccessibilityUpdated { enabled: bool },
+    FullscreenStateUpdated {
+        fullscreen: bool,
+    },
+    AccessibilityUpdated {
+        enabled: bool,
+    },
+    AppWindowFocusChanged {
+        window_id: WindowId,
+        focused: bool,
+        fullscreen: bool,
+    },
 }

@@ -364,6 +364,22 @@ impl PlatformStateImpl {
 
                 Ok(())
             },
+            PlatformBoundEvent::AppWindowFocusChanged {
+                window_id,
+                focused: _,
+                fullscreen,
+            } => {
+                // Update activation policy
+                if window_id == DASHBOARD_ID {
+                    self.proxy
+                        .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
+                            fullscreen,
+                        }))
+                        .ok();
+                }
+
+                Ok(())
+            },
         }
     }
 

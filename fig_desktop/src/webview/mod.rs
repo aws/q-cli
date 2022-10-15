@@ -84,6 +84,7 @@ pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
 pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
+
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
 fn map_theme(theme: &str) -> Option<Theme> {
@@ -255,8 +256,9 @@ impl WebviewManager {
                                 }
                             },
                             WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(Some(theme)),
-                            WryWindowEvent::Focused(true) => {
-                                if window_state.window_id == DASHBOARD_ID {
+
+                            WryWindowEvent::Focused(focused) => {
+                                if focused && window_state.window_id != AUTOCOMPLETE_ID {
                                     proxy
                                         .send_event(Event::WindowEvent {
                                             window_id: AUTOCOMPLETE_ID,
@@ -264,6 +266,14 @@ impl WebviewManager {
                                         })
                                         .unwrap();
                                 }
+
+                                proxy
+                                    .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::AppWindowFocusChanged {
+                                        window_id: window_state.window_id.clone(),
+                                        focused,
+                                        fullscreen: window_state.webview.window().fullscreen().is_some(),
+                                    }))
+                                    .unwrap();
                             },
                             _ => (),
                         }
