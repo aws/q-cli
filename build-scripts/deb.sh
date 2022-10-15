@@ -10,12 +10,23 @@ rm -rf ~/rpmbuild
 prepare_bundle
 gen_manifest apt
 
+case $ARCH in
+    x86_64)
+        APT_ARCH=amd64;;
+    aarch64)
+        APT_ARCH=arm64;;
+    *)
+        echo AAAAAAA
+        exit 1
+    ;;
+esac
+
 echo 'Packaging'
 mkdir -p build/DEBIAN
 if [[ $IS_HEADLESS = 0 ]]; then
-    cp bundle/deb/control build/DEBIAN/control
+    cat bundle/deb/control | APT_ARCH=$APT_ARCH envsubst > build/DEBIAN/control
 else
-    cp bundle/deb/control_headless build/DEBIAN/control
+    cat bundle/deb/control_headless | APT_ARCH=$APT_ARCH envsubst > build/DEBIAN/control
 fi
 cp bundle/deb/prerm build/DEBIAN/prerm
 if [[ $IS_HEADLESS = 0 ]]; then
