@@ -112,8 +112,6 @@ pub enum WindowEvent {
     },
     /// Hides the window
     Hide,
-    /// Request to hide the window, may not be respected
-    HideSoft,
     Show,
     Emit {
         event_name: EmitEventName,
@@ -135,6 +133,6 @@ pub enum WindowEvent {
 
 impl WindowEvent {
     pub fn is_allowed_while_disabled(&self) -> bool {
-        matches!(self, WindowEvent::Hide | WindowEvent::HideSoft)
+        matches!(self, WindowEvent::Hide)
     }
 }

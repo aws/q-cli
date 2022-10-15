@@ -222,11 +222,6 @@ impl WindowState {
                 #[cfg(not(target_os = "linux"))]
                 self.webview.window().set_resizable(false);
             },
-            WindowEvent::HideSoft => {
-                for session in figterm_state.linked_sessions.lock().iter() {
-                    let _ = session.sender.send(FigtermCommand::InterceptClear);
-                }
-            },
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
