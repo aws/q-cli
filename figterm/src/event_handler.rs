@@ -89,6 +89,9 @@ impl EventListener for EventHandler {
                 let context = shell_state_to_context(shell_state);
                 let hook = new_preexec_hook(Some(context));
                 let message = hook_to_message(hook);
+
+                self.main_loop_sender.send(MainLoopEvent::UnlockInterception).unwrap();
+
                 if let Err(err) = self.socket_sender.send(message) {
                     error!(%err, "Sender error");
                 }

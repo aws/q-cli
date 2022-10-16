@@ -188,6 +188,11 @@ pub async fn pre_exec(
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
+    proxy.send_event(Event::WindowEvent {
+        window_id: AUTOCOMPLETE_ID.clone(),
+        window_event: WindowEvent::Hide,
+    })?;
+
     notifications_state
         .send_notification(
             &NotificationType::NotifyOnProcessChanged,

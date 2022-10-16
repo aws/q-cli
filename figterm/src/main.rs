@@ -139,6 +139,7 @@ static SHELL_ENVIRONMENT_VARIABLES: Lazy<Mutex<Vec<EnvironmentVariable>>> = Lazy
 
 pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
+    UnlockInterception,
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
@@ -198,7 +199,7 @@ where
 {
     let shell_enabled = [Some("bash"), Some("zsh"), Some("fish"), Some("nu")]
         .contains(&term.shell_state().get_context().shell.as_deref());
-    let prexec = term.shell_state().preexec;
+    let preexec = term.shell_state().preexec;
 
     let mut handle = INSERTION_LOCKED_AT.write();
     let insertion_locked = match handle.as_ref() {
@@ -224,9 +225,9 @@ where
     };
     drop(handle);
 
-    trace!("shell_enabled: {shell_enabled}, prexec: {prexec}, insertion_locked: {insertion_locked}");
+    trace!(%shell_enabled, %preexec, %insertion_locked, "can_send_edit_buffer");
 
-    shell_enabled && !insertion_locked && !prexec
+    shell_enabled && !insertion_locked && !preexec
 }
 
 async fn send_edit_buffer<T>(
@@ -656,6 +657,9 @@ fn figterm_main() -> Result<()> {
                                         key_interceptor.reset();
                                     }
                                 },
+                                MainLoopEvent::UnlockInterception => {
+                                    key_interceptor.reset();
+                                },
                             }
                         }
                         Err(err) => warn!("Failed to recv: {err}"),
@@ -748,7 +752,7 @@ fn figterm_main() -> Result<()> {
                     if send_eb && can_send_edit_buffer(&term) {
                         let cursor_coordinates = get_cursor_coordinates(&mut terminal);
                         if let Err(err) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
-                            warn!("Failed to send edit buffer: {err}");
+                            warn!(%err, "Failed to send edit buffer");
                         }
                     }
                     Ok(())
