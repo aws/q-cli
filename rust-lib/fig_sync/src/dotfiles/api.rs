@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::io::Write;
 use std::path::PathBuf;
 
 use fig_api_client::plugins::PluginData;
@@ -117,7 +118,17 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
     }
 
     // Write to all.json
-    std::fs::write(all_json_path, download)?;
+    let mut file_opts = std::fs::OpenOptions::new();
+    file_opts.write(true).create(true);
+
+    #[cfg(unix)]
+    {
+        use std::os::unix::fs::OpenOptionsExt;
+        file_opts.mode(0o600);
+    }
+
+    let mut file = file_opts.open(&all_json_path)?;
+    file.write_all(download.as_bytes())?;
 
     // Write to the individual shell files
     for (shell, dotfile) in dotfiles.dotfiles {
@@ -128,7 +139,17 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
             updated_at: dotfiles.updated_at,
         };
 
-        std::fs::write(shell_json_path, &serde_json::to_vec(&dotfiles)?)?;
+        let mut file_opts = std::fs::OpenOptions::new();
+        file_opts.write(true).create(true);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::OpenOptionsExt;
+            file_opts.mode(0o600);
+        }
+
+        let mut file = file_opts.open(&shell_json_path)?;
+        file.write_all(&serde_json::to_vec(&dotfiles)?)?;
     }
 
     // Set the last updated time

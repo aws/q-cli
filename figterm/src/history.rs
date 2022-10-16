@@ -101,6 +101,15 @@ impl History {
         let history_exists = history_path.exists();
 
         let connection = Connection::open(&history_path)?;
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::fs::PermissionsExt;
+            let mut perms = history_path.metadata()?.permissions();
+            perms.set_mode(0o600);
+            std::fs::set_permissions(&history_path, perms)?;
+        }
+
         let history = History { connection };
 
         if old_history_path.exists() && !history_exists {
@@ -191,7 +200,16 @@ impl History {
 
         // Legacy insert into old history file
         if legacy {
-            let legacy_history_file = File::options().create(true).append(true).open(
+            let mut legacy_history_file_opts = File::options();
+            legacy_history_file_opts.create(true).append(true);
+
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                legacy_history_file_opts.mode(0o600);
+            }
+
+            let legacy_history_file = legacy_history_file_opts.open(
                 &[directories::fig_dir().unwrap(), "history".into()]
                     .into_iter()
                     .collect::<PathBuf>(),

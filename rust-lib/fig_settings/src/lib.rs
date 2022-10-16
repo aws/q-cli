@@ -121,8 +121,19 @@ impl LocalJson {
 
         let res = {
             let _lock_guard = self.json_type.lock().write();
-            let mut file = FileRwLock::new(File::create(&path)?);
+
+            let mut file_opts = File::options();
+            file_opts.create(true).write(true);
+
+            #[cfg(unix)]
+            {
+                use std::os::unix::fs::OpenOptionsExt;
+                file_opts.mode(0o600);
+            }
+
+            let mut file = FileRwLock::new(file_opts.open(&path)?);
             let mut lock = file.write()?;
+
             lock.write_all(&json)
         };
         res?;
