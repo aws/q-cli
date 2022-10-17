@@ -462,6 +462,7 @@ pub fn build_dashboard(
         .with_title("Fig")
         .with_resizable(true)
         .with_visible(is_visible)
+        .with_focused(is_visible)
         .with_always_on_top(false)
         .with_window_icon(Some(utils::ICON.clone()))
         .with_menu(menu::menu_bar())
@@ -537,6 +538,7 @@ pub fn build_autocomplete(
         .with_decorations(false)
         .with_always_on_top(true)
         .with_visible(false)
+        .with_focused(false)
         .with_window_icon(Some(utils::ICON.clone()))
         .with_theme(*THEME);
 
