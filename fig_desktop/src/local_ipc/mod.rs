@@ -90,8 +90,8 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, platform_state: Arc<Pl
                             OpenBrowser(command) => commands::open_browser(command).await,
                             PromptAccessibility(_) => commands::prompt_for_accessibility_permission().await,
                             LogLevel(command) => commands::log_level(command),
-                            Logout(_)
-                            | TerminalIntegration(_)
+                            Logout(_) => commands::logout(&proxy).await,
+                            TerminalIntegration(_)
                             | ListTerminalIntegrations(_)
                             | Restart(_)
                             | ReportWindow(_)

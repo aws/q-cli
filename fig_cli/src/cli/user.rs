@@ -7,6 +7,7 @@ use eyre::{
     bail,
     Result,
 };
+use fig_ipc::local::logout_command;
 use fig_request::auth::{
     Credentials,
     SignInConfirmError,
@@ -26,7 +27,6 @@ use serde_json::{
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
-use crate::util::quit_fig;
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
 pub enum RootUserSubcommand {
@@ -170,7 +170,7 @@ impl RootUserSubcommand {
                     false,
                 ));
 
-                let quit_join = tokio::spawn(quit_fig(false));
+                let logout_join = logout_command();
 
                 let mut creds = Credentials::load_credentials()?;
                 creds.clear_credentials();
@@ -185,9 +185,10 @@ impl RootUserSubcommand {
                         .ok();
                 }
 
-                let (_, _) = tokio::join!(telem_join, quit_join);
+                let (_, _) = tokio::join!(telem_join, logout_join);
 
-                println!("Logged out");
+                println!("You are now logged out");
+                println!("Run {} to log back in to Fig", "fig login".magenta());
                 Ok(())
             },
         }

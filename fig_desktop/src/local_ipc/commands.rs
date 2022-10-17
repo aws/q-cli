@@ -14,6 +14,7 @@ use fig_proto::local::{
 };
 use parking_lot::Mutex;
 use tracing::error;
+use wry::application::dpi::LogicalSize;
 use wry::application::event_loop::ControlFlow;
 
 use super::{
@@ -177,4 +178,33 @@ pub fn log_level(LogLevelCommand { level }: LogLevelCommand) -> LocalResult {
             old_level: Some(old_level),
         },
     ))))
+}
+
+pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id: DASHBOARD_ID,
+            window_event: WindowEvent::NavigateRelative {
+                path: "/onboarding/welcome".to_owned(),
+            },
+        })
+        .ok();
+
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id: DASHBOARD_ID,
+            window_event: WindowEvent::Resize {
+                size: LogicalSize::new(590.0, 480.0),
+            },
+        })
+        .ok();
+
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id: DASHBOARD_ID,
+            window_event: WindowEvent::Center,
+        })
+        .ok();
+
+    Ok(LocalResponse::Success(None))
 }
