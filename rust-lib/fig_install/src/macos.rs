@@ -60,7 +60,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
                 Some(path) => path,
                 _ => {
                     return Err(Error::UpdateFailed(
-                        "Binary invoked does not reside in valid app bundle.".into(),
+                        "Binary invoked does not reside in a valid app bundle.".into(),
                     ));
                 },
             };

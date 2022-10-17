@@ -94,15 +94,15 @@ pub fn fig_bundle() -> Option<PathBuf> {
             let current_exe = current_exe_origin().ok()?;
 
             // Verify we have .../Bundle.app/Contents/MacOS/binary-name
-            let parts: PathBuf = current_exe
+            let mut parts: PathBuf = current_exe
                 .components()
                 .rev()
                 .skip(1)
                 .take(3)
                 .collect();
+            parts = parts.iter().rev().collect();
 
-            let path: PathBuf = "Fig.app/MacOS/Contents".to_owned().into();
-            if parts != path {
+            if parts != PathBuf::from("Fig.app/Contents/MacOS") {
                 return None;
             }
 
