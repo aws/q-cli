@@ -1,6 +1,5 @@
 pub mod menu;
 pub mod notification;
-mod util;
 pub mod window;
 
 use std::borrow::Cow;
@@ -74,6 +73,7 @@ use crate::{
     icons,
     local_ipc,
     secure_ipc,
+    utils,
     DebugState,
     EventLoop,
     EventLoopProxy,
@@ -426,7 +426,7 @@ pub fn build_dashboard(
         .with_resizable(true)
         .with_visible(is_visible)
         .with_always_on_top(false)
-        .with_window_icon(Some(util::ICON.clone()))
+        .with_window_icon(Some(utils::ICON.clone()))
         .with_menu(menu::menu_bar())
         .with_theme(*THEME);
 
@@ -500,7 +500,7 @@ pub fn build_autocomplete(
         .with_decorations(false)
         .with_always_on_top(true)
         .with_visible(false)
-        .with_window_icon(Some(util::ICON.clone()))
+        .with_window_icon(Some(utils::ICON.clone()))
         .with_theme(*THEME);
 
     cfg_if!(
@@ -552,7 +552,7 @@ pub fn build_autocomplete(
                 })
                 .unwrap();
         })
-        .with_custom_protocol("fig".into(), util::wrap_custom_protocol(icons::handle))
+        .with_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
         .with_devtools(true)
         .with_transparent(true)
         .with_initialization_script(&javascript_init())

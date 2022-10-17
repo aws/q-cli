@@ -6,6 +6,10 @@ use fig_proto::fig::{
     WindowFocusRequest,
 };
 use tracing::debug;
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
+};
 
 use super::{
     RequestResult,
@@ -48,15 +52,14 @@ pub async fn position_window(
         }
     }
 
-    let anchor = request.anchor.expect("Missing anchor field");
     let size = request.size.as_ref().expect("Missing size field");
+    let anchor = request.anchor.expect("Missing anchor field");
 
     proxy
         .send_event(Event::WindowEvent {
             window_id: window_id.clone(),
             window_event: WindowEvent::Resize {
-                width: size.width as u32,
-                height: size.height as u32,
+                size: LogicalSize::new(size.width.into(), size.height.into()),
             },
         })
         .unwrap();
@@ -65,8 +68,7 @@ pub async fn position_window(
         .send_event(Event::WindowEvent {
             window_id: window_id.clone(),
             window_event: WindowEvent::Reanchor {
-                x: anchor.x as i32,
-                y: anchor.y as i32,
+                position: LogicalPosition::new(anchor.x.into(), anchor.y.into()),
             },
         })
         .unwrap();

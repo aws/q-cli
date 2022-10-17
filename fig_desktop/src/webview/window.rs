@@ -7,7 +7,6 @@ use tokio::sync::mpsc::UnboundedSender;
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
-    PhysicalPosition,
     PhysicalSize,
     Position,
 };
@@ -31,7 +30,6 @@ use crate::platform::{
     self,
     PlatformState,
 };
-use crate::utils::Rect;
 use crate::AUTOCOMPLETE_ID;
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -49,75 +47,76 @@ pub struct WindowState {
     pub webview: WebView,
     pub context: WebContext,
     pub window_id: WindowId,
-    pub anchor: RwLock<PhysicalPosition<i32>>,
-    pub position: RwLock<PhysicalPosition<i32>>,
-    pub size: RwLock<PhysicalSize<u32>>,
+    pub anchor: RwLock<LogicalPosition<f64>>,
+    pub outer_position: RwLock<LogicalPosition<f64>>,
+    pub inner_size: RwLock<LogicalSize<f64>>,
     pub placement: RwLock<Placement>,
     pub enabled: AtomicBool,
 }
 
 impl WindowState {
     pub fn new(window_id: WindowId, webview: WebView, context: WebContext, enabled: bool) -> Self {
+        let window = webview.window();
+        let scale_factor = window.scale_factor();
+
         let position = webview
             .window()
-            .inner_position()
-            .expect("Failed to acquire window position");
+            .outer_position()
+            .expect("Failed to acquire window position")
+            .to_logical(scale_factor);
 
-        let size = webview.window().inner_size();
+        let size = window.inner_size().to_logical(scale_factor);
 
         Self {
             webview,
             context,
             window_id,
-            anchor: RwLock::new(PhysicalPosition::default()),
-            position: RwLock::new(position),
-            size: RwLock::new(size),
+            anchor: RwLock::new(LogicalPosition::default()),
+            outer_position: RwLock::new(position),
+            inner_size: RwLock::new(size),
             placement: RwLock::new(Placement::Absolute),
             enabled: AtomicBool::new(enabled),
         }
     }
 
     fn update_position(&self, platform_state: &PlatformState) {
-        let position = *self.position.read();
         let anchor = *self.anchor.read();
-        let size = *self.size.read();
+        let outer_position = *self.outer_position.read();
+        let inner_size = *self.inner_size.read();
         let placement = *self.placement.read();
 
         // TODO: this should be handled directly by client apps (eg. autocomplete engine) rather than being
         // hardcoded
-        let vertical_padding = anchor.y + 5;
+        let vertical_padding = anchor.y + 5.0;
 
         let monitor_frame = platform_state.get_current_monitor_frame(self.webview.window());
 
         let x = match placement {
-            Placement::Absolute => position.x,
+            Placement::Absolute => outer_position.x,
             Placement::RelativeTo((caret, RelativeDirection::Above | RelativeDirection::Below, clipping_behavior)) => {
                 match (clipping_behavior, monitor_frame) {
-                    (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => caret.x + anchor.x,
+                    (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => caret.left() + anchor.x,
                     (ClippingBehavior::KeepInFrame, Some(frame)) => {
-                        let origin_x = caret.x + anchor.x;
-                        let offset_x = frame.max_x() - (origin_x + size.width as i32);
-                        if offset_x < 0 { origin_x + offset_x } else { origin_x }
+                        let origin_x = caret.left() + anchor.x;
+                        let offset_x = frame.right() - (caret.left() + inner_size.width + anchor.x);
+                        if offset_x < 0.0 { origin_x + offset_x } else { origin_x }
                     },
                 }
             },
         };
 
         let y = match placement {
-            Placement::Absolute => position.y,
+            Placement::Absolute => outer_position.y,
             Placement::RelativeTo((caret, RelativeDirection::Above, _)) => {
-                caret.y - vertical_padding - size.height as i32
+                caret.top() - vertical_padding - inner_size.height
             },
-            Placement::RelativeTo((caret, RelativeDirection::Below, _)) => caret.max_y() + vertical_padding,
+            Placement::RelativeTo((caret, RelativeDirection::Below, _)) => caret.bottom() + vertical_padding,
         };
 
         if let Err(err) = platform_state.position_window(
             self.webview.window(),
             &self.window_id,
-            Position::Logical(LogicalPosition {
-                x: x.into(),
-                y: y.into(),
-            }),
+            Position::Logical(LogicalPosition { x, y }),
         ) {
             tracing::error!(%err, window_id =% self.window_id, "Failed to position window");
         }
@@ -131,13 +130,13 @@ impl WindowState {
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
-            WindowEvent::Reanchor { x, y } => {
-                *self.anchor.write() = PhysicalPosition { x, y };
+            WindowEvent::Reanchor { position } => {
+                *self.anchor.write() = position;
                 self.update_position(platform_state);
             },
-            WindowEvent::PositionAbsolute { x, y } => {
+            WindowEvent::PositionAbsolute { position } => {
                 *self.placement.write() = Placement::Absolute;
-                *self.position.write() = PhysicalPosition { x, y };
+                *self.outer_position.write() = position;
                 self.update_position(platform_state);
             },
             WindowEvent::PositionRelativeToCaret { caret } => {
@@ -147,26 +146,21 @@ impl WindowState {
                 };
 
                 let window_frame = match platform_state.get_active_window() {
-                    Some(active_window) => active_window.geometry,
+                    Some(active_window) => active_window.rect,
                     None => return,
                 };
 
                 // Caret origin will always be less than window origin (if coordinate system origin is top-left)
                 // assert!(caret.y >= window_frame.y);
 
-                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as i32;
+                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
                 // TODO: this calculation does not take into account anchor offset (or default vertical padding)
-                let is_above = window_frame.max_y() < caret.max_y() + max_height && // If positioned below, will popup appear inside of window frame?
-                                            monitor_frame.y < caret.y - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
+                let is_above = window_frame.bottom() < caret.bottom() + max_height && // If positioned below, will popup appear inside of window frame?
+                                            monitor_frame.top() < caret.top() - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
 
                 *self.placement.write() = Placement::RelativeTo((
-                    Rect {
-                        x: caret.x,
-                        y: caret.y,
-                        width: caret.width,
-                        height: caret.height,
-                    },
+                    caret,
                     if is_above {
                         RelativeDirection::Above
                     } else {
@@ -177,31 +171,27 @@ impl WindowState {
                 self.update_position(platform_state);
             },
             WindowEvent::PositionRelativeToRect {
-                x,
-                y,
-                width,
-                height,
+                rect,
                 direction,
                 clipping_behavior,
             } => {
-                *self.placement.write() =
-                    Placement::RelativeTo((Rect { x, y, width, height }, direction, clipping_behavior));
+                *self.placement.write() = Placement::RelativeTo((rect, direction, clipping_behavior));
                 self.update_position(platform_state);
             },
-            WindowEvent::Resize { width, height } => {
-                *self.size.write() = PhysicalSize { width, height };
+            WindowEvent::Resize { size } => {
+                *self.inner_size.write() = size;
                 self.update_position(platform_state);
                 cfg_if::cfg_if! {
                     if #[cfg(target_os = "linux")] {
                         if self.window_id == AUTOCOMPLETE_ID {
                             self.webview
                                 .window()
-                                .set_min_inner_size(Some(LogicalSize { width, height }));
+                                .set_min_inner_size(Some(size));
                         } else {
-                            self.webview.window().set_inner_size(LogicalSize { width, height });
+                            self.webview.window().set_inner_size(size);
                         }
                     } else {
-                        self.webview.window().set_inner_size(LogicalSize { width, height });
+                        self.webview.window().set_inner_size(size);
                     }
                 }
             },
@@ -287,6 +277,18 @@ impl WindowState {
             },
             WindowEvent::SetEnabled(enabled) => self.set_enabled(enabled),
             WindowEvent::SetTheme(theme) => self.set_theme(theme),
+            WindowEvent::Center => {
+                let window = self.webview.window();
+                if let Some(display) = platform_state.get_current_monitor_frame(window) {
+                    let outer_size = window.outer_size().to_logical::<f64>(window.scale_factor());
+                    *self.placement.write() = Placement::Absolute;
+                    *self.outer_position.write() = LogicalPosition::new(
+                        display.center() - outer_size.width * 0.5,
+                        display.middle() - outer_size.height * 0.5,
+                    );
+                    self.update_position(platform_state);
+                }
+            },
         }
     }
 

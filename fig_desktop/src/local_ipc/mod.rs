@@ -154,7 +154,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, platform_state: Arc<Pl
 
                 if let Err(err) = match hook.hook {
                     Some(EditBuffer(_)) => legacy_hook!("EditBuffer"),
-                    Some(CursorPosition(request)) => hooks::caret_position(request, &proxy).await,
+                    Some(CaretPosition(request)) => hooks::caret_position(request, &proxy).await,
                     Some(Prompt(_)) => legacy_hook!("Prompt"),
                     Some(FocusChange(request)) => hooks::focus_change(request, &proxy).await,
                     Some(PreExec(_)) => legacy_hook!("PreExec"),

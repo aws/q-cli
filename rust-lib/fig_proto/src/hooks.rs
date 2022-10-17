@@ -169,18 +169,8 @@ pub fn new_intercepted_key_hook(
     }))
 }
 
-pub fn new_cursor_position_hook(
-    x: impl Into<i32>,
-    y: impl Into<i32>,
-    width: impl Into<i32>,
-    height: impl Into<i32>,
-) -> Hook {
-    hook_enum_to_hook(hook::Hook::CursorPosition(CursorPositionHook {
-        x: x.into(),
-        y: y.into(),
-        width: width.into(),
-        height: height.into(),
-    }))
+pub fn new_caret_position_hook(x: f64, y: f64, width: f64, height: f64) -> Hook {
+    hook_enum_to_hook(hook::Hook::CaretPosition(CaretPositionHook { x, y, width, height }))
 }
 
 #[cfg(test)]

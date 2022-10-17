@@ -8,6 +8,7 @@ use fig_util::{
     Shell,
 };
 use tracing::error;
+use wry::application::dpi::LogicalSize;
 use wry::application::event_loop::ControlFlow;
 
 use super::{
@@ -84,16 +85,23 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 });
             });
 
-            match proxy.send_event(Event::WindowEvent {
-                window_id: DASHBOARD_ID,
-                window_event: crate::event::WindowEvent::Resize {
-                    width: 1030,
-                    height: 720,
-                },
-            }) {
-                Ok(_) => RequestResult::success(),
-                Err(_) => RequestResult::error(""),
-            }
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: crate::event::WindowEvent::Resize {
+                        size: LogicalSize::new(1030.0, 720.0),
+                    },
+                })
+                .ok();
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: crate::event::WindowEvent::Center,
+                })
+                .ok();
+
+            RequestResult::success()
         },
         OnboardingAction::LaunchShellOnboarding => {
             fig_settings::state::set_value("user.onboarding", false).ok();

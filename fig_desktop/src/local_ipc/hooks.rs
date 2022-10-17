@@ -1,9 +1,13 @@
 use anyhow::Result;
 use fig_proto::local::{
-    CursorPositionHook,
+    CaretPositionHook,
     FileChangedHook,
     FocusChangeHook,
     FocusedWindowDataHook,
+};
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
 };
 
 use crate::event::WindowEvent;
@@ -16,14 +20,17 @@ use crate::{
 };
 
 pub async fn caret_position(
-    CursorPositionHook { x, y, width, height }: CursorPositionHook,
+    CaretPositionHook { x, y, width, height }: CaretPositionHook,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     proxy
         .send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID,
             window_event: WindowEvent::PositionRelativeToCaret {
-                caret: Rect { x, y, width, height },
+                caret: Rect {
+                    position: LogicalPosition::new(x, y),
+                    size: LogicalSize::new(width, height),
+                },
             },
         })
         .ok();

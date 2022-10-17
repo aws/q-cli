@@ -275,7 +275,7 @@ mod tests {
             inner: Bytes::from(
                 r#"{
   "hook": {
-    "cursorPosition": {
+    "caretPosition": {
       "x": 123,
       "y": 456,
       "width": 34,
@@ -294,15 +294,15 @@ mod tests {
             _ => panic!(),
         };
 
-        let cursor_position = match hook.hook.unwrap() {
-            local::hook::Hook::CursorPosition(cursor_position) => cursor_position,
+        let caret_position = match hook.hook.unwrap() {
+            local::hook::Hook::CaretPosition(caret_position) => caret_position,
             _ => panic!(),
         };
 
-        assert_eq!(cursor_position.x, 123);
-        assert_eq!(cursor_position.y, 456);
-        assert_eq!(cursor_position.width, 34);
-        assert_eq!(cursor_position.height, 61);
+        assert_eq!(caret_position.x, 123.0);
+        assert_eq!(caret_position.y, 456.0);
+        assert_eq!(caret_position.width, 34.0);
+        assert_eq!(caret_position.height, 61.0);
     }
 
     #[test]

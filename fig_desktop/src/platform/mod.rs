@@ -30,11 +30,8 @@ cfg_if::cfg_if! {
     }
 }
 
-#[allow(dead_code)]
-pub type WindowGeometry = Rect<i32, i32>;
-
 pub struct PlatformWindow {
-    pub geometry: WindowGeometry,
+    pub rect: Rect,
     // TODO: add a platform specific impl of things like name, is_terminal(), etc
     // pub inner: ExternalPlatformWindowImpl
 }
@@ -69,13 +66,21 @@ impl PlatformState {
 
     /// Gets the current cursor position on the screen
     #[allow(dead_code)]
-    pub fn get_cursor_position(&self) -> Option<Rect<i32, i32>> {
+    pub fn get_cursor_position(&self) -> Option<Rect> {
         self.0.get_cursor_position()
     }
 
-    // TODO: implement on Linux & Windows
-    pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect<i32, i32>> {
-        self.0.get_current_monitor_frame(window)
+    pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect> {
+        match window.current_monitor() {
+            Some(monitor) => {
+                let scale_factor = monitor.scale_factor();
+                Some(Rect {
+                    position: monitor.position().to_logical(scale_factor),
+                    size: monitor.size().to_logical(scale_factor),
+                })
+            },
+            None => None,
+        }
     }
 
     /// Gets the currently active window on the platform

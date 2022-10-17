@@ -70,7 +70,6 @@ use wry::application::platform::macos::{
 use super::{
     PlatformBoundEvent,
     PlatformWindow,
-    WindowGeometry,
 };
 use crate::event::{
     Event,
@@ -92,7 +91,7 @@ use crate::{
     DASHBOARD_ID,
 };
 
-pub const DEFAULT_CARET_WIDTH: i32 = 10;
+pub const DEFAULT_CARET_WIDTH: f64 = 10.0;
 
 static UNMANAGED: Lazy<Unmanaged> = Lazy::new(|| Unmanaged {
     event_sender: RwLock::new(Option::<EventLoopProxy>::None),
@@ -393,52 +392,28 @@ impl PlatformStateImpl {
         std::result::Result::Ok(())
     }
 
-    pub(super) fn get_cursor_position(&self) -> Option<Rect<i32, i32>> {
+    pub(super) fn get_cursor_position(&self) -> Option<Rect> {
         let caret: CaretPosition = unsafe { get_caret_position(true) };
 
         if caret.valid {
             Some(Rect {
-                x: caret.x as i32,
-                y: caret.y as i32,
-                width: DEFAULT_CARET_WIDTH,
-                height: caret.height as i32,
+                position: LogicalPosition::new(caret.x, caret.y),
+                size: LogicalSize::new(DEFAULT_CARET_WIDTH, caret.height),
             })
         } else {
             None
         }
     }
 
-    pub(super) fn get_current_monitor_frame(
-        &self,
-        window: &wry::application::window::Window,
-    ) -> Option<Rect<i32, i32>> {
-        match window.current_monitor() {
-            Some(monitor) => {
-                let origin = monitor.position().to_logical(monitor.scale_factor()) as LogicalPosition<i32>;
-                let size = monitor.size().to_logical(monitor.scale_factor()) as LogicalSize<i32>;
-
-                Some(Rect {
-                    x: origin.x,
-                    y: origin.y,
-                    width: size.width as i32,
-                    height: size.height as i32,
-                })
-            },
-            None => None,
-        }
-    }
-
     /// Gets the currently active window on the platform
     pub(super) fn get_active_window(&self) -> Option<PlatformWindow> {
         let window = get_active_window()?;
-        let geometry = WindowGeometry {
-            x: window.position.x as i32,
-            y: window.position.y as i32,
-            width: window.position.width as i32,
-            height: window.position.height as i32,
-        };
-
-        Some(PlatformWindow { geometry })
+        Some(PlatformWindow {
+            rect: Rect {
+                position: LogicalPosition::new(window.position.x, window.position.y),
+                size: LogicalSize::new(window.position.width, window.position.height),
+            },
+        })
     }
 
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {

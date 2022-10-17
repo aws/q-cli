@@ -1,3 +1,7 @@
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
+};
 use wry::application::event_loop::ControlFlow;
 use wry::application::window::Theme;
 
@@ -42,24 +46,10 @@ pub enum ClippingBehavior {
     KeepInFrame,
 }
 
-impl<T> Rect<T, T>
-where
-    T: std::ops::Add<Output = T> + Copy,
-{
-    #[allow(dead_code)]
-    pub fn max_x(&self) -> T {
-        self.x + self.width
-    }
-
-    pub fn max_y(&self) -> T {
-        self.y + self.height
-    }
-}
-
 #[derive(Debug, Clone, Copy)]
 pub enum Placement {
     Absolute,
-    RelativeTo((Rect<i32, i32>, RelativeDirection, ClippingBehavior)),
+    RelativeTo((Rect, RelativeDirection, ClippingBehavior)),
 }
 
 #[derive(Debug, Clone)]
@@ -82,33 +72,23 @@ pub enum WindowEvent {
     SetEnabled(bool),
     SetTheme(Option<Theme>),
     Reanchor {
-        x: i32,
-        y: i32,
+        position: LogicalPosition<f64>,
     },
     PositionRelativeToCaret {
-        caret: Rect<i32, i32>,
+        caret: Rect,
     },
     // todo(mschrage): move direction and clipping behavior out of this struct into WindowState
     PositionRelativeToRect {
-        /// x position of cursor
-        x: i32,
-        /// y position of cursor
-        y: i32,
-        /// width of cursor
-        width: i32,
-        /// height of cursor
-        height: i32,
+        rect: Rect,
         direction: RelativeDirection,
         // Defines behavior when desired window position is outside of screen
         clipping_behavior: ClippingBehavior,
     },
     PositionAbsolute {
-        x: i32,
-        y: i32,
+        position: LogicalPosition<f64>,
     },
     Resize {
-        width: u32,
-        height: u32,
+        size: LogicalSize<f64>,
     },
     /// Hides the window
     Hide,
@@ -129,6 +109,7 @@ pub enum WindowEvent {
     },
     Devtools,
     DebugMode(bool),
+    Center,
 }
 
 impl WindowEvent {

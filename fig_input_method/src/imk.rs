@@ -12,7 +12,7 @@ use cocoa::foundation::{
     NSSize,
 };
 use fig_ipc::local::send_hook_to_socket;
-use fig_proto::hooks::new_cursor_position_hook;
+use fig_proto::hooks::new_caret_position_hook;
 use macos_accessibility_position::{
     NSStringRef,
     NotificationCenter,
@@ -150,13 +150,13 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
         };
         info!("Got maxy: {max_y:?}");
 
-        let hook = new_cursor_position_hook(
-            rect.origin.x as i32,
-            (max_y
+        let hook = new_caret_position_hook(
+            rect.origin.x,
+            max_y
                 .map(|max_y| max_y - rect.origin.y - rect.size.height)
-                .unwrap_or(0.0)) as i32,
-            rect.size.width as i32,
-            rect.size.height as i32,
+                .unwrap_or(0.0),
+            rect.size.width,
+            rect.size.height,
         );
 
         info!("Sending cursor position for {bundle_id:?}: {hook:?}");

@@ -56,7 +56,7 @@ message Hook {
     HideHook hide = 110;
     EventHook event = 111;
     FileChangedHook file_changed = 112;
-    CursorPositionHook cursor_position = 113;
+    CaretPositionHook caret_position = 113;
     FocusChangeHook focus_change = 114;
     InterceptedKeyHook intercepted_key = 115;
     FocusedWindowDataHook focused_window_data = 116;
@@ -225,11 +225,11 @@ message FileChangedHook {
   optional string filepath = 2;
 }
 
-message CursorPositionHook {
-  int32 x = 1;
-  int32 y = 2;
-  int32 width = 3;
-  int32 height = 4;
+message CaretPositionHook {
+  double x = 1;
+  double y = 2;
+  double width = 3;
+  double height = 4;
 }
 
 message FocusChangeHook {}
