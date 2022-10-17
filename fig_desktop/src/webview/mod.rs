@@ -85,6 +85,9 @@ pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 
+pub const DASHBOARD_ONBOARDING_SIZE: LogicalSize<f64> = LogicalSize::new(590.0, 480.0);
+pub const DASHBOARD_INITIAL_SIZE: LogicalSize<f64> = LogicalSize::new(1030.0, 720.0);
+
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
 fn map_theme(theme: &str) -> Option<Theme> {
@@ -463,8 +466,8 @@ pub fn build_dashboard(
         .with_theme(*THEME);
 
     match show_onboarding {
-        true => window = window.with_inner_size(LogicalSize::new(590, 480)),
-        false => window = window.with_inner_size(LogicalSize::new(1030, 720)),
+        true => window = window.with_inner_size(DASHBOARD_ONBOARDING_SIZE),
+        false => window = window.with_inner_size(DASHBOARD_INITIAL_SIZE),
     }
 
     let window = window.build(event_loop)?;

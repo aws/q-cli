@@ -115,7 +115,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             }
         },
         Integration::Daemon => {
-            let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+            let path = std::env::current_exe()?;
             Daemon::default().install(&path).await?;
             installed = true;
             Ok(())

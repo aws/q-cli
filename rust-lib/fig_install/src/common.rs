@@ -1,14 +1,14 @@
-use std::convert::TryInto;
 use std::path::Path;
 
 use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
-use fig_util::{
-    directories,
-    Shell,
+use fig_util::directories::{
+    self,
+    relative_cli_path,
 };
+use fig_util::Shell;
 
 use crate::Error;
 
@@ -124,7 +124,7 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
     }
 
     if components.contains(InstallComponents::DAEMON) {
-        let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+        let path = relative_cli_path()?;
         Daemon::default().install(&path).await?;
     }
 

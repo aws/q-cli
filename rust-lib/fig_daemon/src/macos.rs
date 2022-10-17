@@ -17,9 +17,10 @@ pub struct Daemon;
 
 impl Daemon {
     pub async fn install(&self, executable: &Utf8Path) -> Result<(), Error> {
+        let executable = executable.to_string();
         let daemon = LaunchdPlist::new(DAEMON_NAME)
-            .program(executable.as_str())
-            .program_arguments([executable.as_str(), "daemon"])
+            .program(&executable)
+            .program_arguments([&executable, "daemon"])
             .keep_alive(true)
             .run_at_load(true)
             .throttle_interval(30);

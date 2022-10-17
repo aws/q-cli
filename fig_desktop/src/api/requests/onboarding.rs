@@ -8,7 +8,6 @@ use fig_util::{
     Shell,
 };
 use tracing::error;
-use wry::application::dpi::LogicalSize;
 use wry::application::event_loop::ControlFlow;
 
 use super::{
@@ -16,6 +15,7 @@ use super::{
     RequestResultImpl,
 };
 use crate::event::Event;
+use crate::webview::DASHBOARD_INITIAL_SIZE;
 use crate::{
     EventLoopProxy,
     DASHBOARD_ID,
@@ -89,7 +89,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
                     window_event: crate::event::WindowEvent::Resize {
-                        size: LogicalSize::new(1030.0, 720.0),
+                        size: DASHBOARD_INITIAL_SIZE,
                     },
                 })
                 .ok();

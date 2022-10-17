@@ -14,7 +14,6 @@ use fig_proto::local::{
 };
 use parking_lot::Mutex;
 use tracing::error;
-use wry::application::dpi::LogicalSize;
 use wry::application::event_loop::ControlFlow;
 
 use super::{
@@ -25,6 +24,7 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::webview::DASHBOARD_ONBOARDING_SIZE;
 use crate::{
     platform,
     EventLoopProxy,
@@ -194,7 +194,7 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
             window_event: WindowEvent::Resize {
-                size: LogicalSize::new(590.0, 480.0),
+                size: DASHBOARD_ONBOARDING_SIZE,
             },
         })
         .ok();

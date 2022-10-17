@@ -527,6 +527,21 @@ pub fn ssh_saved_identities() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
 }
 
+/// The path to the cli, relative to the running binary
+pub fn relative_cli_path() -> Result<PathBuf> {
+    cfg_if::cfg_if! {
+        if #[cfg(target_os = "macos")] {
+            let mut current_exe = std::env::current_exe()?;
+            while current_exe.is_symlink() {
+                current_exe = std::fs::read_link(&current_exe)?;
+            }
+            Ok(current_exe.parent().unwrap().join("fig-darwin-universal"))
+        } else {
+            todo!();
+        }
+    }
+}
+
 #[cfg(test)]
 #[test]
 fn _snapshot_ssh_saved_identities() {
@@ -549,6 +564,7 @@ utf8_dir!(plugins_dir);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(ssh_saved_identities);
+utf8_dir!(relative_cli_path);
 
 #[cfg(any(debug_assertions, test))]
 fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {

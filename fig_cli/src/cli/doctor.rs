@@ -782,7 +782,7 @@ macro_rules! daemon_fix {
     () => {
         Some(DoctorFix::Async(
             async move {
-                let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+                let path = std::env::current_exe()?;
                 Daemon::default().install(&path).await?;
                 // Sleep for a few seconds to give the daemon time to install and start
                 std::thread::sleep(std::time::Duration::from_secs(5));
@@ -825,7 +825,7 @@ impl DoctorCheck for DaemonCheck {
                     fix: Some(DoctorFix::Async(
                         async move {
                             std::fs::create_dir_all(&launch_agents_path)?;
-                            let path: camino::Utf8PathBuf = std::env::current_exe()?.try_into()?;
+                            let path = std::env::current_exe()?;
                             fig_daemon::Daemon::default().install(&path).await?;
                             std::thread::sleep(std::time::Duration::from_secs(5));
                             Ok(())

@@ -7,9 +7,9 @@ mod macos;
 #[cfg(target_os = "windows")]
 mod windows;
 
+use std::path::Path;
 use std::process::ExitStatus;
 
-use camino::Utf8Path;
 #[cfg(target_os = "freebsd")]
 use freebsd as os;
 #[cfg(target_os = "linux")]
@@ -51,7 +51,8 @@ pub struct Daemon {
 
 impl Daemon {
     /// Install the daemon
-    pub async fn install(&self, executable: &Utf8Path) -> Result<()> {
+    pub async fn install(&self, executable: &Path) -> Result<()> {
+        let executable: &camino::Utf8Path = executable.try_into().unwrap();
         self.inner.install(executable).await?;
         self.restart().await
     }
