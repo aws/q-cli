@@ -55,6 +55,7 @@ use parking_lot::{
 };
 use tracing::{
     debug,
+    trace,
     warn,
 };
 use wry::application::dpi::{
@@ -137,6 +138,22 @@ impl PlatformStateImpl {
     where
         F: MethodImplementation<Callee = Object>,
     {
+        // https://github.com/tauri-apps/wry/blob/17d324b70e4d580c43c9d4ab37bd265005356bf4/src/webview/wkwebview/mod.rs#L258
+        Self::override_objc_class_method("WryWebView", sel, func)
+    }
+
+    fn override_app_delegate_method<F>(sel: Sel, func: F)
+    where
+        F: MethodImplementation<Callee = Object>,
+    {
+        // https://github.com/tauri-apps/tao/blob/7c7ce8ab2d838a79ecdf83df00124c418a6a51f6/src/platform_impl/macos/app_delegate.rs#L35
+        Self::override_objc_class_method("TaoAppDelegate", sel, func)
+    }
+
+    fn override_objc_class_method<F>(class: &str, sel: Sel, func: F)
+    where
+        F: MethodImplementation<Callee = Object>,
+    {
         let encs = F::Args::encodings();
         let encs = encs.as_ref();
         let sel_args = Self::count_args(sel);
@@ -149,8 +166,7 @@ impl PlatformStateImpl {
 
         let types = Self::method_type_encoding(&F::Ret::encode(), encs);
 
-        // https://github.com/tauri-apps/wry/blob/17d324b70e4d580c43c9d4ab37bd265005356bf4/src/webview/wkwebview/mod.rs#L258
-        let name = CString::new("WryWebView").unwrap();
+        let name = CString::new(class).unwrap();
 
         unsafe {
             let cls = objc_getClass(name.as_ptr()) as *mut Class;
@@ -288,6 +304,33 @@ impl PlatformStateImpl {
                 Self::override_webview_method(
                     sel!(acceptsFirstMouse:),
                     accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
+                );
+
+                extern "C" fn application_should_handle_reopen(
+                    _this: &Object,
+                    _cmd: Sel,
+                    _sender: id,
+                    _visible_windows: BOOL,
+                ) -> BOOL {
+                    trace!("application_should_handle_reopen");
+                    NotificationCenter::shared()
+                        .post_notification("io.fig.show-dashboard", std::iter::empty::<(&str, &str)>());
+                    YES
+                }
+
+                let application_observer = self.proxy.clone();
+                NotificationCenter::shared().subscribe("io.fig.show-dashboard", move |_, _| {
+                    if let Err(e) = application_observer.send_event(Event::WindowEvent {
+                        window_id: DASHBOARD_ID,
+                        window_event: WindowEvent::Show,
+                    }) {
+                        warn!("Error sending event: {e:?}");
+                    }
+                });
+
+                Self::override_app_delegate_method(
+                    sel!(applicationShouldHandleReopen:hasVisibleWindows:),
+                    application_should_handle_reopen as extern "C" fn(&Object, Sel, id, BOOL) -> BOOL,
                 );
 
                 Ok(())
