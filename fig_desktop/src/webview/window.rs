@@ -1,9 +1,26 @@
 use std::borrow::Cow;
-use std::fmt;
+use std::fmt::{
+    self,
+    Display,
+};
 use std::sync::atomic::AtomicBool;
 
+use bytes::BytesMut;
+use fig_proto::fig::notification::Type as NotificationEnum;
+use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
+use fig_proto::fig::{
+    EventNotification,
+    Notification,
+    NotificationType,
+    ServerOriginatedMessage,
+};
+use fig_proto::prost::Message;
 use parking_lot::RwLock;
 use tokio::sync::mpsc::UnboundedSender;
+use tracing::{
+    error,
+    warn,
+};
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
@@ -16,8 +33,10 @@ use wry::webview::{
     WebView,
 };
 
+use super::notification::WebviewNotificationsState;
 use crate::event::{
     ClippingBehavior,
+    EmitEventName,
     Placement,
     RelativeDirection,
     WindowEvent,
@@ -127,6 +146,7 @@ impl WindowState {
         event: WindowEvent,
         figterm_state: &FigtermState,
         platform_state: &PlatformState,
+        notifications_state: &WebviewNotificationsState,
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
@@ -225,16 +245,18 @@ impl WindowState {
                     .unwrap();
             },
             WindowEvent::NavigateRelative { path } => {
-                self.webview
-                    .evaluate_script(&format!("window.location.pathname = '{path}';"))
-                    .unwrap();
+                let event_name = "mission-control.navigate";
+                let payload = serde_json::json!({ "path": path });
+
+                self.notification(notifications_state, &NotificationType::NotifyOnEvent, Notification {
+                    r#type: Some(NotificationEnum::EventNotification(EventNotification {
+                        event_name: Some(event_name.to_string()),
+                        payload: Some(payload.to_string()),
+                    })),
+                })
             },
             WindowEvent::Emit { event_name, payload } => {
-                self.webview
-                    .evaluate_script(&format!(
-                        "document.dispatchEvent(new CustomEvent('{event_name}', {{'detail': `{payload}`}}));"
-                    ))
-                    .unwrap();
+                self.emit(event_name, payload);
             },
             WindowEvent::Api { payload } => {
                 api_tx.send((self.window_id.clone(), payload)).unwrap();
@@ -283,6 +305,43 @@ impl WindowState {
                     self.update_position(platform_state);
                 }
             },
+        }
+    }
+
+    pub fn emit(&self, event_name: impl Display, payload: impl Into<serde_json::Value>) {
+        let payload = payload.into();
+        self.webview
+            .evaluate_script(&format!(
+                "document.dispatchEvent(new CustomEvent('{event_name}', {{'detail': {payload}}}));"
+            ))
+            .unwrap();
+    }
+
+    pub fn notification(
+        &self,
+        notifications_state: &WebviewNotificationsState,
+        notification_type: &NotificationType,
+        notification: Notification,
+    ) {
+        let window_id = &self.window_id;
+        if let Some(notifications) = notifications_state.subscriptions.get(window_id) {
+            if let Some(message_id) = notifications.get(notification_type) {
+                let message = ServerOriginatedMessage {
+                    id: Some(*message_id),
+                    submessage: Some(ServerOriginatedSubMessage::Notification(notification)),
+                };
+
+                let mut encoded = BytesMut::new();
+
+                match message.encode(&mut encoded) {
+                    Ok(_) => self.emit(EmitEventName::ProtoMessageReceived, base64::encode(encoded)),
+                    Err(err) => error!(%err, "Failed to encode notification"),
+                }
+            } else {
+                warn!(?notification_type, %window_id, "No subscription for notification type");
+            }
+        } else {
+            warn!(?notification_type, %window_id, "No subscriptions for window");
         }
     }
 

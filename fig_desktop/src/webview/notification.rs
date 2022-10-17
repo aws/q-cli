@@ -24,7 +24,7 @@ pub struct WebviewNotificationsState {
 }
 
 impl WebviewNotificationsState {
-    pub async fn send_notification(
+    pub async fn broadcast_notification_all(
         &self,
         notification_type: &NotificationType,
         notification: Notification,

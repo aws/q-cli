@@ -162,7 +162,7 @@ pub async fn prompt(
     proxy: &EventLoopProxy,
 ) -> Result<()> {
     notifications_state
-        .send_notification(
+        .broadcast_notification_all(
             &NotificationType::NotifyOnPrompt,
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::ShellPromptReturnedNotification(
@@ -194,7 +194,7 @@ pub async fn pre_exec(
     })?;
 
     notifications_state
-        .send_notification(
+        .broadcast_notification_all(
             &NotificationType::NotifyOnProcessChanged,
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::ProcessChangeNotification(
@@ -223,7 +223,7 @@ pub async fn intercepted_key(
     debug!(%action, "Intercepted Key Action");
 
     notifications_state
-        .send_notification(
+        .broadcast_notification_all(
             &NotificationType::NotifyOnKeybindingPressed,
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::KeybindingPressedNotification(

@@ -133,7 +133,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                         match fig_settings::settings::get_map() {
                             Ok(settings) => {
                                 notifications_state
-                                    .send_notification(
+                                    .broadcast_notification_all(
                                         &NotificationType::NotifyOnSettingsChange,
                                         fig_proto::fig::Notification {
                                             r#type: Some(NotificationEnum::SettingsChangedNotification(
@@ -178,7 +178,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                         match fig_settings::state::get_map() {
                             Ok(state) => {
                                 notifications_state
-                                    .send_notification(
+                                    .broadcast_notification_all(
                                         &NotificationType::NotifyOnLocalStateChanged,
                                         fig_proto::fig::Notification {
                                             r#type: Some(NotificationEnum::LocalStateChangedNotification(

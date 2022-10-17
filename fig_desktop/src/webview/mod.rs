@@ -296,6 +296,7 @@ impl WebviewManager {
                                         window_event,
                                         &self.figterm_state,
                                         &self.platform_state,
+                                        &self.notifications_state,
                                         &api_handler_tx,
                                     );
                                 } else {
@@ -319,6 +320,7 @@ impl WebviewManager {
                                         window_event.clone(),
                                         &self.figterm_state,
                                         &self.platform_state,
+                                        &self.notifications_state,
                                         &api_handler_tx,
                                     );
                                 } else {
