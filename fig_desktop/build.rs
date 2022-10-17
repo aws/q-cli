@@ -19,7 +19,7 @@ fn build_assets() {
         FilterType::Lanczos3,
     );
 
-    resize_directory("icons/tray", "TRAY_ICONS_PROCESSED", 18, 18, FilterType::Lanczos3);
+    resize_directory("icons/tray", "TRAY_ICONS_PROCESSED", 36, 36, FilterType::Lanczos3);
 }
 
 fn resize_directory(name: &str, var: &str, width: u32, height: u32, filter: FilterType) {

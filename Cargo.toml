@@ -39,3 +39,4 @@ opt-level = 3
 [patch.crates-io]
 tokio = { git = "https://github.com/sullivan-sean/tokio" }
 mio = { git = "https://github.com/sullivan-sean/mio" }
+tao = { git = "https://github.com/tauri-apps/tao", rev = "dd86a9ebec67bf103e79bdfd1a2377cbe832bc03" }

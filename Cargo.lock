@@ -7445,8 +7445,7 @@ checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 [[package]]
 name = "tao"
 version = "0.14.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "43336f5d1793543ba96e2a1e75f3a5c7dcd592743be06a0ab3a190f4fcb4b934"
+source = "git+https://github.com/tauri-apps/tao?rev=dd86a9ebec67bf103e79bdfd1a2377cbe832bc03#dd86a9ebec67bf103e79bdfd1a2377cbe832bc03"
 dependencies = [
  "bitflags",
  "cairo-rs",
