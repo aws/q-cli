@@ -93,7 +93,7 @@ impl WindowState {
 
         let x = match placement {
             Placement::Absolute => outer_position.x,
-            Placement::RelativeTo((caret, RelativeDirection::Above | RelativeDirection::Below, clipping_behavior)) => {
+            Placement::RelativeTo(caret, RelativeDirection::Above | RelativeDirection::Below, clipping_behavior) => {
                 match (clipping_behavior, monitor_frame) {
                     (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => caret.left() + anchor.x,
                     (ClippingBehavior::KeepInFrame, Some(frame)) => {
@@ -107,10 +107,10 @@ impl WindowState {
 
         let y = match placement {
             Placement::Absolute => outer_position.y,
-            Placement::RelativeTo((caret, RelativeDirection::Above, _)) => {
+            Placement::RelativeTo(caret, RelativeDirection::Above, _) => {
                 caret.top() - vertical_padding - inner_size.height
             },
-            Placement::RelativeTo((caret, RelativeDirection::Below, _)) => caret.bottom() + vertical_padding,
+            Placement::RelativeTo(caret, RelativeDirection::Below, _) => caret.bottom() + vertical_padding,
         };
 
         if let Err(err) = platform_state.position_window(
@@ -159,7 +159,7 @@ impl WindowState {
                 let is_above = window_frame.bottom() < caret.bottom() + max_height && // If positioned below, will popup appear inside of window frame?
                                             monitor_frame.top() < caret.top() - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
 
-                *self.placement.write() = Placement::RelativeTo((
+                *self.placement.write() = Placement::RelativeTo(
                     caret,
                     if is_above {
                         RelativeDirection::Above
@@ -167,7 +167,7 @@ impl WindowState {
                         RelativeDirection::Below
                     },
                     ClippingBehavior::KeepInFrame,
-                ));
+                );
                 self.update_position(platform_state);
             },
             WindowEvent::PositionRelativeToRect {
@@ -175,7 +175,7 @@ impl WindowState {
                 direction,
                 clipping_behavior,
             } => {
-                *self.placement.write() = Placement::RelativeTo((rect, direction, clipping_behavior));
+                *self.placement.write() = Placement::RelativeTo(rect, direction, clipping_behavior);
                 self.update_position(platform_state);
             },
             WindowEvent::Resize { size } => {
@@ -293,6 +293,9 @@ impl WindowState {
     }
 
     pub fn set_enabled(&self, enabled: bool) {
+        self.webview
+            .evaluate_script(format!("document.fig.enabled = {enabled};").as_str())
+            .unwrap();
         self.enabled.store(enabled, std::sync::atomic::Ordering::SeqCst);
     }
 
@@ -301,6 +304,6 @@ impl WindowState {
     }
 
     pub fn set_theme(&self, _theme: Option<Theme>) {
-        // unimplemented!();
+        // TODO: blocked on https://github.com/tauri-apps/tao/issues/582
     }
 }

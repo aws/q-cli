@@ -220,7 +220,7 @@ impl PlatformStateImpl {
         "/bin/bash".into()
     }
 
-    pub fn accessibility_is_enabled(&self) -> Option<bool> {
+    pub fn accessibility_is_enabled() -> Option<bool> {
         None
     }
 }

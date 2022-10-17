@@ -99,8 +99,8 @@ impl PlatformState {
     }
 
     /// Whether or not accessibility is enabled
-    pub fn accessibility_is_enabled(&self) -> Option<bool> {
-        self.0.accessibility_is_enabled()
+    pub fn accessibility_is_enabled() -> Option<bool> {
+        PlatformStateImpl::accessibility_is_enabled()
     }
 }
 

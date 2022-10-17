@@ -21,6 +21,7 @@ use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
 use fig_util::consts::FIG_DESKTOP_PROCESS_NAME;
 use parking_lot::RwLock;
+use platform::PlatformState;
 use sysinfo::{
     get_current_pid,
     ProcessExt,
@@ -162,6 +163,10 @@ async fn main() {
         tracing::info!("Showing onboarding");
     }
 
+    let autocomplete_enabled = !fig_settings::settings::get_bool_or("autocomplete.disable", false)
+        && PlatformState::accessibility_is_enabled().unwrap_or(true)
+        && fig_request::auth::is_logged_in();
+
     let mut webview_manager = WebviewManager::new();
     webview_manager
         .build_webview(
@@ -175,15 +180,13 @@ async fn main() {
             true,
         )
         .unwrap();
-
     webview_manager
         .build_webview(
             AUTOCOMPLETE_ID,
             build_autocomplete,
             AutocompleteOptions {},
-            !fig_settings::settings::get_bool_or("autocomplete.disable", false),
+            autocomplete_enabled,
         )
         .unwrap();
-
     webview_manager.run().await.unwrap();
 }

@@ -139,9 +139,8 @@ pub fn build_tray(
     event_loop_window_target: &EventLoopWindowTarget,
     _debug_state: &DebugState,
     _figterm_state: &FigtermState,
-    platform_state: &PlatformState,
 ) -> wry::Result<SystemTray> {
-    let tray_menu = get_context_menu(platform_state);
+    let tray_menu = get_context_menu();
 
     cfg_if!(
         if #[cfg(target_os = "linux")] {
@@ -163,10 +162,10 @@ pub fn build_tray(
     Ok(tray_builder.build(event_loop_window_target)?)
 }
 
-pub fn get_context_menu(platform_state: &PlatformState) -> ContextMenu {
+pub fn get_context_menu() -> ContextMenu {
     let mut tray_menu = ContextMenu::new();
 
-    let elements = menu(platform_state);
+    let elements = menu();
     for elem in elements {
         elem.add_to_menu(&mut tray_menu);
     }
@@ -267,7 +266,7 @@ macro_rules! menu_element {
     };
 }
 
-fn menu(platform_state: &PlatformState) -> Vec<MenuElement> {
+fn menu() -> Vec<MenuElement> {
     let logged_in = fig_request::auth::is_logged_in();
 
     if !logged_in {
@@ -278,7 +277,7 @@ fn menu(platform_state: &PlatformState) -> Vec<MenuElement> {
         ];
     }
 
-    if !platform_state.accessibility_is_enabled().unwrap_or(true) {
+    if !PlatformState::accessibility_is_enabled().unwrap_or(true) {
         return vec![
             menu_element!(Element, None, None, "Accessibility is not enabled", "accessibility"),
             menu_element!(Separator),

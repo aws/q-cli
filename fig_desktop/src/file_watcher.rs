@@ -18,6 +18,7 @@ use serde_json::{
     Value,
 };
 use tracing::{
+    debug,
     error,
     trace,
 };
@@ -146,21 +147,19 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                     .await
                                     .unwrap();
 
-                                println!("settings changed");
-
                                 json_map_diff(
                                     &SETTINGS.lock(),
                                     &settings,
                                     |key, value| {
-                                        println!("Setting changed: {} = {}", key, value);
+                                        debug!(%key, %value, "Setting added");
                                         NOTIFICATION_BUS.send_settings_new(key, value);
                                     },
                                     |key, old, new| {
-                                        println!("Setting changed: {} = {} -> {}", key, old, new);
+                                        debug!(%key, %old, %new, "Setting change");
                                         NOTIFICATION_BUS.send_settings_changed(key, old, new);
                                     },
                                     |key, value| {
-                                        println!("Setting removed: {} = {}", key, value);
+                                        debug!(%key, %value, "Setting removed");
                                         NOTIFICATION_BUS.send_settings_remove(key, value);
                                     },
                                 );
@@ -197,12 +196,15 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                     &STATE.lock(),
                                     &state,
                                     |key, value| {
+                                        debug!(%key, %value, "State added");
                                         NOTIFICATION_BUS.send_state_new(key, value);
                                     },
                                     |key, old, new| {
+                                        debug!(%key, %old, %new, "State change");
                                         NOTIFICATION_BUS.send_state_changed(key, old, new);
                                     },
                                     |key, value| {
+                                        debug!(%key, %value, "State removed");
                                         NOTIFICATION_BUS.send_state_remove(key, value);
                                     },
                                 );
@@ -220,7 +222,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_) =
                         event.kind
                     {
-                        proxy.send_event(Event::ReloadTray).ok();
+                        proxy.send_event(Event::ReloadCredentials).ok();
                     }
                 }
             }

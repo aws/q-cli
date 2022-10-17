@@ -99,6 +99,8 @@ static UNMANAGED: Lazy<Unmanaged> = Lazy::new(|| Unmanaged {
     window_server: RwLock::new(Option::<Arc<Mutex<WindowServer>>>::None),
 });
 
+static ACCESSIBILITY_ENABLED: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(accessibility_is_enabled()));
+
 struct Unmanaged {
     event_sender: RwLock<Option<EventLoopProxy>>,
     window_server: RwLock<Option<Arc<Mutex<WindowServer>>>>,
@@ -107,15 +109,11 @@ struct Unmanaged {
 #[derive(Debug)]
 pub(super) struct PlatformStateImpl {
     proxy: EventLoopProxy,
-    accessibility_enabled: AtomicBool,
 }
 
 impl PlatformStateImpl {
     pub(super) fn new(proxy: EventLoopProxy) -> Self {
-        Self {
-            proxy,
-            accessibility_enabled: AtomicBool::new(accessibility_is_enabled()),
-        }
+        Self { proxy }
     }
 
     //
@@ -386,7 +384,7 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::AccessibilityUpdated { enabled } => {
-                let was_enabled = self.accessibility_enabled.swap(enabled, Ordering::Relaxed);
+                let was_enabled = ACCESSIBILITY_ENABLED.swap(enabled, Ordering::SeqCst);
                 if enabled && !was_enabled {
                     tokio::runtime::Handle::current().spawn(async move {
                         fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
@@ -401,7 +399,7 @@ impl PlatformStateImpl {
                 }
 
                 if enabled != was_enabled {
-                    self.proxy.send_event(Event::ReloadTray).ok();
+                    self.proxy.send_event(Event::ReloadAccessibility).ok();
                 }
 
                 Ok(())
@@ -473,8 +471,8 @@ impl PlatformStateImpl {
         "/bin/bash".into()
     }
 
-    pub fn accessibility_is_enabled(&self) -> Option<bool> {
-        Some(self.accessibility_enabled.load(Ordering::Relaxed))
+    pub(super) fn accessibility_is_enabled() -> Option<bool> {
+        Some(ACCESSIBILITY_ENABLED.load(Ordering::SeqCst))
     }
 }
 

@@ -47,7 +47,7 @@ impl WebviewNotificationsState {
             proxy.send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
-                    event_name: EmitEventName::ProtoMessageReceived,
+                    event_name: EmitEventName::Notification,
                     payload: base64::encode(encoded),
                 },
             })?

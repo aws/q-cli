@@ -224,15 +224,7 @@ impl WebviewManager {
 
         let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
         let mut tray = if tray_enabled {
-            Some(
-                build_tray(
-                    &self.event_loop,
-                    &self.debug_state,
-                    &self.figterm_state,
-                    &self.platform_state,
-                )
-                .unwrap(),
-            )
+            Some(build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap())
         } else {
             None
         };
@@ -283,7 +275,7 @@ impl WebviewManager {
                     MenuType::MenuBar => menu::handle_event(menu_id, &proxy),
                     MenuType::ContextMenu => {
                         if let Some(tray) = tray.as_mut() {
-                            tray.set_menu(&get_context_menu(&self.platform_state));
+                            tray.set_menu(&get_context_menu());
                         }
                         tray::handle_event(menu_id, &proxy)
                     },
@@ -303,6 +295,12 @@ impl WebviewManager {
                                         &self.platform_state,
                                         &api_handler_tx,
                                     );
+                                } else {
+                                    trace!(
+                                        window_id =% window_state.window_id,
+                                        ?window_event,
+                                        "Ignoring event for disabled window"
+                                    );
                                 }
                             },
                             None => {
@@ -311,14 +309,20 @@ impl WebviewManager {
                                 trace!(?window_event, "Event");
                             },
                         },
-                        Event::WindowEventAll { event } => {
+                        Event::WindowEventAll { window_event } => {
                             for window_state in self.window_id_map.iter() {
-                                if window_state.enabled() || event.is_allowed_while_disabled() {
+                                if window_state.enabled() || window_event.is_allowed_while_disabled() {
                                     window_state.handle(
-                                        event.clone(),
+                                        window_event.clone(),
                                         &self.figterm_state,
                                         &self.platform_state,
                                         &api_handler_tx,
+                                    );
+                                } else {
+                                    trace!(
+                                        window_id =% window_state.window_id,
+                                        ?window_event,
+                                        "Ignoring event for disabled window"
                                     );
                                 }
                             }
@@ -328,20 +332,48 @@ impl WebviewManager {
                         },
                         Event::ReloadTray => {
                             if let Some(tray) = tray.as_mut() {
-                                tray.set_menu(&get_context_menu(&self.platform_state));
+                                tray.set_menu(&get_context_menu());
                             }
+                        },
+                        Event::ReloadCredentials => {
+                            if let Some(tray) = tray.as_mut() {
+                                tray.set_menu(&get_context_menu());
+                            }
+
+                            let autocomplete_enabled =
+                                !fig_settings::settings::get_bool_or("autocomplete.disable", false)
+                                    && PlatformState::accessibility_is_enabled().unwrap_or(true)
+                                    && fig_request::auth::is_logged_in();
+
+                            proxy
+                                .send_event(Event::WindowEvent {
+                                    window_id: AUTOCOMPLETE_ID,
+                                    window_event: WindowEvent::SetEnabled(autocomplete_enabled),
+                                })
+                                .unwrap();
+                        },
+                        Event::ReloadAccessibility => {
+                            if let Some(tray) = tray.as_mut() {
+                                tray.set_menu(&get_context_menu());
+                            }
+
+                            let autocomplete_enabled =
+                                !fig_settings::settings::get_bool_or("autocomplete.disable", false)
+                                    && PlatformState::accessibility_is_enabled().unwrap_or(true)
+                                    && fig_request::auth::is_logged_in();
+
+                            proxy
+                                .send_event(Event::WindowEvent {
+                                    window_id: AUTOCOMPLETE_ID,
+                                    window_event: WindowEvent::SetEnabled(autocomplete_enabled),
+                                })
+                                .unwrap();
                         },
                         Event::SetTrayEnabled(enabled) => {
                             if enabled {
                                 if tray.is_none() {
                                     tray = Some(
-                                        build_tray(
-                                            window_target,
-                                            &self.debug_state,
-                                            &self.figterm_state,
-                                            &self.platform_state,
-                                        )
-                                        .unwrap(),
+                                        build_tray(window_target, &self.debug_state, &self.figterm_state).unwrap(),
                                     );
                                 }
                             } else {
@@ -599,26 +631,26 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
     }
 
     // This one isnt working properly and permanently locks autocomplete :(
-    // settings_watcher!(
-    //     "autocomplete.disable",
-    //     |notification: JsonNotification, proxy: &EventLoopProxy| {
-    //         let enabled = !notification.as_bool().unwrap_or(false);
-    //         debug!(%enabled, "Autocomplete");
-    //         proxy
-    //             .send_event(Event::WindowEvent {
-    //                 window_id: AUTOCOMPLETE_ID,
-    //                 window_event: WindowEvent::SetEnabled(enabled),
-    //             })
-    //             .unwrap();
-    //     }
-    // );
+    settings_watcher!(
+        "autocomplete.disable",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let enabled = !notification.as_bool().unwrap_or(false);
+            debug!(%enabled, "Autocomplete");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::SetEnabled(enabled),
+                })
+                .unwrap();
+        }
+    );
 
     settings_watcher!("app.theme", |notification: JsonNotification, proxy: &EventLoopProxy| {
         let theme = notification.as_string().as_deref().and_then(map_theme);
         debug!(?theme, "Theme changed");
         proxy
             .send_event(Event::WindowEventAll {
-                event: WindowEvent::SetTheme(theme),
+                window_event: WindowEvent::SetTheme(theme),
             })
             .unwrap();
     });
