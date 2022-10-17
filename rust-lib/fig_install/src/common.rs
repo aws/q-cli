@@ -60,8 +60,19 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
 
     #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::INPUT_METHOD) {
-        use fig_integrations::input_method::InputMethod;
-        InputMethod::default().uninstall()?;
+        use fig_integrations::input_method::{
+            InputMethod,
+            InputMethodError,
+        };
+        use fig_integrations::Error;
+
+        let result = InputMethod::default().uninstall();
+        match result {
+            Err(Error::InputMethod(InputMethodError::CouldNotListInputSources)) => (),
+            _ => {
+                result?;
+            },
+        }
     }
 
     #[cfg(target_os = "macos")]
