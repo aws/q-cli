@@ -32,6 +32,7 @@ cfg_if::cfg_if! {
 
 pub struct PlatformWindow {
     pub rect: Rect,
+    pub inner: PlatformWindowImpl,
     // TODO: add a platform specific impl of things like name, is_terminal(), etc
     // pub inner: ExternalPlatformWindowImpl
 }
@@ -118,5 +119,12 @@ pub enum PlatformBoundEvent {
         window_id: WindowId,
         focused: bool,
         fullscreen: bool,
+    },
+    CaretPositionUpdateRequested,
+    WindowDestroyed {
+        window: PlatformWindowImpl,
+    },
+    ExternalWindowFocusChanged {
+        window: PlatformWindowImpl,
     },
 }

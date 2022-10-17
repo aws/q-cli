@@ -105,8 +105,12 @@ impl PlatformApi {
                 }
 
                 if let DictEntryValue::Number(window_id) = get_from_dict(dic_ref, "kCGWindowNumber") {
+                    if window_id < 0 {
+                        return Err("Invalid window id");
+                    }
+                    let window_id: u32 = window_id.try_into().map_err(|_| "Invalid window id")?;
                     let active_window = ActiveWindow {
-                        window_id: window_id.to_string(),
+                        window_id,
                         process_id: active_window_pid as u64,
                         position: win_pos,
                         bundle_id,

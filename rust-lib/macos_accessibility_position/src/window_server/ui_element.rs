@@ -1,3 +1,5 @@
+use std::fmt;
+
 use accessibility::util::ax_call;
 use accessibility_sys::{
     kAXFocusedWindowAttribute,
@@ -6,6 +8,7 @@ use accessibility_sys::{
     AXUIElement,
     AXUIElementCopyAttributeValue,
     AXUIElementRef,
+    _AXUIElementGetWindow,
 };
 use appkit_nsworkspace_bindings::CFTypeRef;
 use core_foundation::base::TCFType;
@@ -14,13 +17,21 @@ use core_foundation::boolean::{
     CFBooleanRef,
 };
 use core_foundation::string::CFString;
+use core_graphics::window::CGWindowID;
 
 use super::ApplicationSpecifier;
 
-#[allow(dead_code)]
 pub struct UIElement {
     app: Option<ApplicationSpecifier>,
     ax_ref: AXUIElement,
+}
+
+impl fmt::Debug for UIElement {
+    fn fmt(&self, f: &mut fmt::Formatter<'_>) -> fmt::Result {
+        let mut builder = f.debug_struct("UIElement");
+        builder.field("app", &self.app);
+        builder.finish()
+    }
 }
 
 // SAFETY: Pointer AXUIElement is send + sync safe
@@ -34,6 +45,7 @@ impl From<AXUIElement> for UIElement {
 }
 
 impl From<AXUIElementRef> for UIElement {
+    #[allow(clippy::not_unsafe_ptr_arg_deref)]
     fn from(ax_ref: AXUIElementRef) -> Self {
         let ax_ref = unsafe { AXUIElement::wrap_under_get_rule(ax_ref) };
         Self { app: None, ax_ref }
@@ -52,6 +64,13 @@ impl UIElement {
         self.ax_ref.as_concrete_TypeRef()
     }
 
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn get_window_id(&self) -> Result<CGWindowID, AXError> {
+        // TODO(sean) cache this value on struct?
+        ax_call(|window_id: *mut CGWindowID| _AXUIElementGetWindow(self.get_ref(), window_id))
+    }
+
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn is_fullscreen(&self) -> Result<bool, AXError> {
         if self.get_ref().is_null() {
             return Err(-1);
@@ -67,6 +86,7 @@ impl UIElement {
         Ok(res)
     }
 
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn new_with_focused_attribute(
         source_ref: AXUIElementRef,
         app: &ApplicationSpecifier,

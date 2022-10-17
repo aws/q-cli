@@ -140,28 +140,22 @@ impl WindowState {
                 self.update_position(platform_state);
             },
             WindowEvent::PositionRelativeToCaret { caret } => {
-                let monitor_frame = match platform_state.get_current_monitor_frame(self.webview.window()) {
-                    Some(monitor) => monitor,
-                    None => return,
-                };
-
-                let window_frame = match platform_state.get_active_window() {
-                    Some(active_window) => active_window.rect,
-                    None => return,
-                };
-
-                // Caret origin will always be less than window origin (if coordinate system origin is top-left)
-                // assert!(caret.y >= window_frame.y);
-
                 let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
-                // TODO: this calculation does not take into account anchor offset (or default vertical padding)
-                let is_above = window_frame.bottom() < caret.bottom() + max_height && // If positioned below, will popup appear inside of window frame?
-                                            monitor_frame.top() < caret.top() - max_height; // If positioned above, will autocomplete go outside of bounds of current monitor?
+                // TODO: these calculations do not take into account anchor offset (or default vertical padding)
+                let overflows_monitor_above = platform_state
+                    .get_current_monitor_frame(self.webview.window())
+                    .map(|monitor| monitor.top() >= caret.top() - max_height)
+                    .unwrap_or(true);
+
+                let overflows_window_below = platform_state
+                    .get_active_window()
+                    .map(|window| window.rect.bottom() < caret.bottom() + max_height)
+                    .unwrap_or(true);
 
                 *self.placement.write() = Placement::RelativeTo(
                     caret,
-                    if is_above {
+                    if overflows_window_below && !overflows_monitor_above {
                         RelativeDirection::Above
                     } else {
                         RelativeDirection::Below

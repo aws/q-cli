@@ -70,6 +70,11 @@ impl NotificationCenter {
         Self::new(appkit_nsworkspace_bindings::NSNotificationCenter(distributed_default))
     }
 
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn remove_observer(&self, observer: id) {
+        self.inner.removeObserver_(observer);
+    }
+
     pub fn post_notification<I, K, V>(&self, notification_name: impl Into<NSString>, info: I)
     where
         I: IntoIterator<Item = (K, V)>,
@@ -106,7 +111,7 @@ impl NotificationCenter {
             .addObserver_selector_name_object_(observer, callback, name.to_appkit_nsstring(), NIL);
     }
 
-    pub fn subscribe<F>(&mut self, notification_name: impl Into<NSString>, mut f: F)
+    pub fn subscribe<F>(&mut self, notification_name: impl Into<NSString>, queue: Option<id>, mut f: F)
     where
         F: FnMut(NSNotification, Arc<Mutex<Subscription>>),
     {
@@ -121,7 +126,7 @@ impl NotificationCenter {
             let observer = self.inner.addObserverForName_object_queue_usingBlock_(
                 name.to_appkit_nsstring(),
                 NIL,
-                NSOperationQueue(NIL),
+                NSOperationQueue(queue.unwrap_or(NIL)),
                 &mut block as *mut _ as *mut std::os::raw::c_void,
             ) as *mut Object;
             let mut subscription = subscription.lock();
@@ -130,7 +135,7 @@ impl NotificationCenter {
     }
 }
 
-pub unsafe fn get_app_from_notification(notification: NSNotification) -> Option<NSRunningApplication> {
+pub unsafe fn get_app_from_notification(notification: &NSNotification) -> Option<NSRunningApplication> {
     let user_info = notification.userInfo();
     if let NSDictionary(NIL) = user_info {
         return None;
@@ -138,10 +143,7 @@ pub unsafe fn get_app_from_notification(notification: NSNotification) -> Option<
 
     let bundle_id_str: NSString = "NSWorkspaceApplicationKey".into();
 
-    let app = <NSDictionary as INSDictionary<NSString, id>>::objectForKey_(
-        &user_info,
-        bundle_id_str.into_inner().autorelease(),
-    );
+    let app = <NSDictionary as INSDictionary<NSString, id>>::objectForKey_(&user_info, ***bundle_id_str);
     if app == NIL {
         None
     } else {

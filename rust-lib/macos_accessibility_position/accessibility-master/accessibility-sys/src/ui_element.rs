@@ -15,6 +15,7 @@ use core_foundation_sys::base::{
 use core_foundation_sys::dictionary::CFDictionaryRef;
 use core_foundation_sys::runloop::CFRunLoopSourceRef;
 use core_foundation_sys::string::CFStringRef;
+use core_graphics::window::CGWindowID;
 
 use crate::AXError;
 
@@ -131,6 +132,9 @@ extern "C" {
         notification: CFStringRef,
     ) -> AXError;
     pub fn AXObserverGetRunLoopSource(observer: AXObserverRef) -> CFRunLoopSourceRef;
+
+    // Internal API
+    pub fn _AXUIElementGetWindow(observer: AXUIElementRef, window_id: *mut CGWindowID) -> AXError;
 }
 
 pub type AXObserverCallback = unsafe extern "C" fn(

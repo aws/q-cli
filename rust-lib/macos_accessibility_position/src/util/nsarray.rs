@@ -1,6 +1,9 @@
+#![allow(dead_code)]
+
 use std::marker::PhantomData;
 
 use appkit_nsworkspace_bindings::NSArray as AppkitNSArray;
+use cocoa::base::id as RawId;
 use cocoa::foundation::{
     NSArray as CocoaNSArray,
     NSUInteger,
@@ -76,6 +79,78 @@ impl<T: 'static> Iterator for NSArrayIter<T> {
 
 impl<T> IntoIterator for NSArray<T> {
     type IntoIter = NSArrayIter<T>;
+    type Item = IdRef;
+
+    fn into_iter(self) -> Self::IntoIter {
+        self.iter()
+    }
+}
+
+pub struct NSArrayRef<T: 'static> {
+    inner: IdRef,
+    phantom: PhantomData<T>,
+}
+
+impl<T: 'static> NSArrayRef<T> {
+    pub fn iter(self) -> NSArrayRefIter<T> {
+        let count = self.len();
+        NSArrayRefIter {
+            inner: self.inner,
+            count,
+            index: 0,
+            phantom: PhantomData,
+        }
+    }
+
+    pub fn len(&self) -> u64 {
+        unsafe { (*self.inner as RawId).count() }
+    }
+
+    pub fn is_empty(&self) -> bool {
+        self.len() == 0
+    }
+}
+
+impl<T> std::ops::Deref for NSArrayRef<T> {
+    type Target = IdRef;
+
+    fn deref(&self) -> &Self::Target {
+        &self.inner
+    }
+}
+
+impl<T> From<AppkitNSArray> for NSArrayRef<T> {
+    fn from(a: AppkitNSArray) -> Self {
+        Self {
+            inner: unsafe { IdRef::new(a.0) },
+            phantom: PhantomData,
+        }
+    }
+}
+
+pub struct NSArrayRefIter<T: 'static> {
+    inner: IdRef,
+    count: NSUInteger,
+    index: NSUInteger,
+    phantom: PhantomData<T>,
+}
+
+impl<T: 'static> Iterator for NSArrayRefIter<T> {
+    type Item = IdRef;
+
+    fn next(&mut self) -> Option<Self::Item> {
+        if self.index >= self.count {
+            None
+        } else {
+            let item = unsafe { (*self.inner as RawId).objectAtIndex(self.index) };
+            self.index += 1;
+            Some(unsafe { IdRef::new(item) })
+        }
+    }
+}
+
+impl<T> IntoIterator for NSArrayRef<T> {
+    type IntoIter = NSArrayRefIter<T>;
     type Item = IdRef;
 
     fn into_iter(self) -> Self::IntoIter {

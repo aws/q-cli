@@ -8,6 +8,7 @@ use std::sync::atomic::{
 use std::sync::Arc;
 
 use accessibility_sys::{
+    AXError,
     AXUIElementCreateSystemWide,
     AXUIElementSetMessagingTimeout,
 };
@@ -17,15 +18,16 @@ use cocoa::base::{
     NO,
     YES,
 };
+use core_graphics::window::CGWindowID;
 use fig_util::Terminal;
 use macos_accessibility_position::accessibility::accessibility_is_enabled;
 use macos_accessibility_position::caret_position::{
     get_caret_position,
     CaretPosition,
 };
+use macos_accessibility_position::window_server::UIElement;
 use macos_accessibility_position::{
     get_active_window,
-    register_observer,
     NSString,
     NotificationCenter,
     WindowServer,
@@ -41,6 +43,7 @@ use objc::runtime::{
     BOOL,
 };
 use objc::{
+    class,
     msg_send,
     sel,
     sel_impl,
@@ -55,6 +58,7 @@ use parking_lot::{
 };
 use tracing::{
     debug,
+    error,
     trace,
     warn,
 };
@@ -109,11 +113,37 @@ struct Unmanaged {
 #[derive(Debug)]
 pub(super) struct PlatformStateImpl {
     proxy: EventLoopProxy,
+    focused_window: Mutex<Option<PlatformWindowImpl>>,
+}
+
+#[derive(Debug)]
+#[allow(dead_code)]
+pub struct PlatformWindowImpl {
+    window_id: CGWindowID,
+}
+
+impl PlatformWindowImpl {
+    pub fn from_window_id(window_id: CGWindowID) -> Self {
+        Self { window_id }
+    }
+
+    pub fn from_ui_element(ui_element: UIElement) -> Result<Self, AXError> {
+        let window_id = unsafe { ui_element.get_window_id()? };
+        Ok(Self { window_id })
+    }
+
+    pub fn get_window_id(&self) -> CGWindowID {
+        self.window_id
+    }
 }
 
 impl PlatformStateImpl {
     pub(super) fn new(proxy: EventLoopProxy) -> Self {
-        Self { proxy }
+        let focused_window: Option<PlatformWindowImpl> = None;
+        Self {
+            proxy,
+            focused_window: Mutex::new(focused_window),
+        }
     }
 
     //
@@ -182,15 +212,20 @@ impl PlatformStateImpl {
             PlatformBoundEvent::Initialize => {
                 UNMANAGED.event_sender.write().replace(self.proxy.clone());
                 let (tx, rx) = flume::unbounded::<WindowServerEvent>();
+
                 UNMANAGED
                     .window_server
                     .write()
-                    .replace(unsafe { register_observer(tx) });
+                    .replace(Arc::new(Mutex::new(WindowServer::new(tx))));
 
                 let accessibility_proxy = self.proxy.clone();
                 let mut distributed = NotificationCenter::distributed();
                 let ax_notification_name: NSString = "com.apple.accessibility.api".into();
-                distributed.subscribe(ax_notification_name, move |_, _| {
+                let queue: id = unsafe {
+                    let queue: id = msg_send![class!(NSOperationQueue), alloc];
+                    msg_send![queue, init]
+                };
+                distributed.subscribe(ax_notification_name, Some(queue), move |_, _| {
                     let enabled = accessibility_is_enabled();
                     accessibility_proxy
                         .clone()
@@ -209,30 +244,52 @@ impl PlatformStateImpl {
 
                 let observer_proxy = self.proxy.clone();
                 tokio::runtime::Handle::current().spawn(async move {
-                    let update_fullscreen = |fullscreen: bool| {
-                        Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated { fullscreen })
-                    };
                     while let std::result::Result::Ok(result) = rx.recv_async().await {
+                        let mut events: Vec<Event> = vec![];
+
                         match result {
-                            WindowServerEvent::FocusChanged { window, .. } => {
-                                if let Err(e) = observer_proxy.send_event(Event::WindowEvent {
+                            WindowServerEvent::FocusChanged { window } => {
+                                let fullscreen = unsafe { window.is_fullscreen().unwrap_or(false) };
+                                events.push(Event::WindowEvent {
                                     window_id: AUTOCOMPLETE_ID,
                                     window_event: WindowEvent::Hide,
-                                }) {
-                                    warn!("Error sending event: {e:?}");
+                                });
+
+                                events.push(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
+                                    fullscreen,
+                                }));
+
+                                if let Ok(window) = PlatformWindowImpl::from_ui_element(window) {
+                                    events.push(Event::PlatformBoundEvent(
+                                        PlatformBoundEvent::ExternalWindowFocusChanged { window },
+                                    ));
                                 }
-                                if let Some(window) = window {
-                                    let is_fullscreen = unsafe { window.is_fullscreen().unwrap_or(false) };
-                                    if let Err(e) = observer_proxy.send_event(update_fullscreen(is_fullscreen)) {
-                                        warn!("Error sending event: {e:?}");
-                                    }
+                            },
+                            WindowServerEvent::WindowDestroyed { window } => {
+                                // TODO(sean) seems like this is failing -- can't get window id for
+                                // the destroyed elements :(
+                                if let Ok(window) = PlatformWindowImpl::from_ui_element(window) {
+                                    events.push(Event::PlatformBoundEvent(PlatformBoundEvent::WindowDestroyed {
+                                        window,
+                                    }));
                                 }
                             },
                             WindowServerEvent::ActiveSpaceChanged { is_fullscreen } => {
-                                if let Err(e) = observer_proxy.send_event(update_fullscreen(is_fullscreen)) {
-                                    warn!("Error sending event: {e:?}");
-                                }
+                                events.push(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
+                                    fullscreen: is_fullscreen,
+                                }));
                             },
+                            WindowServerEvent::RequestCaretPositionUpdate => {
+                                events.push(Event::PlatformBoundEvent(
+                                    PlatformBoundEvent::CaretPositionUpdateRequested,
+                                ));
+                            },
+                        };
+
+                        for event in events {
+                            if let Err(e) = observer_proxy.send_event(event) {
+                                warn!("Error sending event: {e:?}");
+                            }
                         }
                     }
                 });
@@ -317,7 +374,7 @@ impl PlatformStateImpl {
                 }
 
                 let application_observer = self.proxy.clone();
-                NotificationCenter::shared().subscribe("io.fig.show-dashboard", move |_, _| {
+                NotificationCenter::shared().subscribe("io.fig.show-dashboard", None, move |_, _| {
                     if let Err(e) = application_observer.send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID,
                         window_event: WindowEvent::Show,
@@ -334,35 +391,20 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::EditBufferChanged => {
-                tracing::warn!("Sending notif io.fig.edit_buffer_updated");
-                let current_terminal =
-                    get_active_window().and_then(|window| Terminal::from_bundle_id(window.bundle_id.as_str()));
-
-                let supports_ime = current_terminal
-                    .map(|t| t.supports_macos_input_method())
-                    .unwrap_or(false);
-
-                // let supports_accessibility = current_terminal
-                // .map(|t| t.supports_macos_accessibility())
-                // .unwrap_or(false);
-
-                if supports_ime {
-                    NotificationCenter::distributed()
-                        .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
-                } else {
-                    let caret = self.get_cursor_position().context("Failed to get cursor position")?;
-                    UNMANAGED
-                        .event_sender
-                        .read()
-                        .clone()
-                        .unwrap()
-                        .send_event(Event::WindowEvent {
-                            window_id: AUTOCOMPLETE_ID,
-                            window_event: WindowEvent::PositionRelativeToCaret { caret },
-                        })
-                        .ok();
+                if let Err(e) = self.refresh_window_position() {
+                    error!("Failed to refresh window position: {e:?}");
                 }
-
+                Ok(())
+            },
+            PlatformBoundEvent::ExternalWindowFocusChanged { window } => {
+                let mut focused = self.focused_window.lock();
+                focused.replace(window);
+                Ok(())
+            },
+            PlatformBoundEvent::CaretPositionUpdateRequested => {
+                if let Err(e) = self.refresh_window_position() {
+                    error!("Failed to refresh window position: {e:?}");
+                }
                 Ok(())
             },
             PlatformBoundEvent::FullscreenStateUpdated { fullscreen } => {
@@ -404,6 +446,7 @@ impl PlatformStateImpl {
 
                 Ok(())
             },
+
             PlatformBoundEvent::AppWindowFocusChanged {
                 window_id,
                 focused: _,
@@ -417,10 +460,57 @@ impl PlatformStateImpl {
                         }))
                         .ok();
                 }
-
+                Ok(())
+            },
+            PlatformBoundEvent::WindowDestroyed { window } => {
+                let mut focused = self.focused_window.lock();
+                if let Some(focused_window) = focused.as_ref() {
+                    if focused_window.get_window_id() == window.get_window_id() {
+                        focused.take();
+                        self.proxy
+                            .send_event(Event::WindowEvent {
+                                window_id: AUTOCOMPLETE_ID,
+                                window_event: WindowEvent::Hide,
+                            })
+                            .ok();
+                    }
+                }
                 Ok(())
             },
         }
+    }
+
+    fn refresh_window_position(&self) -> anyhow::Result<()> {
+        let current_terminal =
+            get_active_window().and_then(|window| Terminal::from_bundle_id(window.bundle_id.as_str()));
+
+        let supports_ime = current_terminal
+            .map(|t| t.supports_macos_input_method())
+            .unwrap_or(false);
+
+        // let supports_accessibility = current_terminal
+        // .map(|t| t.supports_macos_accessibility())
+        // .unwrap_or(false);
+
+        if supports_ime {
+            tracing::warn!("Sending notif io.fig.edit_buffer_updated");
+            NotificationCenter::distributed()
+                .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
+        } else {
+            let caret = self.get_cursor_position().context("Failed to get cursor position")?;
+            UNMANAGED
+                .event_sender
+                .read()
+                .clone()
+                .unwrap()
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::PositionRelativeToCaret { caret },
+                })
+                .ok();
+        }
+
+        Ok(())
     }
 
     pub(super) fn position_window(
@@ -454,6 +544,7 @@ impl PlatformStateImpl {
                 position: LogicalPosition::new(window.position.x, window.position.y),
                 size: LogicalSize::new(window.position.width, window.position.height),
             },
+            inner: PlatformWindowImpl::from_window_id(window.window_id),
         })
     }
 

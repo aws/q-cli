@@ -82,7 +82,22 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
     if install_components.contains(InstallComponents::INPUT_METHOD) {
         cfg_if::cfg_if! {
             if #[cfg(target_os = "macos")] {
-                install(InstallComponents::INPUT_METHOD).await?;
+                if !dialoguer::console::user_attended() {
+                    eyre::bail!("You must run with --no-confirm if unattended");
+                }
+
+                println!("");
+                println!("For Fig to support some terminals like Kitty, Alacritty, and Wezterm");
+                println!("you must enable our Input Method integration.");
+                println!("");
+                println!("To enable the integration, select \"y\" below and then click Ok in the popup.");
+                println!("");
+
+                if dialoguer::Confirm::with_theme(&dialoguer_theme())
+                    .with_prompt("Do you want to enable support for input method backed terminals?")
+                    .interact()? {
+                    install(InstallComponents::INPUT_METHOD).await?;
+                }
             } else {
                 println!("input method is only implemented on macOS");
             }

@@ -10,7 +10,10 @@ pub use notification_center::{
     NotificationCenter,
     Subscription,
 };
-pub use nsarray::NSArray;
+pub use nsarray::{
+    NSArray,
+    NSArrayRef,
+};
 pub use nsstring::{
     NSString,
     NSStringRef,
