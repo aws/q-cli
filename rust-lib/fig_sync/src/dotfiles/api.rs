@@ -119,7 +119,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
 
     // Write to all.json
     let mut file_opts = std::fs::OpenOptions::new();
-    file_opts.write(true).create(true);
+    file_opts.write(true).create(true).truncate(true);
 
     #[cfg(unix)]
     {
@@ -140,7 +140,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
         };
 
         let mut file_opts = std::fs::OpenOptions::new();
-        file_opts.write(true).create(true);
+        file_opts.write(true).create(true).truncate(true);
 
         #[cfg(unix)]
         {

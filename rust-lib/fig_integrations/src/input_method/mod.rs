@@ -512,6 +512,7 @@ mod tests {
         sources.into_iter().next().unwrap()
     }
 
+    #[ignore]
     #[test]
     fn toggle_selection() {
         let source = input_method();
@@ -538,6 +539,7 @@ mod tests {
         }
     }
 
+    #[ignore]
     #[test]
     fn get_input_source_by_bundle_id() {
         let bundle_identifier = "com.apple.CharacterPaletteIM";
@@ -565,6 +567,7 @@ mod tests {
         })
     }
 
+    #[ignore]
     #[test]
     fn test_list_all_input_methods() {
         let sources = InputMethod::list_all_input_sources(None, true).unwrap_or_default();

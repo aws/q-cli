@@ -123,7 +123,7 @@ impl LocalJson {
             let _lock_guard = self.json_type.lock().write();
 
             let mut file_opts = File::options();
-            file_opts.create(true).write(true);
+            file_opts.create(true).write(true).truncate(true);
 
             #[cfg(unix)]
             {
