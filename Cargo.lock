@@ -192,9 +192,9 @@ dependencies = [
 
 [[package]]
 name = "arboard"
-version = "3.1.0"
+version = "3.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "79e8af4eff708b72e371acd4625ad3d01a88c946b9e8d6868cb5bb6e4d0d923c"
+checksum = "6702f4a0b562d352aa3d0e22d4142ea9241c44faa27635bb9d87047a08837d4d"
 dependencies = [
  "clipboard-win",
  "log",
@@ -4877,19 +4877,6 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.23.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f866317acbd3a240710c63f065ffb1e4fd466259045ccb504130b7f668f35c6"
-dependencies = [
- "bitflags",
- "cc",
- "cfg-if 1.0.0",
- "libc",
- "memoffset",
-]
-
-[[package]]
-name = "nix"
 version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "195cdbc1741b8134346d515b3a56a1c94b0912758009cfd53f99ea0f57b065fc"
@@ -9143,17 +9130,17 @@ dependencies = [
 
 [[package]]
 name = "wl-clipboard-rs"
-version = "0.6.0"
+version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "be5ca3d1bf382a9baf6ef08b635e8f417c83a8a459bc88b4179a663abd8acd8b"
+checksum = "981a303dfbb75d659f6612d05a14b2e363c103d24f676a2d44a00d18507a1ad9"
 dependencies = [
  "derive-new",
- "derive_more",
  "libc",
  "log",
- "nix 0.23.1",
+ "nix 0.24.2",
  "os_pipe",
  "tempfile",
+ "thiserror",
  "tree_magic_mini",
  "wayland-client",
  "wayland-protocols",
