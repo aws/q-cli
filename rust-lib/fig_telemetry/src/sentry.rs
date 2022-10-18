@@ -60,9 +60,7 @@ pub fn init_sentry(
             #[cfg(target_os = "linux")]
             scope.set_tag("os.wsl", fig_util::system_info::in_wsl());
 
-            if let Some(version) = fig_util::manifest::version() {
-                scope.set_tag("fig.version", version);
-            }
+            scope.set_tag("fig.version", env!("CARGO_PKG_VERSION"));
         });
 
         Some(guard)

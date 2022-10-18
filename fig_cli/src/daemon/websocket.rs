@@ -108,9 +108,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
         ("cliVersion", env!("CARGO_PKG_VERSION").into()),
     ];
 
-    if let Some(version) = fig_util::manifest::version() {
-        params.push(("manifestVersion", version.into()));
-    }
+    params.push(("manifestVersion", env!("CARGO_PKG_VERSION").to_string()));
 
     if let Ok(mut device_id) = get_system_id() {
         if let Some(email) = get_email() {

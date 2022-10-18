@@ -2748,12 +2748,14 @@ dependencies = [
  "fig_integrations",
  "fig_ipc",
  "fig_request",
+ "fig_settings",
  "fig_util",
  "once_cell",
  "regex",
  "reqwest",
  "semver 1.0.14",
  "serde",
+ "strum",
  "tempdir",
  "thiserror",
  "tokio",
@@ -2836,6 +2838,23 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig_release"
+version = "2.5.3"
+dependencies = [
+ "clap 4.0.15",
+ "dialoguer",
+ "eyre",
+ "fig_request",
+ "fig_settings",
+ "once_cell",
+ "semver 1.0.14",
+ "serde",
+ "serde_yaml",
+ "time 0.3.15",
+ "tokio",
+]
+
+[[package]]
 name = "fig_request"
 version = "2.5.3"
 dependencies = [
@@ -2844,6 +2863,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "fig_settings",
  "fig_util",
+ "http",
  "jwt",
  "once_cell",
  "reqwest",
@@ -2962,6 +2982,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sha2",
+ "strum",
  "sysinfo 0.26.4",
  "thiserror",
  "time 0.3.15",

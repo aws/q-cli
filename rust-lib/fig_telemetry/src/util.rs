@@ -122,9 +122,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     prop.insert("device_os".into(), std::env::consts::OS.into());
     prop.insert("device_arch".into(), std::env::consts::ARCH.into());
 
-    if let Some(manifest_version) = fig_util::manifest::version() {
-        prop.insert("manifest_version".into(), manifest_version.into());
-    }
+    prop.insert("manifest_version".into(), env!("CARGO_PKG_VERSION").into());
 
     prop
 }

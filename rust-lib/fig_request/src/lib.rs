@@ -3,15 +3,21 @@ pub mod defaults;
 pub mod reqwest_client;
 
 use auth::get_token;
+use bytes::Bytes;
 use fig_settings::api_host;
 pub use reqwest;
 use reqwest::cookie::Cookie;
-use reqwest::header::HeaderMap;
+use reqwest::header::{
+    HeaderMap,
+    HeaderName,
+    HeaderValue,
+};
 pub use reqwest::Method;
 use reqwest::{
     Client,
     RequestBuilder,
     StatusCode,
+    Url,
 };
 use serde::de::DeserializeOwned;
 use serde::{
@@ -101,13 +107,16 @@ pub struct Request<A: Auth> {
 
 impl Request<NoAuth> {
     pub fn new(method: Method, endpoint: impl AsRef<str>) -> Self {
-        let mut url = api_host();
-        url.set_path(endpoint.as_ref());
+        Self::new_with_host(api_host(), method, endpoint)
+    }
+
+    pub fn new_with_host(mut host: Url, method: Method, endpoint: impl AsRef<str>) -> Self {
+        host.set_path(endpoint.as_ref());
 
         Self {
             builder: client()
                 .as_ref()
-                .map(|client| client.request(method, url).header("Accept", "application/json")),
+                .map(|client| client.request(method, host).header("Accept", "application/json")),
             _auth: NoAuth,
         }
     }
@@ -274,6 +283,28 @@ impl<A: Auth> Request<A> {
             return self.query(&[("namespace", namespace.as_ref())]);
         }
         self
+    }
+
+    /// Add a raw body to the request
+    pub fn raw_body(self, bytes: Bytes) -> Self {
+        Self {
+            builder: self.builder.map(|builder| builder.body(bytes)),
+            ..self
+        }
+    }
+
+    /// Add a header to the request
+    pub fn header<K, V>(self, key: K, value: V) -> Self
+    where
+        HeaderName: TryFrom<K>,
+        <HeaderName as TryFrom<K>>::Error: Into<http::Error>,
+        HeaderValue: TryFrom<V>,
+        <HeaderValue as TryFrom<V>>::Error: Into<http::Error>,
+    {
+        Self {
+            builder: self.builder.map(|builder| builder.header(key, value)),
+            ..self
+        }
     }
 }
 

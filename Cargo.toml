@@ -6,6 +6,7 @@ members = [
     "fig_installer",
     "fig_input_method",
     "figterm",
+    "tools/fig_release",
     "rust-lib/*",
     "rust-lib/macos_accessibility_position/accessibility-master/accessibility",
     "rust-lib/macos_accessibility_position/accessibility-master/accessibility-sys",

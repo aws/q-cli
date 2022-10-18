@@ -1,5 +1,4 @@
 use std::collections::hash_map::DefaultHasher;
-use std::collections::HashMap;
 use std::hash::{
     Hash,
     Hasher,
@@ -9,12 +8,13 @@ use std::time::{
     UNIX_EPOCH,
 };
 
-use fig_util::manifest::manifest;
-use fig_util::system_info::{
-    get_arch,
-    get_platform,
-    get_system_id,
+use cfg_if::cfg_if;
+use fig_util::manifest::{
+    Channel,
+    Kind,
+    Variant,
 };
+use fig_util::system_info::get_system_id;
 use semver::Version;
 use serde::Deserialize;
 use tracing::{
@@ -25,99 +25,129 @@ use tracing::{
 use crate::Error;
 
 #[derive(Deserialize)]
-pub struct Index {
-    latest_version: String,
-    versions: HashMap<String, VersionInfo>,
+struct Index {
+    supported: Vec<Support>,
+    versions: Vec<RemoteVersion>,
 }
 
 #[derive(Deserialize)]
-pub struct VersionInfo {
-    windows: Windows,
-    macos: Macos,
+struct Support {
+    kind: Kind,
+    architecture: PackageArchitecture,
+    variant: Variant,
+}
+
+#[derive(Deserialize)]
+struct RemoteVersion {
+    version: String,
     rollout: Option<Rollout>,
+    packages: Vec<Package>,
+    timestamp: u64,
 }
 
 #[derive(Deserialize)]
-pub struct Rollout {
+struct Rollout {
     start: u64,
     end: u64,
 }
 
-#[derive(Deserialize, Clone, Debug, Default)]
-pub struct RemotePackage {
-    pub download: String,
-    pub sha256: String,
+#[derive(Deserialize)]
+pub struct Package {
+    kind: Kind,
+    architecture: PackageArchitecture,
+    variant: Variant,
+    download: String,
+    sha256: String,
 }
 
-#[derive(Deserialize, Clone, Debug)]
-/// Resolved update package
 pub struct UpdatePackage {
-    /// A link that can be used to download the package
-    pub download: String,
-    /// SHA256 of the entire downloaded object
-    // todo(mia): automatically verify this instead of delegating to platform-specific code
-    pub sha256: String,
-    /// Version of this release package
     pub version: String,
+    pub download: String,
+    pub sha256: String,
 }
 
-#[derive(Deserialize)]
-pub struct Windows {
-    x86_64: RemotePackage,
+#[derive(Deserialize, PartialEq, Eq)]
+#[serde(rename_all = "snake_case")]
+pub enum PackageArchitecture {
+    #[serde(rename = "x86_64")]
+    X86_64,
+    #[serde(rename = "aarch64")]
+    AArch64,
+    Universal,
 }
 
-#[derive(Deserialize)]
-pub struct Macos {
-    x86_64: RemotePackage,
-    aarch64: RemotePackage,
+impl PackageArchitecture {
+    const fn from_system() -> Self {
+        cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                PackageArchitecture::Universal
+            } else if #[cfg(target_arch = "x86_64")] {
+                PackageArchitecture::X86_64
+            } else if #[cfg(target_arch = "aarch64")] {
+                PackageArchitecture::AArch64
+            } else {
+                compile_error!("unknown architecture")
+            }
+        }
+    }
 }
 
-const INDEX_ENDPOINT: &str = "https://pkg.fig.io/managed/index";
+fn index_endpoint(channel: &Channel) -> &'static str {
+    match channel {
+        Channel::Nightly => "https://repo.fig.io/generic/nightly/index.json",
+        Channel::Qa => "https://repo.fig.io/generic/qa/index.json",
+        Channel::Beta => "https://repo.fig.io/generic/beta/index.json",
+        Channel::Stable => "https://repo.fig.io/generic/stable/index.json",
+    }
+}
 
+#[deprecated = "versions are unified, use env!(\"CARGO_PKG_VERSION\")"]
 pub fn local_manifest_version() -> Result<Version, Error> {
-    Ok(Version::parse(
-        &manifest()
-            .as_ref()
-            .map(|man| man.version.clone())
-            .ok_or(Error::UnclearVersion)?,
-    )?)
+    Ok(Version::parse(env!("CARGO_PKG_VERSION"))?)
 }
 
-async fn pull() -> Result<Index, Error> {
+async fn pull(channel: &Channel) -> Result<Index, Error> {
     let response = fig_request::client()
         .expect("Unable to create HTTP client")
-        .get(INDEX_ENDPOINT)
+        .get(index_endpoint(channel))
         .send()
         .await?;
     let index = response.json().await?;
     Ok(index)
 }
 
-pub async fn check_for_updates(current_version: &str) -> Result<Option<UpdatePackage>, Error> {
-    let index = pull().await?;
+pub async fn check_for_updates(channel: Channel, kind: Kind, variant: Variant) -> Result<Option<UpdatePackage>, Error> {
+    const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
+    const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
 
-    let local_version = Version::parse(current_version)?;
-    let remote_version = Version::parse(&index.latest_version)?;
+    let index = pull(&channel).await?;
 
-    if remote_version <= local_version {
-        return Ok(None); // remote version isn't higher than current version
+    if !index
+        .supported
+        .iter()
+        .any(|support| support.kind == kind && support.architecture == ARCHITECTURE && support.variant == variant)
+    {
+        return Err(Error::SystemNotOnChannel);
     }
 
-    let mut remote_versions = index
-        .versions
-        .keys()
-        .filter_map(|key| {
-            Version::parse(key)
-                .ok()
-                .and_then(|x| if x > local_version { Some((x, key)) } else { None })
-        })
-        .collect::<Vec<_>>();
-
-    remote_versions.sort_by_cached_key(|x| x.0.clone());
-    remote_versions.reverse();
-
-    let mut chosen = None;
     let right_now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
+
+    let mut valid_versions = index
+        .versions
+        .into_iter()
+        .filter(|version| {
+            version.packages.iter().any(|package| {
+                package.kind == kind && package.architecture == ARCHITECTURE && package.variant == variant
+            })
+        })
+        .filter(|version| match &version.rollout {
+            Some(rollout) => rollout.start <= right_now,
+            None => true,
+        })
+        .collect::<Vec<RemoteVersion>>();
+
+    valid_versions.sort_unstable_by_key(|version| version.timestamp);
+    valid_versions.reverse();
 
     let system_threshold = {
         let mut hasher = DefaultHasher::new();
@@ -125,45 +155,49 @@ pub async fn check_for_updates(current_version: &str) -> Result<Option<UpdatePac
         get_system_id()?.hash(&mut hasher);
         // different for each version, which prevents people from getting repeatedly hit by untested
         // releases
-        current_version.hash(&mut hasher);
+        CURRENT_VERSION.hash(&mut hasher);
 
         (hasher.finish() % 0xff) as u8
     };
 
-    for remote_version in remote_versions.into_iter().map(|x| x.1) {
-        if let Some(entry) = index.versions.get(remote_version) {
-            if let Some(rollout) = &entry.rollout {
-                if rollout.end < right_now {
-                    trace!("accepted update candidate {remote_version} because rollout is over");
-                    chosen = Some((remote_version, entry));
-                    break;
-                }
-                if rollout.start > right_now {
-                    trace!("rejected update candidate {remote_version} because rollout hasn't started yet");
-                    continue;
-                }
-
-                // interpolate rollout progress
-                let offset_into = (right_now - rollout.start) as f64;
-                let rollout_length = (rollout.end - rollout.start) as f64;
-                let progress = offset_into / rollout_length;
-                let remote_threshold = (progress * 256.0).round().clamp(0.0, 256.0) as u8;
-
-                if remote_threshold >= system_threshold {
-                    // the rollout chose us
-                    chosen = Some((remote_version, entry));
-                    info!(
-                        "accepted update candidate {remote_version} with remote_threshold {remote_threshold} and system_threshold {system_threshold}"
-                    );
-                } else {
-                    info!(
-                        "rejected update candidate {remote_version} because remote_threshold {remote_threshold} is below system_threshold {system_threshold}"
-                    );
-                }
-            } else {
-                chosen = Some((remote_version, entry));
+    let mut chosen = None;
+    for entry in valid_versions.into_iter() {
+        if let Some(rollout) = &entry.rollout {
+            if rollout.end < right_now {
+                trace!("accepted update candidate {} because rollout is over", entry.version);
+                chosen = Some(entry);
                 break;
             }
+            if rollout.start > right_now {
+                trace!(
+                    "rejected update candidate {} because rollout hasn't started yet",
+                    entry.version
+                );
+                continue;
+            }
+
+            // interpolate rollout progress
+            let offset_into = (right_now - rollout.start) as f64;
+            let rollout_length = (rollout.end - rollout.start) as f64;
+            let progress = offset_into / rollout_length;
+            let remote_threshold = (progress * 256.0).round().clamp(0.0, 256.0) as u8;
+
+            if remote_threshold >= system_threshold {
+                // the rollout chose us
+                info!(
+                    "accepted update candidate {} with remote_threshold {remote_threshold} and system_threshold {system_threshold}",
+                    entry.version
+                );
+                chosen = Some(entry);
+            } else {
+                info!(
+                    "rejected update candidate {} because remote_threshold {remote_threshold} is below system_threshold {system_threshold}",
+                    entry.version
+                );
+            }
+        } else {
+            chosen = Some(entry);
+            break;
         }
     }
 
@@ -172,19 +206,16 @@ pub async fn check_for_updates(current_version: &str) -> Result<Option<UpdatePac
         return Ok(None);
     }
 
-    let (candidate_version, candidate_package) = chosen.unwrap();
-
-    let package = match (get_platform(), get_arch()) {
-        ("linux", "x86_64") => Default::default(),
-        ("macos", "x86_64") => candidate_package.macos.x86_64.clone(),
-        ("macos", "aarch64") => candidate_package.macos.aarch64.clone(),
-        ("windows", "x86_64") => candidate_package.windows.x86_64.clone(),
-        _ => return Err(Error::UnsupportedPlatform),
-    };
+    let chosen = chosen.unwrap();
+    let package = chosen
+        .packages
+        .into_iter()
+        .find(|package| package.kind == kind && package.architecture == ARCHITECTURE && package.variant == variant)
+        .unwrap();
 
     Ok(Some(UpdatePackage {
+        version: chosen.version,
         download: package.download,
         sha256: package.sha256,
-        version: candidate_version.clone(),
     }))
 }

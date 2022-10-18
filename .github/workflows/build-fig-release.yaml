@@ -1,0 +1,32 @@
+name: "Build fig_release"
+
+on:
+  workflow_dispatch:
+
+jobs:
+  deploy:
+    runs-on: ubuntu-22.04
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
+
+      - name: Build
+        run: cargo build --release --package fig_release
+
+      - uses: "marvinpinto/action-automatic-releases@latest"
+        with:
+          repo_token: "${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}"
+          automatic_release_tag: "fig_release"
+          title: "fig_release release"
+          files: target/release/fig_release

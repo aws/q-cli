@@ -1,5 +1,4 @@
 use std::io::Write;
-use std::str::FromStr;
 use std::time::Duration;
 
 use cfg_if::cfg_if;
@@ -13,7 +12,6 @@ use eyre::{
     bail,
     Result,
 };
-use fig_install::index::local_manifest_version;
 use fig_install::InstallComponents;
 use fig_ipc::local::update_command;
 use fig_settings::{
@@ -177,24 +175,21 @@ impl AppSubcommand {
             AppSubcommand::Prompts => {
                 if fig_util::manifest::is_headless() {
                     if let Ok(Some(version)) = state::get_string("update.latestVersion") {
-                        if let Ok(local_version) = local_manifest_version() {
-                            if let Ok(remote_version) = semver::Version::from_str(&version) {
-                                if local_version < remote_version {
-                                    writeln!(
-                                        std::io::stdout(),
-                                        "A new version of Fig is available! Please update from your package manager."
-                                    )
-                                    .ok();
-                                }
-                            }
-                        }
+                        writeln!(
+                            std::io::stdout(),
+                            "A new version ({version}) of Fig is available! Please update from your package manager."
+                        )
+                        .ok();
                     }
 
                     match fig_install::check_for_updates().await {
-                        Ok(Some(version)) => {
-                            state::set_value("update.latestVersion", version).ok();
+                        Ok(Some(package)) => {
+                            let _ = state::set_value("update.latestVersion", package.version);
                         },
-                        Ok(None) => {}, // no version available
+                        Ok(None) => {
+                            // no version available
+                            let _ = state::remove_value("update.latestVersion");
+                        },
                         Err(err) => error!(%err, "Failed checking for updates"),
                     }
                 } else if is_fig_desktop_running() {

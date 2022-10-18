@@ -136,7 +136,7 @@ pub static USER_AGENT: Lazy<String> = Lazy::new(|| {
 
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;
-    let version = fig_util::manifest::version().unwrap_or("unknown-version");
+    let version = env!("CARGO_PKG_VERSION");
 
     format!("{name}-{os}-{arch}-{version}")
 });

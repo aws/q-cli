@@ -1,55 +1,84 @@
+use std::fmt::Display;
+use std::str::FromStr;
+
 use cfg_if::cfg_if;
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Deserializer,
 };
+use strum::EnumString;
 
 #[derive(Deserialize)]
 pub struct Manifest {
-    #[serde(deserialize_with = "deser_managed")]
+    #[serde(deserialize_with = "deser_enum_other")]
     pub managed_by: ManagedBy,
-    #[serde(deserialize_with = "deser_variant")]
+    #[serde(deserialize_with = "deser_enum_other")]
     pub variant: Variant,
+    #[serde(deserialize_with = "deser_enum_other")]
+    pub kind: Kind,
+    #[serde(deserialize_with = "deser_enum_other")]
+    pub default_channel: Channel,
     pub packaged_at: String,
     pub packaged_by: String,
-    pub version: String,
 }
 
+#[derive(EnumString)]
+#[strum(serialize_all = "snake_case")]
 pub enum ManagedBy {
     Apt,
     Dnf,
     Pacman,
+    #[strum(default)]
     Other(String),
 }
 
+#[derive(EnumString, Deserialize, PartialEq, Eq, Clone)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum Variant {
+    Online,
+    Offline,
     Full,
     Headless,
+    #[strum(default)]
     Other(String),
 }
 
-fn deser_managed<'de, D>(deserializer: D) -> Result<ManagedBy, D::Error>
-where
-    D: Deserializer<'de>,
-{
-    Ok(match <&str as Deserialize<'de>>::deserialize(deserializer)? {
-        "apt" => ManagedBy::Apt,
-        "dnf" => ManagedBy::Dnf,
-        "pacman" => ManagedBy::Pacman,
-        other => ManagedBy::Other(other.to_string()),
-    })
+#[derive(EnumString, Deserialize, PartialEq, Eq, Clone)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum Kind {
+    WindowsInstaller,
+    WindowsBundle,
+    Dmg,
+    Tar,
+    Deb,
+    Rpm,
+    #[strum(default)]
+    Other(String),
 }
 
-fn deser_variant<'de, D>(deserializer: D) -> Result<Variant, D::Error>
+#[derive(Deserialize, Clone, EnumString)]
+#[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
+pub enum Channel {
+    Nightly,
+    Qa,
+    Beta,
+    Stable,
+}
+
+fn deser_enum_other<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
+    T: FromStr,
+    T::Err: Display,
 {
-    Ok(match <&str as Deserialize<'de>>::deserialize(deserializer)? {
-        "full" => Variant::Full,
-        "headless" => Variant::Headless,
-        other => Variant::Other(other.to_string()),
-    })
+    match T::from_str(<&str as Deserialize<'de>>::deserialize(deserializer)?) {
+        Ok(s) => Ok(s),
+        Err(err) => Err(serde::de::Error::custom(err)),
+    }
 }
 
 static CACHED: Lazy<Option<Manifest>> = Lazy::new(|| {
@@ -120,48 +149,8 @@ pub fn is_headless() -> bool {
     }
 }
 
-#[cfg(target_os = "macos")]
-static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| match option_env!("FIG_MACOS_BACKPORT") {
-    Some(_) => Some(env!("CARGO_PKG_VERSION").to_string()),
-    None => {
-        let version = option_env!("VERSION");
-        let build = option_env!("BUILD");
-        match (version, build) {
-            (Some(version), Some(build)) => Some(format!("{version}+{build}")),
-            (Some(version), None) => Some(version.into()),
-            _ => None,
-        }
-    },
-});
-
-#[cfg(target_os = "windows")]
-static WINDOWS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
-    let output = std::process::Command::new("fig_desktop.exe").arg("--version").output();
-    match output {
-        Ok(output) => {
-            let stdout = String::from_utf8_lossy(&output.stdout);
-            let version = stdout.replace("fig_desktop", "").trim().to_owned();
-            Some(version)
-        },
-        Err(_) => None,
-    }
-});
-
 /// Gets the version from the manifest
+#[deprecated = "versions are unified, use env!(\"CARGO_PKG_VERSION\")"]
 pub fn version() -> Option<&'static str> {
-    match manifest() {
-        Some(manifest) => Some(&manifest.version),
-        None => {
-            cfg_if! {
-                if #[cfg(target_os = "macos")] {
-                    MACOS_VERSION.as_deref()
-                } else if #[cfg(target_os = "windows")] {
-                    // TODO(mia): add actual manifest version for windows
-                    WINDOWS_VERSION.as_deref()
-                } else {
-                    None
-                }
-            }
-        },
-    }
+    Some(env!("CARGO_PKG_VERSION"))
 }

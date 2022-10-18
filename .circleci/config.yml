@@ -20,6 +20,12 @@ parameters:
   checkout:
     type: string
     default: ""
+  compat:
+    type: boolean
+    default: true
+  build_targets:
+    type: string
+    default: "macos"
 
 workflows:
   version: 2
@@ -45,25 +51,30 @@ workflows:
 
       - package-tarball:
           requires:
-            [
-              linux-desktop-x86_64,
-              linux-headless-aarch64,
-              linux-headless-x86_64,
-            ]
+            - linux-desktop-x86_64
+            - linux-headless-aarch64
+            - linux-headless-x86_64
+          context:
+            - github
       - package-rpm:
           requires:
-            [
-              linux-desktop-x86_64,
-              linux-headless-aarch64,
-              linux-headless-x86_64,
-            ]
+            - linux-desktop-x86_64
+            - linux-headless-aarch64
+            - linux-headless-x86_64
+          context:
+            - github
       - package-deb:
           requires:
-            [
-              linux-desktop-x86_64,
-              linux-headless-aarch64,
-              linux-headless-x86_64,
-            ]
+            - linux-desktop-x86_64
+            - linux-headless-aarch64
+            - linux-headless-x86_64
+          context:
+            - github
+      
+      - publish-packages:
+          requires: [package-tarball, package-deb, package-rpm, windows, macos]
+          context:
+            - fig
 
       - sentry:
           requires: [package-tarball, package-deb, package-rpm, windows, macos]
@@ -83,6 +94,8 @@ jobs:
       - image: ubuntu:22.04
     resource_class: small
     steps:
+      - require:
+          condition: << pipeline.parameters.compat >>
       - configure-apt
       - run:
           name: Install dependencies
@@ -92,7 +105,7 @@ jobs:
       - rust/install:
           version: 1.64.0
       - checkout-desktop:
-          checkout: << pipeline.parameters.checkout >>
+          version_update: true
       - run:
           name: Resolve relative version
           command: |
@@ -118,8 +131,8 @@ jobs:
           command: |
             NEW_VERSION=`cat version`
             cd desktop
-            sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" Cargo.toml
-            sed -i "s/Version=\"[^\"]*\"/Version=\"$NEW_VERSION\"/" fig.wxi
+            # sed -i "0,/^version = \"[^\"]*\"\$/s//version = \"$NEW_VERSION\"/" Cargo.toml
+            # sed -i "s/Version=\"[^\"]*\"/Version=\"$NEW_VERSION\"/" fig.wxi
       - run:
           name: Update lockfile
           command: cd desktop && cargo update -p fig_desktop
@@ -151,6 +164,8 @@ jobs:
       size: large
       shell: bash.exe
     steps:
+      - require-target:
+          platform: windows
       - run:
           name: Install dependencies
           command: |
@@ -173,12 +188,24 @@ jobs:
       - store_artifacts:
           path: desktop/target/wix/fig_installer.exe
           destination: pkg/os=windows,arch=x86_64,kind=exe
+      - run:
+          name: Move EXE
+          command: |
+            DIR="/tmp/new/pkg/windows/x86_64/exe/windows_installer/"
+            mkdir -p $DIR
+            mv desktop/fig.exe $DIR/pkg
+      - persist_to_workspace:
+          root: /tmp/new
+          paths:
+            - pkg/x86_64/exe/windows_installer/pkg
 
   linux-headless-x86_64:
     docker:
       - image: messense/rust-musl-cross:x86_64-musl
     resource_class: large
     steps:
+      - require-target:
+          platform: linux
       - prepare-build:
           arch: x86_64
           include_desktop_deps: false
@@ -215,6 +242,8 @@ jobs:
       - image: messense/rust-musl-cross:aarch64-musl
     resource_class: large
     steps:
+      - require-target:
+          platform: linux
       - prepare-build:
           arch: aarch64
           include_desktop_deps: false
@@ -256,6 +285,8 @@ jobs:
       - image: ubuntu:bionic
     resource_class: large
     steps:
+      - require-target:
+          platform: linux
       - prepare-build:
           arch: x86_64
           include_desktop_deps: true
@@ -281,6 +312,8 @@ jobs:
       HOMEBREW_NO_AUTO_UPDATE: 1
       FIG_MACOS_BACKPORT: 1
     steps:
+      - require-target:
+          platform: macos
       - checkout-desktop
       - run:
           name: Remove gitconfig
@@ -425,12 +458,24 @@ jobs:
       - store_artifacts:
           path: fig.dmg
           destination: pkg/os=macos,arch=universal,kind=dmg
+      - run:
+          name: Move DMG
+          command: |
+            DIR="/tmp/new/pkg/macos/universal/dmg/full"
+            mkdir -p "$DIR/"
+            mv fig.dmg "$DIR/pkg"
+      - persist_to_workspace:
+          root: /tmp/new
+          paths:
+            - pkg/universal/dmg/full/pkg
 
   package-tarball:
     docker:
       - image: cimg/base:edge-22.04
     resource_class: small
     steps:
+      - require-target:
+          platform: linux
       - checkout-desktop
       - attach_workspace:
           at: /tmp/ws
@@ -449,6 +494,12 @@ jobs:
           kind: tar
           variant: headless
           ext: tar.xz
+      - persist_to_workspace:
+          root: /tmp/new
+          paths:
+            - pkg/x86_64/tar/full/pkg
+            - pkg/x86_64/tar/headless/pkg
+            - pkg/aarch64/tar/headless/pkg
 
   package-rpm:
     docker:
@@ -460,6 +511,8 @@ jobs:
       FIG_DESKTOP: /tmp/ws/bin/linux/x86_64/fig_desktop
       ARCH: x86_64
     steps:
+      - require-target:
+          platform: linux
       - run:
           name: Install tools
           command: dnf install -y git jq rpmdevtools
@@ -471,37 +524,54 @@ jobs:
           kind: rpm
           variant: full
           ext: rpm
-      - run:
-          name: Collect full x86_64 rpm info
-          command: |
-            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
-            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;full;$(cat /tmp/rpm.xml)"
+      - when:
+          condition: << pipeline.parameters.compat>>
+          steps:
+            - run:
+                name: Collect full x86_64 rpm info
+                command: |
+                  rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+                  curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;full;$(cat /tmp/rpm.xml)"
       - package:
           arch: x86_64
           kind: rpm
           variant: headless
           ext: rpm
-      - run:
-          name: Collect headless x86_64 rpm info
-          command: |
-            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
-            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;headless;$(cat /tmp/rpm.xml)"
+      - when:
+          condition: << pipeline.parameters.compat>>
+          steps:
+            - run:
+                name: Collect headless x86_64 rpm info
+                command: |
+                  rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+                  curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;x86_64;headless;$(cat /tmp/rpm.xml)"
       - package:
           arch: aarch64
           kind: rpm
           variant: headless
           ext: rpm
-      - run:
-          name: Collect headless aarch64 rpm info
-          command: |
-            rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
-            curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;aarch64;headless;$(cat /tmp/rpm.xml)"
+      - when:
+          condition: << pipeline.parameters.compat>>
+          steps:
+            - run:
+                name: Collect headless aarch64 rpm info
+                command: |
+                  rpm --query --xml desktop/fig.rpm > /tmp/rpm.xml
+                  curl -X POST << pipeline.parameters.callback_url >> -d "rpm_metadata;aarch64;headless;$(cat /tmp/rpm.xml)"
+      - persist_to_workspace:
+          root: /tmp/new
+          paths:
+            - pkg/x86_64/rpm/full/pkg
+            - pkg/x86_64/rpm/headless/pkg
+            - pkg/aarch64/rpm/headless/pkg
 
   package-deb:
     docker:
       - image: cimg/base:edge-22.04
     resource_class: small
     steps:
+      - require-target:
+          platform: linux
       - checkout-desktop
       - attach_workspace:
           at: /tmp/ws
@@ -520,6 +590,55 @@ jobs:
           kind: deb
           variant: headless
           ext: deb
+      - persist_to_workspace:
+          root: /tmp/new
+          paths:
+            - pkg/x86_64/deb/full/pkg
+            - pkg/x86_64/deb/headless/pkg
+            - pkg/aarch64/deb/headless/pkg
+  
+  publish-packages:
+    docker:
+      - image: cimg/base:edge-22.04
+    resource_class: small
+    steps:
+      - install-fig-release
+      - attach_workspace:
+          at: /tmp/ws
+      - run:
+          name: Init token
+          command: echo 'export FIG_TOKEN="$FIG_CI_TOKEN"' >> $BASH_ENV
+      - if-target:
+          platform: linux
+          steps:
+            - run:
+                name: Publish linux-full-x86_64
+                command: |
+                  fig_release package --kind deb --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/deb/full/pkg
+                  fig_release package --kind deb --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/deb/headless/pkg
+                  fig_release package --kind deb --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/deb/headless/pkg
+
+                  fig_release package --kind rpm --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/rpm/full/pkg
+                  fig_release package --kind rpm --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/rpm/headless/pkg
+                  fig_release package --kind rpm --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/rpm/headless/pkg
+
+                  fig_release package --kind tar --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/tar/full/pkg
+                  fig_release package --kind tar --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/tar/headless/pkg
+                  fig_release package --kind tar --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/tar/headless/pkg
+      - if-target:
+          platform: macos
+          steps:
+            - run:
+                name: Publish macos
+                command: |
+                  fig_release package --kind dmg --architecture universal --variant full /tmp/ws/pkg/universal/dmg/full/pkg
+      - if-target:
+          platform: windows
+          steps:
+            - run:
+                name: Publish windows
+                command: |
+                  fig_release package --kind exe --architecture x86_64 --variant windows_installer /tmp/ws/pkg/x86_64/exe/windows_installer/pkg
 
   # Does sentry
   sentry:
@@ -585,24 +704,46 @@ commands:
       - store_artifacts:
           path: desktop/fig.<< parameters.ext >>
           destination: pkg/os=linux,arch=<< parameters.arch >>,kind=<< parameters.kind >>,variant=<< parameters.variant >>
+      - run:
+          name: Move package
+          command: |
+            DIR="/tmp/new/pkg/linux/<< parameters.arch >>/<< parameters.kind >>/<< parameters.variant >>/"
+            mkdir -p $DIR
+            mv desktop/fig.<< parameters.ext >> $DIR/pkg
 
   # this should be the last step before you start building in
   # order to give github some time to process the new commit
   checkout-desktop:
     parameters:
-      checkout:
-        type: string
-        default: build-<< pipeline.parameters.id >>
+      version_update:
+        type: boolean
+        default: false
     steps:
       - add_ssh_keys:
           fingerprints:
             - "75:6e:33:0a:e8:7b:05:0e:75:56:73:4a:ad:3d:df:dd"
       - checkout:
           path: desktop
-      - run:
-          name: Checkout desktop
-          command: |
-            cd desktop && git reset --hard HEAD && git checkout << parameters.checkout >>
+      - when:
+          condition:
+            or:
+              - not: << pipeline.parameters.compat >>
+              - << parameters.version_update >>
+          steps:
+            - run:
+                name: Checkout desktop
+                command: |
+                  cd desktop && git reset --hard HEAD && git checkout << pipeline.parameters.checkout >>
+      - when:
+          condition:
+            and:
+              - << pipeline.parameters.compat >>
+              - not: << parameters.version_update >>
+          steps:
+            - run:
+                name: Checkout desktop
+                command: |
+                  cd desktop && git reset --hard HEAD && git checkout build-<< pipeline.parameters.id >>
 
   configure-apt:
     steps:
@@ -705,3 +846,65 @@ commands:
             sudo cp /tmp/protoc/bin/protoc /usr/local/bin/
             sudo cp -r /tmp/protoc/include/google /usr/local/include/
             sudo rm -r /tmp/protoc
+
+  install-fig-release:
+    steps:
+      - run:
+          name: Download fig_release
+          command: |
+            cd /tmp
+            gh -R withfig/macos release download fig_release --clobber
+            mv fig_release /usr/bin/fig_release
+            chmod +x /usr/bin/fig_release
+
+  require:
+    parameters:
+      condition:
+        type: boolean
+    steps:
+      - unless:
+          condition: << parameters.condition >>
+          steps:
+            - run:
+                name: Abort job
+                command: circleci-agent step halt
+
+  if-target:
+    parameters:
+      platform:
+        type: string
+      steps:
+        type: steps
+    steps:
+      - when:
+          condition:
+            matches:
+              pattern: "(:?,|^)<< parameters.platform >>(:?,|$)"
+              value: << pipeline.parameters.build_targets >>
+          steps: << parameters.steps >>
+
+  if-not-target:
+    parameters:
+      platform:
+        type: string
+      steps:
+        type: steps
+    steps:
+      - unless:
+          condition:
+            matches:
+              pattern: "(:?,|^)<< parameters.platform >>(:?,|$)"
+              value: << pipeline.parameters.build_targets >>
+          steps: << parameters.steps >>
+
+  require-target:
+    parameters:
+      platform:
+        type: string
+    steps:
+      - if-not-target:
+          platform: << parameters.platform >>
+          steps:
+            - run:
+                name: Abort job
+                command: circleci-agent step halt

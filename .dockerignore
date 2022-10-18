@@ -2,3 +2,9 @@
 **/Dockerfile
 **/.dockerignore
 tests/dotenv/src/local.ts
+
+target/
+build/
+.vscode/
+.fleet/
+bin/
