@@ -4,6 +4,7 @@ use std::pin::Pin;
 
 use accessibility::util::ax_call;
 use accessibility_sys::{
+    pid_t,
     AXError,
     AXObserverAddNotification,
     AXObserverCallback,
@@ -23,36 +24,25 @@ use core_foundation::string::{
     CFString,
     CFStringRef,
 };
-use flume::Sender;
 
-use super::{
-    ApplicationSpecifier,
-    WindowServerEvent,
-};
-
-pub struct AccessibilityCallbackData {
-    pub app: ApplicationSpecifier,
-    pub ax_ref: AXUIElementRef,
-    pub sender: Sender<WindowServerEvent>,
-}
-
-pub struct AXObserver {
+pub struct AXObserver<T> {
     inner: AXObserverRef,
-    callback_data: Pin<Box<AccessibilityCallbackData>>,
+    ax_ref: AXUIElementRef,
+    callback_data: Pin<Box<T>>,
 }
 
 // SAFETY: Pointers AXObserverRef, AXUIElementRef is send + sync safe
-unsafe impl Send for AXObserver {}
-unsafe impl Sync for AXObserver {}
+unsafe impl<T> Send for AXObserver<T> {}
+unsafe impl<T> Sync for AXObserver<T> {}
 
-impl AXObserver {
+impl<T> AXObserver<T> {
     pub unsafe fn create(
-        app: ApplicationSpecifier,
+        pid: pid_t,
         ax_ref: AXUIElementRef,
-        sender: Sender<WindowServerEvent>,
+        data: T,
         callback: AXObserverCallback,
     ) -> Result<Self, AXError> {
-        let observer = ax_call(|x: *mut AXObserverRef| AXObserverCreate(app.pid, callback, x))?;
+        let observer = ax_call(|x: *mut AXObserverRef| AXObserverCreate(pid, callback, x))?;
 
         CFRunLoopAddSource(
             CFRunLoopGetCurrent(),
@@ -62,16 +52,17 @@ impl AXObserver {
 
         Ok(Self {
             inner: observer,
-            callback_data: Box::pin(AccessibilityCallbackData { app, ax_ref, sender }),
+            ax_ref,
+            callback_data: Box::pin(data),
         })
     }
 
     pub unsafe fn subscribe(&mut self, ax_event: &str) -> Result<(), AXError> {
         ax_call(|_x: *mut c_void| {
-            let callback_data: *const AccessibilityCallbackData = &*self.callback_data;
+            let callback_data: *const T = &*self.callback_data;
             AXObserverAddNotification(
                 self.inner,
-                self.callback_data.ax_ref,
+                self.ax_ref,
                 CFString::from(ax_event).as_CFTypeRef() as CFStringRef,
                 callback_data as *const _ as *mut c_void,
             )
@@ -80,7 +71,7 @@ impl AXObserver {
     }
 }
 
-impl Drop for AXObserver {
+impl<T> Drop for AXObserver<T> {
     fn drop(&mut self) {
         unsafe {
             CFRunLoopRemoveSource(

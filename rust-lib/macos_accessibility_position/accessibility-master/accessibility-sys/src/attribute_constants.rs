@@ -6,6 +6,7 @@ pub const kAXHelpAttribute: &str = "AXHelp";
 pub const kAXTitleAttribute: &str = "AXTitle";
 pub const kAXValueAttribute: &str = "AXValue";
 pub const kAXValueDescriptionAttribute: &str = "AXValueDescription";
+pub const kAXFrameAttribute: &str = "AXFrame";
 pub const kAXMinValueAttribute: &str = "AXMinValue";
 pub const kAXMaxValueAttribute: &str = "AXMaxValue";
 pub const kAXFullScreenAttribute: &str = "AXFullScreen";
@@ -160,3 +161,7 @@ pub const kAXLayoutPointForScreenPointParameterizedAttribute: &str = "AXLayoutPo
 pub const kAXLayoutSizeForScreenSizeParameterizedAttribute: &str = "AXLayoutSizeForScreenSize";
 pub const kAXScreenPointForLayoutPointParameterizedAttribute: &str = "AXScreenPointForLayoutPoint";
 pub const kAXScreenSizeForLayoutSizeParameterizedAttribute: &str = "AXScreenSizeForLayoutSize";
+
+pub const kAXDOMClassListAttribute: &str = "AXDOMClassList";
+pub const kAXEnhancedUserInterfaceAttribute: &str = "AXEnhancedUserInterface";
+pub const kAXManualAccessibilityAttribute: &str = "AXManualAccessibility";

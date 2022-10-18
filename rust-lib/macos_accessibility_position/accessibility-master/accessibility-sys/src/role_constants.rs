@@ -6,6 +6,7 @@ pub const kAXWindowRole: &str = "AXWindow";
 pub const kAXSheetRole: &str = "AXSheet";
 pub const kAXDrawerRole: &str = "AXDrawer";
 pub const kAXGrowAreaRole: &str = "AXGrowArea";
+pub const kAXWebAreaRole: &str = "AXWebArea";
 pub const kAXImageRole: &str = "AXImage";
 pub const kAXUnknownRole: &str = "AXUnknown";
 pub const kAXButtonRole: &str = "AXButton";

@@ -1,5 +1,6 @@
 #![allow(dead_code)]
 
+use std::ffi::c_void;
 use std::marker::PhantomData;
 
 use appkit_nsworkspace_bindings::NSArray as AppkitNSArray;
@@ -8,6 +9,7 @@ use cocoa::foundation::{
     NSArray as CocoaNSArray,
     NSUInteger,
 };
+use core_foundation::array::CFArrayRef;
 
 use super::{
     Id,
@@ -92,6 +94,13 @@ pub struct NSArrayRef<T: 'static> {
 }
 
 impl<T: 'static> NSArrayRef<T> {
+    pub unsafe fn new(inner: *const objc::runtime::Object) -> Self {
+        Self {
+            inner: IdRef::new(inner),
+            phantom: PhantomData,
+        }
+    }
+
     pub fn iter(self) -> NSArrayRefIter<T> {
         let count = self.len();
         NSArrayRefIter {
@@ -116,6 +125,15 @@ impl<T> std::ops::Deref for NSArrayRef<T> {
 
     fn deref(&self) -> &Self::Target {
         &self.inner
+    }
+}
+
+impl<T> From<CFArrayRef> for NSArrayRef<T> {
+    fn from(arr_ref: CFArrayRef) -> Self {
+        Self {
+            inner: unsafe { IdRef::new(arr_ref as *mut c_void as RawId) },
+            phantom: PhantomData,
+        }
     }
 }
 

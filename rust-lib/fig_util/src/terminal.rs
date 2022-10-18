@@ -165,7 +165,7 @@ impl Terminal {
         match self {
             Terminal::Iterm => String::from("com.googlecode.iterm2"),
             Terminal::TerminalApp => String::from("com.apple.Terminal"),
-            Terminal::Hyper => String::from("com.zeit.hyper"),
+            Terminal::Hyper => String::from("co.zeit.hyper"),
             Terminal::Alacritty => String::from("com.alacritty"),
             Terminal::Kitty => String::from("net.kovidgoyal.kitty"),
             Terminal::Vscode => String::from("com.microsoft.VSCode"),
@@ -183,7 +183,7 @@ impl Terminal {
         let res = match bundle {
             "com.googlecode.iterm2" => Terminal::Iterm,
             "com.apple.Terminal" => Terminal::TerminalApp,
-            "com.zeit.hyper" => Terminal::Hyper,
+            "co.zeit.hyper" => Terminal::Hyper,
             "com.alacritty" => Terminal::Alacritty,
             "net.kovidgoyal.kitty" => Terminal::Kitty,
             "com.microsoft.VSCode" => Terminal::Vscode,
@@ -216,6 +216,10 @@ impl Terminal {
             self,
             Terminal::Iterm | Terminal::TerminalApp | Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper
         )
+    }
+
+    pub fn is_xterm(&self) -> bool {
+        matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper)
     }
 
     pub fn executable_names(&self) -> &'static [&'static str] {

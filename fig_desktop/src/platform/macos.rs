@@ -8,6 +8,7 @@ use std::sync::atomic::{
 use std::sync::Arc;
 
 use accessibility_sys::{
+    pid_t,
     AXError,
     AXUIElementCreateSystemWide,
     AXUIElementSetMessagingTimeout,
@@ -18,6 +19,7 @@ use cocoa::base::{
     NO,
     YES,
 };
+use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
 use fig_util::Terminal;
 use macos_accessibility_position::accessibility::accessibility_is_enabled;
@@ -27,7 +29,6 @@ use macos_accessibility_position::caret_position::{
 };
 use macos_accessibility_position::window_server::UIElement;
 use macos_accessibility_position::{
-    get_active_window,
     NSString,
     NotificationCenter,
     WindowServer,
@@ -116,24 +117,70 @@ pub(super) struct PlatformStateImpl {
     focused_window: Mutex<Option<PlatformWindowImpl>>,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone)]
 #[allow(dead_code)]
 pub struct PlatformWindowImpl {
     window_id: CGWindowID,
+    ui_element: UIElement,
+    x_term_tree_cache: Option<Vec<UIElement>>,
+    pub bundle_id: String,
+    pub pid: pid_t,
+}
+
+impl From<CGRect> for Rect {
+    fn from(cgr: CGRect) -> Rect {
+        Rect {
+            position: LogicalPosition::new(cgr.origin.x, cgr.origin.y),
+            size: LogicalSize::new(cgr.size.width, cgr.size.height),
+        }
+    }
 }
 
 impl PlatformWindowImpl {
-    pub fn from_window_id(window_id: CGWindowID) -> Self {
-        Self { window_id }
-    }
-
-    pub fn from_ui_element(ui_element: UIElement) -> Result<Self, AXError> {
+    pub fn new(bundle_id: String, pid: pid_t, ui_element: UIElement) -> Result<Self, AXError> {
         let window_id = unsafe { ui_element.get_window_id()? };
-        Ok(Self { window_id })
+        Ok(Self {
+            window_id,
+            ui_element,
+            pid,
+            x_term_tree_cache: None,
+            bundle_id,
+        })
     }
 
     pub fn get_window_id(&self) -> CGWindowID {
         self.window_id
+    }
+
+    pub fn bundle_id(&self) -> &str {
+        self.bundle_id.as_str()
+    }
+
+    pub fn get_bounds(&self) -> Option<CGRect> {
+        let info = self.ui_element.window_info()?;
+        Some(info.bounds)
+    }
+
+    pub fn get_x_term_cursor_elem(&mut self) -> Option<UIElement> {
+        let tree = self
+            .x_term_tree_cache
+            .as_ref()
+            .and_then(|cached| {
+                warn!("About to walk through {:?}", cached.len());
+                let result: Option<Vec<UIElement>> =
+                    cached.iter().fold(None::<Vec<UIElement>>, |accum, item| match accum {
+                        Some(mut x) => {
+                            x.push(item.clone());
+                            Some(x)
+                        },
+                        None => item.find_x_term_caret_tree().ok(),
+                    });
+                result
+            })
+            .or_else(|| self.ui_element.find_x_term_caret_tree().ok());
+
+        self.x_term_tree_cache = tree;
+        self.x_term_tree_cache.as_ref()?.first().cloned()
     }
 }
 
@@ -208,6 +255,7 @@ impl PlatformStateImpl {
         window_target: &EventLoopWindowTarget,
         window_map: &FigIdMap,
     ) -> anyhow::Result<()> {
+        warn!("Handling platform event: {:?}", event);
         match event {
             PlatformBoundEvent::Initialize => {
                 UNMANAGED.event_sender.write().replace(self.proxy.clone());
@@ -248,8 +296,8 @@ impl PlatformStateImpl {
                         let mut events: Vec<Event> = vec![];
 
                         match result {
-                            WindowServerEvent::FocusChanged { window } => {
-                                let fullscreen = unsafe { window.is_fullscreen().unwrap_or(false) };
+                            WindowServerEvent::FocusChanged { window, app } => {
+                                let fullscreen = window.is_fullscreen().unwrap_or(false);
                                 events.push(Event::WindowEvent {
                                     window_id: AUTOCOMPLETE_ID,
                                     window_event: WindowEvent::Hide,
@@ -259,16 +307,16 @@ impl PlatformStateImpl {
                                     fullscreen,
                                 }));
 
-                                if let Ok(window) = PlatformWindowImpl::from_ui_element(window) {
+                                if let Ok(window) = PlatformWindowImpl::new(app.bundle_id, app.pid, window) {
                                     events.push(Event::PlatformBoundEvent(
                                         PlatformBoundEvent::ExternalWindowFocusChanged { window },
                                     ));
                                 }
                             },
-                            WindowServerEvent::WindowDestroyed { window } => {
+                            WindowServerEvent::WindowDestroyed { window, app } => {
                                 // TODO(sean) seems like this is failing -- can't get window id for
                                 // the destroyed elements :(
-                                if let Ok(window) = PlatformWindowImpl::from_ui_element(window) {
+                                if let Ok(window) = PlatformWindowImpl::new(app.bundle_id, app.pid, window) {
                                     events.push(Event::PlatformBoundEvent(PlatformBoundEvent::WindowDestroyed {
                                         window,
                                     }));
@@ -479,23 +527,46 @@ impl PlatformStateImpl {
     }
 
     fn refresh_window_position(&self) -> anyhow::Result<()> {
-        let current_terminal =
-            get_active_window().and_then(|window| Terminal::from_bundle_id(window.bundle_id.as_str()));
+        let mut guard = self.focused_window.lock();
+        let active_window = guard.as_mut().context("No active window")?;
+        let current_terminal = Terminal::from_bundle_id(active_window.bundle_id());
 
         let supports_ime = current_terminal
+            .clone()
             .map(|t| t.supports_macos_input_method())
             .unwrap_or(false);
+
+        let is_xterm = current_terminal.map(|t| t.is_xterm()).unwrap_or(false);
 
         // let supports_accessibility = current_terminal
         // .map(|t| t.supports_macos_accessibility())
         // .unwrap_or(false);
 
-        if supports_ime {
+        if !is_xterm && supports_ime {
             tracing::warn!("Sending notif io.fig.edit_buffer_updated");
             NotificationCenter::distributed()
                 .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
         } else {
-            let caret = self.get_cursor_position().context("Failed to get cursor position")?;
+            let caret = if is_xterm {
+                let cursor = active_window.get_x_term_cursor_elem();
+                /*
+                for i in 0..20 {
+                    // std::thread::sleep(std::time::Duration::from_millis(20));
+                    cursor = active_window.get_x_term_cursor();
+                    // println!("Iter {i}, {cursor:?}");
+                }
+                */
+
+                cursor.and_then(|c| c.frame().ok()).map(Rect::from)
+            } else {
+                None
+            };
+
+            let caret = caret
+                .or_else(|| self.get_cursor_position())
+                .context("Failed to get cursor position")?;
+            warn!("Sending caret update {:?}", caret);
+
             UNMANAGED
                 .event_sender
                 .read()
@@ -536,13 +607,10 @@ impl PlatformStateImpl {
 
     /// Gets the currently active window on the platform
     pub(super) fn get_active_window(&self) -> Option<PlatformWindow> {
-        let window = get_active_window()?;
+        let active_window = self.focused_window.lock().as_ref()?.clone();
         Some(PlatformWindow {
-            rect: Rect {
-                position: LogicalPosition::new(window.position.x, window.position.y),
-                size: LogicalSize::new(window.position.width, window.position.height),
-            },
-            inner: PlatformWindowImpl::from_window_id(window.window_id),
+            rect: active_window.get_bounds()?.into(),
+            inner: active_window,
         })
     }
 

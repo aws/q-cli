@@ -78,3 +78,9 @@ impl std::ops::Deref for NSStringRef {
         &self.0
     }
 }
+
+impl From<AppkitNSString> for NSStringRef {
+    fn from(s: AppkitNSString) -> Self {
+        Self(unsafe { IdRef::new(s.0) })
+    }
+}

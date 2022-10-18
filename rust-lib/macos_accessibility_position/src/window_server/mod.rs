@@ -20,7 +20,6 @@ use accessibility_sys::{
     AXError,
     AXIsProcessTrusted,
     AXObserverRef,
-    AXUIElement,
     AXUIElementCreateApplication,
     AXUIElementRef,
 };
@@ -38,10 +37,7 @@ use appkit_nsworkspace_bindings::{
     NSWorkspaceDidTerminateApplicationNotification,
     NSWorkspace_NSWorkspaceRunningApplications,
 };
-use ax_observer::{
-    AXObserver,
-    AccessibilityCallbackData,
-};
+use ax_observer::AXObserver;
 use cocoa::base::{
     id,
     nil,
@@ -59,12 +55,6 @@ use objc::runtime::{
     Class,
     Object,
     Sel,
-};
-use objc::{
-    class,
-    msg_send,
-    sel,
-    sel_impl,
 };
 use tracing::{
     debug,
@@ -92,6 +82,9 @@ static BLOCKED_BUNDLE_IDS: &[&str] = &[
     "com.mschrage.fig",
 ];
 
+// TODO(sean) -- should this use fig_util crate Terminal struct?
+static XTERM_BUNDLE_IDS: &[&str] = &["com.microsoft.VSCodeInsiders", "com.microsoft.VSCode", "co.zeit.hyper"];
+
 static TRACKED_NOTIFICATIONS: &[&str] = &[
     kAXWindowCreatedNotification,
     kAXFocusedWindowChangedNotification,
@@ -110,10 +103,23 @@ pub struct ApplicationSpecifier {
 }
 
 pub enum WindowServerEvent {
-    FocusChanged { window: UIElement },
-    WindowDestroyed { window: UIElement },
-    ActiveSpaceChanged { is_fullscreen: bool },
+    FocusChanged {
+        window: UIElement,
+        app: ApplicationSpecifier,
+    },
+    WindowDestroyed {
+        window: UIElement,
+        app: ApplicationSpecifier,
+    },
+    ActiveSpaceChanged {
+        is_fullscreen: bool,
+    },
     RequestCaretPositionUpdate,
+}
+
+pub struct AccessibilityCallbackData {
+    pub app: ApplicationSpecifier,
+    pub sender: Sender<WindowServerEvent>,
 }
 
 unsafe fn app_bundle_id(app: &NSRunningApplication) -> Option<String> {
@@ -134,7 +140,7 @@ unsafe impl Send for WindowServer {}
 unsafe impl Sync for WindowServer {}
 
 pub struct WindowServerInner {
-    observers: DashMap<ApplicationSpecifier, AXObserver, fnv::FnvBuildHasher>,
+    observers: DashMap<ApplicationSpecifier, AXObserver<AccessibilityCallbackData>, fnv::FnvBuildHasher>,
     sender: Sender<WindowServerEvent>,
 }
 
@@ -341,15 +347,30 @@ impl WindowServerInner {
 
         if from_activation {
             // In Swift had 0.25s delay before this...?
-            if let Ok(window) = UIElement::new_with_focused_attribute(ax_ref, &key) {
-                if let Err(e) = self.sender.send(WindowServerEvent::FocusChanged { window }) {
+            if let Ok(window) = UIElement::from(ax_ref).focused_window() {
+                if let Err(e) = self.sender.send(WindowServerEvent::FocusChanged {
+                    window,
+                    app: key.clone(),
+                }) {
                     warn!("Error sending focus changed event: {e:?}");
                 };
             }
         }
 
+        if XTERM_BUNDLE_IDS.contains(&key.bundle_id.as_str()) {
+            UIElement::from(ax_ref).enable_screen_reader_accessibility().ok();
+        }
+
         let bundle_id = key.bundle_id.as_str();
-        if let Ok(mut observer) = AXObserver::create(key.clone(), ax_ref, self.sender.clone(), ax_callback) {
+        if let Ok(mut observer) = AXObserver::create(
+            key.pid,
+            ax_ref,
+            AccessibilityCallbackData {
+                app: key.clone(),
+                sender: self.sender.clone(),
+            },
+            application_ax_callback,
+        ) {
             let result: Result<Vec<_>, AXError> = TRACKED_NOTIFICATIONS
                 .iter()
                 .map(|notification| observer.subscribe(notification))
@@ -357,6 +378,7 @@ impl WindowServerInner {
 
             if result.is_ok() {
                 debug!("Began tracking {bundle_id:?}");
+
                 self.observers.insert(key, observer);
                 return;
             }
@@ -456,7 +478,7 @@ impl WindowServerHandler for WindowServerInner {
 }
 
 #[no_mangle]
-unsafe extern "C" fn ax_callback(
+unsafe extern "C" fn application_ax_callback(
     _observer: AXObserverRef,
     element: AXUIElementRef,
     notification_name: CFStringRef,
@@ -470,7 +492,7 @@ unsafe extern "C" fn ax_callback(
     let cb_data: &mut AccessibilityCallbackData = &mut *(refcon as *mut AccessibilityCallbackData);
     // get_rule will call CFRetain to increment the RC in objc to make sure element is not freed
     // before we are done with it. CFRelease is called automatically on drop.
-    let element = AXUIElement::wrap_under_get_rule(element);
+    let element = UIElement::from(element);
 
     let name = CFString::wrap_under_get_rule(notification_name);
     let app = &cb_data.app;
@@ -478,28 +500,32 @@ unsafe extern "C" fn ax_callback(
     let event = match name.to_string().as_str() {
         kAXFocusedWindowChangedNotification | kAXMainWindowChangedNotification => {
             Some(WindowServerEvent::FocusChanged {
-                window: UIElement::new_with_app(element, app),
+                window: element,
+                app: app.clone(),
             })
         },
         kAXApplicationActivatedNotification | kAXApplicationShownNotification => {
-            UIElement::new_with_focused_attribute(cb_data.ax_ref, app)
+            element
+                .focused_window()
                 .ok()
-                .map(|window| WindowServerEvent::FocusChanged { window })
+                .map(|window| WindowServerEvent::FocusChanged {
+                    window,
+                    app: app.clone(),
+                })
         },
         kAXWindowResizedNotification | kAXWindowMovedNotification => {
             Some(WindowServerEvent::RequestCaretPositionUpdate)
         },
-        kAXUIElementDestroyedNotification => {
-            // Hide autocomplete when frontmost window is destroyed
-            Some(WindowServerEvent::WindowDestroyed {
-                window: UIElement::new_with_app(element, app),
-            })
-        },
+        kAXUIElementDestroyedNotification => Some(WindowServerEvent::WindowDestroyed {
+            window: element,
+            app: app.clone(),
+        }),
         unknown => {
             info!("Unhandled AX event: {unknown}");
             None
         },
     };
+
     if let Some(event) = event {
         if let Err(e) = cb_data.sender.send(event) {
             warn!("Error sending focus changed event: {e:?}");
