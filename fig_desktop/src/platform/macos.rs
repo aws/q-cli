@@ -440,9 +440,7 @@ impl PlatformStateImpl {
                     });
                 }
 
-                if enabled != was_enabled {
-                    self.proxy.send_event(Event::ReloadAccessibility).ok();
-                }
+                self.proxy.send_event(Event::ReloadAccessibility).ok();
 
                 Ok(())
             },
