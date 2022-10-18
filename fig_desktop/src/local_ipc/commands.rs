@@ -24,6 +24,7 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::figterm::FigtermState;
 use crate::webview::DASHBOARD_ONBOARDING_SIZE;
 use crate::{
     platform,
@@ -67,35 +68,41 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
         .map_err(|_| exit(0))
 }
 
-pub async fn diagnostic(_: DiagnosticsCommand) -> LocalResult {
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            let response = DiagnosticsResponse {
-                autocomplete_active: Some(platform::autocomplete_active()),
-                path_to_bundle: macos_accessibility_position::bundle::get_bundle_path()
-                    .and_then(|path| path.to_str().map(|s| s.to_owned()))
-                    .unwrap_or_default(),
-                accessibility: if macos_accessibility_position::accessibility::accessibility_is_enabled() {
-                    "true".into()
-                } else {
-                    "false".into()
-                },
-                ..Default::default()
-            };
-
-            Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
-                response,
-            ))))
-        } else {
-            let response = DiagnosticsResponse {
-                autocomplete_active: Some(platform::autocomplete_active()),
-                ..Default::default()
-            };
-            Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
-                response,
-            ))))
+pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> LocalResult {
+    let (edit_buffer_string, edit_buffer_cursor, shell_context) = {
+        match figterm_state.most_recent() {
+            Some(session) => (
+                Some(session.edit_buffer.text.clone()),
+                Some(session.edit_buffer.cursor),
+                session.context.clone(),
+            ),
+            None => (None, None, None),
         }
-    }
+    };
+
+    let response = DiagnosticsResponse {
+        autocomplete_active: Some(platform::autocomplete_active()),
+        #[cfg(target_os = "macos")]
+        path_to_bundle: macos_accessibility_position::bundle::get_bundle_path()
+            .and_then(|path| path.to_str().map(|s| s.to_owned()))
+            .unwrap_or_default(),
+        #[cfg(target_os = "macos")]
+        accessibility: if macos_accessibility_position::accessibility::accessibility_is_enabled() {
+            "true".into()
+        } else {
+            "false".into()
+        },
+
+        edit_buffer_string,
+        edit_buffer_cursor,
+        shell_context,
+
+        ..Default::default()
+    };
+
+    Ok(LocalResponse::Message(Box::new(CommandResponseTypes::Diagnostics(
+        response,
+    ))))
 }
 
 pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopProxy) -> LocalResult {

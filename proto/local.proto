@@ -297,6 +297,10 @@ message DiagnosticsResponse {
   bool unix_socket_server_exists = 20;
   string current_session = 21;
   optional bool autocomplete_active = 22;
+  // The best guess attempt at most recent terminal session data
+  optional string edit_buffer_string = 23;
+  optional int64 edit_buffer_cursor = 24;
+  optional fig_common.ShellContext shell_context = 25;
 }
 
 message LogLevelResponse { optional string old_level = 1; }

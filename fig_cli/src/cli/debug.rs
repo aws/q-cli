@@ -1,4 +1,8 @@
-use std::io::Read;
+use std::fmt::Write as _;
+use std::io::{
+    Read,
+    Write as _,
+};
 use std::path::Path;
 use std::process::Command;
 
@@ -31,7 +35,6 @@ use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::directories;
 use serde_json::json;
 
-#[cfg(target_os = "macos")]
 use crate::cli::diagnostics::get_diagnostics;
 use crate::cli::launch_fig_desktop;
 use crate::util::{
@@ -75,7 +78,7 @@ pub enum AccessibilityAction {
     Status,
 }
 
-#[derive(Debug, PartialEq, Eq, Subcommand)]
+#[derive(Debug, PartialEq, Subcommand)]
 pub enum DebugSubcommand {
     /// Debug fig app
     App,
@@ -121,6 +124,13 @@ pub enum DebugSubcommand {
     },
     /// Key Tester
     KeyTester,
+    /// Watches diagnostics
+    Diagnostics {
+        #[arg(long)]
+        watch: bool,
+        #[arg(long, requires("watch"), default_value_t = 0.25)]
+        rate: f64,
+    },
 }
 
 impl DebugSubcommand {
@@ -211,7 +221,9 @@ impl DebugSubcommand {
                 }
 
                 if files.is_empty() || files.iter().any(|f| f == "fig_desktop") {
-                    if let Err(err) = fig_ipc::local::set_log_level("DEBUG".into()).await {
+                    if let Err(err) =
+                        fig_ipc::local::set_log_level(level.as_ref().clone().unwrap_or_else(|| "DEBUG".into())).await
+                    {
                         println!("Could not set log level for fig_desktop: {err}");
                     }
                 }
@@ -414,6 +426,99 @@ impl DebugSubcommand {
 
                 disable_raw_mode()?;
                 println!("ctrl-d");
+            },
+            DebugSubcommand::Diagnostics { watch, rate } => {
+                if *watch {
+                    crossterm::execute!(
+                        std::io::stdout(),
+                        crossterm::terminal::EnterAlternateScreen,
+                        crossterm::cursor::Hide,
+                    )?;
+
+                    tokio::spawn(async {
+                        tokio::signal::ctrl_c().await.unwrap();
+                        crossterm::execute!(
+                            std::io::stdout(),
+                            crossterm::terminal::LeaveAlternateScreen,
+                            crossterm::cursor::Show,
+                        )
+                        .unwrap();
+                        std::process::exit(0);
+                    });
+                }
+
+                loop {
+                    let diagnostic = get_diagnostics().await?;
+                    let term_width = crossterm::terminal::size().unwrap().0 as usize;
+
+                    let mut out = String::new();
+
+                    let edit_buffer = diagnostic.edit_buffer_string.map(|mut s| {
+                        if let Some(index) = diagnostic.edit_buffer_cursor {
+                            s.insert_str(index as usize, &"│".magenta().to_string());
+                        }
+                        s = s.replace('\n', "\\n");
+                        s = s.replace('\t', "\\t");
+                        s = s.replace('\r', "\\r");
+                        s.trim().to_string()
+                    });
+
+                    writeln!(&mut out, "{}", "Edit Buffer".bold())?;
+                    writeln!(&mut out, "{}", "━".repeat(term_width))?;
+                    writeln!(&mut out, "{}", edit_buffer.unwrap_or_else(|| "None".into()))?;
+                    writeln!(&mut out, "{}", "━".repeat(term_width))?;
+
+                    writeln!(&mut out)?;
+
+                    if let Some(shell_context) = diagnostic.shell_context {
+                        writeln!(&mut out, "{}", "Shell Context".bold())?;
+                        writeln!(&mut out, "{}", "━".repeat(term_width))?;
+                        writeln!(
+                            &mut out,
+                            "Session ID: {}",
+                            shell_context.session_id.unwrap_or_else(|| "None".to_string())
+                        )?;
+                        writeln!(
+                            &mut out,
+                            "Process Name: {}",
+                            shell_context.process_name.unwrap_or_else(|| "None".to_string())
+                        )?;
+                        writeln!(
+                            &mut out,
+                            "Current Working Directory: {}",
+                            shell_context
+                                .current_working_directory
+                                .unwrap_or_else(|| "None".to_string())
+                        )?;
+                        writeln!(
+                            &mut out,
+                            "TTY: {}",
+                            shell_context.ttys.unwrap_or_else(|| "None".to_string())
+                        )?;
+                    }
+
+                    if *watch {
+                        crossterm::queue!(
+                            std::io::stdout(),
+                            crossterm::terminal::Clear(crossterm::terminal::ClearType::Purge),
+                            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
+                            crossterm::cursor::MoveTo(0, 0),
+                            crossterm::style::Print(format!(
+                                "Fig Diagnostics (use {} to quit)\n\n",
+                                "ctrl-c".magenta()
+                            )),
+                            crossterm::style::Print(out),
+                        )?;
+                        std::io::stdout().flush()?;
+                    } else {
+                        println!("{out}");
+                    }
+
+                    if !watch {
+                        break;
+                    }
+                    tokio::time::sleep(std::time::Duration::from_secs_f64(*rate)).await;
+                }
             },
         }
         Ok(())

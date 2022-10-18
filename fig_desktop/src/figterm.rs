@@ -17,6 +17,7 @@ use hashbrown::HashMap;
 use parking_lot::lock_api::MutexGuard;
 use parking_lot::{
     FairMutex,
+    MappedFairMutexGuard,
     RawFairMutex,
 };
 use time::OffsetDateTime;
@@ -136,6 +137,13 @@ impl FigtermState {
     pub fn with<T>(&self, session_id: &FigtermSessionId, f: impl FnOnce(&mut FigtermSession) -> T) -> Option<T> {
         let mut guard = self.linked_sessions.lock();
         guard.iter_mut().find(|session| &session.id == session_id).map(f)
+    }
+
+    pub fn most_recent(&self) -> Option<MappedFairMutexGuard<'_, FigtermSession>> {
+        MutexGuard::<'_, RawFairMutex, LinkedList<FigtermSession>>::try_map(self.linked_sessions.lock(), |guard| {
+            guard.iter_mut().find(|session| session.dead_since.is_none())
+        })
+        .ok()
     }
 
     pub fn with_maybe_id<T>(

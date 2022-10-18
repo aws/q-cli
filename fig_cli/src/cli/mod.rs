@@ -75,7 +75,7 @@ pub enum Processes {
 
 /// Top level cli commands
 #[deny(missing_docs)]
-#[derive(Debug, PartialEq, Eq, Subcommand)]
+#[derive(Debug, PartialEq, Subcommand)]
 pub enum CliRootCommands {
     /// Interact with the desktop app
     #[command(subcommand)]

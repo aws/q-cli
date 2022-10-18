@@ -176,6 +176,7 @@ impl WebviewManager {
 
         tokio::spawn(local_ipc::start_local_ipc(
             self.platform_state.clone(),
+            self.figterm_state.clone(),
             self.event_loop.create_proxy(),
         ));
 

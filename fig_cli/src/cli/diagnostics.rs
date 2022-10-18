@@ -21,13 +21,10 @@ use fig_ipc::local::send_recv_command_to_socket;
 use fig_proto::local::command_response::Response;
 use fig_proto::local::{
     command,
-    IntegrationAction,
-    TerminalIntegrationCommand,
-};
-#[cfg(unix)]
-use fig_proto::local::{
     DiagnosticsCommand,
     DiagnosticsResponse,
+    IntegrationAction,
+    TerminalIntegrationCommand,
 };
 use fig_telemetry::InstallMethod;
 use fig_util::system_info::OSVersion;
@@ -266,7 +263,6 @@ impl Diagnostic for OSVersion {
     }
 }
 
-#[cfg(unix)]
 pub async fn get_diagnostics() -> Result<DiagnosticsResponse> {
     let response = send_recv_command_to_socket(command::Command::Diagnostics(DiagnosticsCommand {}))
         .await?

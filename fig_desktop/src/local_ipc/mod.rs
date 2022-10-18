@@ -29,6 +29,7 @@ use tracing::{
     warn,
 };
 
+use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
 use crate::EventLoopProxy;
 
@@ -40,7 +41,11 @@ pub enum LocalResponse {
 
 pub type LocalResult = Result<LocalResponse, LocalResponse>;
 
-pub async fn start_local_ipc(platform_state: Arc<PlatformState>, proxy: EventLoopProxy) -> Result<()> {
+pub async fn start_local_ipc(
+    platform_state: Arc<PlatformState>,
+    figterm_state: Arc<FigtermState>,
+    proxy: EventLoopProxy,
+) -> Result<()> {
     let socket_path = directories::fig_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
@@ -56,6 +61,7 @@ pub async fn start_local_ipc(platform_state: Arc<PlatformState>, proxy: EventLoo
         tokio::spawn(handle_local_ipc(
             BufferedUnixStream::new(stream),
             platform_state.clone(),
+            figterm_state.clone(),
             proxy.clone(),
         ));
     }
@@ -63,7 +69,12 @@ pub async fn start_local_ipc(platform_state: Arc<PlatformState>, proxy: EventLoo
     Ok(())
 }
 
-async fn handle_local_ipc(mut stream: BufferedUnixStream, platform_state: Arc<PlatformState>, proxy: EventLoopProxy) {
+async fn handle_local_ipc(
+    mut stream: BufferedUnixStream,
+    platform_state: Arc<PlatformState>,
+    figterm_state: Arc<FigtermState>,
+    proxy: EventLoopProxy,
+) {
     while let Some(message) = stream.recv_message::<LocalMessage>().await.unwrap_or_else(|err| {
         if !err.is_disconnect() {
             error!("Failed receiving local message: {err}");
@@ -86,7 +97,7 @@ async fn handle_local_ipc(mut stream: BufferedUnixStream, platform_state: Arc<Pl
                             DebugMode(command) => commands::debug(command, &proxy).await,
                             OpenUiElement(command) => commands::open_ui_element(command, &proxy).await,
                             Quit(command) => commands::quit(command, &proxy).await,
-                            Diagnostics(command) => commands::diagnostic(command).await,
+                            Diagnostics(command) => commands::diagnostic(command, &figterm_state).await,
                             OpenBrowser(command) => commands::open_browser(command).await,
                             PromptAccessibility(_) => commands::prompt_for_accessibility_permission().await,
                             LogLevel(command) => commands::log_level(command),
