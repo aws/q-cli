@@ -15,6 +15,7 @@ mod webview;
 
 use std::iter::empty;
 
+use camino::Utf8PathBuf;
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
@@ -130,6 +131,18 @@ async fn main() {
             },
             Err(err) => warn!("Failed to get pid: {err}"),
         }
+    }
+
+    #[cfg(target_os = "macos")]
+    if let Some(false) = std::env::current_exe().ok().and_then(|bin| {
+        bin.canonicalize().ok().and_then(|bin| {
+            Utf8PathBuf::from_path_buf(bin)
+                .ok()
+                .map(|bin| bin.as_str().contains(".dmg"))
+        })
+    }) {
+        eprintln!("Cannot execute Fig from within a DMG. Please move Fig to your applications folder and try again.");
+        return;
     }
 
     tokio::spawn(async {
