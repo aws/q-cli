@@ -473,7 +473,8 @@ pub fn manifest_path() -> Result<PathBuf> {
         if #[cfg(all(unix, not(target_os = "macos")))] {
             Ok(std::path::Path::new("/usr/share/fig/manifest.json").into())
         } else if #[cfg(target_os = "macos")] {
-            panic!("This platform does not support build manifests")
+            // todo: make better (use relative)
+            Ok(std::path::Path::new("/Applications/Fig.app/Contents/Resources/manifest.json").into())
         } else if #[cfg(target_os = "windows")] {
             Ok(managed_binaries_dir()?.join("manifest.json"))
         }
