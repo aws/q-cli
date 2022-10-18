@@ -134,7 +134,7 @@ async fn main() {
     }
 
     #[cfg(target_os = "macos")]
-    if let Some(false) = std::env::current_exe().ok().and_then(|bin| {
+    if let Some(true) = std::env::current_exe().ok().and_then(|bin| {
         bin.canonicalize().ok().and_then(|bin| {
             Utf8PathBuf::from_path_buf(bin)
                 .ok()
