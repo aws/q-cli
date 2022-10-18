@@ -689,6 +689,7 @@ impl<T> Term<T> {
         let mut last_char_width: usize = 0;
         let mut last_char_was_padding = true;
 
+        #[allow(unused_variables)]
         let mut cell_idx = 0;
         let mut cursor_idx = None;
 
@@ -707,7 +708,7 @@ impl<T> Term<T> {
             }
 
             if cell.point == cursor {
-                cursor_idx = Some(cell_idx);
+                cursor_idx = Some(buffer.len());
                 while padding > 0 {
                     buffer.push(' ');
                     cell_idx += 1;

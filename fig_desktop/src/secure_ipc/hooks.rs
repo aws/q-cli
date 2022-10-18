@@ -104,6 +104,11 @@ pub async fn edit_buffer(
         }
     }
 
+    let utf16_cursor_position = hook
+        .text
+        .get(..hook.cursor as usize)
+        .map(|s| s.encode_utf16().count() as i32);
+
     for sub in notifications_state.subscriptions.iter() {
         let message_id = match sub.get(&NotificationType::NotifyOnEditbuffferChange) {
             Some(id) => *id,
@@ -119,7 +124,7 @@ pub async fn edit_buffer(
                     EditBufferChangedNotification {
                         context: hook.context,
                         buffer: Some(hook.text),
-                        cursor: Some(hook.cursor.try_into().unwrap()),
+                        cursor: utf16_cursor_position,
                         session_id: Some(session_id.0),
                     },
                 )),
