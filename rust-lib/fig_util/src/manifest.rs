@@ -83,7 +83,7 @@ where
 
 static CACHED: Lazy<Option<Manifest>> = Lazy::new(|| {
     cfg_if! {
-        if #[cfg(all(unix, not(target_os = "macos")))] {
+        if #[cfg(unix)] {
             let text = match std::fs::read_to_string(crate::directories::manifest_path().unwrap()) {
                 Ok(s) => s,
                 Err(err) => {
