@@ -270,7 +270,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
                     format!(
                         "printf '\\n🚀 Fig now supports {terminal} Terminal!\\nEnable integrations with {terminal} by \
                          running:\\n  {}\\n\\n'\n",
-                        "fig install --input-method".magenta()
+                        "fig integrations install input-method".magenta()
                     ),
                 ));
             }

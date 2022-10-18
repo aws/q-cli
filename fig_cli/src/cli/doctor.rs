@@ -1041,7 +1041,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
     async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
         let fix_text = format!(
             "Run {} to reinstall shell integrations for {}",
-            "fig install --dotfiles".magenta(),
+            "fig integrations install dotfiles".magenta(),
             self.integration.get_shell()
         );
         match self.integration.is_installed() {
@@ -1657,7 +1657,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
         } else {
             Err(DoctorError::Error {
                 reason: "Input Method is not enabled".into(),
-                info: vec!["Run `fig install --input-method` to enable it".into()],
+                info: vec!["Run `fig integrations install input-method` to enable it".into()],
                 fix: None,
                 error: None,
             })

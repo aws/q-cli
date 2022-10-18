@@ -747,8 +747,8 @@ class AppDelegate: NSObject, NSApplicationDelegate, NSWindowDelegate {
 
       let cli = Bundle.main.path(forAuxiliaryExecutable: "fig-darwin-universal")!
       // Uninstall daemon first to avoid interaction with file listeners while deleting Fig.app
-      _ = Process.run(command: cli, args: [ "_", "uninstall", "--daemon"])
-      //      _ = "~/.local/bin/fig _ uninstall --daemon".runAsCommand()
+      _ = Process.run(command: cli, args: [ "integrations", "uninstall", "daemon"])
+      //      _ = "~/.local/bin/fig integrations uninstall daemon".runAsCommand()
 
       NSWorkspace.shared.open(
         URL(string: "https://fig.io/uninstall?email=\(Defaults.shared.email ?? "")&" +

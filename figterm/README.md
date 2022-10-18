@@ -15,7 +15,7 @@ changes, prompts (precmd), and right before a command is executed (preexec)
 First, make sure shell integrations are installed. You can use the `fig_cli` to do
 this:
 ```
-fig _ install --dotfiles
+fig integrations install dotfiles
 ```
 
 The run `make install` to build the binary and move to the right location.
