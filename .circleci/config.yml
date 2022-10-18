@@ -621,6 +621,8 @@ jobs:
             - run:
                 name: Publish linux-full-x86_64
                 command: |
+                  cd desktop
+
                   fig_release package --kind deb --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/deb/full/pkg
                   fig_release package --kind deb --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/deb/headless/pkg
                   fig_release package --kind deb --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/deb/headless/pkg
@@ -638,6 +640,7 @@ jobs:
             - run:
                 name: Publish macos
                 command: |
+                  cd desktop
                   fig_release package --kind dmg --architecture universal --variant full /tmp/ws/pkg/macos/universal/dmg/full/pkg
       - if-target:
           platform: windows
@@ -645,6 +648,7 @@ jobs:
             - run:
                 name: Publish windows
                 command: |
+                  cd desktop
                   fig_release package --kind exe --architecture x86_64 --variant windows_installer /tmp/ws/pkg/x86_64/exe/windows_installer/pkg
 
   # Does sentry

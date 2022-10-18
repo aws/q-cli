@@ -17,6 +17,7 @@ use fig_util::manifest::{
 use fig_util::system_info::get_system_id;
 use semver::Version;
 use serde::Deserialize;
+use strum::EnumString;
 use tracing::{
     info,
     trace,
@@ -60,18 +61,22 @@ pub struct Package {
     sha256: String,
 }
 
+#[derive(Debug)]
 pub struct UpdatePackage {
     pub version: String,
     pub download: String,
     pub sha256: String,
 }
 
-#[derive(Deserialize, PartialEq, Eq)]
+#[derive(Deserialize, PartialEq, Eq, EnumString)]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum PackageArchitecture {
     #[serde(rename = "x86_64")]
+    #[strum(serialize = "x86_64")]
     X86_64,
     #[serde(rename = "aarch64")]
+    #[strum(serialize = "aarch64")]
     AArch64,
     Universal,
 }
@@ -120,15 +125,25 @@ pub async fn check_for_updates(channel: Channel, kind: Kind, variant: Variant) -
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
     const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
 
+    query_index(channel, kind, variant, CURRENT_VERSION, ARCHITECTURE).await
+}
+
+pub async fn query_index(
+    channel: Channel,
+    kind: Kind,
+    variant: Variant,
+    current_version: &str,
+    architecture: PackageArchitecture,
+) -> Result<Option<UpdatePackage>, Error> {
     let index = pull(&channel).await?;
 
-    if !index
-        .supported
-        .iter()
-        .any(|support| support.kind == kind && support.architecture == ARCHITECTURE && support.variant == variant)
-    {
-        return Err(Error::SystemNotOnChannel);
-    }
+    // if !index
+    //     .supported
+    //     .iter()
+    //     .any(|support| support.kind == kind && support.architecture == architecture &&
+    // support.variant == variant) {
+    //     return Err(Error::SystemNotOnChannel);
+    // }
 
     let right_now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 
@@ -137,7 +152,7 @@ pub async fn check_for_updates(channel: Channel, kind: Kind, variant: Variant) -
         .into_iter()
         .filter(|version| {
             version.packages.iter().any(|package| {
-                package.kind == kind && package.architecture == ARCHITECTURE && package.variant == variant
+                package.kind == kind && package.architecture == architecture && package.variant == variant
             })
         })
         .filter(|version| match &version.rollout {
@@ -155,7 +170,7 @@ pub async fn check_for_updates(channel: Channel, kind: Kind, variant: Variant) -
         get_system_id()?.hash(&mut hasher);
         // different for each version, which prevents people from getting repeatedly hit by untested
         // releases
-        CURRENT_VERSION.hash(&mut hasher);
+        current_version.hash(&mut hasher);
 
         (hasher.finish() % 0xff) as u8
     };
@@ -210,8 +225,12 @@ pub async fn check_for_updates(channel: Channel, kind: Kind, variant: Variant) -
     let package = chosen
         .packages
         .into_iter()
-        .find(|package| package.kind == kind && package.architecture == ARCHITECTURE && package.variant == variant)
+        .find(|package| package.kind == kind && package.architecture == architecture && package.variant == variant)
         .unwrap();
+
+    if chosen.version == current_version {
+        return Ok(None);
+    }
 
     Ok(Some(UpdatePackage {
         version: chosen.version,
