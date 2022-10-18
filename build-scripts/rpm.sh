@@ -8,7 +8,7 @@ rm -rf ~/rpmbuild
 . build-scripts/common.sh
 
 prepare_bundle
-gen_manifest dnf
+KIND=rpm gen_manifest dnf
 
 echo 'Packaging'
 rpmdev-setuptree

@@ -8,7 +8,7 @@ rm -rf ~/rpmbuild
 . build-scripts/common.sh
 
 prepare_bundle
-gen_manifest apt
+KIND=deb gen_manifest apt
 
 case $ARCH in
     x86_64)

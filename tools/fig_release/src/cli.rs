@@ -60,6 +60,7 @@ pub enum PackageVariant {
 }
 
 #[derive(ValueEnum, Clone, Debug, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum PackageArchitecture {
     #[value(name = "x86_64")]
     #[serde(rename = "x86_64")]
@@ -67,6 +68,7 @@ pub enum PackageArchitecture {
     #[value(name = "aarch64")]
     #[serde(rename = "aarch64")]
     AArch64,
+    Universal,
 }
 
 #[derive(ValueEnum, Clone, Debug)]

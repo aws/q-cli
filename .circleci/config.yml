@@ -75,6 +75,7 @@ workflows:
           requires: [package-tarball, package-deb, package-rpm, windows, macos]
           context:
             - fig
+            - github
 
       - sentry:
           requires: [package-tarball, package-deb, package-rpm, windows, macos]
@@ -315,6 +316,7 @@ jobs:
       - require-target:
           platform: macos
       - checkout-desktop
+      - prepare-packaging
       - run:
           name: Remove gitconfig
           command: rm ~/.gitconfig
@@ -359,12 +361,13 @@ jobs:
           name: Create app bundle
           command: |
             cd desktop
+            IS_HEADLESS=0 build-scripts/macos.sh
             mv "$PRODUCTS_DIR/fig-darwin-universal" "$PRODUCTS_DIR/fig-darwin-universal-$TARGET"
             mv "$PRODUCTS_DIR/figterm-darwin-universal" "$PRODUCTS_DIR/figterm-$TARGET"
             config=$(jq -n \
               --arg fig_cli "$(pwd)/$PRODUCTS_DIR/fig-darwin-universal" \
               --arg figterm "$(pwd)/$PRODUCTS_DIR/figterm" \
-              '{"tauri": {"bundle": {"externalBin": [$fig_cli, $figterm]}}}'
+              '{"tauri": {"bundle": {"externalBin": [$fig_cli, $figterm], "resources": ["manifest.json"]}}}'
             )
             cd fig_desktop
             echo $config > build-config.json
@@ -467,7 +470,7 @@ jobs:
       - persist_to_workspace:
           root: /tmp/new
           paths:
-            - pkg/universal/dmg/full/pkg
+            - pkg/macos/universal/dmg/full/pkg
 
   package-tarball:
     docker:
@@ -477,6 +480,7 @@ jobs:
       - require-target:
           platform: linux
       - checkout-desktop
+      - prepare-packaging
       - attach_workspace:
           at: /tmp/ws
       - package:
@@ -517,6 +521,7 @@ jobs:
           name: Install tools
           command: dnf install -y git jq rpmdevtools
       - checkout-desktop
+      - prepare-packaging
       - attach_workspace:
           at: /tmp/ws
       - package:
@@ -573,6 +578,7 @@ jobs:
       - require-target:
           platform: linux
       - checkout-desktop
+      - prepare-packaging
       - attach_workspace:
           at: /tmp/ws
       - package:
@@ -602,6 +608,7 @@ jobs:
       - image: cimg/base:edge-22.04
     resource_class: small
     steps:
+      - checkout-desktop
       - install-fig-release
       - attach_workspace:
           at: /tmp/ws
@@ -631,7 +638,7 @@ jobs:
             - run:
                 name: Publish macos
                 command: |
-                  fig_release package --kind dmg --architecture universal --variant full /tmp/ws/pkg/universal/dmg/full/pkg
+                  fig_release package --kind dmg --architecture universal --variant full /tmp/ws/pkg/macos/universal/dmg/full/pkg
       - if-target:
           platform: windows
           steps:
@@ -850,12 +857,21 @@ commands:
   install-fig-release:
     steps:
       - run:
+          name: Install gh-cli
+          command: |
+            type -p curl >/dev/null || sudo apt install curl -y
+            curl -fsSL https://cli.github.com/packages/githubcli-archive-keyring.gpg | sudo dd of=/usr/share/keyrings/githubcli-archive-keyring.gpg \
+            && sudo chmod go+r /usr/share/keyrings/githubcli-archive-keyring.gpg \
+            && echo "deb [arch=$(dpkg --print-architecture) signed-by=/usr/share/keyrings/githubcli-archive-keyring.gpg] https://cli.github.com/packages stable main" | sudo tee /etc/apt/sources.list.d/github-cli.list > /dev/null \
+            && sudo apt update \
+            && sudo apt install gh -y
+      - run:
           name: Download fig_release
           command: |
             cd /tmp
             gh -R withfig/macos release download fig_release --clobber
-            mv fig_release /usr/bin/fig_release
-            chmod +x /usr/bin/fig_release
+            sudo mv fig_release /usr/bin/fig_release
+            sudo chmod +x /usr/bin/fig_release
 
   require:
     parameters:
@@ -908,3 +924,9 @@ commands:
             - run:
                 name: Abort job
                 command: circleci-agent step halt
+
+  prepare-packaging:
+    steps:
+      - run:
+          name: Install YQ
+          command: pip3 install yq

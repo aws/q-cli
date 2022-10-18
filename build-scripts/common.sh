@@ -45,6 +45,8 @@ gen_manifest() {
         --arg pa $(date -Iseconds) \
         --arg va "$VARIANT" \
         --arg ve "$VERSION" \
-        '{managed_by: $ib, packaged_at: $pa, packaged_by: "fig", variant: $va, version: $ve}' \
+        --arg kd "$KIND" \
+        --arg dc $(yq -r .channel release.yaml) \
+        '{managed_by: $ib, packaged_at: $pa, packaged_by: "fig", variant: $va, version: $ve, kind: $kd, default_channel: $dc}' \
         >build/usr/share/fig/manifest.json
 }
