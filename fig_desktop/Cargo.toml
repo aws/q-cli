@@ -35,7 +35,7 @@ base64 = "0.13.0"
 bytes = "1.2.1"
 camino = { version = "1.0.9", features = ["serde1"] }
 cfg-if = "1.0.0"
-clap = { version = "4.0.15", features = ["deprecated"] }
+clap = { version = "4.0.16", features = ["deprecated"] }
 dashmap = "5.3.4"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
 fig_daemon = { path = "../rust-lib/fig_daemon" }
