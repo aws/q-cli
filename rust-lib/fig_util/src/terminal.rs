@@ -54,6 +54,8 @@ pub enum Terminal {
     WezTerm,
     /// Jetbrains Terminal
     JediTerm(String),
+    /// Gnome Console
+    GnomeConsole,
     /// Gnome Terminal
     GnomeTerminal,
     /// KDE Konsole
@@ -92,6 +94,7 @@ impl fmt::Display for Terminal {
             Terminal::Nova => write!(f, "Nova"),
             Terminal::WezTerm => write!(f, "Wezterm"),
             Terminal::JediTerm(_) => write!(f, "Jetbrains"),
+            Terminal::GnomeConsole => write!(f, "Gnome Console"),
             Terminal::GnomeTerminal => write!(f, "Gnome Terminal"),
             Terminal::Konsole => write!(f, "Konsole"),
             Terminal::Tilix => write!(f, "Tilix"),
@@ -144,6 +147,7 @@ impl Terminal {
                 .trim_start_matches("com.google.")
                 .to_string(),
             Terminal::GnomeTerminal => "gnome-terminal".into(),
+            Terminal::GnomeConsole => "gnome-console".into(),
             Terminal::Konsole => "konsole".into(),
             Terminal::Tilix => "tilix".into(),
             Terminal::XfceTerminal => "xfce-terminal".into(),
@@ -220,6 +224,7 @@ impl Terminal {
             Terminal::VSCodeInsiders => &["code-insiders"],
             Terminal::Alacritty => &["alacritty"],
             Terminal::Kitty => &["kitty"],
+            Terminal::GnomeConsole => &["kgx"],
             Terminal::GnomeTerminal => &["gnome-terminal-server"],
             Terminal::Konsole => &["konsole"],
             Terminal::Tilix => &["tilix"],
@@ -243,6 +248,7 @@ impl Terminal {
         match self {
             Terminal::Vscode => Some("Code"),
             Terminal::VSCodeInsiders => Some("Vscode-insiders"),
+            Terminal::GnomeConsole => Some("Kgx"),
             Terminal::GnomeTerminal => Some("Gnome-terminal"),
             Terminal::Konsole => Some("konsole"),
             Terminal::Tilix => Some("Tilix"),
