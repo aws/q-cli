@@ -88,6 +88,7 @@ pub fn current_exe_origin() -> Result<PathBuf, Error> {
 }
 
 #[must_use]
+#[cfg(target_os = "macos")]
 pub fn fig_bundle() -> Option<PathBuf> {
     cfg_if! {
         if #[cfg(target_os = "macos")] {
@@ -107,7 +108,7 @@ pub fn fig_bundle() -> Option<PathBuf> {
             }
 
             // .../Bundle.app/Contents/MacOS/binary-name -> .../Bundle.app
-            current_exe.ancestors().nth(4).map(|s| s.into())
+            current_exe.ancestors().nth(3).map(|s| s.into())
         } else {
             None
         }

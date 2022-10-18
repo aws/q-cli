@@ -2645,6 +2645,7 @@ dependencies = [
  "dashmap",
  "dbus",
  "fig_api_client",
+ "fig_daemon",
  "fig_desktop_api",
  "fig_install",
  "fig_integrations",

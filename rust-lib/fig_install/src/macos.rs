@@ -1,5 +1,9 @@
 use std::borrow::BorrowMut;
 use std::ffi::OsString;
+use std::os::unix::prelude::{
+    OsStrExt,
+    PermissionsExt,
+};
 use std::os::unix::process::CommandExt;
 use std::path::{
     Path,
@@ -20,7 +24,10 @@ use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
 };
-use tracing::warn;
+use tracing::{
+    debug,
+    warn,
+};
 
 use crate::index::UpdatePackage;
 use crate::Error;
@@ -28,9 +35,21 @@ use crate::Error;
 pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<(), Error> {
     match option_env!("FIG_MACOS_BACKPORT") {
         Some(_) => {
+            debug!("Starting update");
+
             // Request and write the dmg to file
             let temp_dir = TempDir::new("fig")?;
+
+            // Set the permissions to 700 so that only the user can read and write
+            let permissions = std::fs::Permissions::from_mode(0o700);
+            std::fs::set_permissions(temp_dir.path(), permissions)?;
+
             let dmg_path = temp_dir.path().join("Fig.dmg");
+
+            // We dont want to release the temp dir, so we just leak it
+            std::mem::forget(temp_dir);
+
+            debug!("Downloading dmg to {}", dmg_path.display());
             download_dmg(update.download, &dmg_path).await?;
 
             // Shell out to hdiutil to mount the dmg
@@ -40,9 +59,13 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
                 .args(["-readonly", "-nobrowse", "-plist"])
                 .output()
                 .await?;
+
             if !output.status.success() {
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
+
+            debug!("Mounted dmg");
+
             let plist = String::from_utf8_lossy(&output.stdout).to_string();
 
             let regex = Regex::new(r"<key>mount-point</key>\s*<\S+>([^<]+)</\S+>").unwrap();
@@ -56,14 +79,8 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
             );
 
             // /Applications/Fig.app/Contents/MacOS/{binary}
-            let fig_app_path = match fig_util::fig_bundle() {
-                Some(path) => path,
-                _ => {
-                    return Err(Error::UpdateFailed(
-                        "Binary invoked does not reside in a valid app bundle.".into(),
-                    ));
-                },
-            };
+            let fig_app_path = fig_util::fig_bundle()
+                .ok_or_else(|| Error::UpdateFailed("Binary invoked does not reside in a valid app bundle.".into()))?;
 
             tokio::fs::remove_dir_all(&fig_app_path).await?;
 
@@ -72,9 +89,12 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
                 .arg(&fig_app_path)
                 .output()
                 .await?;
+
             if !output.status.success() {
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
+
+            debug!("Copied new app to {}", fig_app_path.display());
 
             // Shell out to unmount the dmg
             let output = tokio::process::Command::new("hdiutil")
@@ -82,9 +102,12 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
                 .arg(&mount_point)
                 .output()
                 .await?;
+
             if !output.status.success() {
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
+
+            debug!("Unmounted dmg");
 
             let cli_path = fig_app_path.join("Contents").join("MacOS").join("fig-darwin-universal");
 
@@ -94,18 +117,22 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool) -> Result<()
                 ));
             }
 
-            let mut command = OsString::new();
-            command.push("sleep 2 && '");
-            command.push(&cli_path);
-            command.push("' restart app && '");
-            command.push(&cli_path);
-            command.push("' restart daemon");
+            debug!(?cli_path, "Using cli at path");
+
+            let mut arg = OsString::new();
+            arg.push("sleep 2 && '");
+            arg.push(&cli_path);
+            arg.push("' restart app && '");
+            arg.push(&cli_path);
+            arg.push("' restart daemon");
 
             std::process::Command::new("/bin/bash")
                 .process_group(0)
                 .args(["--noediting", "--noprofile", "--norc", "-c"])
-                .arg(command)
+                .arg(arg.clone())
                 .spawn()?;
+
+            debug!(command =% String::from_utf8_lossy(arg.as_bytes()).to_string(), "Restarting fig");
 
             exit(0);
         },

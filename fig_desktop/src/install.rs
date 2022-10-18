@@ -1,6 +1,7 @@
 use std::iter::empty;
 
 use cfg_if::cfg_if;
+use fig_util::directories;
 use semver::Version;
 use tracing::error;
 
@@ -64,11 +65,14 @@ pub async fn run_install() {
         });
 
         tokio::spawn(async {
-            use fig_install::{
-                install,
-                InstallComponents,
-            };
-            install(InstallComponents::DAEMON).await.ok();
+            match directories::relative_cli_path() {
+                Ok(cli_path) => {
+                    if let Err(err) = fig_daemon::Daemon::default().install(&cli_path).await {
+                        error!(%err, "Failed to install daemon");
+                    };
+                },
+                Err(err) => error!(%err, "Failed to get CLI path"),
+            }
         });
 
         cfg_if!(
@@ -110,7 +114,7 @@ pub async fn run_install() {
             launch_ibus().await;
         } else {
             // Update if there's a newer version
-            if !cfg!(debug_assertions) {
+            if !cfg!(debug_assertions) || fig_settings::state::get_bool_or("developer.check-for-updates", false) {
                 tokio::spawn(async {
                     let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
                     if seconds < 0 {

@@ -88,6 +88,8 @@ pub enum DirectoryError {
     NoHomeDirectory,
     #[error("non absolute path: {0:?}")]
     NonAbsolutePath(PathBuf),
+    #[error("file does not exist: {0:?}")]
+    FileDoesNotExist(PathBuf),
     #[error("IO Error: {0}")]
     Io(#[from] std::io::Error),
     #[error(transparent)]
@@ -527,6 +529,14 @@ pub fn ssh_saved_identities() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_ssh_saved_identities() {
+    linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");
+    macos!(ssh_saved_identities(), @"/Users/$USER/Library/Application Support/fig/access/ssh_saved_identities");
+    windows!(ssh_saved_identities(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\access\ssh_saved_identities");
+}
+
 /// The path to the cli, relative to the running binary
 pub fn relative_cli_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
@@ -535,19 +545,16 @@ pub fn relative_cli_path() -> Result<PathBuf> {
             while current_exe.is_symlink() {
                 current_exe = std::fs::read_link(&current_exe)?;
             }
-            Ok(current_exe.parent().unwrap().join("fig-darwin-universal"))
+            let path =current_exe.parent().unwrap().join("fig-darwin-universal");
+            if path.exists() {
+                Ok(path)
+            } else {
+                Err(DirectoryError::FileDoesNotExist(path))
+            }
         } else {
-            todo!();
+            Ok(std::path::Path::new("fig").into())
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_ssh_saved_identities() {
-    linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");
-    macos!(ssh_saved_identities(), @"/Users/$USER/Library/Application Support/fig/access/ssh_saved_identities");
-    windows!(ssh_saved_identities(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\access\ssh_saved_identities");
 }
 
 utf8_dir!(home_dir);

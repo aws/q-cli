@@ -38,6 +38,7 @@ cfg-if = "1.0.0"
 clap = { version = "4.0.15", features = ["deprecated"] }
 dashmap = "5.3.4"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
+fig_daemon = { path = "../rust-lib/fig_daemon" }
 fig_desktop_api = { path = "../rust-lib/fig_desktop_api" }
 fig_install = { path = "../rust-lib/fig_install" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }

@@ -10,8 +10,6 @@ mod windows;
 
 use std::time::SystemTimeError;
 
-use fig_daemon::Daemon;
-use fig_util::directories;
 #[cfg(target_os = "freebsd")]
 use freebsd as os;
 #[cfg(target_os = "linux")]
@@ -19,7 +17,10 @@ use linux as os;
 #[cfg(target_os = "macos")]
 use macos as os;
 use thiserror::Error;
-use tracing::error;
+use tracing::{
+    error,
+    info,
+};
 #[cfg(windows)]
 use windows as os;
 
@@ -72,14 +73,12 @@ pub async fn check_for_updates() -> Result<Option<String>, Error> {
 
 /// Attempt to update if there is a newer version of Fig
 pub async fn update(deprecated_no_confirm: bool) -> Result<(), Error> {
+    info!("Checking for updates...");
     if let Some(update) = index::check_for_updates(env!("CARGO_PKG_VERSION")).await? {
-        let path = directories::relative_cli_path()?;
-        let result = Daemon::default().install(&path).await;
-        if let Err(err) = result {
-            error!(%err, "Failed to install daemon");
-        };
-
+        info!("Found update: {}", update.version);
         os::update(update, deprecated_no_confirm).await?;
+    } else {
+        info!("No updates available");
     }
 
     Ok(())
