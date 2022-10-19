@@ -12,6 +12,7 @@ use crate::cli::{
 mod changelog;
 mod cli;
 mod cut;
+mod debug;
 mod package;
 mod promote;
 mod utils;
@@ -40,6 +41,7 @@ async fn main() -> eyre::Result<()> {
             architecture,
             variant,
         } => package::package(path, kind, architecture, variant).await?,
+        cli::Sub::Debug { action } => debug::debug(action).await?,
         _ => todo!(),
     }
     Ok(())

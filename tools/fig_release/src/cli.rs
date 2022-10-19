@@ -37,6 +37,10 @@ pub enum Sub {
         channel: Promote,
     },
     Release,
+    Debug {
+        #[clap(subcommand)]
+        action: DebugAction,
+    },
 }
 
 #[derive(ValueEnum, Clone, Debug, Serialize)]
@@ -88,4 +92,17 @@ pub enum ChangelogAction {
     Edit,
     Add,
     Remove,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum DebugAction {
+    GetIndexDirty,
+    SetIndexDirty,
+    GetSyncDirty,
+    SetSyncDirty,
+    ReadFile {
+        path: PathBuf,
+        #[arg(short, long)]
+        base: bool,
+    },
 }
