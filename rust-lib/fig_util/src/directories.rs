@@ -11,6 +11,7 @@ use insta;
 use thiserror::Error;
 use time::OffsetDateTime;
 
+use crate::consts::FIG_CLI_BINARY_NAME;
 use crate::system_info::in_ssh;
 // Testing
 
@@ -229,9 +230,12 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
 
     cfg_if::cfg_if! {
-        if #[cfg(unix)] {
+        if #[cfg(target_os = "macos")] {
+            // TODO: use fig_app_bundle() here!
             todo!();
-        } else if #[cfg(windows)] {
+        } else if #[cfg(target_os = "linux")] {
+            todo!();
+        } else if #[cfg(target_od = "windows")] {
             Ok(fig_dir()?.join("bin"))
         }
     }
@@ -542,7 +546,7 @@ fn _snapshot_ssh_saved_identities() {
 pub fn relative_cli_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let path = crate::current_exe_origin().unwrap().parent().unwrap().join("fig-darwin-universal");
+            let path = crate::current_exe_origin().unwrap().parent().unwrap().join(FIG_CLI_BINARY_NAME);
             if path.exists() {
                 Ok(path)
             } else {

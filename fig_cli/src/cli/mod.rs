@@ -416,4 +416,29 @@ mod test {
             })
         );
     }
+
+    /// This test validates that the internal input method installation command maintains the same
+    /// CLI facing definition
+    ///
+    /// If this changes, you must also change how it is called from within
+    /// fig_integrations::input_method
+    #[cfg(target_os = "macos")]
+    #[test]
+    fn test_input_method_installation() {
+        use internal::InternalSubcommand;
+        assert_eq!(
+            Cli::parse_from([
+                "fig",
+                "_",
+                "attempt-to-finish-input-method-installation",
+                "/path/to/bundle.app"
+            ])
+            .subcommand,
+            Some(CliRootCommands::Internal(
+                InternalSubcommand::AttemptToFinishInputMethodInstallation {
+                    bundle_path: Some(std::path::PathBuf::from("/path/to/bundle.app"))
+                }
+            ))
+        );
+    }
 }

@@ -230,6 +230,7 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
         io,
     };
 
+    use fig_util::consts::FIG_CLI_BINARY_NAME;
     use fig_util::directories::{
         fig_dir,
         home_dir,
@@ -275,7 +276,7 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
         std::os::unix::fs::symlink(&figterm_path, &dest).ok();
     }
 
-    if let Some(fig_cli_path) = get_bundle_path_for_executable("fig-darwin-universal") {
+    if let Some(fig_cli_path) = get_bundle_path_for_executable(FIG_CLI_BINARY_NAME) {
         let dest = bin_dir.join("fig");
         std::os::unix::fs::symlink(&fig_cli_path, &dest).ok();
 

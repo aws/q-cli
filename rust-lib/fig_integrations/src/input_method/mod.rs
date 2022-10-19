@@ -15,6 +15,7 @@ use core_foundation::array::{
     CFArrayRef,
 };
 use core_foundation::base::{
+    Boolean,
     CFGetTypeID,
     CFTypeID,
     CFTypeRef,
@@ -43,6 +44,7 @@ use core_foundation::{
     declare_TCFType,
     impl_TCFType,
 };
+use fig_util::consts::FIG_CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use objc::runtime::Object;
 use objc::{
@@ -51,11 +53,17 @@ use objc::{
     sel,
     sel_impl,
 };
-
-pub use crate::error::{
-    Error,
-    Result,
+use serde::{
+    Deserialize,
+    Serialize,
 };
+use tracing::{
+    debug,
+    info,
+    trace,
+};
+
+use crate::error::Result;
 use crate::Integration;
 
 pub enum __TISInputSource {}
@@ -110,7 +118,7 @@ pub struct InputMethod {
 
 use thiserror::Error;
 
-#[derive(Error, Debug)]
+#[derive(Error, Debug, Serialize, Deserialize)]
 pub enum InputMethodError {
     #[error("Could not list input sources")]
     CouldNotListInputSources,
@@ -120,6 +128,8 @@ pub enum InputMethodError {
     MultipleInputSourcesForBundleIdentifier(usize),
     #[error("Invalid input method bundle destination")]
     InvalidDestination,
+    #[error("Invalid path to bundle. Perhaps use an absolute path instead?")]
+    InvalidBundlePath,
     #[error("Invalid input method bundle: {0}")]
     InvalidBundle(Cow<'static, str>),
     #[error("OSStatus error code: {0}")]
@@ -128,12 +138,15 @@ pub enum InputMethodError {
     NotEnabled,
     #[error("Input source is not selected")]
     NotSelected,
+    #[error("Could not locate Fig CLI")]
+    HelperExecutableNotFound,
 }
 
 #[macro_export]
 macro_rules! tis_action {
     ($action:ident, $function:ident) => {
-        fn $action(&self) -> Result<()> {
+        pub fn $action(&self) -> Result<(), InputMethodError> {
+            debug!("{} input source.", stringify!($action));
             unsafe {
                 match $function(self.as_concrete_TypeRef()) {
                     0 => Ok(()),
@@ -148,7 +161,8 @@ macro_rules! tis_action {
 macro_rules! tis_property {
     ($name:ident, $tis_property_key:expr, $cf_type:ty, $rust_type:ty, $convert:ident) => {
         #[allow(dead_code)]
-        fn $name(&self) -> Option<$rust_type> {
+        pub fn $name(&self) -> Option<$rust_type> {
+            trace!("Get '{}' from input source", stringify!($name));
             self.get_property::<$cf_type>(unsafe { $tis_property_key })
                 .map(|s| s.$convert())
         }
@@ -242,11 +256,11 @@ impl std::default::Default for InputMethod {
 }
 
 impl InputMethod {
-    fn input_method_directory() -> PathBuf {
+    pub fn input_method_directory() -> PathBuf {
         home_dir().ok().unwrap().join("Library").join("Input Methods")
     }
 
-    fn list_all_input_sources(
+    pub fn list_all_input_sources(
         properties: Option<CFDictionaryRef>,
         include_all_installed: bool,
     ) -> Option<Vec<TISInputSource>> {
@@ -266,24 +280,25 @@ impl InputMethod {
         }
     }
 
-    fn register(location: impl AsRef<Path>) -> Result<()> {
+    fn register(location: impl AsRef<Path>) -> Result<(), InputMethodError> {
+        debug!("Registering input source...");
+
         let url = match CFURL::from_path(location, true) {
             Some(url) => url,
-            None => return Err(InputMethodError::InvalidDestination.into()),
+            None => return Err(InputMethodError::InvalidDestination),
         };
 
         unsafe {
             match TISRegisterInputSource(url.as_concrete_TypeRef()) {
                 0 => Ok(()),
-                i => Err(InputMethodError::OSStatusError(i).into()),
+                i => Err(InputMethodError::OSStatusError(i)),
             }
         }
     }
 
-    #[allow(dead_code)]
-    fn list_input_sources_for_bundle_id(bundle_id: &'static str) -> Option<Vec<TISInputSource>> {
+    pub fn list_input_sources_for_bundle_id(bundle_id: &str) -> Option<Vec<TISInputSource>> {
         let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };
-        let value = CFString::from_static_string(bundle_id);
+        let value = CFString::from(bundle_id);
         let properties = CFDictionary::from_CFType_pairs(&[(key.as_CFType(), value.as_CFType())]);
 
         InputMethod::list_all_input_sources(Some(properties.as_concrete_TypeRef()), true)
@@ -292,43 +307,23 @@ impl InputMethod {
 
 extern "C" {
     pub fn CFBundleGetIdentifier(bundle: CFBundleRef) -> CFStringRef;
+    pub fn CFPreferencesSynchronize(
+        application_id: CFStringRef,
+        username: CFStringRef,
+        hostname: CFStringRef,
+    ) -> Boolean;
+    pub static kCFPreferencesCurrentUser: CFStringRef;
+    pub static kCFPreferencesCurrentHost: CFStringRef;
 }
 
 #[link(name = "AppKit", kind = "framework")]
 extern "C" {}
 
 impl InputMethod {
-    fn input_source(&self) -> Result<TISInputSource> {
-        let url = match CFURL::from_path(&self.bundle_path, true) {
-            Some(url) => url,
-            None => {
-                return Err(InputMethodError::InvalidBundle("Could not get URL for input method bundle".into()).into());
-            },
-        };
+    pub fn input_source(&self) -> Result<TISInputSource, InputMethodError> {
+        let bundle_id_string: String = self.bundle_id()?;
 
-        let bundle = match CFBundle::new(url) {
-            Some(bundle) => bundle,
-            None => {
-                return Err(InputMethodError::InvalidBundle(
-                    format!("Could not load bundle for URL {}", self.bundle_path.display()).into(),
-                )
-                .into());
-            },
-        };
-
-        let identifier = unsafe { CFBundleGetIdentifier(bundle.as_concrete_TypeRef()) };
-
-        if identifier.is_null() {
-            return Err(InputMethodError::InvalidBundle("Could find bundle identifier".into()).into());
-        }
-
-        let bundle_identifier = unsafe { CFString::wrap_under_get_rule(identifier) };
-
-        // let bundle_identifier = match
-        // bundle.info_dictionary().find(CFString::from_static_string("CFBundleIdentifier")) {
-        //     Some(item) => item.to_void(),
-        //     None => return Err(InputMethodError::InvalidBundle("Could find bundle
-        // identifier".into()).into()), };
+        let bundle_identifier = CFString::from(bundle_id_string.as_str());
 
         unsafe {
             let bundle_id_key: CFString = CFString::wrap_under_get_rule(kTISPropertyBundleID);
@@ -347,14 +342,13 @@ impl InputMethod {
             let sources = InputMethod::list_all_input_sources(Some(properties.as_concrete_TypeRef()), true);
 
             match sources {
-                None => Err(InputMethodError::CouldNotListInputSources.into()),
+                None => Err(InputMethodError::CouldNotListInputSources),
                 Some(sources) => {
                     let len = sources.len();
                     match len {
                         0 => Err(InputMethodError::NoInputSourcesForBundleIdentifier(
                             bundle_identifier.to_string().into(),
-                        )
-                        .into()),
+                        )),
                         1 => Ok(sources.into_iter().next().unwrap()),
                         _len => Ok(sources.into_iter().next().unwrap()), /* Err(InputMethodError::MultipleInputSourcesForBundleIdentifier(len).into()) */
                     }
@@ -363,17 +357,47 @@ impl InputMethod {
         }
     }
 
-    fn target_bundle_path(&self) -> Result<PathBuf> {
+    fn target_bundle_path(&self) -> Result<PathBuf, InputMethodError> {
         let input_method_name = match self.bundle_path.components().last() {
             Some(name) => name.as_os_str(),
             None => {
-                return Err(
-                    InputMethodError::InvalidBundle("Input method bundle name cannot be determined".into()).into(),
-                );
+                return Err(InputMethodError::InvalidBundle(
+                    "Input method bundle name cannot be determined".into(),
+                ));
             },
         };
 
         Ok(InputMethod::input_method_directory().join(input_method_name))
+    }
+
+    pub fn bundle_id(&self) -> Result<String, InputMethodError> {
+        let url = match CFURL::from_path(&self.bundle_path, true) {
+            Some(url) => url,
+            None => {
+                return Err(InputMethodError::InvalidBundle(
+                    "Could not get URL for input method bundle".into(),
+                ));
+            },
+        };
+
+        let bundle = match CFBundle::new(url) {
+            Some(bundle) => bundle,
+            None => {
+                return Err(InputMethodError::InvalidBundle(
+                    format!("Could not load bundle for URL {}", self.bundle_path.display()).into(),
+                ));
+            },
+        };
+
+        let identifier = unsafe { CFBundleGetIdentifier(bundle.as_concrete_TypeRef()) };
+
+        if identifier.is_null() {
+            return Err(InputMethodError::InvalidBundle("Could find bundle identifier".into()));
+        }
+
+        let bundle_identifier = unsafe { CFString::wrap_under_get_rule(identifier) };
+
+        Ok(bundle_identifier.to_string())
     }
 }
 
@@ -434,11 +458,9 @@ impl Integration for InputMethod {
         // Register input source
         InputMethod::register(&destination)?;
 
-        // todo(mschrage): poll for input source
         let input_source = self.input_source()?;
-        // input_source.show();
 
-        // Launch Input Method
+        debug!("Launch Input Method...");
         if let Some(dest) = destination.to_str() {
             Command::new("open").arg(dest);
         }
@@ -446,13 +468,44 @@ impl Integration for InputMethod {
         // Enable input source. This will prompt user in System Preferences.
         input_source.enable()?;
 
-        // todo(mschage): poll for enabled / wait for enabled notification
+        // The 'enabled' property of an input source is never updated for the process that invokes
+        // `TISEnableInputSource` Unclear why this is, but we handle it by calling out to the
+        // fig_cli to finish the second half of the installation.
 
-        // Select input source
-        input_source.select()?;
+        // todo: pull this into a function in fig_directories
+        let fig_cli_path = match fig_util::fig_bundle() {
+            Some(bundle) => bundle.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME),
+            None => return Err(InputMethodError::HelperExecutableNotFound.into()),
+        };
 
-        // Store PIDs of all relevant terminal emulators (input method will not work until these processes
-        // are restarted)
+        loop {
+            let out = Command::new(fig_cli_path.to_str().expect("Fig CLI can be converted to string"))
+                .args([
+                    "_",
+                    "attempt-to-finish-input-method-installation",
+                    self.bundle_path.to_str().unwrap(),
+                ])
+                .output()
+                .unwrap();
+
+            let code = out.status.code().expect("Status code should exist");
+
+            if code == 0 {
+                info!("Input method installed successfully!");
+                break;
+            } else {
+                let err = String::from_utf8(out.stdout).unwrap();
+                match serde_json::from_str::<InputMethodError>(err.as_str()).ok() {
+                    Some(error) => debug!("{error}"),
+                    None => debug!("Could not parse output as known error: {err}"),
+                }
+            }
+
+            std::thread::sleep(std::time::Duration::from_secs(1))
+        }
+
+        // TODO: Store PIDs of all relevant terminal emulators (input method will not work until these
+        // processes are restarted)
 
         // NSWorkspace.shared.runningApplications
         // filter based on Terminals with bundle id
@@ -476,7 +529,7 @@ impl Integration for InputMethod {
                 runningApplicationsWithBundleIdentifier: bundle_id
             ];
             let running_input_method_array_len: u64 = msg_send![running_input_method_array, count];
-            println!("{}", running_input_method_array_len);
+
             if running_input_method_array_len > 0 {
                 let running_input_method: &mut Object = msg_send![running_input_method_array, objectAtIndex: 0];
 
@@ -495,9 +548,33 @@ impl Integration for InputMethod {
     }
 }
 
+impl InputMethod {
+    // Called from separate process in order to check status of Input Method
+    pub fn finish_input_method_installation(bundle_path: Option<PathBuf>) -> Result<(), InputMethodError> {
+        let input_method = match bundle_path {
+            Some(bundle_path) if bundle_path.is_absolute() => InputMethod { bundle_path },
+            Some(_) => return Err(InputMethodError::InvalidBundlePath),
+            None => InputMethod::default(),
+        };
+
+        let source = input_method.input_source()?;
+
+        if !source.is_enabled().unwrap_or_default() {
+            return Err(InputMethodError::NotEnabled);
+        }
+
+        source.select()?;
+
+        if !source.is_selected().unwrap_or_default() {
+            return Err(InputMethodError::NotSelected);
+        }
+
+        Ok(())
+    }
+}
+
 #[cfg(test)]
 mod tests {
-
     // Note this useful idiom: importing names from outer (for mod tests) scope.
     use super::*;
 
@@ -510,6 +587,53 @@ mod tests {
         let sources =
             InputMethod::list_all_input_sources(Some(properties.as_concrete_TypeRef()), true).unwrap_or_default();
         sources.into_iter().next().unwrap()
+    }
+
+    const TEST_INPUT_METHOD_BUNDLE_ID: &str = "io.fig.caret.4";
+    const TEST_INPUT_METHOD_BUNDLE_URL: &str = "/Users/mschrage/p/macos/fig_input_method/build/FigInputMethod4.app";
+
+    #[ignore]
+    #[test]
+    fn check_enabled() {
+        let method = InputMethod {
+            bundle_path: TEST_INPUT_METHOD_BUNDLE_URL.into(),
+        };
+
+        println!(
+            "{} enabled: {}",
+            method.input_source().unwrap().bundle_id().unwrap(),
+            method.input_source().unwrap().is_enabled().unwrap()
+        )
+    }
+
+    #[ignore]
+    #[test]
+    fn install() {
+        let method = InputMethod {
+            bundle_path: TEST_INPUT_METHOD_BUNDLE_URL.into(),
+        };
+
+        let bundle_id = TEST_INPUT_METHOD_BUNDLE_ID;
+        match InputMethod::list_input_sources_for_bundle_id(bundle_id) {
+            Some(inputs) => {
+                println!("Uninstalling...");
+                inputs
+                    .iter()
+                    .for_each(|s| println!("{}", s.is_enabled().unwrap_or_default()));
+                match method.uninstall() {
+                    Ok(_) => println!("Uninstalled!"),
+                    Err(e) => println!("{e}"),
+                }
+            },
+            None => {
+                println!("No input sources found for {}", bundle_id);
+                println!("Installing...");
+                match method.install(None) {
+                    Ok(_) => println!("Installed!"),
+                    Err(e) => println!("{e}"),
+                };
+            },
+        }
     }
 
     #[ignore]
@@ -542,7 +666,7 @@ mod tests {
     #[ignore]
     #[test]
     fn get_input_source_by_bundle_id() {
-        let bundle_identifier = "com.apple.CharacterPaletteIM";
+        let bundle_identifier = TEST_INPUT_METHOD_BUNDLE_ID; //"com.apple.CharacterPaletteIM";
         let sources = InputMethod::list_input_sources_for_bundle_id(bundle_identifier);
         match sources {
             Some(sources) => {
@@ -560,7 +684,7 @@ mod tests {
     #[ignore]
     #[test]
     fn uninstall_all() {
-        let sources = InputMethod::list_input_sources_for_bundle_id("io.fig.caret").unwrap_or_default();
+        let sources = InputMethod::list_input_sources_for_bundle_id(TEST_INPUT_METHOD_BUNDLE_ID).unwrap_or_default();
         sources.iter().for_each(|s| {
             s.deselect().ok();
             s.disable().ok();

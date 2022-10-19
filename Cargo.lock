@@ -2782,9 +2782,11 @@ dependencies = [
  "objc",
  "regex",
  "serde",
+ "serde_json",
  "sysinfo 0.26.5",
  "thiserror",
  "tokio",
+ "tracing",
 ]
 
 [[package]]
