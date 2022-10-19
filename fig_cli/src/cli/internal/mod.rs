@@ -34,7 +34,9 @@ use eyre::{
     Result,
 };
 use fig_install::InstallComponents;
+#[cfg(target_os = "macos")]
 use fig_integrations::input_method::InputMethod;
+#[cfg(target_os = "macos")]
 use fig_integrations::Integration;
 use fig_ipc::local::send_hook_to_socket;
 use fig_ipc::{

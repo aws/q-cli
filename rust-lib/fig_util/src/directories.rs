@@ -11,6 +11,7 @@ use insta;
 use thiserror::Error;
 use time::OffsetDateTime;
 
+#[cfg(target_os = "macos")]
 use crate::consts::FIG_CLI_BINARY_NAME;
 use crate::system_info::in_ssh;
 // Testing
