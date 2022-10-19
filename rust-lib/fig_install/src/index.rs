@@ -19,6 +19,7 @@ use semver::Version;
 use serde::Deserialize;
 use strum::EnumString;
 use tracing::{
+    error,
     info,
     trace,
 };
@@ -42,10 +43,9 @@ struct Support {
 
 #[derive(Deserialize, Debug)]
 struct RemoteVersion {
-    version: String,
+    version: semver::Version,
     rollout: Option<Rollout>,
     packages: Vec<Package>,
-    timestamp: u64,
 }
 
 #[derive(Deserialize, Debug)]
@@ -163,7 +163,7 @@ pub async fn query_index(
         })
         .collect::<Vec<RemoteVersion>>();
 
-    valid_versions.sort_unstable_by_key(|version| version.timestamp);
+    valid_versions.sort_unstable_by(|lhs, rhs| lhs.version.cmp(&rhs.version));
     valid_versions.reverse();
 
     let system_threshold = {
@@ -230,12 +230,18 @@ pub async fn query_index(
         .find(|package| package.kind == kind && package.architecture == architecture && package.variant == variant)
         .unwrap();
 
-    if chosen.version == current_version {
+    if match semver::Version::parse(current_version) {
+        Ok(current_version) => chosen.version <= current_version,
+        Err(err) => {
+            error!("failed parsing current version semver: {err:?}");
+            chosen.version.to_string() == current_version
+        },
+    } {
         return Ok(None);
     }
 
     Ok(Some(UpdatePackage {
-        version: chosen.version,
+        version: chosen.version.to_string(),
         download: package.download,
         sha256: package.sha256,
     }))

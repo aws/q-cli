@@ -32,8 +32,8 @@ pub fn nightly() -> eyre::Result<()> {
     run(&["git", "pull"])?;
     let mut release = read_release_file()?;
     let mut version = Version::parse(&release.version)?;
-    version.pre = Prerelease::EMPTY;
-    version.build = BuildMetadata::new(&gen_nightly())?;
+    version.pre = Prerelease::new(&format!("nightly.{}", gen_nightly()))?;
+    version.build = BuildMetadata::EMPTY;
     release.version = version.to_string();
     release.channel = Some(Channel::Nightly);
     write_release_file(&release)?;
