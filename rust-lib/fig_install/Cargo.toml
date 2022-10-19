@@ -28,3 +28,4 @@ strum = "0.24.1"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 fig_ipc = { path = "../fig_ipc" }
+libc = "0.2.135"

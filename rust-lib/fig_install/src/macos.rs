@@ -1,5 +1,8 @@
 use std::borrow::BorrowMut;
-use std::ffi::OsString;
+use std::ffi::{
+    CString,
+    OsString,
+};
 use std::os::unix::prelude::{
     OsStrExt,
     PermissionsExt,
@@ -41,26 +44,33 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
         Some(_) => {
             debug!("Starting update");
 
-            // Request and write the dmg to file
+            // Get all of the paths up front so we can get an error early if something is wrong
+
+            let fig_app_path = fig_util::fig_bundle()
+                .ok_or_else(|| Error::UpdateFailed("Binary invoked does not reside in a valid app bundle.".into()))?;
+
             let temp_dir = TempDir::new("fig")?;
+
+            let dmg_mount_path = temp_dir.path().join("Fig.dmg");
+            let temp_bundle_path = temp_dir.path().join("Fig.app.old");
+
+            let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
+            let fig_app_cstr = CString::new(fig_app_path.as_os_str().as_bytes())?;
 
             // Set the permissions to 700 so that only the user can read and write
             let permissions = std::fs::Permissions::from_mode(0o700);
             std::fs::set_permissions(temp_dir.path(), permissions)?;
 
-            let dmg_path = temp_dir.path().join("Fig.dmg");
-            let backup_app_path = temp_dir.path().join("Fig.app.old");
-
             // We dont want to release the temp dir, so we just leak it
             std::mem::forget(temp_dir);
 
-            debug!("Downloading dmg to {}", dmg_path.display());
+            debug!("Downloading dmg to {}", dmg_mount_path.display());
 
             tx.send(UpdateStatus::Message("Downloading update...".into()))
                 .await
                 .ok();
 
-            download_dmg(update.download, &dmg_path, tx.clone()).await?;
+            download_dmg(update.download, &dmg_mount_path, tx.clone()).await?;
 
             tx.send(UpdateStatus::Percent(85.0)).await.ok();
             tx.send(UpdateStatus::Message("Unpacking update...".into())).await.ok();
@@ -68,7 +78,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             // Shell out to hdiutil to mount the dmg
             let output = tokio::process::Command::new("hdiutil")
                 .arg("attach")
-                .arg(&dmg_path)
+                .arg(&dmg_mount_path)
                 .args(["-readonly", "-nobrowse", "-plist"])
                 .output()
                 .await?;
@@ -91,18 +101,9 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                     .as_str(),
             );
 
-            // /Applications/Fig.app/Contents/MacOS/{binary}
-            let fig_app_path = fig_util::fig_bundle()
-                .ok_or_else(|| Error::UpdateFailed("Binary invoked does not reside in a valid app bundle.".into()))?;
-
-            tokio::fs::rename(&fig_app_path, &backup_app_path).await?;
-
-            tx.send(UpdateStatus::Percent(95.0)).await.ok();
-            tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
-
             let output = tokio::process::Command::new("ditto")
                 .arg(mount_point.join("Fig.app"))
-                .arg(&fig_app_path)
+                .arg(&temp_bundle_path)
                 .output()
                 .await?;
 
@@ -110,7 +111,22 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
 
-            debug!("Copied new app to {}", fig_app_path.display());
+            tx.send(UpdateStatus::Percent(95.0)).await.ok();
+            tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
+
+            // We want to swap the app bundles, like sparkle does
+            // https://github.com/sparkle-project/Sparkle/blob/863f85b5f5398c03553f2544668b95816b2860db/Sparkle/SUFileManager.m#L235
+            let status =
+                unsafe { libc::renamex_np(temp_bundle_cstr.as_ptr(), fig_app_cstr.as_ptr(), libc::RENAME_SWAP) };
+
+            if status != 0 {
+                return Err(Error::UpdateFailed(format!(
+                    "Failed to swap app bundle: {}",
+                    std::io::Error::last_os_error()
+                )));
+            }
+
+            debug!("Swapped app bundle");
 
             // Shell out to unmount the dmg
             let output = tokio::process::Command::new("hdiutil")
@@ -137,7 +153,8 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
 
             tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
-            tokio::fs::remove_dir_all(&backup_app_path).await?;
+            // Remove the old app bundle
+            tokio::fs::remove_dir_all(&temp_bundle_path).await?;
 
             let mut arg = OsString::new();
             arg.push("sleep 2 && '");

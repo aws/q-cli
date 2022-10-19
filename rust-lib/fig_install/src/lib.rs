@@ -72,6 +72,8 @@ pub enum Error {
     SystemNotOnChannel,
     #[error("manifest not found")]
     ManifestNotFound,
+    #[error("could not convert path to cstring")]
+    Nul(#[from] std::ffi::NulError),
 }
 
 impl From<fig_util::directories::DirectoryError> for Error {
