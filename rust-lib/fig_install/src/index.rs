@@ -25,12 +25,14 @@ use tracing::{
 
 use crate::Error;
 
+#[allow(unused)]
 #[derive(Deserialize)]
 struct Index {
     supported: Vec<Support>,
     versions: Vec<RemoteVersion>,
 }
 
+#[allow(unused)]
 #[derive(Deserialize)]
 struct Support {
     kind: Kind,
