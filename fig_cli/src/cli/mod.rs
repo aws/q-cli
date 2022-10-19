@@ -24,6 +24,7 @@ mod theme;
 mod tips;
 mod tweet;
 mod uninstall;
+mod update;
 mod user;
 mod workflow;
 
@@ -260,7 +261,7 @@ impl Cli {
                     installation::install_cli(args.into(), no_confirm, force).await
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
-                CliRootCommands::Update { no_confirm } => Ok(fig_install::update(no_confirm).await?),
+                CliRootCommands::Update { no_confirm } => update::update(no_confirm).await,
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {

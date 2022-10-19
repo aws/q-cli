@@ -235,9 +235,8 @@ impl WebviewManager {
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, window_target, control_flow| {
-            trace!(?event, "Main loop event");
-
             *control_flow = ControlFlow::Wait;
+            trace!(?event, "Main loop event");
 
             match event {
                 WryEvent::NewEvents(StartCause::Init) => info!("Fig has started"),

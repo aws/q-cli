@@ -23,6 +23,7 @@ use linux as os;
 #[cfg(target_os = "macos")]
 use macos as os;
 use thiserror::Error;
+use tokio::sync::mpsc::Receiver;
 use tracing::{
     error,
     info,
@@ -96,17 +97,44 @@ pub async fn check_for_updates() -> Result<Option<UpdatePackage>, Error> {
     index::check_for_updates(get_channel()?, manifest.kind.clone(), manifest.variant.clone()).await
 }
 
+#[derive(Debug, Clone)]
+pub enum UpdateStatus {
+    Percent(f32),
+    Message(String),
+    Exit,
+}
+
 /// Attempt to update if there is a newer version of Fig
-pub async fn update(deprecated_no_confirm: bool) -> Result<(), Error> {
+pub async fn update(
+    deprecated_no_confirm: bool,
+    on_update: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>>,
+) -> Result<bool, Error> {
     info!("Checking for updates...");
     if let Some(update) = check_for_updates().await? {
         info!("Found update: {}", update.version);
-        os::update(update, deprecated_no_confirm).await?;
+
+        let (tx, rx) = tokio::sync::mpsc::channel(16);
+
+        let join = tokio::spawn(async move {
+            if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
+                error!(%err, "Failed to update");
+                tx.send(UpdateStatus::Message(format!("Error: {err}"))).await.unwrap();
+                return Err(err);
+            }
+            Ok(())
+        });
+
+        if let Some(on_update) = on_update {
+            info!("Updating Fig...");
+            on_update(rx);
+        }
+
+        join.await.unwrap()?;
+        Ok(true)
     } else {
         info!("No updates available");
+        Ok(false)
     }
-
-    Ok(())
 }
 
 pub fn get_uninstall_url() -> String {

@@ -2571,6 +2571,7 @@ dependencies = [
  "futures",
  "globset",
  "humantime",
+ "indicatif",
  "insta",
  "nix 0.25.0",
  "notify",

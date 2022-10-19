@@ -111,25 +111,115 @@ pub async fn run_install() {
             launch_ibus().await;
         } else {
             // Update if there's a newer version
-            if !cfg!(debug_assertions) || fig_settings::state::get_bool_or("developer.check-for-updates", false) {
-                tokio::spawn(async {
-                    let seconds = fig_settings::settings::get_int_or("autoupdate.check-period", 60 * 60 * 3);
-                    if seconds < 0 {
-                        return;
-                    }
-                    let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
-                    loop {
-                        interval.tick().await;
-                        fig_install::update(true).await.ok();
-                    }
-                });
+            check_for_update(true).await;
 
-                // remove the updater if it exists
-                #[cfg(target_os = "windows")]
-                std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
-            }
+            tokio::spawn(async {
+                let seconds = fig_settings::settings::get_int_or("app.autoupdate.check-period", 60 * 60 * 3);
+                if seconds < 0 {
+                    return;
+                }
+                let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
+                interval.tick().await;
+                loop {
+                    interval.tick().await;
+                    check_for_update(false).await;
+                }
+            });
+
+            // remove the updater if it exists
+            #[cfg(target_os = "windows")]
+            std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
         }
     );
+}
+
+#[cfg(not(target_os = "linux"))]
+pub async fn check_for_update(show_updating: bool) {
+    use fig_install::UpdateStatus;
+    use tokio::sync::mpsc::Receiver;
+    use wry::application::dpi::LogicalSize;
+    use wry::application::platform::macos::WindowBuilderExtMacOS;
+
+    let updating_cb: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>> = if show_updating {
+        Some(Box::new(|mut recv: Receiver<UpdateStatus>| {
+            use wry::application::event::{
+                Event,
+                WindowEvent,
+            };
+            use wry::application::event_loop::{
+                ControlFlow,
+                EventLoop,
+            };
+            use wry::application::window::WindowBuilder;
+            use wry::webview::WebViewBuilder;
+
+            let event_loop: EventLoop<UpdateStatus> = EventLoop::with_user_event();
+            let window = WindowBuilder::new()
+                .with_title("Fig")
+                .with_inner_size(LogicalSize::new(350, 350))
+                .with_resizable(false)
+                .with_titlebar_hidden(true)
+                .with_movable_by_window_background(true)
+                .build(&event_loop)
+                .unwrap();
+
+            let webview = WebViewBuilder::new(window)
+                .unwrap()
+                .with_html(include_str!("../updating.html"))
+                .unwrap()
+                .build()
+                .unwrap();
+
+            let proxy = event_loop.create_proxy();
+
+            std::thread::spawn(move || {
+                loop {
+                    if let Some(event) = recv.blocking_recv() {
+                        proxy.send_event(event).ok();
+                    }
+                }
+            });
+
+            event_loop.run(move |event, _, control_flow| {
+                *control_flow = ControlFlow::Wait;
+
+                match event {
+                    Event::WindowEvent {
+                        event: WindowEvent::CloseRequested,
+                        ..
+                    } => *control_flow = ControlFlow::Exit,
+                    Event::UserEvent(event) => match event {
+                        UpdateStatus::Percent(p) => {
+                            webview
+                                .evaluate_script(&format!("updateProgress({})", p as i32))
+                                .unwrap();
+                        },
+                        UpdateStatus::Message(message) => {
+                            tracing::info!("{}", message);
+                            webview
+                                .evaluate_script(&format!("updateMessage({})", serde_json::json!(message)))
+                                .unwrap();
+                        },
+                        UpdateStatus::Exit => {
+                            *control_flow = ControlFlow::Exit;
+                        },
+                    },
+                    _ => (),
+                }
+            });
+        }))
+    } else {
+        None
+    };
+
+    // If not debug or override, check for update
+    if (!cfg!(debug_assertions) || fig_settings::state::get_bool_or("developer.check-for-updates", false))
+        && fig_settings::settings::get_bool_or("app.disableAutoupdates", true)
+    {
+        if let Err(err) = fig_install::update(true, updating_cb).await {
+            error!(%err, "Failed to update");
+        }
+    }
 }
 
 #[cfg(target_os = "macos")]

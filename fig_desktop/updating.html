@@ -1,0 +1,42 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+</head>
+
+<body
+    style="font-family: 'Open Sans', sans-serif; font-size: 16px; line-height: 1.5; color: #fff; background-color: #000;">
+    <div
+        style="flex: 1 0 auto; padding: 1rem; align-items: center; justify-content: center; display: flex; flex-direction: column;">
+        <h1
+            style="font-size: 2.5rem; font-weight: 700; margin: 0 0 1rem 0; padding: 0; color: #fff; text-align: center;">
+            Updating Fig
+        </h1>
+        <!-- Progress bar -->
+        <div style="width: 100%; height: 20px; background-color: #eee; border-radius: 5px; margin-bottom: 20px;">
+            <div style="width: 0%; height: 20px; background-color: magenta; border-radius: 5px; text-align: center; line-height: 20px; color: white; font-weight: bold;"
+                id="progressBar">
+                0%
+            </div>
+        </div>
+        <!-- Message -->
+        <p style="margin: 0 0 1rem 0; padding: 0; color: #fff; text-align: center;" id="message">
+            Downloading update...
+        </p>
+    </div>
+</body>
+
+<script>
+    function updateProgress(progress) {
+        document.getElementById("progressBar").style.width = progress + "%";
+        document.getElementById("progressBar").innerHTML = progress + "%";
+    }
+
+    function updateMessage(message) {
+        document.getElementById("message").innerHTML = message;
+    }
+</script>
+
+</html>

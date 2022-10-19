@@ -1,9 +1,14 @@
 use std::os::windows::process::CommandExt;
 
-use crate::index::UpdatePackage;
-use crate::Error;
+use tokio::sync::mpsc::Sender;
 
-pub async fn update(package: UpdatePackage, _deprecated: bool) -> Result<(), Error> {
+use crate::index::UpdatePackage;
+use crate::{
+    Error,
+    UpdateStatus,
+};
+
+pub async fn update(package: UpdatePackage, _deprecated: bool, _tx: Sender<UpdateStatus>) -> Result<(), Error> {
     let installer_path = fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe");
 
     if installer_path.exists() {
