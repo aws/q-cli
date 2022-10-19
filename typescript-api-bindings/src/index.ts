@@ -15,6 +15,7 @@ import * as Debugger from './debugger';
 import * as State from './state';
 import * as Install from './install';
 import * as Types from './types';
+import * as User from './user';
 
 import * as Fig from './fig.pb';
 import * as Internal from './requests';
@@ -37,7 +38,8 @@ const lib = {
   WindowPosition,
   fs,
   Install,
-  Types
+  Types,
+  User
 };
 
 export {
@@ -59,7 +61,8 @@ export {
   WindowPosition,
   fs,
   Install,
-  Types
+  Types,
+  User
 };
 
 declare global {

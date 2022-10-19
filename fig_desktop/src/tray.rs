@@ -1,4 +1,6 @@
 use cfg_if::cfg_if;
+use fig_install::InstallComponents;
+use fig_util::manifest::manifest;
 use tracing::{
     error,
     trace,
@@ -32,12 +34,30 @@ use crate::{
     DASHBOARD_ID,
 };
 
+const COMMANDKEY: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/commandkey.png",));
+
+const GEAR: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/gear.png",));
+
+const QUESTION: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/question.png",));
+
+const DISCORD: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/discord.png",));
+
+const GITHUB: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/github.png",));
+
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
     match id {
         id if id == MenuId::new("debugger-refresh") => {
             proxy.send_event(Event::ReloadTray).unwrap();
         },
-        id if id == MenuId::new("toggle-devtools") => {
+        id if id == MenuId::new("dashboard-devtools") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::Devtools,
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("autocomplete-devtools") => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID,
@@ -45,10 +65,28 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
+        id if id == MenuId::new("update") => {
+            tokio::runtime::Handle::current().spawn(fig_install::update(true, None));
+        },
         id if id == MenuId::new("quit") => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
         },
-        id if id == MenuId::new("dashboard") || id == MenuId::new("accessibility") || id == MenuId::new("login") => {
+        id if id == MenuId::new("dashboard") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateRelative { path: "".to_owned() },
+                })
+                .unwrap();
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::Show,
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("show") => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
@@ -71,6 +109,12 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                     },
                 })
                 .unwrap();
+        },
+        id if id == MenuId::new("uninstall") => {
+            tokio::runtime::Handle::current().spawn(async {
+                fig_install::uninstall(InstallComponents::all()).await.ok();
+                std::process::exit(0);
+            });
         },
         id if id == MenuId::new("community") => {
             if let Err(err) = fig_util::open_url("https://fig.io/community") {
@@ -174,6 +218,7 @@ pub fn get_context_menu() -> ContextMenu {
 }
 
 enum MenuElement {
+    Info(String),
     Entry {
         emoji_icon: Option<String>,
         image_icon: Option<wry::application::window::Icon>,
@@ -181,11 +226,58 @@ enum MenuElement {
         id: String,
     },
     Separator,
+    SubMenu {
+        title: String,
+        elements: Vec<MenuElement>,
+    },
 }
 
 impl MenuElement {
+    fn entry(
+        emoji_icon: Option<String>,
+        image: Option<&'static [u8]>,
+        text: impl Into<String>,
+        id: impl Into<String>,
+    ) -> Self {
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "macos")] {
+                let image_icon = match image {
+                    Some(image) => {
+                        let image = image::load_from_memory(image)
+                            .expect("Failed to open icon path")
+                            .to_rgba8();
+
+                        let (width, height) = image.dimensions();
+
+                        Icon::from_rgba(image.into_raw(), width, height).ok()
+                    },
+                    None => None,
+                };
+            } else {
+                let image_icon = None;
+            }
+        };
+
+        Self::Entry {
+            emoji_icon,
+            image_icon,
+            text: text.into(),
+            id: id.into(),
+        }
+    }
+
+    fn sub_menu(title: impl Into<String>, elements: Vec<MenuElement>) -> Self {
+        Self::SubMenu {
+            title: title.into(),
+            elements,
+        }
+    }
+
     fn add_to_menu(&self, menu: &mut ContextMenu) {
         match self {
+            MenuElement::Info(info) => {
+                menu.add_item(MenuItemAttributes::new(info).with_enabled(false));
+            },
             MenuElement::Entry {
                 emoji_icon,
                 image_icon,
@@ -199,109 +291,96 @@ impl MenuElement {
                 let menu_item = MenuItemAttributes::new(&text).with_id(MenuId::new(id));
                 let mut custom_menu_item = menu.add_item(menu_item);
                 if let Some(image_icon) = &image_icon {
-                    // TODO: account for retina display (currently image is too large!)
                     custom_menu_item.set_icon(image_icon.clone());
                 }
             },
             MenuElement::Separator => {
                 menu.add_native_item(MenuItem::Separator);
             },
+            MenuElement::SubMenu { title, elements } => {
+                let mut sub_menu = ContextMenu::new();
+                for element in elements {
+                    element.add_to_menu(&mut sub_menu);
+                }
+
+                menu.add_submenu(title, true, sub_menu);
+            },
         }
     }
-}
-
-#[cfg(target_os = "macos")]
-macro_rules! load_icon {
-    ($path:literal) => {{
-        let (icon_rgba, icon_width, icon_height) = {
-            let image = image::load_from_memory(include_bytes!(concat!(
-                env!("TRAY_ICONS_PROCESSED"),
-                "/",
-                $path,
-                ".png"
-            )))
-            .expect("Failed to open icon path")
-            .to_rgba8();
-            let (width, height) = image.dimensions();
-            let rgba = image.into_raw();
-            (rgba, width, height)
-        };
-        Icon::from_rgba(icon_rgba, icon_width, icon_height).ok()
-    }};
-}
-
-macro_rules! menu_element {
-    (Element, $emoji_icon:expr, $image_path:literal, $text:expr, $id:expr) => {{
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "macos")] {
-                let image_icon = load_icon!($image_path);
-            } else {
-                let image_icon = None;
-            }
-        };
-
-        let emoji_icon: Option<&str> = $emoji_icon;
-
-        let entry = MenuElement::Entry {
-            emoji_icon: emoji_icon.map(|emoji_icon| emoji_icon.into()),
-            image_icon,
-            text: $text.into(),
-            id: $id.into(),
-        };
-
-        entry
-    }};
-    (Element, $emoji_icon:expr,None, $text:expr, $id:expr) => {{
-        let entry = MenuElement::Entry {
-            emoji_icon: $emoji_icon,
-            image_icon: None,
-            text: $text.into(),
-            id: $id.into(),
-        };
-
-        entry
-    }};
-    (Separator) => {
-        MenuElement::Separator
-    };
 }
 
 fn menu() -> Vec<MenuElement> {
     let logged_in = fig_request::auth::is_logged_in();
 
+    let report = MenuElement::entry(Some("🐞".to_owned()), Some(GITHUB), "Report an Issue", "issue");
+    let manual = MenuElement::entry(Some("📚".to_owned()), Some(QUESTION), "User Manual", "user-manual");
+    let discord = MenuElement::entry(Some("💬".to_owned()), Some(DISCORD), "Join Community", "community");
+    let version = MenuElement::Info(format!(
+        "Version {} {}",
+        env!("CARGO_PKG_VERSION"),
+        manifest()
+            .as_ref()
+            .map(|m| m.default_channel.to_string())
+            .unwrap_or_default()
+    ));
+    let update = MenuElement::entry(None, None, "Check for updates...", "update");
+    let quit = MenuElement::entry(None, None, "Quit Fig", "quit");
+    let dashboard = MenuElement::entry(Some("🎛️".to_owned()), Some(COMMANDKEY), "Dashboard", "dashboard");
+    let settings = MenuElement::entry(Some("⚙️".to_owned()), Some(GEAR), "Settings", "settings");
+    let developer = MenuElement::sub_menu("Developer", vec![
+        MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
+        MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
+    ]);
+
     if !logged_in {
-        return vec![
-            menu_element!(Element, None, None, "Login", "login"),
-            menu_element!(Separator),
-            menu_element!(Element, None, None, "Quit", "quit"),
-        ];
+        vec![
+            MenuElement::Info("Fig hasn't been set up yet...".to_owned()),
+            MenuElement::entry(None, None, "Get Started", "show"),
+            MenuElement::Separator,
+            report,
+            manual,
+            discord,
+            MenuElement::Separator,
+            MenuElement::entry(None, None, "Uninstall Fig", "uninstall"),
+            MenuElement::Separator,
+            quit,
+        ]
+    } else if !PlatformState::accessibility_is_enabled().unwrap_or(true) {
+        vec![
+            MenuElement::Info("Accessibility isn't enabled".to_owned()),
+            MenuElement::entry(None, None, "Enable Accessibility", "accessibility"),
+            MenuElement::Separator,
+            dashboard,
+            settings,
+            MenuElement::Separator,
+            manual,
+            discord,
+            MenuElement::Separator,
+            report,
+            MenuElement::Separator,
+            version,
+            update,
+            MenuElement::Separator,
+            developer,
+            MenuElement::Separator,
+            quit,
+        ]
+    } else {
+        vec![
+            dashboard,
+            settings,
+            MenuElement::Separator,
+            manual,
+            discord,
+            MenuElement::Separator,
+            report,
+            MenuElement::Separator,
+            version,
+            update,
+            MenuElement::Separator,
+            developer,
+            MenuElement::Separator,
+            quit,
+        ]
     }
-
-    if !PlatformState::accessibility_is_enabled().unwrap_or(true) {
-        return vec![
-            menu_element!(Element, None, None, "Accessibility is not enabled", "accessibility"),
-            menu_element!(Separator),
-            menu_element!(Element, None, None, "Quit", "quit"),
-        ];
-    }
-
-    vec![
-        menu_element!(Element, Some("🎛️"), "commandkey", "Dashboard", "dashboard"),
-        menu_element!(Element, Some("⚙️"), "gear", "Settings", "settings"),
-        menu_element!(Separator),
-        menu_element!(Element, Some("📚"), "question", "User Manual", "user-manual"),
-        menu_element!(Element, Some("💬"), "discord", "Join Community", "community"),
-        menu_element!(Separator),
-        menu_element!(Element, Some("🐞"), "github", "Report an Issue", "issue"),
-        menu_element!(
-            Element,
-            None,
-            None,
-            format!("Version {}", env!("CARGO_PKG_VERSION")),
-            "version"
-        ),
-        menu_element!(Element, None, None, "Toggle Devtools", "toggle-devtools"),
-        menu_element!(Separator),
-        menu_element!(Element, None, None, "Quit", "quit"),
-    ]
 }

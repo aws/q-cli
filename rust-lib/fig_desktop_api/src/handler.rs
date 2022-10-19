@@ -15,6 +15,7 @@ use fig_proto::fig::{
     RunProcessRequest,
     ServerOriginatedMessage,
     UpdateApplicationPropertiesRequest,
+    UserLogoutRequest,
     WindowFocusRequest,
 };
 use fig_proto::prost::Message;
@@ -84,6 +85,10 @@ pub trait EventHandler {
         &self,
         request: Wrapped<Self::Ctx, UpdateApplicationPropertiesRequest>,
     ) -> RequestResult {
+        RequestResult::unimplemented(request.request)
+    }
+
+    async fn user_logout(&self, request: Wrapped<Self::Ctx, UserLogoutRequest>) -> RequestResult {
         RequestResult::unimplemented(request.request)
     }
 }
@@ -202,6 +207,7 @@ async fn handle_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
                 TerminalSessionInfoRequest(request) => RequestResult::deprecated(request),
                 ApplicationUpdateStatusRequest(request) => RequestResult::deprecated(request),
                 MacosInputMethodRequest(request) => RequestResult::deprecated(request),
+                UserLogoutRequest(request) => event_handler.user_logout(request!(request)).await,
             }
         },
         None => {

@@ -45,6 +45,8 @@ message ClientOriginatedMessage {
     TelemetryPageRequest telemetry_page_request = 134;
     AggregateSessionMetricActionRequest
         aggregate_session_metric_action_request = 135;
+    // UserLoginRequest user_login_request = 136;
+    UserLogoutRequest user_logout_request = 137;
   }
 }
 
@@ -379,6 +381,13 @@ message InstallResponse {
     InstallationStatus installation_status = 2;
   }
 }
+
+/// User
+
+// todo(grant)
+// message UserLoginRequest {}
+
+message UserLogoutRequest {}
 
 /// Window Focus
 

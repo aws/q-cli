@@ -69,6 +69,17 @@ pub enum Channel {
     Stable,
 }
 
+impl Display for Channel {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Channel::Nightly => write!(f, "Nightly"),
+            Channel::Qa => write!(f, "QA"),
+            Channel::Beta => write!(f, "Beta"),
+            Channel::Stable => write!(f, "Stable"),
+        }
+    }
+}
+
 fn deser_enum_other<'de, D, T>(deserializer: D) -> Result<T, D::Error>
 where
     D: Deserializer<'de>,
