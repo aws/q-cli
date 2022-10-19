@@ -129,6 +129,6 @@ pub(crate) fn default_properties() -> Map<String, Value> {
 
 pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
     body.insert("anonymousId".into(), get_or_create_anonymous_id()?.into());
-    fig_request::Request::post(route).auth().body(body).send().await?;
+    fig_request::Request::post(route).maybe_auth().body(body).send().await?;
     Ok(())
 }

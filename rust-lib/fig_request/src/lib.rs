@@ -102,6 +102,9 @@ pub trait Auth {}
 pub struct AddAuth;
 impl Auth for AddAuth {}
 
+pub struct MaybeAuth;
+impl Auth for MaybeAuth {}
+
 pub struct NoAuth;
 impl Auth for NoAuth {}
 
@@ -262,6 +265,75 @@ impl Request<AddAuth> {
     }
 }
 
+impl Request<MaybeAuth> {
+    pub async fn send(self) -> Result<Response> {
+        match self.builder {
+            Some(builder) => {
+                let token = match std::env::var("FIG_TOKEN") {
+                    Ok(token) => Some(token),
+                    Err(_) => get_token().await.ok(),
+                };
+
+                let builder = match token {
+                    Some(token) => builder.bearer_auth(token),
+                    None => builder,
+                };
+
+                Ok(Response {
+                    inner: builder.send().await?,
+                })
+            },
+            None => Err(Error::NoClient),
+        }
+    }
+
+    /// Deserialize json to `T: [DeserializeOwned]`
+    pub async fn deser_json<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
+        let response = self.send().await?;
+        let json = response.handle_fig_response().await?.json().await?;
+        Ok(json)
+    }
+
+    /// Deserialize json to a [`serde_json::Value`]
+    pub async fn json(self) -> Result<Value> {
+        self.deser_json().await
+    }
+
+    /// Body text (parses fig errors)
+    pub async fn text(self) -> Result<String> {
+        let response = self.send().await?;
+        let text = response.handle_fig_response().await?.text().await?;
+        Ok(text)
+    }
+
+    /// Raw text (does not parse fig errors)
+    pub async fn raw_text(self) -> Result<String> {
+        let response = self.send().await?;
+        let text = response.inner.text().await?;
+        Ok(text)
+    }
+
+    /// Raw body bytes
+    pub async fn bytes(self) -> Result<bytes::Bytes> {
+        let response = self.send().await?;
+        let bytes = response.handle_fig_response().await?.bytes().await?;
+        Ok(bytes)
+    }
+
+    pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
+        let response = self.send().await?;
+        match response.json::<GraphqlResponse<T>>().await {
+            Ok(GraphqlResponse::Data(data)) => Ok(data),
+            Ok(GraphqlResponse::Errors(err)) => Err(err.into()),
+            Err(err) => Err(err.into()),
+        }
+    }
+
+    pub async fn response(self) -> Result<Response> {
+        self.send().await
+    }
+}
+
 impl<A: Auth> Request<A> {
     pub fn body(self, body: impl Serialize) -> Self {
         Self {
@@ -283,6 +355,13 @@ impl<A: Auth> Request<A> {
         Request {
             builder: self.builder,
             _auth: AddAuth,
+        }
+    }
+
+    pub fn maybe_auth(self) -> Request<MaybeAuth> {
+        Request {
+            builder: self.builder,
+            _auth: MaybeAuth,
         }
     }
 
