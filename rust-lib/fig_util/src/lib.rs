@@ -79,12 +79,7 @@ pub fn search_xdg_data_dirs(ext: impl AsRef<std::path::Path>) -> Option<PathBuf>
 
 /// Returns the path to the original executable, not the symlink
 pub fn current_exe_origin() -> Result<PathBuf, Error> {
-    let mut path = std::env::current_exe()?;
-    while path.is_symlink() {
-        path = std::fs::read_link(&path)?;
-    }
-
-    Ok(path)
+    Ok(std::env::current_exe()?.canonicalize()?)
 }
 
 #[must_use]

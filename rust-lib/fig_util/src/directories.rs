@@ -542,11 +542,7 @@ fn _snapshot_ssh_saved_identities() {
 pub fn relative_cli_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let mut current_exe = std::env::current_exe()?;
-            while current_exe.is_symlink() {
-                current_exe = std::fs::read_link(&current_exe)?;
-            }
-            let path =current_exe.parent().unwrap().join("fig-darwin-universal");
+            let path = crate::current_exe_origin().unwrap().join("fig-darwin-universal");
             if path.exists() {
                 Ok(path)
             } else {
