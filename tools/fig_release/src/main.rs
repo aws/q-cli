@@ -45,7 +45,7 @@ async fn main() -> eyre::Result<()> {
         } => package::package(path, kind, architecture, variant).await?,
         cli::Sub::Bump => bump::bump()?,
         cli::Sub::Debug { action } => debug::debug(action).await?,
-        _ => todo!(),
+        cli::Sub::Release { build_targets } => release::release(build_targets).await?,
     }
     Ok(())
 }

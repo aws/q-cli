@@ -2852,6 +2852,7 @@ dependencies = [
  "eyre",
  "fig_request",
  "fig_settings",
+ "fig_util",
  "once_cell",
  "semver 1.0.14",
  "serde",
