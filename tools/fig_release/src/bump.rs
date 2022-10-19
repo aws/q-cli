@@ -29,7 +29,9 @@ pub fn bump() -> eyre::Result<()> {
 
     sync_version(&release)?;
 
-    run(&["git", "add", "release.yaml", "Cargo.toml"])?;
+    run(&["cargo", "update", "--offline", "--workspace"])?;
+
+    run(&["git", "add", "release.yaml", "Cargo.toml", "Cargo.lock"])?;
     run(&["git", "commit", "-m", "chore: bump version"])?;
     run(&["git", "push"])?;
 
