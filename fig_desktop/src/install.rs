@@ -75,11 +75,8 @@ pub async fn run_install() {
             }
         });
 
-        cfg_if!(
-            if #[cfg(target_os = "macos")] {
-                initialize_fig_dir().ok();
-            }
-        );
+        #[cfg(target_os = "macos")]
+        initialize_fig_dir().ok();
     }
 
     if let Err(err) = set_previous_version(current_version()) {
