@@ -14,15 +14,14 @@ use fig_proto::fig::{
     InstallResponse,
     Result as ProtoResult,
 };
-use fig_util::directories::utc_backup_dir;
 use fig_util::Shell;
 
 use super::RequestResult;
 
 #[allow(dead_code)]
-fn integration_status(integration: impl fig_integrations::Integration) -> ServerOriginatedSubMessage {
+async fn integration_status(integration: impl fig_integrations::Integration) -> ServerOriginatedSubMessage {
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
-        response: Some(Response::InstallationStatus(match integration.is_installed() {
+        response: Some(Response::InstallationStatus(match integration.is_installed().await {
             Ok(_) => InstallationStatus::InstallInstalled.into(),
             Err(_) => InstallationStatus::InstallNotInstalled.into(),
         })),
@@ -53,8 +52,8 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     Ok(integrations) => {
                         for integration in integrations {
                             let res = match action {
-                                InstallAction::InstallAction => integration.install(utc_backup_dir().ok().as_deref()),
-                                InstallAction::UninstallAction => integration.uninstall(),
+                                InstallAction::InstallAction => integration.install().await,
+                                InstallAction::UninstallAction => integration.uninstall().await,
                                 InstallAction::StatusAction => unreachable!(),
                             };
 
@@ -135,6 +134,57 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     integration_result(Ok::<(), &str>(()))
                 } else {
                     integration_result(Err("Accessibility permissions cannot be queried"))
+                }
+            }
+        },
+        (InstallComponent::InputMethod, InstallAction::InstallAction) => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    use fig_integrations::input_method::{
+                        InputMethod,
+                    };
+                    use fig_integrations::Integration;
+
+                    integration_result(match InputMethod::default().install().await {
+                        Ok(_) => Ok(()),
+                        Err(err) => Err(format!("Could not install input method: {err}")),
+                    })
+                } else {
+                    integration_result(Err("Input method install is only supported on macOS"))
+                }
+            }
+        },
+        (InstallComponent::InputMethod, InstallAction::UninstallAction) => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    use fig_integrations::input_method::{
+                        InputMethod,
+                        InputMethodError,
+                    };
+                    use fig_integrations::Error;
+                    use fig_integrations::Integration;
+
+                    integration_result(match InputMethod::default().uninstall().await {
+                        Ok(_) | Err(Error::InputMethod(InputMethodError::CouldNotListInputSources)) => {
+                            Ok(())
+                        },
+                        Err(err) => Err(format!("Could not uninstall input method: {err}")),
+                    })
+                } else {
+                    integration_result(Err("Input method uninstall is only supported on macOS"))
+                }
+            }
+        },
+        (InstallComponent::InputMethod, InstallAction::StatusAction) => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    use fig_integrations::input_method::{
+                        InputMethod,
+                    };
+
+                    integration_status(InputMethod::default()).await
+                } else {
+                    integration_result(Err("Input method status is only supported on macOS"))
                 }
             }
         },

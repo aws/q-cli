@@ -1044,7 +1044,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             "fig integrations install dotfiles".magenta(),
             self.integration.get_shell()
         );
-        match self.integration.is_installed() {
+        match self.integration.is_installed().await {
             Ok(()) => Ok(()),
             Err(InstallationError::LegacyInstallation(msg)) => {
                 Err(DoctorError::Warning(format!("{msg} {fix_text}").into()))
@@ -1075,10 +1075,13 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 Err(DoctorError::Error {
                     reason: msg,
                     info: vec![fix_text.into()],
-                    fix: Some(DoctorFix::Sync(Box::new(move || {
-                        fix_integration.install(None)?;
-                        Ok(())
-                    }))),
+                    fix: Some(DoctorFix::Async(
+                        async move {
+                            fix_integration.install().await?;
+                            Ok(())
+                        }
+                        .boxed(),
+                    )),
                     error: None,
                 })
             },
@@ -1087,10 +1090,13 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                 Err(DoctorError::Error {
                     reason: err.to_string().into(),
                     info: vec![fix_text.into()],
-                    fix: Some(DoctorFix::Sync(Box::new(move || {
-                        fix_integration.install(None)?;
-                        Ok(())
-                    }))),
+                    fix: Some(DoctorFix::Async(
+                        async move {
+                            fix_integration.install().await?;
+                            Ok(())
+                        }
+                        .boxed(),
+                    )),
                     error: Some(eyre::Report::new(err)),
                 })
             },

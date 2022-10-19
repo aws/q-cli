@@ -866,7 +866,7 @@ impl InternalSubcommand {
                             None => InputMethod::default(),
                         };
 
-                        input_method.install(None)?;
+                        input_method.install().await?;
 
                         println!(
                             "Successfully installed input method '{}'",
@@ -889,7 +889,7 @@ impl InternalSubcommand {
                             None => InputMethod::default(),
                         };
 
-                        input_method.uninstall()?;
+                        input_method.uninstall().await?;
 
                         println!(
                             "Successfully uninstalled input method '{}'",
@@ -916,7 +916,7 @@ impl InternalSubcommand {
                             None => InputMethod::default(),
                         };
 
-                        println!("Installed? {}", input_method.is_installed().is_ok());
+                        println!("Installed? {}", input_method.is_installed().await.is_ok());
                         println!("{:#?}", input_method.input_source()?);
                     },
                     InputMethodDebugAction::Source {

@@ -1,10 +1,8 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::PathBuf;
 
+use async_trait::async_trait;
 use fig_util::directories;
 use regex::Regex;
 
@@ -73,25 +71,26 @@ impl SshIntegration {
     }
 }
 
+#[async_trait]
 impl Integration for SshIntegration {
     fn describe(&self) -> String {
         "SSH Integration".to_owned()
     }
 
-    fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
-        if self.is_installed().is_ok() {
+    async fn install(&self) -> Result<()> {
+        if self.is_installed().await.is_ok() {
             return Ok(());
         }
 
         let contents = if self.path.exists() {
-            backup_file(&self.path, backup_dir)?;
-            self.uninstall()?;
+            backup_file(&self.path, fig_util::directories::utc_backup_dir().ok())?;
+            self.uninstall().await?;
             std::fs::read_to_string(&self.path)?
         } else {
             String::new()
         };
 
-        self.get_file_integration()?.install(backup_dir)?;
+        self.get_file_integration()?.install().await?;
         let new_contents = format!("{}\n{}\n{}\n", contents, self.description(), self.source_text()?);
         let mut file = File::create(&self.path)?;
         file.write_all(new_contents.as_bytes())?;
@@ -99,7 +98,7 @@ impl Integration for SshIntegration {
         Ok(())
     }
 
-    fn uninstall(&self) -> Result<()> {
+    async fn uninstall(&self) -> Result<()> {
         if self.path.exists() {
             let mut contents = std::fs::read_to_string(&self.path)?;
             contents = self.source_regex()?.replace_all(&contents, "").into();
@@ -109,12 +108,12 @@ impl Integration for SshIntegration {
             std::fs::write(&self.path, contents.as_bytes())?;
         }
 
-        self.get_file_integration()?.uninstall()?;
+        self.get_file_integration()?.uninstall().await?;
 
         Ok(())
     }
 
-    fn is_installed(&self) -> Result<()> {
+    async fn is_installed(&self) -> Result<()> {
         let filtered_contents: String = match std::fs::read_to_string(&self.path) {
             // Remove comments and empty lines.
             Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
@@ -124,7 +123,7 @@ impl Integration for SshIntegration {
             },
         };
 
-        self.get_file_integration()?.is_installed()?;
+        self.get_file_integration()?.is_installed().await?;
         if !self.source_regex()?.is_match(&filtered_contents) {
             let message = format!("{} does not source Fig's ssh integration", self.path.display());
             return Err(Error::NotInstalled(message.into()));

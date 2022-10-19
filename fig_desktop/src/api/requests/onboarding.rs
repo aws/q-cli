@@ -3,10 +3,7 @@ use fig_proto::fig::{
     OnboardingAction,
     OnboardingRequest,
 };
-use fig_util::{
-    directories,
-    Shell,
-};
+use fig_util::Shell;
 use tracing::error;
 use wry::application::event_loop::ControlFlow;
 
@@ -24,14 +21,12 @@ use crate::{
 pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
     match request.action() {
         OnboardingAction::InstallationScript => {
-            let backups_dir = directories::utc_backup_dir().map_err(|err| err.to_string())?;
-
             let mut errs: Vec<String> = vec![];
             for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
-                            if let Err(err) = integration.install(Some(&backups_dir)) {
+                            if let Err(err) = integration.install().await {
                                 errs.push(format!("{integration}: {err}"));
                             }
                         }

@@ -7,6 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
+async-trait = "0.1.58"
 cfg-if = "1.0.0"
 clap = { version = "4.0.16", features = ["derive", "deprecated"] }
 fig_util = { path = "../fig_util" }

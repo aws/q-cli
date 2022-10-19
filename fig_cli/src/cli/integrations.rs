@@ -1,16 +1,10 @@
 use clap::Subcommand;
-use eyre::{
-    Result,
-    WrapErr,
-};
+use eyre::Result;
 use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration as _;
-use fig_util::{
-    directories,
-    Shell,
-};
+use fig_util::Shell;
 use tracing::debug;
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
@@ -72,8 +66,6 @@ impl IntegrationsSubcommands {
 }
 
 async fn install(integration: Integration, silent: bool) -> Result<()> {
-    let backup_dir = directories::utc_backup_dir().context("Could not get backup dir")?;
-
     let mut installed = false;
 
     let result = match integration {
@@ -89,13 +81,13 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
-                            match integration.is_installed() {
+                            match integration.is_installed().await {
                                 Ok(_) => {
                                     debug!("Skipping {}", integration.describe());
                                 },
                                 Err(_) => {
                                     installed = true;
-                                    if let Err(e) = integration.install(Some(&backup_dir)) {
+                                    if let Err(e) = integration.install().await {
                                         errs.push(format!("{}: {e}", integration.describe()));
                                     }
                                 },
@@ -122,9 +114,9 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
         },
         Integration::Ssh => {
             let ssh_integration = SshIntegration::default()?;
-            if ssh_integration.is_installed().is_err() {
+            if ssh_integration.is_installed().await.is_err() {
                 installed = true;
-                ssh_integration.install(Some(&backup_dir)).map_err(eyre::Report::from)
+                ssh_integration.install().await.map_err(eyre::Report::from)
             } else {
                 Ok(())
             }
@@ -158,10 +150,10 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
-                            match integration.is_installed() {
+                            match integration.is_installed().await {
                                 Ok(_) => {
                                     uninstalled = true;
-                                    if let Err(e) = integration.uninstall() {
+                                    if let Err(e) = integration.uninstall().await {
                                         errs.push(format!("{}: {e}", integration.describe()));
                                     }
                                 },
@@ -190,9 +182,9 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
         },
         Integration::Ssh => {
             let ssh_integration = SshIntegration::default()?;
-            if ssh_integration.is_installed().is_ok() {
+            if ssh_integration.is_installed().await.is_ok() {
                 uninstalled = true;
-                ssh_integration.uninstall().map_err(eyre::Report::from)
+                ssh_integration.uninstall().await.map_err(eyre::Report::from)
             } else {
                 Ok(())
             }

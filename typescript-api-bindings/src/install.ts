@@ -10,7 +10,7 @@ import {
 
 import { sendInstallRequest } from "./requests";
 
-export type Component = "dotfiles" | "ibus";
+export type Component = "dotfiles" | "ibus" | "inputMethod" | "accessibility";
 
 function componentToProto(component: Component) {
   switch (component) {
@@ -18,6 +18,10 @@ function componentToProto(component: Component) {
       return InstallComponent.DOTFILES;
     case "ibus":
       return InstallComponent.IBUS;
+    case "accessibility":
+      return InstallComponent.ACCESSIBILITY;
+    case "inputMethod":
+      return InstallComponent.INPUT_METHOD;
     default:
       throw Error("Invalid component");
   }

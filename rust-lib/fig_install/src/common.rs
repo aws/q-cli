@@ -26,7 +26,7 @@ bitflags::bitflags! {
 
 pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     let ssh_result = if components.contains(InstallComponents::SSH) {
-        SshIntegration::default()?.uninstall()
+        SshIntegration::default()?.uninstall().await
     } else {
         Ok(())
     };
@@ -34,7 +34,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     let shell_integration_result = {
         for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
             for integration in shell.get_shell_integrations()? {
-                integration.uninstall()?
+                integration.uninstall().await?
             }
         }
         Ok(())
@@ -66,12 +66,9 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
         };
         use fig_integrations::Error;
 
-        let result = InputMethod::default().uninstall();
-        match result {
-            Err(Error::InputMethod(InputMethodError::CouldNotListInputSources)) => (),
-            _ => {
-                result?;
-            },
+        match InputMethod::default().uninstall().await {
+            Ok(_) | Err(Error::InputMethod(InputMethodError::CouldNotListInputSources)) => {},
+            Err(err) => return Err(err.into()),
         }
     }
 
@@ -96,14 +93,12 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
 
 pub async fn install(components: InstallComponents) -> Result<(), Error> {
     if components.contains(InstallComponents::SHELL_INTEGRATIONS) {
-        let backup_dir = directories::utc_backup_dir()?;
-
         let mut errs: Vec<Error> = vec![];
         for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
             match shell.get_shell_integrations() {
                 Ok(integrations) => {
                     for integration in integrations {
-                        if let Err(e) = integration.install(Some(&backup_dir)) {
+                        if let Err(e) = integration.install().await {
                             errs.push(e.into());
                         }
                     }
@@ -120,7 +115,7 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
     }
 
     if components.contains(InstallComponents::SSH) {
-        SshIntegration::default()?.install(None)?;
+        SshIntegration::default()?.install().await?;
     }
 
     if components.contains(InstallComponents::DAEMON) {
@@ -131,7 +126,7 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
     #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::INPUT_METHOD) {
         use fig_integrations::input_method::InputMethod;
-        InputMethod::default().install(None)?
+        InputMethod::default().install().await?
     }
 
     Ok(())

@@ -10,6 +10,7 @@ use std::{
     ptr,
 };
 
+use async_trait::async_trait;
 use core_foundation::array::{
     CFArray,
     CFArrayRef,
@@ -416,8 +417,9 @@ fn str_to_nsstring(str: &str) -> &Object {
     }
 }
 
+#[async_trait]
 impl Integration for InputMethod {
-    fn is_installed(&self) -> Result<()> {
+    async fn is_installed(&self) -> Result<()> {
         // let attr = fs::metadata(&self.bundle_path)?;
         let destination = self.target_bundle_path()?;
 
@@ -446,31 +448,33 @@ impl Integration for InputMethod {
         Ok(())
     }
 
-    fn install(&self, _backup_dir: Option<&Path>) -> Result<()> {
-        let destination = self.target_bundle_path()?;
+    async fn install(&self) -> Result<()> {
+        {
+            let destination = self.target_bundle_path()?;
 
-        // Attempt to emove existing symlink
-        fs::remove_file(&destination).ok();
+            // Attempt to emove existing symlink
+            fs::remove_file(&destination).ok();
 
-        // Create new symlink
-        symlink(&self.bundle_path, &destination)?;
+            // Create new symlink
+            symlink(&self.bundle_path, &destination)?;
 
-        // Register input source
-        InputMethod::register(&destination)?;
+            // Register input source
+            InputMethod::register(&destination)?;
 
-        let input_source = self.input_source()?;
+            let input_source = self.input_source()?;
 
-        debug!("Launch Input Method...");
-        if let Some(dest) = destination.to_str() {
-            Command::new("open").arg(dest);
+            debug!("Launch Input Method...");
+            if let Some(dest) = destination.to_str() {
+                Command::new("open").arg(dest);
+            }
+
+            // Enable input source. This will prompt user in System Preferences.
+            input_source.enable()?;
+
+            // The 'enabled' property of an input source is never updated for the process that
+            // invokes `TISEnableInputSource` Unclear why this is, but we handle it by
+            // calling out to the fig_cli to finish the second half of the installation.
         }
-
-        // Enable input source. This will prompt user in System Preferences.
-        input_source.enable()?;
-
-        // The 'enabled' property of an input source is never updated for the process that invokes
-        // `TISEnableInputSource` Unclear why this is, but we handle it by calling out to the
-        // fig_cli to finish the second half of the installation.
 
         // todo: pull this into a function in fig_directories
         let fig_cli_path = match fig_util::fig_bundle() {
@@ -479,18 +483,13 @@ impl Integration for InputMethod {
         };
 
         loop {
-            let out = Command::new(fig_cli_path.to_str().expect("Fig CLI can be converted to string"))
-                .args([
-                    "_",
-                    "attempt-to-finish-input-method-installation",
-                    self.bundle_path.to_str().unwrap(),
-                ])
+            let out = tokio::process::Command::new(fig_cli_path.to_str().expect("Fig CLI can be converted to string"))
+                .args(["_", "attempt-to-finish-input-method-installation"])
+                .arg(&self.bundle_path)
                 .output()
-                .unwrap();
+                .await?;
 
-            let code = out.status.code().expect("Status code should exist");
-
-            if code == 0 {
+            if out.status.code() == Some(0) {
                 info!("Input method installed successfully!");
                 break;
             } else {
@@ -501,7 +500,7 @@ impl Integration for InputMethod {
                 }
             }
 
-            std::thread::sleep(std::time::Duration::from_secs(1))
+            tokio::time::sleep(std::time::Duration::from_secs(1)).await
         }
 
         // TODO: Store PIDs of all relevant terminal emulators (input method will not work until these
@@ -513,7 +512,7 @@ impl Integration for InputMethod {
         Ok(())
     }
 
-    fn uninstall(&self) -> Result<()> {
+    async fn uninstall(&self) -> Result<()> {
         let destination = self.target_bundle_path()?;
 
         let input_source = self.input_source()?;
@@ -607,8 +606,8 @@ mod tests {
     }
 
     #[ignore]
-    #[test]
-    fn install() {
+    #[tokio::test]
+    async fn install() {
         let method = InputMethod {
             bundle_path: TEST_INPUT_METHOD_BUNDLE_URL.into(),
         };
@@ -620,7 +619,7 @@ mod tests {
                 inputs
                     .iter()
                     .for_each(|s| println!("{}", s.is_enabled().unwrap_or_default()));
-                match method.uninstall() {
+                match method.uninstall().await {
                     Ok(_) => println!("Uninstalled!"),
                     Err(e) => println!("{e}"),
                 }
@@ -628,7 +627,7 @@ mod tests {
             None => {
                 println!("No input sources found for {}", bundle_id);
                 println!("Installing...");
-                match method.install(None) {
+                match method.install().await {
                     Ok(_) => println!("Installed!"),
                     Err(e) => println!("{e}"),
                 };

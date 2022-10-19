@@ -6,8 +6,7 @@ pub mod input_method;
 pub mod shell;
 pub mod ssh;
 
-use std::path::Path;
-
+use async_trait::async_trait;
 pub use backup::backup_file;
 pub use error::{
     Error,
@@ -15,9 +14,10 @@ pub use error::{
 };
 pub use file::FileIntegration;
 
+#[async_trait]
 pub trait Integration {
     fn describe(&self) -> String;
-    fn install(&self, backup_dir: Option<&Path>) -> Result<()>;
-    fn uninstall(&self) -> Result<()>;
-    fn is_installed(&self) -> Result<()>;
+    async fn install(&self) -> Result<()>;
+    async fn uninstall(&self) -> Result<()>;
+    async fn is_installed(&self) -> Result<()>;
 }

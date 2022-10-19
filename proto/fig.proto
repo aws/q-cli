@@ -354,6 +354,7 @@ enum InstallComponent {
   DOTFILES = 0;
   IBUS = 1;
   ACCESSIBILITY = 2;
+  INPUT_METHOD = 3;
 }
 
 enum InstallAction {

@@ -1,10 +1,8 @@
 use std::fs::File;
 use std::io::Write;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::PathBuf;
 
+use async_trait::async_trait;
 use cfg_if::cfg_if;
 use clap::ValueEnum;
 use fig_util::{
@@ -232,17 +230,18 @@ unset _FIG_LOCAL_BIN",
     }
 }
 
+#[async_trait]
 impl Integration for ShellScriptShellIntegration {
-    fn is_installed(&self) -> Result<()> {
-        self.get_file_integration().is_installed()
+    async fn is_installed(&self) -> Result<()> {
+        self.get_file_integration().is_installed().await
     }
 
-    fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
-        self.get_file_integration().install(backup_dir)
+    async fn install(&self) -> Result<()> {
+        self.get_file_integration().install().await
     }
 
-    fn uninstall(&self) -> Result<()> {
-        self.get_file_integration().uninstall()
+    async fn uninstall(&self) -> Result<()> {
+        self.get_file_integration().uninstall().await
     }
 
     fn describe(&self) -> String {
@@ -434,16 +433,27 @@ impl DotfileShellIntegration {
     }
 }
 
+#[async_trait]
 impl Integration for DotfileShellIntegration {
-    fn install(&self, backup_dir: Option<&Path>) -> Result<()> {
-        if self.is_installed().is_ok() {
+    fn describe(&self) -> String {
+        format!(
+            "{}{}{} into {}",
+            self.shell,
+            if self.pre { " pre" } else { "" },
+            if self.post { " post" } else { "" },
+            self.dotfile_name,
+        )
+    }
+
+    async fn install(&self) -> Result<()> {
+        if self.is_installed().await.is_ok() {
             return Ok(());
         }
 
         let dotfile = self.dotfile_path();
         let mut contents = if dotfile.exists() {
-            backup_file(&dotfile, backup_dir)?;
-            self.uninstall()?;
+            backup_file(&dotfile, fig_util::directories::utc_backup_dir().ok())?;
+            self.uninstall().await?;
             std::fs::read_to_string(&dotfile)?
         } else {
             String::new()
@@ -452,7 +462,7 @@ impl Integration for DotfileShellIntegration {
         let original_contents = contents.clone();
 
         if self.pre {
-            self.script_integration(When::Pre)?.install(backup_dir)?;
+            self.script_integration(When::Pre)?.install().await?;
             contents = format!(
                 "{}\n{}\n{}",
                 self.description(When::Pre),
@@ -462,7 +472,7 @@ impl Integration for DotfileShellIntegration {
         }
 
         if self.post {
-            self.script_integration(When::Post)?.install(backup_dir)?;
+            self.script_integration(When::Post)?.install().await?;
             contents = format!(
                 "{}\n{}\n{}\n",
                 contents,
@@ -479,7 +489,7 @@ impl Integration for DotfileShellIntegration {
         Ok(())
     }
 
-    fn uninstall(&self) -> Result<()> {
+    async fn uninstall(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
         if dotfile.exists() {
             let mut contents = std::fs::read_to_string(&dotfile)?;
@@ -508,17 +518,17 @@ impl Integration for DotfileShellIntegration {
         }
 
         if self.pre {
-            self.script_integration(When::Pre)?.uninstall()?;
+            self.script_integration(When::Pre)?.uninstall().await?;
         }
 
         if self.post {
-            self.script_integration(When::Post)?.uninstall()?;
+            self.script_integration(When::Post)?.uninstall().await?;
         }
 
         Ok(())
     }
 
-    fn is_installed(&self) -> Result<()> {
+    async fn is_installed(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
         let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
             // Remove comments and empty lines.
@@ -530,25 +540,15 @@ impl Integration for DotfileShellIntegration {
 
         if self.pre {
             self.matches_text(&filtered_contents, When::Pre)?;
-            self.script_integration(When::Pre)?.is_installed()?;
+            self.script_integration(When::Pre)?.is_installed().await?;
         }
 
         if self.post {
             self.matches_text(&filtered_contents, When::Post)?;
-            self.script_integration(When::Post)?.is_installed()?;
+            self.script_integration(When::Post)?.is_installed().await?;
         }
 
         Ok(())
-    }
-
-    fn describe(&self) -> String {
-        format!(
-            "{}{}{} into {}",
-            self.shell,
-            if self.pre { " pre" } else { "" },
-            if self.post { " post" } else { "" },
-            self.dotfile_name,
-        )
     }
 }
 

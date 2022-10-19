@@ -1,7 +1,6 @@
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::PathBuf;
+
+use async_trait::async_trait;
 
 use crate::error::{
     Error,
@@ -15,12 +14,13 @@ pub struct FileIntegration {
     pub contents: String,
 }
 
+#[async_trait]
 impl Integration for FileIntegration {
     fn describe(&self) -> String {
         format!("File Integration @ {}", self.path.to_string_lossy())
     }
 
-    fn is_installed(&self) -> Result<()> {
+    async fn is_installed(&self) -> Result<()> {
         let current_contents = std::fs::read_to_string(&self.path)
             .map_err(|_| Error::Custom(format!("{} does not exist.", self.path.display()).into()))?;
         if current_contents.ne(&self.contents) {
@@ -30,8 +30,8 @@ impl Integration for FileIntegration {
         Ok(())
     }
 
-    fn install(&self, _: Option<&Path>) -> Result<()> {
-        if self.is_installed().is_ok() {
+    async fn install(&self) -> Result<()> {
+        if self.is_installed().await.is_ok() {
             return Ok(());
         }
         let parent_dir = self
@@ -43,7 +43,7 @@ impl Integration for FileIntegration {
         Ok(())
     }
 
-    fn uninstall(&self) -> Result<()> {
+    async fn uninstall(&self) -> Result<()> {
         if self.path.exists() {
             std::fs::remove_file(&self.path)?;
         }
