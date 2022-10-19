@@ -51,6 +51,7 @@ import {
   UpdateDefaultsPropertyRequest,
   UpdateLocalStateRequest,
   UpdateSettingsPropertyRequest,
+  UserLogoutRequest,
   WindowFocusRequest,
   WriteFileRequest
 } from "./fig.pb";
@@ -932,6 +933,32 @@ export async function sendAggregateSessionMetricActionRequest(
             reject(
               Error(
                 `Invalid response '${  response?.$case  }' for 'AggregateSessionMetricActionRequest'`
+              )
+            );
+        }
+      }
+    );
+  });
+}
+
+export async function sendUserLogoutRequest(
+  request: UserLogoutRequest
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "userLogoutRequest", userLogoutRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "success":
+            resolve();
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${  response?.$case  }' for 'UserLogoutRequest'`
               )
             );
         }
