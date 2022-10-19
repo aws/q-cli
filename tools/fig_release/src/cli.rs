@@ -37,7 +37,7 @@ pub enum Sub {
         channel: Promote,
     },
     Bump,
-    Release {
+    Publish {
         build_targets: Vec<String>,
     },
     Debug {

@@ -16,7 +16,7 @@ mod cut;
 mod debug;
 mod package;
 mod promote;
-mod release;
+mod publish;
 mod utils;
 
 #[tokio::main]
@@ -45,7 +45,7 @@ async fn main() -> eyre::Result<()> {
         } => package::package(path, kind, architecture, variant).await?,
         cli::Sub::Bump => bump::bump()?,
         cli::Sub::Debug { action } => debug::debug(action).await?,
-        cli::Sub::Release { build_targets } => release::release(build_targets).await?,
+        cli::Sub::Publish { build_targets } => publish::publish(build_targets).await?,
     }
     Ok(())
 }

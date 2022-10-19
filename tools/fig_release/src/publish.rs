@@ -39,7 +39,7 @@ struct Workflow {
     name: String,
 }
 
-pub async fn release(build_targets: Vec<String>) -> eyre::Result<()> {
+pub async fn publish(build_targets: Vec<String>) -> eyre::Result<()> {
     if build_targets.len() == 0 {
         eyre::bail!("Didn't specify any build targets");
     }
