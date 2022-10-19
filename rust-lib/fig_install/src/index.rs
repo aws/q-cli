@@ -61,6 +61,7 @@ pub struct Package {
     variant: Variant,
     download: String,
     sha256: String,
+    size: u64,
 }
 
 #[derive(Debug)]
@@ -68,6 +69,7 @@ pub struct UpdatePackage {
     pub version: String,
     pub download: String,
     pub sha256: String,
+    pub size: u64,
 }
 
 #[derive(Deserialize, PartialEq, Eq, EnumString, Debug)]
@@ -244,5 +246,6 @@ pub async fn query_index(
         version: chosen.version.to_string(),
         download: package.download,
         sha256: package.sha256,
+        size: package.size,
     }))
 }
