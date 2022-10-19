@@ -377,6 +377,30 @@ impl PlatformStateImpl {
                     NO
                 }
 
+                extern "C" fn perform_key_equivalent(this: &Object, _cmd: Sel, event: id) -> BOOL {
+                    warn!("perform_key_equivalent");
+
+                    unsafe {
+                        // Allow super class to handle.
+                        let supercls = msg_send![this, superclass];
+                        let super_res: BOOL = msg_send![super(this, supercls), performKeyEquivalent: event];
+                        if super_res == YES {
+                            return YES;
+                        }
+
+                        // Handle common text manipulation like copy, paste, select all, etc
+                        let app: id = msg_send![class!(NSApplication), sharedApplication];
+                        let menu: id = msg_send![app, mainMenu];
+                        let app_res: BOOL = msg_send![menu, performKeyEquivalent: event];
+                        if app_res == YES {
+                            return YES;
+                        }
+
+                        // Mark any unhandled events as handled to suppress beeps
+                        YES
+                    }
+                }
+
                 extern "C" fn mouse_down(this: &Object, _cmd: Sel, event: id) {
                     let application = Class::get("NSApplication").unwrap();
 
@@ -408,6 +432,10 @@ impl PlatformStateImpl {
                 Self::override_webview_method(
                     sel!(shouldDelayWindowOrderingForEvent:),
                     should_delay_window_ordering as extern "C" fn(&Object, Sel, id) -> BOOL,
+                );
+                Self::override_webview_method(
+                    sel!(performKeyEquivalent:),
+                    perform_key_equivalent as extern "C" fn(&Object, Sel, id) -> BOOL,
                 );
                 Self::override_webview_method(sel!(mouseDown:), mouse_down as extern "C" fn(&Object, Sel, id));
                 Self::override_webview_method(
