@@ -71,6 +71,7 @@ use wry::application::dpi::{
 use wry::application::platform::macos::{
     ActivationPolicy,
     EventLoopWindowTargetExtMacOS,
+    WindowExtMacOS,
 };
 
 use super::{
@@ -159,6 +160,11 @@ impl PlatformWindowImpl {
     pub fn get_bounds(&self) -> Option<CGRect> {
         let info = self.ui_element.window_info()?;
         Some(info.bounds)
+    }
+
+    pub fn get_level(&self) -> Option<i64> {
+        let info = self.ui_element.window_info()?;
+        Some(info.level)
     }
 
     pub fn get_x_term_cursor_elem(&mut self) -> Option<UIElement> {
@@ -446,7 +452,17 @@ impl PlatformStateImpl {
             },
             PlatformBoundEvent::ExternalWindowFocusChanged { window } => {
                 let mut focused = self.focused_window.lock();
+                let level = window.get_level();
                 focused.replace(window);
+
+                if let Some(level) = level {
+                    if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
+                        let ns_window = window.webview.window().ns_window() as *mut Object;
+                        let above = level.checked_add(1).unwrap_or(level);
+                        debug!("Setting level to {above:?}");
+                        unsafe { msg_send![ns_window, setLevel: above] }
+                    }
+                }
                 Ok(())
             },
             PlatformBoundEvent::CaretPositionUpdateRequested => {

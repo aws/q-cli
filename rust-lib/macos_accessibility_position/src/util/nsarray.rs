@@ -94,6 +94,7 @@ pub struct NSArrayRef<T: 'static> {
 }
 
 impl<T: 'static> NSArrayRef<T> {
+    #[allow(clippy::missing_safety_doc)]
     pub unsafe fn new(inner: *const objc::runtime::Object) -> Self {
         Self {
             inner: IdRef::new(inner),

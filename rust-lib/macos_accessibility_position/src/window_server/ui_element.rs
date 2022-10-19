@@ -57,6 +57,7 @@ use core_graphics::display::{
 };
 use core_graphics::window::{
     kCGWindowBounds,
+    kCGWindowLayer,
     kCGWindowNumber,
     kCGWindowOwnerPID,
     CGWindowID,
@@ -127,6 +128,7 @@ pub struct CGWindowInfo {
     pub window_id: CGWindowID,
     pub bounds: CGRect,
     pub owner_pid: u64,
+    pub level: i64,
 }
 
 impl UIElement {
@@ -316,11 +318,13 @@ impl UIElement {
             let owner_pid = get_num(&*window, kCGWindowOwnerPID)?;
             let bounds = get_value::<CFDictionary>(&*window, kCGWindowBounds)?;
             let bounds_rect = CGRect::from_dict_representation(&bounds)?;
+            let level = get_num(&*window, kCGWindowLayer)?;
 
             Some(CGWindowInfo {
                 owner_pid: owner_pid as u64,
                 window_id,
                 bounds: bounds_rect,
+                level,
             })
         }
     }

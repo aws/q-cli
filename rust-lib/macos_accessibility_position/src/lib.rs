@@ -12,6 +12,7 @@ pub mod window_server;
 
 pub use util::{
     NSArray,
+    NSArrayRef,
     NSString,
     NSStringRef,
     NotificationCenter,
