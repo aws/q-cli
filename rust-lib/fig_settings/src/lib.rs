@@ -167,6 +167,14 @@ pub fn api_host() -> Url {
         .unwrap_or_else(|| Url::parse("https://api.fig.io").unwrap())
 }
 
+pub fn release_host() -> Url {
+    std::env::var("FIG_RELEASE_API_HOST")
+        .ok()
+        .map(|host| Url::parse(&host).unwrap())
+        .or_else(|| get_host_string("developer.release.apiHost"))
+        .unwrap_or_else(|| Url::parse("https://release.fig.io").unwrap())
+}
+
 pub fn ws_host() -> Url {
     std::env::var("FIG_WS_HOST")
         .ok()

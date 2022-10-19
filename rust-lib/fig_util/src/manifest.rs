@@ -33,7 +33,7 @@ pub enum ManagedBy {
     Other(String),
 }
 
-#[derive(EnumString, Deserialize, PartialEq, Eq, Clone)]
+#[derive(EnumString, Deserialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Variant {
@@ -45,7 +45,7 @@ pub enum Variant {
     Other(String),
 }
 
-#[derive(EnumString, Deserialize, PartialEq, Eq, Clone)]
+#[derive(EnumString, Deserialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Kind {

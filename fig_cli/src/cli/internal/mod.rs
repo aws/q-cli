@@ -232,6 +232,8 @@ pub enum InternalSubcommand {
         body: Option<String>,
         #[arg(long)]
         namespace: Option<String>,
+        #[arg(long)]
+        release: bool,
     },
     SocketsDir,
     StreamFromSocket,
@@ -502,15 +504,26 @@ impl InternalSubcommand {
                 method,
                 body,
                 namespace,
+                release,
             } => {
                 let method = fig_request::Method::from_str(&method.to_string())?;
-                let mut request = Request::new(method, route).namespace(namespace);
+                let mut request = if release {
+                    Request::new_release(method, route)
+                } else {
+                    Request::new(method, route)
+                }
+                .namespace(namespace)
+                .auth();
                 if let Some(body) = body {
                     let value: serde_json::Value = serde_json::from_str(&body)?;
                     request = request.body(value);
                 }
-                let value = request.auth().json().await?;
-                writeln!(stdout(), "{value}").ok();
+                if release {
+                    let _ = writeln!(stdout(), "{}", request.raw_text().await?);
+                } else {
+                    let value = request.json().await?;
+                    writeln!(stdout(), "{value}").ok();
+                }
             },
             InternalSubcommand::Ipc {
                 app,

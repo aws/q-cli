@@ -40,7 +40,7 @@ struct Support {
     variant: Variant,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct RemoteVersion {
     version: String,
     rollout: Option<Rollout>,
@@ -48,13 +48,13 @@ struct RemoteVersion {
     timestamp: u64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 struct Rollout {
     start: u64,
     end: u64,
 }
 
-#[derive(Deserialize)]
+#[derive(Deserialize, Debug)]
 pub struct Package {
     kind: Kind,
     architecture: PackageArchitecture,
@@ -70,7 +70,7 @@ pub struct UpdatePackage {
     pub sha256: String,
 }
 
-#[derive(Deserialize, PartialEq, Eq, EnumString)]
+#[derive(Deserialize, PartialEq, Eq, EnumString, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum PackageArchitecture {
@@ -139,13 +139,13 @@ pub async fn query_index(
 ) -> Result<Option<UpdatePackage>, Error> {
     let index = pull(&channel).await?;
 
-    // if !index
-    //     .supported
-    //     .iter()
-    //     .any(|support| support.kind == kind && support.architecture == architecture &&
-    // support.variant == variant) {
-    //     return Err(Error::SystemNotOnChannel);
-    // }
+    if !index
+        .supported
+        .iter()
+        .any(|support| support.kind == kind && support.architecture == architecture && support.variant == variant)
+    {
+        return Err(Error::SystemNotOnChannel);
+    }
 
     let right_now = SystemTime::now().duration_since(UNIX_EPOCH)?.as_secs();
 

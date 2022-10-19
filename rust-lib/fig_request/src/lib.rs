@@ -2,9 +2,14 @@ pub mod auth;
 pub mod defaults;
 pub mod reqwest_client;
 
+use std::time::Duration;
+
 use auth::get_token;
 use bytes::Bytes;
-use fig_settings::api_host;
+use fig_settings::{
+    api_host,
+    release_host,
+};
 pub use reqwest;
 use reqwest::cookie::Cookie;
 use reqwest::header::{
@@ -119,6 +124,10 @@ impl Request<NoAuth> {
                 .map(|client| client.request(method, host).header("Accept", "application/json")),
             _auth: NoAuth,
         }
+    }
+
+    pub fn new_release(method: Method, endpoint: impl AsRef<str>) -> Self {
+        Self::new_with_host(release_host(), method, endpoint)
     }
 
     pub fn get(endpoint: impl AsRef<str>) -> Self {
@@ -303,6 +312,13 @@ impl<A: Auth> Request<A> {
     {
         Self {
             builder: self.builder.map(|builder| builder.header(key, value)),
+            ..self
+        }
+    }
+
+    pub fn timeout(self, timeout: Duration) -> Self {
+        Self {
+            builder: self.builder.map(|builder| builder.timeout(timeout)),
             ..self
         }
     }

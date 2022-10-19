@@ -1,13 +1,10 @@
 use std::path::PathBuf;
-use std::str::FromStr;
+use std::time::Duration;
 
-use fig_request::reqwest::Url;
 use fig_request::{
     Method,
     Request,
 };
-use fig_settings::state;
-use once_cell::sync::Lazy;
 use serde::Serialize;
 
 use crate::cli::{
@@ -19,16 +16,6 @@ use crate::utils::{
     read_release_file,
     Channel,
 };
-
-static DEPLOY_HOST: Lazy<Url> = Lazy::new(|| {
-    Url::from_str(
-        &state::get_string("developer.release.apiHost")
-            .ok()
-            .flatten()
-            .unwrap_or_else(|| "https://release.fig.io".into()),
-    )
-    .unwrap()
-});
 
 #[derive(Serialize)]
 struct PublishArgs {
@@ -51,7 +38,7 @@ pub async fn package(
         .channel
         .ok_or_else(|| eyre::eyre!("Can't publish a package without a channel in the release.yaml!"))?;
 
-    let resp = Request::new_with_host(DEPLOY_HOST.clone(), Method::POST, "/")
+    let resp = Request::new_release(Method::POST, "/")
         .auth()
         .query(&PublishArgs {
             channel,
@@ -60,6 +47,7 @@ pub async fn package(
             version: release.version,
             variant,
         })
+        .timeout(Duration::from_secs(120)) // fly uses slow responses to smooth over deploys
         .raw_body(tokio::fs::read(path).await?.into())
         .send()
         .await?;
