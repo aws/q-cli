@@ -442,7 +442,7 @@ where
     }
 }
 
-pub struct MissionControlOptions {
+pub struct DashboardOptions {
     pub show_onboarding: bool,
     pub force_visible: bool,
     pub page: Option<String>,
@@ -451,11 +451,11 @@ pub struct MissionControlOptions {
 pub fn build_dashboard(
     web_context: &mut WebContext,
     event_loop: &EventLoop,
-    MissionControlOptions {
+    DashboardOptions {
         show_onboarding,
         force_visible,
         page,
-    }: MissionControlOptions,
+    }: DashboardOptions,
 ) -> wry::Result<WebView> {
     let is_visible = !fig_request::auth::is_logged_in() || force_visible || show_onboarding;
 

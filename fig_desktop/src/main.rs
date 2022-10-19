@@ -31,14 +31,17 @@ use sysinfo::{
     System,
     SystemExt,
 };
-use tracing::warn;
+use tracing::{
+    error,
+    warn,
+};
 use url::Url;
 use webview::notification::WebviewNotificationsState;
 use webview::{
     build_autocomplete,
     build_dashboard,
     AutocompleteOptions,
-    MissionControlOptions,
+    DashboardOptions,
     WebviewManager,
 };
 pub use webview::{
@@ -94,7 +97,7 @@ async fn main() {
             "dashboard" => Some(url.path().to_owned()),
             "plugins" => Some(format!("plugins/{}", url.path())),
             _ => {
-                warn!("Invalid deep link");
+                error!("Invalid deep link");
                 None
             },
         })
@@ -156,6 +159,9 @@ async fn main() {
         .ok();
     });
 
+    #[cfg(target_os = "macos")]
+    migrate();
+
     install::run_install().await;
 
     #[cfg(target_os = "linux")]
@@ -176,18 +182,20 @@ async fn main() {
         tracing::info!("Showing onboarding");
     }
 
+    let accessibility_enabled = PlatformState::accessibility_is_enabled().unwrap_or(true);
+
     let autocomplete_enabled = !fig_settings::settings::get_bool_or("autocomplete.disable", false)
-        && PlatformState::accessibility_is_enabled().unwrap_or(true)
-        && fig_request::auth::is_logged_in();
+        && fig_request::auth::is_logged_in()
+        && accessibility_enabled;
 
     let mut webview_manager = WebviewManager::new();
     webview_manager
         .build_webview(
             DASHBOARD_ID,
             build_dashboard,
-            MissionControlOptions {
+            DashboardOptions {
                 show_onboarding,
-                force_visible: !cli.no_dashboard || page.is_some(),
+                force_visible: !cli.no_dashboard || page.is_some() || !accessibility_enabled,
                 page,
             },
             true,
@@ -202,4 +210,32 @@ async fn main() {
         )
         .unwrap();
     webview_manager.run().await.unwrap();
+}
+
+/// Temp function to migrate existing users of Swift macOS app to new Rust app
+#[cfg(target_os = "macos")]
+fn migrate() {
+    match fig_request::defaults::get_default("userEmail") {
+        Ok(user) if user.is_empty() => {
+            fig_request::defaults::remove_default("userEmail").ok();
+            return;
+        },
+        Err(_) => return,
+        _ => {},
+    }
+
+    // Set user as having completed onboarding
+    fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
+
+    // Remove the old LaunchAgents
+    if let Ok(home) = fig_util::directories::home_dir() {
+        for file in ["io.fig.launcher.plist", "io.fig.uninstall.plist"] {
+            let path = home.join("Library").join("LaunchAgents").join(file);
+            if path.exists() {
+                std::fs::remove_file(path).ok();
+            }
+        }
+    }
+
+    fig_request::defaults::remove_default("userEmail").ok();
 }
