@@ -8,6 +8,7 @@ use crate::utils::{
     extract_number,
     read_release_file,
     run,
+    sync_version,
     write_release_file,
     Channel,
 };
@@ -23,6 +24,7 @@ pub fn beta() -> eyre::Result<()> {
     release.version = version.to_string();
     release.channel = Some(Channel::Beta);
     write_release_file(&release)?;
+    sync_version(&release)?;
     run(&["git", "add", "release.yaml"])?;
     run(&["git", "commit", "-m", "chore: promote qa to beta"])?;
     run(&["git", "push"])?;
@@ -39,6 +41,7 @@ pub fn stable() -> eyre::Result<()> {
     release.version = version.to_string();
     release.channel = Some(Channel::Stable);
     write_release_file(&release)?;
+    sync_version(&release)?;
     run(&["git", "add", "release.yaml"])?;
     run(&["git", "commit", "-m", "chore: promote beta to stable"])?;
     run(&["git", "push"])?;

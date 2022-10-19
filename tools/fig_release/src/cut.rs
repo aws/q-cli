@@ -10,6 +10,7 @@ use crate::utils::{
     gen_nightly,
     read_release_file,
     run,
+    sync_version,
     write_release_file,
     Channel,
 };
@@ -37,6 +38,7 @@ pub fn nightly() -> eyre::Result<()> {
     release.version = version.to_string();
     release.channel = Some(Channel::Nightly);
     write_release_file(&release)?;
+    sync_version(&release)?;
     run(&[
         "git",
         "checkout",
@@ -64,6 +66,7 @@ pub fn release() -> eyre::Result<()> {
     release.version = version.to_string();
     release.channel = Some(Channel::Qa);
     write_release_file(&release)?;
+    sync_version(&release)?;
     run(&["git", "checkout", "-b", &format!("{}{blank_version}", *BRANCH_PREFIX)])?;
     run(&["git", "add", "release.yaml"])?;
     run(&["git", "commit", "-m", "chore: cut new release"])?;
@@ -79,6 +82,7 @@ pub fn release() -> eyre::Result<()> {
     release.version = version.to_string();
     release.channel = None; // disable package uploads and ci runs
     write_release_file(&release)?;
+    sync_version(&release)?;
     run(&["git", "add", "release.yaml"])?;
     run(&["git", "commit", "-m", "chore: bump version after release"])?;
     run(&["git", "push"])?;

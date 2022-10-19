@@ -11,6 +11,10 @@ use time::macros::{
     offset,
 };
 use time::OffsetDateTime;
+use toml_edit::{
+    value,
+    Document,
+};
 
 #[derive(Deserialize, Serialize)]
 pub struct ReleaseFile {
@@ -71,6 +75,17 @@ pub fn extract_number(pre: &Prerelease) -> eyre::Result<u64> {
         .filter(|x| x.is_numeric())
         .collect::<String>()
         .parse()?)
+}
+
+pub fn sync_version(release: &ReleaseFile) -> eyre::Result<()> {
+    let cargo_toml = std::fs::read_to_string("Cargo.toml")?;
+    let mut document = cargo_toml.parse::<Document>()?;
+
+    document["workspace"]["package"]["version"] = value(release.version.to_string());
+
+    std::fs::write("Cargo.toml", document.to_string())?;
+
+    Ok(())
 }
 
 #[cfg(test)]

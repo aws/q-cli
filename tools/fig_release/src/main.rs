@@ -9,12 +9,14 @@ use crate::cli::{
     Cli,
 };
 
+mod bump;
 mod changelog;
 mod cli;
 mod cut;
 mod debug;
 mod package;
 mod promote;
+mod release;
 mod utils;
 
 #[tokio::main]
@@ -41,6 +43,7 @@ async fn main() -> eyre::Result<()> {
             architecture,
             variant,
         } => package::package(path, kind, architecture, variant).await?,
+        cli::Sub::Bump => bump::bump()?,
         cli::Sub::Debug { action } => debug::debug(action).await?,
         _ => todo!(),
     }

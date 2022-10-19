@@ -36,6 +36,7 @@ pub enum Sub {
         #[arg(value_enum)]
         channel: Promote,
     },
+    Bump,
     Release,
     Debug {
         #[clap(subcommand)]
