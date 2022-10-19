@@ -40,7 +40,7 @@ struct Workflow {
 }
 
 pub async fn publish(build_targets: Vec<String>) -> eyre::Result<()> {
-    if build_targets.len() == 0 {
+    if build_targets.is_empty() {
         eyre::bail!("Didn't specify any build targets");
     }
 
