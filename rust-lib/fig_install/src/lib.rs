@@ -72,6 +72,8 @@ pub enum Error {
     SystemNotOnChannel,
     #[error("manifest not found")]
     ManifestNotFound,
+    #[error("update in progress")]
+    UpdateInProgress,
     #[error("could not convert path to cstring")]
     Nul(#[from] std::ffi::NulError),
 }
@@ -117,13 +119,23 @@ pub async fn update(
 
         let (tx, rx) = tokio::sync::mpsc::channel(16);
 
+        let lock_file = fig_util::directories::update_lock_path()?;
+
+        if lock_file.exists() {
+            return Err(Error::UpdateInProgress);
+        }
+
+        tokio::fs::write(&lock_file, "").await?;
+
         let join = tokio::spawn(async move {
             tx.send(UpdateStatus::Message("Starting Update...".into())).await.ok();
             if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
                 error!(%err, "Failed to update");
+                tokio::fs::remove_file(&lock_file).await?;
                 tx.send(UpdateStatus::Message(format!("Error: {err}"))).await.unwrap();
                 return Err(err);
             }
+            tokio::fs::remove_file(&lock_file).await?;
             Ok(())
         });
 

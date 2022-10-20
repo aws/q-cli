@@ -1,5 +1,4 @@
 use std::sync::Arc;
-use std::time::Duration;
 
 use eyre::eyre;
 use fig_ipc::local::send_hook_to_socket;
@@ -38,17 +37,20 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
     })
     .unwrap();
 
-    let application_path = std::path::Path::new("/Applications");
+    let fig_app_bundle = fig_util::fig_bundle();
 
-    if application_path.exists() {
-        match watcher.watch(application_path, RecursiveMode::NonRecursive) {
-            Ok(()) => trace!("watching bundle at {application_path:?}"),
-            Err(err) => {
-                error!(%err, "failed to watch application path dir");
-                daemon_status.write().settings_watcher_status =
-                    Err(eyre!("Failed to watch application path dir\n{err}"));
-            },
-        }
+    match &fig_app_bundle {
+        Some(app_bundle_path) if app_bundle_path.exists() => {
+            match watcher.watch(app_bundle_path, RecursiveMode::NonRecursive) {
+                Ok(()) => trace!("watching bundle at {app_bundle_path:?}"),
+                Err(err) => {
+                    error!(%err, "failed to watch application path dir");
+                    daemon_status.write().settings_watcher_status =
+                        Err(eyre!("Failed to watch application path dir\n{err}"));
+                },
+            }
+        },
+        _ => (),
     }
 
     let settings_path = match directories::settings_path().ok() {
@@ -161,14 +163,19 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                 }
             }
 
-            let app_bundle_path = std::path::PathBuf::from("/Applications/Fig.app");
-            if event.paths.contains(&app_bundle_path) {
-                info!("application path changed");
+            match &fig_app_bundle {
+                Some(app_bundle_path) if event.paths.contains(app_bundle_path) => {
+                    info!("application path changed");
 
-                if event.kind.is_remove() {
-                    tokio::time::sleep(Duration::from_secs(1)).await;
+                    // Do not run install logic on updates! Make sure update.lock is set in fig_update...
+                    let update_lock = fig_util::directories::update_lock_path().ok();
+
+                    match update_lock {
+                        Some(file) if file.exists() => continue,
+                        _ => (),
+                    }
+
                     if !app_bundle_path.exists() {
-                        // Send uninstall telemetry event
                         let tel_join = tokio::task::spawn(async move {
                             fig_telemetry::emit_track(TrackEvent::new(
                                 TrackEventType::UninstalledApp,
@@ -185,7 +192,8 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                         fig_install::uninstall(fig_install::InstallComponents::all()).await.ok();
                         tel_join.await.ok();
                     }
-                }
+                },
+                _ => (),
             }
         }
     })

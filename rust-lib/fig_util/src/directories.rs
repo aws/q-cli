@@ -514,6 +514,22 @@ pub fn settings_path() -> Result<PathBuf> {
     }
 }
 
+/// The path to the lock file used to indicate that the app is updating
+pub fn update_lock_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_UPDATE_LOCK_PATH");
+
+    let data_dir = fig_data_dir()?;
+    Ok(data_dir.join("update.lock"))
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_update_lock_path() {
+    linux!(update_lock_path(), @"/home/$USER/.local/share/fig/update.lock");
+    macos!(update_lock_path(), @"/Users/$USER/Library/Application Support/fig/update.lock");
+    windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
+}
+
 /// The path to the fig state file
 pub fn state_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_STATE_PATH");
