@@ -66,13 +66,8 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
 
             debug!("Downloading dmg to {}", dmg_mount_path.display());
 
-            tx.send(UpdateStatus::Message("Downloading update...".into()))
-                .await
-                .ok();
+            download_dmg(update.download, &dmg_mount_path, update.size, tx.clone()).await?;
 
-            download_dmg(update.download, &dmg_mount_path, tx.clone()).await?;
-
-            tx.send(UpdateStatus::Percent(85.0)).await.ok();
             tx.send(UpdateStatus::Message("Unpacking update...".into())).await.ok();
 
             // Shell out to hdiutil to mount the dmg
@@ -111,7 +106,6 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
 
-            tx.send(UpdateStatus::Percent(95.0)).await.ok();
             tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
 
             // We want to swap the app bundles, like sparkle does
@@ -171,7 +165,6 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
 
             debug!(command =% String::from_utf8_lossy(arg.as_bytes()).to_string(), "Restarting fig");
 
-            tx.send(UpdateStatus::Percent(100.0)).await.ok();
             tx.send(UpdateStatus::Exit).await.ok();
 
             exit(0);
@@ -362,17 +355,36 @@ async fn uninstall_terminal_integrations() {
     }
 }
 
-async fn download_dmg(src: impl IntoUrl, dst: impl AsRef<Path>, tx: Sender<UpdateStatus>) -> Result<(), Error> {
+async fn download_dmg(
+    src: impl IntoUrl,
+    dst: impl AsRef<Path>,
+    size: u64,
+    tx: Sender<UpdateStatus>,
+) -> Result<(), Error> {
     let client = fig_request::client().expect("fig_request client must be instantiated on first request");
     let mut response = client.get(src).send().await?;
 
-    let mut p = 0.0;
+    let mut bytes_downloaded = 0;
     let mut file = tokio::fs::File::create(&dst).await?;
     while let Some(mut bytes) = response.chunk().await? {
-        tx.send(UpdateStatus::Percent(p)).await.ok();
-        p += 0.02;
+        bytes_downloaded += bytes.len() as u64;
+
+        tx.send(UpdateStatus::Percent(bytes_downloaded as f32 / size as f32 * 100.0))
+            .await
+            .ok();
+
+        tx.send(UpdateStatus::Message(format!(
+            "Downloading ({:.2}/{:.2} MB)",
+            bytes_downloaded as f32 / 1_000_000.0,
+            size as f32 / 1_000_000.0
+        )))
+        .await
+        .ok();
+
         file.write_all_buf(bytes.borrow_mut()).await?;
     }
+
+    tx.send(UpdateStatus::Percent(100.0)).await.ok();
 
     Ok(())
 }

@@ -118,6 +118,7 @@ pub async fn update(
         let (tx, rx) = tokio::sync::mpsc::channel(16);
 
         let join = tokio::spawn(async move {
+            tx.send(UpdateStatus::Message("Starting Update...".into())).await.ok();
             if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
                 error!(%err, "Failed to update");
                 tx.send(UpdateStatus::Message(format!("Error: {err}"))).await.unwrap();

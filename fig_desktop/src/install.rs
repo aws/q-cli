@@ -165,7 +165,7 @@ pub async fn check_for_update(show_updating: bool) {
 
             let webview = WebViewBuilder::new(window)
                 .unwrap()
-                .with_html(include_str!("../updating.html"))
+                .with_html(include_str!("../html/updating.html"))
                 .unwrap()
                 .build()
                 .unwrap();
