@@ -127,10 +127,26 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             }
         },
         id if id == MenuId::new("issue") => {
-            std::process::Command::new("fig")
-                .args(["issue", "--force", "bug: "])
-                .output()
-                .ok();
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    match fig_util::fig_bundle() {
+                        Some(bundle) => {
+                            let fig_cli = bundle.join("Contents").join("MacOS").join("fig-darwin-universal");
+
+                            std::process::Command::new(fig_cli)
+                                .args(["issue", "--force", "bug: "])
+                                .output()
+                                .ok();
+                        },
+                        None => error!("Failed to execute `fig issue` from the tray: bundle not found"),
+                    }
+                } else {
+                    std::process::Command::new("fig")
+                        .args(["issue", "--force", "bug: "])
+                        .output()
+                        .ok();
+                }
+            }
         },
         id => {
             trace!("Unhandled tray event: {id:?}");
