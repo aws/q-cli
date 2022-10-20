@@ -44,6 +44,8 @@
             align-items: center;
             justify-content: center;
             padding: 2rem 0;
+            height: 100vh;
+            width: 100vw;
         }
 
         /* Add "demo" class to body to see scale. */
@@ -132,30 +134,30 @@
 </body>
 
 <script>
-    function updateProgress(progress) {
-        document.getElementById("progress-bar").style.width = progress + "%";
-    }
+function updateProgress(progress) {
+    document.getElementById("progress-bar").style.width = progress + "%";
+}
 
-    function updateMessage(message) {
-        document.getElementById("message").innerHTML = message;
-    }
+function updateMessage(message) {
+    document.getElementById("message").innerHTML = message;
+}
 
-    // Call this fn to see a demo of the progress bar
-    function demo() {
-        let progress = 0;
-        function update() {
-            progress += Math.min(100, 5 * Math.random());
-            updateProgress(progress);
-            updateMessage("Downloading update...");
-            if (progress < 100) {
-                setTimeout(update, 100);
-            } else {
-                updateMessage("Installing update...");
-            }
+// Call this fn to see a demo of the progress bar
+function demo() {
+    let progress = 0;
+    function update() {
+        progress += Math.min(100, 5 * Math.random());
+        updateProgress(progress);
+        updateMessage("Downloading update...");
+        if (progress < 100) {
+            setTimeout(update, 100);
+        } else {
+            updateMessage("Installing update...");
         }
-
-        update();
     }
+
+    update();
+}
 </script>
 
 </html>
