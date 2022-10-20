@@ -59,7 +59,10 @@ use fig_util::{
 use futures::future::BoxFuture;
 use futures::FutureExt;
 use regex::Regex;
-use semver::Version;
+use semver::{
+    Version,
+    VersionReq,
+};
 use serde_json::json;
 use spinners::{
     Spinner,
@@ -1926,6 +1929,36 @@ impl DoctorCheck for SandboxCheck {
     }
 }
 
+struct FishVersionCheck;
+
+#[async_trait]
+impl DoctorCheck for FishVersionCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Fish is up to date".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        if which::which("fish").is_err() {
+            // fish is not installed, so we shouldn't check it
+            return Ok(());
+        }
+
+        let output = Command::new("fish")
+            .arg("--version")
+            .output()
+            .context("failed getting fish version")?;
+
+        let version =
+            Version::parse(&String::from_utf8_lossy(&output.stdout)).context("failed parsing fish version")?;
+
+        if !VersionReq::parse(">=3.3.0").unwrap().matches(&version) {
+            doctor_error!("your fish version is outdated (need at least 3.3.0, found {version})");
+        }
+
+        Ok(())
+    }
+}
+
 async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
@@ -2183,7 +2216,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         run_checks(
             "Let's check if your system is compatible...".into(),
-            vec![&SystemVersionCheck],
+            vec![&SystemVersionCheck, &FishVersionCheck],
             config,
             &mut spinner,
         )
