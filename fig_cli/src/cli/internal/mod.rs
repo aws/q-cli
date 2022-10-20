@@ -317,6 +317,8 @@ pub enum InternalSubcommand {
         version: String,
         #[arg(short, long)]
         architecture: String,
+        #[arg(short = 'r', long)]
+        enable_rollout: bool,
     },
     #[cfg(target_os = "macos")]
     InputMethod {
@@ -823,6 +825,7 @@ impl InternalSubcommand {
                 variant,
                 version: current_version,
                 architecture,
+                enable_rollout,
             } => {
                 use fig_install::index::PackageArchitecture;
                 use fig_util::manifest::{
@@ -837,10 +840,11 @@ impl InternalSubcommand {
                     Variant::from_str(&variant)?,
                     &current_version,
                     PackageArchitecture::from_str(&architecture)?,
+                    !enable_rollout,
                 )
                 .await?;
 
-                println!("result: {result:#?}");
+                println!("{result:#?}");
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::InputMethod { action } => {
