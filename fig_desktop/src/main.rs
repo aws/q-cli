@@ -55,6 +55,9 @@ use wry::application::event_loop::{
     EventLoopProxy as WryEventLoopProxy,
     EventLoopWindowTarget as WryEventLoopWindowTarget,
 };
+#[cfg(target_os = "macos")]
+#[macro_use]
+extern crate objc;
 
 #[derive(Debug, Default)]
 pub struct DebugState {
@@ -158,7 +161,7 @@ async fn main() {
     });
 
     #[cfg(target_os = "macos")]
-    migrate();
+    migrate().await;
 
     install::run_install().await;
 
@@ -212,7 +215,15 @@ async fn main() {
 
 /// Temp function to migrate existing users of Swift macOS app to new Rust app
 #[cfg(target_os = "macos")]
-fn migrate() {
+async fn migrate() {
+    use fig_install::uninstall_terminal_integrations;
+    use macos_accessibility_position::{
+        NSArrayRef,
+        NSStringRef,
+    };
+    use objc::runtime::Object;
+    use tracing::debug;
+
     match fig_request::defaults::get_default("userEmail") {
         Ok(user) if user.is_empty() => {
             fig_request::defaults::remove_default("userEmail").ok();
@@ -234,6 +245,25 @@ fn migrate() {
             }
         }
     }
+
+    // Uninstall terminal integrations
+    uninstall_terminal_integrations().await;
+
+    // Kill the old input method
+    let shared: *mut Object = unsafe { msg_send![class!(NSWorkspace), sharedWorkspace] };
+    let running_app: NSArrayRef<*mut Object> = unsafe { msg_send![shared, runningApplications] };
+
+    debug!("attempting to kill the old input method");
+    running_app
+        .iter()
+        .filter(|app| {
+            let name: NSStringRef = unsafe { msg_send![**app as *mut Object, bundleIdentifier] };
+            trace!("found {:?} within running apps", name.as_str());
+            name.as_str() == Some("io.fig.cursor")
+        })
+        .for_each(|app| {
+            let _: () = unsafe { msg_send![*app as *mut Object, terminate] };
+        });
 
     fig_request::defaults::remove_default("userEmail").ok();
 }

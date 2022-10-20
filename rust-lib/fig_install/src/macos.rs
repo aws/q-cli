@@ -257,7 +257,7 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
     Ok(())
 }
 
-async fn uninstall_terminal_integrations() {
+pub async fn uninstall_terminal_integrations() {
     // Delete integrations
     if let Ok(home) = directories::home_dir() {
         // Delete iTerm integration
