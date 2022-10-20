@@ -459,7 +459,7 @@ pub fn build_dashboard(
     let is_visible = !fig_request::auth::is_logged_in() || force_visible || show_onboarding;
 
     let mut window = WindowBuilder::new()
-        .with_title("Fig")
+        .with_title("Fig Dashboard")
         .with_resizable(true)
         .with_visible(is_visible)
         .with_focused(is_visible)
