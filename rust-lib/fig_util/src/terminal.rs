@@ -166,7 +166,7 @@ impl Terminal {
             Terminal::Iterm => String::from("com.googlecode.iterm2"),
             Terminal::TerminalApp => String::from("com.apple.Terminal"),
             Terminal::Hyper => String::from("co.zeit.hyper"),
-            Terminal::Alacritty => String::from("com.alacritty"),
+            Terminal::Alacritty => String::from("io.alacritty"),
             Terminal::Kitty => String::from("net.kovidgoyal.kitty"),
             Terminal::Vscode => String::from("com.microsoft.VSCode"),
             Terminal::VSCodeInsiders => String::from("com.microsoft.VSCodeInsiders"),
@@ -184,13 +184,14 @@ impl Terminal {
             "com.googlecode.iterm2" => Terminal::Iterm,
             "com.apple.Terminal" => Terminal::TerminalApp,
             "co.zeit.hyper" => Terminal::Hyper,
-            "com.alacritty" => Terminal::Alacritty,
+            "io.alacritty" => Terminal::Alacritty,
             "net.kovidgoyal.kitty" => Terminal::Kitty,
             "com.microsoft.VSCode" => Terminal::Vscode,
             "com.microsoft.VSCodeInsiders" => Terminal::VSCodeInsiders,
             "org.tabby" => Terminal::Tabby,
             "com.panic.Nova" => Terminal::Nova,
             "com.github.wez.wezterm" => Terminal::WezTerm,
+            // todo(mschrage): the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains") => Terminal::JediTerm(bundle.into()),
             _ => return None,
         };
@@ -201,25 +202,27 @@ impl Terminal {
     pub fn supports_macos_input_method(&self) -> bool {
         matches!(
             self,
-            Terminal::Alacritty
-                | Terminal::Kitty
-                | Terminal::Vscode
-                | Terminal::VSCodeInsiders
-                | Terminal::Hyper
-                | Terminal::WezTerm
-                | Terminal::JediTerm(_)
+            Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::WezTerm | Terminal::JediTerm(_)
         )
     }
 
     pub fn supports_macos_accessibility(&self) -> bool {
         matches!(
             self,
-            Terminal::Iterm | Terminal::TerminalApp | Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper
+            Terminal::Iterm
+                | Terminal::TerminalApp
+                | Terminal::Vscode
+                | Terminal::VSCodeInsiders
+                | Terminal::Hyper
+                | Terminal::Tabby
         )
     }
 
     pub fn is_xterm(&self) -> bool {
-        matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper)
+        matches!(
+            self,
+            Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper | Terminal::Tabby
+        )
     }
 
     pub fn executable_names(&self) -> &'static [&'static str] {
