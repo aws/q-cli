@@ -27,7 +27,10 @@ use macos_accessibility_position::caret_position::{
     get_caret_position,
     CaretPosition,
 };
-use macos_accessibility_position::window_server::UIElement;
+use macos_accessibility_position::window_server::{
+    CGWindowLevelForKey,
+    UIElement,
+};
 use macos_accessibility_position::{
     NSString,
     NotificationCenter,
@@ -99,6 +102,11 @@ use crate::{
 };
 
 pub const DEFAULT_CARET_WIDTH: f64 = 10.0;
+
+// See for other window level keys
+// https://github.com/phracker/MacOSX-SDKs/blob/master/MacOSX10.8.sdk/System/Library/Frameworks/CoreGraphics.framework/Versions/A/Headers/CGWindowLevel.h
+#[allow(non_upper_case_globals)]
+const kCGFloatingWindowLevelKey: i32 = 5;
 
 static UNMANAGED: Lazy<Unmanaged> = Lazy::new(|| Unmanaged {
     event_sender: RwLock::new(Option::<EventLoopProxy>::None),
@@ -483,14 +491,19 @@ impl PlatformStateImpl {
                 let level = window.get_level();
                 focused.replace(window);
 
-                if let Some(level) = level {
-                    if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
-                        let ns_window = window.webview.window().ns_window() as *mut Object;
-                        let above = level.checked_add(1).unwrap_or(level);
-                        debug!("Setting level to {above:?}");
-                        unsafe { msg_send![ns_window, setLevel: above] }
-                    }
+                if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
+                    let ns_window = window.webview.window().ns_window() as *mut Object;
+                    // Handle iTerm Quake mode by explicitly setting window level. See
+                    // https://github.com/gnachman/iTerm2/blob/1a5a09f02c62afcc70a647603245e98862e51911/sources/iTermProfileHotKey.m#L276-L310
+                    // for more on window levels.
+                    let above = match level {
+                        None | Some(0) => unsafe { CGWindowLevelForKey(kCGFloatingWindowLevelKey) as i64 },
+                        Some(level) => level,
+                    };
+                    debug!("Setting window level to {level:?}");
+                    let _: () = unsafe { msg_send![ns_window, setLevel: above] };
                 }
+
                 Ok(())
             },
             PlatformBoundEvent::CaretPositionUpdateRequested => {

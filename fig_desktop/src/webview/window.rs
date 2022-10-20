@@ -230,9 +230,16 @@ impl WindowState {
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
                         self.webview.window().set_visible(true);
-                        self.webview.window().set_always_on_top(true);
-                        #[cfg(target_os = "windows")]
-                        self.webview.window().set_always_on_top(false);
+                        cfg_if::cfg_if!(
+                            if #[cfg(target_os = "macos")] {
+                                // We handle setting window level on focus changed on MacOS
+                                // TODO(sean) pull this out into platform code.
+                            } else if #[cfg(target_os = "windows")] {
+                                self.webview.window().set_always_on_top(false);
+                            } else {
+                                self.webview.window().set_always_on_top(true);
+                            }
+                        );
                     }
                 } else {
                     self.webview.window().set_visible(true);

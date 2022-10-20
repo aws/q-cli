@@ -343,3 +343,8 @@ fn get_num(dict: &CFDictionary, key: CFStringRef) -> Option<i64> {
         None => num.to_i64(),
     }
 }
+
+#[link(name = "CoreGraphics", kind = "framework")]
+extern "C" {
+    pub fn CGWindowLevelForKey(key: i32) -> i32;
+}

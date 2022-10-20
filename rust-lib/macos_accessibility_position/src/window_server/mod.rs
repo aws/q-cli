@@ -63,7 +63,10 @@ use tracing::{
     trace,
     warn,
 };
-pub use ui_element::UIElement;
+pub use ui_element::{
+    CGWindowLevelForKey,
+    UIElement,
+};
 
 use super::util::notification_center::get_app_from_notification;
 use super::util::{
