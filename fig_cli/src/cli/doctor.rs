@@ -1951,8 +1951,13 @@ impl DoctorCheck for FishVersionCheck {
             .output()
             .context("failed getting fish version")?;
 
-        let version =
-            Version::parse(&String::from_utf8_lossy(&output.stdout)).context("failed parsing fish version")?;
+        let version = Version::parse(
+            &String::from_utf8_lossy(&output.stdout)
+                .chars()
+                .filter(|char| char.is_numeric() || char == &'.')
+                .collect::<String>(),
+        )
+        .context("failed parsing fish version")?;
 
         if !VersionReq::parse(">=3.3.0").unwrap().matches(&version) {
             doctor_error!("your fish version is outdated (need at least 3.3.0, found {version})");
