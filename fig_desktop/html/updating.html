@@ -134,30 +134,39 @@
 </body>
 
 <script>
-function updateProgress(progress) {
-    document.getElementById("progress-bar").style.width = progress + "%";
-}
-
-function updateMessage(message) {
-    document.getElementById("message").innerHTML = message;
-}
-
-// Call this fn to see a demo of the progress bar
-function demo() {
-    let progress = 0;
-    function update() {
-        progress += Math.min(100, 5 * Math.random());
-        updateProgress(progress);
-        updateMessage("Downloading update...");
-        if (progress < 100) {
-            setTimeout(update, 100);
-        } else {
-            updateMessage("Installing update...");
-        }
+    function updateProgress(progress) {
+        document.getElementById("progress-bar").style.width = progress + "%";
     }
 
-    update();
-}
+    function updateMessage(message) {
+        document.getElementById("message").innerHTML = message;
+    }
+
+    function updateError(message) {
+        // TODO: Show error message differently ?
+        document.getElementById("message").innerHTML = message;
+    }
+
+    function retryUpdate() {
+        // TODO: add logic to retry update
+    }
+
+    // Call this fn to see a demo of the progress bar
+    function demo() {
+        let progress = 0;
+        function update() {
+            progress += Math.min(100, 5 * Math.random());
+            updateProgress(progress);
+            updateMessage("Downloading update...");
+            if (progress < 100) {
+                setTimeout(update, 100);
+            } else {
+                updateMessage("Installing update...");
+            }
+        }
+
+        update();
+    }
 </script>
 
 </html>

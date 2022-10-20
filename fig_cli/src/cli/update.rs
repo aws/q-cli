@@ -15,6 +15,10 @@ pub async fn update(no_confirm: bool) -> Result<()> {
                         Some(UpdateStatus::Message(m)) => {
                             progress_bar.println(m);
                         },
+                        Some(UpdateStatus::Error(e)) => {
+                            progress_bar.abandon();
+                            return Err(eyre::eyre!(e));
+                        },
                         Some(UpdateStatus::Exit) => {
                             progress_bar.finish();
                             break;
@@ -25,6 +29,7 @@ pub async fn update(no_confirm: bool) -> Result<()> {
                         },
                     }
                 }
+                Ok(())
             });
         })),
     )

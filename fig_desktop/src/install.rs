@@ -212,6 +212,11 @@ pub async fn check_for_update(show_updating: bool) {
                                 .evaluate_script(&format!("updateMessage({});", serde_json::json!(message)))
                                 .unwrap();
                         },
+                        UpdateStatus::Error(message) => {
+                            webview
+                                .evaluate_script(&format!("updateError({});", serde_json::json!(message)))
+                                .unwrap();
+                        },
                         UpdateStatus::Exit => {
                             *control_flow = ControlFlow::Exit;
                         },

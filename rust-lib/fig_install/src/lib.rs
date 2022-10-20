@@ -105,6 +105,7 @@ pub async fn check_for_updates() -> Result<Option<UpdatePackage>, Error> {
 pub enum UpdateStatus {
     Percent(f32),
     Message(String),
+    Error(String),
     Exit,
 }
 
@@ -132,7 +133,7 @@ pub async fn update(
             if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
                 error!(%err, "Failed to update");
                 tokio::fs::remove_file(&lock_file).await?;
-                tx.send(UpdateStatus::Message(format!("Error: {err}"))).await.unwrap();
+                tx.send(UpdateStatus::Error(err.to_string())).await.unwrap();
                 return Err(err);
             }
             tokio::fs::remove_file(&lock_file).await?;
