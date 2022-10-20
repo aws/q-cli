@@ -8,8 +8,8 @@ version.workspace = true
 
 [package.metadata.bundle]
 bundle_name = "FigInputMethod"
-bundle_identifier = "io.fig.caret"
-input_source_identifier = "io.fig.caret"
+bundle_identifier = "io.fig.cursor"
+input_source_identifier = "io.fig.cursor"
 visible_in_system_ui = false
 input_method_type = "palette"
 
