@@ -2146,6 +2146,13 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         fig_settings::state::set_value("pty.path", json!(path)).ok();
     }
 
+    // Remove update lock on doctor runs to fix bad state if update crashed.
+    if let Ok(update_lock) = fig_util::directories::update_lock_path() {
+        if update_lock.exists() {
+            std::fs::remove_file(update_lock).ok();
+        }
+    }
+
     run_checks(
         "Let's check if you're logged in...".into(),
         vec![&LoginStatusCheck {}],
