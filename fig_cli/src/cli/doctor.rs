@@ -1661,15 +1661,34 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 
     async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
-        if fig_settings::state::get_bool_or("input-method.enabled", false) {
-            Ok(())
-        } else {
-            Err(DoctorError::Error {
-                reason: "Input Method is not enabled".into(),
-                info: vec!["Run `fig integrations install input-method` to enable it".into()],
-                fix: None,
-                error: None,
-            })
+        match option_env!("FIG_MACOS_BACKPORT") {
+            Some(_) => {
+                use fig_integrations::input_method::InputMethod;
+                use fig_integrations::Integration;
+
+                if let Err(e) = InputMethod::default().is_installed().await {
+                    return Err(DoctorError::Error {
+                        reason: "Input Method is not installed".into(),
+                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                        fix: None,
+                        error: Some(e.into()),
+                    });
+                }
+
+                Ok(())
+            },
+            None => {
+                if fig_settings::state::get_bool_or("input-method.enabled", false) {
+                    Ok(())
+                } else {
+                    Err(DoctorError::Error {
+                        reason: "Input Method is not enabled".into(),
+                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                        fix: None,
+                        error: None,
+                    })
+                }
+            },
         }
     }
 }
