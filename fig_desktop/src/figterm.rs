@@ -20,6 +20,10 @@ use parking_lot::{
     MappedFairMutexGuard,
     RawFairMutex,
 };
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use time::OffsetDateTime;
 use tokio::sync::oneshot;
 use tokio::time::{
@@ -29,7 +33,7 @@ use tokio::time::{
 };
 use tracing::trace;
 
-#[derive(Debug, Hash, Clone, PartialEq, Eq)]
+#[derive(Debug, Hash, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct FigtermSessionId(pub String);
 
 impl Deref for FigtermSessionId {
@@ -58,7 +62,7 @@ pub struct EditBuffer {
     pub cursor: i64,
 }
 
-#[derive(Debug, Clone)]
+#[derive(Debug, Clone, Serialize)]
 pub struct SessionMetrics {
     pub start_time: OffsetDateTime,
     pub end_time: OffsetDateTime,
@@ -77,7 +81,7 @@ impl SessionMetrics {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug, Default, Serialize)]
 pub struct FigtermState {
     /// Linked list of `[FigtermSession]`s.
     pub linked_sessions: FairMutex<LinkedList<FigtermSession>>,
@@ -158,19 +162,28 @@ impl FigtermState {
     }
 }
 
-#[derive(Debug)]
+#[derive(Debug, Serialize)]
 pub struct FigtermSession {
     pub id: FigtermSessionId,
     pub secret: String,
+    #[serde(skip)]
     pub sender: flume::Sender<FigtermCommand>,
+    #[serde(skip)]
     pub writer: Option<flume::Sender<Clientbound>>,
+    #[serde(skip)]
     pub dead_since: Option<Instant>, // TODO(mia): prune old sessions
+    #[serde(skip)]
     pub edit_buffer: EditBuffer,
+    #[serde(skip)]
     pub last_receive: Instant,
+    #[serde(skip)]
     pub context: Option<ShellContext>,
+    #[serde(skip)]
     pub terminal_cursor_coordinates: Option<TerminalCursorCoordinates>,
     pub current_session_metrics: Option<SessionMetrics>,
+    #[serde(skip)]
     pub response_map: HashMap<u64, oneshot::Sender<hostbound::response::Response>>,
+    #[serde(skip)]
     pub nonce_counter: Arc<AtomicU64>,
 }
 

@@ -36,6 +36,7 @@ message Command {
     OpenBrowserCommand open_browser = 117;
     // A request to set the desktops's log level
     LogLevelCommand log_level = 118;
+    DumpStateCommand dump_state = 119;
   }
 
   reserved 116;
@@ -140,6 +141,12 @@ message PromptAccessibilityCommand {}
 message OpenBrowserCommand { string url = 1; }
 
 message LogLevelCommand { string level = 1; }
+
+message DumpStateCommand {
+  enum Type { DUMP_STATE_FIGTERM = 0; }
+
+  Type type = 1;
+}
 
 // == Hooks ==
 
@@ -305,6 +312,8 @@ message DiagnosticsResponse {
 
 message LogLevelResponse { optional string old_level = 1; }
 
+message DumpStateResponse { string json = 1; }
+
 message CommandResponse {
   optional int64 id = 1;
 
@@ -317,5 +326,6 @@ message CommandResponse {
     DiagnosticsResponse diagnostics = 101;
     // A response to a log level command
     LogLevelResponse log_level = 102;
+    DumpStateResponse dump_state = 103;
   }
 }

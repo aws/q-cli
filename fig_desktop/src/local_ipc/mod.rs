@@ -102,6 +102,7 @@ async fn handle_local_ipc(
                             PromptAccessibility(_) => commands::prompt_for_accessibility_permission().await,
                             LogLevel(command) => commands::log_level(command),
                             Logout(_) => commands::logout(&proxy).await,
+                            DumpState(command) => commands::dump_state(command, &figterm_state),
                             TerminalIntegration(_)
                             | ListTerminalIntegrations(_)
                             | Restart(_)

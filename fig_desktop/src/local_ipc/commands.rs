@@ -1,10 +1,13 @@
 use std::process::exit;
 
 use fig_proto::local::command_response::Response as CommandResponseTypes;
+use fig_proto::local::dump_state_command::Type as DumpStateType;
 use fig_proto::local::{
     DebugModeCommand,
     DiagnosticsCommand,
     DiagnosticsResponse,
+    DumpStateCommand,
+    DumpStateResponse,
     LogLevelCommand,
     LogLevelResponse,
     OpenBrowserCommand,
@@ -214,4 +217,16 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
         .ok();
 
     Ok(LocalResponse::Success(None))
+}
+
+pub fn dump_state(command: DumpStateCommand, figterm_state: &FigtermState) -> LocalResult {
+    let json = match command.r#type() {
+        DumpStateType::DumpStateFigterm => {
+            serde_json::to_string_pretty(&figterm_state).unwrap_or_else(|err| format!("unable to dump: {err}"))
+        },
+    };
+
+    LocalResult::Ok(LocalResponse::Message(Box::new(CommandResponseTypes::DumpState(
+        DumpStateResponse { json },
+    ))))
 }
