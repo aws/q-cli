@@ -3,5 +3,5 @@ import {
 } from './requests';
 
 export async function logout() {
-  return sendUserLogoutRequest();
+  return sendUserLogoutRequest({});
 }
