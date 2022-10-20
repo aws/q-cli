@@ -8,7 +8,7 @@ use crate::util::{
     string_as_vec_u64,
 };
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Host {
     pub nick_name: String,
@@ -21,7 +21,7 @@ pub struct Host {
     pub namespace: Option<String>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Connection {
     pub remote_id: u64,
@@ -32,9 +32,13 @@ pub struct Connection {
     #[serde(deserialize_with = "string_as_vec_u64")]
     pub identity_ids: Vec<u64>,
     pub port_forwards: Vec<PortForward>,
+    #[serde(deserialize_with = "string_as_option_u64", default)]
+    pub remote_host_id: Option<u64>,
+    #[serde(deserialize_with = "string_as_option_u64", default)]
+    pub remote_host_identity_id: Option<u64>,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct PortForward {
     pub remote_id: u64,
@@ -45,17 +49,18 @@ pub struct PortForward {
     pub port_forward_type: PortForwardType,
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "lowercase")]
 pub enum PortForwardType {
     Local,
     Remote,
 }
 
-#[derive(Deserialize, Debug, PartialEq, Eq)]
-#[serde(rename_all = "lowercase")]
+#[derive(Deserialize, Debug, PartialEq, Eq, Clone, Serialize)]
+#[serde(rename_all = "snake_case")]
 pub enum ConnectionType {
     Ssh,
+    SshJump,
 }
 
 pub async fn hosts(namespace: Option<String>) -> fig_request::Result<Vec<Host>> {
@@ -72,7 +77,7 @@ pub async fn hosts(namespace: Option<String>) -> fig_request::Result<Vec<Host>> 
         .collect())
 }
 
-#[derive(Serialize, Deserialize, Debug)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Identity {
     pub username: String,
@@ -108,6 +113,9 @@ struct SshStringRequest<'a> {
     hostname: &'a str,
     port: u16,
     port_forwards: &'a [PortForward],
+    connection_type: &'a ConnectionType,
+    remote_host_ip: Option<&'a str>,
+    remote_host_username: Option<&'a str>,
 }
 
 #[derive(Deserialize)]
@@ -120,6 +128,8 @@ pub async fn ssh_string(
     host: &Host,
     connection: &Connection,
     identity: &Option<Identity>,
+    remote_host_ip: Option<&str>,
+    remote_host_username: Option<&str>,
 ) -> fig_request::Result<String> {
     Ok(fig_request::Request::get("/access/ssh_string")
         .auth()
@@ -131,6 +141,9 @@ pub async fn ssh_string(
             hostname: &host.ip,
             port: connection.port,
             port_forwards: &connection.port_forwards,
+            connection_type: &connection.connection_type,
+            remote_host_ip,
+            remote_host_username,
         })
         .deser_json::<SshStringResponse>()
         .await?
