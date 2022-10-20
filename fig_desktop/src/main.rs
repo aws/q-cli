@@ -258,7 +258,7 @@ async fn migrate() {
         .iter()
         .filter(|app| {
             let name: NSStringRef = unsafe { msg_send![**app as *mut Object, bundleIdentifier] };
-            trace!("found {:?} within running apps", name.as_str());
+            tracing::trace!("found {:?} within running apps", name.as_str());
             name.as_str() == Some("io.fig.cursor")
         })
         .for_each(|app| {
