@@ -561,37 +561,21 @@ impl DoctorCheck for FigIntegrationsCheck {
         //}
 
         match std::env::var("FIG_TERM").as_deref() {
-            Ok("1") => {},
-            Ok(_) | Err(_) => {
-                return Err(DoctorError::Error {
-                    reason: "Figterm is not running".into(),
-                    info: vec![
-                        format!(
-                            "FIG_INTEGRATION_VERSION={:?}",
-                            std::env::var_os("FIG_INTEGRATION_VERSION")
-                        )
-                        .into(),
-                    ],
-                    fix: None,
-                    error: None,
-                });
-            },
-        };
-
-        match std::env::var("FIG_INTEGRATION_VERSION").as_deref() {
-            Ok("9") => {},
-            _ => {
+            Ok(env!("CARGO_PKG_VERSION")) => {},
+            Ok(_) => {
                 return Err(DoctorError::Error {
                     reason:
                         "This terminal is not running with the latest Fig integration, please restart your terminal"
                             .into(),
-                    info: vec![
-                        format!(
-                            "FIG_INTEGRATION_VERSION={:?}",
-                            std::env::var_os("FIG_INTEGRATION_VERSION")
-                        )
-                        .into(),
-                    ],
+                    info: vec![format!("FIG_TERM={:?}", std::env::var_os("FIG_TERM")).into()],
+                    fix: None,
+                    error: None,
+                });
+            },
+            Err(_) => {
+                return Err(DoctorError::Error {
+                    reason: "Figterm is not running in this terminal, please try restarting your terminal".into(),
+                    info: vec![format!("FIG_TERM={:?}", std::env::var_os("FIG_TERM")).into()],
                     fix: None,
                     error: None,
                 });

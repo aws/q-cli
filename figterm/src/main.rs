@@ -145,10 +145,6 @@ pub enum MainLoopEvent {
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
     let terminal = FigTerminal::parent_terminal().map(|s| s.to_string());
 
-    let integration_version = std::env::var("FIG_INTEGRATION_VERSION")
-        .ok()
-        .and_then(|s| s.parse().ok());
-
     local::ShellContext {
         pid: shell_state.local_context.pid,
         ttys: shell_state.local_context.tty.clone(),
@@ -165,10 +161,10 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .clone()
             .map(|cwd| cwd.display().to_string()),
         session_id: shell_state.local_context.session_id.clone(),
-        integration_version,
         terminal,
         hostname: shell_state.local_context.hostname.clone(),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
+        figterm_version: Some(env!("CARGO_PKG_VERSION").into()),
     }
 }
 
@@ -289,10 +285,9 @@ fn build_shell_command() -> Result<CommandBuilder> {
         builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
     }
 
-    builder.env("FIG_TERM", "1");
-    builder.env("FIG_TERM_VERSION", env!("CARGO_PKG_VERSION"));
+    builder.env("FIG_TERM", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
-        builder.env("FIG_TERM_TMUX", "1");
+        builder.env("FIG_TERM_TMUX", env!("CARGO_PKG_VERSION"));
     }
 
     if let Some(hostname) = sysinfo::System::new().host_name() {

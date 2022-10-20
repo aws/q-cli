@@ -238,12 +238,12 @@ mod tests {
             process_name: Some("/bin/bash".into()),
             current_working_directory: Some("/home/user".into()),
             session_id: None,
-            integration_version: None,
             terminal: None,
             hostname: None,
             shell_path: Some("/bin/bash".into()),
             wsl_distro: None,
             environment_variables: vec![],
+            figterm_version: None,
         };
         let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3, None);
         hooks::hook_to_message(hook)

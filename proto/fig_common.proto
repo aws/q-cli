@@ -30,7 +30,7 @@ message EnvironmentVariable {
 }
 
 message ShellContext {
-  reserved 9, 12;
+  reserved 6, 9, 12;
 
   // pid of the shell
   optional int32 pid = 1;
@@ -42,8 +42,6 @@ message ShellContext {
   optional string current_working_directory = 4;
   // the value of $TERM_SESSION_ID
   optional string session_id = 5;
-  // the integration version of figterm
-  optional int32 integration_version = 6;
   // the parent terminal of figterm
   optional string terminal = 7;
   // the hostname of the computer figterm is running on
@@ -54,6 +52,8 @@ message ShellContext {
   optional string wsl_distro = 11;
   // environment variables in the shell
   repeated EnvironmentVariable environment_variables = 13;
+  // the version of figterm
+  optional string figterm_version = 14;
 }
 
 message FileData {

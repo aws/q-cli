@@ -5,8 +5,6 @@ use thiserror::Error;
 use crate::local::*;
 use crate::util::get_shell;
 
-const CURRENT_INTEGRATION_VERSION: i32 = 7;
-
 type Result<T, E = HookError> = std::result::Result<T, E>;
 
 #[derive(Debug, Error)]
@@ -31,7 +29,6 @@ pub fn generate_shell_context(
     pid: impl Into<i32>,
     tty: impl Into<String>,
     session_id: Option<impl Into<String>>,
-    integration_version: impl Into<Option<i32>>,
 ) -> Result<ShellContext> {
     let cwd = std::env::current_dir()?;
     let shell = get_shell()?;
@@ -39,7 +36,6 @@ pub fn generate_shell_context(
         pid: Some(pid.into()),
         ttys: Some(tty.into()),
         session_id: session_id.map(|s| s.into()),
-        integration_version: Some(integration_version.into().unwrap_or(CURRENT_INTEGRATION_VERSION)),
         process_name: Some(shell),
         current_working_directory: Some(cwd.to_string_lossy().into()),
         shell_path: None,
@@ -47,6 +43,7 @@ pub fn generate_shell_context(
         terminal: None,
         hostname: None,
         environment_variables: vec![],
+        figterm_version: None,
     })
 }
 
