@@ -77,6 +77,14 @@ pub async fn run_install() {
 
         #[cfg(target_os = "macos")]
         initialize_fig_dir().ok();
+
+        if let Ok(target_bundle_path) = fig_integrations::input_method::InputMethod::default().target_bundle_path() {
+            if target_bundle_path.exists() {
+                if let Err(err) = fig_integrations::input_method::InputMethod::register(target_bundle_path) {
+                    error!(%err, "Input method could not be registered");
+                }
+            }
+        }
     }
 
     if let Err(err) = set_previous_version(current_version()) {

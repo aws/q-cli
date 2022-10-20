@@ -281,7 +281,7 @@ impl InputMethod {
         }
     }
 
-    fn register(location: impl AsRef<Path>) -> Result<(), InputMethodError> {
+    pub fn register(location: impl AsRef<Path>) -> Result<(), InputMethodError> {
         debug!("Registering input source...");
 
         let url = match CFURL::from_path(location, true) {
@@ -358,7 +358,7 @@ impl InputMethod {
         }
     }
 
-    fn target_bundle_path(&self) -> Result<PathBuf, InputMethodError> {
+    pub fn target_bundle_path(&self) -> Result<PathBuf, InputMethodError> {
         let input_method_name = match self.bundle_path.components().last() {
             Some(name) => name.as_os_str(),
             None => {
