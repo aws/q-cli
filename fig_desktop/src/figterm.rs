@@ -25,7 +25,10 @@ use serde::{
     Serialize,
 };
 use time::OffsetDateTime;
-use tokio::sync::oneshot;
+use tokio::sync::{
+    broadcast,
+    oneshot,
+};
 use tokio::time::{
     sleep_until,
     Duration,
@@ -112,8 +115,28 @@ impl FigtermState {
         std::mem::swap(&mut **guard, &mut sessions_temp);
         let mut existing = None;
         guard.extend(sessions_temp.into_iter().filter_map(|x| {
-            if f(&x) {
+            if f(&x) && existing.is_none() {
                 existing = Some(x);
+                None
+            } else {
+                Some(x)
+            }
+        }));
+        existing
+    }
+
+    /// Removes all sessions with a given lock
+    pub fn remove_where_with_lock_all(
+        &self,
+        mut f: impl FnMut(&FigtermSession) -> bool,
+        guard: &mut MutexGuard<'_, RawFairMutex, LinkedList<FigtermSession>>,
+    ) -> Vec<FigtermSession> {
+        let mut sessions_temp = LinkedList::new();
+        std::mem::swap(&mut **guard, &mut sessions_temp);
+        let mut existing = Vec::new();
+        guard.extend(sessions_temp.into_iter().filter_map(|x| {
+            if f(&x) {
+                existing.push(x);
                 None
             } else {
                 Some(x)
@@ -185,6 +208,8 @@ pub struct FigtermSession {
     pub response_map: HashMap<u64, oneshot::Sender<hostbound::response::Response>>,
     #[serde(skip)]
     pub nonce_counter: Arc<AtomicU64>,
+    #[serde(skip)]
+    pub on_close_tx: broadcast::Sender<()>,
 }
 
 #[derive(Debug)]
@@ -274,9 +299,9 @@ pub async fn clean_figterm_cache(state: Arc<FigtermState>) {
     loop {
         trace!("cleaning figterm cache");
         let mut last_receive = Instant::now();
-        {
+        let sessions = {
             let mut guard = state.linked_sessions.lock();
-            state.remove_where_with_lock(
+            state.remove_where_with_lock_all(
                 |session| {
                     if session.last_receive.elapsed() > Duration::from_secs(600) {
                         return true;
@@ -286,8 +311,14 @@ pub async fn clean_figterm_cache(state: Arc<FigtermState>) {
                     false
                 },
                 &mut guard,
-            );
+            )
+        };
+
+        for session in sessions {
+            session.on_close_tx.send(()).ok();
+            drop(session);
         }
+
         sleep_until(last_receive + Duration::from_secs(600)).await;
     }
 }

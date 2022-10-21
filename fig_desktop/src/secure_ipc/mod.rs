@@ -39,10 +39,7 @@ use tokio::net::{
     UnixStream,
 };
 use tokio::select;
-use tokio::sync::{
-    oneshot,
-    Notify,
-};
+use tokio::sync::Notify;
 use tokio::time::{
     Duration,
     Instant,
@@ -102,148 +99,170 @@ async fn handle_secure_ipc(
     let (reader, writer) = tokio::io::split(stream);
     let (clientbound_tx, clientbound_rx) = flume::unbounded();
 
-    let (stop_pings_tx, stop_pings_rx) = oneshot::channel();
-
     let bad_connection = Arc::new(Notify::new());
 
-    let outgoing_task = tokio::spawn(handle_outgoing(writer, clientbound_rx, bad_connection.clone()));
-    let ping_task = tokio::spawn(send_pings(clientbound_tx.clone(), stop_pings_rx));
+    let (on_close_tx, mut on_close_rx) = tokio::sync::broadcast::channel(1);
+
+    let outgoing_task = tokio::spawn(handle_outgoing(
+        writer,
+        clientbound_rx,
+        bad_connection.clone(),
+        on_close_tx.subscribe(),
+    ));
+
+    let ping_task = tokio::spawn(send_pings(clientbound_tx.clone(), on_close_tx.subscribe()));
 
     let mut session_id: Option<FigtermSessionId> = None;
 
     let mut reader = BufferedReader::new(reader);
-    while let Some(message) = reader.recv_message::<Hostbound>().await.unwrap_or_else(|err| {
-        if !err.is_disconnect() {
-            warn!(%err, "Failed receiving secure message");
-        }
-        None
-    }) {
-        trace!(?message, "Received secure message");
-        if let Some(response) = match message.packet {
-            Some(hostbound::Packet::Handshake(handshake)) => {
-                if session_id.is_some() {
-                    // maybe they missed our response, but they should've been listening harder
-                    Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                        success: false,
-                    }))
-                } else {
-                    let id = FigtermSessionId(handshake.id.clone());
+    loop {
+        tokio::select! {
+            _ = on_close_rx.recv() => {
+                debug!("Connection closed");
+            }
+            message = reader.recv_message::<Hostbound>() => match message {
+                Ok(Some(message)) => {
+                    trace!(?message, "Received secure message");
+                    if let Some(response) = match message.packet {
+                        Some(hostbound::Packet::Handshake(handshake)) => {
+                            if session_id.is_some() {
+                                // maybe they missed our response, but they should've been listening harder
+                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
+                                    success: false,
+                                }))
+                            } else {
+                                let id = FigtermSessionId(handshake.id.clone());
 
-                    if let Some(success) = figterm_state.with_update(id.clone(), |session| {
-                        if session.secret == handshake.secret {
-                            session_id = Some(id);
-                            session.writer = Some(clientbound_tx.clone());
-                            session.dead_since = None;
-                            debug!(
-                                "Client auth for {} accepted because of secret match ({} = {})",
-                                handshake.id, session.secret, handshake.secret
-                            );
-                            true
-                        } else {
-                            debug!(
-                                "Client auth for {} rejected because of secret mismatch ({} =/= {})",
-                                handshake.id, session.secret, handshake.secret
-                            );
-                            false
-                        }
-                    }) {
-                        Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success }))
-                    } else {
-                        let id = FigtermSessionId(handshake.id.clone());
-                        session_id = Some(id.clone());
-                        let (command_tx, command_rx) = flume::unbounded();
-                        tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
-                        figterm_state.insert(FigtermSession {
-                            id,
-                            secret: handshake.secret.clone(),
-                            sender: command_tx,
-                            writer: Some(clientbound_tx.clone()),
-                            dead_since: None,
-                            last_receive: Instant::now(),
-                            edit_buffer: EditBuffer {
-                                text: "".to_string(),
-                                cursor: 0,
-                            },
-                            context: None,
-                            terminal_cursor_coordinates: None,
-                            current_session_metrics: None,
-                            response_map: HashMap::new(),
-                            nonce_counter: Arc::new(AtomicU64::new(0)),
-                        });
-                        debug!(
-                            "Client auth for {} accepted because of new id with secret {}",
-                            handshake.id, handshake.secret
-                        );
-                        Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                            success: true,
-                        }))
-                    }
-                }
-            },
-            Some(hostbound::Packet::Hook(hostbound::Hook { hook: Some(hook) })) => {
-                if let Some(session_id) = &session_id {
-                    let sanatize_fn = get_sanatize_fn(session_id.0.clone());
-                    if let Err(err) = match hook {
-                        hostbound::hook::Hook::EditBuffer(mut edit_buffer) => {
-                            sanatize_fn(&mut edit_buffer.context);
-                            hooks::edit_buffer(
-                                &edit_buffer,
-                                session_id,
-                                figterm_state.clone(),
-                                &notifications_state,
-                                &proxy,
-                            )
-                            .await
+                                if let Some(success) = figterm_state.with_update(id.clone(), |session| {
+                                    if session.secret == handshake.secret {
+                                        session_id = Some(id);
+                                        session.writer = Some(clientbound_tx.clone());
+                                        session.dead_since = None;
+                                        session.on_close_tx = on_close_tx.clone();
+                                        debug!(
+                                            "Client auth for {} accepted because of secret match ({} = {})",
+                                            handshake.id, session.secret, handshake.secret
+                                        );
+                                        true
+                                    } else {
+                                        debug!(
+                                            "Client auth for {} rejected because of secret mismatch ({} =/= {})",
+                                            handshake.id, session.secret, handshake.secret
+                                        );
+                                        false
+                                    }
+                                }) {
+                                    Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success }))
+                                } else {
+                                    let id = FigtermSessionId(handshake.id.clone());
+                                    session_id = Some(id.clone());
+                                    let (command_tx, command_rx) = flume::unbounded();
+                                    tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
+                                    figterm_state.insert(FigtermSession {
+                                        id,
+                                        secret: handshake.secret.clone(),
+                                        sender: command_tx,
+                                        writer: Some(clientbound_tx.clone()),
+                                        dead_since: None,
+                                        last_receive: Instant::now(),
+                                        edit_buffer: EditBuffer {
+                                            text: "".to_string(),
+                                            cursor: 0,
+                                        },
+                                        context: None,
+                                        terminal_cursor_coordinates: None,
+                                        current_session_metrics: None,
+                                        response_map: HashMap::new(),
+                                        nonce_counter: Arc::new(AtomicU64::new(0)),
+                                        on_close_tx: on_close_tx.clone(),
+                                    });
+                                    debug!(
+                                        "Client auth for {} accepted because of new id with secret {}",
+                                        handshake.id, handshake.secret
+                                    );
+                                    Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
+                                        success: true,
+                                    }))
+                                }
+                            }
                         },
-                        hostbound::hook::Hook::Prompt(mut prompt) => {
-                            sanatize_fn(&mut prompt.context);
-                            hooks::prompt(&prompt, session_id, &notifications_state, &proxy).await
+                        Some(hostbound::Packet::Hook(hostbound::Hook { hook: Some(hook) })) => {
+                            if let Some(session_id) = &session_id {
+                                let sanatize_fn = get_sanatize_fn(session_id.0.clone());
+                                if let Err(err) = match hook {
+                                    hostbound::hook::Hook::EditBuffer(mut edit_buffer) => {
+                                        sanatize_fn(&mut edit_buffer.context);
+                                        hooks::edit_buffer(
+                                            &edit_buffer,
+                                            session_id,
+                                            figterm_state.clone(),
+                                            &notifications_state,
+                                            &proxy,
+                                        )
+                                        .await
+                                    },
+                                    hostbound::hook::Hook::Prompt(mut prompt) => {
+                                        sanatize_fn(&mut prompt.context);
+                                        hooks::prompt(&prompt, session_id, &notifications_state, &proxy).await
+                                    },
+                                    hostbound::hook::Hook::PreExec(mut pre_exec) => {
+                                        sanatize_fn(&mut pre_exec.context);
+                                        hooks::pre_exec(&pre_exec, session_id, &notifications_state, &proxy).await
+                                    },
+                                    hostbound::hook::Hook::InterceptedKey(mut intercepted_key) => {
+                                        sanatize_fn(&mut intercepted_key.context);
+                                        hooks::intercepted_key(intercepted_key, &notifications_state, &proxy).await
+                                    },
+                                } {
+                                    error!(%err, "Failed processing hook")
+                                }
+                                None
+                            } else {
+                                // apparently they didn't get the memo
+                                debug!("Client tried to send secure hook without auth");
+                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
+                                    success: false,
+                                }))
+                            }
                         },
-                        hostbound::hook::Hook::PreExec(mut pre_exec) => {
-                            sanatize_fn(&mut pre_exec.context);
-                            hooks::pre_exec(&pre_exec, session_id, &notifications_state, &proxy).await
+                        Some(hostbound::Packet::Response(hostbound::Response {
+                            nonce,
+                            response: Some(response),
+                        })) => {
+                            if let Some(nonce) = nonce {
+                                session_id
+                                    .as_ref()
+                                    .and_then(|session_id| {
+                                        figterm_state.with(session_id, |session| session.response_map.remove(&nonce))
+                                    })
+                                    .flatten()
+                                    .map(|channel| channel.send(response));
+                            }
+                            None
                         },
-                        hostbound::hook::Hook::InterceptedKey(mut intercepted_key) => {
-                            sanatize_fn(&mut intercepted_key.context);
-                            hooks::intercepted_key(intercepted_key, &notifications_state, &proxy).await
+                        _ => {
+                            warn!("Received invalid secure packet");
+                            None
                         },
                     } {
-                        error!(%err, "Failed processing hook")
+                        let _ = clientbound_tx.send(Clientbound { packet: Some(response) });
                     }
-                    None
-                } else {
-                    // apparently they didn't get the memo
-                    debug!("Client tried to send secure hook without auth");
-                    Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                        success: false,
-                    }))
                 }
-            },
-            Some(hostbound::Packet::Response(hostbound::Response {
-                nonce,
-                response: Some(response),
-            })) => {
-                if let Some(nonce) = nonce {
-                    session_id
-                        .as_ref()
-                        .and_then(|session_id| {
-                            figterm_state.with(session_id, |session| session.response_map.remove(&nonce))
-                        })
-                        .flatten()
-                        .map(|channel| channel.send(response));
+                Ok(None) => {
+                    debug!("Figterm connection closed");
+                    break;
                 }
-                None
-            },
-            _ => {
-                warn!("Received invalid secure packet");
-                None
-            },
-        } {
-            let _ = clientbound_tx.send(Clientbound { packet: Some(response) });
+                Err(err) => {
+                    if !err.is_disconnect() {
+                        warn!(%err, "Failed receiving secure message");
+                    }
+                    break;
+                }
+            }
         }
     }
 
-    let _ = stop_pings_tx.send(());
+    let _ = on_close_tx.send(());
     drop(clientbound_tx);
 
     if let Some(session_id) = &session_id {
@@ -268,13 +287,27 @@ async fn handle_outgoing(
     mut writer: tokio::io::WriteHalf<UnixStream>,
     outgoing: flume::Receiver<Clientbound>,
     bad_connection: Arc<Notify>,
+    mut on_close_rx: tokio::sync::broadcast::Receiver<()>,
 ) {
-    while let Ok(message) = outgoing.recv_async().await {
-        debug!(?message, "Sending secure message");
-        if let Err(err) = writer.send_message(message).await {
-            error!(%err, "Secure outgoing task send error");
-            bad_connection.notify_one();
-            return;
+    loop {
+        tokio::select! {
+            _ = on_close_rx.recv() => {
+                debug!("Secure outgoing task exiting");
+                break;
+            },
+            message = outgoing.recv_async() => {
+                if let Ok(message) = message {
+                    debug!(?message, "Sending secure message");
+                    if let Err(err) = writer.send_message(message).await {
+                        error!(%err, "Secure outgoing task send error");
+                        bad_connection.notify_one();
+                        return;
+                    }
+                } else {
+                    debug!("Secure outgoing task exiting");
+                    break;
+                }
+            }
         }
     }
 }
@@ -407,7 +440,7 @@ async fn handle_commands(
     None
 }
 
-async fn send_pings(outgoing: flume::Sender<Clientbound>, mut stop_pings: oneshot::Receiver<()>) {
+async fn send_pings(outgoing: flume::Sender<Clientbound>, mut on_close_rx: tokio::sync::broadcast::Receiver<()>) {
     let mut interval = tokio::time::interval(Duration::from_secs(5));
 
     loop {
@@ -417,7 +450,7 @@ async fn send_pings(outgoing: flume::Sender<Clientbound>, mut stop_pings: onesho
                     packet: Some(clientbound::Packet::Ping(())),
                 });
             }
-            _ = &mut stop_pings => break
+            _ = on_close_rx.recv() => break
         }
     }
 }
