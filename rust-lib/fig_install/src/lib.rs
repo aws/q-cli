@@ -131,11 +131,29 @@ pub async fn update(
 
         let lock_file = fig_util::directories::update_lock_path()?;
 
+        let now_unix_time = std::time::SystemTime::now()
+            .duration_since(std::time::UNIX_EPOCH)
+            .map(|d| d.as_secs())
+            .unwrap_or(0);
+
+        // If the lock file is older than 1hr, we can assume it's stale and remove it
         if lock_file.exists() {
-            return Err(Error::UpdateInProgress);
+            match std::fs::read_to_string(&lock_file) {
+                Ok(contents) => {
+                    let lock_unix_time = contents.parse::<u64>().unwrap_or(0);
+                    if now_unix_time - lock_unix_time < 3600 {
+                        return Err(Error::UpdateInProgress);
+                    } else {
+                        std::fs::remove_file(&lock_file)?;
+                    }
+                },
+                Err(err) => {
+                    error!(%err, "Failed to read lock file, but it exists");
+                },
+            }
         }
 
-        tokio::fs::write(&lock_file, "").await?;
+        tokio::fs::write(&lock_file, &format!("{now_unix_time}")).await?;
 
         let join = tokio::spawn(async move {
             tx.send(UpdateStatus::Message("Starting Update...".into())).await.ok();
