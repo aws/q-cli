@@ -23,13 +23,11 @@ use eyre::{
     WrapErr,
 };
 use fig_ipc::local::{
-    input_method_command,
     prompt_accessibility_command,
     run_build_command,
     set_debug_mode,
     toggle_debug_mode,
 };
-use fig_proto::local::InputMethodAction;
 use fig_sync::dotfiles::download_and_notify;
 use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::directories;
@@ -52,18 +50,6 @@ pub enum Build {
 }
 
 #[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
-pub enum ImeCommand {
-    Install,
-    Uninstall,
-    Select,
-    Deselect,
-    Enable,
-    Disable,
-    Status,
-    Register,
-}
-
-#[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum AutocompleteWindowDebug {
     On,
     Off,
@@ -76,6 +62,44 @@ pub enum AccessibilityAction {
     Prompt,
     Open,
     Status,
+}
+
+#[cfg(target_os = "macos")]
+use fig_integrations::{
+    input_method::InputMethod,
+    Integration,
+};
+
+#[cfg(target_os = "macos")]
+#[derive(Debug, Clone, PartialEq, Eq, ValueEnum)]
+pub enum TISAction {
+    Enable,
+    Disable,
+    Select,
+    Deselect,
+}
+
+#[cfg(target_os = "macos")]
+use std::path::PathBuf;
+
+#[cfg(target_os = "macos")]
+#[derive(Debug, Subcommand, Clone, PartialEq, Eq)]
+pub enum InputMethodDebugAction {
+    Install {
+        bundle_path: Option<PathBuf>,
+    },
+    Uninstall {
+        bundle_path: Option<PathBuf>,
+    },
+    List,
+    Status {
+        bundle_path: Option<PathBuf>,
+    },
+    Source {
+        bundle_identifier: String,
+        #[arg(value_enum)]
+        action: TISAction,
+    },
 }
 
 #[derive(Debug, PartialEq, Subcommand)]
@@ -105,9 +129,10 @@ pub enum DebugSubcommand {
         files: Vec<String>,
     },
     /// Fig input method editor
-    Ime {
-        #[arg(value_enum)]
-        command: ImeCommand,
+    #[cfg(target_os = "macos")]
+    InputMethod {
+        #[command(subcommand)]
+        action: Option<InputMethodDebugAction>,
     },
     /// Prompt accessibility
     PromptAccessibility,
@@ -284,21 +309,103 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait()?;
             },
-            DebugSubcommand::Ime { command } => {
-                let action = match command {
-                    ImeCommand::Install => InputMethodAction::InstallInputMethod,
-                    ImeCommand::Uninstall => InputMethodAction::UninstallInputMethod,
-                    ImeCommand::Select => InputMethodAction::SelectInputMethod,
-                    ImeCommand::Deselect => InputMethodAction::DeselectInputMethod,
-                    ImeCommand::Enable => InputMethodAction::EnableInputMethod,
-                    ImeCommand::Disable => InputMethodAction::DisableInputMethod,
-                    ImeCommand::Status => InputMethodAction::StatusOfInputMethod,
-                    ImeCommand::Register => InputMethodAction::RegisterInputMethod,
+            #[cfg(target_os = "macos")]
+            DebugSubcommand::InputMethod { action } => {
+                let action = match action {
+                    Some(action) => action,
+                    None => &InputMethodDebugAction::Status { bundle_path: None },
                 };
-                let result = input_method_command(action).await;
-                if result.is_err() {
-                    println!("Could not run ime command.");
-                    return result.map_err(eyre::Report::from);
+
+                match action {
+                    InputMethodDebugAction::Install { bundle_path } => {
+                        let input_method = match bundle_path {
+                            Some(bundle_path) => {
+                                let bundle_path = if bundle_path.is_relative() {
+                                    let mut path = std::env::current_dir()?;
+                                    path.push(bundle_path);
+                                    path
+                                } else {
+                                    bundle_path.to_path_buf()
+                                };
+
+                                InputMethod { bundle_path }
+                            },
+                            None => InputMethod::default(),
+                        };
+
+                        input_method.install().await?;
+
+                        println!(
+                            "Successfully installed input method '{}'",
+                            input_method.bundle_id().unwrap()
+                        )
+                    },
+                    InputMethodDebugAction::Uninstall { bundle_path } => {
+                        let input_method = match bundle_path {
+                            Some(bundle_path) => {
+                                let bundle_path = if bundle_path.is_relative() {
+                                    let mut path = std::env::current_dir()?;
+                                    path.push(bundle_path);
+                                    path
+                                } else {
+                                    bundle_path.to_path_buf()
+                                };
+
+                                InputMethod { bundle_path }
+                            },
+                            None => InputMethod::default(),
+                        };
+
+                        input_method.uninstall().await?;
+
+                        println!(
+                            "Successfully uninstalled input method '{}'",
+                            input_method.bundle_id().unwrap()
+                        )
+                    },
+                    InputMethodDebugAction::List => match InputMethod::list_all_input_sources(None, true) {
+                        Some(sources) => sources.iter().for_each(|source| println!("{:#?}", source)),
+                        None => return Err(eyre::eyre!("Could not load input sources")),
+                    },
+                    InputMethodDebugAction::Status { bundle_path } => {
+                        let input_method = match bundle_path {
+                            Some(bundle_path) => {
+                                let bundle_path = if bundle_path.is_relative() {
+                                    let mut path = std::env::current_dir()?;
+                                    path.push(bundle_path);
+                                    path
+                                } else {
+                                    bundle_path.to_path_buf()
+                                };
+
+                                InputMethod { bundle_path }
+                            },
+                            None => InputMethod::default(),
+                        };
+
+                        println!("Installed? {}", input_method.is_installed().await.is_ok());
+                        println!("{:#?}", input_method.input_source()?);
+                    },
+                    InputMethodDebugAction::Source {
+                        bundle_identifier,
+                        action,
+                    } => {
+                        return match InputMethod::list_input_sources_for_bundle_id(bundle_identifier.as_str()) {
+                            Some(sources) => {
+                                sources
+                                    .into_iter()
+                                    .map(|source| match action {
+                                        TISAction::Enable => source.enable(),
+                                        TISAction::Disable => source.disable(),
+                                        TISAction::Select => source.select(),
+                                        TISAction::Deselect => source.deselect(),
+                                    })
+                                    .collect::<Result<Vec<()>, fig_integrations::input_method::InputMethodError>>()?;
+                                Ok(())
+                            },
+                            None => return Err(eyre::eyre!("Could not find an input source with this identifier")),
+                        };
+                    },
                 }
             },
             DebugSubcommand::PromptAccessibility => {

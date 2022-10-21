@@ -36,8 +36,6 @@ use eyre::{
 use fig_install::InstallComponents;
 #[cfg(target_os = "macos")]
 use fig_integrations::input_method::InputMethod;
-#[cfg(target_os = "macos")]
-use fig_integrations::Integration;
 use fig_ipc::local::send_hook_to_socket;
 use fig_ipc::{
     BufferedUnixStream,
@@ -179,34 +177,6 @@ impl Display for Method {
     }
 }
 
-#[derive(Debug, Clone, PartialEq, Eq, ValueEnum)]
-pub enum TISAction {
-    Enable,
-    Disable,
-    Select,
-    Deselect,
-}
-
-#[cfg(target_os = "macos")]
-#[derive(Debug, Subcommand, Clone, PartialEq, Eq)]
-pub enum InputMethodDebugAction {
-    Install {
-        bundle_path: Option<PathBuf>,
-    },
-    Uninstall {
-        bundle_path: Option<PathBuf>,
-    },
-    List,
-    Status {
-        bundle_path: Option<PathBuf>,
-    },
-    Source {
-        bundle_identifier: String,
-        #[arg(value_enum)]
-        action: TISAction,
-    },
-}
-
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
@@ -319,11 +289,6 @@ pub enum InternalSubcommand {
         architecture: String,
         #[arg(short = 'r', long)]
         enable_rollout: bool,
-    },
-    #[cfg(target_os = "macos")]
-    InputMethod {
-        #[command(subcommand)]
-        action: Option<InputMethodDebugAction>,
     },
     #[cfg(target_os = "macos")]
     AttemptToFinishInputMethodInstallation {
@@ -845,105 +810,6 @@ impl InternalSubcommand {
                 .await?;
 
                 println!("{result:#?}");
-            },
-            #[cfg(target_os = "macos")]
-            InternalSubcommand::InputMethod { action } => {
-                let action = match action {
-                    Some(action) => action,
-                    None => InputMethodDebugAction::Status { bundle_path: None },
-                };
-
-                match action {
-                    InputMethodDebugAction::Install { bundle_path } => {
-                        let input_method = match bundle_path {
-                            Some(bundle_path) => {
-                                let bundle_path = if bundle_path.is_relative() {
-                                    let mut path = std::env::current_dir()?;
-                                    path.push(bundle_path);
-                                    path
-                                } else {
-                                    bundle_path
-                                };
-
-                                InputMethod { bundle_path }
-                            },
-                            None => InputMethod::default(),
-                        };
-
-                        input_method.install().await?;
-
-                        println!(
-                            "Successfully installed input method '{}'",
-                            input_method.bundle_id().unwrap()
-                        )
-                    },
-                    InputMethodDebugAction::Uninstall { bundle_path } => {
-                        let input_method = match bundle_path {
-                            Some(bundle_path) => {
-                                let bundle_path = if bundle_path.is_relative() {
-                                    let mut path = std::env::current_dir()?;
-                                    path.push(bundle_path);
-                                    path
-                                } else {
-                                    bundle_path
-                                };
-
-                                InputMethod { bundle_path }
-                            },
-                            None => InputMethod::default(),
-                        };
-
-                        input_method.uninstall().await?;
-
-                        println!(
-                            "Successfully uninstalled input method '{}'",
-                            input_method.bundle_id().unwrap()
-                        )
-                    },
-                    InputMethodDebugAction::List => match InputMethod::list_all_input_sources(None, true) {
-                        Some(sources) => sources.iter().for_each(|source| println!("{:#?}", source)),
-                        None => return Err(eyre::eyre!("Could not load input sources")),
-                    },
-                    InputMethodDebugAction::Status { bundle_path } => {
-                        let input_method = match bundle_path {
-                            Some(bundle_path) => {
-                                let bundle_path = if bundle_path.is_relative() {
-                                    let mut path = std::env::current_dir()?;
-                                    path.push(bundle_path);
-                                    path
-                                } else {
-                                    bundle_path
-                                };
-
-                                InputMethod { bundle_path }
-                            },
-                            None => InputMethod::default(),
-                        };
-
-                        println!("Installed? {}", input_method.is_installed().await.is_ok());
-                        println!("{:#?}", input_method.input_source()?);
-                    },
-                    InputMethodDebugAction::Source {
-                        bundle_identifier,
-                        action,
-                    } => {
-                        return match InputMethod::list_input_sources_for_bundle_id(bundle_identifier.as_str()) {
-                            Some(sources) => {
-                                sources
-                                    .into_iter()
-                                    .map(|source| match action {
-                                        TISAction::Enable => source.enable(),
-                                        TISAction::Disable => source.disable(),
-                                        TISAction::Select => source.select(),
-                                        TISAction::Deselect => source.deselect(),
-                                    })
-                                    .collect::<Result<Vec<()>, fig_integrations::input_method::InputMethodError>>()?;
-                                Ok(())
-                            },
-                            None => return Err(eyre::eyre!("Could not find an input source with this identifier")),
-                        };
-                    },
-                }
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::AttemptToFinishInputMethodInstallation { bundle_path } => {
