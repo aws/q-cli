@@ -1,0 +1,52 @@
+name: 'Upgrade to Appcast to Rust Backport'
+on:
+  workflow_dispatch:
+
+env:
+  # alpha | beta | main
+  VERSIONS_BRANCH: alpa
+  # alpha | beta | versions
+  APPCAST_PREFIX: alpha 
+
+  # Make sure that this is the correct URL to the DMG that we want to deploy!!!
+  RUST_DMG_URL: https://repo.fig.io/generic/beta/asset/latest/universal/fig.dmg
+jobs:    
+  update-appcast:
+    runs-on: macos-latest
+    steps:
+    - name: "Download Sparkle CLI"
+      run: |
+        curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
+        mkdir Sparkle
+        cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
+        cd ..
+    - name: "Checkout withfig/versions"
+      run: |
+        git clone --depth 1 --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+      env:
+        PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+    - name: Pull latest Rust DMG from repo.fig.io
+      run: |
+        curl $RUST_DMG_URL --output ./versions/fig\ 2.0.dmg
+        rm ./versions/fig@latest.dmg
+    - name: "Generate Appcast"
+      run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
+      env:
+        SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
+    - name: TODO - Ensure appcast.xml file is correct  - we may need to manually edit values
+      run: cat ./versions/appcast.xml
+        
+    - name: Commit changes
+      run: |
+        cd versions
+        cp "fig 2.0.dmg" fig@latest.dmg
+        git add .
+        git commit -m "Deploy Build $BUILD" --no-verify
+        cd ..
+
+    - name: Push Changes to withfig/versions
+      run: |
+        cd versions
+        echo DO NOT ACTUALLY PUSH TO withfig/versions
+        echo git push origin $VERSIONS_BRANCH
+        cd ..
