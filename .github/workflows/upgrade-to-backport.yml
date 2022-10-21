@@ -24,8 +24,8 @@ jobs:
           echo "::set-env name=APPCAST_PREFIX::beta"
 
         else
-          echo "::set-env name=VERSIONS_BRANCH::alpha"
-          echo "::set-env name=APPCAST_PREFIX::alpha"
+          echo "::set-env name=VERSIONS_BRANCH::main"
+          echo "::set-env name=APPCAST_PREFIX::versions"
 
         fi
         echo $VERSIONS_BRANCH
@@ -38,15 +38,15 @@ jobs:
         mkdir Sparkle
         cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
         cd ..
-    - name: "Fake versions repo"
-      run: |
-        mkdir versions
-        touch ./versions/fig@latest.dmg
-    # - name: "Checkout withfig/versions"
+    # - name: "Fake versions repo"
     #   run: |
-    #     git clone --depth 1 --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
-    #   env:
-    #     PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+    #     mkdir versions
+    #     touch ./versions/fig@latest.dmg
+    - name: "Checkout withfig/versions"
+      run: |
+        git clone --depth 1 --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+      env:
+        PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
     - name: Pull latest Rust DMG from repo.fig.io
       run: |
         echo "Downloading DMG from $RUST_DMG_URL"
