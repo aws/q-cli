@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-arbitrary = { version = "1.1.6", optional = true, features = ["derive"] }
+arbitrary = { version = "1.2.0", optional = true, features = ["derive"] }
 bytes = "1.2.1"
 fig_util = { path = "../fig_util" }
 hex = "0.4.3"
