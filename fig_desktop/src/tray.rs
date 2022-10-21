@@ -34,14 +34,11 @@ use crate::{
     DASHBOARD_ID,
 };
 
+// TODO: Dont include this when not on macos
 const COMMANDKEY: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/commandkey.png",));
-
 const GEAR: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/gear.png",));
-
 const QUESTION: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/question.png",));
-
 const DISCORD: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/discord.png",));
-
 const GITHUB: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/github.png",));
 
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
@@ -66,7 +63,50 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 .unwrap();
         },
         id if id == MenuId::new("update") => {
-            tokio::runtime::Handle::current().spawn(fig_install::update(true, None, true));
+            let proxy_a = proxy.clone();
+            let proxy_b = proxy.clone();
+            tokio::runtime::Handle::current().spawn(async move {
+                match fig_install::update(
+                    true,
+                    Some(Box::new(move |_| {
+                        proxy_a
+                            .send_event(Event::ShowMessageNotification {
+                                title: "Fig Update".into(),
+                                body:
+                                    "Fig is updating in the background. You can continue to use Fig while it updates."
+                                        .into(),
+                                parent: None,
+                            })
+                            .unwrap();
+                    })),
+                    true,
+                )
+                .await
+                {
+                    Ok(true) => {},
+                    Ok(false) => {
+                        // Didn't update, show a notification
+                        proxy_b
+                            .send_event(Event::ShowMessageNotification {
+                                title: "Fig Update".into(),
+                                body: concat!("Fig is already up to date. Version (", env!("CARGO_PKG_VERSION"), ")")
+                                    .into(),
+                                parent: None,
+                            })
+                            .unwrap();
+                    },
+                    Err(err) => {
+                        // Error updating, show a notification
+                        proxy_b
+                            .send_event(Event::ShowMessageNotification {
+                                title: "Fig Update".into(),
+                                body: format!("Error updating Fig: {err}").into(),
+                                parent: None,
+                            })
+                            .unwrap();
+                    },
+                }
+            });
         },
         id if id == MenuId::new("quit") => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();

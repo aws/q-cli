@@ -16,6 +16,11 @@ use wry::http::{
     ResponseBuilder as HttpResponseBuilder,
 };
 
+/// Determines if the build is ran in debug mode
+pub fn is_cargo_debug_build() -> bool {
+    cfg!(debug_assertions) && !fig_settings::state::get_bool_or("developer.override-cargo-debug", false)
+}
+
 pub fn wrap_custom_protocol(
     f: impl Fn(&HttpRequest) -> anyhow::Result<HttpResponse>,
 ) -> impl Fn(&HttpRequest) -> wry::Result<HttpResponse> {

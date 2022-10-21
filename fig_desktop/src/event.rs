@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
@@ -27,6 +29,12 @@ pub enum Event {
     ReloadCredentials,
     ReloadAccessibility,
     ReloadTray,
+
+    ShowMessageNotification {
+        title: Cow<'static, str>,
+        body: Cow<'static, str>,
+        parent: Option<WindowId>,
+    },
 }
 
 impl From<PlatformBoundEvent> for Event {

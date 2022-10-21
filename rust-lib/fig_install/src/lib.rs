@@ -152,6 +152,8 @@ pub async fn update(
         if let Some(on_update) = on_update {
             info!("Updating Fig...");
             on_update(rx);
+        } else {
+            drop(rx);
         }
 
         join.await.unwrap()?;

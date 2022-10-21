@@ -13,18 +13,14 @@ pub async fn update(no_confirm: bool) -> Result<()> {
                             progress_bar.set_position(p as u64);
                         },
                         Some(UpdateStatus::Message(m)) => {
-                            progress_bar.println(m);
+                            progress_bar.set_message(m);
                         },
                         Some(UpdateStatus::Error(e)) => {
                             progress_bar.abandon();
                             return Err(eyre::eyre!(e));
                         },
-                        Some(UpdateStatus::Exit) => {
-                            progress_bar.finish();
-                            break;
-                        },
-                        None => {
-                            progress_bar.finish();
+                        Some(UpdateStatus::Exit) | None => {
+                            progress_bar.finish_with_message("Done!");
                             break;
                         },
                     }

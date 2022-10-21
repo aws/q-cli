@@ -5,6 +5,8 @@ use fig_util::directories;
 use semver::Version;
 use tracing::error;
 
+use crate::utils::is_cargo_debug_build;
+
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
@@ -119,7 +121,7 @@ pub async fn run_install() {
             launch_ibus().await;
         } else {
             // Update if there's a newer version
-            check_for_update(true).await;
+            crate::update::check_for_update(true).await;
 
             tokio::spawn(async {
                 let seconds = fig_settings::settings::get_int_or("app.autoupdate.check-period", 60 * 60 * 3);
@@ -130,7 +132,7 @@ pub async fn run_install() {
                 interval.tick().await;
                 loop {
                     interval.tick().await;
-                    check_for_update(false).await;
+                    crate::update::check_for_update(false).await;
                 }
             });
 
@@ -139,112 +141,6 @@ pub async fn run_install() {
             std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
         }
     );
-}
-
-#[cfg(not(target_os = "linux"))]
-pub async fn check_for_update(show_updating: bool) {
-    use fig_install::UpdateStatus;
-    use tokio::sync::mpsc::Receiver;
-    use wry::application::dpi::LogicalSize;
-    use wry::application::menu::{
-        MenuBar,
-        MenuItem,
-    };
-    use wry::application::platform::macos::WindowBuilderExtMacOS;
-
-    let updating_cb: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>> = if show_updating {
-        Some(Box::new(|mut recv: Receiver<UpdateStatus>| {
-            use wry::application::event::{
-                Event,
-                WindowEvent,
-            };
-            use wry::application::event_loop::{
-                ControlFlow,
-                EventLoop,
-            };
-            use wry::application::window::WindowBuilder;
-            use wry::webview::WebViewBuilder;
-
-            let mut menu_bar = MenuBar::new();
-            let mut sub_menu_bar = MenuBar::new();
-            sub_menu_bar.add_native_item(MenuItem::Quit);
-            menu_bar.add_submenu("Fig", true, sub_menu_bar);
-
-            let event_loop: EventLoop<UpdateStatus> = EventLoop::with_user_event();
-            let window = WindowBuilder::new()
-                .with_title("Fig")
-                .with_inner_size(LogicalSize::new(350, 350))
-                .with_resizable(false)
-                .with_titlebar_hidden(true)
-                .with_movable_by_window_background(true)
-                .with_menu(menu_bar)
-                .build(&event_loop)
-                .unwrap();
-
-            let webview = WebViewBuilder::new(window)
-                .unwrap()
-                .with_html(include_str!("../html/updating.html"))
-                .unwrap()
-                .with_devtools(true)
-                .build()
-                .unwrap();
-
-            // Forward recv to the webview
-            let proxy = event_loop.create_proxy();
-            std::thread::spawn(move || {
-                // Sleep for a little bit for the js to initialize (dont know why :()
-                std::thread::sleep(std::time::Duration::from_millis(500));
-                loop {
-                    if let Some(event) = recv.blocking_recv() {
-                        proxy.send_event(event).ok();
-                    }
-                }
-            });
-
-            event_loop.run(move |event, _, control_flow| {
-                *control_flow = ControlFlow::Wait;
-
-                match event {
-                    Event::WindowEvent {
-                        event: WindowEvent::CloseRequested,
-                        ..
-                    } => *control_flow = ControlFlow::Exit,
-                    Event::UserEvent(event) => match event {
-                        UpdateStatus::Percent(p) => {
-                            webview
-                                .evaluate_script(&format!("updateProgress({});", p as i32))
-                                .unwrap();
-                        },
-                        UpdateStatus::Message(message) => {
-                            webview
-                                .evaluate_script(&format!("updateMessage({});", serde_json::json!(message)))
-                                .unwrap();
-                        },
-                        UpdateStatus::Error(message) => {
-                            webview
-                                .evaluate_script(&format!("updateError({});", serde_json::json!(message)))
-                                .unwrap();
-                        },
-                        UpdateStatus::Exit => {
-                            *control_flow = ControlFlow::Exit;
-                        },
-                    },
-                    _ => {},
-                }
-            });
-        }))
-    } else {
-        None
-    };
-
-    // If not debug or override, check for update
-    if (!cfg!(debug_assertions) || fig_settings::state::get_bool_or("developer.check-for-updates", false))
-        && fig_settings::settings::get_bool_or("app.disableAutoupdates", true)
-    {
-        if let Err(err) = fig_install::update(true, updating_cb, false).await {
-            error!(%err, "Failed to update");
-        }
-    }
 }
 
 #[cfg(target_os = "macos")]
@@ -446,7 +342,7 @@ fn should_run_install_script() -> bool {
         None => return true,
     };
 
-    current_version > previous_version
+    !is_cargo_debug_build() && current_version > previous_version
 }
 
 /// The current version of the desktop app

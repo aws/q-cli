@@ -443,6 +443,17 @@ impl WebviewManager {
                                 debug!(%err, "Failed to handle native event");
                             }
                         },
+                        Event::ShowMessageNotification { title, body, parent } => {
+                            let mut dialog = rfd::MessageDialog::new().set_title(&title).set_description(&body);
+
+                            if let Some(parent) = parent {
+                                if let Some(parent_window) = self.fig_id_map.get(&parent) {
+                                    dialog = dialog.set_parent(parent_window.webview.window());
+                                }
+                            }
+
+                            dialog.show();
+                        },
                     }
                 },
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},

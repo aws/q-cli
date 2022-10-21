@@ -10,6 +10,7 @@ pub mod notification_bus;
 mod platform;
 mod secure_ipc;
 mod tray;
+mod update;
 mod utils;
 mod webview;
 
