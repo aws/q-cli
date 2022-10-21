@@ -283,5 +283,20 @@ async fn status(integration: Integration) -> Result<()> {
             }
             Ok(())
         },
+        Integration::InputMethod => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    let input_method = fig_integrations::input_method::InputMethod::default();
+                    if input_method.is_installed().await.is_ok() {
+                        println!("Installed")
+                    } else {
+                        println!("Not installed")
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("Input method integration is only supported on macOS"))
+                }
+            }
+        },
     }
 }
