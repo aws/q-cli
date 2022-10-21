@@ -32,6 +32,7 @@ pub async fn update(no_confirm: bool) -> Result<()> {
                 Ok(())
             });
         })),
+        true,
     )
     .await
     {

@@ -125,11 +125,16 @@ async fn pull(channel: &Channel) -> Result<Index, Error> {
     Ok(index)
 }
 
-pub async fn check_for_updates(channel: Channel, kind: Kind, variant: Variant) -> Result<Option<UpdatePackage>, Error> {
+pub async fn check_for_updates(
+    channel: Channel,
+    kind: Kind,
+    variant: Variant,
+    disable_rollout: bool,
+) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
     const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
 
-    query_index(channel, kind, variant, CURRENT_VERSION, ARCHITECTURE, false).await
+    query_index(channel, kind, variant, CURRENT_VERSION, ARCHITECTURE, disable_rollout).await
 }
 
 pub async fn query_index(

@@ -66,7 +66,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 .unwrap();
         },
         id if id == MenuId::new("update") => {
-            tokio::runtime::Handle::current().spawn(fig_install::update(true, None));
+            tokio::runtime::Handle::current().spawn(fig_install::update(true, None, true));
         },
         id if id == MenuId::new("quit") => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();

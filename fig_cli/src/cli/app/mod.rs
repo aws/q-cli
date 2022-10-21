@@ -182,7 +182,7 @@ impl AppSubcommand {
                         .ok();
                     }
 
-                    match fig_install::check_for_updates().await {
+                    match fig_install::check_for_updates(false).await {
                         Ok(Some(package)) => {
                             let _ = state::set_value("update.latestVersion", package.version);
                         },

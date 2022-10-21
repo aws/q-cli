@@ -241,7 +241,7 @@ pub async fn check_for_update(show_updating: bool) {
     if (!cfg!(debug_assertions) || fig_settings::state::get_bool_or("developer.check-for-updates", false))
         && fig_settings::settings::get_bool_or("app.disableAutoupdates", true)
     {
-        if let Err(err) = fig_install::update(true, updating_cb).await {
+        if let Err(err) = fig_install::update(true, updating_cb, false).await {
             error!(%err, "Failed to update");
         }
     }

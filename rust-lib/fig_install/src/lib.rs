@@ -97,10 +97,16 @@ pub fn get_channel() -> Result<Channel, Error> {
     })
 }
 
-pub async fn check_for_updates() -> Result<Option<UpdatePackage>, Error> {
+pub async fn check_for_updates(disable_rollout: bool) -> Result<Option<UpdatePackage>, Error> {
     let manifest = manifest().as_ref().ok_or(Error::ManifestNotFound)?;
 
-    index::check_for_updates(get_channel()?, manifest.kind.clone(), manifest.variant.clone()).await
+    index::check_for_updates(
+        get_channel()?,
+        manifest.kind.clone(),
+        manifest.variant.clone(),
+        disable_rollout,
+    )
+    .await
 }
 
 #[derive(Debug, Clone)]
@@ -115,9 +121,10 @@ pub enum UpdateStatus {
 pub async fn update(
     deprecated_no_confirm: bool,
     on_update: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>>,
+    disable_rollout: bool,
 ) -> Result<bool, Error> {
     info!("Checking for updates...");
-    if let Some(update) = check_for_updates().await? {
+    if let Some(update) = check_for_updates(disable_rollout).await? {
         info!("Found update: {}", update.version);
 
         let (tx, rx) = tokio::sync::mpsc::channel(16);
