@@ -5,6 +5,8 @@ on:
   push:
     paths: 
       - typescript-api-bindings/src/*.ts
+      - typescript-api-bindings/codegen/*.ts
+      - typescript-api-bindings/package.json
       - proto/fig.proto
 
 jobs:
