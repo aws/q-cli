@@ -384,6 +384,9 @@ jobs:
             mv "${bundle_dir}/fig_desktop.app" "${bundle_dir}/Fig.app"
             cp -r ./config "${bundle_dir}/Fig.app/Contents/Resources"
 
+            # Add legacy Sparkle ED Public Key - required for migration but can be removed afterwards
+            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" SUPublicEDKey 5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=
+            
             cd fig_input_method
             cargo build && make
             cd ..
