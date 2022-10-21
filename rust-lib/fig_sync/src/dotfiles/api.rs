@@ -107,7 +107,6 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
 
     // Parse the JSON
     let dotfiles: DotfilesData = serde_json::from_str(&download)?;
-    debug!("dotfiles: {:?}", dotfiles.dotfiles);
 
     let all_json_path = all_file_path()?;
 
