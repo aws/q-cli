@@ -19,17 +19,32 @@ use crate::event::{
     Event,
     WindowEvent,
 };
+use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
 use crate::webview::window::WindowId;
-use crate::EventLoopProxy;
+use crate::{
+    EventLoopProxy,
+    AUTOCOMPLETE_ID,
+};
 
 pub async fn position_window(
     request: PositionWindowRequest,
     window_id: WindowId,
     platform_state: &PlatformState,
+    figterm_state: &FigtermState,
     proxy: &EventLoopProxy,
 ) -> RequestResult {
     debug!(?request, %window_id, "Position Window Request");
+
+    if window_id == AUTOCOMPLETE_ID
+        && figterm_state
+            .most_recent()
+            .and_then(|session| session.context.as_ref().map(|context| context.preexec()))
+            .unwrap_or(false)
+    {
+        return RequestResult::error("Cannot position autocomplete window while preexec is active");
+    }
+
     if request.dryrun.unwrap_or(false) {
         match platform_state.get_active_window() {
             Some(_) => {

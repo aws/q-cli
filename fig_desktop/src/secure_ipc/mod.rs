@@ -203,11 +203,11 @@ async fn handle_secure_ipc(
                                     },
                                     hostbound::hook::Hook::Prompt(mut prompt) => {
                                         sanatize_fn(&mut prompt.context);
-                                        hooks::prompt(&prompt, session_id, &notifications_state, &proxy).await
+                                        hooks::prompt(&prompt, session_id, &figterm_state, &notifications_state, &proxy).await
                                     },
                                     hostbound::hook::Hook::PreExec(mut pre_exec) => {
                                         sanatize_fn(&mut pre_exec.context);
-                                        hooks::pre_exec(&pre_exec, session_id, &notifications_state, &proxy).await
+                                        hooks::pre_exec(&pre_exec, session_id, &figterm_state, &notifications_state, &proxy).await
                                     },
                                     hostbound::hook::Hook::InterceptedKey(mut intercepted_key) => {
                                         sanatize_fn(&mut intercepted_key.context);

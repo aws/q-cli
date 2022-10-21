@@ -572,7 +572,13 @@ impl DebugSubcommand {
 
                     writeln!(&mut out, "{}", "Edit Buffer".bold())?;
                     writeln!(&mut out, "{}", "━".repeat(term_width))?;
-                    writeln!(&mut out, "{}", edit_buffer.unwrap_or_else(|| "None".into()))?;
+
+                    if diagnostic.shell_context.as_ref().map(|c| c.preexec()).unwrap_or(false) {
+                        writeln!(&mut out, "{}", "<Running Process>".dim())?;
+                    } else {
+                        writeln!(&mut out, "{}", edit_buffer.unwrap_or_else(|| "None".into()))?;
+                    }
+
                     writeln!(&mut out, "{}", "━".repeat(term_width))?;
 
                     writeln!(&mut out)?;
@@ -601,6 +607,14 @@ impl DebugSubcommand {
                             &mut out,
                             "TTY: {}",
                             shell_context.ttys.unwrap_or_else(|| "None".to_string())
+                        )?;
+                        writeln!(
+                            &mut out,
+                            "Preexec: {}",
+                            shell_context
+                                .preexec
+                                .map(|s| s.to_string())
+                                .unwrap_or_else(|| "None".to_string())
                         )?;
                     }
 

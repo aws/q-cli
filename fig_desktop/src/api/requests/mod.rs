@@ -101,6 +101,7 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
             request.request,
             request.context.window_id.clone(),
             request.context.platform_state,
+            request.context.figterm_state,
             request.context.proxy,
         )
         .await

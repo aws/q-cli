@@ -1760,7 +1760,7 @@ impl<T: EventListener> Handler for Term<T> {
     #[inline]
     fn pre_exec(&mut self) {
         trace!("Fig PreExec");
-
+        self.shell_state.preexec = true;
         self.event_proxy.send_event(Event::PreExec, &self.shell_state);
         trace!("PreExec event sent");
 
@@ -1780,8 +1780,6 @@ impl<T: EventListener> Handler for Term<T> {
             hostname: context.hostname.clone(),
             exit_code: None,
         });
-
-        self.shell_state.preexec = true;
     }
 
     #[inline]

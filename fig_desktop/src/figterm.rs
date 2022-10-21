@@ -36,7 +36,7 @@ use tokio::time::{
 };
 use tracing::trace;
 
-#[derive(Debug, Hash, Clone, PartialEq, Eq, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
 pub struct FigtermSessionId(pub String);
 
 impl Deref for FigtermSessionId {

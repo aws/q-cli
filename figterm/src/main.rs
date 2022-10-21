@@ -165,6 +165,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
         hostname: shell_state.local_context.hostname.clone(),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
         figterm_version: Some(env!("CARGO_PKG_VERSION").into()),
+        preexec: Some(shell_state.preexec),
     }
 }
 

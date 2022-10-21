@@ -163,9 +163,14 @@ pub async fn edit_buffer(
 pub async fn prompt(
     hook: &PromptHook,
     session_id: &FigtermSessionId,
+    figterm_state: &FigtermState,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
+    figterm_state.with(session_id, |session| {
+        session.context = hook.context.clone();
+    });
+
     notifications_state
         .broadcast_notification_all(
             &NotificationType::NotifyOnPrompt,
@@ -190,9 +195,14 @@ pub async fn prompt(
 pub async fn pre_exec(
     hook: &PreExecHook,
     session_id: &FigtermSessionId,
+    figterm_state: &FigtermState,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
+    figterm_state.with_update(session_id.clone(), |session| {
+        session.context = hook.context.clone();
+    });
+
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID.clone(),
         window_event: WindowEvent::Hide,

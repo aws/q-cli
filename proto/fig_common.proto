@@ -54,6 +54,8 @@ message ShellContext {
   repeated EnvironmentVariable environment_variables = 13;
   // the version of figterm
   optional string figterm_version = 14;
+  // true if a command is running
+  optional bool preexec = 15;
 }
 
 message FileData {

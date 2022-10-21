@@ -44,6 +44,7 @@ pub fn generate_shell_context(
         hostname: None,
         environment_variables: vec![],
         figterm_version: None,
+        preexec: None,
     })
 }
 
