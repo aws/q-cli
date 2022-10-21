@@ -41,7 +41,9 @@ fig_api_client = { path = "../rust-lib/fig_api_client" }
 fig_daemon = { path = "../rust-lib/fig_daemon" }
 fig_desktop_api = { path = "../rust-lib/fig_desktop_api" }
 fig_install = { path = "../rust-lib/fig_install" }
-fig_integrations = { path = "../rust-lib/fig_integrations" }
+fig_integrations = { path = "../rust-lib/fig_integrations", features = [
+    "dispatch",
+] }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
 fig_log = { path = "../rust-lib/fig_log" }
 fig_proto = { path = "../rust-lib/fig_proto" }

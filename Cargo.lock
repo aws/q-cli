@@ -2774,6 +2774,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "clap 4.0.18",
  "core-foundation",
+ "dispatch",
  "fig_telemetry",
  "fig_util",
  "macos_accessibility_position",

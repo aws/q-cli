@@ -18,6 +18,7 @@ use core_foundation::array::{
 use core_foundation::base::{
     Boolean,
     CFGetTypeID,
+    CFType,
     CFTypeID,
     CFTypeRef,
     OSStatus,
@@ -262,23 +263,22 @@ impl InputMethod {
     }
 
     pub fn list_all_input_sources(
-        properties: Option<CFDictionaryRef>,
+        properties: Option<&CFDictionary<CFType, CFType>>,
         include_all_installed: bool,
     ) -> Option<Vec<TISInputSource>> {
-        let properties = match properties {
-            Some(properties) => properties,
+        let properties: CFDictionaryRef = match properties {
+            Some(properties) => properties.as_concrete_TypeRef(),
             None => ptr::null(),
         };
 
-        unsafe {
-            let sources = TISCreateInputSourceList(properties, include_all_installed);
-            if sources.is_null() {
-                return None;
-            }
-            let sources = CFArray::<TISInputSource>::wrap_under_create_rule(sources);
-
-            Some(sources.into_iter().map(|value| value.to_owned()).collect())
+        let sources = unsafe { TISCreateInputSourceList(properties, include_all_installed) };
+        if sources.is_null() {
+            return None;
         }
+
+        let sources = unsafe { CFArray::<TISInputSource>::wrap_under_create_rule(sources) };
+
+        Some(sources.into_iter().map(|value| value.to_owned()).collect())
     }
 
     pub fn register(location: impl AsRef<Path>) -> Result<(), InputMethodError> {
@@ -302,7 +302,7 @@ impl InputMethod {
         let value = CFString::from(bundle_id);
         let properties = CFDictionary::from_CFType_pairs(&[(key.as_CFType(), value.as_CFType())]);
 
-        InputMethod::list_all_input_sources(Some(properties.as_concrete_TypeRef()), true)
+        InputMethod::list_all_input_sources(Some(&properties), true)
     }
 }
 
@@ -340,7 +340,7 @@ impl InputMethod {
                 (input_source_key.as_CFType(), bundle_identifier.as_CFType()),
             ]);
 
-            let sources = InputMethod::list_all_input_sources(Some(properties.as_concrete_TypeRef()), true);
+            let sources = InputMethod::list_all_input_sources(Some(&properties), true);
 
             match sources {
                 None => Err(InputMethodError::CouldNotListInputSources),
@@ -434,18 +434,21 @@ impl Integration for InputMethod {
         // todo(mschrage): check that the input method is running (NSRunning application)
 
         // Can we load input source?
-        let input_source = self.input_source()?;
 
-        // Is input source enabled?
-        if !input_source.is_enabled().unwrap_or_default() {
-            return Err(InputMethodError::NotEnabled.into());
-        }
+        run_on_main(|| {
+            let input_source = self.input_source()?;
 
-        if !input_source.is_selected().unwrap_or_default() {
-            return Err(InputMethodError::NotSelected.into());
-        }
+            // Is input source enabled?
+            if !input_source.is_enabled().unwrap_or_default() {
+                return Err(InputMethodError::NotEnabled.into());
+            }
 
-        Ok(())
+            if !input_source.is_selected().unwrap_or_default() {
+                return Err(InputMethodError::NotSelected.into());
+            }
+
+            Ok(())
+        })
     }
 
     async fn install(&self) -> Result<()> {
@@ -461,15 +464,16 @@ impl Integration for InputMethod {
             // Register input source
             InputMethod::register(&destination)?;
 
-            let input_source = self.input_source()?;
-
             debug!("Launch Input Method...");
             if let Some(dest) = destination.to_str() {
                 Command::new("open").arg(dest);
             }
 
-            // Enable input source. This will prompt user in System Preferences.
-            input_source.enable()?;
+            run_on_main(|| {
+                let source = self.input_source()?;
+                source.enable()?;
+                Ok::<(), InputMethodError>(())
+            })?;
 
             // The 'enabled' property of an input source is never updated for the process that
             // invokes `TISEnableInputSource` Unclear why this is, but we handle it by
@@ -515,12 +519,17 @@ impl Integration for InputMethod {
     async fn uninstall(&self) -> Result<()> {
         let destination = self.target_bundle_path()?;
 
-        let input_source = self.input_source()?;
-        input_source.deselect()?;
-        input_source.disable()?;
+        let binding = run_on_main(|| {
+            let input_source = self.input_source()?;
+            input_source.deselect()?;
+            input_source.disable()?;
+
+            Ok::<_, InputMethodError>(input_source.bundle_id())
+        })?;
+
+        let binding = binding.ok_or_else(|| InputMethodError::InvalidBundle("Could not get bundle id".into()))?;
 
         // todo(mschrage): Terminate input method binary using Cocoa APIs
-        let binding = input_source.bundle_id().unwrap();
         unsafe {
             let bundle_id: &Object = str_to_nsstring(binding.as_str());
             let running_input_method_array: &mut Object = msg_send![
@@ -572,6 +581,20 @@ impl InputMethod {
     }
 }
 
+fn run_on_main<T, F>(work: F) -> T
+where
+    F: Send + FnOnce() -> T,
+    T: Send,
+{
+    cfg_if::cfg_if! {
+        if #[cfg(feature = "dispatch")] {
+            dispatch::Queue::main().exec_sync(work)
+        } else {
+            work()
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     // Note this useful idiom: importing names from outer (for mod tests) scope.
@@ -583,8 +606,7 @@ mod tests {
         let key: CFString = unsafe { CFString::wrap_under_create_rule(kTISPropertyBundleID) };
         let value = CFString::from_static_string(bundle_identifier);
         let properties = CFDictionary::from_CFType_pairs(&[(key.as_CFType(), value.as_CFType())]);
-        let sources =
-            InputMethod::list_all_input_sources(Some(properties.as_concrete_TypeRef()), true).unwrap_or_default();
+        let sources = InputMethod::list_all_input_sources(Some(&properties), true).unwrap_or_default();
         sources.into_iter().next().unwrap()
     }
 

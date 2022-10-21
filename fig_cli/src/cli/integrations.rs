@@ -25,6 +25,11 @@ pub enum IntegrationsSubcommands {
         #[arg(long, short)]
         silent: bool,
     },
+    Status {
+        /// Integration to check status of
+        #[command(subcommand)]
+        integration: Integration,
+    },
 }
 
 #[derive(Debug, Subcommand, Clone, Copy, PartialEq, Eq)]
@@ -68,6 +73,7 @@ impl IntegrationsSubcommands {
                 }
                 Ok(())
             },
+            IntegrationsSubcommands::Status { integration } => status(integration).await,
         }
     }
 }
@@ -229,4 +235,53 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
     }
 
     result
+}
+
+async fn status(integration: Integration) -> Result<()> {
+    match integration {
+        Integration::All => Err(eyre::eyre!("Cannot check status of all integrations")),
+        Integration::Ssh => {
+            let ssh_integration = SshIntegration::default()?;
+            if ssh_integration.is_installed().await.is_ok() {
+                println!("Installed")
+            } else {
+                println!("Not installed")
+            }
+            Ok(())
+        },
+        Integration::Daemon => {
+            let daemon = Daemon::default();
+            match daemon.status().await {
+                Ok(status) => {
+                    println!("Status: {status:?}");
+                },
+                Err(err) => {
+                    println!("Status Error: {err}");
+                },
+            }
+            Ok(())
+        },
+        Integration::Dotfiles { .. } => {
+            for shell in &[Shell::Bash, Shell::Zsh, Shell::Fish] {
+                match shell.get_shell_integrations() {
+                    Ok(integrations) => {
+                        for integration in integrations {
+                            match integration.is_installed().await {
+                                Ok(_) => {
+                                    println!("{}: Installed", integration.describe());
+                                },
+                                Err(_) => {
+                                    println!("{}: Not installed", integration.describe());
+                                },
+                            }
+                        }
+                    },
+                    Err(e) => {
+                        println!("{shell}: {e}");
+                    },
+                }
+            }
+            Ok(())
+        },
+    }
 }
