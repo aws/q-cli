@@ -9,28 +9,29 @@ jobs:
   update-appcast:
     runs-on: macos-latest
     steps:
-    - name: "SET: VERSIONS_BRANCH, APPCAST_PREFIX and BUMP_CASK_PR"
-        env:
-          REF: ${{ github.ref }}
-          ACTIONS_ALLOW_UNSECURE_COMMANDS: true
-        run: |
-          if [[ $REF == 'refs/heads/master' ]]; then
-              echo "::set-env name=VERSIONS_BRANCH::main"
-              echo "::set-env name=APPCAST_PREFIX::versions"
-              echo "::set-env name=BUMP_CASK_PR::1" 
+    - name: "SET VERSIONS_BRANCH, APPCAST_PREFIX and BUMP_CASK_PR"
+      env:
+        REF: ${{ github.ref }}
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      run: |
+        if [[ $REF == 'refs/heads/master' ]]; then
+          echo "::set-env name=VERSIONS_BRANCH::main"
+          echo "::set-env name=APPCAST_PREFIX::versions"
+          echo "::set-env name=BUMP_CASK_PR::1" 
 
-          elif [[ $REF == 'refs/heads/staging' ]]; then
-              echo "::set-env name=VERSIONS_BRANCH::beta"
-              echo "::set-env name=APPCAST_PREFIX::beta"
+        elif [[ $REF == 'refs/heads/staging' ]]; then
+          echo "::set-env name=VERSIONS_BRANCH::beta"
+          echo "::set-env name=APPCAST_PREFIX::beta"
 
-          else
-              echo "::set-env name=VERSIONS_BRANCH::alpha"
-              echo "::set-env name=APPCAST_PREFIX::alpha"
+        else
+          echo "::set-env name=VERSIONS_BRANCH::alpha"
+          echo "::set-env name=APPCAST_PREFIX::alpha"
 
-          fi
-          echo $VERSIONS_BRANCH
-          echo $APPCAST_PREFIX
-          echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_ENV
+        fi
+        echo $VERSIONS_BRANCH
+        echo $APPCAST_PREFIX
+        echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_ENV
+        
     - name: "Download Sparkle CLI"
       run: |
         curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
