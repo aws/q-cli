@@ -36,6 +36,7 @@ pub enum Integration {
     },
     Daemon,
     Ssh,
+    InputMethod,
     #[doc(hidden)]
     All,
 }
@@ -47,19 +48,25 @@ impl IntegrationsSubcommands {
                 if let Integration::All = integration {
                     install(Integration::Dotfiles { shell: None }, silent).await?;
                     install(Integration::Daemon, silent).await?;
-                    install(Integration::Ssh, silent).await
+                    install(Integration::Ssh, silent).await?;
+                    #[cfg(target_os = "macos")]
+                    install(Integration::InputMethod, silent).await?;
                 } else {
-                    install(integration, silent).await
+                    install(integration, silent).await?;
                 }
+                Ok(())
             },
             IntegrationsSubcommands::Uninstall { integration, silent } => {
                 if let Integration::All = integration {
                     uninstall(Integration::Dotfiles { shell: None }, silent).await?;
                     uninstall(Integration::Daemon, silent).await?;
-                    uninstall(Integration::Ssh, silent).await
+                    uninstall(Integration::Ssh, silent).await?;
+                    #[cfg(target_os = "macos")]
+                    uninstall(Integration::InputMethod, silent).await?;
                 } else {
-                    uninstall(integration, silent).await
+                    uninstall(integration, silent).await?;
                 }
+                Ok(())
             },
         }
     }
@@ -119,6 +126,17 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 ssh_integration.install().await.map_err(eyre::Report::from)
             } else {
                 Ok(())
+            }
+        },
+        Integration::InputMethod => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    fig_integrations::input_method::InputMethod::default().install().await?;
+                    installed = true;
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("Input method integration is only supported on macOS"))
+                }
             }
         },
     };
@@ -187,6 +205,17 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                 ssh_integration.uninstall().await.map_err(eyre::Report::from)
             } else {
                 Ok(())
+            }
+        },
+        Integration::InputMethod => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    fig_integrations::input_method::InputMethod::default().uninstall().await?;
+                    uninstalled = true;
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("Input method integration is only supported on macOS"))
+                }
             }
         },
     };

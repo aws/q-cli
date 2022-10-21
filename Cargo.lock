@@ -6254,7 +6254,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0149778bd99b6959285b0933288206090c50e2327f47a9c463bfdbf45c8823ea"
 dependencies = [
- "block 0.1.6 (registry+https://github.com/rust-lang/crates.io-index)",
+ "block",
  "dispatch",
  "glib-sys",
  "gobject-sys",
