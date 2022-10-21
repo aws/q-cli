@@ -18,6 +18,7 @@ pub use fig_desktop_api::requests::{
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     AggregateSessionMetricActionRequest,
+    ClientOriginatedMessage,
     DebuggerUpdateRequest,
     InsertTextRequest,
     NotificationRequest,
@@ -149,7 +150,7 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
 #[allow(clippy::too_many_arguments)]
 pub async fn api_request(
     window_id: WindowId,
-    client_originated_message_b64: String,
+    message: fig_desktop_api::error::Result<ClientOriginatedMessage>,
     debug_state: &DebugState,
     figterm_state: &FigtermState,
     intercept_state: &InterceptState,
@@ -157,7 +158,7 @@ pub async fn api_request(
     platform_state: &PlatformState,
     proxy: &EventLoopProxy,
 ) {
-    let response = match fig_desktop_api::handler::request_from_b64(&client_originated_message_b64) {
+    let response = match message {
         Ok(request) => {
             let id = request.id;
             trace!(?request, %window_id, "Received request");

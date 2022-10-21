@@ -9,6 +9,8 @@ use std::sync::Arc;
 use cfg_if::cfg_if;
 use dashmap::DashMap;
 use fig_desktop_api::init_script::javascript_init;
+use fig_proto::fig::client_originated_message::Submessage;
+use fig_proto::fig::ClientOriginatedMessage;
 use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
@@ -189,35 +191,83 @@ impl WebviewManager {
         tokio::spawn(crate::figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
+        let (sync_api_handler_tx, mut sync_api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(
+            WindowId,
+            fig_desktop_api::error::Result<ClientOriginatedMessage>,
+        )>();
 
         {
+            let sync_proxy = self.event_loop.create_proxy();
+            let sync_debug_state = self.debug_state.clone();
+            let sync_figterm_state = self.figterm_state.clone();
+            let sync_intercept_state = self.intercept_state.clone();
+            let sync_notifications_state = self.notifications_state.clone();
+            let sync_platform_state = self.platform_state.clone();
+
+            tokio::spawn(async move {
+                while let Some((fig_id, message)) = sync_api_handler_rx.recv().await {
+                    let proxy = sync_proxy.clone();
+                    let debug_state = sync_debug_state.clone();
+                    let figterm_state = sync_figterm_state.clone();
+                    let intercept_state = sync_intercept_state.clone();
+                    let notifications_state = sync_notifications_state.clone();
+                    let platform_state = sync_platform_state.clone();
+                    api_request(
+                        fig_id,
+                        message,
+                        &debug_state,
+                        &figterm_state,
+                        &intercept_state,
+                        &notifications_state,
+                        &platform_state,
+                        &proxy.clone(),
+                    )
+                    .await;
+                }
+            });
+
             let proxy = self.event_loop.create_proxy();
             let debug_state = self.debug_state.clone();
             let figterm_state = self.figterm_state.clone();
             let intercept_state = self.intercept_state.clone();
             let notifications_state = self.notifications_state.clone();
             let platform_state = self.platform_state.clone();
+
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
-                    let proxy = proxy.clone();
-                    let debug_state = debug_state.clone();
-                    let figterm_state = figterm_state.clone();
-                    let intercept_state = intercept_state.clone();
-                    let notifications_state = notifications_state.clone();
-                    let platform_state = platform_state.clone();
-                    tokio::spawn(async move {
-                        api_request(
-                            fig_id,
-                            payload,
-                            &debug_state,
-                            &figterm_state,
-                            &intercept_state,
-                            &notifications_state,
-                            &platform_state,
-                            &proxy.clone(),
-                        )
-                        .await;
-                    });
+                    let message = fig_desktop_api::handler::request_from_b64(&payload);
+                    if matches!(
+                        message,
+                        Ok(ClientOriginatedMessage {
+                            id: _,
+                            submessage: Some(Submessage::PositionWindowRequest(_))
+                        }) | Ok(ClientOriginatedMessage {
+                            id: _,
+                            submessage: Some(Submessage::WindowFocusRequest(_))
+                        })
+                    ) {
+                        sync_api_handler_tx.send((fig_id, message)).ok();
+                    } else {
+                        let proxy = proxy.clone();
+                        let debug_state = debug_state.clone();
+                        let figterm_state = figterm_state.clone();
+                        let intercept_state = intercept_state.clone();
+                        let notifications_state = notifications_state.clone();
+                        let platform_state = platform_state.clone();
+                        tokio::spawn(async move {
+                            api_request(
+                                fig_id,
+                                message,
+                                &debug_state,
+                                &figterm_state,
+                                &intercept_state,
+                                &notifications_state,
+                                &platform_state,
+                                &proxy.clone(),
+                            )
+                            .await;
+                        });
+                    }
                 }
             });
         }
