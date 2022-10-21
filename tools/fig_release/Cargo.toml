@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-clap = { version = "4.0.16", features = ["derive"] }
+clap = { version = "4.0.18", features = ["derive"] }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select", "editor"] }
 eyre = "0.6.8"
 fig_request = { path = "../../rust-lib/fig_request" }

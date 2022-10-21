@@ -899,9 +899,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.0.17"
+version = "4.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "06badb543e734a2d6568e19a40af66ed5364360b9226184926f89d229b4b4267"
+checksum = "335867764ed2de42325fafe6d18b8af74ba97ee0c590fa016f157535b42ab04b"
 dependencies = [
  "atty",
  "bitflags",
@@ -919,7 +919,7 @@ version = "4.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfe581a2035db4174cdbdc91265e1aba50f381577f0510d0ad36c7bc59cc84a3"
 dependencies = [
- "clap 4.0.17",
+ "clap 4.0.18",
 ]
 
 [[package]]
@@ -928,15 +928,15 @@ version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b36d1abc7184a737efc9f589e6e783e8b56c72e71fca748cf9947ed0a6f46d44"
 dependencies = [
- "clap 4.0.17",
+ "clap 4.0.18",
  "clap_complete",
 ]
 
 [[package]]
 name = "clap_derive"
-version = "4.0.13"
+version = "4.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c42f169caba89a7d512b5418b09864543eeb4d497416c917d7137863bd2076ad"
+checksum = "16a1b0f6422af32d5da0c58e2703320f379216ee70198241c84173a8c5ac28f3"
 dependencies = [
  "heck 0.4.0",
  "proc-macro-error",
@@ -2514,7 +2514,7 @@ name = "fig-api-mock"
 version = "2.5.8-beta.8"
 dependencies = [
  "async-trait",
- "clap 4.0.17",
+ "clap 4.0.18",
  "fig_desktop_api",
  "fig_proto",
  "tokio",
@@ -2545,7 +2545,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.17",
+ "clap 4.0.18",
  "clap_complete",
  "clap_complete_fig",
  "color-eyre",
@@ -2640,7 +2640,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.17",
+ "clap 4.0.18",
  "cocoa",
  "core-foundation",
  "core-graphics",
@@ -2776,7 +2776,7 @@ dependencies = [
  "accessibility-sys",
  "async-trait",
  "cfg-if 1.0.0",
- "clap 4.0.17",
+ "clap 4.0.18",
  "core-foundation",
  "fig_telemetry",
  "fig_util",
@@ -2847,7 +2847,7 @@ dependencies = [
 name = "fig_release"
 version = "2.5.8-beta.8"
 dependencies = [
- "clap 4.0.17",
+ "clap 4.0.18",
  "dialoguer",
  "eyre",
  "fig_request",
@@ -2974,7 +2974,7 @@ dependencies = [
  "bstr 1.0.1",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.17",
+ "clap 4.0.18",
  "core-foundation",
  "dirs",
  "fig_test",
@@ -3011,7 +3011,7 @@ dependencies = [
  "bitflags",
  "bytes",
  "cfg-if 1.0.0",
- "clap 4.0.17",
+ "clap 4.0.18",
  "crossterm",
  "dashmap",
  "fig_api_client",
