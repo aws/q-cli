@@ -16,7 +16,6 @@ pub use util::{
     NSString,
     NSStringRef,
     NotificationCenter,
-    Subscription,
     NSURL,
 };
 pub use window_server::{

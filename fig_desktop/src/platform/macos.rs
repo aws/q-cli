@@ -287,7 +287,7 @@ impl PlatformStateImpl {
                     let queue: id = msg_send![class!(NSOperationQueue), alloc];
                     msg_send![queue, init]
                 };
-                distributed.subscribe(ax_notification_name, Some(queue), move |_, _| {
+                distributed.subscribe(ax_notification_name, Some(queue), move |_| {
                     let enabled = accessibility_is_enabled();
                     accessibility_proxy
                         .clone()
@@ -463,8 +463,12 @@ impl PlatformStateImpl {
                     YES
                 }
 
+                let queue: id = unsafe {
+                    let queue: id = msg_send![class!(NSOperationQueue), alloc];
+                    msg_send![queue, init]
+                };
                 let application_observer = self.proxy.clone();
-                NotificationCenter::shared().subscribe("io.fig.show-dashboard", None, move |_, _| {
+                NotificationCenter::shared().subscribe("io.fig.show-dashboard", Some(queue), move |_| {
                     if let Err(e) = application_observer.send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID,
                         window_event: WindowEvent::Show,

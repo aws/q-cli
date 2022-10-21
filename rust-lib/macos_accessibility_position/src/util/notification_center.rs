@@ -1,5 +1,3 @@
-use std::sync::Arc;
-
 use appkit_nsworkspace_bindings::{
     id,
     INSDictionary,
@@ -16,39 +14,8 @@ use appkit_nsworkspace_bindings::{
 use block;
 use cocoa::base::nil as NIL;
 use objc::runtime::Object;
-use parking_lot::Mutex;
 
 use super::NSString;
-
-pub struct Subscription {
-    observer: Mutex<Option<*mut Object>>,
-    center: NSNotificationCenter,
-}
-
-// SAFETY: Pointer for *mut Object is send + sync
-unsafe impl Send for Subscription {}
-unsafe impl Sync for Subscription {}
-
-impl Subscription {
-    pub fn empty(center: NSNotificationCenter) -> Self {
-        Self {
-            observer: Mutex::new(None::<*mut Object>),
-            center,
-        }
-    }
-
-    pub fn set_observer(&mut self, observer: *mut Object) {
-        self.observer.lock().replace(observer);
-    }
-
-    pub fn cancel(&mut self) {
-        if let Some(observer) = self.observer.lock().take() {
-            unsafe {
-                self.center.removeObserver_(observer);
-            }
-        }
-    }
-}
 
 pub struct NotificationCenter {
     inner: NSNotificationCenter,
@@ -111,26 +78,20 @@ impl NotificationCenter {
             .addObserver_selector_name_object_(observer, callback, name.to_appkit_nsstring(), NIL);
     }
 
-    pub fn subscribe<F>(&mut self, notification_name: impl Into<NSString>, queue: Option<id>, mut f: F)
+    pub fn subscribe<F>(&mut self, notification_name: impl Into<NSString>, queue: Option<id>, f: F)
     where
-        F: FnMut(NSNotification, Arc<Mutex<Subscription>>),
+        F: Fn(NSNotification),
     {
-        let subscription = Arc::new(Mutex::new(Subscription::empty(self.inner)));
-        let block_sub = subscription.clone();
-        let mut block = block::ConcreteBlock::new(move |notif: NSNotification| {
-            f(notif, block_sub.clone());
-        });
+        let mut block = block::ConcreteBlock::new(f);
         unsafe {
             let name: NSString = notification_name.into();
             // addObserverForName copies block for us.
-            let observer = self.inner.addObserverForName_object_queue_usingBlock_(
+            self.inner.addObserverForName_object_queue_usingBlock_(
                 name.to_appkit_nsstring(),
                 NIL,
                 NSOperationQueue(queue.unwrap_or(NIL)),
                 &mut block as *mut _ as *mut std::os::raw::c_void,
-            ) as *mut Object;
-            let mut subscription = subscription.lock();
-            subscription.set_observer(observer);
+            );
         }
     }
 }

@@ -6,10 +6,7 @@ mod nsurl;
 use std::ops::Deref;
 
 use cocoa::base::nil;
-pub use notification_center::{
-    NotificationCenter,
-    Subscription,
-};
+pub use notification_center::NotificationCenter;
 pub use nsarray::{
     NSArray,
     NSArrayRef,
