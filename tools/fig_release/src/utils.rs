@@ -68,6 +68,23 @@ pub fn run(args: &[&str]) -> eyre::Result<()> {
     Ok(())
 }
 
+pub fn run_stdout(args: &[&str]) -> eyre::Result<String> {
+    print!("$ {} ", args[0]);
+    for arg in &args[1..] {
+        print!("{arg} ");
+    }
+    println!();
+    let output = Command::new(args[0]).args(&args[1..]).output()?;
+    if !output.status.success() {
+        if let Some(code) = output.status.code() {
+            eyre::bail!("Failed running command {}: exit code {code}", args.join(" "));
+        } else {
+            eyre::bail!("Failed running command {}", args.join(" "));
+        }
+    }
+    Ok(String::from_utf8_lossy(&output.stdout).to_string())
+}
+
 pub fn extract_number(pre: &Prerelease) -> eyre::Result<u64> {
     Ok(pre
         .as_str()
