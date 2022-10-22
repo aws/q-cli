@@ -63,6 +63,7 @@ message Hostbound {
     Handshake handshake = 100;
     Hook hook = 101;
     Response response = 102;
+    google.protobuf.Empty pong = 103;
   }
 
   message Handshake {

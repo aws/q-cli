@@ -283,7 +283,7 @@ pub async fn spawn_secure_ipc(
                         let outgoing_task = tokio::spawn(async move {
                             while let Ok(message) = outgoing_rx.recv_async().await {
                                 trace!(?message, "Sending secure message");
-                                match writer.send_message(message.clone()).await {
+                                match writer.send_message(message).await {
                                     Ok(()) => {
                                         if let Err(err) = writer.flush().await {
                                             error!(%err, "Failed to flush socket");

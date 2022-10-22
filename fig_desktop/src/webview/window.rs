@@ -210,9 +210,14 @@ impl WindowState {
                 }
             },
             WindowEvent::Hide => {
+                if !self.webview.window().is_visible() {
+                    return;
+                }
+
                 for session in figterm_state.linked_sessions.lock().iter() {
                     let _ = session.sender.send(FigtermCommand::InterceptClear);
                 }
+
                 self.webview.window().set_visible(false);
                 #[cfg(not(target_os = "linux"))]
                 self.webview.window().set_resizable(true);

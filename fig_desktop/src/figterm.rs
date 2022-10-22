@@ -133,16 +133,16 @@ impl FigtermState {
     ) -> Vec<FigtermSession> {
         let mut sessions_temp = LinkedList::new();
         std::mem::swap(&mut **guard, &mut sessions_temp);
-        let mut existing = Vec::new();
+        let mut removed = Vec::new();
         guard.extend(sessions_temp.into_iter().filter_map(|x| {
             if f(&x) {
-                existing.push(x);
+                removed.push(x);
                 None
             } else {
                 Some(x)
             }
         }));
-        existing
+        removed
     }
 
     /// Gets mutable reference to the given session id and sets the most recent session id
@@ -199,7 +199,6 @@ pub struct FigtermSession {
     pub edit_buffer: EditBuffer,
     #[serde(skip)]
     pub last_receive: Instant,
-    #[serde(skip)]
     pub context: Option<ShellContext>,
     #[serde(skip)]
     pub terminal_cursor_coordinates: Option<TerminalCursorCoordinates>,

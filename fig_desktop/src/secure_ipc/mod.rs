@@ -119,6 +119,7 @@ async fn handle_secure_ipc(
         tokio::select! {
             _ = on_close_rx.recv() => {
                 debug!("Connection closed");
+                break;
             }
             message = reader.recv_message::<Hostbound>() => match message {
                 Ok(Some(message)) => {
@@ -240,10 +241,21 @@ async fn handle_secure_ipc(
                             }
                             None
                         },
-                        _ => {
-                            warn!("Received invalid secure packet");
+                        Some(hostbound::Packet::Pong(())) => {
+                            trace!(?session_id, "Received pong");
+                            if let Some(session_id) = &session_id {
+                                figterm_state.with_update(session_id.clone(), |session| {
+                                    session.last_receive = Instant::now();
+                                });
+                            }
                             None
                         },
+                        Some(hostbound::Packet::Hook(hostbound::Hook { hook: None }))
+                            | Some(hostbound::Packet::Response(hostbound::Response { response: None, .. }))
+                            | None => {
+                            warn!("Received invalid secure packet");
+                            None
+                        }
                     } {
                         let _ = clientbound_tx.send(Clientbound { packet: Some(response) });
                     }

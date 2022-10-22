@@ -177,6 +177,11 @@ impl Display for Method {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
+pub enum StateComponent {
+    Figterm,
+}
+
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
@@ -293,6 +298,9 @@ pub enum InternalSubcommand {
     #[cfg(target_os = "macos")]
     AttemptToFinishInputMethodInstallation {
         bundle_path: Option<PathBuf>,
+    },
+    DumpState {
+        component: StateComponent,
     },
 }
 
@@ -823,6 +831,14 @@ impl InternalSubcommand {
                         exit(1)
                     },
                 }
+            },
+            InternalSubcommand::DumpState { .. } => {
+                let state =
+                    fig_ipc::local::dump_state_command(fig_proto::local::dump_state_command::Type::DumpStateFigterm)
+                        .await
+                        .context("Failed to send dump state command")?;
+
+                println!("{}", state.json);
             },
         }
 

@@ -1,8 +1,53 @@
 //! Fig.js Protocol Buffers
 
+use serde::ser::{
+    SerializeStruct,
+    SerializeTuple,
+};
+use serde::Serialize;
 use serde_json::Value;
 
 use crate::proto::fig_common::*;
+
+// Context utils
+
+impl ShellContext {}
+
+impl Serialize for ShellContext {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut s = serializer.serialize_struct("ShellContext", 12)?;
+        s.serialize_field("pid", &self.pid)?;
+        s.serialize_field("ttys", &self.ttys)?;
+        s.serialize_field("process_name", &self.process_name)?;
+        s.serialize_field("current_working_directory", &self.current_working_directory)?;
+        s.serialize_field("session_id", &self.session_id)?;
+        s.serialize_field("terminal", &self.terminal)?;
+        s.serialize_field("hostname", &self.hostname)?;
+        s.serialize_field("shell_path", &self.shell_path)?;
+        s.serialize_field("wsl_distro", &self.wsl_distro)?;
+        s.serialize_field("environment_variables", &self.environment_variables)?;
+        s.serialize_field("figterm_version", &self.figterm_version)?;
+        s.serialize_field("preexec", &self.preexec)?;
+        s.end()
+    }
+}
+
+impl Serialize for EnvironmentVariable {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        let mut s = serializer.serialize_tuple(2)?;
+        s.serialize_element(&self.key)?;
+        s.serialize_element(&self.value)?;
+        s.end()
+    }
+}
+
+// JSON utilities
 
 impl From<String> for Json {
     fn from(s: String) -> Self {

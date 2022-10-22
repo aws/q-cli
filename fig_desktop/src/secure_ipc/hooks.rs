@@ -145,12 +145,16 @@ pub async fn edit_buffer(
             .unwrap();
     }
 
-    proxy.send_event(Event::PlatformBoundEvent(PlatformBoundEvent::EditBufferChanged))?;
+    let empty_edit_buffer = hook.text.trim().is_empty();
+
+    if !empty_edit_buffer {
+        proxy.send_event(Event::PlatformBoundEvent(PlatformBoundEvent::EditBufferChanged))?;
+    }
 
     proxy.send_event(Event::WindowEvent {
         window_id: AUTOCOMPLETE_ID,
         // If editbuffer is empty, hide the autocomplete window to avoid flickering
-        window_event: if hook.text.is_empty() {
+        window_event: if empty_edit_buffer {
             WindowEvent::Hide
         } else {
             WindowEvent::Show

@@ -5,9 +5,12 @@ use fig_proto::local::{
     self,
     command,
     command_response,
+    dump_state_command,
     BuildCommand,
     CommandResponse,
     DebugModeCommand,
+    DumpStateCommand,
+    DumpStateResponse,
     InputMethodAction,
     InputMethodCommand,
     LogLevelCommand,
@@ -77,6 +80,21 @@ pub async fn set_log_level(level: String) -> Result<Option<String>> {
             response: Some(command_response::Response::LogLevel(LogLevelResponse { old_level })),
             ..
         }) => Ok(old_level),
+        _ => Err(RecvError::InvalidMessageType.into()),
+    }
+}
+
+pub async fn dump_state_command(component: dump_state_command::Type) -> Result<DumpStateResponse> {
+    let command = command::Command::DumpState(DumpStateCommand {
+        r#type: component.into(),
+    });
+    let resp: Option<local::CommandResponse> = send_recv_command_to_socket(command).await?;
+
+    match resp {
+        Some(CommandResponse {
+            response: Some(command_response::Response::DumpState(resp)),
+            ..
+        }) => Ok(resp),
         _ => Err(RecvError::InvalidMessageType.into()),
     }
 }

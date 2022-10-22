@@ -337,145 +337,162 @@ pub async fn process_secure_message(
     use clientbound::request::Request;
     use hostbound::response::Response;
 
-    if let Some(clientbound::Packet::Request(request)) = clientbound_message.packet {
-        let nonce = request.nonce;
-        let make_response = move |response: Response| -> Hostbound {
-            Hostbound {
-                packet: Some(hostbound::Packet::Response(hostbound::Response {
-                    response: Some(response),
-                    nonce,
-                })),
-            }
-        };
+    match clientbound_message.packet {
+        Some(clientbound::Packet::Request(request)) => {
+            let nonce = request.nonce;
+            let make_response = move |response: Response| -> Hostbound {
+                Hostbound {
+                    packet: Some(hostbound::Packet::Response(hostbound::Response {
+                        response: Some(response),
+                        nonce,
+                    })),
+                }
+            };
 
-        match request.request {
-            Some(Request::InsertText(request)) => {
-                send_figterm_response_hostbound(
-                    process_figterm_request(FigtermRequest::InsertText(request), term, pty_master, key_interceptor)
-                        .await?,
-                    nonce,
-                    &response_tx,
-                )
-                .await;
-            },
-            Some(Request::Intercept(request)) => {
-                send_figterm_response_hostbound(
-                    process_figterm_request(FigtermRequest::Intercept(request), term, pty_master, key_interceptor)
-                        .await?,
-                    nonce,
-                    &response_tx,
-                )
-                .await;
-            },
-            Some(Request::Diagnostics(request)) => {
-                send_figterm_response_hostbound(
-                    process_figterm_request(FigtermRequest::Diagnostics(request), term, pty_master, key_interceptor)
-                        .await?,
-                    nonce,
-                    &response_tx,
-                )
-                .await;
-            },
-            Some(Request::InsertOnNewCmd(request)) => {
-                send_figterm_response_hostbound(
-                    process_figterm_request(
-                        FigtermRequest::InsertOnNewCmd(request),
-                        term,
-                        pty_master,
-                        key_interceptor,
+            match request.request {
+                Some(Request::InsertText(request)) => {
+                    send_figterm_response_hostbound(
+                        process_figterm_request(FigtermRequest::InsertText(request), term, pty_master, key_interceptor)
+                            .await?,
+                        nonce,
+                        &response_tx,
                     )
-                    .await?,
-                    nonce,
-                    &response_tx,
-                )
-                .await;
-            },
-            Some(Request::RunProcess(request)) => {
-                // TODO(sean) we can infer shell as above for execute if no executable is provided.
-                let mut cmd = create_command(
-                    &request.executable,
-                    working_directory(request.working_directory.as_deref(), term.shell_state()),
-                );
+                    .await;
+                },
+                Some(Request::Intercept(request)) => {
+                    send_figterm_response_hostbound(
+                        process_figterm_request(FigtermRequest::Intercept(request), term, pty_master, key_interceptor)
+                            .await?,
+                        nonce,
+                        &response_tx,
+                    )
+                    .await;
+                },
+                Some(Request::Diagnostics(request)) => {
+                    send_figterm_response_hostbound(
+                        process_figterm_request(
+                            FigtermRequest::Diagnostics(request),
+                            term,
+                            pty_master,
+                            key_interceptor,
+                        )
+                        .await?,
+                        nonce,
+                        &response_tx,
+                    )
+                    .await;
+                },
+                Some(Request::InsertOnNewCmd(request)) => {
+                    send_figterm_response_hostbound(
+                        process_figterm_request(
+                            FigtermRequest::InsertOnNewCmd(request),
+                            term,
+                            pty_master,
+                            key_interceptor,
+                        )
+                        .await?,
+                        nonce,
+                        &response_tx,
+                    )
+                    .await;
+                },
+                Some(Request::RunProcess(request)) => {
+                    // TODO(sean) we can infer shell as above for execute if no executable is provided.
+                    let mut cmd = create_command(
+                        &request.executable,
+                        working_directory(request.working_directory.as_deref(), term.shell_state()),
+                    );
 
-                cmd.args(request.arguments);
-                for var in request.env {
-                    cmd.env(var.key.clone(), var.value());
-                }
-
-                tokio::spawn(async move {
-                    debug!("running command");
-                    match cmd.output() {
-                        Ok(output) => {
-                            debug!("command successfully ran");
-                            let response = make_response(Response::RunProcess(RunProcessResponse {
-                                stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                                stderr: String::from_utf8_lossy(&output.stderr).to_string(),
-                                exit_code: output.status.code().unwrap_or(0),
-                            }));
-                            if let Err(err) = response_tx.send_async(response).await {
-                                error!(%err, "Failed sending request response");
-                            }
-                        },
-                        Err(err) => {
-                            debug!("command unsuccessfully ran");
-                            warn!(%err, command = request.executable, "Failed running command");
-                        },
+                    cmd.args(request.arguments);
+                    for var in request.env {
+                        cmd.env(var.key.clone(), var.value());
                     }
-                });
-            },
-            Some(Request::PseudoterminalExecute(request)) => {
-                let default_command_shell = term
-                    .shell_state()
-                    .local_context
-                    .shell_path
-                    .as_ref()
-                    .map(|x| x.as_os_str())
-                    .unwrap_or_else(|| OsStr::new("/bin/bash"))
-                    .to_owned();
 
-                let mut cmd = create_command(
-                    &default_command_shell,
-                    working_directory(request.working_directory.as_deref(), term.shell_state()),
-                );
-                // TODO(sean): better SHELL_ARGs handling here based on shell.
-                let args = shell_args(&default_command_shell.to_string_lossy());
-                cmd.args(args);
-                cmd.arg(&request.command);
-
-                for EnvironmentVariable { key, value } in &request.env {
-                    match value {
-                        Some(value) => cmd.env(key, value),
-                        None => cmd.env_remove(key),
-                    };
-                }
-
-                tokio::spawn(async move {
-                    debug!("pseudoterminal executing");
-                    match cmd.output() {
-                        Err(err) => {
-                            warn!(%err, command = request.command, "Failed running command");
-                        },
-                        Ok(output) => {
-                            let response =
-                                make_response(Response::PseudoterminalExecute(PseudoterminalExecuteResponse {
+                    tokio::spawn(async move {
+                        debug!("running command");
+                        match cmd.output() {
+                            Ok(output) => {
+                                debug!("command successfully ran");
+                                let response = make_response(Response::RunProcess(RunProcessResponse {
                                     stdout: String::from_utf8_lossy(&output.stdout).to_string(),
-                                    stderr: if output.stderr.is_empty() {
-                                        None
-                                    } else {
-                                        Some(String::from_utf8_lossy(&output.stderr).to_string())
-                                    },
-                                    exit_code: output.status.code(),
+                                    stderr: String::from_utf8_lossy(&output.stderr).to_string(),
+                                    exit_code: output.status.code().unwrap_or(0),
                                 }));
-                            if let Err(err) = response_tx.send_async(response).await {
-                                error!(%err, "Failed sending request response");
-                            }
-                        },
+                                if let Err(err) = response_tx.send_async(response).await {
+                                    error!(%err, "Failed sending request response");
+                                }
+                            },
+                            Err(err) => {
+                                debug!("command unsuccessfully ran");
+                                warn!(%err, command = request.executable, "Failed running command");
+                            },
+                        }
+                    });
+                },
+                Some(Request::PseudoterminalExecute(request)) => {
+                    let default_command_shell = term
+                        .shell_state()
+                        .local_context
+                        .shell_path
+                        .as_ref()
+                        .map(|x| x.as_os_str())
+                        .unwrap_or_else(|| OsStr::new("/bin/bash"))
+                        .to_owned();
+
+                    let mut cmd = create_command(
+                        &default_command_shell,
+                        working_directory(request.working_directory.as_deref(), term.shell_state()),
+                    );
+                    // TODO(sean): better SHELL_ARGs handling here based on shell.
+                    let args = shell_args(&default_command_shell.to_string_lossy());
+                    cmd.args(args);
+                    cmd.arg(&request.command);
+
+                    for EnvironmentVariable { key, value } in &request.env {
+                        match value {
+                            Some(value) => cmd.env(key, value),
+                            None => cmd.env_remove(key),
+                        };
                     }
-                });
-            },
-            _ => warn!("unhandled request {request:?}"),
-        }
-    }
+
+                    tokio::spawn(async move {
+                        debug!("pseudoterminal executing");
+                        match cmd.output() {
+                            Err(err) => {
+                                warn!(%err, command = request.command, "Failed running command");
+                            },
+                            Ok(output) => {
+                                let response =
+                                    make_response(Response::PseudoterminalExecute(PseudoterminalExecuteResponse {
+                                        stdout: String::from_utf8_lossy(&output.stdout).to_string(),
+                                        stderr: if output.stderr.is_empty() {
+                                            None
+                                        } else {
+                                            Some(String::from_utf8_lossy(&output.stderr).to_string())
+                                        },
+                                        exit_code: output.status.code(),
+                                    }));
+                                if let Err(err) = response_tx.send_async(response).await {
+                                    error!(%err, "Failed sending request response");
+                                }
+                            },
+                        }
+                    });
+                },
+                _ => warn!("unhandled request {request:?}"),
+            }
+        },
+        Some(clientbound::Packet::Ping(())) => {
+            let response = Hostbound {
+                packet: Some(hostbound::Packet::Pong(())),
+            };
+
+            if let Err(err) = response_tx.send_async(response).await {
+                error!(%err, "Failed sending request response");
+            }
+        },
+        packet => warn!("unhandled packet {packet:?}"),
+    };
 
     Ok(())
 }
