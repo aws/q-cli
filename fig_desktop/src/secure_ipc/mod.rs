@@ -244,7 +244,7 @@ async fn handle_secure_ipc(
                         Some(hostbound::Packet::Pong(())) => {
                             trace!(?session_id, "Received pong");
                             if let Some(session_id) = &session_id {
-                                figterm_state.with_update(session_id.clone(), |session| {
+                                figterm_state.with(session_id, |session| {
                                     session.last_receive = Instant::now();
                                 });
                             }
