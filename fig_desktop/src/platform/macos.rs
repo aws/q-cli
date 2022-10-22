@@ -21,6 +21,8 @@ use cocoa::base::{
 };
 use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
+use fig_integrations::input_method::InputMethod;
+use fig_integrations::Integration;
 use fig_util::Terminal;
 use macos_accessibility_position::accessibility::accessibility_is_enabled;
 use macos_accessibility_position::caret_position::{
@@ -491,8 +493,55 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::ExternalWindowFocusChanged { window } => {
-                let mut focused = self.focused_window.lock();
+                let current_terminal = Terminal::from_bundle_id(window.bundle_id.clone());
+
+                // Checking if IME is installed is async :(
+                let enabled_proxy = self.proxy.clone();
+                tokio::spawn(async move {
+                    let disabled_setting_name = match current_terminal {
+                        Some(Terminal::Iterm) => Some("iterm"),
+                        Some(Terminal::TerminalApp) => Some("terminal"),
+                        Some(Terminal::Hyper) => Some("hyper"),
+                        Some(Terminal::Vscode) | Some(Terminal::VSCodeInsiders) => Some("vscode"),
+                        _ => None,
+                    };
+
+                    let is_terminal_disabled = disabled_setting_name
+                        .and_then(|name| {
+                            fig_settings::settings::get_bool(format!("integrations.{name}.disabled"))
+                                .ok()
+                                .flatten()
+                        })
+                        .unwrap_or(false);
+
+                    let terminal_cursor_backing_installed = match current_terminal {
+                        Some(term) => {
+                            if term.supports_macos_input_method() {
+                                let input_method: InputMethod = Default::default();
+                                input_method.is_installed().await.is_ok()
+                            } else {
+                                true
+                            }
+                        },
+                        None => true,
+                    };
+
+                    let is_enabled = !is_terminal_disabled
+                        && terminal_cursor_backing_installed
+                        && !fig_settings::settings::get_bool_or("autocomplete.disable", false)
+                        && accessibility_is_enabled()
+                        && fig_request::auth::is_logged_in();
+
+                    enabled_proxy
+                        .send_event(Event::WindowEvent {
+                            window_id: AUTOCOMPLETE_ID,
+                            window_event: WindowEvent::SetEnabled(is_enabled),
+                        })
+                        .unwrap();
+                });
+
                 let level = window.get_level();
+                let mut focused = self.focused_window.lock();
                 focused.replace(window);
 
                 if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
