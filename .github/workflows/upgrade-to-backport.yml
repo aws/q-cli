@@ -4,7 +4,7 @@ on:
 
 env:
   # Make sure that this is the correct URL to the DMG that we want to deploy!!!
-  RUST_DMG_URL: https://repo.fig.io/generic/beta/asset/latest/universal/fig.dmg
+  RUST_DMG_URL: https://fig-repo-pub.s3.us-west-1.amazonaws.com/generic/qa/asset/2.5.8-beta.9%2Bqa/universal/fig.dmg
 jobs:    
   update-appcast:
     runs-on: macos-latest
