@@ -50,8 +50,10 @@ pub async fn publish(build_targets: Vec<String>) -> eyre::Result<()> {
         .expect("Make sure you're logged into your company Fig account and have dotfiles enabled");
     let client = fig_request::client().unwrap().clone();
 
-    let commit_hash = run_stdout(&["git", "rev-parse", "HEAD"])?;
-    let current_branch = run_stdout(&["git", "rev-parse", "--abbrev-ref", "HEAD"])?;
+    let commit_hash = run_stdout(&["git", "rev-parse", "HEAD"])?.trim().to_string();
+    let current_branch = run_stdout(&["git", "rev-parse", "--abbrev-ref", "HEAD"])?
+        .trim()
+        .to_string();
 
     let resp = client
         .post("https://circleci.com/api/v2/project/github/withfig/macos/pipeline")
