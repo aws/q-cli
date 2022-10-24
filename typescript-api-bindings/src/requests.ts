@@ -9,6 +9,8 @@ import {
   AppendToFileRequest,
   ApplicationUpdateStatusRequest,
   ApplicationUpdateStatusResponse,
+  CheckForUpdatesRequest,
+  CheckForUpdatesResponse,
   ContentsOfDirectoryRequest,
   ContentsOfDirectoryResponse,
   CreateDirectoryRequest,
@@ -47,6 +49,7 @@ import {
   TerminalSessionInfoRequest,
   TerminalSessionInfoResponse,
   UpdateApplicationPropertiesRequest,
+  UpdateApplicationRequest,
   UpdateConfigPropertyRequest,
   UpdateDefaultsPropertyRequest,
   UpdateLocalStateRequest,
@@ -413,6 +416,32 @@ export async function sendInstallRequest(
             reject(
               Error(
                 `Invalid response '${  response?.$case  }' for 'InstallRequest'`
+              )
+            );
+        }
+      }
+    );
+  });
+}
+
+export async function sendCheckForUpdatesRequest(
+  request: CheckForUpdatesRequest
+): Promise<CheckForUpdatesResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "checkForUpdatesRequest", checkForUpdatesRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "checkForUpdatesResponse":
+            resolve(response.checkForUpdatesResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${  response?.$case  }' for 'CheckForUpdatesRequest'`
               )
             );
         }
@@ -959,6 +988,32 @@ export async function sendUserLogoutRequest(
             reject(
               Error(
                 `Invalid response '${  response?.$case  }' for 'UserLogoutRequest'`
+              )
+            );
+        }
+      }
+    );
+  });
+}
+
+export async function sendUpdateApplicationRequest(
+  request: UpdateApplicationRequest
+): Promise<void> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "updateApplicationRequest", updateApplicationRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "success":
+            resolve();
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${  response?.$case  }' for 'UpdateApplicationRequest'`
               )
             );
         }
