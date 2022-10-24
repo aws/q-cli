@@ -24,6 +24,7 @@ use percent_encoding::percent_decode_str;
 use tracing::{
     debug,
     trace,
+    warn,
 };
 use url::Url;
 use wry::http::status::StatusCode;
@@ -176,9 +177,6 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
                 }
             }
 
-            // todo: add badge
-            // if let Some(badge) = query_pairs.get("badge") {}
-
             let mut png_bytes = std::io::Cursor::new(Vec::new());
             image.write_to(&mut png_bytes, image::ImageFormat::Png).unwrap();
             Some(build_asset_response(png_bytes.into_inner(), AssetKind::Png))
@@ -188,11 +186,22 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
             .or_else(|| pairs.get("type"))
             .map(|name| cached_asset_response(&AssetSpecifier::Named(name.to_string()), None)),
         None => {
-            let decoded_str = &*percent_decode_str(url.path()).decode_utf8()?;
-            let path: Cow<Path> = Cow::from(Path::new(decoded_str));
+            let decoded_str = &*percent_decode_str(url.path()).decode_utf8().map_err(|err| {
+                warn!(%err, "Failed to decode fig url");
+                err
+            })?;
 
-            #[cfg(windows)]
-            let path = transform_unix_to_windows_path(path);
+            cfg_if::cfg_if! {
+                if #[cfg(windows)] {
+                    let path = transform_unix_to_windows_path(path);
+                    // TODO: we might want to shellexpand like we do below, but we need
+                    // context on what the home dir is
+                    let path_str = path.to_str().unwrap_or("");
+                } else {
+                    let path_str = shellexpand::tilde(&decoded_str);
+                    let path = Path::new(path_str.as_ref());
+                }
+            }
 
             let fallback = match fs::metadata(&path) {
                 Ok(meta) => {
@@ -203,15 +212,16 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
                     } else if meta.is_symlink() {
                         Some("symlink")
                     } else {
+                        warn!(%path_str, "Unknown file type");
                         None
                     }
                 },
-                Err(_) => Some(if path.to_string_lossy().ends_with('/') {
-                    "folder"
-                } else {
-                    "file"
-                }),
+                Err(err) => {
+                    warn!(%path_str, %err, "Failed to stat path");
+                    Some(if path_str.ends_with('/') { "folder" } else { "file" })
+                },
             };
+
             Some(cached_asset_response(
                 &AssetSpecifier::PathBased(path.to_path_buf()),
                 fallback,
@@ -224,13 +234,12 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
 
 /// Translate a unix style path into a windows style path assuming root dir is the drive
 #[cfg_attr(not(windows), allow(dead_code))]
-fn transform_unix_to_windows_path(path: Cow<'_, Path>) -> Cow<'_, Path> {
+fn transform_unix_to_windows_path(path: Cow<'_, str>) -> Cow<'_, Path> {
     use std::path::Component;
 
-    let string_path = path.as_ref().to_string_lossy();
-    let folder = string_path.ends_with('/') || string_path.ends_with('\\');
+    let folder = path.ends_with('/') || path.ends_with('\\');
 
-    let path_components: Vec<_> = path.as_ref().components().collect();
+    let path_components: Vec<_> = Path::new(path.as_ref()).components().collect();
     match &path_components[..] {
         [Component::RootDir, Component::Normal(drive), rest @ ..] => {
             let mut root = std::ffi::OsString::from(drive);
@@ -247,7 +256,10 @@ fn transform_unix_to_windows_path(path: Cow<'_, Path>) -> Cow<'_, Path> {
 
             Cow::from(PathBuf::from(root))
         },
-        _ => path,
+        _ => match path {
+            Cow::Borrowed(path) => Cow::Borrowed(Path::new(path)),
+            Cow::Owned(path) => Cow::Owned(PathBuf::from(path)),
+        },
     }
 }
 
@@ -258,9 +270,9 @@ mod tests {
     #[test]
     fn unix_to_windows_path_transform() {
         assert_eq!(
-            transform_unix_to_windows_path(Path::new(r"/c/User/chay/Downloads").into()),
+            transform_unix_to_windows_path("/c/User/chay/Downloads".into()),
             Path::new(r"c:\User\chay\Downloads")
         );
-        assert_eq!(transform_unix_to_windows_path(Path::new(r"/").into()), Path::new(r"/"));
+        assert_eq!(transform_unix_to_windows_path("/".into()), Path::new("/"));
     }
 }
