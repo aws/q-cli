@@ -6,6 +6,9 @@ pub struct Cli {
     /// Do not launch the dashboard when starting
     #[arg(long)]
     pub no_dashboard: bool,
+    /// Checks the `app.launchOnStartup` setting before launching
+    #[arg(long)]
+    pub is_startup: bool,
     /// Kill old instances of `fig_desktop`
     #[arg(long)]
     pub kill_old: bool,

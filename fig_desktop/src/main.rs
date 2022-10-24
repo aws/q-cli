@@ -93,6 +93,10 @@ async fn main() {
         true,
     );
 
+    if cli.is_startup && !fig_settings::settings::get_bool_or("app.launchOnStartup", true) {
+        std::process::exit(0);
+    }
+
     let page = cli.url_link.and_then(|url| {
         let url = Url::parse(&url).unwrap();
         assert_eq!(url.scheme(), "fig");

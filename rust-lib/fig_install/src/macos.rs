@@ -199,9 +199,8 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 
 pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
     // TODO(sean)
-    // 1. Remove login items
-    // 2. Set title of running ttys "Restart this terminal to finish uninstalling Fig..."
-    // 3. Delete webview cache
+    // 1. Set title of running ttys "Restart this terminal to finish uninstalling Fig..."
+    // 2. Delete webview cache
 
     // Remove launch agents
     if let Ok(home) = directories::home_dir() {

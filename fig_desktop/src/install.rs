@@ -228,7 +228,22 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
         std::process::Command::new("launchctl")
             .arg("load")
             .arg(&path)
-            .status()?;
+            .status()
+            .ok();
+
+        let exe = bundle_path.join("Contents").join("MacOS").join("fig_desktop");
+        let startup_launch_agent = LaunchdPlist::new("io.fig.launcher")
+            .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
+            .run_at_load(true);
+
+        create_launch_agent(&startup_launch_agent)?;
+
+        let path = startup_launch_agent.get_file_path()?;
+        std::process::Command::new("launchctl")
+            .arg("load")
+            .arg(&path)
+            .status()
+            .ok();
     }
 
     if let Ok(home) = home_dir() {
