@@ -137,6 +137,13 @@ static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_stri
 
 static SHELL_ENVIRONMENT_VARIABLES: Lazy<Mutex<Vec<EnvironmentVariable>>> = Lazy::new(|| Mutex::new(vec![]));
 
+static USER_ENABLED_SHELLS: Lazy<Vec<String>> = Lazy::new(|| {
+    fig_settings::state::get("user.enabled-shells")
+        .ok()
+        .flatten()
+        .unwrap_or_default()
+});
+
 pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
     UnlockInterception,
@@ -194,8 +201,10 @@ fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
 where
     T: EventListener,
 {
-    let shell_enabled = [Some("bash"), Some("zsh"), Some("fish"), Some("nu")]
-        .contains(&term.shell_state().get_context().shell.as_deref());
+    let shell_enabled = ["bash", "zsh", "fish", "nu", "dash"]
+        .into_iter()
+        .chain(USER_ENABLED_SHELLS.iter().map(|s| s.as_str()))
+        .any(|s| term.shell_state().get_context().shell.as_deref() == Some(s));
     let preexec = term.shell_state().preexec;
 
     let mut handle = INSERTION_LOCKED_AT.write();
