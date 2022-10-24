@@ -514,6 +514,28 @@ pub fn settings_path() -> Result<PathBuf> {
     }
 }
 
+#[cfg(test)]
+#[test]
+fn _snapshot_settings_path() {
+    linux!(settings_path(), @"/home/$USER/.fig/settings.json");
+    macos!(settings_path(), @"/Users/$USER/.fig/settings.json");
+    windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
+}
+
+/// The path to the fig state file
+pub fn state_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_STATE_PATH");
+    Ok(fig_data_dir()?.join("state.json"))
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_state_path() {
+    linux!(state_path(), @"/home/$USER/.local/share/fig/state.json");
+    macos!(state_path(), @"/Users/$USER/Library/Application Support/fig/state.json");
+    windows!(state_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\state.json");
+}
+
 /// The path to the lock file used to indicate that the app is updating
 pub fn update_lock_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_UPDATE_LOCK_PATH");
@@ -530,15 +552,17 @@ fn _snapshot_update_lock_path() {
     windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
 }
 
-/// The path to the fig state file
-pub fn state_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_STATE_PATH");
-    Ok(fig_data_dir()?.join("state.json"))
-}
-
 /// Path to the main credentials file
 pub fn credentials_path() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("credentials.json"))
+}
+
+#[cfg(test)]
+#[test]
+fn _snapshot_credentials_path() {
+    linux!(credentials_path(), @"/home/$USER/.local/share/fig/credentials.json");
+    macos!(credentials_path(), @"/Users/$USER/Library/Application Support/fig/credentials.json");
+    windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
 }
 
 /// The path to the saved ssh identities file
