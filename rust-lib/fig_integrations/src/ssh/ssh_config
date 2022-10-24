@@ -3,4 +3,4 @@ Match user="!git,!aur,*"
   SendEnv LC_FIG_SET_PARENT FIG_SET_PARENT
   StreamLocalBindMask 600
   StreamLocalBindUnlink yes
-  LocalCommand /home/mia/Fig/desktop/target/debug/fig_cli _ prompt-ssh '%r@%n' 1>&2
+  LocalCommand fig _ prompt-ssh '%r@%n' 1>&2
