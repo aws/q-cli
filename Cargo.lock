@@ -2699,6 +2699,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "dashmap",
  "fig_api_client",
+ "fig_install",
  "fig_integrations",
  "fig_proto",
  "fig_settings",

@@ -13,6 +13,7 @@ camino = { version = "1.1.1", features = ["serde1"] }
 cfg-if = "1.0.0"
 dashmap = "5.4.0"
 fig_api_client = { path = "../fig_api_client" }
+fig_install = { path = "../fig_install" }
 fig_integrations = { path = "../fig_integrations" }
 fig_proto = { path = "../fig_proto" }
 fig_settings = { path = "../fig_settings" }

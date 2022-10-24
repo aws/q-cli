@@ -47,6 +47,8 @@ message ClientOriginatedMessage {
         aggregate_session_metric_action_request = 135;
     // UserLoginRequest user_login_request = 136;
     UserLogoutRequest user_logout_request = 137;
+    CheckForUpdatesRequest check_for_updates_request = 138;
+    UpdateApplicationRequest update_application_request = 139;
   }
 }
 
@@ -72,6 +74,7 @@ message ServerOriginatedMessage {
     RunProcessResponse run_process_response = 111;
     MacosInputMethodResponse macos_input_method_response = 112;
     InstallResponse install_response = 113;
+    CheckForUpdatesResponse check_for_updates_response = 114;
 
     Notification notification = 1000;
   }
@@ -399,6 +402,19 @@ enum FocusAction {
 message WindowFocusRequest { optional FocusAction type = 1; }
 
 message OpenInExternalApplicationRequest { optional string url = 1; }
+
+/// Updating actions
+
+// check for updates and return the latest version
+message CheckForUpdatesRequest {}
+
+message CheckForUpdatesResponse {
+  optional bool isUpdateAvailable = 1;
+  optional string version = 2;
+}
+
+// update to the latest version available
+message UpdateApplicationRequest {}
 
 /// Actions
 

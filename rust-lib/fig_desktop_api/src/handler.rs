@@ -208,6 +208,8 @@ async fn handle_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
                 ApplicationUpdateStatusRequest(request) => RequestResult::deprecated(request),
                 MacosInputMethodRequest(request) => RequestResult::deprecated(request),
                 UserLogoutRequest(request) => event_handler.user_logout(request!(request)).await,
+                UpdateApplicationRequest(request) => update::update_application(request).await,
+                CheckForUpdatesRequest(request) => update::check_for_updates(request).await,
             }
         },
         None => {
