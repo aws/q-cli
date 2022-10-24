@@ -103,13 +103,26 @@ async fn handle_local_ipc(
                             LogLevel(command) => commands::log_level(command),
                             Logout(_) => commands::logout(&proxy).await,
                             DumpState(command) => commands::dump_state(command, &figterm_state),
+                            Update(_) => fig_install::update(
+                                true,
+                                Some(Box::new(move |_| {
+                                    debug!("Updating from proto");
+                                })),
+                                true,
+                            )
+                            .await
+                            .map(|_| LocalResponse::Success(None))
+                            .map_err(|_| LocalResponse::Error {
+                                code: None,
+                                message: Some("Failed to check for updates".to_owned()),
+                            }),
+
                             TerminalIntegration(_)
                             | ListTerminalIntegrations(_)
                             | Restart(_)
                             | ReportWindow(_)
                             | RestartSettingsListener(_)
                             | RunInstallScript(_)
-                            | Update(_)
                             | Build(_)
                             | ResetCache(_)
                             | InputMethod(_) => {

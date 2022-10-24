@@ -183,7 +183,7 @@ pub fn launch_fig_desktop(wait_for_socket: bool, verbose: bool) -> Result<(), Er
 
     cfg_if! {
         if #[cfg(windows)] {
-            for _ in 0..20 {
+            for _ in 0..30 {
                 match path.metadata() {
                     Ok(_) => return Ok(()),
                     Err(err) => if let Some(code) = err.raw_os_error() {
@@ -198,7 +198,7 @@ pub fn launch_fig_desktop(wait_for_socket: bool, verbose: bool) -> Result<(), Er
                 std::thread::sleep(std::time::Duration::from_millis(500));
             }
         } else {
-            for _ in 0..10 {
+            for _ in 0..30 {
                 // Wait for socket to exist
                 if path.exists() {
                     return Ok(());
