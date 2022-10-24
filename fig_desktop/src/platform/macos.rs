@@ -561,7 +561,7 @@ impl PlatformStateImpl {
             },
             PlatformBoundEvent::CaretPositionUpdateRequested => {
                 if let Err(e) = self.refresh_window_position() {
-                    error!("Failed to refresh window position: {e:?}");
+                    debug!(%e, "Failed to refresh window position");
                 }
                 Ok(())
             },

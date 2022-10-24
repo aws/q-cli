@@ -4,6 +4,7 @@ use fig_proto::fig::{
     OnboardingRequest,
 };
 use fig_util::Shell;
+use tokio::process::Command;
 use tracing::error;
 use wry::application::event_loop::ControlFlow;
 
@@ -113,7 +114,24 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                     }
                     RequestResult::error("Failed to open any terminal")
                 } else if #[cfg(target_os = "macos")] {
-                    RequestResult::error("Unimplemented")
+                    use std::io::Write;
+                    use std::os::unix::fs::PermissionsExt;
+
+                    tracing::debug!("creating onboarding shell file");
+                    if let Ok(mut file) = tempfile::NamedTempFile::new() {
+                        file.as_file().set_permissions(std::fs::Permissions::from_mode(0o0700)).ok();
+                        write!(file, r#"fig onboarding; exec $SHELL"#).ok();
+
+                        if let Err(err) = Command::new("open").args(["-b", "com.apple.Terminal"]).arg(file.path()).spawn() {
+                            error!(%err, "Failed to open onboarding");
+                            return RequestResult::error("Failed to open onboarding");
+                        }
+
+                        file.keep().ok();
+                        return RequestResult::success();
+                    }
+
+                    RequestResult::error("Failed to open onboarding")
                 } else if #[cfg(target_os = "windows")] {
                     use std::os::windows::process::CommandExt;
 

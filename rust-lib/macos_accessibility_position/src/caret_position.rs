@@ -54,7 +54,11 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
     let focused_element: AXUIElement = match system_wide_element.attribute(&AXAttribute::focused_ui()) {
         Ok(focused_element) => focused_element,
         Err(err) => {
-            error!("Couldn't get focused element, error code {:?}", err);
+            match err {
+                accessibility::Error::Ax(-25212) => debug!(%err, "Selected range value did not exist"),
+                _ => error!(%err, "Couldn't get selected range value, error code"),
+            }
+
             return INVALID_CARET_POSITION;
         },
     };
@@ -63,7 +67,11 @@ pub unsafe fn get_caret_position(extend_range: bool) -> CaretPosition {
     let selected_range_value: CFType = match focused_element.attribute(&AXAttribute::selected_range()) {
         Ok(selected_range_value) => selected_range_value,
         Err(err) => {
-            error!("Couldn't get selected range value, error code {:?}", err);
+            match err {
+                accessibility::Error::Ax(-25212) => debug!(%err, "Selected range value did not exist"),
+                _ => error!(%err, "Couldn't get selected range value, error code"),
+            }
+
             return INVALID_CARET_POSITION;
         },
     };
