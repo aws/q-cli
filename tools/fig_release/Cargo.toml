@@ -16,7 +16,7 @@ fig_util = { path = "../../rust-lib/fig_util" }
 once_cell = "1.15.0"
 semver = "1.0.14"
 serde = { version = "1.0.145", features = ["derive"] }
-serde_yaml = "0.9.13"
+serde_yaml = "0.9.14"
 time = { version = "0.3.14", features = ["macros", "formatting"] }
 tokio = { version = "1", features = ["full"] }
 toml_edit = "0.15.0"
