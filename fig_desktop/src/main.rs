@@ -247,6 +247,8 @@ async fn migrate() {
         }
     }
 
+    fig_settings::state::remove_value("NEW_VERSION_AVAILABLE").ok();
+
     // Uninstall terminal integrations
     uninstall_terminal_integrations().await;
 
