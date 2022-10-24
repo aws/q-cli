@@ -5,6 +5,11 @@ on:
 env:
   # Make sure that this is the correct URL to the DMG that we want to deploy!!!
   RUST_DMG_URL: https://fig-repo-pub.s3.us-west-1.amazonaws.com/generic/qa/asset/2.5.8-beta.9%2Bqa/universal/fig.dmg
+inputs:
+  RUST_DMG_URL:
+    description: The URL of the DMG on repo.fig.io
+    required: true
+
 jobs:    
   update-appcast:
     runs-on: macos-latest
@@ -24,8 +29,8 @@ jobs:
           echo "::set-env name=APPCAST_PREFIX::beta"
 
         else
-          echo "::set-env name=VERSIONS_BRANCH::main"
-          echo "::set-env name=APPCAST_PREFIX::versions"
+          echo "::set-env name=VERSIONS_BRANCH::alpha"
+          echo "::set-env name=APPCAST_PREFIX::alpha"
 
         fi
         echo $VERSIONS_BRANCH
@@ -49,8 +54,8 @@ jobs:
         PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
     - name: Pull latest Rust DMG from repo.fig.io
       run: |
-        echo "Downloading DMG from $RUST_DMG_URL"
-        curl $RUST_DMG_URL --output ./versions/fig\ 2.0.dmg
+        echo "Downloading DMG from ${{ github.event.inputs.RUST_DMG_URL }}"
+        curl ${{ github.event.inputs.RUST_DMG_URL }} --output ./versions/fig\ 2.0.dmg
         rm ./versions/fig@latest.dmg
     - name: "Generate Appcast"
       run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
@@ -70,6 +75,6 @@ jobs:
     - name: Push Changes to withfig/versions
       run: |
         cd versions
-        echo DO NOT ACTUALLY PUSH TO withfig/versions
-        echo git push origin $VERSIONS_BRANCH
+        echo Pushing to $VERSIONS_BRANCH on withfig/versions
+        git push origin $VERSIONS_BRANCH
         cd ..
