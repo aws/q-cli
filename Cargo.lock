@@ -7117,7 +7117,7 @@ dependencies = [
 [[package]]
 name = "skim"
 version = "0.9.4"
-source = "git+https://github.com/grant0417/skim#c31250622fee790c066c03c27568dfbc8463a57b"
+source = "git+https://github.com/grant0417/skim#df54d772268e6f38c4e0aafe93ea4676c7be7d8e"
 dependencies = [
  "atty",
  "beef",
