@@ -387,6 +387,12 @@ jobs:
             # Add legacy Sparkle ED Public Key - required for migration but can be removed afterwards
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" SUPublicEDKey 5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=
             
+            # Change the display name of the app
+            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleDisplayName Fig
+
+            # Add fig:// association to bundle
+            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleURLSchemes -array-add fig
+
             cd fig_input_method
             cargo build && make
             cd ..
