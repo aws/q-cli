@@ -31,7 +31,7 @@ custom-protocol = []
 [dependencies]
 anyhow = "1.0.66"
 async-trait = "0.1.57"
-base64 = "0.13.0"
+base64 = "0.13.1"
 bytes = "1.2.1"
 camino = { version = "1.0.9", features = ["serde1"] }
 cfg-if = "1.0.0"
