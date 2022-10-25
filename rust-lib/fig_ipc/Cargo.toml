@@ -18,5 +18,8 @@ tokio = { version = "1.20.1", features = ["fs", "time", "io-util", "net"] }
 tracing = "0.1.36"
 whoami = "1.2.1"
 
+[target.'cfg(unix)'.dependencies]
+nix = "0.25.0"
+
 [dev-dependencies]
 tokio = { version = "*", features = ["full"] }

@@ -234,6 +234,11 @@ pub async fn spawn_incoming_system_handler(daemon_status: Arc<RwLock<DaemonStatu
             .context("Could not create daemon socket directory")?;
     }
 
+    #[cfg(unix)]
+    if let Err(err) = fig_ipc::util::set_sockets_dir_permissions() {
+        error!(%err, "Failed to set permissions on sockets directory");
+    }
+
     // Remove the system socket if it already exists
     tokio::fs::remove_file(&daemon_socket_path).await.ok();
 

@@ -167,6 +167,11 @@ fn _snapshot_fig_data_dir() {
     windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
 }
 
+#[cfg(unix)]
+pub fn root_socket_dir() -> &'static Path {
+    Path::new("/var/tmp/fig")
+}
+
 /// The fig sockets directory of the local fig installation
 ///
 /// - Linux: /var/tmp/fig/Alice
@@ -177,8 +182,7 @@ pub fn sockets_dir() -> Result<PathBuf> {
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            use std::path::Path;
-            Ok(Path::new("/var/tmp/fig").join(whoami::username()))
+            Ok(root_socket_dir().join(whoami::username()))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("sockets"))
         }
