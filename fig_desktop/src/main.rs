@@ -229,6 +229,8 @@ async fn migrate() {
     use objc::runtime::Object;
     use tracing::debug;
 
+    fig_settings::state::remove_value("NEW_VERSION_AVAILABLE").ok();
+
     match fig_request::defaults::get_default("userEmail") {
         Ok(user) if user.is_empty() => {
             fig_request::defaults::remove_default("userEmail").ok();
@@ -250,8 +252,6 @@ async fn migrate() {
             }
         }
     }
-
-    fig_settings::state::remove_value("NEW_VERSION_AVAILABLE").ok();
 
     // Uninstall terminal integrations
     uninstall_terminal_integrations().await;

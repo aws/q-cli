@@ -180,27 +180,6 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
                 });
 
                 to_source.push("fig app onboarding".into())
-            } else {
-                cfg_if! {
-                    if #[cfg(target_os = "linux")] {
-                        let show_prompts = !fig_util::system_info::in_wsl();
-                    } else {
-                        let show_prompts = true;
-                    }
-                }
-
-                if show_prompts {
-                    to_source.push(guard_source(
-                        shell,
-                        false,
-                        "FIG_CHECKED_PROMPTS",
-                        GuardAssignment::AfterSourcing,
-                        match shell {
-                            Shell::Bash | Shell::Zsh => "(fig app prompts &)",
-                            Shell::Fish => "begin; fig app prompts &; end",
-                        },
-                    ));
-                }
             }
         }
     }
