@@ -32,7 +32,12 @@ pub fn bump() -> eyre::Result<()> {
     run(&["cargo", "update", "--offline", "--workspace"])?;
 
     run(&["git", "add", "release.yaml", "Cargo.toml", "Cargo.lock"])?;
-    run(&["git", "commit", "-m", "chore: bump version"])?;
+    run(&[
+        "git",
+        "commit",
+        "-m",
+        &format!("chore: bump version to {version} [skip ci]"),
+    ])?;
     run(&["git", "push"])?;
 
     Ok(())
