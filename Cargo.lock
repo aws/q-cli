@@ -2749,6 +2749,7 @@ dependencies = [
  "fig_ipc",
  "fig_request",
  "fig_settings",
+ "fig_telemetry",
  "fig_util",
  "libc",
  "once_cell",
@@ -2935,6 +2936,7 @@ dependencies = [
 name = "fig_telemetry"
 version = "2.5.8-beta.13"
 dependencies = [
+ "anyhow",
  "fig_ipc",
  "fig_proto",
  "fig_request",

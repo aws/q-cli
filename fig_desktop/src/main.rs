@@ -15,6 +15,7 @@ mod utils;
 mod webview;
 
 use std::iter::empty;
+use std::process::exit;
 
 use camino::Utf8PathBuf;
 use clap::Parser;
@@ -97,19 +98,30 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let page = cli.url_link.and_then(|url| {
-        let url = Url::parse(&url).unwrap();
-        assert_eq!(url.scheme(), "fig");
-
-        url.host_str().and_then(|s| match s {
-            "dashboard" => Some(url.path().to_owned()),
-            "plugins" => Some(format!("plugins/{}", url.path())),
-            _ => {
-                error!("Invalid deep link");
-                None
+    let page = cli
+        .url_link
+        .and_then(|url| match Url::parse(&url) {
+            Ok(url) => Some(url),
+            Err(err) => {
+                error!(%err, %url, "Failed to parse url");
+                exit(1)
             },
         })
-    });
+        .and_then(|url| {
+            if url.scheme() != "fig" {
+                error!(scheme = %url.scheme(), %url, "Invalid scheme");
+                exit(1)
+            }
+
+            url.host_str().and_then(|s| match s {
+                "dashboard" => Some(url.path().to_owned()),
+                "plugins" => Some(format!("plugins/{}", url.path())),
+                _ => {
+                    error!("Invalid deep link");
+                    None
+                },
+            })
+        });
 
     if !cli.allow_multiple {
         match get_current_pid() {

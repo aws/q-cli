@@ -160,7 +160,13 @@ pub async fn update(
             if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
                 error!(%err, "Failed to update");
                 tokio::fs::remove_file(&lock_file).await?;
-                tx.send(UpdateStatus::Error(err.to_string())).await.unwrap();
+
+                let err_id = fig_telemetry::sentry::capture_error(&err);
+
+                tx.send(UpdateStatus::Error(format!("{err}\nError ID: {err_id}")))
+                    .await
+                    .ok();
+
                 return Err(err);
             }
             tokio::fs::remove_file(&lock_file).await?;

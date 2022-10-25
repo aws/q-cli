@@ -65,10 +65,10 @@ impl KeyBindings {
         let key_bindings = json_map
             .into_iter()
             .filter_map(|(key, value)| {
-                if let Some(key) = key.strip_prefix(&format!("{product_namespace}.actions.",)) {
+                if let Some(key) = key.strip_prefix(&format!("{product_namespace}.keybindings.",)) {
                     Some(KeyBinding {
-                        identifier: key.into(),
-                        binding: value.as_str()?.into(),
+                        identifier: value.as_str()?.into(),
+                        binding: key.into(),
                     })
                 } else {
                     None
@@ -109,8 +109,10 @@ mod test {
     #[test]
     fn test_load_from_json_map() {
         let json_map = serde_json::json!({
-            "autocomplete.actions.insertSelected": "enter",
-            "autocomplete.actions.nextItem": "tab",
+            "autocomplete.keybindings.command+i": "toggleDescription",
+            "autocomplete.keybindings.control+-": "increaseSize",
+            "autocomplete.keybindings.control+/": "toggleDescription",
+            "autocomplete.keybindings.control+=": "decreaseSize",
             "autocomplete.other": "other",
             "other": "other",
         })
@@ -120,8 +122,18 @@ mod test {
 
         let json = KeyBindings::load_from_json_map(json_map, "autocomplete");
 
-        assert_eq!(json.0.len(), 2);
-        assert_eq!(json.0[0].identifier, "insertSelected");
-        assert_eq!(json.0[0].binding, "enter");
+        assert_eq!(json.0.len(), 4);
+
+        assert_eq!(json.0[0].identifier, "toggleDescription");
+        assert_eq!(json.0[0].binding, "command+i");
+
+        assert_eq!(json.0[1].identifier, "increaseSize");
+        assert_eq!(json.0[1].binding, "control+-");
+
+        assert_eq!(json.0[2].identifier, "toggleDescription");
+        assert_eq!(json.0[2].binding, "control+/");
+
+        assert_eq!(json.0[3].identifier, "decreaseSize");
+        assert_eq!(json.0[3].binding, "control+=");
     }
 }

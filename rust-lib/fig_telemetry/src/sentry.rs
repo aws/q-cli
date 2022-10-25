@@ -3,7 +3,6 @@ use std::sync::Arc;
 
 use fig_request::reqwest_client::reqwest_client;
 use fig_util::Terminal;
-pub use sentry::integrations::anyhow::capture_anyhow;
 use sentry::transports::ReqwestHttpTransport;
 pub use sentry::{
     configure_scope,
@@ -65,4 +64,12 @@ pub fn init_sentry(
 
         Some(guard)
     }
+}
+
+pub fn capture_anyhow(err: &anyhow::Error) -> String {
+    sentry::integrations::anyhow::capture_anyhow(err).to_string()
+}
+
+pub fn capture_error<E: std::error::Error + ?Sized>(err: &E) -> String {
+    sentry::capture_error(err).to_string()
 }
