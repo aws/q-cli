@@ -30,6 +30,7 @@ use tokio::io::{
 use tokio::sync::mpsc::Sender;
 use tracing::{
     debug,
+    error,
     warn,
 };
 
@@ -42,12 +43,12 @@ use crate::{
 pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<UpdateStatus>) -> Result<(), Error> {
     match option_env!("FIG_MACOS_BACKPORT") {
         Some(_) => {
-            debug!("Starting update");
+            debug!("starting update");
 
             // Get all of the paths up front so we can get an error early if something is wrong
 
             let fig_app_path = fig_util::fig_bundle()
-                .ok_or_else(|| Error::UpdateFailed("Binary invoked does not reside in a valid app bundle.".into()))?;
+                .ok_or_else(|| Error::UpdateFailed("binary invoked does not reside in a valid app bundle.".into()))?;
 
             let temp_dir = TempDir::new("fig")?;
 
@@ -64,7 +65,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             // We dont want to release the temp dir, so we just leak it
             std::mem::forget(temp_dir);
 
-            debug!("Downloading dmg to {}", dmg_mount_path.display());
+            debug!("downloading dmg to {}", dmg_mount_path.display());
 
             download_dmg(update.download, &dmg_mount_path, update.size, tx.clone()).await?;
 
@@ -82,7 +83,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
             }
 
-            debug!("Mounted dmg");
+            debug!("mounted dmg");
 
             let plist = String::from_utf8_lossy(&output.stdout).to_string();
 
@@ -115,12 +116,12 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
 
             if status != 0 {
                 return Err(Error::UpdateFailed(format!(
-                    "Failed to swap app bundle: {}",
+                    "failed to swap app bundle: {}",
                     std::io::Error::last_os_error()
                 )));
             }
 
-            debug!("Swapped app bundle");
+            debug!("swapped app bundle");
 
             // Shell out to unmount the dmg
             let output = tokio::process::Command::new("hdiutil")
@@ -130,10 +131,10 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 .await?;
 
             if !output.status.success() {
-                return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
+                error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but fig failed to unmount the dmg");
+            } else {
+                debug!("unmounted dmg");
             }
-
-            debug!("Unmounted dmg");
 
             let cli_path = fig_app_path.join("Contents").join("MacOS").join("fig-darwin-universal");
 
@@ -143,7 +144,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 ));
             }
 
-            debug!(?cli_path, "Using cli at path");
+            debug!(?cli_path, "using cli at path");
 
             tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
@@ -163,7 +164,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 .arg(arg.clone())
                 .spawn()?;
 
-            debug!(command =% String::from_utf8_lossy(arg.as_bytes()).to_string(), "Restarting fig");
+            debug!(command =% String::from_utf8_lossy(arg.as_bytes()).to_string(), "restarting fig");
 
             tx.send(UpdateStatus::Exit).await.ok();
 
