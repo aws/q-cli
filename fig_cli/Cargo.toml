@@ -61,12 +61,11 @@ spinners = "4.1.0"
 sysinfo = "0.26.5"
 tempfile = "3.3.0"
 thiserror = "1.0.36"
-time = { version = "=0.3.15", features = [
+time = { version = "=0.3.16", features = [
     "serde-human-readable",
     "local-offset",
     "formatting",
-    "macros",
-    "serde-well-known",
+    "macros"
 ] }
 tokio = { version = "1.20.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.2", features = [

@@ -12,5 +12,5 @@ fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 serde = { version = "1.0.147", features = ["derive"] }
 serde_json = "1.0.87"
-time = { version = "0.3.15", features = ["serde"] }
+time = { version = "0.3.16", features = ["serde"] }
 url = { version = "2.3.1", features = ["serde"] }
