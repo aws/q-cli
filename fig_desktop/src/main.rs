@@ -152,7 +152,7 @@ async fn main() {
                     }
                 }
             },
-            Err(err) => warn!("Failed to get pid: {err}"),
+            Err(err) => warn!(%err, "Failed to get pid"),
         }
     }
 

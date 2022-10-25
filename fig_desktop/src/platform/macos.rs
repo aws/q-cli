@@ -182,7 +182,7 @@ impl PlatformWindowImpl {
             .x_term_tree_cache
             .as_ref()
             .and_then(|cached| {
-                warn!("About to walk through {:?}", cached.len());
+                debug!("About to walk through {:?}", cached.len());
                 let result: Option<Vec<UIElement>> =
                     cached.iter().fold(None::<Vec<UIElement>>, |accum, item| match accum {
                         Some(mut x) => {
@@ -388,7 +388,7 @@ impl PlatformStateImpl {
                 }
 
                 extern "C" fn perform_key_equivalent(this: &Object, _cmd: Sel, event: id) -> BOOL {
-                    warn!("perform_key_equivalent");
+                    debug!("perform_key_equivalent");
 
                     unsafe {
                         // Allow super class to handle.
@@ -653,7 +653,7 @@ impl PlatformStateImpl {
         // .unwrap_or(false);
 
         if !is_xterm && supports_ime {
-            tracing::warn!("Sending notif io.fig.edit_buffer_updated");
+            tracing::debug!("Sending notif io.fig.edit_buffer_updated");
             NotificationCenter::distributed()
                 .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
         } else {
@@ -675,7 +675,7 @@ impl PlatformStateImpl {
             let caret = caret
                 .or_else(|| self.get_cursor_position())
                 .context("Failed to get cursor position")?;
-            warn!("Sending caret update {:?}", caret);
+            debug!("Sending caret update {:?}", caret);
 
             UNMANAGED
                 .event_sender

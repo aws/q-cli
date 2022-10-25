@@ -45,7 +45,7 @@ fig_integrations = { path = "../rust-lib/fig_integrations", features = [
     "dispatch",
 ] }
 fig_ipc = { path = "../rust-lib/fig_ipc" }
-fig_log = { path = "../rust-lib/fig_log" }
+fig_log = { path = "../rust-lib/fig_log", features = ["sentry"] }
 fig_proto = { path = "../rust-lib/fig_proto" }
 fig_request = { path = "../rust-lib/fig_request" }
 fig_settings = { path = "../rust-lib/fig_settings" }

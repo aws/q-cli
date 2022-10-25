@@ -89,7 +89,6 @@ async fn handle_local_ipc(
         trace!("Received local message: {message:?}");
         match message.r#type {
             Some(LocalMessageType::Command(command)) => {
-                warn!("COMMAND {command:?}");
                 let response = match command.command {
                     None => LocalResponse::Error {
                         code: None,

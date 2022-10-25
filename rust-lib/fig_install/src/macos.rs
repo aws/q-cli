@@ -65,7 +65,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             // We dont want to release the temp dir, so we just leak it
             std::mem::forget(temp_dir);
 
-            debug!("downloading dmg to {}", dmg_mount_path.display());
+            debug!(?dmg_mount_path, "downloading dmg");
 
             download_dmg(update.download, &dmg_mount_path, update.size, tx.clone()).await?;
 
@@ -115,10 +115,18 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 unsafe { libc::renamex_np(temp_bundle_cstr.as_ptr(), fig_app_cstr.as_ptr(), libc::RENAME_SWAP) };
 
             if status != 0 {
-                return Err(Error::UpdateFailed(format!(
-                    "failed to swap app bundle: {}",
-                    std::io::Error::last_os_error()
-                )));
+                let err = std::io::Error::last_os_error();
+
+                error!(%err, "failed to swap app bundle");
+
+                if matches!(err.kind(), std::io::ErrorKind::PermissionDenied) {
+                    return Err(Error::UpdateFailed(
+                        "Failed to swap app bundle dur to permission denied. Please try running `sudo fig update`."
+                            .into(),
+                    ));
+                } else {
+                    return Err(Error::UpdateFailed(format!("Failed to swap app bundle: {err}",)));
+                }
             }
 
             debug!("swapped app bundle");

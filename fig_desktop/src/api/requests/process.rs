@@ -37,7 +37,7 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
         "zsh" | "zsh.exe" => &["--norcs", "-c"],
         "fish" | "fish.exe" => &["--no-config", "-c"],
         _ => {
-            warn!("unknown shell {shell_name}");
+            warn!(%shell_name, "unknown shell");
             &[]
         },
     }
