@@ -89,6 +89,7 @@ pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 
 pub const DASHBOARD_ONBOARDING_SIZE: LogicalSize<f64> = LogicalSize::new(590.0, 480.0);
 pub const DASHBOARD_INITIAL_SIZE: LogicalSize<f64> = LogicalSize::new(1030.0, 720.0);
+pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480.0);
 
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
@@ -531,7 +532,11 @@ pub fn build_dashboard(
 
     match show_onboarding {
         true => window = window.with_inner_size(DASHBOARD_ONBOARDING_SIZE),
-        false => window = window.with_inner_size(DASHBOARD_INITIAL_SIZE),
+        false => {
+            window = window
+                .with_inner_size(DASHBOARD_INITIAL_SIZE)
+                .with_min_inner_size(DASHBOARD_MINIMUM_SIZE)
+        },
     }
 
     let window = window.build(event_loop)?;
