@@ -7,7 +7,16 @@ use serde::{
 };
 
 /// Terminals that macOS supports
-pub const MACOS_TERMINALS: &[Terminal] = &[Terminal::Iterm, Terminal::Vscode, Terminal::TerminalApp];
+pub const MACOS_TERMINALS: &[Terminal] = &[
+    Terminal::Alacritty,
+    Terminal::Iterm,
+    Terminal::Kitty,
+    Terminal::Tabby,
+    Terminal::TerminalApp,
+    Terminal::VSCodeInsiders,
+    Terminal::Vscode,
+    Terminal::WezTerm,
+];
 
 /// Terminals that Linux supports
 pub const LINUX_TERMINALS: &[Terminal] = &[

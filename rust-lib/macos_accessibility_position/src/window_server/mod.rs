@@ -86,7 +86,12 @@ static BLOCKED_BUNDLE_IDS: &[&str] = &[
 ];
 
 // TODO(sean) -- should this use fig_util crate Terminal struct?
-static XTERM_BUNDLE_IDS: &[&str] = &["com.microsoft.VSCodeInsiders", "com.microsoft.VSCode", "co.zeit.hyper"];
+pub static XTERM_BUNDLE_IDS: &[&str] = &[
+    "com.microsoft.VSCodeInsiders",
+    "com.microsoft.VSCode",
+    "co.zeit.hyper",
+    "org.tabby",
+];
 
 static TRACKED_NOTIFICATIONS: &[&str] = &[
     kAXWindowCreatedNotification,
@@ -350,14 +355,17 @@ impl WindowServerInner {
 
         if from_activation {
             // In Swift had 0.25s delay before this...?
-            if let Ok(window) = UIElement::from(ax_ref).focused_window() {
-                if let Err(e) = self.sender.send(WindowServerEvent::FocusChanged {
-                    window,
-                    app: key.clone(),
-                }) {
-                    warn!("Error sending focus changed event: {e:?}");
-                };
-            }
+            let elem = UIElement::from(ax_ref);
+            let sender = self.sender.clone();
+            let app = key.clone();
+            tokio::spawn(async move {
+                tokio::time::sleep(std::time::Duration::from_millis(250)).await;
+                if let Ok(window) = elem.focused_window() {
+                    if let Err(e) = sender.send(WindowServerEvent::FocusChanged { window, app }) {
+                        warn!("Error sending focus changed event: {e:?}");
+                    };
+                }
+            });
         }
 
         if XTERM_BUNDLE_IDS.contains(&key.bundle_id.as_str()) {
