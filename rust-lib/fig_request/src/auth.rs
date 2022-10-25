@@ -46,8 +46,21 @@ pub fn is_logged_in() -> bool {
 }
 
 pub fn logout() -> Result<()> {
+    fig_settings::state::create_anonymous_id()?;
+    fig_settings::state::remove_value("user_id").ok();
+    fig_settings::state::remove_value("previous_email").ok();
+
     let creds = Credentials::default();
     creds.save_credentials()?;
+
+    #[cfg(target_os = "macos")]
+    {
+        std::process::Command::new("defaults")
+            .args(["delete", "com.mschrage.fig.shared"])
+            .output()
+            .ok();
+    }
+
     Ok(())
 }
 

@@ -62,6 +62,8 @@ pub enum Error {
     Dir(#[from] fig_util::directories::DirectoryError),
     #[error(transparent)]
     RefreshError(#[from] auth::RefreshError),
+    #[error(transparent)]
+    SettingsError(#[from] fig_settings::Error),
     #[error("No client")]
     NoClient,
     #[error("No token")]

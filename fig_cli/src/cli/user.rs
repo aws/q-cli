@@ -66,6 +66,10 @@ impl RootUserSubcommand {
                     return Ok(());
                 }
 
+                if let Some(email) = fig_request::auth::get_email() {
+                    return Err(eyre::eyre!("Already logged in as {email}, please logout first."));
+                }
+
                 if email.is_none() {
                     println!("{}", "Login to Fig".bold().magenta());
                 }
@@ -172,18 +176,7 @@ impl RootUserSubcommand {
 
                 let logout_join = logout_command();
 
-                let mut creds = Credentials::load_credentials()?;
-                creds.clear_credentials();
-                creds.save_credentials()?;
-
-                #[cfg(target_os = "macos")]
-                {
-                    tokio::process::Command::new("defaults")
-                        .args(["delete", "com.mschrage.fig.shared"])
-                        .output()
-                        .await
-                        .ok();
-                }
+                fig_request::auth::logout()?;
 
                 let (_, _) = tokio::join!(telem_join, logout_join);
 

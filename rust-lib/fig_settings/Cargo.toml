@@ -15,6 +15,7 @@ serde_json = "1.0.87"
 thiserror = "1.0.36"
 tokio = { version = "1.20.1", features = ["full"] }
 url = "2.3.1"
+uuid = { version = "1.2.1", features = ["v4"] }
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }

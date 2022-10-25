@@ -1,4 +1,3 @@
-use fig_settings::state;
 use fig_util::system_info::get_system_id;
 use serde_json::{
     Map,
@@ -6,20 +5,6 @@ use serde_json::{
 };
 
 use crate::Error;
-
-fn create_anonymous_id() -> Result<String, fig_settings::Error> {
-    let anonymous_id = uuid::Uuid::new_v4().as_hyphenated().to_string();
-    state::set_value("anonymousId", anonymous_id.clone())?;
-    Ok(anonymous_id)
-}
-
-pub fn get_or_create_anonymous_id() -> Result<String, fig_settings::Error> {
-    if let Ok(Some(anonymous_id)) = state::get_string("anonymousId") {
-        return Ok(anonymous_id);
-    }
-
-    create_anonymous_id()
-}
 
 pub fn telemetry_is_disabled() -> bool {
     std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
@@ -128,7 +113,10 @@ pub(crate) fn default_properties() -> Map<String, Value> {
 }
 
 pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
-    body.insert("anonymousId".into(), get_or_create_anonymous_id()?.into());
+    body.insert(
+        "anonymousId".into(),
+        fig_settings::state::get_or_create_anonymous_id()?.into(),
+    );
     fig_request::Request::post(route).maybe_auth().body(body).send().await?;
     Ok(())
 }

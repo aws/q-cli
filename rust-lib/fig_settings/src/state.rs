@@ -75,6 +75,20 @@ pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {
     get_int(key).ok().flatten().unwrap_or(default)
 }
 
+pub fn create_anonymous_id() -> Result<String> {
+    let anonymous_id = uuid::Uuid::new_v4().as_hyphenated().to_string();
+    set_value("anonymousId", anonymous_id.clone())?;
+    Ok(anonymous_id)
+}
+
+pub fn get_or_create_anonymous_id() -> Result<String> {
+    if let Ok(Some(anonymous_id)) = get_string("anonymousId") {
+        return Ok(anonymous_id);
+    }
+
+    create_anonymous_id()
+}
+
 #[cfg(test)]
 mod test {
     use super::*;
