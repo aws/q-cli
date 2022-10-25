@@ -38,12 +38,15 @@
 
         body {
             background-color: var(--color-bg);
+            isolation: isolate;
             color: var(--color-fg-muted);
             display: flex;
             flex-direction: column;
             align-items: center;
             justify-content: center;
             padding: 2rem 0;
+            border: 1px solid var(--color-input-border);
+            overflow: hidden;
             height: 100vh;
             width: 100vw;
         }
@@ -54,9 +57,7 @@
             width: var(--size);
             height: var(--size);
             margin: 25vh auto;
-            border: 1px solid var(--color-input-border);
             box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
-            border-radius: 0.5rem;
         }
 
         h1 {
@@ -108,6 +109,9 @@
         p {
             font-size: 0.825rem;
             margin-top: 1rem;
+            max-width: 30ch;
+            margin-inline: auto;
+            text-align: center;
         }
     </style>
 </head>
@@ -126,6 +130,7 @@
     </h1>
     <div class="progress-bar-container">
         <div id="progress-bar">
+
         </div>
     </div>
     <p id="message">
@@ -143,7 +148,6 @@
     }
 
     function updateError(message) {
-        // TODO: Show error message differently ?
         document.getElementById("message").innerHTML = message;
     }
 
