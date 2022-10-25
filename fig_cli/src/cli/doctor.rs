@@ -1869,12 +1869,12 @@ impl DoctorCheck for LoginStatusCheck {
     }
 }
 
-struct MissionControlHostCheck;
+struct DashboardHostCheck;
 
 #[async_trait]
-impl DoctorCheck for MissionControlHostCheck {
+impl DoctorCheck for DashboardHostCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Mission Control is loading from the correct URL".into()
+        "Dashboard is loading from the correct URL".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -1886,7 +1886,38 @@ impl DoctorCheck for MissionControlHostCheck {
                 if host.contains("localhost") {
                     Err(DoctorError::Warning(
                         format!(
-                            "developer.mission-control.host = {}, delete this setting if Mission Control fails to load",
+                            "developer.mission-control.host = {}, delete this setting if Dashboard fails to load",
+                            host
+                        )
+                        .into(),
+                    ))
+                } else {
+                    Ok(())
+                }
+            },
+            None => Ok(()),
+        }
+    }
+}
+
+struct AutocompleteHostCheck;
+
+#[async_trait]
+impl DoctorCheck for AutocompleteHostCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Autocomplete is loading from the correct URL".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        match fig_settings::settings::get_string("developer.autocomplete.host")
+            .ok()
+            .flatten()
+        {
+            Some(host) => {
+                if host.contains("localhost") {
+                    Err(DoctorError::Warning(
+                        format!(
+                            "developer.autocomplete.host = {}, delete this setting if Autocomplete fails to load",
                             host
                         )
                         .into(),
@@ -2222,7 +2253,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &PseudoTerminalPathCheck,
                 &AutocompleteDevModeCheck,
                 &PluginDevModeCheck,
-                &MissionControlHostCheck,
+                &DashboardHostCheck,
+                &AutocompleteHostCheck,
             ],
             config,
             &mut spinner,
