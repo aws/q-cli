@@ -192,14 +192,14 @@ pub enum CliRootCommands {
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
-#[command(help_template = "
-ㅤ\x1B[1m███████╗██╗ ██████╗
+#[command(help_template = "\x1B[1m
+  ███████╗██╗ ██████╗
   ██╔════╝██║██╔════╝
   █████╗  ██║██║  ███╗
   ██╔══╝  ██║██║   ██║
   ██║     ██║╚██████╔╝
-  ╚═╝     ╚═╝ ╚═════╝ CLI\x1B[0m
-
+  ╚═╝     ╚═╝ ╚═════╝ CLI
+\x1B[0m
 ╭────────────────────────────────────────────────────╮
 │ \x1B[1mfig\x1B[0m            \x1B[0;90mOpen the Fig Dashboard\x1B[0m              │ 
 │ \x1B[1mfig doctor\x1B[0m     \x1B[0;90mDebug Fig installation issues\x1B[0m       │ 
