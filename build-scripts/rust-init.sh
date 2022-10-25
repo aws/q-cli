@@ -21,4 +21,5 @@ cat <<EOF >>"${BASH_ENV}"
 export CARGO_INCREMENTAL="0"
 export CARGO_PROFILE_RELEASE_LTO="thin"
 export RUSTFLAGS="${rustflags[*]}"
+export CARGO_NET_GIT_FETCH_WITH_CLI="true"
 EOF
