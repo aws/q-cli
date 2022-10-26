@@ -280,21 +280,6 @@ pub enum InternalSubcommand {
     PromptSsh {
         remote_dest: String,
     },
-    /// Queries remote repository for updates given the specified versions
-    QueryIndex {
-        #[arg(short, long)]
-        channel: String,
-        #[arg(short, long)]
-        kind: String,
-        #[arg(short, long)]
-        variant: String,
-        #[arg(short = 'e', long)]
-        version: String,
-        #[arg(short, long)]
-        architecture: String,
-        #[arg(short = 'r', long)]
-        enable_rollout: bool,
-    },
     #[cfg(target_os = "macos")]
     AttemptToFinishInputMethodInstallation {
         bundle_path: Option<PathBuf>,
@@ -791,33 +776,6 @@ impl InternalSubcommand {
                         installed_hosts.write_all(&new_line.into_bytes())?;
                     }
                 }
-            },
-            InternalSubcommand::QueryIndex {
-                channel,
-                kind,
-                variant,
-                version: current_version,
-                architecture,
-                enable_rollout,
-            } => {
-                use fig_install::index::PackageArchitecture;
-                use fig_util::manifest::{
-                    Channel,
-                    Kind,
-                    Variant,
-                };
-
-                let result = fig_install::index::query_index(
-                    Channel::from_str(&channel)?,
-                    Kind::from_str(&kind)?,
-                    Variant::from_str(&variant)?,
-                    &current_version,
-                    PackageArchitecture::from_str(&architecture)?,
-                    !enable_rollout,
-                )
-                .await?;
-
-                println!("{result:#?}");
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::AttemptToFinishInputMethodInstallation { bundle_path } => {
