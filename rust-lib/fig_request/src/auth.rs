@@ -55,6 +55,7 @@ pub fn logout() -> Result<()> {
 
     #[cfg(target_os = "macos")]
     {
+        // This is old code and should probably be removed
         std::process::Command::new("defaults")
             .args(["delete", "com.mschrage.fig.shared"])
             .output()
