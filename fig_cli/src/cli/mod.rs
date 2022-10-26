@@ -29,7 +29,6 @@ mod update;
 mod user;
 mod workflow;
 
-use cfg_if::cfg_if;
 use clap::{
     CommandFactory,
     Parser,
@@ -42,7 +41,10 @@ use eyre::{
     WrapErr,
 };
 use fig_daemon::Daemon;
+use fig_ipc::local::open_ui_element;
 use fig_log::Logger;
+use fig_proto::local::UiElement;
+use fig_request::auth::is_logged_in;
 use fig_util::{
     directories,
     is_fig_desktop_running,
@@ -179,6 +181,8 @@ pub enum CliRootCommands {
     Version,
     /// Print help for all subcommands
     HelpAll,
+    /// Open the fig dashboard
+    Dashboard,
 
     /// (LEGACY) Old hook that was being used somewhere
     #[command(name = "app:running", hide = true)]
@@ -336,6 +340,7 @@ impl Cli {
                     cmd.print_long_help()?;
                     Ok(())
                 },
+                CliRootCommands::Dashboard => launch_dashboard().await,
 
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
@@ -345,49 +350,22 @@ impl Cli {
                 CliRootCommands::LegacyBgTmux { .. } => Ok(()),
             },
             // Root command
-            None => root_command().await,
+            None => launch_dashboard().await,
         }
     }
 }
 
-async fn root_command() -> Result<()> {
-    // Launch fig if it is not running
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            use fig_request::auth::is_logged_in;
-            use fig_ipc::local::{open_ui_element, quit_command};
-            use fig_proto::local::UiElement;
-            use std::time::Duration;
+async fn launch_dashboard() -> Result<()> {
+    launch_fig_desktop(true, true)?;
 
-            if !is_logged_in() && is_fig_desktop_running() {
-                if quit_command().await.is_err() {
-                    eyre::bail!(
-                        "Fig is running but you are not logged in. Please quit Fig from the menu\
-                        bar and try again"
-                    );
-                }
-                tokio::time::sleep(Duration::from_millis(1000)).await;
-            }
+    let route = match is_logged_in() {
+        true => Some("/".into()),
+        false => None,
+    };
 
-            launch_fig_desktop(true, true)?;
-
-            if is_logged_in() {
-                open_ui_element(UiElement::MissionControl, None)
-                    .await
-                    .context("Could not launch fig")?;
-            }
-        } else {
-            use fig_ipc::local::open_ui_element;
-            use fig_proto::local::UiElement;
-
-            if fig_util::manifest::is_headless() {
-                eyre::bail!("Launching Fig from headless installs is not yet supported");
-            }
-
-            launch_fig_desktop(true, true)?;
-            open_ui_element(UiElement::MissionControl, None).await.context("Failed to open Fig")?;
-        }
-    }
+    open_ui_element(UiElement::MissionControl, route)
+        .await
+        .context("Failed to open dashboard")?;
 
     Ok(())
 }

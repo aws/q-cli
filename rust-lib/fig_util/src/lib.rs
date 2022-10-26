@@ -113,6 +113,12 @@ pub fn fig_bundle() -> Option<PathBuf> {
 pub fn launch_fig_desktop(wait_for_socket: bool, verbose: bool) -> Result<(), Error> {
     use directories::fig_socket_path;
 
+    if manifest::is_headless() {
+        return Err(Error::LaunchError(
+            "launching Fig from headless installs is not yet supportedd".to_owned(),
+        ));
+    }
+
     if system_info::is_remote() {
         return Err(Error::LaunchError(
             "launching Fig from remote installs is not yet supported".to_owned(),
