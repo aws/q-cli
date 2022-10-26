@@ -105,17 +105,9 @@ pub async fn identities(namespace: Option<String>) -> fig_request::Result<Vec<Id
 
 #[derive(Serialize)]
 #[serde(rename_all = "camelCase")]
-struct SshStringRequest<'a> {
-    authentication_type: Option<&'a str>,
-    path_to_auth: Option<&'a str>,
-    identity_remote_id: Option<u64>,
-    username: Option<&'a str>,
-    hostname: &'a str,
-    port: u16,
-    port_forwards: &'a [PortForward],
-    connection_type: &'a ConnectionType,
-    remote_host_ip: Option<&'a str>,
-    remote_host_username: Option<&'a str>,
+struct SshStringRequest {
+    host_id: u64,
+    identity_id: Option<u64>,
 }
 
 #[derive(Deserialize)]
@@ -124,27 +116,10 @@ struct SshStringResponse {
     ssh_string: String,
 }
 
-pub async fn ssh_string(
-    host: &Host,
-    connection: &Connection,
-    identity: &Option<Identity>,
-    remote_host_ip: Option<&str>,
-    remote_host_username: Option<&str>,
-) -> fig_request::Result<String> {
-    Ok(fig_request::Request::get("/access/ssh_string")
+pub async fn ssh_string(host_id: u64, identity_id: Option<u64>) -> fig_request::Result<String> {
+    Ok(fig_request::Request::get("/access/v2/ssh_string")
         .auth()
-        .body(SshStringRequest {
-            authentication_type: identity.as_ref().map(|iden| iden.authentication_type.as_ref()),
-            path_to_auth: identity.as_ref().and_then(|iden| iden.path_to_auth.as_deref()),
-            identity_remote_id: identity.as_ref().map(|iden| iden.remote_id),
-            username: identity.as_ref().map(|iden| iden.username.as_ref()),
-            hostname: &host.ip,
-            port: connection.port,
-            port_forwards: &connection.port_forwards,
-            connection_type: &connection.connection_type,
-            remote_host_ip,
-            remote_host_username,
-        })
+        .body(SshStringRequest { host_id, identity_id })
         .deser_json::<SshStringResponse>()
         .await?
         .ssh_string)

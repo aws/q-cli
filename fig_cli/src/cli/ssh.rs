@@ -130,7 +130,6 @@ impl SshSubcommand {
         let connection = connections.into_iter().next().unwrap();
 
         let mut identities = Vec::new();
-        let mut original_identities = Vec::new();
         let selected_identity = if connection.identity_ids.is_empty() && self.auth.is_none() {
             None
         } else {
@@ -139,7 +138,6 @@ impl SshSubcommand {
                     .await?
                     .into_iter(),
             );
-            original_identities = identities.clone();
             if self.auth.is_none() && connection.default_identity_id.is_some() {
                 let default = connection.default_identity_id.unwrap();
                 if identities.iter().any(|iden| iden.remote_id == default) {
@@ -214,23 +212,9 @@ impl SshSubcommand {
                 },
             }
         };
-
-        let remote_host_ip = hosts
-            .iter()
-            .find(|host| Some(host.remote_id) == connection.remote_host_id)
-            .map(|host| host.ip.clone());
-        let remote_host_username = original_identities
-            .iter()
-            .find(|id| Some(id.remote_id) == connection.remote_host_identity_id)
-            .map(|id| id.username.clone());
-        let ssh_string = fig_api_client::access::ssh_string(
-            &host,
-            connection,
-            &selected_identity.cloned(),
-            remote_host_ip.as_deref(),
-            remote_host_username.as_deref(),
-        )
-        .await?;
+        let ssh_string =
+            fig_api_client::access::ssh_string(host.remote_id, selected_identity.as_ref().map(|iden| iden.remote_id))
+                .await?;
         let mut parts = shlex::split(&ssh_string)
             .context("got no built ssh string from api")?
             .into_iter();
