@@ -13,6 +13,7 @@ use std::path::{
     PathBuf,
 };
 use std::process::exit;
+use std::time::Duration;
 
 use fig_ipc::local::update_command;
 use fig_util::consts::FIG_BUNDLE_ID;
@@ -370,7 +371,7 @@ async fn download_dmg(
     tx: Sender<UpdateStatus>,
 ) -> Result<(), Error> {
     let client = fig_request::client().expect("fig_request client must be instantiated on first request");
-    let mut response = client.get(src).send().await?;
+    let mut response = client.get(src).timeout(Duration::from_secs(30 * 60)).send().await?;
 
     let mut bytes_downloaded = 0;
     let mut file = tokio::fs::File::create(&dst).await?;
