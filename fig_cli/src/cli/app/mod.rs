@@ -49,6 +49,9 @@ pub struct UninstallArgs {
     /// Do not open the uninstallation page
     #[arg(long)]
     pub no_open: bool,
+    /// Only open the uninstallation page
+    #[arg(long)]
+    pub only_open: bool,
 }
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]
@@ -264,7 +267,9 @@ impl AppSubcommand {
                             fig_util::open_url(url).ok();
                         }
 
-                        fig_install::uninstall(args.into()).await?;
+                        if !args.only_open {
+                            fig_install::uninstall(args.into()).await?;
+                        }
                     } else {
                         let _args = args;
                         eyre::bail!("Unable to uninstall app via `fig app uninstall` on {}", std::env::consts::OS)
