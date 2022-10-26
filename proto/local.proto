@@ -37,6 +37,7 @@ message Command {
     // A request to set the desktops's log level
     LogLevelCommand log_level = 118;
     DumpStateCommand dump_state = 119;
+    DevtoolsCommand devtools = 120;
   }
 
   reserved 116;
@@ -146,6 +147,15 @@ message DumpStateCommand {
   enum Type { DUMP_STATE_FIGTERM = 0; }
 
   Type type = 1;
+}
+
+message DevtoolsCommand {
+  enum Window {
+    DEVTOOLS_AUTOCOMPLETE = 0;
+    DEVTOOLS_DASHBOARD = 1;
+  }
+
+  Window window = 1;
 }
 
 // == Hooks ==

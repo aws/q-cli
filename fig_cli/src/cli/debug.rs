@@ -24,6 +24,7 @@ use eyre::{
     WrapErr,
 };
 use fig_ipc::local::{
+    devtools_command,
     prompt_accessibility_command,
     run_build_command,
     set_debug_mode,
@@ -171,6 +172,10 @@ pub enum DebugSubcommand {
         architecture: String,
         #[arg(short = 'r', long)]
         enable_rollout: bool,
+    },
+    /// Open up the devtools of a specific webview
+    Devtools {
+        window: fig_proto::local::devtools_command::Window,
     },
 }
 
@@ -683,6 +688,14 @@ impl DebugSubcommand {
                 .await?;
 
                 println!("{result:#?}");
+            },
+            Self::Devtools { window } => {
+                launch_fig_desktop(true, true)?;
+                let result = devtools_command(*window).await;
+                if result.is_err() {
+                    println!("Could not open devtools window");
+                    return result.map_err(eyre::Report::from);
+                }
             },
         }
         Ok(())

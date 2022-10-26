@@ -5,10 +5,12 @@ use fig_proto::local::{
     self,
     command,
     command_response,
+    devtools_command,
     dump_state_command,
     BuildCommand,
     CommandResponse,
     DebugModeCommand,
+    DevtoolsCommand,
     DumpStateCommand,
     DumpStateResponse,
     InputMethodAction,
@@ -128,6 +130,11 @@ pub async fn quit_command() -> Result<()> {
 
 pub async fn logout_command() -> Result<()> {
     let command = command::Command::Logout(LogoutCommand {});
+    send_command_to_socket(command).await
+}
+
+pub async fn devtools_command(window: devtools_command::Window) -> Result<()> {
+    let command = command::Command::Devtools(DevtoolsCommand { window: window.into() });
     send_command_to_socket(command).await
 }
 

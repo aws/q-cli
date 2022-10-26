@@ -29,9 +29,14 @@ use tracing::{
     warn,
 };
 
+use crate::event::Event;
 use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
-use crate::EventLoopProxy;
+use crate::{
+    EventLoopProxy,
+    AUTOCOMPLETE_ID,
+    DASHBOARD_ID,
+};
 
 pub enum LocalResponse {
     Error { code: Option<i32>, message: Option<String> },
@@ -120,6 +125,21 @@ async fn handle_local_ipc(
                                 code: None,
                                 message: Some("Failed to check for updates".to_owned()),
                             }),
+                            Devtools(command) => {
+                                let window_id = match command.window() {
+                                    fig_proto::local::devtools_command::Window::DevtoolsAutocomplete => AUTOCOMPLETE_ID,
+                                    fig_proto::local::devtools_command::Window::DevtoolsDashboard => DASHBOARD_ID,
+                                };
+
+                                proxy
+                                    .send_event(Event::WindowEvent {
+                                        window_id,
+                                        window_event: crate::event::WindowEvent::Devtools,
+                                    })
+                                    .ok();
+
+                                Ok(LocalResponse::Success(None))
+                            },
 
                             TerminalIntegration(_)
                             | ListTerminalIntegrations(_)
