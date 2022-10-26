@@ -7,10 +7,8 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_ipc::local::{
-    send_hook_to_socket,
-    update_command,
-};
+use fig_api_client::settings::ensure_telemetry;
+use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
 use fig_request::auth::get_email;
 use fig_request::reqwest::StatusCode;
@@ -20,11 +18,8 @@ use fig_settings::{
     settings,
     ws_host,
 };
+use fig_util::directories;
 use fig_util::system_info::get_system_id;
-use fig_util::{
-    directories,
-    launch_fig_desktop,
-};
 use serde::{
     Deserialize,
     Serialize,
@@ -71,7 +66,10 @@ enum FigWebsocketMessage {
         apps: Option<Vec<String>>,
     },
     #[serde(rename_all = "camelCase")]
-    TriggerAutoUpdate,
+    TriggerAutoUpdate {
+        #[serde(default)]
+        disable_rollout: bool,
+    },
     #[serde(rename_all = "camelCase")]
     QuitDaemon {
         status: Option<i32>,
@@ -190,11 +188,18 @@ pub async fn process_websocket(
                     match websocket_message_result {
                         Ok(websocket_message) => match websocket_message {
                             FigWebsocketMessage::DotfilesUpdated => scheduler.schedule_now(SyncDotfiles),
-                            FigWebsocketMessage::SettingsUpdated { settings, updated_at } => {
+                            FigWebsocketMessage::SettingsUpdated {
+                                mut settings,
+                                updated_at,
+                            } => {
+                                if let Err(err) = ensure_telemetry(&mut settings).await {
+                                    error!(?err, "Failed to ensure telemetry is respected");
+                                }
+
                                 // Write settings to disk
                                 let path = directories::settings_path().context("Could not get settings path")?;
 
-                                info!("Settings updated: Writing settings to disk at {path:?}");
+                                info!(?path, "Settings updated: Writing settings to disk");
 
                                 let mut settings_file = std::fs::File::create(&path)?;
                                 let settings_json = serde_json::to_string_pretty(&settings)?;
@@ -226,27 +231,20 @@ pub async fn process_websocket(
                                 payload,
                                 apps,
                             } => match payload.as_ref().map(serde_json::to_string).transpose() {
-                                Err(err) => error!("Could not serialize event payload: {err:?}"),
+                                Err(err) => error!(%err, "Could not serialize event payload"),
                                 Ok(payload_blob) => {
                                     let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
                                     send_hook_to_socket(hook).await.ok();
                                 },
                             },
-                            FigWebsocketMessage::TriggerAutoUpdate => {
+                            FigWebsocketMessage::TriggerAutoUpdate { disable_rollout } => {
                                 if !settings::get_bool_or("app.disableAutoupdates", false) {
-                                    // trigger forced update. This will QUIT the macOS app, it must be relaunched...
-                                    update_command(true).await.ok();
-
-                                    // Sleep for a bit
-                                    tokio::time::sleep(std::time::Duration::from_secs(3)).await;
-
-                                    // Relaunch the app
-                                    launch_fig_desktop(true, false).ok();
+                                    fig_install::update(true, None, disable_rollout).await.ok();
                                 }
                             },
                             FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),
                         },
-                        Err(err) => error!("Could not parse json message: {err:?}"),
+                        Err(err) => error!(%err, "Could not parse json message"),
                     }
 
                     Ok(())

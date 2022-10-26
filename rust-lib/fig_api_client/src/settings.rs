@@ -27,14 +27,20 @@ pub async fn update_all(settings: Map<String, Value>) -> Result<()> {
     Ok(())
 }
 
-pub async fn update(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<()> {
+async fn update_remote(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<()> {
     let value = value.into();
-    fig_settings::settings::set_value(key.as_ref(), value.clone()).ok();
     fig_request::Request::post(format!("/settings/update/{}", key.as_ref()))
         .body(&json!({ "value": value }))
         .auth()
         .send()
         .await?;
+    Ok(())
+}
+
+pub async fn update(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<()> {
+    let value = value.into();
+    fig_settings::settings::set_value(key.as_ref(), value.clone()).ok();
+    update_remote(key, value).await?;
     Ok(())
 }
 
@@ -50,9 +56,28 @@ pub async fn delete(key: impl AsRef<str>) -> Result<()> {
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
-    pub settings: serde_json::Value,
+    pub settings: serde_json::Map<String, Value>,
     #[serde(with = "time::serde::rfc3339")]
     pub updated_at: time::OffsetDateTime,
+}
+
+/// Ensure that telemetry setting from pre-login is respected
+///
+/// Currently we sync the settings on login, but we need to ensure that the telemetry setting is
+/// respected from before login. This will do a one-time migration of the setting on login.
+pub async fn ensure_telemetry(settings: &mut Map<String, Value>) -> Result<()> {
+    // If we have never set the telemetry from this fn, it is set locally, and not in the settings
+    // passed in, we need to set it in that map and send it to the server
+    if !fig_settings::state::get_bool_or("telemetry.setOnRemote", false)
+        && fig_settings::settings::get_bool_or("telemetry.disabled", false)
+        && !settings.contains_key("telemetry.disabled")
+    {
+        fig_settings::state::set_value("telemetry.setOnRemote", true).ok();
+        settings.insert("telemetry.disabled".to_string(), json!(true));
+        update_remote("telemetry.disabled", true).await?;
+    }
+
+    Ok(())
 }
 
 pub async fn get() -> Result<Settings> {
@@ -60,7 +85,12 @@ pub async fn get() -> Result<Settings> {
 }
 
 pub async fn sync() -> Result<()> {
-    let Settings { settings, updated_at } = get().await?;
+    let Settings {
+        mut settings,
+        updated_at,
+    } = get().await?;
+
+    ensure_telemetry(&mut settings).await?;
 
     let path = directories::settings_path()?;
 

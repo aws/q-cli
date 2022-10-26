@@ -4,7 +4,6 @@ use clap::{
     Subcommand,
 };
 use eyre::{
-    bail,
     Result,
     WrapErr,
 };
@@ -109,10 +108,7 @@ impl SettingsArgs {
             },
             Some(SettingsSubcommands::All { remote, format }) => {
                 let settings = if remote {
-                    match settings::get().await?.settings {
-                        serde_json::Value::Object(map) => map,
-                        val => bail!("Remote settings is not an object: {val}"),
-                    }
+                    settings::get().await?.settings
                 } else {
                     fig_settings::settings::local_settings()?.inner
                 };

@@ -20,6 +20,7 @@ mod settings;
 mod source;
 mod ssh;
 mod team;
+mod telemetry;
 mod theme;
 mod tips;
 mod tweet;
@@ -169,6 +170,9 @@ pub enum CliRootCommands {
     Integrations(IntegrationsSubcommands),
     /// English -> Bash translation
     Ai(ai::AiArgs),
+    /// Enable/disable telemetry
+    #[command(subcommand, hide = true)]
+    Telemetry(telemetry::TelemetrySubcommand),
     /// Fig Pro
     Pro,
     /// Version
@@ -311,6 +315,7 @@ impl Cli {
                 CliRootCommands::Workflow(args) => args.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
+                CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
                 CliRootCommands::Pro => pro::execute().await,
                 CliRootCommands::Version => {
                     print!("{}", Self::command().render_version());

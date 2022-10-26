@@ -159,7 +159,10 @@ pub async fn update(
             tx.send(UpdateStatus::Message("Starting Update...".into())).await.ok();
             if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
                 error!(%err, "Failed to update");
-                tokio::fs::remove_file(&lock_file).await?;
+
+                if let Err(err) = tokio::fs::remove_file(&lock_file).await {
+                    error!(%err, "Failed to remove lock file");
+                }
 
                 let err_id = fig_telemetry::sentry::capture_error(&err);
 
@@ -180,7 +183,7 @@ pub async fn update(
             drop(rx);
         }
 
-        join.await.unwrap()?;
+        join.await.expect("Failed to join update thread")?;
         Ok(true)
     } else {
         info!("No updates available");
