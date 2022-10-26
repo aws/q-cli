@@ -15,6 +15,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::TerminalApp,
     Terminal::VSCodeInsiders,
     Terminal::Vscode,
+    Terminal::VSCodium,
     Terminal::WezTerm,
 ];
 
@@ -30,6 +31,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Terminator,
     Terminal::Vscode,
     Terminal::VSCodeInsiders,
+    Terminal::VSCodium,
 ];
 
 /// Other terminals that figterm should launch within that are not full terminal emulators
@@ -55,6 +57,8 @@ pub enum Terminal {
     Vscode,
     /// VSCode Insiders
     VSCodeInsiders,
+    /// VSCodium
+    VSCodium,
     /// Tabby
     Tabby,
     /// Nova
@@ -99,6 +103,7 @@ impl fmt::Display for Terminal {
             Terminal::Kitty => write!(f, "Kitty"),
             Terminal::Vscode => write!(f, "VSCode"),
             Terminal::VSCodeInsiders => write!(f, "VSCode Insiders"),
+            Terminal::VSCodium => write!(f, "VSCodium"),
             Terminal::Tabby => write!(f, "Tabby"),
             Terminal::Nova => write!(f, "Nova"),
             Terminal::WezTerm => write!(f, "Wezterm"),
@@ -132,7 +137,7 @@ impl Terminal {
             Some("Nova") => Some(Terminal::Nova),
             Some("WezTerm") => Some(Terminal::WezTerm),
             _ => match std::env::var("__CFBundleIdentifier").ok().as_deref() {
-                Some(v) if v.contains("com.jetbrains.") => Some(Terminal::JediTerm(v.into())),
+                Some(v) => Self::from_bundle_id(v),
                 _ => None,
             },
         }
@@ -148,6 +153,7 @@ impl Terminal {
             Terminal::Kitty => "kitty".into(),
             Terminal::Vscode => "vscode".into(),
             Terminal::VSCodeInsiders => "vscode-insiders".into(),
+            Terminal::VSCodium => "vscodium".into(),
             Terminal::Tabby => "tabby".into(),
             Terminal::Nova => "nova".into(),
             Terminal::WezTerm => "wezterm".into(),
@@ -170,15 +176,18 @@ impl Terminal {
     }
 
     /// Get the bundle identifier for the terminal
+    /// Note: this does not gracefully handle terminals that have changed bundle identifiers
+    /// recently such as VSCodium & Alacritty. We default to the current identifier.
     pub fn to_bundle_id(&self) -> String {
         match self {
             Terminal::Iterm => String::from("com.googlecode.iterm2"),
             Terminal::TerminalApp => String::from("com.apple.Terminal"),
             Terminal::Hyper => String::from("co.zeit.hyper"),
-            Terminal::Alacritty => String::from("io.alacritty"),
+            Terminal::Alacritty => String::from("org.alacritty"),
             Terminal::Kitty => String::from("net.kovidgoyal.kitty"),
             Terminal::Vscode => String::from("com.microsoft.VSCode"),
             Terminal::VSCodeInsiders => String::from("com.microsoft.VSCodeInsiders"),
+            Terminal::VSCodium => String::from("com.vscodium"),
             Terminal::Tabby => String::from("org.tabby"),
             Terminal::Nova => String::from("com.panic.Nova"),
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
@@ -193,10 +202,11 @@ impl Terminal {
             "com.googlecode.iterm2" => Terminal::Iterm,
             "com.apple.Terminal" => Terminal::TerminalApp,
             "co.zeit.hyper" => Terminal::Hyper,
-            "io.alacritty" => Terminal::Alacritty,
+            "io.alacritty" | "org.alacritty" => Terminal::Alacritty,
             "net.kovidgoyal.kitty" => Terminal::Kitty,
             "com.microsoft.VSCode" => Terminal::Vscode,
             "com.microsoft.VSCodeInsiders" => Terminal::VSCodeInsiders,
+            "com.vscodium" | "com.visualstudio.code.oss" => Terminal::VSCodium,
             "org.tabby" => Terminal::Tabby,
             "com.panic.Nova" => Terminal::Nova,
             "com.github.wez.wezterm" => Terminal::WezTerm,
@@ -222,6 +232,7 @@ impl Terminal {
                 | Terminal::TerminalApp
                 | Terminal::Vscode
                 | Terminal::VSCodeInsiders
+                | Terminal::VSCodium
                 | Terminal::Hyper
                 | Terminal::Tabby
         )
@@ -312,6 +323,6 @@ impl Terminal {
     }
 
     pub fn supports_fancy_boxes(&self) -> bool {
-        !matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders)
+        !matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::VSCodium)
     }
 }
