@@ -10,6 +10,7 @@ use std::ops::{
     Range,
 };
 use std::path::PathBuf;
+use std::time::SystemTime;
 use std::{
     env,
     mem,
@@ -163,10 +164,9 @@ pub struct CommandInfo {
     pub pid: Option<i32>,
     pub session_id: Option<String>,
     pub cwd: Option<PathBuf>,
-    pub time: Option<u64>,
-
+    pub start_time: Option<SystemTime>,
+    pub end_time: Option<SystemTime>,
     pub hostname: Option<String>,
-
     pub exit_code: Option<i32>,
 }
 
@@ -912,6 +912,12 @@ impl<T> Dimensions for Term<T> {
 }
 
 impl<T: EventListener> Handler for Term<T> {
+    #[inline]
+    fn set_title(&mut self, title: Option<String>) {
+        trace!("Setting title to '{:?}'", title);
+        self.title = title
+    }
+
     /// A character to be displayed.
     #[inline(never)]
     fn input(&mut self, c: char) {
@@ -1013,19 +1019,6 @@ impl<T: EventListener> Handler for Term<T> {
         }
 
         trace!("Current cursor position: {:?}", self.grid.cursor.point);
-    }
-
-    #[inline]
-    fn decaln(&mut self) {
-        trace!("Decalnning");
-
-        for line in (0..self.screen_lines()).map(Line::from) {
-            for column in 0..self.columns() {
-                let cell = &mut self.grid[line][Column(column)];
-                *cell = Cell::default();
-                cell.c = 'E';
-            }
-        }
     }
 
     #[inline]
@@ -1375,20 +1368,6 @@ impl<T: EventListener> Handler for Term<T> {
         }
     }
 
-    /// Set the indexed color value.
-    #[inline]
-    fn set_color(&mut self, index: usize, color: Rgb) {
-        trace!("Setting color[{}] = {:?}", index, color);
-        self.colors[index] = Some(color);
-    }
-
-    /// Reset the indexed color to original value.
-    #[inline]
-    fn reset_color(&mut self, index: usize) {
-        trace!("Resetting color[{}]", index);
-        self.colors[index] = None;
-    }
-
     #[inline]
     fn clear_screen(&mut self, mode: ansi::ClearMode) {
         trace!("Clearing screen: {:?}", mode);
@@ -1697,21 +1676,42 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     #[inline]
-    fn configure_charset(&mut self, index: CharsetIndex, charset: StandardCharset) {
-        trace!("Configuring charset {:?} as {:?}", index, charset);
-        self.grid.cursor.charsets[index] = charset;
-    }
-
-    #[inline]
     fn set_active_charset(&mut self, index: CharsetIndex) {
         trace!("Setting active charset {:?}", index);
         self.active_charset = index;
     }
 
     #[inline]
-    fn set_title(&mut self, title: Option<String>) {
-        trace!("Setting title to '{:?}'", title);
-        self.title = title
+    fn configure_charset(&mut self, index: CharsetIndex, charset: StandardCharset) {
+        trace!("Configuring charset {:?} as {:?}", index, charset);
+        self.grid.cursor.charsets[index] = charset;
+    }
+
+    /// Set the indexed color value.
+    #[inline]
+    fn set_color(&mut self, index: usize, color: Rgb) {
+        trace!("Setting color[{}] = {:?}", index, color);
+        self.colors[index] = Some(color);
+    }
+
+    /// Reset the indexed color to original value.
+    #[inline]
+    fn reset_color(&mut self, index: usize) {
+        trace!("Resetting color[{}]", index);
+        self.colors[index] = None;
+    }
+
+    #[inline]
+    fn decaln(&mut self) {
+        trace!("Decalnning");
+
+        for line in (0..self.screen_lines()).map(Line::from) {
+            for column in 0..self.columns() {
+                let cell = &mut self.grid[line][Column(column)];
+                *cell = Cell::default();
+                cell.c = 'E';
+            }
+        }
     }
 
     #[inline]
@@ -1773,12 +1773,10 @@ impl<T: EventListener> Handler for Term<T> {
             pid: context.pid,
             session_id: context.session_id.clone(),
             cwd: env::current_dir().ok(),
-            time: std::time::SystemTime::now()
-                .duration_since(std::time::SystemTime::UNIX_EPOCH)
-                .ok()
-                .map(|d| d.as_secs()),
-            hostname: context.hostname.clone(),
+            start_time: Some(std::time::SystemTime::now()),
             exit_code: None,
+            hostname: context.hostname.clone(),
+            end_time: None,
         });
     }
 
@@ -1807,6 +1805,7 @@ impl<T: EventListener> Handler for Term<T> {
         trace!("Fig exit code: {exit_code}");
         if let Some(command) = &mut self.shell_state.command_info {
             command.exit_code = Some(exit_code);
+            command.end_time = Some(std::time::SystemTime::now());
         }
     }
 

@@ -155,7 +155,11 @@ impl History {
                         pid: None,
                         session_id,
                         cwd,
-                        time: cap[6].parse().ok(),
+                        start_time: cap[6]
+                            .parse()
+                            .ok()
+                            .map(|t: u64| std::time::UNIX_EPOCH + std::time::Duration::from_secs(t)),
+                        end_time: None,
                         hostname: None,
                         exit_code: cap[2].parse().ok(),
                     }
@@ -163,7 +167,6 @@ impl History {
                 .collect();
         }
 
-        create_migrations_table(&history.connection)?;
         migrate_history_db(&history.connection)?;
 
         if !old_history.is_empty() {
@@ -182,15 +185,36 @@ impl History {
         if let Some(command) = &command_info.command {
             if !command.is_empty() {
                 self.connection.execute(
-                    "INSERT INTO history (command, shell, pid, session_id, cwd, time, hostname, \
-                     exit_code) VALUES (?, ?, ?, ?, ?, ?, ?, ?)",
+                    "INSERT INTO history 
+                        (command, shell, pid, session_id, cwd, start_time, end_time, duration, hostname, exit_code)
+                        VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
                     params![
                         &command_info.command,
                         &command_info.shell,
                         &command_info.pid,
                         &command_info.session_id,
                         &command_info.cwd.as_ref().map(|p| p.to_string_lossy().into_owned()),
-                        &command_info.time,
+                        &command_info
+                            .start_time
+                            .as_ref()
+                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                            .map(|d| d.as_secs()),
+                        &command_info
+                            .end_time
+                            .as_ref()
+                            .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok())
+                            .map(|t| t.as_secs()),
+                        &command_info
+                            .start_time
+                            .as_ref()
+                            .and_then(|start_time| {
+                                command_info
+                                    .end_time
+                                    .as_ref()
+                                    .and_then(|end_time| end_time.duration_since(*start_time).ok())
+                            })
+                            .map(|duration| duration.as_millis())
+                            .and_then(|duration| i64::try_from(duration).ok()),
                         &command_info.hostname,
                         &command_info.exit_code,
                     ],
@@ -227,7 +251,10 @@ impl History {
                         .as_ref()
                         .map(|p| p.to_string_lossy().into_owned())
                         .unwrap_or_else(|| "".to_string());
-                    let time = command_info.time.unwrap_or(0);
+                    let time = command_info
+                        .start_time
+                        .and_then(|t| t.duration_since(std::time::UNIX_EPOCH).ok().map(|d| d.as_secs()))
+                        .unwrap_or(0);
 
                     let entry = format!(
                         "\n- command: {}\n  exit_code: {}\n  shell: {}\n  session_id: {}\n  cwd: {}\n  time: {}",
@@ -250,36 +277,72 @@ impl History {
     }
 }
 
-fn create_migrations_table(conn: &Connection) -> Result<()> {
+fn migrate_history_db(conn: &Connection) -> Result<()> {
     trace!("Creating migrations table");
     conn.execute_batch(
-        "CREATE TABLE IF NOT EXISTS migrations( id INTEGER PRIMARY KEY, version INTEGER NOT NULL, migration_time \
-         INTEGER NOT NULL);",
+        "CREATE TABLE IF NOT EXISTS migrations( \
+                id INTEGER PRIMARY KEY, \
+                version INTEGER NOT NULL, \
+                migration_time INTEGER NOT NULL \
+            );",
     )?;
 
-    Ok(())
-}
-
-fn migrate_history_db(conn: &Connection) -> Result<()> {
     trace!("Migrating history database");
-    let mut max_migration_version_stmt = conn.prepare("SELECT max(version) from migrations;")?;
-    let max_migration_version: i64 = max_migration_version_stmt.query_row([], |row| row.get(0)).unwrap_or(0);
 
-    if max_migration_version < 1 {
-        conn.execute_batch(
-            "BEGIN; CREATE TABLE IF NOT EXISTS history( id INTEGER PRIMARY KEY, command TEXT, shell TEXT, pid \
-             INTEGER, session_id TEXT, cwd TEXT, time INTEGER , in_ssh INTEGER, in_docker INTEGER, hostname TEXT, \
-             exit_code INTEGER); INSERT INTO migrations(version, migration_time) VALUES (1, strftime('%s', 'now')); \
-             COMMIT;",
-        )?;
-    }
+    let max_migration_version: i64 = conn
+        .prepare("SELECT max(version) from migrations;")?
+        .query_row([], |row| row.get(0))
+        .unwrap_or(0);
 
-    if max_migration_version < 2 {
-        conn.execute_batch(
-            "BEGIN; ALTER TABLE history DROP COLUMN in_ssh; ALTER TABLE history DROP COLUMN in_docker; INSERT \
-            INTO migrations(version, migration_time) VALUES (2, strftime('%s', 'now')); COMMIT;",
-        )?;
-    }
+    let migrate = |n, s| {
+        if max_migration_version < n {
+            trace!("Running migration {n}");
+
+            conn.execute_batch(&format!(
+                "BEGIN; \
+            {s} \
+            INSERT INTO migrations (version, migration_time) VALUES ({n}, strftime('%s', 'now')); \
+            COMMIT;"
+            ))
+        } else {
+            Ok(())
+        }
+    };
+
+    // Create the initial history table
+    migrate(
+        1,
+        "CREATE TABLE IF NOT EXISTS history( \
+            id INTEGER PRIMARY KEY, \
+            command TEXT, \
+            shell TEXT, \
+            pid INTEGER, \
+            session_id TEXT, \
+            cwd TEXT, \
+            time INTEGER, \
+            in_ssh INTEGER, \
+            in_docker INTEGER, \
+            hostname TEXT, \
+            exit_code INTEGER \
+        );",
+    )?;
+
+    // Drop in_ssh and in_docker columns
+    migrate(
+        2,
+        "ALTER TABLE history DROP COLUMN in_ssh; \
+        ALTER TABLE history DROP COLUMN in_docker;",
+    )?;
+
+    // Rename time -> start_time, add end_time and duration
+    migrate(
+        3,
+        "ALTER TABLE history RENAME COLUMN time TO start_time; \
+        ALTER TABLE history ADD COLUMN end_time INTEGER; \
+        ALTER TABLE history ADD COLUMN duration INTEGER;",
+    )?;
+
+    //
 
     Ok(())
 }
@@ -291,8 +354,6 @@ mod tests {
     #[test]
     fn migrate_and_insert() {
         let conn = Connection::open_in_memory().unwrap();
-
-        create_migrations_table(&conn).unwrap();
         migrate_history_db(&conn).unwrap();
 
         let history = History { connection: conn };
@@ -304,9 +365,10 @@ mod tests {
                     pid: Some(123),
                     session_id: Some("session-id".into()),
                     cwd: Some("/home/grant/".into()),
-                    time: Some(123123),
+                    start_time: Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(123)),
+                    end_time: Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(124)),
                     hostname: Some("laptop".into()),
-                    exit_code: None,
+                    exit_code: Some(0),
                 },
                 false,
             )
