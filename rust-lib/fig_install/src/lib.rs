@@ -72,7 +72,7 @@ pub enum Error {
     UpdateFailed(String),
     #[error("failed to update fig: `{0}`")]
     UpdateFailedPermissions(String),
-    // #[cfg(target_os = "macos")]
+    #[cfg(target_os = "macos")]
     #[error("failed to update fig due to auth error: `{0}`")]
     SecurityFramework(#[from] security_framework::base::Error),
     #[error("your system is not supported on this channel")]
