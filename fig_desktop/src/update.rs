@@ -97,7 +97,7 @@ pub async fn check_for_update(show_webview: bool) -> bool {
     };
 
     // If not debug or override, check for update
-    if !is_cargo_debug_build() && fig_settings::settings::get_bool_or("app.disableAutoupdates", true) {
+    if !is_cargo_debug_build() && !fig_settings::settings::get_bool_or("app.disableAutoupdates", false) {
         match fig_install::update(true, updating_cb, !show_webview).await {
             Ok(status) => status,
             Err(err) => {
