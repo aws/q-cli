@@ -820,12 +820,31 @@ impl InternalSubcommand {
             InternalSubcommand::SwapFiles { from, to } => {
                 use std::os::unix::prelude::OsStrExt;
 
-                let from_cstr = std::ffi::CString::new(from.as_os_str().as_bytes()).context("Invalid from path")?;
-                let to_cstr = std::ffi::CString::new(to.as_os_str().as_bytes()).context("Invalid to path")?;
+                let from_cstr = match std::ffi::CString::new(from.as_os_str().as_bytes()).context("Invalid from path") {
+                    Ok(cstr) => cstr,
+                    Err(err) => {
+                        writeln!(stderr(), "Invalid from path: {err}").ok();
+                        std::process::exit(1);
+                    },
+                };
 
-                fig_install::macos::swap(from_cstr, to_cstr).context("Failed to swap files")?;
+                let to_cstr = match std::ffi::CString::new(to.as_os_str().as_bytes()) {
+                    Ok(cstr) => cstr,
+                    Err(err) => {
+                        writeln!(stderr(), "Invalid to path: {err}").ok();
+                        std::process::exit(1);
+                    },
+                };
 
-                writeln!(stdout(), "success").ok();
+                match fig_install::macos::swap(from_cstr, to_cstr) {
+                    Ok(_) => {
+                        writeln!(stdout(), "success").ok();
+                    },
+                    Err(err) => {
+                        writeln!(stderr(), "Failed to swap files: {err}").ok();
+                        std::process::exit(1);
+                    },
+                }
             },
         }
 

@@ -125,6 +125,8 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                     debug!("swapped app bundle")
                 },
                 Err(err) => {
+                    // TODO: Only fallback if the update is "interactive"
+
                     error!(?err, "failed to swap app bundle, trying to elevate permissions");
 
                     let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
