@@ -72,16 +72,21 @@ impl PlatformState {
     }
 
     pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect> {
-        match window.current_monitor() {
-            Some(monitor) => {
+        let cursor_position = match self.get_cursor_position() {
+            Some(cursor_position) => cursor_position.position,
+            None => return None,
+        };
+
+        window
+            .available_monitors()
+            .map(|monitor| {
                 let scale_factor = monitor.scale_factor();
-                Some(Rect {
+                Rect {
                     position: monitor.position().to_logical(scale_factor),
                     size: monitor.size().to_logical(scale_factor),
-                })
-            },
-            None => None,
-        }
+                }
+            })
+            .find(|bounds| bounds.contains(cursor_position))
     }
 
     /// Gets the currently active window on the platform
