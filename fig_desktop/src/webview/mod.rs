@@ -348,6 +348,7 @@ impl WebviewManager {
                                         &self.figterm_state,
                                         &self.platform_state,
                                         &self.notifications_state,
+                                        window_target,
                                         &api_handler_tx,
                                     );
                                 } else {
@@ -372,6 +373,7 @@ impl WebviewManager {
                                         &self.figterm_state,
                                         &self.platform_state,
                                         &self.notifications_state,
+                                        window_target,
                                         &api_handler_tx,
                                     );
                                 } else {

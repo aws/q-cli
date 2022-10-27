@@ -49,7 +49,11 @@ use crate::platform::{
     self,
     PlatformState,
 };
-use crate::AUTOCOMPLETE_ID;
+use crate::{
+    EventLoopWindowTarget,
+    AUTOCOMPLETE_ID,
+    DASHBOARD_ID,
+};
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
 pub struct WindowId(pub Cow<'static, str>);
@@ -147,6 +151,7 @@ impl WindowState {
         figterm_state: &FigtermState,
         platform_state: &PlatformState,
         notifications_state: &WebviewNotificationsState,
+        window_target: &EventLoopWindowTarget,
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
@@ -213,23 +218,36 @@ impl WindowState {
                 if !self.webview.window().is_visible() {
                     return;
                 }
+                self.webview.window().set_visible(false);
 
-                for session in figterm_state.linked_sessions.lock().iter() {
-                    let _ = session.sender.send(FigtermCommand::InterceptClear);
+                if self.window_id == AUTOCOMPLETE_ID {
+                    for session in figterm_state.linked_sessions.lock().iter() {
+                        let _ = session.sender.send(FigtermCommand::InterceptClear);
+                    }
+
+                    #[cfg(not(target_os = "linux"))]
+                    self.webview.window().set_resizable(true);
+                    #[cfg(target_os = "linux")]
+                    self.webview
+                        .window()
+                        .set_min_inner_size(Some(PhysicalSize { width: 1, height: 1 }));
+
+                    self.webview
+                        .window()
+                        .set_inner_size(PhysicalSize { width: 1, height: 1 });
+
+                    #[cfg(not(target_os = "linux"))]
+                    self.webview.window().set_resizable(false);
                 }
 
-                self.webview.window().set_visible(false);
-                #[cfg(not(target_os = "linux"))]
-                self.webview.window().set_resizable(true);
-                #[cfg(target_os = "linux")]
-                self.webview
-                    .window()
-                    .set_min_inner_size(Some(PhysicalSize { width: 1, height: 1 }));
-                self.webview
-                    .window()
-                    .set_inner_size(PhysicalSize { width: 1, height: 1 });
-                #[cfg(not(target_os = "linux"))]
-                self.webview.window().set_resizable(false);
+                #[cfg(target_os = "macos")]
+                if self.window_id == DASHBOARD_ID {
+                    use wry::application::platform::macos::{
+                        ActivationPolicy,
+                        EventLoopWindowTargetExtMacOS,
+                    };
+                    window_target.set_activation_policy_at_runtime(ActivationPolicy::Accessory);
+                }
             },
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
@@ -247,6 +265,15 @@ impl WindowState {
                         );
                     }
                 } else {
+                    #[cfg(target_os = "macos")]
+                    if self.window_id == DASHBOARD_ID {
+                        use wry::application::platform::macos::{
+                            ActivationPolicy,
+                            EventLoopWindowTargetExtMacOS,
+                        };
+                        window_target.set_activation_policy_at_runtime(ActivationPolicy::Regular);
+                    }
+
                     self.webview.window().set_visible(true);
                     self.webview.window().set_focus();
                 }
