@@ -53,8 +53,11 @@ pub async fn run_install() {
         }
     });
 
+    #[cfg(target_os = "macos")]
+    initialize_fig_dir().ok();
+
+    // Add any items that are only once per version
     if should_run_install_script() {
-        // Add any items that are only once per version
         tokio::spawn(async {
             fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::UpdatedApp,
@@ -76,9 +79,6 @@ pub async fn run_install() {
                 Err(err) => error!(%err, "Failed to get CLI path"),
             }
         });
-
-        #[cfg(target_os = "macos")]
-        initialize_fig_dir().ok();
 
         if let Ok(target_bundle_path) = fig_integrations::input_method::InputMethod::default().target_bundle_path() {
             if target_bundle_path.exists() {
