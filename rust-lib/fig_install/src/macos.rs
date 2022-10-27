@@ -146,7 +146,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                         &cli_path,
                         &[
                             OsStr::new("_"),
-                            OsStr::new("swap"),
+                            OsStr::new("swap-files"),
                             temp_bundle_path.as_os_str(),
                             fig_app_path.as_os_str(),
                         ],
