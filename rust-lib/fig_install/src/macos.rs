@@ -1,5 +1,10 @@
 use std::borrow::BorrowMut;
-use std::ffi::CString;
+use std::ffi::{
+    CStr,
+    CString,
+    OsStr,
+};
+use std::io::Read;
 use std::os::unix::prelude::{
     OsStrExt,
     PermissionsExt,
@@ -107,27 +112,58 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
 
             tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
 
-            // We want to swap the app bundles, like sparkle does
-            // https://github.com/sparkle-project/Sparkle/blob/863f85b5f5398c03553f2544668b95816b2860db/Sparkle/SUFileManager.m#L235
-            let status =
-                unsafe { libc::renamex_np(temp_bundle_cstr.as_ptr(), fig_app_cstr.as_ptr(), libc::RENAME_SWAP) };
+            let cli_path = fig_app_path.join("Contents").join("MacOS").join("fig-darwin-universal");
 
-            if status != 0 {
-                let err = std::io::Error::last_os_error();
-
-                error!(%err, "failed to swap app bundle");
-
-                if matches!(err.kind(), std::io::ErrorKind::PermissionDenied) {
-                    return Err(Error::UpdateFailed(
-                        "Failed to swap app bundle dur to permission denied. Please try running `sudo fig update`."
-                            .into(),
-                    ));
-                } else {
-                    return Err(Error::UpdateFailed(format!("Failed to swap app bundle: {err}",)));
-                }
+            if !cli_path.exists() {
+                return Err(Error::UpdateFailed(
+                    "the update succeeded, but the cli did not have the expected name or was missing".to_owned(),
+                ));
             }
 
-            debug!("swapped app bundle");
+            match swap(&temp_bundle_cstr, &fig_app_cstr) {
+                Ok(()) => {
+                    debug!("swapped app bundle")
+                },
+                Err(err) => {
+                    error!(?err, "failed to swap app bundle, trying to elevate permissions");
+
+                    let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
+                        .add_right("system.privilege.admin")?
+                        .build();
+
+                    let auth = security_framework::authorization::Authorization::new(
+                        Some(rights),
+                        None,
+                        security_framework::authorization::Flags::DEFAULTS
+                            | security_framework::authorization::Flags::INTERACTION_ALLOWED
+                            | security_framework::authorization::Flags::PREAUTHORIZE
+                            | security_framework::authorization::Flags::EXTEND_RIGHTS,
+                    )?;
+
+                    let mut file = auth.execute_with_privileges_piped(
+                        &cli_path,
+                        &[
+                            OsStr::new("_"),
+                            OsStr::new("swap"),
+                            temp_bundle_path.as_os_str(),
+                            fig_app_path.as_os_str(),
+                        ],
+                        security_framework::authorization::Flags::DEFAULTS,
+                    )?;
+
+                    let mut out = String::new();
+                    file.read_to_string(&mut out)?;
+
+                    match out.trim() {
+                        "success" => {
+                            debug!("swapped app bundle")
+                        },
+                        other => {
+                            return Err(Error::UpdateFailed(other.to_owned()));
+                        },
+                    }
+                },
+            }
 
             // Shell out to unmount the dmg
             let output = tokio::process::Command::new("hdiutil")
@@ -140,14 +176,6 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but fig failed to unmount the dmg");
             } else {
                 debug!("unmounted dmg");
-            }
-
-            let cli_path = fig_app_path.join("Contents").join("MacOS").join("fig-darwin-universal");
-
-            if !cli_path.exists() {
-                return Err(Error::UpdateFailed(
-                    "the update succeeded, but the cli did not have the expected name or was missing".to_owned(),
-                ));
             }
 
             debug!(?cli_path, "using cli at path");
@@ -382,6 +410,28 @@ async fn download_dmg(
     }
 
     tx.send(UpdateStatus::Percent(100.0)).await.ok();
+
+    Ok(())
+}
+
+pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
+    // We want to swap the app bundles, like sparkle does
+    // https://github.com/sparkle-project/Sparkle/blob/863f85b5f5398c03553f2544668b95816b2860db/Sparkle/SUFileManager.m#L235
+    let status = unsafe { libc::renamex_np(src.as_ref().as_ptr(), dst.as_ref().as_ptr(), libc::RENAME_SWAP) };
+
+    if status != 0 {
+        let err = std::io::Error::last_os_error();
+
+        error!(%err, "failed to swap app bundle");
+
+        if matches!(err.kind(), std::io::ErrorKind::PermissionDenied) {
+            return Err(Error::UpdateFailed(
+                "Failed to swap app bundle dur to permission denied. Please try running `sudo fig update`.".into(),
+            ));
+        } else {
+            return Err(Error::UpdateFailed(format!("Failed to swap app bundle: {err}")));
+        }
+    }
 
     Ok(())
 }

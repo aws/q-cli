@@ -290,6 +290,11 @@ pub enum InternalSubcommand {
         component: StateComponent,
     },
     FinishUpdate,
+    #[cfg(target_os = "macos")]
+    SwapFiles {
+        from: PathBuf,
+        to: PathBuf,
+    },
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -810,6 +815,17 @@ impl InternalSubcommand {
                     .await
                     .context("Failed to restart daemon")
                     .ok();
+            },
+            #[cfg(target_os = "macos")]
+            InternalSubcommand::SwapFiles { from, to } => {
+                use std::os::unix::prelude::OsStrExt;
+
+                let from_cstr = std::ffi::CString::new(from.as_os_str().as_bytes()).context("Invalid from path")?;
+                let to_cstr = std::ffi::CString::new(to.as_os_str().as_bytes()).context("Invalid to path")?;
+
+                fig_install::macos::swap(from_cstr, to_cstr).context("Failed to swap files")?;
+
+                writeln!(stdout(), "success").ok();
             },
         }
 

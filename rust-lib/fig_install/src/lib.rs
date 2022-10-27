@@ -4,7 +4,7 @@ pub mod index;
 #[cfg(target_os = "linux")]
 mod linux;
 #[cfg(target_os = "macos")]
-mod macos;
+pub mod macos;
 #[cfg(windows)]
 mod windows;
 
@@ -70,6 +70,11 @@ pub enum Error {
     PackageManaged,
     #[error("failed to update fig: `{0}`")]
     UpdateFailed(String),
+    #[error("failed to update fig: `{0}`")]
+    UpdateFailedPermissions(String),
+    // #[cfg(target_os = "macos")]
+    #[error("failed to update fig due to auth error: `{0}`")]
+    SecurityFramework(#[from] security_framework::base::Error),
     #[error("your system is not supported on this channel")]
     SystemNotOnChannel,
     #[error("manifest not found")]

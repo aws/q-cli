@@ -30,3 +30,4 @@ fig_telemetry = { path = "../fig_telemetry" }
 [target.'cfg(target_os = "macos")'.dependencies]
 fig_ipc = { path = "../fig_ipc" }
 libc = "0.2.137"
+security-framework  = "2.7.0"
