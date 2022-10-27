@@ -46,8 +46,10 @@ use core_foundation::{
     declare_TCFType,
     impl_TCFType,
 };
+use fig_settings::state;
 use fig_util::consts::FIG_CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
+use fig_util::Terminal;
 use objc::runtime::Object;
 use objc::{
     class,
@@ -142,6 +144,8 @@ pub enum InputMethodError {
     NotSelected,
     #[error("Could not locate Fig CLI")]
     HelperExecutableNotFound,
+    #[error("An unknown error occurred")]
+    UnknownError,
 }
 
 #[macro_export]
@@ -435,20 +439,29 @@ impl Integration for InputMethod {
 
         // Can we load input source?
 
-        run_on_main(|| {
-            let input_source = self.input_source()?;
+        // todo: pull this into a function in fig_directories
+        let fig_cli_path = match fig_util::fig_bundle() {
+            Some(bundle) => bundle.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME),
+            None => return Err(InputMethodError::HelperExecutableNotFound.into()),
+        };
 
-            // Is input source enabled?
-            if !input_source.is_enabled().unwrap_or_default() {
-                return Err(InputMethodError::NotEnabled.into());
-            }
+        let out = tokio::process::Command::new(fig_cli_path.to_str().expect("Fig CLI can be converted to string"))
+            .args(["_", "attempt-to-finish-input-method-installation"])
+            .arg(&self.bundle_path)
+            .output()
+            .await?;
 
-            if !input_source.is_selected().unwrap_or_default() {
-                return Err(InputMethodError::NotSelected.into());
-            }
-
+        if out.status.code() == Some(0) {
+            self.set_is_enabled(true);
             Ok(())
-        })
+        } else {
+            self.set_is_enabled(false);
+            let err = String::from_utf8(out.stdout).unwrap();
+            match serde_json::from_str::<InputMethodError>(err.as_str()).ok() {
+                Some(error) => Err(error.into()),
+                None => Err(InputMethodError::UnknownError.into()),
+            }
+        }
     }
 
     async fn install(&self) -> Result<()> {
@@ -507,16 +520,32 @@ impl Integration for InputMethod {
             tokio::time::sleep(std::time::Duration::from_secs(1)).await
         }
 
-        // TODO: Store PIDs of all relevant terminal emulators (input method will not work until these
+        // Store PIDs of all relevant terminal emulators (input method will not work until these
         // processes are restarted)
+        use macos_accessibility_position::applications::running_applications;
+        running_applications().iter().for_each(|app| {
+            if let Some(bundle_id) = &app.bundle_identifier {
+                match Terminal::from_bundle_id(bundle_id) {
+                    Some(terminal) if terminal.supports_macos_accessibility() => {
+                        state::set_value(
+                            self.terminal_instance_requires_restart_key(&terminal, app.process_identifier),
+                            true,
+                        )
+                        .ok();
+                    },
+                    _ => (),
+                }
+            }
+        });
 
-        // NSWorkspace.shared.runningApplications
-        // filter based on Terminals with bundle id
+        self.set_is_enabled(true);
 
         Ok(())
     }
 
     async fn uninstall(&self) -> Result<()> {
+        self.set_is_enabled(false);
+
         let destination = self.target_bundle_path()?;
 
         let binding = run_on_main(|| {
@@ -578,6 +607,47 @@ impl InputMethod {
         }
 
         Ok(())
+    }
+
+    fn terminal_instance_requires_restart_key(&self, terminal: &Terminal, process_identifier: i32) -> String {
+        let input_method_bundle_id = self.bundle_id().ok().unwrap_or_else(|| "unknown-bundle-id".into());
+        format!(
+            "input-method={}.{}.process[{}]-requires-restart",
+            input_method_bundle_id,
+            terminal.internal_id(),
+            process_identifier
+        )
+    }
+
+    pub fn enabled_for_terminal_instance(&self, terminal: &Terminal, process_identifier: i32) -> bool {
+        let key = self.terminal_instance_requires_restart_key(terminal, process_identifier);
+        let requires_restart = state::get_bool_or(&key, true);
+
+        let enabled = !requires_restart;
+
+        if enabled {
+            state::remove_value(key).ok();
+        }
+
+        enabled
+    }
+
+    fn input_method_is_enabled_key(&self) -> String {
+        let input_method_bundle_id = self.bundle_id().ok().unwrap_or_else(|| "unknown-bundle-id".into());
+        format!("input-method={}.enabled", input_method_bundle_id)
+    }
+
+    pub fn is_enabled(&self) -> Option<bool> {
+        let key = self.input_method_is_enabled_key();
+        match state::get_bool(key) {
+            Ok(enabled) => enabled,
+            Err(_) => None,
+        }
+    }
+
+    fn set_is_enabled(&self, enabled: bool) {
+        let key = self.input_method_is_enabled_key();
+        state::set_value(key, enabled).ok();
     }
 }
 

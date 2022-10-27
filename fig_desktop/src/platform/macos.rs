@@ -22,7 +22,6 @@ use cocoa::base::{
 use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
 use fig_integrations::input_method::InputMethod;
-use fig_integrations::Integration;
 use fig_util::Terminal;
 use macos_accessibility_position::accessibility::accessibility_is_enabled;
 use macos_accessibility_position::caret_position::{
@@ -498,6 +497,7 @@ impl PlatformStateImpl {
                 // Checking if IME is installed is async :(
                 let enabled_proxy = self.proxy.clone();
                 tokio::spawn(async move {
+                    // todo: replace this with current_terminal.internal_id()
                     let disabled_setting_name = match current_terminal {
                         Some(Terminal::Iterm) => Some("iterm"),
                         Some(Terminal::TerminalApp) => Some("terminal"),
@@ -515,10 +515,11 @@ impl PlatformStateImpl {
                         .unwrap_or(false);
 
                     let terminal_cursor_backing_installed = match current_terminal {
-                        Some(term) => {
-                            if term.supports_macos_input_method() {
+                        Some(terminal) => {
+                            if terminal.supports_macos_input_method() {
                                 let input_method: InputMethod = Default::default();
-                                input_method.is_installed().await.is_ok()
+                                input_method.is_enabled().unwrap_or(false)
+                                    && input_method.enabled_for_terminal_instance(&terminal, window.pid)
                             } else {
                                 true
                             }

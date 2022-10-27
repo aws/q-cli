@@ -4,6 +4,7 @@
 extern crate objc;
 
 pub mod accessibility;
+pub mod applications;
 pub mod bundle;
 pub mod caret_position;
 pub mod image;

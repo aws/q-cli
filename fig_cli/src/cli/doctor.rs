@@ -1644,19 +1644,41 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
         }
     }
 
-    async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
+    async fn check(&self, current_terminal: &Option<Terminal>) -> Result<(), DoctorError> {
         match option_env!("FIG_MACOS_BACKPORT") {
             Some(_) => {
                 use fig_integrations::input_method::InputMethod;
                 use fig_integrations::Integration;
 
-                if let Err(e) = InputMethod::default().is_installed().await {
+                let input_method = InputMethod::default();
+                if let Err(e) = input_method.is_installed().await {
                     return Err(DoctorError::Error {
                         reason: "Input Method is not installed".into(),
                         info: vec!["Run `fig integrations install input-method` to enable it".into()],
                         fix: None,
                         error: Some(e.into()),
                     });
+                }
+
+                use macos_accessibility_position::applications::running_applications_matching;
+
+                match current_terminal {
+                    Some(terminal) if terminal.is_input_dependant() => {
+                        let apps = running_applications_matching(&terminal.to_bundle_id());
+                        if apps.len() == 1
+                            && !input_method.enabled_for_terminal_instance(terminal, apps[0].process_identifier)
+                        {
+                            return Err(DoctorError::Error {
+                                reason: format!("Not enabled for {}", terminal).into(),
+                                info: vec![
+                                    format!("Restart {} to enable autocomplete in this terminal.", terminal).into(),
+                                ],
+                                fix: None,
+                                error: None,
+                            });
+                        }
+                    },
+                    _ => (),
                 }
 
                 Ok(())
