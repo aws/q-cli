@@ -3,7 +3,6 @@ use std::fs::File;
 use std::io::BufReader;
 use std::path::Path;
 use std::sync::Arc;
-use std::time::Duration;
 
 use fig_util::consts::FIG_CLI_BINARY_NAME;
 use once_cell::sync::Lazy;
@@ -151,7 +150,6 @@ pub static CLIENT: Lazy<Option<Client>> = Lazy::new(|| {
         .use_preconfigured_tls((*client_config()).clone())
         .user_agent(USER_AGENT.chars().filter(|c| c.is_ascii_graphic()).collect::<String>())
         .cookie_store(true)
-        .timeout(Duration::from_secs(30))
         .build()
         .ok()
 });
