@@ -130,8 +130,8 @@ impl Rect {
 
     pub fn contains(&self, point: LogicalPosition<f64>) -> bool {
         point.x >= self.position.x
-            && point.x < self.position.x + self.size.width
+            && point.x <= self.position.x + self.size.width
             && point.y >= self.position.y
-            && point.y < self.position.y + self.size.height
+            && point.y <= self.position.y + self.size.height
     }
 }
