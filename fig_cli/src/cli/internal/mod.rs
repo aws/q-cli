@@ -803,7 +803,7 @@ impl InternalSubcommand {
             },
             InternalSubcommand::FinishUpdate => {
                 // Wait some time for the previous installation to close
-                tokio::time::sleep(Duration::from_secs(2)).await;
+                tokio::time::sleep(Duration::from_millis(100)).await;
                 app::restart_fig().await.ok();
                 Daemon::default()
                     .restart()
