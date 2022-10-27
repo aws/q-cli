@@ -33,6 +33,7 @@ use eyre::{
     ContextCompat,
     Result,
 };
+use fig_daemon::Daemon;
 use fig_install::InstallComponents;
 #[cfg(target_os = "macos")]
 use fig_integrations::input_method::InputMethod;
@@ -86,6 +87,7 @@ use tracing::{
     trace,
 };
 
+use super::app;
 use crate::cli::installation::install_cli;
 
 #[derive(Debug, Args, PartialEq, Eq)]
@@ -287,6 +289,7 @@ pub enum InternalSubcommand {
     DumpState {
         component: StateComponent,
     },
+    FinishUpdate,
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -797,6 +800,16 @@ impl InternalSubcommand {
                         .context("Failed to send dump state command")?;
 
                 println!("{}", state.json);
+            },
+            InternalSubcommand::FinishUpdate => {
+                // Wait some time for the previous installation to close
+                tokio::time::sleep(Duration::from_secs(2)).await;
+                app::restart_fig().await.ok();
+                Daemon::default()
+                    .restart()
+                    .await
+                    .context("Failed to restart daemon")
+                    .ok();
             },
         }
 

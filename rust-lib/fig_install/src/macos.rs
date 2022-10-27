@@ -1,8 +1,5 @@
 use std::borrow::BorrowMut;
-use std::ffi::{
-    CString,
-    OsString,
-};
+use std::ffi::CString;
 use std::os::unix::prelude::{
     OsStrExt,
     PermissionsExt,
@@ -160,20 +157,11 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             // Remove the old app bundle
             tokio::fs::remove_dir_all(&temp_bundle_path).await?;
 
-            let mut arg = OsString::new();
-            arg.push("sleep 2 && '");
-            arg.push(&cli_path);
-            arg.push("' restart app && '");
-            arg.push(&cli_path);
-            arg.push("' restart daemon");
-
-            std::process::Command::new("/bin/bash")
+            debug!("restarting fig");
+            std::process::Command::new(&cli_path)
                 .process_group(0)
-                .args(["--noediting", "--noprofile", "--norc", "-c"])
-                .arg(arg.clone())
+                .args(["_", "finish-update"])
                 .spawn()?;
-
-            debug!(command =% String::from_utf8_lossy(arg.as_bytes()).to_string(), "restarting fig");
 
             tx.send(UpdateStatus::Exit).await.ok();
 
