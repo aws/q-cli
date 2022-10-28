@@ -526,7 +526,7 @@ impl Integration for InputMethod {
         running_applications().iter().for_each(|app| {
             if let Some(bundle_id) = &app.bundle_identifier {
                 match Terminal::from_bundle_id(bundle_id) {
-                    Some(terminal) if terminal.supports_macos_accessibility() => {
+                    Some(terminal) if terminal.supports_macos_input_method() => {
                         state::set_value(
                             self.terminal_instance_requires_restart_key(&terminal, app.process_identifier),
                             true,
@@ -621,7 +621,7 @@ impl InputMethod {
 
     pub fn enabled_for_terminal_instance(&self, terminal: &Terminal, process_identifier: i32) -> bool {
         let key = self.terminal_instance_requires_restart_key(terminal, process_identifier);
-        let requires_restart = state::get_bool_or(&key, true);
+        let requires_restart = state::get_bool_or(&key, false);
 
         let enabled = !requires_restart;
 
