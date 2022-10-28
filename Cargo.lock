@@ -1598,7 +1598,7 @@ dependencies = [
 
 [[package]]
 name = "dbus"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "once_cell",
  "thiserror",
@@ -2507,7 +2507,7 @@ dependencies = [
 
 [[package]]
 name = "fig-api-mock"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "async-trait",
  "clap 4.0.18",
@@ -2518,7 +2518,7 @@ dependencies = [
 
 [[package]]
 name = "fig_api_client"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "fig_request",
  "fig_settings",
@@ -2531,7 +2531,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "arboard",
  "assert_cmd",
@@ -2606,7 +2606,7 @@ dependencies = [
 
 [[package]]
 name = "fig_color"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "bitflags",
  "fig_test",
@@ -2615,7 +2615,7 @@ dependencies = [
 
 [[package]]
 name = "fig_daemon"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "camino",
  "fig_ipc",
@@ -2628,7 +2628,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "accessibility-sys",
  "anyhow",
@@ -2693,7 +2693,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop_api"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "async-trait",
  "base64",
@@ -2721,7 +2721,7 @@ dependencies = [
 
 [[package]]
 name = "fig_input_method"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "apple-bundle",
  "cocoa",
@@ -2741,7 +2741,7 @@ dependencies = [
 
 [[package]]
 name = "fig_install"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "bitflags",
  "camino",
@@ -2769,11 +2769,11 @@ dependencies = [
 
 [[package]]
 name = "fig_installer"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 
 [[package]]
 name = "fig_integrations"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "accessibility-sys",
  "async-trait",
@@ -2797,7 +2797,7 @@ dependencies = [
 
 [[package]]
 name = "fig_ipc"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2814,7 +2814,7 @@ dependencies = [
 
 [[package]]
 name = "fig_log"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "console-subscriber",
  "fig_util",
@@ -2829,7 +2829,7 @@ dependencies = [
 
 [[package]]
 name = "fig_proto"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "arbitrary",
  "bytes",
@@ -2850,7 +2850,7 @@ dependencies = [
 
 [[package]]
 name = "fig_release"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "clap 4.0.18",
  "dialoguer",
@@ -2869,7 +2869,7 @@ dependencies = [
 
 [[package]]
 name = "fig_request"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "base64",
  "bytes",
@@ -2895,7 +2895,7 @@ dependencies = [
 
 [[package]]
 name = "fig_settings"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "fd-lock",
  "fig_test",
@@ -2912,7 +2912,7 @@ dependencies = [
 
 [[package]]
 name = "fig_sync"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "cfg-if 1.0.0",
  "crossterm",
@@ -2939,7 +2939,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "anyhow",
  "fig_ipc",
@@ -2958,7 +2958,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "fig_test_macro",
  "tokio",
@@ -2966,7 +2966,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test_macro"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "quote 1.0.21",
  "syn 1.0.103",
@@ -2974,7 +2974,7 @@ dependencies = [
 
 [[package]]
 name = "fig_util"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "appkit-nsworkspace-bindings",
  "bstr 1.0.1",
@@ -3009,7 +3009,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -4568,7 +4568,7 @@ dependencies = [
 
 [[package]]
 name = "macos_accessibility_position"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "accessibility",
  "accessibility-sys",
@@ -4879,7 +4879,7 @@ checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
 
 [[package]]
 name = "newton"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "crossterm",
  "rand 0.8.5",
@@ -8119,7 +8119,7 @@ checksum = "3e5d7cd7ab3e47dda6e56542f4bbf3824c15234958c6e1bd6aaa347e93499fdc"
 
 [[package]]
 name = "tui"
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 dependencies = [
  "newton",
  "paste",

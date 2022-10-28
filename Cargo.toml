@@ -21,7 +21,7 @@ authors = ["fig developers"]
 edition = "2021"
 homepage = "https://fig.io"
 publish = false
-version = "2.7.0-qa.6"
+version = "2.7.0-beta.2"
 
 [profile.release]
 debug = 1
