@@ -567,7 +567,7 @@ impl DoctorCheck for FigIntegrationsCheck {
                     reason:
                         "This terminal is not running with the latest Fig integration, please restart your terminal"
                             .into(),
-                    info: vec![format!("FIG_TERM={:?}", std::env::var_os("FIG_TERM")).into()],
+                    info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
                     fix: None,
                     error: None,
                 });
@@ -575,7 +575,7 @@ impl DoctorCheck for FigIntegrationsCheck {
             Err(_) => {
                 return Err(DoctorError::Error {
                     reason: "Figterm is not running in this terminal, please try restarting your terminal".into(),
-                    info: vec![format!("FIG_TERM={:?}", std::env::var_os("FIG_TERM")).into()],
+                    info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
                     fix: None,
                     error: None,
                 });
