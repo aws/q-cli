@@ -35,6 +35,9 @@ highlight = "all"
 [[bans.deny]]
 name = "openssl"
 
+[[bans.deny]]
+name = "tempdir"
+
 [sources]
 unknown-registry = "deny"
 unknown-git = "deny"
