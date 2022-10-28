@@ -51,7 +51,6 @@ use wry::webview::{
 };
 
 use self::notification::WebviewNotificationsState;
-use crate::api::api_request;
 use crate::event::{
     Event,
     WindowEvent,
@@ -65,6 +64,7 @@ use crate::platform::{
     PlatformBoundEvent,
     PlatformState,
 };
+use crate::request::api_request;
 use crate::tray::{
     self,
     build_tray,

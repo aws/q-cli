@@ -1,4 +1,3 @@
-mod api;
 mod cli;
 mod event;
 mod figterm;
@@ -8,6 +7,7 @@ mod install;
 mod local_ipc;
 pub mod notification_bus;
 mod platform;
+mod request;
 mod secure_ipc;
 mod tray;
 mod update;
