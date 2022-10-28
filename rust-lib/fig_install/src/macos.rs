@@ -4,7 +4,6 @@ use std::ffi::{
     CString,
     OsStr,
 };
-use std::io::Read;
 use std::os::unix::prelude::{
     OsStrExt,
     PermissionsExt,
@@ -18,14 +17,16 @@ use std::process::exit;
 use std::time::Duration;
 
 use fig_ipc::local::update_command;
-use fig_util::consts::FIG_BUNDLE_ID;
+use fig_util::consts::{
+    FIG_BUNDLE_ID,
+    FIG_CLI_BINARY_NAME,
+};
 use fig_util::{
     directories,
     launch_fig_desktop,
 };
 use regex::Regex;
 use reqwest::IntoUrl;
-use tempdir::TempDir;
 use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
@@ -53,42 +54,41 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             let fig_app_path = fig_util::fig_bundle()
                 .ok_or_else(|| Error::UpdateFailed("binary invoked does not reside in a valid app bundle.".into()))?;
 
-            let temp_dir = TempDir::new("fig")?;
+            let temp_dir = tempfile::Builder::new().prefix("fig-download").tempdir()?;
 
-            let dmg_mount_path = temp_dir.path().join("Fig.dmg");
-            let temp_bundle_path = temp_dir.path().join("Fig.app.old");
+            let dmg_path = temp_dir.path().join("Fig.dmg");
+            let temp_bundle_path = temp_dir.path().join("Fig.app");
 
-            let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
             let fig_app_cstr = CString::new(fig_app_path.as_os_str().as_bytes())?;
+            let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
 
             // Set the permissions to 700 so that only the user can read and write
             let permissions = std::fs::Permissions::from_mode(0o700);
             std::fs::set_permissions(temp_dir.path(), permissions)?;
 
-            // We dont want to release the temp dir, so we just leak it
-            std::mem::forget(temp_dir);
+            debug!(?dmg_path, "downloading dmg");
 
-            debug!(?dmg_mount_path, "downloading dmg");
-
-            download_dmg(update.download, &dmg_mount_path, update.size, tx.clone()).await?;
+            download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
 
             tx.send(UpdateStatus::Message("Unpacking update...".into())).await.ok();
 
             // Shell out to hdiutil to mount the dmg
-            let output = tokio::process::Command::new("hdiutil")
+            let hdiutil_attach_output = tokio::process::Command::new("hdiutil")
                 .arg("attach")
-                .arg(&dmg_mount_path)
+                .arg(&dmg_path)
                 .args(["-readonly", "-nobrowse", "-plist"])
                 .output()
                 .await?;
 
-            if !output.status.success() {
-                return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
+            if !hdiutil_attach_output.status.success() {
+                return Err(Error::UpdateFailed(
+                    String::from_utf8_lossy(&hdiutil_attach_output.stderr).to_string(),
+                ));
             }
 
             debug!("mounted dmg");
 
-            let plist = String::from_utf8_lossy(&output.stdout).to_string();
+            let plist = String::from_utf8_lossy(&hdiutil_attach_output.stdout).to_string();
 
             let regex = Regex::new(r"<key>mount-point</key>\s*<\S+>([^<]+)</\S+>").unwrap();
             let mount_point = PathBuf::from(
@@ -100,24 +100,26 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                     .as_str(),
             );
 
-            let output = tokio::process::Command::new("ditto")
+            let ditto_output = tokio::process::Command::new("ditto")
                 .arg(mount_point.join("Fig.app"))
                 .arg(&temp_bundle_path)
                 .output()
                 .await?;
 
-            if !output.status.success() {
-                return Err(Error::UpdateFailed(String::from_utf8_lossy(&output.stderr).to_string()));
+            if !ditto_output.status.success() {
+                return Err(Error::UpdateFailed(
+                    String::from_utf8_lossy(&ditto_output.stderr).to_string(),
+                ));
             }
 
             tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
 
-            let cli_path = fig_app_path.join("Contents").join("MacOS").join("fig-darwin-universal");
+            let cli_path = fig_app_path.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME);
 
             if !cli_path.exists() {
-                return Err(Error::UpdateFailed(
-                    "the update succeeded, but the cli did not have the expected name or was missing".to_owned(),
-                ));
+                return Err(Error::UpdateFailed(format!(
+                    "the current app bundle is missing the CLI with the correct name {FIG_CLI_BINARY_NAME}"
+                )));
             }
 
             match swap(&temp_bundle_cstr, &fig_app_cstr) {
@@ -129,32 +131,36 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
 
                     error!(?err, "failed to swap app bundle, trying to elevate permissions");
 
-                    let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
-                        .add_right("system.privilege.admin")?
-                        .build();
+                    let mut file = {
+                        let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
+                            .add_right("system.privilege.admin")?
+                            .build();
 
-                    let auth = security_framework::authorization::Authorization::new(
-                        Some(rights),
-                        None,
-                        security_framework::authorization::Flags::DEFAULTS
-                            | security_framework::authorization::Flags::INTERACTION_ALLOWED
-                            | security_framework::authorization::Flags::PREAUTHORIZE
-                            | security_framework::authorization::Flags::EXTEND_RIGHTS,
-                    )?;
+                        let auth = security_framework::authorization::Authorization::new(
+                            Some(rights),
+                            None,
+                            security_framework::authorization::Flags::DEFAULTS
+                                | security_framework::authorization::Flags::INTERACTION_ALLOWED
+                                | security_framework::authorization::Flags::PREAUTHORIZE
+                                | security_framework::authorization::Flags::EXTEND_RIGHTS,
+                        )?;
 
-                    let mut file = auth.execute_with_privileges_piped(
-                        &cli_path,
-                        &[
-                            OsStr::new("_"),
-                            OsStr::new("swap-files"),
-                            temp_bundle_path.as_os_str(),
-                            fig_app_path.as_os_str(),
-                        ],
-                        security_framework::authorization::Flags::DEFAULTS,
-                    )?;
+                        let file = auth.execute_with_privileges_piped(
+                            &cli_path,
+                            &[
+                                OsStr::new("_"),
+                                OsStr::new("swap-files"),
+                                temp_bundle_path.as_os_str(),
+                                fig_app_path.as_os_str(),
+                            ],
+                            security_framework::authorization::Flags::DEFAULTS,
+                        )?;
+
+                        tokio::fs::File::from_std(file)
+                    };
 
                     let mut out = String::new();
-                    file.read_to_string(&mut out)?;
+                    file.read_to_string(&mut out).await?;
 
                     match out.trim() {
                         "success" => {
@@ -180,12 +186,15 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 debug!("unmounted dmg");
             }
 
+            if !cli_path.exists() {
+                return Err(Error::UpdateFailed(format!(
+                    "the update succeeded, but the cli did not have the expected name or was missing, expected {FIG_CLI_BINARY_NAME}"
+                )));
+            }
+
             debug!(?cli_path, "using cli at path");
 
             tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
-
-            // Remove the old app bundle
-            tokio::fs::remove_dir_all(&temp_bundle_path).await?;
 
             debug!("restarting fig");
             std::process::Command::new(&cli_path)
