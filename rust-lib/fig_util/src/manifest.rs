@@ -59,7 +59,7 @@ pub enum Kind {
     Other(String),
 }
 
-#[derive(Deserialize, Clone, EnumString)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Channel {

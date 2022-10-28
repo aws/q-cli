@@ -1,6 +1,9 @@
 use cfg_if::cfg_if;
 use fig_install::InstallComponents;
-use fig_util::manifest::manifest;
+use fig_util::manifest::{
+    manifest,
+    Channel,
+};
 use tracing::{
     error,
     trace,
@@ -371,14 +374,7 @@ fn menu() -> Vec<MenuElement> {
     let report = MenuElement::entry(Some("🐞".to_owned()), Some(GITHUB), "Report an Issue", "issue");
     let manual = MenuElement::entry(Some("📚".to_owned()), Some(QUESTION), "User Manual", "user-manual");
     let discord = MenuElement::entry(Some("💬".to_owned()), Some(DISCORD), "Join Community", "community");
-    let version = MenuElement::Info(format!(
-        "Version {} {}",
-        env!("CARGO_PKG_VERSION"),
-        manifest()
-            .as_ref()
-            .map(|m| m.default_channel.to_string())
-            .unwrap_or_default()
-    ));
+    let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION"),));
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
     let quit = MenuElement::entry(None, None, "Quit Fig", "quit");
     let dashboard = MenuElement::entry(Some("🎛️".to_owned()), Some(COMMANDKEY), "Dashboard", "dashboard");
@@ -388,7 +384,7 @@ fn menu() -> Vec<MenuElement> {
         MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
     ]);
 
-    if !logged_in {
+    let mut menu = if !logged_in {
         vec![
             MenuElement::Info("Fig hasn't been set up yet...".to_owned()),
             MenuElement::entry(None, None, "Get Started", "show"),
@@ -398,8 +394,6 @@ fn menu() -> Vec<MenuElement> {
             discord,
             MenuElement::Separator,
             MenuElement::entry(None, None, "Uninstall Fig", "uninstall"),
-            MenuElement::Separator,
-            quit,
         ]
     } else if !PlatformState::accessibility_is_enabled().unwrap_or(true) {
         vec![
@@ -414,12 +408,7 @@ fn menu() -> Vec<MenuElement> {
             MenuElement::Separator,
             report,
             MenuElement::Separator,
-            version,
-            update,
-            MenuElement::Separator,
             developer,
-            MenuElement::Separator,
-            quit,
         ]
     } else {
         vec![
@@ -431,12 +420,19 @@ fn menu() -> Vec<MenuElement> {
             MenuElement::Separator,
             report,
             MenuElement::Separator,
-            version,
-            update,
-            MenuElement::Separator,
             developer,
-            MenuElement::Separator,
-            quit,
         ]
+    };
+
+    menu.extend([MenuElement::Separator, version]);
+
+    if let Some(channel) = manifest().as_ref().map(|m| m.default_channel) {
+        if channel != Channel::Stable {
+            menu.push(MenuElement::Info(format!("Channel: {channel}")));
+        }
     }
+
+    menu.extend([update, MenuElement::Separator, quit]);
+
+    menu
 }

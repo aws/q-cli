@@ -94,11 +94,7 @@ impl From<fig_util::directories::DirectoryError> for Error {
 pub fn get_channel() -> Result<Channel, Error> {
     Ok(match fig_settings::state::get_string("updates.channel")? {
         Some(channel) => Channel::from_str(&channel)?,
-        None => manifest()
-            .as_ref()
-            .ok_or(Error::ManifestNotFound)?
-            .default_channel
-            .clone(),
+        None => manifest().as_ref().ok_or(Error::ManifestNotFound)?.default_channel,
     })
 }
 
