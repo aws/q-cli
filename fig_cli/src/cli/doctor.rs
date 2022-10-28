@@ -1660,22 +1660,29 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                     });
                 }
 
-                use macos_accessibility_position::applications::running_applications_matching;
+                use macos_accessibility_position::applications::running_applications;
 
                 match current_terminal {
                     Some(terminal) if terminal.is_input_dependant() => {
-                        let apps = running_applications_matching(&terminal.to_bundle_id());
-                        if apps.len() == 1
-                            && !input_method.enabled_for_terminal_instance(terminal, apps[0].process_identifier)
-                        {
-                            return Err(DoctorError::Error {
-                                reason: format!("Not enabled for {}", terminal).into(),
-                                info: vec![
-                                    format!("Restart {} to enable autocomplete in this terminal.", terminal).into(),
-                                ],
-                                fix: None,
-                                error: None,
-                            });
+                        let app = running_applications()
+                            .into_iter()
+                            .find(|app| app.bundle_identifier == Some(terminal.to_bundle_id()));
+
+                        if let Some(app) = app {
+                            if !input_method.enabled_for_terminal_instance(terminal, app.process_identifier) {
+                                return Err(DoctorError::Error {
+                                    reason: format!("Not enabled for {}", terminal).into(),
+                                    info: vec![
+                                        format!(
+                                            "Restart {} [{}] to enable autocomplete in this terminal.",
+                                            terminal, app.process_identifier
+                                        )
+                                        .into(),
+                                    ],
+                                    fix: None,
+                                    error: None,
+                                });
+                            }
                         }
                     },
                     _ => (),
