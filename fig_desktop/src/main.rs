@@ -17,7 +17,6 @@ mod webview;
 use std::iter::empty;
 use std::process::exit;
 
-use camino::Utf8PathBuf;
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
@@ -157,13 +156,19 @@ async fn main() {
     }
 
     #[cfg(target_os = "macos")]
-    if let Some(true) = fig_util::current_exe_origin().ok().and_then(|bin| {
-        Utf8PathBuf::from_path_buf(bin)
-            .ok()
-            .map(|bin| bin.as_str().contains(".dmg"))
-    }) {
-        eprintln!("Cannot execute Fig from within a DMG. Please move Fig to your applications folder and try again.");
-        return;
+    if let Ok(current_exe) = fig_util::current_exe_origin() {
+        if let Ok(statvfs) = nix::sys::statvfs::statvfs(&current_exe) {
+            if statvfs.flags().contains(nix::sys::statvfs::FsFlags::ST_RDONLY) {
+                rfd::MessageDialog::new()
+                    .set_title("Error")
+                    .set_description(
+                        "Cannot execute Fig from within a readonly volume. Please move Fig to your applications folder and try again.",
+                    )
+                    .show();
+            }
+
+            return;
+        }
     }
 
     tokio::spawn(async {
