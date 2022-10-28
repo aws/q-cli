@@ -77,7 +77,7 @@ impl PlatformState {
             None => return None,
         };
 
-        window
+        let frame = window
             .available_monitors()
             .map(|monitor| {
                 let scale_factor = monitor.scale_factor();
@@ -86,7 +86,18 @@ impl PlatformState {
                     size: monitor.size().to_logical(scale_factor),
                 }
             })
-            .find(|bounds| bounds.contains(cursor_position))
+            .find(|bounds| bounds.contains(cursor_position));
+
+        if frame.is_none() {
+            let monitor = window.current_monitor()?;
+            let scale_factor = monitor.scale_factor();
+            return Some(Rect {
+                position: monitor.position().to_logical(scale_factor),
+                size: monitor.size().to_logical(scale_factor),
+            });
+        }
+
+        frame
     }
 
     /// Gets the currently active window on the platform
