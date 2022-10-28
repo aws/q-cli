@@ -210,9 +210,6 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
     }
 
     if let Some(bundle_path) = get_bundle_path() {
-        let resources = bundle_path.join("Contents").join("Resources");
-        let script_path = resources.join("config").join("tools").join("uninstaller.scpt");
-
         let exe = bundle_path.join("Contents").join("MacOS").join("fig_desktop");
         let startup_launch_agent = LaunchdPlist::new("io.fig.launcher")
             .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
