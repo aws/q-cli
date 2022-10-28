@@ -213,24 +213,6 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
         let resources = bundle_path.join("Contents").join("Resources");
         let script_path = resources.join("config").join("tools").join("uninstaller.scpt");
 
-        let uninstall_agent = LaunchdPlist::new("io.fig.uninstall")
-            .program_arguments([
-                "osascript",
-                &script_path.to_string_lossy(),
-                &bundle_path.to_string_lossy(),
-            ])
-            .watch_paths(["~/.Trash"])
-            .keep_alive(false);
-
-        create_launch_agent(&uninstall_agent)?;
-
-        let path = uninstall_agent.get_file_path()?;
-        std::process::Command::new("launchctl")
-            .arg("load")
-            .arg(&path)
-            .status()
-            .ok();
-
         let exe = bundle_path.join("Contents").join("MacOS").join("fig_desktop");
         let startup_launch_agent = LaunchdPlist::new("io.fig.launcher")
             .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
