@@ -42,6 +42,8 @@ pub enum Integration {
     Daemon,
     Ssh,
     InputMethod,
+    #[command(name = "vscode")]
+    VSCode,
     #[doc(hidden)]
     All,
 }
@@ -145,6 +147,20 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 }
             }
         },
+        Integration::VSCode => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    let variants = fig_integrations::vscode::variants_installed();
+                    installed = !variants.is_empty();
+                    for variant in variants {
+                        fig_integrations::vscode::VSCodeIntegration { variant }.install().await?;
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("VSCode integration is only supported on macOS"))
+                }
+            }
+        },
     };
 
     if installed && result.is_ok() && !silent {
@@ -224,6 +240,18 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                 }
             }
         },
+        Integration::VSCode => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    for variant in fig_integrations::vscode::variants_installed() {
+                        fig_integrations::vscode::VSCodeIntegration { variant }.uninstall().await?;
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("VSCode integration is only supported on macOS"))
+                }
+            }
+        },
     };
 
     if uninstalled && result.is_ok() && !silent {
@@ -295,6 +323,20 @@ async fn status(integration: Integration) -> Result<()> {
                     Ok(())
                 } else {
                     Err(eyre::eyre!("Input method integration is only supported on macOS"))
+                }
+            }
+        },
+        Integration::VSCode => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    let variants = fig_integrations::vscode::variants_installed();
+                    let mut any = false;
+                    for variant in variants {
+                        any = any || fig_integrations::vscode::VSCodeIntegration { variant }.is_installed().await.is_ok();
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("VSCode integration is only supported on macOS"))
                 }
             }
         },

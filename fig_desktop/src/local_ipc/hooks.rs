@@ -2,7 +2,6 @@ use anyhow::Result;
 use fig_proto::local::{
     CaretPositionHook,
     FileChangedHook,
-    FocusChangeHook,
     FocusedWindowDataHook,
 };
 use wry::application::dpi::{
@@ -38,7 +37,7 @@ pub async fn caret_position(
     Ok(())
 }
 
-pub async fn focus_change(_: FocusChangeHook, proxy: &EventLoopProxy) -> Result<()> {
+pub async fn focus_change(proxy: &EventLoopProxy) -> Result<()> {
     proxy
         .send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),

@@ -29,4 +29,13 @@ pub enum Error {
     #[cfg(target_os = "macos")]
     #[error(transparent)]
     InputMethod(#[from] crate::input_method::InputMethodError),
+    #[cfg(target_os = "macos")]
+    #[error("Application not installed: {0}")]
+    ApplicationNotInstalled(Cow<'static, str>),
+    #[cfg(target_os = "macos")]
+    #[error(transparent)]
+    SerdeJSON(#[from] serde_json::Error),
+    #[cfg(target_os = "macos")]
+    #[error(transparent)]
+    URL(#[from] url::ParseError),
 }

@@ -51,7 +51,7 @@ function noActiveTerminals() {
 
 console.log(vscode.env.uriScheme)
 
-function activate(context) {
+function activate(_) {
 	try {
 		updateActiveTerminal()
 
@@ -74,6 +74,9 @@ function activate(context) {
 			updateActiveTerminal(terminal)
 		});
 
+		vscode.window.onDidChangeTextEditorSelection(_ => {
+			runCommand(`fig hook keyboard-focus-changed ${vscode.env.uriScheme} 0`);
+		});
 	} catch (e) {
 		logError(e)
 	}

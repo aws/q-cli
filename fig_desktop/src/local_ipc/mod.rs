@@ -205,13 +205,14 @@ async fn handle_local_ipc(
                     Some(EditBuffer(_)) => legacy_hook!("EditBuffer"),
                     Some(CaretPosition(request)) => hooks::caret_position(request, &proxy).await,
                     Some(Prompt(_)) => legacy_hook!("Prompt"),
-                    Some(FocusChange(request)) => hooks::focus_change(request, &proxy).await,
+                    Some(FocusChange(_)) => hooks::focus_change(&proxy).await,
                     Some(PreExec(_)) => legacy_hook!("PreExec"),
                     Some(InterceptedKey(_)) => legacy_hook!("InterceptedKey"),
                     Some(FileChanged(request)) => hooks::file_changed(request).await,
                     Some(FocusedWindowData(request)) => {
                         hooks::focused_window_data(request, &platform_state, &proxy).await
                     },
+                    Some(KeyboardFocusChanged(_)) => hooks::focus_change(&proxy).await,
                     err => {
                         match &err {
                             Some(unknown) => error!("Unknown hook: {unknown:?}"),
