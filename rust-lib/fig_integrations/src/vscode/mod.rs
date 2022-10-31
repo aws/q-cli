@@ -132,7 +132,7 @@ impl Integration for VSCodeIntegration {
                 .path()
                 .replace("%20", " ")
                 .split('/')
-                .filter(|x| x.is_empty())
+                .filter(|x| !x.is_empty())
                 .chain(["Contents", "Resources", "app", "bin", self.variant.cli_executable_name])
                 .collect::<Vec<&str>>()
                 .join("/")
