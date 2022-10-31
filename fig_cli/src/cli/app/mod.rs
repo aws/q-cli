@@ -114,13 +114,14 @@ pub async fn restart_fig() -> Result<()> {
             if #[cfg(target_os = "macos")] {
                 match option_env!("FIG_MACOS_BACKPORT") {
                     Some(_) => {
-                        crate::util::quit_fig(true).await?;
+                        println!("Restarting Fig");
+                        crate::util::quit_fig(false).await?;
                         tokio::time::sleep(Duration::from_millis(1000)).await;
                         launch_fig_desktop(LaunchArgs {
                             wait_for_socket: true,
                             open_dashboard: false,
                             immediate_update: true,
-                            verbose: true,
+                            verbose: false,
                         })?;
                     },
                     None => {

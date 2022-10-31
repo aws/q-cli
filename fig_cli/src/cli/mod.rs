@@ -303,24 +303,13 @@ impl Cli {
                 CliRootCommands::Issue(args) => args.execute().await,
                 CliRootCommands::Completion(args) => args.execute(),
                 CliRootCommands::Internal(internal_subcommand) => internal_subcommand.execute().await,
-                CliRootCommands::Launch => {
-                    if is_fig_desktop_running() {
-                        println!("Fig is already running!");
-                        return Ok(());
-                    }
-
-                    launch_fig_desktop(LaunchArgs {
-                        wait_for_socket: true,
-                        open_dashboard: false,
-                        immediate_update: true,
-                        verbose: true,
-                    })?;
-
-                    Ok(())
-                },
+                CliRootCommands::Launch => launch_dashboard().await,
                 CliRootCommands::Quit => crate::util::quit_fig(true).await,
                 CliRootCommands::Restart { process } => match process {
-                    Processes::App => app::restart_fig().await,
+                    Processes::App => {
+                        app::restart_fig().await?;
+                        launch_dashboard().await
+                    },
                     Processes::Daemon => Daemon::default().restart().await.context("Failed to restart daemon"),
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,

@@ -2336,8 +2336,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         #[cfg(target_os = "linux")]
         {
-            use super::diagnostics::get_diagnostics;
-
             if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
                 run_checks_with_context(
                     format!("Let's check {}...", "fig diagnostic".bold()),
