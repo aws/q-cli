@@ -204,6 +204,23 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             },
             Err(err) => error!(%err, "Failed to execute `fig issue` from the tray"),
         },
+        id if id == MenuId::new("not-working") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateRelative {
+                        path: Cow::Borrowed("?show_help=true"),
+                    },
+                })
+                .ok();
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::Show,
+                })
+                .ok();
+        },
         id => {
             trace!(?id, "Unhandled tray event");
         },
@@ -385,6 +402,7 @@ impl MenuElement {
 fn menu() -> Vec<MenuElement> {
     let logged_in = fig_request::auth::is_logged_in();
 
+    let not_working = MenuElement::entry(Some("🚨".into()), icon!("alert"), "Fig isn't working?", "not-working");
     let report = MenuElement::entry(Some("🐞".into()), icon!("github"), "Report an Issue", "issue");
     let manual = MenuElement::entry(Some("📚".into()), icon!("question"), "User Manual", "user-manual");
     let discord = MenuElement::entry(Some("💬".into()), icon!("discord"), "Join Community", "community");
@@ -406,6 +424,7 @@ fn menu() -> Vec<MenuElement> {
             manual,
             discord,
             MenuElement::Separator,
+            not_working,
             report,
             MenuElement::Separator,
             MenuElement::entry(None, None, "Uninstall Fig", "uninstall"),
@@ -447,6 +466,7 @@ fn menu() -> Vec<MenuElement> {
             manual,
             discord,
             MenuElement::Separator,
+            not_working,
             report,
             MenuElement::Separator,
             developer,
