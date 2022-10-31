@@ -128,8 +128,6 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         },
     }
 
-    std::fs::remove_file(directories::fig_socket_path()?).ok();
-
     let mut common_args = vec![];
     if !args.open_dashboard {
         common_args.push("--no-dashboard");
