@@ -114,23 +114,26 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         return Ok(());
     }
 
-    let telem_join = tokio::spawn(async {
-        fig_telemetry::dispatch_emit_track(
-            fig_telemetry::TrackEvent::new(
-                fig_telemetry::TrackEventType::QuitApp,
-                fig_telemetry::TrackSource::Cli,
-                env!("CARGO_PKG_VERSION").into(),
-                empty::<(&str, &str)>(),
-            ),
-            false,
-        )
-        .await
-        .ok();
-    });
+    let telem_join = match verbose {
+        true => {
+            println!("Quitting Fig");
 
-    if verbose {
-        println!("Quitting Fig");
-    }
+            Some(tokio::spawn(async {
+                fig_telemetry::dispatch_emit_track(
+                    fig_telemetry::TrackEvent::new(
+                        fig_telemetry::TrackEventType::QuitApp,
+                        fig_telemetry::TrackSource::Cli,
+                        env!("CARGO_PKG_VERSION").into(),
+                        empty::<(&str, &str)>(),
+                    ),
+                    false,
+                )
+                .await
+                .ok();
+            }))
+        },
+        false => None,
+    };
 
     if quit_command().await.is_err() {
         tokio::time::sleep(Duration::from_millis(500)).await;
@@ -172,7 +175,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         }
     }
 
-    telem_join.await.ok();
+    telem_join.map(|f| async { f.await.ok() });
 
     Ok(())
 }

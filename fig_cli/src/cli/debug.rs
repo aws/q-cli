@@ -32,6 +32,7 @@ use fig_ipc::local::{
 };
 use fig_sync::dotfiles::download_and_notify;
 use fig_util::consts::FIG_BUNDLE_ID;
+use fig_util::desktop::LaunchArgs;
 use fig_util::directories;
 use serde_json::json;
 
@@ -485,7 +486,12 @@ impl DebugSubcommand {
                         .spawn()?
                         .wait()?;
 
-                    launch_fig_desktop(true, true)?;
+                    launch_fig_desktop(LaunchArgs {
+                        wait_for_socket: true,
+                        open_dashboard: false,
+                        immediate_update: true,
+                        verbose: true,
+                    })?;
                 },
                 Some(AccessibilityAction::Reset) => {
                     quit_fig(true).await?;
@@ -496,7 +502,13 @@ impl DebugSubcommand {
                         .wait()?;
                 },
                 Some(AccessibilityAction::Prompt) => {
-                    launch_fig_desktop(true, true)?;
+                    launch_fig_desktop(LaunchArgs {
+                        wait_for_socket: true,
+                        open_dashboard: false,
+                        immediate_update: true,
+                        verbose: true,
+                    })?;
+
                     let result = prompt_accessibility_command().await;
                     if result.is_err() {
                         println!("Could not prompt for accessibility permissions.");
@@ -690,7 +702,13 @@ impl DebugSubcommand {
                 println!("{result:#?}");
             },
             Self::Devtools { window } => {
-                launch_fig_desktop(true, true)?;
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: true,
+                    open_dashboard: false,
+                    immediate_update: true,
+                    verbose: true,
+                })?;
+
                 let result = devtools_command(*window).await;
                 if result.is_err() {
                     println!("Could not open devtools window");

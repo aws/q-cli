@@ -45,6 +45,10 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use fig_util::directories;
 use serde_json::Value;
 #[cfg(unix)]
@@ -365,7 +369,13 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                     match workflow {
                                         WorkflowAction::Run(workflow) => ("search", *workflow.clone()),
                                         WorkflowAction::Create => {
-                                            fig_util::launch_fig_desktop(true, true)?;
+                                            launch_fig_desktop(LaunchArgs {
+                                                wait_for_socket: true,
+                                                open_dashboard: false,
+                                                immediate_update: true,
+                                                verbose: true,
+                                            })?;
+
                                             return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
                                                 Ok(()) => Ok(()),
                                                 Err(err) => Err(err.into()),

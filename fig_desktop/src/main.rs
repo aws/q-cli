@@ -185,7 +185,7 @@ async fn main() {
     #[cfg(target_os = "macos")]
     migrate().await;
 
-    install::run_install().await;
+    install::run_install(cli.ignore_immediate_update).await;
 
     #[cfg(target_os = "linux")]
     {

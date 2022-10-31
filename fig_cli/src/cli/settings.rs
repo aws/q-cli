@@ -14,10 +14,11 @@ use fig_ipc::local::{
 };
 use fig_proto::local::UiElement;
 use fig_request::auth::is_logged_in;
-use fig_util::{
-    directories,
+use fig_util::desktop::{
     launch_fig_desktop,
+    LaunchArgs,
 };
+use fig_util::directories;
 use globset::Glob;
 use serde_json::json;
 
@@ -190,7 +191,12 @@ impl SettingsArgs {
                     _ => Ok(()),
                 },
                 None => {
-                    launch_fig_desktop(true, true)?;
+                    launch_fig_desktop(LaunchArgs {
+                        wait_for_socket: true,
+                        open_dashboard: false,
+                        immediate_update: true,
+                        verbose: true,
+                    })?;
 
                     if is_logged_in() {
                         match open_ui_element(UiElement::Settings, None).await {

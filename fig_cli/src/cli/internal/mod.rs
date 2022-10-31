@@ -62,6 +62,10 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
@@ -87,7 +91,6 @@ use tracing::{
     trace,
 };
 
-use super::app;
 use crate::cli::installation::install_cli;
 
 #[derive(Debug, Args, PartialEq, Eq)]
@@ -809,7 +812,17 @@ impl InternalSubcommand {
             InternalSubcommand::FinishUpdate => {
                 // Wait some time for the previous installation to close
                 tokio::time::sleep(Duration::from_millis(100)).await;
-                app::restart_fig().await.ok();
+
+                crate::util::quit_fig(false).await.ok();
+                tokio::time::sleep(Duration::from_millis(1000)).await;
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: false,
+                    open_dashboard: false,
+                    immediate_update: false,
+                    verbose: false,
+                })
+                .ok();
+
                 Daemon::default()
                     .restart()
                     .await

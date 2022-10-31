@@ -18,9 +18,12 @@ use fig_settings::{
     settings,
     state,
 };
+use fig_util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use fig_util::{
     is_fig_desktop_running,
-    launch_fig_desktop,
     manifest,
 };
 use tracing::{
@@ -99,7 +102,12 @@ pub async fn restart_fig() -> Result<()> {
     }
 
     if !is_fig_desktop_running() {
-        launch_fig_desktop(true, true)?;
+        launch_fig_desktop(LaunchArgs {
+            wait_for_socket: true,
+            open_dashboard: false,
+            immediate_update: true,
+            verbose: true,
+        })?;
         Ok(())
     } else {
         cfg_if! {
@@ -108,7 +116,12 @@ pub async fn restart_fig() -> Result<()> {
                     Some(_) => {
                         crate::util::quit_fig(true).await?;
                         tokio::time::sleep(Duration::from_millis(1000)).await;
-                        launch_fig_desktop(true, true)?;
+                        launch_fig_desktop(LaunchArgs {
+                            wait_for_socket: true,
+                            open_dashboard: false,
+                            immediate_update: true,
+                            verbose: true,
+                        })?;
                     },
                     None => {
                         use eyre::Context;
@@ -123,7 +136,12 @@ pub async fn restart_fig() -> Result<()> {
             } else {
                 crate::util::quit_fig(true).await?;
                 tokio::time::sleep(Duration::from_millis(1000)).await;
-                launch_fig_desktop(true, true)?;
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: true,
+                    open_dashboard: false,
+                    immediate_update: true,
+                    verbose: true,
+                })?;
             }
         }
 
@@ -143,7 +161,12 @@ impl AppSubcommand {
                         use std::process::Command;
                         use std::os::unix::process::CommandExt;
 
-                        launch_fig_desktop(true, true)?;
+                        launch_fig_desktop(LaunchArgs {
+                            wait_for_socket: true,
+                            open_dashboard: false,
+                            immediate_update: true,
+                            verbose: true,
+                        })?;
 
                         if state::set_value("user.onboarding", true).is_ok() {
                             Command::new("bash")
@@ -223,7 +246,13 @@ impl AppSubcommand {
                             tokio::time::sleep(std::time::Duration::from_millis(3000)).await;
 
                             trace!("launching updated version of Fig");
-                            launch_fig_desktop(true, false).ok();
+                            launch_fig_desktop(LaunchArgs {
+                                wait_for_socket: true,
+                                open_dashboard: false,
+                                immediate_update: true,
+                                verbose: false,
+                            })
+                            .ok();
                         } else {
                             trace!("autoupdates are disabled.");
 
@@ -247,7 +276,12 @@ impl AppSubcommand {
                             fig_settings::state::set_value("DISPLAYED_AUTOLAUNCH_SETTINGS_HINT", true)?
                         }
 
-                        launch_fig_desktop(false, false)?;
+                        launch_fig_desktop(LaunchArgs {
+                            wait_for_socket: false,
+                            open_dashboard: false,
+                            immediate_update: true,
+                            verbose: false,
+                        })?;
                     }
                 }
             },
@@ -283,7 +317,13 @@ impl AppSubcommand {
                     println!("Fig is already running!");
                     return Ok(());
                 }
-                launch_fig_desktop(true, true)?
+
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: true,
+                    open_dashboard: false,
+                    immediate_update: true,
+                    verbose: true,
+                })?;
             },
             AppSubcommand::Running => {
                 println!("{}", if is_fig_desktop_running() { "1" } else { "0" });

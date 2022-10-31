@@ -48,11 +48,14 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
     is_fig_desktop_running,
-    launch_fig_desktop,
     Shell,
     Terminal,
 };
@@ -2222,7 +2225,13 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     .await?;
 
     // If user is logged in, try to launch fig
-    launch_fig_desktop(true, false).ok();
+    launch_fig_desktop(LaunchArgs {
+        wait_for_socket: true,
+        open_dashboard: false,
+        immediate_update: true,
+        verbose: false,
+    })
+    .ok();
 
     let shell_integrations: Vec<_> = [Shell::Bash, Shell::Zsh, Shell::Fish]
         .into_iter()

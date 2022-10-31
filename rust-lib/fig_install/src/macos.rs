@@ -21,10 +21,11 @@ use fig_util::consts::{
     FIG_BUNDLE_ID,
     FIG_CLI_BINARY_NAME,
 };
-use fig_util::{
-    directories,
+use fig_util::desktop::{
     launch_fig_desktop,
+    LaunchArgs,
 };
+use fig_util::directories;
 use regex::Regex;
 use reqwest::IntoUrl;
 use tokio::io::{
@@ -207,8 +208,14 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             exit(0);
         },
         None => {
-            // Let desktop app handle updates on macOS
-            launch_fig_desktop(true, true)?;
+            // Let swift app handle updates internally
+            // Note that not all of the flags are supported by the swift app and should be set carefully
+            launch_fig_desktop(LaunchArgs {
+                wait_for_socket: true,
+                open_dashboard: true,
+                immediate_update: true,
+                verbose: true,
+            })?;
 
             if update_command(deprecated).await.is_err() {
                 return Err(Error::UpdateFailed(

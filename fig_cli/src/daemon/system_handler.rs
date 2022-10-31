@@ -29,10 +29,11 @@ use fig_proto::daemon::{
 use fig_sync::dotfiles::download_and_notify;
 use fig_sync::plugins::fetch_installed_plugins;
 use fig_telemetry::TrackEvent;
-use fig_util::{
-    directories,
+use fig_util::desktop::{
     launch_fig_desktop,
+    LaunchArgs,
 };
+use fig_util::directories;
 use parking_lot::RwLock;
 use tokio::net::UnixListener;
 use tokio::task::JoinHandle;
@@ -121,7 +122,13 @@ async fn spawn_system_handler(
                                             tokio::time::sleep(std::time::Duration::from_secs(5)).await;
 
                                             tokio::task::block_in_place(|| {
-                                                launch_fig_desktop(true, false).ok();
+                                                launch_fig_desktop(LaunchArgs {
+                                                    wait_for_socket: true,
+                                                    open_dashboard: false,
+                                                    immediate_update: true,
+                                                    verbose: false,
+                                                })
+                                                .ok();
                                             });
                                         });
                                         true

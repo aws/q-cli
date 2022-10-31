@@ -45,10 +45,13 @@ use fig_ipc::local::open_ui_element;
 use fig_log::Logger;
 use fig_proto::local::UiElement;
 use fig_request::auth::is_logged_in;
+use fig_util::desktop::{
+    launch_fig_desktop,
+    LaunchArgs,
+};
 use fig_util::{
     directories,
     is_fig_desktop_running,
-    launch_fig_desktop,
 };
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
@@ -305,7 +308,14 @@ impl Cli {
                         println!("Fig is already running!");
                         return Ok(());
                     }
-                    launch_fig_desktop(true, true)?;
+
+                    launch_fig_desktop(LaunchArgs {
+                        wait_for_socket: true,
+                        open_dashboard: false,
+                        immediate_update: true,
+                        verbose: true,
+                    })?;
+
                     Ok(())
                 },
                 CliRootCommands::Quit => crate::util::quit_fig(true).await,
@@ -356,7 +366,12 @@ impl Cli {
 }
 
 async fn launch_dashboard() -> Result<()> {
-    launch_fig_desktop(true, true)?;
+    launch_fig_desktop(LaunchArgs {
+        wait_for_socket: true,
+        open_dashboard: true,
+        immediate_update: true,
+        verbose: true,
+    })?;
 
     let route = match is_logged_in() {
         true => Some("/".into()),

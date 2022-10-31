@@ -10,7 +10,7 @@ use crate::utils::is_cargo_debug_build;
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
-pub async fn run_install() {
+pub async fn run_install(ignore_immediate_update: bool) {
     // Create files needed for other parts of the app to run
     for (path_result, name, default) in [
         (fig_util::directories::settings_path(), "settings", "{}"),
@@ -121,7 +121,9 @@ pub async fn run_install() {
             launch_ibus().await;
         } else {
             // Update if there's a newer version
-            crate::update::check_for_update(true).await;
+            if !ignore_immediate_update {
+                crate::update::check_for_update(true).await;
+            }
 
             tokio::spawn(async {
                 let seconds = fig_settings::settings::get_int_or("app.autoupdate.check-period", 60 * 60 * 3);
