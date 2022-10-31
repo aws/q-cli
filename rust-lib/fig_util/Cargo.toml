@@ -7,7 +7,6 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-bstr = "1.0.1"
 camino = "1.1.1"
 cfg-if = "1.0.0"
 clap = { version = "4.0.18", features = ["derive", "deprecated"] }
@@ -34,6 +33,10 @@ macos_accessibility_position = { path = "../macos_accessibility_position" }
 regex = "1.6.0"
 objc = "0.2.7"
 
+[target.'cfg(target_os = "linux")'.dependencies]
+bstr = "1.0.1"
+sysinfo = "0.26.6"
+
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.43.0", features = [
     "Win32_Foundation",
@@ -45,7 +48,6 @@ winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.25.0"
-sysinfo = "0.26.6"
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }

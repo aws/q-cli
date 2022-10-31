@@ -36,7 +36,6 @@ use fig_util::desktop::LaunchArgs;
 use fig_util::directories;
 use serde_json::json;
 
-use crate::cli::diagnostics::get_diagnostics;
 use crate::cli::launch_fig_desktop;
 use crate::util::{
     get_app_info,
@@ -84,6 +83,8 @@ pub enum TISAction {
 
 #[cfg(target_os = "macos")]
 use std::path::PathBuf;
+
+use super::diagnostics::get_diagnostics;
 
 #[cfg(target_os = "macos")]
 #[derive(Debug, Subcommand, Clone, PartialEq, Eq)]

@@ -74,7 +74,10 @@ use spinners::{
 use tokio::io::AsyncBufReadExt;
 
 use super::app::restart_fig;
-use crate::cli::diagnostics::verify_integration;
+use super::diagnostics::{
+    get_diagnostics,
+    verify_integration,
+};
 use crate::util::{
     app_path_from_bundle_id,
     glob,
@@ -2314,8 +2317,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         #[cfg(target_os = "macos")]
         {
-            use super::diagnostics::get_diagnostics;
-
             run_checks_with_context(
                 format!("Let's check {}...", "fig diagnostic".bold()),
                 vec![

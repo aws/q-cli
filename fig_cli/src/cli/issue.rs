@@ -1,12 +1,8 @@
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::Result;
+use fig_diagnostic::Diagnostics;
 use regex::Regex;
-
-use crate::cli::diagnostics::{
-    Diagnostic,
-    Diagnostics,
-};
 
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct IssueArgs {
@@ -70,14 +66,14 @@ impl IssueArgs {
             labels.push("integration:ssh".into());
         }
 
-        let environment = Diagnostics::new().await?;
+        let environment = Diagnostics::new();
 
         let os = match &environment.os {
             Some(os) => os.to_string(),
             None => "None".to_owned(),
         };
 
-        let env_string = environment.user_readable()?.join("\n");
+        let env_string = environment.user_readable().join("\n");
 
         let url = url::Url::parse_with_params("https://github.com/withfig/fig/issues/new", &[
             ("template", "1_main_issue_template.yml"),

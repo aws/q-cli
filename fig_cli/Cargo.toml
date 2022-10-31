@@ -30,6 +30,7 @@ dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 eyre = "0.6.8"
 fig_api_client = { path = "../rust-lib/fig_api_client" }
 fig_daemon = { path = "../rust-lib/fig_daemon" }
+fig_diagnostic = { path = "../rust-lib/fig_diagnostic" }
 fig_install = { path = "../rust-lib/fig_install" }
 fig_integrations = { path = "../rust-lib/fig_integrations" }
 fig_ipc = { path = "../rust-lib/fig_ipc" }

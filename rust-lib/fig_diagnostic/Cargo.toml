@@ -1,0 +1,20 @@
+[package]
+name = "fig_diagnostic"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+atty = "0.2.14"
+cfg-if = "1.0.0"
+clap = "4.0.18"
+fig_ipc = { version = "2.7.0-beta.2", path = "../fig_ipc" }
+fig_proto = { version = "2.7.0-beta.2", path = "../fig_proto" }
+fig_telemetry = { path = "../fig_telemetry" }
+fig_util = { path = "../fig_util" }
+serde = { version = "1.0.147", features = ["derive"] }
+serde_json = "1.0.87"
+sysinfo = "0.26.6"
+time = "0.3.16"

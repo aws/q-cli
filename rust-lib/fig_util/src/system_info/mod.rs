@@ -170,6 +170,42 @@ Please upgrade to Windows 11 or wait for a fix while we work this issue out."
             OSVersion::FreeBsd { .. } => SupportLevel::InDevelopment { info: None },
         }
     }
+
+    pub fn user_readable(&self) -> Vec<String> {
+        match self {
+            OSVersion::Linux {
+                kernel_version,
+                os_release,
+            } => {
+                let mut v = vec![format!("kernel: {kernel_version}")];
+
+                if let Some(os_release) = os_release {
+                    if let Some(name) = &os_release.name {
+                        v.push(format!("distro: {name}"));
+                    }
+
+                    if let Some(version) = &os_release.version {
+                        v.push(format!("distro-version: {version}"));
+                    } else if let Some(version) = &os_release.version_id {
+                        v.push(format!("distro-version: {version}"));
+                    }
+
+                    if let Some(variant) = &os_release.variant {
+                        v.push(format!("distro-variant: {variant}"));
+                    } else if let Some(variant) = &os_release.variant_id {
+                        v.push(format!("distro-variant: {variant}"));
+                    }
+
+                    if let Some(build) = &os_release.build_id {
+                        v.push(format!("distro-build: {build}"));
+                    }
+                }
+
+                v
+            },
+            other => vec![format!("{other}")],
+        }
+    }
 }
 
 impl std::fmt::Display for OSVersion {
