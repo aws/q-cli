@@ -880,21 +880,6 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "3.2.23"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "71655c45cb9845d3270c9d6df84ebe72b4dad3c2ba3f7023ad47c144e4e473a5"
-dependencies = [
- "atty",
- "bitflags",
- "clap_lex 0.2.4",
- "indexmap",
- "strsim",
- "termcolor",
- "textwrap",
-]
-
-[[package]]
-name = "clap"
 version = "4.0.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "335867764ed2de42325fafe6d18b8af74ba97ee0c590fa016f157535b42ab04b"
@@ -902,7 +887,7 @@ dependencies = [
  "atty",
  "bitflags",
  "clap_derive",
- "clap_lex 0.3.0",
+ "clap_lex",
  "once_cell",
  "strsim",
  "termcolor",
@@ -915,7 +900,7 @@ version = "4.0.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "dfe581a2035db4174cdbdc91265e1aba50f381577f0510d0ad36c7bc59cc84a3"
 dependencies = [
- "clap 4.0.18",
+ "clap",
 ]
 
 [[package]]
@@ -924,7 +909,7 @@ version = "4.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "b36d1abc7184a737efc9f589e6e783e8b56c72e71fca748cf9947ed0a6f46d44"
 dependencies = [
- "clap 4.0.18",
+ "clap",
  "clap_complete",
 ]
 
@@ -939,15 +924,6 @@ dependencies = [
  "proc-macro2 1.0.47",
  "quote 1.0.21",
  "syn 1.0.103",
-]
-
-[[package]]
-name = "clap_lex"
-version = "0.2.4"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2850f2f5a82cbf437dd5af4d49848fbdfc27c157c3d010345776f952765261c5"
-dependencies = [
- "os_str_bytes",
 ]
 
 [[package]]
@@ -2367,19 +2343,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "env_logger"
-version = "0.9.1"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c90bf5f19754d10198ccb95b70664fc925bd1fc090a0fd9a6ebc54acc8cd6272"
-dependencies = [
- "atty",
- "humantime",
- "log",
- "regex",
- "termcolor",
-]
-
-[[package]]
 name = "errno"
 version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -2507,7 +2470,7 @@ name = "fig-api-mock"
 version = "2.7.0-beta.2"
 dependencies = [
  "async-trait",
- "clap 4.0.18",
+ "clap",
  "fig_desktop_api",
  "fig_proto",
  "tokio",
@@ -2538,7 +2501,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.18",
+ "clap",
  "clap_complete",
  "clap_complete_fig",
  "color-eyre",
@@ -2634,7 +2597,7 @@ dependencies = [
  "bytes",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.18",
+ "clap",
  "cocoa",
  "core-foundation",
  "core-graphics",
@@ -2776,7 +2739,7 @@ dependencies = [
  "accessibility-sys",
  "async-trait",
  "cfg-if 1.0.0",
- "clap 4.0.18",
+ "clap",
  "core-foundation",
  "dispatch",
  "fig_settings",
@@ -2850,7 +2813,7 @@ dependencies = [
 name = "fig_release"
 version = "2.7.0-beta.2"
 dependencies = [
- "clap 4.0.18",
+ "clap",
  "dialoguer",
  "eyre",
  "fig_request",
@@ -2978,7 +2941,7 @@ dependencies = [
  "bstr 1.0.1",
  "camino",
  "cfg-if 1.0.0",
- "clap 4.0.18",
+ "clap",
  "core-foundation",
  "dirs",
  "fig_test",
@@ -3015,7 +2978,7 @@ dependencies = [
  "bitflags",
  "bytes",
  "cfg-if 1.0.0",
- "clap 4.0.18",
+ "clap",
  "crossterm",
  "dashmap",
  "fig_api_client",
@@ -7092,25 +7055,21 @@ dependencies = [
 
 [[package]]
 name = "skim"
-version = "0.9.4"
-source = "git+https://github.com/grant0417/skim#df54d772268e6f38c4e0aafe93ea4676c7be7d8e"
+version = "0.10.1"
+source = "git+https://github.com/grant0417/skim#9def5d2fce0f42e7ab7d3d8d4626d441796dd34b"
 dependencies = [
- "atty",
  "beef",
  "bitflags",
  "chrono",
- "clap 3.2.23",
  "crossbeam",
  "defer-drop",
  "derive_builder",
- "env_logger",
  "fuzzy-matcher",
  "lazy_static",
  "log",
  "nix 0.25.0",
  "rayon",
  "regex",
- "shlex",
  "time 0.3.16",
  "timer",
  "tuikit",
@@ -7583,12 +7542,6 @@ name = "termtree"
 version = "0.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "507e9898683b6c43a9aa55b64259b721b52ba226e0f3779137e50ad114a4c90b"
-
-[[package]]
-name = "textwrap"
-version = "0.16.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "222a222a5bfe1bba4a77b45ec488a741b3cb8872e5e499451fd7d0129c9c7c3d"
 
 [[package]]
 name = "thin-slice"
@@ -8125,9 +8078,9 @@ dependencies = [
 
 [[package]]
 name = "tuikit"
-version = "0.4.6"
+version = "0.5.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "667c8e002675e76d98358d8869021793a472d28e3a50fbd750284a1d211abd09"
+checksum = "5e19c6ab038babee3d50c8c12ff8b910bdb2196f62278776422f50390d8e53d8"
 dependencies = [
  "bitflags",
  "lazy_static",
