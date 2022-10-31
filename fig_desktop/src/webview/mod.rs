@@ -299,8 +299,21 @@ impl WebviewManager {
                             WryWindowEvent::CloseRequested => {
                                 window_state.webview.window().set_visible(false);
 
-                                if window_state.window_id == DASHBOARD_ID && !is_logged_in() {
-                                    *control_flow = ControlFlow::Exit;
+                                if window_state.window_id == DASHBOARD_ID {
+                                    match is_logged_in() {
+                                        true => {
+                                            proxy
+                                                .send_event(Event::PlatformBoundEvent(
+                                                    PlatformBoundEvent::AppWindowFocusChanged {
+                                                        window_id: DASHBOARD_ID,
+                                                        focused: false,
+                                                        fullscreen: false,
+                                                    },
+                                                ))
+                                                .ok();
+                                        },
+                                        false => *control_flow = ControlFlow::Exit,
+                                    }
                                 }
                             },
                             WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(Some(theme)),
