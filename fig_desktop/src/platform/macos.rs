@@ -10,6 +10,7 @@ use std::sync::Arc;
 use accessibility_sys::{
     pid_t,
     AXError,
+    AXIsProcessTrusted,
     AXUIElementCreateSystemWide,
     AXUIElementSetMessagingTimeout,
 };
@@ -273,6 +274,14 @@ impl PlatformStateImpl {
         warn!("Handling platform event: {:?}", event);
         match event {
             PlatformBoundEvent::Initialize => {
+                unsafe {
+                    if AXIsProcessTrusted() {
+                        // This prevents Fig from becoming unresponsive if one of the applications
+                        // we are tracking becomes unresponsive.
+                        AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.25);
+                    }
+                }
+
                 UNMANAGED.event_sender.write().replace(self.proxy.clone());
                 let (tx, rx) = flume::unbounded::<WindowServerEvent>();
 
