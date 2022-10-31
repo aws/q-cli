@@ -165,9 +165,9 @@ async fn main() {
                         "Cannot execute Fig from within a readonly volume. Please move Fig to your applications folder and try again.",
                     )
                     .show();
-            }
 
-            return;
+                return;
+            }
         }
     }
 
