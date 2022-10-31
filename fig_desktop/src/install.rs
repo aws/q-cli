@@ -184,7 +184,6 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
 
     let fig_dir = fig_dir()?;
     let bin_dir = fig_dir.join("bin");
-    fs::remove_dir_all(&bin_dir).ok();
     fs::create_dir_all(&bin_dir).ok();
     fs::create_dir_all(fig_dir.join("apps")).ok();
 

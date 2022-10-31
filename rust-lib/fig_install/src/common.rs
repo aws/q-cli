@@ -94,7 +94,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
 pub async fn install(components: InstallComponents) -> Result<(), Error> {
     if components.contains(InstallComponents::SHELL_INTEGRATIONS) {
         let mut errs: Vec<Error> = vec![];
-        for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
+        for shell in Shell::all() {
             match shell.get_shell_integrations() {
                 Ok(integrations) => {
                     for integration in integrations {

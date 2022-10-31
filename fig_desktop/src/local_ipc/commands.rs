@@ -28,7 +28,10 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::webview::DASHBOARD_ONBOARDING_SIZE;
+use crate::webview::{
+    DASHBOARD_ONBOARDING_SIZE,
+    ONBOARDING_PATH,
+};
 use crate::{
     platform,
     EventLoopProxy,
@@ -131,7 +134,7 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
                 proxy
                     .send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID.clone(),
-                        window_event: WindowEvent::NavigateRelative { path },
+                        window_event: WindowEvent::NavigateRelative { path: path.into() },
                     })
                     .unwrap();
             }
@@ -197,7 +200,7 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
             window_event: WindowEvent::NavigateRelative {
-                path: "/onboarding/welcome".to_owned(),
+                path: ONBOARDING_PATH.into(),
             },
         })
         .ok();

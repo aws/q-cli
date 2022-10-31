@@ -8,7 +8,10 @@ use crate::event::{
     Event,
     WindowEvent,
 };
-use crate::webview::DASHBOARD_ONBOARDING_SIZE;
+use crate::webview::{
+    DASHBOARD_ONBOARDING_SIZE,
+    ONBOARDING_PATH,
+};
 use crate::{
     EventLoopProxy,
     DASHBOARD_ID,
@@ -19,7 +22,7 @@ pub fn logout(_request: UserLogoutRequest, proxy: &EventLoopProxy) -> RequestRes
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
             window_event: WindowEvent::NavigateRelative {
-                path: "onboarding/welcome".to_owned(),
+                path: ONBOARDING_PATH.into(),
             },
         })
         .ok();

@@ -205,7 +205,7 @@ pub async fn api_request(
                     Some(_) => EmitEventName::ProtoMessageReceived,
                     None => EmitEventName::GlobalErrorOccurred,
                 },
-                payload: fig_desktop_api::handler::response_to_b64(response),
+                payload: fig_desktop_api::handler::response_to_b64(response).into(),
             },
         })
         .unwrap();

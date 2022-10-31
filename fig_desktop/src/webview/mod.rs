@@ -93,6 +93,8 @@ pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480
 
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
+pub const ONBOARDING_PATH: &str = "/onboarding/welcome";
+
 fn map_theme(theme: &str) -> Option<Theme> {
     match theme {
         "dark" => Some(Theme::Dark),
@@ -557,7 +559,7 @@ pub fn build_dashboard(
         fig_settings::settings::get_string_or("developer.mission-control.host", "https://desktop.fig.io".into());
 
     let url = if show_onboarding {
-        format!("{base_url}/onboarding/welcome")
+        format!("{base_url}{ONBOARDING_PATH}")
     } else {
         match page {
             Some(page) => format!("{base_url}/{page}"),
@@ -572,7 +574,9 @@ pub fn build_dashboard(
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
-                    window_event: WindowEvent::Api { payload },
+                    window_event: WindowEvent::Api {
+                        payload: payload.into(),
+                    },
                 })
                 .unwrap();
         })
@@ -655,7 +659,9 @@ pub fn build_autocomplete(
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID.clone(),
-                    window_event: WindowEvent::Api { payload },
+                    window_event: WindowEvent::Api {
+                        payload: payload.into(),
+                    },
                 })
                 .unwrap();
         })

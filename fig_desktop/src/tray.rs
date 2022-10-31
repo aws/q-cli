@@ -1,5 +1,9 @@
+use std::borrow::Cow;
+
 use cfg_if::cfg_if;
 use fig_install::InstallComponents;
+use fig_integrations::shell::ShellExt;
+use fig_util::directories::relative_cli_path;
 use fig_util::manifest::{
     manifest,
     Channel,
@@ -29,6 +33,7 @@ use crate::event::{
 };
 use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
+use crate::webview::ONBOARDING_PATH;
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -37,12 +42,23 @@ use crate::{
     DASHBOARD_ID,
 };
 
-// TODO: Dont include this when not on macos
-const COMMANDKEY: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/commandkey.png",));
-const GEAR: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/gear.png",));
-const QUESTION: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/question.png",));
-const DISCORD: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/discord.png",));
-const GITHUB: &[u8] = include_bytes!(concat!(env!("TRAY_ICONS_PROCESSED"), "/github.png",));
+macro_rules! icon {
+    ($icon:literal) => {{
+        #[cfg(target_os = "macos")]
+        {
+            Some(include_bytes!(concat!(
+                env!("TRAY_ICONS_PROCESSED"),
+                "/",
+                $icon,
+                ".png"
+            )))
+        }
+        #[cfg(not(target_os = "macos"))]
+        {
+            None
+        }
+    }};
+}
 
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
     match id {
@@ -118,7 +134,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::NavigateRelative { path: "".to_owned() },
+                    window_event: WindowEvent::NavigateRelative { path: "/".into() },
                 })
                 .unwrap();
 
@@ -129,13 +145,22 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("show") => {
+        id if id == MenuId::new("onboarding") => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
                     window_event: WindowEvent::Show,
                 })
                 .unwrap();
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateRelative {
+                        path: ONBOARDING_PATH.into(),
+                    },
+                })
+                .ok();
         },
         id if id == MenuId::new("settings") => {
             proxy
@@ -144,6 +169,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                     window_event: WindowEvent::Show,
                 })
                 .unwrap();
+
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
@@ -169,30 +195,17 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 error!(%err, "Failed to open user manual url")
             }
         },
-        id if id == MenuId::new("issue") => {
-            cfg_if::cfg_if! {
-                if #[cfg(target_os = "macos")] {
-                    match fig_util::fig_bundle() {
-                        Some(bundle) => {
-                            let fig_cli = bundle.join("Contents").join("MacOS").join("fig-darwin-universal");
-
-                            std::process::Command::new(fig_cli)
-                                .args(["issue", "--force", "bug: "])
-                                .output()
-                                .ok();
-                        },
-                        None => error!("Failed to execute `fig issue` from the tray: bundle not found"),
-                    }
-                } else {
-                    std::process::Command::new("fig")
-                        .args(["issue", "--force", "bug: "])
-                        .output()
-                        .ok();
-                }
-            }
+        id if id == MenuId::new("issue") => match relative_cli_path() {
+            Ok(fig_cli) => {
+                std::process::Command::new(fig_cli)
+                    .args(["issue", "--force", "bug: "])
+                    .output()
+                    .ok();
+            },
+            Err(err) => error!(%err, "Failed to execute `fig issue` from the tray"),
         },
         id => {
-            trace!("Unhandled tray event: {id:?}");
+            trace!(?id, "Unhandled tray event");
         },
     }
 }
@@ -277,26 +290,26 @@ pub fn get_context_menu() -> ContextMenu {
 }
 
 enum MenuElement {
-    Info(String),
+    Info(Cow<'static, str>),
     Entry {
-        emoji_icon: Option<String>,
+        emoji_icon: Option<Cow<'static, str>>,
         image_icon: Option<wry::application::window::Icon>,
-        text: String,
-        id: String,
+        text: Cow<'static, str>,
+        id: Cow<'static, str>,
     },
     Separator,
     SubMenu {
-        title: String,
+        title: Cow<'static, str>,
         elements: Vec<MenuElement>,
     },
 }
 
 impl MenuElement {
     fn entry(
-        emoji_icon: Option<String>,
+        emoji_icon: Option<Cow<'static, str>>,
         image: Option<&'static [u8]>,
-        text: impl Into<String>,
-        id: impl Into<String>,
+        text: impl Into<Cow<'static, str>>,
+        id: impl Into<Cow<'static, str>>,
     ) -> Self {
         cfg_if::cfg_if! {
             if #[cfg(target_os = "macos")] {
@@ -313,6 +326,7 @@ impl MenuElement {
                     None => None,
                 };
             } else {
+                let _ = image;
                 let image_icon = None;
             }
         };
@@ -325,7 +339,7 @@ impl MenuElement {
         }
     }
 
-    fn sub_menu(title: impl Into<String>, elements: Vec<MenuElement>) -> Self {
+    fn sub_menu(title: impl Into<Cow<'static, str>>, elements: Vec<MenuElement>) -> Self {
         Self::SubMenu {
             title: title.into(),
             elements,
@@ -345,7 +359,7 @@ impl MenuElement {
             } => {
                 let text = match (std::env::consts::OS, emoji_icon) {
                     ("linux", Some(emoji_icon)) => format!("{} {}", emoji_icon, text),
-                    _ => text.clone(),
+                    _ => text.to_string(),
                 };
                 let menu_item = MenuItemAttributes::new(&text).with_id(MenuId::new(id));
                 let mut custom_menu_item = menu.add_item(menu_item);
@@ -371,14 +385,14 @@ impl MenuElement {
 fn menu() -> Vec<MenuElement> {
     let logged_in = fig_request::auth::is_logged_in();
 
-    let report = MenuElement::entry(Some("🐞".to_owned()), Some(GITHUB), "Report an Issue", "issue");
-    let manual = MenuElement::entry(Some("📚".to_owned()), Some(QUESTION), "User Manual", "user-manual");
-    let discord = MenuElement::entry(Some("💬".to_owned()), Some(DISCORD), "Join Community", "community");
-    let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION"),));
+    let report = MenuElement::entry(Some("🐞".into()), icon!("github"), "Report an Issue", "issue");
+    let manual = MenuElement::entry(Some("📚".into()), icon!("question"), "User Manual", "user-manual");
+    let discord = MenuElement::entry(Some("💬".into()), icon!("discord"), "Join Community", "community");
+    let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
     let quit = MenuElement::entry(None, None, "Quit Fig", "quit");
-    let dashboard = MenuElement::entry(Some("🎛️".to_owned()), Some(COMMANDKEY), "Dashboard", "dashboard");
-    let settings = MenuElement::entry(Some("⚙️".to_owned()), Some(GEAR), "Settings", "settings");
+    let dashboard = MenuElement::entry(Some("🎛️".into()), icon!("commandkey"), "Dashboard", "dashboard");
+    let settings = MenuElement::entry(Some("⚙️".into()), icon!("gear"), "Settings", "settings");
     let developer = MenuElement::sub_menu("Developer", vec![
         MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
         MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
@@ -386,32 +400,47 @@ fn menu() -> Vec<MenuElement> {
 
     let mut menu = if !logged_in {
         vec![
-            MenuElement::Info("Fig hasn't been set up yet...".to_owned()),
-            MenuElement::entry(None, None, "Get Started", "show"),
+            MenuElement::Info("Fig hasn't been set up yet...".into()),
+            MenuElement::entry(None, None, "Get Started", "onboarding"),
             MenuElement::Separator,
-            report,
             manual,
             discord,
+            MenuElement::Separator,
+            report,
             MenuElement::Separator,
             MenuElement::entry(None, None, "Uninstall Fig", "uninstall"),
         ]
-    } else if !PlatformState::accessibility_is_enabled().unwrap_or(true) {
-        vec![
-            MenuElement::Info("Accessibility isn't enabled".to_owned()),
-            MenuElement::entry(None, None, "Enable Accessibility", "accessibility"),
-            MenuElement::Separator,
-            dashboard,
-            settings,
-            MenuElement::Separator,
-            manual,
-            discord,
-            MenuElement::Separator,
-            report,
-            MenuElement::Separator,
-            developer,
-        ]
     } else {
-        vec![
+        let mut menu = vec![];
+
+        // accessibility not enabled
+        // or shell integrations are not installed,
+        // or input method not enabled AND kitty/alacritty/jetbrains installed
+
+        let handle = tokio::runtime::Handle::current();
+        let shell_not_installed = std::thread::spawn(move || {
+            fig_util::Shell::all()
+                .iter()
+                .filter_map(|s| s.get_shell_integrations().ok())
+                .flatten()
+                .any(|i| handle.block_on(i.is_installed()).is_err())
+        })
+        .join()
+        .unwrap();
+
+        let accessibility_not_installed = !PlatformState::accessibility_is_enabled().unwrap_or(true);
+
+        // TODO: Add input method check
+
+        if accessibility_not_installed || shell_not_installed {
+            menu.extend([
+                MenuElement::Info("Fig hasn't been configured correctly".into()),
+                MenuElement::entry(None, None, "Fix Configuration Issues", "dashboard"),
+                MenuElement::Separator,
+            ]);
+        }
+
+        menu.extend([
             dashboard,
             settings,
             MenuElement::Separator,
@@ -421,14 +450,16 @@ fn menu() -> Vec<MenuElement> {
             report,
             MenuElement::Separator,
             developer,
-        ]
+        ]);
+
+        menu
     };
 
     menu.extend([MenuElement::Separator, version]);
 
     if let Some(channel) = manifest().as_ref().map(|m| m.default_channel) {
         if channel != Channel::Stable {
-            menu.push(MenuElement::Info(format!("Channel: {channel}")));
+            menu.push(MenuElement::Info(format!("Channel: {channel}").into()));
         }
     }
 

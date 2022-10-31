@@ -25,7 +25,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
             },
             Some((modifier_txt, key)) => {
                 modifiers |= match modifier_txt {
-                    "control" => Modifiers::CTRL,
+                    "ctrl" | "control" => Modifiers::CTRL,
                     "shift" => Modifiers::SHIFT,
                     "alt" => Modifiers::ALT,
                     "meta" | "command" => Modifiers::META,

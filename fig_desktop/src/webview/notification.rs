@@ -48,7 +48,7 @@ impl WebviewNotificationsState {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
                     event_name: EmitEventName::Notification,
-                    payload: base64::encode(encoded),
+                    payload: base64::encode(encoded).into(),
                 },
             })?
         }

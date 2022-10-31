@@ -298,7 +298,7 @@ impl WindowState {
                 self.emit(event_name, payload);
             },
             WindowEvent::Api { payload } => {
-                api_tx.send((self.window_id.clone(), payload)).unwrap();
+                api_tx.send((self.window_id.clone(), payload.into())).unwrap();
             },
             WindowEvent::Devtools => {
                 if self.webview.is_devtools_open() {

@@ -114,17 +114,17 @@ pub enum WindowEvent {
     Show,
     Emit {
         event_name: EmitEventName,
-        payload: String,
+        payload: Cow<'static, str>,
     },
     NavigateRelative {
-        path: String,
+        path: Cow<'static, str>,
     },
     NavigateAbsolute {
         url: url::Url,
     },
     Api {
         /// A base64 encoded protobuf
-        payload: String,
+        payload: Cow<'static, str>,
     },
     Devtools,
     DebugMode(bool),
