@@ -389,9 +389,10 @@ jobs:
             
             # Change the display name of the app
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleDisplayName Fig
+            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleName Fig
 
             # Add fig:// association to bundle
-            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleURLSchemes -array-add fig
+            plutil -insert CFBundleURLTypes -xml '<array><dict><key>CFBundleURLName</key><string>CustomID</string><key>CFBundleURLSchemes</key><array><string>fig</string></array></dict></array>' "${bundle_dir}/Fig.app/Contents/Info.plist"
 
             cd fig_input_method
             cargo build && make
