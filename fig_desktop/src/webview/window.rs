@@ -110,6 +110,7 @@ impl WindowState {
 
         // TODO: this should be handled directly by client apps (eg. autocomplete engine) rather than being
         // hardcoded
+        let horizontal_padding = anchor.x;
         let vertical_padding = anchor.y + 5.0;
 
         let monitor_frame = platform_state.get_current_monitor_frame(self.webview.window());
@@ -118,22 +119,30 @@ impl WindowState {
             Placement::Absolute => outer_position.x,
             Placement::RelativeTo(caret, RelativeDirection::Above | RelativeDirection::Below, clipping_behavior) => {
                 match (clipping_behavior, monitor_frame) {
-                    (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => caret.left() + anchor.x,
-                    (ClippingBehavior::KeepInFrame, Some(frame)) => {
-                        let origin_x = caret.left() + anchor.x;
-                        let offset_x = frame.right() - (caret.left() + inner_size.width + anchor.x);
-                        if offset_x < 0.0 { origin_x + offset_x } else { origin_x }
+                    (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => {
+                        caret.left() + horizontal_padding
                     },
+                    (ClippingBehavior::KeepInFrame, Some(frame)) => (caret.left() + horizontal_padding)
+                        .max(frame.left())
+                        .min(frame.right() - inner_size.width),
                 }
             },
         };
 
         let y = match placement {
             Placement::Absolute => outer_position.y,
-            Placement::RelativeTo(caret, RelativeDirection::Above, _) => {
-                caret.top() - vertical_padding - inner_size.height
+            Placement::RelativeTo(caret, relative_direction, _) => {
+                let mut y = match relative_direction {
+                    RelativeDirection::Above => caret.top() - vertical_padding - inner_size.height,
+                    RelativeDirection::Below => caret.bottom() + vertical_padding,
+                };
+
+                if let Some(frame) = monitor_frame {
+                    y = y.max(frame.top()).min(frame.bottom() - inner_size.height)
+                }
+
+                y
             },
-            Placement::RelativeTo(caret, RelativeDirection::Below, _) => caret.bottom() + vertical_padding,
         };
 
         if let Err(err) = platform_state.position_window(
@@ -167,23 +176,29 @@ impl WindowState {
             WindowEvent::PositionRelativeToCaret { caret } => {
                 let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
-                // TODO: these calculations do not take into account anchor offset (or default vertical padding)
-                let overflows_monitor_above = platform_state
-                    .get_current_monitor_frame(self.webview.window())
-                    .map(|monitor| monitor.top() >= caret.top() - max_height)
-                    .unwrap_or(true);
+                let window = self.webview.window();
+                // todo(chay): If this is none, the autocomplete window must follow the cursor out of bounds
+                let frame = platform_state.get_current_monitor_frame(window);
+                let active_window = platform_state.get_active_window();
 
-                let overflows_window_below = platform_state
-                    .get_active_window()
-                    .map(|window| window.rect.bottom() < caret.bottom() + max_height)
-                    .unwrap_or(true);
+                // TODO: these calculations do not take into account anchor offset (or default vertical padding)
+                let overflows_above = frame
+                    .map(|monitor| monitor.top() >= caret.top() - max_height)
+                    .unwrap_or(false);
+
+                let overflows_below = frame
+                    .map(|monitor| monitor.bottom() < caret.bottom() + max_height)
+                    .unwrap_or(false)
+                    | active_window
+                        .as_ref()
+                        .map(|window| window.rect.bottom() < caret.bottom() + max_height)
+                        .unwrap_or(false);
 
                 *self.placement.write() = Placement::RelativeTo(
                     caret,
-                    if overflows_window_below && !overflows_monitor_above {
-                        RelativeDirection::Above
-                    } else {
-                        RelativeDirection::Below
+                    match (overflows_above, overflows_below) {
+                        (false, true) => RelativeDirection::Above,
+                        _ => RelativeDirection::Below,
                     },
                     ClippingBehavior::KeepInFrame,
                 );

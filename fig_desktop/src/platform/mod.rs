@@ -30,6 +30,7 @@ cfg_if::cfg_if! {
     }
 }
 
+#[derive(Debug)]
 pub struct PlatformWindow {
     pub rect: Rect,
     pub inner: PlatformWindowImpl,
