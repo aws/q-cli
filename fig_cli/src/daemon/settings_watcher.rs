@@ -176,21 +176,19 @@ pub async fn spawn_settings_watcher(daemon_status: Arc<RwLock<DaemonStatus>>) ->
                     }
 
                     if !app_bundle_path.exists() {
-                        let tel_join = tokio::task::spawn(async move {
-                            fig_telemetry::emit_track(TrackEvent::new(
-                                TrackEventType::UninstalledApp,
-                                TrackSource::Daemon,
-                                env!("CARGO_PKG_VERSION").into(),
-                                [("source", "daemon settings watcher")],
-                            ))
-                            .await
-                            .ok();
-                        });
+                        fig_telemetry::emit_track(TrackEvent::new(
+                            TrackEventType::UninstalledApp,
+                            TrackSource::Daemon,
+                            env!("CARGO_PKG_VERSION").into(),
+                            [("source", "daemon settings watcher")],
+                        ))
+                        .await
+                        .ok();
 
                         let url = fig_install::get_uninstall_url();
                         fig_util::open_url(url).ok();
+
                         fig_install::uninstall(fig_install::InstallComponents::all()).await.ok();
-                        tel_join.await.ok();
                     }
                 },
                 _ => (),

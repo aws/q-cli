@@ -2788,6 +2788,7 @@ dependencies = [
  "security-framework",
  "semver 1.0.14",
  "serde",
+ "serde_json",
  "strum",
  "tempfile",
  "thiserror",

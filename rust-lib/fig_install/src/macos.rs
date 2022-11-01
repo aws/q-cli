@@ -288,6 +288,34 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
 
     uninstall_terminal_integrations().await;
 
+    // Delete data dir
+    if let Ok(fig_data_dir) = directories::fig_data_dir() {
+        let state = fig_settings::state::get_string("anonymousId").unwrap_or_default();
+
+        for file in std::fs::read_dir(fig_data_dir).ok().into_iter().flatten().flatten() {
+            if let Some(file_name) = file.file_name().to_str() {
+                if file_name == "credentials.json" {
+                } else if file_name == "state.json" {
+                    std::fs::write(file.path(), serde_json::json!({ "anonymousId": state }).to_string())
+                        .map_err(|err| warn!("Failed to write state.json: {err}"))
+                        .ok();
+                } else if let Ok(metadata) = file.metadata() {
+                    if metadata.is_dir() {
+                        tokio::fs::remove_dir_all(file.path())
+                            .await
+                            .map_err(|err| warn!("Failed to remove data dir: {err}"))
+                            .ok();
+                    } else {
+                        tokio::fs::remove_file(file.path())
+                            .await
+                            .map_err(|err| warn!("Failed to remove data dir: {err}"))
+                            .ok();
+                    }
+                }
+            }
+        }
+    }
+
     let app_path = PathBuf::from("/Applications/Fig.app");
     if app_path.exists() {
         tokio::fs::remove_dir_all(&app_path)
