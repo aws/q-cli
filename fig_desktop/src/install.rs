@@ -92,6 +92,24 @@ pub async fn run_install(ignore_immediate_update: bool) {
                 }
             }
         }
+
+        // Delete old figterm instances
+        if let Ok(fig_dir) = directories::fig_dir() {
+            let bins = fig_dir.join("bin");
+            for entry in std::fs::read_dir(bins).ok().into_iter().flatten() {
+                if let Ok(entry) = entry {
+                    if entry.file_type().map_or(false, |f| f.is_file()) {
+                        if let Some(name) = entry.file_name().to_str() {
+                            if name.contains("figterm") {
+                                if let Err(err) = std::fs::remove_file(entry.path()) {
+                                    error!(%err, "Failed to delete old figterm instance");
+                                }
+                            }
+                        }
+                    }
+                }
+            }
+        }
     }
 
     if let Err(err) = set_previous_version(current_version()) {
