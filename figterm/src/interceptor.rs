@@ -165,6 +165,7 @@ impl KeyInterceptor {
     }
 
     pub fn reset(&mut self) {
+        trace!("Resetting key interceptor");
         self.intercept_all = false;
         self.intercept_bind = false;
     }

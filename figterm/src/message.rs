@@ -210,7 +210,7 @@ pub async fn process_figterm_request(
                 },
                 Some(InterceptCommand::ClearIntercept(_)) => {
                     debug!("Clear intercept");
-                    key_interceptor.set_intercept_all(false);
+                    key_interceptor.reset();
                 },
                 Some(InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
                     intercept_bound_keystrokes,
