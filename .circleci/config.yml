@@ -358,6 +358,11 @@ jobs:
             PRODUCTS_DIR: build/usr/bin
             TARGET: universal-apple-darwin
       - run:
+          name: Build input method
+          command: |
+            cd desktop
+            build-scripts/ime.sh
+      - run:
           name: Create app bundle
           command: |
             cd desktop
@@ -394,12 +399,8 @@ jobs:
             # Add fig:// association to bundle
             plutil -insert CFBundleURLTypes -xml '<array><dict><key>CFBundleURLName</key><string>CustomID</string><key>CFBundleURLSchemes</key><array><string>fig</string></array></dict></array>' "${bundle_dir}/Fig.app/Contents/Info.plist"
 
-            cd fig_input_method
-            cargo build && make
-            cd ..
-
             mkdir -p "${bundle_dir}/Fig.app/Contents/Helpers/"
-            cp -r ./fig_input_method/build/FigInputMethod.app "${bundle_dir}/Fig.app/Contents/Helpers/"
+            cp -r build/FigInputMethod.app "${bundle_dir}/Fig.app/Contents/Helpers/"
 
             echo "export BUNDLE_PATH=${bundle_dir}/Fig.app" >> $BASH_ENV
           environment:
