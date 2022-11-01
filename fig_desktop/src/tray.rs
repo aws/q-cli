@@ -1,7 +1,10 @@
 use std::borrow::Cow;
 
 use cfg_if::cfg_if;
-use fig_install::InstallComponents;
+use fig_install::{
+    InstallComponents,
+    UpdateOptions,
+};
 use fig_integrations::shell::ShellExt;
 use fig_util::directories::relative_cli_path;
 use fig_util::manifest::{
@@ -86,7 +89,6 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             let proxy_b = proxy.clone();
             tokio::runtime::Handle::current().spawn(async move {
                 match fig_install::update(
-                    true,
                     Some(Box::new(move |_| {
                         proxy_a
                             .send_event(Event::ShowMessageNotification {
@@ -98,7 +100,11 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                             })
                             .unwrap();
                     })),
-                    true,
+                    UpdateOptions {
+                        ignore_rollout: true,
+                        interactive: true,
+                        relaunch_dashboard: true,
+                    },
                 )
                 .await
                 {

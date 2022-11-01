@@ -414,7 +414,11 @@ message CheckForUpdatesResponse {
 }
 
 // update to the latest version available
-message UpdateApplicationRequest {}
+message UpdateApplicationRequest {
+  optional bool ignore_rollout = 1;
+  optional bool interactive = 2;
+  optional bool relaunch_dashboard = 3;
+}
 
 /// Actions
 

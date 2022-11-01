@@ -292,7 +292,10 @@ pub enum InternalSubcommand {
     DumpState {
         component: StateComponent,
     },
-    FinishUpdate,
+    FinishUpdate {
+        #[arg(long)]
+        relaunch_dashboard: bool,
+    },
     #[cfg(target_os = "macos")]
     SwapFiles {
         from: PathBuf,
@@ -809,15 +812,17 @@ impl InternalSubcommand {
 
                 println!("{}", state.json);
             },
-            InternalSubcommand::FinishUpdate => {
+            InternalSubcommand::FinishUpdate { relaunch_dashboard } => {
                 // Wait some time for the previous installation to close
                 tokio::time::sleep(Duration::from_millis(100)).await;
 
                 crate::util::quit_fig(false).await.ok();
-                tokio::time::sleep(Duration::from_millis(1000)).await;
+
+                tokio::time::sleep(Duration::from_millis(200)).await;
+
                 launch_fig_desktop(LaunchArgs {
                     wait_for_socket: false,
-                    open_dashboard: false,
+                    open_dashboard: relaunch_dashboard,
                     immediate_update: false,
                     verbose: false,
                 })

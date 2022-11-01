@@ -128,7 +128,7 @@ pub async fn run_install(ignore_immediate_update: bool) {
                 // Check for updates but timeout after 3 seconds to avoid making the user wait too long
                 // todo: don't download the index file twice
                 match timeout(Duration::from_secs(3), check_for_updates(true)).await {
-                    Ok(Ok(Some(_))) => { crate::update::check_for_update(true).await; },
+                    Ok(Ok(Some(_))) => { crate::update::check_for_update(true, true).await; },
                     Ok(Ok(None)) => error!("No update found"),
                     Ok(Err(err)) => error!(%err, "Failed to check for updates"),
                     Err(err) => error!(%err, "Update check timed out"),
@@ -145,7 +145,8 @@ pub async fn run_install(ignore_immediate_update: bool) {
                 interval.tick().await;
                 loop {
                     interval.tick().await;
-                    crate::update::check_for_update(false).await;
+                    // TODO: we need to determine if the dashboard is open here and pass that as the second bool
+                    crate::update::check_for_update(false, false).await;
                 }
             });
 

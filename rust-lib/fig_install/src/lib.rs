@@ -98,14 +98,14 @@ pub fn get_channel() -> Result<Channel, Error> {
     })
 }
 
-pub async fn check_for_updates(disable_rollout: bool) -> Result<Option<UpdatePackage>, Error> {
+pub async fn check_for_updates(ignore_rollout: bool) -> Result<Option<UpdatePackage>, Error> {
     let manifest = manifest().as_ref().ok_or(Error::ManifestNotFound)?;
 
     index::check_for_updates(
         get_channel()?,
         manifest.kind.clone(),
         manifest.variant.clone(),
-        disable_rollout,
+        ignore_rollout,
     )
     .await
 }
@@ -118,14 +118,27 @@ pub enum UpdateStatus {
     Exit,
 }
 
+#[derive(Debug, Clone, Default)]
+pub struct UpdateOptions {
+    /// Ignores the rollout and forces an update if any newer version is available
+    pub ignore_rollout: bool,
+    /// If the update is interactive and the user will be able to respond to prompts
+    pub interactive: bool,
+    /// If to relaunch into dashboard after update (false will launch in background)
+    pub relaunch_dashboard: bool,
+}
+
 /// Attempt to update if there is a newer version of Fig
 pub async fn update(
-    deprecated_no_confirm: bool,
     on_update: Option<Box<dyn FnOnce(Receiver<UpdateStatus>) + Send>>,
-    disable_rollout: bool,
+    UpdateOptions {
+        ignore_rollout,
+        interactive,
+        relaunch_dashboard,
+    }: UpdateOptions,
 ) -> Result<bool, Error> {
     info!("Checking for updates...");
-    if let Some(update) = check_for_updates(disable_rollout).await? {
+    if let Some(update) = check_for_updates(ignore_rollout).await? {
         info!("Found update: {}", update.version);
 
         let (tx, rx) = tokio::sync::mpsc::channel(16);
@@ -158,7 +171,7 @@ pub async fn update(
 
         let join = tokio::spawn(async move {
             tx.send(UpdateStatus::Message("Starting Update...".into())).await.ok();
-            if let Err(err) = os::update(update, deprecated_no_confirm, tx.clone()).await {
+            if let Err(err) = os::update(update, tx.clone(), interactive, relaunch_dashboard).await {
                 error!(%err, "Failed to update");
 
                 if let Err(err) = tokio::fs::remove_file(&lock_file).await {

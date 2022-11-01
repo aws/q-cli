@@ -1,3 +1,4 @@
+use fig_install::UpdateOptions;
 use fig_proto::fig::{
     CheckForUpdatesRequest,
     CheckForUpdatesResponse,
@@ -10,8 +11,12 @@ use super::{
     ServerOriginatedSubMessage,
 };
 
-pub async fn update_application(_request: UpdateApplicationRequest) -> RequestResult {
-    tokio::spawn(fig_install::update(true, Some(Box::new(|_| {})), true));
+pub async fn update_application(request: UpdateApplicationRequest) -> RequestResult {
+    tokio::spawn(fig_install::update(Some(Box::new(|_| {})), UpdateOptions {
+        ignore_rollout: request.ignore_rollout.unwrap_or(true),
+        interactive: request.interactive.unwrap_or(true),
+        relaunch_dashboard: request.relaunch_dashboard.unwrap_or(true),
+    }));
     RequestResult::success()
 }
 

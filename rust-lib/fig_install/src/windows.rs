@@ -8,7 +8,12 @@ use crate::{
     UpdateStatus,
 };
 
-pub async fn update(package: UpdatePackage, _deprecated: bool, _tx: Sender<UpdateStatus>) -> Result<(), Error> {
+pub async fn update(
+    package: UpdatePackage,
+    _tx: Sender<UpdateStatus>,
+    _interactive: bool,
+    _relaunch_dashboard: bool,
+) -> Result<(), Error> {
     let installer_path = fig_util::directories::fig_data_dir().unwrap().join("fig_installer.exe");
 
     if installer_path.exists() {

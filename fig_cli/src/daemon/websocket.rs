@@ -8,6 +8,7 @@ use eyre::{
     WrapErr,
 };
 use fig_api_client::settings::ensure_telemetry;
+use fig_install::UpdateOptions;
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_event_hook;
 use fig_request::auth::get_email;
@@ -68,7 +69,7 @@ enum FigWebsocketMessage {
     #[serde(rename_all = "camelCase")]
     TriggerAutoUpdate {
         #[serde(default)]
-        disable_rollout: bool,
+        ignore_rollout: bool,
     },
     #[serde(rename_all = "camelCase")]
     QuitDaemon {
@@ -237,9 +238,15 @@ pub async fn process_websocket(
                                     send_hook_to_socket(hook).await.ok();
                                 },
                             },
-                            FigWebsocketMessage::TriggerAutoUpdate { disable_rollout } => {
+                            FigWebsocketMessage::TriggerAutoUpdate { ignore_rollout } => {
                                 if !settings::get_bool_or("app.disableAutoupdates", false) {
-                                    fig_install::update(true, None, disable_rollout).await.ok();
+                                    fig_install::update(None, UpdateOptions {
+                                        ignore_rollout,
+                                        interactive: false,
+                                        relaunch_dashboard: false,
+                                    })
+                                    .await
+                                    .ok();
                                 }
                             },
                             FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),

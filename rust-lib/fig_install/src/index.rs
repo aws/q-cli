@@ -129,12 +129,12 @@ pub async fn check_for_updates(
     channel: Channel,
     kind: Kind,
     variant: Variant,
-    disable_rollout: bool,
+    ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
     const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
 
-    query_index(channel, kind, variant, CURRENT_VERSION, ARCHITECTURE, disable_rollout).await
+    query_index(channel, kind, variant, CURRENT_VERSION, ARCHITECTURE, ignore_rollout).await
 }
 
 pub async fn query_index(
@@ -143,7 +143,7 @@ pub async fn query_index(
     variant: Variant,
     current_version: &str,
     architecture: PackageArchitecture,
-    disable_rollout: bool,
+    ignore_rollout: bool,
 ) -> Result<Option<UpdatePackage>, Error> {
     let index = pull(&channel).await?;
 
@@ -188,11 +188,8 @@ pub async fn query_index(
     let mut chosen = None;
     for entry in valid_versions.into_iter() {
         if let Some(rollout) = &entry.rollout {
-            if disable_rollout {
-                trace!(
-                    "accepted update candidate {} because rollout is disabled",
-                    entry.version
-                );
+            if ignore_rollout {
+                trace!("accepted update candidate {} because rollout is ignored", entry.version);
                 chosen = Some(entry);
                 break;
             }

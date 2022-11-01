@@ -7,6 +7,7 @@ use anyhow::{
     anyhow,
     Result,
 };
+use fig_install::UpdateOptions;
 use fig_ipc::{
     BufferedUnixStream,
     RecvMessage,
@@ -113,11 +114,10 @@ async fn handle_local_ipc(
                             Logout(_) => commands::logout(&proxy).await,
                             DumpState(command) => commands::dump_state(command, &figterm_state),
                             Update(_) => fig_install::update(
-                                true,
                                 Some(Box::new(move |_| {
                                     debug!("Updating from proto");
                                 })),
-                                true,
+                                UpdateOptions::default(),
                             )
                             .await
                             .map(|_| LocalResponse::Success(None))

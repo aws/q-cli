@@ -45,7 +45,12 @@ use crate::{
     UpdateStatus,
 };
 
-pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<UpdateStatus>) -> Result<(), Error> {
+pub(crate) async fn update(
+    update: UpdatePackage,
+    tx: Sender<UpdateStatus>,
+    interactive: bool,
+    relaunch_dashboard: bool,
+) -> Result<(), Error> {
     match option_env!("FIG_MACOS_BACKPORT") {
         Some(_) => {
             debug!("starting update");
@@ -124,12 +129,9 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             }
 
             match swap(&temp_bundle_cstr, &fig_app_cstr) {
-                Ok(()) => {
-                    debug!("swapped app bundle")
-                },
-                Err(err) => {
-                    // TODO: Only fallback if the update is "interactive"
-
+                Ok(()) => debug!("swapped app bundle"),
+                // Try to elevate permissions if we can't swap the app bundle and in interactive mode
+                Err(err) if interactive => {
                     error!(?err, "failed to swap app bundle, trying to elevate permissions");
 
                     let mut file = {
@@ -172,6 +174,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                         },
                     }
                 },
+                Err(err) => return Err(err),
             }
 
             // Shell out to unmount the dmg
@@ -198,10 +201,14 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
             tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
 
             debug!("restarting fig");
-            std::process::Command::new(&cli_path)
-                .process_group(0)
-                .args(["_", "finish-update"])
-                .spawn()?;
+            let mut cmd = std::process::Command::new(&cli_path);
+            cmd.process_group(0).args(["_", "finish-update"]);
+
+            if relaunch_dashboard {
+                cmd.arg("--relaunch-dashboard");
+            }
+
+            cmd.spawn()?;
 
             tx.send(UpdateStatus::Exit).await.ok();
 
@@ -217,7 +224,7 @@ pub(crate) async fn update(update: UpdatePackage, deprecated: bool, tx: Sender<U
                 verbose: true,
             })?;
 
-            if update_command(deprecated).await.is_err() {
+            if update_command(!interactive).await.is_err() {
                 return Err(Error::UpdateFailed(
                     "Unable to connect to Fig, it may not be running. To launch Fig, run 'fig launch'".to_owned(),
                 ));

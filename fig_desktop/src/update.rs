@@ -1,6 +1,9 @@
 #[cfg(not(target_os = "linux"))]
-pub async fn check_for_update(show_webview: bool) -> bool {
-    use fig_install::UpdateStatus;
+pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> bool {
+    use fig_install::{
+        UpdateOptions,
+        UpdateStatus,
+    };
     use tokio::sync::mpsc::Receiver;
     use wry::application::dpi::LogicalSize;
     use wry::application::menu::{
@@ -98,7 +101,13 @@ pub async fn check_for_update(show_webview: bool) -> bool {
 
     // If not debug or override, check for update
     if !is_cargo_debug_build() && !fig_settings::settings::get_bool_or("app.disableAutoupdates", false) {
-        match fig_install::update(true, updating_cb, !show_webview).await {
+        match fig_install::update(updating_cb, UpdateOptions {
+            ignore_rollout: false,
+            interactive: show_webview,
+            relaunch_dashboard,
+        })
+        .await
+        {
             Ok(status) => status,
             Err(err) => {
                 tracing::error!(%err, "Failed to update");

@@ -111,9 +111,19 @@ pub enum CliRootCommands {
     },
     /// Update dotfiles
     Update {
-        /// Force update
-        #[arg(long, short = 'y')]
+        /// (deprecated) Use --non-interactive instead
+        #[deprecated = "Use --non-interactive instead"]
+        #[arg(long, hide = true)]
         no_confirm: bool,
+        /// Don't prompt for confirmation
+        #[arg(long, short = 'y')]
+        non_interactive: bool,
+        /// Relaunch into dashboard after update (false will launch in background)
+        #[arg(long)]
+        relaunch_dashboard: bool,
+        /// Uses rollout
+        #[arg(long)]
+        rollout: bool,
     },
     /// Run the daemon
     #[command(hide = true)]
@@ -272,7 +282,12 @@ impl Cli {
                     installation::install_cli(args.into(), no_confirm, force).await
                 },
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
-                CliRootCommands::Update { no_confirm } => update::update(no_confirm).await,
+                CliRootCommands::Update {
+                    non_interactive,
+                    relaunch_dashboard,
+                    rollout,
+                    ..
+                } => update::update(non_interactive, relaunch_dashboard, rollout).await,
                 CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
                 CliRootCommands::Daemon => {
