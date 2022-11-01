@@ -2498,6 +2498,7 @@ dependencies = [
  "async-trait",
  "atty",
  "bitflags",
+ "bstr 1.0.1",
  "bytes",
  "camino",
  "cfg-if 1.0.0",

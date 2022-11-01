@@ -1,5 +1,4 @@
 use appkit_nsworkspace_bindings::{
-    id,
     INSDictionary,
     INSNotification,
     INSNotificationCenter,
@@ -12,7 +11,10 @@ use appkit_nsworkspace_bindings::{
     NSWorkspace,
 };
 use block;
-use cocoa::base::nil as NIL;
+use cocoa::base::{
+    id,
+    nil as NIL,
+};
 use objc::runtime::Object;
 
 use super::NSString;

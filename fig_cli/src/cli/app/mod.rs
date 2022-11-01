@@ -289,18 +289,29 @@ impl AppSubcommand {
             AppSubcommand::Uninstall(args) => {
                 cfg_if! {
                     if #[cfg(target_os = "macos")] {
+                        use bstr::ByteSlice;
                         use fig_telemetry::{TrackSource, TrackEvent, TrackEventType};
-                        fig_telemetry::emit_track(TrackEvent::new(
+                        use tokio::process::Command;
+
+                        let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
                             TrackEventType::UninstalledApp,
                             TrackSource::Cli,
                             env!("CARGO_PKG_VERSION").into(),
                             [("source", "fig app uninstall")],
-                        )).await.ok();
+                        )));
 
-                        if !args.no_open {
+                        let is_brew_reinstall = Command::new("ps")
+                            .args(["aux", "-o", "args"])
+                            .output()
+                            .await
+                            .map_or(false, |output| output.stdout.contains_str(b"brew upgrade"));
+
+                        if !args.no_open && !is_brew_reinstall {
                             let url = fig_install::get_uninstall_url();
                             fig_util::open_url(url).ok();
                         }
+
+                        telem_join.await.ok();
 
                         if !args.only_open {
                             fig_install::uninstall(args.into()).await?;
