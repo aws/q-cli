@@ -81,6 +81,8 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 });
             });
 
+            proxy.send_event(Event::ReloadTray).ok();
+
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
