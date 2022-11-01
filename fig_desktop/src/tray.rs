@@ -460,7 +460,7 @@ fn menu() -> Vec<MenuElement> {
         if accessibility_not_installed || shell_not_installed {
             menu.extend([
                 MenuElement::Info("Fig hasn't been configured correctly".into()),
-                MenuElement::entry(None, None, "Fix Configuration Issues", "help"),
+                MenuElement::entry(None, None, "Fix Configuration Issues", "not-working"),
                 MenuElement::Separator,
             ]);
         }
