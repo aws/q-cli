@@ -17,6 +17,7 @@ pub struct LaunchdPlist {
     keep_alive: Option<bool>,
     throttle_interval: Option<i64>,
     watch_paths: Option<Vec<String>>,
+    associated_bundle_identifiers: Option<Vec<String>>,
 }
 
 impl LaunchdPlist {
@@ -156,6 +157,10 @@ impl LaunchdPlist {
                 if let Some(watch_paths) = &self.watch_paths {
                     push_key_val!("WatchPaths", &[String], watch_paths);
                 }
+
+                if let Some(associated_bundle_identifiers) = &self.associated_bundle_identifiers {
+                    push_key_val!("AssociatedBundleIdentifiers", &[String], associated_bundle_identifiers);
+                }
             });
 
             push_line!("</dict>");
@@ -278,6 +283,17 @@ impl LaunchdPlist {
         self.watch_paths = Some(watch_paths.into_iter().map(|s| s.into()).collect());
         self
     }
+
+    /// Set the program arguments
+    pub fn associated_bundle_identifiers<I, T>(mut self, associated_bundle_identifiers: I) -> LaunchdPlist
+    where
+        I: IntoIterator<Item = T>,
+        T: Into<String>,
+    {
+        self.associated_bundle_identifiers =
+            Some(associated_bundle_identifiers.into_iter().map(|s| s.into()).collect());
+        self
+    }
 }
 
 pub fn create_launch_agent(launchd_plist: &LaunchdPlist) -> Result<(), super::Error> {
@@ -307,6 +323,7 @@ mod test {
             .run_at_load(true)
             .keep_alive(false)
             .throttle_interval(10)
+            .associated_bundle_identifiers(["com.mschrage.fig"])
             .plist();
 
         println!("{}", plist);
@@ -343,6 +360,10 @@ mod test {
         <false/>
         <key>ThrottleInterval</key>
         <integer>10</integer>
+        <key>AssociatedBundleIdentifiers</key>
+        <array>
+            <string>com.mschrage.fig</string>
+        </array>
     </dict>
 </plist>
 "#;

@@ -1,4 +1,5 @@
 use camino::Utf8Path;
+use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::launchd_plist::{
     create_launch_agent,
     LaunchdPlist,
@@ -23,7 +24,8 @@ impl Daemon {
             .program_arguments([&executable, "daemon"])
             .keep_alive(true)
             .run_at_load(true)
-            .throttle_interval(30);
+            .throttle_interval(30)
+            .associated_bundle_identifiers([FIG_BUNDLE_ID]);
 
         create_launch_agent(&daemon)?;
 

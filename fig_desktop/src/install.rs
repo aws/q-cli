@@ -153,7 +153,11 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
         io,
     };
 
-    use fig_util::consts::FIG_CLI_BINARY_NAME;
+    use fig_util::consts::{
+        FIG_BUNDLE_ID,
+        FIG_CLI_BINARY_NAME,
+        FIG_DESKTOP_PROCESS_NAME,
+    };
     use fig_util::directories::{
         fig_dir,
         home_dir,
@@ -211,9 +215,13 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
     }
 
     if let Some(bundle_path) = get_bundle_path() {
-        let exe = bundle_path.join("Contents").join("MacOS").join("fig_desktop");
+        let exe = bundle_path
+            .join("Contents")
+            .join("MacOS")
+            .join(FIG_DESKTOP_PROCESS_NAME);
         let startup_launch_agent = LaunchdPlist::new("io.fig.launcher")
             .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
+            .associated_bundle_identifiers([FIG_BUNDLE_ID])
             .run_at_load(true);
 
         create_launch_agent(&startup_launch_agent)?;
