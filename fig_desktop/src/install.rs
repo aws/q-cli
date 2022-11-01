@@ -1,6 +1,7 @@
 use std::iter::empty;
 
 use cfg_if::cfg_if;
+use fig_install::check_for_updates;
 use fig_util::directories;
 use semver::Version;
 use tracing::error;
@@ -121,8 +122,18 @@ pub async fn run_install(ignore_immediate_update: bool) {
             launch_ibus().await;
         } else {
             // Update if there's a newer version
-            if !ignore_immediate_update {
-                crate::update::check_for_update(true).await;
+            if !ignore_immediate_update && !is_cargo_debug_build() {
+                use std::time::Duration;
+                use tokio::time::timeout;
+                // Check for updates but timeout after 3 seconds to avoid making the user wait too long
+                // todo: don't download the index file twice
+                match timeout(Duration::from_secs(3), check_for_updates(true)).await {
+                    Ok(Ok(Some(_))) => { crate::update::check_for_update(true).await; },
+                    Ok(Ok(None)) => error!("No update found"),
+                    Ok(Err(err)) => error!(%err, "Failed to check for updates"),
+                    Err(err) => error!(%err, "Update check timed out"),
+                }
+
             }
 
             tokio::spawn(async {
