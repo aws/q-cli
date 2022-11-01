@@ -63,7 +63,8 @@ then
 
         # Only copy figterm binary if it doesn't already exist
         if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
-          cp -p "$(command -v figterm)" "${FIG_SHELL_PATH}"
+          cp -p "$(command -v figterm)" "${FIG_SHELL_PATH}.tmp"
+          mv "${FIG_SHELL_PATH}.tmp" "${FIG_SHELL_PATH}"
         fi
     else
       FIG_TERM_NAME="figterm"
