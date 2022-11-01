@@ -45,9 +45,19 @@ pub fn is_fig_desktop_running() -> bool {
                 sel,
                 sel_impl,
             };
+            use sysinfo::{
+                ProcessRefreshKind,
+                RefreshKind,
+                System,
+                SystemExt,
+            };
 
-            let bundle_id = NSString::from(crate::consts::FIG_BUNDLE_ID);
+            use crate::consts::{
+                FIG_DESKTOP_PROCESS_NAME,
+                FIG_BUNDLE_ID
+            };
 
+            let bundle_id = NSString::from(FIG_BUNDLE_ID);
             let running_applications: NSArray<NSRunningApplication> = unsafe {
                 msg_send![
                     class!(NSRunningApplication),
@@ -55,7 +65,14 @@ pub fn is_fig_desktop_running() -> bool {
                 ]
             };
 
-            !running_applications.is_empty()
+            if !running_applications.is_empty() {
+                return true;
+            }
+
+            // Fallback to process name check
+            let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
+            let mut processes = s.processes_by_exact_name(FIG_DESKTOP_PROCESS_NAME);
+            processes.next().is_some()
         } else if #[cfg(target_os = "windows")] {
             use crate::consts::FIG_DESKTOP_PROCESS_NAME;
 
@@ -127,6 +144,8 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
             }
         },
     }
+
+    std::fs::remove_file(directories::fig_socket_path()?).ok();
 
     let mut common_args = vec![];
     if !args.open_dashboard {

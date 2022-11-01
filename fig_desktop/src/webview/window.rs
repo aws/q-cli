@@ -24,7 +24,6 @@ use tracing::{
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
-    PhysicalSize,
     Position,
 };
 use wry::application::window::Theme;
@@ -242,14 +241,12 @@ impl WindowState {
 
                     #[cfg(not(target_os = "linux"))]
                     self.webview.window().set_resizable(true);
+
+                    // TODO: move to only happen when size is set to 1x1 by ae
                     #[cfg(target_os = "linux")]
                     self.webview
                         .window()
                         .set_min_inner_size(Some(PhysicalSize { width: 1, height: 1 }));
-
-                    self.webview
-                        .window()
-                        .set_inner_size(PhysicalSize { width: 1, height: 1 });
 
                     #[cfg(not(target_os = "linux"))]
                     self.webview.window().set_resizable(false);

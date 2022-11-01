@@ -35,7 +35,6 @@ objc = "0.2.7"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 bstr = "1.0.1"
-sysinfo = "0.26.7"
 
 [target.'cfg(windows)'.dependencies]
 windows = { version = "0.43.0", features = [
@@ -47,6 +46,7 @@ windows = { version = "0.43.0", features = [
 winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
+sysinfo = "0.26.7"
 nix = "0.25.0"
 
 [dev-dependencies]
