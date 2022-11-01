@@ -45,16 +45,16 @@ fn integration_result(result: Result<(), impl Display>) -> ServerOriginatedSubMe
 
 pub async fn install(request: InstallRequest) -> RequestResult {
     let response = match (request.component(), request.action()) {
-        (InstallComponent::Dotfiles, action @ (InstallAction::InstallAction | InstallAction::UninstallAction)) => {
+        (InstallComponent::Dotfiles, action) => {
             let mut errs: Vec<String> = vec![];
-            for shell in [Shell::Bash, Shell::Zsh, Shell::Fish] {
+            for shell in Shell::all() {
                 match shell.get_shell_integrations() {
                     Ok(integrations) => {
                         for integration in integrations {
                             let res = match action {
                                 InstallAction::InstallAction => integration.install().await,
                                 InstallAction::UninstallAction => integration.uninstall().await,
-                                InstallAction::StatusAction => unreachable!(),
+                                InstallAction::StatusAction => integration.is_installed().await,
                             };
 
                             if let Err(err) = res {
@@ -68,18 +68,22 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
 
-            integration_result(match &errs[..] {
-                [] => Ok(()),
-                errs => Err(errs.join("\n")),
-            })
-        },
-        (InstallComponent::Dotfiles, InstallAction::StatusAction) => {
-            // TODO(grant): Add actual logic here!
-            ServerOriginatedSubMessage::InstallResponse(InstallResponse {
-                response: Some(Response::InstallationStatus(
-                    InstallationStatus::InstallInstalled.into(),
-                )),
-            })
+            match action {
+                InstallAction::InstallAction | InstallAction::UninstallAction => integration_result(match &errs[..] {
+                    [] => Ok(()),
+                    errs => Err(errs.join("\n")),
+                }),
+                InstallAction::StatusAction => ServerOriginatedSubMessage::InstallResponse(InstallResponse {
+                    response: Some(Response::InstallationStatus(
+                        if errs.is_empty() {
+                            InstallationStatus::InstallInstalled
+                        } else {
+                            InstallationStatus::InstallNotInstalled
+                        }
+                        .into(),
+                    )),
+                }),
+            }
         },
         (InstallComponent::Ibus, _) => integration_result(Err("IBus install is legacy")),
         (InstallComponent::Accessibility, InstallAction::InstallAction) => {
