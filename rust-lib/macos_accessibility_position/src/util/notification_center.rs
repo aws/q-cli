@@ -1,9 +1,7 @@
 use appkit_nsworkspace_bindings::{
-    INSDictionary,
     INSNotification,
     INSNotificationCenter,
     INSWorkspace,
-    NSDictionary,
     NSNotification,
     NSNotificationCenter,
     NSOperationQueue,
@@ -15,6 +13,7 @@ use cocoa::base::{
     id,
     nil as NIL,
 };
+use cocoa::foundation::NSDictionary;
 use objc::runtime::Object;
 
 use super::NSString;
@@ -61,10 +60,13 @@ impl NotificationCenter {
             let keys_array = cf::NSArray::arrayWithObjects(NIL, &keys);
             let objs_array = cf::NSArray::arrayWithObjects(NIL, &objs);
 
-            let user_info = cf::NSDictionary::dictionaryWithObjects_forKeys_(NIL, objs_array, keys_array);
+            let user_info = NSDictionary::dictionaryWithObjects_forKeys_(NIL, objs_array, keys_array);
 
-            self.inner
-                .postNotificationName_object_userInfo_(name.to_appkit_nsstring(), NIL, NSDictionary(user_info));
+            self.inner.postNotificationName_object_userInfo_(
+                name.to_appkit_nsstring(),
+                NIL,
+                appkit_nsworkspace_bindings::NSDictionary(user_info),
+            );
         }
     }
 
@@ -99,15 +101,16 @@ impl NotificationCenter {
 }
 
 pub unsafe fn get_app_from_notification(notification: &NSNotification) -> Option<NSRunningApplication> {
-    let user_info = notification.userInfo();
-    if let NSDictionary(NIL) = user_info {
+    let user_info = notification.userInfo().0;
+
+    if user_info.is_null() {
         return None;
     }
 
     let bundle_id_str: NSString = "NSWorkspaceApplicationKey".into();
 
-    let app = <NSDictionary as INSDictionary<NSString, id>>::objectForKey_(&user_info, ***bundle_id_str);
-    if app == NIL {
+    let app = user_info.objectForKey_(***bundle_id_str);
+    if app.is_null() {
         None
     } else {
         Some(NSRunningApplication(app))
