@@ -2,9 +2,13 @@ use std::iter::empty;
 
 use cfg_if::cfg_if;
 use fig_install::check_for_updates;
+use fig_integrations::Integration;
 use fig_util::directories;
 use semver::Version;
-use tracing::error;
+use tracing::{
+    error,
+    info,
+};
 
 use crate::utils::is_cargo_debug_build;
 
@@ -155,6 +159,20 @@ pub async fn run_install(ignore_immediate_update: bool) {
             std::fs::remove_file(fig_util::directories::fig_dir().unwrap().join("fig_installer.exe")).ok();
         }
     );
+
+    // install vscode
+    for variant in fig_integrations::vscode::variants_installed() {
+        let integration = fig_integrations::vscode::VSCodeIntegration { variant };
+        if integration.is_installed().await.is_err() {
+            info!(
+                "Attempting to install vscode integration for variant {}",
+                integration.variant.application_name
+            );
+            if let Err(err) = integration.install().await {
+                error!(%err, "Failed installing vscode integration for variant {}", integration.variant.application_name);
+            }
+        }
+    }
 }
 
 #[cfg(target_os = "macos")]

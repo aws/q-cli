@@ -45,6 +45,9 @@ pub enum Integration {
     #[command(name = "vscode")]
     VSCode,
     #[doc(hidden)]
+    #[command(name = "intellij")]
+    IntelliJ,
+    #[doc(hidden)]
     All,
 }
 
@@ -161,6 +164,20 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 }
             }
         },
+        Integration::IntelliJ => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    let variants = fig_integrations::intellij::variants_installed();
+                    installed = !variants.is_empty();
+                    for variant in variants {
+                        fig_integrations::intellij::IntelliJIntegration { variant }.install().await?;
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
+                }
+            }
+        },
     };
 
     if installed && result.is_ok() && !silent {
@@ -244,11 +261,31 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     for variant in fig_integrations::vscode::variants_installed() {
-                        fig_integrations::vscode::VSCodeIntegration { variant }.uninstall().await?;
+                        let integration = fig_integrations::vscode::VSCodeIntegration { variant };
+                        if integration.is_installed().await.is_ok() {
+                            integration.uninstall().await?;
+                            uninstalled = true;
+                        }
                     }
                     Ok(())
                 } else {
                     Err(eyre::eyre!("VSCode integration is only supported on macOS"))
+                }
+            }
+        },
+        Integration::IntelliJ => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    for variant in fig_integrations::intellij::variants_installed() {
+                        let integration = fig_integrations::intellij::IntelliJIntegration { variant };
+                        if integration.is_installed().await.is_ok() {
+                            integration.uninstall().await?;
+                            uninstalled = true;
+                        }
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
                 }
             }
         },
@@ -330,13 +367,41 @@ async fn status(integration: Integration) -> Result<()> {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     let variants = fig_integrations::vscode::variants_installed();
-                    let mut any = false;
                     for variant in variants {
-                        any = any || fig_integrations::vscode::VSCodeIntegration { variant }.is_installed().await.is_ok();
+                        let integration = fig_integrations::vscode::VSCodeIntegration { variant };
+                        match integration.is_installed().await {
+                            Ok(_) => {
+                                println!("{}: Installed", integration.variant.application_name);
+                            }
+                            Err(_) => {
+                                println!("{}: Not installed", integration.variant.application_name);
+                            }
+                        }
                     }
                     Ok(())
                 } else {
                     Err(eyre::eyre!("VSCode integration is only supported on macOS"))
+                }
+            }
+        },
+        Integration::IntelliJ => {
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "macos")] {
+                    let variants = fig_integrations::intellij::variants_installed();
+                    for variant in variants {
+                        let integration = fig_integrations::intellij::IntelliJIntegration { variant };
+                        match integration.is_installed().await {
+                            Ok(_) => {
+                                println!("{}: Installed", integration.variant.application_name);
+                            }
+                            Err(_) => {
+                                println!("{}: Not installed", integration.variant.application_name);
+                            }
+                        }
+                    }
+                    Ok(())
+                } else {
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
                 }
             }
         },

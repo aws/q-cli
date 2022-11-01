@@ -37,5 +37,8 @@ pub enum Error {
     SerdeJSON(#[from] serde_json::Error),
     #[cfg(target_os = "macos")]
     #[error(transparent)]
-    URL(#[from] url::ParseError),
+    PList(#[from] plist::Error),
+    #[cfg(target_os = "macos")]
+    #[error(transparent)]
+    Zip(#[from] zip::result::ZipError),
 }

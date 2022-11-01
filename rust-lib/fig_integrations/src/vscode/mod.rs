@@ -2,10 +2,9 @@ use std::env::temp_dir;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use macos_accessibility_position::url::url_for_application;
+use macos_accessibility_position::url::path_for_application;
 use tokio::process::Command;
 use tracing::error;
-use url::Url;
 
 use crate::error::Result;
 use crate::{
@@ -22,7 +21,7 @@ pub struct VSCodeVariant {
     bundle_identifier: &'static str,
     config_folder_name: &'static str,
     application_support_folder_name: &'static str,
-    application_name: &'static str,
+    pub application_name: &'static str,
     cli_executable_name: &'static str,
 }
 
@@ -60,7 +59,7 @@ pub static VARIANTS: &[VSCodeVariant] = &[
 pub fn variants_installed() -> Vec<VSCodeVariant> {
     VARIANTS
         .iter()
-        .filter(|variant| url_for_application(variant.bundle_identifier).is_some())
+        .filter(|variant| path_for_application(variant.bundle_identifier).is_some())
         .cloned()
         .collect()
 }
@@ -117,26 +116,16 @@ impl Integration for VSCodeIntegration {
             return Ok(());
         }
 
-        let bundle_url = Url::parse(
-            &url_for_application(self.variant.bundle_identifier)
-                .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name.into()))?,
-        )?;
+        let bundle_path = path_for_application(self.variant.bundle_identifier)
+            .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name.into()))?;
 
         if let Err(err) = self.update_settings().await {
             error!("error updating {} settings: {err:?}", self.variant.application_name);
         }
 
-        let cli_path = format!(
-            "/{}",
-            bundle_url
-                .path()
-                .replace("%20", " ")
-                .split('/')
-                .filter(|x| !x.is_empty())
-                .chain(["Contents", "Resources", "app", "bin", self.variant.cli_executable_name])
-                .collect::<Vec<&str>>()
-                .join("/")
-        );
+        let cli_path = bundle_path
+            .join("Contents/Resources/app/bin")
+            .join(self.variant.cli_executable_name);
 
         let extension_path = temp_dir().join("fig.vsix");
         tokio::fs::write(&extension_path, &EXTENSION).await?;
