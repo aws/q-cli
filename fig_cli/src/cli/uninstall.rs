@@ -25,15 +25,13 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 
     cfg_if! {
         if #[cfg(unix)] {
-            let emit = tokio::spawn(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
                 fig_telemetry::TrackEventType::UninstalledApp,
                 fig_telemetry::TrackSource::Cli,
                 env!("CARGO_PKG_VERSION").into(),
                 std::iter::empty::<(&str, &str)>(),
-            )));
-            let (emit_join, uninstall_join) = tokio::join!(emit, uninstall());
-            emit_join?.ok();
-            uninstall_join?;
+            )).await.ok();
+            uninstall().await?;
         } else if #[cfg(target_os = "windows")] {
             println!("Please uninstall fig from the `Add or remove programs` menu for now.");
             println!("If you're having issues uninstalling fig, run `fig issue` to let us know, and use the tool at the following link to remove fig:");

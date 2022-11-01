@@ -276,14 +276,6 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
         .map_err(|err| warn!("Failed to delete defaults: {err}"))
         .ok();
 
-    // Delete data dir
-    if let Ok(fig_data_dir) = directories::fig_data_dir() {
-        tokio::fs::remove_dir_all(&fig_data_dir)
-            .await
-            .map_err(|err| warn!("Could not remove {}: {err}", fig_data_dir.display()))
-            .ok();
-    }
-
     // Delete the ~/.fig folder
     if let Ok(fig_dir) = directories::fig_dir() {
         tokio::fs::remove_dir_all(fig_dir)
