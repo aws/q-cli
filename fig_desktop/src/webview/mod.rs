@@ -171,7 +171,7 @@ impl WebviewManager {
         Ok(())
     }
 
-    pub async fn run(self) -> wry::Result<()> {
+    pub async fn run(mut self) -> wry::Result<()> {
         self.platform_state
             .handle(PlatformBoundEvent::Initialize, &self.event_loop, &self.fig_id_map)
             .expect("Failed to initialize platform state");
@@ -285,6 +285,17 @@ impl WebviewManager {
         } else {
             None
         };
+
+        #[cfg(target_os = "macos")]
+        {
+            use wry::application::platform::macos::EventLoopExtMacOS;
+
+            if let Some(window) = self.fig_id_map.get(&DASHBOARD_ID) {
+                if !window.webview.window().is_focused() {
+                    self.event_loop.set_activate_ignoring_other_apps(false);
+                }
+            }
+        }
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, window_target, control_flow| {

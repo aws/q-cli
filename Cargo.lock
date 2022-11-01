@@ -4274,9 +4274,9 @@ dependencies = [
 
 [[package]]
 name = "jni"
-version = "0.19.0"
+version = "0.20.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c6df18c2e3db7e453d3c6ac5b3e9d5182664d28788126d39b91f2d1e22b017ec"
+checksum = "039022cdf4d7b1cf548d31f60ae783138e5fd42013f6271049d7df7afadef96c"
 dependencies = [
  "cesu8",
  "combine",
@@ -7522,7 +7522,7 @@ checksum = "7b2093cf4c8eb1e67749a6762251bc9cd836b6fc171623bd0a9d324d37af2417"
 [[package]]
 name = "tao"
 version = "0.14.0"
-source = "git+https://github.com/tauri-apps/tao?rev=dd86a9ebec67bf103e79bdfd1a2377cbe832bc03#dd86a9ebec67bf103e79bdfd1a2377cbe832bc03"
+source = "git+https://github.com/grant0417/tao?branch=configure-activate-ignoring-other-apps#f0afe7001a6c8be6bedfae4b010de9227d139847"
 dependencies = [
  "bitflags",
  "cairo-rs",
