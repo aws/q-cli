@@ -782,7 +782,7 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                         .send_event(Event::WindowEvent {
                             window_id: DASHBOARD_ID,
                             window_event: WindowEvent::NavigateRelative {
-                                path: "/onboarding/welcome".to_owned(),
+                                path: "/onboarding/welcome".into(),
                             },
                         })
                         .ok();
