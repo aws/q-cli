@@ -441,14 +441,20 @@ impl WindowServerHandler for WindowServerInner {
 
     fn active_space_changed(&mut self, notif: NSNotification) {
         unsafe {
-            let ax_ref = notif.object() as AXUIElementRef;
-            let elem: UIElement = ax_ref.into();
-            if let Ok(is_fullscreen) = elem.is_fullscreen() {
-                if let Err(e) = self
-                    .sender
-                    .send(WindowServerEvent::ActiveSpaceChanged { is_fullscreen })
-                {
-                    warn!("Error sending active space changed notif: {e:?}");
+            let workspace = NSWorkspace(notif.object());
+            let app = workspace.frontmostApplication();
+            let pid = app.processIdentifier();
+            let ax_app = AXUIElementCreateApplication(pid);
+            let app_elem: UIElement = ax_app.into();
+            if let Ok(window) = app_elem.focused_window() {
+                let fullscreen = window.is_fullscreen();
+                if let Ok(is_fullscreen) = fullscreen {
+                    if let Err(e) = self
+                        .sender
+                        .send(WindowServerEvent::ActiveSpaceChanged { is_fullscreen })
+                    {
+                        warn!("Error sending active space changed notif: {e:?}");
+                    }
                 }
             }
         }
