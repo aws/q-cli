@@ -55,9 +55,9 @@ dependencies = [
 
 [[package]]
 name = "aes"
-version = "0.8.1"
+version = "0.8.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bfe0133578c0986e1fe3dfcd4af1cc5b2dd6c3dbf534d69916ce16a2701d40ba"
+checksum = "433cfd6710c9986c576a25ca913c39d66a6474107b406f34f91d4a8923395241"
 dependencies = [
  "cfg-if 1.0.0",
  "cipher",
@@ -293,16 +293,16 @@ dependencies = [
 
 [[package]]
 name = "async-io"
-version = "1.9.0"
+version = "1.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "83e21f3a490c72b3b0cf44962180e60045de2925d8dff97918f7ee43c8f637c7"
+checksum = "e8121296a9f05be7f34aa4196b1747243b3b62e048bb7906f644f3fbfc490cf7"
 dependencies = [
+ "async-lock",
  "autocfg",
  "concurrent-queue",
  "futures-lite",
  "libc",
  "log",
- "once_cell",
  "parking",
  "polling",
  "slab",
@@ -690,9 +690,9 @@ checksum = "2c676a478f63e9fa2dd5368a42f28bba0d6c560b775f38583c8bbaa7fcd67c9c"
 
 [[package]]
 name = "bytemuck"
-version = "1.12.1"
+version = "1.12.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2f5715e491b5a1598fc2bef5a606847b5dc1d48ea625bd3c02c00de8285591da"
+checksum = "5aec14f5d4e6e3f927cd0c81f72e5710d95ee9019fbeb4b3021193867491bfd8"
 
 [[package]]
 name = "byteorder"
@@ -784,9 +784,9 @@ dependencies = [
 
 [[package]]
 name = "cc"
-version = "1.0.73"
+version = "1.0.74"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "2fff2a6927b3bb87f9595d67196a70493f627687a71d87a0d692242c33f58c11"
+checksum = "581f5dba903aac52ea3feb5ec4810848460ee833876f1f9b0fdeab1f19091574"
 dependencies = [
  "jobserver",
 ]
@@ -948,9 +948,9 @@ dependencies = [
 
 [[package]]
 name = "cocoa"
-version = "0.24.0"
+version = "0.24.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "6f63902e9223530efb4e26ccd0cf55ec30d592d3b42e21a28defc42a9586e832"
+checksum = "f425db7937052c684daec3bd6375c8abe2d146dca4b8b143d6db777c39138f3a"
 dependencies = [
  "bitflags",
  "block",
@@ -1511,9 +1511,9 @@ dependencies = [
 
 [[package]]
 name = "darling"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4529658bdda7fd6769b8614be250cdcfc3aeb0ee72fe66f9e41e5e5eb73eac02"
+checksum = "b0dd3cd20dc6b5a876612a6e5accfe7f3dd883db6d07acfbf14c128f61550dfa"
 dependencies = [
  "darling_core",
  "darling_macro",
@@ -1521,9 +1521,9 @@ dependencies = [
 
 [[package]]
 name = "darling_core"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "649c91bc01e8b1eac09fb91e8dbc7d517684ca6be8ebc75bb9cafc894f9fdb6f"
+checksum = "a784d2ccaf7c98501746bf0be29b2022ba41fd62a2e622af997a03e9f972859f"
 dependencies = [
  "fnv",
  "ident_case",
@@ -1535,9 +1535,9 @@ dependencies = [
 
 [[package]]
 name = "darling_macro"
-version = "0.14.1"
+version = "0.14.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddfc69c5bfcbd2fc09a0f38451d2daf0e372e367986a83906d1b0dbc88134fb5"
+checksum = "7618812407e9402654622dd402b0a89dff9ba93badd6540781526117b92aab7e"
 dependencies = [
  "darling_core",
  "quote 1.0.21",
@@ -1571,7 +1571,7 @@ checksum = "8d7439c3735f405729d52c3fbbe4de140eaf938a1fe47d227c27f8254d4302a5"
 
 [[package]]
 name = "dbus"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "once_cell",
  "thiserror",
@@ -2447,9 +2447,9 @@ dependencies = [
 
 [[package]]
 name = "ff"
-version = "0.12.0"
+version = "0.12.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "df689201f395c6b90dfe87127685f8dbfc083a5e779e613575d8bd7314300c3e"
+checksum = "d013fc25338cc558c5c2cfbad646908fb23591e2404481826742b651c9af7160"
 dependencies = [
  "rand_core 0.6.4",
  "subtle",
@@ -2467,7 +2467,7 @@ dependencies = [
 
 [[package]]
 name = "fig-api-mock"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "async-trait",
  "clap",
@@ -2478,7 +2478,7 @@ dependencies = [
 
 [[package]]
 name = "fig_api_client"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "fig_request",
  "fig_settings",
@@ -2491,7 +2491,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "arboard",
  "assert_cmd",
@@ -2568,7 +2568,7 @@ dependencies = [
 
 [[package]]
 name = "fig_color"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "bitflags",
  "fig_test",
@@ -2577,7 +2577,7 @@ dependencies = [
 
 [[package]]
 name = "fig_daemon"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "camino",
  "fig_ipc",
@@ -2590,7 +2590,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "accessibility-sys",
  "anyhow",
@@ -2656,7 +2656,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop_api"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "async-trait",
  "base64",
@@ -2684,7 +2684,7 @@ dependencies = [
 
 [[package]]
 name = "fig_diagnostic"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "atty",
  "cfg-if 1.0.0",
@@ -2701,7 +2701,7 @@ dependencies = [
 
 [[package]]
 name = "fig_input_method"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "apple-bundle",
  "cocoa",
@@ -2721,7 +2721,7 @@ dependencies = [
 
 [[package]]
 name = "fig_install"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "bitflags",
  "camino",
@@ -2749,11 +2749,11 @@ dependencies = [
 
 [[package]]
 name = "fig_installer"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 
 [[package]]
 name = "fig_integrations"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "accessibility-sys",
  "async-trait",
@@ -2778,7 +2778,7 @@ dependencies = [
 
 [[package]]
 name = "fig_ipc"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2795,7 +2795,7 @@ dependencies = [
 
 [[package]]
 name = "fig_log"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "console-subscriber",
  "fig_util",
@@ -2810,7 +2810,7 @@ dependencies = [
 
 [[package]]
 name = "fig_proto"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "arbitrary",
  "bytes",
@@ -2831,7 +2831,7 @@ dependencies = [
 
 [[package]]
 name = "fig_release"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "clap",
  "dialoguer",
@@ -2850,7 +2850,7 @@ dependencies = [
 
 [[package]]
 name = "fig_request"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "base64",
  "bytes",
@@ -2876,7 +2876,7 @@ dependencies = [
 
 [[package]]
 name = "fig_settings"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "fd-lock",
  "fig_test",
@@ -2893,7 +2893,7 @@ dependencies = [
 
 [[package]]
 name = "fig_sync"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "cfg-if 1.0.0",
  "crossterm",
@@ -2920,7 +2920,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "anyhow",
  "fig_ipc",
@@ -2939,7 +2939,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "fig_test_macro",
  "tokio",
@@ -2947,7 +2947,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test_macro"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "quote 1.0.21",
  "syn 1.0.103",
@@ -2955,7 +2955,7 @@ dependencies = [
 
 [[package]]
 name = "fig_util"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "appkit-nsworkspace-bindings",
  "bstr 1.0.1",
@@ -2990,7 +2990,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -3918,9 +3918,9 @@ checksum = "9a3a5bfb195931eeb336b2a7b4d761daec841b97f947d34394601737a7bba5e4"
 
 [[package]]
 name = "hyper"
-version = "0.14.20"
+version = "0.14.22"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "02c929dc5c39e335a03c405292728118860721b10190d98c2a0f0efd5baafbac"
+checksum = "abfba89e19b959ca163c7752ba59d737c1ceea53a5d31a149c805446fc958064"
 dependencies = [
  "bytes",
  "futures-channel",
@@ -3967,9 +3967,9 @@ dependencies = [
 
 [[package]]
 name = "iana-time-zone"
-version = "0.1.51"
+version = "0.1.53"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f5a6ef98976b22b3b7f2f3a806f858cb862044cfa66805aa3ad84cb3d3b785ed"
+checksum = "64c122667b287044802d6ce17ee2ddf13207ed924c712de9a66a5814d5b64765"
 dependencies = [
  "android_system_properties",
  "core-foundation-sys",
@@ -4429,9 +4429,9 @@ checksum = "292a948cd991e376cf75541fe5b97a1081d713c618b4f1b9500f8844e49eb565"
 
 [[package]]
 name = "libsqlite3-sys"
-version = "0.25.1"
+version = "0.25.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9f0455f2c1bc9a7caa792907026e469c1d91761fb0ea37cbb16427c77280cf35"
+checksum = "29f835d03d717946d28b1d1ed632eb6f0e24a299388ee623d0c23118d3e8a7fa"
 dependencies = [
  "cc",
  "pkg-config",
@@ -4525,9 +4525,9 @@ dependencies = [
 
 [[package]]
 name = "lzzzz"
-version = "1.0.3"
+version = "1.0.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "736263997293f91cffd401b5370e2b06805c9796c0f31b9b478e9734cf4d72bc"
+checksum = "8014d1362004776e6a91e4c15a3aa7830d1b6650a075b51a9969ebb6d6af13bc"
 dependencies = [
  "cc",
 ]
@@ -4549,7 +4549,7 @@ dependencies = [
 
 [[package]]
 name = "macos_accessibility_position"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "accessibility",
  "accessibility-sys",
@@ -4859,7 +4859,7 @@ checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
 
 [[package]]
 name = "newton"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "crossterm",
  "rand 0.8.5",
@@ -5170,9 +5170,9 @@ checksum = "ff011a302c396a5197692431fc1948019154afc178baf7d8e37367442a4601cf"
 
 [[package]]
 name = "openssl-src"
-version = "111.22.0+1.1.1q"
+version = "111.24.0+1.1.1s"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f31f0d509d1c1ae9cada2f9539ff8f37933831fd5098879e482aa687d659853"
+checksum = "3498f259dab01178c6228c6b00dcef0ed2a2d5e20d648c017861227773ea4abd"
 dependencies = [
  "cc",
 ]
@@ -5232,9 +5232,9 @@ dependencies = [
 
 [[package]]
 name = "os_str_bytes"
-version = "6.3.0"
+version = "6.3.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "9ff7415e9ae3fff1225851df9e0d9e4e5479f947619774677a63572e55e80eff"
+checksum = "3baf96e39c5359d2eb0dd6ccb42c62b91d9678aa68160d261b9e0ccbf9e9dea9"
 
 [[package]]
 name = "outref"
@@ -5571,9 +5571,9 @@ dependencies = [
 
 [[package]]
 name = "pkg-config"
-version = "0.3.25"
+version = "0.3.26"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1df8c4ec4b0627e53bdf214615ad287367e482558cf84b109250b37464dc03ae"
+checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
 name = "plist"
@@ -5591,14 +5591,14 @@ dependencies = [
 
 [[package]]
 name = "png"
-version = "0.17.6"
+version = "0.17.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8f0e7f4c94ec26ff209cee506314212639d6c91b80afb82984819fafce9df01c"
+checksum = "5d708eaf860a19b19ce538740d2b4bdeeb8337fa53f7738455e706623ad5c638"
 dependencies = [
  "bitflags",
  "crc32fast",
  "flate2",
- "miniz_oxide 0.5.4",
+ "miniz_oxide 0.6.2",
 ]
 
 [[package]]
@@ -7025,9 +7025,9 @@ dependencies = [
 
 [[package]]
 name = "simba"
-version = "0.7.2"
+version = "0.7.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c48e45e5961033db030b56ad67aef22e9c908c493a6e8348c0a0f6b93433cd77"
+checksum = "2f3fd720c48c53cace224ae62bef1bbff363a70c68c4802a78b5cc6159618176"
 dependencies = [
  "approx",
  "num-complex",
@@ -7608,9 +7608,9 @@ dependencies = [
 
 [[package]]
 name = "tiff"
-version = "0.7.3"
+version = "0.7.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7259662e32d1e219321eb309d5f9d898b779769d81b76e762c07c8e5d38fcb65"
+checksum = "9f71e422515e83e3ab8a03d4781d05ebf864fc61f4546e6ecffa58cbd34181a0"
 dependencies = [
  "flate2",
  "jpeg-decoder",
@@ -8089,7 +8089,7 @@ checksum = "3e5d7cd7ab3e47dda6e56542f4bbf3824c15234958c6e1bd6aaa347e93499fdc"
 
 [[package]]
 name = "tui"
-version = "2.7.1-beta.1"
+version = "2.7.2-beta.0+qa"
 dependencies = [
  "newton",
  "paste",
