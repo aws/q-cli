@@ -2,13 +2,14 @@ use dashmap::DashMap;
 use fnv::FnvBuildHasher;
 use once_cell::sync::Lazy;
 use tokio::sync::broadcast::{
+    self,
     Receiver,
     Sender,
 };
 
 const CHANNEL_SIZE: usize = 16;
 
-pub static NOTIFICATION_BUS: Lazy<NotificationBus> = Lazy::new(NotificationBus::default);
+pub static NOTIFICATION_BUS: Lazy<NotificationBus> = Lazy::new(NotificationBus::new);
 
 #[derive(Debug, Clone)]
 pub enum JsonNotification {
@@ -42,13 +43,28 @@ impl JsonNotification {
     }
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct NotificationBus {
     state_channels: DashMap<String, Sender<JsonNotification>, FnvBuildHasher>,
     settings_channels: DashMap<String, Sender<JsonNotification>, FnvBuildHasher>,
+    user_email_channel: Sender<Option<String>>,
+}
+
+impl std::default::Default for NotificationBus {
+    fn default() -> Self {
+        Self {
+            state_channels: DashMap::default(),
+            settings_channels: DashMap::default(),
+            user_email_channel: broadcast::channel(CHANNEL_SIZE).0,
+        }
+    }
 }
 
 impl NotificationBus {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn subscribe_state(&self, key: String) -> Receiver<JsonNotification> {
         self.state_channels
             .entry(key)
@@ -69,6 +85,10 @@ impl NotificationBus {
             .subscribe()
     }
 
+    pub fn subscribe_user_email(&self) -> Receiver<Option<String>> {
+        self.user_email_channel.subscribe()
+    }
+
     pub fn send_state(&self, key: impl AsRef<str>, value: JsonNotification) {
         if let Some(tx) = self.state_channels.get(key.as_ref()) {
             tx.send(value).ok();
@@ -79,6 +99,10 @@ impl NotificationBus {
         if let Some(tx) = self.settings_channels.get(key.as_ref()) {
             tx.send(value).ok();
         }
+    }
+
+    pub fn send_user_email(&self, value: Option<String>) {
+        self.user_email_channel.send(value).ok();
     }
 
     pub fn send_state_new(&self, key: impl AsRef<str>, value: &serde_json::Value) {

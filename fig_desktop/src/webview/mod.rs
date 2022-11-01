@@ -757,4 +757,46 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
             proxy.send_event(Event::SetTrayEnabled(enabled)).unwrap();
         }
     );
+
+    tokio::spawn(async move {
+        let mut res = NOTIFICATION_BUS.subscribe_user_email();
+        loop {
+            match res.recv().await {
+                Ok(Some(_)) => {
+                    // Unclear what should happen here, navigation is probably wrong, should
+                    // probably notify the web side that this happened
+                },
+                Ok(None) => {
+                    proxy
+                        .send_event(Event::WindowEvent {
+                            window_id: DASHBOARD_ID,
+                            window_event: WindowEvent::NavigateRelative {
+                                path: "/onboarding/welcome".to_owned(),
+                            },
+                        })
+                        .ok();
+
+                    proxy
+                        .send_event(Event::WindowEvent {
+                            window_id: DASHBOARD_ID,
+                            window_event: WindowEvent::Resize {
+                                size: DASHBOARD_ONBOARDING_SIZE,
+                            },
+                        })
+                        .ok();
+
+                    proxy
+                        .send_event(Event::WindowEvent {
+                            window_id: DASHBOARD_ID,
+                            window_event: WindowEvent::Center,
+                        })
+                        .ok();
+                },
+                Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                    warn!("Notification bus 'userEmail' lagged by {n} messages");
+                },
+                Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+            }
+        }
+    });
 }

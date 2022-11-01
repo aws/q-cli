@@ -6,6 +6,7 @@ use fig_proto::fig::{
     NotificationType,
     SettingsChangedNotification,
 };
+use fig_request::auth::Credentials;
 use fig_util::directories;
 use notify::{
     RecursiveMode,
@@ -33,6 +34,9 @@ static SETTINGS: Lazy<Mutex<Map<String, Value>>> =
 
 static STATE: Lazy<Mutex<Map<String, Value>>> =
     Lazy::new(|| Mutex::new(fig_settings::state::get_map().unwrap_or_default()));
+
+static CREDENTIALS: Lazy<Mutex<Credentials>> =
+    Lazy::new(|| Mutex::new(fig_request::auth::Credentials::load_credentials().unwrap_or_default()));
 
 pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsState>, proxy: EventLoopProxy) {
     // We need to initialize the settings and state here because the diffing logic depends it
@@ -222,7 +226,12 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_) =
                         event.kind
                     {
-                        proxy.send_event(Event::ReloadCredentials).ok();
+                        let creds = fig_request::auth::Credentials::load_credentials().unwrap_or_default();
+                        if creds.email != CREDENTIALS.lock().email {
+                            NOTIFICATION_BUS.send_user_email(creds.email.clone());
+                            proxy.send_event(Event::ReloadCredentials).ok();
+                        }
+                        *CREDENTIALS.lock() = creds;
                     }
                 }
             }
