@@ -4,7 +4,7 @@ on:
 
 env:
   # Make sure that this is the correct URL to the DMG that we want to deploy!!!
-  RUST_DMG_URL: https://repo.fig.io/generic/stable/asset/latest/universal/fig.dmg
+  RUST_DMG_URL: https://repo.fig.io/generic/stable/asset/2.7.2/universal/fig.dmg
 
 jobs:    
   update-appcast:
