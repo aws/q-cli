@@ -1,3 +1,8 @@
+export interface EnvironmentVariable {
+  key: string;
+  value?: string;
+}
+
 export interface ShellContext {
   /** The current PID of the shell process */
   pid?: number;
@@ -18,6 +23,6 @@ export interface ShellContext {
   /** path to the shell being used in the terminal */
   shellPath?: string;
   /** the environment variables of the shell, note that only exported variables are included */
-  environmentVariables?: { key: string; value: string }[];
+  environmentVariables?: EnvironmentVariable[];
 }
 
