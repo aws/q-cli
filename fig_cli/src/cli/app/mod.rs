@@ -304,7 +304,7 @@ impl AppSubcommand {
                             .args(["aux", "-o", "args"])
                             .output()
                             .await
-                            .map_or(false, |output| output.stdout.contains_str(b"brew upgrade"));
+                            .map_or(false, |output| output.stdout.contains_str(b"brew upgrade") || output.stdout.contains_str(b"brew reinstall"));
 
                         if !args.no_open && !is_brew_reinstall {
                             let url = fig_install::get_uninstall_url();
