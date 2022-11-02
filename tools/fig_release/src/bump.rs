@@ -1,44 +1,46 @@
-use semver::{
-    Prerelease,
-    Version,
-};
+use semver::Prerelease;
 
 use crate::utils::{
     extract_number,
-    read_release_file,
-    run,
-    sync_version,
-    write_release_file,
+    read_channel,
+    read_version,
+    run_wet,
+    update_lockfile,
+    write_version,
     Channel,
 };
 
-pub fn bump() -> eyre::Result<()> {
-    let mut release = read_release_file()?;
-    match release.channel {
-        Some(Channel::Nightly) => eyre::bail!("cannot bump nightly version"),
-        Some(Channel::Stable) => eyre::bail!("cannot bump stable version"),
-        Some(_) => {},
-        None => eyre::bail!("must have a channel to bump version"),
+pub fn bump(dry: bool) -> eyre::Result<()> {
+    let mut version = read_version();
+    let channel = read_channel();
+
+    match channel {
+        Channel::Nightly => eyre::bail!("cannot bump nightly version"),
+        Channel::None => eyre::bail!("must have a channel to bump version"),
+        Channel::Beta | Channel::Qa => {
+            let mut num = extract_number(&version.pre)?;
+            num += 1;
+            version.pre = Prerelease::new(&format!("beta.{num}"))?;
+        },
+        Channel::Stable => {
+            version.minor += 1;
+        },
     }
-    let mut version = Version::parse(&release.version)?;
-    let mut num = extract_number(&version.pre)?;
-    num += 1;
-    version.pre = Prerelease::new(&format!("beta.{num}"))?;
-    release.version = version.to_string();
-    write_release_file(&release)?;
+    write_version(&version);
 
-    sync_version(&release)?;
+    update_lockfile()?;
 
-    run(&["cargo", "update", "--offline", "--workspace"])?;
-
-    run(&["git", "add", "release.yaml", "Cargo.toml", "Cargo.lock"])?;
-    run(&[
-        "git",
-        "commit",
-        "-m",
-        &format!("chore: bump version to {version} [skip ci]"),
-    ])?;
-    run(&["git", "push"])?;
+    run_wet(&["git", "add", "Cargo.toml", "Cargo.toml", "Cargo.lock"], dry)?;
+    run_wet(
+        &[
+            "git",
+            "commit",
+            "-m",
+            &format!("chore: bump version to {version} [skip ci]"),
+        ],
+        dry,
+    )?;
+    run_wet(&["git", "push"], dry)?;
 
     Ok(())
 }

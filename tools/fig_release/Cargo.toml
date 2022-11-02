@@ -13,10 +13,9 @@ eyre = "0.6.8"
 fig_request = { path = "../../rust-lib/fig_request" }
 fig_settings = { path = "../../rust-lib/fig_settings" }
 fig_util = { path = "../../rust-lib/fig_util" }
-once_cell = "1.16.0"
 semver = "1.0.14"
 serde = { version = "1.0.147", features = ["derive"] }
-serde_yaml = "0.9.14"
+strum = "0.24.1"
 time = { version = "0.3.16", features = ["macros", "formatting"] }
 tokio = { version = "1", features = ["full"] }
 toml_edit = "0.15.0"

@@ -13,7 +13,8 @@ use crate::cli::{
     PackageVariant,
 };
 use crate::utils::{
-    read_release_file,
+    read_channel,
+    read_version,
     Channel,
 };
 
@@ -31,12 +32,18 @@ pub async fn package(
     kind: PackageKind,
     architecture: PackageArchitecture,
     variant: PackageVariant,
+    dry: bool,
 ) -> eyre::Result<()> {
-    let release = read_release_file()?;
+    let version = read_version();
+    let channel = read_channel();
 
-    let channel = release
-        .channel
-        .ok_or_else(|| eyre::eyre!("Can't publish a package without a channel in the release.yaml!"))?;
+    if channel == Channel::None {
+        panic!("Can't publish a package with channel set to none");
+    }
+
+    if dry {
+        panic!("not sure what you expect me to do here")
+    }
 
     let resp = Request::new_release(Method::POST, "/")
         .auth()
@@ -44,7 +51,7 @@ pub async fn package(
             channel,
             kind,
             architecture,
-            version: release.version,
+            version: version.to_string(),
             variant,
         })
         .timeout(Duration::from_secs(120)) // fly uses slow responses to smooth over deploys

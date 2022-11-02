@@ -1,91 +1,87 @@
 use fig_settings::state;
-use once_cell::sync::Lazy;
 use semver::{
     BuildMetadata,
     Prerelease,
-    Version,
 };
 
 use crate::utils::{
     gen_nightly,
-    read_release_file,
-    run,
-    sync_version,
-    write_release_file,
+    read_version,
+    run_wet,
+    update_lockfile,
+    write_channel,
+    write_version,
     Channel,
 };
-
-pub static SOURCE_BRANCH: Lazy<String> = Lazy::new(|| {
+fn source_branch() -> String {
     state::get_string("developer.release.sourceBranch")
         .ok()
         .flatten()
         .unwrap_or_else(|| "develop".into())
-});
-pub static BRANCH_PREFIX: Lazy<String> = Lazy::new(|| {
+}
+
+fn branch_prefix() -> String {
     state::get_string("developer.release.branchPrefix")
         .ok()
         .flatten()
         .unwrap_or_else(|| "".into())
-});
+}
 
-pub fn nightly() -> eyre::Result<()> {
-    run(&["git", "checkout", &SOURCE_BRANCH])?;
-    run(&["git", "pull"])?;
-    let mut release = read_release_file()?;
-    let mut version = Version::parse(&release.version)?;
+pub fn nightly(dry: bool) -> eyre::Result<()> {
+    run_wet(&["git", "checkout", &source_branch()], dry)?;
+    run_wet(&["git", "pull"], dry)?;
+    let mut version = read_version();
     version.pre = Prerelease::new(&format!("nightly.{}", gen_nightly()))?;
     version.build = BuildMetadata::EMPTY;
-    release.version = version.to_string();
-    release.channel = Some(Channel::Nightly);
-    write_release_file(&release)?;
-    sync_version(&release)?;
-    run(&[
-        "git",
-        "checkout",
-        "-b",
-        &format!("{}{}", *BRANCH_PREFIX, release.version),
-    ])?;
-    run(&["git", "add", "release.yaml"])?;
-    run(&["git", "commit", "-m", "chore: cut new nightly release"])?;
-    run(&["git", "push"])?;
+    write_version(&version);
+    write_channel(&Channel::Nightly);
+    update_lockfile()?;
+    run_wet(
+        &["git", "checkout", "-b", &format!("{}{}", branch_prefix(), version)],
+        dry,
+    )?;
+    run_wet(&["git", "add", "Cargo.toml", "Cargo.lock"], dry)?;
+    run_wet(&["git", "commit", "-m", "chore: cut new nightly release"], dry)?;
+    run_wet(&["git", "push"], dry)?;
 
     Ok(())
 }
 
-pub fn release() -> eyre::Result<()> {
+pub fn release(dry: bool) -> eyre::Result<()> {
+    let source_branch = source_branch();
+
     // create version branch
-    run(&["git", "checkout", &SOURCE_BRANCH])?;
-    run(&["git", "pull"])?;
-    let mut release = read_release_file()?;
-    let mut version = Version::parse(&release.version)?;
+    run_wet(&["git", "checkout", &source_branch], dry)?;
+    run_wet(&["git", "pull"], dry)?;
+    let mut version = read_version();
     version.pre = Prerelease::EMPTY;
     version.build = BuildMetadata::EMPTY;
     let blank_version = version.to_string();
     version.pre = Prerelease::new("beta.0")?;
     version.build = BuildMetadata::new("qa")?;
-    release.version = version.to_string();
-    release.channel = Some(Channel::Qa);
-    write_release_file(&release)?;
-    sync_version(&release)?;
-    run(&["git", "checkout", "-b", &format!("{}{blank_version}", *BRANCH_PREFIX)])?;
-    run(&["git", "add", "release.yaml"])?;
-    run(&["git", "commit", "-m", "chore: cut new release"])?;
-    run(&["git", "push"])?;
+    write_version(&version);
+    write_channel(&Channel::Qa);
+    update_lockfile()?;
+    run_wet(
+        &["git", "checkout", "-b", &format!("{}{blank_version}", branch_prefix())],
+        dry,
+    )?;
+    run_wet(&["git", "add", "Cargo.toml", "Cargo.lock"], dry)?;
+    run_wet(&["git", "commit", "-m", "chore: cut new release"], dry)?;
+    run_wet(&["git", "push"], dry)?;
 
     // bump source branch
-    run(&["git", "checkout", &SOURCE_BRANCH])?;
-    let mut release = read_release_file()?;
-    let mut version = Version::parse(&release.version)?;
+    run_wet(&["git", "checkout", &source_branch], dry)?;
+    let mut version = read_version();
     version.pre = Prerelease::new("dev")?;
     version.build = BuildMetadata::EMPTY;
     version.patch += 1;
-    release.version = version.to_string();
-    release.channel = None; // disable package uploads and ci runs
-    write_release_file(&release)?;
-    sync_version(&release)?;
-    run(&["git", "add", "release.yaml"])?;
-    run(&["git", "commit", "-m", "chore: bump version after release"])?;
-    run(&["git", "push"])?;
+    write_version(&version);
+    write_channel(&Channel::None); // disable package uploads and ci runs
+    update_lockfile()?;
+    run_wet(&["git", "add", "Cargo.toml", "Cargo.lock"], dry)?;
+    run_wet(&["git", "commit", "-m", "chore: bump version after release"], dry)?;
+    run_wet(&["git", "push"], dry)?;
 
     Ok(())
 }

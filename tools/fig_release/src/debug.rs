@@ -7,6 +7,7 @@ use fig_request::{
 use serde::Serialize;
 
 use crate::cli::DebugAction;
+use crate::utils::update_lockfile;
 
 pub async fn debug(action: DebugAction) -> eyre::Result<()> {
     let ret = match action {
@@ -41,6 +42,7 @@ pub async fn debug(action: DebugAction) -> eyre::Result<()> {
                 .text()
                 .await?
         },
+        DebugAction::UpdateLockfile => return update_lockfile(),
     };
 
     println!("{ret}");

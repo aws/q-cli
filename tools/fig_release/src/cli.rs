@@ -11,6 +11,8 @@ use serde::Serialize;
 pub struct Cli {
     #[clap(subcommand)]
     pub subcommand: Sub,
+    #[arg(short, long)]
+    pub dry: bool,
 }
 
 #[derive(Subcommand, Debug)]
@@ -108,4 +110,5 @@ pub enum DebugAction {
         #[arg(short, long)]
         base: bool,
     },
+    UpdateLockfile,
 }

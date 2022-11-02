@@ -1,10 +1,17 @@
-use std::fs::OpenOptions;
 use std::process::Command;
+use std::str::FromStr;
 
-use semver::Prerelease;
+use semver::{
+    Prerelease,
+    Version,
+};
 use serde::{
     Deserialize,
     Serialize,
+};
+use strum::{
+    Display,
+    EnumString,
 };
 use time::macros::{
     format_description,
@@ -15,35 +22,15 @@ use toml_edit::{
     value,
     Document,
 };
-
-#[derive(Deserialize, Serialize)]
-pub struct ReleaseFile {
-    pub version: String,
-    pub channel: Option<Channel>,
-    pub changelog: Vec<String>,
-}
-
-#[derive(Deserialize, Serialize)]
+#[derive(Deserialize, Serialize, EnumString, Display, PartialEq, Eq)]
 #[serde(rename_all = "snake_case")]
+#[strum(serialize_all = "snake_case")]
 pub enum Channel {
     Nightly,
     Qa,
     Beta,
     Stable,
-}
-
-pub fn read_release_file() -> eyre::Result<ReleaseFile> {
-    Ok(serde_yaml::from_reader(
-        OpenOptions::new().read(true).open("release.yaml")?,
-    )?)
-}
-
-pub fn write_release_file(release: &ReleaseFile) -> eyre::Result<()> {
-    serde_yaml::to_writer(
-        OpenOptions::new().write(true).truncate(true).open("release.yaml")?,
-        release,
-    )?;
-    Ok(())
+    None,
 }
 
 pub fn gen_nightly() -> String {
@@ -52,17 +39,28 @@ pub fn gen_nightly() -> String {
 }
 
 pub fn run(args: &[&str]) -> eyre::Result<()> {
-    print!("$ {} ", args[0]);
+    run_wet(args, false)
+}
+
+pub fn run_wet(args: &[&str], dry: bool) -> eyre::Result<()> {
+    if dry {
+        print!("~");
+    } else {
+        print!("$");
+    }
+    print!(" {} ", args[0]);
     for arg in &args[1..] {
         print!("{arg} ");
     }
     println!();
-    let status = Command::new(args[0]).args(&args[1..]).status()?;
-    if !status.success() {
-        if let Some(code) = status.code() {
-            eyre::bail!("Failed running command {}: exit code {code}", args.join(" "));
-        } else {
-            eyre::bail!("Failed running command {}", args.join(" "));
+    if !dry {
+        let status = Command::new(args[0]).args(&args[1..]).status()?;
+        if !status.success() {
+            if let Some(code) = status.code() {
+                eyre::bail!("Failed running command {}: exit code {code}", args.join(" "));
+            } else {
+                eyre::bail!("Failed running command {}", args.join(" "));
+            }
         }
     }
     Ok(())
@@ -94,15 +92,43 @@ pub fn extract_number(pre: &Prerelease) -> eyre::Result<u64> {
         .parse()?)
 }
 
-pub fn sync_version(release: &ReleaseFile) -> eyre::Result<()> {
-    let cargo_toml = std::fs::read_to_string("Cargo.toml")?;
-    let mut document = cargo_toml.parse::<Document>()?;
+fn read_manifest() -> Document {
+    std::fs::read_to_string("Cargo.toml")
+        .expect("failed reading manifest")
+        .parse()
+        .expect("failed parsing manifest")
+}
 
-    document["workspace"]["package"]["version"] = value(release.version.to_string());
+pub fn read_version() -> Version {
+    Version::parse(read_manifest()["workspace"]["package"]["version"].as_str().unwrap())
+        .expect("failed parsing manifest")
+}
 
-    std::fs::write("Cargo.toml", document.to_string())?;
+pub fn read_channel() -> Channel {
+    Channel::from_str(read_manifest()["workspace"]["metadata"]["channel"].as_str().unwrap())
+        .expect("failed parsing manifest")
+}
 
-    Ok(())
+fn modify_manifest(f: impl FnOnce(&mut Document)) {
+    let mut manifest = read_manifest();
+    f(&mut manifest);
+    std::fs::write("Cargo.toml", manifest.to_string()).expect("failed writing manifest");
+}
+
+pub fn write_version(version: &Version) {
+    modify_manifest(|manifest| {
+        manifest["workspace"]["package"]["version"] = value(version.to_string());
+    });
+}
+
+pub fn write_channel(channel: &Channel) {
+    modify_manifest(|manifest| {
+        manifest["workspace"]["metadata"]["channel"] = value(channel.to_string());
+    });
+}
+
+pub fn update_lockfile() -> eyre::Result<()> {
+    run(&["cargo", "update", "--offline", "--workspace"])
 }
 
 #[cfg(test)]

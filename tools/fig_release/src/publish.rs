@@ -41,7 +41,7 @@ struct Workflow {
     name: String,
 }
 
-pub async fn publish(build_targets: Vec<String>) -> eyre::Result<()> {
+pub async fn publish(build_targets: Vec<String>, dry: bool) -> eyre::Result<()> {
     if build_targets.is_empty() {
         eyre::bail!("Didn't specify any build targets");
     }
@@ -54,6 +54,12 @@ pub async fn publish(build_targets: Vec<String>) -> eyre::Result<()> {
     let current_branch = run_stdout(&["git", "rev-parse", "--abbrev-ref", "HEAD"])?
         .trim()
         .to_string();
+
+    if dry {
+        println!("commit_hash: {commit_hash}");
+        println!("current_branch: {current_branch}");
+        return Ok(());
+    }
 
     let resp = client
         .post("https://circleci.com/api/v2/project/github/withfig/macos/pipeline")

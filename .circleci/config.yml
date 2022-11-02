@@ -316,7 +316,6 @@ jobs:
       - require-target:
           platform: macos
       - checkout-desktop
-      - prepare-packaging
       - run:
           name: Remove gitconfig
           command: rm ~/.gitconfig
@@ -491,7 +490,6 @@ jobs:
       - require-target:
           platform: linux
       - checkout-desktop
-      - prepare-packaging
       - attach_workspace:
           at: /tmp/ws
       - package:
@@ -532,7 +530,6 @@ jobs:
           name: Install tools
           command: dnf install -y git jq rpmdevtools
       - checkout-desktop
-      - prepare-packaging
       - attach_workspace:
           at: /tmp/ws
       - package:
@@ -589,7 +586,6 @@ jobs:
       - require-target:
           platform: linux
       - checkout-desktop
-      - prepare-packaging
       - attach_workspace:
           at: /tmp/ws
       - package:
@@ -939,9 +935,3 @@ commands:
             - run:
                 name: Abort job
                 command: circleci-agent step halt
-
-  prepare-packaging:
-    steps:
-      - run:
-          name: Install YQ
-          command: pip3 install yq
