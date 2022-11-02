@@ -51,7 +51,7 @@ jobs:
     - name: Pull latest Rust DMG from repo.fig.io
       run: |
         echo "Downloading DMG from $RUST_DMG_URL"
-        curl $RUST_DMG_URL --output ./versions/fig\ 2.0.dmg
+        curl $RUST_DMG_URL --output ./versions/fig\ 2.7.2.dmg
         rm ./versions/fig@latest.dmg
     - name: "Generate Appcast"
       run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
@@ -63,7 +63,7 @@ jobs:
     - name: Commit changes
       run: |
         cd versions
-        cp "fig 2.0.dmg" fig@latest.dmg
+        cp "fig 2.7.2.dmg" fig@latest.dmg
         git add .
         git commit -m "Deploy Build $BUILD" --no-verify
         cd ..
