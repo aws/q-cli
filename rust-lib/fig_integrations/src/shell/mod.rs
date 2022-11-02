@@ -207,9 +207,9 @@ impl ShellScriptShellIntegration {
         cfg_if!(
             if #[cfg(target_os = "macos")] {
                 return match self.shell {
-                    // `test -x` checks if the file can be executed
+                    // Check if ~/.local/bin/fig is executable before eval
                     Shell::Fish => format!("test -x ~/.local/bin/fig; and eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
-                    _ => format!("eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
+                    Shell::Bash | Shell::Zsh => format!("[ -x ~/.local/bin/fig ] && eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
                 }
             } else {
                 let source_line = match self.shell {
