@@ -281,7 +281,7 @@ fn get_parent_shell() -> Result<String> {
 
 fn build_shell_command() -> Result<CommandBuilder> {
     let parent_shell = get_parent_shell()?;
-    let mut builder = CommandBuilder::new(&parent_shell);
+    let mut builder = CommandBuilder::new(parent_shell);
 
     if env::var("FIG_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
         builder.arg("--login");
@@ -619,7 +619,7 @@ fn figterm_main() -> Result<()> {
                                         };
 
                                         master.resize(pty_size)?;
-                                        let window_size = SizeInfo::new(size.rows as usize, size.cols as usize);
+                                        let window_size = SizeInfo::new(size.rows, size.cols);
                                         debug!("Window size changed: {window_size:?}");
                                         term.resize(window_size);
                                     }

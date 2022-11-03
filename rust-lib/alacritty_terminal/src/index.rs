@@ -59,7 +59,7 @@ pub struct Rect {
 
 impl Rect {
     pub const fn size(&self) -> usize {
-        (self.end.column.0 - self.start.column.0) as usize * (self.end.line.0 - self.start.line.0) as usize
+        (self.end.column.0 - self.start.column.0) * (self.end.line.0 - self.start.line.0) as usize
     }
 }
 

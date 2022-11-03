@@ -245,7 +245,7 @@ impl Credentials {
             fs::create_dir_all(&data_dir)?;
         }
 
-        let mut creds_file = File::create(&Credentials::path()?)?;
+        let mut creds_file = File::create(Credentials::path()?)?;
 
         #[cfg(unix)]
         {

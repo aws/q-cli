@@ -203,7 +203,7 @@ pub fn handle(request: &Request) -> anyhow::Result<Response> {
                 }
             }
 
-            let fallback = match fs::metadata(&path) {
+            let fallback = match fs::metadata(path) {
                 Ok(meta) => {
                     if meta.is_dir() {
                         Some("folder")

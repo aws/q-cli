@@ -230,7 +230,7 @@ fn try_parse_named(s: &str) -> Option<Color> {
     if let Ok(idx) = idx_res {
         return Some(Color {
             kind: ColorType::Named,
-            name_idx: NAMED_COLORS[idx as usize].idx,
+            name_idx: NAMED_COLORS[idx].idx,
             rgb: [0, 0, 0],
         });
     }

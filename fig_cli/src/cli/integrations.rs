@@ -131,7 +131,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             Ok(())
         },
         Integration::Ssh => {
-            let ssh_integration = SshIntegration::default()?;
+            let ssh_integration = SshIntegration::new()?;
             if ssh_integration.is_installed().await.is_err() {
                 installed = true;
                 ssh_integration.install().await.map_err(eyre::Report::from)
@@ -238,7 +238,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             Ok(())
         },
         Integration::Ssh => {
-            let ssh_integration = SshIntegration::default()?;
+            let ssh_integration = SshIntegration::new()?;
             if ssh_integration.is_installed().await.is_ok() {
                 uninstalled = true;
                 ssh_integration.uninstall().await.map_err(eyre::Report::from)
@@ -306,7 +306,7 @@ async fn status(integration: Integration) -> Result<()> {
     match integration {
         Integration::All => Err(eyre::eyre!("Cannot check status of all integrations")),
         Integration::Ssh => {
-            let ssh_integration = SshIntegration::default()?;
+            let ssh_integration = SshIntegration::new()?;
             if ssh_integration.is_installed().await.is_ok() {
                 println!("Installed")
             } else {

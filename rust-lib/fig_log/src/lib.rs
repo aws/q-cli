@@ -51,7 +51,7 @@ fn fig_log_level() -> String {
 fn create_filter_layer() -> EnvFilter {
     EnvFilter::builder()
         .with_default_directive(DEFAULT_FILTER.into())
-        .parse_lossy(&fig_log_level())
+        .parse_lossy(fig_log_level())
 }
 
 pub fn set_fig_log_level(level: String) -> Result<String> {

@@ -315,10 +315,10 @@ impl UIElement {
                     .unwrap_or(false)
             })?;
 
-            let owner_pid = get_num(&*window, kCGWindowOwnerPID)?;
-            let bounds = get_value::<CFDictionary>(&*window, kCGWindowBounds)?;
+            let owner_pid = get_num(&window, kCGWindowOwnerPID)?;
+            let bounds = get_value::<CFDictionary>(&window, kCGWindowBounds)?;
             let bounds_rect = CGRect::from_dict_representation(&bounds)?;
-            let level = get_num(&*window, kCGWindowLayer)?;
+            let level = get_num(&window, kCGWindowLayer)?;
 
             Some(CGWindowInfo {
                 owner_pid: owner_pid as u64,

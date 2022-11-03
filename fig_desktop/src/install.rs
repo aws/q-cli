@@ -241,23 +241,23 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
     if let Some(resources) = get_bundle_resource_path() {
         let source = resources.join("config");
         let dest = fig_dir.join("config");
-        copy_dir_all(&source, &dest).ok();
+        copy_dir_all(source, dest).ok();
     }
 
     if let Some(figterm_path) = get_bundle_path_for_executable("figterm") {
         let dest = bin_dir.join("figterm");
-        std::os::unix::fs::symlink(&figterm_path, &dest).ok();
+        std::os::unix::fs::symlink(figterm_path, dest).ok();
     }
 
     if let Some(fig_cli_path) = get_bundle_path_for_executable(FIG_CLI_BINARY_NAME) {
         let dest = bin_dir.join("fig");
-        std::os::unix::fs::symlink(&fig_cli_path, &dest).ok();
+        std::os::unix::fs::symlink(&fig_cli_path, dest).ok();
 
         if let Ok(home) = home_dir() {
             let local_bin = home.join(".local").join("bin");
             fs::create_dir_all(&local_bin).ok();
             let dest = local_bin.join("fig");
-            std::os::unix::fs::symlink(&fig_cli_path, &dest).ok();
+            std::os::unix::fs::symlink(&fig_cli_path, dest).ok();
         }
     }
 
@@ -326,7 +326,7 @@ impl std::fmt::Display for SystemdUserService {
 async fn launch_systemd_user_service(service: SystemdUserService) -> anyhow::Result<()> {
     use tokio::process::Command;
     let output = Command::new("systemctl")
-        .args(&["--user", "restart", service.service_name()])
+        .args(["--user", "restart", service.service_name()])
         .output()
         .await?;
     if !output.status.success() {
@@ -353,7 +353,7 @@ async fn launch_ibus() {
         info!("Launching ibus via systemd");
 
         match Command::new("systemctl")
-            .args(&["--user", "is-active", "gnome-session-initialized.target"])
+            .args(["--user", "is-active", "gnome-session-initialized.target"])
             .output()
             .await
         {

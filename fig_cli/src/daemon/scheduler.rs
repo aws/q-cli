@@ -450,7 +450,7 @@ impl Task for SendDotfilesLineCountTelemetry {
             };
             let dotfile = shell.get_config_directory().ok().and_then(|dir| {
                 let dotfile_path = dir.join(filename);
-                std::fs::read_to_string(&dotfile_path).ok()
+                std::fs::read_to_string(dotfile_path).ok()
             });
             if let Some(contents) = dotfile {
                 stats.insert(property_name.into(), get_dotfile_line_count(contents).into());
@@ -459,7 +459,7 @@ impl Task for SendDotfilesLineCountTelemetry {
             let dotfile_data: Option<DotfileData> = shell
                 .get_data_path()
                 .ok()
-                .and_then(|path| std::fs::read_to_string(&path).ok())
+                .and_then(|path| std::fs::read_to_string(path).ok())
                 .and_then(|contents| serde_json::from_str(&contents).ok());
             if let Some(data) = dotfile_data {
                 stats.insert(

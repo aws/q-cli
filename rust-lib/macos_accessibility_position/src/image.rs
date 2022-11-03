@@ -59,7 +59,7 @@ pub unsafe fn png_for_path(path: &Path) -> Option<Vec<u8>> {
         let file_path: NSString = path.to_str()?.into();
         shared.iconForFile_(file_path.to_appkit_nsstring()).0
     } else {
-        let is_dir = std::fs::metadata(&path).ok().map(|meta| meta.is_dir()).unwrap_or(false);
+        let is_dir = std::fs::metadata(path).ok().map(|meta| meta.is_dir()).unwrap_or(false);
         let file_type: NSString = if is_dir {
             NSFileTypeDirectory.into()
         } else {

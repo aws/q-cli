@@ -26,7 +26,7 @@ bitflags::bitflags! {
 
 pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
     let ssh_result = if components.contains(InstallComponents::SSH) {
-        SshIntegration::default()?.uninstall().await
+        SshIntegration::new()?.uninstall().await
     } else {
         Ok(())
     };
@@ -115,7 +115,7 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
     }
 
     if components.contains(InstallComponents::SSH) {
-        SshIntegration::default()?.install().await?;
+        SshIntegration::new()?.install().await?;
     }
 
     if components.contains(InstallComponents::DAEMON) {

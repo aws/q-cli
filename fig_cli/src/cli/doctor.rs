@@ -364,7 +364,7 @@ impl DoctorCheck for FigBinCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         let path = directories::fig_dir().map_err(eyre::Report::from)?;
-        Ok(check_file_exists(&path)?)
+        Ok(check_file_exists(path)?)
     }
 }
 
@@ -760,7 +760,7 @@ impl DoctorCheck for InsertionLockCheck {
                 reason: "Insertion lock exists".into(),
                 info: vec![],
                 fix: Some(DoctorFix::Sync(Box::new(move || {
-                    std::fs::remove_file(&insertion_lock_path)?;
+                    std::fs::remove_file(insertion_lock_path)?;
                     Ok(())
                 }))),
                 error: None,
@@ -832,11 +832,11 @@ impl DoctorCheck for DaemonCheck {
             // Check the directory is writable
             // I wish `try` was stable :(
             (|| -> Result<()> {
-                let mut file = std::fs::File::create(&launch_agents_path.join("test.txt"))
-                    .context("Could not create test file")?;
+                let mut file =
+                    std::fs::File::create(launch_agents_path.join("test.txt")).context("Could not create test file")?;
                 file.write_all(b"test").context("Could not write to test file")?;
                 file.sync_all().context("Could not sync test file")?;
-                std::fs::remove_file(&launch_agents_path.join("test.txt")).context("Could not remove test file")?;
+                std::fs::remove_file(launch_agents_path.join("test.txt")).context("Could not remove test file")?;
                 Ok(())
             })()
             .map_err(|err| DoctorError::Error {
@@ -1024,7 +1024,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             }
         }
 
-        if is_executable_in_path(&self.integration.get_shell().to_string()) {
+        if is_executable_in_path(self.integration.get_shell().to_string()) {
             DoctorCheckType::SoftCheck
         } else {
             DoctorCheckType::NoCheck
@@ -1613,7 +1613,7 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
                     .join(dir)
                     .join("extensions");
 
-                let glob_set = glob(&[extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
+                let glob_set = glob([extensions.join("withfig.fig-").to_string_lossy()]).unwrap();
 
                 let extensions = extensions.as_path();
                 if let Ok(fig_extensions) = glob_dir(&glob_set, extensions) {

@@ -150,7 +150,7 @@ pub(crate) async fn update(
 
                         let file = auth.execute_with_privileges_piped(
                             &cli_path,
-                            &[
+                            [
                                 OsStr::new("_"),
                                 OsStr::new("swap-files"),
                                 temp_bundle_path.as_os_str(),

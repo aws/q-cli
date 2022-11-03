@@ -366,7 +366,7 @@ impl InternalSubcommand {
                     _ => {
                         let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 9);
                         let tmp_filename = format!("fig-callback-{}", file_id);
-                        let tmp_path = PathBuf::from("/tmp").join(&tmp_filename);
+                        let tmp_path = PathBuf::from("/tmp").join(tmp_filename);
                         let mut tmp_file = std::fs::File::create(&tmp_path)?;
                         let mut buffer = [0u8; BUFFER_SIZE];
                         let mut stdin = std::io::stdin();
@@ -485,7 +485,7 @@ impl InternalSubcommand {
                             })() {
                                 Some((should_execute, ancestry)) => {
                                     writeln!(stdout(), "{ancestry}").ok();
-                                    exit(if should_execute { 0 } else { 1 });
+                                    exit(i32::from(!should_execute));
                                 },
                                 None => exit(1),
                             }

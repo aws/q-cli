@@ -182,7 +182,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
                 }
             } else {
                 let output = Command::new("systemctl")
-                    .args(&["--user", "start", "fig"])
+                    .args(["--user", "start", "fig"])
                     .output()?;
 
                 if !output.status.success() {

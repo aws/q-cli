@@ -86,12 +86,12 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
                     eyre::bail!("You must run with --no-confirm if unattended");
                 }
 
-                println!("");
+                println!();
                 println!("For Fig to support some terminals like Kitty, Alacritty, and Wezterm");
                 println!("you must enable our Input Method integration.");
-                println!("");
+                println!();
                 println!("To enable the integration, select \"yes\" below and then click Ok in the popup.");
-                println!("");
+                println!();
 
                 if dialoguer::Select::with_theme(&dialoguer_theme())
                     .with_prompt("Do you want to enable support for input method backed terminals?")

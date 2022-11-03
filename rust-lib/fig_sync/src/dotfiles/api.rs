@@ -147,7 +147,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
             file_opts.mode(0o600);
         }
 
-        let mut file = file_opts.open(&shell_json_path)?;
+        let mut file = file_opts.open(shell_json_path)?;
         file.write_all(&serde_json::to_vec(&dotfiles)?)?;
     }
 

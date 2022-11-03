@@ -93,8 +93,7 @@ pub async fn sync() -> Result<()> {
     ensure_telemetry(&mut settings).await?;
 
     let path = directories::settings_path()?;
-
-    let mut settings_file = std::fs::File::create(&path)?;
+    let mut settings_file = std::fs::File::create(path)?;
     let settings_json = serde_json::to_string_pretty(&settings)?;
     settings_file.write_all(settings_json.as_bytes())?;
 

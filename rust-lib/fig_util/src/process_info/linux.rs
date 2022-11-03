@@ -16,7 +16,7 @@ impl PidExt for Pid {
     }
 
     fn parent(&self) -> Option<Pid> {
-        std::fs::read_to_string(&format!("/proc/{self}/status"))
+        std::fs::read_to_string(format!("/proc/{self}/status"))
             .ok()
             .and_then(|s| {
                 s.lines()
@@ -34,7 +34,7 @@ impl PidExt for Pid {
 
 impl LinuxExt for Pid {
     fn cmdline(&self) -> Option<String> {
-        std::fs::read_to_string(&format!("/proc/{self}/cmdline"))
+        std::fs::read_to_string(format!("/proc/{self}/cmdline"))
             .ok()
             .map(|s| s.replace('\0', ""))
     }

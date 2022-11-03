@@ -64,7 +64,7 @@ impl NSStringRef {
                 let obj = *self.0 as *mut Object;
                 let bytes: *const std::os::raw::c_char = obj.UTF8String();
                 let len = obj.len();
-                let bytes = std::slice::from_raw_parts(bytes as *const u8, len as usize);
+                let bytes = std::slice::from_raw_parts(bytes as *const u8, len);
                 Some(std::str::from_utf8_unchecked(bytes))
             }
         }

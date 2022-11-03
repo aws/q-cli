@@ -46,7 +46,7 @@ impl InitSystem {
                     .unit();
 
                 if let Some(parent) = path.parent() {
-                    std::fs::create_dir_all(&parent)?;
+                    std::fs::create_dir_all(parent)?;
                 }
                 std::fs::write(&path, unit.as_bytes())?;
 

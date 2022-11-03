@@ -22,7 +22,7 @@ pub struct SshIntegration {
 }
 
 impl SshIntegration {
-    pub fn default() -> Result<Self, Error> {
+    pub fn new() -> Result<Self, Error> {
         let path = directories::home_dir()?.join(".ssh").join("config");
         Ok(SshIntegration { path })
     }

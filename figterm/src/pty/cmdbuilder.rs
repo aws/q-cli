@@ -293,7 +293,7 @@ impl CommandBuilder {
             cmd
         } else {
             let resolved = self.search_path(&self.args[0], dir)?;
-            let mut cmd = std::process::Command::new(&resolved);
+            let mut cmd = std::process::Command::new(resolved);
             cmd.arg0(&self.args[0]);
             cmd.args(&self.args[1..]);
             cmd

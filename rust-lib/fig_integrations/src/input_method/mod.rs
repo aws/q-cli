@@ -575,7 +575,7 @@ impl Integration for InputMethod {
         }
 
         // Remove symbolic link
-        fs::remove_file(&destination)?;
+        fs::remove_file(destination)?;
 
         Ok(())
     }

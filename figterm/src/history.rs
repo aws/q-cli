@@ -234,7 +234,7 @@ impl History {
             }
 
             let legacy_history_file = legacy_history_file_opts.open(
-                &[directories::fig_dir().unwrap(), "history".into()]
+                [directories::fig_dir().unwrap(), "history".into()]
                     .into_iter()
                     .collect::<PathBuf>(),
             )?;
