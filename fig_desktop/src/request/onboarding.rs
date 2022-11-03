@@ -123,7 +123,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                     tracing::debug!("creating onboarding shell file");
                     if let Ok(mut file) = tempfile::NamedTempFile::new() {
                         file.as_file().set_permissions(std::fs::Permissions::from_mode(0o0700)).ok();
-                        write!(file, r#"fig onboarding; exec $SHELL"#).ok();
+                        write!(file, r#"fig onboarding; exec /bin/bash"#).ok();
 
                         if let Err(err) = Command::new("open").args(["-b", "com.apple.Terminal"]).arg(file.path()).spawn() {
                             error!(%err, "Failed to open onboarding");
