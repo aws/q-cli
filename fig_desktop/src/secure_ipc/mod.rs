@@ -58,6 +58,7 @@ use crate::figterm::{
     FigtermSession,
     FigtermSessionId,
     FigtermState,
+    InterceptMode,
 };
 use crate::webview::notification::WebviewNotificationsState;
 use crate::EventLoopProxy;
@@ -181,6 +182,7 @@ async fn handle_secure_ipc(
                                         response_map: HashMap::new(),
                                         nonce_counter: Arc::new(AtomicU64::new(0)),
                                         on_close_tx: on_close_tx.clone(),
+                                        intercept: InterceptMode::Unlocked
                                     });
                                     debug!(
                                         "Client auth for {} accepted because of new id with secret {}",
@@ -335,6 +337,8 @@ async fn handle_commands(
     session_id: FigtermSessionId,
 ) -> Option<()> {
     while let Ok(command) = incoming.recv_async().await {
+        let mut new_intercept_mode = None;
+
         let (request, nonce_channel) = match command {
             FigtermCommand::InterceptDefault => (
                 Request::Intercept(InterceptRequest {
@@ -352,18 +356,25 @@ async fn handle_commands(
                 intercept_bound_keystrokes,
                 intercept_global_keystrokes,
                 actions,
-            } => (
-                Request::Intercept(InterceptRequest {
-                    intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
-                        intercept_request::SetFigjsIntercepts {
-                            intercept_bound_keystrokes,
-                            intercept_global_keystrokes,
-                            actions,
-                        },
-                    )),
-                }),
-                None,
-            ),
+            } => {
+                new_intercept_mode = Some(if intercept_bound_keystrokes || intercept_global_keystrokes {
+                    InterceptMode::Locked
+                } else {
+                    InterceptMode::Unlocked
+                });
+                (
+                    Request::Intercept(InterceptRequest {
+                        intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
+                            intercept_request::SetFigjsIntercepts {
+                                intercept_bound_keystrokes,
+                                intercept_global_keystrokes,
+                                actions,
+                            },
+                        )),
+                    }),
+                    None,
+                )
+            },
             FigtermCommand::InsertText {
                 insertion,
                 deletion,
@@ -431,6 +442,10 @@ async fn handle_commands(
 
         let is_insert_request = matches!(request, Request::InsertText(_));
         figterm_state.with(&session_id, |session| {
+            if let Some(new_intercept_mode) = new_intercept_mode {
+                session.intercept = new_intercept_mode;
+            }
+
             if let Some(writer) = &session.writer {
                 if writer
                     .try_send(Clientbound {

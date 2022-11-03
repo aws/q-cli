@@ -43,6 +43,7 @@ use crate::event::{
 use crate::figterm::{
     FigtermCommand,
     FigtermState,
+    InterceptMode,
 };
 use crate::platform::{
     self,
@@ -264,6 +265,17 @@ impl WindowState {
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
+                        for session in figterm_state.linked_sessions.lock().iter() {
+                            match session.intercept {
+                                InterceptMode::Locked => {
+                                    let _ = session.sender.send(FigtermCommand::InterceptDefault);
+                                },
+                                InterceptMode::Unlocked => {
+                                    let _ = session.sender.send(FigtermCommand::InterceptClear);
+                                },
+                            }
+                        }
+
                         self.webview.window().set_visible(true);
                         cfg_if::cfg_if!(
                             if #[cfg(target_os = "macos")] {

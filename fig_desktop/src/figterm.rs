@@ -186,6 +186,12 @@ impl FigtermState {
     }
 }
 
+#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+pub enum InterceptMode {
+    Locked,
+    Unlocked,
+}
+
 #[derive(Debug, Serialize)]
 pub struct FigtermSession {
     pub id: FigtermSessionId,
@@ -210,6 +216,7 @@ pub struct FigtermSession {
     pub nonce_counter: Arc<AtomicU64>,
     #[serde(skip)]
     pub on_close_tx: broadcast::Sender<()>,
+    pub intercept: InterceptMode,
 }
 
 #[derive(Debug)]
