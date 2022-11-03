@@ -28,7 +28,7 @@
   "name": "@withfig/api-bindings",
   "author": "The Fig Team",
   "dependencies": {
-    "long": "=5.2.0",
+    "long": "=5.2.1",
     "protobufjs": "=7.1.2"
   },
   "devDependencies": {
