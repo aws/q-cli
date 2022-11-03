@@ -177,7 +177,7 @@ pub async fn run_install(ignore_immediate_update: bool) {
         }
     );
 
-    // install vscode
+    // install vscode integration
     for variant in fig_integrations::vscode::variants_installed() {
         let integration = fig_integrations::vscode::VSCodeIntegration { variant };
         if integration.is_installed().await.is_err() {
@@ -187,6 +187,20 @@ pub async fn run_install(ignore_immediate_update: bool) {
             );
             if let Err(err) = integration.install().await {
                 error!(%err, "Failed installing vscode integration for variant {}", integration.variant.application_name);
+            }
+        }
+    }
+
+    // install intellij integration
+    for variant in fig_integrations::intellij::variants_installed() {
+        let integration = fig_integrations::intellij::IntelliJIntegration { variant };
+        if integration.is_installed().await.is_err() {
+            info!(
+                "Attempting to install intellij integration for variant {}",
+                integration.variant.application_name
+            );
+            if let Err(err) = integration.install().await {
+                error!(%err, "Failed installing intellij integration for variant {}", integration.variant.application_name);
             }
         }
     }

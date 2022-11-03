@@ -44,8 +44,7 @@ pub enum Integration {
     InputMethod,
     #[command(name = "vscode")]
     VSCode,
-    #[doc(hidden)]
-    #[command(name = "intellij")]
+    #[command(name = "intellij", alias = "jetbrains")]
     IntelliJ,
     #[doc(hidden)]
     All,
@@ -267,6 +266,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                             uninstalled = true;
                         }
                     }
+                    println!("Warning: VSCode integrations are automatically reinstalled on launch");
                     Ok(())
                 } else {
                     Err(eyre::eyre!("VSCode integration is only supported on macOS"))
@@ -283,6 +283,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                             uninstalled = true;
                         }
                     }
+                    println!("Warning: IntelliJ integrations are automatically reinstalled on launch");
                     Ok(())
                 } else {
                     Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
