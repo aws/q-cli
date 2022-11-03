@@ -59,14 +59,14 @@ pub enum Kind {
     Other(String),
 }
 
-#[derive(Debug, Clone, Copy, PartialEq, Eq, EnumString, Deserialize)]
+#[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, EnumString, Deserialize)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Channel {
-    Nightly,
-    Qa,
-    Beta,
     Stable,
+    Beta,
+    Qa,
+    Nightly,
 }
 
 impl Display for Channel {

@@ -2,7 +2,7 @@ export default {
   "*.swift": ["swiftlint lint --fix --quiet 2>/dev/null", "swiftlint lint"],
   "*.{rs,toml}": () => [
     "cargo +nightly fmt --check -- --color always",
-    "cargo +stable clippy --locked --color always -- -D warnings",
+    "cargo clippy --locked --color always -- -D warnings",
   ],
   "*.proto": "clang-format -n --Werror",
   "*": "typos"

@@ -94,7 +94,14 @@ impl From<fig_util::directories::DirectoryError> for Error {
 pub fn get_channel() -> Result<Channel, Error> {
     Ok(match fig_settings::state::get_string("updates.channel")? {
         Some(channel) => Channel::from_str(&channel)?,
-        None => manifest().as_ref().ok_or(Error::ManifestNotFound)?.default_channel,
+        None => {
+            let manifest_channel = manifest().as_ref().ok_or(Error::ManifestNotFound)?.default_channel;
+            if fig_settings::settings::get_bool_or("app.beta", false) {
+                manifest_channel.max(Channel::Beta)
+            } else {
+                manifest_channel
+            }
+        },
     })
 }
 

@@ -314,7 +314,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     // Init the .fig/shell directory
     std::fs::create_dir(fig_dir.join("shell")).ok();
     for integration in Shell::all()
-        .into_iter()
+        .iter()
         .flat_map(|s| s.get_script_integrations().unwrap_or_else(|_| vec![]))
     {
         if let Err(err) = integration.install().await {

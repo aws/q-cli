@@ -96,6 +96,9 @@ pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
 pub const ONBOARDING_PATH: &str = "/onboarding/welcome";
 
+pub const DASHBOARD_URL: &str = "https://desktop.fig.io";
+pub const AUTOCOMPLETE_URL: &str = "https://autocomplete.fig.io";
+
 fn map_theme(theme: &str) -> Option<Theme> {
     match theme {
         "dark" => Some(Theme::Dark),
@@ -580,8 +583,7 @@ pub fn build_dashboard(
 
     let proxy = event_loop.create_proxy();
 
-    let base_url =
-        fig_settings::settings::get_string_or("developer.mission-control.host", "https://desktop.fig.io".into());
+    let base_url = fig_settings::settings::get_string_or("developer.mission-control.host", DASHBOARD_URL.into());
 
     let url = if show_onboarding {
         format!("{base_url}{ONBOARDING_PATH}")
@@ -679,7 +681,7 @@ pub fn build_autocomplete(
         .with_web_context(web_context)
         .with_url(&fig_settings::settings::get_string_or(
             "developer.autocomplete.host",
-            "https://autocomplete.fig.io/".into(),
+            AUTOCOMPLETE_URL.into(),
         ))?
         .with_ipc_handler(move |_window, payload| {
             proxy
@@ -770,6 +772,64 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
             proxy.send_event(Event::SetTrayEnabled(enabled)).unwrap();
         }
     );
+
+    settings_watcher!(
+        "developer.mission-control.host",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = notification
+                .as_string()
+                .and_then(|s| Url::parse(&s).ok())
+                .unwrap_or_else(|| Url::parse(DASHBOARD_URL).unwrap());
+
+            debug!(%url, "Mission control host");
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    settings_watcher!(
+        "developer.autocomplete.host",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = notification
+                .as_string()
+                .and_then(|s| Url::parse(&s).ok())
+                .unwrap_or_else(|| Url::parse(AUTOCOMPLETE_URL).unwrap());
+
+            debug!(%url, "Autocomplete host");
+
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    settings_watcher!("app.beta", |_: JsonNotification, proxy: &EventLoopProxy| {
+        let proxy = proxy.clone();
+        tokio::spawn(fig_install::update(
+            Some(Box::new(move |_| {
+                proxy
+                    .send_event(Event::ShowMessageNotification {
+                        title: "Fig Update".into(),
+                        body: "Fig is updating in the background. You can continue to use Fig while it updates.".into(),
+                        parent: None,
+                    })
+                    .unwrap();
+            })),
+            fig_install::UpdateOptions {
+                ignore_rollout: true,
+                interactive: true,
+                relaunch_dashboard: true,
+            },
+        ));
+    });
 
     tokio::spawn(async move {
         let mut res = NOTIFICATION_BUS.subscribe_user_email();
