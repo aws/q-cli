@@ -1407,36 +1407,6 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
     }
 
     async fn check(&self, _: &Option<Terminal>) -> Result<(), DoctorError> {
-        // iTerm Integration
-        let integration = verify_integration("com.googlecode.iterm2")
-            .await
-            .context("Could not verify iTerm integration")?;
-        if integration != "installed!" {
-            let output = Command::new("defaults")
-                .args(["read", "com.googlecode.iterm2", "EnableAPIServer"])
-                .output();
-            match output {
-                Ok(output) => {
-                    let api_enabled = String::from_utf8_lossy(&output.stdout);
-                    if api_enabled.trim() == "0" {
-                        return Err(doctor_error!("iTerm API server is not enabled."));
-                    }
-                },
-                Err(_) => {
-                    return Err(doctor_error!("Could not get iTerm API status"));
-                },
-            }
-
-            let integration_path = directories::home_dir()
-                .context("Could not get home dir")?
-                .join("Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt");
-            if !integration_path.exists() {
-                return Err(doctor_error!("fig-iterm-integration.scpt is missing."));
-            }
-
-            return Err(doctor_error!("Unknown error with iTerm integration"));
-        }
-
         if let Some(version) = app_version("com.googlecode.iterm2") {
             if version < Version::new(3, 4, 0) {
                 return Err(doctor_error!(

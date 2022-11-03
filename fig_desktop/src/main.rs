@@ -239,6 +239,7 @@ async fn main() {
 #[cfg(target_os = "macos")]
 async fn migrate() {
     use fig_install::uninstall_terminal_integrations;
+    use fig_util::directories::home_dir;
     use macos_accessibility_position::{
         NSArrayRef,
         NSStringRef,
@@ -247,6 +248,19 @@ async fn migrate() {
     use tracing::debug;
 
     fig_settings::state::remove_value("NEW_VERSION_AVAILABLE").ok();
+
+    if let Ok(home) = home_dir() {
+        for path in &[
+            "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py",
+            ".config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py",
+            "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt",
+        ] {
+            tokio::fs::remove_file(home.join(path))
+                .await
+                .map_err(|err| warn!("Could not remove iTerm integration {path}: {err}"))
+                .ok();
+        }
+    }
 
     match fig_request::defaults::get_default("userEmail") {
         Ok(user) if user.is_empty() => {
