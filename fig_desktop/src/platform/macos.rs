@@ -743,13 +743,12 @@ impl PlatformStateImpl {
     }
 
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
-        match asset {
-            AssetSpecifier::Named(_) => None,
-            AssetSpecifier::PathBased(path) => {
-                let data = unsafe { macos_accessibility_position::image::png_for_path(path)? };
-                Some((data.into(), AssetKind::Png))
-            },
-        }
+        let data = match asset {
+            AssetSpecifier::Named(name) => unsafe { macos_accessibility_position::image::png_for_name(name)? },
+            AssetSpecifier::PathBased(path) => unsafe { macos_accessibility_position::image::png_for_path(path)? },
+        };
+
+        Some((data.into(), AssetKind::Png))
     }
 
     pub(super) fn shell() -> Cow<'static, str> {

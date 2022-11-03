@@ -18,6 +18,7 @@ use cocoa::foundation::{
     NSRect,
     NSSize,
 };
+use objc::runtime::Object;
 use objc::{
     class,
     msg_send,
@@ -53,6 +54,13 @@ pub unsafe fn resize_image(image: id, size: NSSize) -> Option<id> {
 }
 
 #[allow(clippy::missing_safety_doc)]
+pub unsafe fn png_for_name(name: &str) -> Option<Vec<u8>> {
+    let shared = NSWorkspace::sharedWorkspace();
+    let image = shared.iconForFileType_(NSString::from(name).to_appkit_nsstring()).0;
+    convert_image(image)
+}
+
+#[allow(clippy::missing_safety_doc)]
 pub unsafe fn png_for_path(path: &Path) -> Option<Vec<u8>> {
     let shared = NSWorkspace::sharedWorkspace();
     let image = if path.exists() {
@@ -68,6 +76,10 @@ pub unsafe fn png_for_path(path: &Path) -> Option<Vec<u8>> {
         shared.iconForFileType_(file_type.to_appkit_nsstring()).0
     };
 
+    convert_image(image)
+}
+
+unsafe fn convert_image(image: *mut Object) -> Option<Vec<u8>> {
     let image = resize_image(image, NSSize {
         width: 32.0,
         height: 32.0,
