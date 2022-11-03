@@ -59,7 +59,7 @@ pub async fn run_install(ignore_immediate_update: bool) {
     });
 
     #[cfg(target_os = "macos")]
-    initialize_fig_dir().ok();
+    initialize_fig_dir().await.ok();
 
     // Add any items that are only once per version
     if should_run_install_script() {
@@ -207,13 +207,14 @@ pub async fn run_install(ignore_immediate_update: bool) {
 }
 
 #[cfg(target_os = "macos")]
-pub fn initialize_fig_dir() -> anyhow::Result<()> {
+pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     use std::path::Path;
     use std::{
         fs,
         io,
     };
 
+    use fig_integrations::shell::ShellExt;
     use fig_util::consts::{
         FIG_BUNDLE_ID,
         FIG_CLI_BINARY_NAME,
@@ -227,6 +228,7 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
         create_launch_agent,
         LaunchdPlist,
     };
+    use fig_util::Shell;
     use macos_accessibility_position::bundle::{
         get_bundle_path,
         get_bundle_path_for_executable,
@@ -306,6 +308,17 @@ pub fn initialize_fig_dir() -> anyhow::Result<()> {
 
         if iterm_integration_path.exists() {
             std::fs::remove_file(&iterm_integration_path).ok();
+        }
+    }
+
+    // Init the .fig/shell directory
+    std::fs::create_dir(fig_dir.join("shell")).ok();
+    for integration in Shell::all()
+        .into_iter()
+        .flat_map(|s| s.get_script_integrations().unwrap_or_else(|_| vec![]))
+    {
+        if let Err(err) = integration.install().await {
+            error!(%err, "Failed installing shell integration {}", integration.describe());
         }
     }
 

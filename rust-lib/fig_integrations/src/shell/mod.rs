@@ -33,6 +33,12 @@ pub enum When {
     Post,
 }
 
+impl When {
+    pub fn all() -> [When; 2] {
+        [Self::Pre, Self::Post]
+    }
+}
+
 impl std::fmt::Display for When {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
@@ -42,12 +48,45 @@ impl std::fmt::Display for When {
     }
 }
 
+fn integration_file_name(dotfile_name: &str, when: &When, shell: &Shell) -> String {
+    format!(
+        "{}.{when}.{shell}",
+        Regex::new(r"^\.").unwrap().replace_all(dotfile_name, ""),
+    )
+}
+
 pub trait ShellExt {
     fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>>;
+    /// Script integrations are installed into ~/.fig/shell
+    fn get_script_integrations(&self) -> Result<Vec<ShellScriptShellIntegration>>;
     fn get_fig_integration_source(&self, when: &When) -> &'static str;
 }
 
 impl ShellExt for Shell {
+    fn get_script_integrations(&self) -> Result<Vec<ShellScriptShellIntegration>> {
+        let mut integrations = vec![];
+
+        for file in match self {
+            Shell::Bash => [".bashrc", ".bash_profile", ".bash_login", ".profile"].iter(),
+            Shell::Zsh => [".zshrc", ".zprofile"].iter(),
+            Shell::Fish => [].iter(),
+        } {
+            for when in &When::all() {
+                let path = directories::fig_dir()?
+                    .join("shell")
+                    .join(integration_file_name(file, when, self));
+
+                integrations.push(ShellScriptShellIntegration {
+                    shell: *self,
+                    when: *when,
+                    path,
+                });
+            }
+        }
+
+        Ok(integrations)
+    }
+
     fn get_shell_integrations(&self) -> Result<Vec<Box<dyn ShellIntegration>>> {
         let config_dir = self.get_config_directory()?;
 
