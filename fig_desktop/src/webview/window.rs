@@ -207,7 +207,7 @@ impl WindowState {
                     false => caret_position.y + caret_size.height + anchor.height,
                 };
 
-                #[allow(clippy::manual_clamp)]
+                #[allow(clippy::all)]
                 if let Some((_, monitor_position, monitor_size)) = &monitor_state {
                     x = x
                         .min(monitor_position.x + monitor_size.width - size.width)
