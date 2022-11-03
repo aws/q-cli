@@ -9,9 +9,11 @@ use wry::application::dpi::{
     LogicalSize,
 };
 
-use crate::event::WindowEvent;
+use crate::event::{
+    WindowEvent,
+    WindowPosition,
+};
 use crate::platform::PlatformState;
-use crate::utils::Rect;
 use crate::{
     Event,
     EventLoopProxy,
@@ -25,11 +27,13 @@ pub async fn caret_position(
     proxy
         .send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID,
-            window_event: WindowEvent::PositionRelativeToCaret {
-                caret: Rect {
-                    position: LogicalPosition::new(x, y),
-                    size: LogicalSize::new(width, height),
-                },
+            window_event: WindowEvent::UpdateWindowGeometry {
+                position: Some(WindowPosition::RelativeToCaret {
+                    caret_position: LogicalPosition::new(x, y),
+                    caret_size: LogicalSize::new(width, height),
+                }),
+                size: None,
+                anchor: None,
             },
         })
         .ok();

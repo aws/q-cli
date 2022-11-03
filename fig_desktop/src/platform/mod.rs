@@ -72,34 +72,6 @@ impl PlatformState {
         self.0.get_cursor_position()
     }
 
-    pub fn get_current_monitor_frame(&self, window: &wry::application::window::Window) -> Option<Rect> {
-        let default = || {
-            let monitor = window.current_monitor()?;
-            let scale_factor = monitor.scale_factor();
-            Some(Rect {
-                position: monitor.position().to_logical(scale_factor),
-                size: monitor.size().to_logical(scale_factor),
-            })
-        };
-
-        let cursor_position = match self.get_cursor_position() {
-            Some(cursor_position) => cursor_position.position,
-            None => return default(),
-        };
-
-        window
-            .available_monitors()
-            .map(|monitor| {
-                let scale_factor = monitor.scale_factor();
-                Rect {
-                    position: monitor.position().to_logical(scale_factor),
-                    size: monitor.size().to_logical(scale_factor),
-                }
-            })
-            .find(|bounds| bounds.contains(cursor_position))
-            .or_else(default)
-    }
-
     /// Gets the currently active window on the platform
     pub fn get_active_window(&self) -> Option<PlatformWindow> {
         self.0.get_active_window()

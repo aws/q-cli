@@ -26,6 +26,7 @@ use super::{
 use crate::event::{
     Event,
     WindowEvent,
+    WindowPosition,
 };
 use crate::figterm::FigtermState;
 use crate::webview::{
@@ -208,16 +209,11 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
-            window_event: WindowEvent::Resize {
-                size: DASHBOARD_ONBOARDING_SIZE,
+            window_event: WindowEvent::UpdateWindowGeometry {
+                position: Some(WindowPosition::Centered),
+                size: Some(DASHBOARD_ONBOARDING_SIZE),
+                anchor: None,
             },
-        })
-        .ok();
-
-    proxy
-        .send_event(Event::WindowEvent {
-            window_id: DASHBOARD_ID,
-            window_event: WindowEvent::Center,
         })
         .ok();
 

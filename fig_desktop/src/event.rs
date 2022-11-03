@@ -3,12 +3,12 @@ use std::borrow::Cow;
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
+    Position,
 };
 use wry::application::event_loop::ControlFlow;
 use wry::application::window::Theme;
 
 use crate::platform::PlatformBoundEvent;
-use crate::utils::Rect;
 use crate::webview::window::WindowId;
 
 #[allow(clippy::enum_variant_names)]
@@ -43,26 +43,6 @@ impl From<PlatformBoundEvent> for Event {
     }
 }
 
-#[derive(Debug, Clone, Copy)]
-pub enum RelativeDirection {
-    Above,
-    Below,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum ClippingBehavior {
-    // Allow window to be clipped
-    Allow,
-    // Offset window position to keep it in screen frame
-    KeepInFrame,
-}
-
-#[derive(Debug, Clone, Copy)]
-pub enum Placement {
-    Absolute,
-    RelativeTo(Rect, RelativeDirection, ClippingBehavior),
-}
-
 #[derive(Debug, Clone)]
 pub enum EmitEventName {
     Notification,
@@ -79,6 +59,16 @@ impl std::fmt::Display for EmitEventName {
     }
 }
 
+#[derive(Debug, Clone, Copy, PartialEq)]
+pub enum WindowPosition {
+    Absolute(Position),
+    Centered,
+    RelativeToCaret {
+        caret_position: LogicalPosition<f64>,
+        caret_size: LogicalSize<f64>,
+    },
+}
+
 #[derive(Debug, Clone)]
 pub enum WindowEvent {
     /// Sets the window to be enabled or disabled
@@ -90,24 +80,10 @@ pub enum WindowEvent {
     ///
     /// This is currently unimplemented blocked on https://github.com/tauri-apps/tao/issues/582
     SetTheme(Option<Theme>),
-    Reanchor {
-        position: LogicalPosition<f64>,
-    },
-    PositionRelativeToCaret {
-        caret: Rect,
-    },
-    // todo(mschrage): move direction and clipping behavior out of this struct into WindowState
-    PositionRelativeToRect {
-        rect: Rect,
-        direction: RelativeDirection,
-        /// Defines behavior when desired window position is outside of screen
-        clipping_behavior: ClippingBehavior,
-    },
-    PositionAbsolute {
-        position: LogicalPosition<f64>,
-    },
-    Resize {
-        size: LogicalSize<f64>,
+    UpdateWindowGeometry {
+        position: Option<WindowPosition>,
+        size: Option<LogicalSize<f64>>,
+        anchor: Option<LogicalSize<f64>>,
     },
     /// Hides the window
     Hide,
@@ -128,7 +104,6 @@ pub enum WindowEvent {
     },
     Devtools,
     DebugMode(bool),
-    Center,
 }
 
 impl WindowEvent {

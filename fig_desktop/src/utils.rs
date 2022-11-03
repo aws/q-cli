@@ -103,6 +103,7 @@ pub struct Rect {
     pub size: LogicalSize<f64>,
 }
 
+#[allow(dead_code)]
 impl Rect {
     pub fn left(&self) -> f64 {
         self.position.x
@@ -112,20 +113,12 @@ impl Rect {
         self.position.x + self.size.width
     }
 
-    pub fn center(&self) -> f64 {
-        self.position.x + self.size.width * 0.5
-    }
-
     pub fn top(&self) -> f64 {
         self.position.y
     }
 
     pub fn bottom(&self) -> f64 {
         self.position.y + self.size.height
-    }
-
-    pub fn middle(&self) -> f64 {
-        self.position.y + self.size.height * 0.5
     }
 
     pub fn contains(&self, point: LogicalPosition<f64>) -> bool {

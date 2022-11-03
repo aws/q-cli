@@ -54,6 +54,7 @@ use self::notification::WebviewNotificationsState;
 use crate::event::{
     Event,
     WindowEvent,
+    WindowPosition,
 };
 use crate::figterm::FigtermState;
 use crate::notification_bus::{
@@ -636,6 +637,7 @@ pub fn build_autocomplete(
         .with_visible(false)
         .with_focused(false)
         .with_window_icon(Some(utils::ICON.clone()))
+        .with_inner_size(LogicalSize::new(1.0, 1.0))
         .with_theme(*THEME);
 
     cfg_if!(
@@ -790,16 +792,11 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                     proxy
                         .send_event(Event::WindowEvent {
                             window_id: DASHBOARD_ID,
-                            window_event: WindowEvent::Resize {
-                                size: DASHBOARD_ONBOARDING_SIZE,
+                            window_event: WindowEvent::UpdateWindowGeometry {
+                                position: Some(WindowPosition::Centered),
+                                size: Some(DASHBOARD_ONBOARDING_SIZE),
+                                anchor: None,
                             },
-                        })
-                        .ok();
-
-                    proxy
-                        .send_event(Event::WindowEvent {
-                            window_id: DASHBOARD_ID,
-                            window_event: WindowEvent::Center,
                         })
                         .ok();
                 },

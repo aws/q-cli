@@ -15,7 +15,7 @@ use fig_proto::fig::{
     ServerOriginatedMessage,
 };
 use fig_proto::prost::Message;
-use parking_lot::RwLock;
+use parking_lot::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     error,
@@ -34,11 +34,9 @@ use wry::webview::{
 
 use super::notification::WebviewNotificationsState;
 use crate::event::{
-    ClippingBehavior,
     EmitEventName,
-    Placement,
-    RelativeDirection,
     WindowEvent,
+    WindowPosition,
 };
 use crate::figterm::{
     FigtermCommand,
@@ -49,6 +47,7 @@ use crate::platform::{
     self,
     PlatformState,
 };
+use crate::utils::Rect;
 use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
@@ -64,22 +63,28 @@ impl fmt::Display for WindowId {
     }
 }
 
+pub struct WindowGeometryState {
+    /// The outer position of the window by positioning scheme
+    pub position: WindowPosition,
+    /// The inner size of the window
+    pub size: LogicalSize<f64>,
+    /// The window anchor, which is added onto the final position
+    pub anchor: LogicalSize<f64>,
+}
+
 // TODO: Add state for the active terminal window
-// TODO: Switch to using LogicalPosition and LogicalSize
 pub struct WindowState {
     pub webview: WebView,
     pub context: WebContext,
     pub window_id: WindowId,
-    pub anchor: RwLock<LogicalPosition<f64>>,
-    pub outer_position: RwLock<LogicalPosition<f64>>,
-    pub inner_size: RwLock<LogicalSize<f64>>,
-    pub placement: RwLock<Placement>,
+    pub window_geometry_state: Mutex<WindowGeometryState>,
     pub enabled: AtomicBool,
 }
 
 impl WindowState {
     pub fn new(window_id: WindowId, webview: WebView, context: WebContext, enabled: bool) -> Self {
         let window = webview.window();
+
         let scale_factor = window.scale_factor();
 
         let position = webview
@@ -94,63 +99,156 @@ impl WindowState {
             webview,
             context,
             window_id,
-            anchor: RwLock::new(LogicalPosition::default()),
-            outer_position: RwLock::new(position),
-            inner_size: RwLock::new(size),
-            placement: RwLock::new(Placement::Absolute),
-            enabled: AtomicBool::new(enabled),
+            window_geometry_state: Mutex::new(WindowGeometryState {
+                position: WindowPosition::Absolute(Position::Logical(position)),
+                size,
+                anchor: LogicalSize::<f64>::default(),
+            }),
+            enabled: enabled.into(),
         }
     }
 
-    fn update_position(&self, platform_state: &PlatformState) {
-        let anchor = *self.anchor.read();
-        let outer_position = *self.outer_position.read();
-        let inner_size = *self.inner_size.read();
-        let placement = *self.placement.read();
+    fn update_position(
+        &self,
+        position: Option<WindowPosition>,
+        size: Option<LogicalSize<f64>>,
+        anchor: Option<LogicalSize<f64>>,
+        platform_state: &PlatformState,
+    ) {
+        // Lock our atomic state
+        let mut state = self.window_geometry_state.lock();
 
-        // TODO: this should be handled directly by client apps (eg. autocomplete engine) rather than being
-        // hardcoded
-        let horizontal_padding = anchor.x;
-        let vertical_padding = anchor.y + 5.0;
-
-        let monitor_frame = platform_state.get_current_monitor_frame(self.webview.window());
-
-        let x = match placement {
-            Placement::Absolute => outer_position.x,
-            Placement::RelativeTo(caret, RelativeDirection::Above | RelativeDirection::Below, clipping_behavior) => {
-                match (clipping_behavior, monitor_frame) {
-                    (ClippingBehavior::Allow, _) | (ClippingBehavior::KeepInFrame, None) => {
-                        caret.left() + horizontal_padding
-                    },
-                    (ClippingBehavior::KeepInFrame, Some(frame)) => (caret.left() + horizontal_padding)
-                        .max(frame.left())
-                        .min(frame.right() - inner_size.width),
-                }
+        // Acquire our position, size, and anchor, and update them if dirty
+        let position = match position {
+            Some(position) => {
+                state.position = position;
+                position
             },
+            None => state.position,
         };
 
-        let y = match placement {
-            Placement::Absolute => outer_position.y,
-            Placement::RelativeTo(caret, relative_direction, _) => {
-                let mut y = match relative_direction {
-                    RelativeDirection::Above => caret.top() - vertical_padding - inner_size.height,
-                    RelativeDirection::Below => caret.bottom() + vertical_padding,
+        let size = match size {
+            Some(size) => {
+                state.size = size;
+                size
+            },
+            None => state.size,
+        };
+
+        let anchor = match anchor {
+            Some(anchor) => {
+                state.anchor = anchor;
+                anchor
+            },
+            None => state.anchor,
+        };
+
+        let window = self.webview.window();
+        let monitor_state = match position {
+            WindowPosition::Absolute(_) | WindowPosition::Centered => {
+                let scale_factor = window.scale_factor();
+                window.current_monitor().map(|monitor| {
+                    let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
+                    let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
+                    (monitor, monitor_position, monitor_size)
+                })
+            },
+            WindowPosition::RelativeToCaret { caret_position, .. } => window
+                .available_monitors()
+                .find(|monitor| {
+                    let scale_factor = monitor.scale_factor();
+                    let monitor_frame = Rect {
+                        position: monitor.position().to_logical(scale_factor),
+                        size: monitor.size().to_logical(scale_factor),
+                    };
+                    monitor_frame.contains(caret_position)
+                })
+                .map(|monitor| {
+                    let scale_factor = monitor.scale_factor();
+                    let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
+                    let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
+                    (monitor, monitor_position, monitor_size)
+                }),
+        };
+
+        let position = match position {
+            WindowPosition::Absolute(position) => position,
+            WindowPosition::Centered => match monitor_state {
+                Some((_, monitor_position, monitor_size)) => Position::Logical(LogicalPosition::new(
+                    monitor_position.x + monitor_size.width * 0.5 - size.width * 0.5,
+                    monitor_position.y + monitor_size.height * 0.5 - size.height * 0.5,
+                )),
+                None => return,
+            },
+            WindowPosition::RelativeToCaret {
+                caret_position,
+                caret_size,
+            } => {
+                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
+
+                let (overflows_monitor_above, overflows_monitor_below) = match &monitor_state {
+                    Some((_, monitor_position, monitor_size)) => (
+                        monitor_position.y >= caret_position.y - max_height,
+                        monitor_position.y + monitor_size.height < caret_position.y + caret_size.height + max_height,
+                    ),
+                    None => (false, false),
                 };
 
-                if let Some(frame) = monitor_frame {
-                    y = y.max(frame.top()).min(frame.bottom() - inner_size.height)
+                let overflows_window_below = platform_state
+                    .get_active_window()
+                    .map(|window| window.rect.bottom() < max_height + caret_position.y + caret_size.height)
+                    .unwrap_or(false);
+
+                let above = !overflows_monitor_above & (overflows_monitor_below | overflows_window_below);
+
+                let mut x = caret_position.x + anchor.width;
+                let mut y = match above {
+                    true => caret_position.y - size.height - anchor.height,
+                    false => caret_position.y + caret_size.height + anchor.height,
+                };
+
+                #[allow(clippy::manual_clamp)]
+                if let Some((_, monitor_position, monitor_size)) = &monitor_state {
+                    x = x
+                        .min(monitor_position.x + monitor_size.width - size.width)
+                        .max(monitor_position.x);
+                    y = y
+                        .min(monitor_position.y + monitor_size.height - size.height)
+                        .max(monitor_position.y);
                 }
 
-                y
+                Position::Logical(LogicalPosition::new(x, y))
             },
         };
 
-        if let Err(err) = platform_state.position_window(
-            self.webview.window(),
-            &self.window_id,
-            Position::Logical(LogicalPosition { x, y }),
-        ) {
-            tracing::error!(%err, window_id =% self.window_id, "Failed to position window");
+        match platform_state.position_window(self.webview.window(), &self.window_id, position) {
+            Ok(_) => {
+                tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
+            },
+            Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
+        }
+
+        // Apply the diff to atomic state
+        cfg_if::cfg_if! {
+            if #[cfg(target_os = "linux")] {
+                if self.window_id == AUTOCOMPLETE_ID {
+                    self.webview
+                        .window()
+                        .set_min_inner_size(Some(size));
+                } else {
+                    self.webview.window().set_inner_size(size);
+                }
+            }
+            else {
+                self.webview.window().set_inner_size(size);
+            }
+        }
+
+        match platform_state.position_window(self.webview.window(), &self.window_id, position) {
+            Ok(_) => {
+                tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
+            },
+            Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
         }
     }
 
@@ -164,70 +262,8 @@ impl WindowState {
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
-            WindowEvent::Reanchor { position } => {
-                *self.anchor.write() = position;
-                self.update_position(platform_state);
-            },
-            WindowEvent::PositionAbsolute { position } => {
-                *self.placement.write() = Placement::Absolute;
-                *self.outer_position.write() = position;
-                self.update_position(platform_state);
-            },
-            WindowEvent::PositionRelativeToCaret { caret } => {
-                let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
-
-                let window = self.webview.window();
-                // todo(chay): If this is none, the autocomplete window must follow the cursor out of bounds
-                let frame = platform_state.get_current_monitor_frame(window);
-                let active_window = platform_state.get_active_window();
-
-                // TODO: these calculations do not take into account anchor offset (or default vertical padding)
-                let overflows_above = frame
-                    .map(|monitor| monitor.top() >= caret.top() - max_height)
-                    .unwrap_or(false);
-
-                let overflows_below = frame
-                    .map(|monitor| monitor.bottom() < caret.bottom() + max_height)
-                    .unwrap_or(false)
-                    | active_window
-                        .as_ref()
-                        .map(|window| window.rect.bottom() < caret.bottom() + max_height)
-                        .unwrap_or(false);
-
-                *self.placement.write() = Placement::RelativeTo(
-                    caret,
-                    match (overflows_above, overflows_below) {
-                        (false, true) => RelativeDirection::Above,
-                        _ => RelativeDirection::Below,
-                    },
-                    ClippingBehavior::KeepInFrame,
-                );
-                self.update_position(platform_state);
-            },
-            WindowEvent::PositionRelativeToRect {
-                rect,
-                direction,
-                clipping_behavior,
-            } => {
-                *self.placement.write() = Placement::RelativeTo(rect, direction, clipping_behavior);
-                self.update_position(platform_state);
-            },
-            WindowEvent::Resize { size } => {
-                *self.inner_size.write() = size;
-                self.update_position(platform_state);
-                cfg_if::cfg_if! {
-                    if #[cfg(target_os = "linux")] {
-                        if self.window_id == AUTOCOMPLETE_ID {
-                            self.webview
-                                .window()
-                                .set_min_inner_size(Some(size));
-                        } else {
-                            self.webview.window().set_inner_size(size);
-                        }
-                    } else {
-                        self.webview.window().set_inner_size(size);
-                    }
-                }
+            WindowEvent::UpdateWindowGeometry { position, size, anchor } => {
+                self.update_position(position, size, anchor, platform_state)
             },
             WindowEvent::Hide => {
                 if !self.webview.window().is_visible() {
@@ -263,6 +299,10 @@ impl WindowState {
                 }
             },
             WindowEvent::Show => {
+                if self.webview.window().is_visible() {
+                    return;
+                }
+
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
                         for session in figterm_state.linked_sessions.lock().iter() {
@@ -356,18 +396,6 @@ impl WindowState {
             },
             WindowEvent::SetEnabled(enabled) => self.set_enabled(enabled),
             WindowEvent::SetTheme(theme) => self.set_theme(theme),
-            WindowEvent::Center => {
-                let window = self.webview.window();
-                if let Some(display) = platform_state.get_current_monitor_frame(window) {
-                    let outer_size = window.outer_size().to_logical::<f64>(window.scale_factor());
-                    *self.placement.write() = Placement::Absolute;
-                    *self.outer_position.write() = LogicalPosition::new(
-                        display.center() - outer_size.width * 0.5,
-                        display.middle() - outer_size.height * 0.5,
-                    );
-                    self.update_position(platform_state);
-                }
-            },
         }
     }
 

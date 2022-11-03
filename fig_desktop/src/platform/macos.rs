@@ -86,6 +86,7 @@ use super::{
 use crate::event::{
     Event,
     WindowEvent,
+    WindowPosition,
 };
 use crate::icons::{
     AssetKind,
@@ -694,7 +695,14 @@ impl PlatformStateImpl {
                 .unwrap()
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID,
-                    window_event: WindowEvent::PositionRelativeToCaret { caret },
+                    window_event: WindowEvent::UpdateWindowGeometry {
+                        position: Some(WindowPosition::RelativeToCaret {
+                            caret_position: caret.position,
+                            caret_size: caret.size,
+                        }),
+                        size: None,
+                        anchor: None,
+                    },
                 })
                 .ok();
         }

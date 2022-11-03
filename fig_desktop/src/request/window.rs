@@ -6,10 +6,7 @@ use fig_proto::fig::{
     WindowFocusRequest,
 };
 use tracing::debug;
-use wry::application::dpi::{
-    LogicalPosition,
-    LogicalSize,
-};
+use wry::application::dpi::LogicalSize;
 
 use super::{
     RequestResult,
@@ -67,23 +64,20 @@ pub async fn position_window(
         }
     }
 
-    let size = request.size.as_ref().expect("Missing size field");
-    let anchor = request.anchor.expect("Missing anchor field");
+    let anchor = request.anchor.as_ref().expect("missing anchor field");
+    let autocomplete_padding = 5.0;
+    let size = request.size.as_ref().expect("missing size field");
 
     proxy
         .send_event(Event::WindowEvent {
             window_id: window_id.clone(),
-            window_event: WindowEvent::Resize {
-                size: LogicalSize::new(size.width.into(), size.height.into()),
-            },
-        })
-        .unwrap();
-
-    proxy
-        .send_event(Event::WindowEvent {
-            window_id: window_id.clone(),
-            window_event: WindowEvent::Reanchor {
-                position: LogicalPosition::new(anchor.x.into(), anchor.y.into()),
+            window_event: WindowEvent::UpdateWindowGeometry {
+                position: None,
+                size: Some(LogicalSize::new(size.width.into(), size.height.into())),
+                anchor: Some(LogicalSize::new(
+                    anchor.x.into(),
+                    (anchor.y + autocomplete_padding).into(),
+                )),
             },
         })
         .unwrap();

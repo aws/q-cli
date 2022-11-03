@@ -12,7 +12,11 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::event::Event;
+use crate::event::{
+    Event,
+    WindowEvent,
+    WindowPosition,
+};
 use crate::webview::DASHBOARD_INITIAL_SIZE;
 use crate::{
     EventLoopProxy,
@@ -87,16 +91,11 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
-                    window_event: crate::event::WindowEvent::Resize {
-                        size: DASHBOARD_INITIAL_SIZE,
+                    window_event: WindowEvent::UpdateWindowGeometry {
+                        position: Some(WindowPosition::Centered),
+                        size: Some(DASHBOARD_INITIAL_SIZE),
+                        anchor: None,
                     },
-                })
-                .ok();
-
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: crate::event::WindowEvent::Center,
                 })
                 .ok();
 
