@@ -203,25 +203,16 @@ pub async fn process_figterm_request(
             Ok(None)
         },
         FigtermRequest::Intercept(request) => {
-            match request.intercept_command {
-                Some(InterceptCommand::SetInterceptAll(_)) => {
-                    debug!("Set intercept all");
-                    key_interceptor.set_intercept_all(true);
-                },
-                Some(InterceptCommand::ClearIntercept(_)) => {
-                    debug!("Clear intercept");
-                    key_interceptor.reset();
-                },
-                Some(InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
-                    intercept_bound_keystrokes,
-                    intercept_global_keystrokes,
-                    actions,
-                })) => {
-                    key_interceptor.set_intercept_all(intercept_global_keystrokes);
-                    key_interceptor.set_intercept_bind(intercept_bound_keystrokes);
-                    key_interceptor.set_actions(&actions);
-                },
-                None => {},
+            if let Some(InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
+                intercept_bound_keystrokes,
+                intercept_global_keystrokes,
+                actions,
+                override_actions,
+            })) = request.intercept_command
+            {
+                key_interceptor.set_intercept_global(intercept_global_keystrokes);
+                key_interceptor.set_intercept(intercept_bound_keystrokes);
+                key_interceptor.set_actions(&actions, override_actions);
             };
             Ok(None)
         },

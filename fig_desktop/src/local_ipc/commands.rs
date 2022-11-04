@@ -28,7 +28,10 @@ use crate::event::{
     WindowEvent,
     WindowPosition,
 };
-use crate::figterm::FigtermState;
+use crate::figterm::{
+    FigtermState,
+    InterceptMode,
+};
 use crate::webview::{
     DASHBOARD_ONBOARDING_SIZE,
     ONBOARDING_PATH,
@@ -76,14 +79,16 @@ pub async fn quit(_: QuitCommand, proxy: &EventLoopProxy) -> LocalResult {
 }
 
 pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> LocalResult {
-    let (edit_buffer_string, edit_buffer_cursor, shell_context) = {
+    let (edit_buffer_string, edit_buffer_cursor, shell_context, intercept_enabled, intercept_global_enabled) = {
         match figterm_state.most_recent() {
             Some(session) => (
                 Some(session.edit_buffer.text.clone()),
                 Some(session.edit_buffer.cursor),
                 session.context.clone(),
+                Some(session.intercept == InterceptMode::Locked),
+                Some(session.intercept_global == InterceptMode::Locked),
             ),
-            None => (None, None, None),
+            None => (None, None, None, None, None),
         }
     };
 
@@ -103,6 +108,8 @@ pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> 
         edit_buffer_string,
         edit_buffer_cursor,
         shell_context,
+        intercept_enabled,
+        intercept_global_enabled,
 
         ..Default::default()
     };

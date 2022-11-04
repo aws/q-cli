@@ -596,7 +596,8 @@ impl DebugSubcommand {
 
                     let mut out = String::new();
 
-                    let edit_buffer = diagnostic.edit_buffer_string.map(|mut s| {
+                    let edit_buffer = diagnostic.edit_buffer_string.as_deref().map(|s| {
+                        let mut s = s.to_owned();
                         if let Some(index) = diagnostic.edit_buffer_cursor {
                             s.insert_str(index as usize, &"│".magenta().to_string());
                         }
@@ -619,31 +620,25 @@ impl DebugSubcommand {
 
                     writeln!(&mut out)?;
 
-                    if let Some(shell_context) = diagnostic.shell_context {
+                    if let Some(shell_context) = &diagnostic.shell_context {
                         writeln!(&mut out, "{}", "Shell Context".bold())?;
                         writeln!(&mut out, "{}", "━".repeat(term_width))?;
                         writeln!(
                             &mut out,
                             "Session ID: {}",
-                            shell_context.session_id.unwrap_or_else(|| "None".to_string())
+                            shell_context.session_id.as_deref().unwrap_or("None")
                         )?;
                         writeln!(
                             &mut out,
                             "Process Name: {}",
-                            shell_context.process_name.unwrap_or_else(|| "None".to_string())
+                            shell_context.process_name.as_deref().unwrap_or("None")
                         )?;
                         writeln!(
                             &mut out,
                             "Current Working Directory: {}",
-                            shell_context
-                                .current_working_directory
-                                .unwrap_or_else(|| "None".to_string())
+                            shell_context.current_working_directory.as_deref().unwrap_or("None")
                         )?;
-                        writeln!(
-                            &mut out,
-                            "TTY: {}",
-                            shell_context.ttys.unwrap_or_else(|| "None".to_string())
-                        )?;
+                        writeln!(&mut out, "TTY: {}", shell_context.ttys.as_deref().unwrap_or("None"))?;
                         writeln!(
                             &mut out,
                             "Preexec: {}",
@@ -653,6 +648,13 @@ impl DebugSubcommand {
                                 .unwrap_or_else(|| "None".to_string())
                         )?;
                     }
+
+                    writeln!(
+                        &mut out,
+                        "Intercept: {}, Global Intercept: {}",
+                        diagnostic.intercept_enabled(),
+                        diagnostic.intercept_global_enabled(),
+                    )?;
 
                     if *watch {
                         crossterm::queue!(

@@ -318,6 +318,8 @@ message DiagnosticsResponse {
   optional string edit_buffer_string = 23;
   optional int64 edit_buffer_cursor = 24;
   optional fig_common.ShellContext shell_context = 25;
+  optional bool intercept_enabled = 26;
+  optional bool intercept_global_enabled = 27;
 }
 
 message LogLevelResponse { optional string old_level = 1; }

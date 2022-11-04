@@ -99,6 +99,7 @@ pub struct Logger {
     log_file_name: Option<String>,
     stdout_logger: bool,
     max_file_size: Option<u64>,
+    delete_old_log_file: bool,
 }
 
 impl Logger {
@@ -118,6 +119,11 @@ impl Logger {
 
     pub fn with_max_file_size(mut self, size: u64) -> Logger {
         self.max_file_size = Some(size);
+        self
+    }
+
+    pub fn with_delete_old_log_file(mut self) -> Logger {
+        self.delete_old_log_file = true;
         self
     }
 
@@ -141,21 +147,29 @@ impl Logger {
                     fs::create_dir_all(parent)?;
                 }
 
-                if log_path.exists() {
+                if self.delete_old_log_file {
+                    fs::remove_file(&log_path).ok();
+                } else if log_path.exists() {
                     let metadata = std::fs::metadata(&log_path)?;
                     if metadata.len() > self.max_file_size.unwrap_or(DEFAULT_MAX_FILE_SIZE) {
                         std::fs::remove_file(&log_path)?;
                     }
                 }
 
-                let file = File::options().append(true).create(true).open(log_path)?;
+                let file = if self.delete_old_log_file {
+                    File::create(&log_path)?
+                } else {
+                    File::options().append(true).create(true).open(log_path)?
+                };
 
                 #[cfg(unix)]
                 {
                     use std::os::unix::fs::PermissionsExt;
-                    let mut perms = file.metadata()?.permissions();
-                    perms.set_mode(0o600);
-                    file.set_permissions(perms)?;
+                    if let Ok(metadata) = file.metadata() {
+                        let mut permissions = metadata.permissions();
+                        permissions.set_mode(0o600);
+                        file.set_permissions(permissions).ok();
+                    }
                 }
 
                 let (non_blocking, guard) = tracing_appender::non_blocking(file);

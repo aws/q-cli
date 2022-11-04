@@ -186,7 +186,7 @@ impl FigtermState {
     }
 }
 
-#[derive(Debug, Clone, Serialize, PartialEq, Eq)]
+#[derive(Debug, Clone, Copy, Serialize, PartialEq, Eq)]
 pub enum InterceptMode {
     Locked,
     Unlocked,
@@ -217,6 +217,7 @@ pub struct FigtermSession {
     #[serde(skip)]
     pub on_close_tx: broadcast::Sender<()>,
     pub intercept: InterceptMode,
+    pub intercept_global: InterceptMode,
 }
 
 #[derive(Debug)]
@@ -238,12 +239,14 @@ impl FigtermSession {
 #[allow(dead_code)]
 #[derive(Debug)]
 pub enum FigtermCommand {
-    InterceptDefault,
-    InterceptClear,
     InterceptFigJs {
-        intercept_bound_keystrokes: bool,
+        intercept_keystrokes: bool,
         intercept_global_keystrokes: bool,
         actions: Vec<fig_proto::figterm::Action>,
+    },
+    InterceptUpdate {
+        intercept_keystrokes: InterceptMode,
+        intercept_global_keystrokes: InterceptMode,
     },
     InsertText {
         insertion: Option<String>,

@@ -5,6 +5,7 @@ use fig_settings::keybindings::{
     KeyBinding,
     KeyBindings,
 };
+use once_cell::sync::Lazy;
 use tracing::trace;
 
 use crate::input::{
@@ -12,6 +13,14 @@ use crate::input::{
     KeyEvent,
     Modifiers,
 };
+
+// TODO: remove hardcoded list of global actions and use `availability`
+const GLOBAL_ACTIONS: &[&str] = &["toggleAutocomplete", "showAutocomplete"];
+
+const IGNORE_ACTION: &str = "ignore";
+
+static ONLY_SHOW_ON_TAB: Lazy<bool> =
+    Lazy::new(|| fig_settings::settings::get_bool_or("autocomplete.onlyShowOnTab", false));
 
 pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
     let text = text.as_ref();
@@ -27,7 +36,7 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
                 modifiers |= match modifier_txt {
                     "ctrl" | "control" => Modifiers::CTRL,
                     "shift" => Modifiers::SHIFT,
-                    "alt" => Modifiers::ALT,
+                    "alt" | "option" => Modifiers::ALT,
                     "meta" | "command" => Modifiers::META,
                     _ => Modifiers::NONE,
                 };
@@ -78,8 +87,11 @@ pub fn key_from_text(text: impl AsRef<str>) -> Option<KeyEvent> {
 
 #[derive(Debug, Clone, Default)]
 pub struct KeyInterceptor {
-    intercept_all: bool,
-    intercept_bind: bool,
+    intercept_global: bool,
+    intercept: bool,
+
+    // TODO: this should be based on `availability`
+    _global_actions: Vec<Action>,
 
     mappings: DashMap<KeyEvent, String, fnv::FnvBuildHasher>,
 }
@@ -99,18 +111,20 @@ impl KeyInterceptor {
         Ok(())
     }
 
-    pub fn set_intercept_all(&mut self, intercept_all: bool) {
-        trace!("Setting intercept all to {intercept_all}");
-        self.intercept_all = intercept_all;
+    pub fn set_intercept_global(&mut self, intercept_global: bool) {
+        trace!("Setting intercept global to {intercept_global}");
+        self.intercept_global = intercept_global;
     }
 
-    pub fn set_intercept_bind(&mut self, intercept_bind: bool) {
-        trace!("Setting intercept bind to {intercept_bind}");
-        self.intercept_bind = intercept_bind;
+    pub fn set_intercept(&mut self, intercept: bool) {
+        trace!("Setting intercept to {intercept}");
+        self.intercept = intercept;
     }
 
-    pub fn set_actions(&mut self, actions: &[Action]) {
-        self.mappings.clear();
+    pub fn set_actions(&mut self, actions: &[Action], override_actions: bool) {
+        if override_actions {
+            self.mappings.clear();
+        }
 
         for Action { identifier, bindings } in actions {
             for binding in bindings {
@@ -166,17 +180,34 @@ impl KeyInterceptor {
 
     pub fn reset(&mut self) {
         trace!("Resetting key interceptor");
-        self.intercept_all = false;
-        self.intercept_bind = false;
+        self.intercept_global = false;
+        self.intercept = false;
     }
 
     pub fn intercept_key(&self, key_event: &KeyEvent) -> Option<String> {
         trace!(?key_event, "Intercepting key");
-        if self.intercept_all || self.intercept_bind {
-            if let Some(action) = self.mappings.get(key_event) {
-                return Some(action.value().to_string());
-            }
+
+        match (self.intercept_global, self.intercept) {
+            (true, false) => {
+                // TODO: only show on tab should be encoded in AE
+                if key_event.key == KeyCode::Tab && *ONLY_SHOW_ON_TAB {
+                    Some("showAutocomplete".into())
+                } else {
+                    match self.mappings.get(key_event) {
+                        Some(action) if action.value() == IGNORE_ACTION => None,
+                        Some(action) if GLOBAL_ACTIONS.contains(&action.value().as_str()) => {
+                            Some(action.value().clone())
+                        },
+                        _ => None,
+                    }
+                }
+            },
+            (_, true) => match self.mappings.get(key_event) {
+                Some(action) if action.value() == IGNORE_ACTION => None,
+                Some(action) => Some(action.value().to_string()),
+                None => None,
+            },
+            _ => None,
         }
-        None
     }
 }

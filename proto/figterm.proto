@@ -32,20 +32,20 @@ message Action {
 // Intercept command
 // Used to set which input is intercepted by figterm
 message InterceptRequest {
-  reserved 1, 3, 4;
+  reserved 1 to 5;
 
   message SetFigjsIntercepts {
     bool intercept_bound_keystrokes = 1;
     bool intercept_global_keystrokes = 2;
     repeated Action actions = 3;
+    // If true then figterm will clear the current action bindings and set the
+    // bindings to the bindings in the actions field, otherwise it will append
+    // if there are any new bindings
+    bool override_actions = 4;
   }
 
   // The intercept command to execute
   oneof intercept_command {
-    // Clear figterm intercepts
-    google.protobuf.Empty clear_intercept = 2;
-    // Set figterm to intercept default keys
-    google.protobuf.Empty set_intercept_all = 5;
     // Set figterm to intercept keys according to the FigJs interface
     SetFigjsIntercepts set_figjs_intercepts = 6;
   }

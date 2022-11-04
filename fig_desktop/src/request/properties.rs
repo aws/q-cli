@@ -58,13 +58,13 @@ pub fn update(
             })
         })
         .chain(key_bindings)
-        .collect();
+        .collect::<Vec<_>>();
 
     match session_data {
         Some((session_sender, session_id)) => {
             if let Err(err) = session_sender.send(FigtermCommand::InterceptFigJs {
-                intercept_bound_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
-                intercept_global_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
+                intercept_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
+                intercept_global_keystrokes: request.intercept_global_keystrokes.unwrap_or_default(),
                 actions,
             }) {
                 error!("Failed sending command to figterm session {session_id}: {err}");

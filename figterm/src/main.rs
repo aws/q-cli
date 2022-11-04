@@ -418,10 +418,21 @@ fn figterm_main() -> Result<()> {
 
     let pty_name = pty.slave.get_name().unwrap_or_else(|| session_id.clone());
 
-    let _logger_guard = fig_log::Logger::new()
+    let _logger_guard = match fig_log::Logger::new()
         .with_file(format!("figterm{pty_name}.log"))
+        .with_delete_old_log_file()
         .init()
-        .context("Failed to init logger")?;
+        .context("Failed to init logger")
+    {
+        Ok(logger_guard) => Some(logger_guard),
+        Err(err) => {
+            if !fig_settings::state::get_bool_or("figterm.suppress_log_error", false) {
+                let id = capture_anyhow(&err);
+                eprintln!("Fig failed to init logger ({id}): {err:?}");
+            }
+            None
+        },
+    };
 
     logger::stdio_debug_log(format!("pty name: {pty_name}"));
     logger::stdio_debug_log("Forking child shell process");
@@ -549,8 +560,12 @@ fn figterm_main() -> Result<()> {
                             for event in events {
                                 match event {
                                     Ok((raw, InputEvent::Key(event))) => {
-                                        info!("Got key, {event:?}, {raw:?}");
-                                        if ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                                        // Do not do most stuff during not preexec since that means a command is running
+                                        let preexec = term.shell_state().preexec;
+
+                                        debug!(?event, ?raw, %preexec,  "Got key event");
+
+                                        if !preexec && ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                             if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
                                                 let buffer = buffer.trim();
                                                 if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {
@@ -575,7 +590,7 @@ fn figterm_main() -> Result<()> {
                                             }
                                         }
 
-                                        if lints_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                                        if !preexec && lints_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                             if let Some(TextBuffer { buffer, .. }) = term.get_current_buffer() {
                                                 fig_lint(buffer.trim()).await;
                                             }
@@ -587,25 +602,35 @@ fn figterm_main() -> Result<()> {
                                                 .map(|s| s.into_bytes().into())
                                         });
 
-                                        if let Some(action) = key_interceptor.intercept_key(&event) {
-                                            debug!("Intercepted action: {action:?}");
-                                            let s = raw.clone()
-                                                .and_then(|b| String::from_utf8(b.to_vec()).ok())
-                                                .unwrap_or_default();
-                                            let context = shell_state_to_context(term.shell_state());
-                                            let hook = fig_proto::secure_hooks::new_intercepted_key_hook(context, action.to_string(), s);
-                                            secure_sender.send(hook_to_message(hook)).unwrap();
+                                        let handled_action = if !preexec {
+                                            if let Some(action) = key_interceptor.intercept_key(&event) {
+                                                debug!(?action, "Intercepted action");
+                                                let s = raw.clone()
+                                                    .and_then(|b| String::from_utf8(b.to_vec()).ok())
+                                                    .unwrap_or_default();
+                                                let context = shell_state_to_context(term.shell_state());
+                                                let hook = fig_proto::secure_hooks::new_intercepted_key_hook(context, action.to_string(), s);
+                                                secure_sender.send(hook_to_message(hook)).unwrap();
 
-                                            if event.key == KeyCode::Escape {
-                                                key_interceptor.reset();
+                                                if event.key == KeyCode::Escape {
+                                                    key_interceptor.reset();
+                                                }
+                                                true
+                                            } else {
+                                                false
                                             }
-                                        } else if let Some(bytes) = raw {
-                                            if (event.key == KeyCode::Char('c') || event.key == KeyCode::Char('d'))
-                                                && event.modifiers == Modifiers::CTRL {
-                                                key_interceptor.reset();
-                                            }
+                                        } else {
+                                            false
+                                        };
 
-                                            write_buffer.extend(&bytes);
+                                        if !handled_action {
+                                            if let Some(bytes) = raw {
+                                                if (event.key == KeyCode::Char('c') || event.key == KeyCode::Char('d'))
+                                                    && event.modifiers == Modifiers::CTRL {
+                                                    key_interceptor.reset();
+                                                }
+                                                write_buffer.extend(&bytes);
+                                            }
                                         }
                                     }
                                     Ok((_, InputEvent::Resized)) => {

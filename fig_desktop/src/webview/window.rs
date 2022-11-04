@@ -277,7 +277,10 @@ impl WindowState {
 
                 if self.window_id == AUTOCOMPLETE_ID {
                     for session in figterm_state.linked_sessions.lock().iter() {
-                        let _ = session.sender.send(FigtermCommand::InterceptClear);
+                        let _ = session.sender.send(FigtermCommand::InterceptUpdate {
+                            intercept_keystrokes: InterceptMode::Unlocked,
+                            intercept_global_keystrokes: session.intercept_global,
+                        });
                     }
 
                     #[cfg(not(target_os = "linux"))]
@@ -306,14 +309,10 @@ impl WindowState {
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
                         for session in figterm_state.linked_sessions.lock().iter() {
-                            match session.intercept {
-                                InterceptMode::Locked => {
-                                    let _ = session.sender.send(FigtermCommand::InterceptDefault);
-                                },
-                                InterceptMode::Unlocked => {
-                                    let _ = session.sender.send(FigtermCommand::InterceptClear);
-                                },
-                            }
+                            let _ = session.sender.send(FigtermCommand::InterceptUpdate {
+                                intercept_keystrokes: session.intercept,
+                                intercept_global_keystrokes: session.intercept_global,
+                            });
                         }
 
                         self.webview.window().set_visible(true);

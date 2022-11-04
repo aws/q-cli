@@ -182,7 +182,8 @@ async fn handle_secure_ipc(
                                         response_map: HashMap::new(),
                                         nonce_counter: Arc::new(AtomicU64::new(0)),
                                         on_close_tx: on_close_tx.clone(),
-                                        intercept: InterceptMode::Unlocked
+                                        intercept: InterceptMode::Unlocked,
+                                        intercept_global: InterceptMode::Unlocked,
                                     });
                                     debug!(
                                         "Client auth for {} accepted because of new id with secret {}",
@@ -338,43 +339,56 @@ async fn handle_commands(
 ) -> Option<()> {
     while let Ok(command) = incoming.recv_async().await {
         let mut new_intercept_mode = None;
+        let mut new_intercept_global_mode = None;
 
         let (request, nonce_channel) = match command {
-            FigtermCommand::InterceptDefault => (
-                Request::Intercept(InterceptRequest {
-                    intercept_command: Some(intercept_request::InterceptCommand::SetInterceptAll(())),
-                }),
-                None,
-            ),
-            FigtermCommand::InterceptClear => (
-                Request::Intercept(InterceptRequest {
-                    intercept_command: Some(intercept_request::InterceptCommand::ClearIntercept(())),
-                }),
-                None,
-            ),
             FigtermCommand::InterceptFigJs {
-                intercept_bound_keystrokes,
+                intercept_keystrokes,
                 intercept_global_keystrokes,
                 actions,
             } => {
-                new_intercept_mode = Some(if intercept_bound_keystrokes || intercept_global_keystrokes {
+                new_intercept_mode = Some(if intercept_keystrokes {
                     InterceptMode::Locked
                 } else {
                     InterceptMode::Unlocked
                 });
+
+                new_intercept_global_mode = Some(if intercept_global_keystrokes {
+                    InterceptMode::Locked
+                } else {
+                    InterceptMode::Unlocked
+                });
+
                 (
                     Request::Intercept(InterceptRequest {
                         intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
                             intercept_request::SetFigjsIntercepts {
-                                intercept_bound_keystrokes,
+                                intercept_bound_keystrokes: intercept_keystrokes,
                                 intercept_global_keystrokes,
                                 actions,
+                                override_actions: true,
                             },
                         )),
                     }),
                     None,
                 )
             },
+            FigtermCommand::InterceptUpdate {
+                intercept_keystrokes,
+                intercept_global_keystrokes,
+            } => (
+                Request::Intercept(InterceptRequest {
+                    intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
+                        intercept_request::SetFigjsIntercepts {
+                            intercept_bound_keystrokes: intercept_keystrokes == InterceptMode::Locked,
+                            intercept_global_keystrokes: intercept_global_keystrokes == InterceptMode::Locked,
+                            actions: vec![],
+                            override_actions: false,
+                        },
+                    )),
+                }),
+                None,
+            ),
             FigtermCommand::InsertText {
                 insertion,
                 deletion,
@@ -444,6 +458,10 @@ async fn handle_commands(
         figterm_state.with(&session_id, |session| {
             if let Some(new_intercept_mode) = new_intercept_mode {
                 session.intercept = new_intercept_mode;
+            }
+
+            if let Some(new_intercept_global_mode) = new_intercept_global_mode {
+                session.intercept_global = new_intercept_global_mode;
             }
 
             if let Some(writer) = &session.writer {
