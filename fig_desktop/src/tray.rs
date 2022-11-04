@@ -92,10 +92,8 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                     Some(Box::new(move |_| {
                         proxy_a
                             .send_event(Event::ShowMessageNotification {
-                                title: "Fig Update".into(),
-                                body:
-                                    "Fig is updating in the background. You can continue to use Fig while it updates."
-                                        .into(),
+                                title: "Fig is updating in the background".into(),
+                                body: "You can continue to use Fig while it updates".into(),
                                 parent: None,
                             })
                             .unwrap();
@@ -113,9 +111,8 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                         // Didn't update, show a notification
                         proxy_b
                             .send_event(Event::ShowMessageNotification {
-                                title: "Fig Update".into(),
-                                body: concat!("Fig is already up to date. Version (", env!("CARGO_PKG_VERSION"), ")")
-                                    .into(),
+                                title: "Fig is already up to date".into(),
+                                body: concat!("Version (", env!("CARGO_PKG_VERSION"), ")").into(),
                                 parent: None,
                             })
                             .unwrap();
@@ -124,8 +121,8 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                         // Error updating, show a notification
                         proxy_b
                             .send_event(Event::ShowMessageNotification {
-                                title: "Fig Update".into(),
-                                body: format!("Error updating Fig: {err}").into(),
+                                title: "Error Updating Fig".into(),
+                                body: err.to_string().into(),
                                 parent: None,
                             })
                             .unwrap();

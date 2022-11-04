@@ -80,6 +80,14 @@ pub type EventLoopWindowTarget = WryEventLoopWindowTarget<Event>;
 async fn main() {
     let cli = cli::Cli::parse();
 
+    if let Err(err) = fig_settings::settings::init_global() {
+        error!(%err, "failed to init global settings");
+    }
+
+    if let Err(err) = fig_settings::state::init_global() {
+        error!(%err, "failed to init global state");
+    }
+
     let _logger_guard = Logger::new()
         .with_stdout()
         .with_file("fig_desktop.log")

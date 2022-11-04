@@ -6,8 +6,8 @@ use std::time::Duration;
 
 use auth::get_token;
 use bytes::Bytes;
-use fig_settings::{
-    api_host,
+use fig_settings::api::{
+    host,
     release_host,
 };
 pub use reqwest;
@@ -117,7 +117,7 @@ pub struct Request<A: Auth> {
 
 impl Request<NoAuth> {
     pub fn new(method: Method, endpoint: impl AsRef<str>) -> Self {
-        Self::new_with_host(api_host(), method, endpoint)
+        Self::new_with_host(host(), method, endpoint)
     }
 
     pub fn new_with_host(mut host: Url, method: Method, endpoint: impl AsRef<str>) -> Self {

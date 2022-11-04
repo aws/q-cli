@@ -7,17 +7,18 @@ use fig_proto::fig::{
     SettingsChangedNotification,
 };
 use fig_request::auth::Credentials;
+use fig_settings::JsonStore;
 use fig_util::directories;
 use notify::{
     RecursiveMode,
     Watcher,
 };
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
 use serde_json::{
     Map,
     Value,
 };
+use tokio::sync::Mutex;
 use tracing::{
     debug,
     error,
@@ -29,22 +30,10 @@ use crate::notification_bus::NOTIFICATION_BUS;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::EventLoopProxy;
 
-static SETTINGS: Lazy<Mutex<Map<String, Value>>> =
-    Lazy::new(|| Mutex::new(fig_settings::settings::get_map().unwrap_or_default()));
-
-static STATE: Lazy<Mutex<Map<String, Value>>> =
-    Lazy::new(|| Mutex::new(fig_settings::state::get_map().unwrap_or_default()));
-
 static CREDENTIALS: Lazy<Mutex<Credentials>> =
     Lazy::new(|| Mutex::new(fig_request::auth::Credentials::load_credentials().unwrap_or_default()));
 
 pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsState>, proxy: EventLoopProxy) {
-    // We need to initialize the settings and state here because the diffing logic depends it
-    {
-        let _ = *SETTINGS.lock();
-        let _ = *STATE.lock();
-    }
-
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
     let mut watcher = notify::recommended_watcher(move |res| match res {
@@ -134,7 +123,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
             if let Some(ref settings_path) = settings_path {
                 if event.paths.contains(settings_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        match fig_settings::settings::get_map() {
+                        match fig_settings::Settings::load_from_file() {
                             Ok(settings) => {
                                 notifications_state
                                     .broadcast_notification_all(
@@ -151,8 +140,10 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                     .await
                                     .unwrap();
 
+                                let mut mem_settings = fig_settings::Settings::load().expect("Failed to load state");
+
                                 json_map_diff(
-                                    &SETTINGS.lock(),
+                                    &mem_settings.map(),
                                     &settings,
                                     |key, value| {
                                         debug!(%key, %value, "Setting added");
@@ -168,7 +159,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                     },
                                 );
 
-                                *SETTINGS.lock() = settings;
+                                *mem_settings.map_mut() = settings;
                             },
                             Err(err) => error!(%err, "Failed to get settings"),
                         }
@@ -179,7 +170,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
             if let Some(ref state_path) = state_path {
                 if event.paths.contains(state_path) {
                     if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        match fig_settings::state::get_map() {
+                        match fig_settings::State::load_from_file() {
                             Ok(state) => {
                                 notifications_state
                                     .broadcast_notification_all(
@@ -196,8 +187,10 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                     .await
                                     .unwrap();
 
+                                let mut mem_state = fig_settings::State::load().expect("Failed to load state");
+
                                 json_map_diff(
-                                    &STATE.lock(),
+                                    &mem_state.map(),
                                     &state,
                                     |key, value| {
                                         debug!(%key, %value, "State added");
@@ -213,7 +206,7 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                     },
                                 );
 
-                                *STATE.lock() = state;
+                                *mem_state.map_mut() = state;
                             },
                             Err(err) => error!(%err, "Failed to get state"),
                         }
@@ -227,11 +220,11 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                         event.kind
                     {
                         let creds = fig_request::auth::Credentials::load_credentials().unwrap_or_default();
-                        if creds.email != CREDENTIALS.lock().email {
+                        if creds.email != CREDENTIALS.lock().await.email {
                             NOTIFICATION_BUS.send_user_email(creds.email.clone());
                             proxy.send_event(Event::ReloadCredentials).ok();
                         }
-                        *CREDENTIALS.lock() = creds;
+                        *CREDENTIALS.lock().await = creds;
                     }
                 }
             }

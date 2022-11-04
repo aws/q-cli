@@ -11,6 +11,7 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::restart_settings_listener;
+use fig_settings::JsonStore;
 use fig_util::directories;
 use serde_json::json;
 
@@ -79,17 +80,16 @@ impl LocalStateArgs {
                 }
             },
             Some(LocalStateSubcommand::All { format }) => {
-                let map = fig_settings::state::local_settings()?.inner;
-
+                let state = fig_settings::State::load()?;
                 match format {
                     OutputFormat::Plain => {
-                        for (key, value) in map {
+                        for (key, value) in &*state.map() {
                             println!("{key} = {value}");
                         }
                     },
-                    OutputFormat::Json => println!("{}", serde_json::to_string(&map)?),
+                    OutputFormat::Json => println!("{}", serde_json::to_string(&*state.map())?),
                     OutputFormat::JsonPretty => {
-                        println!("{}", serde_json::to_string_pretty(&map)?)
+                        println!("{}", serde_json::to_string_pretty(&*state.map())?)
                     },
                 }
 

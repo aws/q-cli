@@ -44,6 +44,7 @@ use fig_proto::daemon::diagnostic_response::{
     websocket_status,
 };
 use fig_proto::local::DiagnosticsResponse;
+use fig_settings::JsonStore;
 use fig_telemetry::{
     TrackEventType,
     TrackSource,
@@ -480,7 +481,7 @@ impl DoctorCheck for SettingsCorruptionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        fig_settings::settings::local_settings().map_err(|_| DoctorError::Error {
+        fig_settings::Settings::load().map_err(|_| DoctorError::Error {
             reason: "Fig settings file is corrupted".into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {
@@ -490,7 +491,7 @@ impl DoctorCheck for SettingsCorruptionCheck {
             error: None,
         })?;
 
-        fig_settings::state::local_settings().map_err(|_| DoctorError::Error {
+        fig_settings::State::load().map_err(|_| DoctorError::Error {
             reason: "Fig state file is corrupted".into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {

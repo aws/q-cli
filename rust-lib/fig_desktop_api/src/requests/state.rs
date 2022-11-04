@@ -4,8 +4,11 @@ use fig_proto::fig::{
     GetLocalStateResponse,
     UpdateLocalStateRequest,
 };
-use fig_settings::state;
-use serde_json::Value;
+use fig_settings::{
+    state,
+    JsonStore,
+    State,
+};
 
 use super::{
     RequestResult,
@@ -13,17 +16,18 @@ use super::{
 };
 
 pub async fn get(request: GetLocalStateRequest) -> RequestResult {
-    let value = match request.key {
-        Some(key) => state::get_value(&key)
-            .map_err(|err| format!("Failed getting settings value for {key}: {err}"))?
-            .ok_or_else(|| format!("No value for key '{key}'"))?,
-        None => state::local_settings()
-            .map(|s| Value::Object(s.inner))
-            .map_err(|err| format!("Failed getting settings: {err}"))?,
+    let res = match request.key {
+        Some(key) => serde_json::to_string(
+            &state::get_value(&key)
+                .map_err(|err| format!("Failed getting state value for {key}: {err}"))?
+                .ok_or_else(|| format!("No value for key '{key}'"))?,
+        ),
+        None => State::load()
+            .map(|s| serde_json::to_string(&*s.map()))
+            .map_err(|err| format!("Failed getting state: {err}"))?,
     };
 
-    let json_blob =
-        serde_json::to_string(&value).map_err(|err| format!("Could not convert value for key to JSON: {err}"))?;
+    let json_blob = res.map_err(|err| format!("Could not convert value for key to JSON: {err}"))?;
 
     let response = ServerOriginatedSubMessage::GetLocalStateResponse(GetLocalStateResponse {
         json_blob: Some(json_blob),

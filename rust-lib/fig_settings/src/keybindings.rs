@@ -5,7 +5,11 @@ use serde::{
     Serialize,
 };
 
-use crate::Error;
+use crate::{
+    Error,
+    JsonStore,
+    Settings,
+};
 
 #[derive(Debug, Clone, Copy, PartialEq, Eq, Hash, Serialize, Deserialize)]
 #[serde(rename_all = "SCREAMING_SNAKE_CASE")]
@@ -59,7 +63,7 @@ impl KeyBindings {
     }
 
     fn load_from_json_map(
-        json_map: serde_json::Map<String, serde_json::Value>,
+        json_map: &serde_json::Map<String, serde_json::Value>,
         product_namespace: impl Display,
     ) -> Self {
         let key_bindings = json_map
@@ -79,8 +83,9 @@ impl KeyBindings {
     }
 
     pub fn load_from_settings(product_namespace: impl Display) -> Result<Self, Error> {
-        let settings = crate::settings::local_settings()?;
-        Ok(Self::load_from_json_map(settings.inner, product_namespace))
+        let settings = Settings::load()?;
+        let map = settings.map();
+        Ok(Self::load_from_json_map(&map, product_namespace))
     }
 }
 
@@ -120,7 +125,7 @@ mod test {
         .unwrap()
         .clone();
 
-        let json = KeyBindings::load_from_json_map(json_map, "autocomplete");
+        let json = KeyBindings::load_from_json_map(&json_map, "autocomplete");
 
         assert_eq!(json.0.len(), 4);
 

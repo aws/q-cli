@@ -15,10 +15,8 @@ use fig_request::auth::get_email;
 use fig_request::reqwest::StatusCode;
 use fig_request::reqwest_client::client_config;
 use fig_request::Request;
-use fig_settings::{
-    settings,
-    ws_host,
-};
+use fig_settings::api::ws_host;
+use fig_settings::settings;
 use fig_util::directories;
 use fig_util::system_info::get_system_id;
 use serde::{

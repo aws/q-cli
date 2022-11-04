@@ -4,8 +4,11 @@ use fig_proto::fig::{
     GetSettingsPropertyResponse,
     UpdateSettingsPropertyRequest,
 };
-use fig_settings::settings;
-use serde_json::Value;
+use fig_settings::{
+    settings,
+    JsonStore,
+    Settings,
+};
 
 use super::{
     RequestResult,
@@ -13,17 +16,18 @@ use super::{
 };
 
 pub async fn get(request: GetSettingsPropertyRequest) -> RequestResult {
-    let value = match request.key {
-        Some(key) => settings::get_value(&key)
-            .map_err(|err| format!("Failed getting settings value for {key}: {err}"))?
-            .ok_or_else(|| format!("No value for key '{key}'"))?,
-        None => settings::local_settings()
-            .map(|s| Value::Object(s.inner))
-            .map_err(|_| "Failed getting settings".to_string())?,
+    let res = match request.key {
+        Some(key) => serde_json::to_string(
+            &settings::get_value(&key)
+                .map_err(|err| format!("Failed getting settings value for {key}: {err}"))?
+                .ok_or_else(|| format!("No value for key '{key}'"))?,
+        ),
+        None => Settings::load()
+            .map(|s| serde_json::to_string(&*s.map()))
+            .map_err(|err| format!("Failed getting settings: {err}"))?,
     };
 
-    let json_blob =
-        serde_json::to_string(&value).map_err(|err| format!("Could not convert value for key to JSON: {err}"))?;
+    let json_blob = res.map_err(|err| format!("Could not convert value for key to JSON: {err}"))?;
 
     let response = ServerOriginatedSubMessage::GetSettingsPropertyResponse(GetSettingsPropertyResponse {
         json_blob: Some(json_blob),

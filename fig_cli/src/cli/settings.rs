@@ -14,6 +14,7 @@ use fig_ipc::local::{
 };
 use fig_proto::local::UiElement;
 use fig_request::auth::is_logged_in;
+use fig_settings::JsonStore;
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
@@ -111,7 +112,7 @@ impl SettingsArgs {
                 let settings = if remote {
                     settings::get().await?.settings
                 } else {
-                    fig_settings::settings::local_settings()?.inner
+                    fig_settings::Settings::load()?.map().clone()
                 };
 
                 match format {
@@ -158,7 +159,8 @@ impl SettingsArgs {
                     },
                     (None, true) => {
                         let glob = Glob::new(key).context("Could not create glob")?.compile_matcher();
-                        let map = fig_settings::settings::get_map()?;
+                        let settings = fig_settings::Settings::load()?;
+                        let map = settings.map();
                         let keys_to_remove = map.keys().filter(|key| glob.is_match(key)).collect::<Vec<_>>();
 
                         match keys_to_remove.len() {
