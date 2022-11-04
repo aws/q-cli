@@ -502,22 +502,12 @@ impl PlatformStateImpl {
                 // Checking if IME is installed is async :(
                 let enabled_proxy = self.proxy.clone();
                 tokio::spawn(async move {
-                    // todo: replace this with current_terminal.internal_id()
-                    let disabled_setting_name = match current_terminal {
-                        Some(Terminal::Iterm) => Some("iterm"),
-                        Some(Terminal::TerminalApp) => Some("terminal"),
-                        Some(Terminal::Hyper) => Some("hyper"),
-                        Some(Terminal::Vscode) | Some(Terminal::VSCodeInsiders) => Some("vscode"),
-                        _ => None,
-                    };
-
-                    let is_terminal_disabled = disabled_setting_name
-                        .and_then(|name| {
-                            fig_settings::settings::get_bool(format!("integrations.{name}.disabled"))
-                                .ok()
-                                .flatten()
-                        })
-                        .unwrap_or(false);
+                    let is_terminal_disabled = current_terminal.as_ref().map_or(false, |terminal| {
+                        fig_settings::settings::get_bool_or(
+                            format!("integrations.{}.disabled", terminal.internal_id()),
+                            false,
+                        )
+                    });
 
                     let terminal_cursor_backing_installed = match current_terminal {
                         Some(terminal) => {
