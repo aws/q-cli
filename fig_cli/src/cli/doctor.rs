@@ -52,6 +52,10 @@ use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
+use fig_util::directories::{
+    settings_path,
+    state_path,
+};
 use fig_util::system_info::SupportLevel;
 use fig_util::{
     directories,
@@ -464,6 +468,39 @@ impl DoctorCheck for FigSocketCheck {
         } else {
             DoctorCheckType::NoCheck
         }
+    }
+}
+
+struct SettingsCorruptionCheck;
+
+#[async_trait]
+impl DoctorCheck for SettingsCorruptionCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Settings Corruption".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        fig_settings::settings::local_settings().map_err(|_| DoctorError::Error {
+            reason: "Fig settings file is corrupted".into(),
+            info: vec![],
+            fix: Some(DoctorFix::Sync(Box::new(|| {
+                std::fs::write(settings_path()?, "{}")?;
+                Ok(())
+            }))),
+            error: None,
+        })?;
+
+        fig_settings::state::local_settings().map_err(|_| DoctorError::Error {
+            reason: "Fig state file is corrupted".into(),
+            info: vec![],
+            fix: Some(DoctorFix::Sync(Box::new(|| {
+                std::fs::write(state_path()?, "{}")?;
+                Ok(())
+            }))),
+            error: None,
+        })?;
+
+        Ok(())
     }
 }
 
@@ -2238,6 +2275,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &FigBinPathCheck,
                 #[cfg(target_os = "windows")]
                 &WindowsConsoleCheck,
+                &SettingsCorruptionCheck,
                 &FigIntegrationsCheck,
             ],
             config,
