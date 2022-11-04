@@ -322,15 +322,10 @@ impl PlatformStateImpl {
 
                         match result {
                             WindowServerEvent::FocusChanged { window, app } => {
-                                let fullscreen = window.is_fullscreen().unwrap_or(false);
                                 events.push(Event::WindowEvent {
                                     window_id: AUTOCOMPLETE_ID,
                                     window_event: WindowEvent::Hide,
                                 });
-
-                                events.push(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
-                                    fullscreen,
-                                }));
 
                                 if let Ok(window) = PlatformWindowImpl::new(app.bundle_id, app.pid, window) {
                                     events.push(Event::PlatformBoundEvent(
