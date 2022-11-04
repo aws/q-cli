@@ -37,9 +37,8 @@ use crate::icons::{
     ProcessedAsset,
 };
 use crate::platform::linux::sway::SwayState;
-use crate::utils::Rect;
 use crate::webview::window::WindowId;
-use crate::webview::FigWindowMap;
+use crate::webview::FigIdMap;
 use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,
@@ -82,7 +81,7 @@ impl PlatformStateImpl {
         self: &Arc<Self>,
         event: PlatformBoundEvent,
         _: &EventLoopWindowTarget,
-        _: &FigWindowMap,
+        _: &FigIdMap,
     ) -> anyhow::Result<()> {
         match event {
             PlatformBoundEvent::Initialize => {
@@ -149,6 +148,18 @@ impl PlatformStateImpl {
             PlatformBoundEvent::AccessibilityUpdated { .. } => {
                 trace!("Ignoring accessibility updated event");
             },
+            PlatformBoundEvent::AppWindowFocusChanged { .. } => {
+                trace!("Ignoring app window focus changed event");
+            },
+            PlatformBoundEvent::CaretPositionUpdateRequested => {
+                trace!("Ignoring caret position update requested event");
+            },
+            PlatformBoundEvent::WindowDestroyed { .. } => {
+                trace!("Ignoring window destroyed event");
+            },
+            PlatformBoundEvent::ExternalWindowFocusChanged { .. } => {
+                trace!("Ignoring external window focus changed event");
+            },
         }
         Ok(())
     }
@@ -185,14 +196,7 @@ impl PlatformStateImpl {
         Ok(())
     }
 
-    pub(super) fn get_cursor_position(&self) -> Option<crate::utils::Rect<i32, i32>> {
-        None
-    }
-
-    pub(super) fn get_current_monitor_frame(
-        &self,
-        _window: &wry::application::window::Window,
-    ) -> Option<Rect<i32, i32>> {
+    pub(super) fn get_cursor_position(&self) -> Option<crate::utils::Rect> {
         None
     }
 
@@ -264,3 +268,6 @@ pub mod gtk {
         }
     }
 }
+
+#[derive(Debug)]
+pub struct PlatformWindowImpl;

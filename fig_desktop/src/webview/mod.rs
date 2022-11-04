@@ -175,6 +175,7 @@ impl WebviewManager {
         Ok(())
     }
 
+    #[allow(unused_mut)]
     pub async fn run(mut self) -> wry::Result<()> {
         self.platform_state
             .handle(PlatformBoundEvent::Initialize, &self.event_loop, &self.fig_id_map)

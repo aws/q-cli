@@ -27,6 +27,10 @@ use tracing::{
     trace,
     warn,
 };
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
+};
 
 use super::integrations::GSE_WHITELIST;
 use crate::utils::Rect;
@@ -34,7 +38,7 @@ use crate::EventLoopProxy;
 
 #[derive(Debug)]
 pub struct SwayState {
-    pub active_window_rect: Mutex<Option<Rect<i64, i64>>>,
+    pub active_window_rect: Mutex<Option<Rect>>,
     pub active_terminal: Mutex<Option<Terminal>>,
     pub sway_tx: flume::Sender<SwayCommand>,
 }
@@ -193,16 +197,15 @@ pub async fn handle_incoming(conn: &mut UnixStream, buf: &mut BytesMut, sway_sta
 
                                 let geometey = match container.get("rect") {
                                     Some(Value::Object(geometry)) => {
-                                        let x = geometry.get("x").and_then(|x| x.as_i64());
-                                        let y = geometry.get("y").and_then(|y| y.as_i64());
-                                        let width = geometry.get("width").and_then(|w| w.as_i64());
-                                        let height = geometry.get("height").and_then(|h| h.as_i64());
+                                        let x = geometry.get("x").and_then(|x| x.as_i64()).unwrap_or(0) as f64;
+                                        let y = geometry.get("y").and_then(|y| y.as_i64()).unwrap_or(0) as f64;
+                                        let width = geometry.get("width").and_then(|w| w.as_i64()).unwrap_or(0) as f64;
+                                        let height =
+                                            geometry.get("height").and_then(|h| h.as_i64()).unwrap_or(0) as f64;
 
                                         Rect {
-                                            x: x.unwrap_or(0),
-                                            y: y.unwrap_or(0),
-                                            width: width.unwrap_or(0),
-                                            height: height.unwrap_or(0),
+                                            position: LogicalPosition { x, y },
+                                            size: LogicalSize { width, height },
                                         }
                                     },
                                     _ => {

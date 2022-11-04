@@ -8,6 +8,10 @@ use tracing::{
     info,
     trace,
 };
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
+};
 use x11rb::connection::Connection;
 use x11rb::properties::WmClass;
 use x11rb::protocol::xproto::{
@@ -31,7 +35,7 @@ use x11rb::rust_connection::RustConnection;
 use super::integrations::WM_CLASS_WHITELIST;
 use super::WM_REVICED_DATA;
 use crate::event::WindowEvent;
-use crate::platform::WindowGeometry;
+use crate::utils::Rect;
 use crate::{
     Event,
     EventLoopProxy,
@@ -48,7 +52,7 @@ pub struct X11WindowData {
     pub id: x11rb::protocol::xproto::Window,
     pub class: Option<Vec<u8>>,
     pub instance: Option<Vec<u8>>,
-    pub window_geometry: Option<WindowGeometry>,
+    pub window_geometry: Option<Rect>,
 }
 
 mod atoms {
@@ -148,11 +152,15 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
         id: focus_window,
         class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
         instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
-        window_geometry: window_reply.ok().map(|window_reply| WindowGeometry {
-            x: window_reply.x as i32,
-            y: window_reply.y as i32,
-            width: window_reply.width as i32,
-            height: window_reply.height as i32,
+        window_geometry: window_reply.ok().map(|window_reply| Rect {
+            position: LogicalPosition {
+                x: window_reply.x as f64,
+                y: window_reply.y as f64,
+            },
+            size: LogicalSize {
+                width: window_reply.width as f64,
+                height: window_reply.height as f64,
+            },
         }),
     });
 

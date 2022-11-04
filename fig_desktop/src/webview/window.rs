@@ -21,6 +21,8 @@ use tracing::{
     error,
     warn,
 };
+#[cfg(target_os = "linux")]
+use wry::application::dpi::PhysicalSize;
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
@@ -48,10 +50,11 @@ use crate::platform::{
     PlatformState,
 };
 use crate::utils::Rect;
+#[cfg(target_os = "macos")]
+use crate::DASHBOARD_ID;
 use crate::{
     EventLoopWindowTarget,
     AUTOCOMPLETE_ID,
-    DASHBOARD_ID,
 };
 
 #[derive(Debug, Clone, PartialEq, Eq, Hash)]
@@ -252,6 +255,7 @@ impl WindowState {
         }
     }
 
+    #[allow(clippy::only_used_in_recursion)]
     pub fn handle(
         &self,
         event: WindowEvent,

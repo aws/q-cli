@@ -142,34 +142,17 @@ jobs:
       - name: Rust Cache
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
-      - name: Check (MacOS)
+      - name: Check
         uses: actions-rs/cargo@v1
-        if: startsWith(matrix.os,'macos')
         with:
           command: check
           args: --workspace --locked
 
-      - name: Check (Other)
-        uses: actions-rs/cargo@v1
-        if: ${{ !startsWith(matrix.os,'macos') }}
-        with:
-          command: check
-          args: --workspace --locked --exclude fig_desktop
-
-      - name: Clippy (MacOS)
+      - name: Clippy
         uses: actions-rs/clippy-check@v1
-        if: startsWith(matrix.os,'macos')
         with:
           token: ${{ secrets.GITHUB_TOKEN }}
           args: --workspace --locked -- -D warnings
-          name: Clippy ${{ matrix.os }} Report
-
-      - name: Clippy (Other)
-        uses: actions-rs/clippy-check@v1
-        if: ${{ !startsWith(matrix.os,'macos') }}
-        with:
-          token: ${{ secrets.GITHUB_TOKEN }}
-          args: --workspace --locked --exclude fig_desktop -- -D warnings
           name: Clippy ${{ matrix.os }} Report
 
   test-code-cov:

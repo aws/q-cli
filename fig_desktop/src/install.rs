@@ -1,7 +1,9 @@
 use std::iter::empty;
 
 use cfg_if::cfg_if;
+#[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
+#[cfg(target_os = "macos")]
 use fig_integrations::Integration;
 use fig_util::directories;
 use semver::Version;
@@ -15,7 +17,9 @@ use crate::utils::is_cargo_debug_build;
 const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
-pub async fn run_install(ignore_immediate_update: bool) {
+pub async fn run_install(_ignore_immediate_update: bool) {
+    #[cfg(target_os = "macos")]
+    let ignore_immediate_update = _ignore_immediate_update;
     // Create files needed for other parts of the app to run
     for (path_result, name, default) in [
         (fig_util::directories::settings_path(), "settings", "{}"),
@@ -85,6 +89,7 @@ pub async fn run_install(ignore_immediate_update: bool) {
             }
         });
 
+        #[cfg(target_os = "macos")]
         if let Ok(target_bundle_path) = fig_integrations::input_method::InputMethod::default().target_bundle_path() {
             if target_bundle_path.exists() {
                 if let Err(err) = fig_integrations::input_method::InputMethod::register(target_bundle_path) {
@@ -178,6 +183,7 @@ pub async fn run_install(ignore_immediate_update: bool) {
     );
 
     // install vscode integration
+    #[cfg(target_os = "macos")]
     for variant in fig_integrations::vscode::variants_installed() {
         let integration = fig_integrations::vscode::VSCodeIntegration { variant };
         if integration.is_installed().await.is_err() {
@@ -192,6 +198,7 @@ pub async fn run_install(ignore_immediate_update: bool) {
     }
 
     // install intellij integration
+    #[cfg(target_os = "macos")]
     for variant in fig_integrations::intellij::variants_installed() {
         let integration = fig_integrations::intellij::IntelliJIntegration { variant };
         if integration.is_installed().await.is_err() {
@@ -371,7 +378,6 @@ async fn launch_ibus() {
         SystemExt,
     };
     use tokio::process::Command;
-    use tracing::info;
 
     let system = tokio::task::block_in_place(|| {
         System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()))

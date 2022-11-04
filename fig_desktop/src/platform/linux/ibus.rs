@@ -7,6 +7,10 @@ use tracing::{
     debug,
     error,
 };
+use wry::application::dpi::{
+    LogicalPosition,
+    LogicalSize,
+};
 use zbus::export::futures_util::TryStreamExt;
 use zbus::fdo::DBusProxy;
 use zbus::MessageStream;
@@ -15,6 +19,7 @@ use super::PlatformStateImpl;
 use crate::event::{
     Event,
     WindowEvent,
+    WindowPosition,
 };
 use crate::platform::ActiveWindowData;
 use crate::{
@@ -71,9 +76,19 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                         proxy
                                             .send_event(Event::WindowEvent {
                                                 window_id: AUTOCOMPLETE_ID.clone(),
-                                                window_event: WindowEvent::PositionAbsolute {
-                                                    x: body.0,
-                                                    y: body.1 + body.3,
+                                                window_event: WindowEvent::UpdateWindowGeometry {
+                                                    position: Some(WindowPosition::RelativeToCaret {
+                                                        caret_position: LogicalPosition {
+                                                            x: body.0 as f64,
+                                                            y: body.1 as f64,
+                                                        },
+                                                        caret_size: LogicalSize {
+                                                            width: body.2 as f64,
+                                                            height: body.3 as f64,
+                                                        },
+                                                    }),
+                                                    size: None,
+                                                    anchor: None,
                                                 },
                                             })
                                             .unwrap();
@@ -118,9 +133,19 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                     proxy
                                         .send_event(Event::WindowEvent {
                                             window_id: AUTOCOMPLETE_ID.clone(),
-                                            window_event: WindowEvent::PositionAbsolute {
-                                                x: abs.0,
-                                                y: abs.1 + body.3,
+                                            window_event: WindowEvent::UpdateWindowGeometry {
+                                                position: Some(WindowPosition::RelativeToCaret {
+                                                    caret_position: LogicalPosition {
+                                                        x: abs.0 as f64,
+                                                        y: abs.1 as f64,
+                                                    },
+                                                    caret_size: LogicalSize {
+                                                        width: body.2 as f64,
+                                                        height: body.3 as f64,
+                                                    },
+                                                }),
+                                                size: None,
+                                                anchor: None,
                                             },
                                         })
                                         .unwrap();
