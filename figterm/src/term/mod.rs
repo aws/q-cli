@@ -80,6 +80,11 @@ pub trait Terminal {
 
     #[cfg(windows)]
     fn get_cursor_coordinate(&mut self) -> Result<CellCoordinate>;
+
+    /// Passes through the input without any delay on input, the delay
+    /// is used to batch input since some terminals will send multiple
+    /// writes for a single keypress.
+    fn set_immediate_mode(&mut self, immediate: bool) -> Result<()>;
 }
 
 /// `SystemTerminal` is a concrete implementation of `Terminal`.

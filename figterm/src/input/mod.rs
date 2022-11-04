@@ -1114,7 +1114,7 @@ impl InputParser {
         // `CSI u` encodings for the ascii range;
         // see http://www.leonerd.org.uk/hacks/fixterms/
         for c in 0..=0x7fu8 {
-            for (suffix, modifiers) in modifier_combos {
+            for (suffix, modifiers) in modifier_combos_including_meta() {
                 let key = format!("\x1b[{}{}u", c, suffix);
                 map.insert(
                     key,
@@ -1337,6 +1337,14 @@ impl InputParser {
             InputEvent::Key(KeyEvent {
                 key: KeyCode::Tab,
                 modifiers: Modifiers::NONE,
+            }),
+        );
+
+        map.insert(
+            [0x1b, b'[', b'Z'],
+            InputEvent::Key(KeyEvent {
+                key: KeyCode::Tab,
+                modifiers: Modifiers::SHIFT,
             }),
         );
 

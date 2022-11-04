@@ -147,6 +147,7 @@ static USER_ENABLED_SHELLS: Lazy<Vec<String>> = Lazy::new(|| {
 pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
     UnlockInterception,
+    SetImmediateMode(bool),
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
@@ -664,6 +665,11 @@ fn figterm_main() -> Result<()> {
                                 },
                                 MainLoopEvent::UnlockInterception => {
                                     key_interceptor.reset();
+                                },
+                                MainLoopEvent::SetImmediateMode(mode) => {
+                                    if let Err(err) = terminal.set_immediate_mode(mode) {
+                                        error!(%err, "Failed to set immediate mode");
+                                    }
                                 },
                             }
                         }

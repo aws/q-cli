@@ -8,6 +8,11 @@ use std::io::{
 };
 use std::mem;
 use std::os::unix::io::AsRawFd;
+use std::sync::atomic::{
+    AtomicBool,
+    Ordering,
+};
+use std::time::Duration;
 
 use anyhow::{
     bail,
@@ -209,6 +214,8 @@ impl UnixTerminal {
     }
 }
 
+static IMMEDIATE_MODE: AtomicBool = AtomicBool::new(true);
+
 impl Terminal for UnixTerminal {
     fn set_raw_mode(&mut self) -> Result<()> {
         let mut raw = self.write.get_termios()?;
@@ -250,6 +257,11 @@ impl Terminal for UnixTerminal {
         self.write.flush().context("flush failed")
     }
 
+    fn set_immediate_mode(&mut self, immediate: bool) -> Result<()> {
+        IMMEDIATE_MODE.store(immediate, Ordering::SeqCst);
+        Ok(())
+    }
+
     fn read_input(&mut self) -> Result<Receiver<InputEventResult>> {
         let mut window_change_signal = tokio::signal::unix::signal(SignalKind::window_change())?;
         let (input_tx, input_rx) = bounded::<InputEventResult>(1);
@@ -258,6 +270,20 @@ impl Terminal for UnixTerminal {
             let mut stdin = io::stdin();
             let mut parser = InputParser::new();
             let mut buf = BytesMut::with_capacity(crate::BUFFER_SIZE);
+            let mut read_timeout = tokio::time::interval(Duration::from_millis(1));
+
+            macro_rules! parse_buf {
+                () => {
+                    async {
+                        let mut events = vec![];
+                        parser.parse(&buf, |raw, evt| events.push(Ok((raw, evt))), false);
+                        buf.clear();
+                        if let Err(err) = input_tx.send_async(events).await {
+                            error!(%err, "Error sending event");
+                        }
+                    }
+                }
+            }
 
             loop {
                 select! {
@@ -265,36 +291,34 @@ impl Terminal for UnixTerminal {
                     res = stdin.read_buf(&mut buf) => {
                         match res {
                             Ok(n) => {
-                                trace!("Read input: {:?}", &buf[0..n]);
+                                trace!(buf =? &buf[0..n], "Read input");
                                 let full = buf.capacity() == buf.len();
                                 if full {
                                     buf.reserve(buf.len());
                                 }
-                                let mut events = vec![];
-                                parser.parse(
-                                    &buf[0..n],
-                                    |raw, evt| events.push(Ok((raw, evt))),
-                                    full,
-                                );
-                                if let Err(e) = input_tx.send_async(events).await {
-                                    warn!("Error sending event: {e}");
+                                if IMMEDIATE_MODE.load(Ordering::SeqCst) {
+                                    parse_buf!().await;
                                 }
+                                read_timeout.reset();
                             }
                             Err(err) => {
-                                if let Err(e) = input_tx.send_async(vec![Err(anyhow::anyhow!(err))]).await {
-                                    error!("Error sending event: {e}");
+                                if let Err(err) = input_tx.send_async(vec![Err(anyhow::anyhow!(err))]).await {
+                                    error!(%err, "Error sending event");
                                 }
                             }
                         }
+                    }
+                    _ = read_timeout.tick(), if !buf.is_empty() && !IMMEDIATE_MODE.load(Ordering::SeqCst) => {
+                        tracing::debug!(?buf, "Parsing input");
+                        parse_buf!().await;
                     }
                     _ = window_change_signal.recv() => {
                         let event = InputEvent::Resized;
-                        if let Err(e) = input_tx.send_async(vec![Ok((None, event))]).await {
-                            warn!("Error sending event: {e}");
+                        if let Err(err) = input_tx.send_async(vec![Ok((None, event))]).await {
+                            warn!(%err, "Error sending event");
                         }
                     }
                 }
-                buf.clear();
             }
         });
 

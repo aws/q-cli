@@ -81,6 +81,10 @@ impl EventListener for EventHandler {
                         .unwrap();
                 }
 
+                self.main_loop_sender
+                    .send(MainLoopEvent::SetImmediateMode(false))
+                    .unwrap();
+
                 if let Err(err) = self.socket_sender.send(message) {
                     error!(%err, "Sender error");
                 }
@@ -91,6 +95,9 @@ impl EventListener for EventHandler {
                 let message = hook_to_message(hook);
 
                 self.main_loop_sender.send(MainLoopEvent::UnlockInterception).unwrap();
+                self.main_loop_sender
+                    .send(MainLoopEvent::SetImmediateMode(true))
+                    .unwrap();
 
                 if let Err(err) = self.socket_sender.send(message) {
                     error!(%err, "Sender error");

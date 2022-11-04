@@ -643,6 +643,10 @@ impl Terminal for WindowsTerminal {
             .map_err(|e| anyhow::anyhow!("flush failed: {}", e))
     }
 
+    fn set_immediate_mode(&mut self, _immediate: bool) -> Result<()> {
+        Ok(())
+    }
+
     fn read_input(&mut self) -> Result<Receiver<InputEventResult>> {
         let (input_tx, input_rx) = bounded::<InputEventResult>(1);
         let mut input_handle = self.input_handle.try_clone()?;
