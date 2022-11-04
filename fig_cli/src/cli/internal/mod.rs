@@ -766,28 +766,45 @@ impl InternalSubcommand {
                 }
             },
             InternalSubcommand::PromptSsh { remote_dest } => {
+                // migrate old hostnames location
+                let old_hosts_file = directories::fig_dir()
+                    .context("Can't get fig data dir")?
+                    .join("ssh_hostnames");
+                let installed_hosts_file = directories::fig_data_dir()
+                    .context("Can't get fig data dir")?
+                    .join("ssh_hostnames");
+
+                if old_hosts_file.exists() {
+                    if installed_hosts_file.exists() {
+                        std::fs::remove_file(old_hosts_file)?;
+                    } else {
+                        std::fs::rename(old_hosts_file, &installed_hosts_file)?;
+                    }
+                }
+
                 if !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
-                    let installed_hosts_file = directories::fig_dir()
-                        .context("Can't get fig dir")?
-                        .join("ssh_hostnames");
                     let mut installed_hosts = OpenOptions::new()
                         .create(true)
                         .read(true)
                         .append(true)
-                        .open(installed_hosts_file)?;
-
+                        .open(&installed_hosts_file)?;
                     let mut contents = String::new();
                     installed_hosts.read_to_string(&mut contents)?;
+                    let hosts = Vec::from_iter(contents.split('\n'));
 
-                    if !contents.contains(&remote_dest) {
+                    let is_new = !hosts.contains(&remote_dest.as_str());
+                    if remote_dest == "_" || is_new {
                         let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
                         println!(
-                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n  \
-                            $ curl -fSsL https://fig.io/install-headless.sh | bash\n{bar}",
+                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n  {}\n{bar}",
                             "Fig".magenta(),
+                            "$ curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL"
+                                .white()
+                                .on_black()
                         );
-                        let new_line = format!("\n{}", remote_dest);
-                        installed_hosts.write_all(&new_line.into_bytes())?;
+                        if is_new {
+                            installed_hosts.write_all(format!("{remote_dest}\n").as_bytes())?;
+                        }
                     }
                 }
             },
