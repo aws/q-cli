@@ -174,6 +174,8 @@ pub enum DebugSubcommand {
         architecture: String,
         #[arg(short = 'r', long)]
         enable_rollout: bool,
+        #[arg(short = 't', long)]
+        override_threshold: Option<u8>,
     },
     /// Open up the devtools of a specific webview
     Devtools {
@@ -682,6 +684,7 @@ impl DebugSubcommand {
                 version: current_version,
                 architecture,
                 enable_rollout,
+                override_threshold,
             } => {
                 use fig_install::index::PackageArchitecture;
                 use fig_util::manifest::{
@@ -697,6 +700,7 @@ impl DebugSubcommand {
                     current_version,
                     PackageArchitecture::from_str(architecture)?,
                     !enable_rollout,
+                    *override_threshold,
                 )
                 .await?;
 

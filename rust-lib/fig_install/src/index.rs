@@ -134,7 +134,16 @@ pub async fn check_for_updates(
     const CURRENT_VERSION: &str = env!("CARGO_PKG_VERSION");
     const ARCHITECTURE: PackageArchitecture = PackageArchitecture::from_system();
 
-    query_index(channel, kind, variant, CURRENT_VERSION, ARCHITECTURE, ignore_rollout).await
+    query_index(
+        channel,
+        kind,
+        variant,
+        CURRENT_VERSION,
+        ARCHITECTURE,
+        ignore_rollout,
+        None,
+    )
+    .await
 }
 
 pub async fn query_index(
@@ -144,6 +153,7 @@ pub async fn query_index(
     current_version: &str,
     architecture: PackageArchitecture,
     ignore_rollout: bool,
+    threshold_override: Option<u8>,
 ) -> Result<Option<UpdatePackage>, Error> {
     let index = pull(&channel).await?;
 
@@ -174,18 +184,20 @@ pub async fn query_index(
     valid_versions.sort_unstable_by(|lhs, rhs| lhs.version.cmp(&rhs.version));
     valid_versions.reverse();
 
-    let system_threshold = {
+    let sys_id = get_system_id()?;
+    let system_threshold = threshold_override.unwrap_or_else(|| {
         let mut hasher = DefaultHasher::new();
         // different for each system
-        get_system_id()?.hash(&mut hasher);
+        sys_id.hash(&mut hasher);
         // different for each version, which prevents people from getting repeatedly hit by untested
         // releases
         current_version.hash(&mut hasher);
 
         (hasher.finish() % 0xff) as u8
-    };
+    });
 
     let mut chosen = None;
+    #[allow(clippy::never_loop)] // todo(mia): fix
     for entry in valid_versions.into_iter() {
         if let Some(rollout) = &entry.rollout {
             if ignore_rollout {
@@ -203,7 +215,7 @@ pub async fn query_index(
                     "rejected update candidate {} because rollout hasn't started yet",
                     entry.version
                 );
-                continue;
+                break;
             }
 
             // interpolate rollout progress
@@ -219,11 +231,13 @@ pub async fn query_index(
                     entry.version
                 );
                 chosen = Some(entry);
+                break;
             } else {
                 info!(
                     "rejected update candidate {} because remote_threshold {remote_threshold} is below system_threshold {system_threshold}",
                     entry.version
                 );
+                break;
             }
         } else {
             chosen = Some(entry);
