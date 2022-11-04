@@ -108,6 +108,8 @@ static IN_SSH: Lazy<bool> = Lazy::new(|| {
         || std::env::var_os("SSH_TTY").is_some()
 });
 
+static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os("FIG_PARENT").is_some());
+
 /// The support level for different platforms
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SupportLevel {
@@ -259,6 +261,12 @@ pub fn in_wsl() -> bool {
 pub fn is_remote() -> bool {
     // TODO(chay): Add detection for inside docker container
     in_ssh() || in_wsl()
+}
+
+/// Whether Fig has a parent. Determines if we have an IPC path to a Desktop app from a remote
+/// environment
+pub fn has_parent() -> bool {
+    *HAS_PARENT
 }
 
 #[cfg(target_os = "macos")]

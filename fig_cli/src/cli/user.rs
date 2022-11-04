@@ -43,6 +43,9 @@ pub enum RootUserSubcommand {
         ///
         #[arg(long, hide = true)]
         switchable: bool,
+        /// Add a "not now" option to the choicer
+        #[arg(long, hide = true)]
+        not_now: bool,
     },
     /// Logout of Fig
     Logout,
@@ -56,6 +59,7 @@ impl RootUserSubcommand {
                 refresh,
                 hard_refresh,
                 switchable,
+                not_now,
             } => {
                 if refresh || hard_refresh {
                     let mut creds = Credentials::load_credentials()?;
@@ -63,6 +67,29 @@ impl RootUserSubcommand {
                         creds.refresh_credentials().await?;
                         creds.save_credentials()?;
                     }
+                    return Ok(());
+                }
+
+                const OPTION_EMAIL: &str = "Log in with email";
+                const OPTION_NOT_NOW: &str = "Not now";
+
+                let mut options = vec![OPTION_EMAIL];
+                if not_now {
+                    options.push(OPTION_NOT_NOW);
+                }
+
+                let chosen = match options.len() {
+                    1 => options[0],
+                    _ => {
+                        options[dialoguer::Select::with_theme(&crate::util::dialoguer_theme())
+                            .default(0)
+                            .with_prompt("Select action")
+                            .items(&options)
+                            .interact()?]
+                    },
+                };
+
+                if chosen == OPTION_NOT_NOW {
                     return Ok(());
                 }
 
