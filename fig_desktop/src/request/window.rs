@@ -70,39 +70,25 @@ pub async fn position_window(
 
     proxy
         .send_event(Event::WindowEvent {
-            window_id: window_id.clone(),
-            window_event: WindowEvent::UpdateWindowGeometry {
-                position: None,
-                size: Some(LogicalSize::new(size.width.into(), size.height.into())),
-                anchor: Some(LogicalSize::new(
-                    anchor.x.into(),
-                    (anchor.y + autocomplete_padding).into(),
-                )),
-            },
+            window_id,
+            window_event: WindowEvent::Batch(vec![
+                WindowEvent::UpdateWindowGeometry {
+                    position: None,
+                    size: Some(LogicalSize::new(size.width.into(), size.height.into())),
+                    anchor: Some(LogicalSize::new(
+                        anchor.x.into(),
+                        (anchor.y + autocomplete_padding).into(),
+                    )),
+                },
+                // Workaround to nonapplicably zero sized windows
+                if size.width == 1.0 || size.height == 1.0 {
+                    WindowEvent::Hide
+                } else {
+                    WindowEvent::Show
+                },
+            ]),
         })
         .unwrap();
-
-    // NOTE(mia): this code never restores the window on linux
-
-    // Workaround to nonapplicably zero sized windows
-    match size.width == 1.0 || size.height == 1.0 {
-        true => {
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id,
-                    window_event: WindowEvent::Hide,
-                })
-                .unwrap();
-        },
-        false => {
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id,
-                    window_event: WindowEvent::Show,
-                })
-                .unwrap();
-        },
-    }
 
     RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
         PositionWindowResponse {

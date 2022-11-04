@@ -139,49 +139,50 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
         id if id == MenuId::new("dashboard") => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::NavigateRelative { path: "/".into() },
-                })
-                .unwrap();
-
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::Show,
+                    window_id: DASHBOARD_ID.clone(),
+                    window_event: WindowEvent::Batch(vec![
+                        WindowEvent::NavigateRelative { path: "/".into() },
+                        WindowEvent::Show,
+                    ]),
                 })
                 .unwrap();
         },
         id if id == MenuId::new("onboarding") => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::Show,
+                    window_id: DASHBOARD_ID.clone(),
+                    window_event: WindowEvent::Batch(vec![
+                        WindowEvent::NavigateRelative {
+                            path: ONBOARDING_PATH.into(),
+                        },
+                        WindowEvent::Show,
+                    ]),
                 })
                 .unwrap();
-
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::NavigateRelative {
-                        path: ONBOARDING_PATH.into(),
-                    },
-                })
-                .ok();
         },
         id if id == MenuId::new("settings") => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::Show,
+                    window_id: DASHBOARD_ID.clone(),
+                    window_event: WindowEvent::Batch(vec![
+                        WindowEvent::NavigateRelative {
+                            path: "/settings".into(),
+                        },
+                        WindowEvent::Show,
+                    ]),
                 })
                 .unwrap();
-
+        },
+        id if id == MenuId::new("not-working") => {
             proxy
                 .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::NavigateRelative {
-                        path: "/settings".into(),
-                    },
+                    window_id: DASHBOARD_ID.clone(),
+                    window_event: WindowEvent::Batch(vec![
+                        WindowEvent::NavigateRelative {
+                            path: "?show_help=true".into(),
+                        },
+                        WindowEvent::Show,
+                    ]),
                 })
                 .unwrap();
         },
@@ -209,23 +210,6 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                     .ok();
             },
             Err(err) => error!(%err, "Failed to execute `fig issue` from the tray"),
-        },
-        id if id == MenuId::new("not-working") => {
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::NavigateRelative {
-                        path: Cow::Borrowed("?show_help=true"),
-                    },
-                })
-                .ok();
-
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::Show,
-                })
-                .ok();
         },
         id => {
             trace!(?id, "Unhandled tray event");

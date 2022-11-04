@@ -299,10 +299,6 @@ impl WindowState {
                 }
             },
             WindowEvent::Show => {
-                if self.webview.window().is_visible() {
-                    return;
-                }
-
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
                         for session in figterm_state.linked_sessions.lock().iter() {
@@ -358,6 +354,9 @@ impl WindowState {
                     })),
                 })
             },
+            WindowEvent::Reload => {
+                self.webview.evaluate_script("window.location.reload();").unwrap();
+            },
             WindowEvent::Emit { event_name, payload } => {
                 self.emit(event_name, payload);
             },
@@ -396,6 +395,18 @@ impl WindowState {
             },
             WindowEvent::SetEnabled(enabled) => self.set_enabled(enabled),
             WindowEvent::SetTheme(theme) => self.set_theme(theme),
+            WindowEvent::Batch(events) => {
+                for event in events {
+                    self.handle(
+                        event,
+                        figterm_state,
+                        platform_state,
+                        notifications_state,
+                        window_target,
+                        api_tx,
+                    );
+                }
+            },
         }
     }
 

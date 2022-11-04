@@ -98,12 +98,15 @@ pub enum WindowEvent {
     NavigateAbsolute {
         url: url::Url,
     },
+    Reload,
     Api {
         /// A base64 encoded protobuf
         payload: Cow<'static, str>,
     },
     Devtools,
     DebugMode(bool),
+
+    Batch(Vec<WindowEvent>),
 }
 
 impl WindowEvent {

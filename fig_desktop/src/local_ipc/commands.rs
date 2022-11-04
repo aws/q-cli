@@ -118,32 +118,26 @@ pub async fn open_ui_element(command: OpenUiElementCommand, proxy: &EventLoopPro
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
-                    window_event: WindowEvent::NavigateRelative {
-                        path: "/settings".into(),
-                    },
-                })
-                .unwrap();
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID.clone(),
-                    window_event: WindowEvent::Show,
+                    window_event: WindowEvent::Batch(vec![
+                        WindowEvent::NavigateRelative {
+                            path: "/settings".into(),
+                        },
+                        WindowEvent::Show,
+                    ]),
                 })
                 .unwrap();
         },
         UiElement::MissionControl => {
-            if let Some(path) = command.route {
-                proxy
-                    .send_event(Event::WindowEvent {
-                        window_id: DASHBOARD_ID.clone(),
-                        window_event: WindowEvent::NavigateRelative { path: path.into() },
-                    })
-                    .unwrap();
-            }
+            let events = if let Some(path) = command.route {
+                vec![WindowEvent::NavigateRelative { path: path.into() }, WindowEvent::Show]
+            } else {
+                vec![WindowEvent::Show]
+            };
 
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
-                    window_event: WindowEvent::Show,
+                    window_event: WindowEvent::Batch(events),
                 })
                 .unwrap();
         },
@@ -200,20 +194,17 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
     proxy
         .send_event(Event::WindowEvent {
             window_id: DASHBOARD_ID,
-            window_event: WindowEvent::NavigateRelative {
-                path: ONBOARDING_PATH.into(),
-            },
-        })
-        .ok();
-
-    proxy
-        .send_event(Event::WindowEvent {
-            window_id: DASHBOARD_ID,
-            window_event: WindowEvent::UpdateWindowGeometry {
-                position: Some(WindowPosition::Centered),
-                size: Some(DASHBOARD_ONBOARDING_SIZE),
-                anchor: None,
-            },
+            window_event: WindowEvent::Batch(vec![
+                WindowEvent::NavigateRelative {
+                    path: ONBOARDING_PATH.into(),
+                },
+                WindowEvent::UpdateWindowGeometry {
+                    position: Some(WindowPosition::Centered),
+                    size: Some(DASHBOARD_ONBOARDING_SIZE),
+                    anchor: None,
+                },
+                WindowEvent::Show,
+            ]),
         })
         .ok();
 

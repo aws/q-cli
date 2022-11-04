@@ -15,6 +15,7 @@ use crate::{
 };
 
 static DASHBOARD_QUIT: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-quit"));
+static DASHBOARD_RELOAD: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-reload"));
 
 #[cfg(target_os = "macos")]
 pub fn menu_bar() -> MenuBar {
@@ -33,6 +34,11 @@ pub fn menu_bar() -> MenuBar {
         MenuItemAttributes::new("Quit Fig (UI)")
             .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyQ))
             .with_id(*DASHBOARD_QUIT),
+    );
+    app_submenu.add_item(
+        MenuItemAttributes::new("Reload")
+            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyR))
+            .with_id(*DASHBOARD_RELOAD),
     );
 
     menu_bar.add_submenu("Fig", true, app_submenu);
@@ -118,6 +124,12 @@ pub fn handle_event(menu_id: MenuId, proxy: &EventLoopProxy) {
             .send_event(Event::WindowEvent {
                 window_id: DASHBOARD_ID,
                 window_event: WindowEvent::Hide,
+            })
+            .unwrap(),
+        menu_id if menu_id == *DASHBOARD_RELOAD => proxy
+            .send_event(Event::WindowEvent {
+                window_id: DASHBOARD_ID,
+                window_event: WindowEvent::Reload,
             })
             .unwrap(),
         _ => {},
