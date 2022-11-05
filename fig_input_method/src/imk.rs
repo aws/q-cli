@@ -138,14 +138,12 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
             },
         };
 
-        println!("Hey!");
-
         info!("setMarkedText: selectionRange: replacementRange:");
         // Used to trigger input method enabled in Alacritty (see https://github.com/rust-windowing/winit/blob/97d4c7b303bb8110df6c492f0c2327b7d5098347/src/platform_impl/macos/view.rs#L300)
         let empty_range = NSRange::new(0, 0);
         let empty_string: NSString = "".into();
         let _: () = unsafe {
-            msg_send![client, setMarkedText: empty_string selectionRange:  empty_range replacementRange: empty_range]
+            msg_send![client, setMarkedText: empty_string selectionRange: empty_range replacementRange: empty_range]
         };
 
         let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };

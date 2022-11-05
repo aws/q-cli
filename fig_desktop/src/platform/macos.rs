@@ -475,11 +475,11 @@ impl PlatformStateImpl {
                 };
                 let application_observer = self.proxy.clone();
                 NotificationCenter::shared().subscribe("io.fig.show-dashboard", Some(queue), move |_| {
-                    if let Err(e) = application_observer.send_event(Event::WindowEvent {
+                    if let Err(err) = application_observer.send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID,
                         window_event: WindowEvent::Show,
                     }) {
-                        warn!("Error sending event: {e:?}");
+                        warn!(%err, "Error sending event");
                     }
                 });
 
@@ -491,8 +491,8 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::EditBufferChanged => {
-                if let Err(e) = self.refresh_window_position() {
-                    error!("Failed to refresh window position: {e:?}");
+                if let Err(err) = self.refresh_window_position() {
+                    error!(%err, "Failed to refresh window position");
                 }
                 Ok(())
             },
