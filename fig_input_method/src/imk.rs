@@ -8,12 +8,14 @@ use cocoa::base::{
 };
 use cocoa::foundation::{
     NSPoint,
+    NSRange,
     NSRect,
     NSSize,
 };
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_caret_position_hook;
 use macos_accessibility_position::{
+    NSString,
     NSStringRef,
     NotificationCenter,
 };
@@ -134,6 +136,16 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
                 height: 0.0,
                 width: 0.0,
             },
+        };
+
+        println!("Hey!");
+
+        info!("setMarkedText: selectionRange: replacementRange:");
+        // Used to trigger input method enabled in Alacritty (see https://github.com/rust-windowing/winit/blob/97d4c7b303bb8110df6c492f0c2327b7d5098347/src/platform_impl/macos/view.rs#L300)
+        let empty_range = NSRange::new(0, 0);
+        let empty_string: NSString = "".into();
+        let _: () = unsafe {
+            msg_send![client, setMarkedText: empty_string selectionRange:  empty_range replacementRange: empty_range]
         };
 
         let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };
