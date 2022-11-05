@@ -47,6 +47,7 @@ tokio = { version = "1.20.1", features = ["full"] }
 tracing = "0.1.36"
 tracing-subscriber = { version = "0.3.16", features = ["fmt", "time", "parking_lot"] }
 uuid = { version = "1.2.1", features = ["v4", "fast-rng"] }
+which = "4.3.0"
 
 [target.'cfg(unix)'.dependencies]
 nix = "0.25.0"

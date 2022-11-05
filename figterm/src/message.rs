@@ -67,9 +67,17 @@ fn shell_args(shell_path: &str) -> &'static [&'static str] {
     }
 }
 
-fn working_directory(path: Option<&str>, shell_state: &ShellState) -> Option<PathBuf> {
-    let map_dir = |path: PathBuf| {
-        if path.exists() { Some(path) } else { None }
+fn working_directory(path: Option<&str>, shell_state: &ShellState) -> PathBuf {
+    let map_dir = |path: PathBuf| match path.canonicalize() {
+        Ok(path) if path.is_dir() => Some(path),
+        Ok(path) => {
+            warn!(?path, "not a directory");
+            None
+        },
+        Err(err) => {
+            warn!(?path, %err, "failed to canonicalize path");
+            None
+        },
     };
 
     path.map(PathBuf::from)
@@ -82,21 +90,43 @@ fn working_directory(path: Option<&str>, shell_state: &ShellState) -> Option<Pat
                 .and_then(map_dir)
         })
         .or_else(|| std::env::current_dir().ok())
+        .unwrap_or_else(|| {
+            cfg_if::cfg_if! {
+                if #[cfg(windows)] {
+                    PathBuf::from("C:\\")
+                } else if #[cfg(unix)] {
+                    PathBuf::from("/")
+                }
+            }
+        })
 }
 
-fn create_command(executable: impl AsRef<OsStr>, working_directory: Option<impl AsRef<Path>>) -> Command {
-    let mut cmd = Command::new(executable);
+fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Path>) -> Command {
+    let env = (*SHELL_ENVIRONMENT_VARIABLES.lock())
+        .clone()
+        .into_iter()
+        .filter_map(|EnvironmentVariable { key, value }| value.map(|value| (key, value)))
+        .collect::<Vec<_>>();
+
+    let mut cmd = if executable.as_ref().is_absolute() {
+        Command::new(executable.as_ref())
+    } else {
+        let path = env
+            .iter()
+            .find_map(|(key, value)| if key == "PATH" { Some(value.as_str()) } else { None });
+
+        which::which_in(executable.as_ref(), path, working_directory.as_ref())
+            .map(Command::new)
+            .unwrap_or_else(|_| Command::new(executable.as_ref()))
+    };
+
     #[cfg(target_os = "windows")]
     {
         use std::os::windows::process::CommandExt;
         cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
     }
 
-    if let Some(working_directory) = working_directory {
-        cmd.current_dir(working_directory);
-    } else if let Ok(working_directory) = std::env::current_dir() {
-        cmd.current_dir(working_directory);
-    }
+    cmd.current_dir(working_directory);
 
     #[cfg(unix)]
     {
@@ -119,30 +149,18 @@ fn create_command(executable: impl AsRef<OsStr>, working_directory: Option<impl 
         }
     }
 
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            if let Some(value) = SHELL_ENVIRONMENT_VARIABLES
-                .lock()
-                .iter()
-                .find_map(|EnvironmentVariable { key, value }| if key == "PATH" { value.as_ref() } else { None })
-            {
-                cmd.env("PATH", value);
-            }
-        } else {
-            cmd.envs(
-                (*SHELL_ENVIRONMENT_VARIABLES.lock())
-                    .clone()
-                    .into_iter()
-                    .filter_map(|EnvironmentVariable { key, value }| value.map(|value| (key, value))),
-            );
-        }
+    if !env.is_empty() {
+        cmd.env_clear();
+        cmd.envs(env);
     }
 
+    cmd.env_remove("LS_COLORS");
     cmd.envs([
         ("PROCESS_LAUNCHED_BY_FIG", "1"),
         ("HISTFILE", ""),
         ("HISTCONTROL", "ignoreboth"),
         ("TERM", "xterm-256color"),
+        ("NO_COLOR", "1"),
     ]);
 
     cmd
@@ -494,6 +512,6 @@ mod tests {
 
     #[test]
     fn command() {
-        create_command("cargo", None::<&str>).output().unwrap();
+        create_command("cargo", "/").output().unwrap();
     }
 }

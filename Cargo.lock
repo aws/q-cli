@@ -3054,6 +3054,7 @@ dependencies = [
  "tracing",
  "tracing-subscriber",
  "uuid",
+ "which",
  "winapi",
  "windows 0.43.0",
  "winreg 0.10.1",
