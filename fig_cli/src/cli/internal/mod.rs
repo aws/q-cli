@@ -308,6 +308,11 @@ pub enum InternalSubcommand {
     CheckSSH {
         remote_username: String,
     },
+    #[cfg(target_os = "macos")]
+    BrewUninstall {
+        #[arg(long)]
+        zap: bool,
+    },
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -902,6 +907,26 @@ impl InternalSubcommand {
                     }
                 }
                 std::process::exit(0);
+            },
+            #[cfg(target_os = "macos")]
+            InternalSubcommand::BrewUninstall { zap } => {
+                let brew_is_reinstalling = crate::util::is_brew_reinstall().await;
+
+                if brew_is_reinstalling {
+                    // If we're reinstalling, we don't want to uninstall
+                    return Ok(());
+                } else {
+                    let url = fig_install::get_uninstall_url();
+                    fig_util::open_url_async(url).await.ok();
+                }
+
+                let components = if zap {
+                    // All except the desktop app
+                    InstallComponents::all() & !InstallComponents::DESKTOP_APP
+                } else {
+                    InstallComponents::SHELL_INTEGRATIONS | InstallComponents::SSH | InstallComponents::DAEMON
+                };
+                fig_install::uninstall(components).await.ok();
             },
         }
 

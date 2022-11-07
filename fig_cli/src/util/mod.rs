@@ -292,6 +292,19 @@ pub fn dialoguer_theme() -> ColorfulTheme {
     }
 }
 
+#[cfg(target_os = "macos")]
+pub async fn is_brew_reinstall() -> bool {
+    use bstr::ByteSlice;
+
+    tokio::process::Command::new("ps")
+        .args(["aux", "-o", "args"])
+        .output()
+        .await
+        .map_or(false, |output| {
+            output.stdout.contains_str(b"brew upgrade") || output.stdout.contains_str(b"brew reinstall")
+        })
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
