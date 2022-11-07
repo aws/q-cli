@@ -43,7 +43,6 @@ use crate::event::{
 use crate::figterm::{
     FigtermCommand,
     FigtermState,
-    InterceptMode,
 };
 use crate::platform::{
     self,
@@ -277,10 +276,9 @@ impl WindowState {
 
                 if self.window_id == AUTOCOMPLETE_ID {
                     for session in figterm_state.linked_sessions.lock().iter() {
-                        let _ = session.sender.send(FigtermCommand::InterceptUpdate {
-                            intercept_keystrokes: InterceptMode::Unlocked,
-                            intercept_global_keystrokes: session.intercept_global,
-                        });
+                        let _ = session
+                            .sender
+                            .send(FigtermCommand::InterceptFigJSVisible { visible: false });
                     }
 
                     #[cfg(not(target_os = "linux"))]
@@ -308,11 +306,10 @@ impl WindowState {
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
-                        for session in figterm_state.linked_sessions.lock().iter() {
-                            let _ = session.sender.send(FigtermCommand::InterceptUpdate {
-                                intercept_keystrokes: session.intercept,
-                                intercept_global_keystrokes: session.intercept_global,
-                            });
+                        for session in figterm_state.linked_sessions.lock().iter_mut() {
+                            let _ = session
+                                .sender
+                                .send(FigtermCommand::InterceptFigJSVisible { visible: true });
                         }
 
                         self.webview.window().set_visible(true);

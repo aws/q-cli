@@ -28,10 +28,7 @@ use crate::event::{
     WindowEvent,
     WindowPosition,
 };
-use crate::figterm::{
-    FigtermState,
-    InterceptMode,
-};
+use crate::figterm::FigtermState;
 use crate::webview::{
     DASHBOARD_ONBOARDING_SIZE,
     ONBOARDING_PATH,
@@ -85,8 +82,8 @@ pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> 
                 Some(session.edit_buffer.text.clone()),
                 Some(session.edit_buffer.cursor),
                 session.context.clone(),
-                Some(session.intercept == InterceptMode::Locked),
-                Some(session.intercept_global == InterceptMode::Locked),
+                Some(session.intercept.into()),
+                Some(session.intercept_global.into()),
             ),
             None => (None, None, None, None, None),
         }

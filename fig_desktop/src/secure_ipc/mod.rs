@@ -183,7 +183,7 @@ async fn handle_secure_ipc(
                                         nonce_counter: Arc::new(AtomicU64::new(0)),
                                         on_close_tx: on_close_tx.clone(),
                                         intercept: InterceptMode::Unlocked,
-                                        intercept_global: InterceptMode::Unlocked,
+                                        intercept_global: InterceptMode::Unlocked
                                     });
                                     debug!(
                                         "Client auth for {} accepted because of new id with secret {}",
@@ -338,53 +338,29 @@ async fn handle_commands(
     session_id: FigtermSessionId,
 ) -> Option<()> {
     while let Ok(command) = incoming.recv_async().await {
-        let mut new_intercept_mode = None;
-        let mut new_intercept_global_mode = None;
-
         let (request, nonce_channel) = match command {
             FigtermCommand::InterceptFigJs {
                 intercept_keystrokes,
                 intercept_global_keystrokes,
                 actions,
-            } => {
-                new_intercept_mode = Some(if intercept_keystrokes {
-                    InterceptMode::Locked
-                } else {
-                    InterceptMode::Unlocked
-                });
-
-                new_intercept_global_mode = Some(if intercept_global_keystrokes {
-                    InterceptMode::Locked
-                } else {
-                    InterceptMode::Unlocked
-                });
-
-                (
-                    Request::Intercept(InterceptRequest {
-                        intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
-                            intercept_request::SetFigjsIntercepts {
-                                intercept_bound_keystrokes: intercept_keystrokes,
-                                intercept_global_keystrokes,
-                                actions,
-                                override_actions: true,
-                            },
-                        )),
-                    }),
-                    None,
-                )
-            },
-            FigtermCommand::InterceptUpdate {
-                intercept_keystrokes,
-                intercept_global_keystrokes,
+                override_actions,
             } => (
                 Request::Intercept(InterceptRequest {
                     intercept_command: Some(intercept_request::InterceptCommand::SetFigjsIntercepts(
                         intercept_request::SetFigjsIntercepts {
-                            intercept_bound_keystrokes: intercept_keystrokes == InterceptMode::Locked,
-                            intercept_global_keystrokes: intercept_global_keystrokes == InterceptMode::Locked,
-                            actions: vec![],
-                            override_actions: false,
+                            intercept_bound_keystrokes: intercept_keystrokes,
+                            intercept_global_keystrokes,
+                            actions,
+                            override_actions,
                         },
+                    )),
+                }),
+                None,
+            ),
+            FigtermCommand::InterceptFigJSVisible { visible } => (
+                Request::Intercept(InterceptRequest {
+                    intercept_command: Some(intercept_request::InterceptCommand::SetFigjsVisible(
+                        intercept_request::SetFigjsVisible { visible },
                     )),
                 }),
                 None,
@@ -456,14 +432,6 @@ async fn handle_commands(
 
         let is_insert_request = matches!(request, Request::InsertText(_));
         figterm_state.with(&session_id, |session| {
-            if let Some(new_intercept_mode) = new_intercept_mode {
-                session.intercept = new_intercept_mode;
-            }
-
-            if let Some(new_intercept_global_mode) = new_intercept_global_mode {
-                session.intercept_global = new_intercept_global_mode;
-            }
-
             if let Some(writer) = &session.writer {
                 if writer
                     .try_send(Clientbound {

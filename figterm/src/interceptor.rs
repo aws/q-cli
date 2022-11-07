@@ -90,6 +90,8 @@ pub struct KeyInterceptor {
     intercept_global: bool,
     intercept: bool,
 
+    window_visible: bool,
+
     // TODO: this should be based on `availability`
     _global_actions: Vec<Action>,
 
@@ -119,6 +121,11 @@ impl KeyInterceptor {
     pub fn set_intercept(&mut self, intercept: bool) {
         trace!("Setting intercept to {intercept}");
         self.intercept = intercept;
+    }
+
+    pub fn set_window_visible(&mut self, window_visible: bool) {
+        trace!("Setting window visible to {window_visible}");
+        self.window_visible = window_visible;
     }
 
     pub fn set_actions(&mut self, actions: &[Action], override_actions: bool) {
@@ -202,10 +209,16 @@ impl KeyInterceptor {
                     }
                 }
             },
-            (_, true) => match self.mappings.get(key_event) {
-                Some(action) if action.value() == IGNORE_ACTION => None,
-                Some(action) => Some(action.value().to_string()),
-                None => None,
+            (_, true) => {
+                if self.window_visible {
+                    match self.mappings.get(key_event) {
+                        Some(action) if action.value() == IGNORE_ACTION => None,
+                        Some(action) => Some(action.value().to_string()),
+                        None => None,
+                    }
+                } else {
+                    None
+                }
             },
             _ => None,
         }

@@ -44,10 +44,14 @@ message InterceptRequest {
     bool override_actions = 4;
   }
 
+  message SetFigjsVisible { bool visible = 1; }
+
   // The intercept command to execute
   oneof intercept_command {
     // Set figterm to intercept keys according to the FigJs interface
     SetFigjsIntercepts set_figjs_intercepts = 6;
+    // Tell figterm if the figjs window is visible
+    SetFigjsVisible set_figjs_visible = 7;
   }
 }
 

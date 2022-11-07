@@ -20,6 +20,7 @@ use fig_proto::figterm::figterm_response_message::Response as FigtermResponse;
 use fig_proto::figterm::intercept_request::{
     InterceptCommand,
     SetFigjsIntercepts,
+    SetFigjsVisible,
 };
 use fig_proto::figterm::{
     self,
@@ -221,17 +222,23 @@ pub async fn process_figterm_request(
             Ok(None)
         },
         FigtermRequest::Intercept(request) => {
-            if let Some(InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
-                intercept_bound_keystrokes,
-                intercept_global_keystrokes,
-                actions,
-                override_actions,
-            })) = request.intercept_command
-            {
-                key_interceptor.set_intercept_global(intercept_global_keystrokes);
-                key_interceptor.set_intercept(intercept_bound_keystrokes);
-                key_interceptor.set_actions(&actions, override_actions);
-            };
+            match request.intercept_command {
+                Some(InterceptCommand::SetFigjsIntercepts(SetFigjsIntercepts {
+                    intercept_bound_keystrokes,
+                    intercept_global_keystrokes,
+                    actions,
+                    override_actions,
+                })) => {
+                    key_interceptor.set_intercept_global(intercept_global_keystrokes);
+                    key_interceptor.set_intercept(intercept_bound_keystrokes);
+                    key_interceptor.set_actions(&actions, override_actions);
+                },
+                Some(InterceptCommand::SetFigjsVisible(SetFigjsVisible { visible })) => {
+                    key_interceptor.set_window_visible(visible);
+                },
+                None => {},
+            }
+
             Ok(None)
         },
         FigtermRequest::Diagnostics(_) => {

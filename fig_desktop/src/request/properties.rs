@@ -13,6 +13,7 @@ use crate::figterm::{
     FigtermCommand,
     FigtermSessionId,
     FigtermState,
+    InterceptMode,
 };
 use crate::InterceptState;
 
@@ -28,12 +29,6 @@ pub fn update(
     if let Some(intercept_global_keystrokes) = request.intercept_global_keystrokes {
         *intercept_state.intercept_global_keystrokes.write() = intercept_global_keystrokes;
     }
-
-    let request_session_id = request.current_terminal_session_id.map(FigtermSessionId);
-
-    let session_data = figterm_state.with_maybe_id(&request_session_id, |session| {
-        (session.sender.clone(), session.id.clone())
-    });
 
     let key_bindings = KeyBindings::load_from_settings("autocomplete")
         .map(|key_bindings| key_bindings.into_iter())
@@ -60,20 +55,33 @@ pub fn update(
         .chain(key_bindings)
         .collect::<Vec<_>>();
 
-    match session_data {
-        Some((session_sender, session_id)) => {
-            if let Err(err) = session_sender.send(FigtermCommand::InterceptFigJs {
+    let request_session_id = request.current_terminal_session_id.map(FigtermSessionId);
+
+    for session in figterm_state.linked_sessions.lock().iter_mut() {
+        if request_session_id.as_ref() == Some(&session.id) {
+            session.intercept = request.intercept_bound_keystrokes.unwrap_or_default().into();
+            session.intercept_global = request.intercept_global_keystrokes.unwrap_or_default().into();
+
+            if let Err(err) = session.sender.send(FigtermCommand::InterceptFigJs {
                 intercept_keystrokes: request.intercept_bound_keystrokes.unwrap_or_default(),
                 intercept_global_keystrokes: request.intercept_global_keystrokes.unwrap_or_default(),
-                actions,
+                actions: actions.clone(),
+                override_actions: true,
             }) {
-                error!("Failed sending command to figterm session {session_id}: {err}");
+                error!(%err, %session.id, "Failed sending command to figterm session");
             }
-        },
-        None => error!(
-            ?request_session_id,
-            "Failed to send command to figterm session since there is None for Id"
-        ),
+        } else {
+            session.intercept = InterceptMode::Unlocked;
+
+            if let Err(err) = session.sender.send(FigtermCommand::InterceptFigJs {
+                intercept_keystrokes: false,
+                intercept_global_keystrokes: request.intercept_global_keystrokes.unwrap_or_default(),
+                actions: vec![],
+                override_actions: false,
+            }) {
+                error!(%err, %session.id, "Failed sending command to figterm session");
+            }
+        }
     }
 
     RequestResult::success()

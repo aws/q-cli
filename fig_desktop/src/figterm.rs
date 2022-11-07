@@ -192,6 +192,25 @@ pub enum InterceptMode {
     Unlocked,
 }
 
+impl From<bool> for InterceptMode {
+    fn from(from: bool) -> Self {
+        if from {
+            InterceptMode::Locked
+        } else {
+            InterceptMode::Unlocked
+        }
+    }
+}
+
+impl From<InterceptMode> for bool {
+    fn from(from: InterceptMode) -> Self {
+        match from {
+            InterceptMode::Locked => true,
+            InterceptMode::Unlocked => false,
+        }
+    }
+}
+
 #[derive(Debug, Serialize)]
 pub struct FigtermSession {
     pub id: FigtermSessionId,
@@ -243,10 +262,10 @@ pub enum FigtermCommand {
         intercept_keystrokes: bool,
         intercept_global_keystrokes: bool,
         actions: Vec<fig_proto::figterm::Action>,
+        override_actions: bool,
     },
-    InterceptUpdate {
-        intercept_keystrokes: InterceptMode,
-        intercept_global_keystrokes: InterceptMode,
+    InterceptFigJSVisible {
+        visible: bool,
     },
     InsertText {
         insertion: Option<String>,
