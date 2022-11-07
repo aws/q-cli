@@ -37,10 +37,19 @@ pub async fn run_install(_ignore_immediate_update: bool) {
                         }
                     }
                 }
-                if !path.exists() {
-                    if let Err(err) = std::fs::write(&path, default) {
-                        error!(%err, "Failed to create {name} file");
+                // If file is empty, write default
+                if path.exists() {
+                    if let Ok(file) = std::fs::File::open(&path) {
+                        if let Ok(metadata) = file.metadata() {
+                            if metadata.len() == 0 {
+                                if let Err(err) = std::fs::write(&path, default) {
+                                    error!(%err, "Failed to write default {name} file");
+                                }
+                            }
+                        }
                     }
+                } else if let Err(err) = std::fs::write(&path, default) {
+                    error!(%err, "Failed to write default {name} file");
                 }
             },
             Err(err) => error!(%err, "Failed to get {name} path"),

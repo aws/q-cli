@@ -1,7 +1,5 @@
-use std::io::Write;
-
 use fig_request::Result;
-use fig_util::directories;
+use fig_settings::JsonStore;
 use serde::{
     Deserialize,
     Serialize,
@@ -13,14 +11,14 @@ use serde_json::{
 };
 use time::format_description::well_known::Rfc3339;
 
-pub async fn update_all(settings: Map<String, Value>) -> Result<()> {
-    if let Ok(path) = directories::settings_path() {
-        if let Ok(file) = std::fs::File::open(path) {
-            serde_json::to_writer_pretty(file, &settings).ok();
-        }
+pub async fn update_all(settings_map: Map<String, Value>) -> Result<()> {
+    if let Ok(mut settings) = fig_settings::Settings::load() {
+        *settings.map_mut() = settings_map.clone();
+        settings.save_to_file().ok();
     }
+
     fig_request::Request::post("/settings/update")
-        .body(&json!({ "settings": settings }))
+        .body(&json!({ "settings": settings_map }))
         .auth()
         .send()
         .await?;
@@ -86,16 +84,16 @@ pub async fn get() -> Result<Settings> {
 
 pub async fn sync() -> Result<()> {
     let Settings {
-        mut settings,
+        settings: mut settings_map,
         updated_at,
     } = get().await?;
 
-    ensure_telemetry(&mut settings).await?;
+    ensure_telemetry(&mut settings_map).await?;
 
-    let path = directories::settings_path()?;
-    let mut settings_file = std::fs::File::create(path)?;
-    let settings_json = serde_json::to_string_pretty(&settings)?;
-    settings_file.write_all(settings_json.as_bytes())?;
+    if let Ok(mut settings) = fig_settings::Settings::load() {
+        *settings.map_mut() = settings_map;
+        settings.save_to_file().ok();
+    }
 
     if let Ok(updated_at) = updated_at.format(&Rfc3339) {
         fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
