@@ -31,6 +31,7 @@ pub struct EventHandler {
     socket_sender: Sender<Hostbound>,
     history_sender: Sender<CommandInfo>,
     main_loop_sender: Sender<MainLoopEvent>,
+    csi_u_enabled: bool,
 }
 
 impl EventHandler {
@@ -43,14 +44,14 @@ impl EventHandler {
             socket_sender,
             history_sender,
             main_loop_sender,
+            csi_u_enabled: fig_settings::settings::get_bool_or("figterm.csi-u.enabled", false),
         }
     }
 }
 
 impl EventListener for EventHandler {
     fn send_event(&self, event: Event, shell_state: &ShellState) {
-        debug!("{event:?}");
-        debug!("{shell_state:?}");
+        debug!(?event, ?shell_state, "Handling event");
         match event {
             Event::Prompt => {
                 let context = shell_state_to_context(shell_state);
@@ -88,6 +89,12 @@ impl EventListener for EventHandler {
                 if let Err(err) = self.socket_sender.send(message) {
                     error!(%err, "Sender error");
                 }
+
+                if self.csi_u_enabled {
+                    if let Err(err) = self.main_loop_sender.send(MainLoopEvent::SetCsiU) {
+                        error!(%err, "Sender error");
+                    }
+                }
             },
             Event::PreExec => {
                 let context = shell_state_to_context(shell_state);
@@ -101,6 +108,12 @@ impl EventListener for EventHandler {
 
                 if let Err(err) = self.socket_sender.send(message) {
                     error!(%err, "Sender error");
+                }
+
+                if self.csi_u_enabled {
+                    if let Err(err) = self.main_loop_sender.send(MainLoopEvent::UnsetCsiU) {
+                        error!(%err, "Sender error");
+                    }
                 }
             },
             Event::CommandInfo(command_info) => {

@@ -148,6 +148,8 @@ pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
     UnlockInterception,
     SetImmediateMode(bool),
+    SetCsiU,
+    UnsetCsiU,
 }
 
 fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
@@ -536,6 +538,8 @@ fn figterm_main() -> Result<()> {
 
         let lints_enabled = fig_settings::settings::get_bool_or("product-gate.fig.lints.enabled", false);
 
+        let mut csi_u_set = false;
+
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
@@ -552,6 +556,42 @@ fn figterm_main() -> Result<()> {
 
             let select_result: Result<()> = select! {
                 biased;
+                res = main_loop_rx.recv_async() => {
+                    match res {
+                        Ok(event) => {
+                            match event {
+                                MainLoopEvent::Insert { insert, unlock } => {
+                                    master.write_all(&insert).await?;
+                                    if unlock {
+                                        key_interceptor.reset();
+                                    }
+                                },
+                                MainLoopEvent::UnlockInterception => {
+                                    key_interceptor.reset();
+                                },
+                                MainLoopEvent::SetImmediateMode(mode) => {
+                                    if let Err(err) = terminal.set_immediate_mode(mode) {
+                                        error!(%err, "Failed to set immediate mode");
+                                    }
+                                },
+                                MainLoopEvent::SetCsiU => {
+                                    // Send CSI > 1 u
+                                    stdout.write_all(b"\x1b[>1u").await?;
+                                    stdout.flush().await?;
+                                    csi_u_set = true;
+                                },
+                                MainLoopEvent::UnsetCsiU => {
+                                    // Send CSI < u
+                                    stdout.write_all(b"\x1b[<u").await?;
+                                    stdout.flush().await?;
+                                    csi_u_set = false;
+                                },
+                            }
+                        }
+                        Err(err) => warn!("Failed to recv: {err}"),
+                    };
+                    Ok(())
+                }
                 res = input_rx.recv_async() => {
                     let mut input_res = Ok(());
                     match res {
@@ -596,11 +636,18 @@ fn figterm_main() -> Result<()> {
                                             }
                                         }
 
-                                        let raw = raw.or_else(|| {
+                                        // if we are in CSI u mode we try to encode first, otherwise we try to send the raw bytes first
+                                        let raw = if csi_u_set {
                                             event.key.encode(event.modifiers, key_code_encode_mode, true)
                                                 .ok()
-                                                .map(|s| s.into_bytes().into())
-                                        });
+                                                .map(|s| s.into_bytes().into()).or(raw)
+                                        } else {
+                                            raw.or_else(|| {
+                                                event.key.encode(event.modifiers, key_code_encode_mode, true)
+                                                    .ok()
+                                                    .map(|s| s.into_bytes().into())
+                                            })
+                                        };
 
                                         let handled_action = if !preexec {
                                             if let Some(action) = key_interceptor.intercept_key(&event) {
@@ -677,30 +724,6 @@ fn figterm_main() -> Result<()> {
                         }
                     };
                     input_res
-                }
-                res = main_loop_rx.recv_async() => {
-                    match res {
-                        Ok(event) => {
-                            match event {
-                                MainLoopEvent::Insert { insert, unlock } => {
-                                    master.write_all(&insert).await?;
-                                    if unlock {
-                                        key_interceptor.reset();
-                                    }
-                                },
-                                MainLoopEvent::UnlockInterception => {
-                                    key_interceptor.reset();
-                                },
-                                MainLoopEvent::SetImmediateMode(mode) => {
-                                    if let Err(err) = terminal.set_immediate_mode(mode) {
-                                        error!(%err, "Failed to set immediate mode");
-                                    }
-                                },
-                            }
-                        }
-                        Err(err) => warn!("Failed to recv: {err}"),
-                    };
-                    Ok(())
                 }
                 res = master.read(&mut write_buffer) => {
                     match res {
