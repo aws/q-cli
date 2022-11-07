@@ -229,7 +229,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Create cache dir
     tokio::fs::create_dir_all(directories::workflows_cache_dir()?).await?;
 
-    let workflows = get_workflows().await?;
+    let mut workflows = get_workflows().await?;
 
     // Must come after we get workflows
     let mut write_workflows: Option<tokio::task::JoinHandle<Result<(), _>>> = Some(tokio::spawn(write_workflows()));
@@ -271,12 +271,13 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             .find(|workflow| workflow.name == name && workflow.is_owned_by_user),
                     };
 
-                    if workflow.is_none() {
-                        eprintln!("Workflow not found");
-                        return Ok(());
+                    match workflow {
+                        Some(workflow) => workflow,
+                        None => {
+                            eprintln!("Workflow not found");
+                            return Ok(());
+                        },
                     }
-
-                    workflow.unwrap()
                 },
             };
 
@@ -300,7 +301,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 warn!("Failed to acquire remote workflow definitions: {err}");
             }
 
-            let mut workflows = get_workflows().await?;
             workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
                 (None, None) => StdOrdering::Equal,
                 (None, Some(_)) => StdOrdering::Greater,
@@ -321,7 +321,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         tx.send(Arc::new(WorkflowAction::Create)).ok();
                     }
 
-                    for workflow in workflows.iter().rev() {
+                    for workflow in workflows.iter() {
                         tx.send(Arc::new(WorkflowAction::Run(Box::new(workflow.clone())))).ok();
                     }
                     drop(tx);
