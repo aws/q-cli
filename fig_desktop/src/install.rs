@@ -6,6 +6,8 @@ use fig_install::check_for_updates;
 #[cfg(target_os = "macos")]
 use fig_integrations::Integration;
 use fig_util::directories;
+#[cfg(target_os = "macos")]
+use macos_accessibility_position::bundle::get_bundle_path_for_executable;
 use semver::Version;
 use tracing::{
     error,
@@ -98,20 +100,15 @@ pub async fn run_install(_ignore_immediate_update: bool) {
             }
         }
 
-        // Delete old figterm instances
+        // Copy shell specific versions of figterm bin
         #[cfg(target_os = "macos")]
-        if let Ok(fig_dir) = directories::fig_dir() {
+        if let (Ok(fig_dir), Some(ref figterm_exe)) = (
+            directories::fig_dir(),
+            get_bundle_path_for_executable(fig_util::consts::FIGTERM_BINARY_NAME),
+        ) {
             let bins = fig_dir.join("bin");
-            for entry in std::fs::read_dir(bins).ok().into_iter().flatten().flatten() {
-                if entry.file_type().map_or(false, |f| f.is_file()) {
-                    if let Some(name) = entry.file_name().to_str() {
-                        if name.contains("figterm") {
-                            if let Err(err) = std::fs::remove_file(entry.path()) {
-                                error!(%err, "Failed to delete old figterm instance");
-                            }
-                        }
-                    }
-                }
+            for shell in fig_util::Shell::all() {
+                std::fs::copy(figterm_exe, bins.join(format!("{shell} (figterm)"))).ok();
             }
         }
     }
@@ -223,6 +220,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
     use fig_integrations::shell::ShellExt;
     use fig_util::consts::{
+        FIGTERM_BINARY_NAME,
         FIG_BUNDLE_ID,
         FIG_CLI_BINARY_NAME,
         FIG_DESKTOP_PROCESS_NAME,
@@ -235,10 +233,8 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         create_launch_agent,
         LaunchdPlist,
     };
-    use fig_util::Shell;
     use macos_accessibility_position::bundle::{
         get_bundle_path,
-        get_bundle_path_for_executable,
         get_bundle_resource_path,
     };
 
@@ -267,7 +263,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         copy_dir_all(source, dest).ok();
     }
 
-    if let Some(figterm_path) = get_bundle_path_for_executable("figterm") {
+    if let Some(figterm_path) = get_bundle_path_for_executable(FIGTERM_BINARY_NAME) {
         let dest = bin_dir.join("figterm");
         std::os::unix::fs::symlink(figterm_path, dest).ok();
     }
@@ -320,7 +316,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
     // Init the .fig/shell directory
     std::fs::create_dir(fig_dir.join("shell")).ok();
-    for integration in Shell::all()
+    for integration in fig_util::Shell::all()
         .iter()
         .flat_map(|s| s.get_script_integrations().unwrap_or_else(|_| vec![]))
     {

@@ -9,3 +9,5 @@ pub const FIG_DESKTOP_PROCESS_NAME: &str = "fig_desktop.exe";
 pub const FIG_CLI_BINARY_NAME: &str = "fig-darwin-universal";
 #[cfg(not(target_os = "macos"))]
 pub const FIG_CLI_BINARY_NAME: &str = "fig";
+
+pub const FIGTERM_BINARY_NAME: &str = "figterm";

@@ -5,14 +5,18 @@ use core_foundation::bundle::{
     CFBundleCopyBundleURL,
     CFBundleGetMainBundle,
 };
-use core_foundation::url::CFURL;
+use core_foundation::url::{
+    CFURLRef,
+    CFURL,
+};
 
 pub fn get_bundle_path() -> Option<PathBuf> {
-    unsafe {
-        let url = CFBundleCopyBundleURL(CFBundleGetMainBundle());
-        let url = CFURL::wrap_under_get_rule(url);
-        url.to_path()
+    let url: CFURLRef = unsafe { CFBundleCopyBundleURL(CFBundleGetMainBundle()) };
+    if url.is_null() {
+        return None;
     }
+    let url = unsafe { CFURL::wrap_under_get_rule(url) };
+    url.to_path()
 }
 
 pub fn get_bundle_path_for_executable(executable: &str) -> Option<PathBuf> {
