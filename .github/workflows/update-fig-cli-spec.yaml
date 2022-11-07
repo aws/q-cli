@@ -15,6 +15,8 @@ jobs:
     steps:
       - uses: actions/checkout@v3
       - uses: actions/setup-node@v3
+        with:
+          node-version: 16
       - name: Setup Rust stable
         uses: actions-rs/toolchain@v1
         with:
@@ -33,7 +35,7 @@ jobs:
       - name: Get CLI version
         id: cli-version
         run: |
-          echo "::set-output name=VERSION::$(cat Cargo.toml | sed -rn 's/^version = \"([0-9\.-]+)\"$/\1 /p')"
+          echo "version=$(cargo run --quiet -- --version | sed -rn 's/^fig_cli ([0-9\.-]+)$/\1/p')" >> $GITHUB_OUTPUT
       - name: Create Autocomplete PR
         uses: withfig/push-to-fig-autocomplete-action@v1
         with:
@@ -42,5 +44,5 @@ jobs:
           spec-path: fig_cli/spec.ts
           integration: clap
           diff-based-versioning: true
-          new-spec-version: ${{ steps.cli-version.outputs.VERSION }}
+          new-spec-version: ${{ steps.cli-version.outputs.version }}
 
