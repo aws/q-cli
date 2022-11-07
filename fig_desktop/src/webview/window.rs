@@ -19,8 +19,10 @@ use parking_lot::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
     error,
+    info,
     warn,
 };
+use url::Url;
 #[cfg(target_os = "linux")]
 use wry::application::dpi::PhysicalSize;
 use wry::application::dpi::{
@@ -81,10 +83,11 @@ pub struct WindowState {
     pub window_id: WindowId,
     pub window_geometry_state: Mutex<WindowGeometryState>,
     pub enabled: AtomicBool,
+    pub url: Mutex<Url>,
 }
 
 impl WindowState {
-    pub fn new(window_id: WindowId, webview: WebView, context: WebContext, enabled: bool) -> Self {
+    pub fn new(window_id: WindowId, webview: WebView, context: WebContext, enabled: bool, url: Url) -> Self {
         let window = webview.window();
 
         let scale_factor = window.scale_factor();
@@ -107,6 +110,7 @@ impl WindowState {
                 anchor: LogicalSize::<f64>::default(),
             }),
             enabled: enabled.into(),
+            url: Mutex::new(url),
         }
     }
 
@@ -342,6 +346,7 @@ impl WindowState {
                 self.webview
                     .evaluate_script(&format!("window.location.href = '{url}';"))
                     .unwrap();
+                *self.url.lock() = url;
             },
             WindowEvent::NavigateRelative { path } => {
                 let event_name = "mission-control.navigate";
@@ -354,8 +359,36 @@ impl WindowState {
                     })),
                 })
             },
+            WindowEvent::ReloadIfNotLoaded => {
+                info!(%self.window_id, "Reloading window if not loaded");
+
+                let url = serde_json::json!(self.url.lock().clone());
+
+                self.webview
+                    .evaluate_script(&dbg!(format!(
+                        "if (window.location.href === 'about:blank') {{\
+                            console.log('Reloading window to', {url});\
+                            window.location.href = {url};\
+                        }}"
+                    )))
+                    .unwrap();
+            },
             WindowEvent::Reload => {
-                self.webview.evaluate_script("window.location.reload();").unwrap();
+                info!(%self.window_id, "Reloading window");
+
+                let url = serde_json::json!(self.url.lock().clone());
+
+                self.webview
+                    .evaluate_script(&dbg!(format!(
+                        "if (window.location.href === 'about:blank') {{\
+                            console.log('Reloading window to', {url});\
+                            window.location.href = {url};\
+                        }} else {{\
+                            console.log('Reloading window');\
+                            window.location.reload();\
+                        }}"
+                    )))
+                    .unwrap();
             },
             WindowEvent::Emit { event_name, payload } => {
                 self.emit(event_name, payload);
@@ -395,6 +428,11 @@ impl WindowState {
             },
             WindowEvent::SetEnabled(enabled) => self.set_enabled(enabled),
             WindowEvent::SetTheme(theme) => self.set_theme(theme),
+            WindowEvent::SetHtml { html } => {
+                self.webview
+                    .evaluate_script(&format!("document.documentElement.innerHTML = `{html}`;"))
+                    .unwrap();
+            },
             WindowEvent::Batch(events) => {
                 for event in events {
                     self.handle(

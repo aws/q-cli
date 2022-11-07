@@ -117,6 +117,7 @@ libc = "0.2"
 macos_accessibility_position = { path = "../lib/macos_accessibility_position" }
 nix = "0.25.0"
 objc = "0.2.7"
+system-configuration = "0.5.0"
 
 [build-dependencies]
 image = "0.24.4"

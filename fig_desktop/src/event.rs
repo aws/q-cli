@@ -99,12 +99,20 @@ pub enum WindowEvent {
         url: url::Url,
     },
     Reload,
+
+    /// Trigger a reload if the page is not already loaded
+    ReloadIfNotLoaded,
+
     Api {
         /// A base64 encoded protobuf
         payload: Cow<'static, str>,
     },
     Devtools,
     DebugMode(bool),
+
+    SetHtml {
+        html: Cow<'static, str>,
+    },
 
     Batch(Vec<WindowEvent>),
 }
