@@ -92,9 +92,7 @@ impl PlatformStateImpl {
                         Ok(DisplayServer::X11) => {
                             info!("Detected X11 server");
 
-                            let x11_state = Arc::new(X11State {
-                                active_window: Mutex::new(None),
-                            });
+                            let x11_state = Arc::new(X11State::default());
                             *platform_state.display_server_state.lock() =
                                 Some(DisplayServerState::X11(x11_state.clone()));
 
@@ -216,7 +214,16 @@ impl PlatformStateImpl {
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         match asset {
             AssetSpecifier::Named(name) => icons::lookup(name),
-            AssetSpecifier::PathBased(_) => None,
+            AssetSpecifier::PathBased(path) => path.metadata().ok().and_then(|metadata| {
+                let name = if metadata.is_dir() {
+                    Some("folder")
+                } else if metadata.is_file() {
+                    Some("file")
+                } else {
+                    None
+                };
+                name.and_then(icons::lookup)
+            }),
         }
     }
 

@@ -560,8 +560,12 @@ pub fn build_dashboard(
         .with_focused(is_visible)
         .with_always_on_top(false)
         .with_window_icon(Some(utils::ICON.clone()))
-        .with_menu(menu::menu_bar())
         .with_theme(*THEME);
+
+    #[cfg(not(target_os = "linux"))]
+    {
+        window = window.with_menu(menu::menu_bar());
+    }
 
     match show_onboarding {
         true => window = window.with_inner_size(DASHBOARD_ONBOARDING_SIZE),

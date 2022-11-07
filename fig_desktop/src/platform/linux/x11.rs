@@ -1,11 +1,11 @@
 use std::sync::atomic::Ordering;
 use std::sync::Arc;
 
+use dashmap::DashMap;
 use parking_lot::Mutex;
 use tracing::{
     debug,
     error,
-    info,
     trace,
 };
 use wry::application::dpi::{
@@ -20,7 +20,9 @@ use x11rb::protocol::xproto::{
     get_geometry,
     get_input_focus,
     get_property,
+    intern_atom,
     query_tree,
+    Atom,
     AtomEnum,
     ChangeWindowAttributesAux,
     EventMask,
@@ -42,9 +44,37 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-#[derive(Debug)]
+const WM_WINDOW_ROLE: &[u8] = b"WM_WINDOW_ROLE";
+
+#[derive(Debug, Default)]
 pub struct X11State {
     pub active_window: Mutex<Option<X11WindowData>>,
+    pub atom_cache_a2b: DashMap<Atom, Vec<u8>>,
+    pub atom_cache_b2a: DashMap<Vec<u8>, Atom>,
+}
+
+impl X11State {
+    fn atom_a2b(&self, conn: &RustConnection, atom: Atom) -> anyhow::Result<Vec<u8>> {
+        match self.atom_cache_a2b.get(&atom) {
+            Some(name) => Ok(name.clone()),
+            None => {
+                let name = get_atom_name(conn, atom)?.reply()?.name;
+                self.atom_cache_a2b.insert(atom, name.clone());
+                Ok(name)
+            },
+        }
+    }
+
+    fn atom_b2a(&self, conn: &RustConnection, name: &[u8]) -> anyhow::Result<Atom> {
+        match self.atom_cache_b2a.get(name) {
+            Some(atom) => Ok(*atom),
+            None => {
+                let atom = intern_atom(conn, false, name)?.reply()?.atom;
+                self.atom_cache_b2a.insert(name.to_vec(), atom);
+                Ok(atom)
+            },
+        }
+    }
 }
 
 #[derive(Debug)]
@@ -53,27 +83,6 @@ pub struct X11WindowData {
     pub class: Option<Vec<u8>>,
     pub instance: Option<Vec<u8>>,
     pub window_geometry: Option<Rect>,
-}
-
-mod atoms {
-    use once_cell::sync::OnceCell;
-    use x11rb::protocol::xproto::{
-        intern_atom,
-        Atom,
-    };
-    use x11rb::rust_connection::RustConnection;
-
-    static WM_ROLE: OnceCell<Atom> = OnceCell::new();
-
-    pub(super) fn wm_role(conn: &RustConnection) -> Atom {
-        *WM_ROLE.get_or_init(|| {
-            intern_atom(conn, false, "WM_ROLE".as_bytes())
-                .expect("Failed requesting WM_ROLE atom")
-                .reply()
-                .expect("Failed receiving WM_ROLE atom")
-                .atom
-        })
-    }
 }
 
 pub async fn handle_x11(proxy: EventLoopProxy, x11_state: Arc<X11State>) {
@@ -116,8 +125,7 @@ fn handle_property_event(
     WM_REVICED_DATA.store(true, Ordering::Relaxed);
     let PropertyNotifyEvent { atom, state, .. } = event;
     if state == Property::NEW_VALUE {
-        // TODO(mia): cache this
-        let property_name = get_atom_name(conn, atom)?.reply()?.name;
+        let property_name = x11_state.atom_a2b(conn, atom)?;
 
         if property_name == b"_NET_ACTIVE_WINDOW" {
             trace!("active window changed");
@@ -176,13 +184,13 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
 
     debug!("focus changed to {}", wm_class.escape_ascii());
 
-    if wm_class == b"Fig_desktop" {
+    if wm_class == b"Fig" {
         // get wm_role
         let reply = get_property(
             conn,
             false,
             focus_window,
-            atoms::wm_role(conn),
+            x11_state.atom_b2a(conn, WM_WINDOW_ROLE)?,
             AtomEnum::STRING,
             0,
             2048,
@@ -197,7 +205,7 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
         return Ok(());
     }
 
-    info!("Not autocomplete");
+    debug!("Selected window is not Fig");
 
     if let Some(old_window_data) = old_window_data {
         if old_window_data.id != focus_window {
@@ -212,7 +220,7 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
         return Ok(());
     }
 
-    info!("Not whitelisted");
+    debug!("Selected window is not whitelisted");
 
     // TODO(mia): get the geometry and subscribe to changes
 

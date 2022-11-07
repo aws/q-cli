@@ -221,20 +221,12 @@ jobs:
       - name: Install cargo-llvm-cov
         uses: taiki-e/install-action@cargo-llvm-cov
 
-      - name: Test & Codecov (MacOS)
+      - name: Test & Codecov
         uses: actions-rs/cargo@v1
-        if: startsWith(matrix.os,'macos')
         with:
           command: llvm-cov
           args: --workspace --jobs 1 --locked --lcov --output-path lcov.info
 
-      - name: Test & Codecov (Other)
-        uses: actions-rs/cargo@v1
-        if: ${{ !startsWith(matrix.os,'macos') }}
-        with:
-          command: llvm-cov
-          args: --workspace --jobs 1 --locked --exclude fig_desktop --lcov --output-path lcov.info    
-      
       - name: Upload coverage to Codecov
         uses: codecov/codecov-action@v3
         with:

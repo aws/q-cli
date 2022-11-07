@@ -10,6 +10,8 @@ use tracing::{
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
+    PhysicalPosition,
+    Position,
 };
 use zbus::export::futures_util::TryStreamExt;
 use zbus::fdo::DBusProxy;
@@ -77,16 +79,12 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                             .send_event(Event::WindowEvent {
                                                 window_id: AUTOCOMPLETE_ID.clone(),
                                                 window_event: WindowEvent::UpdateWindowGeometry {
-                                                    position: Some(WindowPosition::RelativeToCaret {
-                                                        caret_position: LogicalPosition {
-                                                            x: body.0 as f64,
-                                                            y: body.1 as f64,
+                                                    position: Some(WindowPosition::Absolute(Position::Physical(
+                                                        PhysicalPosition {
+                                                            x: body.0,
+                                                            y: body.1 + body.3,
                                                         },
-                                                        caret_size: LogicalSize {
-                                                            width: body.2 as f64,
-                                                            height: body.3 as f64,
-                                                        },
-                                                    }),
+                                                    ))),
                                                     size: None,
                                                     anchor: None,
                                                 },
