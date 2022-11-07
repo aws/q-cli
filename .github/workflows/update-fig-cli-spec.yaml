@@ -21,9 +21,13 @@ jobs:
           profile: minimal
           toolchain: stable
       - uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
-      - name: Install protoc
+      - name: Install Protobuf on Ubuntu
+        if: startsWith(matrix.os,'ubuntu')
         run: |
-          sudo apt install -y protobuf-compiler
+          curl -L -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v21.6/protoc-21.6-linux-x86_64.zip \
+          && unzip /tmp/protoc.zip -d /tmp/protoc \
+          && sudo cp /tmp/protoc/bin/protoc /usr/local/bin/ \
+          && sudo cp -r /tmp/protoc/include/google /usr/local/include/
       - name: Generate the spec
         run: |
           cargo run -- completion fig > spec.ts
