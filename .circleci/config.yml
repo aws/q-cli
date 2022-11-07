@@ -390,6 +390,7 @@ jobs:
 
             # Add legacy Sparkle ED Public Key - required for migration but can be removed afterwards
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" SUPublicEDKey 5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=
+            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" LSUIElement -bool TRUE
             
             # Change the display name of the app
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleDisplayName Fig
