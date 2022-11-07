@@ -10,18 +10,33 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
         return Ok(());
     }
 
-    let should_uninstall = if no_confirm {
-        true
-    } else {
-        dialoguer::Confirm::with_theme(&dialoguer_theme())
-            .with_prompt("Are you sure you want to uninstall Fig?")
-            .interact()?
-    };
+    if !no_confirm {
+        println!("\nCommon issues with Fig can be resolved by running `fig doctor`");
+        println!("Additionally, you can disable Autocomplete and continue using the rest of Fig\n");
 
-    if !should_uninstall {
-        println!("Phew...");
-        return Ok(());
-    }
+        let choice = dialoguer::Select::with_theme(&dialoguer_theme())
+            .with_prompt("What would you like to do?")
+            .items(&["fix common issues", "disable autocomplete", "uninstall", "exit"])
+            .default(0)
+            .interact()?;
+
+        match choice {
+            i if i == 0 => return super::doctor::doctor_cli(true, false).await,
+            i if i == 1 => {
+                println!(
+                    "Autocomplete disabled! If you'd like to re-enable it, run `fig settings autocomplete.disable false`"
+                );
+                fig_api_client::settings::update("autocomplete.disable", true).await?;
+                return Ok(());
+            },
+            i if i == 2 => println!("Uninstalling Fig"),
+            i if i == 3 => {
+                println!("Phew...");
+                return Ok(());
+            },
+            _ => unreachable!(),
+        }
+    };
 
     cfg_if! {
         if #[cfg(unix)] {
