@@ -62,7 +62,7 @@ struct InputMethod {
     #[serde(rename(serialize = "InputMethodType"))]
     input_method_type: String,
     #[serde(rename(serialize = "ComponentInvisibleInSystemUI"))]
-    visible_in_system_ui: bool,
+    invisible_in_system_ui: bool,
     #[serde(
         rename(serialize = "tsInputMethodIconFileKey"),
         default = "input_method_file_icon_key_default"

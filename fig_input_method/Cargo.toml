@@ -10,7 +10,7 @@ version.workspace = true
 bundle_name = "FigInputMethod"
 bundle_identifier = "io.fig.cursor"
 input_source_identifier = "io.fig.cursor"
-visible_in_system_ui = false
+invisible_in_system_ui = true
 input_method_type = "palette"
 
 [build-dependencies]
