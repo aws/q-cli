@@ -69,6 +69,13 @@ impl SshIntegration {
         );
         Ok(Regex::new(&regex)?)
     }
+
+    pub async fn reinstall(&self) -> Result<()> {
+        if self.get_integration_path()?.exists() {
+            self.get_file_integration()?.install().await?;
+        }
+        Ok(())
+    }
 }
 
 #[async_trait]

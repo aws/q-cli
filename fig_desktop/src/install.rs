@@ -3,6 +3,7 @@ use std::iter::empty;
 use cfg_if::cfg_if;
 #[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
+use fig_integrations::ssh::SshIntegration;
 #[cfg(target_os = "macos")]
 use fig_integrations::Integration;
 use fig_util::directories;
@@ -206,6 +207,13 @@ pub async fn run_install(_ignore_immediate_update: bool) {
             if let Err(err) = integration.install().await {
                 error!(%err, "Failed installing intellij integration for variant {}", integration.variant.application_name);
             }
+        }
+    }
+
+    // update ssh integration
+    if let Ok(ssh_integration) = SshIntegration::new() {
+        if let Err(err) = ssh_integration.reinstall().await {
+            error!(%err, "Failed updating ssh integration");
         }
     }
 }

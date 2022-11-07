@@ -1,4 +1,4 @@
-Match user="!git,!aur,*"
+Match exec="command -v fig && fig _ check-ssh %r"
   RemoteForward /var/tmp/fig-parent-${FIGTERM_SESSION_ID}.socket /var/tmp/fig/${USER}/secure.socket
   SendEnv LC_FIG_SET_PARENT FIG_SET_PARENT
   StreamLocalBindMask 600

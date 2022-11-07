@@ -301,6 +301,13 @@ pub enum InternalSubcommand {
         from: PathBuf,
         to: PathBuf,
     },
+    /// Checks to see if we should try to forward on this SSH connection
+    ///
+    /// Checks that the username is not git or aur and that the environment variables
+    /// LC_FIG_SET_PARENT and FIG_SET_PARENT are set
+    CheckSSH {
+        remote_username: String,
+    },
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -880,6 +887,21 @@ impl InternalSubcommand {
                         std::process::exit(1);
                     },
                 }
+            },
+            InternalSubcommand::CheckSSH { remote_username } => {
+                for username in ["git", "aur"] {
+                    if remote_username == username {
+                        writeln!(stdout(), "blacklisted username {username}").ok();
+                        std::process::exit(1);
+                    }
+                }
+                for var in ["FIGTERM_SESSION_ID", "LC_FIG_SET_PARENT", "FIG_SET_PARENT"] {
+                    if std::env::var_os(var).is_none() {
+                        writeln!(stdout(), "missing env var {var}").ok();
+                        std::process::exit(1);
+                    }
+                }
+                std::process::exit(0);
             },
         }
 
