@@ -24,9 +24,9 @@ objc = "0.2.7"
 cocoa = "0.24.0"
 libc = "0.2"
 rand = "0.8.4"
-fig_ipc = { path = "../rust-lib/fig_ipc" }
-fig_log = { path = "../rust-lib/fig_log" }
-fig_proto = { path = "../rust-lib/fig_proto" }
-macos_accessibility_position = { path = "../rust-lib/macos_accessibility_position" }
+fig_ipc = { path = "../lib/fig_ipc" }
+fig_log = { path = "../lib/fig_log" }
+fig_proto = { path = "../lib/fig_proto" }
+macos_accessibility_position = { path = "../lib/macos_accessibility_position" }
 tokio = { version = "1.20.1", features = ["full"] }
 tracing = "0.1.36"

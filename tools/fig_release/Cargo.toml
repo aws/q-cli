@@ -10,9 +10,9 @@ version.workspace = true
 clap = { version = "4.0.18", features = ["derive"] }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select", "editor"] }
 eyre = "0.6.8"
-fig_request = { path = "../../rust-lib/fig_request" }
-fig_settings = { path = "../../rust-lib/fig_settings" }
-fig_util = { path = "../../rust-lib/fig_util" }
+fig_request = { path = "../../lib/fig_request" }
+fig_settings = { path = "../../lib/fig_settings" }
+fig_util = { path = "../../lib/fig_util" }
 semver = "1.0.14"
 serde = { version = "1.0.147", features = ["derive"] }
 strum = "0.24.1"

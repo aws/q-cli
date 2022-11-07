@@ -74,7 +74,7 @@ Figterm replicates the processing of these sequences from the shell to
 create it's own internal screen representation. We do this with a fork of
 [Alacritty](https://github.com/alacritty/alacritty)’s [alacritty_terminal
 crate](https://docs.rs/alacritty_terminal/latest/alacritty_terminal/index.html).
-This lives in `rust-lib/alacritty_terminal/`.
+This lives in `lib/alacritty_terminal/`.
 
 Our `post`
 [shell

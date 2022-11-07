@@ -36,7 +36,3 @@ protoMessageRecieved = "protoMessageRecieved"
 FROM_LEFT_2ND_BUTTON_PRESSED = "FROM_LEFT_2ND_BUTTON_PRESSED"
 # Flag of `systeminfo`
 FO = "FO"
-
-[type.swift.extend-identifiers]
-# looks like a typo of `input`, but this is a swift keyword
-inout = "inout"

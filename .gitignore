@@ -4,12 +4,6 @@ xcuserdata/
 ## gcc Patch
 /*.gcno
 
-# Swift Package Manager
-fig.xcodeproj/**
-!fig.xcodeproj/project.xcworkspace/xcshareddata/swiftpm/Package.resolved
-
-fig.xcodeproj/xcuserdata/*.xcuserdatad/xcschemes/xcschememanagement.plist
-
 # Misc
 .DS_Store
 node_modules/
@@ -24,7 +18,6 @@ package-lock.json
 
 # Ignore all compiled protobuf artifacts
 **/*.pb.ts
-**/*.pb.swift
 
 target/
 build/

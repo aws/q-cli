@@ -29,19 +29,19 @@ deno_core = { version = "0.156.0", optional = true }
 deno_runtime = { version = "0.82.0", optional = true }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 eyre = "0.6.8"
-fig_api_client = { path = "../rust-lib/fig_api_client" }
-fig_daemon = { path = "../rust-lib/fig_daemon" }
-fig_diagnostic = { path = "../rust-lib/fig_diagnostic" }
-fig_install = { path = "../rust-lib/fig_install" }
-fig_integrations = { path = "../rust-lib/fig_integrations" }
-fig_ipc = { path = "../rust-lib/fig_ipc" }
-fig_log = { path = "../rust-lib/fig_log" }
-fig_proto = { path = "../rust-lib/fig_proto" }
-fig_request = { path = "../rust-lib/fig_request" }
-fig_settings = { path = "../rust-lib/fig_settings" }
-fig_sync = { path = "../rust-lib/fig_sync" }
-fig_telemetry = { path = "../rust-lib/fig_telemetry" }
-fig_util = { path = "../rust-lib/fig_util" }
+fig_api_client = { path = "../lib/fig_api_client" }
+fig_daemon = { path = "../lib/fig_daemon" }
+fig_diagnostic = { path = "../lib/fig_diagnostic" }
+fig_install = { path = "../lib/fig_install" }
+fig_integrations = { path = "../lib/fig_integrations" }
+fig_ipc = { path = "../lib/fig_ipc" }
+fig_log = { path = "../lib/fig_log" }
+fig_proto = { path = "../lib/fig_proto" }
+fig_request = { path = "../lib/fig_request" }
+fig_settings = { path = "../lib/fig_settings" }
+fig_sync = { path = "../lib/fig_sync" }
+fig_telemetry = { path = "../lib/fig_telemetry" }
+fig_util = { path = "../lib/fig_util" }
 flume = "0.10.14"
 futures = "0.3.25"
 globset = "0.4.9"
@@ -79,7 +79,7 @@ tracing-subscriber = { version = "0.3.16", features = [
     "time",
     "parking_lot",
 ] }
-tui = { path = "../rust-lib/tui" }
+tui = { path = "../lib/tui" }
 url = "2.3.1"
 uuid = { version = "1.2.1", features = ["v4", "fast-rng"] }
 validator = "0.16.0"
@@ -92,7 +92,7 @@ skim = { git = "https://github.com/grant0417/skim", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
 notify = "5.0.0"
-macos_accessibility_position = { path = "../rust-lib/macos_accessibility_position" }
+macos_accessibility_position = { path = "../lib/macos_accessibility_position" }
 
 [target.'cfg(target_os = "windows")'.dependencies]
 windows = { version = "0.43.0", features = ["Win32_System_Threading"] }

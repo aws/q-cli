@@ -61,7 +61,7 @@ USER test
 COPY --chown=test:test ./tests/figterm/package.json .
 COPY --chown=test:test ./fig_cli/ ./fig_cli/
 COPY --chown=test:test ./figterm/ ./figterm/
-COPY --chown=test:test ./rust-lib/ ./rust-lib/
+COPY --chown=test:test ./lib/ ./lib/
 COPY --chown=test:test ./build-scripts/ ./build-scripts/
 RUN ls -la
 

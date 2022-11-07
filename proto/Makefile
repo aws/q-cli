@@ -15,7 +15,6 @@ TS_FLAGS    = --plugin=$(TS_PROTO) \
 							--ts_proto_opt=esModuleInterop=true \
 							--ts_proto_opt=oneof=unions \
 							--ts_proto_opt=fileSuffix=.pb
-SWIFT_FLAGS = --swift_opt=Visibility=Public
 
 # Proto files
 LOCAL = "./local.proto" "./fig_common.proto"
@@ -27,12 +26,10 @@ SECURE = "./secure.proto"
 ARTIFACTS           = bin
 ARTIFACTS_TS        = bin/ts
 TS_API_BINDINGS     = $(ROOT)/../typescript-api-bindings/src
-SWIFT_API_BINDINGS  = $(ROOT)/../swift-api-bindings/Sources/FigAPIBindings
 DOTENV             ?= $(ROOT)/../tests/dotenv/src
 
 DESTINATIONS = $(ARTIFACTS) \
 					     $(TS_API_BINDINGS) \
-					     $(SWIFT_API_BINDINGS) \
 					     $(DOTENV)
 
 # Ensure $ARTIFACTS directory exists
@@ -44,23 +41,15 @@ all: api local figterm secure
 check-protoc:
 	command -v protoc 2> /dev/null || echo "protoc is not in PATH"
 
-check-swift: check-protoc
-	command -v protoc-gen-swift 2> /dev/null || echo "protoc-gen-swift is not in PATH"
-
 check-ts: check-protoc
 	command -v $(TS_PROTO) 2> /dev/null || echo "protoc-gen-ts_proto is not in PATH"
-
-api-swift: check-swift
-	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(API)
-	mkdir -p $(SWIFT_API_BINDINGS)
-	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
 
 api-ts: check-ts
 	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS_TS) $(API)
 	mkdir -p $(TS_API_BINDINGS)
 	cp -r $(ARTIFACTS_TS)/** $(TS_API_BINDINGS)
 
-api: api-swift api-ts
+api: api-ts
 
 local-ts: check-ts
 	protoc $(FLAGS) $(TS_FLAGS) --ts_proto_out=$(ARTIFACTS) $(LOCAL)
@@ -68,20 +57,6 @@ local-ts: check-ts
 	cp $(ARTIFACTS)/local.pb.ts $(DOTENV)
 
 local: local-ts
-
-figterm-swift:
-	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(FIGTERM)
-	mkdir -p $(SWIFT_API_BINDINGS)
-	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
-
-figterm: figterm-swift
-
-secure-swift:
-	protoc $(FLAGS) $(SWIFT_FLAGS) --swift_out=$(ARTIFACTS) $(SECURE)
-	mkdir -p $(SWIFT_API_BINDINGS)
-	cp $(ARTIFACTS)/*.pb.swift $(SWIFT_API_BINDINGS)
-
-secure: secure-swift
 
 clean: 
 	# Remove compiled protos from all destinations, including $ARTIFACTS

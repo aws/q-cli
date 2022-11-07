@@ -9,7 +9,7 @@ on:
       - reopened
       - ready_for_review
     paths:
-      - "rust-lib/**"
+      - "lib/**"
       - "figterm/**"
       - "fig_cli/**"
       - "fig_desktop/**"
@@ -19,7 +19,7 @@ on:
       - develop
   push:
     paths:
-      - "rust-lib/**"
+      - "lib/**"
       - "figterm/**"
       - "fig_cli/**"
       - "fig_desktop/**"
