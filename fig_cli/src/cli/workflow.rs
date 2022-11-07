@@ -11,7 +11,6 @@ use std::iter::empty;
 use std::process::Command;
 use std::rc::Rc;
 
-use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::{
@@ -216,9 +215,12 @@ async fn get_workflows() -> Result<Vec<Workflow>> {
     for file in directories::workflows_cache_dir()?.read_dir()?.flatten() {
         if let Some(name) = file.file_name().to_str() {
             if name.ends_with(".json") {
-                workflows.push(serde_json::from_slice::<Workflow>(
-                    &tokio::fs::read(file.path()).await?,
-                )?);
+                let workflow = serde_json::from_slice::<Workflow>(&tokio::fs::read(file.path()).await?);
+
+                match workflow {
+                    Ok(workflow) => workflows.push(workflow),
+                    Err(err) => eprintln!("failed to deserialize workflow: {}", err),
+                }
             }
         }
     }
@@ -798,15 +800,8 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    cfg_if! {
-        if #[cfg(feature = "deno")] {
-            let map = args.into_iter().map(|(key, (v, _))| (key, v)).collect();
-            execute_js_workflow(&workflow.template, &map)?;
-        } else {
-            if send_figterm(command, true).await.is_err() {
-                execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &args.take()).await?;
-            }
-        }
+    if send_figterm(command, true).await.is_err() {
+        execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &args.take()).await?;
     }
 
     Ok(())
@@ -905,96 +900,6 @@ async fn execute_bash_workflow(
                 .ok();
         }
     }
-
-    Ok(())
-}
-
-#[cfg(feature = "deno")]
-pub async fn execute_js_workflow(script: &str, args: &HashMap<&str, Value>) -> Result<()> {
-    use std::rc::Rc;
-    use std::sync::Arc;
-
-    use deno_core::error::AnyError;
-    use deno_runtime::deno_broadcast_channel::InMemoryBroadcastChannel;
-    use deno_runtime::deno_web::BlobStore;
-    use deno_runtime::permissions::Permissions;
-    use deno_runtime::worker::{
-        MainWorker,
-        WorkerOptions,
-    };
-    use deno_runtime::{
-        colors,
-        BootstrapOptions,
-    };
-
-    fn get_error_class_name(e: &AnyError) -> &'static str {
-        deno_runtime::errors::get_error_class_name(e).unwrap_or("Error")
-    }
-
-    let module_loader = Rc::new(deno_core::FsModuleLoader);
-    let create_web_worker_cb = Arc::new(|_| {
-        todo!("Web workers are not supported in the example");
-    });
-    let web_worker_preload_module_cb = Arc::new(|_| {
-        todo!("Web workers are not supported in the example");
-    });
-
-    let options = WorkerOptions {
-        bootstrap: BootstrapOptions {
-            args: vec![],
-            cpu_count: std::thread::available_parallelism().map(|p| p.get()).unwrap_or(1),
-            debug_flag: false,
-            enable_testing_features: false,
-            location: None,
-            no_color: !colors::use_color(),
-            is_tty: colors::is_tty(),
-            runtime_version: "x".to_string(),
-            ts_version: "x".to_string(),
-            unstable: false,
-            user_agent: "fig-cli/workflow".to_string(),
-        },
-        extensions: vec![],
-        unsafely_ignore_certificate_errors: None,
-        root_cert_store: None,
-        seed: None,
-        source_map_getter: None,
-        format_js_error_fn: None,
-        web_worker_preload_module_cb,
-        create_web_worker_cb,
-        maybe_inspector_server: None,
-        should_break_on_first_statement: false,
-        module_loader,
-        get_error_class_fn: Some(&get_error_class_name),
-        origin_storage_dir: None,
-        blob_store: BlobStore::default(),
-        broadcast_channel: InMemoryBroadcastChannel::default(),
-        shared_array_buffer_store: None,
-        compiled_wasm_module_store: None,
-        stdio: Default::default(),
-    };
-
-    let permissions = Permissions::allow_all();
-
-    let dir = tempfile::tempdir().unwrap();
-    let file = dir.path().join("script.js");
-
-    tokio::fs::write(&file, script).await.unwrap();
-
-    let specifier = deno_core::ModuleSpecifier::from_file_path(file).unwrap();
-
-    let mut worker = MainWorker::bootstrap_from_options(specifier.clone(), permissions, options);
-
-    worker.execute_script("[fig-init]", "const args = {}").unwrap();
-
-    for (key, value) in args {
-        worker
-            .execute_script("[fig-init]", &format!("args.{key}={value};const ${key}=args.{key};"))
-            .unwrap();
-    }
-
-    worker.execute_main_module(&specifier).await.unwrap();
-
-    worker.run_event_loop(false).await.unwrap();
 
     Ok(())
 }
