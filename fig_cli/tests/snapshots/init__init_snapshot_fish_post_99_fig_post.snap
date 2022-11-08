@@ -87,7 +87,6 @@ function fig_precmd --on-event fish_prompt
         fig_osc "WSLDistro=%s" "$WSL_DISTRO_NAME"
     end
     fig_osc "PID=%d" "$fish_pid"
-    fig_osc "SessionId=%s" "$TERM_SESSION_ID"
     fig_osc "ExitCode=%s" "$last_status"
     fig_osc "TTY=%s" (tty)
     fig_osc "Log=%s" "$FIG_LOG_LEVEL"
@@ -120,7 +119,7 @@ function fig_precmd --on-event fish_prompt
     fig_copy_fn fish_prompt fig_user_prompt
     function fish_prompt
         fig_wrap_prompt (fig_user_prompt)
-        fig_osc NewCmd
+        fig_osc NewCmd=$FIGTERM_SESSION_ID
     end
 
     set fig_has_set_prompt 1

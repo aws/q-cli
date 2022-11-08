@@ -830,10 +830,25 @@ impl<T> Term<T> {
         self.grid.cursor.template.fig_flags.remove(FigFlags::IN_PROMPT);
     }
 
-    fn new_cmd_internal(&mut self, force: bool)
+    fn new_cmd_internal(&mut self, force: bool, session_id: Option<&str>)
     where
         T: EventListener,
     {
+        if let Some(remote_session_id) = session_id {
+            if remote_session_id.is_empty() {
+                // fallback for old shell integrations
+                trace!("NewCmd check remote_session_id == \"\"");
+            } else if let Some(local_session_id) = &self.shell_state.local_context.session_id {
+                trace!(
+                    "NewCmd check {remote_session_id} != {local_session_id}: {:?}",
+                    remote_session_id != local_session_id
+                );
+                if remote_session_id != local_session_id {
+                    return;
+                }
+            }
+        }
+
         if self.windows_delay_end_prompt && !force {
             self.delayed_events.push(DelayedEvent::NewCmd);
             return;
@@ -886,7 +901,7 @@ impl<T> Term<T> {
                     self.end_prompt_internal(true);
                 },
                 DelayedEvent::NewCmd => {
-                    self.new_cmd_internal(true);
+                    self.new_cmd_internal(true, None);
                 },
             }
         }
@@ -1740,12 +1755,15 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     #[inline]
-    fn new_cmd(&mut self) {
-        self.new_cmd_internal(false);
+    fn new_cmd(&mut self, session_id: &str) {
+        self.new_cmd_internal(false, Some(session_id));
     }
 
     #[inline]
     fn start_prompt(&mut self) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig start prompt");
         self.shell_state.has_seen_prompt = true;
 
@@ -1754,11 +1772,17 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn end_prompt(&mut self) {
+        if self.shell_state.preexec {
+            return;
+        }
         self.end_prompt_internal(false);
     }
 
     #[inline]
     fn pre_exec(&mut self) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig PreExec");
         self.shell_state.preexec = true;
         self.event_proxy.send_event(Event::PreExec, &self.shell_state);
@@ -1782,6 +1806,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn dir(&mut self, directory: &std::path::Path) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig dir: {:?}", directory.display());
         self.shell_state.get_mut_context().current_working_directory = Some(directory.to_path_buf());
         match env::set_current_dir(directory) {
@@ -1792,16 +1819,25 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn shell_path(&mut self, path: &std::path::Path) {
+        if self.shell_state.preexec {
+            return;
+        }
         self.shell_state.get_mut_context().shell_path = Some(path.to_path_buf());
     }
 
     #[inline]
     fn wsl_distro(&mut self, distro: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         self.shell_state.get_mut_context().wsl_distro = Some(distro.trim().into());
     }
 
     #[inline]
     fn exit_code(&mut self, exit_code: i32) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig exit code: {exit_code}");
         if let Some(command) = &mut self.shell_state.command_info {
             command.exit_code = Some(exit_code);
@@ -1811,6 +1847,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn shell(&mut self, shell: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         let shell = shell.trim().to_owned();
         trace!("Fig shell: {shell:?}");
         let shell_changed = match &self.shell_state.get_context().shell {
@@ -1825,6 +1864,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn fish_suggestion_color(&mut self, color: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig fish suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
@@ -1834,6 +1876,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn zsh_suggestion_color(&mut self, color: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig zsh suggestion color: {color:?}");
 
         if let Some(color_support) = self.shell_state().color_support {
@@ -1844,6 +1889,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn tty(&mut self, tty: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         let tty = tty.trim().to_owned();
         trace!("Fig tty: {tty:?}");
         self.shell_state.get_mut_context().tty = Some(tty);
@@ -1851,12 +1899,18 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn pid(&mut self, pid: i32) {
+        if self.shell_state.preexec {
+            return;
+        }
         trace!("Fig pid: {pid}");
         self.shell_state.get_mut_context().pid = Some(pid);
     }
 
     #[inline]
     fn hostname(&mut self, hostname: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         let hostname = hostname.trim().to_owned();
         trace!("Fig hostname: {hostname:?}");
         self.shell_state.get_mut_context().hostname = Some(hostname);
@@ -1864,6 +1918,9 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn log(&mut self, fig_log_level: &str) {
+        if self.shell_state.preexec {
+            return;
+        }
         let fig_log_level = fig_log_level.trim().to_owned();
         trace!("Fig log: {fig_log_level:?}");
 

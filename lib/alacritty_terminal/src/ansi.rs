@@ -470,7 +470,7 @@ pub trait Handler {
     fn pop_title(&mut self) {}
 
     /// Fig NewCmd Osc
-    fn new_cmd(&mut self) {}
+    fn new_cmd(&mut self, _: &str) {}
 
     /// Fig StartPrompt Osc
     fn start_prompt(&mut self) {}
@@ -507,9 +507,6 @@ pub trait Handler {
 
     /// Fig PID Osc
     fn pid(&mut self, _: i32) {}
-
-    /// Fig SessionId Osc
-    fn session_id(&mut self, _: &str) {}
 
     /// Fig Hostname Osc
     fn hostname(&mut self, _: &str) {}
@@ -1183,7 +1180,7 @@ where
             b"697" => {
                 if let Some(fig_osc) = params.get(1) {
                     match *fig_osc {
-                        b"NewCmd" => self.handler.new_cmd(),
+                        b"NewCmd" => self.handler.new_cmd(""),
                         b"StartPrompt" => self.handler.start_prompt(),
                         b"EndPrompt" => self.handler.end_prompt(),
                         b"PreExec" => self.handler.pre_exec(),
@@ -1239,10 +1236,6 @@ where
                                         },
                                         Err(err) => log::error!("Error decoding ExitCode: {err}"),
                                     },
-                                    b"SessionId" => match str::from_utf8(&val[1..]) {
-                                        Ok(s) => self.handler.session_id(s),
-                                        Err(err) => log::error!("Error decoding SessionId: {err}"),
-                                    },
                                     b"Hostname" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.hostname(s),
                                         Err(err) => log::error!("Error decoding Hostname: {err}"),
@@ -1251,8 +1244,10 @@ where
                                         Ok(s) => self.handler.log(s),
                                         Err(err) => log::error!("Error decoding Log: {err}"),
                                     },
-                                    b"Docker" => {},
-                                    b"SSH" => {},
+                                    b"NewCmd" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.new_cmd(s),
+                                        Err(err) => log::error!("Error decoding NewCmd: {err}"),
+                                    },
                                     _ => unhandled!(),
                                 }
                             }

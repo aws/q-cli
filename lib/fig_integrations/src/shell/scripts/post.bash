@@ -127,7 +127,9 @@ function __fig_post_prompt () {
 
   START_PROMPT="\[$(fig_osc StartPrompt)\]"
   END_PROMPT="\[$(fig_osc EndPrompt)\]"
-  NEW_CMD="\[$(fig_osc NewCmd)\]"
+  # shellcheck disable=SC2086
+  # it's already double quoted, dummy
+  NEW_CMD="\[$(fig_osc NewCmd=${FIGTERM_SESSION_ID})\]"
 
   # Reset $? first in case it's used in $FIG_USER_PSx.
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
