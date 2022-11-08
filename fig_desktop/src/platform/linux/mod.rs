@@ -158,6 +158,9 @@ impl PlatformStateImpl {
             PlatformBoundEvent::ExternalWindowFocusChanged { .. } => {
                 trace!("Ignoring external window focus changed event");
             },
+            PlatformBoundEvent::AccessibilityUpdateRequested => {
+                trace!("Ignoring accessibility update requested event");
+            },
         }
         Ok(())
     }
