@@ -582,9 +582,9 @@ jobs:
       - persist_to_workspace:
           root: /tmp/new
           paths:
-            - pkg/x86_64/rpm/full/pkg
-            - pkg/x86_64/rpm/headless/pkg
-            - pkg/aarch64/rpm/headless/pkg
+            - pkg/linux/x86_64/rpm/full/pkg
+            - pkg/linux/x86_64/rpm/headless/pkg
+            - pkg/linux/aarch64/rpm/headless/pkg
 
   package-deb:
     docker:
@@ -644,17 +644,17 @@ jobs:
                 command: |
                   cd desktop
 
-                  fig_release package --kind deb --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/deb/full/pkg
-                  fig_release package --kind deb --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/deb/headless/pkg
-                  fig_release package --kind deb --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/deb/headless/pkg
+                  fig_release package --kind deb --architecture x86_64 --variant full /tmp/ws/pkg/linux/x86_64/deb/full/pkg
+                  fig_release package --kind deb --architecture x86_64 --variant headless /tmp/ws/pkg/linux/x86_64/deb/headless/pkg
+                  fig_release package --kind deb --architecture aarch64 --variant headless /tmp/ws/pkg/linux/aarch64/deb/headless/pkg
 
-                  fig_release package --kind rpm --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/rpm/full/pkg
-                  fig_release package --kind rpm --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/rpm/headless/pkg
-                  fig_release package --kind rpm --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/rpm/headless/pkg
+                  fig_release package --kind rpm --architecture x86_64 --variant full /tmp/ws/pkg/linux/x86_64/rpm/full/pkg
+                  fig_release package --kind rpm --architecture x86_64 --variant headless /tmp/ws/pkg/linux/x86_64/rpm/headless/pkg
+                  fig_release package --kind rpm --architecture aarch64 --variant headless /tmp/ws/pkg/linux/aarch64/rpm/headless/pkg
 
-                  fig_release package --kind tar --architecture x86_64 --variant full /tmp/ws/pkg/x86_64/tar/full/pkg
-                  fig_release package --kind tar --architecture x86_64 --variant headless /tmp/ws/pkg/x86_64/tar/headless/pkg
-                  fig_release package --kind tar --architecture aarch64 --variant headless /tmp/ws/pkg/aarch64/tar/headless/pkg
+                  fig_release package --kind tar --architecture x86_64 --variant full /tmp/ws/pkg/linux/x86_64/tar/full/pkg
+                  fig_release package --kind tar --architecture x86_64 --variant headless /tmp/ws/pkg/linux/x86_64/tar/headless/pkg
+                  fig_release package --kind tar --architecture aarch64 --variant headless /tmp/ws/pkg/linux/aarch64/tar/headless/pkg
       - if-target:
           platform: macos
           steps:
