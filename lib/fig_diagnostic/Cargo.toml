@@ -17,4 +17,4 @@ fig_util = { path = "../fig_util" }
 serde = { version = "1.0.147", features = ["derive"] }
 serde_json = "1.0.87"
 sysinfo = "0.26.7"
-time = "0.3.16"
+time = "0.3.17"
