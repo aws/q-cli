@@ -10,7 +10,9 @@ version.workspace = true
 default = []
 
 [dependencies]
-arboard = { version = "3.1.1", default-features = false, features = ["wayland-data-control"] }
+arboard = { version = "3.1.1", default-features = false, features = [
+    "wayland-data-control",
+] }
 async-trait = "0.1.57"
 atty = "0.2.14"
 bitflags = "1.3.2"
@@ -64,7 +66,7 @@ time = { version = "=0.3.17", features = [
     "serde-human-readable",
     "local-offset",
     "formatting",
-    "macros"
+    "macros",
 ] }
 tokio = { version = "1.20.1", features = ["full"] }
 tokio-tungstenite = { version = "0.17.2", features = [
@@ -88,7 +90,6 @@ nix = "0.25.0"
 skim = { git = "https://github.com/grant0417/skim", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]
-notify = "5.0.0"
 macos_accessibility_position = { path = "../lib/macos_accessibility_position" }
 
 [target.'cfg(target_os = "windows")'.dependencies]

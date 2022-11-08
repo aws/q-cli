@@ -23,13 +23,6 @@ pub async fn socket_connect(socket: impl AsRef<Path>) -> Result<UnixStream, Conn
         },
     };
 
-    // When on macOS after the socket connection is made a brief delay is required
-    // Not sure why, so this is a workaround
-    #[cfg(target_os = "macos")]
-    if option_env!("FIG_MACOS_BACKPORT").is_none() {
-        tokio::time::sleep(Duration::from_millis(2)).await;
-    }
-
     trace!(?socket, "Connected");
 
     Ok(stream)

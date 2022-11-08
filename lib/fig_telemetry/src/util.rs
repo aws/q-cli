@@ -27,19 +27,7 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     }
 
     #[cfg(target_os = "macos")]
-    match option_env!("FIG_MACOS_BACKPORT") {
-        Some(_) => {
-            prop.insert("desktop_version".into(), env!("CARGO_PKG_VERSION").into());
-        },
-        None => {
-            if let Ok(version) = fig_request::defaults::get_default("versionAtPreviousLaunch") {
-                if let Some((version, build)) = version.split_once(',') {
-                    prop.insert("desktop_version".into(), version.into());
-                    prop.insert("desktop_legacy_build".into(), build.into());
-                }
-            }
-        },
-    }
+    prop.insert("desktop_version".into(), env!("CARGO_PKG_VERSION").into());
 
     #[cfg(target_os = "linux")]
     if let Some(linux_os_release) = fig_util::system_info::linux::get_os_release() {

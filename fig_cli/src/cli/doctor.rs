@@ -1659,64 +1659,48 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     }
 
     async fn check(&self, current_terminal: &Option<Terminal>) -> Result<(), DoctorError> {
-        match option_env!("FIG_MACOS_BACKPORT") {
-            Some(_) => {
-                use fig_integrations::input_method::InputMethod;
-                use fig_integrations::Integration;
+        use fig_integrations::input_method::InputMethod;
+        use fig_integrations::Integration;
 
-                let input_method = InputMethod::default();
-                if let Err(e) = input_method.is_installed().await {
-                    return Err(DoctorError::Error {
-                        reason: "Input Method is not installed".into(),
-                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
-                        fix: None,
-                        error: Some(e.into()),
-                    });
-                }
-
-                use macos_accessibility_position::applications::running_applications;
-
-                match current_terminal {
-                    Some(terminal) if terminal.is_input_dependant() => {
-                        let app = running_applications()
-                            .into_iter()
-                            .find(|app| app.bundle_identifier == Some(terminal.to_bundle_id()));
-
-                        if let Some(app) = app {
-                            if !input_method.enabled_for_terminal_instance(terminal, app.process_identifier) {
-                                return Err(DoctorError::Error {
-                                    reason: format!("Not enabled for {}", terminal).into(),
-                                    info: vec![
-                                        format!(
-                                            "Restart {} [{}] to enable autocomplete in this terminal.",
-                                            terminal, app.process_identifier
-                                        )
-                                        .into(),
-                                    ],
-                                    fix: None,
-                                    error: None,
-                                });
-                            }
-                        }
-                    },
-                    _ => (),
-                }
-
-                Ok(())
-            },
-            None => {
-                if fig_settings::state::get_bool_or("input-method.enabled", false) {
-                    Ok(())
-                } else {
-                    Err(DoctorError::Error {
-                        reason: "Input Method is not enabled".into(),
-                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
-                        fix: None,
-                        error: None,
-                    })
-                }
-            },
+        let input_method = InputMethod::default();
+        if let Err(e) = input_method.is_installed().await {
+            return Err(DoctorError::Error {
+                reason: "Input Method is not installed".into(),
+                info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                fix: None,
+                error: Some(e.into()),
+            });
         }
+
+        use macos_accessibility_position::applications::running_applications;
+
+        match current_terminal {
+            Some(terminal) if terminal.is_input_dependant() => {
+                let app = running_applications()
+                    .into_iter()
+                    .find(|app| app.bundle_identifier == Some(terminal.to_bundle_id()));
+
+                if let Some(app) = app {
+                    if !input_method.enabled_for_terminal_instance(terminal, app.process_identifier) {
+                        return Err(DoctorError::Error {
+                            reason: format!("Not enabled for {}", terminal).into(),
+                            info: vec![
+                                format!(
+                                    "Restart {} [{}] to enable autocomplete in this terminal.",
+                                    terminal, app.process_identifier
+                                )
+                                .into(),
+                            ],
+                            fix: None,
+                            error: None,
+                        });
+                    }
+                }
+            },
+            _ => (),
+        }
+
+        Ok(())
     }
 }
 

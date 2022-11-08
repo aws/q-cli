@@ -257,53 +257,22 @@ impl Credentials {
 
         #[cfg(target_os = "macos")]
         {
-            use crate::defaults::{
-                remove_default,
-                set_default,
-            };
+            use crate::defaults::remove_default;
 
-            match &self.id_token {
-                Some(id) => {
-                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
-                        set_default("id_token", id)?;
-                    }
-                },
-                None => {
-                    remove_default("id_token").ok();
-                },
+            if self.id_token.is_none() {
+                remove_default("id_token").ok();
             }
 
-            match &self.access_token {
-                Some(access) => {
-                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
-                        set_default("access_token", access)?;
-                    }
-                },
-                None => {
-                    remove_default("access_token").ok();
-                },
+            if self.access_token.is_none() {
+                remove_default("access_token").ok();
             }
 
-            match &self.refresh_token {
-                Some(refresh) => {
-                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
-                        set_default("refresh_token", refresh)?;
-                    }
-                },
-                None => {
-                    remove_default("refresh_token").ok();
-                },
+            if self.refresh_token.is_none() {
+                remove_default("refresh_token").ok();
             }
 
-            match &self.email {
-                Some(email) => {
-                    if option_env!("FIG_MACOS_BACKPORT").is_none() {
-                        set_default("userEmail", email)?;
-                    }
-                },
-                None => {
-                    remove_default("userEmail").ok();
-                },
+            if self.email.is_none() {
+                remove_default("userEmail").ok();
             }
         }
 

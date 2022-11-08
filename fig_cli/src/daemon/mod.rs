@@ -1,11 +1,8 @@
 pub mod scheduler;
-#[cfg(target_os = "macos")]
-pub mod settings_watcher;
 pub mod socket_server;
 pub mod system_handler;
 pub mod websocket;
 
-use cfg_if::cfg_if;
 use eyre::Result;
 use parking_lot::Mutex;
 
@@ -53,8 +50,6 @@ pub async fn daemon() -> Result<()> {
         info,
     };
 
-    #[cfg(target_os = "macos")]
-    use crate::daemon::settings_watcher::spawn_settings_watcher;
     use crate::daemon::system_handler::spawn_incoming_system_handler;
     use crate::daemon::websocket::process_websocket;
     use crate::util::backoff::Backoff;
@@ -176,20 +171,7 @@ pub async fn daemon() -> Result<()> {
 
     info!("Daemon is now running");
 
-    cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            if option_env!("FIG_MACOS_BACKPORT").is_none() {
-                // Spawn settings watcher
-                let settings_watcher_join = spawn_settings_watcher(daemon_status.clone()).await;
-                tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join, settings_watcher_join)?;
-            } else {
-                tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
-            }
-
-        } else {
-            tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
-        }
-    }
+    tokio::try_join!(scheduler_join, unix_join, websocket_join, websocket_listen_join)?;
 
     Ok(())
 }

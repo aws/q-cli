@@ -250,16 +250,7 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
 pub fn themes_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_THEMES_DIR");
 
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            match option_env!("FIG_MACOS_BACKPORT") {
-                Some(_) => Ok(themes_repo_dir()?.join("themes")),
-                None => deprecated::legacy_themes_dir()
-            }
-        } else {
-            Ok(themes_repo_dir()?.join("themes"))
-        }
-    }
+    Ok(themes_repo_dir()?.join("themes"))
 }
 
 #[cfg(test)]
@@ -630,10 +621,6 @@ fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
 #[cfg(target_os = "macos")]
 mod deprecated {
     use super::*;
-
-    pub fn legacy_themes_dir() -> Result<PathBuf> {
-        Ok(fig_dir()?.join("themes"))
-    }
 
     pub fn legacy_logs_dir() -> Result<PathBuf> {
         Ok(fig_dir()?.join("logs"))

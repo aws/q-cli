@@ -112,28 +112,15 @@ pub async fn restart_fig() -> Result<()> {
     } else {
         cfg_if! {
             if #[cfg(target_os = "macos")] {
-                match option_env!("FIG_MACOS_BACKPORT") {
-                    Some(_) => {
-                        println!("Restarting Fig");
-                        crate::util::quit_fig(false).await?;
-                        tokio::time::sleep(Duration::from_millis(1000)).await;
-                        launch_fig_desktop(LaunchArgs {
-                            wait_for_socket: true,
-                            open_dashboard: false,
-                            immediate_update: true,
-                            verbose: false,
-                        })?;
-                    },
-                    None => {
-                        use eyre::Context;
-
-                        use fig_ipc::local::restart_command;
-
-                        println!("Restarting Fig");
-                        restart_command().await.context("Unable to restart Fig")?;
-                        tokio::time::sleep(std::time::Duration::from_millis(1000)).await;
-                    },
-                }
+                println!("Restarting Fig");
+                crate::util::quit_fig(false).await?;
+                tokio::time::sleep(Duration::from_millis(1000)).await;
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: true,
+                    open_dashboard: false,
+                    immediate_update: true,
+                    verbose: false,
+                })?;
             } else {
                 crate::util::quit_fig(true).await?;
                 tokio::time::sleep(Duration::from_millis(1000)).await;

@@ -16,14 +16,9 @@ use std::path::{
 use std::process::exit;
 use std::time::Duration;
 
-use fig_ipc::local::update_command;
 use fig_util::consts::{
     FIG_BUNDLE_ID,
     FIG_CLI_BINARY_NAME,
-};
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
 };
 use fig_util::directories;
 use regex::Regex;
@@ -51,188 +46,166 @@ pub(crate) async fn update(
     interactive: bool,
     relaunch_dashboard: bool,
 ) -> Result<(), Error> {
-    match option_env!("FIG_MACOS_BACKPORT") {
-        Some(_) => {
-            debug!("starting update");
+    debug!("starting update");
 
-            // Get all of the paths up front so we can get an error early if something is wrong
+    // Get all of the paths up front so we can get an error early if something is wrong
 
-            let fig_app_path = fig_util::fig_bundle()
-                .ok_or_else(|| Error::UpdateFailed("binary invoked does not reside in a valid app bundle.".into()))?;
+    let fig_app_path = fig_util::fig_bundle()
+        .ok_or_else(|| Error::UpdateFailed("binary invoked does not reside in a valid app bundle.".into()))?;
 
-            let temp_dir = tempfile::Builder::new().prefix("fig-download").tempdir()?;
+    let temp_dir = tempfile::Builder::new().prefix("fig-download").tempdir()?;
 
-            let dmg_path = temp_dir.path().join("Fig.dmg");
-            let temp_bundle_path = temp_dir.path().join("Fig.app");
+    let dmg_path = temp_dir.path().join("Fig.dmg");
+    let temp_bundle_path = temp_dir.path().join("Fig.app");
 
-            let fig_app_cstr = CString::new(fig_app_path.as_os_str().as_bytes())?;
-            let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
+    let fig_app_cstr = CString::new(fig_app_path.as_os_str().as_bytes())?;
+    let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
 
-            // Set the permissions to 700 so that only the user can read and write
-            let permissions = std::fs::Permissions::from_mode(0o700);
-            std::fs::set_permissions(temp_dir.path(), permissions)?;
+    // Set the permissions to 700 so that only the user can read and write
+    let permissions = std::fs::Permissions::from_mode(0o700);
+    std::fs::set_permissions(temp_dir.path(), permissions)?;
 
-            debug!(?dmg_path, "downloading dmg");
+    debug!(?dmg_path, "downloading dmg");
 
-            download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
+    download_dmg(update.download, &dmg_path, update.size, tx.clone()).await?;
 
-            tx.send(UpdateStatus::Message("Unpacking update...".into())).await.ok();
+    tx.send(UpdateStatus::Message("Unpacking update...".into())).await.ok();
 
-            // Shell out to hdiutil to mount the dmg
-            let hdiutil_attach_output = tokio::process::Command::new("hdiutil")
-                .arg("attach")
-                .arg(&dmg_path)
-                .args(["-readonly", "-nobrowse", "-plist"])
-                .output()
-                .await?;
+    // Shell out to hdiutil to mount the dmg
+    let hdiutil_attach_output = tokio::process::Command::new("hdiutil")
+        .arg("attach")
+        .arg(&dmg_path)
+        .args(["-readonly", "-nobrowse", "-plist"])
+        .output()
+        .await?;
 
-            if !hdiutil_attach_output.status.success() {
-                return Err(Error::UpdateFailed(
-                    String::from_utf8_lossy(&hdiutil_attach_output.stderr).to_string(),
-                ));
-            }
-
-            debug!("mounted dmg");
-
-            let plist = String::from_utf8_lossy(&hdiutil_attach_output.stdout).to_string();
-
-            let regex = Regex::new(r"<key>mount-point</key>\s*<\S+>([^<]+)</\S+>").unwrap();
-            let mount_point = PathBuf::from(
-                regex
-                    .captures(&plist)
-                    .unwrap()
-                    .get(1)
-                    .expect("mount-point will always exist")
-                    .as_str(),
-            );
-
-            let ditto_output = tokio::process::Command::new("ditto")
-                .arg(mount_point.join("Fig.app"))
-                .arg(&temp_bundle_path)
-                .output()
-                .await?;
-
-            if !ditto_output.status.success() {
-                return Err(Error::UpdateFailed(
-                    String::from_utf8_lossy(&ditto_output.stderr).to_string(),
-                ));
-            }
-
-            tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
-
-            let cli_path = fig_app_path.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME);
-
-            if !cli_path.exists() {
-                return Err(Error::UpdateFailed(format!(
-                    "the current app bundle is missing the CLI with the correct name {FIG_CLI_BINARY_NAME}"
-                )));
-            }
-
-            match swap(&temp_bundle_cstr, &fig_app_cstr) {
-                Ok(()) => debug!("swapped app bundle"),
-                // Try to elevate permissions if we can't swap the app bundle and in interactive mode
-                Err(err) if interactive => {
-                    error!(?err, "failed to swap app bundle, trying to elevate permissions");
-
-                    let mut file = {
-                        let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
-                            .add_right("system.privilege.admin")?
-                            .build();
-
-                        let auth = security_framework::authorization::Authorization::new(
-                            Some(rights),
-                            None,
-                            security_framework::authorization::Flags::DEFAULTS
-                                | security_framework::authorization::Flags::INTERACTION_ALLOWED
-                                | security_framework::authorization::Flags::PREAUTHORIZE
-                                | security_framework::authorization::Flags::EXTEND_RIGHTS,
-                        )?;
-
-                        let file = auth.execute_with_privileges_piped(
-                            &cli_path,
-                            [
-                                OsStr::new("_"),
-                                OsStr::new("swap-files"),
-                                temp_bundle_path.as_os_str(),
-                                fig_app_path.as_os_str(),
-                            ],
-                            security_framework::authorization::Flags::DEFAULTS,
-                        )?;
-
-                        tokio::fs::File::from_std(file)
-                    };
-
-                    let mut out = String::new();
-                    file.read_to_string(&mut out).await?;
-
-                    match out.trim() {
-                        "success" => {
-                            debug!("swapped app bundle")
-                        },
-                        other => {
-                            return Err(Error::UpdateFailed(other.to_owned()));
-                        },
-                    }
-                },
-                Err(err) => return Err(err),
-            }
-
-            // Shell out to unmount the dmg
-            let output = tokio::process::Command::new("hdiutil")
-                .arg("detach")
-                .arg(&mount_point)
-                .output()
-                .await?;
-
-            if !output.status.success() {
-                error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but fig failed to unmount the dmg");
-            } else {
-                debug!("unmounted dmg");
-            }
-
-            if !cli_path.exists() {
-                return Err(Error::UpdateFailed(format!(
-                    "the update succeeded, but the cli did not have the expected name or was missing, expected {FIG_CLI_BINARY_NAME}"
-                )));
-            }
-
-            debug!(?cli_path, "using cli at path");
-
-            tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
-
-            debug!("restarting fig");
-            let mut cmd = std::process::Command::new(&cli_path);
-            cmd.process_group(0).args(["_", "finish-update"]);
-
-            if relaunch_dashboard {
-                cmd.arg("--relaunch-dashboard");
-            }
-
-            cmd.spawn()?;
-
-            tx.send(UpdateStatus::Exit).await.ok();
-
-            exit(0);
-        },
-        None => {
-            // Let swift app handle updates internally
-            // Note that not all of the flags are supported by the swift app and should be set carefully
-            launch_fig_desktop(LaunchArgs {
-                wait_for_socket: true,
-                open_dashboard: true,
-                immediate_update: true,
-                verbose: true,
-            })?;
-
-            if update_command(!interactive).await.is_err() {
-                return Err(Error::UpdateFailed(
-                    "Unable to connect to Fig, it may not be running. To launch Fig, run 'fig launch'".to_owned(),
-                ));
-            }
-        },
+    if !hdiutil_attach_output.status.success() {
+        return Err(Error::UpdateFailed(
+            String::from_utf8_lossy(&hdiutil_attach_output.stderr).to_string(),
+        ));
     }
 
-    Ok(())
+    debug!("mounted dmg");
+
+    let plist = String::from_utf8_lossy(&hdiutil_attach_output.stdout).to_string();
+
+    let regex = Regex::new(r"<key>mount-point</key>\s*<\S+>([^<]+)</\S+>").unwrap();
+    let mount_point = PathBuf::from(
+        regex
+            .captures(&plist)
+            .unwrap()
+            .get(1)
+            .expect("mount-point will always exist")
+            .as_str(),
+    );
+
+    let ditto_output = tokio::process::Command::new("ditto")
+        .arg(mount_point.join("Fig.app"))
+        .arg(&temp_bundle_path)
+        .output()
+        .await?;
+
+    if !ditto_output.status.success() {
+        return Err(Error::UpdateFailed(
+            String::from_utf8_lossy(&ditto_output.stderr).to_string(),
+        ));
+    }
+
+    tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
+
+    let cli_path = fig_app_path.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME);
+
+    if !cli_path.exists() {
+        return Err(Error::UpdateFailed(format!(
+            "the current app bundle is missing the CLI with the correct name {FIG_CLI_BINARY_NAME}"
+        )));
+    }
+
+    match swap(&temp_bundle_cstr, &fig_app_cstr) {
+        Ok(()) => debug!("swapped app bundle"),
+        // Try to elevate permissions if we can't swap the app bundle and in interactive mode
+        Err(err) if interactive => {
+            error!(?err, "failed to swap app bundle, trying to elevate permissions");
+
+            let mut file = {
+                let rights = security_framework::authorization::AuthorizationItemSetBuilder::new()
+                    .add_right("system.privilege.admin")?
+                    .build();
+
+                let auth = security_framework::authorization::Authorization::new(
+                    Some(rights),
+                    None,
+                    security_framework::authorization::Flags::DEFAULTS
+                        | security_framework::authorization::Flags::INTERACTION_ALLOWED
+                        | security_framework::authorization::Flags::PREAUTHORIZE
+                        | security_framework::authorization::Flags::EXTEND_RIGHTS,
+                )?;
+
+                let file = auth.execute_with_privileges_piped(
+                    &cli_path,
+                    [
+                        OsStr::new("_"),
+                        OsStr::new("swap-files"),
+                        temp_bundle_path.as_os_str(),
+                        fig_app_path.as_os_str(),
+                    ],
+                    security_framework::authorization::Flags::DEFAULTS,
+                )?;
+
+                tokio::fs::File::from_std(file)
+            };
+
+            let mut out = String::new();
+            file.read_to_string(&mut out).await?;
+
+            match out.trim() {
+                "success" => {
+                    debug!("swapped app bundle")
+                },
+                other => {
+                    return Err(Error::UpdateFailed(other.to_owned()));
+                },
+            }
+        },
+        Err(err) => return Err(err),
+    }
+
+    // Shell out to unmount the dmg
+    let output = tokio::process::Command::new("hdiutil")
+        .arg("detach")
+        .arg(&mount_point)
+        .output()
+        .await?;
+
+    if !output.status.success() {
+        error!(command =% String::from_utf8_lossy(&output.stderr).to_string(), "the update succeeded, but fig failed to unmount the dmg");
+    } else {
+        debug!("unmounted dmg");
+    }
+
+    if !cli_path.exists() {
+        return Err(Error::UpdateFailed(format!(
+            "the update succeeded, but the cli did not have the expected name or was missing, expected {FIG_CLI_BINARY_NAME}"
+        )));
+    }
+
+    debug!(?cli_path, "using cli at path");
+
+    tx.send(UpdateStatus::Message("Relaunching...".into())).await.ok();
+
+    debug!("restarting fig");
+    let mut cmd = std::process::Command::new(&cli_path);
+    cmd.process_group(0).args(["_", "finish-update"]);
+
+    if relaunch_dashboard {
+        cmd.arg("--relaunch-dashboard");
+    }
+
+    cmd.spawn()?;
+
+    tx.send(UpdateStatus::Exit).await.ok();
+
+    exit(0);
 }
 
 async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl Fn(&str) -> bool) {
