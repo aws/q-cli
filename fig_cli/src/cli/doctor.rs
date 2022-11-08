@@ -2022,6 +2022,27 @@ impl DoctorCheck for FishVersionCheck {
     }
 }
 
+#[cfg(target_os = "macos")]
+struct ToolboxInstalledCheck;
+
+#[cfg(target_os = "macos")]
+#[async_trait]
+impl DoctorCheck for ToolboxInstalledCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Jetbrains Toolbox Check".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        if Terminal::is_jetbrains_terminal()
+            && macos_accessibility_position::url::path_for_application("com.jetbrains.toolbox").is_some()
+        {
+            doctor_warning!("apps install through jetbrains toolbox are not supported");
+        }
+
+        Ok(())
+    }
+}
+
 async fn run_checks_with_context<T, Fut>(
     header: impl AsRef<str>,
     checks: Vec<&dyn DoctorCheck<T>>,
@@ -2294,7 +2315,12 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         run_checks(
             "Let's check if your system is compatible...".into(),
-            vec![&SystemVersionCheck, &FishVersionCheck],
+            vec![
+                &SystemVersionCheck,
+                &FishVersionCheck,
+                #[cfg(target_os = "macos")]
+                &ToolboxInstalledCheck,
+            ],
             config,
             &mut spinner,
         )

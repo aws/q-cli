@@ -85,13 +85,16 @@ impl IntelliJIntegration {
             .ok_or_else(|| Error::ApplicationNotInstalled(self.variant.application_name.into()))?
             .join("Contents/Info.plist");
 
-        let contents: InfoPList = plist::from_file(plist_path)?;
+        let contents: InfoPList = plist::from_file(plist_path)
+            .map_err(|err| Error::Custom(format!("Could not read plist file: {err:?}").into()))?;
 
         Ok(contents.jvm_options.properties)
     }
 
     fn application_folder(&self) -> Result<PathBuf> {
-        let mut props = self.get_jvm_properties()?;
+        let mut props = self
+            .get_jvm_properties()
+            .map_err(|err| Error::Custom(format!("Couldn't get JVM properties: {err:?}").into()))?;
 
         let selector = props
             .remove("idea.paths.selector")
@@ -127,16 +130,25 @@ impl Integration for IntelliJIntegration {
         let destination_folder = plugins_folder.join(PLUGIN_SLUG);
 
         if destination_folder.exists() {
-            tokio::fs::remove_dir_all(&destination_folder).await?;
+            tokio::fs::remove_dir_all(&destination_folder).await.map_err(|err| {
+                Error::Custom(format!("Failed removing destination folder {destination_folder:?}: {err:?}").into())
+            })?;
         }
 
-        let mut archive = ZipArchive::new(Cursor::new(PLUGIN_CONTENTS))?;
+        let mut archive = ZipArchive::new(Cursor::new(PLUGIN_CONTENTS))
+            .map_err(|err| Error::Custom(format!("Failed reading bundled plugin zip: {err:?}").into()))?;
 
         let tmp = temp_dir();
 
         archive.extract(&tmp)?;
 
-        tokio::fs::rename(tmp.join("jetbrains-extension"), destination_folder).await?;
+        let tmp_plugin_path = tmp.join("jetbrains-extension");
+
+        tokio::fs::rename(&tmp_plugin_path, &destination_folder)
+            .await
+            .map_err(|err| {
+                Error::Custom(format!("Failed renaming extracted plugin path {tmp_plugin_path:?} to destination folder {destination_folder:?}: {err:?}").into())
+            })?;
 
         Ok(())
     }
@@ -144,10 +156,22 @@ impl Integration for IntelliJIntegration {
     async fn uninstall(&self) -> Result<()> {
         let plugins_folder = self.application_folder()?.join("plugins");
 
-        let mut entries = tokio::fs::read_dir(plugins_folder).await?;
-        while let Some(entry) = entries.next_entry().await? {
+        let mut entries = tokio::fs::read_dir(&plugins_folder).await.map_err(|err| {
+            Error::Custom(format!("Failed reading plugins folder dir {plugins_folder:?}: {err:?}").into())
+        })?;
+        while let Some(entry) = entries.next_entry().await.map_err(|err| {
+            Error::Custom(format!("Failed reading next entry in plugins folder dir {plugins_folder:?}: {err:?}").into())
+        })? {
             if entry.file_name().to_string_lossy().starts_with(PLUGIN_PREFIX) {
-                tokio::fs::remove_dir_all(entry.path()).await?;
+                tokio::fs::remove_dir_all(entry.path()).await.map_err(|err| {
+                    Error::Custom(
+                        format!(
+                            "Failed removing entry {:?} from plugins folder dir {plugins_folder:?}: {err:?}",
+                            entry.path()
+                        )
+                        .into(),
+                    )
+                })?;
             }
         }
 
