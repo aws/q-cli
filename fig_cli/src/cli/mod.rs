@@ -119,7 +119,7 @@ pub enum CliRootCommands {
         #[arg(long, short = 'y')]
         non_interactive: bool,
         /// Relaunch into dashboard after update (false will launch in background)
-        #[arg(long)]
+        #[arg(long, default_value = "true")]
         relaunch_dashboard: bool,
         /// Uses rollout
         #[arg(long)]
