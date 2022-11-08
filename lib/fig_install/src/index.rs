@@ -16,7 +16,10 @@ use fig_util::manifest::{
 };
 use fig_util::system_info::get_system_id;
 use semver::Version;
-use serde::Deserialize;
+use serde::{
+    Deserialize,
+    Serialize,
+};
 use strum::EnumString;
 use tracing::{
     error,
@@ -27,34 +30,34 @@ use tracing::{
 use crate::Error;
 
 #[allow(unused)]
-#[derive(Deserialize)]
-struct Index {
+#[derive(Deserialize, Serialize, Debug)]
+pub struct Index {
     supported: Vec<Support>,
     versions: Vec<RemoteVersion>,
 }
 
 #[allow(unused)]
-#[derive(Deserialize)]
+#[derive(Deserialize, Serialize, Debug)]
 struct Support {
     kind: Kind,
     architecture: PackageArchitecture,
     variant: Variant,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct RemoteVersion {
     version: semver::Version,
     rollout: Option<Rollout>,
     packages: Vec<Package>,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 struct Rollout {
     start: u64,
     end: u64,
 }
 
-#[derive(Deserialize, Debug)]
+#[derive(Deserialize, Serialize, Debug)]
 pub struct Package {
     kind: Kind,
     architecture: PackageArchitecture,
@@ -72,7 +75,7 @@ pub struct UpdatePackage {
     pub size: u64,
 }
 
-#[derive(Deserialize, PartialEq, Eq, EnumString, Debug)]
+#[derive(Deserialize, Serialize, PartialEq, Eq, EnumString, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum PackageArchitecture {
@@ -115,7 +118,7 @@ pub fn local_manifest_version() -> Result<Version, Error> {
     Ok(Version::parse(env!("CARGO_PKG_VERSION"))?)
 }
 
-async fn pull(channel: &Channel) -> Result<Index, Error> {
+pub async fn pull(channel: &Channel) -> Result<Index, Error> {
     let response = fig_request::client()
         .expect("Unable to create HTTP client")
         .get(index_endpoint(channel))

@@ -181,6 +181,13 @@ pub enum DebugSubcommand {
     Devtools {
         window: fig_proto::local::devtools_command::Window,
     },
+    /// Displays remote index
+    GetIndex {
+        channel: String,
+        #[arg(short, long, default_value = "false")]
+        /// Display using debug formatting
+        debug: bool,
+    },
 }
 
 impl DebugSubcommand {
@@ -720,6 +727,16 @@ impl DebugSubcommand {
                 if result.is_err() {
                     println!("Could not open devtools window");
                     return result.map_err(eyre::Report::from);
+                }
+            },
+            DebugSubcommand::GetIndex { channel, debug } => {
+                use fig_util::manifest::Channel;
+                let index = fig_install::index::pull(&Channel::from_str(channel)?).await?;
+                if *debug {
+                    println!("{index:#?}");
+                } else {
+                    let json = serde_json::to_string_pretty(&index)?;
+                    println!("{json}");
                 }
             },
         }

@@ -6,6 +6,7 @@ use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
     Deserializer,
+    Serialize,
 };
 use strum::EnumString;
 
@@ -33,7 +34,7 @@ pub enum ManagedBy {
     Other(String),
 }
 
-#[derive(EnumString, Deserialize, PartialEq, Eq, Clone, Debug)]
+#[derive(EnumString, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Variant {
@@ -45,7 +46,7 @@ pub enum Variant {
     Other(String),
 }
 
-#[derive(EnumString, Deserialize, PartialEq, Eq, Clone, Debug)]
+#[derive(EnumString, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Kind {
