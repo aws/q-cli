@@ -229,8 +229,9 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
 
     #[cfg(target_os = "macos")]
     if when == &When::Post
-        && !fig_settings::state::get_bool_or("input-method.enabled", false)
-        && !fig_settings::settings::get_bool_or("integrations.experimental", false)
+        && !fig_integrations::input_method::InputMethod::default()
+            .is_enabled()
+            .unwrap_or(false)
     {
         use crossterm::style::Stylize;
 
