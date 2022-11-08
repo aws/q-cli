@@ -129,9 +129,21 @@ pub struct WebviewManager {
     notifications_state: Arc<WebviewNotificationsState>,
 }
 
-impl Default for WebviewManager {
-    fn default() -> Self {
-        let event_loop = WryEventLoop::with_user_event();
+impl WebviewManager {
+    #[allow(unused_variables)]
+    #[allow(unused_mut)]
+    pub fn new(visible: bool) -> Self {
+        let mut event_loop = WryEventLoop::with_user_event();
+
+        #[cfg(target_os = "macos")]
+        if !visible {
+            use wry::application::platform::macos::{
+                ActivationPolicy,
+                EventLoopExtMacOS,
+            };
+            event_loop.set_activation_policy(ActivationPolicy::Accessory);
+        }
+
         let proxy = event_loop.create_proxy();
 
         Self {
@@ -144,12 +156,6 @@ impl Default for WebviewManager {
             platform_state: Arc::new(PlatformState::new(proxy)),
             notifications_state: Arc::new(WebviewNotificationsState::default()),
         }
-    }
-}
-
-impl WebviewManager {
-    pub fn new() -> Self {
-        Self::default()
     }
 
     fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext, enabled: bool, url: Url) {
@@ -294,17 +300,6 @@ impl WebviewManager {
         } else {
             None
         };
-
-        #[cfg(target_os = "macos")]
-        {
-            use wry::application::platform::macos::EventLoopExtMacOS;
-
-            if let Some(window) = self.fig_id_map.get(&DASHBOARD_ID) {
-                if !window.webview.window().is_focused() {
-                    self.event_loop.set_activate_ignoring_other_apps(false);
-                }
-            }
-        }
 
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, window_target, control_flow| {
@@ -542,7 +537,7 @@ where
 
 pub struct DashboardOptions {
     pub show_onboarding: bool,
-    pub force_visible: bool,
+    pub visible: bool,
     pub page: Option<String>,
 }
 
@@ -551,17 +546,15 @@ pub fn build_dashboard(
     event_loop: &EventLoop,
     DashboardOptions {
         show_onboarding,
-        force_visible,
+        visible,
         page,
     }: DashboardOptions,
 ) -> wry::Result<WebView> {
-    let is_visible = !fig_request::auth::is_logged_in() || force_visible || show_onboarding;
-
     let mut window = WindowBuilder::new()
         .with_title("Fig Dashboard")
         .with_resizable(true)
-        .with_visible(is_visible)
-        .with_focused(is_visible)
+        .with_visible(visible)
+        .with_focused(visible)
         .with_always_on_top(false)
         .with_window_icon(Some(utils::ICON.clone()))
         .with_theme(*THEME);

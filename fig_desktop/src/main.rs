@@ -216,19 +216,20 @@ async fn main() {
     }
 
     let accessibility_enabled = PlatformState::accessibility_is_enabled().unwrap_or(true);
+    let visible = !cli.no_dashboard;
 
     let autocomplete_enabled = !fig_settings::settings::get_bool_or("autocomplete.disable", false)
         && fig_request::auth::is_logged_in()
         && accessibility_enabled;
 
-    let mut webview_manager = WebviewManager::new();
+    let mut webview_manager = WebviewManager::new(visible);
     webview_manager
         .build_webview(
             DASHBOARD_ID,
             build_dashboard,
             DashboardOptions {
                 show_onboarding,
-                force_visible: !cli.no_dashboard || page.is_some() || !accessibility_enabled,
+                visible,
                 page,
             },
             true,
@@ -244,6 +245,7 @@ async fn main() {
             AUTOCOMPLETE_URL.parse().unwrap(),
         )
         .unwrap();
+
     webview_manager.run().await.unwrap();
 }
 
