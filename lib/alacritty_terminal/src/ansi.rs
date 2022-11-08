@@ -514,6 +514,12 @@ pub trait Handler {
     /// Fig Log Osc
     fn log(&mut self, _: &str) {}
 
+    /// Fig OSCLock Osc
+    fn osc_lock(&mut self, _: &str) {}
+
+    /// Fig OSCUnlock OSC
+    fn osc_unlock(&mut self, _: &str) {}
+
     /// Unhandled `execute` fallthrough
     fn unhandled_execute(&mut self, _byte: u8) -> HandledStatus {
         HandledStatus::Unhandled
@@ -1247,6 +1253,14 @@ where
                                     b"NewCmd" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.new_cmd(s),
                                         Err(err) => log::error!("Error decoding NewCmd: {err}"),
+                                    },
+                                    b"OSCLock" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.osc_lock(s),
+                                        Err(err) => log::error!("Error decoding OSCLock: {err}"),
+                                    },
+                                    b"OSCUnlock" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.osc_unlock(s),
+                                        Err(err) => log::error!("Error decoding OSCUnlock: {err}"),
                                     },
                                     _ => unhandled!(),
                                 }

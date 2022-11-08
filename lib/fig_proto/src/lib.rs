@@ -245,6 +245,7 @@ mod tests {
             environment_variables: vec![],
             figterm_version: None,
             preexec: Some(false),
+            osc_lock: Some(true),
         };
         let hook = hooks::new_edit_buffer_hook(Some(ctx), "test", 2, 3, None);
         hooks::hook_to_message(hook)

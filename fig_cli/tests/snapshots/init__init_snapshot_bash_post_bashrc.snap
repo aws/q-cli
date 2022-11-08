@@ -426,6 +426,7 @@ fi
 function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
 
 function __fig_preexec() {
+  fig_osc "OSCLock=%s" "${FIGTERM_SESSION_ID}"
   fig_osc PreExec
 
   # Reset user prompts before executing a command, but only if it hasn't
@@ -455,6 +456,7 @@ function __fig_preexec_preserve_status() {
 function __fig_pre_prompt () {
   __fig_ret_value="$?"
 
+  fig_osc "OSCUnlock=%s" "${FIGTERM_SESSION_ID}"
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
   fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"

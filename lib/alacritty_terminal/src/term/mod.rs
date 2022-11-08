@@ -212,6 +212,8 @@ pub struct ShellState {
     pub command_info: Option<CommandInfo>,
     /// Fig Log Level
     pub fig_log_level: Option<String>,
+    /// OSC Lock
+    pub osc_lock: bool,
 }
 
 impl ShellState {
@@ -1761,7 +1763,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn start_prompt(&mut self) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         trace!("Fig start prompt");
@@ -1772,7 +1774,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn end_prompt(&mut self) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         self.end_prompt_internal(false);
@@ -1806,7 +1808,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn dir(&mut self, directory: &std::path::Path) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         trace!("Fig dir: {:?}", directory.display());
@@ -1819,7 +1821,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn shell_path(&mut self, path: &std::path::Path) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         self.shell_state.get_mut_context().shell_path = Some(path.to_path_buf());
@@ -1827,7 +1829,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn wsl_distro(&mut self, distro: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         self.shell_state.get_mut_context().wsl_distro = Some(distro.trim().into());
@@ -1835,7 +1837,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn exit_code(&mut self, exit_code: i32) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         trace!("Fig exit code: {exit_code}");
@@ -1847,7 +1849,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn shell(&mut self, shell: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         let shell = shell.trim().to_owned();
@@ -1864,7 +1866,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn fish_suggestion_color(&mut self, color: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         trace!("Fig fish suggestion color: {color:?}");
@@ -1876,7 +1878,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn zsh_suggestion_color(&mut self, color: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         trace!("Fig zsh suggestion color: {color:?}");
@@ -1889,7 +1891,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn tty(&mut self, tty: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         let tty = tty.trim().to_owned();
@@ -1899,7 +1901,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn pid(&mut self, pid: i32) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         trace!("Fig pid: {pid}");
@@ -1908,7 +1910,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn hostname(&mut self, hostname: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         let hostname = hostname.trim().to_owned();
@@ -1918,7 +1920,7 @@ impl<T: EventListener> Handler for Term<T> {
 
     #[inline]
     fn log(&mut self, fig_log_level: &str) {
-        if self.shell_state.preexec {
+        if self.shell_state.osc_lock {
             return;
         }
         let fig_log_level = fig_log_level.trim().to_owned();
@@ -1926,6 +1928,36 @@ impl<T: EventListener> Handler for Term<T> {
 
         self.shell_state.fig_log_level = Some(fig_log_level.clone());
         self.event_proxy.log_level_event(Some(fig_log_level));
+    }
+
+    #[inline]
+    fn osc_lock(&mut self, session_id: &str) {
+        if let Some(local_session_id) = &self.shell_state.local_context.session_id {
+            trace!(
+                "OSCLock check {session_id} != {local_session_id}: {:?}",
+                session_id != local_session_id
+            );
+            if session_id != local_session_id {
+                return;
+            }
+        }
+
+        self.shell_state.osc_lock = true;
+    }
+
+    #[inline]
+    fn osc_unlock(&mut self, session_id: &str) {
+        if let Some(local_session_id) = &self.shell_state.local_context.session_id {
+            trace!(
+                "OSCUnlock check {session_id} != {local_session_id}: {:?}",
+                session_id != local_session_id
+            );
+            if session_id != local_session_id {
+                return;
+            }
+        }
+
+        self.shell_state.osc_lock = false;
     }
 }
 

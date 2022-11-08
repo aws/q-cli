@@ -654,6 +654,14 @@ impl DebugSubcommand {
                                 .map(|s| s.to_string())
                                 .unwrap_or_else(|| "None".to_string())
                         )?;
+                        writeln!(
+                            &mut out,
+                            "OSCLock: {}",
+                            shell_context
+                                .osc_lock
+                                .map(|s| s.to_string())
+                                .unwrap_or_else(|| "None".to_string())
+                        )?;
                     }
 
                     writeln!(

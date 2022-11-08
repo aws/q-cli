@@ -62,6 +62,7 @@ function fig_wrap_prompt
 end
 
 function fig_preexec --on-event fish_preexec
+    fig_osc "OSCLock=%s" "$FIGTERM_SESSION_ID"
     fig_osc PreExec
 
     if fig_fn_defined fig_user_mode_prompt
@@ -80,6 +81,7 @@ end
 function fig_precmd --on-event fish_prompt
     set -l last_status $status
 
+    fig_osc "OSCUnlock=%s" "$FIGTERM_SESSION_ID"
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
     fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"

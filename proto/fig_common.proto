@@ -56,6 +56,8 @@ message ShellContext {
   optional string figterm_version = 14;
   // true if a command is running
   optional bool preexec = 15;
+  // true if OSCs are locked
+  optional bool osc_lock = 16;
 }
 
 message FileData {

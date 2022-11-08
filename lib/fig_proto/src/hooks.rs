@@ -45,6 +45,7 @@ pub fn generate_shell_context(
         environment_variables: vec![],
         figterm_version: None,
         preexec: None,
+        osc_lock: None,
     })
 }
 

@@ -73,6 +73,8 @@ fig_preexec() {
   [[ -v RPROMPT2 ]] && RPROMPT2="$FIG_USER_RPROMPT2"
 
   FIG_HAS_SET_PROMPT=0
+
+  fig_osc "OSCLock=%s" "${FIGTERM_SESSION_ID}"
   fig_osc PreExec
 }
 
@@ -81,6 +83,7 @@ fig_precmd() {
 
   fig_reset_hooks
 
+  fig_osc "OSCUnlock=%s" "${FIGTERM_SESSION_ID}"
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
   fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"
