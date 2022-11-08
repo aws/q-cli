@@ -299,20 +299,12 @@ impl PlatformStateImpl {
                     msg_send![queue, init]
                 };
                 distributed.subscribe(ax_notification_name, Some(queue), move |_| {
-                    let enabled = accessibility_is_enabled();
                     accessibility_proxy
                         .clone()
-                        .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::AccessibilityUpdated {
-                            enabled,
-                        }))
+                        .send_event(Event::PlatformBoundEvent(
+                            PlatformBoundEvent::AccessibilityUpdateRequested,
+                        ))
                         .ok();
-                    if enabled {
-                        unsafe {
-                            // This prevents Fig from becoming unresponsive if one of the applications
-                            // we are tracking becomes unresponsive.
-                            AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.25);
-                        }
-                    }
                 });
 
                 let observer_proxy = self.proxy.clone();
@@ -577,6 +569,27 @@ impl PlatformStateImpl {
                     }
                 };
                 window_target.set_activation_policy_at_runtime(policy);
+                Ok(())
+            },
+            PlatformBoundEvent::AccessibilityUpdateRequested => {
+                let proxy = self.proxy.clone();
+                tokio::runtime::Handle::current().spawn(async move {
+                    tokio::time::sleep(std::time::Duration::from_millis(100)).await;
+                    let enabled = accessibility_is_enabled();
+                    proxy
+                        .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::AccessibilityUpdated {
+                            enabled,
+                        }))
+                        .ok();
+                    if enabled {
+                        unsafe {
+                            // This prevents Fig from becoming unresponsive if one of the applications
+                            // we are tracking becomes unresponsive.
+                            AXUIElementSetMessagingTimeout(AXUIElementCreateSystemWide(), 0.25);
+                        }
+                    }
+                });
+
                 Ok(())
             },
             PlatformBoundEvent::AccessibilityUpdated { enabled } => {

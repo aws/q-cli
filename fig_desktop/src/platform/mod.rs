@@ -103,6 +103,7 @@ pub enum PlatformBoundEvent {
     AccessibilityUpdated {
         enabled: bool,
     },
+    AccessibilityUpdateRequested,
     AppWindowFocusChanged {
         window_id: WindowId,
         focused: bool,
