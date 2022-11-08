@@ -921,7 +921,7 @@ commands:
       - unless:
           condition:
             matches:
-              pattern: "(:?,|^)<< parameters.platform >>(:?,|$)"
+              pattern: ".*(:?,|^)<< parameters.platform >>(:?,|$).*"
               value: << pipeline.parameters.build_targets >>
           steps: << parameters.steps >>
 
