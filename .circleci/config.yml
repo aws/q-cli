@@ -517,9 +517,9 @@ jobs:
       - persist_to_workspace:
           root: /tmp/new
           paths:
-            - pkg/x86_64/tar/full/pkg
-            - pkg/x86_64/tar/headless/pkg
-            - pkg/aarch64/tar/headless/pkg
+            - pkg/linux/x86_64/tar/full/pkg
+            - pkg/linux/x86_64/tar/headless/pkg
+            - pkg/linux/aarch64/tar/headless/pkg
 
   package-rpm:
     docker:
@@ -620,9 +620,9 @@ jobs:
       - persist_to_workspace:
           root: /tmp/new
           paths:
-            - pkg/x86_64/deb/full/pkg
-            - pkg/x86_64/deb/headless/pkg
-            - pkg/aarch64/deb/headless/pkg
+            - pkg/linux/x86_64/deb/full/pkg
+            - pkg/linux/x86_64/deb/headless/pkg
+            - pkg/linux/aarch64/deb/headless/pkg
   
   publish-packages:
     docker:
