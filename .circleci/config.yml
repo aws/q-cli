@@ -434,7 +434,7 @@ jobs:
               '{
                 "title": "Fig",
                 "icon": "VolumeIcon.icns",
-                "background": "dmg-background.png",
+                "background": "background.png",
                 "icon-size": 160,
                 "format": "ULFO",
                 "window": {
@@ -462,8 +462,8 @@ jobs:
                 }
               }'
             )
-            echo "$FILE_CONTENTS" > /var/tmp/dmg-spec.json
-            appdmg /var/tmp/dmg-spec.json fig.dmg
+            echo "$FILE_CONTENTS" > ./desktop/bundle/dmg/spec.json
+            appdmg ./desktop/bundle/dmg/spec.json fig.dmg
       - run:
           name: Notarize DMG
           command: |
@@ -490,6 +490,12 @@ jobs:
     steps:
       - require-target:
           platform: linux
+      - prepare-package
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt install -y gettext
       - checkout-desktop
       - attach_workspace:
           at: /tmp/ws
@@ -527,9 +533,10 @@ jobs:
     steps:
       - require-target:
           platform: linux
+      - prepare-package
       - run:
           name: Install tools
-          command: dnf install -y git jq rpmdevtools
+          command: dnf install -y git jq rpmdevtools gettext
       - checkout-desktop
       - attach_workspace:
           at: /tmp/ws
@@ -586,6 +593,12 @@ jobs:
     steps:
       - require-target:
           platform: linux
+      - prepare-package
+      - run:
+          name: Install dependencies
+          command: |
+            apt update
+            apt install -y gettext
       - checkout-desktop
       - attach_workspace:
           at: /tmp/ws
@@ -884,6 +897,11 @@ commands:
             gh -R withfig/macos release download fig_release --clobber
             sudo mv fig_release /usr/bin/fig_release
             sudo chmod +x /usr/bin/fig_release
+  
+  prepare-package:
+    steps:
+      - rust/install:
+          version: 1.65.0
 
   require:
     parameters:
