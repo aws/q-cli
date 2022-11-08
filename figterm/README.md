@@ -23,7 +23,7 @@ The run `make install` to build the binary and move to the right location.
 The shell integrations will then launch figterm on each terminal session.
 
 You can verify figterm is running by:
-1. Running `pstree -p $$` and checking, e.g. for a `zsh (figterm)` process
+1. Running `pstree -p $$` and checking, e.g. for a `figterm` process
 with a child `zsh` process.
 2. Running `env | grep FIG` and checking the `FIG_TERM` variable is set to
 1.

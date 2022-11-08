@@ -43,21 +43,8 @@ if test "$TERM_PROGRAM" != WarpTerminal
 
     # Do not launch figterm in non-interactive shells (like VSCode Tasks)
     if status --is-interactive
-        if test (command uname) = Darwin
-            set FIG_TERM_NAME (command basename "$FIG_SHELL")" (figterm)"
-            set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/$FIG_TERM_NAME")
-
-            # Only copy figterm binary if it doesn't already exist
-            # WARNING: copying file if it already exists results
-            # in crashes. See https://github.com/withfig/fig/issues/548
-            if not test -f "$FIG_SHELL_PATH"
-                command cp -p ~/.fig/bin/figterm "$FIG_SHELL_PATH.tmp"
-                command mv "$FIG_SHELL_PATH.tmp" "$FIG_SHELL_PATH"
-            end
-        else
-            set FIG_TERM_NAME figterm
-            set FIG_SHELL_PATH figterm
-        end
+        set FIG_TERM_NAME figterm
+        set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/figterm")
 
         # Need to exec bash because we're using 'exec -a <name>'
         # to set argv[0] and fish's exec doesn't have this option

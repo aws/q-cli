@@ -549,7 +549,7 @@ mod tests {
     #[test]
     fn _snapshot_themes_dir() {
         linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
-        macos!(themes_dir(), @"/Users/$USER/.fig/themes");
+        macos!(themes_dir(), @"/Users/$USER/Library/Application Support/fig/themes/themes");
         windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
     }
 

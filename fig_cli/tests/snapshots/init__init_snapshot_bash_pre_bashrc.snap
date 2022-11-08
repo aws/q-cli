@@ -435,19 +435,8 @@ then
 
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
-    if [[ "$OSTYPE" == "darwin"* ]]; then
-        FIG_TERM_NAME="${FIG_SHELL} (figterm)"
-        FIG_SHELL_PATH="$(command -v "$FIG_TERM_NAME" || echo "${HOME}/.fig/bin/$(basename "${FIG_SHELL}") (figterm)")"
-
-        # Only copy figterm binary if it doesn't already exist
-        if [[ ! -f "${FIG_SHELL_PATH}" ]]; then
-          cp -p "$(command -v figterm)" "${FIG_SHELL_PATH}.tmp"
-          mv "${FIG_SHELL_PATH}.tmp" "${FIG_SHELL_PATH}"
-        fi
-    else
-      FIG_TERM_NAME="figterm"
-      FIG_SHELL_PATH="figterm"
-    fi
+    FIG_TERM_NAME="figterm"
+    FIG_SHELL_PATH="$(command -v "$FIG_TERM_NAME" || echo "${HOME}/.fig/bin/figterm")"
 
     FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
 
