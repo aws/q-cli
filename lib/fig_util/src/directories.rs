@@ -6,61 +6,12 @@ use std::path::{
 };
 
 use camino::Utf8PathBuf;
-#[cfg(test)]
-use insta;
 use thiserror::Error;
 use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
 use crate::consts::FIG_CLI_BINARY_NAME;
 use crate::system_info::in_ssh;
-// Testing
-
-#[cfg(test)]
-fn sanitized_directory_path(path: Result<PathBuf>) -> String {
-    let user = whoami::username();
-    path.ok()
-        .unwrap()
-        .into_os_string()
-        .into_string()
-        .unwrap()
-        .replace(&user, "$USER")
-}
-
-#[cfg(test)]
-macro_rules! assert_directory {
-    ($value:expr, @ $snapshot:literal) => {
-        insta::assert_snapshot!(
-            insta::_macro_support::ReferenceValue::Inline($snapshot),
-            sanitized_directory_path($value),
-            stringify!(sanitized_directory_path($value))
-        )
-    };
-}
-
-#[cfg(test)]
-macro_rules! macos {
-    ($value:expr, @$snapshot:literal) => {
-        #[cfg(target_os = "macos")]
-        assert_directory!($value, @$snapshot)
-    };
-}
-
-#[cfg(test)]
-macro_rules! linux {
-    ($value:expr, @$snapshot:literal) => {
-        #[cfg(target_os = "linux")]
-        assert_directory!($value, @$snapshot)
-    };
-}
-
-#[cfg(test)]
-macro_rules! windows {
-    ($value:expr, @$snapshot:literal) => {
-        #[cfg(target_os = "windows")]
-        assert_directory!($value, @$snapshot)
-    };
-}
 
 macro_rules! debug_env_binding {
     ($path:literal) => {
@@ -133,13 +84,6 @@ pub fn fig_dir() -> Result<PathBuf> {
     }
 }
 
-#[test]
-fn _snapshot_fig_dir() {
-    linux!(fig_dir(), @"/home/$USER/.fig");
-    macos!(fig_dir(), @"/Users/$USER/.fig");
-    windows!(fig_dir(), @r"C:\Users\$USER\AppData\Local\Fig");
-}
-
 /// The fig data directory
 ///
 /// - Linux: `$XDG_DATA_HOME/fig` or `$HOME/.local/share/fig`
@@ -157,14 +101,6 @@ pub fn fig_data_dir() -> Result<PathBuf> {
             Ok(fig_dir()?.join("userdata"))
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_fig_data_dir() {
-    linux!(fig_data_dir(), @"/home/$USER/.local/share/fig");
-    macos!(fig_data_dir(), @"/Users/$USER/Library/Application Support/fig");
-    windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
 }
 
 #[cfg(unix)]
@@ -187,14 +123,6 @@ pub fn sockets_dir() -> Result<PathBuf> {
             Ok(fig_dir()?.join("sockets"))
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_sockets_dir() {
-    linux!(sockets_dir(), @"/var/tmp/fig/$USER");
-    macos!(sockets_dir(), @"/var/tmp/fig/$USER");
-    windows!(sockets_dir(), @r"C:\Users\$USER\AppData\Local\Fig\sockets");
 }
 
 /// The directory on the host machine where socket files are stored
@@ -240,7 +168,7 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
             todo!();
         } else if #[cfg(target_os = "linux")] {
             todo!();
-        } else if #[cfg(target_od = "windows")] {
+        } else if #[cfg(target_os = "windows")] {
             Ok(fig_dir()?.join("bin"))
         }
     }
@@ -253,25 +181,10 @@ pub fn themes_dir() -> Result<PathBuf> {
     Ok(themes_repo_dir()?.join("themes"))
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_themes_dir() {
-    linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
-    macos!(themes_dir(), @"/Users/$USER/.fig/themes");
-    windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
-}
-
 /// The path to the cloned repo containing the themes
 pub fn themes_repo_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_THEMES_REPO_DIR");
     Ok(fig_data_dir()?.join("themes"))
-}
-
-#[test]
-fn _snapshot_themes_repo_dir() {
-    linux!(themes_repo_dir(), @"/home/$USER/.local/share/fig/themes");
-    macos!(themes_repo_dir(), @"/Users/$USER/Library/Application Support/fig/themes");
-    windows!(themes_repo_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes");
 }
 
 /// The path to the fig plugins
@@ -285,14 +198,6 @@ pub fn plugins_dir() -> Result<PathBuf> {
             Ok(fig_data_dir()?.join("plugins"))
         }
     }
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_plugins_dir() {
-    linux!(plugins_dir(), @"/home/$USER/.local/share/fig/plugins");
-    macos!(plugins_dir(), @"/Users/$USER/.local/share/fig/plugins");
-    windows!(plugins_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\plugins");
 }
 
 /// The directory to all the fig logs
@@ -325,14 +230,6 @@ pub fn backups_dir() -> Result<PathBuf> {
     }
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_backups_dir() {
-    linux!(backups_dir(), @"/home/$USER/.fig.dotfiles.bak");
-    macos!(backups_dir(), @"/Users/$USER/.fig.dotfiles.bak");
-    windows!(backups_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\backups");
-}
-
 /// The directory for time based data-sensitive backups
 ///
 /// NOTE: This changes every second and cannot be cached
@@ -361,14 +258,6 @@ pub fn fig_socket_path() -> Result<PathBuf> {
     Ok(host_sockets_dir()?.join("fig.socket"))
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_fig_socket_path() {
-    linux!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
-    macos!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
-    windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.socket");
-}
-
 /// Get path to the daemon socket
 ///
 /// - Linux/MacOS: `/var/tmp/fig/$USERNAME/daemon.socket`
@@ -376,14 +265,6 @@ fn _snapshot_fig_socket_path() {
 pub fn daemon_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
     Ok(sockets_dir()?.join("daemon.socket"))
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_daemon_socket_path() {
-    linux!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
-    macos!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
-    windows!(daemon_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\daemon.socket");
 }
 
 /// The path to secure socket
@@ -403,14 +284,6 @@ pub fn secure_socket_path() -> Result<PathBuf> {
     local_secure_socket_path()
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_secure_socket_path() {
-    linux!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-    macos!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-    windows!(secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
-}
-
 /// The path to fig parent socket
 ///
 /// - Linux/MacOS: `/var/tmp/fig-parent-$FIG_PARENT.socket`
@@ -418,14 +291,6 @@ fn _snapshot_secure_socket_path() {
 pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_PARENT_SOCKET_PATH");
     Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.socket")).to_path_buf())
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_parent_socket_path() {
-    linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
-    macos!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
-    // windows does not have a parent socket
 }
 
 /// The path to local secure socket
@@ -437,14 +302,6 @@ pub fn local_secure_socket_path() -> Result<PathBuf> {
     Ok(host_sockets_dir()?.join("secure.socket"))
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_local_secure_socket_path() {
-    linux!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-    macos!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-    windows!(local_secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
-}
-
 /// Get path to a figterm socket
 ///
 /// - Linux/Macos: `/var/tmp/fig/%USERNAME%/figterm/$SESSION_ID.socket`
@@ -452,14 +309,6 @@ fn _snapshot_local_secure_socket_path() {
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIGTERM_SOCKET_PATH");
     Ok(sockets_dir()?.join("figterm").join(format!("{session_id}.socket")))
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_figterm_socket_path() {
-    linux!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
-    macos!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
-    windows!(figterm_socket_path("$SESSION_ID"), @r"C:\Users\$USER\AppData\Local\Fig\sockets\figterm\$SESSION_ID.socket");
 }
 
 /// The path to the fig install manifest
@@ -509,26 +358,10 @@ pub fn settings_path() -> Result<PathBuf> {
     }
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_settings_path() {
-    linux!(settings_path(), @"/home/$USER/.fig/settings.json");
-    macos!(settings_path(), @"/Users/$USER/.fig/settings.json");
-    windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
-}
-
 /// The path to the fig state file
 pub fn state_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_STATE_PATH");
     Ok(fig_data_dir()?.join("state.json"))
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_state_path() {
-    linux!(state_path(), @"/home/$USER/.local/share/fig/state.json");
-    macos!(state_path(), @"/Users/$USER/Library/Application Support/fig/state.json");
-    windows!(state_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\state.json");
 }
 
 /// The path to the lock file used to indicate that the app is updating
@@ -539,25 +372,9 @@ pub fn update_lock_path() -> Result<PathBuf> {
     Ok(data_dir.join("update.lock"))
 }
 
-#[cfg(test)]
-#[test]
-fn _snapshot_update_lock_path() {
-    linux!(update_lock_path(), @"/home/$USER/.local/share/fig/update.lock");
-    macos!(update_lock_path(), @"/Users/$USER/Library/Application Support/fig/update.lock");
-    windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
-}
-
 /// Path to the main credentials file
 pub fn credentials_path() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("credentials.json"))
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_credentials_path() {
-    linux!(credentials_path(), @"/home/$USER/.local/share/fig/credentials.json");
-    macos!(credentials_path(), @"/Users/$USER/Library/Application Support/fig/credentials.json");
-    windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
 }
 
 /// The path to the saved ssh identities file
@@ -568,14 +385,6 @@ fn _snapshot_credentials_path() {
 pub fn ssh_saved_identities() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
     Ok(fig_data_dir()?.join("access").join("ssh_saved_identities"))
-}
-
-#[cfg(test)]
-#[test]
-fn _snapshot_ssh_saved_identities() {
-    linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");
-    macos!(ssh_saved_identities(), @"/Users/$USER/Library/Application Support/fig/access/ssh_saved_identities");
-    windows!(ssh_saved_identities(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\access\ssh_saved_identities");
 }
 
 /// The path to the cli, relative to the running binary
@@ -666,5 +475,179 @@ mod test {
         test_environment_path!(settings_path, "FIG_DIRECTORIES_SETTINGS_PATH");
         test_environment_path!(state_path, "FIG_DIRECTORIES_STATE_PATH");
         test_environment_path!(ssh_saved_identities, "FIG_DIRECTORIES_SSH_SAVED_IDENTITIES");
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use insta;
+
+    use super::*;
+
+    macro_rules! assert_directory {
+        ($value:expr, @ $snapshot:literal) => {
+            insta::assert_snapshot!(
+                insta::_macro_support::ReferenceValue::Inline($snapshot),
+                sanitized_directory_path($value),
+                stringify!(sanitized_directory_path($value))
+            )
+        };
+    }
+
+    macro_rules! macos {
+        ($value:expr, @$snapshot:literal) => {
+            #[cfg(target_os = "macos")]
+            assert_directory!($value, @$snapshot)
+        };
+    }
+
+    macro_rules! linux {
+        ($value:expr, @$snapshot:literal) => {
+            #[cfg(target_os = "linux")]
+            assert_directory!($value, @$snapshot)
+        };
+    }
+
+    macro_rules! windows {
+        ($value:expr, @$snapshot:literal) => {
+            #[cfg(target_os = "windows")]
+            assert_directory!($value, @$snapshot)
+        };
+    }
+
+    fn sanitized_directory_path(path: Result<PathBuf>) -> String {
+        let user = whoami::username();
+        path.ok()
+            .unwrap()
+            .into_os_string()
+            .into_string()
+            .unwrap()
+            .replace(&user, "$USER")
+    }
+
+    #[test]
+    fn _snapshot_fig_dir() {
+        linux!(fig_dir(), @"/home/$USER/.fig");
+        macos!(fig_dir(), @"/Users/$USER/.fig");
+        windows!(fig_dir(), @r"C:\Users\$USER\AppData\Local\Fig");
+    }
+
+    #[test]
+    fn _snapshot_fig_data_dir() {
+        linux!(fig_data_dir(), @"/home/$USER/.local/share/fig");
+        macos!(fig_data_dir(), @"/Users/$USER/Library/Application Support/fig");
+        windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
+    }
+
+    #[test]
+    fn _snapshot_sockets_dir() {
+        linux!(sockets_dir(), @"/var/tmp/fig/$USER");
+        macos!(sockets_dir(), @"/var/tmp/fig/$USER");
+        windows!(sockets_dir(), @r"C:\Users\$USER\AppData\Local\Fig\sockets");
+    }
+
+    #[test]
+    fn _snapshot_themes_dir() {
+        linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
+        macos!(themes_dir(), @"/Users/$USER/.fig/themes");
+        windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
+    }
+
+    #[test]
+    fn _snapshot_themes_repo_dir() {
+        linux!(themes_repo_dir(), @"/home/$USER/.local/share/fig/themes");
+        macos!(themes_repo_dir(), @"/Users/$USER/Library/Application Support/fig/themes");
+        windows!(themes_repo_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes");
+    }
+
+    #[test]
+    fn _snapshot_plugins_dir() {
+        linux!(plugins_dir(), @"/home/$USER/.local/share/fig/plugins");
+        macos!(plugins_dir(), @"/Users/$USER/.local/share/fig/plugins");
+        windows!(plugins_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\plugins");
+    }
+
+    #[test]
+    fn _snapshot_backups_dir() {
+        linux!(backups_dir(), @"/home/$USER/.fig.dotfiles.bak");
+        macos!(backups_dir(), @"/Users/$USER/.fig.dotfiles.bak");
+        windows!(backups_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\backups");
+    }
+
+    #[test]
+    fn _snapshot_fig_socket_path() {
+        linux!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
+        macos!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
+        windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.socket");
+    }
+
+    #[test]
+    fn _snapshot_daemon_socket_path() {
+        linux!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
+        macos!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
+        windows!(daemon_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\daemon.socket");
+    }
+
+    #[test]
+    fn _snapshot_secure_socket_path() {
+        linux!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        macos!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        windows!(secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
+    }
+
+    #[test]
+    fn _snapshot_parent_socket_path() {
+        linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
+        macos!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
+        // windows does not have a parent socket
+    }
+
+    #[test]
+    fn _snapshot_local_secure_socket_path() {
+        linux!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        macos!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        windows!(local_secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
+    }
+
+    #[test]
+    fn _snapshot_figterm_socket_path() {
+        linux!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
+        macos!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
+        windows!(figterm_socket_path("$SESSION_ID"), @r"C:\Users\$USER\AppData\Local\Fig\sockets\figterm\$SESSION_ID.socket");
+    }
+
+    #[test]
+    fn _snapshot_settings_path() {
+        linux!(settings_path(), @"/home/$USER/.fig/settings.json");
+        macos!(settings_path(), @"/Users/$USER/.fig/settings.json");
+        windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
+    }
+
+    #[test]
+    fn _snapshot_state_path() {
+        linux!(state_path(), @"/home/$USER/.local/share/fig/state.json");
+        macos!(state_path(), @"/Users/$USER/Library/Application Support/fig/state.json");
+        windows!(state_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\state.json");
+    }
+
+    #[test]
+    fn _snapshot_update_lock_path() {
+        linux!(update_lock_path(), @"/home/$USER/.local/share/fig/update.lock");
+        macos!(update_lock_path(), @"/Users/$USER/Library/Application Support/fig/update.lock");
+        windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
+    }
+
+    #[test]
+    fn _snapshot_credentials_path() {
+        linux!(credentials_path(), @"/home/$USER/.local/share/fig/credentials.json");
+        macos!(credentials_path(), @"/Users/$USER/Library/Application Support/fig/credentials.json");
+        windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
+    }
+
+    #[test]
+    fn _snapshot_ssh_saved_identities() {
+        linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");
+        macos!(ssh_saved_identities(), @"/Users/$USER/Library/Application Support/fig/access/ssh_saved_identities");
+        windows!(ssh_saved_identities(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\access\ssh_saved_identities");
     }
 }

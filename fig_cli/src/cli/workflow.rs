@@ -44,10 +44,6 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
-use fig_util::desktop::{
-    launch_fig_desktop,
-    LaunchArgs,
-};
 use fig_util::directories;
 use serde_json::Value;
 #[cfg(unix)]
@@ -315,6 +311,10 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
+                    use fig_util::desktop::{
+                        launch_fig_desktop,
+                        LaunchArgs,
+                    };
                     use skim::prelude::*;
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();

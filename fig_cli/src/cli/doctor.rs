@@ -79,10 +79,7 @@ use spinners::{
 use tokio::io::AsyncBufReadExt;
 
 use super::app::restart_fig;
-use super::diagnostics::{
-    get_diagnostics,
-    verify_integration,
-};
+use super::diagnostics::verify_integration;
 use crate::util::{
     app_path_from_bundle_id,
     glob,
@@ -2320,7 +2317,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                     &AccessibilityCheck,
                     &DotfilesSymlinkedCheck,
                 ],
-                get_diagnostics,
+                super::diagnostics::get_diagnostics,
                 config,
                 &mut spinner,
             )
@@ -2333,7 +2330,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 run_checks_with_context(
                     format!("Let's check {}...", "fig diagnostic".bold()),
                     vec![&AutocompleteActiveCheck],
-                    get_diagnostics,
+                    super::diagnostics::get_diagnostics,
                     config,
                     &mut spinner,
                 )

@@ -356,7 +356,7 @@ impl CommandBuilder {
             let extensions = self.get_env("PATHEXT").unwrap_or_else(|| OsStr::new(".EXE"));
             for path in std::env::split_paths(&path) {
                 // Check for exactly the user's string in this path dir
-                let candidate = path.join(&exe);
+                let candidate = path.join(exe);
                 if candidate.exists() {
                     return candidate.into_os_string();
                 }
@@ -368,7 +368,7 @@ impl CommandBuilder {
                     // PATHEXT includes the leading `.`, but `with_extension`
                     // doesn't want that
                     let ext = ext.to_str().expect("PATHEXT entries must be utf8");
-                    let path = path.join(&exe).with_extension(&ext[1..]);
+                    let path = path.join(exe).with_extension(&ext[1..]);
                     if path.exists() {
                         return path.into_os_string();
                     }

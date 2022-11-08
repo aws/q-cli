@@ -32,7 +32,7 @@ fn open_command(url: impl AsRef<str>) -> std::process::Command {
     let detached = 0x8;
     let mut command = std::process::Command::new("cmd");
     command.creation_flags(detached);
-    command.args(&["/c", "start", url.as_ref()]);
+    command.args(["/c", "start", url.as_ref()]);
     command
 }
 
