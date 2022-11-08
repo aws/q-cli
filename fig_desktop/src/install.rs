@@ -23,6 +23,7 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 pub async fn run_install(_ignore_immediate_update: bool) {
     #[cfg(target_os = "macos")]
     let ignore_immediate_update = _ignore_immediate_update;
+
     // Create files needed for other parts of the app to run
     for (path_result, name, default) in [
         (fig_util::directories::settings_path(), "settings", "{}"),
@@ -31,10 +32,8 @@ pub async fn run_install(_ignore_immediate_update: bool) {
         match path_result {
             Ok(path) => {
                 if let Some(path_parent) = path.parent() {
-                    if !path_parent.exists() {
-                        if let Err(err) = std::fs::create_dir_all(path_parent) {
-                            error!(%err, "Failed to create {name} directory");
-                        }
+                    if let Err(err) = std::fs::create_dir_all(path_parent) {
+                        error!(%err, "Failed to create {name} directory");
                     }
                 }
                 // If file is empty, write default
@@ -110,15 +109,20 @@ pub async fn run_install(_ignore_immediate_update: bool) {
             }
         }
 
-        // Copy shell specific versions of figterm bin
+        // Delete old figterm instances
         #[cfg(target_os = "macos")]
-        if let (Ok(fig_dir), Some(ref figterm_exe)) = (
-            directories::fig_dir(),
-            get_bundle_path_for_executable(fig_util::consts::FIGTERM_BINARY_NAME),
-        ) {
+        if let Ok(fig_dir) = directories::fig_dir() {
             let bins = fig_dir.join("bin");
-            for shell in fig_util::Shell::all() {
-                std::fs::copy(figterm_exe, bins.join(format!("{shell} (figterm)"))).ok();
+            for entry in std::fs::read_dir(bins).ok().into_iter().flatten().flatten() {
+                if entry.file_type().map_or(false, |f| f.is_file()) {
+                    if let Some(name) = entry.file_name().to_str() {
+                        if name.contains("figterm") {
+                            if let Err(err) = std::fs::remove_file(entry.path()) {
+                                error!(%err, "Failed to delete old figterm instance");
+                            }
+                        }
+                    }
+                }
             }
         }
     }

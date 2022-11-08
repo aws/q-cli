@@ -25,6 +25,14 @@ pub enum IntegrationsSubcommands {
         #[arg(long, short)]
         silent: bool,
     },
+    Reinstall {
+        /// Integration to reinstall
+        #[command(subcommand)]
+        integration: Integration,
+        /// Suppress status messages
+        #[arg(long, short)]
+        silent: bool,
+    },
     Status {
         /// Integration to check status of
         #[command(subcommand)]
@@ -78,6 +86,24 @@ impl IntegrationsSubcommands {
                 Ok(())
             },
             IntegrationsSubcommands::Status { integration } => status(integration).await,
+            IntegrationsSubcommands::Reinstall { integration, silent } => {
+                if let Integration::All = integration {
+                    uninstall(Integration::Dotfiles { shell: None }, silent).await?;
+                    uninstall(Integration::Daemon, silent).await?;
+                    uninstall(Integration::Ssh, silent).await?;
+                    #[cfg(target_os = "macos")]
+                    uninstall(Integration::InputMethod, silent).await?;
+                    install(Integration::Dotfiles { shell: None }, silent).await?;
+                    install(Integration::Daemon, silent).await?;
+                    install(Integration::Ssh, silent).await?;
+                    #[cfg(target_os = "macos")]
+                    install(Integration::InputMethod, silent).await?;
+                } else {
+                    uninstall(integration, silent).await?;
+                    install(integration, silent).await?;
+                }
+                Ok(())
+            },
         }
     }
 }
