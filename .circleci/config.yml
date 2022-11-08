@@ -462,8 +462,8 @@ jobs:
                 }
               }'
             )
-            echo "$FILE_CONTENTS" > ./desktop/dmg/dmg-spec.json
-            appdmg ./desktop/dmg/dmg-spec.json fig.dmg
+            echo "$FILE_CONTENTS" > /var/tmp/dmg-spec.json
+            appdmg /var/tmp/dmg-spec.json fig.dmg
       - run:
           name: Notarize DMG
           command: |
