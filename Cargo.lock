@@ -1943,6 +1943,7 @@ dependencies = [
  "fig_ipc",
  "fig_log",
  "fig_proto",
+ "fig_util",
  "libc",
  "macos_accessibility_position",
  "objc",

@@ -14,6 +14,7 @@ use cocoa::foundation::{
 };
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_caret_position_hook;
+use fig_util::Terminal;
 use macos_accessibility_position::{
     NSString,
     NSStringRef,
@@ -111,7 +112,26 @@ fn bundle_identifier(client: id) -> Option<String> {
 extern "C" fn activate_server(this: &mut Object, _cmd: Sel, client: id) {
     unsafe {
         (*this).set_ivar::<BOOL>("is_active", YES);
-        info!("activated server: {:?}", bundle_identifier(client));
+        let bundle_id = bundle_identifier(client);
+        info!("activated server: {:?}", bundle_id);
+
+        let terminal = Terminal::from_bundle_id(bundle_id.unwrap_or_default().as_str());
+
+        // Used to trigger input method enabled in Alacritty
+        if matches!(terminal, Some(Terminal::Alacritty)) {
+            let empty_range = NSRange::new(0, 0);
+            let space_string: NSString = " ".into();
+            let empty_string: NSString = "".into();
+
+            // First, setMarkedText with a non-empty string in order to enable winit IME
+            // https://github.com/rust-windowing/winit/blob/97d4c7b303bb8110df6c492f0c2327b7d5098347/src/platform_impl/macos/view.rs#L330-L337
+
+            let _: () = msg_send![client, setMarkedText: space_string selectionRange: empty_range replacementRange: empty_range];
+
+            // Then, since we don't *actually* want to be in the preedit state, set marked text to an empty
+            // string to invalidate https://github.com/rust-windowing/winit/blob/97d4c7b303bb8110df6c492f0c2327b7d5098347/src/platform_impl/macos/view.rs#L345-L351
+            let _: () = msg_send![client, setMarkedText: empty_string selectionRange: empty_range replacementRange: empty_range];
+        }
     }
 }
 
@@ -136,14 +156,6 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
                 height: 0.0,
                 width: 0.0,
             },
-        };
-
-        info!("setMarkedText: selectionRange: replacementRange:");
-        // Used to trigger input method enabled in Alacritty (see https://github.com/rust-windowing/winit/blob/97d4c7b303bb8110df6c492f0c2327b7d5098347/src/platform_impl/macos/view.rs#L300)
-        let empty_range = NSRange::new(0, 0);
-        let empty_string: NSString = "".into();
-        let _: () = unsafe {
-            msg_send![client, setMarkedText: empty_string selectionRange: empty_range replacementRange: empty_range]
         };
 
         let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };
