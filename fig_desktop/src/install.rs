@@ -103,14 +103,25 @@ pub async fn run_install(_ignore_immediate_update: bool) {
         #[cfg(target_os = "macos")]
         {
             let input_method = fig_integrations::input_method::InputMethod::default();
-            if let Ok(target_bundle_path) = input_method.target_bundle_path() {
-                if target_bundle_path.exists() {
+            match input_method.target_bundle_path() {
+                Ok(target_bundle_path) if target_bundle_path.exists() => {
                     input_method.terminate().ok();
 
                     if let Err(err) = fig_integrations::input_method::InputMethod::register(target_bundle_path) {
                         error!(%err, "Input method could not be registered");
                     }
-                }
+
+                    use tokio::time::{
+                        sleep,
+                        Duration,
+                    };
+                    tokio::spawn(async move {
+                        sleep(Duration::from_secs(1)).await;
+                        input_method.launch();
+                    });
+                },
+                Ok(_) => tracing::warn!("Input method bundle path does not exist"),
+                Err(err) => tracing::warn!(%err, "Failed to get input method bundle path"),
             }
         }
 

@@ -110,6 +110,7 @@ impl IntegrationsSubcommands {
 
 async fn install(integration: Integration, silent: bool) -> Result<()> {
     let mut installed = false;
+    let mut status: Option<&str> = None;
 
     let result = match integration {
         Integration::All => Ok(()),
@@ -169,6 +170,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                 if #[cfg(target_os = "macos")] {
                     fig_integrations::input_method::InputMethod::default().install().await?;
                     installed = true;
+                    status = Some("You must restart your terminal to finish installing the input method.");
                     Ok(())
                 } else {
                     Err(eyre::eyre!("Input method integration is only supported on macOS"))
@@ -206,7 +208,11 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
     };
 
     if installed && result.is_ok() && !silent {
-        println!("Installed!")
+        println!("Installed!");
+
+        if let Some(status) = status {
+            println!("{}", status);
+        }
     }
 
     if !installed && !silent {

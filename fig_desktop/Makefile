@@ -105,6 +105,10 @@ install-native-usr: build-native
 install-native-usr-release: build-native-release
 	sudo install $(TARGET_DIR)/release/$(CRATE_NAME) /usr/bin/$(BINARY_NAME)
 
+install-macos-bundle: build-native
+	mkdir -p /Applications/Fig.app/Contents/MacOS/
+	install $(TARGET_DIR)/debug/$(CRATE_NAME) /Applications/Fig.app/Contents/MacOS/fig_desktop
+
 ### Convert icons
 
 icons:

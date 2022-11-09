@@ -409,12 +409,16 @@ impl InputMethod {
     }
 
     pub fn launch(&self) {
+        debug!("Launching input method...");
+
         if let Some(bundle_path) = self.bundle_path.to_str() {
             applications::launch_application(bundle_path);
         }
     }
 
     pub fn terminate(&self) -> Result<(), InputMethodError> {
+        debug!("Terminating input method...");
+
         let bundle_id = self.bundle_id()?;
         applications::running_applications_matching(&bundle_id)
             .iter()

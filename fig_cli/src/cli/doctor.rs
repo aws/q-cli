@@ -29,6 +29,7 @@ use eyre::{
     WrapErr,
 };
 use fig_daemon::Daemon;
+use fig_integrations::input_method::InputMethodError;
 use fig_integrations::shell::{
     ShellExt,
     ShellIntegration,
@@ -1630,12 +1631,33 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
 
         let input_method = InputMethod::default();
         if let Err(e) = input_method.is_installed().await {
-            return Err(DoctorError::Error {
-                reason: "Input Method is not installed".into(),
-                info: vec!["Run `fig integrations install input-method` to enable it".into()],
-                fix: None,
-                error: Some(e.into()),
-            });
+            match e {
+                InstallationError::InputMethod(InputMethodError::NotRunning) => {
+                    return Err(doctor_fix!({
+                            reason: "Input method is not running",
+                            fix: move || {
+                                input_method.launch();
+                                Ok(())
+                            }
+                    }));
+                },
+                InstallationError::InputMethod(_) => {
+                    return Err(DoctorError::Error {
+                        reason: e.to_string().into(),
+                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                        fix: None,
+                        error: Some(e.into()),
+                    });
+                },
+                _ => {
+                    return Err(DoctorError::Error {
+                        reason: "Input Method is not installed".into(),
+                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                        fix: None,
+                        error: Some(e.into()),
+                    });
+                },
+            }
         }
 
         use macos_accessibility_position::applications::running_applications;
