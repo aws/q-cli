@@ -1,3 +1,4 @@
+use http::header::CONTENT_TYPE;
 use http::status::StatusCode;
 use http::{
     Request as HttpRequest,
@@ -21,8 +22,8 @@ pub fn is_cargo_debug_build() -> bool {
 }
 
 pub fn wrap_custom_protocol(
-    f: impl Fn(&HttpRequest<Vec<u8>>) -> anyhow::Result<HttpResponse<Vec<u8>>>,
-) -> impl Fn(&HttpRequest<Vec<u8>>) -> wry::Result<HttpResponse<Vec<u8>>> {
+    f: impl Fn(&HttpRequest<Vec<u8>>) -> anyhow::Result<HttpResponse<Vec<u8>>> + 'static,
+) -> impl Fn(&HttpRequest<Vec<u8>>) -> wry::Result<HttpResponse<Vec<u8>>> + 'static {
     move |req: &HttpRequest<Vec<u8>>| -> wry::Result<HttpResponse<Vec<u8>>> {
         Ok(match f(req) {
             Ok(res) => res,
@@ -34,11 +35,11 @@ pub fn wrap_custom_protocol(
                     .and_then(|accept| accept.to_str().ok())
                     .and_then(|accept| accept.split('/').last())
                 {
-                    Some("json") => response.header("Content-Type", "application/json").body(
+                    Some("json") => response.header(CONTENT_TYPE, "application/json").body(
                         serde_json::to_vec(&json!({ "error": err.to_string() })).unwrap_or_else(|_| b"{}".to_vec()),
                     ),
                     _ => response
-                        .header("Content-Type", "text/plain")
+                        .header(CONTENT_TYPE, "text/plain")
                         .body(err.to_string().into_bytes()),
                 }?
             },

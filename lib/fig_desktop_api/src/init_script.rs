@@ -35,6 +35,7 @@ pub struct Constants {
     os: &'static str,
     arch: &'static str,
     env: HashMap<String, String>,
+    new_uri_format: bool,
 }
 
 impl Default for Constants {
@@ -79,6 +80,7 @@ impl Default for Constants {
             os: consts::OS,
             arch: consts::ARCH,
             env: std::env::vars().collect(),
+            new_uri_format: true,
         }
     }
 }

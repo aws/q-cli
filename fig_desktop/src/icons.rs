@@ -13,6 +13,7 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use http::header::CONTENT_TYPE;
 use http::{
     Request,
     Response,
@@ -125,7 +126,7 @@ fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Vec<u8>
 fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response<Vec<u8>> {
     Response::builder()
         .status(StatusCode::OK)
-        .header("Content-Type", match asset_kind {
+        .header(CONTENT_TYPE, match asset_kind {
             AssetKind::Png => "image/png",
             AssetKind::Svg => "image/svg+xml",
         })
@@ -184,7 +185,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
             .get("asset")
             .or_else(|| pairs.get("type"))
             .map(|name| cached_asset_response(&AssetSpecifier::Named(name.to_string()), None)),
-        None => {
+        Some("path") => {
             let decoded_str = &*percent_decode_str(url.path()).decode_utf8().map_err(|err| {
                 warn!(%err, "Failed to decode fig url");
                 err
