@@ -57,7 +57,7 @@ fnv = "1.0.7"
 hashbrown = "0.12.3"
 image = "0.24.4"
 imageproc = "0.23.0"
-moka = "0.9.5"
+moka = "0.9.6"
 notify = "5.0.0"
 once_cell = "1.16.0"
 parking_lot = { version = "0.12.1", features = ["serde"] }
