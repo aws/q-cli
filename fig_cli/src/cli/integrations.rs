@@ -108,6 +108,7 @@ impl IntegrationsSubcommands {
     }
 }
 
+#[allow(unused_mut)]
 async fn install(integration: Integration, silent: bool) -> Result<()> {
     let mut installed = false;
     let mut status: Option<&str> = None;

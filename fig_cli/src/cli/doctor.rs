@@ -29,6 +29,7 @@ use eyre::{
     WrapErr,
 };
 use fig_daemon::Daemon;
+#[cfg(target_os = "macos")]
 use fig_integrations::input_method::InputMethodError;
 use fig_integrations::shell::{
     ShellExt,
