@@ -1336,37 +1336,6 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
     }
 }
 
-struct PseudoTerminalPathCheck;
-#[async_trait]
-impl DoctorCheck for PseudoTerminalPathCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "PATH and PseudoTerminal PATH match".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = std::env::var("PATH").unwrap_or_default();
-        let pty_path = fig_settings::state::get_value("pty.path")
-            .map_err(|e| DoctorError::Error {
-                reason: "Could not get PseudoTerminal PATH".into(),
-                info: vec![e.to_string().into()],
-                fix: None,
-                error: None,
-            })?
-            .and_then(|s| s.as_str().map(str::to_string));
-
-        if path != pty_path.unwrap_or_default() {
-            Err(DoctorError::Error {
-                reason: "paths do not match".into(),
-                info: vec![],
-                fix: command_fix(vec!["fig", "app", "set-path"], None),
-                error: None,
-            })
-        } else {
-            Ok(())
-        }
-    }
-}
-
 struct DotfilesSymlinkedCheck;
 
 #[async_trait]
@@ -2302,7 +2271,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 #[cfg(unix)]
                 &FigtermSocketCheck,
                 &InsertionLockCheck,
-                &PseudoTerminalPathCheck,
                 &AutocompleteDevModeCheck,
                 &PluginDevModeCheck,
                 &DashboardHostCheck,
