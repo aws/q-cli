@@ -1,4 +1,5 @@
 use cfg_if::cfg_if;
+use crossterm::style::Stylize;
 use eyre::Result;
 
 use crate::util::dialoguer_theme;
@@ -11,30 +12,25 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
     }
 
     if !no_confirm {
-        println!("\nCommon issues with Fig can be resolved by running `fig doctor`");
-        println!("Additionally, you can disable Autocomplete and continue using the rest of Fig\n");
+        println!("\n* Fig not working? Run {}", "fig doctor".bold().magenta());
+        println!(
+            r#"* Autocomplete doesn't "feel" right? Watch {}"#,
+            "https://fig.io/l/configuring-autocomplete".bold()
+        );
+        println!(
+            "* Keep Fig but disable Autocomplete? Run {}\n",
+            "fig settings autocomplete.disable true".bold().magenta()
+        );
 
-        let choice = dialoguer::Select::with_theme(&dialoguer_theme())
-            .with_prompt("What would you like to do?")
-            .items(&["fix common issues", "disable autocomplete", "uninstall", "exit"])
-            .default(0)
+        let should_continue = dialoguer::Confirm::with_theme(&dialoguer_theme())
+            .with_prompt("Do you want to continue uninstalling Fig?")
             .interact()?;
 
-        match choice {
-            i if i == 0 => return super::doctor::doctor_cli(true, false).await,
-            i if i == 1 => {
-                println!(
-                    "Autocomplete disabled! If you'd like to re-enable it, run `fig settings autocomplete.disable false`"
-                );
-                fig_api_client::settings::update("autocomplete.disable", true).await?;
-                return Ok(());
-            },
-            i if i == 2 => println!("Uninstalling Fig"),
-            i if i == 3 => {
-                println!("Phew...");
-                return Ok(());
-            },
-            _ => unreachable!(),
+        if should_continue {
+            println!("Uninstalling Fig");
+        } else {
+            println!("Cancelled");
+            return Ok(());
         }
     };
 
