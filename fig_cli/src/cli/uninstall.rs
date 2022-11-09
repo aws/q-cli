@@ -22,11 +22,13 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             "fig settings autocomplete.disable true".bold().magenta()
         );
 
-        let should_continue = dialoguer::Confirm::with_theme(&dialoguer_theme())
+        let should_continue = dialoguer::Select::with_theme(&dialoguer_theme())
             .with_prompt("Do you want to continue uninstalling Fig?")
-            .interact()?;
+            .items(&["Yes", "No"])
+            .default(0)
+            .interact_opt()?;
 
-        if should_continue {
+        if should_continue == Some(0) {
             println!("Uninstalling Fig");
         } else {
             println!("Cancelled");

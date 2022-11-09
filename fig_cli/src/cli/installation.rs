@@ -95,7 +95,8 @@ pub async fn install_cli(install_components: InstallComponents, no_confirm: bool
 
                 if dialoguer::Select::with_theme(&dialoguer_theme())
                     .with_prompt("Do you want to enable support for input method backed terminals?")
-                    .items(&["yes", "no"])
+                    .default(0)
+                    .items(&["Yes", "No"])
                     .interact_opt()? == Some(0) {
                     install(InstallComponents::INPUT_METHOD).await?;
                 }
