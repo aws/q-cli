@@ -134,9 +134,6 @@ impl AppSubcommand {
             AppSubcommand::Onboarding => {
                 cfg_if! {
                     if #[cfg(unix)] {
-                        use std::process::Command;
-                        use std::os::unix::process::CommandExt;
-
                         launch_fig_desktop(LaunchArgs {
                             wait_for_socket: true,
                             open_dashboard: false,
@@ -144,10 +141,28 @@ impl AppSubcommand {
                             verbose: true,
                         })?;
 
-                        if state::set_value("user.onboarding", true).is_ok() {
-                            Command::new("bash")
-                                .args(["-c", include_str!("onboarding.sh")])
-                                .exec();
+                        if state::set_value("user.onboarding", true).is_ok() && state::set_value("doctor.prompt-restart-terminal", false).is_ok() {
+                            // Command::new("bash")
+                            //     .args(["-c", include_str!("onboarding.sh")])
+                            //     .exec();
+                            println!(
+                                "
+   ███████╗██╗ ██████╗
+   ██╔════╝██║██╔════╝
+   █████╗  ██║██║  ███╗
+   ██╔══╝  ██║██║   ██║
+   ██║     ██║╚██████╔╝
+   ╚═╝     ╚═╝ ╚═════╝  ....is now installed!
+
+   Start typing to use {}
+
+   * Change settings? Run {}
+   * Fig not working? Run {}
+                                ",
+                                "Fig Autocomplete".bold(),
+                                "fig".bold().magenta(),
+                                "fig doctor".bold().magenta(),
+                            );
                         }
                     } else if #[cfg(windows)] {
                         if state::set_value("user.onboarding", true).is_ok() &&

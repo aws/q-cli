@@ -7,7 +7,6 @@ use std::io::{
     Write,
 };
 
-use cfg_if::cfg_if;
 use clap::Args;
 use crossterm::tty::IsTty;
 use eyre::Result;
@@ -162,18 +161,18 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
             // this is explicitly set in onboarding in macOS app.
             let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
 
-            cfg_if! {
-                if #[cfg(target_os = "macos")] {
-                    let terminal_supports_onboarding = {
-                        let terminal = Terminal::parent_terminal();
-                        [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
-                    };
-                } else {
-                    let terminal_supports_onboarding = true;
-                }
-            }
+            // cfg_if! {
+            //     if #[cfg(target_os = "macos")] {
+            //         let terminal_supports_onboarding = {
+            //             let terminal = Terminal::parent_terminal();
+            //             [Some(Terminal::Iterm), Some(Terminal::TerminalApp)].contains(&terminal)
+            //         };
+            //     } else {
+            //         let terminal_supports_onboarding = true;
+            //     }
+            // }
 
-            if is_logged_in() && !has_seen_onboarding && terminal_supports_onboarding {
+            if is_logged_in() && !has_seen_onboarding {
                 to_source.push(match shell {
                     Shell::Bash | Shell::Zsh => "(fig restart daemon &> /dev/null &)".into(),
                     Shell::Fish => "begin; fig restart daemon &> /dev/null &; end".into(),
