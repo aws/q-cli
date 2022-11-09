@@ -50,6 +50,7 @@ use fig_settings::state;
 use fig_util::consts::FIG_CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use fig_util::Terminal;
+use macos_accessibility_position::applications;
 use objc::runtime::Object;
 use objc::{
     class,
@@ -144,6 +145,8 @@ pub enum InputMethodError {
     NotSelected,
     #[error("Could not locate Fig CLI")]
     HelperExecutableNotFound,
+    #[error("Input method not running")]
+    NotRunning,
     #[error("An unknown error occurred")]
     UnknownError,
 }
@@ -404,6 +407,21 @@ impl InputMethod {
 
         Ok(bundle_identifier.to_string())
     }
+
+    pub fn launch(&self) {
+        if let Some(bundle_path) = self.bundle_path.to_str() {
+            applications::launch_application(bundle_path);
+        }
+    }
+
+    pub fn terminate(&self) -> Result<(), InputMethodError> {
+        let bundle_id = self.bundle_id()?;
+        applications::running_applications_matching(&bundle_id)
+            .iter()
+            .for_each(|app| app.terminate());
+
+        Ok(())
+    }
 }
 
 fn str_to_nsstring(str: &str) -> &Object {
@@ -435,7 +453,11 @@ impl Integration for InputMethod {
             return Err(InputMethodError::InvalidBundle("Symbolic link is incorrect".into()).into());
         }
 
-        // todo(mschrage): check that the input method is running (NSRunning application)
+        // check that the input method is running (NSRunning application)
+        let bundle_id = self.bundle_id()?;
+        if applications::running_applications_matching(bundle_id.as_str()).is_empty() {
+            return Err(InputMethodError::NotRunning.into());
+        }
 
         // Can we load input source?
 
@@ -522,8 +544,7 @@ impl Integration for InputMethod {
 
         // Store PIDs of all relevant terminal emulators (input method will not work until these
         // processes are restarted)
-        use macos_accessibility_position::applications::running_applications;
-        running_applications().iter().for_each(|app| {
+        applications::running_applications().iter().for_each(|app| {
             if let Some(bundle_id) = &app.bundle_identifier {
                 match Terminal::from_bundle_id(bundle_id) {
                     Some(terminal) if terminal.supports_macos_input_method() => {

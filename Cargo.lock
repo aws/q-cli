@@ -3576,6 +3576,7 @@ dependencies = [
  "dashmap",
  "flume",
  "fnv",
+ "nix 0.25.0",
  "objc",
  "once_cell",
  "parking_lot 0.12.1",

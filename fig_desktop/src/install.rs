@@ -101,10 +101,15 @@ pub async fn run_install(_ignore_immediate_update: bool) {
         });
 
         #[cfg(target_os = "macos")]
-        if let Ok(target_bundle_path) = fig_integrations::input_method::InputMethod::default().target_bundle_path() {
-            if target_bundle_path.exists() {
-                if let Err(err) = fig_integrations::input_method::InputMethod::register(target_bundle_path) {
-                    error!(%err, "Input method could not be registered");
+        {
+            let input_method = fig_integrations::input_method::InputMethod::default();
+            if let Ok(target_bundle_path) = input_method.target_bundle_path() {
+                if target_bundle_path.exists() {
+                    input_method.terminate().ok();
+
+                    if let Err(err) = fig_integrations::input_method::InputMethod::register(target_bundle_path) {
+                        error!(%err, "Input method could not be registered");
+                    }
                 }
             }
         }
