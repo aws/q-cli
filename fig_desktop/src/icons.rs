@@ -36,13 +36,15 @@ use url::Url;
 
 use crate::platform::PlatformState;
 
+const DEFAULT_ICON: &str = "template";
+
 #[derive(Hash, Eq, PartialEq, Debug)]
-pub enum AssetSpecifier {
-    Named(String),
-    PathBased(PathBuf),
+pub enum AssetSpecifier<'a> {
+    Named(Cow<'a, str>),
+    PathBased(Cow<'a, Path>),
 }
 
-static ASSETS: Lazy<HashMap<AssetSpecifier, Arc<Vec<u8>>>> = Lazy::new(|| {
+static ASSETS: Lazy<HashMap<AssetSpecifier<'static>, Arc<Vec<u8>>>> = Lazy::new(|| {
     let mut map = HashMap::new();
 
     macro_rules! load_assets {
@@ -111,15 +113,24 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
 }
 
 fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Vec<u8>>, AssetKind) {
-    let fallback = fallback.unwrap_or("template");
-    PlatformState::icon_lookup(asset).unwrap_or_else(|| {
-        (
-            ASSETS
-                .get(asset)
-                .unwrap_or_else(|| ASSETS.get(&AssetSpecifier::Named(fallback.into())).unwrap())
-                .clone(),
-            AssetKind::Png, // bundled assets are PNGs
-        )
+    match &asset {
+        AssetSpecifier::Named(_) => ASSETS
+            .get(asset)
+            .map(|asset| (asset.clone(), AssetKind::Png))
+            .or_else(|| PlatformState::icon_lookup(asset)),
+        AssetSpecifier::PathBased(_) => PlatformState::icon_lookup(asset),
+    }
+    .or_else(|| match fallback {
+        Some(fallback) => ASSETS
+            .get(&AssetSpecifier::Named(fallback.into()))
+            .map(|asset| (asset.clone(), AssetKind::Png)),
+        None => None,
+    })
+    .unwrap_or_else(|| {
+        ASSETS
+            .get(&AssetSpecifier::Named(DEFAULT_ICON.into()))
+            .map(|asset| (asset.clone(), AssetKind::Png))
+            .unwrap()
     })
 }
 
@@ -142,7 +153,7 @@ fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Resp
 }
 
 fn build_default() -> Response<Vec<u8>> {
-    cached_asset_response(&AssetSpecifier::Named("template".into()), None)
+    cached_asset_response(&AssetSpecifier::Named(DEFAULT_ICON.into()), None)
 }
 
 fn scale(a: u8, b: u8) -> u8 {
@@ -184,7 +195,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
         Some("icon") | Some("asset") => pairs
             .get("asset")
             .or_else(|| pairs.get("type"))
-            .map(|name| cached_asset_response(&AssetSpecifier::Named(name.to_string()), None)),
+            .map(|name| cached_asset_response(&AssetSpecifier::Named(Cow::Borrowed(name)), None)),
         Some("path") => {
             let decoded_str = &*percent_decode_str(url.path()).decode_utf8().map_err(|err| {
                 warn!(%err, "Failed to decode fig url");
@@ -223,7 +234,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
             };
 
             Some(cached_asset_response(
-                &AssetSpecifier::PathBased(path.to_path_buf()),
+                &AssetSpecifier::PathBased(Cow::Borrowed(path)),
                 fallback,
             ))
         },
