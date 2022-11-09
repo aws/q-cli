@@ -55,6 +55,7 @@ fig_util = { path = "../lib/fig_util" }
 flume = "0.10.14"
 fnv = "1.0.7"
 hashbrown = "0.12.3"
+http = "0.2.8"
 image = "0.24.4"
 imageproc = "0.23.0"
 moka = "0.9.6"
@@ -76,7 +77,7 @@ tracing = "0.1.36"
 url = "2.3.1"
 which = "4.3.0"
 whoami = "1.2.1"
-wry = { version = "0.21.1", default-features = false, features = [
+wry = { version = "0.22.0", default-features = false, features = [
     "tray",
     "protocol",
     "devtools",

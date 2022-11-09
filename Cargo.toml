@@ -43,4 +43,3 @@ opt-level = 3
 [patch.crates-io]
 tokio = { git = "https://github.com/sullivan-sean/tokio" }
 mio = { git = "https://github.com/sullivan-sean/mio" }
-tao = { git = "https://github.com/grant0417/tao", branch = "configure-activate-ignoring-other-apps" }

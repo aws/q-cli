@@ -297,7 +297,7 @@ impl SshSubcommand {
 }
 
 fn read_saved_identities() -> eyre::Result<HashMap<u64, Option<u64>>> {
-    let saved = std::fs::read_to_string(&directories::ssh_saved_identities()?)?;
+    let saved = std::fs::read_to_string(directories::ssh_saved_identities()?)?;
     Ok(HashMap::from_iter(
         saved
             .lines()

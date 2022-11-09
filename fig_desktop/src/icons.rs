@@ -13,6 +13,11 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
+use http::{
+    Request,
+    Response,
+    StatusCode,
+};
 use image::imageops::FilterType;
 use image::{
     ImageOutputFormat,
@@ -27,12 +32,6 @@ use tracing::{
     warn,
 };
 use url::Url;
-use wry::http::status::StatusCode;
-use wry::http::{
-    Request,
-    Response,
-    ResponseBuilder,
-};
 
 use crate::platform::PlatformState;
 
@@ -123,10 +122,10 @@ fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Vec<u8>
     })
 }
 
-fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response {
-    ResponseBuilder::new()
+fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response<Vec<u8>> {
+    Response::builder()
         .status(StatusCode::OK)
-        .mimetype(match asset_kind {
+        .header("Content-Type", match asset_kind {
             AssetKind::Png => "image/png",
             AssetKind::Svg => "image/svg+xml",
         })
@@ -135,13 +134,13 @@ fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response {
         .unwrap()
 }
 
-fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response {
+fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response<Vec<u8>> {
     trace!("building response for asset {asset:?}");
     let (data, asset_kind) = resolve_asset(asset, fallback);
     build_asset_response(data.to_vec(), asset_kind)
 }
 
-fn build_default() -> Response {
+fn build_default() -> Response<Vec<u8>> {
     cached_asset_response(&AssetSpecifier::Named("template".into()), None)
 }
 
@@ -149,9 +148,9 @@ fn scale(a: u8, b: u8) -> u8 {
     (a as f32 * (b as f32 / 256.0)) as u8
 }
 
-pub fn handle(request: &Request) -> anyhow::Result<Response> {
-    debug!(uri = request.uri(), "Fig protocol request");
-    let url = Url::parse(request.uri())?;
+pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
+    debug!(uri =% request.uri(), "Fig protocol request");
+    let url = Url::parse(&request.uri().to_string())?;
     let domain = url.domain();
     // rust really doesn't like us not specifying RandomState here
     let pairs: HashMap<_, _, RandomState> = HashMap::from_iter(url.query_pairs());

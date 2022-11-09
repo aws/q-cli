@@ -1,3 +1,8 @@
+use http::status::StatusCode;
+use http::{
+    Request as HttpRequest,
+    Response as HttpResponse,
+};
 use once_cell::sync::Lazy;
 use serde::{
     Deserialize,
@@ -9,12 +14,6 @@ use wry::application::dpi::{
     LogicalSize,
 };
 use wry::application::window::Icon;
-use wry::http::status::StatusCode;
-use wry::http::{
-    Request as HttpRequest,
-    Response as HttpResponse,
-    ResponseBuilder as HttpResponseBuilder,
-};
 
 /// Determines if the build is ran in debug mode
 pub fn is_cargo_debug_build() -> bool {
@@ -22,23 +21,25 @@ pub fn is_cargo_debug_build() -> bool {
 }
 
 pub fn wrap_custom_protocol(
-    f: impl Fn(&HttpRequest) -> anyhow::Result<HttpResponse>,
-) -> impl Fn(&HttpRequest) -> wry::Result<HttpResponse> {
-    move |req: &HttpRequest| -> wry::Result<HttpResponse> {
+    f: impl Fn(&HttpRequest<Vec<u8>>) -> anyhow::Result<HttpResponse<Vec<u8>>>,
+) -> impl Fn(&HttpRequest<Vec<u8>>) -> wry::Result<HttpResponse<Vec<u8>>> {
+    move |req: &HttpRequest<Vec<u8>>| -> wry::Result<HttpResponse<Vec<u8>>> {
         Ok(match f(req) {
             Ok(res) => res,
             Err(err) => {
-                let response = HttpResponseBuilder::new().status(StatusCode::BAD_REQUEST);
+                let response = HttpResponse::builder().status(StatusCode::BAD_REQUEST);
                 match req
                     .headers()
                     .get("Accept")
                     .and_then(|accept| accept.to_str().ok())
                     .and_then(|accept| accept.split('/').last())
                 {
-                    Some("json") => response.mimetype("application/json").body(
+                    Some("json") => response.header("Content-Type", "application/json").body(
                         serde_json::to_vec(&json!({ "error": err.to_string() })).unwrap_or_else(|_| b"{}".to_vec()),
                     ),
-                    _ => response.mimetype("text/plain").body(err.to_string().into_bytes()),
+                    _ => response
+                        .header("Content-Type", "text/plain")
+                        .body(err.to_string().into_bytes()),
                 }?
             },
         })
