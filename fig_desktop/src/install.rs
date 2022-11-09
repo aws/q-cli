@@ -236,6 +236,26 @@ pub async fn run_install(_ignore_immediate_update: bool) {
     }
 }
 
+/// Symlink, and overwrite if it already exists and is invalid or not a symlink
+#[cfg(target_os = "macos")]
+fn symlink(origin: impl AsRef<std::path::Path>, link: impl AsRef<std::path::Path>) -> Result<(), std::io::Error> {
+    let origin = origin.as_ref();
+    let link = link.as_ref();
+
+    // Check if the link already exists
+    if link.exists() {
+        // If it's a symlink, check if it points to the right place
+        if link.symlink_metadata()?.file_type().is_symlink() && std::fs::read_link(link)? == origin {
+            return Ok(());
+        }
+        // If it's not a symlink or it points to the wrong place, delete it
+        std::fs::remove_file(link)?;
+    }
+
+    // Create the symlink
+    std::os::unix::fs::symlink(origin, link)
+}
+
 #[cfg(target_os = "macos")]
 pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     use std::path::Path;
@@ -290,19 +310,19 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
     }
 
     if let Some(figterm_path) = get_bundle_path_for_executable(FIGTERM_BINARY_NAME) {
-        let dest = bin_dir.join("figterm");
-        std::os::unix::fs::symlink(figterm_path, dest).ok();
+        let link = bin_dir.join("figterm");
+        symlink(figterm_path, link).ok();
     }
 
     if let Some(fig_cli_path) = get_bundle_path_for_executable(FIG_CLI_BINARY_NAME) {
         let dest = bin_dir.join("fig");
-        std::os::unix::fs::symlink(&fig_cli_path, dest).ok();
+        symlink(&fig_cli_path, dest).ok();
 
         if let Ok(home) = home_dir() {
             let local_bin = home.join(".local").join("bin");
             fs::create_dir_all(&local_bin).ok();
             let dest = local_bin.join("fig");
-            std::os::unix::fs::symlink(&fig_cli_path, dest).ok();
+            symlink(&fig_cli_path, dest).ok();
         }
     }
 
