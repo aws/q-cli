@@ -1,3 +1,5 @@
+use std::collections::HashMap;
+
 use clap::Parser;
 use eyre::{
     bail,
@@ -15,7 +17,10 @@ use regex::Regex;
 use tokio::process::Command;
 use tracing::warn;
 
-use crate::util::choose;
+use crate::util::{
+    choose,
+    dialoguer_theme,
+};
 
 #[derive(Debug, Parser, PartialEq, Eq)]
 pub struct SshSubcommand {
@@ -27,8 +32,10 @@ pub struct SshSubcommand {
     #[arg(long, hide = true)]
     get_identities: bool,
     /// Ignore saved identities
+    #[arg(long, alias = "ignore-saved")]
+    ignore_default_identity: bool,
     #[arg(long)]
-    ignore_saved: bool,
+    remove_default_identity: bool,
 }
 
 static HOST_NAMESPACE_REGEX: Lazy<Regex> =
@@ -98,14 +105,14 @@ impl SshSubcommand {
                             .iter()
                             .map(|host| {
                                 format!(
-                                    "{} ({})",
-                                    host.nick_name,
+                                    "@{}/{}",
                                     host.namespace.as_deref().unwrap_or_else(|| user
                                         .as_ref()
                                         .unwrap()
                                         .username
                                         .as_deref()
-                                        .unwrap_or("you"))
+                                        .unwrap_or("you")),
+                                    host.nick_name,
                                 )
                             })
                             .collect(),
@@ -114,6 +121,13 @@ impl SshSubcommand {
                 },
             }
         };
+
+        if self.remove_default_identity {
+            let mut entries = read_saved_identities()?;
+            entries.remove(&host.remote_id);
+            write_saved_identities(entries)?;
+            return Ok(());
+        }
 
         let connections = host
             .connections
@@ -129,6 +143,7 @@ impl SshSubcommand {
         }
         let connection = connections.into_iter().next().unwrap();
 
+        let mut using_local_default = false;
         let mut identities = Vec::new();
         let selected_identity = if connection.identity_ids.is_empty() && self.auth.is_none() {
             None
@@ -168,17 +183,17 @@ impl SshSubcommand {
                 println!("{}", serde_json::to_string_pretty(&identities)?);
                 return Ok(());
             }
-            if identities.len() > 1 && !self.ignore_saved {
-                let saved = std::fs::read_to_string(&saved_identities_path)?;
-                if let Some((_, saved_identity)) = saved
-                    .lines()
-                    .filter_map(|l| l.split_once('='))
-                    .filter_map(|(h, i)| Some((h.parse::<u64>().ok()?, i.parse::<u64>().ok()?)))
-                    .find(|(h, i)| *h == host.remote_id && identities.iter().any(|iden| iden.remote_id == *i))
-                {
-                    identities.retain(|iden| iden.remote_id == saved_identity);
+            if identities.len() > 1 && !self.ignore_default_identity {
+                let entries = read_saved_identities()?;
+                if let Some(Some(iden)) = entries.get(&host.remote_id) {
+                    if identities.iter().any(|check| check.remote_id == *iden) {
+                        identities.retain(|check| check.remote_id == *iden);
+                        using_local_default = true;
+                    }
                 }
             }
+
+            identities.dedup_by_key(|iden| iden.remote_id);
 
             match identities.len() {
                 0 => {
@@ -196,14 +211,14 @@ impl SshSubcommand {
                             .iter()
                             .map(|iden| {
                                 format!(
-                                    "{} ({})",
-                                    iden.display_name,
+                                    "@{}/{}",
                                     iden.namespace.as_deref().unwrap_or_else(|| user
                                         .as_ref()
                                         .unwrap()
                                         .username
                                         .as_deref()
-                                        .unwrap_or("you"))
+                                        .unwrap_or("you")),
+                                    iden.display_name,
                                 )
                             })
                             .collect(),
@@ -212,6 +227,35 @@ impl SshSubcommand {
                 },
             }
         };
+
+        if !using_local_default {
+            if let Some(selected_identity) = selected_identity {
+                let mut entries = read_saved_identities()?;
+                let host_entry = if self.ignore_default_identity {
+                    None
+                } else {
+                    entries.get(&host.remote_id)
+                };
+                match host_entry {
+                    None | Some(Some(_)) => {
+                        let should_add_new = dialoguer::Confirm::with_theme(&dialoguer_theme())
+                            .with_prompt("Would you like to save this identity?")
+                            .interact()?;
+                        entries.insert(
+                            host.remote_id,
+                            if should_add_new {
+                                Some(selected_identity.remote_id)
+                            } else {
+                                None
+                            },
+                        );
+                    },
+                    _ => {},
+                }
+                write_saved_identities(entries)?;
+            }
+        }
+
         let ssh_string =
             fig_api_client::access::ssh_string(host.remote_id, selected_identity.as_ref().map(|iden| iden.remote_id))
                 .await?;
@@ -231,7 +275,11 @@ impl SshSubcommand {
             host.nick_name,
             selected_identity
                 .as_ref()
-                .map(|iden| format!(" with identity {}", iden.display_name))
+                .map(|iden| format!(
+                    " with identity {}{}",
+                    iden.namespace.as_ref().map(|ns| format!("@{ns}/")).unwrap_or_default(),
+                    iden.display_name
+                ))
                 .unwrap_or_default()
         );
 
@@ -244,29 +292,26 @@ impl SshSubcommand {
             bail!("SSH process was not successful");
         }
 
-        if let Some(selected_identity) = selected_identity {
-            let saved = std::fs::read_to_string(&saved_identities_path)?;
-            let mut did_update = false;
-            let mut updated = saved
-                .lines()
-                .filter(|line| !line.is_empty())
-                .filter_map(|line| line.trim().split_once('='))
-                .filter_map(|(h, i)| Some((h.parse::<u64>().ok()?, i.parse::<u64>().ok()?)))
-                .map(|(h, i)| {
-                    if h == host.remote_id {
-                        did_update = true;
-                        format!("{h}={}\n", selected_identity.remote_id)
-                    } else {
-                        format!("{h}={i}\n")
-                    }
-                })
-                .collect::<String>();
-            if !did_update {
-                updated.push_str(&format!("{}={}\n", host.remote_id, selected_identity.remote_id));
-            }
-            std::fs::write(saved_identities_path, updated)?;
-        }
-
         Ok(())
     }
+}
+
+fn read_saved_identities() -> eyre::Result<HashMap<u64, Option<u64>>> {
+    let saved = std::fs::read_to_string(&directories::ssh_saved_identities()?)?;
+    Ok(HashMap::from_iter(
+        saved
+            .lines()
+            .filter_map(|l| l.split_once('='))
+            .filter_map(|(h, i)| Some((h.parse::<u64>().ok()?, i.parse::<u64>().ok()))),
+    ))
+}
+
+fn write_saved_identities(entries: HashMap<u64, Option<u64>>) -> eyre::Result<()> {
+    let updated = entries
+        .iter()
+        .map(|(host, iden)| format!("{host}={}\n", iden.map(|x| x.to_string()).unwrap_or_default()))
+        .collect::<String>();
+    std::fs::write(directories::ssh_saved_identities()?, updated)?;
+
+    Ok(())
 }
