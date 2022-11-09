@@ -217,16 +217,13 @@ impl PlatformStateImpl {
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         match asset {
             AssetSpecifier::Named(name) => icons::lookup(name),
-            AssetSpecifier::PathBased(path) => path.metadata().ok().and_then(|metadata| {
-                let name = if metadata.is_dir() {
-                    Some("folder")
-                } else if metadata.is_file() {
-                    Some("file")
+            AssetSpecifier::PathBased(path) => {
+                icons::lookup(if path.to_str().map(|x| x.ends_with('/')).unwrap_or_default() {
+                    "folder"
                 } else {
-                    None
-                };
-                name.and_then(icons::lookup)
-            }),
+                    "text-x-generic-template"
+                })
+            },
         }
     }
 
