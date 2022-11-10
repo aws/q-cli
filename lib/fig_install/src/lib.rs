@@ -91,6 +91,7 @@ impl From<fig_util::directories::DirectoryError> for Error {
     }
 }
 
+// The current selected channel
 pub fn get_channel() -> Result<Channel, Error> {
     Ok(match fig_settings::state::get_string("updates.channel")? {
         Some(channel) => Channel::from_str(&channel)?,
@@ -103,6 +104,36 @@ pub fn get_channel() -> Result<Channel, Error> {
             }
         },
     })
+}
+
+/// The highest channel to display to user
+pub fn get_max_channel() -> Channel {
+    let state_channel = fig_settings::state::get_string("updates.channel")
+        .ok()
+        .flatten()
+        .and_then(|s| Channel::from_str(&s).ok())
+        .unwrap_or(Channel::Stable);
+    let manifest_channel = manifest()
+        .as_ref()
+        .map(|m| m.default_channel)
+        .unwrap_or(Channel::Stable);
+    let settings_channel = if fig_settings::settings::get_bool_or("app.beta", false) {
+        Channel::Beta
+    } else {
+        Channel::Stable
+    };
+    let fig_team_channel = fig_request::auth::get_email().map_or(Channel::Stable, |email| {
+        if email.ends_with("@fig.io") {
+            Channel::Nightly
+        } else {
+            Channel::Stable
+        }
+    });
+
+    [state_channel, manifest_channel, settings_channel, fig_team_channel]
+        .into_iter()
+        .max()
+        .unwrap()
 }
 
 pub async fn check_for_updates(ignore_rollout: bool) -> Result<Option<UpdatePackage>, Error> {

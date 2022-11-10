@@ -7,10 +7,7 @@ use fig_install::{
 };
 use fig_integrations::shell::ShellExt;
 use fig_util::directories::relative_cli_path;
-use fig_util::manifest::{
-    manifest,
-    Channel,
-};
+use fig_util::manifest::Channel;
 use tracing::{
     error,
     trace,
@@ -63,6 +60,53 @@ macro_rules! icon {
     }};
 }
 
+fn tray_update(proxy: &EventLoopProxy) {
+    let proxy_a = proxy.clone();
+    let proxy_b = proxy.clone();
+    tokio::runtime::Handle::current().spawn(async move {
+        match fig_install::update(
+            Some(Box::new(move |_| {
+                proxy_a
+                    .send_event(Event::ShowMessageNotification {
+                        title: "Fig is updating in the background".into(),
+                        body: "You can continue to use Fig while it updates".into(),
+                        parent: None,
+                    })
+                    .unwrap();
+            })),
+            UpdateOptions {
+                ignore_rollout: true,
+                interactive: true,
+                relaunch_dashboard: true,
+            },
+        )
+        .await
+        {
+            Ok(true) => {},
+            Ok(false) => {
+                // Didn't update, show a notification
+                proxy_b
+                    .send_event(Event::ShowMessageNotification {
+                        title: "Fig is already up to date".into(),
+                        body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
+                        parent: None,
+                    })
+                    .unwrap();
+            },
+            Err(err) => {
+                // Error updating, show a notification
+                proxy_b
+                    .send_event(Event::ShowMessageNotification {
+                        title: "Error Updating Fig".into(),
+                        body: err.to_string().into(),
+                        parent: None,
+                    })
+                    .unwrap();
+            },
+        }
+    });
+}
+
 pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
     match id {
         id if id == MenuId::new("debugger-refresh") => {
@@ -85,50 +129,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 .unwrap();
         },
         id if id == MenuId::new("update") => {
-            let proxy_a = proxy.clone();
-            let proxy_b = proxy.clone();
-            tokio::runtime::Handle::current().spawn(async move {
-                match fig_install::update(
-                    Some(Box::new(move |_| {
-                        proxy_a
-                            .send_event(Event::ShowMessageNotification {
-                                title: "Fig is updating in the background".into(),
-                                body: "You can continue to use Fig while it updates".into(),
-                                parent: None,
-                            })
-                            .unwrap();
-                    })),
-                    UpdateOptions {
-                        ignore_rollout: true,
-                        interactive: true,
-                        relaunch_dashboard: true,
-                    },
-                )
-                .await
-                {
-                    Ok(true) => {},
-                    Ok(false) => {
-                        // Didn't update, show a notification
-                        proxy_b
-                            .send_event(Event::ShowMessageNotification {
-                                title: "Fig is already up to date".into(),
-                                body: concat!("Version (", env!("CARGO_PKG_VERSION"), ")").into(),
-                                parent: None,
-                            })
-                            .unwrap();
-                    },
-                    Err(err) => {
-                        // Error updating, show a notification
-                        proxy_b
-                            .send_event(Event::ShowMessageNotification {
-                                title: "Error Updating Fig".into(),
-                                body: err.to_string().into(),
-                                parent: None,
-                            })
-                            .unwrap();
-                    },
-                }
-            });
+            tray_update(proxy);
         },
         id if id == MenuId::new("quit") => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
@@ -209,6 +210,15 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             Err(err) => error!(%err, "Failed to execute `fig issue` from the tray"),
         },
         id => {
+            for channel in Channel::all() {
+                if id == MenuId::new(&format!("channel-{channel}")) {
+                    fig_settings::state::set_value("updates.channel", channel.to_string()).ok();
+                    proxy.send_event(Event::ReloadTray).unwrap();
+                    tray_update(proxy);
+                    return;
+                }
+            }
+
             trace!(?id, "Unhandled tray event");
         },
     }
@@ -464,10 +474,30 @@ fn menu() -> Vec<MenuElement> {
 
     menu.extend([MenuElement::Separator, version]);
 
-    if let Some(channel) = manifest().as_ref().map(|m| m.default_channel) {
-        if channel != Channel::Stable {
-            menu.push(MenuElement::Info(format!("Channel: {channel}").into()));
-        }
+    let max_channel = fig_install::get_max_channel();
+    if max_channel != Channel::Stable {
+        let channel = fig_install::get_channel().unwrap_or(Channel::Stable);
+
+        menu.push(MenuElement::SubMenu {
+            title: format!("Channel: {channel:#}").into(),
+            elements: Channel::all()
+                .iter()
+                .filter_map(|c| {
+                    if c > &max_channel {
+                        None
+                    } else if c == &channel {
+                        Some(MenuElement::Info(format!("Channel: {c:#} (current)").into()))
+                    } else {
+                        Some(MenuElement::entry(
+                            None,
+                            None,
+                            format!("Channel: {c:#}"),
+                            format!("channel-{c}"),
+                        ))
+                    }
+                })
+                .collect(),
+        });
     }
 
     menu.extend([update, MenuElement::Separator, quit]);

@@ -70,13 +70,36 @@ pub enum Channel {
     Nightly,
 }
 
+impl Channel {
+    pub fn all() -> &'static [Self] {
+        &[Channel::Stable, Channel::Beta, Channel::Qa, Channel::Nightly]
+    }
+
+    pub fn id(&self) -> &'static str {
+        match self {
+            Channel::Stable => "stable",
+            Channel::Beta => "beta",
+            Channel::Qa => "qa",
+            Channel::Nightly => "nightly",
+        }
+    }
+
+    pub fn name(&self) -> &'static str {
+        match self {
+            Channel::Stable => "Stable",
+            Channel::Beta => "Beta",
+            Channel::Qa => "QA",
+            Channel::Nightly => "Nightly",
+        }
+    }
+}
+
 impl Display for Channel {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Channel::Nightly => write!(f, "Nightly"),
-            Channel::Qa => write!(f, "QA"),
-            Channel::Beta => write!(f, "Beta"),
-            Channel::Stable => write!(f, "Stable"),
+        if f.alternate() {
+            f.write_str(self.name())
+        } else {
+            f.write_str(self.id())
         }
     }
 }
