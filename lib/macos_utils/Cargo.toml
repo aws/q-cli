@@ -1,5 +1,5 @@
 [package]
-name = "macos_accessibility_position"
+name = "macos_utils"
 authors.workspace = true
 edition.workspace = true
 homepage.workspace = true

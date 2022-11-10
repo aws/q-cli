@@ -30,4 +30,4 @@ which = "4.3.0"
 whoami = "1.2.3"
 
 [target.'cfg(target_os="macos")'.dependencies]
-macos_accessibility_position = { path = "../macos_accessibility_position" }
+macos_utils = { path = "../macos_utils" }

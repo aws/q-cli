@@ -80,7 +80,11 @@ pub(crate) fn default_properties() -> Map<String, Value> {
         prop.insert("device_windows_build".into(), build.to_owned().into());
     }
 
-    // TODO(matt): add macos release
+    #[cfg(target_os = "macos")]
+    {
+        let os_version = macos_utils::os::NSOperatingSystemVersion::get();
+        prop.insert("device_macos_release_version".into(), os_version.to_string().into());
+    }
 
     prop.insert(
         "device_install_method".into(),

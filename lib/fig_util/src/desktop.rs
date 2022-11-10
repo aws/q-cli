@@ -35,7 +35,7 @@ pub fn is_fig_desktop_running() -> bool {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             use appkit_nsworkspace_bindings::NSRunningApplication;
-            use macos_accessibility_position::{
+            use macos_utils::{
                 NSArray,
                 NSString,
             };

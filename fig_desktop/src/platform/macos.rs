@@ -24,16 +24,16 @@ use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
 use fig_integrations::input_method::InputMethod;
 use fig_util::Terminal;
-use macos_accessibility_position::accessibility::accessibility_is_enabled;
-use macos_accessibility_position::caret_position::{
+use macos_utils::accessibility::accessibility_is_enabled;
+use macos_utils::caret_position::{
     get_caret_position,
     CaretPosition,
 };
-use macos_accessibility_position::window_server::{
+use macos_utils::window_server::{
     CGWindowLevelForKey,
     UIElement,
 };
-use macos_accessibility_position::{
+use macos_utils::{
     NSString,
     NotificationCenter,
     WindowServer,
@@ -742,8 +742,8 @@ impl PlatformStateImpl {
 
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         let data = match asset {
-            AssetSpecifier::Named(name) => unsafe { macos_accessibility_position::image::png_for_name(name)? },
-            AssetSpecifier::PathBased(path) => unsafe { macos_accessibility_position::image::png_for_path(path)? },
+            AssetSpecifier::Named(name) => unsafe { macos_utils::image::png_for_name(name)? },
+            AssetSpecifier::PathBased(path) => unsafe { macos_utils::image::png_for_path(path)? },
         };
 
         Some((data.into(), AssetKind::Png))

@@ -2,7 +2,7 @@ use std::env::temp_dir;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use macos_accessibility_position::url::path_for_application;
+use macos_utils::url::path_for_application;
 use tokio::process::Command;
 use tracing::error;
 

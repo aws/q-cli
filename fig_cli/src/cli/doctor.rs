@@ -1674,7 +1674,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
             }
         }
 
-        use macos_accessibility_position::applications::running_applications;
+        use macos_utils::applications::running_applications;
 
         match current_terminal {
             Some(terminal) if terminal.is_input_dependant() => {
@@ -2039,7 +2039,7 @@ impl DoctorCheck for ToolboxInstalledCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         if Terminal::is_jetbrains_terminal()
-            && macos_accessibility_position::url::path_for_application("com.jetbrains.toolbox").is_some()
+            && macos_utils::url::path_for_application("com.jetbrains.toolbox").is_some()
         {
             doctor_warning!("apps install through jetbrains toolbox are not supported");
         }

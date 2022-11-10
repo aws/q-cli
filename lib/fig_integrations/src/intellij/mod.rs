@@ -4,7 +4,7 @@ use std::io::Cursor;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
-use macos_accessibility_position::url::path_for_application;
+use macos_utils::url::path_for_application;
 use serde::Deserialize;
 use zip::ZipArchive;
 

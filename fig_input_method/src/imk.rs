@@ -15,7 +15,7 @@ use cocoa::foundation::{
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_caret_position_hook;
 use fig_util::Terminal;
-use macos_accessibility_position::{
+use macos_utils::{
     NSString,
     NSStringRef,
     NotificationCenter,

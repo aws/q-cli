@@ -4,7 +4,7 @@ use cfg_if::cfg_if;
 
 #[cfg(target_os = "macos")]
 fn open_macos(url_str: impl AsRef<str>) -> io::Result<bool> {
-    use macos_accessibility_position::NSURL;
+    use macos_utils::NSURL;
     use objc::runtime::{
         Object,
         BOOL,

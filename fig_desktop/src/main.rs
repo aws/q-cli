@@ -256,7 +256,7 @@ async fn main() {
 async fn migrate() {
     use fig_install::uninstall_terminal_integrations;
     use fig_util::directories::home_dir;
-    use macos_accessibility_position::{
+    use macos_utils::{
         NSArrayRef,
         NSStringRef,
     };

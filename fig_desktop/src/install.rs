@@ -8,7 +8,7 @@ use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
 use fig_util::directories;
 #[cfg(target_os = "macos")]
-use macos_accessibility_position::bundle::get_bundle_path_for_executable;
+use macos_utils::bundle::get_bundle_path_for_executable;
 use semver::Version;
 use tracing::{
     error,
@@ -255,7 +255,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         create_launch_agent,
         LaunchdPlist,
     };
-    use macos_accessibility_position::bundle::{
+    use macos_utils::bundle::{
         get_bundle_path,
         get_bundle_resource_path,
     };

@@ -92,11 +92,11 @@ pub async fn diagnostic(_: DiagnosticsCommand, figterm_state: &FigtermState) -> 
     let response = DiagnosticsResponse {
         autocomplete_active: Some(platform::autocomplete_active()),
         #[cfg(target_os = "macos")]
-        path_to_bundle: macos_accessibility_position::bundle::get_bundle_path()
+        path_to_bundle: macos_utils::bundle::get_bundle_path()
             .and_then(|path| path.to_str().map(|s| s.to_owned()))
             .unwrap_or_default(),
         #[cfg(target_os = "macos")]
-        accessibility: if macos_accessibility_position::accessibility::accessibility_is_enabled() {
+        accessibility: if macos_utils::accessibility::accessibility_is_enabled() {
             "true".into()
         } else {
             "false".into()

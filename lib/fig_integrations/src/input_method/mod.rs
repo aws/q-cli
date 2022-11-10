@@ -50,7 +50,7 @@ use fig_settings::state;
 use fig_util::consts::FIG_CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use fig_util::Terminal;
-use macos_accessibility_position::applications;
+use macos_utils::applications;
 use objc::runtime::Object;
 use objc::{
     class,

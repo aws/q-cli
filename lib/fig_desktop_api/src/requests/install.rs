@@ -89,7 +89,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
         (InstallComponent::Accessibility, InstallAction::InstallAction) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
-                    use macos_accessibility_position::accessibility::{
+                    use macos_utils::accessibility::{
                         open_accessibility,
                         accessibility_is_enabled
                     };
@@ -118,7 +118,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
         (InstallComponent::Accessibility, InstallAction::StatusAction) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
-                    use macos_accessibility_position::accessibility::accessibility_is_enabled;
+                    use macos_utils::accessibility::accessibility_is_enabled;
 
                     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
                         response: Some(Response::InstallationStatus(if accessibility_is_enabled() {

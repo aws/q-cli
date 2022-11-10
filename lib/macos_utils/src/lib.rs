@@ -8,6 +8,7 @@ pub mod applications;
 pub mod bundle;
 pub mod caret_position;
 pub mod image;
+pub mod os;
 pub mod url;
 mod util;
 pub mod window_server;

@@ -1788,7 +1788,7 @@ dependencies = [
  "humantime",
  "indicatif",
  "insta",
- "macos_accessibility_position",
+ "macos_utils",
  "nix 0.25.0",
  "once_cell",
  "owo-colors",
@@ -1883,7 +1883,7 @@ dependencies = [
  "image",
  "imageproc",
  "libc",
- "macos_accessibility_position",
+ "macos_utils",
  "moka",
  "nix 0.25.0",
  "notify",
@@ -1929,7 +1929,7 @@ dependencies = [
  "fig_telemetry",
  "fig_util",
  "fnv",
- "macos_accessibility_position",
+ "macos_utils",
  "serde",
  "serde_json",
  "shellexpand",
@@ -1968,7 +1968,7 @@ dependencies = [
  "fig_proto",
  "fig_util",
  "libc",
- "macos_accessibility_position",
+ "macos_utils",
  "objc",
  "plist",
  "rand 0.8.5",
@@ -2025,7 +2025,7 @@ dependencies = [
  "fig_settings",
  "fig_telemetry",
  "fig_util",
- "macos_accessibility_position",
+ "macos_utils",
  "objc",
  "plist",
  "regex",
@@ -2190,6 +2190,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_util",
+ "macos_utils",
  "once_cell",
  "parking_lot 0.12.1",
  "sentry",
@@ -2229,7 +2230,7 @@ dependencies = [
  "fig_test",
  "hex",
  "insta",
- "macos_accessibility_position",
+ "macos_utils",
  "nix 0.25.0",
  "objc",
  "once_cell",
@@ -3591,7 +3592,7 @@ dependencies = [
 ]
 
 [[package]]
-name = "macos_accessibility_position"
+name = "macos_utils"
 version = "2.7.7"
 dependencies = [
  "accessibility",
