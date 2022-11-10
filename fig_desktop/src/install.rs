@@ -24,37 +24,6 @@ pub async fn run_install(_ignore_immediate_update: bool) {
     #[cfg(target_os = "macos")]
     let ignore_immediate_update = _ignore_immediate_update;
 
-    // Create files needed for other parts of the app to run
-    for (path_result, name, default) in [
-        (fig_util::directories::settings_path(), "settings", "{}"),
-        (fig_util::directories::state_path(), "state", "{}"),
-    ] {
-        match path_result {
-            Ok(path) => {
-                if let Some(path_parent) = path.parent() {
-                    if let Err(err) = std::fs::create_dir_all(path_parent) {
-                        error!(%err, "Failed to create {name} directory");
-                    }
-                }
-                // If file is empty, write default
-                if path.exists() {
-                    if let Ok(file) = std::fs::File::open(&path) {
-                        if let Ok(metadata) = file.metadata() {
-                            if metadata.len() == 0 {
-                                if let Err(err) = std::fs::write(&path, default) {
-                                    error!(%err, "Failed to write default {name} file");
-                                }
-                            }
-                        }
-                    }
-                } else if let Err(err) = std::fs::write(&path, default) {
-                    error!(%err, "Failed to write default {name} file");
-                }
-            },
-            Err(err) => error!(%err, "Failed to get {name} path"),
-        }
-    }
-
     tokio::spawn(async {
         if let Err(err) = fig_sync::themes::clone_or_update().await {
             error!(%err, "Failed to clone or update themes");

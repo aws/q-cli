@@ -82,14 +82,6 @@ pub type EventLoopWindowTarget = WryEventLoopWindowTarget<Event>;
 async fn main() {
     let cli = cli::Cli::parse();
 
-    if let Err(err) = fig_settings::settings::init_global() {
-        error!(%err, "failed to init global settings");
-    }
-
-    if let Err(err) = fig_settings::state::init_global() {
-        error!(%err, "failed to init global state");
-    }
-
     let _logger_guard = Logger::new()
         .with_stdout()
         .with_file("fig_desktop.log")
@@ -102,6 +94,16 @@ async fn main() {
         1.0,
         true,
     );
+
+    if let Err(err) = fig_settings::settings::init_global() {
+        error!(%err, "failed to init global settings");
+        fig_telemetry::sentry::capture_error(&err);
+    }
+
+    if let Err(err) = fig_settings::state::init_global() {
+        error!(%err, "failed to init global state");
+        fig_telemetry::sentry::capture_error(&err);
+    }
 
     if cli.is_startup && !fig_settings::settings::get_bool_or("app.launchOnStartup", true) {
         std::process::exit(0);

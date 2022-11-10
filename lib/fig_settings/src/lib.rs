@@ -8,6 +8,7 @@ use std::fs::{
     File,
 };
 use std::io::{
+    Read,
     Seek,
     SeekFrom,
     Write,
@@ -25,6 +26,7 @@ use parking_lot::{
 };
 use serde_json::Value;
 use thiserror::Error;
+use tracing::error;
 
 #[derive(Debug, Error)]
 pub enum Error {
@@ -222,16 +224,19 @@ pub trait JsonStore: Sized {
             }
         }
 
-        // If the file doesn't exist, create it.
-        if !path.exists() {
-            fs::File::create(&path)?;
-        }
-
         let json: Map = {
             let _lock_guard = Self::file_lock().write();
-            let mut file = FileRwLock::new(File::open(&path)?);
-            let mut read = file.write()?;
-            serde_json::from_reader(&mut *read)?
+
+            // If the file doesn't exist, create it.
+            if !path.exists() {
+                let mut file = FileRwLock::new(File::create(path)?);
+                file.write()?.write_all(b"{}")?;
+                serde_json::Map::new()
+            } else {
+                let mut file = FileRwLock::new(File::open(&path)?);
+                let mut read = file.write()?;
+                serde_json::from_reader(&mut *read)?
+            }
         };
 
         Ok(json)
@@ -239,9 +244,34 @@ pub trait JsonStore: Sized {
 
     /// Loads data from file into global backend
     fn load_into_global() -> Result<()> {
-        let json = Self::load_from_file()?;
-        *Self::data_lock().write() = Some(json);
-        Ok(())
+        match Self::load_from_file() {
+            Ok(json) => {
+                *Self::data_lock().write() = Some(json);
+                Ok(())
+            },
+            Err(err) => {
+                *Self::data_lock().write() = Some(Map::new());
+
+                let file_content: Result<String> = (|| {
+                    let _lock_guard = Self::file_lock().write();
+                    let mut file = FileRwLock::new(File::open(Self::path()?)?);
+                    let mut read = file.write()?;
+                    let mut content = String::new();
+                    read.read_to_string(&mut content)?;
+                    Ok(content)
+                })();
+
+                error!(%err, ?file_content, "Failed to load json file into global backend");
+
+                // Write default data to file
+                let json = Self::new_from_backend(Backend::Memory(Map::new()));
+                if let Err(err) = json.save_to_file() {
+                    error!(%err, "Failed to write default data to file");
+                }
+
+                Err(err)
+            },
+        }
     }
 
     fn save_to_file(&self) -> Result<()> {

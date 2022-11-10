@@ -490,6 +490,19 @@ impl DoctorCheck for SettingsCorruptionCheck {
             error: None,
         })?;
 
+        Ok(())
+    }
+}
+
+struct StateCorruptionCheck;
+
+#[async_trait]
+impl DoctorCheck for StateCorruptionCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "State Corruption".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
         fig_settings::State::load().map_err(|_| DoctorError::Error {
             reason: "Fig state file is corrupted".into(),
             info: vec![],
@@ -2271,6 +2284,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 #[cfg(target_os = "windows")]
                 &WindowsConsoleCheck,
                 &SettingsCorruptionCheck,
+                &StateCorruptionCheck,
                 &FigIntegrationsCheck,
             ],
             config,
