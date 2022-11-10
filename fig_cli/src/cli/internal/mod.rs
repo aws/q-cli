@@ -741,14 +741,32 @@ impl InternalSubcommand {
             #[cfg(target_os = "linux")]
             InternalSubcommand::DetectSandbox => {
                 use fig_util::system_info::linux::SandboxKind;
-                match fig_util::system_info::linux::detect_sandbox() {
-                    SandboxKind::None => println!("No sandbox detected"),
-                    SandboxKind::Flatpak => println!("You are in a Flatpak"),
-                    SandboxKind::Snap => println!("You are in a Snap"),
-                    SandboxKind::Docker => println!("You are in a Docker container"),
-                    SandboxKind::Container(None) => println!("You are in a generic container"),
-                    SandboxKind::Container(Some(engine)) => println!("You are in a {engine} container"),
-                };
+                exit(match fig_util::system_info::linux::detect_sandbox() {
+                    SandboxKind::None => {
+                        println!("No sandbox detected");
+                        0
+                    },
+                    SandboxKind::Flatpak => {
+                        println!("You are in a Flatpak");
+                        1
+                    },
+                    SandboxKind::Snap => {
+                        println!("You are in a Snap");
+                        1
+                    },
+                    SandboxKind::Docker => {
+                        println!("You are in a Docker container");
+                        1
+                    },
+                    SandboxKind::Container(None) => {
+                        println!("You are in a generic container");
+                        1
+                    },
+                    SandboxKind::Container(Some(engine)) => {
+                        println!("You are in a {engine} container");
+                        1
+                    },
+                })
             },
             InternalSubcommand::OpenUninstallPage { verbose } => {
                 let url = fig_install::get_uninstall_url();
