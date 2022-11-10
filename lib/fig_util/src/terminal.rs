@@ -301,7 +301,7 @@ impl Terminal {
             Terminal::Alacritty => Some("Alacritty"),
             Terminal::Kitty => Some("kitty"),
             Terminal::XfceTerminal => Some("xfce4-terminal"),
-            // Terminal::Terminator => Some("terminator"),
+            Terminal::Terminator => Some("terminator"),
             // Terminal::Terminology => Some("terminology"),
             // Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
             // Terminal::Tabby => Some("tabby"),
@@ -325,4 +325,17 @@ impl Terminal {
     pub fn supports_fancy_boxes(&self) -> bool {
         !matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::VSCodium)
     }
+
+    pub fn positioning_kind(&self) -> PositioningKind {
+        match self {
+            Terminal::Konsole => PositioningKind::Logical,
+            _ => PositioningKind::Physical,
+        }
+    }
+}
+
+#[derive(Debug)]
+pub enum PositioningKind {
+    Logical,
+    Physical,
 }

@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use dbus::ibus_bus_new;
+use fig_util::terminal::PositioningKind;
 use hashbrown::HashSet;
 use tracing::{
     debug,
@@ -75,15 +76,20 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                             body.1,
                                             path.as_str()
                                         );
+                                        let positioning_kind = platform_state
+                                            .active_terminal
+                                            .lock()
+                                            .as_ref()
+                                            .map(|x| x.positioning_kind())
+                                            .unwrap_or(PositioningKind::Physical);
                                         proxy
                                             .send_event(Event::WindowEvent {
                                                 window_id: AUTOCOMPLETE_ID.clone(),
                                                 window_event: WindowEvent::UpdateWindowGeometry {
-                                                    position: Some(WindowPosition::Absolute(Position::Physical(
-                                                        PhysicalPosition {
-                                                            x: body.0,
-                                                            y: body.1 + body.3,
-                                                        },
+                                                    position: Some(WindowPosition::Absolute(position(
+                                                        positioning_kind,
+                                                        body.0,
+                                                        body.1 + body.3,
                                                     ))),
                                                     size: None,
                                                     anchor: None,
@@ -166,4 +172,14 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
     });
 
     Ok(())
+}
+
+fn position(kind: PositioningKind, x: i32, y: i32) -> Position {
+    match kind {
+        PositioningKind::Logical => Position::Logical(LogicalPosition {
+            x: x as f64,
+            y: y as f64,
+        }),
+        PositioningKind::Physical => Position::Physical(PhysicalPosition { x, y }),
+    }
 }

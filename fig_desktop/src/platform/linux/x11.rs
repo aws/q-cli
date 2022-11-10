@@ -35,7 +35,10 @@ use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
 use super::integrations::WM_CLASS_WHITELIST;
-use super::WM_REVICED_DATA;
+use super::{
+    PlatformStateImpl,
+    WM_REVICED_DATA,
+};
 use crate::event::WindowEvent;
 use crate::utils::Rect;
 use crate::{
@@ -85,7 +88,11 @@ pub struct X11WindowData {
     pub window_geometry: Option<Rect>,
 }
 
-pub async fn handle_x11(proxy: EventLoopProxy, x11_state: Arc<X11State>) {
+pub(super) async fn handle_x11(
+    proxy: EventLoopProxy,
+    x11_state: Arc<X11State>,
+    platform_state: Arc<PlatformStateImpl>,
+) {
     let (conn, screen_num) = x11rb::connect(None).expect("Failed to connect to X server");
 
     let setup = conn.setup();
@@ -109,7 +116,7 @@ pub async fn handle_x11(proxy: EventLoopProxy, x11_state: Arc<X11State>) {
 
     while let Ok(event) = tokio::task::block_in_place(|| conn.wait_for_event()) {
         if let X11Event::PropertyNotify(event) = event {
-            if let Err(err) = handle_property_event(&conn, &x11_state, &proxy, event) {
+            if let Err(err) = handle_property_event(&conn, &x11_state, &proxy, event, &platform_state) {
                 error!("error handling PropertyNotifyEvent: {err}");
             }
         }
@@ -121,6 +128,7 @@ fn handle_property_event(
     x11_state: &X11State,
     proxy: &EventLoopProxy,
     event: PropertyNotifyEvent,
+    platform_state: &Arc<PlatformStateImpl>,
 ) -> anyhow::Result<()> {
     WM_REVICED_DATA.store(true, Ordering::Relaxed);
     let PropertyNotifyEvent { atom, state, .. } = event;
@@ -129,14 +137,19 @@ fn handle_property_event(
 
         if property_name == b"_NET_ACTIVE_WINDOW" {
             trace!("active window changed");
-            process_window(conn, x11_state, proxy)?;
+            process_window(conn, x11_state, proxy, platform_state)?;
         }
     }
 
     Ok(())
 }
 
-fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoopProxy) -> anyhow::Result<()> {
+fn process_window(
+    conn: &RustConnection,
+    x11_state: &X11State,
+    proxy: &EventLoopProxy,
+    platform_state: &Arc<PlatformStateImpl>,
+) -> anyhow::Result<()> {
     let hide = || {
         proxy.send_event(Event::WindowEvent {
             window_id: AUTOCOMPLETE_ID.clone(),
@@ -172,7 +185,7 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
         }),
     });
 
-    let wm_class = match wm_class {
+    let wm_class = String::from_utf8_lossy(&match wm_class {
         Ok(class_raw) => class_raw.class().to_owned(),
         Err(err) => {
             debug!("No wm class {err:?}");
@@ -180,11 +193,12 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
             hide()?;
             return Ok(());
         },
-    };
+    })
+    .to_string();
 
-    debug!("focus changed to {}", wm_class.escape_ascii());
+    debug!("focus changed to {}", wm_class);
 
-    if wm_class == b"Fig" {
+    if wm_class == "Fig" {
         // get wm_role
         let reply = get_property(
             conn,
@@ -207,6 +221,10 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
 
     debug!("Selected window is not Fig");
 
+    if let Some(terminal) = WM_CLASS_WHITELIST.get(&wm_class.as_str()) {
+        *platform_state.active_terminal.lock() = Some(terminal.clone());
+    }
+
     if let Some(old_window_data) = old_window_data {
         if old_window_data.id != focus_window {
             hide()?;
@@ -214,15 +232,10 @@ fn process_window(conn: &RustConnection, x11_state: &X11State, proxy: &EventLoop
         }
     }
 
-    if !WM_CLASS_WHITELIST.keys().any(|w| w.as_bytes() == wm_class) {
-        // hide if not a whitelisted wm class
+    if !WM_CLASS_WHITELIST.contains_key(&wm_class.as_str()) {
         hide()?;
         return Ok(());
     }
-
-    debug!("Selected window is not whitelisted");
-
-    // TODO(mia): get the geometry and subscribe to changes
 
     Ok(())
 }

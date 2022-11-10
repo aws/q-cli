@@ -17,6 +17,7 @@ use fig_util::system_info::linux::{
     DesktopEnvironment,
     DisplayServer,
 };
+use fig_util::Terminal;
 use parking_lot::Mutex;
 use tracing::{
     error,
@@ -66,6 +67,7 @@ pub(super) struct PlatformStateImpl {
     pub(super) proxy: EventLoopProxy,
     pub(super) active_window_data: Mutex<Option<ActiveWindowData>>,
     pub(super) display_server_state: Mutex<Option<DisplayServerState>>,
+    pub(super) active_terminal: Mutex<Option<Terminal>>,
 }
 
 impl PlatformStateImpl {
@@ -74,6 +76,7 @@ impl PlatformStateImpl {
             proxy,
             active_window_data: Mutex::new(None),
             display_server_state: Mutex::new(None),
+            active_terminal: Mutex::new(None),
         }
     }
 
@@ -96,7 +99,8 @@ impl PlatformStateImpl {
                             *platform_state.display_server_state.lock() =
                                 Some(DisplayServerState::X11(x11_state.clone()));
 
-                            tokio::spawn(async { x11::handle_x11(proxy_, x11_state).await });
+                            let platform_state_ = platform_state.clone();
+                            tokio::spawn(async { x11::handle_x11(proxy_, x11_state, platform_state_).await });
                         },
                         Ok(DisplayServer::Wayland) => {
                             info!("Detected Wayland server");
