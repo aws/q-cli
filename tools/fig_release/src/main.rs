@@ -43,7 +43,7 @@ async fn main() -> eyre::Result<()> {
         } => package::package(path, kind, architecture, variant, cli.dry).await?,
         cli::Sub::Bump => bump::bump(cli.dry)?,
         cli::Sub::Debug { action } => debug::debug(action).await?,
-        cli::Sub::Publish { build_targets } => publish::publish(build_targets, cli.dry).await?,
+        cli::Sub::Publish { build_targets } => publish::publish(build_targets, cli.dry, cli.yes).await?,
         _ => todo!(),
     }
     Ok(())

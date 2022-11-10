@@ -13,6 +13,8 @@ pub struct Cli {
     pub subcommand: Sub,
     #[arg(short, long)]
     pub dry: bool,
+    #[arg(short, long)]
+    pub yes: bool,
 }
 
 #[derive(Subcommand, Debug)]

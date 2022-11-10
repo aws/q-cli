@@ -5,7 +5,12 @@ use serde::{
     Serialize,
 };
 
-use crate::utils::run_stdout;
+use crate::utils::{
+    read_channel,
+    read_version,
+    run_stdout,
+    Channel,
+};
 
 #[derive(Serialize)]
 struct TriggerPipelineRequest {
@@ -41,9 +46,14 @@ struct Workflow {
     name: String,
 }
 
-pub async fn publish(build_targets: Vec<String>, dry: bool) -> eyre::Result<()> {
+pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::Result<()> {
     if build_targets.is_empty() {
         eyre::bail!("Didn't specify any build targets");
+    }
+
+    let channel = read_channel();
+    if channel == Channel::None {
+        eyre::bail!("This commit isn't configured for publishing releases");
     }
 
     let token = std::env::var("CIRCLECI_TOKEN")
@@ -59,6 +69,19 @@ pub async fn publish(build_targets: Vec<String>, dry: bool) -> eyre::Result<()> 
         println!("commit_hash: {commit_hash}");
         println!("current_branch: {current_branch}");
         return Ok(());
+    }
+
+    if !yes {
+        let version = read_version();
+
+        if !dialoguer::Confirm::new()
+            .with_prompt(&format!(
+                "Are you sure you want to deploy {version} on branch {current_branch} ({commit_hash}) to channel {channel}"
+            ))
+            .interact()?
+        {
+            eyre::bail!("Cancelled");
+        }
     }
 
     let resp = client
