@@ -55,8 +55,8 @@ pub async fn delete(key: impl AsRef<str>) -> Result<()> {
 #[serde(rename_all = "camelCase")]
 pub struct Settings {
     pub settings: serde_json::Map<String, Value>,
-    #[serde(with = "time::serde::rfc3339")]
-    pub updated_at: time::OffsetDateTime,
+    #[serde(with = "time::serde::rfc3339::option")]
+    pub updated_at: Option<time::OffsetDateTime>,
 }
 
 /// Ensure that telemetry setting from pre-login is respected
@@ -95,7 +95,7 @@ pub async fn sync() -> Result<()> {
         settings.save_to_file().ok();
     }
 
-    if let Ok(updated_at) = updated_at.format(&Rfc3339) {
+    if let Some(Ok(updated_at)) = updated_at.map(|t| t.format(&Rfc3339)) {
         fig_settings::state::set_value("settings.updatedAt", json!(updated_at)).ok();
     }
 
