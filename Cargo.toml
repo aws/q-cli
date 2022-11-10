@@ -21,10 +21,10 @@ authors = ["fig developers"]
 edition = "2021"
 homepage = "https://fig.io"
 publish = false
-version = "2.7.6-beta.6"
+version = "2.7.6"
 
 [workspace.metadata]
-channel = "beta"
+channel = "stable"
 
 [profile.release]
 debug = 1
