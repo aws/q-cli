@@ -444,7 +444,7 @@ pub fn swap(src: impl AsRef<CStr>, dst: impl AsRef<CStr>) -> Result<(), Error> {
 
         if matches!(err.kind(), std::io::ErrorKind::PermissionDenied) {
             return Err(Error::UpdateFailed(
-                "Failed to swap app bundle dur to permission denied. Please try running `sudo fig update`.".into(),
+                "Failed to swap app bundle dur to permission denied. Try restarting Fig.".into(),
             ));
         } else {
             return Err(Error::UpdateFailed(format!("Failed to swap app bundle: {err}")));
