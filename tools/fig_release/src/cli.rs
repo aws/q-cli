@@ -40,7 +40,10 @@ pub enum Sub {
         #[arg(value_enum)]
         channel: Promote,
     },
-    Bump,
+    Bump {
+        #[command(subcommand)]
+        to: Option<BumpTo>,
+    },
     Publish {
         build_targets: Vec<String>,
     },
@@ -113,4 +116,10 @@ pub enum DebugAction {
         base: bool,
     },
     UpdateLockfile,
+}
+
+#[derive(Subcommand, Debug)]
+pub enum BumpTo {
+    Qa,
+    Beta,
 }
