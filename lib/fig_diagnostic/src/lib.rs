@@ -71,7 +71,7 @@ impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let env_vars = std::env::vars()
             .into_iter()
-            .filter(|(key, _)| {
+            .filter(|(key, val)| {
                 (key.starts_with("FIG_")
                     || key == "SHELL"
                     || key == "DISPLAY"
@@ -89,6 +89,7 @@ impl EnvVarDiagnostic {
                     && !key.contains("KEY")
                     && !key.contains("SECRET")
                     && !key.contains("PASSWORD")
+                    && !val.starts_with("figapi_")
             })
             .collect();
 
