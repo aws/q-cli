@@ -301,10 +301,8 @@ pub enum InternalSubcommand {
         from: PathBuf,
         to: PathBuf,
     },
-    /// Checks to see if we should try to forward on this SSH connection
-    ///
-    /// Checks that the username is not git or aur and that the environment variables
-    /// LC_FIG_SET_PARENT and FIG_SET_PARENT are set
+    #[deprecated]
+    #[command(hide = true)]
     CheckSSH {
         remote_username: String,
     },
@@ -312,6 +310,13 @@ pub enum InternalSubcommand {
     BrewUninstall {
         #[arg(long)]
         zap: bool,
+    },
+    /// Generates an SSH configuration file
+    ///
+    /// This lets us bypass a bug in Include and vdollar_expand that causes environment variables to
+    /// be expanded, even in files that are only referenced in match blocks that resolve to false
+    GenerateSSH {
+        remote_username: String,
     },
 }
 
@@ -911,20 +916,9 @@ impl InternalSubcommand {
                     },
                 }
             },
-            InternalSubcommand::CheckSSH { remote_username } => {
-                for username in ["git", "aur"] {
-                    if remote_username == username {
-                        writeln!(stdout(), "blacklisted username {username}").ok();
-                        std::process::exit(1);
-                    }
-                }
-                for var in ["FIGTERM_SESSION_ID", "LC_FIG_SET_PARENT", "FIG_SET_PARENT"] {
-                    if std::env::var_os(var).is_none() {
-                        writeln!(stdout(), "missing env var {var}").ok();
-                        std::process::exit(1);
-                    }
-                }
-                std::process::exit(0);
+            #[allow(deprecated)]
+            InternalSubcommand::CheckSSH { .. } => {
+                std::process::exit(1);
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::BrewUninstall { zap } => {
@@ -945,6 +939,32 @@ impl InternalSubcommand {
                     InstallComponents::SHELL_INTEGRATIONS | InstallComponents::SSH | InstallComponents::DAEMON
                 };
                 fig_install::uninstall(components).await.ok();
+            },
+            InternalSubcommand::GenerateSSH { remote_username } => {
+                let mut should_generate_config = true;
+
+                for username in ["git", "aur"] {
+                    if remote_username == username {
+                        writeln!(stdout(), "blacklisted username {username}").ok();
+                        should_generate_config = false;
+                    }
+                }
+                for var in ["FIGTERM_SESSION_ID", "LC_FIG_SET_PARENT", "FIG_SET_PARENT"] {
+                    if std::env::var_os(var).is_none() {
+                        writeln!(stdout(), "missing env var {var}").ok();
+                        should_generate_config = false;
+                    }
+                }
+
+                let config_path = directories::fig_dir()?.join("ssh_inner");
+
+                if should_generate_config {
+                    std::fs::write(config_path, fig_integrations::ssh::SSH_CONFIG_INNER)?;
+                    writeln!(stdout(), "wrote inner config").ok();
+                } else {
+                    std::fs::write(config_path, fig_integrations::ssh::SSH_CONFIG_EMPTY)?;
+                    writeln!(stdout(), "cleared inner config").ok();
+                }
             },
         }
 

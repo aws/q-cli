@@ -16,6 +16,9 @@ use crate::{
     Integration,
 };
 
+pub static SSH_CONFIG_INNER: &str = include_str!("./ssh_config_inner");
+pub static SSH_CONFIG_EMPTY: &str = include_str!("./ssh_config_empty");
+
 #[derive(Debug, Clone)]
 pub struct SshIntegration {
     path: PathBuf,
