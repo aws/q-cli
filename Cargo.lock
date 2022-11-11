@@ -7662,8 +7662,7 @@ dependencies = [
 [[package]]
 name = "wry"
 version = "0.22.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "923d297b203eae65b095af16c02978b7932be1968012b4da7138390edf34dea5"
+source = "git+https://github.com/grant0417/wry?branch=grant/double-inset-fix#eabced8ed53c914afd3d3e9ce35841bf573c28d6"
 dependencies = [
  "base64",
  "block",

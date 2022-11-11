@@ -43,3 +43,5 @@ opt-level = 3
 [patch.crates-io]
 tokio = { git = "https://github.com/sullivan-sean/tokio" }
 mio = { git = "https://github.com/sullivan-sean/mio" }
+# TODO: remove when we switch away from draft js
+wry = { git = "https://github.com/grant0417/wry", branch = "grant/double-inset-fix" }
