@@ -70,7 +70,7 @@ workflows:
             - linux-headless-x86_64
           context:
             - github
-      
+
       - publish-packages:
           requires: [package-tarball, package-deb, package-rpm, windows, macos]
           context:
@@ -390,7 +390,7 @@ jobs:
             # Add legacy Sparkle ED Public Key - required for migration but can be removed afterwards
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" SUPublicEDKey 5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" LSUIElement -bool TRUE
-            
+
             # Change the display name of the app
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleDisplayName Fig
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleName Fig
@@ -622,7 +622,7 @@ jobs:
             - pkg/linux/x86_64/deb/full/pkg
             - pkg/linux/x86_64/deb/headless/pkg
             - pkg/linux/aarch64/deb/headless/pkg
-  
+
   publish-packages:
     docker:
       - image: cimg/base:edge-22.04
@@ -682,6 +682,8 @@ jobs:
       SENTRY_ENVIRONMENT: production
     steps:
       - checkout-desktop
+      - rust/install:
+          version: 1.65.0
       - run:
           name: Install sentry
           command: |
@@ -690,7 +692,7 @@ jobs:
           name: Create new sentry release
           command: |
             cd desktop
-            VERSION=`sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' Cargo.toml | head -1`
+            VERSION=`cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "fig_desktop") | .version'`
             export SENTRY_RELEASE="$SENTRY_PROJECT@${VERSION}"
             sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
             sentry-cli releases set-commits $SENTRY_RELEASE --auto
@@ -897,7 +899,7 @@ commands:
             gh -R withfig/macos release download fig_release --clobber
             sudo mv fig_release /usr/bin/fig_release
             sudo chmod +x /usr/bin/fig_release
-  
+
   prepare-package:
     steps:
       - rust/install:
