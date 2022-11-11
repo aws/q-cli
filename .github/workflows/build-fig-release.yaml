@@ -10,6 +10,9 @@ jobs:
 
       - name: Checkout repository
         uses: actions/checkout@v2
+      
+      - name: Install dependencies
+        run: sudo apt update && sudo apt install -y musl-dev musl-tools
 
       - name: Install Rust toolchain
         uses: actions-rs/toolchain@v1
@@ -17,16 +20,17 @@ jobs:
           toolchain: stable
           profile: minimal
           override: true
-
+          target: x86_64-unknown-linux-musl
+      
       - name: Cache Dependencies
         uses: Swatinem/rust-cache@6720f05bc48b77f96918929a9019fb2203ff71f8
 
       - name: Build
-        run: cargo build --release --package fig_release
+        run: cargo build --release --package fig_release --target x86_64-unknown-linux-musl
 
       - uses: "marvinpinto/action-automatic-releases@latest"
         with:
           repo_token: "${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}"
           automatic_release_tag: "fig_release"
           title: "fig_release release"
-          files: target/release/fig_release
+          files: target/x86_64-unknown-linux-musl/release/fig_release

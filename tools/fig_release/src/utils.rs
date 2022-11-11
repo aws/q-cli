@@ -128,7 +128,7 @@ pub fn write_channel(channel: &Channel) {
 }
 
 pub fn update_lockfile() -> eyre::Result<()> {
-    run(&["cargo", "update", "--offline", "--workspace"])
+    run(&["cargo", "update", "--workspace"])
 }
 
 #[cfg(test)]

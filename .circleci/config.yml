@@ -283,7 +283,7 @@ jobs:
 
   linux-desktop-x86_64:
     docker:
-      - image: ubuntu:bionic
+      - image: ubuntu:20.04
     resource_class: large
     steps:
       - require-target:

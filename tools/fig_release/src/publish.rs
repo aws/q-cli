@@ -148,10 +148,10 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
             interval.tick().await;
         }
 
-        if !success {
-            fig_util::open_url(format!(
-                "https://app.circleci.com/pipelines/github/withfig/macos/{pipeline_number}",
-            ))?;
+        if success {
+            let url = format!("https://app.circleci.com/pipelines/github/withfig/macos/{pipeline_number}");
+            println!("---> {url} <---");
+            fig_util::open_url(url)?;
         }
     } else {
         let resp: CircleError = resp.json().await?;
