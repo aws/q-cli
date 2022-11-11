@@ -690,7 +690,8 @@ jobs:
           name: Create new sentry release
           command: |
             cd desktop
-            export SENTRY_RELEASE=fig-rust-desktop@$(jq -r '.FIG_VERSION' bundle/bundle_info.json)
+            VERSION=`sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' desktop/Cargo.toml | head -1`
+            export SENTRY_RELEASE="$SENTRY_PROJECT@${VERSION}"
             sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
             sentry-cli releases set-commits $SENTRY_RELEASE --auto
             sentry-cli releases finalize $SENTRY_RELEASE
