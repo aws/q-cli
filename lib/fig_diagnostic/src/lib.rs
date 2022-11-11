@@ -72,7 +72,7 @@ impl EnvVarDiagnostic {
         let env_vars = std::env::vars()
             .into_iter()
             .filter(|(key, _)| {
-                key.starts_with("FIG_")
+                (key.starts_with("FIG_")
                     || key == "SHELL"
                     || key == "DISPLAY"
                     || key == "PATH"
@@ -84,7 +84,11 @@ impl EnvVarDiagnostic {
                     || key == "GLFW_IM_MODULE"
                     || key == "GTK_IM_MODULE"
                     || key == "QT_IM_MODULE"
-                    || key == "XMODIFIERS"
+                    || key == "XMODIFIERS")
+                    && !key.contains("TOKEN")
+                    && !key.contains("KEY")
+                    && !key.contains("SECRET")
+                    && !key.contains("PASSWORD")
             })
             .collect();
 
