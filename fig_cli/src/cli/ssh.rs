@@ -143,7 +143,7 @@ impl SshSubcommand {
         }
         let connection = connections.into_iter().next().unwrap();
 
-        let mut using_local_default = false;
+        let mut attempt_save = true;
         let mut identities = Vec::new();
         let selected_identity = if connection.identity_ids.is_empty() && self.auth.is_none() {
             None
@@ -188,7 +188,7 @@ impl SshSubcommand {
                 if let Some(Some(iden)) = entries.get(&host.remote_id) {
                     if identities.iter().any(|check| check.remote_id == *iden) {
                         identities.retain(|check| check.remote_id == *iden);
-                        using_local_default = true;
+                        attempt_save = false;
                     }
                 }
             }
@@ -200,7 +200,10 @@ impl SshSubcommand {
                     warn!("No identities found!");
                     None
                 },
-                1 => identities.first(),
+                1 => {
+                    attempt_save = false;
+                    identities.first()
+                },
                 _ => {
                     if user.is_none() {
                         user = Some(fig_api_client::user::account().await?);
@@ -228,7 +231,7 @@ impl SshSubcommand {
             }
         };
 
-        if !using_local_default {
+        if attempt_save {
             if let Some(selected_identity) = selected_identity {
                 let mut entries = read_saved_identities()?;
                 let host_entry = if self.ignore_default_identity {

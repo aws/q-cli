@@ -4,6 +4,7 @@ pub mod sync;
 
 use std::env;
 use std::ffi::OsStr;
+use std::io::stdout;
 use std::iter::empty;
 use std::path::{
     Path,
@@ -248,6 +249,12 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
 static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var("TTY").is_ok());
 
 pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
+    tokio::spawn(async {
+        tokio::signal::ctrl_c().await.unwrap();
+        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+        std::process::exit(0);
+    });
+
     if options.is_empty() {
         bail!("no options passed to choose")
     }
