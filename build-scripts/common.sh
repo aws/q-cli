@@ -1,7 +1,7 @@
 #!/bin/bash
 
 export VERSION
-VERSION=$(sed -nr 's/^version[[:space:]]*=[[:space:]]*\"([^"]*)\"/\1/p' fig_desktop/Cargo.toml | head -1)
+VERSION=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "fig_desktop") | .version')
 echo "Version ${VERSION}"
 
 prepare_bundle() {
@@ -23,9 +23,6 @@ prepare_bundle() {
     mkdir -p build/usr/bin
     cp "$FIG_CLI" build/usr/bin/fig
     cp "$FIGTERM" build/usr/bin/figterm
-    ln -s /usr/bin/figterm build/usr/bin/bash\ \(figterm\)
-    ln -s /usr/bin/figterm build/usr/bin/fish\ \(figterm\)
-    ln -s /usr/bin/figterm build/usr/bin/zsh\ \(figterm\)
     cp -r bundle/linux/headless/. build/
     if [[ $IS_HEADLESS = 0 ]]; then
         cp -r bundle/linux/desktop/. build/

@@ -1,6 +1,6 @@
 Name: fig-headless
 Version: $VERSION
-Release: 1
+Release: $RELEASE
 Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
@@ -15,25 +15,21 @@ Conflicts: fig
 
 %install
 rm -r %{buildroot}
-cp -r %{_builddir}/fig-%{version}-%{release}.$ARCH/ %{buildroot}
+BASE=%{_builddir}/fig-%{version}-%{release}
+if [[ -d $BASE-1.$ARCH ]]; then
+    cp -r $BASE-1.$ARCH/ %{buildroot}
+else
+    cp -r $BASE.$ARCH/ %{buildroot}
+fi
 
 %clean
 rm -rf %{buildroot}
-
-%preun
-fig _ uninstall-for-all-users
-
-%postun
-killall fig_desktop
 
 %posttrans
 (ls /etc/yum.repos.d/fig.repo>/dev/null && sed -i 's/f$releasever\///' '/etc/yum.repos.d/fig.repo') || true
 
 %files
 /usr/bin/fig
-"/usr/bin/zsh (figterm)"
-"/usr/bin/bash (figterm)"
-"/usr/bin/fish (figterm)"
 /usr/bin/figterm
 /usr/share/fig/manifest.json
 /usr/share/licenses/fig/LICENSE

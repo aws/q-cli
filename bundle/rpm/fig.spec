@@ -1,6 +1,6 @@
 Name: fig
 Version: $VERSION
-Release: 1
+Release: $RELEASE
 Summary: Fig for Linux
 License: Fig License
 Group: Applications/System
@@ -20,27 +20,21 @@ Requires: ibus
 
 %install
 rm -r %{buildroot}
-cp -r %{_builddir}/fig-%{version}-%{release}.$ARCH/ %{buildroot}
+BASE=%{_builddir}/fig-%{version}-%{release}
+if [[ -d $BASE-1.$ARCH ]]; then
+    cp -r $BASE-1.$ARCH/ %{buildroot}
+else
+    cp -r $BASE.$ARCH/ %{buildroot}
+fi
 
 %clean
 rm -rf %{buildroot}
-
-# temporarily disabled as dnf runs this on upgrade as well
-# im having flashbacks to homebrew!
-# %preun
-# fig _ uninstall-for-all-users
-
-%postun
-killall fig_desktop
 
 %posttrans
 (ls /etc/yum.repos.d/fig.repo>/dev/null && sed -i 's/f$releasever\///' '/etc/yum.repos.d/fig.repo') || true
 
 %files
 /usr/bin/fig
-"/usr/bin/zsh (figterm)"
-"/usr/bin/bash (figterm)"
-"/usr/bin/fish (figterm)"
 /usr/bin/fig_desktop
 /usr/bin/figterm
 /usr/lib/systemd/user/fig.service
