@@ -47,6 +47,7 @@ allow-git = [
   "https://github.com/sullivan-sean/mio",
   "https://github.com/grant0417/skim",
   "https://github.com/grant0417/tao",
+  "https://github.com/grant0417/wry",
   "https://github.com/sullivan-sean/rust-block",
   "https://github.com/tauri-apps/tao",
 ]
