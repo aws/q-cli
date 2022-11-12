@@ -15,6 +15,7 @@ message Clientbound {
     HandshakeResponse handshake_response = 100;
     google.protobuf.Empty ping = 101;
     Request request = 102;
+    Response response = 103;
   }
 
   message HandshakeResponse { bool success = 1; }
@@ -50,18 +51,28 @@ message Clientbound {
     optional bool isPipelined = 4;
     repeated fig_common.EnvironmentVariable env = 5;
   }
-}
 
-// hooks removed:
-// OpenedSSHConnectionHook: not necessary after multiplexing is no longer a
-// requirement unused: CallbackHook, Hide, PostExecHook, TmuxPaneChangedHook,
-// KeyboardFocusChangedHook, EventHook, FileChangedHook not necessary over
-// remote: IntegrationReadyHook, FocusChangeHook, CursorPositionHook
+  message Response {
+    optional uint64 nonce = 1;
+
+    oneof response {
+      AccountInfoResponse account_info = 101;
+      ExchangeCredentialsResponse exchange_credentials = 102;
+    }
+  }
+
+  message AccountInfoResponse { bool logged_in = 1; }
+
+  message ExchangeCredentialsResponse {
+    bool approved = 1;
+    optional string credentials = 2;
+  }
+}
 
 message Hostbound {
   oneof packet {
     Handshake handshake = 100;
-    Hook hook = 101;
+    Request request = 101;
     Response response = 102;
     google.protobuf.Empty pong = 103;
   }
@@ -71,12 +82,18 @@ message Hostbound {
     string secret = 2;
   }
 
-  message Hook {
-    oneof hook {
+  message Request {
+    optional uint64 nonce = 1;
+
+    oneof request {
       local.EditBufferHook edit_buffer = 101;
       local.PromptHook prompt = 102;
       local.PreExecHook pre_exec = 103;
       local.InterceptedKeyHook intercepted_key = 104;
+
+      google.protobuf.Empty account_info = 105;
+      google.protobuf.Empty start_exchange_credentials = 106;
+      ConfirmExchangeCredentialsRequest confirm_exchange_credentials = 107;
     }
   }
 
@@ -93,7 +110,9 @@ message Hostbound {
 
       ReadFileResponse read_file = 103;
     }
-
-    message ReadFileResponse { fig_common.FileData data = 1; }
   }
+
+  message ReadFileResponse { fig_common.FileData data = 1; }
+
+  message ConfirmExchangeCredentialsRequest { string code = 1; }
 }

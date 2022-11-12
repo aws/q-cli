@@ -1,5 +1,8 @@
 use std::sync::Arc;
-use std::time::Duration;
+use std::time::{
+    Duration,
+    SystemTime,
+};
 
 use anyhow::Result;
 use bytes::BytesMut;
@@ -21,10 +24,22 @@ use fig_proto::local::{
     PromptHook,
 };
 use fig_proto::prost::Message;
+use fig_proto::secure::clientbound;
+use fig_proto::secure::hostbound::ConfirmExchangeCredentialsRequest;
+use fig_request::auth::Credentials;
+use fig_telemetry::{
+    TrackEvent,
+    TrackEventType,
+    TrackSource,
+};
+use parking_lot::Mutex;
+use rand::distributions::uniform::SampleRange;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
+use tokio::time::Instant;
 use tracing::{
     debug,
+    error,
     warn,
 };
 
@@ -51,7 +66,7 @@ pub async fn edit_buffer(
     figterm_state: Arc<FigtermState>,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
-) -> Result<()> {
+) -> Result<Option<clientbound::response::Response>> {
     let old_metrics = figterm_state.with_update(session_id.clone(), |session| {
         session.edit_buffer.text = hook.text.clone();
         session.edit_buffer.cursor = hook.cursor;
@@ -161,7 +176,7 @@ pub async fn edit_buffer(
         },
     })?;
 
-    Ok(())
+    Ok(None)
 }
 
 pub async fn prompt(
@@ -170,7 +185,7 @@ pub async fn prompt(
     figterm_state: &FigtermState,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
-) -> Result<()> {
+) -> Result<Option<clientbound::response::Response>> {
     figterm_state.with(session_id, |session| {
         session.context = hook.context.clone();
     });
@@ -193,7 +208,9 @@ pub async fn prompt(
             },
             proxy,
         )
-        .await
+        .await?;
+
+    Ok(None)
 }
 
 pub async fn pre_exec(
@@ -202,7 +219,7 @@ pub async fn pre_exec(
     figterm_state: &FigtermState,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
-) -> Result<()> {
+) -> Result<Option<clientbound::response::Response>> {
     figterm_state.with_update(session_id.clone(), |session| {
         session.context = hook.context.clone();
     });
@@ -231,14 +248,16 @@ pub async fn pre_exec(
             },
             proxy,
         )
-        .await
+        .await?;
+
+    Ok(None)
 }
 
 pub async fn intercepted_key(
     InterceptedKeyHook { action, context, .. }: InterceptedKeyHook,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
-) -> Result<()> {
+) -> Result<Option<clientbound::response::Response>> {
     debug!(%action, "Intercepted Key Action");
 
     notifications_state
@@ -255,5 +274,92 @@ pub async fn intercepted_key(
             },
             proxy,
         )
-        .await
+        .await?;
+
+    Ok(None)
+}
+
+pub fn account_info() -> Result<Option<clientbound::response::Response>> {
+    let mut logged_in = false;
+    if let Ok(creds) = Credentials::load_credentials() {
+        logged_in = creds.access_token.is_some()
+            && creds.email.is_some()
+            && creds.id_token.is_some()
+            && creds.refresh_token.is_some()
+            && !creds.refresh_token_expired.unwrap_or_default()
+    }
+
+    Ok(Some(clientbound::response::Response::AccountInfo(
+        clientbound::AccountInfoResponse { logged_in },
+    )))
+}
+
+static LAST_EXECUTED_TIME: Mutex<SystemTime> = Mutex::new(SystemTime::UNIX_EPOCH);
+
+pub async fn start_exchange_credentials(
+    last_auth_code: &mut Option<(u32, Instant)>,
+    proxy: &EventLoopProxy,
+) -> Result<Option<clientbound::response::Response>> {
+    {
+        let mut last_time = LAST_EXECUTED_TIME.lock();
+        if last_time.elapsed().unwrap_or_default() < Duration::from_secs(1) {
+            warn!("start_exchange_credentials hit rate limit");
+            return Ok(None);
+        }
+        *last_time = SystemTime::now();
+    }
+
+    let new_code = (0..99999999).sample_single(&mut rand::thread_rng());
+    *last_auth_code = Some((new_code, Instant::now()));
+
+    if proxy
+        .send_event(Event::ShowMessageNotification {
+            title: "Credential exchange requested".into(),
+            body: format!("Your exchange code is: {new_code:08}").into(),
+            parent: None,
+        })
+        .is_err()
+    {
+        error!("event loop closed!");
+    }
+
+    Ok(None)
+}
+
+pub async fn confirm_exchange_credentials(
+    request: ConfirmExchangeCredentialsRequest,
+    last_auth_code: &mut Option<(u32, Instant)>,
+) -> Result<Option<clientbound::response::Response>> {
+    let mut approved = true;
+    if let Some((last_auth_code, timestamp)) = last_auth_code {
+        if timestamp.elapsed() > Duration::from_secs(60 * 5) {
+            anyhow::bail!("client attempted to use expired exchange code");
+        }
+        let remote_code = (request.code as String).parse::<u32>()?;
+        if remote_code != *last_auth_code {
+            approved = false;
+        }
+    } else {
+        anyhow::bail!("client attempted to confirm exchange before starting one");
+    }
+
+    *last_auth_code = None;
+
+    fig_telemetry::emit_track(TrackEvent::new(
+        TrackEventType::LoggedInWithAuthExchange,
+        TrackSource::Desktop,
+        env!("CARGO_PKG_VERSION").into(),
+        std::iter::empty::<(&str, &str)>(),
+    ))
+    .await
+    .ok();
+
+    let credentials = tokio::fs::read_to_string(Credentials::path()?).await?;
+
+    Ok(Some(clientbound::response::Response::ExchangeCredentials(
+        clientbound::ExchangeCredentialsResponse {
+            approved,
+            credentials: Some(credentials),
+        },
+    )))
 }

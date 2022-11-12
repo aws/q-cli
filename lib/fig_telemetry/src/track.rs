@@ -36,6 +36,7 @@ pub enum TrackEventType {
     DotfileLineCountsRecorded,
     PromptedForAXPermission,
     GrantedAXPermission,
+    LoggedInWithAuthExchange,
     /// Prefer not using this directly and instead define an enum value, this is only for
     /// internal use by `fig_telemetry`
     Other(String),
@@ -60,6 +61,7 @@ impl std::fmt::Display for TrackEventType {
             Self::DotfileLineCountsRecorded => "Dotfile Line Counts Recorded",
             Self::PromptedForAXPermission => "Prompted for AX Permission",
             Self::GrantedAXPermission => "Granted AX Permission",
+            Self::LoggedInWithAuthExchange => "Logged In with Auth Exchange",
             Self::Other(s) => s,
         })
     }

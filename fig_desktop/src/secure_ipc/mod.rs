@@ -119,6 +119,7 @@ async fn handle_secure_ipc(
     let ping_task = tokio::spawn(send_pings(clientbound_tx.clone(), on_close_tx.subscribe()));
 
     let mut session_id: Option<FigtermSessionId> = None;
+    let mut last_auth_code = None;
 
     let mut reader = BufferedReader::new(reader);
     loop {
@@ -195,43 +196,53 @@ async fn handle_secure_ipc(
                                 }
                             }
                         },
-                        Some(hostbound::Packet::Hook(hostbound::Hook { hook: Some(hook) })) => {
-                            if let Some(session_id) = &session_id {
-                                let sanatize_fn = get_sanatize_fn(session_id.0.clone());
-                                if let Err(err) = match hook {
-                                    hostbound::hook::Hook::EditBuffer(mut edit_buffer) => {
-                                        sanatize_fn(&mut edit_buffer.context);
+                        Some(hostbound::Packet::Request(hostbound::Request { request: Some(request), nonce })) => {
+                            if matches!(
+                                request,
+                                hostbound::request::Request::EditBuffer(_)
+                                | hostbound::request::Request::Prompt(_)
+                                | hostbound::request::Request::PreExec(_)
+                                | hostbound::request::Request::InterceptedKey(_)
+                            ) && session_id.is_none() {
+                                debug!("Client tried to send secure hook without auth");
+                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
+                                    success: false,
+                                }))
+                            } else {
+                                match match request {
+                                    hostbound::request::Request::EditBuffer(mut edit_buffer) => {
+                                        sanitize_fn(&mut edit_buffer.context, &session_id);
                                         hooks::edit_buffer(
                                             &edit_buffer,
-                                            session_id,
+                                            session_id.as_ref().expect("unreachable"),
                                             figterm_state.clone(),
                                             &notifications_state,
                                             &proxy,
                                         )
                                         .await
                                     },
-                                    hostbound::hook::Hook::Prompt(mut prompt) => {
-                                        sanatize_fn(&mut prompt.context);
-                                        hooks::prompt(&prompt, session_id, &figterm_state, &notifications_state, &proxy).await
+                                    hostbound::request::Request::Prompt(mut prompt) => {
+                                        sanitize_fn(&mut prompt.context, &session_id);
+                                        hooks::prompt(&prompt, session_id.as_ref().expect("unreachable"), &figterm_state, &notifications_state, &proxy).await
                                     },
-                                    hostbound::hook::Hook::PreExec(mut pre_exec) => {
-                                        sanatize_fn(&mut pre_exec.context);
-                                        hooks::pre_exec(&pre_exec, session_id, &figterm_state, &notifications_state, &proxy).await
+                                    hostbound::request::Request::PreExec(mut pre_exec) => {
+                                        sanitize_fn(&mut pre_exec.context, &session_id);
+                                        hooks::pre_exec(&pre_exec, session_id.as_ref().expect("unreachable"), &figterm_state, &notifications_state, &proxy).await
                                     },
-                                    hostbound::hook::Hook::InterceptedKey(mut intercepted_key) => {
-                                        sanatize_fn(&mut intercepted_key.context);
+                                    hostbound::request::Request::InterceptedKey(mut intercepted_key) => {
+                                        sanitize_fn(&mut intercepted_key.context, &session_id);
                                         hooks::intercepted_key(intercepted_key, &notifications_state, &proxy).await
                                     },
+                                    hostbound::request::Request::AccountInfo(_) => hooks::account_info(),
+                                    hostbound::request::Request::StartExchangeCredentials(_) => hooks::start_exchange_credentials(&mut last_auth_code, &proxy).await,
+                                    hostbound::request::Request::ConfirmExchangeCredentials(request) => hooks::confirm_exchange_credentials(request, &mut last_auth_code).await,
                                 } {
-                                    error!(%err, "Failed processing hook")
+                                    Ok(inner) => inner.map(|inner| clientbound::Packet::Response(clientbound::Response { nonce, response: Some(inner) })),
+                                    Err(err) => {
+                                        error!(%err, "Failed processing hook");
+                                        None
+                                    }
                                 }
-                                None
-                            } else {
-                                // apparently they didn't get the memo
-                                debug!("Client tried to send secure hook without auth");
-                                Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
-                                    success: false,
-                                }))
                             }
                         },
                         Some(hostbound::Packet::Response(hostbound::Response {
@@ -258,10 +269,10 @@ async fn handle_secure_ipc(
                             }
                             None
                         },
-                        Some(hostbound::Packet::Hook(hostbound::Hook { hook: None }))
+                        Some(hostbound::Packet::Request(hostbound::Request { request: None, .. }))
                             | Some(hostbound::Packet::Response(hostbound::Response { response: None, .. }))
                             | None => {
-                            warn!("Received invalid secure packet");
+                            warn!(?message.packet, "Received unknown secure packet");
                             None
                         }
                     } {
@@ -475,10 +486,8 @@ async fn send_pings(outgoing: flume::Sender<Clientbound>, mut on_close_rx: tokio
 
 // This has to be used to sanitize as a hook can contain an invalid session_id and it must
 // be sanitized before being sent to any consumers
-fn get_sanatize_fn(session_id: String) -> impl FnOnce(&mut Option<ShellContext>) {
-    |context| {
-        if let Some(context) = context {
-            context.session_id = Some(session_id);
-        }
+fn sanitize_fn(context: &mut Option<ShellContext>, session_id: &Option<FigtermSessionId>) {
+    if let Some(context) = context {
+        context.session_id = Some(session_id.as_ref().expect("unreachable").0.clone());
     }
 }

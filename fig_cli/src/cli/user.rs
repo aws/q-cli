@@ -1,5 +1,6 @@
 use std::iter::empty;
 use std::process::exit;
+use std::time::Duration;
 
 use clap::Subcommand;
 use crossterm::style::Stylize;
@@ -8,6 +9,22 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::logout_command;
+use fig_ipc::{
+    BufferedUnixStream,
+    SendMessage,
+    SendRecvMessage,
+};
+use fig_proto::secure::{
+    clientbound,
+    hostbound,
+    Clientbound,
+    Hostbound,
+};
+use fig_proto::secure_hooks::{
+    new_account_info_request,
+    new_confirm_exchange_credentials_request,
+    new_start_exchange_credentials_request,
+};
 use fig_request::auth::{
     Credentials,
     SignInConfirmError,
@@ -20,6 +37,7 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::system_info::is_remote;
 use serde_json::{
     json,
     Value,
@@ -27,6 +45,7 @@ use serde_json::{
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
+use crate::util::dialoguer_theme;
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
 pub enum RootUserSubcommand {
@@ -70,10 +89,43 @@ impl RootUserSubcommand {
                     return Ok(());
                 }
 
+                if let Some(email) = fig_request::auth::get_email() {
+                    if not_now {
+                        return Ok(());
+                    } else {
+                        eyre::bail!("Already logged in as {email}, please logout first.");
+                    }
+                }
+
                 const OPTION_EMAIL: &str = "Log in with email";
                 const OPTION_NOT_NOW: &str = "Not now";
+                const OPTION_REMOTE: &str = "Log in with local machine";
 
-                let mut options = vec![OPTION_EMAIL];
+                let mut options = vec![];
+                if is_remote() {
+                    let mut connection =
+                        BufferedUnixStream::connect(fig_util::directories::secure_socket_path()?).await?;
+                    let response: Option<Clientbound> = connection
+                        .send_recv_message_filtered(
+                            Hostbound {
+                                packet: Some(hostbound::Packet::Request(new_account_info_request())),
+                            },
+                            |x: &Clientbound| matches!(x.packet, Some(clientbound::Packet::Response(_))),
+                        )
+                        .await?;
+                    if let Some(response) = response {
+                        let Some(clientbound::Packet::Response(response)) = response.packet else {
+                            unreachable!();
+                        };
+                        let Some(clientbound::response::Response::AccountInfo(account_info)) = response.response else {
+                            eyre::bail!("weird packet from desktop");
+                        };
+                        if account_info.logged_in {
+                            options.push(OPTION_REMOTE);
+                        }
+                    }
+                }
+                options.push(OPTION_EMAIL);
                 if not_now {
                     options.push(OPTION_NOT_NOW);
                 }
@@ -83,112 +135,172 @@ impl RootUserSubcommand {
                     _ => {
                         options[dialoguer::Select::with_theme(&crate::util::dialoguer_theme())
                             .default(0)
-                            .with_prompt("Select action")
+                            .with_prompt(if not_now {
+                                "Would you like to log in?"
+                            } else {
+                                "Select action"
+                            })
                             .items(&options)
                             .interact()?]
                     },
                 };
 
-                if chosen == OPTION_NOT_NOW {
-                    return Ok(());
-                }
+                match chosen {
+                    OPTION_NOT_NOW => {},
+                    OPTION_EMAIL => {
+                        if email.is_none() {
+                            println!("{}", "Login to Fig".bold().magenta());
+                        }
 
-                if let Some(email) = fig_request::auth::get_email() {
-                    return Err(eyre::eyre!("Already logged in as {email}, please logout first."));
-                }
+                        let email: String = match email {
+                            Some(email) => email,
+                            None => dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
+                                .with_prompt("Email")
+                                .validate_with(|input: &String| -> Result<(), &str> {
+                                    if validator::validate_email(input.trim()) {
+                                        Ok(())
+                                    } else {
+                                        Err("This is not a valid email")
+                                    }
+                                })
+                                .interact_text()?,
+                        };
 
-                if email.is_none() {
-                    println!("{}", "Login to Fig".bold().magenta());
-                }
+                        let trimmed_email = email.trim();
+                        let sign_in_input = SignInInput::new(trimmed_email);
 
-                let email: String = match email {
-                    Some(email) => email,
-                    None => dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
-                        .with_prompt("Email")
-                        .validate_with(|input: &String| -> Result<(), &str> {
-                            if validator::validate_email(input.trim()) {
-                                Ok(())
-                            } else {
-                                Err("This is not a valid email")
-                            }
-                        })
-                        .interact_text()?,
-                };
+                        println!("Sending login code to {trimmed_email}...");
+                        println!("Please check your email for the code");
 
-                let trimmed_email = email.trim();
-                let sign_in_input = SignInInput::new(trimmed_email);
+                        let mut sign_in_output = sign_in_input.sign_in().await?;
 
-                println!("Sending login code to {trimmed_email}...");
-                println!("Please check your email for the code");
+                        loop {
+                            let login_code: String = dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
+                                .with_prompt("Login code")
+                                .validate_with(|input: &String| -> Result<(), &str> {
+                                    if input.len() == 6 && input.chars().all(|c| c.is_ascii_digit()) {
+                                        Ok(())
+                                    } else {
+                                        Err("Code must be 6 digits")
+                                    }
+                                })
+                                .interact_text()?;
 
-                let mut sign_in_output = sign_in_input.sign_in().await?;
+                            match sign_in_output.confirm(login_code.trim()).await {
+                                Ok(creds) => {
+                                    creds.save_credentials()?;
 
-                loop {
-                    let login_code: String = dialoguer::Input::with_theme(&crate::util::dialoguer_theme())
-                        .with_prompt("Login code")
-                        .validate_with(|input: &String| -> Result<(), &str> {
-                            if input.len() == 6 && input.chars().all(|c| c.is_ascii_digit()) {
-                                Ok(())
-                            } else {
-                                Err("Code must be 6 digits")
-                            }
-                        })
-                        .interact_text()?;
+                                    if switchable {
+                                        let dir = Credentials::account_credentials_dir()?;
+                                        if !dir.exists() {
+                                            std::fs::create_dir_all(&dir)?;
+                                        }
+                                        std::fs::copy(
+                                            Credentials::path()?,
+                                            Credentials::account_credentials_path(trimmed_email)?,
+                                        )?;
+                                    }
 
-                    match sign_in_output.confirm(login_code.trim()).await {
-                        Ok(creds) => {
-                            creds.save_credentials()?;
+                                    let mut login_body = serde_json::Map::new();
+                                    login_body.insert("loginSource".into(), "cli".into());
+                                    if let Ok(Some(anonymous_id)) = state::get_string("anonymousId") {
+                                        login_body.insert("anonymousId".into(), anonymous_id.into());
+                                    };
 
-                            if switchable {
-                                let dir = Credentials::account_credentials_dir()?;
-                                if !dir.exists() {
-                                    std::fs::create_dir_all(&dir)?;
-                                }
-                                std::fs::copy(
-                                    Credentials::path()?,
-                                    Credentials::account_credentials_path(trimmed_email)?,
-                                )?;
-                            }
+                                    let (telem_join, login_join) = tokio::join!(
+                                        fig_telemetry::dispatch_emit_track(
+                                            TrackEvent::new(
+                                                TrackEventType::Login,
+                                                TrackSource::Cli,
+                                                env!("CARGO_PKG_VERSION").into(),
+                                                empty::<(&str, &str)>()
+                                            ),
+                                            false,
+                                        ),
+                                        Request::post("/user/login").auth().body(login_body).send()
+                                    );
 
-                            let mut login_body = serde_json::Map::new();
-                            login_body.insert("loginSource".into(), "cli".into());
-                            if let Ok(Some(anonymous_id)) = state::get_string("anonymousId") {
-                                login_body.insert("anonymousId".into(), anonymous_id.into());
+                                    telem_join.ok();
+                                    login_join?;
+
+                                    println!("Login successful!");
+                                    return Ok(());
+                                },
+                                Err(err) => match err {
+                                    SignInConfirmError::InvalidCode => {
+                                        println!("Code mismatch, try again...");
+                                        continue;
+                                    },
+                                    SignInConfirmError::TooManyAttempts => {
+                                        return Err(eyre::eyre!(
+                                            "Not authorized, you may have entered the wrong code too many times."
+                                        ));
+                                    },
+                                    err => return Err(err.into()),
+                                },
                             };
+                        }
+                    },
+                    OPTION_REMOTE => {
+                        let mut connection =
+                            BufferedUnixStream::connect(fig_util::directories::secure_socket_path()?).await?;
+                        connection
+                            .send_message(Hostbound {
+                                packet: Some(hostbound::Packet::Request(new_start_exchange_credentials_request())),
+                            })
+                            .await?;
+                        let code = dialoguer::Input::with_theme(&dialoguer_theme())
+                            .allow_empty(true)
+                            .validate_with(|code: &String| match code.len() {
+                                0 => Ok(()),
+                                8 => {
+                                    if code.chars().any(|x| !x.is_numeric()) {
+                                        Err(eyre::eyre!("Codes should only have numbers"))
+                                    } else {
+                                        Ok(())
+                                    }
+                                },
+                                _ => Err(eyre::eyre!("Codes should be 8 digits")),
+                            })
+                            .with_prompt("Enter your exchange code")
+                            .interact_text()?;
+                        if code.is_empty() {
+                            eyre::bail!("Cancelled");
+                        }
+                        let response: Option<Clientbound> = connection
+                            .send_recv_message_timeout_filtered(
+                                Hostbound {
+                                    packet: Some(hostbound::Packet::Request(new_confirm_exchange_credentials_request(
+                                        code,
+                                    ))),
+                                },
+                                Duration::from_secs(5),
+                                |x: &Clientbound| matches!(x.packet, Some(clientbound::Packet::Response(_))),
+                            )
+                            .await?;
+                        if let Some(response) = response {
+                            let Some(clientbound::Packet::Response(response)) = response.packet else {
+                                unreachable!();
+                            };
+                            let Some(clientbound::response::Response::ExchangeCredentials(exchange_credentials)) = response.response else {
+                                eyre::bail!("weird packet from desktop");
+                            };
+                            if exchange_credentials.approved {
+                                let creds: String = exchange_credentials.credentials.unwrap();
+                                tokio::fs::write(Credentials::path()?, creds).await?;
 
-                            let (telem_join, login_join) = tokio::join!(
-                                fig_telemetry::dispatch_emit_track(
-                                    TrackEvent::new(
-                                        TrackEventType::Login,
-                                        TrackSource::Cli,
-                                        env!("CARGO_PKG_VERSION").into(),
-                                        empty::<(&str, &str)>()
-                                    ),
-                                    false,
-                                ),
-                                Request::post("/user/login").auth().body(login_body).send()
-                            );
-
-                            telem_join.ok();
-                            login_join?;
-
-                            println!("Login successful!");
-                            return Ok(());
-                        },
-                        Err(err) => match err {
-                            SignInConfirmError::InvalidCode => {
-                                println!("Code mismatch, try again...");
-                                continue;
-                            },
-                            SignInConfirmError::TooManyAttempts => {
-                                return Err(eyre::eyre!(
-                                    "Not authorized, you may have entered the wrong code too many times."
-                                ));
-                            },
-                            err => return Err(err.into()),
-                        },
-                    };
+                                let mut creds = Credentials::load_credentials()?;
+                                creds.refresh_credentials().await?;
+                                creds.save_credentials()?;
+                            } else {
+                                eyre::bail!("Bad code");
+                            }
+                        }
+                    },
+                    _ => unreachable!(),
                 }
+
+                Ok(())
             },
             Self::Logout => {
                 let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(

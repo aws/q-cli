@@ -11,7 +11,7 @@ use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
 use crate::consts::FIG_CLI_BINARY_NAME;
-use crate::system_info::in_ssh;
+use crate::system_info::is_remote;
 
 macro_rules! debug_env_binding {
     ($path:literal) => {
@@ -274,7 +274,7 @@ pub fn daemon_socket_path() -> Result<PathBuf> {
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
 pub fn secure_socket_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SECURE_SOCKET_PATH");
-    if in_ssh() {
+    if is_remote() {
         if let Ok(parent_id) = std::env::var("FIG_PARENT") {
             if !parent_id.is_empty() {
                 return parent_socket_path(&parent_id);
