@@ -7,7 +7,7 @@ on:
         description: "Package name"
         required: true
       version:
-        description: "New version"
+        description: "Version"
         required: true
       channel:
         description: "Channel"
@@ -21,6 +21,8 @@ jobs:
       - uses: actions/checkout@v2
       - name: Generate PKGBUILD
         run: |
+          set -eox pipefail
+
           export aur_pkgname=${{ github.event.inputs.pkgname }}
           export aur_pkgver=$(echo ${{ github.event.inputs.version }} | sed 's/-/_/g')
           export aur_channel=${{ github.event.inputs.channel }}
@@ -28,11 +30,11 @@ jobs:
           if [ {{ github.event.inputs.pkgname }} == "fig" ]; then
             export aur_provides=""
           else
-            export aur_provides="\nprovides=('fig')\nconflicts=('fig')"
+            export aur_provides=$(printf "\nprovides=('fig')\nconflicts=('fig')")
           fi
 
-          curl -sL https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz
-          export aur_sha256=$(sha256sum fig.tar | cut -d ' ' -f 1)
+          curl -sL -o fig.tar.xz https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz
+          export aur_sha256=$(sha256sum fig.tar.xz | cut -d ' ' -f 1)
 
           envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_provides} ${aur_sha256}' < bundle/archlinux/PKGBUILD.template > PKGBUILD
 
