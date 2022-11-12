@@ -2,7 +2,7 @@
 
 pkgname='$aur_pkgname'
 pkgver='$aur_pkgver'
-pkgrel=1
+pkgrel=$aur_pkgrel
 pkgdesc='Adds IDE-style autocomplete to your existing terminal.'
 arch=('x86_64')
 url='https://fig.io'
