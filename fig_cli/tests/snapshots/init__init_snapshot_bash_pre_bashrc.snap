@@ -396,14 +396,17 @@ if [[ -n "${FIG_NEW_SESSION}" ]]; then
   unset FIG_NEW_SESSION
 fi
 
-# Load parent from env variables
-if [[ "$FIG_SET_PARENT" = "" && "$LC_FIG_SET_PARENT" != "" ]]; then
-  export FIG_SET_PARENT=$LC_FIG_SET_PARENT
-  unset -v LC_FIG_SET_PARENT
-fi
-if [[ "$FIG_PARENT" = "" && "$FIG_SET_PARENT" != "" ]]; then
-  export FIG_PARENT=$FIG_SET_PARENT
-  unset -v FIG_SET_PARENT
+if [[ -z "${FIG_SET_PARENT_CHECK}" ]]; then
+  # Load parent from env variables
+  if [[ "$FIG_SET_PARENT" = "" && "$LC_FIG_SET_PARENT" != "" ]]; then
+    export FIG_SET_PARENT=$LC_FIG_SET_PARENT
+    unset -v LC_FIG_SET_PARENT
+  fi
+  if [[ "$FIG_PARENT" = "" && "$FIG_SET_PARENT" != "" ]]; then
+    export FIG_PARENT=$FIG_SET_PARENT
+    unset -v FIG_SET_PARENT
+  fi
+  export FIG_SET_PARENT_CHECK=1
 fi
 
 # 0 = Yes, 1 = No, 2 = Fallback to FIG_TERM
