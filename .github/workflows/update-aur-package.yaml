@@ -20,7 +20,7 @@ on:
 
 jobs:
   aur-publish:
-    name: Publish ${{ github.event.inputs.pkgname }} ${{ github.event.inputs.version }}-${{ github.event.inputs.pkgrel }} to AUR
+    name: Publish ${{ github.event.inputs.channel }} ${{ github.event.inputs.version }}-${{ github.event.inputs.pkgrel }} to AUR
     runs-on: ubuntu-latest
     steps:
       - uses: actions/checkout@v2
