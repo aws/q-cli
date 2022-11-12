@@ -1,0 +1,50 @@
+name: Update AUR Package
+
+on:
+  workflow_dispatch:
+    inputs:
+      pkgname:
+        description: "Package name"
+        required: true
+      version:
+        description: "New version"
+        required: true
+      channel:
+        description: "Channel"
+        required: true
+
+jobs:
+  aur-publish:
+    name: Publish to AUR
+    runs-on: ubuntu-latest
+    steps:
+      - uses: actions/checkout@v2
+      - name: Generate PKGBUILD
+        run: |
+          export aur_pkgname=${{ github.event.inputs.pkgname }}
+          export aur_pkgver=$(echo ${{ github.event.inputs.version }} | sed 's/-/_/g')
+          export aur_channel=${{ github.event.inputs.channel }}
+
+          if [ {{ github.event.inputs.pkgname }} == "fig" ]; then
+            export aur_provides=""
+          else
+            export aur_provides="\nprovides=('fig')\nconflicts=('fig')"
+          fi
+
+          curl -sL https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz
+          export aur_sha256=$(sha256sum fig.tar | cut -d ' ' -f 1)
+
+          envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_provides} ${aur_sha256}' < bundle/archlinux/PKGBUILD.template > PKGBUILD
+
+          cat PKGBUILD
+
+      - name: Publish flyctl-bin to the AUR
+        uses: superfly/aur-releaser@ba29a0a809d7221713a104f9c9a23c34ee5b0742
+        with:
+          pkgname: ${{ github.event.inputs.pkgname }}
+          pkgbuild: PKGBUILD
+          commit_username: Grant G
+          commit_email: grant@fig.io
+          ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
+          commit_message: ${{ github.event.inputs.version }}
+          force_push: "true"
