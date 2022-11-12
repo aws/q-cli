@@ -36,7 +36,7 @@ jobs:
           curl -sL -o fig.tar.xz https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz
           export aur_sha256sum=$(sha256sum fig.tar.xz | cut -d ' ' -f 1)
 
-          envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_provides} ${aur_sha256}' < bundle/archlinux/PKGBUILD.template > PKGBUILD
+          envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_provides} ${aur_sha256sum}' < bundle/archlinux/PKGBUILD.template > PKGBUILD
 
           cat PKGBUILD
 
