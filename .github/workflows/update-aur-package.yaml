@@ -6,12 +6,25 @@ on:
       pkgname:
         description: "Package name"
         required: true
+        type: choice
+        options:
+          - fig
+          - fig-beta
+          - fig-nightly-bin
       version:
         description: "Version"
         required: true
       channel:
         description: "Channel"
         required: true
+        type: choice
+        options:
+          - stable
+          - beta
+          - nightly
+      pkgrel:
+        description: "Package release"
+        default: "1"
 
 jobs:
   aur-publish:
@@ -26,8 +39,9 @@ jobs:
           export aur_pkgname=${{ github.event.inputs.pkgname }}
           export aur_pkgver=$(echo ${{ github.event.inputs.version }} | sed 's/-/_/g')
           export aur_channel=${{ github.event.inputs.channel }}
+          export aur_pkgrel=${{ github.event.inputs.pkgrel }}
 
-          if [ {{ github.event.inputs.pkgname }} == "fig" ]; then
+          if [ ${{ github.event.inputs.pkgname }} == "fig" ]; then
             export aur_provides=""
           else
             export aur_provides=$(printf "\nprovides=('fig')\nconflicts=('fig')")
@@ -48,5 +62,5 @@ jobs:
           commit_username: Grant G
           commit_email: grant@fig.io
           ssh_private_key: ${{ secrets.AUR_SSH_PRIVATE_KEY }}
-          commit_message: ${{ github.event.inputs.version }}
+          commit_message: ${{ github.event.inputs.version }}-${{ github.event.inputs.pkgrel }}
           force_push: "true"
