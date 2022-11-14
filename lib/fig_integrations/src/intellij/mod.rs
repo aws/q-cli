@@ -127,6 +127,9 @@ impl Integration for IntelliJIntegration {
         self.uninstall().await?;
 
         let plugins_folder = application_folder.join("plugins");
+
+        tokio::fs::create_dir_all(&plugins_folder).await?;
+
         let destination_folder = plugins_folder.join(PLUGIN_SLUG);
 
         if destination_folder.exists() {
