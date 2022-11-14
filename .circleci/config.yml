@@ -26,6 +26,9 @@ parameters:
   build_targets:
     type: string
     default: "macos"
+  do_publish:
+    type: boolean
+    default: false
 
 workflows:
   version: 2
@@ -306,9 +309,8 @@ jobs:
             - bin/linux/x86_64/fig_desktop
 
   macos:
-    macos:
-      xcode: 13.4.1
-    resource_class: macos.x86.medium.gen2
+    machine: true
+    resource_class: withfig/mini-m1
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
@@ -318,24 +320,12 @@ jobs:
       - run:
           name: Remove gitconfig
           command: rm ~/.gitconfig
-      - run:
-          name: Install Build Dependencies
-          command: brew install jq protobuf node gh
       - rust/install:
           version: 1.65.0
       - run:
           name: Configure rust
           command: |
             ./desktop/build-scripts/rust-init.sh
-            rustup target add aarch64-apple-darwin
-            rustup target add x86_64-apple-darwin
-      - run:
-          name: Install tauri CLI
-          command: |
-            cd desktop
-            gh release download tauri-cli-macos
-            chmod +x cargo-tauri
-            mv cargo-tauri /usr/local/bin/cargo-tauri
       - run:
           name: Build fig_cli
           command: |
@@ -628,6 +618,8 @@ jobs:
       - image: cimg/base:edge-22.04
     resource_class: small
     steps:
+      - require:
+          condition: << pipeline.parameters.do_publish >>
       - checkout-desktop
       - install-fig-release
       - attach_workspace:
