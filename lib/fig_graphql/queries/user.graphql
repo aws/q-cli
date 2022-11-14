@@ -1,0 +1,9 @@
+query User {
+    currentUser {
+        settings
+        namespace {
+            username
+        }
+        createdAt
+    }
+}

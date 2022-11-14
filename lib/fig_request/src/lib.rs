@@ -1,11 +1,13 @@
 pub mod auth;
 pub mod defaults;
+mod error;
 pub mod reqwest_client;
 
 use std::time::Duration;
 
 use auth::get_token;
 use bytes::Bytes;
+pub use error::Error;
 use fig_settings::api::{
     host,
     release_host,
@@ -30,74 +32,12 @@ use serde::{
     Serialize,
 };
 use serde_json::Value;
-use thiserror::Error;
 
 pub fn client() -> Option<&'static Client> {
     reqwest_client::reqwest_client()
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("{error}")]
-    Fig {
-        error: String,
-        status: StatusCode,
-        sentry_id: Option<String>,
-    },
-    #[error(transparent)]
-    Graphql(#[from] GraphqlError),
-    #[error(transparent)]
-    Reqwest(#[from] reqwest::Error),
-    #[error("Status {0}")]
-    Status(StatusCode),
-    #[error(transparent)]
-    Serde(#[from] serde_json::Error),
-    #[error(transparent)]
-    Defaults(#[from] defaults::DefaultsError),
-    #[error(transparent)]
-    Io(#[from] std::io::Error),
-    #[error(transparent)]
-    Dir(#[from] fig_util::directories::DirectoryError),
-    #[error(transparent)]
-    RefreshError(#[from] auth::RefreshError),
-    #[error(transparent)]
-    SettingsError(#[from] fig_settings::Error),
-    #[error("No client")]
-    NoClient,
-    #[error("No token")]
-    NoToken,
-}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(transparent)]
-pub struct GraphqlError(Vec<serde_json::Map<String, serde_json::Value>>);
-
-impl std::fmt::Display for GraphqlError {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        for error in &self.0 {
-            if let Some(message) = error.get("message") {
-                match message.as_str() {
-                    Some(message) => write!(f, "{message}")?,
-                    None => write!(f, "{message}")?,
-                }
-            } else {
-                write!(f, "Unknown error")?;
-            }
-        }
-        Ok(())
-    }
-}
-
-impl std::error::Error for GraphqlError {}
-
-#[derive(Debug, Clone, Serialize, Deserialize)]
-#[serde(rename_all = "camelCase")]
-pub enum GraphqlResponse<T> {
-    Data(T),
-    Errors(GraphqlError),
-}
 
 pub trait Auth {}
 
@@ -191,9 +131,14 @@ impl Request<NoAuth> {
 
     pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
         let response = self.send().await?;
-        match response.json::<GraphqlResponse<T>>().await {
-            Ok(GraphqlResponse::Data(data)) => Ok(data),
-            Ok(GraphqlResponse::Errors(err)) => Err(err.into()),
+        match response.json::<graphql_client::Response<T>>().await {
+            Ok(response) => {
+                if let Some(errors) = response.errors {
+                    Err(Error::Graphql(errors))
+                } else {
+                    Ok(response.data.unwrap())
+                }
+            },
             Err(err) => Err(err.into()),
         }
     }
@@ -255,9 +200,14 @@ impl Request<AddAuth> {
 
     pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
         let response = self.send().await?;
-        match response.json::<GraphqlResponse<T>>().await {
-            Ok(GraphqlResponse::Data(data)) => Ok(data),
-            Ok(GraphqlResponse::Errors(err)) => Err(err.into()),
+        match response.json::<graphql_client::Response<T>>().await {
+            Ok(response) => {
+                if let Some(errors) = response.errors {
+                    Err(Error::Graphql(errors))
+                } else {
+                    Ok(response.data.unwrap())
+                }
+            },
             Err(err) => Err(err.into()),
         }
     }
@@ -324,9 +274,14 @@ impl Request<MaybeAuth> {
 
     pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
         let response = self.send().await?;
-        match response.json::<GraphqlResponse<T>>().await {
-            Ok(GraphqlResponse::Data(data)) => Ok(data),
-            Ok(GraphqlResponse::Errors(err)) => Err(err.into()),
+        match response.json::<graphql_client::Response<T>>().await {
+            Ok(response) => {
+                if let Some(errors) = response.errors {
+                    Err(Error::Graphql(errors))
+                } else {
+                    Ok(response.data.unwrap())
+                }
+            },
             Err(err) => Err(err.into()),
         }
     }
