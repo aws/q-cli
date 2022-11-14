@@ -161,6 +161,10 @@ fn main() {
                 supports_sudden_termination: Some(true),
                 ..Default::default()
             },
+            operating_system_version: OperatingSystemVersion {
+                minimum_system_version: Some("10.13".to_string()),
+                ..Default::default()
+            },
             ..Default::default()
         },
         input_method: bundle.input_method,
