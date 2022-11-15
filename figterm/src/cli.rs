@@ -2,7 +2,10 @@ use clap::Parser;
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
-pub struct Cli {}
+pub struct Cli {
+    #[arg(last = true)]
+    pub command: Option<Vec<String>>,
+}
 
 #[cfg(test)]
 mod tests {

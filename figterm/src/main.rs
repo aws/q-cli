@@ -283,21 +283,36 @@ fn get_parent_shell() -> Result<String> {
     }
 }
 
-fn build_shell_command() -> Result<CommandBuilder> {
-    let parent_shell = get_parent_shell()?;
-    let mut builder = CommandBuilder::new(parent_shell);
+fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
+    let mut builder = match command {
+        Some(command) => {
+            let mut iter = command.iter().map(|s| s.as_str());
 
-    if env::var("FIG_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
-        builder.arg("--login");
-    }
+            let mut builder = CommandBuilder::new(iter.next().unwrap());
+            for arg in iter {
+                builder.arg(arg);
+            }
+            builder
+        },
+        None => {
+            let parent_shell = get_parent_shell()?;
+            let mut builder = CommandBuilder::new(parent_shell);
 
-    if let Some(execution_string) = env::var("FIG_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
-        builder.args(["-c", &execution_string]);
-    }
+            if env::var("FIG_IS_LOGIN_SHELL").ok().as_deref() == Some("1") {
+                builder.arg("--login");
+            }
 
-    if let Some(extra_args) = env::var("FIG_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
-        builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
-    }
+            if let Some(execution_string) = env::var("FIG_EXECUTION_STRING").ok().filter(|s| !s.is_empty()) {
+                builder.args(["-c", &execution_string]);
+            }
+
+            if let Some(extra_args) = env::var("FIG_SHELL_EXTRA_ARGS").ok().filter(|s| !s.is_empty()) {
+                builder.args(extra_args.split_whitespace().filter(|arg| arg != &"--login"));
+            }
+
+            builder
+        },
+    };
 
     builder.env("FIG_TERM", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
@@ -323,8 +338,8 @@ fn build_shell_command() -> Result<CommandBuilder> {
 }
 
 #[cfg(unix)]
-fn launch_shell() -> Result<()> {
-    let cmd = build_shell_command()?.as_command()?;
+fn launch_shell(command: Option<&[String]>) -> Result<()> {
+    let cmd = build_shell_command(command)?.as_command()?;
     let mut args: Vec<&OsStr> = std::vec![cmd.get_program()];
     args.extend(cmd.get_args());
 
@@ -402,7 +417,7 @@ async fn fig_lint(current_line: &str) {
     }
 }
 
-fn figterm_main() -> Result<()> {
+fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let session_id = uuid::Uuid::new_v4().to_string();
     std::env::set_var("FIGTERM_SESSION_ID", &session_id);
 
@@ -417,7 +432,7 @@ fn figterm_main() -> Result<()> {
     };
 
     let pty = open_pty(&pty_size).context("Failed to open pty")?;
-    let command = build_shell_command()?;
+    let command = build_shell_command(command)?;
 
     let pty_name = pty.slave.get_name().unwrap_or_else(|| session_id.clone());
 
@@ -856,7 +871,8 @@ fn main() {
         false,
     );
 
-    Cli::parse();
+    let cli = Cli::parse();
+    let command = cli.command.as_deref();
 
     logger::stdio_debug_log(format!("FIG_LOG_LEVEL={}", fig_log::get_fig_log_level()));
 
@@ -866,7 +882,7 @@ fn main() {
         return;
     }
 
-    match figterm_main() {
+    match figterm_main(command) {
         Ok(()) => {
             info!("Exiting");
         },
@@ -877,7 +893,7 @@ fn main() {
 
             // Fallback to normal shell
             #[cfg(unix)]
-            if let Err(err) = launch_shell() {
+            if let Err(err) = launch_shell(command) {
                 capture_anyhow(&err);
                 logger::stdio_debug_log(err.to_string());
             }
