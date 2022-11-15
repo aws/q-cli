@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-fig_request = { version = "2.5.3", path = "../fig_request" }
+fig_request = { path = "../fig_request" }
 graphql_client = "0.11.0"
 serde = "1.0.145"
 serde_json = { version = "1.0.85", features = ["arbitrary_precision"] }
