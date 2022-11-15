@@ -21,25 +21,25 @@ use tracing::metadata::LevelFilter;
 
 const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
 
-#[tokio::main]
-async fn main() -> Result<()> {
+fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
 
     // Whitelist commands do not have sentry or telemetry, telemetry should only run on
     // user facing commands as performance is less important
-    let (_guard, track_join) = match (
+    let (_guard, track_join, multithread) = match (
         args.get(0).map(String::as_str),
         args.get(1).map(String::as_str),
         args.get(2).map(String::as_str),
     ) {
         (_, Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running"), _) => {
-            (None, None)
+            (None, None, false)
         },
         (Some("/Applications/Fig.app/Contents/MacOS/fig-darwin-universal"), _, _)
         | (_, Some("app"), Some("prompts"))
         | (_, Some("settings"), Some("init")) => (
             Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false)),
             None,
+            true,
         ),
         _ => {
             let sentry = fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false);
@@ -79,10 +79,11 @@ async fn main() -> Result<()> {
                         ),
                         false,
                     )),
+                    true,
                     #[cfg(windows)]
                     Some(async { Result::<()>::Ok(()) }),
                 ),
-                Some(_) => (Some(sentry), None),
+                Some(_) => (Some(sentry), None, true),
             }
         },
     };
@@ -116,12 +117,22 @@ async fn main() -> Result<()> {
         },
     };
 
-    let cli_join = parsed.execute();
+    let runtime = if multithread {
+        tokio::runtime::Builder::new_multi_thread()
+    } else {
+        tokio::runtime::Builder::new_current_thread()
+    }
+    .enable_all()
+    .build()?;
 
-    let result = match track_join {
-        Some(track_join) => tokio::join!(cli_join, track_join).0,
-        None => cli_join.await,
-    };
+    let result = runtime.block_on(async {
+        let cli_join = parsed.execute();
+
+        match track_join {
+            Some(track_join) => tokio::join!(cli_join, track_join).0,
+            None => cli_join.await,
+        }
+    });
 
     if let Err(err) = result {
         if get_max_fig_log_level() > LevelFilter::INFO {
