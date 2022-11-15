@@ -139,6 +139,15 @@ async fn main() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
                 let processes = system.processes_by_name(FIG_DESKTOP_PROCESS_NAME);
+
+                cfg_if::cfg_if! {
+                    if #[cfg(unix)] {
+                        let current_user_id = Some(nix::unistd::getuid().as_raw());
+                    } else {
+                        let current_user_id = None;
+                    }
+                };
+
                 for process in processes {
                     let pid = process.pid();
                     if current_pid != pid {
@@ -147,18 +156,43 @@ async fn main() {
                             let exe = process.exe().display();
                             eprintln!("Killing instance: {exe} ({pid})");
                         } else {
-                            let exe = process.exe().display();
-                            eprintln!("Fig is already running: {exe} ({pid})");
-                            match page {
-                                Some(ref page) => eprintln!("Opening /{page}..."),
-                                None => eprintln!("Opening Fig Window..."),
+                            let page = page.clone();
+                            let on_match = async {
+                                let exe = process.exe().display();
+
+                                let mut extra = vec![format!("pid={pid}")];
+
+                                if let Some(user_id) = process.user_id() {
+                                    extra.push(format!("uid={}", **user_id));
+                                }
+
+                                if let Some(group_id) = process.group_id() {
+                                    extra.push(format!("gid={}", *group_id));
+                                }
+
+                                eprintln!("Fig is already running: {exe} ({})", extra.join(" "),);
+                                match page {
+                                    Some(ref page) => eprintln!("Opening /{page}..."),
+                                    None => eprintln!("Opening Fig Window..."),
+                                }
+                                if let Err(err) =
+                                    fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page)
+                                        .await
+                                {
+                                    eprintln!("Failed to open Fig: {err}");
+                                }
+                                exit(0);
+                            };
+
+                            match (process.user_id().map(|uid| uid as &u32), current_user_id.as_ref()) {
+                                (Some(uid), Some(current_uid)) if uid == current_uid => {
+                                    on_match.await;
+                                },
+                                (_, None) => {
+                                    on_match.await;
+                                },
+                                _ => {},
                             }
-                            if let Err(err) =
-                                fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page).await
-                            {
-                                eprintln!("Failed to open Fig: {err}");
-                            }
-                            return;
                         }
                     }
                 }
@@ -210,8 +244,7 @@ async fn main() {
         platform::gtk::init().expect("Failed initializing GTK");
     }
 
-    let show_onboarding =
-        !fig_settings::state::get_bool_or("desktop.completedOnboarding", false) || !fig_request::auth::is_logged_in();
+    let show_onboarding = !fig_request::auth::is_logged_in();
 
     if show_onboarding {
         tracing::info!("Showing onboarding");
