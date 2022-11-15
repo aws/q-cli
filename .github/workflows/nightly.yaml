@@ -27,7 +27,7 @@ jobs:
 
       - name: "cut nightly release"
         run: |
-          git pull
+          git fetch > /dev/null
           git config user.email ci@fig.io
           git config user.name fig-ci
           git config push.autoSetupRemote true
