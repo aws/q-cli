@@ -10,6 +10,7 @@ use thiserror::Error;
 use tracing::info;
 use tracing::level_filters::LevelFilter;
 use tracing_appender::non_blocking::WorkerGuard;
+use tracing_subscriber::filter::Directive;
 use tracing_subscriber::prelude::*;
 use tracing_subscriber::{
     fmt,
@@ -41,6 +42,13 @@ fn log_path(log_file_name: impl AsRef<str>) -> Result<PathBuf> {
     Ok(directories::logs_dir()?.join(log_file_name.as_ref().replace(['/', '\\'], "_")))
 }
 
+fn try_fig_log_level() -> Option<String> {
+    FIG_LOG_LEVEL
+        .lock()
+        .clone()
+        .or_else(|| std::env::var("FIG_LOG_LEVEL").ok())
+}
+
 fn fig_log_level() -> String {
     FIG_LOG_LEVEL
         .lock()
@@ -49,9 +57,12 @@ fn fig_log_level() -> String {
 }
 
 fn create_filter_layer() -> EnvFilter {
-    EnvFilter::builder()
-        .with_default_directive(DEFAULT_FILTER.into())
-        .parse_lossy(fig_log_level())
+    match try_fig_log_level() {
+        Some(level) => EnvFilter::builder()
+            .with_default_directive(DEFAULT_FILTER.into())
+            .parse_lossy(level),
+        None => EnvFilter::default().add_directive(Directive::from(DEFAULT_FILTER)),
+    }
 }
 
 pub fn set_fig_log_level(level: String) -> Result<String> {

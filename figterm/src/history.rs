@@ -1,8 +1,6 @@
-use std::borrow::Cow;
 use std::fs::File;
 use std::io::{
     BufWriter,
-    Read,
     Write,
 };
 use std::path::PathBuf;
@@ -14,8 +12,6 @@ use flume::{
     bounded,
     Sender,
 };
-use once_cell::sync::Lazy;
-use regex::Regex;
 use rusqlite::{
     params,
     Connection,
@@ -52,25 +48,6 @@ pub async fn spawn_history_task() -> Sender<CommandInfo> {
     sender
 }
 
-static UNESCAPE_RE: Lazy<Regex> = Lazy::new(|| Regex::new(r"\\(.)").unwrap());
-
-fn unescape_string(s: &str) -> Cow<str> {
-    UNESCAPE_RE.replace_all(s, |caps: &regex::Captures| {
-        let c = caps.get(1).unwrap().as_str();
-        match c {
-            "n" => String::from("\n"),
-            "t" => String::from("\t"),
-            "\\" => String::from("\\"),
-            "\"" => String::from("\""),
-            "/" => String::from("/"),
-            "b" => String::from("\x08"),
-            "r" => String::from("\r"),
-            "f" => String::from("\x0c"),
-            _ => format!("\\{}", c),
-        }
-    })
-}
-
 fn escape_string(s: impl AsRef<str>) -> String {
     s.as_ref()
         .replace('\\', "\\\\")
@@ -90,15 +67,9 @@ impl History {
     pub fn load() -> Result<History> {
         trace!("Loading history");
 
-        let old_history_path = directories::fig_dir()?.join("history");
-
         let history_path: PathBuf = [directories::fig_dir().unwrap(), "fig.history".into()]
             .into_iter()
             .collect();
-
-        let mut old_history = Vec::new();
-
-        let history_exists = history_path.exists();
 
         let connection = Connection::open(&history_path)?;
 
@@ -112,68 +83,7 @@ impl History {
 
         let history = History { connection };
 
-        if old_history_path.exists() && !history_exists {
-            let mut file = File::open(&old_history_path)?;
-            let mut file_string = String::new();
-            file.read_to_string(&mut file_string)?;
-
-            let re = Regex::new(
-                r"- command: (.*)\n  exit_code: (.*)\n  shell: (.*)\n  session_id: (.*)\n  cwd: (.*)\n  time: (.*)",
-            )
-            .unwrap();
-
-            old_history = re
-                .captures_iter(&file_string)
-                .map(|cap| {
-                    let command = if cap[1].is_empty() {
-                        None
-                    } else {
-                        Some(unescape_string(&cap[1]).trim().to_string())
-                    };
-
-                    let shell = if cap[3].is_empty() {
-                        None
-                    } else {
-                        Some(unescape_string(&cap[3]).trim().to_string())
-                    };
-
-                    let session_id = if cap[4].is_empty() {
-                        None
-                    } else {
-                        Some(unescape_string(&cap[4]).trim().to_string())
-                    };
-
-                    let cwd = if cap[5].is_empty() {
-                        None
-                    } else {
-                        Some(PathBuf::from(unescape_string(&cap[5]).to_string()))
-                    };
-
-                    CommandInfo {
-                        command,
-                        shell,
-                        pid: None,
-                        session_id,
-                        cwd,
-                        start_time: cap[6]
-                            .parse()
-                            .ok()
-                            .map(|t: u64| std::time::UNIX_EPOCH + std::time::Duration::from_secs(t)),
-                        end_time: None,
-                        hostname: None,
-                        exit_code: cap[2].parse().ok(),
-                    }
-                })
-                .collect();
-        }
-
         migrate_history_db(&history.connection)?;
-
-        if !old_history.is_empty() {
-            for command in old_history {
-                history.insert_command_history(&command, false).ok();
-            }
-        }
 
         Ok(history)
     }

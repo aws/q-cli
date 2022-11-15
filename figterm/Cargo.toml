@@ -9,6 +9,7 @@ version.workspace = true
 [features]
 # Tests that do not work on CI
 desktop-tests = []
+profiling_early_exit = []
 
 [dependencies]
 alacritty_terminal = { path = "../lib/alacritty_terminal" }

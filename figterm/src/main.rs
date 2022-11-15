@@ -727,6 +727,8 @@ fn figterm_main() -> Result<()> {
                     input_res
                 }
                 res = master.read(&mut write_buffer) => {
+                    #[cfg(feature = "profiling_early_exit")]
+                    break 'select_loop Ok(());
                     match res {
                         Ok(0) => {
                             trace!("EOF from master");
