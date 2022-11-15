@@ -326,6 +326,8 @@ jobs:
           name: Configure rust
           command: |
             ./desktop/build-scripts/rust-init.sh
+            rustup target add x86_64-apple-darwin
+            rustup target add aarch64-apple-darwin
       - run:
           name: Build fig_cli
           command: |
