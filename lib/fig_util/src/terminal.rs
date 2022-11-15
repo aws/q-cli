@@ -23,6 +23,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
 pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Alacritty,
     Terminal::Kitty,
+    Terminal::GnomeConsole,
     Terminal::GnomeTerminal,
     Terminal::Konsole,
     Terminal::XfceTerminal,
