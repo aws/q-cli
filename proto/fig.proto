@@ -377,6 +377,8 @@ message InstallResponse {
   enum InstallationStatus {
     INSTALL_INSTALLED = 0;
     INSTALL_NOT_INSTALLED = 1;
+    // The integration is not supported on the given platform
+    INSTALL_NOT_SUPPORTED = 2;
   }
 
   oneof response {

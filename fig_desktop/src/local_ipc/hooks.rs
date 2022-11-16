@@ -29,8 +29,8 @@ pub async fn caret_position(
             window_id: AUTOCOMPLETE_ID,
             window_event: WindowEvent::UpdateWindowGeometry {
                 position: Some(WindowPosition::RelativeToCaret {
-                    caret_position: LogicalPosition::new(x, y),
-                    caret_size: LogicalSize::new(width, height),
+                    caret_position: LogicalPosition::new(x, y).into(),
+                    caret_size: LogicalSize::new(width, height).into(),
                 }),
                 size: None,
                 anchor: None,

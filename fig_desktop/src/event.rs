@@ -1,9 +1,9 @@
 use std::borrow::Cow;
 
 use wry::application::dpi::{
-    LogicalPosition,
     LogicalSize,
     Position,
+    Size,
 };
 use wry::application::event_loop::ControlFlow;
 use wry::application::window::Theme;
@@ -63,10 +63,7 @@ impl std::fmt::Display for EmitEventName {
 pub enum WindowPosition {
     Absolute(Position),
     Centered,
-    RelativeToCaret {
-        caret_position: LogicalPosition<f64>,
-        caret_size: LogicalSize<f64>,
-    },
+    RelativeToCaret { caret_position: Position, caret_size: Size },
 }
 
 #[derive(Debug, Clone)]

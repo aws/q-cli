@@ -9,8 +9,8 @@ use tracing::{
     trace,
 };
 use wry::application::dpi::{
-    LogicalPosition,
-    LogicalSize,
+    PhysicalPosition,
+    PhysicalSize,
 };
 use x11rb::connection::Connection;
 use x11rb::properties::WmClass;
@@ -174,14 +174,16 @@ fn process_window(
         class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
         instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
         window_geometry: window_reply.ok().map(|window_reply| Rect {
-            position: LogicalPosition {
-                x: window_reply.x as f64,
-                y: window_reply.y as f64,
-            },
-            size: LogicalSize {
-                width: window_reply.width as f64,
-                height: window_reply.height as f64,
-            },
+            position: PhysicalPosition {
+                x: window_reply.x,
+                y: window_reply.y,
+            }
+            .into(),
+            size: PhysicalSize {
+                width: window_reply.width,
+                height: window_reply.height,
+            }
+            .into(),
         }),
     });
 

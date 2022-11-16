@@ -204,8 +204,8 @@ pub async fn handle_incoming(conn: &mut UnixStream, buf: &mut BytesMut, sway_sta
                                             geometry.get("height").and_then(|h| h.as_i64()).unwrap_or(0) as f64;
 
                                         Rect {
-                                            position: LogicalPosition { x, y },
-                                            size: LogicalSize { width, height },
+                                            position: LogicalPosition { x, y }.into(),
+                                            size: LogicalSize { width, height }.into(),
                                         }
                                     },
                                     _ => {

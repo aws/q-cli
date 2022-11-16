@@ -63,6 +63,9 @@ pub(super) enum DisplayServerState {
     Sway(Arc<sway::SwayState>),
 }
 
+#[derive(Debug)]
+pub struct PlatformWindowImpl;
+
 pub(super) struct PlatformStateImpl {
     pub(super) proxy: EventLoopProxy,
     pub(super) active_window_data: Mutex<Option<ActiveWindowData>>,
@@ -206,16 +209,15 @@ impl PlatformStateImpl {
     }
 
     pub(super) fn get_active_window(&self) -> Option<super::PlatformWindow> {
-        // TODO: make this correct
-        // match &*self.display_server_state.lock() {
-        //     Some(DisplayServerState::X11(x11_state)) => x11_state
-        //         .active_window
-        //         .lock()
-        //         .as_ref()
-        //         .and_then(|window| window.window_geometry.clone()),
-        //     _ => None,
-        // }
-        None
+        match &*self.display_server_state.lock() {
+            Some(DisplayServerState::X11(x11_state)) => x11_state.active_window.lock().as_ref().and_then(|window| {
+                window.window_geometry.map(|rect| super::PlatformWindow {
+                    rect,
+                    inner: PlatformWindowImpl,
+                })
+            }),
+            _ => None,
+        }
     }
 
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
@@ -232,6 +234,11 @@ impl PlatformStateImpl {
     }
 
     pub(super) fn shell() -> Cow<'static, str> {
+        for shell in &["bash", "zsh", "sh"] {
+            if let Ok(shell_path) = which::which(shell) {
+                return shell_path.to_string_lossy().to_string().into();
+            }
+        }
         "/bin/bash".into()
     }
 
@@ -279,6 +286,3 @@ pub mod gtk {
         }
     }
 }
-
-#[derive(Debug)]
-pub struct PlatformWindowImpl;

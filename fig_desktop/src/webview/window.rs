@@ -156,7 +156,7 @@ impl WindowState {
                 window.current_monitor().map(|monitor| {
                     let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
                     let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
-                    (monitor, monitor_position, monitor_size)
+                    (monitor, monitor_position, monitor_size, scale_factor)
                 })
             },
             WindowPosition::RelativeToCaret { caret_position, .. } => window
@@ -164,23 +164,23 @@ impl WindowState {
                 .find(|monitor| {
                     let scale_factor = monitor.scale_factor();
                     let monitor_frame = Rect {
-                        position: monitor.position().to_logical(scale_factor),
-                        size: monitor.size().to_logical(scale_factor),
+                        position: monitor.position().into(),
+                        size: monitor.size().into(),
                     };
-                    monitor_frame.contains(caret_position)
+                    monitor_frame.contains(caret_position, scale_factor)
                 })
                 .map(|monitor| {
                     let scale_factor = monitor.scale_factor();
                     let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
                     let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
-                    (monitor, monitor_position, monitor_size)
+                    (monitor, monitor_position, monitor_size, scale_factor)
                 }),
         };
 
         let position = match position {
             WindowPosition::Absolute(position) => position,
             WindowPosition::Centered => match monitor_state {
-                Some((_, monitor_position, monitor_size)) => Position::Logical(LogicalPosition::new(
+                Some((_, monitor_position, monitor_size, _scale_factor)) => Position::Logical(LogicalPosition::new(
                     monitor_position.x + monitor_size.width * 0.5 - size.width * 0.5,
                     monitor_position.y + monitor_size.height * 0.5 - size.height * 0.5,
                 )),
@@ -192,29 +192,40 @@ impl WindowState {
             } => {
                 let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
-                let (overflows_monitor_above, overflows_monitor_below) = match &monitor_state {
-                    Some((_, monitor_position, monitor_size)) => (
-                        monitor_position.y >= caret_position.y - max_height,
-                        monitor_position.y + monitor_size.height < caret_position.y + caret_size.height + max_height,
-                    ),
-                    None => (false, false),
-                };
+                let (caret_position, overflows_monitor_above, overflows_monitor_below, scale_factor) =
+                    match &monitor_state {
+                        Some((_, monitor_position, monitor_size, scale_factor)) => {
+                            let logical_caret_position = caret_position.to_logical::<f64>(*scale_factor);
+                            (
+                                logical_caret_position,
+                                monitor_position.y >= logical_caret_position.y - max_height,
+                                monitor_position.y + monitor_size.height
+                                    < logical_caret_position.y
+                                        + caret_size.to_logical::<f64>(*scale_factor).height
+                                        + max_height,
+                                *scale_factor,
+                            )
+                        },
+                        None => (caret_position.to_logical(1.0), false, false, 1.0),
+                    };
+
+                let caret_size = caret_size.to_logical::<f64>(scale_factor);
 
                 let overflows_window_below = platform_state
                     .get_active_window()
-                    .map(|window| window.rect.bottom() < max_height + caret_position.y + caret_size.height)
+                    .map(|window| window.rect.bottom(scale_factor) < max_height + caret_position.y + caret_size.height)
                     .unwrap_or(false);
 
                 let above = !overflows_monitor_above & (overflows_monitor_below | overflows_window_below);
 
-                let mut x = caret_position.x + anchor.width;
-                let mut y = match above {
+                let mut x: f64 = caret_position.x + anchor.width;
+                let mut y: f64 = match above {
                     true => caret_position.y - size.height - anchor.height,
                     false => caret_position.y + caret_size.height + anchor.height,
                 };
 
                 #[allow(clippy::all)]
-                if let Some((_, monitor_position, monitor_size)) = &monitor_state {
+                if let Some((_, monitor_position, monitor_size, _)) = &monitor_state {
                     x = x
                         .min(monitor_position.x + monitor_size.width - size.width)
                         .max(monitor_position.x);
@@ -244,8 +255,7 @@ impl WindowState {
                 } else {
                     self.webview.window().set_inner_size(size);
                 }
-            }
-            else {
+            } else {
                 self.webview.window().set_inner_size(size);
             }
         }
@@ -365,12 +375,12 @@ impl WindowState {
                 let url = serde_json::json!(self.url.lock().clone());
 
                 self.webview
-                    .evaluate_script(&dbg!(format!(
+                    .evaluate_script(&format!(
                         "if (window.location.href === 'about:blank') {{\
                             console.log('Reloading window to', {url});\
                             window.location.href = {url};\
                         }}"
-                    )))
+                    ))
                     .unwrap();
             },
             WindowEvent::Reload => {
@@ -379,7 +389,7 @@ impl WindowState {
                 let url = serde_json::json!(self.url.lock().clone());
 
                 self.webview
-                    .evaluate_script(&dbg!(format!(
+                    .evaluate_script(&format!(
                         "if (window.location.href === 'about:blank') {{\
                             console.log('Reloading window to', {url});\
                             window.location.href = {url};\
@@ -387,7 +397,7 @@ impl WindowState {
                             console.log('Reloading window');\
                             window.location.reload();\
                         }}"
-                    )))
+                    ))
                     .unwrap();
             },
             WindowEvent::Emit { event_name, payload } => {

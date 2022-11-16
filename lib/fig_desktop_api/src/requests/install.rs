@@ -28,6 +28,15 @@ async fn integration_status(integration: impl fig_integrations::Integration) -> 
     })
 }
 
+#[allow(dead_code)]
+fn integration_unsupported() -> ServerOriginatedSubMessage {
+    ServerOriginatedSubMessage::InstallResponse(InstallResponse {
+        response: Some(Response::InstallationStatus(
+            InstallationStatus::InstallNotSupported.into(),
+        )),
+    })
+}
+
 fn integration_result(result: Result<(), impl Display>) -> ServerOriginatedSubMessage {
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
         response: Some(Response::Result(match result {
@@ -188,7 +197,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
 
                     integration_status(InputMethod::default()).await
                 } else {
-                    integration_result(Err("Input method status is only supported on macOS"))
+                    integration_unsupported()
                 }
             }
         },

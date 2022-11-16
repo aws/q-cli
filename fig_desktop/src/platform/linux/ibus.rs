@@ -12,7 +12,9 @@ use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
     PhysicalPosition,
+    PhysicalSize,
     Position,
+    Size,
 };
 use zbus::export::futures_util::TryStreamExt;
 use zbus::fdo::DBusProxy;
@@ -82,15 +84,26 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                             .as_ref()
                                             .map(|x| x.positioning_kind())
                                             .unwrap_or(PositioningKind::Physical);
+
+                                        let (caret_position, caret_size): (Position, Size) = match positioning_kind {
+                                            PositioningKind::Logical => (
+                                                LogicalPosition::new(body.0 as f64, body.1 as f64).into(),
+                                                LogicalSize::new(body.2 as f64, body.3 as f64).into(),
+                                            ),
+                                            PositioningKind::Physical => (
+                                                PhysicalPosition::new(body.0, body.1).into(),
+                                                PhysicalSize::new(body.2, body.3).into(),
+                                            ),
+                                        };
+
                                         proxy
                                             .send_event(Event::WindowEvent {
                                                 window_id: AUTOCOMPLETE_ID.clone(),
                                                 window_event: WindowEvent::UpdateWindowGeometry {
-                                                    position: Some(WindowPosition::Absolute(position(
-                                                        positioning_kind,
-                                                        body.0,
-                                                        body.1 + body.3,
-                                                    ))),
+                                                    position: Some(WindowPosition::RelativeToCaret {
+                                                        caret_position,
+                                                        caret_size,
+                                                    }),
                                                     size: None,
                                                     anchor: None,
                                                 },
@@ -142,11 +155,13 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                     caret_position: LogicalPosition {
                                                         x: abs.0 as f64,
                                                         y: abs.1 as f64,
-                                                    },
+                                                    }
+                                                    .into(),
                                                     caret_size: LogicalSize {
                                                         width: body.2 as f64,
                                                         height: body.3 as f64,
-                                                    },
+                                                    }
+                                                    .into(),
                                                 }),
                                                 size: None,
                                                 anchor: None,
@@ -172,14 +187,4 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
     });
 
     Ok(())
-}
-
-fn position(kind: PositioningKind, x: i32, y: i32) -> Position {
-    match kind {
-        PositioningKind::Logical => Position::Logical(LogicalPosition {
-            x: x as f64,
-            y: y as f64,
-        }),
-        PositioningKind::Physical => Position::Physical(PhysicalPosition { x, y }),
-    }
 }

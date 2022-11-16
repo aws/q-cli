@@ -142,8 +142,8 @@ pub struct PlatformWindowImpl {
 impl From<CGRect> for Rect {
     fn from(cgr: CGRect) -> Rect {
         Rect {
-            position: LogicalPosition::new(cgr.origin.x, cgr.origin.y),
-            size: LogicalSize::new(cgr.size.width, cgr.size.height),
+            position: LogicalPosition::new(cgr.origin.x, cgr.origin.y).into(),
+            size: LogicalSize::new(cgr.size.width, cgr.size.height).into(),
         }
     }
 }
@@ -695,8 +695,8 @@ impl PlatformStateImpl {
 
         if caret.valid {
             Some(Rect {
-                position: LogicalPosition::new(caret.x, caret.y),
-                size: LogicalSize::new(DEFAULT_CARET_WIDTH, caret.height),
+                position: LogicalPosition::new(caret.x, caret.y).into(),
+                size: LogicalSize::new(DEFAULT_CARET_WIDTH, caret.height).into(),
             })
         } else {
             None

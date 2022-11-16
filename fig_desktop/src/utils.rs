@@ -11,8 +11,8 @@ use serde::{
 };
 use serde_json::json;
 use wry::application::dpi::{
-    LogicalPosition,
-    LogicalSize,
+    Position,
+    Size,
 };
 use wry::application::window::Icon;
 
@@ -101,32 +101,37 @@ mod tests {
 // todo: rename to LogicalFrame
 // A logical rect, where the origin point is the top left corner.
 pub struct Rect {
-    pub position: LogicalPosition<f64>,
-    pub size: LogicalSize<f64>,
+    pub position: Position,
+    pub size: Size,
 }
 
 #[allow(dead_code)]
 impl Rect {
-    pub fn left(&self) -> f64 {
-        self.position.x
+    pub fn left(&self, scale_factor: f64) -> f64 {
+        self.position.to_logical::<f64>(scale_factor).x
     }
 
-    pub fn right(&self) -> f64 {
-        self.position.x + self.size.width
+    pub fn right(&self, scale_factor: f64) -> f64 {
+        self.position.to_logical::<f64>(scale_factor).x + self.size.to_logical::<f64>(scale_factor).width
     }
 
-    pub fn top(&self) -> f64 {
-        self.position.y
+    pub fn top(&self, scale_factor: f64) -> f64 {
+        self.position.to_logical::<f64>(scale_factor).y
     }
 
-    pub fn bottom(&self) -> f64 {
-        self.position.y + self.size.height
+    pub fn bottom(&self, scale_factor: f64) -> f64 {
+        self.position.to_logical::<f64>(scale_factor).y + self.size.to_logical::<f64>(scale_factor).height
     }
 
-    pub fn contains(&self, point: LogicalPosition<f64>) -> bool {
-        point.x >= self.position.x
-            && point.x <= self.position.x + self.size.width
-            && point.y >= self.position.y
-            && point.y <= self.position.y + self.size.height
+    pub fn contains(&self, point: Position, scale_factor: f64) -> bool {
+        let point = point.to_logical::<f64>(scale_factor);
+
+        let rect_position = self.position.to_logical::<f64>(scale_factor);
+        let rect_size = self.size.to_logical::<f64>(scale_factor);
+
+        point.x >= rect_position.x
+            && point.x <= rect_position.x + rect_size.width
+            && point.y >= rect_position.y
+            && point.y <= rect_position.y + rect_size.height
     }
 }

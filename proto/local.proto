@@ -243,6 +243,7 @@ message FileChangedHook {
 }
 
 message CaretPositionHook {
+  // TODO(grant): support physical size
   double x = 1;
   double y = 2;
   double width = 3;
