@@ -45,7 +45,10 @@ use serde_json::{
 use time::format_description::well_known::Rfc3339;
 
 use super::OutputFormat;
-use crate::util::dialoguer_theme;
+use crate::util::{
+    choose,
+    dialoguer_theme,
+};
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
 pub enum RootUserSubcommand {
@@ -133,15 +136,14 @@ impl RootUserSubcommand {
                 let chosen = match options.len() {
                     1 => options[0],
                     _ => {
-                        options[dialoguer::Select::with_theme(&crate::util::dialoguer_theme())
-                            .default(0)
-                            .with_prompt(if not_now {
+                        options[choose(
+                            if not_now {
                                 "Would you like to log in?"
                             } else {
                                 "Select action"
-                            })
-                            .items(&options)
-                            .interact()?]
+                            },
+                            &options,
+                        )?]
                     },
                 };
 

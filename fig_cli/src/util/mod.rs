@@ -16,7 +16,10 @@ use std::time::Duration;
 use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use dialoguer::FuzzySelect;
+use dialoguer::{
+    FuzzySelect,
+    Select,
+};
 use eyre::{
     bail,
     ContextCompat,
@@ -248,7 +251,7 @@ pub fn match_regex(regex: impl AsRef<str>, input: impl AsRef<str>) -> Option<Str
 
 static IS_TTY: Lazy<bool> = Lazy::new(|| std::env::var("TTY").is_ok());
 
-pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
+pub fn choose_fuzzy(prompt: &str, options: &[impl ToString]) -> Result<usize> {
     tokio::spawn(async {
         tokio::signal::ctrl_c().await.unwrap();
         crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
@@ -268,7 +271,32 @@ pub fn choose(prompt: &str, options: Vec<String>) -> Result<usize> {
         .items(&options)
         .default(0)
         .with_prompt(prompt)
-        .interact()?)
+        .interact_opt()?
+        .ok_or_else(|| eyre::eyre!("Cancelled"))?)
+}
+
+pub fn choose(prompt: &str, options: &[impl ToString]) -> Result<usize> {
+    tokio::spawn(async {
+        tokio::signal::ctrl_c().await.unwrap();
+        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+        std::process::exit(0);
+    });
+
+    if options.is_empty() {
+        bail!("no options passed to choose")
+    }
+
+    if !*IS_TTY {
+        warn!("choose called without TTY, choosing first option");
+        return Ok(0);
+    }
+
+    Ok(Select::with_theme(&dialoguer_theme())
+        .items(&options)
+        .default(0)
+        .with_prompt(prompt)
+        .interact_opt()?
+        .ok_or_else(|| eyre::eyre!("Cancelled"))?)
 }
 
 pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {

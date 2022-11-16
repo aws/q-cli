@@ -18,7 +18,7 @@ use tokio::process::Command;
 use tracing::warn;
 
 use crate::util::{
-    choose,
+    choose_fuzzy,
     dialoguer_theme,
 };
 
@@ -99,9 +99,9 @@ impl SshSubcommand {
                 },
                 None => {
                     user = Some(fig_api_client::user::account().await?);
-                    let idx = choose(
+                    let idx = choose_fuzzy(
                         "Choose a host to connect to",
-                        hosts
+                        &hosts
                             .iter()
                             .map(|host| {
                                 format!(
@@ -115,7 +115,7 @@ impl SshSubcommand {
                                     host.nick_name,
                                 )
                             })
-                            .collect(),
+                            .collect::<Vec<String>>(),
                     )?;
                     break hosts.get(idx).cloned().unwrap();
                 },
@@ -208,9 +208,9 @@ impl SshSubcommand {
                     if user.is_none() {
                         user = Some(fig_api_client::user::account().await?);
                     }
-                    let idx = choose(
+                    let idx = choose_fuzzy(
                         "Choose an identity to connect with",
-                        identities
+                        &identities
                             .iter()
                             .map(|iden| {
                                 format!(
@@ -224,7 +224,7 @@ impl SshSubcommand {
                                     iden.display_name,
                                 )
                             })
-                            .collect(),
+                            .collect::<Vec<String>>(),
                     )?;
                     identities.get(idx)
                 },
