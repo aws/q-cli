@@ -46,7 +46,7 @@ pub async fn ibus_proxy() -> Result<IBusProxy<'static>, CrateError> {
     Ok(IBusProxy::new(ibus_bus().await?).await?)
 }
 
-#[dbus_proxy(interface = "org.freedesktop.IBus")]
+#[dbus_proxy(interface = "org.freedesktop.IBus", assume_defaults = true)]
 pub trait IBus {
     /// CreateInputContext method
     fn create_input_context(&self, client_name: &str) -> zbus::Result<OwnedObjectPath>;

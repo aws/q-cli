@@ -35,6 +35,7 @@ use crate::{
 pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStateImpl>) -> Result<()> {
     let ibus_connection = ibus_bus_new().await?;
     debug!("Connected to ibus");
+    #[allow(deprecated)]
     DBusProxy::new(&ibus_connection)
         .await?
         .add_match("eavesdrop=true")
