@@ -483,7 +483,7 @@ impl PlatformStateImpl {
                                 true
                             }
                         },
-                        None => true,
+                        None => false,
                     };
 
                     let is_enabled = !is_terminal_disabled
