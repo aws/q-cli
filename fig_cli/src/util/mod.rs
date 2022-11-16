@@ -267,12 +267,12 @@ pub fn choose_fuzzy(prompt: &str, options: &[impl ToString]) -> Result<usize> {
         return Ok(0);
     }
 
-    Ok(FuzzySelect::with_theme(&dialoguer_theme())
-        .items(&options)
+    FuzzySelect::with_theme(&dialoguer_theme())
+        .items(options)
         .default(0)
         .with_prompt(prompt)
         .interact_opt()?
-        .ok_or_else(|| eyre::eyre!("Cancelled"))?)
+        .ok_or_else(|| eyre::eyre!("Cancelled"))
 }
 
 pub fn choose(prompt: &str, options: &[impl ToString]) -> Result<usize> {
@@ -291,12 +291,12 @@ pub fn choose(prompt: &str, options: &[impl ToString]) -> Result<usize> {
         return Ok(0);
     }
 
-    Ok(Select::with_theme(&dialoguer_theme())
-        .items(&options)
+    Select::with_theme(&dialoguer_theme())
+        .items(options)
         .default(0)
         .with_prompt(prompt)
         .interact_opt()?
-        .ok_or_else(|| eyre::eyre!("Cancelled"))?)
+        .ok_or_else(|| eyre::eyre!("Cancelled"))
 }
 
 pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {
