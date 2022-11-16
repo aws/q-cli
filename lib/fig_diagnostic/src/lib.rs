@@ -84,7 +84,8 @@ impl EnvVarDiagnostic {
                     || key == "GLFW_IM_MODULE"
                     || key == "GTK_IM_MODULE"
                     || key == "QT_IM_MODULE"
-                    || key == "XMODIFIERS")
+                    || key == "XMODIFIERS"
+                    || key == "__CFBundleIdentifier")
                     && !key.contains("TOKEN")
                     && !key.contains("KEY")
                     && !key.contains("SECRET")

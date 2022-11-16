@@ -1403,6 +1403,48 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteActiveCheck {
     }
 }
 
+struct SupportedTerminalCheck;
+
+#[async_trait]
+impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "Terminal support".into()
+    }
+
+    fn get_type(&self, _: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
+        if fig_util::system_info::is_remote() {
+            DoctorCheckType::NoCheck
+        } else {
+            match platform {
+                Platform::MacOs => DoctorCheckType::NormalCheck,
+                // We can promote this to normal check once we have better terminal detection on other platforms,
+                // also we should probably use process tree climbing instead of env vars
+                _ => DoctorCheckType::SoftCheck,
+            }
+        }
+    }
+
+    async fn check(&self, terminal: &Option<Terminal>) -> Result<(), DoctorError> {
+        if terminal.is_none() {
+            Err(DoctorError::Error {
+                reason: "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run `fig issue`".into(),
+                info: vec![
+                    #[cfg(target_os = "macos")]
+                    format!(
+                        "__CFBundleIdentifier: {}",
+                        std::env::var("__CFBundleIdentifier").unwrap_or_else(|_| "<not-set>".into())
+                    )
+                    .into(),
+                ],
+                fix: None,
+                error: None,
+            })
+        } else {
+            Ok(())
+        }
+    }
+}
+
 struct ItermIntegrationCheck;
 
 #[async_trait]
@@ -2372,6 +2414,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         run_checks_with_context(
             "Let's check your terminal integrations...",
             vec![
+                &SupportedTerminalCheck,
                 // &ItermIntegrationCheck,
                 &ItermBashIntegrationCheck,
                 // TODO(sean) re-enable on macos once IME/terminal integrations are sorted
