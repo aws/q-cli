@@ -1,13 +1,26 @@
 use std::fmt::Display;
 
-use newton::{
-    Color,
-    DisplayState,
+use termwiz::color::ColorAttribute;
+use termwiz::surface::Surface;
+
+use super::ComponentData;
+use crate::event_loop::{
+    Event,
+    State,
 };
-
 use crate::input::InputAction;
-use crate::Style;
+use crate::surface_ext::SurfaceExt;
+use crate::Component;
 
+const MAX_ROWS: i32 = 6;
+
+#[derive(Debug)]
+pub enum SelectEvent {
+    /// The user has selected an option
+    OptionSelected { id: String, option: String },
+}
+
+#[derive(Debug)]
 pub struct Select {
     text: String,
     hint: Option<String>,
@@ -18,98 +31,69 @@ pub struct Select {
     options: Vec<String>,
     sorted_options: Vec<usize>,
     validate: bool,
-    focused: bool,
-    signal: Box<dyn Fn(String)>,
+    inner: ComponentData,
 }
 
-const MAX_ROWS: i32 = 6;
-
-impl Select {
-    pub fn new(options: Vec<String>, validate: bool, signal: impl Fn(String) + 'static) -> Self {
-        Self {
-            text: Default::default(),
-            hint: None,
-            cursor: 0,
-            cursor_offset: 0,
-            index: Default::default(),
-            index_offset: 0,
-            options,
-            sorted_options: vec![],
-            validate,
-            focused: false,
-            signal: Box::new(signal),
-        }
-    }
-
-    pub fn with_text(mut self, text: impl Display) -> Self {
-        self.text = text.to_string();
-        self.cursor = self.text.len();
-        self
-    }
-
-    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
-        self.hint = Some(hint.into());
-        self
-    }
-
-    pub(crate) fn initialize(&mut self, width: &mut i32, height: &mut i32) {
+impl Component for Select {
+    fn initialize(&mut self, _: &mut State) {
         let mut w = self
             .text
             .len()
             .max(self.options.iter().fold(0, |acc, option| acc.max(option.len())))
             .max(60);
+
         if let Some(hint) = &self.hint {
             w = w.max(hint.len());
         }
 
-        *width = i32::try_from(w).unwrap();
-        *height = 1;
+        self.inner.width = w as f64;
+        self.inner.height = 1.0;
     }
 
-    pub(crate) fn draw(&self, renderer: &mut DisplayState, style: &Style, x: i32, y: i32, width: i32, height: i32) {
-        if height <= 0 || width <= 0 {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
+        if height <= 0.0 || width <= 0.0 {
             return;
         }
 
-        let (width, height) = match (usize::try_from(width), usize::try_from(height)) {
-            (Ok(width), Ok(height)) => (width, height),
-            _ => return,
-        };
+        let style = self.style(state);
 
-        let arrow = match self.focused {
+        let width = width as usize;
+        let height = height as usize;
+
+        let arrow = match self.inner.focus {
             true => '▿',
             false => '▹',
         };
 
-        renderer.draw_symbol(arrow, x, y, style.color(), style.background_color(), false);
+        surface.draw_text(arrow, x, y, style.color(), style.background_color(), false);
 
         match self.text.is_empty() {
             true => {
                 if let Some(hint) = &self.hint {
-                    renderer.draw_string(
+                    surface.draw_text(
                         &hint.as_str()[self.cursor_offset..hint.len().min(width - 2 + self.cursor_offset)],
-                        x + 2,
+                        x + 2.0,
                         y,
-                        Color::DarkGrey,
+                        ColorAttribute::PaletteIndex(8),
                         style.background_color(),
                         false,
                     );
                 }
             },
             false => {
-                renderer.draw_string(
+                surface.draw_text(
                     &self.text.as_str()[self.cursor_offset..self.text.len().min(width - 2 + self.cursor_offset)],
-                    x + 2,
+                    x + 2.0,
                     y,
                     style.color(),
                     style.background_color(),
                     false,
                 );
 
-                if self.focused {
-                    renderer.draw_symbol(
+                if self.inner.focus {
+                    surface.draw_text(
                         self.text.chars().nth(self.cursor).unwrap_or(' '),
-                        x + 2 + i32::try_from(self.cursor).unwrap() - i32::try_from(self.cursor_offset).unwrap(),
+                        x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
                         y,
                         style.background_color(),
                         style.color(),
@@ -136,15 +120,15 @@ impl Select {
             if let Some(index) = self.index {
                 if i == index - self.index_offset.min(index) {
                     background_color = color;
-                    color = Color::Black;
+                    color = ColorAttribute::PaletteIndex(0);
                 }
             }
 
             let option = self.options[*option].as_str();
-            renderer.draw_string(
+            surface.draw_text(
                 &option[0..option.len().min(width)],
-                x + 2,
-                y + i32::try_from(i).unwrap() + 1,
+                x + 2.0,
+                y + i as f64 + 1.0,
                 color,
                 background_color,
                 false,
@@ -152,8 +136,8 @@ impl Select {
         }
     }
 
-    pub(crate) fn on_input_action(&mut self, height: &mut i32, input: InputAction) {
-        match input {
+    fn on_input_action(&mut self, _: &mut State, input_action: InputAction) -> bool {
+        match input_action {
             InputAction::Left => self.cursor -= 1.min(self.cursor),
             InputAction::Right => self.cursor += 1.min(self.text.len() - self.cursor),
             InputAction::Up => {
@@ -209,7 +193,7 @@ impl Select {
                     },
                     false => {
                         if self.cursor == 0 {
-                            return;
+                            return true;
                         }
 
                         self.text.remove(self.cursor - 1);
@@ -251,18 +235,28 @@ impl Select {
             _ => (),
         }
 
-        *height = 1 + MAX_ROWS.min(i32::try_from(self.sorted_options.len()).unwrap());
+        self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.sorted_options.len()).unwrap()) as f64;
+
+        true
     }
 
-    pub(crate) fn on_focus(&mut self, height: &mut i32, focused: bool) {
-        match focused {
+    fn on_resize(&mut self, _: &mut State, width: f64, _: f64) {
+        let width = width.round() as usize;
+
+        if self.cursor >= width {
+            self.cursor_offset = self.cursor - width;
+        }
+    }
+
+    fn on_focus(&mut self, state: &mut State, focus: bool) {
+        match focus {
             true => {
                 for i in 0..self.options.len() {
                     if self.options[i].contains(&self.text) {
                         self.sorted_options.push(i);
                     }
                 }
-                *height = 1 + MAX_ROWS.min(i32::try_from(self.sorted_options.len()).unwrap());
+                self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.sorted_options.len()).unwrap()) as f64;
             },
             false => {
                 if let Some(index) = self.index {
@@ -278,21 +272,57 @@ impl Select {
                 self.index_offset = 0;
 
                 self.sorted_options.clear();
-                *height = 1;
+                self.inner.height = 1.0;
 
                 if !self.text.is_empty() {
-                    (self.signal)(self.text.clone());
+                    state.event_buffer.push(Event::Select(SelectEvent::OptionSelected {
+                        id: self.inner.id.to_owned(),
+                        option: self.text.clone(),
+                    }));
                 }
             },
         }
-        self.focused = focused;
+
+        self.inner.focus = focus;
     }
 
-    pub(crate) fn on_resize(&mut self, width: i32) {
-        if let Ok(width) = usize::try_from(width) {
-            if self.cursor >= width {
-                self.cursor_offset = self.cursor - width;
-            }
+    fn class(&self) -> &'static str {
+        "select"
+    }
+
+    fn inner(&self) -> &super::ComponentData {
+        &self.inner
+    }
+
+    fn inner_mut(&mut self) -> &mut super::ComponentData {
+        &mut self.inner
+    }
+}
+
+impl Select {
+    pub fn new(id: impl ToString, options: Vec<String>, validate: bool) -> Self {
+        Self {
+            text: Default::default(),
+            hint: None,
+            cursor: 0,
+            cursor_offset: 0,
+            index: Default::default(),
+            index_offset: 0,
+            options,
+            sorted_options: vec![],
+            validate,
+            inner: ComponentData::new(id.to_string(), true),
         }
+    }
+
+    pub fn with_text(mut self, text: impl Display) -> Self {
+        self.text = text.to_string();
+        self.cursor = self.text.len();
+        self
+    }
+
+    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
+        self.hint = Some(hint.into());
+        self
     }
 }

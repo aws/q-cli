@@ -79,9 +79,9 @@ fn main() -> Result<()> {
                         ),
                         false,
                     )),
-                    true,
                     #[cfg(windows)]
                     Some(async { Result::<()>::Ok(()) }),
+                    true,
                 ),
                 Some(_) => (Some(sentry), None, true),
             }

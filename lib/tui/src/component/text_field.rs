@@ -1,10 +1,19 @@
-use newton::{
-    Color,
-    DisplayState,
-};
+use termwiz::color::ColorAttribute;
+use termwiz::surface::Surface;
 
+use crate::component::ComponentData;
+use crate::event_loop::{
+    Event,
+    State,
+};
 use crate::input::InputAction;
-use crate::Style;
+use crate::surface_ext::SurfaceExt;
+use crate::Component;
+
+#[derive(Debug)]
+pub enum TextFieldEvent {
+    TextChanged { id: String, text: String },
+}
 
 pub struct TextField {
     text: String,
@@ -13,11 +22,11 @@ pub struct TextField {
     hint: Option<String>,
     obfuscated: bool,
     focused: bool,
-    signal: Box<dyn Fn(String)>,
+    inner: ComponentData,
 }
 
 impl TextField {
-    pub fn new(signal: impl Fn(String) + 'static) -> Self {
+    pub fn new(id: impl ToString) -> Self {
         Self {
             text: String::new(),
             cursor: 0,
@@ -25,7 +34,7 @@ impl TextField {
             hint: None,
             obfuscated: false,
             focused: false,
-            signal: Box::new(signal),
+            inner: ComponentData::new(id.to_string(), true),
         }
     }
 
@@ -44,40 +53,42 @@ impl TextField {
         self.obfuscated = obfuscated;
         self
     }
+}
 
-    pub(crate) fn initialize(&mut self, width: &mut i32, height: &mut i32) {
-        *width = 32;
-        *height = 1;
+impl Component for TextField {
+    fn initialize(&mut self, _: &mut State) {
+        self.inner.width = 32.0;
+        self.inner.height = 1.0;
     }
 
-    pub(crate) fn draw(&self, renderer: &mut DisplayState, style: &Style, x: i32, y: i32, width: i32, height: i32) {
-        if height <= 0 || width <= 0 {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
+        if width <= 0.0 || height <= 0.0 {
             return;
         }
 
-        let width = match usize::try_from(match style.width() {
+        let style = self.style(state);
+
+        let width = match style.width() {
             Some(width) => width,
             None => width,
-        }) {
-            Ok(width) => width,
-            Err(_) => return,
-        };
+        } as usize;
 
         match self.text.is_empty() {
-            true => match &self.hint {
-                Some(hint) => renderer.draw_string(
-                    &hint.as_str()[self.offset..hint.len().min(width + self.offset)],
-                    x,
-                    y,
-                    Color::DarkGrey,
-                    style.background_color(),
-                    false,
-                ),
-                None => renderer,
+            true => {
+                if let Some(hint) = &self.hint {
+                    surface.draw_text(
+                        hint.as_str(),
+                        x,
+                        y,
+                        ColorAttribute::PaletteIndex(8),
+                        style.background_color(),
+                        false,
+                    );
+                }
             },
             false => {
                 match self.obfuscated {
-                    true => renderer.draw_string(
+                    true => surface.draw_text(
                         "*".repeat(self.text.len().min(width)),
                         x,
                         y,
@@ -85,7 +96,7 @@ impl TextField {
                         style.background_color(),
                         false,
                     ),
-                    false => renderer.draw_string(
+                    false => surface.draw_text(
                         &self.text.as_str()[self.offset..self.text.len().min(width + self.offset)],
                         x,
                         y,
@@ -96,23 +107,21 @@ impl TextField {
                 };
 
                 if self.focused {
-                    renderer.draw_symbol(
+                    surface.draw_text(
                         self.text.chars().nth(self.cursor).unwrap_or(' '),
-                        x + i32::try_from(self.cursor).unwrap() - i32::try_from(self.offset).unwrap(),
+                        x + self.cursor as f64 - self.offset as f64,
                         y,
                         style.background_color(),
                         style.color(),
                         false,
                     );
                 }
-
-                renderer
             },
         };
     }
 
-    pub(crate) fn on_input_action(&mut self, input: InputAction) {
-        match input {
+    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
+        match input_action {
             InputAction::Left => self.cursor -= 1.min(self.cursor),
             InputAction::Right => self.cursor += 1.min(self.text.len() - self.cursor),
             InputAction::Insert(c, _) => {
@@ -126,7 +135,7 @@ impl TextField {
                 },
                 false => {
                     if self.cursor == 0 {
-                        return;
+                        return true;
                     }
 
                     self.text.remove(self.cursor - 1);
@@ -146,19 +155,79 @@ impl TextField {
         }
 
         if !self.text.is_empty() {
-            (self.signal)(self.text.clone());
+            state.event_buffer.push(Event::TextField(TextFieldEvent::TextChanged {
+                id: self.inner.id.to_owned(),
+                text: self.text.to_owned(),
+            }))
+        }
+
+        true
+    }
+
+    fn on_resize(&mut self, _: &mut State, width: f64, _: f64) {
+        let width = width.round() as usize;
+
+        if self.cursor >= width {
+            self.offset = self.cursor - width;
         }
     }
 
-    pub(crate) fn on_focus(&mut self, focused: bool) {
-        self.focused = focused;
+    fn class(&self) -> &'static str {
+        "input:text"
     }
 
-    pub(crate) fn on_resize(&mut self, width: i32) {
-        if let Ok(width) = usize::try_from(width) {
-            if self.cursor >= width {
-                self.offset = self.cursor - width;
-            }
-        }
+    fn inner(&self) -> &ComponentData {
+        &self.inner
+    }
+
+    fn inner_mut(&mut self) -> &mut ComponentData {
+        &mut self.inner
+    }
+}
+
+#[cfg(test)]
+mod tests {
+    use termwiz::input::{
+        InputEvent,
+        KeyCode,
+        KeyEvent,
+        Modifiers,
+    };
+
+    use super::*;
+    use crate::{
+        ControlFlow,
+        EventLoop,
+        InputMethod,
+        StyleSheet,
+    };
+
+    #[test]
+    fn test_text_field() {
+        let mut test = String::new();
+
+        let text_field_id = "test";
+        let mut text_field = TextField::new("test");
+
+        EventLoop::new()
+            .run(
+                &mut text_field,
+                InputMethod::Scripted(vec![InputEvent::Key(KeyEvent {
+                    key: KeyCode::Char('a'),
+                    modifiers: Modifiers::NONE,
+                })]),
+                StyleSheet::default(),
+                |event, _component, control_flow| {
+                    if let Event::TextField(TextFieldEvent::TextChanged { id, text }) = event {
+                        if id == text_field_id {
+                            test = text;
+                            *control_flow = ControlFlow::Quit
+                        }
+                    }
+                },
+            )
+            .unwrap();
+
+        assert_eq!(test, "a");
     }
 }

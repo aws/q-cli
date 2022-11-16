@@ -1,6 +1,7 @@
-use newton::{
+use termwiz::input::{
+    InputEvent,
     KeyCode,
-    KeyModifiers,
+    Modifiers,
 };
 
 #[non_exhaustive]
@@ -15,51 +16,51 @@ pub enum InputAction {
     Previous,
     Delete,
     Select,
-    Exit(u32),
-    Reenter,
-    Insert(char, KeyModifiers),
+    Quit,
+    Terminate,
+    ChangeView,
+    Insert(char, Modifiers),
 }
 
 impl InputAction {
-    pub(crate) fn from_key(input_method: &InputMethod, code: KeyCode, modifiers: KeyModifiers) -> Vec<Self> {
+    pub(crate) fn from_key(input_method: &InputMethod, code: KeyCode, modifiers: Modifiers) -> Vec<Self> {
         match input_method {
             InputMethod::None => match code {
                 KeyCode::Char(c) => match c {
-                    c if ['o', 'O'].contains(&c) && modifiers.contains(KeyModifiers::CONTROL) => {
-                        vec![InputAction::Reenter]
-                    },
-                    c if ['c', 'C', 'd', 'D'].contains(&c) && modifiers.contains(KeyModifiers::CONTROL) => {
-                        vec![InputAction::Exit(1)]
+                    c if ['c', 'C', 'd', 'D'].contains(&c) && modifiers.contains(Modifiers::CTRL) => {
+                        vec![InputAction::Terminate]
                     },
                     _ => vec![],
                 },
-                KeyCode::Esc => vec![InputAction::Exit(1)],
+                KeyCode::Escape => vec![InputAction::Terminate],
                 _ => vec![],
             },
-            InputMethod::Form => match code {
+            InputMethod::Form | InputMethod::Scripted(_) => match code {
                 KeyCode::Backspace => vec![InputAction::Remove],
-                KeyCode::Enter => match modifiers.contains(KeyModifiers::SHIFT) {
-                    true => vec![InputAction::Submit, InputAction::Exit(0)],
+                KeyCode::Enter => match modifiers.contains(Modifiers::SHIFT) {
+                    true => vec![InputAction::Submit, InputAction::Quit],
                     false => vec![InputAction::Submit],
                 },
-                KeyCode::Left => vec![InputAction::Left],
-                KeyCode::Right => vec![InputAction::Right],
-                KeyCode::Up => vec![InputAction::Up],
-                KeyCode::Down => vec![InputAction::Down],
-                KeyCode::Tab => vec![InputAction::Next],
-                KeyCode::BackTab => vec![InputAction::Previous],
+                KeyCode::LeftArrow => vec![InputAction::Left],
+                KeyCode::RightArrow => vec![InputAction::Right],
+                KeyCode::UpArrow => vec![InputAction::Up],
+                KeyCode::DownArrow => vec![InputAction::Down],
+                KeyCode::Tab => match modifiers.contains(Modifiers::SHIFT) {
+                    true => vec![InputAction::Previous],
+                    false => vec![InputAction::Next],
+                },
                 KeyCode::Delete => vec![InputAction::Delete],
                 KeyCode::Char(c) => match c {
                     c if c == ' ' => vec![InputAction::Select, InputAction::Insert(c, modifiers)],
-                    c if ['o', 'O'].contains(&c) && modifiers.contains(KeyModifiers::CONTROL) => {
-                        vec![InputAction::Reenter]
+                    c if ['c', 'C', 'd', 'D'].contains(&c) && modifiers.contains(Modifiers::CTRL) => {
+                        vec![InputAction::Terminate]
                     },
-                    c if ['c', 'C', 'd', 'D'].contains(&c) && modifiers.contains(KeyModifiers::CONTROL) => {
-                        vec![InputAction::Exit(1)]
+                    c if ['o', 'O'].contains(&c) && modifiers.contains(Modifiers::CTRL) => {
+                        vec![InputAction::ChangeView]
                     },
                     _ => vec![InputAction::Insert(c, modifiers)],
                 },
-                KeyCode::Esc => vec![InputAction::Exit(1)],
+                KeyCode::Escape => vec![InputAction::Terminate],
                 _ => vec![],
             },
         }
@@ -70,4 +71,5 @@ impl InputAction {
 pub enum InputMethod {
     None,
     Form,
+    Scripted(Vec<InputEvent>),
 }

@@ -1,33 +1,29 @@
+#![allow(clippy::too_many_arguments)]
+
 #[doc(hidden)]
 pub extern crate paste;
 
-#[macro_use]
-mod style;
+pub mod component;
 
-mod component;
 mod event_loop;
 mod input;
+#[macro_use]
 mod stylesheet;
+mod style;
+mod surface_ext;
 
-pub use component::{
-    CheckBox,
-    Component,
-    Container,
-    FilePicker,
-    Label,
-    Paragraph,
-    Select,
-    TextField,
-};
+pub use component::Component;
 pub use event_loop::{
     ControlFlow,
-    DisplayMode,
+    Event,
     EventLoop,
 };
 pub use input::InputMethod;
-pub use newton::Color;
 pub use style::{
     BorderStyle,
+    Property,
     Style,
 };
 pub use stylesheet::StyleSheet;
+pub use termwiz::color::ColorAttribute;
+pub use termwiz::Error;

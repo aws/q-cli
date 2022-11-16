@@ -52,21 +52,27 @@ use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use tokio::io::AsyncWriteExt;
 use tracing::warn;
-use tui::{
-    BorderStyle,
+use tui::component::{
     CheckBox,
-    Color,
-    Component,
+    CheckBoxEvent,
     Container,
-    ControlFlow,
-    DisplayMode,
-    EventLoop,
     FilePicker,
-    InputMethod,
+    FilePickerEvent,
     Label,
     Paragraph,
     Select,
+    SelectEvent,
     TextField,
+    TextFieldEvent,
+};
+use tui::{
+    BorderStyle,
+    ColorAttribute,
+    Component,
+    ControlFlow,
+    Event,
+    EventLoop,
+    InputMethod,
 };
 
 const SUPPORTED_SCHEMA_VERSION: u32 = 2;
@@ -485,121 +491,277 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         return Ok(());
     }
 
-    let style_sheet = tui::style_sheet! {
-        "*" => {
-            border_left_color: Color::DarkGrey;
-            border_right_color: Color::DarkGrey;
-            border_top_color: Color::DarkGrey;
-            border_bottom_color: Color::DarkGrey;
-            border_style: BorderStyle::Ascii {
-                top_left: '┌',
-                top: '─',
-                top_right: '┐',
-                left: '│',
-                right: '│',
-                bottom_left: '└',
-                bottom: '─',
-                bottom_right: '┘',
-            };
-        },
-        "*:focus" => {
-            color: Color::DarkYellow;
-            border_left_color: Color::DarkYellow;
-            border_right_color: Color::DarkYellow;
-            border_top_color: Color::DarkYellow;
-            border_bottom_color: Color::DarkYellow;
-            border_style: BorderStyle::Ascii {
-                top_left: '┏',
-                top: '━',
-                top_right: '┓',
-                left: '┃',
-                right: '┃',
-                bottom_left: '┗',
-                bottom: '━',
-                bottom_right: '┛',
-            };
-        },
-        "input:checkbox" => {
-            padding_left: 1;
-            padding_right: 1;
-        },
-        "div" => {
-            color: Color::DarkGrey;
-            width: Some(100);
-            padding_top: -1;
-            border_left_width: 1;
-            border_top_width: 1;
-            border_bottom_width: 1;
-            border_right_width: 1;
-        },
-        "h1" => {
-            margin_left: 1;
-            padding_left: 1;
-            padding_right: 1;
-        },
-        "p" => {
-            padding_left: 1;
-            padding_right: 1;
-        },
-        "select" => {
-            padding_left: 1;
-            padding_right: 1;
-        },
-        "input:text" => {
-            width: Some(98);
-            padding_left: 1;
-            padding_right: 2;
-        }
-    };
-
     if !workflow.parameters.is_empty() {
-        let mut preview = false;
-        let mut event_loop = EventLoop::new(DisplayMode::AlternateScreen)?;
+        let style_sheet = tui::style_sheet! {
+            "*" => {
+                border_left_color: ColorAttribute::PaletteIndex(8);
+                border_right_color: ColorAttribute::PaletteIndex(8);
+                border_top_color: ColorAttribute::PaletteIndex(8);
+                border_bottom_color: ColorAttribute::PaletteIndex(8);
+                border_style: BorderStyle::Ascii {
+                    top_left: '┌',
+                    top: '─',
+                    top_right: '┐',
+                    left: '│',
+                    right: '│',
+                    bottom_left: '└',
+                    bottom: '─',
+                    bottom_right: '┘',
+                };
+            },
+            "*:focus" => {
+                color: ColorAttribute::PaletteIndex(3);
+                border_left_color: ColorAttribute::PaletteIndex(3);
+                border_right_color: ColorAttribute::PaletteIndex(3);
+                border_top_color: ColorAttribute::PaletteIndex(3);
+                border_bottom_color: ColorAttribute::PaletteIndex(3);
+                border_style: BorderStyle::Ascii {
+                    top_left: '┏',
+                    top: '━',
+                    top_right: '┓',
+                    left: '┃',
+                    right: '┃',
+                    bottom_left: '┗',
+                    bottom: '━',
+                    bottom_right: '┛',
+                };
+            },
+            "input:checkbox" => {
+                padding_left: 1.0;
+                padding_right: 1.0;
+            },
+            "div" => {
+                color: ColorAttribute::PaletteIndex(8);
+                width: Some(100.0);
+                padding_top: -1.0;
+                border_left_width: 1.0;
+                border_top_width: 1.0;
+                border_bottom_width: 1.0;
+                border_right_width: 1.0;
+            },
+            "h1" => {
+                margin_left: 1.0;
+                padding_left: 1.0;
+                padding_right: 1.0;
+            },
+            "p" => {
+                padding_left: 1.0;
+                padding_right: 1.0;
+            },
+            "select" => {
+                padding_left: 1.0;
+                padding_right: 1.0;
+            },
+            "input:text" => {
+                width: Some(98.0);
+                padding_left: 1.0;
+                padding_right: 2.0;
+            },
+            "#__header" => {
+                margin_bottom: 1.0;
+            },
+            "#__keybindings" => {
+                margin_left: 0.0;
+                width: Some(110.0);
+            },
+            "#__view" => {
+                border_style: BorderStyle::None;
+                padding_top: 0.0;
+                margin_left: 2.0;
+                margin_right: 2.0;
+            },
+            "#__form" => {
+                padding_top: 0.0;
+                border_style: BorderStyle::None;
+            }
+        };
 
-        loop {
-            let mut header = Paragraph::new();
-            header.push_line_break();
-            header.push_styled_text(
+        let mut header = Paragraph::new("__header")
+            .push_line_break()
+            .push_styled_text(
                 workflow.display_name.as_ref().unwrap_or(&workflow.name),
                 None,
                 None,
                 true,
-            );
-            header.push_styled_text(
+            )
+            .push_styled_text(
                 format!(" • @{}", workflow.namespace),
-                Some(Color::DarkGrey),
+                Some(ColorAttribute::PaletteIndex(8)),
                 None,
                 false,
             );
 
-            if let Some(description) = &workflow.description {
-                if !description.is_empty() {
-                    header.push_line_break();
-                    header.push_styled_text(description, Some(Color::DarkYellow), None, false);
-                }
+        if let Some(description) = &workflow.description {
+            if !description.is_empty() {
+                header = header.push_line_break().push_styled_text(
+                    description,
+                    Some(ColorAttribute::PaletteIndex(3)),
+                    None,
+                    false,
+                );
             }
+        }
 
-            let mut header = Component::from(header);
-            header.style.with_margin_bottom(1);
+        let mut form = Container::new("__form");
+        let mut flag_map = HashMap::new();
+        for parameter in &workflow.parameters {
+            let args = args.clone();
+            let parameter_value = args.borrow().get(&parameter.name).unwrap_or(&String::default()).clone();
 
-            let mut components = vec![header];
+            let mut property = Container::new("").push(Label::new(
+                &parameter.name,
+                parameter.display_name.as_ref().unwrap_or(&parameter.name),
+                false,
+            ));
 
-            let input_method;
-            match preview {
-                true => {
-                    input_method = InputMethod::None;
+            match &parameter.parameter_type {
+                ParameterType::Selector {
+                    placeholder,
+                    suggestions,
+                    generators,
+                } => {
+                    let mut options = suggestions.to_owned().unwrap_or_default();
+                    if let Some(generators) = generators {
+                        for generator in generators {
+                            match generator {
+                                Generator::Named { .. } => {
+                                    return Err(eyre!("named generators aren't supported in workflows yet"));
+                                },
+                                Generator::Script { script } => {
+                                    if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
+                                        for suggestion in String::from_utf8_lossy(&output.stdout).split('\n') {
+                                            if !suggestion.is_empty() {
+                                                options.push(suggestion.to_owned());
+                                            }
+                                        }
+                                    }
+                                },
+                            }
+                        }
+                    }
 
-                    let colors = [Color::Magenta, Color::Blue, Color::Cyan];
-                    let mut paragraph = Paragraph::new();
+                    property = property.push(
+                        Select::new(&parameter.name, options, true)
+                            .with_text(parameter_value)
+                            .with_hint(placeholder.as_deref().unwrap_or("Search...")),
+                    );
+                },
+                ParameterType::Text { placeholder } => {
+                    property = property.push(
+                        TextField::new(&parameter.name)
+                            .with_text(parameter_value)
+                            .with_hint(placeholder.to_owned().unwrap_or_default()),
+                    )
+                },
+                ParameterType::Checkbox {
+                    true_value_substitution,
+                    false_value_substitution,
+                } => {
+                    flag_map.insert(
+                        parameter.name.to_owned(),
+                        (true_value_substitution.to_owned(), false_value_substitution.to_owned()),
+                    );
+
+                    let checked = args
+                        .borrow_mut()
+                        .get(&parameter.name)
+                        .map(|c| c == true_value_substitution)
+                        .unwrap_or(false);
+
+                    if !checked {
+                        args.borrow_mut()
+                            .insert(parameter.name.to_owned(), false_value_substitution.to_owned());
+                    }
+
+                    property = property.push(CheckBox::new(
+                        &parameter.name,
+                        parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
+                        checked,
+                    ));
+                },
+                ParameterType::Path { file_type, extensions } => {
+                    let (files, folders) = match file_type {
+                        FileType::Any => (true, true),
+                        FileType::FileOnly => (true, false),
+                        FileType::FolderOnly => (false, true),
+                    };
+
+                    property = property.push(FilePicker::new(
+                        &parameter.name,
+                        std::env::current_dir()?,
+                        files,
+                        folders,
+                        extensions.clone(),
+                    ));
+                },
+            };
+
+            form = form.push(property);
+        }
+
+        let mut view = Container::new("__view").push(header).push(form).push(
+            Paragraph::new("__keybindings")
+                .push_styled_text("enter", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" select • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" next • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("shift+tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" previous • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("⎵", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" toggle • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("⌃o", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" preview", Some(ColorAttribute::Default), None, false),
+        );
+
+        let mut temp = None;
+
+        EventLoop::new().run(
+            &mut view,
+            InputMethod::Form,
+            style_sheet,
+            |event, view, control_flow| match event {
+                Event::Quit => *control_flow = ControlFlow::Quit,
+                Event::Terminate => {
+                    tokio::runtime::Handle::current()
+                        .block_on(fig_telemetry::dispatch_emit_track(
+                            TrackEvent::new(
+                                TrackEventType::WorkflowCancelled,
+                                TrackSource::Cli,
+                                env!("CARGO_PKG_VERSION").into(),
+                                [
+                                    ("workflow", workflow_name.as_ref()),
+                                    ("execution_method", execution_method),
+                                ],
+                            ),
+                            false,
+                        ))
+                        .ok();
+
+                    *control_flow = ControlFlow::Quit;
+                },
+                Event::TempChangeView => {
+                    if let Some(temp) = temp.take() {
+                        view.remove("__preview");
+                        view.insert("__header", temp);
+                        return;
+                    }
+
+                    let colors = [
+                        ColorAttribute::PaletteIndex(13),
+                        ColorAttribute::PaletteIndex(12),
+                        ColorAttribute::PaletteIndex(14),
+                    ];
+
+                    let mut paragraph = Paragraph::new("");
                     for element in &workflow.tree {
                         match element {
-                            TreeElement::String(s) => paragraph.push_text(s),
+                            TreeElement::String(s) => paragraph = paragraph.push_text(s),
                             TreeElement::Token { name } => {
                                 let mut hasher = DefaultHasher::new();
                                 name.hash(&mut hasher);
                                 let hash = hasher.finish() as usize;
 
-                                paragraph.push_styled_text(
+                                paragraph = paragraph.push_styled_text(
                                     match args.borrow().get(name.as_str()) {
                                         Some(value) => value.to_string(),
                                         None => format!("{{{{{name}}}}}"),
@@ -612,169 +774,44 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         }
                     }
 
-                    components.push(Component::from(Container::new(vec![
-                        Component::from(Label::new("Preview", false)),
-                        Component::from(paragraph),
-                    ])));
-                },
-                false => {
-                    input_method = InputMethod::Form;
-
-                    for parameter in &workflow.parameters {
-                        let args = args.clone();
-                        let parameter_name = parameter.name.clone();
-                        let parameter_value = args.borrow().get(&parameter_name).unwrap_or(&String::default()).clone();
-
-                        components.push(Component::from(Container::new(vec![
-                            Component::from(Label::new(
-                                parameter.display_name.clone().unwrap_or_else(|| parameter.name.clone()),
-                                false,
-                            )),
-                            match &parameter.parameter_type {
-                                ParameterType::Selector {
-                                    placeholder,
-                                    suggestions,
-                                    generators,
-                                } => {
-                                    let mut options = suggestions.to_owned().unwrap_or_default();
-                                    if let Some(generators) = generators {
-                                        for generator in generators {
-                                            match generator {
-                                                Generator::Named { .. } => {
-                                                    return Err(eyre!(
-                                                        "Named generators aren't supported in workflows yet"
-                                                    ));
-                                                },
-                                                Generator::Script { script } => {
-                                                    if let Ok(output) =
-                                                        Command::new("bash").arg("-c").arg(script).output()
-                                                    {
-                                                        for suggestion in
-                                                            String::from_utf8_lossy(&output.stdout).split('\n')
-                                                        {
-                                                            if !suggestion.is_empty() {
-                                                                options.push(suggestion.to_owned());
-                                                            }
-                                                        }
-                                                    }
-                                                },
-                                            }
-                                        }
-                                    }
-
-                                    Component::from(
-                                        Select::new(options, true, move |signal| {
-                                            args.borrow_mut().insert(parameter_name.clone(), signal);
-                                        })
-                                        .with_text(parameter_value)
-                                        .with_hint(placeholder.as_deref().unwrap_or("Search...")),
-                                    )
-                                },
-                                ParameterType::Text { placeholder } => Component::from(
-                                    TextField::new(move |signal| {
-                                        args.borrow_mut().insert(parameter_name.clone(), signal);
-                                    })
-                                    .with_text(parameter_value)
-                                    .with_hint(placeholder.to_owned().unwrap_or_default()),
-                                ),
-                                ParameterType::Checkbox {
-                                    true_value_substitution,
-                                    false_value_substitution,
-                                } => {
-                                    let true_value = true_value_substitution.clone();
-                                    let false_value = false_value_substitution.clone();
-                                    let checked = args
-                                        .borrow_mut()
-                                        .get(&parameter_name)
-                                        .map(|c| c == &true_value)
-                                        .unwrap_or(false);
-
-                                    if !checked {
-                                        args.borrow_mut().insert(parameter_name.clone(), false_value.clone());
-                                    }
-
-                                    Component::from(CheckBox::new(
-                                        parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
-                                        checked,
-                                        move |signal| {
-                                            args.borrow_mut().insert(parameter_name.clone(), match signal {
-                                                true => true_value.clone(),
-                                                false => false_value.clone(),
-                                            });
-                                        },
-                                    ))
-                                },
-                                ParameterType::Path { file_type, extensions } => {
-                                    let (files, folders) = match file_type {
-                                        FileType::Any => (true, true),
-                                        FileType::FileOnly => (true, false),
-                                        FileType::FolderOnly => (false, true),
-                                    };
-
-                                    Component::from(FilePicker::new(
-                                        std::env::current_dir()?,
-                                        files,
-                                        folders,
-                                        extensions.clone(),
-                                        move |signal| {
-                                            args.borrow_mut()
-                                                .insert(parameter_name.clone(), signal.to_string_lossy().to_string());
-                                        },
-                                    ))
-                                },
-                            },
-                        ])));
-                    }
-                },
-            };
-
-            let mut keybindings = Paragraph::new();
-
-            keybindings.push_styled_text("enter", Some(Color::DarkYellow), None, false);
-            keybindings.push_styled_text(" select • ", Some(Color::Reset), None, false);
-            keybindings.push_styled_text("tab", Some(Color::DarkYellow), None, false);
-            keybindings.push_styled_text(" next • ", Some(Color::Reset), None, false);
-            keybindings.push_styled_text("shift+tab", Some(Color::DarkYellow), None, false);
-            keybindings.push_styled_text(" previous • ", Some(Color::Reset), None, false);
-            keybindings.push_styled_text("⎵", Some(Color::DarkYellow), None, false);
-            keybindings.push_styled_text(" toggle • ", Some(Color::Reset), None, false);
-            keybindings.push_styled_text("⌃o", Some(Color::DarkYellow), None, false);
-            keybindings.push_styled_text(" preview", Some(Color::Reset), None, false);
-
-            let mut keybindings = Component::from(keybindings);
-            keybindings.style.with_margin_left(0).with_width(Some(110));
-            components.push(keybindings);
-
-            let mut view = Component::from(Container::new(components));
-            view.style
-                .with_border_style(BorderStyle::None)
-                .with_padding_top(0)
-                .with_margin_left(2)
-                .with_margin_right(2);
-
-            match event_loop.run(&mut view, &input_method, Some(&style_sheet), ControlFlow::Wait)? {
-                ControlFlow::Exit(0) => break,
-                ControlFlow::Exit(_) => {
-                    fig_telemetry::dispatch_emit_track(
-                        TrackEvent::new(
-                            TrackEventType::WorkflowCancelled,
-                            TrackSource::Cli,
-                            env!("CARGO_PKG_VERSION").into(),
-                            [
-                                ("workflow", workflow_name.as_ref()),
-                                ("execution_method", execution_method),
-                            ],
+                    temp = view.remove("__form");
+                    view.insert(
+                        "__header",
+                        Box::new(
+                            Container::new("__preview")
+                                .push(Label::new("preview_label", "Preview", false))
+                                .push(paragraph),
                         ),
-                        false,
-                    )
-                    .await
-                    .ok();
-                    return Ok(());
+                    );
                 },
-                ControlFlow::Reenter(_) => preview = !preview,
+                Event::CheckBox(event) => match event {
+                    CheckBoxEvent::Checked { id, checked } => {
+                        let (true_val, false_val) = flag_map.get(&id).unwrap();
+
+                        args.borrow_mut().insert(id, match checked {
+                            true => true_val.to_owned(),
+                            false => false_val.to_owned(),
+                        });
+                    },
+                },
+                Event::FilePicker(event) => match event {
+                    FilePickerEvent::FilePathChanged { id, path } => {
+                        args.borrow_mut().insert(id, path.to_string_lossy().to_string());
+                    },
+                },
+                Event::Select(event) => match event {
+                    SelectEvent::OptionSelected { id, option } => {
+                        args.borrow_mut().insert(id, option);
+                    },
+                },
+                Event::TextField(event) => match event {
+                    TextFieldEvent::TextChanged { id, text } => {
+                        args.borrow_mut().insert(id, text);
+                    },
+                },
                 _ => (),
-            }
-        }
+            },
+        )?;
     }
 
     let command = map_args_to_command(&workflow, &args.borrow());

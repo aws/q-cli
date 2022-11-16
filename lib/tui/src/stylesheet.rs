@@ -42,18 +42,27 @@ impl StyleSheet {
     // inline-style
     // element.class
     // element.class:focus
-    pub(crate) fn get_style(&self, selector: impl AsRef<str>, hovered: bool, focused: bool, active: bool) -> Style {
+    // element#id
+    // element#id:focus
+    pub(crate) fn get_style(
+        &self,
+        selector: impl AsRef<str>,
+        id: impl AsRef<str>,
+        hover: bool,
+        focus: bool,
+        active: bool,
+    ) -> Style {
         let mut style = Style::default();
 
         if let Some(all) = self.0.get("*") {
             style.apply(all);
         }
-        if hovered {
+        if hover {
             if let Some(all_hover) = self.0.get("*:hover") {
                 style.apply(all_hover);
             }
         }
-        if focused {
+        if focus {
             if let Some(all_focus) = self.0.get("*:focus") {
                 style.apply(all_focus);
             }
@@ -67,18 +76,37 @@ impl StyleSheet {
         if let Some(all) = self.0.get(&selector.as_ref().to_string()) {
             style.apply(all);
         }
-        if hovered {
+        if hover {
             if let Some(all_hover) = self.0.get(&format!("{}:hover", selector.as_ref())) {
                 style.apply(all_hover);
             }
         }
-        if focused {
+        if focus {
             if let Some(all_focus) = self.0.get(&format!("{}:focus", selector.as_ref())) {
                 style.apply(all_focus);
             }
         }
         if active {
             if let Some(all_active) = self.0.get(&format!("{}:active", selector.as_ref())) {
+                style.apply(all_active);
+            }
+        }
+
+        if let Some(all) = self.0.get(&format!("#{}", id.as_ref())) {
+            style.apply(all);
+        }
+        if hover {
+            if let Some(all_hover) = self.0.get(&format!("#{}:hover", id.as_ref())) {
+                style.apply(all_hover);
+            }
+        }
+        if focus {
+            if let Some(all_focus) = self.0.get(&format!("#{}:focus", id.as_ref())) {
+                style.apply(all_focus);
+            }
+        }
+        if active {
+            if let Some(all_active) = self.0.get(&format!("#{}:active", id.as_ref())) {
                 style.apply(all_active);
             }
         }

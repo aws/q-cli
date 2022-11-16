@@ -1,42 +1,61 @@
 use std::fmt::Display;
 
-use newton::DisplayState;
+use termwiz::surface::Surface;
 
-use crate::Style;
+use super::ComponentData;
+use crate::event_loop::State;
+use crate::surface_ext::SurfaceExt;
+use crate::Component;
 
-#[derive(Debug, Clone, Default)]
+#[derive(Debug)]
 pub struct Label {
     label: String,
     bold: bool,
+    inner: ComponentData,
 }
 
 impl Label {
-    pub fn new(label: impl Display, bold: bool) -> Self {
+    pub fn new(id: impl ToString, label: impl Display, bold: bool) -> Self {
         Self {
             label: label.to_string(),
             bold,
+            inner: ComponentData::new(id.to_string(), false),
         }
     }
+}
 
-    pub(crate) fn initialize(&mut self, width: &mut i32, height: &mut i32) {
-        *width = i32::try_from(self.label.len()).unwrap();
-        *height = 1;
+impl Component for Label {
+    fn initialize(&mut self, _: &mut State) {
+        self.inner.width = self.label.len() as f64;
+        self.inner.height = 1.0;
     }
 
-    pub(crate) fn draw(&self, renderer: &mut DisplayState, style: &Style, x: i32, y: i32, width: i32, height: i32) {
-        if height <= 0 {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
+        if width <= 0.0 || height <= 0.0 {
             return;
         }
 
-        if let Ok(width) = usize::try_from(width) {
-            renderer.draw_string(
-                &self.label[0..self.label.len().min(width)],
-                x,
-                y,
-                style.color(),
-                style.background_color(),
-                self.bold,
-            );
-        }
+        let style = self.style(state);
+
+        surface.draw_text(
+            &self.label[0..self.label.len().min(width as usize)],
+            x,
+            y,
+            style.color(),
+            style.background_color(),
+            self.bold,
+        );
+    }
+
+    fn class(&self) -> &'static str {
+        "p"
+    }
+
+    fn inner(&self) -> &ComponentData {
+        &self.inner
+    }
+
+    fn inner_mut(&mut self) -> &mut ComponentData {
+        &mut self.inner
     }
 }

@@ -1,98 +1,215 @@
-use std::time::Instant;
+use std::time::Duration;
 
-pub use newton::{
-    ControlFlow,
-    DisplayMode,
-    Event as NewtonEvent,
+use termwiz::caps::Capabilities;
+use termwiz::color::ColorAttribute;
+use termwiz::input::InputEvent;
+use termwiz::surface::{
+    Change,
+    CursorVisibility,
+    Surface,
+};
+use termwiz::terminal::{
+    new_terminal,
+    Terminal,
 };
 
-use crate::component::Component;
+use crate::component::{
+    CheckBoxEvent,
+    Component,
+    FilePickerEvent,
+    SelectEvent,
+    TextFieldEvent,
+};
 use crate::input::InputAction;
+use crate::surface_ext::SurfaceExt;
 use crate::{
+    Error,
     InputMethod,
     StyleSheet,
 };
 
-pub struct EventLoop {
-    inner_loop: newton::EventLoop,
-    last_instant: Instant,
+#[derive(Debug)]
+pub struct State {
+    pub style_sheet: StyleSheet,
+    pub event_buffer: Vec<Event>,
 }
 
-impl EventLoop {
-    pub fn new(display_mode: DisplayMode) -> Result<Self, std::io::Error> {
-        let event_loop = newton::EventLoop::new(display_mode)?;
+impl State {
+    fn new(style_sheet: StyleSheet) -> Self {
+        Self {
+            style_sheet,
+            event_buffer: vec![],
+        }
+    }
+}
 
-        Ok(Self {
-            inner_loop: event_loop,
-            last_instant: Instant::now(),
-        })
+#[derive(Debug)]
+pub enum Event {
+    Quit,
+    Terminate,
+    MainEventsCleared,
+    // todo(chay): remove
+    TempChangeView,
+    FocusChanged { id: String, focus: bool },
+    HoverChanged { id: String, hover: bool },
+    ActiveChanged { id: String, active: bool },
+    CheckBox(CheckBoxEvent),
+    FilePicker(FilePickerEvent),
+    Select(SelectEvent),
+    TextField(TextFieldEvent),
+}
+
+#[derive(Clone, Copy, Debug)]
+pub enum ControlFlow {
+    Wait,
+    Quit,
+}
+
+#[derive(Debug, Default)]
+pub struct EventLoop;
+
+impl EventLoop {
+    pub fn new() -> Self {
+        Self::default()
     }
 
-    pub fn run(
-        &mut self,
-        component: &mut Component,
-        input_method: &InputMethod,
-        style_sheet: Option<&StyleSheet>,
-        control_flow: ControlFlow,
-    ) -> Result<ControlFlow, std::io::Error> {
-        let mut width = self.inner_loop.width();
-        let mut height = self.inner_loop.height();
-        let default_style = StyleSheet::default();
-        let style_sheet = match style_sheet {
-            Some(sheet) => sheet,
-            None => &default_style,
+    #[inline]
+    pub fn run<'a, C, F>(
+        &self,
+        component: &'a mut C,
+        input_method: InputMethod,
+        style_sheet: StyleSheet,
+        mut event_handler: F,
+    ) -> Result<(), Error>
+    where
+        C: Component,
+        F: 'a + FnMut(Event, &mut C, &mut ControlFlow),
+    {
+        let mut terminal = new_terminal(Capabilities::new_from_env()?)?;
+        terminal.enter_alternate_screen()?;
+        terminal.set_raw_mode()?;
+        terminal.render(&[Change::CursorVisibility(CursorVisibility::Hidden)])?;
+
+        let screen_size = terminal.get_screen_size()?;
+        let mut cols = screen_size.cols as f64;
+        let mut rows = screen_size.rows as f64;
+
+        let mut surface = Surface::new(screen_size.cols, screen_size.rows);
+        let mut backbuffer = Surface::new(screen_size.cols, screen_size.rows);
+
+        let mut state = State::new(style_sheet);
+        component.initialize(&mut state);
+        component.on_focus(&mut state, true);
+
+        let mut scripted_events = match &input_method {
+            InputMethod::Scripted(input_events) => input_events.iter().cloned().rev().collect(),
+            _ => vec![],
         };
 
-        component.initialize(style_sheet);
-        component.on_focus(style_sheet, true);
+        let mut control_flow = ControlFlow::Wait;
+        loop {
+            // drawing code
+            let style = component.style(&mut state);
+            let mut x = 0.0;
+            let mut y = 0.0;
+            let mut width = (style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()).min(cols);
+            let mut height =
+                (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(rows);
+            surface.add_change(Change::ClearScreen(ColorAttribute::Default));
+            surface.draw_border(&style, &mut x, &mut y, &mut width, &mut height);
+            component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
 
-        self.last_instant = Instant::now();
-        self.inner_loop.run(control_flow, |event, renderer, control_flow| {
-            match event {
-                NewtonEvent::Draw => {
-                    renderer.clear();
-                    component.draw(renderer, style_sheet, 0, 0, width, height, width, height);
-                },
-                NewtonEvent::Resized {
-                    width: new_width,
-                    height: new_height,
-                } => {
-                    width = new_width;
-                    height = new_height;
-                    component.on_resize(width, height);
-                },
-                NewtonEvent::KeyPressed { code, modifiers } => {
-                    for input_action in InputAction::from_key(input_method, code, modifiers) {
-                        match input_action {
-                            InputAction::Submit => {
-                                if component.on_input_action(style_sheet, input_action)
-                                    && component.next(style_sheet, false).is_none()
-                                {
-                                    *control_flow = ControlFlow::Exit(0);
-                                }
-                            },
-                            InputAction::Next => {
-                                if component.next(style_sheet, true).is_none() {
-                                    *control_flow = ControlFlow::Exit(0)
-                                }
-                            },
-                            InputAction::Previous => {
-                                component.prev(style_sheet, true);
-                            },
-                            InputAction::Exit(code) => *control_flow = ControlFlow::Exit(code),
-                            InputAction::Reenter => {
-                                *control_flow = ControlFlow::Reenter(1);
-                            },
-                            _ => {
-                                component.on_input_action(style_sheet, input_action);
-                            },
-                        }
-                    }
-                },
-                _ => (),
+            // diffing logic
+            let diff = backbuffer.diff_screens(&surface);
+            if !diff.is_empty() {
+                terminal.render(&diff)?;
+
+                let mut seq = backbuffer.add_changes(diff);
+                backbuffer.flush_changes_older_than(seq);
+
+                seq = surface.current_seqno();
+                surface.flush_changes_older_than(seq);
             }
 
-            Ok(())
-        })
+            let duration = match control_flow {
+                ControlFlow::Wait => Some(Duration::from_millis(16)),
+                ControlFlow::Quit => break,
+            };
+
+            while let Some(event) = terminal.poll_input(duration)?.or_else(|| scripted_events.pop()) {
+                match event {
+                    InputEvent::Key(event) => {
+                        let code = event.key;
+                        let modifiers = event.modifiers;
+
+                        for input_action in InputAction::from_key(&input_method, code, modifiers) {
+                            match input_action {
+                                InputAction::Submit => {
+                                    if component.on_input_action(&mut state, input_action)
+                                        && component.next(&mut state, false).is_none()
+                                    {
+                                        control_flow = ControlFlow::Quit;
+                                    }
+                                },
+                                InputAction::Next => {
+                                    if component.next(&mut state, true).is_none() {
+                                        control_flow = ControlFlow::Quit
+                                    }
+                                },
+                                InputAction::Previous => {
+                                    component.prev(&mut state, true);
+                                },
+                                InputAction::Quit => event_handler(Event::Quit, component, &mut control_flow),
+                                InputAction::Terminate => event_handler(Event::Terminate, component, &mut control_flow),
+                                InputAction::ChangeView => {
+                                    component.on_focus(&mut state, false);
+                                    event_handler(Event::TempChangeView, component, &mut control_flow);
+                                    component.initialize(&mut state);
+                                    component.on_focus(&mut state, true);
+                                },
+                                _ => {
+                                    component.on_input_action(&mut state, input_action);
+                                },
+                            }
+                        }
+                    },
+                    InputEvent::Resized {
+                        cols: new_cols,
+                        rows: new_rows,
+                    } => {
+                        cols = new_cols as f64;
+                        rows = new_rows as f64;
+
+                        surface.resize(new_cols, new_rows);
+                        backbuffer.resize(new_cols, new_rows);
+
+                        component.on_resize(&mut state, cols, rows);
+
+                        // TODO(chay) validate
+                        // Not sure why the following is required but it is
+                        let style = component.style(&mut state);
+                        let mut x = 0.0;
+                        let mut y = 0.0;
+                        let mut width =
+                            (style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()).min(cols);
+                        let mut height =
+                            (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(rows);
+                        surface.draw_border(&style, &mut x, &mut y, &mut width, &mut height);
+                        component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
+                        //
+
+                        backbuffer.add_change(Change::ClearScreen(ColorAttribute::Default));
+                        terminal.render(&[Change::ClearScreen(ColorAttribute::Default)])?;
+                    },
+                    _ => (),
+                }
+            }
+
+            while let Some(event) = state.event_buffer.pop() {
+                event_handler(event, component, &mut control_flow);
+            }
+        }
+
+        Ok(())
     }
 }

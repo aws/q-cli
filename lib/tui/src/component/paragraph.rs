@@ -1,75 +1,88 @@
-use newton::{
-    Color,
-    DisplayState,
-};
+use termwiz::color::ColorAttribute;
+use termwiz::surface::Surface;
 
-use crate::Style;
+use super::ComponentData;
+use crate::surface_ext::SurfaceExt;
+use crate::Component;
 
 #[derive(Debug)]
-pub enum ParagraphComponent {
+enum ParagraphComponent {
     Text {
         text: String,
-        color: Option<Color>,
-        background_color: Option<Color>,
+        color: Option<ColorAttribute>,
+        background_color: Option<ColorAttribute>,
         bold: bool,
     },
     LineBreak,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct Paragraph {
-    pub components: Vec<ParagraphComponent>,
+    components: Vec<ParagraphComponent>,
+    inner: ComponentData,
 }
 
 impl Paragraph {
-    pub fn new() -> Self {
-        Default::default()
+    pub fn new(id: impl Into<String>) -> Self {
+        Self {
+            components: vec![],
+            inner: ComponentData::new(id.into(), false),
+        }
     }
 
-    pub fn push_text(&mut self, text: impl Into<String>) {
-        self.push_styled_text(text, None, None, false);
+    pub fn push_text(self, text: impl Into<String>) -> Self {
+        self.push_styled_text(text, None, None, false)
     }
 
     pub fn push_styled_text(
-        &mut self,
+        mut self,
         text: impl Into<String>,
-        color: Option<Color>,
-        background_color: Option<Color>,
+        color: Option<ColorAttribute>,
+        background_color: Option<ColorAttribute>,
         bold: bool,
-    ) {
+    ) -> Self {
         self.components.push(ParagraphComponent::Text {
             text: text.into().replace('\t', "    "),
             color,
             background_color,
             bold,
-        })
+        });
+
+        self
     }
 
-    pub fn push_line_break(&mut self) {
+    pub fn push_line_break(mut self) -> Self {
         self.components.push(ParagraphComponent::LineBreak);
+        self
     }
+}
 
-    pub(crate) fn initialize(&self, width: &mut i32, height: &mut i32) {
-        *width = 110;
+impl Component for Paragraph {
+    fn initialize(&mut self, _: &mut crate::event_loop::State) {
+        self.inner.width = 110.0;
         if !self.components.is_empty() {
-            *height = self.components.iter().fold(1, |acc, c| match c {
+            self.inner.height = self.components.iter().fold(1, |acc, c| match c {
                 ParagraphComponent::Text { text, .. } => {
                     acc + i32::try_from(text.chars().filter(|c| c == &'\n').count()).unwrap()
                 },
                 ParagraphComponent::LineBreak => acc + 1,
-            });
+            }) as f64;
         }
     }
 
-    pub(crate) fn draw(
+    fn draw(
         &self,
-        renderer: &mut DisplayState,
-        style: &Style,
-        mut x: i32,
-        mut y: i32,
-        width: i32,
-        height: i32,
+        state: &mut crate::event_loop::State,
+        surface: &mut Surface,
+        mut x: f64,
+        mut y: f64,
+        width: f64,
+        height: f64,
+        _: f64,
+        _: f64,
     ) {
+        let style = self.style(state);
+
         let start = x;
         let mut offset = 0;
         for component in &self.components {
@@ -87,34 +100,46 @@ impl Paragraph {
                     for char in text.chars() {
                         if char == '\n' {
                             x = start;
-                            y += 1;
+                            y += 1.0;
                             offset = 0;
                             continue;
                         }
 
-                        renderer.draw_symbol(
+                        surface.draw_text(
                             char,
-                            x + offset,
+                            x + offset as f64,
                             y,
                             color.unwrap_or(style.color()),
                             background_color.unwrap_or(style.background_color()),
                             *bold,
                         );
-                        x += 1;
+                        x += 1.0;
 
                         if x >= width {
                             x = start;
-                            y += 1;
+                            y += 1.0;
                             offset = 4;
                         }
                     }
                 },
                 ParagraphComponent::LineBreak => {
                     x = start;
-                    y += 1;
+                    y += 1.0;
                     offset = 0;
                 },
             }
         }
+    }
+
+    fn class(&self) -> &'static str {
+        "p"
+    }
+
+    fn inner(&self) -> &super::ComponentData {
+        &self.inner
+    }
+
+    fn inner_mut(&mut self) -> &mut super::ComponentData {
+        &mut self.inner
     }
 }
