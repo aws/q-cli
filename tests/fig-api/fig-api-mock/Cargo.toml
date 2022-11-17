@@ -8,7 +8,7 @@ version.workspace = true
 
 [dependencies]
 async-trait = "0.1.57"
-clap = { version = "4.0.25", features = ["derive", "deprecated"] }
+clap = { version = "4.0.26", features = ["derive", "deprecated"] }
 fig_desktop_api = { path = "../../../lib/fig_desktop_api" }
 fig_proto = { path = "../../../lib/fig_proto" }
 tokio = { version = "1", features = ["full"] }

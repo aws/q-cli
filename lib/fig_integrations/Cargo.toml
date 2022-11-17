@@ -12,7 +12,7 @@ dispatch = ["dep:dispatch"]
 [dependencies]
 async-trait = "0.1.58"
 cfg-if = "1.0.0"
-clap = { version = "4.0.25", features = ["derive", "deprecated"] }
+clap = { version = "4.0.26", features = ["derive", "deprecated"] }
 fig_util = { path = "../fig_util" }
 regex = "1.6.0"
 serde = { version = "1.0.147", features = ["derive"] }
