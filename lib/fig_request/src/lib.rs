@@ -34,7 +34,7 @@ use serde::{
 use serde_json::Value;
 
 pub fn client() -> Option<&'static Client> {
-    reqwest_client::reqwest_client()
+    reqwest_client::reqwest_client(true)
 }
 
 pub type Result<T, E = Error> = std::result::Result<T, E>;

@@ -163,7 +163,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     let (websocket_stream, _) = tokio_tungstenite::connect_async_tls_with_config(
         url,
         None,
-        Some(tokio_tungstenite::Connector::Rustls(client_config())),
+        Some(tokio_tungstenite::Connector::Rustls(client_config(true))),
     )
     .await
     .context("Failed to connect to websocket")?;

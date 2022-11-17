@@ -36,7 +36,7 @@ pub fn init_sentry(
                 sample_rate,
                 auto_session_tracking: session_tracking,
                 transport: Some(Arc::new(move |opts: &ClientOptions| -> Arc<dyn Transport> {
-                    Arc::new(match reqwest_client().cloned() {
+                    Arc::new(match reqwest_client(false).cloned() {
                         Some(client) => ReqwestHttpTransport::with_client(opts, client),
                         None => ReqwestHttpTransport::new(opts),
                     })
