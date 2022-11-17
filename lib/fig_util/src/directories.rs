@@ -440,6 +440,7 @@ mod deprecated {
 mod test {
     use super::*;
 
+    #[ignore]
     #[fig_test::test]
     fn environment_paths() {
         macro_rules! test_environment_path {

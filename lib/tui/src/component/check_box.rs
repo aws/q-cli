@@ -99,6 +99,7 @@ mod tests {
         StyleSheet,
     };
 
+    #[ignore = "does not work on CI"]
     #[test]
     fn test_checkbox() {
         let mut test = false;

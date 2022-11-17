@@ -202,6 +202,7 @@ mod tests {
         StyleSheet,
     };
 
+    #[ignore = "does not work on CI"]
     #[test]
     fn test_text_field() {
         let mut test = String::new();
