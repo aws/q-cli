@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::cell::RefCell;
 use std::cmp::Ordering as StdOrdering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
@@ -9,7 +8,6 @@ use std::hash::{
 };
 use std::iter::empty;
 use std::process::Command;
-use std::rc::Rc;
 
 use clap::Args;
 use crossterm::style::Stylize;
@@ -27,6 +25,7 @@ use fig_api_client::workflows::{
     Predicate,
     Rule,
     RuleType,
+    Runtime,
     TreeElement,
     Workflow,
 };
@@ -74,8 +73,9 @@ use tui::{
     EventLoop,
     InputMethod,
 };
+use which::which;
 
-const SUPPORTED_SCHEMA_VERSION: u32 = 2;
+const SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct WorkflowArgs {
@@ -418,13 +418,46 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
     let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
     if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
-        return Err(eyre!(
+        bail!(
             "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
             "fig update".magenta(),
-        ));
+        );
     }
 
+    // determine that runtime exists before validating rules
+    let command = match workflow.runtime {
+        Runtime::Bash => match which("bash") {
+            Ok(bash) => {
+                let mut command = Command::new(bash);
+                command.arg("-c");
+                command
+            },
+            Err(_) => bail!("Could not execute {workflow_name} because bash was not found on PATH"),
+        },
+        Runtime::Python => {
+            let mut command = match which("python3") {
+                Ok(python3) => Command::new(python3),
+                Err(_) => match which("python") {
+                    Ok(python) => Command::new(python),
+                    Err(_) => bail!("Could not execute {workflow_name} because python was not found on PATH"),
+                },
+            };
+
+            command.arg("-c");
+            command
+        },
+        Runtime::Node => match which("node") {
+            Ok(node) => {
+                let mut command = Command::new(node);
+                command.arg("-e");
+                command
+            },
+            Err(_) => bail!("Could not execute {workflow_name} because node was not found on PATH"),
+        },
+    };
+
+    // validate that all of the workflow rules pass
     if let Some(ruleset) = &workflow.rules {
         if !rules_met(ruleset)? {
             return Ok(());
@@ -432,7 +465,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     }
 
     let mut env_args = env_args.into_iter().skip(1);
-    let args: Rc<RefCell<HashMap<String, String>>> = Rc::new(RefCell::new(HashMap::new()));
+    let mut args: HashMap<String, String> = HashMap::new();
     let mut arg = None;
     loop {
         arg = match arg {
@@ -444,14 +477,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 ParameterType::Checkbox {
                                     true_value_substitution,
                                     ..
-                                } => args.borrow_mut().insert(arg, true_value_substitution.clone()),
-                                _ => args.borrow_mut().insert(arg, "true".to_string()),
+                                } => args.insert(arg, true_value_substitution.clone()),
+                                _ => args.insert(arg, "true".to_string()),
                             };
                         }
                         Some(value.to_string())
                     },
                     None => {
-                        args.borrow_mut().insert(arg, value);
+                        args.insert(arg, value);
                         None
                     },
                 },
@@ -461,8 +494,8 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                             ParameterType::Checkbox {
                                 true_value_substitution,
                                 ..
-                            } => args.borrow_mut().insert(arg, true_value_substitution.clone()),
-                            _ => args.borrow_mut().insert(arg, "true".to_string()),
+                            } => args.insert(arg, true_value_substitution.clone()),
+                            _ => args.insert(arg, "true".to_string()),
                         };
                     }
                     break;
@@ -478,14 +511,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    let map = parse_args(args.borrow(), &workflow.parameters);
+    let map = parse_args(&args, &workflow.parameters);
     if let Ok(map) = map {
         if execution_method == "invoke" {
-            execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &map).await?;
+            execute_workflow(command, &workflow.name, &workflow.namespace, &workflow.tree, &map).await?;
         } else if execution_method == "search" {
-            let args = &args.take();
+            let args = &args;
             if send_figterm(map_args_to_command(&workflow, args), true).await.is_err() {
-                execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, args).await?;
+                execute_workflow(command, &workflow.name, &workflow.namespace, &workflow.tree, args).await?;
             }
         }
         return Ok(());
@@ -605,8 +638,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         let mut form = Container::new("__form");
         let mut flag_map = HashMap::new();
         for parameter in &workflow.parameters {
-            let args = args.clone();
-            let parameter_value = args.borrow().get(&parameter.name).unwrap_or(&String::default()).clone();
+            let parameter_value = args.get(&parameter.name).cloned().unwrap_or_default();
 
             let mut property = Container::new("").push(Label::new(
                 &parameter.name,
@@ -663,14 +695,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     );
 
                     let checked = args
-                        .borrow_mut()
                         .get(&parameter.name)
                         .map(|c| c == true_value_substitution)
                         .unwrap_or(false);
 
                     if !checked {
-                        args.borrow_mut()
-                            .insert(parameter.name.to_owned(), false_value_substitution.to_owned());
+                        args.insert(parameter.name.to_owned(), false_value_substitution.to_owned());
                     }
 
                     property = property.push(CheckBox::new(
@@ -762,7 +792,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 let hash = hasher.finish() as usize;
 
                                 paragraph = paragraph.push_styled_text(
-                                    match args.borrow().get(name.as_str()) {
+                                    match args.get(name.as_str()) {
                                         Some(value) => value.to_string(),
                                         None => format!("{{{{{name}}}}}"),
                                     },
@@ -788,7 +818,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     CheckBoxEvent::Checked { id, checked } => {
                         let (true_val, false_val) = flag_map.get(&id).unwrap();
 
-                        args.borrow_mut().insert(id, match checked {
+                        args.insert(id, match checked {
                             true => true_val.to_owned(),
                             false => false_val.to_owned(),
                         });
@@ -796,17 +826,17 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 },
                 Event::FilePicker(event) => match event {
                     FilePickerEvent::FilePathChanged { id, path } => {
-                        args.borrow_mut().insert(id, path.to_string_lossy().to_string());
+                        args.insert(id, path.to_string_lossy().to_string());
                     },
                 },
                 Event::Select(event) => match event {
                     SelectEvent::OptionSelected { id, option } => {
-                        args.borrow_mut().insert(id, option);
+                        args.insert(id, option);
                     },
                 },
                 Event::TextField(event) => match event {
                     TextFieldEvent::TextChanged { id, text } => {
-                        args.borrow_mut().insert(id, text);
+                        args.insert(id, text);
                     },
                 },
                 _ => (),
@@ -814,7 +844,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         )?;
     }
 
-    let command = map_args_to_command(&workflow, &args.borrow());
+    let run_command = map_args_to_command(&workflow, &args);
 
     fig_telemetry::dispatch_emit_track(
         TrackEvent::new(
@@ -837,17 +867,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    if send_figterm(command, true).await.is_err() {
-        execute_bash_workflow(&workflow.name, &workflow.namespace, &workflow.tree, &args.take()).await?;
+    if send_figterm(run_command, true).await.is_err() {
+        execute_workflow(command, &workflow.name, &workflow.namespace, &workflow.tree, &args).await?;
     }
 
     Ok(())
 }
 
-fn parse_args(
-    args: core::cell::Ref<HashMap<String, String>>,
-    parameters: &Vec<Parameter>,
-) -> Result<HashMap<String, String>> {
+fn parse_args(args: &HashMap<String, String>, parameters: &Vec<Parameter>) -> Result<HashMap<String, String>> {
     let mut map = HashMap::new();
     for parameter in parameters {
         let value = args.get(&parameter.name);
@@ -901,15 +928,15 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     Ok(())
 }
 
-async fn execute_bash_workflow(
+async fn execute_workflow(
+    mut command: Command,
     name: &str,
     namespace: &str,
     tree: &[TreeElement],
     args: &HashMap<String, String>,
 ) -> Result<()> {
     let start_time = time::OffsetDateTime::now_utc();
-    let mut command = Command::new("bash");
-    command.arg("-c");
+
     command.arg(tree.iter().fold(String::new(), |mut acc, branch| {
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
@@ -929,7 +956,7 @@ async fn execute_bash_workflow(
                     "commandStderr": Value::Null,
                     "exitCode": exit_code,
                     "executionStartTime": execution_start_time,
-                    "executionDuration": execution_duration
+                    "executionDuration": execution_duration,
                 }))
                 .auth()
                 .send()

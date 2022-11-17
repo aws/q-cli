@@ -149,6 +149,15 @@ pub enum TreeElement {
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[serde(rename_all = "UPPERCASE")]
+pub enum Runtime {
+    #[default]
+    Bash,
+    Python,
+    Node,
+}
+
+#[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Workflow {
     pub name: String,
@@ -160,9 +169,10 @@ pub struct Workflow {
     pub rules: Option<Vec<Vec<Rule>>>,
     pub namespace: String,
     pub parameters: Vec<Parameter>,
-    pub template: String,
     pub tree: Vec<TreeElement>,
     pub is_owned_by_user: bool,
+    #[serde(default)]
+    pub runtime: Runtime,
 }
 
 pub async fn workflows(schema_version: u32) -> fig_request::Result<Vec<Workflow>> {
