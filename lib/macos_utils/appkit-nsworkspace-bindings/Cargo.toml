@@ -4,7 +4,7 @@ version = "0.1.0"
 publish = false
 
 [target.'cfg(target_os = "macos")'.build-dependencies]
-bindgen = "0.61"
+bindgen = "0.62"
 
 [target.'cfg(target_os = "macos")'.dependencies]
 objc = "0.2"
