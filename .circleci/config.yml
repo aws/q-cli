@@ -337,12 +337,17 @@ jobs:
             chmod +x cargo-tauri
             mv cargo-tauri /usr/local/bin/cargo-tauri
       - run:
+          name: Install sentry
+          command: |
+            curl -sL https://sentry.io/get-cli/ | bash
+      - run:
           name: Build fig_cli
           command: |
             cd desktop
             mkdir -p "$PRODUCTS_DIR"
             cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package fig_cli
             lipo -create -output "$PRODUCTS_DIR/fig-darwin-universal" target/{x86_64,aarch64}-apple-darwin/release/fig_cli
+            sentry-cli upload-dif --include-sources -o withfig -p rust-cli "$PRODUCTS_DIR/fig-darwin-universal"
           environment:
             PRODUCTS_DIR: build/usr/bin
             TARGET: universal-apple-darwin
@@ -352,6 +357,7 @@ jobs:
             cd desktop
             cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package figterm
             lipo -create -output "$PRODUCTS_DIR/figterm-darwin-universal" target/{x86_64,aarch64}-apple-darwin/release/figterm
+            sentry-cli upload-dif --include-sources -o withfig -p figterm "$PRODUCTS_DIR/figterm-darwin-universal"
           environment:
             PRODUCTS_DIR: build/usr/bin
             TARGET: universal-apple-darwin
@@ -693,7 +699,7 @@ jobs:
           command: |
             cd desktop
             VERSION=`cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "fig_desktop") | .version'`
-            export SENTRY_RELEASE="$SENTRY_PROJECT@${VERSION}"
+            export SENTRY_RELEASE="fig_desktop@${VERSION}"
             sentry-cli releases new -p $SENTRY_PROJECT $SENTRY_RELEASE
             sentry-cli releases set-commits $SENTRY_RELEASE --auto
             sentry-cli releases finalize $SENTRY_RELEASE
