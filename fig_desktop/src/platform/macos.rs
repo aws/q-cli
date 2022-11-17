@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 use std::ffi::CString;
+use std::path::Path;
 use std::slice;
 use std::sync::atomic::{
     AtomicBool,
@@ -715,7 +716,24 @@ impl PlatformStateImpl {
     pub(super) fn icon_lookup(asset: &AssetSpecifier) -> Option<ProcessedAsset> {
         let data = match asset {
             AssetSpecifier::Named(name) => unsafe { macos_utils::image::png_for_name(name)? },
-            AssetSpecifier::PathBased(path) => unsafe { macos_utils::image::png_for_path(path)? },
+            AssetSpecifier::PathBased(path) => (unsafe { macos_utils::image::png_for_path(path) })
+                .or_else(|| {
+                    if path.to_str()?.ends_with('/') {
+                        // /bin will always exist and looks like the default folder
+                        // TODO: replace with `iconForContentType`
+                        unsafe { macos_utils::image::png_for_path(Path::new("/bin")) }
+                    } else {
+                        None
+                    }
+                })
+                .or_else(|| {
+                    if let Some(ext) = path.extension() {
+                        unsafe { macos_utils::image::png_for_name(ext.to_str()?) }
+                    } else {
+                        None
+                    }
+                })
+                .or_else(|| unsafe { macos_utils::image::png_for_name("file") })?,
         };
 
         Some((data.into(), AssetKind::Png))
