@@ -116,6 +116,11 @@ async fn uninstall() -> Result<()> {
     Ok(())
 }
 
+#[cfg(all(unix, not(any(target_os = "macos", target_os = "linux"))))]
+async fn uninstall() -> Result<()> {
+    eyre::bail!("Uninstalling Fig is not supported on this platform");
+}
+
 #[cfg(target_os = "linux")]
 mod linux {
     use eyre::Result;

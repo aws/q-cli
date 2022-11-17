@@ -11,6 +11,6 @@ pub(crate) async fn update(
     _tx: Sender<UpdateStatus>,
     _interactive: bool,
     _relaunch_dashboard: bool,
-) -> Result<()> {
+) -> Result<(), Error> {
     Err(Error::PackageManaged)
 }

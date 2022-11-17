@@ -170,6 +170,8 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
             todo!();
         } else if #[cfg(target_os = "windows")] {
             Ok(fig_dir()?.join("bin"))
+        } else {
+            todo!();
         }
     }
 }
