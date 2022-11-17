@@ -35,7 +35,7 @@ fn bump_normal(dry: bool) -> eyre::Result<()> {
             version.pre = Prerelease::new(&format!("beta.{num}"))?;
         },
         Channel::Stable => {
-            version.minor += 1;
+            version.patch += 1;
         },
     }
     write_version(&version);
