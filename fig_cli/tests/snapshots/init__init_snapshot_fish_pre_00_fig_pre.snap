@@ -43,12 +43,16 @@ if test "$TERM_PROGRAM" != WarpTerminal
 
     # Do not launch figterm in non-interactive shells (like VSCode Tasks)
     if status --is-interactive
-        set FIG_TERM_NAME figterm
-        set FIG_SHELL_PATH (command -v "$FIG_TERM_NAME" || echo "$HOME/.fig/bin/figterm")
+        set FIG_TERM_NAME (command basename "$FIG_SHELL")" (figterm)"
+        if test -x "$HOME/.fig/bin/$FIG_TERM_NAME"
+            set FIG_TERM_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
+        else 
+            set FIG_TERM_PATH (command -v figterm || echo "$HOME/.fig/bin/figterm")
+        end
 
         # Need to exec bash because we're using 'exec -a <name>'
         # to set argv[0] and fish's exec doesn't have this option
-        exec bash -c "FIG_PARENT=$FIG_PARENT FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_SHELL_PATH\""
+        exec bash -c "FIG_PARENT=$FIG_PARENT FIG_SHELL=$FIG_SHELL FIG_IS_LOGIN_SHELL=$FIG_IS_LOGIN_SHELL exec -a \"$FIG_TERM_NAME\" \"$FIG_TERM_PATH\""
     end
     # else
     #     set -g FIG_DID_NOT_EXEC_FIGTERM 1

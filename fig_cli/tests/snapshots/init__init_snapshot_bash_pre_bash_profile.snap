@@ -438,8 +438,12 @@ then
 
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
-    FIG_TERM_NAME="figterm"
-    FIG_SHELL_PATH="$(command -v "$FIG_TERM_NAME" || echo "${HOME}/.fig/bin/figterm")"
+    FIG_TERM_NAME="$(basename "${FIG_SHELL}") (figterm)"
+    if [[ -x "${HOME}/.fig/bin/${FIG_TERM_NAME}" ]]; then
+      FIG_TERM_PATH="${HOME}/.fig/bin/${FIG_TERM_NAME}"
+    else
+      FIG_TERM_PATH="$(command -v figterm || echo "${HOME}/.fig/bin/figterm")"
+    fi
 
     FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"
 
@@ -454,7 +458,7 @@ then
         INITIAL_TEXT="${INITIAL_TEXT}${REPLY}\n"
       done
     fi
-    FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_SHELL_PATH}"
+    FIG_EXECUTION_STRING="${FIG_EXECUTION_STRING}" FIG_START_TEXT="$(printf "%b" "${INITIAL_TEXT}")" FIG_SHELL="${FIG_SHELL}" FIG_IS_LOGIN_SHELL="${FIG_IS_LOGIN_SHELL}" exec -a "${FIG_TERM_NAME}" "${FIG_TERM_PATH}"
   fi
 # else
 #   FIG_DID_NOT_EXEC_FIGTERM=1

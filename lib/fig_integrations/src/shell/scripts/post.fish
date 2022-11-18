@@ -86,7 +86,7 @@ function fig_precmd --on-event fish_prompt
     end
     fig_osc "PID=%d" "$fish_pid"
     fig_osc "ExitCode=%s" "$last_status"
-    fig_osc "TTY=%s" (tty)
+    fig_osc "TTY=%s" "$TTY"
     fig_osc "Log=%s" "$FIG_LOG_LEVEL"
     fig_osc "FishSuggestionColor=%s" "$fish_color_autosuggestion"
 
@@ -137,4 +137,4 @@ if test -n "$PROCESS_LAUNCHED_BY_FIG"
     fig_osc DoneSourcing
 end
 
-fig _ pre-cmd &>/dev/null &
+begin; fig _ pre-cmd &> /dev/null &; end

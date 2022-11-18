@@ -89,23 +89,6 @@ pub async fn run_install(_ignore_immediate_update: bool) {
                 Err(err) => tracing::warn!(%err, "Failed to get input method bundle path"),
             }
         }
-
-        // Delete old figterm instances
-        #[cfg(target_os = "macos")]
-        if let Ok(fig_dir) = directories::fig_dir() {
-            let bins = fig_dir.join("bin");
-            for entry in std::fs::read_dir(bins).ok().into_iter().flatten().flatten() {
-                if entry.file_type().map_or(false, |f| f.is_file()) {
-                    if let Some(name) = entry.file_name().to_str() {
-                        if name.contains("figterm") {
-                            if let Err(err) = std::fs::remove_file(entry.path()) {
-                                error!(%err, "Failed to delete old figterm instance");
-                            }
-                        }
-                    }
-                }
-            }
-        }
     }
 
     if let Err(err) = set_previous_version(current_version()) {
@@ -234,6 +217,7 @@ fn symlink(origin: impl AsRef<std::path::Path>, link: impl AsRef<std::path::Path
 
 #[cfg(target_os = "macos")]
 pub async fn initialize_fig_dir() -> anyhow::Result<()> {
+    use std::fs::hard_link;
     use std::path::Path;
     use std::{
         fs,
@@ -255,6 +239,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         create_launch_agent,
         LaunchdPlist,
     };
+    use fig_util::Shell;
     use macos_utils::bundle::{
         get_bundle_path,
         get_bundle_resource_path,
@@ -287,7 +272,12 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
     if let Some(figterm_path) = get_bundle_path_for_executable(FIGTERM_BINARY_NAME) {
         let link = bin_dir.join("figterm");
-        symlink(figterm_path, link).ok();
+        symlink(&figterm_path, link).ok();
+
+        for shell in Shell::all() {
+            let link = bin_dir.join(format!("{shell} (figterm)"));
+            hard_link(&figterm_path, link).ok();
+        }
     }
 
     if let Some(fig_cli_path) = get_bundle_path_for_executable(FIG_CLI_BINARY_NAME) {

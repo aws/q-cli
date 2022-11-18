@@ -85,7 +85,8 @@ impl EnvVarDiagnostic {
                     || key == "GTK_IM_MODULE"
                     || key == "QT_IM_MODULE"
                     || key == "XMODIFIERS"
-                    || key == "__CFBundleIdentifier")
+                    || key == "__CFBundleIdentifier"
+                    || key == "ZDOTDIR")
                     && !key.contains("TOKEN")
                     && !key.contains("KEY")
                     && !key.contains("SECRET")
