@@ -12,15 +12,15 @@ or set --append PATH $HOME/.local/bin
 # end
 
 
-# Open workflows on keyboard shortcut
-set --query FIG_WORKFLOWS_KEYBIND; or set FIG_WORKFLOWS_KEYBIND '\cf'
+# Open scripts on keyboard shortcut
+set --query FIG_SCRIPTS_KEYBIND; or set FIG_SCRIPTS_KEYBIND '\cf'
 
-# function fig-open-workflows
+# function fig-open-scripts
 #     fig run
 #     commandline -f repaint
 # end
 
-# bind (string unescape $FIG_WORKFLOWS_KEYBIND) fig-open-workflows
+# bind (string unescape $FIG_SCRIPTS_KEYBIND) fig-open-scripts
 
 set --query TTY; or set TTY (command tty)
 set --export TTY

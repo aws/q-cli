@@ -55,8 +55,10 @@ enum FigWebsocketMessage {
         #[serde(with = "time::serde::rfc3339::option")]
         updated_at: Option<time::OffsetDateTime>,
     },
-    InvalidateWorkflows {
-        workflows: Vec<WorkflowIdentifier>,
+    #[serde(rename = "invalidateWorkflows")]
+    InvalidateScripts {
+        #[serde(rename = "workflows")]
+        scripts: Vec<ScriptIdentifier>,
     },
     #[serde(rename_all = "camelCase")]
     Event {
@@ -91,7 +93,7 @@ struct RateLimitResponse {
 
 #[derive(Clone, Debug, Default, Eq, PartialEq, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
-struct WorkflowIdentifier {
+struct ScriptIdentifier {
     namespace: String,
     name: String,
 }
@@ -210,17 +212,17 @@ pub async fn process_websocket(
                                     }
                                 }
                             },
-                            FigWebsocketMessage::InvalidateWorkflows { workflows } => {
-                                if workflows.is_empty() {
-                                    tokio::fs::remove_dir_all(directories::workflows_cache_dir()?).await?;
-                                    tokio::fs::create_dir(directories::workflows_cache_dir()?).await?;
+                            FigWebsocketMessage::InvalidateScripts { scripts } => {
+                                if scripts.is_empty() {
+                                    tokio::fs::remove_dir_all(directories::scripts_cache_dir()?).await?;
+                                    tokio::fs::create_dir(directories::scripts_cache_dir()?).await?;
                                     return Ok(());
                                 }
 
-                                for workflow in workflows {
+                                for script in scripts {
                                     tokio::fs::remove_file(
-                                        directories::workflows_cache_dir()?
-                                            .join(format!("{}.{}.json", workflow.namespace, workflow.name)),
+                                        directories::scripts_cache_dir()?
+                                            .join(format!("{}.{}.json", script.namespace, script.name)),
                                     )
                                     .await?;
                                 }

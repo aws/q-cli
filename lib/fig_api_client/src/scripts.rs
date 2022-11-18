@@ -180,7 +180,7 @@ impl Runtime {
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
-pub struct Workflow {
+pub struct Script {
     pub name: String,
     pub display_name: Option<String>,
     pub description: Option<String>,
@@ -197,7 +197,7 @@ pub struct Workflow {
     pub runtime: Runtime,
 }
 
-pub async fn workflows(schema_version: u32) -> fig_request::Result<Vec<Workflow>> {
+pub async fn scripts(schema_version: u32) -> fig_request::Result<Vec<Script>> {
     fig_request::Request::get("/workflows")
         .query(&[("schema-version", schema_version)])
         .auth()

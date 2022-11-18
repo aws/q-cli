@@ -245,10 +245,10 @@ pub fn utc_backup_dir() -> Result<PathBuf> {
     Ok(backups_dir()?.join(now))
 }
 
-/// The directory where cached workflows are stored
-pub fn workflows_cache_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_WORKFLOWS_CACHE_DIR");
-    Ok(fig_dir()?.join("cache").join("workflows"))
+/// The directory where cached scripts are stored
+pub fn scripts_cache_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
+    Ok(fig_dir()?.join("cache").join("scripts"))
 }
 
 /// The desktop app socket path
@@ -470,7 +470,7 @@ mod test {
         test_environment_path!(logs_dir, "FIG_DIRECTORIES_LOGS_DIR");
         test_environment_path!(backups_dir, "FIG_DIRECTORIES_BACKUPS_DIR");
         test_environment_path!(utc_backup_dir, "FIG_DIRECTORIES_UTC_BACKUP_DIR");
-        test_environment_path!(workflows_cache_dir, "FIG_DIRECTORIES_WORKFLOWS_CACHE_DIR");
+        test_environment_path!(scripts_cache_dir, "FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
         test_environment_path!(fig_socket_path, "FIG_DIRECTORIES_FIG_SOCKET_PATH");
         test_environment_path!(daemon_socket_path, "FIG_DIRECTORIES_DAEMON_SOCKET_PATH");
         test_environment_path!(manifest_path, "FIG_DIRECTORIES_MANIFEST_PATH");

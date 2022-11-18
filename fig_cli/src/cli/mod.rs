@@ -16,6 +16,7 @@ mod issue;
 mod man;
 mod plugins;
 mod pro;
+mod scripts;
 mod settings;
 mod source;
 mod ssh;
@@ -27,7 +28,6 @@ mod tweet;
 mod uninstall;
 mod update;
 mod user;
-mod workflow;
 
 use clap::{
     CommandFactory,
@@ -177,9 +177,9 @@ pub enum CliRootCommands {
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man(man::ManArgs),
-    /// Fig Workflows
-    #[command(aliases(&["run", "r", "workflows", "snippet", "snippets", "flow", "flows"]))]
-    Workflow(workflow::WorkflowArgs),
+    /// Fig Scripts
+    #[command(alias("r"))]
+    Run(scripts::ScriptsArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
@@ -330,7 +330,7 @@ impl Cli {
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man(args) => args.execute(),
-                CliRootCommands::Workflow(args) => args.execute().await,
+                CliRootCommands::Run(args) => args.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,

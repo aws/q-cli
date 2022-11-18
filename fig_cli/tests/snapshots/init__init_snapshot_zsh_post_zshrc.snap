@@ -14,19 +14,19 @@ pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
 # if [[ $TTY != "not a tty" ]]; then
-  # # Open workflows on keyboard shortcut
-  # if [[ -z "${FIG_WORKFLOWS_KEYBIND}" ]]
+  # # Open scripts on keyboard shortcut
+  # if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]
   # then
-  #   export FIG_WORKFLOWS_KEYBIND='^f'
+  #   export FIG_SCRIPTS_KEYBIND='^f'
   # fi
   #
-  # fig-open-workflows() {
+  # fig-open-scripts() {
   #     fig run < $TTY
   #     zle .kill-whole-line
   #     zle .accept-line
   # }
-  # zle -N fig-open-workflows
-  # bindkey ${FIG_WORKFLOWS_KEYBIND} fig-open-workflows
+  # zle -N fig-open-scripts
+  # bindkey ${FIG_SCRIPTS_KEYBIND} fig-open-scripts
 # fi
 
 # if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then

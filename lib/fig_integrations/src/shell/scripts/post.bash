@@ -9,15 +9,15 @@ pathadd() {
 pathadd ~/.fig/bin
 pathadd ~/.local/bin
 
-# Open workflows on keyboard shortcut
-if [[ -z "${FIG_WORKFLOWS_KEYBIND}" ]]
+# Open scripts on keyboard shortcut
+if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]
 then
-  export FIG_WORKFLOWS_KEYBIND='^f'
+  export FIG_SCRIPTS_KEYBIND='^f'
 fi
 
 # we *would* install the keybind here, but the bash syntax is painful and we don't want to risk it
 # if [[ "$(set -o | grep 'emacs\|\bvi\b' | cut -f2 | tr '\n' ':')" != 'off:off:' ]]; then
-#   bind "\"${FIG_WORKFLOWS_KEYBIND}\":\"fig run\n\""
+#   bind "\"${FIG_SCRIPTS_KEYBIND}\":\"fig run\n\""
 # fi
 
 # if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then

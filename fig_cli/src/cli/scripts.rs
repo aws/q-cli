@@ -17,8 +17,8 @@ use eyre::{
     eyre,
     Result,
 };
-use fig_api_client::workflows::{
-    workflows,
+use fig_api_client::scripts::{
+    scripts,
     FileType,
     Generator,
     Parameter,
@@ -27,8 +27,8 @@ use fig_api_client::workflows::{
     Rule,
     RuleType,
     Runtime,
+    Script,
     TreeElement,
-    Workflow,
 };
 #[cfg(unix)]
 use fig_ipc::local::open_ui_element;
@@ -81,61 +81,61 @@ use crate::util::choose;
 const SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Args, PartialEq, Eq)]
-pub struct WorkflowArgs {
+pub struct ScriptsArgs {
     // Flags can be added here
     #[arg(allow_hyphen_values = true)]
     args: Vec<String>,
 }
 
-impl WorkflowArgs {
+impl ScriptsArgs {
     pub async fn execute(self) -> Result<()> {
         execute(self.args).await
     }
 }
 
 #[cfg(unix)]
-enum WorkflowAction {
-    Run(Box<fig_api_client::workflows::Workflow>),
+enum ScriptAction {
+    Run(Box<fig_api_client::scripts::Script>),
     Create,
 }
 
 #[cfg(unix)]
-impl SkimItem for WorkflowAction {
+impl SkimItem for ScriptAction {
     fn text(&self) -> std::borrow::Cow<str> {
         match self {
-            WorkflowAction::Run(workflow) => {
-                let tags = match &workflow.tags {
+            ScriptAction::Run(script) => {
+                let tags = match &script.tags {
                     Some(tags) => tags.join(" "),
                     None => String::new(),
                 };
 
                 format!(
                     "{} {} @{}/{} {}",
-                    workflow.display_name.as_deref().unwrap_or_default(),
-                    workflow.name,
-                    workflow.namespace,
-                    workflow.name,
+                    script.display_name.as_deref().unwrap_or_default(),
+                    script.name,
+                    script.namespace,
+                    script.name,
                     tags
                 )
                 .into()
             },
-            WorkflowAction::Create => "create new workflow".into(),
+            ScriptAction::Create => "create new script".into(),
         }
     }
 
     fn display<'a>(&'a self, context: skim::DisplayContext<'a>) -> skim::AnsiString<'a> {
         match self {
-            WorkflowAction::Run(workflow) => {
-                let name = workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone());
+            ScriptAction::Run(script) => {
+                let name = script.display_name.clone().unwrap_or_else(|| script.name.clone());
                 let name_len = name.len();
 
-                let tags = match &workflow.tags {
+                let tags = match &script.tags {
                     Some(tags) if !tags.is_empty() => format!(" |{}| ", tags.join("|")),
                     _ => String::new(),
                 };
                 let tag_len = tags.len();
 
-                let namespace_name = format!("@{}/{}", workflow.namespace, workflow.name);
+                let namespace_name = format!("@{}/{}", script.namespace, script.name);
                 let namespace_name_len = namespace_name.len();
 
                 let terminal_size = crossterm::terminal::size();
@@ -165,16 +165,16 @@ impl SkimItem for WorkflowAction {
                     ))
                 }
             },
-            WorkflowAction::Create => skim::AnsiString::parse(&"Create new Workflow...".bold().blue().to_string()),
+            ScriptAction::Create => skim::AnsiString::parse(&"Create new Script...".bold().blue().to_string()),
         }
     }
 
     fn preview(&self, _context: skim::PreviewContext) -> skim::ItemPreview {
         match self {
-            WorkflowAction::Run(workflow) => {
+            ScriptAction::Run(script) => {
                 let mut lines = vec![]; //format!("@{}/{}", self.namespace, self.name)];
 
-                if let Some(description) = workflow.description.as_deref() {
+                if let Some(description) = script.description.as_deref() {
                     if !description.is_empty() {
                         lines.push(format!("  {}", description.to_owned()));
                     } else {
@@ -187,14 +187,14 @@ impl SkimItem for WorkflowAction {
 
                 skim::ItemPreview::AnsiText(lines.join("\n"))
             },
-            WorkflowAction::Create => skim::ItemPreview::AnsiText("".to_string()),
+            ScriptAction::Create => skim::ItemPreview::AnsiText("".to_string()),
         }
     }
 
     fn output(&self) -> std::borrow::Cow<str> {
         match self {
-            WorkflowAction::Run(workflow) => workflow.name.clone().into(),
-            WorkflowAction::Create => "".into(),
+            ScriptAction::Run(script) => script.name.clone().into(),
+            ScriptAction::Create => "".into(),
         }
     }
 
@@ -203,33 +203,35 @@ impl SkimItem for WorkflowAction {
     }
 }
 
-async fn write_workflows() -> Result<(), eyre::Report> {
-    for workflow in workflows(SUPPORTED_SCHEMA_VERSION).await? {
+async fn write_scripts() -> Result<(), eyre::Report> {
+    for script in scripts(SUPPORTED_SCHEMA_VERSION).await? {
         let mut file = tokio::fs::File::create(
-            directories::workflows_cache_dir()?.join(format!("{}.{}.json", workflow.namespace, workflow.name)),
+            directories::scripts_cache_dir()?.join(format!("{}.{}.json", script.namespace, script.name)),
         )
         .await?;
-        file.write_all(serde_json::to_string_pretty(&workflow)?.as_bytes())
+        file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
             .await?;
     }
+
     Ok(())
 }
 
-async fn get_workflows() -> Result<Vec<Workflow>> {
-    let mut workflows = vec![];
-    for file in directories::workflows_cache_dir()?.read_dir()?.flatten() {
+async fn get_scripts() -> Result<Vec<Script>> {
+    let mut scripts = vec![];
+    for file in directories::scripts_cache_dir()?.read_dir()?.flatten() {
         if let Some(name) = file.file_name().to_str() {
             if name.ends_with(".json") {
-                let workflow = serde_json::from_slice::<Workflow>(&tokio::fs::read(file.path()).await?);
+                let script = serde_json::from_slice::<Script>(&tokio::fs::read(file.path()).await?);
 
-                match workflow {
-                    Ok(workflow) => workflows.push(workflow),
-                    Err(err) => eprintln!("failed to deserialize workflow: {}", err),
+                match script {
+                    Ok(script) => scripts.push(script),
+                    Err(err) => eprintln!("failed to deserialize script: {}", err),
                 }
             }
         }
     }
-    Ok(workflows)
+
+    Ok(scripts)
 }
 
 #[derive(Debug, Clone, PartialEq, Eq)]
@@ -284,72 +286,72 @@ impl std::fmt::Display for ExecutionMethod {
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Create cache dir
-    tokio::fs::create_dir_all(directories::workflows_cache_dir()?).await?;
+    tokio::fs::create_dir_all(directories::scripts_cache_dir()?).await?;
 
-    let mut workflows = get_workflows().await?;
+    let mut scripts = get_scripts().await?;
 
-    // Must come after we get workflows
-    let mut write_workflows: Option<tokio::task::JoinHandle<Result<(), _>>> = Some(tokio::spawn(write_workflows()));
+    // Must come after we get scripts
+    let mut write_scripts: Option<tokio::task::JoinHandle<Result<(), _>>> = Some(tokio::spawn(write_scripts()));
 
     let is_interactive = atty::is(atty::Stream::Stdin) && atty::is(atty::Stream::Stdout);
 
     // Parse args
-    let workflow_name = env_args.first().map(String::from);
-    let (execution_method, workflow) = match workflow_name {
+    let script_name = env_args.first().map(String::from);
+    let (execution_method, script) = match script_name {
         Some(name) => {
             let (namespace, name) = match name.strip_prefix('@') {
                 Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
                     [namespace, name] => (Some(namespace), name),
-                    _ => bail!("Malformed workflow specifier, expects '@namespace/workflow-name': {name}",),
+                    _ => bail!("Malformed script specifier, expects '@namespace/script-name': {name}",),
                 },
                 None => (None, name.as_ref()),
             };
 
-            let workflow = match namespace {
-                Some(namespace) => workflows
+            let script = match namespace {
+                Some(namespace) => scripts
                     .into_iter()
-                    .find(|workflow| workflow.name == name && workflow.namespace == namespace),
-                None => workflows
+                    .find(|script| script.name == name && script.namespace == namespace),
+                None => scripts
                     .into_iter()
-                    .find(|workflow| workflow.name == name && workflow.is_owned_by_user),
+                    .find(|script| script.name == name && script.is_owned_by_user),
             };
 
-            let workflow = match workflow {
-                Some(workflow) => workflow,
+            let script = match script {
+                Some(script) => script,
                 None => {
-                    write_workflows.take().unwrap().await??;
+                    write_scripts.take().unwrap().await??;
 
-                    let workflows = get_workflows().await?;
+                    let scripts = get_scripts().await?;
 
-                    let workflow = match namespace {
-                        Some(namespace) => workflows
+                    let script = match namespace {
+                        Some(namespace) => scripts
                             .into_iter()
-                            .find(|workflow| workflow.name == name && workflow.namespace == namespace),
-                        None => workflows
+                            .find(|script| script.name == name && script.namespace == namespace),
+                        None => scripts
                             .into_iter()
-                            .find(|workflow| workflow.name == name && workflow.is_owned_by_user),
+                            .find(|script| script.name == name && script.is_owned_by_user),
                     };
 
-                    match workflow {
-                        Some(workflow) => workflow,
+                    match script {
+                        Some(script) => script,
                         None => {
-                            eprintln!("Workflow not found");
+                            eprintln!("Script not found");
                             return Ok(());
                         },
                     }
                 },
             };
 
-            (ExecutionMethod::Invoke, workflow)
+            (ExecutionMethod::Invoke, script)
         },
         None => {
             if !is_interactive {
-                bail!("No workflow specified");
+                bail!("No script specified");
             }
 
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
-                    TrackEventType::WorkflowSearchViewed,
+                    TrackEventType::ScriptSearchViewed,
                     TrackSource::Cli,
                     env!("CARGO_PKG_VERSION").into(),
                     empty::<(&str, &str)>(),
@@ -359,12 +361,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
-            if let Err(err) = write_workflows.take().unwrap().await? {
-                eprintln!("Could not load remote workflows!\nFalling back to local cache.");
-                warn!("Failed to acquire remote workflow definitions: {err}");
+            if let Err(err) = write_scripts.take().unwrap().await? {
+                eprintln!("Could not load remote scripts!\nFalling back to local cache.");
+                warn!("Failed to acquire remote script definitions: {err}");
             }
 
-            workflows.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
+            scripts.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
                 (None, None) => StdOrdering::Equal,
                 (None, Some(_)) => StdOrdering::Greater,
                 (Some(_), None) => StdOrdering::Less,
@@ -384,12 +386,12 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
                     let (tx, rx): (SkimItemSender, SkimItemReceiver) = unbounded();
 
-                    if workflows.is_empty() {
-                        tx.send(Arc::new(WorkflowAction::Create)).ok();
+                    if scripts.is_empty() {
+                        tx.send(Arc::new(ScriptAction::Create)).ok();
                     }
 
-                    for workflow in workflows.iter() {
-                        tx.send(Arc::new(WorkflowAction::Run(Box::new(workflow.clone())))).ok();
+                    for script in scripts.iter() {
+                        tx.send(Arc::new(ScriptAction::Run(Box::new(script.clone())))).ok();
                     }
                     drop(tx);
 
@@ -427,15 +429,15 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                 .map(|selected_item|
                                     (**selected_item)
                                         .as_any()
-                                        .downcast_ref::<WorkflowAction>()
+                                        .downcast_ref::<ScriptAction>()
                                         .unwrap()
                                         .to_owned()
                                 )
                                 .next() {
-                                Some(workflow) => {
-                                    match workflow {
-                                        WorkflowAction::Run(workflow) => (ExecutionMethod::Search, *workflow.clone()),
-                                        WorkflowAction::Create => {
+                                Some(script) => {
+                                    match script {
+                                        ScriptAction::Run(script) => (ExecutionMethod::Search, *script.clone()),
+                                        ScriptAction::Create => {
                                             launch_fig_desktop(LaunchArgs {
                                                 wait_for_socket: true,
                                                 open_dashboard: false,
@@ -443,7 +445,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                                                 verbose: true,
                                             })?;
 
-                                            return match open_ui_element(UiElement::MissionControl, Some("/workflows".to_string())).await {
+                                            return match open_ui_element(UiElement::MissionControl, Some("/scripts".to_string())).await {
                                                 Ok(()) => Ok(()),
                                                 Err(err) => Err(err.into()),
                                             };
@@ -456,27 +458,27 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         None => return Ok(()),
                     }
                 } else if #[cfg(windows)] {
-                    let workflow_names: Vec<String> = workflows
+                    let script_names: Vec<String> = scripts
                         .iter()
-                        .map(|workflow| {
-                            workflow.display_name.clone().unwrap_or_else(|| workflow.name.clone())
+                        .map(|script| {
+                            script.display_name.clone().unwrap_or_else(|| script.name.clone())
                         })
                         .collect();
 
                     let selection = dialoguer::FuzzySelect::with_theme(&crate::util::dialoguer_theme())
-                        .items(&workflow_names)
+                        .items(&script_names)
                         .default(0)
                         .interact()
                         .unwrap();
 
-                    ("search", workflows.remove(selection))
+                    ("search", scripts.remove(selection))
                 }
             }
         },
     };
 
-    if std::env::var_os("FIG_WORKFLOW_DEBUG").is_some() {
-        dbg!(&workflow);
+    if std::env::var_os("FIG_SCRIPT_DEBUG").is_some() {
+        dbg!(&script);
     }
 
     if execution_method == ExecutionMethod::Search {
@@ -487,19 +489,19 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         )?;
     }
 
-    let workflow_name = format!("@{}/{}", &workflow.namespace, &workflow.name);
-    if workflow.template_version > SUPPORTED_SCHEMA_VERSION {
+    let script_name = format!("@{}/{}", &script.namespace, &script.name);
+    if script.template_version > SUPPORTED_SCHEMA_VERSION {
         bail!(
-            "Could not execute {workflow_name} since it requires features not available in this version of Fig.\n\
+            "Could not execute {script_name} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
             "fig update".magenta(),
         );
     }
 
-    runtime_check(&workflow.runtime).await?;
+    runtime_check(&script.runtime).await?;
 
-    // validate that all of the workflow rules pass
-    if let Some(ruleset) = &workflow.rules {
+    // validate that all of the script rules pass
+    if let Some(ruleset) = &script.rules {
         if !rules_met(ruleset)? {
             return Ok(());
         }
@@ -522,49 +524,35 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         bail!("Arguments must be in the form of `--key value`");
     }
 
-    let map = if workflow.parameters.is_empty() {
+    let map = if script.parameters.is_empty() {
         Ok(HashMap::new())
     } else {
-        parse_args(&arg_pairs, &workflow.parameters)
+        parse_args(&arg_pairs, &script.parameters)
     };
 
     match (map, is_interactive) {
         (Ok(map), _) => match execution_method {
             ExecutionMethod::Invoke => {
-                execute_workflow(
-                    workflow.runtime,
-                    &workflow.name,
-                    &workflow.namespace,
-                    &workflow.tree,
-                    &map,
-                )
-                .await?;
+                execute_script(script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
             },
             ExecutionMethod::Search => {
-                if send_figterm(map_args_to_command(&workflow, &map), true).await.is_err() {
-                    execute_workflow(
-                        workflow.runtime,
-                        &workflow.name,
-                        &workflow.namespace,
-                        &workflow.tree,
-                        &map,
-                    )
-                    .await?;
+                if send_figterm(map_args_to_command(&script, &map), true).await.is_err() {
+                    execute_script(script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
                 }
             },
         },
         (Err(_), true) => {
-            let tui_out = run_tui(&workflow, &arg_pairs, &workflow_name, &execution_method)?;
+            let tui_out = run_tui(&script, &arg_pairs, &script_name, &execution_method)?;
 
-            let run_command = map_args_to_command(&workflow, &tui_out);
+            let run_command = map_args_to_command(&script, &tui_out);
 
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
-                    TrackEventType::WorkflowExecuted,
+                    TrackEventType::ScriptExecuted,
                     TrackSource::Cli,
                     env!("CARGO_PKG_VERSION").into(),
                     [
-                        ("workflow", workflow_name.as_str()),
+                        ("script", script_name.as_str()),
                         ("execution_method", execution_method.to_string().as_str()),
                     ],
                 ),
@@ -573,21 +561,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
-            if let Some(task) = write_workflows {
+            if let Some(task) = write_scripts {
                 if let Err(err) = task.await? {
-                    eprintln!("Failed to update workflows from remote: {err}");
+                    eprintln!("Failed to update scripts from remote: {err}");
                 }
             }
 
             if send_figterm(run_command, true).await.is_err() {
-                execute_workflow(
-                    workflow.runtime,
-                    &workflow.name,
-                    &workflow.namespace,
-                    &workflow.tree,
-                    &tui_out,
-                )
-                .await?;
+                execute_script(script.runtime, &script.name, &script.namespace, &script.tree, &tui_out).await?;
             }
         },
         (Err(err), false) => {
@@ -641,10 +622,10 @@ fn parse_args(args: &HashMap<String, String>, parameters: &Vec<Parameter>) -> Re
     Ok(map)
 }
 
-fn map_args_to_command(workflow: &Workflow, args: &HashMap<String, Value>) -> String {
-    let mut command = format!("fig run {}", match workflow.is_owned_by_user {
-        true => workflow.name.clone(),
-        false => format!("@{}/{}", &workflow.namespace, &workflow.name),
+fn map_args_to_command(script: &Script, args: &HashMap<String, Value>) -> String {
+    let mut command = format!("fig run {}", match script.is_owned_by_user {
+        true => script.name.clone(),
+        false => format!("@{}/{}", &script.namespace, &script.name),
     });
     for (arg, val) in args {
         use std::fmt::Write;
@@ -673,7 +654,7 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     Ok(())
 }
 
-async fn execute_workflow(
+async fn execute_script(
     runtime: Runtime,
     name: &str,
     namespace: &str,
@@ -738,7 +719,7 @@ async fn execute_workflow(
     let exit_code = output.ok().and_then(|output| output.code());
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
         if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
-            Request::post(format!("/workflows/{name}/invocations"))
+            Request::post(format!("/scripts/{name}/invocations"))
                 .body(serde_json::json!({
                     "namespace": namespace,
                     "commandStderr": JsonValue::Null,
@@ -802,7 +783,7 @@ fn try_install(runtime: &Runtime) -> Result<()> {
 
     // if not interactive, don't try to install
     if !atty::is(atty::Stream::Stdout) {
-        eyre::bail!("Failed to execute workflow, {runtime:?} is not installed");
+        eyre::bail!("Failed to execute script, {runtime:?} is not installed");
     }
 
     // If brew is installed, use it to install the dependency
@@ -819,7 +800,7 @@ fn try_install(runtime: &Runtime) -> Result<()> {
         return Ok(());
     }
 
-    eyre::bail!("Failed to execute workflow, {runtime:?} is not installed");
+    eyre::bail!("Failed to execute script, {runtime:?} is not installed");
 }
 
 fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
@@ -899,9 +880,9 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
 }
 
 fn run_tui(
-    workflow: &Workflow,
+    script: &Script,
     arg_pairs: &HashMap<String, String>,
-    workflow_name: &str,
+    script_name: &str,
     execution_method: &ExecutionMethod,
 ) -> Result<HashMap<String, Value>> {
     let style_sheet = tui::style_sheet! {
@@ -990,20 +971,15 @@ fn run_tui(
 
     let mut header = Paragraph::new("__header")
         .push_line_break()
+        .push_styled_text(script.display_name.as_ref().unwrap_or(&script.name), None, None, true)
         .push_styled_text(
-            workflow.display_name.as_ref().unwrap_or(&workflow.name),
-            None,
-            None,
-            true,
-        )
-        .push_styled_text(
-            format!(" • @{}", workflow.namespace),
+            format!(" • @{}", script.namespace),
             Some(ColorAttribute::PaletteIndex(8)),
             None,
             false,
         );
 
-    if let Some(description) = &workflow.description {
+    if let Some(description) = &script.description {
         if !description.is_empty() {
             header = header.push_line_break().push_styled_text(
                 description,
@@ -1019,7 +995,7 @@ fn run_tui(
     let mut args: HashMap<String, Value> = HashMap::new();
     let mut flag_map: HashMap<String, (String, String)> = HashMap::new();
 
-    for parameter in &workflow.parameters {
+    for parameter in &script.parameters {
         let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
 
         let mut property = Container::new("").push(Label::new(
@@ -1039,7 +1015,7 @@ fn run_tui(
                     for generator in generators {
                         match generator {
                             Generator::Named { .. } => {
-                                return Err(eyre!("named generators aren't supported in workflows yet"));
+                                return Err(eyre!("named generators aren't supported in scripts yet"));
                             },
                             Generator::Script { script } => {
                                 if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
@@ -1143,11 +1119,11 @@ fn run_tui(
                 tokio::runtime::Handle::current()
                     .block_on(fig_telemetry::dispatch_emit_track(
                         TrackEvent::new(
-                            TrackEventType::WorkflowCancelled,
+                            TrackEventType::ScriptCancelled,
                             TrackSource::Cli,
                             env!("CARGO_PKG_VERSION").into(),
                             [
-                                ("workflow", workflow_name),
+                                ("script", script_name),
                                 ("execution_method", execution_method.to_string().as_str()),
                             ],
                         ),
@@ -1171,7 +1147,7 @@ fn run_tui(
                 ];
 
                 let mut paragraph = Paragraph::new("");
-                for element in &workflow.tree {
+                for element in &script.tree {
                     match element {
                         TreeElement::String(s) => paragraph = paragraph.push_text(s),
                         TreeElement::Token { name } => {
@@ -1237,7 +1213,7 @@ fn run_tui(
 
 #[cfg(test)]
 mod test {
-    use fig_api_client::workflows::Workflow;
+    use fig_api_client::scripts::Script;
 
     use super::*;
 
@@ -1390,10 +1366,10 @@ mod test {
             }
         );
 
-        let workflow = serde_json::from_value::<Workflow>(json)?;
-        assert!(workflow.rules.is_some());
+        let script = serde_json::from_value::<Script>(json)?;
+        assert!(script.rules.is_some());
 
-        let ruleset = workflow.rules.unwrap();
+        let ruleset = script.rules.unwrap();
         rules_met(&ruleset)?;
 
         Ok(())

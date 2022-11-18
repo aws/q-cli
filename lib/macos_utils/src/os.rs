@@ -34,6 +34,6 @@ mod tests {
         assert!(v.major >= 10);
 
         let formatted = format!("{v}");
-        assert!(formatted.contains("."));
+        assert!(formatted.contains('.'));
     }
 }
