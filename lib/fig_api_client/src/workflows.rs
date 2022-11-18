@@ -155,6 +155,27 @@ pub enum Runtime {
     Bash,
     Python,
     Node,
+    Deno,
+}
+
+impl Runtime {
+    pub fn exe(&self) -> &str {
+        match self {
+            Runtime::Bash => "bash",
+            Runtime::Python => "python",
+            Runtime::Node => "node",
+            Runtime::Deno => "deno",
+        }
+    }
+
+    pub fn brew_package(&self) -> &str {
+        match self {
+            Runtime::Bash => "bash",
+            Runtime::Python => "python3",
+            Runtime::Node => "node",
+            Runtime::Deno => "deno",
+        }
+    }
 }
 
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
@@ -169,6 +190,7 @@ pub struct Workflow {
     pub rules: Option<Vec<Vec<Rule>>>,
     pub namespace: String,
     pub parameters: Vec<Parameter>,
+    pub template: String,
     pub tree: Vec<TreeElement>,
     pub is_owned_by_user: bool,
     #[serde(default)]
