@@ -55,9 +55,9 @@ enum FigWebsocketMessage {
         #[serde(with = "time::serde::rfc3339::option")]
         updated_at: Option<time::OffsetDateTime>,
     },
-    #[serde(rename = "invalidateWorkflows")]
+    #[serde(alias = "invalidateWorkflows")]
     InvalidateScripts {
-        #[serde(rename = "workflows")]
+        #[serde(alias = "workflows")]
         scripts: Vec<ScriptIdentifier>,
     },
     #[serde(rename_all = "camelCase")]

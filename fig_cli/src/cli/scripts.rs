@@ -552,7 +552,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     TrackSource::Cli,
                     env!("CARGO_PKG_VERSION").into(),
                     [
-                        ("script", script_name.as_str()),
+                        ("workflow", script_name.as_str()),
                         ("execution_method", execution_method.to_string().as_str()),
                     ],
                 ),
@@ -719,7 +719,7 @@ async fn execute_script(
     let exit_code = output.ok().and_then(|output| output.code());
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
         if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
-            Request::post(format!("/scripts/{name}/invocations"))
+            Request::post(format!("/workflows/{name}/invocations"))
                 .body(serde_json::json!({
                     "namespace": namespace,
                     "commandStderr": JsonValue::Null,
@@ -1123,7 +1123,7 @@ fn run_tui(
                             TrackSource::Cli,
                             env!("CARGO_PKG_VERSION").into(),
                             [
-                                ("script", script_name),
+                                ("workflow", script_name),
                                 ("execution_method", execution_method.to_string().as_str()),
                             ],
                         ),
