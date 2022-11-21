@@ -275,7 +275,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
         for shell in Shell::all() {
             let figterm_shell_cpy = bin_dir.join(format!("{shell} (figterm)"));
-            if let Err(err) = std::fs::remove_file(&figterm_path) {
+            if let Err(err) = std::fs::remove_file(&figterm_shell_cpy) {
                 error!(%err, "Failed to remove figterm shell {shell:?} copy");
             }
             if let Err(err) = std::fs::copy(&figterm_path, &figterm_shell_cpy) {

@@ -438,8 +438,6 @@ impl Response {
 }
 
 fn parse_fig_error_response(status: StatusCode, text: String) -> Error {
-    assert!(!status.is_success());
-
     match serde_json::from_str::<ErrorResponse>(&text) {
         Ok(ErrorResponse { error, sentry_id }) => Error::Fig {
             error,
