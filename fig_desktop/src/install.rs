@@ -217,7 +217,6 @@ fn symlink(origin: impl AsRef<std::path::Path>, link: impl AsRef<std::path::Path
 
 #[cfg(target_os = "macos")]
 pub async fn initialize_fig_dir() -> anyhow::Result<()> {
-    use std::fs::hard_link;
     use std::path::Path;
     use std::{
         fs,
@@ -275,8 +274,13 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         symlink(&figterm_path, link).ok();
 
         for shell in Shell::all() {
-            let link = bin_dir.join(format!("{shell} (figterm)"));
-            hard_link(&figterm_path, link).ok();
+            let figterm_shell_cpy = bin_dir.join(format!("{shell} (figterm)"));
+            if let Err(err) = std::fs::remove_file(&figterm_path) {
+                error!(%err, "Failed to remove figterm shell {shell:?} copy");
+            }
+            if let Err(err) = std::fs::copy(&figterm_path, &figterm_shell_cpy) {
+                error!(%err, "Failed to copy figterm to {}", figterm_shell_cpy.display());
+            }
         }
     }
 
