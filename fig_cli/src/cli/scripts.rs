@@ -1116,20 +1116,27 @@ fn run_tui(
         |event, view, control_flow| match event {
             Event::Quit => *control_flow = ControlFlow::Quit,
             Event::Terminate => {
-                tokio::runtime::Handle::current()
-                    .block_on(fig_telemetry::dispatch_emit_track(
-                        TrackEvent::new(
-                            TrackEventType::ScriptCancelled,
-                            TrackSource::Cli,
-                            env!("CARGO_PKG_VERSION").into(),
-                            [
-                                ("workflow", script_name),
-                                ("execution_method", execution_method.to_string().as_str()),
-                            ],
-                        ),
-                        false,
-                    ))
-                    .ok();
+                let handle = tokio::runtime::Handle::current();
+                let script_name = script_name.to_owned();
+                let execution_method = execution_method.to_owned();
+                std::thread::spawn(move || {
+                    handle
+                        .block_on(fig_telemetry::dispatch_emit_track(
+                            TrackEvent::new(
+                                TrackEventType::ScriptCancelled,
+                                TrackSource::Cli,
+                                env!("CARGO_PKG_VERSION").into(),
+                                [
+                                    ("workflow", script_name),
+                                    ("execution_method", execution_method.to_string()),
+                                ],
+                            ),
+                            false,
+                        ))
+                        .ok();
+                })
+                .join()
+                .ok();
 
                 *control_flow = ControlFlow::Quit;
             },
