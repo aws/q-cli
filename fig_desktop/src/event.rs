@@ -81,6 +81,8 @@ pub enum WindowEvent {
         position: Option<WindowPosition>,
         size: Option<LogicalSize<f64>>,
         anchor: Option<LogicalSize<f64>>,
+        dry_run: bool,
+        tx: Option<tokio::sync::mpsc::UnboundedSender<(bool, bool)>>,
     },
     /// Hides the window
     Hide,

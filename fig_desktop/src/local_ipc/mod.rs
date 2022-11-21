@@ -180,7 +180,6 @@ async fn handle_local_ipc(
                             }
                         };
 
-                        // TODO: implement AsyncWrite trait for Windows sockets
                         if let Err(err) = stream.send_message(message).await {
                             error!(%err, "Failed sending local response");
                             break;

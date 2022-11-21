@@ -96,6 +96,8 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                         position: Some(WindowPosition::Centered),
                         size: Some(DASHBOARD_INITIAL_SIZE),
                         anchor: None,
+                        tx: None,
+                        dry_run: false,
                     },
                 })
                 .ok();

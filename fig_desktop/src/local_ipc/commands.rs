@@ -206,6 +206,8 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
                     position: Some(WindowPosition::Centered),
                     size: Some(DASHBOARD_ONBOARDING_SIZE),
                     anchor: None,
+                    tx: None,
+                    dry_run: false,
                 },
                 WindowEvent::Show,
             ]),

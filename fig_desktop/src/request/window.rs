@@ -17,7 +17,6 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::platform::PlatformState;
 use crate::webview::window::WindowId;
 use crate::{
     EventLoopProxy,
@@ -27,7 +26,6 @@ use crate::{
 pub async fn position_window(
     request: PositionWindowRequest,
     window_id: WindowId,
-    platform_state: &PlatformState,
     figterm_state: &FigtermState,
     proxy: &EventLoopProxy,
 ) -> RequestResult {
@@ -42,60 +40,51 @@ pub async fn position_window(
         return RequestResult::error("Cannot position autocomplete window while preexec is active");
     }
 
-    if request.dryrun.unwrap_or(false) {
-        match platform_state.get_active_window() {
-            Some(_) => {
-                // TODO(grant): do something with geometry
-                return RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
-                    PositionWindowResponse {
-                        is_above: Some(false),
-                        is_clipped: Some(false),
-                    },
-                )));
-            },
-            None => {
-                return RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
-                    PositionWindowResponse {
-                        is_above: Some(false),
-                        is_clipped: Some(false),
-                    },
-                )));
-            },
-        }
-    }
-
+    let dry_run = request.dryrun.unwrap_or(false);
     let anchor = request.anchor.as_ref().expect("missing anchor field");
     let autocomplete_padding = 5.0;
     let size = request.size.as_ref().expect("missing size field");
 
+    let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
+
+    let mut events = vec![WindowEvent::UpdateWindowGeometry {
+        position: None,
+        size: Some(LogicalSize::new(size.width.into(), size.height.into())),
+        anchor: Some(LogicalSize::new(
+            anchor.x.into(),
+            (anchor.y + autocomplete_padding).into(),
+        )),
+        tx: Some(tx),
+        dry_run,
+    }];
+
+    if !dry_run {
+        events.push(
+            // Workaround to nonapplicably zero sized windows
+            if size.width == 1.0 || size.height == 1.0 {
+                WindowEvent::Hide
+            } else {
+                WindowEvent::Show
+            },
+        );
+    }
+
     proxy
         .send_event(Event::WindowEvent {
             window_id,
-            window_event: WindowEvent::Batch(vec![
-                WindowEvent::UpdateWindowGeometry {
-                    position: None,
-                    size: Some(LogicalSize::new(size.width.into(), size.height.into())),
-                    anchor: Some(LogicalSize::new(
-                        anchor.x.into(),
-                        (anchor.y + autocomplete_padding).into(),
-                    )),
-                },
-                // Workaround to nonapplicably zero sized windows
-                if size.width == 1.0 || size.height == 1.0 {
-                    WindowEvent::Hide
-                } else {
-                    WindowEvent::Show
-                },
-            ]),
+            window_event: WindowEvent::Batch(events),
         })
         .unwrap();
 
-    RequestResult::Ok(Box::new(ServerOriginatedSubMessage::PositionWindowResponse(
-        PositionWindowResponse {
-            is_above: Some(false),
-            is_clipped: Some(false),
-        },
-    )))
+    match rx.recv().await {
+        Some((is_above, is_clipped)) => RequestResult::Ok(Box::new(
+            ServerOriginatedSubMessage::PositionWindowResponse(PositionWindowResponse {
+                is_above: Some(is_above),
+                is_clipped: Some(is_clipped),
+            }),
+        )),
+        None => RequestResult::error("unable to determine is_above and is_clipped"),
+    }
 }
 
 pub async fn focus(request: WindowFocusRequest, window_id: WindowId, proxy: &EventLoopProxy) -> RequestResult {

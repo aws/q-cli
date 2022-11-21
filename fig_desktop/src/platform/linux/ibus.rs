@@ -107,6 +107,8 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                     }),
                                                     size: None,
                                                     anchor: None,
+                                                    tx: None,
+                                                    dry_run: false,
                                                 },
                                             })
                                             .unwrap();
@@ -166,6 +168,8 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                 }),
                                                 size: None,
                                                 anchor: None,
+                                                tx: None,
+                                                dry_run: false,
                                             },
                                         })
                                         .unwrap();

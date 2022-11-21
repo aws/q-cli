@@ -120,33 +120,35 @@ impl WindowState {
         size: Option<LogicalSize<f64>>,
         anchor: Option<LogicalSize<f64>>,
         platform_state: &PlatformState,
-    ) {
+        dry_run: bool,
+    ) -> (bool, bool) {
         // Lock our atomic state
         let mut state = self.window_geometry_state.lock();
 
         // Acquire our position, size, and anchor, and update them if dirty
         let position = match position {
-            Some(position) => {
+            Some(position) if !dry_run => {
                 state.position = position;
                 position
             },
+            Some(position) => position,
             None => state.position,
         };
 
         let size = match size {
-            Some(size) => {
+            Some(size) if !dry_run => {
                 state.size = size;
                 size
             },
-            None => state.size,
+            _ => state.size,
         };
 
         let anchor = match anchor {
-            Some(anchor) => {
+            Some(anchor) if !dry_run => {
                 state.anchor = anchor;
                 anchor
             },
-            None => state.anchor,
+            _ => state.anchor,
         };
 
         let window = self.webview.window();
@@ -177,14 +179,18 @@ impl WindowState {
                 }),
         };
 
-        let position = match position {
-            WindowPosition::Absolute(position) => position,
+        let (position, is_above, is_clipped) = match position {
+            WindowPosition::Absolute(position) => (position, false, false),
             WindowPosition::Centered => match monitor_state {
-                Some((_, monitor_position, monitor_size, _scale_factor)) => Position::Logical(LogicalPosition::new(
-                    monitor_position.x + monitor_size.width * 0.5 - size.width * 0.5,
-                    monitor_position.y + monitor_size.height * 0.5 - size.height * 0.5,
-                )),
-                None => return,
+                Some((_, monitor_position, monitor_size, _scale_factor)) => (
+                    Position::Logical(LogicalPosition::new(
+                        monitor_position.x + monitor_size.width * 0.5 - size.width * 0.5,
+                        monitor_position.y + monitor_size.height * 0.5 - size.height * 0.5,
+                    )),
+                    false,
+                    false,
+                ),
+                None => return (false, false),
             },
             WindowPosition::RelativeToCaret {
                 caret_position,
@@ -225,47 +231,57 @@ impl WindowState {
                 };
 
                 #[allow(clippy::all)]
-                if let Some((_, monitor_position, monitor_size, _)) = &monitor_state {
+                let clipped = if let Some((_, monitor_position, monitor_size, _)) = &monitor_state {
+                    let clipped = caret_position.x + size.width > monitor_position.x + monitor_size.width;
+
                     x = x
                         .min(monitor_position.x + monitor_size.width - size.width)
                         .max(monitor_position.x);
                     y = y
                         .min(monitor_position.y + monitor_size.height - size.height)
                         .max(monitor_position.y);
-                }
 
-                Position::Logical(LogicalPosition::new(x, y))
+                    clipped
+                } else {
+                    false
+                };
+
+                (Position::Logical(LogicalPosition::new(x, y)), above, clipped)
             },
         };
 
-        match platform_state.position_window(self.webview.window(), &self.window_id, position) {
-            Ok(_) => {
-                tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
-            },
-            Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
-        }
+        if !dry_run {
+            match platform_state.position_window(self.webview.window(), &self.window_id, position) {
+                Ok(_) => {
+                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
+                },
+                Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
+            }
 
-        // Apply the diff to atomic state
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "linux")] {
-                if self.window_id == AUTOCOMPLETE_ID {
-                    self.webview
-                        .window()
-                        .set_min_inner_size(Some(size));
+            // Apply the diff to atomic state
+            cfg_if::cfg_if! {
+                if #[cfg(target_os = "linux")] {
+                    if self.window_id == AUTOCOMPLETE_ID {
+                        self.webview
+                            .window()
+                            .set_min_inner_size(Some(size));
+                    } else {
+                        self.webview.window().set_inner_size(size);
+                    }
                 } else {
                     self.webview.window().set_inner_size(size);
                 }
-            } else {
-                self.webview.window().set_inner_size(size);
+            }
+
+            match platform_state.position_window(self.webview.window(), &self.window_id, position) {
+                Ok(_) => {
+                    tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
+                },
+                Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
             }
         }
 
-        match platform_state.position_window(self.webview.window(), &self.window_id, position) {
-            Ok(_) => {
-                tracing::trace!(window_id =% self.window_id, ?position, ?size, ?anchor, "updated window geometry")
-            },
-            Err(err) => tracing::error!(%err, window_id =% self.window_id, "failed to position window"),
-        }
+        (is_above, is_clipped)
     }
 
     #[allow(clippy::only_used_in_recursion)]
@@ -279,8 +295,19 @@ impl WindowState {
         api_tx: &UnboundedSender<(WindowId, String)>,
     ) {
         match event {
-            WindowEvent::UpdateWindowGeometry { position, size, anchor } => {
-                self.update_position(position, size, anchor, platform_state)
+            WindowEvent::UpdateWindowGeometry {
+                position,
+                size,
+                anchor,
+                dry_run,
+                tx,
+            } => {
+                let (is_above, is_clipped) = self.update_position(position, size, anchor, platform_state, dry_run);
+                if let Some(tx) = tx {
+                    if let Err(err) = tx.send((is_above, is_clipped)) {
+                        tracing::error!(%err, "failed to send window geometry update result");
+                    }
+                }
             },
             WindowEvent::Hide => {
                 if !self.webview.window().is_visible() {

@@ -673,6 +673,8 @@ impl PlatformStateImpl {
                         }),
                         size: None,
                         anchor: None,
+                        tx: None,
+                        dry_run: false,
                     },
                 })
                 .ok();

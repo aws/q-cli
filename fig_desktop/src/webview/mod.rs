@@ -217,7 +217,6 @@ impl WebviewManager {
             let sync_figterm_state = self.figterm_state.clone();
             let sync_intercept_state = self.intercept_state.clone();
             let sync_notifications_state = self.notifications_state.clone();
-            let sync_platform_state = self.platform_state.clone();
 
             tokio::spawn(async move {
                 while let Some((fig_id, message)) = sync_api_handler_rx.recv().await {
@@ -226,7 +225,6 @@ impl WebviewManager {
                     let figterm_state = sync_figterm_state.clone();
                     let intercept_state = sync_intercept_state.clone();
                     let notifications_state = sync_notifications_state.clone();
-                    let platform_state = sync_platform_state.clone();
                     api_request(
                         fig_id,
                         message,
@@ -234,7 +232,6 @@ impl WebviewManager {
                         &figterm_state,
                         &intercept_state,
                         &notifications_state,
-                        &platform_state,
                         &proxy.clone(),
                     )
                     .await;
@@ -246,7 +243,6 @@ impl WebviewManager {
             let figterm_state = self.figterm_state.clone();
             let intercept_state = self.intercept_state.clone();
             let notifications_state = self.notifications_state.clone();
-            let platform_state = self.platform_state.clone();
 
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
@@ -268,7 +264,6 @@ impl WebviewManager {
                         let figterm_state = figterm_state.clone();
                         let intercept_state = intercept_state.clone();
                         let notifications_state = notifications_state.clone();
-                        let platform_state = platform_state.clone();
                         tokio::spawn(async move {
                             api_request(
                                 fig_id,
@@ -277,7 +272,6 @@ impl WebviewManager {
                                 &figterm_state,
                                 &intercept_state,
                                 &notifications_state,
-                                &platform_state,
                                 &proxy.clone(),
                             )
                             .await;
@@ -649,7 +643,8 @@ pub fn build_autocomplete(
             use wry::application::platform::unix::WindowBuilderExtUnix;
             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
         } else if #[cfg(target_os = "macos")] {
-            window_builder = window_builder.with_resizable(false);
+            use wry::application::platform::macos::WindowBuilderExtMacOS;
+            window_builder = window_builder.with_resizable(false).with_has_shadow(false);
         } else if #[cfg(target_os = "windows")] {
             use wry::application::platform::windows::WindowBuilderExtWindows;
             window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
@@ -853,6 +848,8 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                                     position: Some(WindowPosition::Centered),
                                     size: Some(DASHBOARD_ONBOARDING_SIZE),
                                     anchor: None,
+                                    tx: None,
+                                    dry_run: false,
                                 },
                                 WindowEvent::Show,
                             ]),

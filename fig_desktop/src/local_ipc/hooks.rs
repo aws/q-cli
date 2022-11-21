@@ -34,6 +34,8 @@ pub async fn caret_position(
                 }),
                 size: None,
                 anchor: None,
+                tx: None,
+                dry_run: false,
             },
         })
         .ok();
