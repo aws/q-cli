@@ -34,6 +34,34 @@ pub struct Select {
     inner: ComponentData,
 }
 
+impl Select {
+    pub fn new(id: impl ToString, options: Vec<String>, validate: bool) -> Self {
+        Self {
+            text: Default::default(),
+            hint: None,
+            cursor: 0,
+            cursor_offset: 0,
+            index: Default::default(),
+            index_offset: 0,
+            options,
+            sorted_options: vec![],
+            validate,
+            inner: ComponentData::new(id.to_string(), true),
+        }
+    }
+
+    pub fn with_text(mut self, text: impl Display) -> Self {
+        self.text = text.to_string();
+        self.cursor = self.text.len();
+        self
+    }
+
+    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
+        self.hint = Some(hint.into());
+        self
+    }
+}
+
 impl Component for Select {
     fn initialize(&mut self, _: &mut State) {
         let mut w = self
@@ -253,6 +281,7 @@ impl Component for Select {
 
         match focus {
             true => {
+                self.sorted_options.clear();
                 for i in 0..self.options.len() {
                     if self.options[i].contains(&self.text) {
                         self.sorted_options.push(i);
@@ -296,33 +325,5 @@ impl Component for Select {
 
     fn inner_mut(&mut self) -> &mut super::ComponentData {
         &mut self.inner
-    }
-}
-
-impl Select {
-    pub fn new(id: impl ToString, options: Vec<String>, validate: bool) -> Self {
-        Self {
-            text: Default::default(),
-            hint: None,
-            cursor: 0,
-            cursor_offset: 0,
-            index: Default::default(),
-            index_offset: 0,
-            options,
-            sorted_options: vec![],
-            validate,
-            inner: ComponentData::new(id.to_string(), true),
-        }
-    }
-
-    pub fn with_text(mut self, text: impl Display) -> Self {
-        self.text = text.to_string();
-        self.cursor = self.text.len();
-        self
-    }
-
-    pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
-        self.hint = Some(hint.into());
-        self
     }
 }
