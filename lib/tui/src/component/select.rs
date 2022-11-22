@@ -249,6 +249,8 @@ impl Component for Select {
     }
 
     fn on_focus(&mut self, state: &mut State, focus: bool) {
+        self.inner.focus = focus;
+
         match focus {
             true => {
                 for i in 0..self.options.len() {
@@ -282,8 +284,6 @@ impl Component for Select {
                 }
             },
         }
-
-        self.inner.focus = focus;
     }
 
     fn class(&self) -> &'static str {

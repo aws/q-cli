@@ -26,7 +26,12 @@ impl Paragraph {
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             components: vec![],
-            inner: ComponentData::new(id.into(), false),
+            inner: ComponentData {
+                id: id.into(),
+                width: 110.0,
+                interactive: false,
+                ..Default::default()
+            },
         }
     }
 
@@ -59,7 +64,6 @@ impl Paragraph {
 
 impl Component for Paragraph {
     fn initialize(&mut self, _: &mut crate::event_loop::State) {
-        self.inner.width = 110.0;
         if !self.components.is_empty() {
             self.inner.height = self.components.iter().fold(1, |acc, c| match c {
                 ParagraphComponent::Text { text, .. } => {

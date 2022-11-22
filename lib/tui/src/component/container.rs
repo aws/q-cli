@@ -87,97 +87,139 @@ impl Component for Container {
     }
 
     fn next(&mut self, state: &mut State, wrap: bool) -> Option<String> {
-        if let Some(active) = self.active {
-            match self.components[active].next(state, false) {
-                Some(id) => return Some(id),
-                None => {
-                    self.components[active].on_focus(state, false);
-                    self.active = self
-                        .components
-                        .iter()
-                        .enumerate()
-                        .skip(active + 1)
-                        .find(|(_, c)| c.interactive(state))
-                        .map(|(i, _)| i);
-                    if let Some(active) = self.active {
-                        let active_id = {
-                            let active = &mut self.components[active];
-                            active.on_focus(state, true);
-                            active.id()
-                        };
-                        self.resize(state);
-                        return Some(active_id);
-                    }
-                },
+        let active_old = self.active;
+
+        let next = match self.active {
+            Some(active) => {
+                let component = &mut self.components[active];
+                match component.next(state, false) {
+                    Some(active) => Some(active),
+                    None => {
+                        self.active = self
+                            .components
+                            .iter()
+                            .enumerate()
+                            .skip(active + 1)
+                            .find(|(_, c)| c.interactive(state))
+                            .map(|(i, _)| i);
+
+                        match self.active {
+                            Some(active) => {
+                                let component = &mut self.components[active];
+                                match component.next(state, false) {
+                                    Some(active) => Some(active),
+                                    None => Some(component.id()),
+                                }
+                            },
+                            None => match wrap {
+                                true => return self.next(state, false),
+                                false => None,
+                            },
+                        }
+                    },
+                }
+            },
+            None => {
+                self.active = self
+                    .components
+                    .iter()
+                    .enumerate()
+                    .find(|(_, c)| c.interactive(state))
+                    .map(|(i, _)| i);
+
+                match self.active {
+                    Some(active) => {
+                        let component = &mut self.components[active];
+                        match component.next(state, wrap) {
+                            Some(active) => Some(active),
+                            None => Some(component.id()),
+                        }
+                    },
+                    None => None,
+                }
+            },
+        };
+
+        if active_old != self.active {
+            if let Some(active) = active_old {
+                self.components[active].on_focus(state, false);
+            }
+
+            if let Some(active) = self.active {
+                self.components[active].on_focus(state, true);
             }
         }
 
-        if self.interactive(state) && wrap {
-            self.active = self
-                .components
-                .iter()
-                .enumerate()
-                .find(|(_, c)| c.interactive(state))
-                .map(|(i, _)| i);
-
-            let active_id = {
-                let active = &mut self.components[self.active.unwrap()];
-                active.on_focus(state, true);
-                active.id()
-            };
-            self.resize(state);
-            return Some(active_id);
-        }
-
         self.resize(state);
-        None
+        next
     }
 
     fn prev(&mut self, state: &mut State, wrap: bool) -> Option<String> {
-        if let Some(active) = self.active {
-            match self.components[active].prev(state, false) {
-                Some(id) => return Some(id),
-                None => {
-                    self.components[active].on_focus(state, false);
-                    self.active = self.components[0..active]
-                        .iter()
-                        .enumerate()
-                        .rev()
-                        .find(|(_, c)| c.interactive(state))
-                        .map(|(i, _)| i);
-                    if let Some(active) = self.active {
-                        let active_id = {
-                            let active = &mut self.components[active];
-                            active.on_focus(state, true);
-                            active.id()
-                        };
-                        self.resize(state);
-                        return Some(active_id);
-                    }
-                },
+        let active_old = self.active;
+
+        let prev = match self.active {
+            Some(active) => {
+                let component = &mut self.components[active];
+                match component.prev(state, false) {
+                    Some(active) => Some(active),
+                    None => {
+                        self.active = self.components[0..active]
+                            .iter()
+                            .enumerate()
+                            .rev()
+                            .find(|(_, c)| c.interactive(state))
+                            .map(|(i, _)| i);
+
+                        match self.active {
+                            Some(active) => {
+                                let component = &mut self.components[active];
+                                match component.prev(state, false) {
+                                    Some(active) => Some(active),
+                                    None => Some(component.id()),
+                                }
+                            },
+                            None => match wrap {
+                                true => return self.prev(state, false),
+                                false => None,
+                            },
+                        }
+                    },
+                }
+            },
+            None => {
+                self.active = self
+                    .components
+                    .iter()
+                    .enumerate()
+                    .rev()
+                    .find(|(_, c)| c.interactive(state))
+                    .map(|(i, _)| i);
+
+                match self.active {
+                    Some(active) => {
+                        let component = &mut self.components[active];
+                        match component.prev(state, wrap) {
+                            Some(active) => Some(active),
+                            None => Some(component.id()),
+                        }
+                    },
+                    None => None,
+                }
+            },
+        };
+
+        if active_old != self.active {
+            if let Some(active) = active_old {
+                self.components[active].on_focus(state, false);
+            }
+
+            if let Some(active) = self.active {
+                self.components[active].on_focus(state, true);
             }
         }
 
-        if self.interactive(state) && wrap {
-            self.active = self
-                .components
-                .iter()
-                .enumerate()
-                .rev()
-                .find(|(_, c)| c.interactive(state))
-                .map(|(i, _)| i);
-
-            let active_id = {
-                let active = &mut self.components[self.active.unwrap()];
-                active.on_focus(state, true);
-                active.id()
-            };
-            self.resize(state);
-            return Some(active_id);
-        }
-
         self.resize(state);
-        None
+        prev
     }
 
     fn remove(&mut self, id: &str) -> Option<Box<dyn Component>> {
@@ -205,6 +247,26 @@ impl Component for Container {
         Some(component)
     }
 
+    fn replace(&mut self, id: &str, mut component: Box<dyn Component>) -> Option<Box<dyn Component>> {
+        for (i, child) in self.components.iter_mut().enumerate() {
+            if child.id() == id {
+                if let Some(active) = self.active {
+                    if active == i {
+                        self.active = None;
+                    }
+                }
+
+                let removed = self.components.remove(i);
+                self.components.insert(i, component);
+                return Some(removed);
+            }
+
+            component = child.insert(id, component)?;
+        }
+
+        Some(component)
+    }
+
     fn on_resize(&mut self, state: &mut State, width: f64, height: f64) {
         for component in &mut self.components {
             component.on_resize(state, width, height);
@@ -214,7 +276,7 @@ impl Component for Container {
     fn on_focus(&mut self, state: &mut State, focus: bool) {
         self.inner.focus = focus;
 
-        if focus {
+        if focus && self.active.is_none() {
             self.active = self
                 .components
                 .iter()

@@ -31,7 +31,7 @@ use crate::event_loop::State;
 use crate::input::InputAction;
 use crate::Style;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct ComponentData {
     pub id: String,
     pub width: f64,
@@ -46,12 +46,8 @@ impl ComponentData {
     pub fn new(id: String, interactive: bool) -> Self {
         Self {
             id,
-            width: 0.0,
-            height: 0.0,
             interactive,
-            hover: false,
-            focus: false,
-            active: false,
+            ..Default::default()
         }
     }
 }
@@ -93,6 +89,11 @@ pub trait Component {
 
     #[allow(unused_variables)]
     fn insert(&mut self, id: &str, component: Box<dyn Component>) -> Option<Box<dyn Component>> {
+        Some(component)
+    }
+
+    #[allow(unused_variables)]
+    fn replace(&mut self, id: &str, component: Box<dyn Component>) -> Option<Box<dyn Component>> {
         Some(component)
     }
 

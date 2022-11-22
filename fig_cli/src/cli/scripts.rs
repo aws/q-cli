@@ -8,7 +8,10 @@ use std::hash::{
 };
 use std::io::Write;
 use std::iter::empty;
-use std::process::Command;
+use std::process::{
+    Command,
+    Stdio,
+};
 
 use clap::Args;
 use crossterm::style::Stylize;
@@ -682,7 +685,7 @@ async fn execute_script(
     });
 
     // determine that runtime exists before validating rules
-    let (mut command, _file) = match runtime {
+    let (mut command, text) = match runtime {
         Runtime::Bash => {
             let mut command = Command::new("bash");
             command.arg("-c");
@@ -702,21 +705,24 @@ async fn execute_script(
             (command, None)
         },
         Runtime::Deno => {
-            let tmpfile = tempfile::Builder::new().prefix("fig-script-").tempfile()?;
-            tmpfile.as_file().write_all(script.as_bytes())?;
-
             let mut command = Command::new("deno");
             command.arg("run");
             command.arg("-A");
-            command.arg(tmpfile.path());
+            command.arg("-");
+            command.stdin(Stdio::piped());
 
-            (command, Some(tmpfile))
+            (command, Some(script))
         },
     };
 
-    let output = command.status();
+    let mut child = command.spawn()?;
+    if let Some(text) = text {
+        let mut stdin = child.stdin.take().unwrap();
+        stdin.write_all(text.as_bytes())?;
+        stdin.flush()?;
+    }
 
-    let exit_code = output.ok().and_then(|output| output.code());
+    let exit_code = child.wait().ok().and_then(|output| output.code());
     if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
         if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
             Request::post(format!("/workflows/{name}/invocations"))
@@ -966,6 +972,10 @@ fn run_tui(
         "#__form" => {
             padding_top: 0.0;
             border_style: BorderStyle::None;
+        },
+        "#__description" => {
+            margin_top: 1000.0;
+            height: Some(1.0);
         }
     };
 
@@ -993,10 +1003,13 @@ fn run_tui(
     let mut form = Container::new("__form");
 
     let mut args: HashMap<String, Value> = HashMap::new();
+    let mut description_map = HashMap::new();
     let mut flag_map: HashMap<String, (String, String)> = HashMap::new();
 
     for parameter in &script.parameters {
-        let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
+        if let Some(description) = &parameter.description {
+            description_map.insert(parameter.name.to_owned(), description.to_owned());
+        }
 
         let mut property = Container::new("").push(Label::new(
             &parameter.name,
@@ -1004,6 +1017,7 @@ fn run_tui(
             false,
         ));
 
+        let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
         match &parameter.parameter_type {
             ParameterType::Selector {
                 placeholder,
@@ -1093,19 +1107,23 @@ fn run_tui(
         form = form.push(property);
     }
 
-    let mut view = Container::new("__view").push(header).push(form).push(
-        Paragraph::new("__keybindings")
-            .push_styled_text("enter", Some(ColorAttribute::PaletteIndex(3)), None, false)
-            .push_styled_text(" select • ", Some(ColorAttribute::Default), None, false)
-            .push_styled_text("tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
-            .push_styled_text(" next • ", Some(ColorAttribute::Default), None, false)
-            .push_styled_text("shift+tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
-            .push_styled_text(" previous • ", Some(ColorAttribute::Default), None, false)
-            .push_styled_text("⎵", Some(ColorAttribute::PaletteIndex(3)), None, false)
-            .push_styled_text(" toggle • ", Some(ColorAttribute::Default), None, false)
-            .push_styled_text("⌃o", Some(ColorAttribute::PaletteIndex(3)), None, false)
-            .push_styled_text(" preview", Some(ColorAttribute::Default), None, false),
-    );
+    let mut view = Container::new("__view")
+        .push(header)
+        .push(form)
+        .push(Paragraph::new("__description"))
+        .push(
+            Paragraph::new("__keybindings")
+                .push_styled_text("enter", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" select • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" next • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("shift+tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" previous • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("⎵", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" toggle • ", Some(ColorAttribute::Default), None, false)
+                .push_styled_text("⌃o", Some(ColorAttribute::PaletteIndex(3)), None, false)
+                .push_styled_text(" preview", Some(ColorAttribute::Default), None, false),
+        );
 
     let mut temp = None;
 
@@ -1184,6 +1202,20 @@ fn run_tui(
                             .push(paragraph),
                     ),
                 );
+            },
+            Event::FocusChanged { id, focus } => {
+                if focus {
+                    let description = description_map.get(&id).cloned().unwrap_or_default();
+                    view.replace(
+                        "__description",
+                        Box::new(Paragraph::new("__description").push_styled_text(
+                            description,
+                            Some(ColorAttribute::PaletteIndex(8)),
+                            None,
+                            false,
+                        )),
+                    );
+                }
             },
             Event::CheckBox(event) => match event {
                 CheckBoxEvent::Checked { id, checked } => {

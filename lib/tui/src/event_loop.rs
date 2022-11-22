@@ -151,13 +151,22 @@ impl EventLoop {
                                         control_flow = ControlFlow::Quit;
                                     }
                                 },
-                                InputAction::Next => {
-                                    if component.next(&mut state, true).is_none() {
-                                        control_flow = ControlFlow::Quit
-                                    }
+                                InputAction::Next => match component.next(&mut state, true) {
+                                    Some(id) => event_handler(
+                                        Event::FocusChanged { id, focus: true },
+                                        component,
+                                        &mut control_flow,
+                                    ),
+                                    None => control_flow = ControlFlow::Quit,
                                 },
                                 InputAction::Previous => {
-                                    component.prev(&mut state, true);
+                                    if let Some(id) = component.prev(&mut state, true) {
+                                        event_handler(
+                                            Event::FocusChanged { id, focus: true },
+                                            component,
+                                            &mut control_flow,
+                                        )
+                                    }
                                 },
                                 InputAction::Quit => event_handler(Event::Quit, component, &mut control_flow),
                                 InputAction::Terminate => event_handler(Event::Terminate, component, &mut control_flow),
