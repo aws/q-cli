@@ -545,9 +545,20 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             },
         },
         (Err(_), true) => {
-            let tui_out = run_tui(&script, &arg_pairs, &script_name, &execution_method)?;
+            let values_by_arg = run_tui(&script, &arg_pairs, &script_name, &execution_method)?;
 
-            let run_command = map_args_to_command(&script, &tui_out);
+            let mut missing_args = vec![];
+            for parameter in &script.parameters {
+                if !values_by_arg.contains_key(&parameter.name) {
+                    missing_args.push(parameter.name.to_owned());
+                }
+            }
+
+            if !missing_args.is_empty() {
+                bail!("Missing required arguments: {}", missing_args.join(", "));
+            }
+
+            let run_command = map_args_to_command(&script, &values_by_arg);
 
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
@@ -571,7 +582,14 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             }
 
             if send_figterm(run_command, true).await.is_err() {
-                execute_script(script.runtime, &script.name, &script.namespace, &script.tree, &tui_out).await?;
+                execute_script(
+                    script.runtime,
+                    &script.name,
+                    &script.namespace,
+                    &script.tree,
+                    &values_by_arg,
+                )
+                .await?;
             }
         },
         (Err(err), false) => {
