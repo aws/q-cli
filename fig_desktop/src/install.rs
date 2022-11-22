@@ -275,12 +275,41 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
 
         for shell in Shell::all() {
             let figterm_shell_cpy = bin_dir.join(format!("{shell} (figterm)"));
-            if let Err(err) = std::fs::remove_file(&figterm_shell_cpy) {
-                error!(%err, "Failed to remove figterm shell {shell:?} copy");
-            }
-            if let Err(err) = std::fs::copy(&figterm_path, &figterm_shell_cpy) {
-                error!(%err, "Failed to copy figterm to {}", figterm_shell_cpy.display());
-            }
+            let figterm_path = figterm_path.clone();
+
+            tokio::spawn(async move {
+                // Check version if copy already exists, this is because everytime a copy is made the first start is
+                // kinda slow and we want to avoid that
+                if figterm_shell_cpy.exists() {
+                    let output = tokio::process::Command::new(&figterm_shell_cpy)
+                        .arg("--version")
+                        .output()
+                        .await
+                        .ok();
+
+                    let version = output
+                        .as_ref()
+                        .and_then(|output| std::str::from_utf8(&output.stdout).ok())
+                        .map(|s| {
+                            match s.strip_prefix("figterm") {
+                                Some(s) => s,
+                                None => s,
+                            }
+                            .trim()
+                        });
+
+                    if version == Some(env!("CARGO_PKG_VERSION")) {
+                        return;
+                    }
+                }
+
+                if let Err(err) = tokio::fs::remove_file(&figterm_shell_cpy).await {
+                    error!(%err, "Failed to remove figterm shell {shell:?} copy");
+                }
+                if let Err(err) = tokio::fs::copy(&figterm_path, &figterm_shell_cpy).await {
+                    error!(%err, "Failed to copy figterm to {}", figterm_shell_cpy.display());
+                }
+            });
         }
     }
 
