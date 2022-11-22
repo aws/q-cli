@@ -50,7 +50,11 @@ pub fn run_wet(args: &[&str], dry: bool) -> eyre::Result<()> {
     }
     print!(" {} ", args[0]);
     for arg in &args[1..] {
-        print!("{arg} ");
+        if arg.contains(' ') {
+            print!("'{arg}' ");
+        } else {
+            print!("{arg} ");
+        }
     }
     println!();
     if !dry {
