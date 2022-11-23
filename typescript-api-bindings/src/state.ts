@@ -11,7 +11,7 @@ export const didChange = {
     handler: (notification: LocalStateChangedNotification) => boolean | undefined
   ) {
     return _subscribe(
-      { type: NotificationType.NOTIFY_ON_LOCAL_STATE_CHANGED },
+      { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_LOCAL_STATE_CHANGED },
       notification => {
         switch (notification?.type?.$case) {
           case 'localStateChangedNotification':

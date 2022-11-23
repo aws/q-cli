@@ -1,5 +1,6 @@
 syntax = "proto3";
 package stress;
+
 import "google/protobuf/empty.proto";
 
 message Serverbound {
@@ -11,8 +12,8 @@ message Serverbound {
   }
 
   enum StressKind {
-    increment = 0;
-    echo = 1;
+    STRESS_KIND_INCREMENT = 0;
+    STRESS_KIND_ECHO = 1;
   }
 
   message Setup {
@@ -22,9 +23,13 @@ message Serverbound {
     int64 payload_size = 4;
   }
 
-  message IncrementTest { int64 number = 1; }
+  message IncrementTest {
+    int64 number = 1;
+  }
 
-  message EchoResponse { string payload = 1; }
+  message EchoResponse {
+    string payload = 1;
+  }
 }
 
 message Clientbound {
@@ -34,7 +39,11 @@ message Clientbound {
     EchoTest echo_test = 3;
   }
 
-  message Report { optional string message = 1; }
+  message Report {
+    optional string message = 1;
+  }
 
-  message EchoTest { string payload = 1; }
+  message EchoTest {
+    string payload = 1;
+  }
 }

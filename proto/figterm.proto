@@ -3,8 +3,6 @@ package figterm;
 
 import "fig_common.proto";
 
-import "google/protobuf/empty.proto";
-
 // A request message to figterm
 message FigtermRequestMessage {
   oneof request {
@@ -19,7 +17,9 @@ message FigtermRequestMessage {
 
 // A response message back from figterm
 message FigtermResponseMessage {
-  oneof response { DiagnosticsResponse diagnostics = 1; }
+  oneof response {
+    DiagnosticsResponse diagnostics = 1;
+  }
 }
 
 message Action {
@@ -44,7 +44,9 @@ message InterceptRequest {
     bool override_actions = 4;
   }
 
-  message SetFigjsVisible { bool visible = 1; }
+  message SetFigjsVisible {
+    bool visible = 1;
+  }
 
   // The intercept command to execute
   oneof intercept_command {

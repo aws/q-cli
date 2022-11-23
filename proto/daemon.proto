@@ -1,8 +1,8 @@
 syntax = "proto3";
 package daemon;
 
-import "google/protobuf/empty.proto";
 import "fig_common.proto";
+import "google/protobuf/empty.proto";
 
 //
 // Commands
@@ -59,10 +59,10 @@ message DaemonResponse {
 message DiagnosticCommand {
   // Parts of the diagnostics to get
   enum DiagnosticPart {
-    TIME_STARTED_EPOCH = 0;
-    SETTINGS_WATCHER_STATUS = 1;
-    WEBSOCKET_STATUS = 2;
-    SYSTEM_SOCKET_STATUS = 3;
+    DIAGNOSTIC_PART_TIME_STARTED_EPOCH = 0;
+    DIAGNOSTIC_PART_SETTINGS_WATCHER_STATUS = 1;
+    DIAGNOSTIC_PART_WEBSOCKET_STATUS = 2;
+    DIAGNOSTIC_PART_SYSTEM_SOCKET_STATUS = 3;
   }
 
   // If set only get the diagnostic part specified
@@ -74,8 +74,8 @@ message DiagnosticResponse {
   // Status of the settings watcher
   message SettingsWatcherStatus {
     enum Status {
-      OK = 0;
-      ERROR = 1;
+      STATUS_OK = 0;
+      STATUS_ERROR = 1;
     }
 
     Status status = 1;
@@ -85,8 +85,8 @@ message DiagnosticResponse {
   // Status of the websocket
   message WebsocketStatus {
     enum Status {
-      OK = 0;
-      ERROR = 1;
+      STATUS_OK = 0;
+      STATUS_ERROR = 1;
     }
 
     Status status = 1;
@@ -96,8 +96,8 @@ message DiagnosticResponse {
   // Status of the system socket
   message SystemSocketStatus {
     enum Status {
-      OK = 0;
-      ERROR = 1;
+      STATUS_OK = 0;
+      STATUS_ERROR = 1;
     }
 
     Status status = 1;
@@ -124,8 +124,8 @@ message SelfUpdateResponse {
   // This is out of order as Ok may be changed to a different type of
   // status such as Updated or NotUpdated
   enum Status {
-    ERROR = 0;
-    OK = 1;
+    STATUS_ERROR = 0;
+    STATUS_OK = 1;
   }
 
   Status status = 1;
@@ -135,9 +135,9 @@ message SelfUpdateResponse {
 message SyncCommand {
   enum SyncType {
     // This will only clone new repositories
-    PLUGIN_CLONE = 0;
+    SYNC_TYPE_PLUGIN_CLONE = 0;
     // This will clone and update all repositories
-    PLUGIN_UPDATE = 1;
+    SYNC_TYPE_PLUGIN_UPDATE = 1;
   }
 
   SyncType type = 1;
@@ -145,8 +145,8 @@ message SyncCommand {
 
 message SyncResponse {
   enum SyncStatus {
-    OK = 0;
-    ERROR = 1;
+    SYNC_STATUS_OK = 0;
+    SYNC_STATUS_ERROR = 1;
   }
 
   SyncStatus status = 1;
@@ -157,11 +157,11 @@ message TelemetryEmitTrackCommand {
   // The original source of a telemetry event
   enum Source {
     // An event originating in the desktop app
-    DESKTOP = 0;
+    SOURCE_DESKTOP = 0;
     // An event originating in the CLI
-    CLI = 1;
+    SOURCE_CLI = 1;
     // An event originating in the daemon
-    DAEMON = 2;
+    SOURCE_DAEMON = 2;
   }
 
   // The name of the track event
@@ -178,12 +178,14 @@ message TelemetryEmitTrackCommand {
   optional bool enqueue = 4;
 }
 
-message LogLevelCommand { string level = 1; }
+message LogLevelCommand {
+  string level = 1;
+}
 
 message LogLevelResponse {
   enum Status {
-    OK = 0;
-    ERROR = 1;
+    STATUS_OK = 0;
+    STATUS_ERROR = 1;
   }
 
   Status status = 1;
@@ -191,4 +193,6 @@ message LogLevelResponse {
   optional string error = 3;
 }
 
-message OpenBrowserCommand { string url = 1; }
+message OpenBrowserCommand {
+  string url = 1;
+}

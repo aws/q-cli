@@ -13,7 +13,7 @@ export const processDidChange = {
     handler: (notification: ProcessChangedNotification) => boolean | undefined
   ) {
     return _subscribe(
-      { type: NotificationType.NOTIFY_ON_PROCESS_CHANGED },
+      { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_PROCESS_CHANGED },
       (notification) => {
         switch (notification?.type?.$case) {
           case "processChangeNotification":
@@ -35,7 +35,7 @@ export const promptDidReturn = {
     ) => boolean | undefined
   ) {
     return _subscribe(
-      { type: NotificationType.NOTIFY_ON_PROMPT },
+      { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_PROMPT },
       (notification) => {
         switch (notification?.type?.$case) {
           case "shellPromptReturnedNotification":
@@ -55,7 +55,7 @@ export const historyUpdated = {
     handler: (notification: HistoryUpdatedNotification) => boolean | undefined
   ) {
     return _subscribe(
-      { type: NotificationType.NOTIFY_ON_HISTORY_UPDATED },
+      { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_HISTORY_UPDATED },
       (notification) => {
         switch (notification?.type?.$case) {
           case "historyUpdatedNotification":

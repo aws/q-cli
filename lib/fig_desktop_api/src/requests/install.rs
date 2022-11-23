@@ -5,7 +5,7 @@ use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,
 };
-use fig_proto::fig::result::ResultEnum as ProtoResultEnum;
+use fig_proto::fig::result::Result as ProtoResultEnum;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     InstallAction,
@@ -22,8 +22,8 @@ use super::RequestResult;
 async fn integration_status(integration: impl fig_integrations::Integration) -> ServerOriginatedSubMessage {
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
         response: Some(Response::InstallationStatus(match integration.is_installed().await {
-            Ok(_) => InstallationStatus::InstallInstalled.into(),
-            Err(_) => InstallationStatus::InstallNotInstalled.into(),
+            Ok(_) => InstallationStatus::Installed.into(),
+            Err(_) => InstallationStatus::NotInstalled.into(),
         })),
     })
 }
@@ -31,9 +31,7 @@ async fn integration_status(integration: impl fig_integrations::Integration) -> 
 #[allow(dead_code)]
 fn integration_unsupported() -> ServerOriginatedSubMessage {
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
-        response: Some(Response::InstallationStatus(
-            InstallationStatus::InstallNotSupported.into(),
-        )),
+        response: Some(Response::InstallationStatus(InstallationStatus::NotSupported.into())),
     })
 }
 
@@ -41,11 +39,11 @@ fn integration_result(result: Result<(), impl Display>) -> ServerOriginatedSubMe
     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
         response: Some(Response::Result(match result {
             Ok(()) => ProtoResult {
-                result: ProtoResultEnum::ResultOk.into(),
+                result: ProtoResultEnum::Ok.into(),
                 error: None,
             },
             Err(err) => ProtoResult {
-                result: ProtoResultEnum::ResultError.into(),
+                result: ProtoResultEnum::Error.into(),
                 error: Some(err.to_string()),
             },
         })),
@@ -61,9 +59,9 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     Ok(integrations) => {
                         for integration in integrations {
                             let res = match action {
-                                InstallAction::InstallAction => integration.install().await,
-                                InstallAction::UninstallAction => integration.uninstall().await,
-                                InstallAction::StatusAction => integration.is_installed().await,
+                                InstallAction::Install => integration.install().await,
+                                InstallAction::Uninstall => integration.uninstall().await,
+                                InstallAction::Status => integration.is_installed().await,
                             };
 
                             if let Err(err) = res {
@@ -78,16 +76,16 @@ pub async fn install(request: InstallRequest) -> RequestResult {
             }
 
             match action {
-                InstallAction::InstallAction | InstallAction::UninstallAction => integration_result(match &errs[..] {
+                InstallAction::Install | InstallAction::Uninstall => integration_result(match &errs[..] {
                     [] => Ok(()),
                     errs => Err(errs.join("\n")),
                 }),
-                InstallAction::StatusAction => ServerOriginatedSubMessage::InstallResponse(InstallResponse {
+                InstallAction::Status => ServerOriginatedSubMessage::InstallResponse(InstallResponse {
                     response: Some(Response::InstallationStatus(
                         if errs.is_empty() {
-                            InstallationStatus::InstallInstalled
+                            InstallationStatus::Installed
                         } else {
-                            InstallationStatus::InstallNotInstalled
+                            InstallationStatus::NotInstalled
                         }
                         .into(),
                     )),
@@ -95,7 +93,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
             }
         },
         (InstallComponent::Ibus, _) => integration_result(Err("IBus install is legacy")),
-        (InstallComponent::Accessibility, InstallAction::InstallAction) => {
+        (InstallComponent::Accessibility, InstallAction::Install) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     use macos_utils::accessibility::{
@@ -124,16 +122,16 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
         },
-        (InstallComponent::Accessibility, InstallAction::StatusAction) => {
+        (InstallComponent::Accessibility, InstallAction::Status) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     use macos_utils::accessibility::accessibility_is_enabled;
 
                     ServerOriginatedSubMessage::InstallResponse(InstallResponse {
                         response: Some(Response::InstallationStatus(if accessibility_is_enabled() {
-                            InstallationStatus::InstallInstalled.into()
+                            InstallationStatus::Installed.into()
                         } else {
-                            InstallationStatus::InstallNotInstalled.into()
+                            InstallationStatus::NotInstalled.into()
                         })),
                     })
                 } else {
@@ -141,7 +139,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
         },
-        (InstallComponent::Accessibility, InstallAction::UninstallAction) => {
+        (InstallComponent::Accessibility, InstallAction::Uninstall) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     integration_result(Ok::<(), &str>(()))
@@ -150,7 +148,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
         },
-        (InstallComponent::InputMethod, InstallAction::InstallAction) => {
+        (InstallComponent::InputMethod, InstallAction::Install) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     use fig_integrations::input_method::{
@@ -167,7 +165,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
         },
-        (InstallComponent::InputMethod, InstallAction::UninstallAction) => {
+        (InstallComponent::InputMethod, InstallAction::Uninstall) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     use fig_integrations::input_method::{
@@ -188,7 +186,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
         },
-        (InstallComponent::InputMethod, InstallAction::StatusAction) => {
+        (InstallComponent::InputMethod, InstallAction::Status) => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
                     use fig_integrations::input_method::{

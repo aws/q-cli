@@ -167,7 +167,7 @@ pub async fn prompt_for_accessibility_permission() -> LocalResult {
 
             install(InstallRequest {
                 component: InstallComponent::Accessibility.into(),
-                action: InstallAction::InstallAction.into()
+                action: InstallAction::Install.into()
             }).await.ok();
             Ok(LocalResponse::Success(None))
         } else {

@@ -6,7 +6,7 @@ export function subscribe<T>(
   handler: (payload: T) => boolean | undefined
 ) {
   return _subscribe(
-    { type: NotificationType.NOTIFY_ON_EVENT },
+    { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_EVENT },
     notification => {
       switch (notification?.type?.$case) {
         case 'eventNotification':

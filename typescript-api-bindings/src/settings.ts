@@ -11,7 +11,7 @@ export const didChange = {
     handler: (notification: SettingsChangedNotification) => boolean | undefined
   ) {
     return _subscribe(
-      { type: NotificationType.NOTIFY_ON_SETTINGS_CHANGE },
+      { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_SETTINGS_CHANGE },
       notification => {
         switch (notification?.type?.$case) {
           case 'settingsChangedNotification':

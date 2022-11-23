@@ -93,7 +93,7 @@ const unsubscribeFromAll = () => {
     $case: 'notificationRequest',
     notificationRequest: {
       subscribe: false,
-      type: NotificationType.ALL
+      type: NotificationType.NOTIFICATION_TYPE_ALL
     }
   });
 };

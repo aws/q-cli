@@ -2,8 +2,8 @@
   "name": "proto",
   "version": "1.0.0",
   "scripts": {
-    "lint": "clang-format -n --Werror *.proto",
-    "lint:fix": "clang-format -i *.proto",
+    "lint": "buf lint && (buf format --exit-code > /dev/null || (echo 'Run `buf format -w`' && exit 1))",
+    "lint:fix": "buf format -w",
     "precommit": "exit 0"
   },
   "devDependencies": {

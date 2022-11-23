@@ -11,8 +11,12 @@ message Json {
       double f64 = 3;
     }
   }
-  message Array { repeated Json array = 1; }
-  message Object { map<string, Json> map = 1; }
+  message Array {
+    repeated Json array = 1;
+  }
+  message Object {
+    map<string, Json> map = 1;
+  }
 
   oneof value {
     google.protobuf.Empty null = 1;
