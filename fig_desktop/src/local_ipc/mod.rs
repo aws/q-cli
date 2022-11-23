@@ -140,14 +140,12 @@ async fn handle_local_ipc(
 
                                 Ok(LocalResponse::Success(None))
                             },
-
                             TerminalIntegration(_)
                             | ListTerminalIntegrations(_)
                             | Restart(_)
                             | ReportWindow(_)
                             | RestartSettingsListener(_)
                             | RunInstallScript(_)
-                            | Build(_)
                             | ResetCache(_)
                             | InputMethod(_) => {
                                 debug!(?command, "Unhandled command");

@@ -1,3 +1,4 @@
+pub mod autocomplete;
 pub mod menu;
 pub mod notification;
 pub mod window;
@@ -97,7 +98,6 @@ pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 pub const ONBOARDING_PATH: &str = "/onboarding/welcome";
 
 pub const DASHBOARD_URL: &str = "https://desktop.fig.io";
-pub const AUTOCOMPLETE_URL: &str = "https://autocomplete.fig.io";
 
 fn map_theme(theme: &str) -> Option<Theme> {
     match theme {
@@ -171,14 +171,14 @@ impl WebviewManager {
         builder: impl Fn(&mut WebContext, &EventLoop, T) -> wry::Result<WebView>,
         options: T,
         enabled: bool,
-        url: Url,
+        url_fn: impl Fn() -> Url,
     ) -> anyhow::Result<()> {
         let context_path = directories::fig_data_dir()?
             .join("webcontexts")
             .join(window_id.0.as_ref());
         let mut context = WebContext::new(Some(context_path));
         let webview = builder(&mut context, &self.event_loop, options)?;
-        self.insert_webview(window_id, webview, context, enabled, url);
+        self.insert_webview(window_id, webview, context, enabled, url_fn());
         Ok(())
     }
 
@@ -676,10 +676,7 @@ pub fn build_autocomplete(
 
     let webview = WebViewBuilder::new(window)?
         .with_web_context(web_context)
-        .with_url(&fig_settings::settings::get_string_or(
-            "developer.autocomplete.host",
-            AUTOCOMPLETE_URL.into(),
-        ))?
+        .with_url(autocomplete::url().as_str())?
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {
@@ -696,15 +693,11 @@ pub fn build_autocomplete(
         .with_initialization_script(&javascript_init())
         .with_navigation_handler(navigation_handler(AUTOCOMPLETE_ID, &[
             // Main domain
-            r"^autocomplete\.fig\.io$",
+            r"autocomplete\.fig\.io$",
             // Dev domains
             r"^localhost$",
             r"^127\.0\.0\.1$",
             r"-withfig\.vercel\.app$",
-            // Legacy domains
-            r"^app\.withfig\.com$",
-            r"^staging\.withfig\.com$",
-            r"^fig-autocomplete\.vercel\.app$",
         ]))
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
@@ -714,30 +707,33 @@ pub fn build_autocomplete(
 }
 
 async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
-    macro_rules! settings_watcher {
-        ($name:expr, $on_update:expr) => {{
-            let proxy = proxy.clone();
-            tokio::spawn(async move {
-                let mut rx = NOTIFICATION_BUS.subscribe_settings($name.into());
-                loop {
-                    let res = rx.recv().await;
-                    match res {
-                        Ok(val) => {
-                            #[allow(clippy::redundant_closure_call)]
-                            ($on_update)(val, &proxy);
-                        },
-                        Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
-                            warn!("Notification bus '{}' lagged by {n} messages", $name);
-                        },
-                        Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+    macro_rules! watcher {
+        ($type:ident, $name:expr, $on_update:expr) => {{
+            paste::paste! {
+                let proxy = proxy.clone();
+                tokio::spawn(async move {
+                    let mut rx = NOTIFICATION_BUS.[<subscribe_ $type>]($name.into());
+                    loop {
+                        let res = rx.recv().await;
+                        match res {
+                            Ok(val) => {
+                                #[allow(clippy::redundant_closure_call)]
+                                ($on_update)(val, &proxy);
+                            },
+                            Err(tokio::sync::broadcast::error::RecvError::Lagged(n)) => {
+                                warn!("Notification bus '{}' lagged by {n} messages", $name);
+                            },
+                            Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
+                        }
                     }
-                }
-            });
+                });
+            }
         };};
     }
 
     // This one isnt working properly and permanently locks autocomplete :(
-    settings_watcher!(
+    watcher!(
+        settings,
         "autocomplete.disable",
         |notification: JsonNotification, proxy: &EventLoopProxy| {
             let enabled = !notification.as_bool().unwrap_or(false);
@@ -751,17 +747,22 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         }
     );
 
-    settings_watcher!("app.theme", |notification: JsonNotification, proxy: &EventLoopProxy| {
-        let theme = notification.as_string().as_deref().and_then(map_theme);
-        debug!(?theme, "Theme changed");
-        proxy
-            .send_event(Event::WindowEventAll {
-                window_event: WindowEvent::SetTheme(theme),
-            })
-            .unwrap();
-    });
+    watcher!(
+        settings,
+        "app.theme",
+        |notification: JsonNotification, proxy: &EventLoopProxy| {
+            let theme = notification.as_string().as_deref().and_then(map_theme);
+            debug!(?theme, "Theme changed");
+            proxy
+                .send_event(Event::WindowEventAll {
+                    window_event: WindowEvent::SetTheme(theme),
+                })
+                .unwrap();
+        }
+    );
 
-    settings_watcher!(
+    watcher!(
+        settings,
         "app.hideMenubarIcon",
         |notification: JsonNotification, proxy: &EventLoopProxy| {
             let enabled = !notification.as_bool().unwrap_or(false);
@@ -770,7 +771,8 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         }
     );
 
-    settings_watcher!(
+    watcher!(
+        settings,
         "developer.mission-control.host",
         |notification: JsonNotification, proxy: &EventLoopProxy| {
             let url = notification
@@ -789,16 +791,12 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         }
     );
 
-    settings_watcher!(
+    watcher!(
+        settings,
         "developer.autocomplete.host",
-        |notification: JsonNotification, proxy: &EventLoopProxy| {
-            let url = notification
-                .as_string()
-                .and_then(|s| Url::parse(&s).ok())
-                .unwrap_or_else(|| Url::parse(AUTOCOMPLETE_URL).unwrap());
-
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = autocomplete::url();
             debug!(%url, "Autocomplete host");
-
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID,
@@ -808,7 +806,22 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         }
     );
 
-    settings_watcher!("app.beta", |_: JsonNotification, proxy: &EventLoopProxy| {
+    watcher!(
+        settings,
+        "developer.autocomplete.build",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = autocomplete::url();
+            debug!(%url, "Autocomplete host");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
+
+    watcher!(settings, "app.beta", |_: JsonNotification, proxy: &EventLoopProxy| {
         let proxy = proxy.clone();
         tokio::spawn(fig_install::update(
             Some(Box::new(move |_| {

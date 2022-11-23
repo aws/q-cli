@@ -53,6 +53,10 @@ pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>> {
     Ok(Settings::load()?.get_string(key))
 }
 
+pub fn get_string_opt(key: impl AsRef<str>) -> Option<String> {
+    get_string(key).ok().flatten()
+}
+
 pub fn get_string_or(key: impl AsRef<str>, default: String) -> String {
     get_string(key).ok().flatten().unwrap_or(default)
 }

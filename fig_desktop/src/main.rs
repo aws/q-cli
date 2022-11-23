@@ -39,12 +39,12 @@ use tracing::{
 use url::Url;
 use webview::notification::WebviewNotificationsState;
 use webview::{
+    autocomplete,
     build_autocomplete,
     build_dashboard,
     AutocompleteOptions,
     DashboardOptions,
     WebviewManager,
-    AUTOCOMPLETE_URL,
     DASHBOARD_URL,
 };
 pub use webview::{
@@ -268,7 +268,7 @@ async fn main() {
                 page,
             },
             true,
-            DASHBOARD_URL.parse().unwrap(),
+            || DASHBOARD_URL.parse().unwrap(),
         )
         .unwrap();
     webview_manager
@@ -277,7 +277,7 @@ async fn main() {
             build_autocomplete,
             AutocompleteOptions {},
             autocomplete_enabled,
-            AUTOCOMPLETE_URL.parse().unwrap(),
+            autocomplete::url,
         )
         .unwrap();
 

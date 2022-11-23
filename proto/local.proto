@@ -13,6 +13,8 @@ message LocalMessage {
 }
 
 message Command {
+  reserved 110;
+
   optional int64 id = 1;
   optional bool no_response = 2; // opt-out of response from host app
 
@@ -27,7 +29,6 @@ message Command {
     ReportWindowCommand report_window = 107;
     RestartSettingsListenerCommand restart_settings_listener = 108;
     RunInstallScriptCommand run_install_script = 109;
-    BuildCommand build = 110;
     OpenUiElementCommand open_ui_element = 111;
     ResetCacheCommand reset_cache = 112;
     DebugModeCommand debug_mode = 113;
@@ -101,8 +102,6 @@ message ReportWindowCommand {
 message RestartSettingsListenerCommand {}
 
 message RunInstallScriptCommand {}
-
-message BuildCommand { optional string branch = 1; }
 
 enum UiElement {
   MENU_BAR = 0;

@@ -1974,6 +1974,7 @@ dependencies = [
  "objc",
  "once_cell",
  "parking_lot 0.12.1",
+ "paste",
  "percent-encoding",
  "rand 0.8.5",
  "regex",

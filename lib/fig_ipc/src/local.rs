@@ -7,7 +7,6 @@ use fig_proto::local::{
     command_response,
     devtools_command,
     dump_state_command,
-    BuildCommand,
     CommandResponse,
     DebugModeCommand,
     DevtoolsCommand,
@@ -46,13 +45,6 @@ pub async fn open_ui_element(element: UiElement, route: Option<String>) -> Resul
     let command = command::Command::OpenUiElement(OpenUiElementCommand {
         element: element.into(),
         route,
-    });
-    send_command_to_socket(command).await
-}
-
-pub async fn run_build_command(build: impl Into<String>) -> Result<()> {
-    let command = command::Command::Build(BuildCommand {
-        branch: Some(build.into()),
     });
     send_command_to_socket(command).await
 }

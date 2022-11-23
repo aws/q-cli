@@ -18,7 +18,6 @@ use crossterm::terminal::{
 };
 use crossterm::ExecutableCommand;
 use eyre::{
-    eyre,
     ContextCompat,
     Result,
     WrapErr,
@@ -26,7 +25,6 @@ use eyre::{
 use fig_ipc::local::{
     devtools_command,
     prompt_accessibility_command,
-    run_build_command,
     set_debug_mode,
     toggle_debug_mode,
 };
@@ -34,6 +32,7 @@ use fig_sync::dotfiles::download_and_notify;
 use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
 use fig_util::directories;
+use owo_colors::OwoColorize;
 use serde_json::json;
 
 use crate::cli::launch_fig_desktop;
@@ -46,9 +45,34 @@ use crate::util::{
 
 #[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum Build {
-    Dev,
-    Prod,
+    Production,
     Staging,
+    Develop,
+}
+
+impl std::fmt::Display for Build {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Build::Production => f.write_str("production"),
+            Build::Staging => f.write_str("staging"),
+            Build::Develop => f.write_str("develop"),
+        }
+    }
+}
+
+#[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
+pub enum App {
+    Dashboard,
+    Autocomplete,
+}
+
+impl std::fmt::Display for App {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            App::Dashboard => f.write_str("dashboard"),
+            App::Autocomplete => f.write_str("autocomplete"),
+        }
+    }
 }
 
 #[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
@@ -116,8 +140,10 @@ pub enum DebugSubcommand {
         #[arg(long)]
         disable: bool,
     },
-    /// Switch build
+    /// Switch to another branch of a Fig.js app
     Build {
+        #[arg(value_enum)]
+        app: App,
         #[arg(value_enum)]
         build: Build,
     },
@@ -142,8 +168,6 @@ pub enum DebugSubcommand {
     PromptAccessibility,
     /// Sample fig process
     Sample,
-    /// Debug fig unix sockets
-    UnixSocket,
     /// Debug fig codesign verification
     VerifyCodesign,
     /// Accessibility
@@ -178,9 +202,7 @@ pub enum DebugSubcommand {
         override_threshold: Option<u8>,
     },
     /// Open up the devtools of a specific webview
-    Devtools {
-        window: fig_proto::local::devtools_command::Window,
-    },
+    Devtools { app: App },
     /// Displays remote index
     GetIndex {
         channel: String,
@@ -227,17 +249,14 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait()?;
             },
-            DebugSubcommand::Build { build } => {
-                let x = build.to_possible_value().context(eyre!("Invalid build value"))?;
-                let res = run_build_command(x.get_name()).await;
-                if res.is_err() {
-                    println!("\n{}", "Unable to connect to Fig.".bold());
-                    println!(
-                        "\nFig might not be running, to launch Fig run: {}\n",
-                        "fig launch".magenta()
-                    );
-                    return res.map_err(eyre::Report::from);
-                }
+            DebugSubcommand::Build { build, app } => {
+                fig_api_client::settings::update(format!("developer.{app}.build"), match build {
+                    Build::Production => serde_json::Value::Null,
+                    Build::Staging => "staging".into(),
+                    Build::Develop => "develop".into(),
+                })
+                .await?;
+                println!("Fig will now use the {} build of {}", build.magenta(), app.magenta());
             },
             DebugSubcommand::Dotfiles { disable } => {
                 if *disable {
@@ -473,13 +492,6 @@ impl DebugSubcommand {
                 println!("\n\n\n-------\nFinished writing to {}", outfile.display());
                 println!("Please send this file to the Fig Team");
                 println!("Or attach it to a Github issue (run '{}')", "fig issue".magenta());
-            },
-            DebugSubcommand::UnixSocket => {
-                println!("Listening on /tmp/fig.socket...");
-                println!("Note: You will need to restart Fig afterwards");
-                let socket_path = "/tmp/fig.socket";
-                std::fs::remove_file(socket_path)?;
-                Command::new("nc").args(["-Ulk", socket_path]).spawn()?.wait()?;
             },
             DebugSubcommand::VerifyCodesign => {
                 Command::new("codesign")
@@ -723,7 +735,7 @@ impl DebugSubcommand {
 
                 println!("{result:#?}");
             },
-            Self::Devtools { window } => {
+            Self::Devtools { app } => {
                 launch_fig_desktop(LaunchArgs {
                     wait_for_socket: true,
                     open_dashboard: false,
@@ -731,7 +743,12 @@ impl DebugSubcommand {
                     verbose: true,
                 })?;
 
-                let result = devtools_command(*window).await;
+                let result = devtools_command(match app {
+                    App::Dashboard => fig_proto::local::devtools_command::Window::DevtoolsDashboard,
+                    App::Autocomplete => fig_proto::local::devtools_command::Window::DevtoolsAutocomplete,
+                })
+                .await;
+
                 if result.is_err() {
                     println!("Could not open devtools window");
                     return result.map_err(eyre::Report::from);
