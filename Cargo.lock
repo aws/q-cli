@@ -2356,6 +2356,7 @@ version = "2.8.0"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
+ "assert_cmd",
  "async-trait",
  "bitflags",
  "bytes",
@@ -2382,6 +2383,7 @@ dependencies = [
  "parking_lot 0.12.1",
  "pin-project",
  "portable-pty",
+ "predicates",
  "regex",
  "rusqlite",
  "serde",

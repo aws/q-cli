@@ -68,3 +68,7 @@ winapi = { version = "0.3", features = [
 ] }
 winreg = "0.10"
 
+[dev-dependencies]
+assert_cmd = "2.0.6"
+predicates = "2.1.3"
+
