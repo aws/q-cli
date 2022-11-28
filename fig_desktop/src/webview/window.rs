@@ -396,6 +396,12 @@ impl WindowState {
                     })),
                 })
             },
+            WindowEvent::NavigateForward => {
+                self.webview.evaluate_script("window.history.forward();").unwrap();
+            },
+            WindowEvent::NavigateBack => {
+                self.webview.evaluate_script("window.history.back();").unwrap();
+            },
             WindowEvent::ReloadIfNotLoaded => {
                 info!(%self.window_id, "Reloading window if not loaded");
 

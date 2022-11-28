@@ -17,6 +17,8 @@ use crate::{
 
 static DASHBOARD_QUIT: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-quit"));
 static DASHBOARD_RELOAD: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-reload"));
+static DASHBOARD_BACK: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-back"));
+static DASHBOARD_FORWARD: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-forward"));
 
 #[cfg(target_os = "macos")]
 pub fn menu_bar() -> MenuBar {
@@ -30,6 +32,16 @@ pub fn menu_bar() -> MenuBar {
     let mut menu_bar = MenuBar::new();
 
     let mut app_submenu = MenuBar::new();
+    app_submenu.add_item(
+        MenuItemAttributes::new("Backward")
+            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::BracketLeft))
+            .with_id(*DASHBOARD_BACK),
+    );
+    app_submenu.add_item(
+        MenuItemAttributes::new("Forward")
+            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::BracketRight))
+            .with_id(*DASHBOARD_FORWARD),
+    );
     app_submenu.add_native_item(MenuItem::CloseWindow);
     app_submenu.add_item(
         MenuItemAttributes::new("Quit Fig (UI)")
@@ -102,6 +114,18 @@ pub fn handle_event(menu_id: MenuId, proxy: &EventLoopProxy) {
             .send_event(Event::WindowEvent {
                 window_id: DASHBOARD_ID,
                 window_event: WindowEvent::Reload,
+            })
+            .unwrap(),
+        menu_id if menu_id == *DASHBOARD_BACK => proxy
+            .send_event(Event::WindowEvent {
+                window_id: DASHBOARD_ID,
+                window_event: WindowEvent::NavigateBack,
+            })
+            .unwrap(),
+        menu_id if menu_id == *DASHBOARD_FORWARD => proxy
+            .send_event(Event::WindowEvent {
+                window_id: DASHBOARD_ID,
+                window_event: WindowEvent::NavigateForward,
             })
             .unwrap(),
         _ => {},

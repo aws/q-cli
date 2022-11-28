@@ -97,6 +97,9 @@ pub enum WindowEvent {
     NavigateAbsolute {
         url: url::Url,
     },
+    NavigateForward,
+    NavigateBack,
+
     Reload,
 
     /// Trigger a reload if the page is not already loaded
