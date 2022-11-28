@@ -1516,7 +1516,7 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
                 if Version::new(0, 4, 0) > Version::parse(version).unwrap() {
                     return Err(doctor_error!(
                         "iTerm Bash Integration is out of date. Please update in iTerm's menu by selecting \"Install \
-                         Shell Integration\"."
+                         Shell Integration\". For more details see https://iterm2.com/documentation-shell-integration.html"
                     ));
                 }
                 Ok(())
