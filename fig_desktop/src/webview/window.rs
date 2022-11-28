@@ -524,7 +524,7 @@ impl WindowState {
 
     pub fn set_enabled(&self, enabled: bool) {
         self.webview
-            .evaluate_script(format!("document.fig.enabled = {enabled};").as_str())
+            .evaluate_script(format!("window.fig.enabled = {enabled};").as_str())
             .unwrap();
         self.enabled.store(enabled, std::sync::atomic::Ordering::SeqCst);
     }
