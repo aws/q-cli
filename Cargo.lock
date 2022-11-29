@@ -4993,9 +4993,9 @@ dependencies = [
 
 [[package]]
 name = "prost-build"
-version = "0.11.2"
+version = "0.11.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "1d8b442418ea0822409d9e7d047cbf1e7e9e1760b172bf9982cf29d517c93511"
+checksum = "e330bf1316db56b12c2bcfa399e8edddd4821965ea25ddb2c134b610b1c1c604"
 dependencies = [
  "bytes",
  "heck 0.4.0",
