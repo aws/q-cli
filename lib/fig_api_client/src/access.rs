@@ -87,6 +87,7 @@ pub struct Identity {
     pub namespace: Option<String>,
     pub private_key: Option<String>,
     pub authentication_type: String,
+    pub password: Option<String>,
 }
 
 pub async fn identities(namespace: Option<String>) -> fig_request::Result<Vec<Identity>> {

@@ -262,15 +262,39 @@ impl SshSubcommand {
         let ssh_string =
             fig_api_client::access::ssh_string(host.remote_id, selected_identity.as_ref().map(|iden| iden.remote_id))
                 .await?;
-        let mut parts = shlex::split(&ssh_string)
-            .context("got no built ssh string from api")?
-            .into_iter();
 
-        let mut command = Command::new(parts.next().context("didn't get root command")?);
+        let mut command = None;
 
-        for arg in parts {
-            command.arg(arg);
+        if let Some(identity) = selected_identity {
+            if identity.authentication_type == "password" {
+                if which::which("expect").is_err() {
+                    eyre::bail!("You need to install expect to use password input");
+                }
+                let password = identity.password.clone().unwrap_or_default();
+                let mut expect_command = Command::new("expect");
+                expect_command
+                .arg("-c")
+                .arg(format!(r#"spawn {ssh_string}; expect "yes/no" {{ send "yes\n"; expect "*?assword:"; send "{password}\n"; }} "*?assword" {{ send "{password}\n"; }}; interact"#));
+                command = Some(expect_command);
+            }
         }
+
+        let mut command = match command {
+            Some(command) => command,
+            None => {
+                let mut parts = shlex::split(&ssh_string)
+                    .context("got no built ssh string from api")?
+                    .into_iter();
+
+                let mut command = Command::new(parts.next().context("didn't get root command")?);
+
+                for arg in parts {
+                    command.arg(arg);
+                }
+
+                command
+            },
+        };
 
         println!(
             "Connecting to {}{}{}",
