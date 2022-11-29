@@ -11,6 +11,7 @@ pub mod desktop;
 #[cfg(target_os = "macos")]
 pub mod launchd_plist;
 
+use std::cmp::Ordering;
 use std::path::{
     Path,
     PathBuf,
@@ -93,4 +94,43 @@ pub fn fig_bundle() -> Option<PathBuf> {
 
     // .../Bundle.app/Contents/MacOS/binary-name -> .../Bundle.app
     current_exe.ancestors().nth(3).map(|s| s.into())
+}
+
+pub fn partitioned_compare(lhs: &str, rhs: &str, by: char) -> Ordering {
+    let sides = lhs
+        .split(by)
+        .filter(|x| !x.is_empty())
+        .zip(rhs.split(by).filter(|x| !x.is_empty()));
+
+    for (lhs, rhs) in sides {
+        match if lhs.chars().all(|x| x.is_numeric()) && rhs.chars().all(|x| x.is_numeric()) {
+            // perform a numerical comparison
+            let lhs: u64 = lhs.parse().unwrap();
+            let rhs: u64 = rhs.parse().unwrap();
+            lhs.cmp(&rhs)
+        } else {
+            // perform a lexical comparison
+            lhs.cmp(rhs)
+        } {
+            Ordering::Equal => continue,
+            s => return s,
+        }
+    }
+
+    lhs.len().cmp(&rhs.len())
+}
+
+#[cfg(test)]
+mod tests {
+    use std::cmp::Ordering;
+
+    use crate::partitioned_compare;
+
+    #[test]
+    fn test_partitioned_compare() {
+        assert_eq!(partitioned_compare("1.2.3", "1.2.3", '.'), Ordering::Equal);
+        assert_eq!(partitioned_compare("1.2.3", "1.2.2", '.'), Ordering::Greater);
+        assert_eq!(partitioned_compare("4-a-b", "4-a-c", '-'), Ordering::Less);
+        assert_eq!(partitioned_compare("0?0?0", "0?0", '?'), Ordering::Greater);
+    }
 }

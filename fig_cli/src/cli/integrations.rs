@@ -194,15 +194,15 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
         },
         Integration::IntelliJ => {
             cfg_if::cfg_if! {
-                if #[cfg(target_os = "macos")] {
-                    let variants = fig_integrations::intellij::variants_installed();
+                if #[cfg(any(target_os = "macos", target_os = "linux"))] {
+                    let variants = fig_integrations::intellij::variants_installed().await?;
                     installed = !variants.is_empty();
                     for variant in variants {
-                        fig_integrations::intellij::IntelliJIntegration { variant }.install().await?;
+                        variant.install().await?;
                     }
                     Ok(())
                 } else {
-                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS and Linux"))
                 }
             }
         },
@@ -308,18 +308,17 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
         },
         Integration::IntelliJ => {
             cfg_if::cfg_if! {
-                if #[cfg(target_os = "macos")] {
-                    for variant in fig_integrations::intellij::variants_installed() {
-                        let integration = fig_integrations::intellij::IntelliJIntegration { variant };
-                        if integration.is_installed().await.is_ok() {
-                            integration.uninstall().await?;
+                if #[cfg(any(target_os = "macos", target_os = "linux"))] {
+                    for variant in fig_integrations::intellij::variants_installed().await? {
+                        if variant.is_installed().await.is_ok() {
+                            variant.uninstall().await?;
                             uninstalled = true;
                         }
                     }
                     println!("Warning: IntelliJ integrations are automatically reinstalled on launch");
                     Ok(())
                 } else {
-                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS and Linux"))
                 }
             }
         },
@@ -420,22 +419,21 @@ async fn status(integration: Integration) -> Result<()> {
         },
         Integration::IntelliJ => {
             cfg_if::cfg_if! {
-                if #[cfg(target_os = "macos")] {
-                    let variants = fig_integrations::intellij::variants_installed();
+                if #[cfg(any(target_os = "macos", target_os = "linux"))] {
+                    let variants = fig_integrations::intellij::variants_installed().await?;
                     for variant in variants {
-                        let integration = fig_integrations::intellij::IntelliJIntegration { variant };
-                        match integration.is_installed().await {
+                        match variant.is_installed().await {
                             Ok(_) => {
-                                println!("{}: Installed", integration.variant.application_name);
+                                println!("{}: Installed", variant.variant.application_name());
                             }
                             Err(_) => {
-                                println!("{}: Not installed", integration.variant.application_name);
+                                println!("{}: Not installed", variant.variant.application_name());
                             }
                         }
                     }
                     Ok(())
                 } else {
-                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS"))
+                    Err(eyre::eyre!("IntelliJ integration is only supported on macOS and Linux"))
                 }
             }
         },

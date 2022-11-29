@@ -67,6 +67,8 @@ use fig_util::desktop::{
     LaunchArgs,
 };
 use fig_util::directories::figterm_socket_path;
+#[cfg(target_os = "linux")]
+use fig_util::Terminal;
 use fig_util::{
     directories,
     get_parent_process_exe,
@@ -484,6 +486,10 @@ impl InternalSubcommand {
                                 let grandparent_name = grandparent_path.file_name()?.to_str()?;
                                 let grandparent_cmdline = grandparent_pid.cmdline()?;
                                 let grandparent_exe = grandparent_cmdline.split('/').last()?;
+
+                                if Terminal::is_jetbrains_terminal() && std::env::var_os("FIG_TERM").is_none() {
+                                    return Some((true, "✅ In Jetbrains".into()))
+                                }
 
                                 let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
                                     .iter().chain(fig_util::terminal::SPECIAL_TERMINALS.iter())

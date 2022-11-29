@@ -33,6 +33,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::Vscode,
     Terminal::VSCodeInsiders,
     Terminal::VSCodium,
+    Terminal::IntelliJ(None),
 ];
 
 /// Other terminals that figterm should launch within that are not full terminal emulators
@@ -82,6 +83,8 @@ pub enum Terminal {
     Terminator,
     /// Terminology
     Terminology,
+    /// IntelliJ
+    IntelliJ(Option<IntelliJVariant>),
 
     // Other pseudoterminal that we want to launch within
     /// SSH
@@ -120,6 +123,8 @@ impl fmt::Display for Terminal {
             Terminal::Tmux => write!(f, "Tmux"),
             Terminal::Nvim => write!(f, "Nvim"),
             Terminal::Zellij => write!(f, "Zellij"),
+            Terminal::IntelliJ(Some(variant)) => write!(f, "{}", variant.application_name()),
+            Terminal::IntelliJ(None) => write!(f, "IntelliJ"),
         }
     }
 }
@@ -173,6 +178,7 @@ impl Terminal {
             Terminal::Tmux => "tmux".into(),
             Terminal::Nvim => "nvim".into(),
             Terminal::Zellij => "zellij".into(),
+            Terminal::IntelliJ(_) => todo!(),
         }
     }
 
@@ -287,6 +293,7 @@ impl Terminal {
             Terminal::Terminology => Some("terminology"),
             Terminal::WezTerm => Some("org.wezfurlong.wezterm"),
             Terminal::Tabby => Some("tabby"),
+            Terminal::IntelliJ(Some(IntelliJVariant::IdeaCE)) => Some("jetbrains-idea-ce"),
             _ => None,
         }
     }
@@ -339,4 +346,73 @@ impl Terminal {
 pub enum PositioningKind {
     Logical,
     Physical,
+}
+
+macro_rules! intellij_variants {
+    ($($name:ident { org: $organization:expr, name: $application_name:expr, bundle: $bundle_identifier:expr },)*) => {
+        #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+        #[serde(rename_all = "kebab-case")]
+        pub enum IntelliJVariant {
+            $(
+                $name,
+            )*
+        }
+
+        impl IntelliJVariant {
+            pub const fn all() -> &'static [IntelliJVariant] {
+                &[$(IntelliJVariant::$name,)*]
+            }
+
+            pub fn application_name(&self) -> &'static str {
+                match self {
+                    $(
+                        IntelliJVariant::$name => $application_name,
+                    )*
+                }
+            }
+
+            pub fn organization(&self) -> &'static str {
+                match self {
+                    $(
+                        IntelliJVariant::$name => $organization,
+                    )*
+                }
+            }
+
+            pub fn bundle_identifier(&self) -> &'static str {
+                match self {
+                    $(
+                        IntelliJVariant::$name => $bundle_identifier,
+                    )*
+                }
+            }
+        }
+    };
+}
+
+intellij_variants! {
+    IdeaUltimate { org: "JetBrains", name: "IDEA Ultimate", bundle: "com.jetbrains.intellij" },
+    IdeaCE { org: "JetBrains", name: "IDEA Community", bundle: "com.jetbrains.intellij.ce" },
+    WebStorm { org: "JetBrains", name: "WebStorm", bundle: "com.jetbrains.WebStorm" },
+    GoLand { org: "JetBrains", name: "GoLand", bundle: "com.jetbrains.goland" },
+    PhpStorm { org: "JetBrains", name: "PhpStorm", bundle: "com.jetbrains.PhpStorm" },
+    PyCharm { org: "JetBrains", name: "PyCharm Professional", bundle: "com.jetbrains.pycharm" },
+    PyCharmCE { org: "JetBrains", name: "PyCharm Community", bundle: "com.jetbrains.pycharm.ce" },
+    AppCode { org: "JetBrains", name: "AppCode", bundle: "com.jetbrains.AppCode" },
+    CLion { org: "JetBrains", name: "CLion", bundle: "com.jetbrains.CLion" },
+    Rider { org: "JetBrains", name: "Rider", bundle: "com.jetbrains.rider" },
+    RubyMine { org: "JetBrains", name: "RubyMine", bundle: "com.jetbrains.rubymine" },
+    DataSpell { org: "JetBrains", name: "DataSpell", bundle: "com.jetbrains.dataspell" },
+    AndroidStudio { org: "Google", name: "Android Studio", bundle: "com.google.android.studio" },
+}
+
+impl IntelliJVariant {
+    pub fn from_product_code(from: &str) -> Option<Self> {
+        Some(match from {
+            "IU" => IntelliJVariant::IdeaUltimate,
+            "IC" => IntelliJVariant::IdeaCE,
+            "PC" => IntelliJVariant::PyCharmCE,
+            _ => return None,
+        })
+    }
 }

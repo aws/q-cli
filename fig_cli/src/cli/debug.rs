@@ -210,6 +210,9 @@ pub enum DebugSubcommand {
         /// Display using debug formatting
         debug: bool,
     },
+    /// Lists installed IntelliJ variants
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    ListIntelliJVariants,
 }
 
 impl DebugSubcommand {
@@ -773,6 +776,12 @@ impl DebugSubcommand {
                 } else {
                     let json = serde_json::to_string_pretty(&index)?;
                     println!("{json}");
+                }
+            },
+            #[cfg(any(target_os = "macos", target_os = "linux"))]
+            DebugSubcommand::ListIntelliJVariants => {
+                for integration in fig_integrations::intellij::variants_installed().await? {
+                    println!("{}", integration.variant.application_name());
                 }
             },
         }

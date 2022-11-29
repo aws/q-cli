@@ -3,7 +3,6 @@ pub mod error;
 pub mod file;
 #[cfg(target_os = "macos")]
 pub mod input_method;
-#[cfg(target_os = "macos")]
 pub mod intellij;
 pub mod shell;
 pub mod ssh;

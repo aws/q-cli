@@ -4,7 +4,6 @@ use cfg_if::cfg_if;
 #[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
-#[cfg(target_os = "macos")]
 use fig_integrations::Integration;
 use fig_util::directories;
 #[cfg(target_os = "macos")]
@@ -173,18 +172,22 @@ pub async fn run_install(_ignore_immediate_update: bool) {
     }
 
     // install intellij integration
-    #[cfg(target_os = "macos")]
-    for variant in fig_integrations::intellij::variants_installed() {
-        let integration = fig_integrations::intellij::IntelliJIntegration { variant };
-        if integration.is_installed().await.is_err() {
-            info!(
-                "Attempting to install intellij integration for variant {}",
-                integration.variant.application_name
-            );
-            if let Err(err) = integration.install().await {
-                error!(%err, "Failed installing intellij integration for variant {}", integration.variant.application_name);
+    #[cfg(any(target_os = "macos", target_os = "linux"))]
+    match fig_integrations::intellij::variants_installed().await {
+        Ok(variants) => {
+            for integration in variants {
+                if integration.is_installed().await.is_err() {
+                    info!(
+                        "Attempting to install intellij integration for variant {}",
+                        integration.variant.application_name()
+                    );
+                    if let Err(err) = integration.install().await {
+                        error!(%err, "Failed installing intellij integration for variant {}", integration.variant.application_name());
+                    }
+                }
             }
-        }
+        },
+        Err(err) => error!(%err, "Failed getting installed intellij variants"),
     }
 
     // update ssh integration

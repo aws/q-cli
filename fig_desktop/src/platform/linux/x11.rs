@@ -83,8 +83,6 @@ impl X11State {
 #[derive(Debug)]
 pub struct X11WindowData {
     pub id: x11rb::protocol::xproto::Window,
-    pub class: Option<Vec<u8>>,
-    pub instance: Option<Vec<u8>>,
     pub window_geometry: Option<Rect>,
 }
 
@@ -157,22 +155,41 @@ fn process_window(
         })
     };
 
-    let focus_window = get_input_focus(conn)?.reply()?.focus;
-    trace!("Active window id: {focus_window}");
+    let mut window = get_input_focus(conn)?.reply()?.focus;
 
-    if focus_window == 0 {
-        hide()?;
-        return Ok(());
-    }
+    let (active_window, wm_class) = 'win: loop {
+        if window == 0 {
+            hide()?;
+            return Ok(());
+        }
 
-    let wm_class = WmClass::get(conn, focus_window)?.reply();
+        let wm_class = WmClass::get(conn, window)?.reply();
 
-    let window_reply = window_geometry(conn, focus_window);
+        let wm_class = String::from_utf8_lossy(&match wm_class {
+            Ok(class_raw) => class_raw.class().to_owned(),
+            Err(err) => {
+                debug!("No wm class {err:?}");
+                // hide if missing wm class
+                hide()?;
+                return Ok(());
+            },
+        })
+        .to_string();
+
+        if wm_class == "FocusProxy" {
+            window = query_tree(conn, window)?.reply()?.parent;
+        } else {
+            break 'win (window, wm_class);
+        }
+    };
+
+    debug!("active window id: {active_window}");
+    debug!("focus changed to {}", wm_class);
+
+    let window_reply = window_geometry(conn, active_window);
 
     let old_window_data = x11_state.active_window.lock().replace(X11WindowData {
-        id: focus_window,
-        class: wm_class.as_ref().ok().map(|wm_class| wm_class.class().to_owned()),
-        instance: wm_class.as_ref().ok().map(|wm_class| wm_class.instance().to_owned()),
+        id: active_window,
         window_geometry: window_reply.ok().map(|window_reply| Rect {
             position: PhysicalPosition {
                 x: window_reply.x,
@@ -187,25 +204,12 @@ fn process_window(
         }),
     });
 
-    let wm_class = String::from_utf8_lossy(&match wm_class {
-        Ok(class_raw) => class_raw.class().to_owned(),
-        Err(err) => {
-            debug!("No wm class {err:?}");
-            // hide if missing wm class
-            hide()?;
-            return Ok(());
-        },
-    })
-    .to_string();
-
-    debug!("focus changed to {}", wm_class);
-
     if wm_class == "Fig" {
         // get wm_role
         let reply = get_property(
             conn,
             false,
-            focus_window,
+            active_window,
             x11_state.atom_b2a(conn, WM_WINDOW_ROLE)?,
             AtomEnum::STRING,
             0,
@@ -228,7 +232,7 @@ fn process_window(
     }
 
     if let Some(old_window_data) = old_window_data {
-        if old_window_data.id != focus_window {
+        if old_window_data.id != active_window {
             hide()?;
             return Ok(());
         }
