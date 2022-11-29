@@ -107,7 +107,7 @@ pub(super) async fn handle_x11(
     let screen = &setup.roots[screen_num];
 
     change_window_attributes(&conn, screen.root, &ChangeWindowAttributesAux {
-        event_mask: Some(u32::from(EventMask::PROPERTY_CHANGE)),
+        event_mask: Some(EventMask::PROPERTY_CHANGE),
         ..Default::default()
     })
     .expect("Failed sending event mask update")
