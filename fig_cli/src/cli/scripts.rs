@@ -965,8 +965,13 @@ fn run_tui(
             border_bottom_width: 0.0;
             border_right_width: 0.0;
         },
-        "#__label" => {
+        "#__parameter" => {
             padding_top: -1.0;
+        },
+        "#__label" => {
+            margin_left: 1.0;
+            padding_left: 1.0;
+            padding_right: 1.0;
         },
         "#__preview" => {
             padding_left: 1.0;
@@ -981,6 +986,9 @@ fn run_tui(
             border_right_color: ColorAttribute::PaletteIndex(8);
             border_top_color: ColorAttribute::PaletteIndex(8);
             border_bottom_color: ColorAttribute::PaletteIndex(8);
+        },
+        "#__footer" => {
+            margin_top: 1.0;
         }
     };
 
@@ -1026,7 +1034,7 @@ fn run_tui(
             description_map.insert(parameter.name.to_owned(), description.to_owned());
         }
 
-        let mut parameter_div = Container::new("", Layout::Vertical);
+        let mut parameter_div = Container::new("__parameter", Layout::Vertical);
         parameter_div
             .push(Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name)));
 
@@ -1118,7 +1126,7 @@ fn run_tui(
 
     #[rustfmt::skip]
     view.push(form).push(
-        Paragraph::new("keybindings")
+        Paragraph::new("__footer")
             .push_styled_text("enter", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
             .push_styled_text(" select • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
             .push_styled_text("tab", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)

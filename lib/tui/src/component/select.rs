@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -95,13 +96,16 @@ impl Component for Select {
 
         match self.text.is_empty() {
             true => {
+                let mut attributes = style.attributes();
+                attributes.set_foreground(ColorAttribute::PaletteIndex(8));
+
                 if let Some(hint) = &self.hint {
                     surface.draw_text(
                         &hint.as_str()[self.cursor_offset..],
                         x + 2.0,
                         y,
                         width - 2.0,
-                        style.attributes(),
+                        attributes,
                     );
                 }
             },
@@ -113,22 +117,22 @@ impl Component for Select {
                     width - 2.0,
                     style.attributes(),
                 );
-
-                if self.inner.focus {
-                    let mut attributes = style.attributes();
-                    attributes
-                        .set_background(attributes.foreground())
-                        .set_foreground(style.caret_color());
-
-                    surface.draw_text(
-                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
-                        x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
-                        y,
-                        1.0,
-                        attributes,
-                    );
-                }
             },
+        }
+
+        if self.inner.focus {
+            let mut attributes = style.attributes();
+            attributes
+                .set_foreground(style.background_color())
+                .set_background(style.caret_color());
+
+            surface.draw_text(
+                self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
+                x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
+                y,
+                1.0,
+                attributes,
+            );
         }
 
         for (i, option) in self.sorted_options[self.index_offset
@@ -147,8 +151,8 @@ impl Component for Select {
             if let Some(index) = self.index {
                 if i == index - self.index_offset.min(index) {
                     attributes
-                        .set_background(attributes.foreground())
-                        .set_foreground(style.caret_color());
+                        .set_foreground(style.background_color())
+                        .set_background(style.caret_color());
                 }
             }
 

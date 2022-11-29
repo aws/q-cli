@@ -144,7 +144,7 @@ impl Style {
 
     field!(
         caret_color,
-        Property::Color,
+        Property::CaretColor,
         ColorAttribute,
         ColorAttribute::PaletteIndex(15)
     );
