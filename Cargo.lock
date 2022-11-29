@@ -1180,7 +1180,7 @@ dependencies = [
  "autocfg",
  "cfg-if 1.0.0",
  "crossbeam-utils",
- "memoffset",
+ "memoffset 0.6.5",
  "scopeguard",
 ]
 
@@ -1804,7 +1804,7 @@ version = "0.3.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1e1c54951450cbd39f3dbcf1005ac413b49487dabf18a720ad2383eccfeffb92"
 dependencies = [
- "memoffset",
+ "memoffset 0.6.5",
  "rustc_version 0.3.3",
 ]
 
@@ -1873,7 +1873,7 @@ dependencies = [
  "indicatif",
  "insta",
  "macos_utils",
- "nix 0.25.0",
+ "nix 0.26.1",
  "once_cell",
  "owo-colors",
  "parking_lot 0.12.1",
@@ -1969,7 +1969,7 @@ dependencies = [
  "libc",
  "macos_utils",
  "moka",
- "nix 0.25.0",
+ "nix 0.26.1",
  "notify",
  "objc",
  "once_cell",
@@ -2146,7 +2146,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "fig_proto",
  "fig_util",
- "nix 0.25.0",
+ "nix 0.26.1",
  "pin-project-lite",
  "thiserror",
  "tokio",
@@ -2177,7 +2177,7 @@ dependencies = [
  "bytes",
  "fig_util",
  "hex",
- "nix 0.25.0",
+ "nix 0.26.1",
  "once_cell",
  "prost",
  "prost-build",
@@ -2331,7 +2331,7 @@ dependencies = [
  "hex",
  "insta",
  "macos_utils",
- "nix 0.25.0",
+ "nix 0.26.1",
  "objc",
  "once_cell",
  "paste",
@@ -2378,7 +2378,7 @@ dependencies = [
  "fnv",
  "lazy_static",
  "memmem",
- "nix 0.25.0",
+ "nix 0.26.1",
  "num-traits",
  "once_cell",
  "parking_lot 0.12.1",
@@ -3814,7 +3814,7 @@ dependencies = [
  "dashmap",
  "flume",
  "fnv",
- "nix 0.25.0",
+ "nix 0.26.1",
  "objc",
  "once_cell",
  "parking_lot 0.12.1",
@@ -3904,6 +3904,15 @@ name = "memoffset"
 version = "0.6.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "5aa361d4faea93603064a027415f07bd8e1d5c88c9fbf68bf56a285428fd79ce"
+dependencies = [
+ "autocfg",
+]
+
+[[package]]
+name = "memoffset"
+version = "0.7.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "5de893c32cde5f383baa4c04c5d6dbdd735cfd4a794b0debdb2bb1b421da5ff4"
 dependencies = [
  "autocfg",
 ]
@@ -4060,7 +4069,7 @@ dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
  "libc",
- "memoffset",
+ "memoffset 0.6.5",
 ]
 
 [[package]]
@@ -4073,8 +4082,22 @@ dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
  "libc",
- "memoffset",
+ "memoffset 0.6.5",
  "pin-utils",
+]
+
+[[package]]
+name = "nix"
+version = "0.26.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "46a58d1d356c6597d08cde02c2f09d785b09e28711837b1ed667dc652c08a694"
+dependencies = [
+ "bitflags",
+ "cfg-if 1.0.0",
+ "libc",
+ "memoffset 0.7.1",
+ "pin-utils",
+ "static_assertions",
 ]
 
 [[package]]

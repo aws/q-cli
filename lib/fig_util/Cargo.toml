@@ -47,7 +47,7 @@ winreg = "0.10.1"
 
 [target.'cfg(unix)'.dependencies]
 sysinfo = "0.26.8"
-nix = "0.25.0"
+nix = "0.26.1"
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }

@@ -103,7 +103,7 @@ features = [
 ]
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.25.0"
+nix = "0.26.1"
 
 [target.'cfg(target_os = "linux")'.dependencies]
 dbus = { path = "../lib/dbus" }
