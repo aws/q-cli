@@ -25,5 +25,6 @@ pub use style::{
     Style,
 };
 pub use stylesheet::StyleSheet;
+pub use termwiz::cell::Intensity;
 pub use termwiz::color::ColorAttribute;
 pub use termwiz::Error;

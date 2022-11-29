@@ -116,7 +116,7 @@ impl EventLoop {
             let mut height =
                 (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(rows);
             surface.add_change(Change::ClearScreen(ColorAttribute::Default));
-            surface.draw_border(&style, &mut x, &mut y, &mut width, &mut height);
+            surface.draw_border(&mut x, &mut y, &mut width, &mut height, &style);
             component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
 
             // diffing logic
@@ -194,19 +194,7 @@ impl EventLoop {
 
                         component.on_resize(&mut state, cols, rows);
 
-                        // TODO(chay) validate
-                        // Not sure why the following is required but it is
-                        let style = component.style(&mut state);
-                        let mut x = 0.0;
-                        let mut y = 0.0;
-                        let mut width =
-                            (style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()).min(cols);
-                        let mut height =
-                            (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(rows);
-                        surface.draw_border(&style, &mut x, &mut y, &mut width, &mut height);
-                        component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
-                        //
-
+                        surface.add_change(Change::ClearScreen(ColorAttribute::PaletteIndex(0)));
                         backbuffer.add_change(Change::ClearScreen(ColorAttribute::Default));
                         terminal.render(&[Change::ClearScreen(ColorAttribute::Default)])?;
                     },

@@ -1,7 +1,8 @@
 use std::fmt::Display;
 
-use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use super::ComponentData;
 use crate::event_loop::{
@@ -52,7 +53,7 @@ impl Select {
 
     pub fn with_text(mut self, text: impl Display) -> Self {
         self.text = text.to_string();
-        self.cursor = self.text.len();
+        self.cursor = self.text.width();
         self
     }
 
@@ -66,12 +67,12 @@ impl Component for Select {
     fn initialize(&mut self, _: &mut State) {
         let mut w = self
             .text
-            .len()
-            .max(self.options.iter().fold(0, |acc, option| acc.max(option.len())))
+            .width()
+            .max(self.options.iter().fold(0, |acc, option| acc.max(option.width())))
             .max(60);
 
         if let Some(hint) = &self.hint {
-            w = w.max(hint.len());
+            w = w.max(hint.width());
         }
 
         self.inner.width = w as f64;
@@ -85,47 +86,46 @@ impl Component for Select {
 
         let style = self.style(state);
 
-        let width = width as usize;
-        let height = height as usize;
-
         let arrow = match self.inner.focus {
             true => '▿',
             false => '▹',
         };
 
-        surface.draw_text(arrow, x, y, style.color(), style.background_color(), false);
+        surface.draw_text(arrow, x, y, 1.0, style.attributes());
 
         match self.text.is_empty() {
             true => {
                 if let Some(hint) = &self.hint {
                     surface.draw_text(
-                        &hint.as_str()[self.cursor_offset..hint.len().min(width - 2 + self.cursor_offset)],
+                        &hint.as_str()[self.cursor_offset..],
                         x + 2.0,
                         y,
-                        ColorAttribute::PaletteIndex(8),
-                        style.background_color(),
-                        false,
+                        width - 2.0,
+                        style.attributes(),
                     );
                 }
             },
             false => {
                 surface.draw_text(
-                    &self.text.as_str()[self.cursor_offset..self.text.len().min(width - 2 + self.cursor_offset)],
+                    &self.text.as_str()[self.cursor_offset..],
                     x + 2.0,
                     y,
-                    style.color(),
-                    style.background_color(),
-                    false,
+                    width - 2.0,
+                    style.attributes(),
                 );
 
                 if self.inner.focus {
+                    let mut attributes = style.attributes();
+                    attributes
+                        .set_background(attributes.foreground())
+                        .set_foreground(style.caret_color());
+
                     surface.draw_text(
-                        self.text.chars().nth(self.cursor).unwrap_or(' '),
+                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
                         x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
                         y,
-                        style.background_color(),
-                        style.color(),
-                        false,
+                        1.0,
+                        attributes,
                     );
                 }
             },
@@ -139,27 +139,25 @@ impl Component for Select {
             .iter()
             .enumerate()
         {
-            if i + 1 > height {
+            if i + 1 > height as usize {
                 return;
             }
 
-            let mut color = style.color();
-            let mut background_color = style.background_color();
+            let mut attributes = style.attributes();
             if let Some(index) = self.index {
                 if i == index - self.index_offset.min(index) {
-                    background_color = color;
-                    color = ColorAttribute::PaletteIndex(0);
+                    attributes
+                        .set_background(attributes.foreground())
+                        .set_foreground(style.caret_color());
                 }
             }
 
-            let option = self.options[*option].as_str();
             surface.draw_text(
-                &option[0..option.len().min(width)],
+                self.options[*option].as_str(),
                 x + 2.0,
                 y + i as f64 + 1.0,
-                color,
-                background_color,
-                false,
+                width,
+                attributes,
             );
         }
     }
@@ -167,7 +165,7 @@ impl Component for Select {
     fn on_input_action(&mut self, _: &mut State, input_action: InputAction) -> bool {
         match input_action {
             InputAction::Left => self.cursor -= 1.min(self.cursor),
-            InputAction::Right => self.cursor += 1.min(self.text.len() - self.cursor),
+            InputAction::Right => self.cursor += 1.min(self.text.width() - self.cursor),
             InputAction::Up => {
                 if !self.sorted_options.is_empty() {
                     match self.index {
@@ -214,7 +212,7 @@ impl Component for Select {
                     .retain(|option| self.options[*option].contains(&self.text));
             },
             InputAction::Remove => {
-                match self.cursor == self.text.len() {
+                match self.cursor == self.text.width() {
                     true => {
                         self.text.pop();
                         self.cursor -= 1.min(self.cursor);

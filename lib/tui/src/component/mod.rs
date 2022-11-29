@@ -1,7 +1,6 @@
 mod check_box;
 mod container;
 mod file_picker;
-mod label;
 mod paragraph;
 mod select;
 mod text_field;
@@ -10,12 +9,14 @@ pub use check_box::{
     CheckBox,
     CheckBoxEvent,
 };
-pub use container::Container;
+pub use container::{
+    Container,
+    Layout,
+};
 pub use file_picker::{
     FilePicker,
     FilePickerEvent,
 };
-pub use label::Label;
 pub use paragraph::Paragraph;
 pub use select::{
     Select,
@@ -52,7 +53,7 @@ impl ComponentData {
     }
 }
 
-pub trait Component {
+pub trait Component: std::fmt::Debug {
     fn initialize(&mut self, state: &mut State);
 
     fn draw(

@@ -1,24 +1,19 @@
+use termwiz::cell::{
+    CellAttributes,
+    Intensity,
+};
 use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use super::ComponentData;
 use crate::surface_ext::SurfaceExt;
 use crate::Component;
 
 #[derive(Debug)]
-enum ParagraphComponent {
-    Text {
-        text: String,
-        color: Option<ColorAttribute>,
-        background_color: Option<ColorAttribute>,
-        bold: bool,
-    },
-    LineBreak,
-}
-
-#[derive(Debug)]
 pub struct Paragraph {
-    components: Vec<ParagraphComponent>,
+    components: Vec<(String, Option<CellAttributes>)>,
     inner: ComponentData,
 }
 
@@ -26,52 +21,45 @@ impl Paragraph {
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             components: vec![],
-            inner: ComponentData {
-                id: id.into(),
-                width: 110.0,
-                interactive: false,
-                ..Default::default()
-            },
+            inner: ComponentData::new(id.into(), false),
         }
     }
 
-    pub fn push_text(self, text: impl Into<String>) -> Self {
-        self.push_styled_text(text, None, None, false)
+    pub fn push_text(mut self, text: impl Into<String>) -> Self {
+        self.components.push((text.into(), None));
+        self
     }
 
     pub fn push_styled_text(
         mut self,
         text: impl Into<String>,
-        color: Option<ColorAttribute>,
-        background_color: Option<ColorAttribute>,
+        foreground: ColorAttribute,
+        background: ColorAttribute,
         bold: bool,
+        italic: bool,
     ) -> Self {
-        self.components.push(ParagraphComponent::Text {
-            text: text.into().replace('\t', "    "),
-            color,
-            background_color,
-            bold,
-        });
+        let mut attributes = CellAttributes::blank();
+        attributes
+            .set_foreground(foreground)
+            .set_background(background)
+            .set_intensity(if bold { Intensity::Bold } else { Intensity::Normal })
+            .set_italic(italic);
 
-        self
-    }
-
-    pub fn push_line_break(mut self) -> Self {
-        self.components.push(ParagraphComponent::LineBreak);
+        self.components.push((text.into(), Some(attributes)));
         self
     }
 }
 
 impl Component for Paragraph {
     fn initialize(&mut self, _: &mut crate::event_loop::State) {
-        if !self.components.is_empty() {
-            self.inner.height = self.components.iter().fold(1, |acc, c| match c {
-                ParagraphComponent::Text { text, .. } => {
-                    acc + i32::try_from(text.chars().filter(|c| c == &'\n').count()).unwrap()
-                },
-                ParagraphComponent::LineBreak => acc + 1,
-            }) as f64;
-        }
+        let (width, height) = self.components.iter().fold((0, 1), |(acc0, acc1), c| {
+            let width = c.0.lines().map(|t| t.width()).max().unwrap_or_default();
+            let height = c.0.graphemes(true).filter(|s| s == &"\n" || s == &"\r\n").count();
+            (acc0 + width, acc1 + height)
+        });
+
+        self.inner.width = width as f64;
+        self.inner.height = height as f64;
     }
 
     fn draw(
@@ -87,51 +75,31 @@ impl Component for Paragraph {
     ) {
         let style = self.style(state);
 
-        let start = x;
-        let mut offset = 0;
+        let start_x = x;
+        let start_y = y;
         for component in &self.components {
-            if y == height {
-                return;
-            }
-
-            match component {
-                ParagraphComponent::Text {
-                    text,
-                    color,
-                    background_color,
-                    bold,
-                } => {
-                    for char in text.chars() {
-                        if char == '\n' {
-                            x = start;
-                            y += 1.0;
-                            offset = 0;
-                            continue;
-                        }
-
-                        surface.draw_text(
-                            char,
-                            x + offset as f64,
-                            y,
-                            color.unwrap_or(style.color()),
-                            background_color.unwrap_or(style.background_color()),
-                            *bold,
-                        );
-                        x += 1.0;
-
-                        if x >= width {
-                            x = start;
-                            y += 1.0;
-                            offset = 4;
-                        }
-                    }
-                },
-                ParagraphComponent::LineBreak => {
-                    x = start;
+            let mut new_line = false;
+            component.0.lines().for_each(|line| {
+                if new_line {
+                    x = start_x;
                     y += 1.0;
-                    offset = 0;
-                },
-            }
+                }
+
+                if y > start_y + height {
+                    return;
+                }
+
+                surface.draw_text(
+                    line,
+                    x,
+                    y,
+                    width - (x - start_x),
+                    component.1.clone().unwrap_or_else(|| style.attributes()),
+                );
+                x += line.width() as f64;
+
+                new_line = true;
+            });
         }
     }
 

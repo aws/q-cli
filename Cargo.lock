@@ -7123,6 +7123,8 @@ version = "2.8.0"
 dependencies = [
  "paste",
  "termwiz",
+ "unicode-segmentation",
+ "unicode-width",
 ]
 
 [[package]]

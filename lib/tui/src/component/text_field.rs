@@ -1,5 +1,6 @@
-use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
+use unicode_segmentation::UnicodeSegmentation;
+use unicode_width::UnicodeWidthStr;
 
 use crate::component::ComponentData;
 use crate::event_loop::{
@@ -15,13 +16,13 @@ pub enum TextFieldEvent {
     TextChanged { id: String, text: String },
 }
 
+#[derive(Debug)]
 pub struct TextField {
     text: String,
     cursor: usize,
     offset: usize,
     hint: Option<String>,
     obfuscated: bool,
-    focused: bool,
     inner: ComponentData,
 }
 
@@ -33,14 +34,13 @@ impl TextField {
             offset: 0,
             hint: None,
             obfuscated: false,
-            focused: false,
             inner: ComponentData::new(id.to_string(), true),
         }
     }
 
     pub fn with_text(mut self, text: impl Into<String>) -> Self {
         self.text = text.into();
-        self.cursor = self.text.len();
+        self.cursor = self.text.width();
         self
     }
 
@@ -67,53 +67,32 @@ impl Component for TextField {
         }
 
         let style = self.style(state);
-
-        let width = match style.width() {
-            Some(width) => width,
-            None => width,
-        } as usize;
+        let width = style.width().unwrap_or(width);
 
         match self.text.is_empty() {
             true => {
                 if let Some(hint) = &self.hint {
-                    surface.draw_text(
-                        hint.as_str(),
-                        x,
-                        y,
-                        ColorAttribute::PaletteIndex(8),
-                        style.background_color(),
-                        false,
-                    );
+                    surface.draw_text(hint.as_str(), x, y, width, style.attributes());
                 }
             },
             false => {
                 match self.obfuscated {
-                    true => surface.draw_text(
-                        "*".repeat(self.text.len().min(width)),
-                        x,
-                        y,
-                        style.color(),
-                        style.background_color(),
-                        false,
-                    ),
-                    false => surface.draw_text(
-                        &self.text.as_str()[self.offset..self.text.len().min(width + self.offset)],
-                        x,
-                        y,
-                        style.color(),
-                        style.background_color(),
-                        false,
-                    ),
+                    true => surface.draw_text("*".repeat(self.text.len()), x, y, width, style.attributes()),
+                    false => surface.draw_text(&self.text.as_str()[self.offset..], x, y, width, style.attributes()),
                 };
 
-                if self.focused {
+                if self.inner.focus {
+                    let mut attributes = style.attributes();
+                    attributes
+                        .set_foreground(style.background_color())
+                        .set_background(style.caret_color());
+
                     surface.draw_text(
-                        self.text.chars().nth(self.cursor).unwrap_or(' '),
+                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
                         x + self.cursor as f64 - self.offset as f64,
                         y,
-                        style.background_color(),
-                        style.color(),
-                        false,
+                        1.0,
+                        attributes,
                     );
                 }
             },

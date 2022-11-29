@@ -1,6 +1,10 @@
 use std::collections::HashMap;
 use std::mem::Discriminant;
 
+use termwiz::cell::{
+    CellAttributes,
+    Intensity,
+};
 use termwiz::color::ColorAttribute;
 
 #[macro_export]
@@ -70,7 +74,9 @@ pub enum Property {
     BorderStyle(BorderStyle),
     BorderTopColor(ColorAttribute),
     BorderTopWidth(f64),
+    CaretColor(ColorAttribute),
     Color(ColorAttribute),
+    FontWeight(Intensity),
     Height(Option<f64>),
     MarginBottom(f64),
     MarginLeft(f64),
@@ -136,7 +142,16 @@ impl Style {
 
     field!(border_top_width, Property::BorderTopWidth, f64, 0.0);
 
+    field!(
+        caret_color,
+        Property::Color,
+        ColorAttribute,
+        ColorAttribute::PaletteIndex(15)
+    );
+
     field!(color, Property::Color, ColorAttribute, ColorAttribute::Default);
+
+    field!(font_weight, Property::FontWeight, Intensity, Intensity::Normal);
 
     field!(margin_bottom, Property::MarginBottom, f64, 0.0);
 
@@ -238,5 +253,19 @@ impl Style {
             style.0.insert(*key, *value);
         }
         style
+    }
+
+    pub fn attributes(&self) -> CellAttributes {
+        let foreground = self.color();
+        let background = self.background_color();
+        let intensity = self.font_weight();
+
+        let mut attributes = CellAttributes::blank();
+        attributes
+            .set_foreground(foreground)
+            .set_background(background)
+            .set_underline_color(foreground)
+            .set_intensity(intensity);
+        attributes
     }
 }

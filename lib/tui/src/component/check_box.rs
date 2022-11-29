@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use termwiz::surface::Surface;
+use unicode_width::UnicodeWidthStr;
 
 use crate::component::ComponentData;
 use crate::event_loop::{
@@ -17,6 +18,7 @@ pub enum CheckBoxEvent {
     Checked { id: String, checked: bool },
 }
 
+#[derive(Debug)]
 pub struct CheckBox {
     label: String,
     checked: bool,
@@ -35,7 +37,7 @@ impl CheckBox {
 
 impl Component for CheckBox {
     fn initialize(&mut self, _: &mut State) {
-        self.inner.width = 4.0 + self.label.len() as f64;
+        self.inner.width = 4.0 + self.label.width() as f64;
         self.inner.height = 1.0;
     }
 
@@ -47,13 +49,11 @@ impl Component for CheckBox {
         let style = self.style(state);
 
         surface.draw_text(
-            &format!("{} {}", if self.checked { '☑' } else { '☐' }, self.label)
-                [0..(4 + self.label.len()).min(width as usize)],
+            &format!("{} {}", if self.checked { '☑' } else { '☐' }, self.label),
             x,
             y,
-            style.color(),
-            style.background_color(),
-            false,
+            2.0 + self.label.width() as f64,
+            style.attributes(),
         );
     }
 

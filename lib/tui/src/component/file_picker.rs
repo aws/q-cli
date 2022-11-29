@@ -120,33 +120,11 @@ impl Component for FilePicker {
         let style = self.style(state);
 
         let path = self.path.to_string_lossy();
-        surface.draw_text(
-            &path[0..path.len().min(width as usize)],
-            x,
-            y,
-            style.color(),
-            style.background_color(),
-            false,
-        );
+        surface.draw_text(&path, x, y, width, style.attributes());
 
         if height as usize > 1 {
-            surface.draw_rect(
-                '─',
-                x,
-                y + 1.0,
-                width,
-                1.0,
-                ColorAttribute::PaletteIndex(8),
-                style.background_color(),
-            );
-            surface.draw_text(
-                '┬',
-                x + width * 0.5 - 1.0,
-                y + 1.0,
-                ColorAttribute::PaletteIndex(8),
-                style.background_color(),
-                false,
-            );
+            surface.draw_rect('─', x, y + 1.0, width, 1.0, style.attributes());
+            surface.draw_text('┬', x + width * 0.5 - 1.0, y + 1.0, 1.0, style.attributes());
         }
         surface.draw_rect(
             '│',
@@ -154,8 +132,7 @@ impl Component for FilePicker {
             y + 2.0,
             1.0,
             height - 2.0,
-            ColorAttribute::PaletteIndex(8),
-            style.background_color(),
+            style.attributes(),
         );
 
         for (i, option) in self.options[self.index_offset
@@ -171,25 +148,21 @@ impl Component for FilePicker {
             }
 
             let path = self.path.join(option);
-            let (mut color, mut background_color) = match path.is_dir() {
-                true => (style.color(), style.background_color()),
-                false => (ColorAttribute::PaletteIndex(8), ColorAttribute::Default),
+            let mut attributes = style.attributes();
+            if !path.is_dir() {
+                attributes
+                    .set_foreground(ColorAttribute::PaletteIndex(8))
+                    .set_background(ColorAttribute::Default);
             };
 
             if i == self.index - self.index_offset.min(self.index) {
-                background_color = color;
-                color = ColorAttribute::PaletteIndex(0);
+                attributes
+                    .set_background(attributes.foreground())
+                    .set_foreground(ColorAttribute::PaletteIndex(0));
             }
 
             let option = option.to_string_lossy();
-            surface.draw_text(
-                &option[0..option.len().min(width as usize / 2 - 3.min(width as usize / 2))],
-                x + 2.0,
-                y + i as f64 + 2.0,
-                color,
-                background_color,
-                false,
-            );
+            surface.draw_text(&option, x + 2.0, y + i as f64 + 2.0, width / 2.0 - 3.0, attributes);
         }
 
         if let Some(option) = self.options.get(self.index) {
@@ -198,20 +171,21 @@ impl Component for FilePicker {
                     break;
                 }
 
-                let path = self.path.join(option).join(preview);
-                let (color, background_color) = match path.is_dir() {
-                    true => (style.color(), style.background_color()),
-                    false => (ColorAttribute::PaletteIndex(8), ColorAttribute::Default),
+                let path = self.path.join(option);
+                let mut attributes = style.attributes();
+                if !path.is_dir() {
+                    attributes
+                        .set_foreground(ColorAttribute::PaletteIndex(8))
+                        .set_background(ColorAttribute::Default);
                 };
 
                 let preview = preview.to_string_lossy();
                 surface.draw_text(
-                    &preview[0..preview.len().min(width as usize / 2 - 1.min(width as usize / 2))],
+                    &preview,
                     x + 2.0 + width * 0.5,
                     y + i as f64 + 2.0,
-                    color,
-                    background_color,
-                    false,
+                    width / 2.0 - 1.0,
+                    style.attributes(),
                 );
             }
         }

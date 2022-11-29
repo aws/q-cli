@@ -8,22 +8,31 @@ use crate::event_loop::State;
 use crate::input::InputAction;
 use crate::surface_ext::SurfaceExt;
 
+#[derive(Debug)]
+pub enum Layout {
+    Vertical,
+    Horizontal,
+}
+
+#[derive(Debug)]
 pub struct Container {
     components: Vec<Box<dyn Component + 'static>>,
+    layout: Layout,
     active: Option<usize>,
     inner: ComponentData,
 }
 
 impl Container {
-    pub fn new(id: impl Into<String>) -> Self {
+    pub fn new(id: impl Into<String>, layout: Layout) -> Self {
         Self {
             components: vec![],
             active: None,
+            layout,
             inner: ComponentData::new(id.into(), false),
         }
     }
 
-    pub fn push(mut self, component: impl Component + 'static) -> Self {
+    pub fn push(&mut self, component: impl Component + 'static) -> &mut Self {
         self.components.push(Box::new(component));
         self
     }
@@ -32,11 +41,18 @@ impl Container {
         (self.inner.width, self.inner.height) = self.components.iter().fold((0.0_f64, 0.0_f64), |acc, c| {
             let style = c.style(state);
 
-            (
-                acc.0
-                    .max(style.width().unwrap_or_else(|| c.width()) + style.spacing_horizontal()),
-                acc.1 + style.height().unwrap_or_else(|| c.height()) + style.spacing_vertical(),
-            )
+            match self.layout {
+                Layout::Vertical => (
+                    acc.0
+                        .max(style.width().unwrap_or_else(|| c.width()) + style.spacing_horizontal()),
+                    acc.1 + style.height().unwrap_or_else(|| c.height()) + style.spacing_vertical(),
+                ),
+                Layout::Horizontal => (
+                    acc.0 + style.width().unwrap_or_else(|| c.width()) + style.spacing_horizontal(),
+                    acc.1
+                        .max(style.height().unwrap_or_else(|| c.height()) + style.spacing_vertical()),
+                ),
+            }
         });
     }
 }
@@ -54,24 +70,34 @@ impl Component for Container {
         &self,
         state: &mut State,
         surface: &mut Surface,
-        x: f64,
+        mut x: f64,
         mut y: f64,
         width: f64,
-        _: f64,
+        height: f64,
         screen_width: f64,
         screen_height: f64,
     ) {
         for component in &self.components {
             let style = component.style(state);
-            let mut x = x;
+            let mut cx = x;
             let mut cy = y;
+
             let mut width =
                 (style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()).min(width);
-            let mut height = style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical();
-            surface.draw_border(&style, &mut x, &mut cy, &mut width, &mut height);
-            component.draw(state, surface, x, cy, width, height, screen_width, screen_height);
+            let mut height =
+                (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(height);
 
-            y += style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical();
+            surface.draw_border(&mut cx, &mut cy, &mut width, &mut height, &style);
+            component.draw(state, surface, cx, cy, width, height, screen_width, screen_height);
+
+            match self.layout {
+                Layout::Vertical => {
+                    y += style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()
+                },
+                Layout::Horizontal => {
+                    x += style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()
+                },
+            }
         }
     }
 

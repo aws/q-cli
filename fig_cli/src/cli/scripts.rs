@@ -61,7 +61,7 @@ use tui::component::{
     Container,
     FilePicker,
     FilePickerEvent,
-    Label,
+    Layout,
     Paragraph,
     Select,
     SelectEvent,
@@ -911,129 +911,124 @@ fn run_tui(
 ) -> Result<HashMap<String, Value>> {
     let style_sheet = tui::style_sheet! {
         "*" => {
-            border_left_color: ColorAttribute::PaletteIndex(8);
-            border_right_color: ColorAttribute::PaletteIndex(8);
-            border_top_color: ColorAttribute::PaletteIndex(8);
-            border_bottom_color: ColorAttribute::PaletteIndex(8);
-            border_style: BorderStyle::Ascii {
-                top_left: '┌',
-                top: '─',
-                top_right: '┐',
-                left: '│',
-                right: '│',
-                bottom_left: '└',
-                bottom: '─',
-                bottom_right: '┘',
-            };
-        },
-        "*:focus" => {
-            color: ColorAttribute::PaletteIndex(3);
-            border_left_color: ColorAttribute::PaletteIndex(3);
-            border_right_color: ColorAttribute::PaletteIndex(3);
-            border_top_color: ColorAttribute::PaletteIndex(3);
-            border_bottom_color: ColorAttribute::PaletteIndex(3);
-            border_style: BorderStyle::Ascii {
-                top_left: '┏',
-                top: '━',
-                top_right: '┓',
-                left: '┃',
-                right: '┃',
-                bottom_left: '┗',
-                bottom: '━',
-                bottom_right: '┛',
-            };
-        },
-        "input:checkbox" => {
-            padding_left: 1.0;
-            padding_right: 1.0;
+            caret_color: ColorAttribute::PaletteIndex(11);
+            color: ColorAttribute::PaletteIndex(7);
         },
         "div" => {
-            color: ColorAttribute::PaletteIndex(8);
             width: Some(100.0);
-            padding_top: -1.0;
             border_left_width: 1.0;
             border_top_width: 1.0;
             border_bottom_width: 1.0;
             border_right_width: 1.0;
+            border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
+            border_left_color: ColorAttribute::PaletteIndex(8);
+            border_right_color: ColorAttribute::PaletteIndex(8);
+            border_top_color: ColorAttribute::PaletteIndex(8);
+            border_bottom_color: ColorAttribute::PaletteIndex(8);
         },
-        "h1" => {
-            margin_left: 1.0;
-            padding_left: 1.0;
-            padding_right: 1.0;
-        },
-        "p" => {
-            padding_left: 1.0;
-            padding_right: 1.0;
-        },
-        "select" => {
-            padding_left: 1.0;
-            padding_right: 1.0;
+        "div:focus" => {
+            width: Some(100.0);
+            border_left_width: 1.0;
+            border_top_width: 1.0;
+            border_bottom_width: 1.0;
+            border_right_width: 1.0;
+            border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
+            border_left_color: ColorAttribute::PaletteIndex(11);
+            border_right_color: ColorAttribute::PaletteIndex(11);
+            border_top_color: ColorAttribute::PaletteIndex(11);
+            border_bottom_color: ColorAttribute::PaletteIndex(11);
         },
         "input:text" => {
-            width: Some(98.0);
-            padding_left: 1.0;
-            padding_right: 2.0;
+            margin_left: 1.0;
+            margin_right: 1.0;
+        },
+        "input:checkbox" => {
+            margin_left: 1.0;
+            margin_right: 1.0;
+        },
+        "select" => {
+            margin_left: 1.0;
+            margin_right: 1.0;
+        },
+        "#__view" => {
+            border_left_width: 0.0;
+            border_top_width: 0.0;
+            border_bottom_width: 0.0;
+            border_right_width: 0.0;
         },
         "#__header" => {
             margin_bottom: 1.0;
         },
-        "#__keybindings" => {
-            margin_left: 0.0;
-            width: Some(110.0);
-        },
-        "#__view" => {
-            border_style: BorderStyle::None;
-            padding_top: 0.0;
-            margin_left: 2.0;
-            margin_right: 2.0;
-        },
         "#__form" => {
-            padding_top: 0.0;
-            border_style: BorderStyle::None;
+            border_left_width: 0.0;
+            border_top_width: 0.0;
+            border_bottom_width: 0.0;
+            border_right_width: 0.0;
         },
-        "#__description" => {
-            margin_top: 1000.0;
-            height: Some(1.0);
+        "#__label" => {
+            padding_top: -1.0;
+        },
+        "#__preview" => {
+            padding_left: 1.0;
+            padding_right: 1.0;
+            padding_bottom: 1.0;
+            border_left_width: 1.0;
+            border_top_width: 1.0;
+            border_bottom_width: 1.0;
+            border_right_width: 1.0;
+            border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
+            border_left_color: ColorAttribute::PaletteIndex(8);
+            border_right_color: ColorAttribute::PaletteIndex(8);
+            border_top_color: ColorAttribute::PaletteIndex(8);
+            border_bottom_color: ColorAttribute::PaletteIndex(8);
         }
     };
 
+    let mut view = Container::new("__view", Layout::Vertical);
+
     let mut header = Paragraph::new("__header")
-        .push_line_break()
-        .push_styled_text(script.display_name.as_ref().unwrap_or(&script.name), None, None, true)
+        .push_styled_text(
+            script.display_name.as_ref().unwrap_or(&script.name),
+            ColorAttribute::PaletteIndex(11),
+            ColorAttribute::Default,
+            true,
+            false,
+        )
         .push_styled_text(
             format!(" • @{}", script.namespace),
-            Some(ColorAttribute::PaletteIndex(8)),
-            None,
+            ColorAttribute::Default,
+            ColorAttribute::Default,
+            false,
             false,
         );
 
     if let Some(description) = &script.description {
         if !description.is_empty() {
-            header = header.push_line_break().push_styled_text(
-                description,
-                Some(ColorAttribute::PaletteIndex(3)),
-                None,
+            header = header.push_styled_text(
+                format!("\n{description}"),
+                ColorAttribute::PaletteIndex(8),
+                ColorAttribute::Default,
                 false,
+                true,
             );
         }
     }
 
-    let mut form = Container::new("__form");
+    view.push(header);
+
+    let mut form = Container::new("__form", Layout::Vertical);
 
     let mut args: HashMap<String, Value> = HashMap::new();
     let mut description_map = HashMap::new();
     let mut flag_map: HashMap<String, (String, String)> = HashMap::new();
-
     for parameter in &script.parameters {
         if let Some(description) = &parameter.description {
             description_map.insert(parameter.name.to_owned(), description.to_owned());
         }
 
-        let mut property = Container::new("").push(Label::new(
-            &parameter.name,
-            parameter.display_name.as_ref().unwrap_or(&parameter.name),
-            false,
-        ));
+        let mut parameter_div = Container::new("", Layout::Vertical);
+        parameter_div
+            .push(Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name)));
 
         let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
         match &parameter.parameter_type {
@@ -1062,18 +1057,18 @@ fn run_tui(
                     }
                 }
 
-                property = property.push(
+                parameter_div.push(
                     Select::new(&parameter.name, options, true)
                         .with_text(parameter_value)
                         .with_hint(placeholder.as_deref().unwrap_or("Search...")),
                 );
             },
             ParameterType::Text { placeholder } => {
-                property = property.push(
+                parameter_div.push(
                     TextField::new(&parameter.name)
                         .with_text(parameter_value.to_string())
                         .with_hint(placeholder.to_owned().unwrap_or_default()),
-                )
+                );
             },
             ParameterType::Checkbox {
                 true_value_substitution,
@@ -1099,11 +1094,7 @@ fn run_tui(
                     false_value: Some(false_value_substitution.to_owned()),
                 });
 
-                property = property.push(CheckBox::new(
-                    &parameter.name,
-                    parameter.description.to_owned().unwrap_or_else(|| "Toggle".to_string()),
-                    checked,
-                ));
+                parameter_div.push(CheckBox::new(&parameter.name, "", checked));
             },
             ParameterType::Path { file_type, extensions } => {
                 let (files, folders) = match file_type {
@@ -1112,7 +1103,7 @@ fn run_tui(
                     FileType::FolderOnly => (false, true),
                 };
 
-                property = property.push(FilePicker::new(
+                parameter_div.push(FilePicker::new(
                     &parameter.name,
                     std::env::current_dir()?,
                     files,
@@ -1122,28 +1113,26 @@ fn run_tui(
             },
         };
 
-        form = form.push(property);
+        form.push(parameter_div);
     }
 
-    let mut view = Container::new("__view")
-        .push(header)
-        .push(form)
-        .push(Paragraph::new("__description"))
-        .push(
-            Paragraph::new("__keybindings")
-                .push_styled_text("enter", Some(ColorAttribute::PaletteIndex(3)), None, false)
-                .push_styled_text(" select • ", Some(ColorAttribute::Default), None, false)
-                .push_styled_text("tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
-                .push_styled_text(" next • ", Some(ColorAttribute::Default), None, false)
-                .push_styled_text("shift+tab", Some(ColorAttribute::PaletteIndex(3)), None, false)
-                .push_styled_text(" previous • ", Some(ColorAttribute::Default), None, false)
-                .push_styled_text("⎵", Some(ColorAttribute::PaletteIndex(3)), None, false)
-                .push_styled_text(" toggle • ", Some(ColorAttribute::Default), None, false)
-                .push_styled_text("⌃o", Some(ColorAttribute::PaletteIndex(3)), None, false)
-                .push_styled_text(" preview", Some(ColorAttribute::Default), None, false),
-        );
+    #[rustfmt::skip]
+    view.push(form).push(
+        Paragraph::new("keybindings")
+            .push_styled_text("enter", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text(" select • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
+            .push_styled_text("tab", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text(" next • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
+            .push_styled_text("shift+tab", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text(" previous • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
+            .push_styled_text("⎵", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text(" toggle • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
+            .push_styled_text( "⌃o", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text( " preview", ColorAttribute::Default, ColorAttribute::Default, false, false),
+    );
 
     let mut temp = None;
+    let mut terminated = false;
 
     EventLoop::new().run(
         &mut view,
@@ -1174,12 +1163,12 @@ fn run_tui(
                 .join()
                 .ok();
 
+                terminated = true;
                 *control_flow = ControlFlow::Quit;
             },
             Event::TempChangeView => {
                 if let Some(temp) = temp.take() {
-                    view.remove("__preview");
-                    view.insert("__header", temp);
+                    view.replace("__preview", temp);
                     return;
                 }
 
@@ -1203,37 +1192,22 @@ fn run_tui(
                                     Some(value) => value.to_string(),
                                     None => format!("{{{{{name}}}}}"),
                                 },
-                                Some(colors[hash % colors.len()]),
-                                None,
+                                colors[hash % colors.len()],
+                                ColorAttribute::Default,
+                                false,
                                 false,
                             );
                         },
                     }
                 }
 
+                let mut preview = Container::new("__preview", Layout::Vertical);
+                preview
+                    .push(Paragraph::new("__label").push_text("Preview"))
+                    .push(paragraph);
+
                 temp = view.remove("__form");
-                view.insert(
-                    "__header",
-                    Box::new(
-                        Container::new("__preview")
-                            .push(Label::new("preview_label", "Preview", false))
-                            .push(paragraph),
-                    ),
-                );
-            },
-            Event::FocusChanged { id, focus } => {
-                if focus {
-                    let description = description_map.get(&id).cloned().unwrap_or_default();
-                    view.replace(
-                        "__description",
-                        Box::new(Paragraph::new("__description").push_styled_text(
-                            description,
-                            Some(ColorAttribute::PaletteIndex(8)),
-                            None,
-                            false,
-                        )),
-                    );
-                }
+                view.insert("__header", Box::new(preview));
             },
             Event::CheckBox(event) => match event {
                 CheckBoxEvent::Checked { id, checked } => {
@@ -1264,6 +1238,10 @@ fn run_tui(
             _ => (),
         },
     )?;
+
+    if terminated {
+        std::process::exit(1);
+    }
 
     Ok(args)
 }
