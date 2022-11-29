@@ -145,7 +145,7 @@ pub enum DebugSubcommand {
         #[arg(value_enum)]
         app: App,
         #[arg(value_enum)]
-        build: Build,
+        build: Option<Build>,
     },
     /// Toggle/set autocomplete window debug mode
     AutocompleteWindow {
@@ -249,14 +249,25 @@ impl DebugSubcommand {
                     .spawn()?
                     .wait()?;
             },
-            DebugSubcommand::Build { build, app } => {
-                fig_api_client::settings::update(format!("developer.{app}.build"), match build {
-                    Build::Production => serde_json::Value::Null,
-                    Build::Staging => "staging".into(),
-                    Build::Develop => "develop".into(),
-                })
-                .await?;
-                println!("Fig will now use the {} build of {}", build.magenta(), app.magenta());
+            DebugSubcommand::Build { build, app } => match build {
+                Some(build) => {
+                    fig_api_client::settings::update(format!("developer.{app}.build"), match build {
+                        Build::Production => serde_json::Value::Null,
+                        Build::Staging => "staging".into(),
+                        Build::Develop => "develop".into(),
+                    })
+                    .await?;
+                    println!("Fig will now use the {} build of {}", build.magenta(), app.magenta());
+                },
+                None => {
+                    let current_build = fig_settings::settings::get_string_opt(format!("developer.{app}.build"));
+                    let current_build = match current_build.as_deref() {
+                        Some("staging") => Build::Staging,
+                        Some("develop") => Build::Develop,
+                        _ => Build::Production,
+                    };
+                    println!("{current_build}");
+                },
             },
             DebugSubcommand::Dotfiles { disable } => {
                 if *disable {
