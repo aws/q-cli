@@ -21,7 +21,7 @@ authors = ["fig developers"]
 edition = "2021"
 homepage = "https://fig.io"
 publish = false
-version = "2.8.0"
+version = "2.9.0"
 
 [workspace.metadata]
 channel = "none"
