@@ -1,6 +1,7 @@
 mod alias;
 mod daemon_dispatch;
 mod error;
+pub mod feature_flags;
 mod identify;
 mod install_method;
 mod page;
