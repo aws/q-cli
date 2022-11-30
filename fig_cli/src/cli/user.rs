@@ -43,6 +43,10 @@ use serde_json::{
     Value,
 };
 use time::format_description::well_known::Rfc3339;
+use tracing::{
+    error,
+    info,
+};
 
 use super::OutputFormat;
 use crate::util::{
@@ -106,26 +110,34 @@ impl RootUserSubcommand {
 
                 let mut options = vec![];
                 if is_remote() {
-                    let mut connection =
+                    let result = (|| async move {
+                        let mut connection =
                         BufferedUnixStream::connect(fig_util::directories::secure_socket_path()?).await?;
-                    let response: Option<Clientbound> = connection
-                        .send_recv_message_filtered(
-                            Hostbound {
-                                packet: Some(hostbound::Packet::Request(new_account_info_request())),
-                            },
-                            |x: &Clientbound| matches!(x.packet, Some(clientbound::Packet::Response(_))),
-                        )
-                        .await?;
-                    if let Some(response) = response {
-                        let Some(clientbound::Packet::Response(response)) = response.packet else {
-                            unreachable!();
-                        };
-                        let Some(clientbound::response::Response::AccountInfo(account_info)) = response.response else {
-                            eyre::bail!("weird packet from desktop");
-                        };
-                        if account_info.logged_in {
-                            options.push(OPTION_REMOTE);
+                        let response: Option<Clientbound> = connection
+                            .send_recv_message_filtered(
+                                Hostbound {
+                                    packet: Some(hostbound::Packet::Request(new_account_info_request())),
+                                },
+                                |x: &Clientbound| matches!(x.packet, Some(clientbound::Packet::Response(_))),
+                            )
+                            .await?;
+                        if let Some(response) = response {
+                            let Some(clientbound::Packet::Response(response)) = response.packet else {
+                                unreachable!();
+                            };
+                            let Some(clientbound::response::Response::AccountInfo(account_info)) = response.response else {
+                                eyre::bail!("weird packet from desktop");
+                            };
+                            if account_info.logged_in {
+                                return Ok(true)
+                            }
                         }
+                        Ok(false)
+                    })().await;
+                    match result {
+                        Ok(true) => options.push(OPTION_REMOTE),
+                        Ok(false) => info!("local host not logged in"),
+                        Err(err) => error!(%err, "failed checking local credentials"),
                     }
                 }
                 options.push(OPTION_EMAIL);
