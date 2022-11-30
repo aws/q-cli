@@ -705,6 +705,8 @@ async fn execute_script(
         },
         Runtime::Node => {
             let mut command = Command::new("node");
+            command.arg("--input-type");
+            command.arg("module");
             command.arg("-e");
             command.arg(script);
             (command, None)
