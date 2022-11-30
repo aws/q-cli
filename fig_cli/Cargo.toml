@@ -69,7 +69,7 @@ time = { version = "0.3.17", features = [
     "macros",
 ] }
 tokio = { version = "1.20.1", features = ["full"] }
-tokio-tungstenite = { version = "0.17.2", features = [
+tokio-tungstenite = { version = "0.18.0", features = [
     "rustls-tls-webpki-roots",
 ] }
 tracing = "0.1.36"
