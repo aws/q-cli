@@ -6,7 +6,10 @@ mod nsurl;
 use std::ops::Deref;
 
 use cocoa::base::nil;
-pub use notification_center::NotificationCenter;
+pub use notification_center::{
+    get_user_info_from_notification,
+    NotificationCenter,
+};
 pub use nsarray::{
     NSArray,
     NSArrayRef,
@@ -56,6 +59,14 @@ impl IdRef {
 
     pub fn is_nil(&self) -> bool {
         self.0 == nil
+    }
+
+    /// # Safety
+    ///
+    /// This is unsafe because the caller must ensure that the pointer has exclusive
+    /// access to the object.
+    pub unsafe fn as_mut_ptr(&self) -> *mut Object {
+        self.0 as *mut _
     }
 }
 

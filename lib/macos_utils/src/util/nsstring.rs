@@ -13,12 +13,30 @@ use super::{
 pub struct NSString(Id);
 
 impl NSString {
+    #[allow(clippy::missing_safety_doc)]
+    pub unsafe fn new(raw: *mut Object) -> Self {
+        Self(Id::new(raw))
+    }
+
     pub fn into_inner(self) -> Id {
         self.0
     }
 
     pub fn to_appkit_nsstring(self) -> AppkitNSString {
         AppkitNSString(self.0.autorelease())
+    }
+
+    pub fn as_str(&self) -> Option<&str> {
+        if self.is_null() {
+            None
+        } else {
+            unsafe {
+                let bytes: *const std::os::raw::c_char = self.UTF8String();
+                let len = self.len();
+                let bytes = std::slice::from_raw_parts(bytes as *const u8, len);
+                Some(std::str::from_utf8_unchecked(bytes))
+            }
+        }
     }
 }
 

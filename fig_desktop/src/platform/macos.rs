@@ -35,7 +35,9 @@ use macos_utils::window_server::{
     UIElement,
 };
 use macos_utils::{
+    NSArrayRef,
     NSString,
+    NSStringRef,
     NotificationCenter,
     WindowServer,
     WindowServerEvent,
@@ -434,15 +436,74 @@ impl PlatformStateImpl {
                     YES
                 }
 
+                extern "C" fn application_open_urls(_this: &Object, _cmd: Sel, _application: id, urls: id) -> BOOL {
+                    use cocoa::foundation::NSURL;
+
+                    let urls: NSArrayRef<id> = unsafe { NSArrayRef::new(urls) };
+                    let mut info: Vec<(NSString, NSString)> = vec![];
+
+                    if let Some(url) = urls.iter().next() {
+                        if !url.is_null() {
+                            let ns_string = unsafe { macos_utils::NSString::new(url.as_mut_ptr().absoluteString()) };
+                            info.push(("url".into(), ns_string));
+                        }
+                    }
+
+                    NotificationCenter::shared().post_notification("io.fig.show-dashboard", info);
+
+                    YES
+                }
+
                 let queue: id = unsafe {
                     let queue: id = msg_send![class!(NSOperationQueue), alloc];
                     msg_send![queue, init]
                 };
                 let application_observer = self.proxy.clone();
-                NotificationCenter::shared().subscribe("io.fig.show-dashboard", Some(queue), move |_| {
+                NotificationCenter::shared().subscribe("io.fig.show-dashboard", Some(queue), move |notification| {
+                    use cocoa::foundation::NSDictionary;
+
+                    let mut events = vec![WindowEvent::Show];
+
+                    if let Some(dict) = unsafe { macos_utils::get_user_info_from_notification(&notification) } {
+                        let key = NSString::from("url");
+                        let maybe_url = unsafe { dict.objectForKey_(***key) };
+                        if !maybe_url.is_null() {
+                            let url = unsafe { NSStringRef::new(maybe_url) };
+                            if let Some(url) = url.as_str() {
+                                let url = url::Url::parse(url);
+                                match url {
+                                    Ok(url) => {
+                                        if url.scheme() == "fig" {
+                                            match url.host_str() {
+                                                Some("dashboard") => {
+                                                    events.push(WindowEvent::NavigateRelative {
+                                                        path: url.path().to_owned().into(),
+                                                    });
+                                                },
+                                                Some("plugins") => {
+                                                    events.push(WindowEvent::NavigateRelative {
+                                                        path: format!("plugins/{}", url.path()).into(),
+                                                    });
+                                                },
+                                                host => {
+                                                    error!(?host, "Invalid deep link");
+                                                },
+                                            }
+                                        } else {
+                                            error!(scheme = %url.scheme(), %url, "Invalid scheme");
+                                        }
+                                    },
+                                    Err(err) => {
+                                        error!(%err, "Invalid URL");
+                                    },
+                                };
+                            }
+                        }
+                    }
+
                     if let Err(err) = application_observer.send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID,
-                        window_event: WindowEvent::Show,
+                        window_event: WindowEvent::Batch(events),
                     }) {
                         warn!(%err, "Error sending event");
                     }
@@ -451,6 +512,11 @@ impl PlatformStateImpl {
                 Self::override_app_delegate_method(
                     sel!(applicationShouldHandleReopen:hasVisibleWindows:),
                     application_should_handle_reopen as extern "C" fn(&Object, Sel, id, BOOL) -> BOOL,
+                );
+
+                Self::override_app_delegate_method(
+                    sel!(application:openURLs:),
+                    application_open_urls as extern "C" fn(&Object, Sel, id, id) -> BOOL,
                 );
 
                 Ok(())

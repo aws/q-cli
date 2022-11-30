@@ -402,7 +402,18 @@ jobs:
             defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleName Fig
 
             # Add fig:// association to bundle
-            plutil -insert CFBundleURLTypes -xml '<array><dict><key>CFBundleURLName</key><string>CustomID</string><key>CFBundleURLSchemes</key><array><string>fig</string></array></dict></array>' "${bundle_dir}/Fig.app/Contents/Info.plist"
+            plutil -insert CFBundleURLTypes -xml \
+            '<array>
+              <dict>
+                <key>CFBundleURLName</key>
+                <string>com.mschrage.fig</string>
+                <key>CFBundleURLSchemes</key>
+                <array>
+                  <string>fig</string>
+                </array>
+              </dict>
+            </array>' \
+            "${bundle_dir}/Fig.app/Contents/Info.plist"
 
             mkdir -p "${bundle_dir}/Fig.app/Contents/Helpers/"
             cp -r build/FigInputMethod.app "${bundle_dir}/Fig.app/Contents/Helpers/"

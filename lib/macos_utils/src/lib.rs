@@ -14,6 +14,7 @@ mod util;
 pub mod window_server;
 
 pub use util::{
+    get_user_info_from_notification,
     NSArray,
     NSArrayRef,
     NSString,

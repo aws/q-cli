@@ -116,3 +116,14 @@ pub unsafe fn get_app_from_notification(notification: &NSNotification) -> Option
         Some(NSRunningApplication(app))
     }
 }
+
+#[allow(clippy::missing_safety_doc)]
+pub unsafe fn get_user_info_from_notification(notification: &NSNotification) -> Option<id> {
+    let user_info = notification.userInfo().0;
+
+    if user_info.is_null() {
+        return None;
+    }
+
+    Some(user_info)
+}
