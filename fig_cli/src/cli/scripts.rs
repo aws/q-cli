@@ -536,12 +536,10 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     match (map, is_interactive) {
         (Ok(map), _) => match execution_method {
             ExecutionMethod::Invoke => {
-                execute_script(script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
+                execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
             },
             ExecutionMethod::Search => {
-                if send_figterm(map_args_to_command(&script, &map), true).await.is_err() {
-                    execute_script(script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
-                }
+                execute_script_or_insert(&script, &map).await?;
             },
         },
         (Err(_), true) => {
@@ -557,8 +555,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             if !missing_args.is_empty() {
                 bail!("Missing required arguments: {}", missing_args.join(", "));
             }
-
-            let run_command = map_args_to_command(&script, &values_by_arg);
 
             fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
@@ -581,19 +577,10 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 }
             }
 
-            if send_figterm(run_command, true).await.is_err() {
-                execute_script(
-                    script.runtime,
-                    &script.name,
-                    &script.namespace,
-                    &script.tree,
-                    &values_by_arg,
-                )
-                .await?;
-            }
+            execute_script_or_insert(&script, &values_by_arg).await?;
         },
         (Err(err), false) => {
-            eprintln!("{}", err);
+            eprintln!("{err}");
             std::process::exit(1);
         },
     }
@@ -676,7 +663,7 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
 }
 
 async fn execute_script(
-    runtime: Runtime,
+    runtime: &Runtime,
     name: &str,
     namespace: &str,
     tree: &[TreeElement],
@@ -756,6 +743,20 @@ async fn execute_script(
                 .await
                 .ok();
         }
+    }
+
+    Ok(())
+}
+
+/// Uses the setting `scripts.insert-into-shell` to determine whether to insert the command into the
+/// shell or execute it directly
+async fn execute_script_or_insert(script: &Script, args: &HashMap<String, Value>) -> Result<()> {
+    if fig_settings::settings::get_bool_or("scripts.insert-into-shell", false) {
+        if send_figterm(map_args_to_command(script, args), true).await.is_err() {
+            execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, args).await?;
+        }
+    } else {
+        execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, args).await?;
     }
 
     Ok(())
