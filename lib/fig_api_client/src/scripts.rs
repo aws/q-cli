@@ -162,7 +162,7 @@ impl Runtime {
     pub fn exe(&self) -> &str {
         match self {
             Runtime::Bash => "bash",
-            Runtime::Python => "python",
+            Runtime::Python => "python3",
             Runtime::Node => "node",
             Runtime::Deno => "deno",
         }
