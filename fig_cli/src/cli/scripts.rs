@@ -682,7 +682,10 @@ async fn execute_script(
                 } => match (runtime, val) {
                     (Runtime::Bash, true) => true_value.clone().unwrap_or_else(|| "true".into()),
                     (Runtime::Bash, false) => false_value.clone().unwrap_or_else(|| "false".into()),
-                    (Runtime::Python | Runtime::Node | Runtime::Deno, val) => val.to_string(),
+                    (Runtime::Python, true) => "True".into(),
+                    (Runtime::Python, false) => "False".into(),
+                    (Runtime::Node | Runtime::Deno, true) => "true".into(),
+                    (Runtime::Node | Runtime::Deno, false) => "false".into(),
                 },
             }),
         }
