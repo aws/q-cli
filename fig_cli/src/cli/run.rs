@@ -990,8 +990,8 @@ fn run_tui(
             border_bottom_color: ColorAttribute::PaletteIndex(3);
         },
         "#__view" => {
-            margin_left: 1.0;
-            margin_right: 1.0;
+            margin_left: 2.0;
+            margin_right: 2.0;
             margin_top: 1.0;
             margin_bottom: 1.0;
         },
