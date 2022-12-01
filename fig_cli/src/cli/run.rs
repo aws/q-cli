@@ -286,7 +286,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
     // Parse args
     let script_name = env_args.first().map(String::from);
-    let (execution_method, script) = match script_name {
+    let (execution_method, mut script) = match script_name {
         Some(name) => {
             let (namespace, name) = match name.strip_prefix('@') {
                 Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
@@ -452,6 +452,27 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             }
         },
     };
+
+    if join_write_scripts
+        .as_ref()
+        .map(|join| join.is_finished())
+        .unwrap_or_default()
+    {
+        // This is always okay to unwrap because we just checked that it's finished
+        let scripts = join_write_scripts.take().unwrap().await??;
+
+        // Find the script again in case it was updated
+        match scripts
+            .into_iter()
+            .find(|new_script| new_script.namespace == script.namespace && new_script.name == script.name)
+        {
+            Some(new_script) => script = new_script,
+            None => {
+                eprintln!("Script is no longer available");
+                return Ok(());
+            },
+        }
+    }
 
     if std::env::var_os("FIG_SCRIPT_DEBUG").is_some() {
         dbg!(&script);
