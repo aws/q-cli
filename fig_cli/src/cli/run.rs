@@ -350,7 +350,20 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
-            scripts.sort_by(|a, b| a.relevance.total_cmp(&b.relevance));
+            // 1. All scripts user have personally ever invoked, ordered recency
+            // 2. All scripts other people on team have ever invoked, ordered by their recency
+            // 3. All other scripts in alphabetical order
+            scripts.sort_by(|a, b| match (a.last_invoked_at_by_user, b.last_invoked_at_by_user) {
+                (Some(a), Some(b)) => a.cmp(&b),
+                (Some(_), None) => std::cmp::Ordering::Greater,
+                (None, Some(_)) => std::cmp::Ordering::Less,
+                (None, None) => match (a.last_invoked_at, b.last_invoked_at) {
+                    (Some(a), Some(b)) => a.cmp(&b),
+                    (Some(_), None) => std::cmp::Ordering::Greater,
+                    (None, Some(_)) => std::cmp::Ordering::Less,
+                    (None, None) => a.name.cmp(&b.name),
+                },
+            });
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {
