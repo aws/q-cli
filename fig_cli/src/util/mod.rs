@@ -131,6 +131,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
                         empty::<(&str, &str)>(),
                     ),
                     false,
+                    true,
                 )
                 .await
                 .ok();

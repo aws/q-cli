@@ -230,6 +230,7 @@ impl RootUserSubcommand {
                                                 empty::<(&str, &str)>()
                                             ),
                                             false,
+                                            true,
                                         ),
                                         Request::post("/user/login").auth().body(login_body).send()
                                     );
@@ -325,6 +326,7 @@ impl RootUserSubcommand {
                         empty::<(&str, &str)>(),
                     ),
                     false,
+                    true,
                 ));
 
                 let logout_join = logout_command();

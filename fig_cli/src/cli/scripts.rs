@@ -54,7 +54,6 @@ use skim::SkimItem;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use tokio::io::AsyncWriteExt;
-use tracing::warn;
 use tui::component::{
     CheckBox,
     CheckBoxEvent,
@@ -294,7 +293,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     let mut scripts = get_scripts().await?;
 
     // Must come after we get scripts
-    let mut write_scripts: Option<tokio::task::JoinHandle<Result<(), _>>> = Some(tokio::spawn(write_scripts()));
+    let write_scripts: tokio::task::JoinHandle<Result<(), _>> = tokio::spawn(write_scripts());
 
     let is_interactive = atty::is(atty::Stream::Stdin) && atty::is(atty::Stream::Stdout);
 
@@ -322,8 +321,6 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             let script = match script {
                 Some(script) => script,
                 None => {
-                    write_scripts.take().unwrap().await??;
-
                     let scripts = get_scripts().await?;
 
                     let script = match namespace {
@@ -360,14 +357,10 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     empty::<(&str, &str)>(),
                 ),
                 false,
+                false,
             )
             .await
             .ok();
-
-            if let Err(err) = write_scripts.take().unwrap().await? {
-                eprintln!("Could not load remote scripts!\nFalling back to local cache.");
-                warn!("Failed to acquire remote script definitions: {err}");
-            }
 
             scripts.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
                 (None, None) => StdOrdering::Equal,
@@ -474,7 +467,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         .interact()
                         .unwrap();
 
-                    ("search", scripts.remove(selection))
+                    (ExecutionMethod::Search, scripts.remove(selection))
                 }
             }
         },
@@ -556,7 +549,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 bail!("Missing required arguments: {}", missing_args.join(", "));
             }
 
-            fig_telemetry::dispatch_emit_track(
+            let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
                     TrackEventType::ScriptExecuted,
                     TrackSource::Cli,
@@ -567,17 +560,16 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                     ],
                 ),
                 false,
-            )
-            .await
-            .ok();
+                true,
+            ));
 
-            if let Some(task) = write_scripts {
-                if let Err(err) = task.await? {
-                    eprintln!("Failed to update scripts from remote: {err}");
-                }
+            if let Err(err) = write_scripts.await? {
+                eprintln!("Failed to update scripts from remote: {err}");
             }
 
             execute_script_or_insert(&script, &values_by_arg).await?;
+
+            telem_join.await.ok();
         },
         (Err(err), false) => {
             eprintln!("{err}");
@@ -925,79 +917,39 @@ fn run_tui(
         },
         "div" => {
             width: Some(100.0);
+        },
+        "input:text", "input:checkbox", "select", "#__preview" => {
+            padding_left: 1.0;
+            padding_right: 1.0;
+        },
+        "#__parameter", "#__preview" => {
             border_left_width: 1.0;
             border_top_width: 1.0;
             border_bottom_width: 1.0;
             border_right_width: 1.0;
-            border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
             border_left_color: ColorAttribute::PaletteIndex(8);
             border_right_color: ColorAttribute::PaletteIndex(8);
             border_top_color: ColorAttribute::PaletteIndex(8);
             border_bottom_color: ColorAttribute::PaletteIndex(8);
-        },
-        "div:focus" => {
-            width: Some(100.0);
-            border_left_width: 1.0;
-            border_top_width: 1.0;
-            border_bottom_width: 1.0;
-            border_right_width: 1.0;
             border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
+            padding_top: -1.0;
+        },
+        "#__parameter:focus" => {
             border_left_color: ColorAttribute::PaletteIndex(11);
             border_right_color: ColorAttribute::PaletteIndex(11);
             border_top_color: ColorAttribute::PaletteIndex(11);
             border_bottom_color: ColorAttribute::PaletteIndex(11);
         },
-        "input:text" => {
-            margin_left: 1.0;
-            margin_right: 1.0;
-        },
-        "input:checkbox" => {
-            margin_left: 1.0;
-            margin_right: 1.0;
-        },
-        "select" => {
-            margin_left: 1.0;
-            margin_right: 1.0;
-        },
-        "#__view" => {
-            border_left_width: 0.0;
-            border_top_width: 0.0;
-            border_bottom_width: 0.0;
-            border_right_width: 0.0;
-        },
         "#__header" => {
             margin_bottom: 1.0;
         },
-        "#__form" => {
-            border_left_width: 0.0;
-            border_top_width: 0.0;
-            border_bottom_width: 0.0;
-            border_right_width: 0.0;
-        },
-        "#__parameter" => {
-            padding_top: -1.0;
-        },
-        "#__label" => {
-            margin_left: 1.0;
-            padding_left: 1.0;
-            padding_right: 1.0;
-        },
-        "#__preview" => {
-            padding_left: 1.0;
-            padding_right: 1.0;
-            padding_bottom: 1.0;
-            border_left_width: 1.0;
-            border_top_width: 1.0;
-            border_bottom_width: 1.0;
-            border_right_width: 1.0;
-            border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
-            border_left_color: ColorAttribute::PaletteIndex(8);
-            border_right_color: ColorAttribute::PaletteIndex(8);
-            border_top_color: ColorAttribute::PaletteIndex(8);
-            border_bottom_color: ColorAttribute::PaletteIndex(8);
-        },
         "#__footer" => {
             margin_top: 1.0;
+        },
+        "#__label" => {
+            padding_left: 1.0;
+            padding_right: 1.0;
+            margin_left: 1.0;
         }
     };
 
@@ -1173,6 +1125,7 @@ fn run_tui(
                                     ("execution_method", execution_method.to_string()),
                                 ],
                             ),
+                            false,
                             false,
                         ))
                         .ok();

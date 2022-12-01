@@ -78,6 +78,7 @@ fn main() -> Result<()> {
                             ],
                         ),
                         false,
+                        true,
                     )),
                     #[cfg(windows)]
                     Some(async { Result::<()>::Ok(()) }),

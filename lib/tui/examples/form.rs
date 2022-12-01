@@ -51,7 +51,7 @@ fn main() {
                 bottom: '━',
                 bottom_right: '┛',
             };
-        }
+        },
     };
 
     let mut container1 = Container::new("container1", Layout::Vertical);

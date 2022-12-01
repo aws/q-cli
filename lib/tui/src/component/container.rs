@@ -1,3 +1,7 @@
+use termwiz::input::{
+    MouseButtons,
+    MouseEvent,
+};
 use termwiz::surface::Surface;
 
 use super::{
@@ -110,6 +114,58 @@ impl Component for Container {
         self.resize(state);
 
         no_consume
+    }
+
+    fn on_mouse_event(
+        &mut self,
+        state: &mut State,
+        mouse_event: &MouseEvent,
+        mut x: f64,
+        mut y: f64,
+        width: f64,
+        height: f64,
+    ) {
+        if !mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+            return;
+        }
+
+        for i in 0..self.components.len() {
+            let style = self.components[i].style(state);
+            let mut cx = x;
+            let mut cy = y;
+
+            let mut width =
+                (style.width().unwrap_or_else(|| self.components[i].width()) + style.spacing_horizontal()).min(width);
+            let mut height =
+                (style.height().unwrap_or_else(|| self.components[i].height()) + style.spacing_vertical()).min(height);
+
+            cx += style.margin_left();
+            cy += style.margin_top();
+            width -= style.margin_horizontal();
+            height -= style.margin_vertical();
+
+            if mouse_event.x as f64 >= cx
+                && mouse_event.x as f64 <= cx + width
+                && mouse_event.y as f64 >= cy
+                && mouse_event.y as f64 <= cy + height
+            {
+                if let Some(active) = self.active {
+                    self.components[active].on_focus(state, false);
+                }
+
+                self.active = Some(i);
+                self.components[i].on_mouse_event(state, mouse_event, x, y, width, height);
+            }
+
+            match self.layout {
+                Layout::Vertical => {
+                    y += style.height().unwrap_or_else(|| self.components[i].height()) + style.spacing_vertical()
+                },
+                Layout::Horizontal => {
+                    x += style.width().unwrap_or_else(|| self.components[i].width()) + style.spacing_horizontal()
+                },
+            }
+        }
     }
 
     fn next(&mut self, state: &mut State, wrap: bool) -> Option<String> {

@@ -4,8 +4,11 @@ use crate::Style;
 
 #[macro_export]
 macro_rules! style_sheet {
-    ($( $class:expr => $val:tt ),*) => {{
-        $crate::StyleSheet::new() $( .with_style($class, $crate::style_sheet!( @internal $val )) )*
+    ($( $( $class:expr ),* => $val:tt ),*) => {{
+        $crate::StyleSheet::new() $( $( .with_style($class, $crate::style_sheet!( @internal $val )) )* )*
+    }};
+    ($( $( $class:expr ),* => $val:tt, )*) => {{
+        $crate::StyleSheet::new() $( $( .with_style($class, $crate::style_sheet!( @internal $val )) )* )*
     }};
     ( @internal { ..$parent:expr; $( $prop:ident: $val:expr; )* } ) => {{
         $crate::style! {
@@ -31,7 +34,16 @@ impl StyleSheet {
     }
 
     pub fn with_style(mut self, selector: impl Into<String>, style: Style) -> Self {
-        self.0.insert(selector.into(), style);
+        let selector = selector.into();
+        match self.0.get_mut(&selector) {
+            Some(base) => {
+                base.apply(&style);
+            },
+            None => {
+                self.0.insert(selector, style);
+            },
+        }
+
         self
     }
 

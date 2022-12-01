@@ -22,6 +22,10 @@ pub use select::{
     Select,
     SelectEvent,
 };
+use termwiz::input::{
+    MouseButtons,
+    MouseEvent,
+};
 use termwiz::surface::Surface;
 pub use text_field::{
     TextField,
@@ -71,6 +75,15 @@ pub trait Component: std::fmt::Debug {
     #[allow(unused_variables)]
     fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
         true
+    }
+
+    #[allow(unused_variables)]
+    fn on_mouse_event(&mut self, state: &mut State, mouse_event: &MouseEvent, x: f64, y: f64, width: f64, height: f64) {
+        if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+            self.on_focus(state, true);
+        } else if mouse_event.mouse_buttons.is_empty() {
+            self.inner_mut().hover = true;
+        }
     }
 
     #[allow(unused_variables)]

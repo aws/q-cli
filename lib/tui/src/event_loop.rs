@@ -21,7 +21,6 @@ use crate::component::{
     TextFieldEvent,
 };
 use crate::input::InputAction;
-use crate::surface_ext::SurfaceExt;
 use crate::{
     Error,
     InputMethod,
@@ -87,6 +86,7 @@ impl EventLoop {
     {
         let mut terminal = new_terminal(Capabilities::new_from_env()?)?;
         terminal.enter_alternate_screen()?;
+
         terminal.set_raw_mode()?;
         terminal.render(&[Change::CursorVisibility(CursorVisibility::Hidden)])?;
 
@@ -109,15 +109,8 @@ impl EventLoop {
         let mut control_flow = ControlFlow::Wait;
         loop {
             // drawing code
-            let style = component.style(&mut state);
-            let mut x = 0.0;
-            let mut y = 0.0;
-            let mut width = (style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()).min(cols);
-            let mut height =
-                (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(rows);
             surface.add_change(Change::ClearScreen(ColorAttribute::Default));
-            surface.draw_border(&mut x, &mut y, &mut width, &mut height, &style);
-            component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
+            component.draw(&mut state, &mut surface, 0.0, 0.0, cols, rows, cols, rows);
 
             // diffing logic
             let diff = backbuffer.diff_screens(&surface);
@@ -182,6 +175,8 @@ impl EventLoop {
                             }
                         }
                     },
+                    // todo(chay): add back
+                    // InputEvent::Mouse(event) => component.on_mouse_event(&mut state, &event, 0.0, 0.0, cols, rows),
                     InputEvent::Resized {
                         cols: new_cols,
                         rows: new_rows,
@@ -206,6 +201,8 @@ impl EventLoop {
                 event_handler(event, component, &mut control_flow);
             }
         }
+
+        terminal.flush()?;
 
         Ok(())
     }

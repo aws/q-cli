@@ -496,6 +496,7 @@ impl WebviewManager {
                         empty::<(&str, &str)>(),
                     ),
                     false,
+                    true,
                 ));
             }
         });

@@ -26,11 +26,12 @@ async fn send_daemon_message(message: DaemonMessage) -> Result<(), fig_ipc::Erro
     Ok(())
 }
 
-pub async fn dispatch_emit_track(event: TrackEvent, enqueue: bool) -> Result<(), Error> {
+pub async fn dispatch_emit_track(event: TrackEvent, enqueue: bool, fallback: bool) -> Result<(), Error> {
     if telemetry_is_disabled() {
         return Err(Error::TelemetryDisabled);
     }
 
+    // TODO: Matt wants to write this to a file if it fails for processing later
     let message = DaemonMessage {
         id: None,
         no_response: Some(true),
@@ -59,7 +60,9 @@ pub async fn dispatch_emit_track(event: TrackEvent, enqueue: bool) -> Result<(),
         Ok(()) => Ok(()),
         Err(err) => {
             tracing::error!("Failed to dispatch telemetry event to daemon: {err}");
-            crate::emit_track(event).await?;
+            if fallback {
+                crate::emit_track(event).await?;
+            }
             Ok(())
         },
     }
