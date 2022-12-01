@@ -751,7 +751,7 @@ async fn execute_script(
 /// Uses the setting `scripts.insert-into-shell` to determine whether to insert the command into the
 /// shell or execute it directly
 async fn execute_script_or_insert(script: &Script, args: &HashMap<String, Value>) -> Result<()> {
-    if fig_settings::settings::get_bool_or("scripts.insert-into-shell", false) {
+    if fig_settings::settings::get_bool_or("scripts.insert-into-shell", true) {
         if send_figterm(map_args_to_command(script, args), true).await.is_err() {
             execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, args).await?;
         }
