@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
 use serde::{
     Deserialize,
     Serialize,
@@ -234,6 +235,32 @@ pub async fn scripts(schema_version: u32) -> fig_request::Result<Vec<Script>> {
         .auth()
         .deser_json()
         .await
+}
+
+/// Caches the scripts and returns them
+pub async fn sync_scripts() -> fig_request::Result<Vec<Script>> {
+    let scripts_cache_dir = fig_util::directories::scripts_cache_dir()?;
+    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+    let scripts = scripts(FIG_SCRIPTS_SCHEMA_VERSION).await?;
+
+    // Delete old scripts so if one was removed from the server it will be removed locally
+    if let Ok(mut read_dir) = tokio::fs::read_dir(&scripts_cache_dir).await {
+        while let Some(entry) = read_dir.next_entry().await.ok().flatten() {
+            tokio::fs::remove_file(entry.path()).await.ok();
+        }
+    }
+
+    // Write new scripts
+    for script in &scripts {
+        tokio::fs::write(
+            scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name)),
+            serde_json::to_string_pretty(&script)?.as_bytes(),
+        )
+        .await?;
+    }
+
+    Ok(scripts)
 }
 
 #[cfg(test)]

@@ -85,6 +85,12 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                         error!(%err, "Failed to fetch installed plugins");
                     }
                 });
+
+                tokio::spawn(async {
+                    if let Err(err) = fig_api_client::scripts::sync_scripts().await {
+                        error!(%err, "Failed to sync scripts");
+                    }
+                });
             });
 
             proxy.send_event(Event::ReloadTray).ok();

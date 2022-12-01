@@ -19,6 +19,7 @@ use eyre::{
     Result,
 };
 use fig_api_client::scripts::{
+    sync_scripts,
     FileType,
     Generator,
     Parameter,
@@ -200,28 +201,12 @@ impl SkimItem for ScriptAction {
     }
 }
 
-pub async fn write_scripts() -> Result<(), eyre::Report> {
-    let scripts_cache_dir = directories::scripts_cache_dir()?;
-    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
-
-    for script in fig_api_client::scripts::scripts(FIG_SCRIPTS_SCHEMA_VERSION).await? {
-        let mut file =
-            tokio::fs::File::create(scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name)))
-                .await?;
-
-        file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
-            .await?;
-    }
-
-    Ok(())
-}
-
 async fn get_scripts() -> Result<Vec<Script>> {
     let scripts_cache_dir = directories::scripts_cache_dir()?;
     tokio::fs::create_dir_all(&scripts_cache_dir).await?;
 
     if scripts_cache_dir.read_dir()?.count() == 0 {
-        write_scripts().await?;
+        sync_scripts().await?;
     }
 
     let mut scripts = vec![];
@@ -293,7 +278,7 @@ impl std::fmt::Display for ExecutionMethod {
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
     let mut scripts = get_scripts().await?;
-    let mut join_write_scripts = Some(tokio::spawn(write_scripts()));
+    let mut join_write_scripts = Some(tokio::spawn(sync_scripts()));
 
     let is_interactive = atty::is(atty::Stream::Stdin)
         && atty::is(atty::Stream::Stdout)

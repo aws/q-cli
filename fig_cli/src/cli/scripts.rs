@@ -9,8 +9,6 @@ use fig_util::desktop::{
 };
 use fig_util::directories::scripts_cache_dir;
 
-use super::run::write_scripts;
-
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct ScriptsArgs {
     #[command(subcommand)]
@@ -27,7 +25,7 @@ impl ScriptsArgs {
         match self.subcommand {
             Some(ScriptsSubcommands::Refresh) => {
                 tokio::fs::remove_dir_all(scripts_cache_dir()?).await?;
-                write_scripts().await?;
+                fig_api_client::scripts::sync_scripts().await?;
                 Ok(())
             },
             None => {

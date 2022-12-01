@@ -74,6 +74,8 @@ pub async fn daemon() -> Result<()> {
         None => scheduler.schedule_random_delay(scheduler::SyncDotfiles, 0., 60.),
     }
 
+    scheduler.schedule_random_delay(scheduler::SyncScripts, 0., 1260.);
+
     scheduler.schedule_random_delay(
         scheduler::RecurringTask::new(
             scheduler::SendQueuedTelemetryEvents,

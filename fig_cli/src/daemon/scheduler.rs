@@ -14,6 +14,7 @@ use eyre::{
     Result,
     WrapErr,
 };
+use fig_api_client::scripts::sync_scripts;
 use fig_sync::dotfiles::api::DotfileData;
 use fig_sync::dotfiles::download_and_notify;
 use fig_sync::plugins::fetch_installed_plugins;
@@ -305,6 +306,19 @@ impl Task for SyncPlugins {
 }
 
 impl TaggedTask for SyncPlugins {}
+
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncScripts;
+
+#[async_trait]
+impl Task for SyncScripts {
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
+        sync_scripts().await?;
+        Ok(())
+    }
+}
+
+impl TaggedTask for SyncScripts {}
 
 trait CloneableTask: TaggedTask {
     fn as_task(&self) -> &dyn TaggedTask;

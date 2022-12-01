@@ -26,7 +26,6 @@ use serde::{
 };
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
-use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{
@@ -268,11 +267,10 @@ pub async fn process_websocket(
                                 .await
                                 {
                                     Ok(script) => {
-                                        let mut file = tokio::fs::File::create(&file_name).await?;
-                                        file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
+                                        tokio::fs::write(&file_name, serde_json::to_string_pretty(&script)?.as_bytes())
                                             .await?;
                                     },
-                                    Err(err) => error!("failed to retrieve script {err}"),
+                                    Err(err) => error!(%err, "Failed to retrieve script"),
                                 }
                             },
                             FigWebsocketMessage::DeleteScript { script } => {
@@ -300,28 +298,16 @@ pub async fn process_websocket(
                                 )
                                 .await
                                 {
-                                    let mut file = tokio::fs::File::create(
+                                    tokio::fs::write(
                                         scripts_cache_dir.join(format!("{}.{}.json", new.namespace, new.name)),
+                                        serde_json::to_string_pretty(&script)?.as_bytes(),
                                     )
                                     .await?;
-                                    file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
-                                        .await?;
                                 }
                             },
                             FigWebsocketMessage::UpdateAllScripts => {
-                                let scripts_cache_dir = directories::scripts_cache_dir()?;
-                                tokio::fs::remove_dir_all(&scripts_cache_dir).await?;
-                                tokio::fs::create_dir_all(&scripts_cache_dir).await?;
-
-                                for script in fig_api_client::scripts::scripts(FIG_SCRIPTS_SCHEMA_VERSION).await? {
-                                    let mut file = tokio::fs::File::create(
-                                        directories::scripts_cache_dir()?
-                                            .join(format!("{}.{}.json", script.namespace, script.name)),
-                                    )
-                                    .await?;
-
-                                    file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
-                                        .await?;
+                                if let Err(err) = fig_api_client::scripts::sync_scripts().await {
+                                    error!(?err, "Failed to update scripts");
                                 }
                             },
                         },
