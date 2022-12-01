@@ -11,3 +11,5 @@ pub const FIG_CLI_BINARY_NAME: &str = "fig-darwin-universal";
 pub const FIG_CLI_BINARY_NAME: &str = "fig";
 
 pub const FIGTERM_BINARY_NAME: &str = "figterm";
+
+pub const FIG_SCRIPTS_SCHEMA_VERSION: u32 = 3;

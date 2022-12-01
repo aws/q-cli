@@ -17,6 +17,7 @@ use fig_request::reqwest_client::client_config;
 use fig_request::Request;
 use fig_settings::api::ws_host;
 use fig_settings::settings;
+use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
 use fig_util::directories;
 use fig_util::system_info::get_system_id;
 use serde::{
@@ -25,6 +26,7 @@ use serde::{
 };
 use serde_json::json;
 use time::format_description::well_known::Rfc3339;
+use tokio::io::AsyncWriteExt;
 use tokio::net::TcpStream;
 use tokio_tungstenite::tungstenite::Message;
 use tokio_tungstenite::{
@@ -55,11 +57,6 @@ enum FigWebsocketMessage {
         #[serde(with = "time::serde::rfc3339::option")]
         updated_at: Option<time::OffsetDateTime>,
     },
-    #[serde(alias = "invalidateWorkflows")]
-    InvalidateScripts {
-        #[serde(alias = "workflows")]
-        scripts: Vec<ScriptIdentifier>,
-    },
     #[serde(rename_all = "camelCase")]
     Event {
         event_name: String,
@@ -75,6 +72,26 @@ enum FigWebsocketMessage {
     QuitDaemon {
         status: Option<i32>,
     },
+    // Scripts ////////////////////////////////////////////////////////////
+    /// Update a single script in the local cache given a script identifier
+    #[serde(rename_all = "camelCase")]
+    UpdateScript {
+        script: ScriptIdentifier,
+    },
+    /// Delete a script with the given identifier
+    #[serde(rename_all = "camelCase")]
+    DeleteScript {
+        script: ScriptIdentifier,
+    },
+    /// Rename a script by first deleting then retrieving the new one
+    #[serde(rename_all = "camelCase")]
+    RenameScript {
+        old: ScriptIdentifier,
+        new: ScriptIdentifier,
+    },
+    /// Update the local scripts cache
+    #[serde(rename_all = "camelCase")]
+    UpdateAllScripts,
 }
 
 #[derive(Debug, Default, Serialize, Deserialize)]
@@ -212,21 +229,6 @@ pub async fn process_websocket(
                                     }
                                 }
                             },
-                            FigWebsocketMessage::InvalidateScripts { scripts } => {
-                                if scripts.is_empty() {
-                                    tokio::fs::remove_dir_all(directories::scripts_cache_dir()?).await?;
-                                    tokio::fs::create_dir(directories::scripts_cache_dir()?).await?;
-                                    return Ok(());
-                                }
-
-                                for script in scripts {
-                                    tokio::fs::remove_file(
-                                        directories::scripts_cache_dir()?
-                                            .join(format!("{}.{}.json", script.namespace, script.name)),
-                                    )
-                                    .await?;
-                                }
-                            },
                             FigWebsocketMessage::Event {
                                 event_name,
                                 payload,
@@ -250,6 +252,78 @@ pub async fn process_websocket(
                                 }
                             },
                             FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),
+                            FigWebsocketMessage::UpdateScript { script } => {
+                                let scripts_cache_dir = directories::scripts_cache_dir()?;
+                                tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+                                let file_name =
+                                    scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name));
+                                tokio::fs::remove_file(&file_name).await.ok();
+
+                                match fig_api_client::scripts::script(
+                                    &script.namespace,
+                                    &script.name,
+                                    FIG_SCRIPTS_SCHEMA_VERSION,
+                                )
+                                .await
+                                {
+                                    Ok(script) => {
+                                        let mut file = tokio::fs::File::create(&file_name).await?;
+                                        file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
+                                            .await?;
+                                    },
+                                    Err(err) => error!("failed to retrieve script {err}"),
+                                }
+                            },
+                            FigWebsocketMessage::DeleteScript { script } => {
+                                tokio::fs::remove_file(
+                                    directories::scripts_cache_dir()?
+                                        .join(format!("{}.{}.json", script.namespace, script.name)),
+                                )
+                                .await
+                                .ok();
+                            },
+                            FigWebsocketMessage::RenameScript { old, new } => {
+                                let scripts_cache_dir = directories::scripts_cache_dir()?;
+                                tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+                                tokio::fs::remove_file(
+                                    scripts_cache_dir.join(format!("{}.{}.json", old.namespace, old.name)),
+                                )
+                                .await
+                                .ok();
+
+                                if let Ok(script) = fig_api_client::scripts::script(
+                                    &new.namespace,
+                                    &new.name,
+                                    FIG_SCRIPTS_SCHEMA_VERSION,
+                                )
+                                .await
+                                {
+                                    let mut file = tokio::fs::File::create(
+                                        scripts_cache_dir.join(format!("{}.{}.json", new.namespace, new.name)),
+                                    )
+                                    .await?;
+                                    file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
+                                        .await?;
+                                }
+                            },
+                            FigWebsocketMessage::UpdateAllScripts => {
+                                let scripts_cache_dir = directories::scripts_cache_dir()?;
+                                tokio::fs::remove_dir_all(&scripts_cache_dir).await?;
+                                tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+                                for script in fig_api_client::scripts::scripts(FIG_SCRIPTS_SCHEMA_VERSION).await? {
+                                    let mut file = tokio::fs::File::create(
+                                        directories::scripts_cache_dir()?
+                                            .join(format!("{}.{}.json", script.namespace, script.name)),
+                                    )
+                                    .await?;
+
+                                    file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
+                                        .await?;
+                                }
+                            },
                         },
                         Err(err) => error!(%err, "Could not parse json message"),
                     }

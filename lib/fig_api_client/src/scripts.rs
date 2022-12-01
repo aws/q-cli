@@ -217,6 +217,17 @@ pub struct Script {
     pub relevance: f64,
 }
 
+pub async fn script(namespace: &str, name: &str, schema_version: u32) -> fig_request::Result<Script> {
+    fig_request::Request::get(format!("/workflows/{name}"))
+        .query(&[
+            ("namespace", namespace),
+            ("schema-version", &schema_version.to_string()),
+        ])
+        .auth()
+        .deser_json()
+        .await
+}
+
 pub async fn scripts(schema_version: u32) -> fig_request::Result<Vec<Script>> {
     fig_request::Request::get("/workflows")
         .query(&[("schema-version", schema_version)])

@@ -19,7 +19,6 @@ use eyre::{
     Result,
 };
 use fig_api_client::scripts::{
-    scripts,
     FileType,
     Generator,
     Parameter,
@@ -45,6 +44,7 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
 use fig_util::directories;
 #[cfg(unix)]
 use skim::SkimItem;
@@ -76,8 +76,6 @@ use tui::{
 use which::which;
 
 use crate::util::choose;
-
-const SUPPORTED_SCHEMA_VERSION: u32 = 3;
 
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct ScriptsArgs {
@@ -205,10 +203,12 @@ impl SkimItem for ScriptAction {
 pub async fn write_scripts() -> Result<(), eyre::Report> {
     let scripts_cache_dir = directories::scripts_cache_dir()?;
     tokio::fs::create_dir_all(&scripts_cache_dir).await?;
-    for script in scripts(SUPPORTED_SCHEMA_VERSION).await? {
+
+    for script in fig_api_client::scripts::scripts(FIG_SCRIPTS_SCHEMA_VERSION).await? {
         let mut file =
             tokio::fs::File::create(scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name)))
                 .await?;
+
         file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
             .await?;
     }
@@ -217,6 +217,13 @@ pub async fn write_scripts() -> Result<(), eyre::Report> {
 }
 
 async fn get_scripts() -> Result<Vec<Script>> {
+    let scripts_cache_dir = directories::scripts_cache_dir()?;
+    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+    if scripts_cache_dir.read_dir()?.count() == 0 {
+        write_scripts().await?;
+    }
+
     let mut scripts = vec![];
     for file in directories::scripts_cache_dir()?.read_dir()?.flatten() {
         if let Some(name) = file.file_name().to_str() {
@@ -285,13 +292,8 @@ impl std::fmt::Display for ExecutionMethod {
 }
 
 pub async fn execute(env_args: Vec<String>) -> Result<()> {
-    // Create cache dir
-    tokio::fs::create_dir_all(directories::scripts_cache_dir()?).await?;
-
     let mut scripts = get_scripts().await?;
-
-    // Must come after we get scripts
-    let write_scripts: tokio::task::JoinHandle<Result<(), _>> = tokio::spawn(write_scripts());
+    let mut join_write_scripts = Some(tokio::spawn(write_scripts()));
 
     let is_interactive = atty::is(atty::Stream::Stdin)
         && atty::is(atty::Stream::Stdout)
@@ -321,7 +323,8 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             let script = match script {
                 Some(script) => script,
                 None => {
-                    let scripts = get_scripts().await?;
+                    join_write_scripts.take().unwrap().await??;
+                    scripts = get_scripts().await?;
 
                     let script = match namespace {
                         Some(namespace) => scripts
@@ -478,7 +481,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     }
 
     let script_name = format!("@{}/{}", &script.namespace, &script.name);
-    if script.template_version > SUPPORTED_SCHEMA_VERSION {
+    if script.template_version > FIG_SCRIPTS_SCHEMA_VERSION {
         bail!(
             "Could not execute {script_name} since it requires features not available in this version of Fig.\n\
             Please update to the latest version by running {} and try again.",
@@ -558,18 +561,27 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                 true,
             ));
 
-            if let Err(err) = write_scripts.await? {
-                eprintln!("Failed to update scripts from remote: {err}");
-            }
-
             execute_script_or_insert(&script, &values_by_arg).await?;
+
+            if let Some(write_scripts) = join_write_scripts.take() {
+                write_scripts.await?.ok();
+            }
 
             telem_join.await.ok();
         },
         (Err(err), false) => {
             eprintln!("{err}");
+
+            if let Some(write_scripts) = join_write_scripts.take() {
+                write_scripts.await?.ok();
+            }
+
             std::process::exit(1);
         },
+    }
+
+    if let Some(write_scripts) = join_write_scripts.take() {
+        write_scripts.await?.ok();
     }
 
     Ok(())
