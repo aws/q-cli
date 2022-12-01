@@ -1812,9 +1812,11 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_util",
+ "regex",
  "serde",
  "serde_json",
  "time 0.3.17",
+ "tokio",
  "url",
 ]
 

@@ -6,7 +6,6 @@ use std::hash::{
     Hash,
     Hasher,
 };
-use std::io::Write;
 use std::iter::empty;
 use std::process::{
     Command,
@@ -48,7 +47,6 @@ use fig_telemetry::{
     TrackSource,
 };
 use fig_util::directories;
-use serde_json::Value as JsonValue;
 #[cfg(unix)]
 use skim::SkimItem;
 use time::format_description::well_known::Rfc3339;
@@ -695,19 +693,19 @@ async fn execute_script(
     // determine that runtime exists before validating rules
     let (mut command, text) = match runtime {
         Runtime::Bash => {
-            let mut command = Command::new("bash");
+            let mut command = tokio::process::Command::new("bash");
             command.arg("-c");
             command.arg(script);
             (command, None)
         },
         Runtime::Python => {
-            let mut command = Command::new("python3");
+            let mut command = tokio::process::Command::new("python3");
             command.arg("-c");
             command.arg(script);
             (command, None)
         },
         Runtime::Node => {
-            let mut command = Command::new("node");
+            let mut command = tokio::process::Command::new("node");
             command.arg("--input-type");
             command.arg("module");
             command.arg("-e");
@@ -715,7 +713,7 @@ async fn execute_script(
             (command, None)
         },
         Runtime::Deno => {
-            let mut command = Command::new("deno");
+            let mut command = tokio::process::Command::new("deno");
             command.arg("run");
             command.arg("-A");
             command.arg("-");
@@ -730,29 +728,53 @@ async fn execute_script(
     let mut child = command.spawn()?;
     if let Some(text) = text {
         let mut stdin = child.stdin.take().unwrap();
-        stdin.write_all(text.as_bytes())?;
-        stdin.flush()?;
+        stdin.write_all(text.as_bytes()).await?;
+        stdin.flush().await?;
     }
 
-    let exit_code = child.wait().ok().and_then(|output| output.code());
-    if let Ok(execution_start_time) = start_time.format(&Rfc3339) {
-        if let Ok(execution_duration) = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()) {
+    let runtime_version = {
+        let runtime = runtime.clone();
+        tokio::spawn(async move { runtime.version().await })
+    };
+
+    tokio::select! {
+        _res = tokio::signal::ctrl_c() => {
+            child.kill().await?;
+            let execution_start_time = start_time.format(&Rfc3339).ok();
+            let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
             Request::post(format!("/workflows/{name}/invocations"))
                 .body(serde_json::json!({
                     "namespace": namespace,
-                    "commandStderr": JsonValue::Null,
-                    "exitCode": exit_code,
                     "executionStartTime": execution_start_time,
                     "executionDuration": execution_duration,
+                    "ctrlC": true,
+                    "runtimeVersion": runtime_version.await.ok().flatten(),
                 }))
                 .auth()
                 .send()
                 .await
                 .ok();
+            bail!("Script execution cancelled");
+        },
+        res = child.wait() => {
+            let exit_code = res.ok().and_then(|output| output.code());
+            let execution_start_time = start_time.format(&Rfc3339).ok();
+            let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
+            Request::post(format!("/workflows/{name}/invocations"))
+                .body(serde_json::json!({
+                    "namespace": namespace,
+                    "executionStartTime": execution_start_time,
+                    "executionDuration": execution_duration,
+                    "exitCode": exit_code,
+                    "runtimeVersion": runtime_version.await.ok().flatten(),
+                }))
+                .auth()
+                .send()
+                .await
+                .ok();
+            Ok(())
         }
     }
-
-    Ok(())
 }
 
 /// Uses the setting `scripts.insert-into-shell` to determine whether to insert the command into the

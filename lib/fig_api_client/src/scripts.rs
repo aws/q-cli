@@ -4,6 +4,7 @@ use serde::{
     Deserialize,
     Serialize,
 };
+use tokio::process::Command;
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(tag = "type")]
@@ -159,6 +160,10 @@ pub enum Runtime {
 }
 
 impl Runtime {
+    pub fn all() -> Vec<Self> {
+        vec![Runtime::Bash, Runtime::Python, Runtime::Node, Runtime::Deno]
+    }
+
     pub fn exe(&self) -> &str {
         match self {
             Runtime::Bash => "bash",
@@ -175,6 +180,19 @@ impl Runtime {
             Runtime::Node => "node",
             Runtime::Deno => "deno",
         }
+    }
+
+    pub async fn version(&self) -> Option<String> {
+        let regex = regex::Regex::new(match self {
+            Runtime::Bash => r"version ([0-9.]+)",
+            Runtime::Python => r"Python ([0-9.]+)",
+            Runtime::Node => r"v([0-9.]+)",
+            Runtime::Deno => r"deno ([0-9.]+)",
+        })
+        .ok()?;
+        let output = Command::new(self.exe()).arg("--version").output().await.ok()?;
+        let stdout = String::from_utf8(output.stdout).ok()?;
+        Some(regex.captures(&stdout)?.get(1)?.as_str().to_owned())
     }
 }
 
@@ -203,4 +221,17 @@ pub async fn scripts(schema_version: u32) -> fig_request::Result<Vec<Script>> {
         .auth()
         .deser_json()
         .await
+}
+
+#[cfg(test)]
+mod test {
+    use super::*;
+
+    #[ignore = "runtime may not be installed"]
+    #[tokio::test]
+    async fn test_version() {
+        for runtime in Runtime::all() {
+            println!("{:?} version: {}", runtime, runtime.version().await.unwrap());
+        }
+    }
 }
