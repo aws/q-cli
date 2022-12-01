@@ -110,7 +110,17 @@ impl EventLoop {
         loop {
             // drawing code
             surface.add_change(Change::ClearScreen(ColorAttribute::Default));
-            component.draw(&mut state, &mut surface, 0.0, 0.0, cols, rows, cols, rows);
+            let style = component.style(&mut state);
+            component.draw(
+                &mut state,
+                &mut surface,
+                style.spacing_left(),
+                style.spacing_top(),
+                cols - style.spacing_horizontal(),
+                rows - style.spacing_vertical(),
+                cols,
+                rows,
+            );
 
             // diffing logic
             let diff = backbuffer.diff_screens(&surface);

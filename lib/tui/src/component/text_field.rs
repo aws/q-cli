@@ -1,3 +1,4 @@
+use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
 use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
@@ -72,7 +73,27 @@ impl Component for TextField {
         match self.text.is_empty() {
             true => {
                 if let Some(hint) = &self.hint {
-                    surface.draw_text(hint.as_str(), x, y, width, style.attributes());
+                    let mut attributes = style.attributes();
+                    attributes.set_foreground(ColorAttribute::PaletteIndex(8));
+                    surface.draw_text(hint.as_str(), x, y, width, attributes);
+                }
+
+                if self.inner.focus {
+                    let mut attributes = style.attributes();
+                    attributes
+                        .set_foreground(style.background_color())
+                        .set_background(style.caret_color());
+
+                    surface.draw_text(
+                        self.hint
+                            .as_ref()
+                            .and_then(|hint| hint.graphemes(true).nth(self.cursor))
+                            .unwrap_or(" "),
+                        x + self.cursor as f64 - self.offset as f64,
+                        y,
+                        1.0,
+                        attributes,
+                    );
                 }
             },
             false => {
@@ -80,23 +101,23 @@ impl Component for TextField {
                     true => surface.draw_text("*".repeat(self.text.len()), x, y, width, style.attributes()),
                     false => surface.draw_text(&self.text.as_str()[self.offset..], x, y, width, style.attributes()),
                 };
+
+                if self.inner.focus {
+                    let mut attributes = style.attributes();
+                    attributes
+                        .set_foreground(style.background_color())
+                        .set_background(style.caret_color());
+
+                    surface.draw_text(
+                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
+                        x + self.cursor as f64 - self.offset as f64,
+                        y,
+                        1.0,
+                        attributes,
+                    );
+                }
             },
         };
-
-        if self.inner.focus {
-            let mut attributes = style.attributes();
-            attributes
-                .set_foreground(style.background_color())
-                .set_background(style.caret_color());
-
-            surface.draw_text(
-                self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
-                x + self.cursor as f64 - self.offset as f64,
-                y,
-                1.0,
-                attributes,
-            );
-        }
     }
 
     fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {

@@ -108,6 +108,24 @@ impl Component for Select {
                         attributes,
                     );
                 }
+
+                if self.inner.focus {
+                    let mut attributes = style.attributes();
+                    attributes
+                        .set_foreground(style.background_color())
+                        .set_background(style.caret_color());
+
+                    surface.draw_text(
+                        self.hint
+                            .as_ref()
+                            .and_then(|hint| hint.graphemes(true).nth(self.cursor))
+                            .unwrap_or(" "),
+                        x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
+                        y,
+                        1.0,
+                        attributes,
+                    );
+                }
             },
             false => {
                 surface.draw_text(
@@ -117,22 +135,22 @@ impl Component for Select {
                     width - 2.0,
                     style.attributes(),
                 );
+
+                if self.inner.focus {
+                    let mut attributes = style.attributes();
+                    attributes
+                        .set_foreground(style.background_color())
+                        .set_background(style.caret_color());
+
+                    surface.draw_text(
+                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
+                        x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
+                        y,
+                        1.0,
+                        attributes,
+                    );
+                }
             },
-        }
-
-        if self.inner.focus {
-            let mut attributes = style.attributes();
-            attributes
-                .set_foreground(style.background_color())
-                .set_background(style.caret_color());
-
-            surface.draw_text(
-                self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
-                x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
-                y,
-                1.0,
-                attributes,
-            );
         }
 
         for (i, option) in self.sorted_options[self.index_offset

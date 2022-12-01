@@ -961,7 +961,7 @@ fn run_tui(
 ) -> Result<HashMap<String, Value>> {
     let style_sheet = tui::style_sheet! {
         "*" => {
-            caret_color: ColorAttribute::PaletteIndex(11);
+            caret_color: ColorAttribute::PaletteIndex(3);
             color: ColorAttribute::PaletteIndex(7);
         },
         "div" => {
@@ -984,10 +984,16 @@ fn run_tui(
             padding_top: -1.0;
         },
         "#__parameter:focus" => {
-            border_left_color: ColorAttribute::PaletteIndex(11);
-            border_right_color: ColorAttribute::PaletteIndex(11);
-            border_top_color: ColorAttribute::PaletteIndex(11);
-            border_bottom_color: ColorAttribute::PaletteIndex(11);
+            border_left_color: ColorAttribute::PaletteIndex(3);
+            border_right_color: ColorAttribute::PaletteIndex(3);
+            border_top_color: ColorAttribute::PaletteIndex(3);
+            border_bottom_color: ColorAttribute::PaletteIndex(3);
+        },
+        "#__view" => {
+            margin_left: 1.0;
+            margin_right: 1.0;
+            margin_top: 1.0;
+            margin_bottom: 1.0;
         },
         "#__header" => {
             margin_bottom: 1.0;
@@ -1007,7 +1013,7 @@ fn run_tui(
     let mut header = Paragraph::new("__header")
         .push_styled_text(
             script.display_name.as_ref().unwrap_or(&script.name),
-            ColorAttribute::PaletteIndex(11),
+            ColorAttribute::PaletteIndex(3),
             ColorAttribute::Default,
             true,
             false,
@@ -1137,15 +1143,15 @@ fn run_tui(
     #[rustfmt::skip]
     view.push(form).push(
         Paragraph::new("__footer")
-            .push_styled_text("enter", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text("enter", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" select • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
-            .push_styled_text("tab", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text("tab", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" next • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
-            .push_styled_text("shift+tab", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text("shift+tab", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" previous • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
-            .push_styled_text("⎵", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text("⎵", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" toggle • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
-            .push_styled_text( "⌃o", ColorAttribute::PaletteIndex(11), ColorAttribute::Default, false, false)
+            .push_styled_text( "⌃o", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text( " preview", ColorAttribute::Default, ColorAttribute::Default, false, false),
     );
 
