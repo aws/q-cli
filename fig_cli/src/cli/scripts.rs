@@ -675,14 +675,20 @@ async fn execute_script(
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
             TreeElement::Token { name } => acc.push_str(&match &args[name.as_str()] {
-                Value::String(string) => string.clone(),
+                Value::String(string) => match runtime {
+                    Runtime::Bash => string.clone(),
+                    Runtime::Python | Runtime::Node | Runtime::Deno => {
+                        serde_json::to_string(string).expect("Failed to serialize string to JSON string")
+                    },
+                },
                 Value::Bool {
                     val,
                     true_value,
                     false_value,
-                } => match val {
-                    true => true_value.clone().unwrap_or_else(|| "true".into()),
-                    false => false_value.clone().unwrap_or_else(|| "false".into()),
+                } => match (runtime, val) {
+                    (Runtime::Bash, true) => true_value.clone().unwrap_or_else(|| "true".into()),
+                    (Runtime::Bash, false) => false_value.clone().unwrap_or_else(|| "false".into()),
+                    (Runtime::Python | Runtime::Node | Runtime::Deno, val) => val.to_string(),
                 },
             }),
         }
