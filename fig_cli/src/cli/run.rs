@@ -366,7 +366,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
                         tx.send(Arc::new(ScriptAction::Create)).ok();
                     }
 
-                    for script in scripts.iter() {
+                    for script in scripts.iter().rev() {
                         tx.send(Arc::new(ScriptAction::Run(Box::new(script.clone())))).ok();
                     }
                     drop(tx);
@@ -732,6 +732,10 @@ async fn execute_script(
     tokio::select! {
         _res = tokio::signal::ctrl_c() => {
             child.kill().await?;
+
+            eprintln!();
+            eprintln!("{} script cancelled", format!("@{namespace}/{name}").magenta().bold());
+
             let execution_start_time = start_time.format(&Rfc3339).ok();
             let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
             Request::post(format!("/workflows/{name}/invocations"))
@@ -746,7 +750,8 @@ async fn execute_script(
                 .send()
                 .await
                 .ok();
-            bail!("Script execution cancelled");
+
+            std::process::exit(130);
         },
         res = child.wait() => {
             let exit_code = res.ok().and_then(|output| output.code());
