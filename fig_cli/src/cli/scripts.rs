@@ -295,7 +295,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     // Must come after we get scripts
     let write_scripts: tokio::task::JoinHandle<Result<(), _>> = tokio::spawn(write_scripts());
 
-    let is_interactive = atty::is(atty::Stream::Stdin) && atty::is(atty::Stream::Stdout);
+    let is_interactive = atty::is(atty::Stream::Stdin)
+        && atty::is(atty::Stream::Stdout)
+        && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none();
 
     // Parse args
     let script_name = env_args.first().map(String::from);
@@ -720,6 +722,8 @@ async fn execute_script(
         },
     };
 
+    command.env("FIG_SCRIPT_EXECUTION", "1");
+
     let mut child = command.spawn()?;
     if let Some(text) = text {
         let mut stdin = child.stdin.take().unwrap();
@@ -751,7 +755,9 @@ async fn execute_script(
 /// Uses the setting `scripts.insert-into-shell` to determine whether to insert the command into the
 /// shell or execute it directly
 async fn execute_script_or_insert(script: &Script, args: &HashMap<String, Value>) -> Result<()> {
-    if fig_settings::settings::get_bool_or("scripts.insert-into-shell", true) {
+    if fig_settings::settings::get_bool_or("scripts.insert-into-shell", true)
+        && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none()
+    {
         if send_figterm(map_args_to_command(script, args), true).await.is_err() {
             execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, args).await?;
         }
