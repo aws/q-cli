@@ -1,5 +1,4 @@
 use std::borrow::Cow;
-use std::cmp::Ordering as StdOrdering;
 use std::collections::hash_map::DefaultHasher;
 use std::collections::HashMap;
 use std::hash::{
@@ -362,15 +361,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
             .await
             .ok();
 
-            scripts.sort_by(|a, b| match (&a.last_invoked_at, &b.last_invoked_at) {
-                (None, None) => StdOrdering::Equal,
-                (None, Some(_)) => StdOrdering::Greater,
-                (Some(_), None) => StdOrdering::Less,
-                (Some(a), Some(b)) => match (OffsetDateTime::parse(a, &Rfc3339), OffsetDateTime::parse(b, &Rfc3339)) {
-                    (Ok(a), Ok(b)) => b.cmp(&a),
-                    _ => StdOrdering::Equal,
-                },
-            });
+            scripts.sort_by(|a, b| a.relevance.total_cmp(&b.relevance));
 
             cfg_if::cfg_if! {
                 if #[cfg(unix)] {

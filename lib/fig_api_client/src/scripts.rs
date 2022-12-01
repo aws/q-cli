@@ -213,6 +213,8 @@ pub struct Script {
     pub is_owned_by_user: bool,
     #[serde(default)]
     pub runtime: Runtime,
+    #[serde(default)]
+    pub relevance: f64,
 }
 
 pub async fn scripts(schema_version: u32) -> fig_request::Result<Vec<Script>> {
