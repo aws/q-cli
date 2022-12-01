@@ -203,11 +203,12 @@ impl SkimItem for ScriptAction {
 }
 
 pub async fn write_scripts() -> Result<(), eyre::Report> {
+    let scripts_cache_dir = directories::scripts_cache_dir()?;
+    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
     for script in scripts(SUPPORTED_SCHEMA_VERSION).await? {
-        let mut file = tokio::fs::File::create(
-            directories::scripts_cache_dir()?.join(format!("{}.{}.json", script.namespace, script.name)),
-        )
-        .await?;
+        let mut file =
+            tokio::fs::File::create(scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name)))
+                .await?;
         file.write_all(serde_json::to_string_pretty(&script)?.as_bytes())
             .await?;
     }

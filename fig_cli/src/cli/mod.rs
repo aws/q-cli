@@ -17,6 +17,7 @@ mod man;
 mod plugins;
 mod pro;
 mod run;
+mod scripts;
 mod settings;
 mod source;
 mod ssh;
@@ -180,6 +181,9 @@ pub enum CliRootCommands {
     /// Execute a Fig Script
     #[command(alias("r"))]
     Run(run::ScriptsArgs),
+    /// Manage your Fig Scripts
+    #[command(alias("script"))]
+    Scripts(scripts::ScriptsArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
@@ -331,6 +335,7 @@ impl Cli {
                 CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man(args) => args.execute(),
                 CliRootCommands::Run(args) => args.execute().await,
+                CliRootCommands::Scripts(args) => args.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
