@@ -203,7 +203,7 @@ impl SkimItem for ScriptAction {
     }
 }
 
-async fn write_scripts() -> Result<(), eyre::Report> {
+pub async fn write_scripts() -> Result<(), eyre::Report> {
     for script in scripts(SUPPORTED_SCHEMA_VERSION).await? {
         let mut file = tokio::fs::File::create(
             directories::scripts_cache_dir()?.join(format!("{}.{}.json", script.namespace, script.name)),
@@ -509,6 +509,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
     for pair in args.chunks(2) {
         match pair[0].strip_prefix("--") {
             Some(key) => {
+                if pair.len() == 1 {
+                    bail!("Missing value for argument {key}");
+                }
                 arg_pairs.insert(key.to_string(), pair[1].to_string());
             },
             None => bail!("Unexpected value: {}", pair[0]),

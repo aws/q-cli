@@ -16,7 +16,7 @@ mod issue;
 mod man;
 mod plugins;
 mod pro;
-mod scripts;
+mod run;
 mod settings;
 mod source;
 mod ssh;
@@ -177,9 +177,9 @@ pub enum CliRootCommands {
     Plugins(PluginsSubcommands),
     /// Open manual page
     Man(man::ManArgs),
-    /// Fig Scripts
+    /// Execute a Fig Script
     #[command(alias("r"))]
-    Run(scripts::ScriptsArgs),
+    Run(run::ScriptsArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
