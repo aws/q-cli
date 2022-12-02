@@ -6,10 +6,7 @@ use std::hash::{
     Hasher,
 };
 use std::iter::empty;
-use std::path::{
-    Path,
-    PathBuf,
-};
+use std::path::Path;
 use std::process::{
     Command,
     Stdio,
