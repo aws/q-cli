@@ -22,7 +22,7 @@ fig_util = { path = "../fig_util" }
 fnv = "1.0.7"
 serde = { version = "1.0.148", features = ["derive"] }
 serde_json = "1.0.89"
-shellexpand = "2.1.2"
+shellexpand = "3.0.0"
 thiserror = "1.0.35"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1.36"
