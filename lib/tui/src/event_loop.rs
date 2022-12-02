@@ -126,13 +126,13 @@ impl EventLoop {
             let diff = backbuffer.diff_screens(&surface);
             if !diff.is_empty() {
                 terminal.render(&diff)?;
-
-                let mut seq = backbuffer.add_changes(diff);
-                backbuffer.flush_changes_older_than(seq);
-
-                seq = surface.current_seqno();
-                surface.flush_changes_older_than(seq);
             }
+
+            let mut seq = backbuffer.add_changes(diff);
+            backbuffer.flush_changes_older_than(seq);
+
+            seq = surface.current_seqno();
+            surface.flush_changes_older_than(seq);
 
             let duration = match control_flow {
                 ControlFlow::Wait => Some(Duration::from_millis(16)),
