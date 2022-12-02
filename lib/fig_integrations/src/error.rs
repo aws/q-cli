@@ -37,7 +37,4 @@ pub enum Error {
     #[cfg(target_os = "macos")]
     #[error(transparent)]
     PList(#[from] plist::Error),
-    #[cfg(target_os = "macos")]
-    #[error(transparent)]
-    Zip(#[from] zip::result::ZipError),
 }

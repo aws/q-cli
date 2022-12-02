@@ -1,13 +1,10 @@
 use std::collections::HashMap;
-use std::env::temp_dir;
-use std::io::Cursor;
 use std::path::PathBuf;
 
 use async_trait::async_trait;
 use fig_util::terminal::IntelliJVariant;
 use macos_utils::url::path_for_application;
 use serde::Deserialize;
-use zip::ZipArchive;
 
 use crate::error::Result;
 use crate::{
@@ -17,7 +14,8 @@ use crate::{
 
 const PLUGIN_PREFIX: &str = "jetbrains-extension-";
 const PLUGIN_SLUG: &str = "jetbrains-extension-2.0.0";
-static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.zip");
+const PLUGIN_JAR: &str = "jetbrains-extension-2.0.0.jar";
+static PLUGIN_CONTENTS: &[u8] = include_bytes!("plugin.jar");
 
 pub async fn variants_installed() -> Result<Vec<IntelliJIntegration>> {
     Ok(IntelliJVariant::all()
@@ -99,20 +97,15 @@ impl Integration for IntelliJIntegration {
             })?;
         }
 
-        let mut archive = ZipArchive::new(Cursor::new(PLUGIN_CONTENTS))
-            .map_err(|err| Error::Custom(format!("Failed reading bundled plugin zip: {err:?}").into()))?;
-
-        let tmp = temp_dir();
-
-        archive.extract(&tmp)?;
-
-        let tmp_plugin_path = tmp.join("jetbrains-extension");
-
-        tokio::fs::rename(&tmp_plugin_path, &destination_folder)
+        let lib_dir = destination_folder.join("lib");
+        tokio::fs::create_dir_all(&lib_dir)
             .await
-            .map_err(|err| {
-                Error::Custom(format!("Failed renaming extracted plugin path {tmp_plugin_path:?} to destination folder {destination_folder:?}: {err:?}").into())
-            })?;
+            .map_err(|err| Error::Custom(format!("Failed creating plugin lib folder: {err:?}").into()))?;
+
+        let jar_path = lib_dir.join(PLUGIN_JAR);
+        tokio::fs::write(&jar_path, PLUGIN_CONTENTS)
+            .await
+            .map_err(|err| Error::Custom(format!("Failed writing plugin jar to {jar_path:?}: {err:?}").into()))?;
 
         Ok(())
     }

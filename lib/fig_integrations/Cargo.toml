@@ -34,4 +34,3 @@ core-foundation = "0.9.3"
 plist = "1.3.1"
 objc = "0.2.7"
 fig_settings = { path = "../fig_settings" }
-zip = "0.6.3"
