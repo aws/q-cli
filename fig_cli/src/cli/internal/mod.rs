@@ -971,7 +971,8 @@ impl InternalSubcommand {
                         SetEnv LC_FIG_SET_PARENT={uuid} FIG_SET_PARENT={uuid}\n  \
                         StreamLocalBindMask 600\n  \
                         StreamLocalBindUnlink yes\n  \
-                        LocalCommand {exe_path} _ prompt-ssh '%r@%n' 1>&2\n"
+                        LocalCommand {exe_path} _ prompt-ssh '%r@%n' 1>&2\n
+                        PermitLocalCommand yes\n"
                     );
 
                     std::fs::write(config_path, config)?;
