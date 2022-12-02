@@ -37,15 +37,15 @@ pub struct FilePicker {
 impl FilePicker {
     pub fn new(
         id: impl ToString,
-        working_directory: impl Into<PathBuf>,
+        path: impl Into<PathBuf>,
         files: bool,
         folders: bool,
         extensions: Vec<String>,
     ) -> Self {
-        let working_directory = working_directory.into();
+        let path = path.into();
 
         Self {
-            path: working_directory,
+            path,
             files,
             folders,
             extensions,

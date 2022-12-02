@@ -6,6 +6,10 @@ use std::hash::{
     Hasher,
 };
 use std::iter::empty;
+use std::path::{
+    Path,
+    PathBuf,
+};
 use std::process::{
     Command,
     Stdio,
@@ -1067,13 +1071,13 @@ fn run_tui(
         parameter_div
             .push(Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name)));
 
-        let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
         match &parameter.parameter_type {
             ParameterType::Selector {
                 placeholder,
                 suggestions,
                 generators,
             } => {
+                let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
                 let mut options = suggestions.to_owned().unwrap_or_default();
                 if let Some(generators) = generators {
                     for generator in generators {
@@ -1101,6 +1105,7 @@ fn run_tui(
                 );
             },
             ParameterType::Text { placeholder } => {
+                let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
                 parameter_div.push(
                     TextField::new(&parameter.name)
                         .with_text(parameter_value.to_string())
@@ -1138,6 +1143,16 @@ fn run_tui(
                 ));
             },
             ParameterType::Path { file_type, extensions } => {
+                let parameter_value = arg_pairs
+                    .get(&parameter.name)
+                    // TODO(chay): Fix this so it can be any file
+                    .and_then(|val| {
+                        let p = Path::new(val);
+                        if p.is_dir() { Some(p.to_owned()) } else { None }
+                    })
+                    .or_else(|| std::env::current_dir().ok())
+                    .unwrap_or_else(|| Path::new("/").to_owned());
+
                 let (files, folders) = match file_type {
                     FileType::Any => (true, true),
                     FileType::FileOnly => (true, false),
@@ -1146,7 +1161,7 @@ fn run_tui(
 
                 parameter_div.push(FilePicker::new(
                     &parameter.name,
-                    std::env::current_dir()?,
+                    parameter_value,
                     files,
                     folders,
                     extensions.clone(),
