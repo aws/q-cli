@@ -1131,7 +1131,11 @@ fn run_tui(
                     false_value: Some(false_value_substitution.to_owned()),
                 });
 
-                parameter_div.push(CheckBox::new(&parameter.name, "", checked));
+                parameter_div.push(CheckBox::new(
+                    &parameter.name,
+                    parameter.description.clone().unwrap_or_else(|| "Toggle".into()),
+                    checked,
+                ));
             },
             ParameterType::Path { file_type, extensions } => {
                 let (files, folders) = match file_type {
