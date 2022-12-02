@@ -8,6 +8,7 @@ use eyre::{
     bail,
     Result,
 };
+use fig_api_client::drip_campaign::DripCampaign;
 use fig_ipc::local::logout_command;
 use fig_ipc::{
     BufferedUnixStream,
@@ -203,6 +204,7 @@ impl RootUserSubcommand {
                             match sign_in_output.confirm(login_code.trim()).await {
                                 Ok(creds) => {
                                     creds.save_credentials()?;
+                                    DripCampaign::load().await.ok();
 
                                     if switchable {
                                         let dir = Credentials::account_credentials_dir()?;
@@ -307,6 +309,7 @@ impl RootUserSubcommand {
                                 let mut creds = Credentials::load_credentials()?;
                                 creds.refresh_credentials().await?;
                                 creds.save_credentials()?;
+                                DripCampaign::load().await.ok();
                             } else {
                                 eyre::bail!("Bad code");
                             }

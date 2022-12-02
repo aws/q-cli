@@ -9,6 +9,7 @@ use std::sync::Arc;
 
 use cfg_if::cfg_if;
 use dashmap::DashMap;
+use fig_api_client::drip_campaign::DripCampaign;
 use fig_desktop_api::init_script::javascript_init;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
@@ -295,6 +296,12 @@ impl WebviewManager {
             None
         };
 
+        // load drip campaign with initial credentials.
+        tokio::spawn(async {
+            let res = DripCampaign::load().await;
+            error!(?res, "loaded drip campaign results");
+        });
+
         let proxy = self.event_loop.create_proxy();
         self.event_loop.run(move |event, window_target, control_flow| {
             *control_flow = ControlFlow::Wait;
@@ -421,6 +428,9 @@ impl WebviewManager {
                             if let Some(tray) = tray.as_mut() {
                                 tray.set_menu(&get_context_menu());
                             }
+
+                            // re-load drip campaign whenever credentials change.
+                            tokio::spawn(DripCampaign::load());
 
                             let autocomplete_enabled =
                                 !fig_settings::settings::get_bool_or("autocomplete.disable", false)

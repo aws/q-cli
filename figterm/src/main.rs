@@ -43,6 +43,7 @@ use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
 use crossterm::style::Stylize;
+use fig_api_client::drip_campaign::DripCampaign;
 use fig_proto::local::{
     self,
     EnvironmentVariable,
@@ -473,8 +474,6 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     info!("Figterm: {}", Pid::current());
     info!("Pty name: {pty_name}");
 
-    terminal.set_raw_mode()?;
-
     let runtime = runtime::Builder::new_multi_thread()
         .enable_all()
         .thread_name_fn(|| {
@@ -484,6 +483,20 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         })
         .build()?;
     let runtime_result = runtime.block_on(async {
+        let tips_disabled = fig_settings::settings::get_bool_or("cli.tips.disabled", false);
+        if !tips_disabled {
+            if let Some(mut campaign) = DripCampaign::load_local().ok().flatten() {
+                if let Some(message) = campaign.get_current_message() {
+                    println!("\n{}\n\n(Run {} to disable occasional Fig tips)\n", message.text, "fig tips disable".bold().magenta());
+                    tokio::spawn(async move {
+                        campaign.increment_drip().await.ok();
+                    });
+                }
+            }
+        }
+
+        terminal.set_raw_mode()?;
+
         let (main_loop_tx, main_loop_rx) = flume::bounded::<MainLoopEvent>(16);
 
         let history_sender = history::spawn_history_task().await;
