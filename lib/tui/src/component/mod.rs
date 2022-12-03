@@ -112,11 +112,12 @@ pub trait Component: std::fmt::Debug {
     }
 
     #[allow(unused_variables)]
-    fn on_resize(&mut self, state: &mut State, width: f64, height: f64) {}
-
-    #[allow(unused_variables)]
     fn on_focus(&mut self, state: &mut State, focus: bool) {
         self.inner_mut().focus = focus;
+
+        if !focus {
+            state.cursor_visibility = false;
+        }
     }
 
     #[allow(unused_variables)]

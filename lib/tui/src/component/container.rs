@@ -349,12 +349,6 @@ impl Component for Container {
         Some(component)
     }
 
-    fn on_resize(&mut self, state: &mut State, width: f64, height: f64) {
-        for component in &mut self.components {
-            component.on_resize(state, width, height);
-        }
-    }
-
     fn on_focus(&mut self, state: &mut State, focus: bool) {
         self.inner.focus = focus;
 

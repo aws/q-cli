@@ -1,6 +1,5 @@
 use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
-use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use crate::component::ComponentData;
@@ -54,12 +53,23 @@ impl TextField {
         self.obfuscated = obfuscated;
         self
     }
+
+    fn resize(&mut self) {
+        self.inner.width = match self.text.is_empty() {
+            true => match &self.hint {
+                Some(hint) => hint.width() as f64,
+                None => 0.0,
+            },
+            false => self.text.width() as f64,
+        };
+
+        self.inner.height = 1.0;
+    }
 }
 
 impl Component for TextField {
     fn initialize(&mut self, _: &mut State) {
-        self.inner.width = 32.0;
-        self.inner.height = 1.0;
+        self.resize();
     }
 
     fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
@@ -77,47 +87,19 @@ impl Component for TextField {
                     attributes.set_foreground(ColorAttribute::PaletteIndex(8));
                     surface.draw_text(hint.as_str(), x, y, width, attributes);
                 }
-
-                if self.inner.focus {
-                    let mut attributes = style.attributes();
-                    attributes
-                        .set_foreground(style.background_color())
-                        .set_background(style.caret_color());
-
-                    surface.draw_text(
-                        self.hint
-                            .as_ref()
-                            .and_then(|hint| hint.graphemes(true).nth(self.cursor))
-                            .unwrap_or(" "),
-                        x + self.cursor as f64 - self.offset as f64,
-                        y,
-                        1.0,
-                        attributes,
-                    );
-                }
             },
             false => {
                 match self.obfuscated {
                     true => surface.draw_text("*".repeat(self.text.len()), x, y, width, style.attributes()),
                     false => surface.draw_text(&self.text.as_str()[self.offset..], x, y, width, style.attributes()),
                 };
-
-                if self.inner.focus {
-                    let mut attributes = style.attributes();
-                    attributes
-                        .set_foreground(style.background_color())
-                        .set_background(style.caret_color());
-
-                    surface.draw_text(
-                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
-                        x + self.cursor as f64 - self.offset as f64,
-                        y,
-                        1.0,
-                        attributes,
-                    );
-                }
             },
         };
+
+        if self.inner.focus {
+            state.cursor_position = (x + self.cursor as f64 - self.offset as f64, y);
+            state.cursor_visibility = true;
+        }
     }
 
     fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
@@ -127,11 +109,13 @@ impl Component for TextField {
             InputAction::Insert(c, _) => {
                 self.text.insert(self.cursor, c);
                 self.cursor += 1;
+                self.resize()
             },
             InputAction::Remove => match self.cursor == self.text.len() {
                 true => {
                     self.text.pop();
                     self.cursor -= 1.min(self.cursor);
+                    self.resize()
                 },
                 false => {
                     if self.cursor == 0 {
@@ -140,14 +124,17 @@ impl Component for TextField {
 
                     self.text.remove(self.cursor - 1);
                     self.cursor -= 1.min(self.cursor);
+                    self.resize()
                 },
             },
             InputAction::Delete => match self.text.len() {
                 len if len == self.cursor + 1 => {
                     self.text.pop();
+                    self.resize()
                 },
                 len if len > self.cursor + 1 => {
                     self.text.remove(self.cursor);
+                    self.resize()
                 },
                 _ => (),
             },
@@ -162,14 +149,6 @@ impl Component for TextField {
         }
 
         true
-    }
-
-    fn on_resize(&mut self, _: &mut State, width: f64, _: f64) {
-        let width = width.round() as usize;
-
-        if self.cursor >= width {
-            self.offset = self.cursor - width;
-        }
     }
 
     fn class(&self) -> &'static str {

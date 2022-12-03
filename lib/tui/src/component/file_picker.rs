@@ -162,7 +162,7 @@ impl Component for FilePicker {
             }
 
             let option = option.to_string_lossy();
-            surface.draw_text(&option, x + 2.0, y + i as f64 + 2.0, width / 2.0 - 3.0, attributes);
+            surface.draw_text(&option, x + 1.0, y + i as f64 + 2.0, width * 0.5 - 3.0, attributes);
         }
 
         if let Some(option) = self.options.get(self.index) {
@@ -182,9 +182,9 @@ impl Component for FilePicker {
                 let preview = preview.to_string_lossy();
                 surface.draw_text(
                     &preview,
-                    x + 2.0 + width * 0.5,
+                    x + 1.0 + width * 0.5,
                     y + i as f64 + 2.0,
-                    width / 2.0 - 1.0,
+                    width * 0.5 - 3.0,
                     style.attributes(),
                 );
             }

@@ -2,7 +2,6 @@ use std::fmt::Display;
 
 use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
-use unicode_segmentation::UnicodeSegmentation;
 use unicode_width::UnicodeWidthStr;
 
 use super::ComponentData;
@@ -108,24 +107,6 @@ impl Component for Select {
                         attributes,
                     );
                 }
-
-                if self.inner.focus {
-                    let mut attributes = style.attributes();
-                    attributes
-                        .set_foreground(style.background_color())
-                        .set_background(style.caret_color());
-
-                    surface.draw_text(
-                        self.hint
-                            .as_ref()
-                            .and_then(|hint| hint.graphemes(true).nth(self.cursor))
-                            .unwrap_or(" "),
-                        x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
-                        y,
-                        1.0,
-                        attributes,
-                    );
-                }
             },
             false => {
                 surface.draw_text(
@@ -135,22 +116,12 @@ impl Component for Select {
                     width - 2.0,
                     style.attributes(),
                 );
-
-                if self.inner.focus {
-                    let mut attributes = style.attributes();
-                    attributes
-                        .set_foreground(style.background_color())
-                        .set_background(style.caret_color());
-
-                    surface.draw_text(
-                        self.text.graphemes(true).nth(self.cursor).unwrap_or(" "),
-                        x + 2.0 + self.cursor as f64 - self.cursor_offset as f64,
-                        y,
-                        1.0,
-                        attributes,
-                    );
-                }
             },
+        }
+
+        if self.inner.focus {
+            state.cursor_position = (x + 2.0 + self.cursor as f64 - self.cursor_offset as f64, y);
+            state.cursor_visibility = true;
         }
 
         for (i, option) in self.sorted_options[self.index_offset
@@ -178,7 +149,7 @@ impl Component for Select {
                 self.options[*option].as_str(),
                 x + 2.0,
                 y + i as f64 + 1.0,
-                width,
+                width - 2.0,
                 attributes,
             );
         }
@@ -288,28 +259,17 @@ impl Component for Select {
         true
     }
 
-    fn on_resize(&mut self, _: &mut State, width: f64, _: f64) {
-        let width = width.round() as usize;
-
-        if self.cursor >= width {
-            self.cursor_offset = self.cursor - width;
-        }
-    }
-
     fn on_focus(&mut self, state: &mut State, focus: bool) {
         self.inner.focus = focus;
 
         match focus {
             true => {
-                self.sorted_options.clear();
-                for i in 0..self.options.len() {
-                    if self.options[i].contains(&self.text) {
-                        self.sorted_options.push(i);
-                    }
-                }
+                self.sorted_options = (0..self.options.len()).into_iter().collect();
                 self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.sorted_options.len()).unwrap()) as f64;
             },
             false => {
+                state.cursor_visibility = false;
+
                 if let Some(index) = self.index {
                     self.text = self.options[self.sorted_options[index]].to_string();
                 }
