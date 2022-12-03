@@ -5,6 +5,7 @@ use std::hash::{
     Hash,
     Hasher,
 };
+use std::io::Write;
 use std::iter::empty;
 use std::path::Path;
 use std::process::{
@@ -12,6 +13,7 @@ use std::process::{
     Stdio,
 };
 
+use bytes::BytesMut;
 use clap::Args;
 use crossterm::style::Stylize;
 use eyre::{
@@ -51,7 +53,10 @@ use fig_util::directories;
 use skim::SkimItem;
 use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
-use tokio::io::AsyncWriteExt;
+use tokio::io::{
+    AsyncReadExt,
+    AsyncWriteExt,
+};
 use tui::component::{
     CheckBox,
     CheckBoxEvent,
@@ -610,7 +615,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 
             match execution_method {
                 ExecutionMethod::Invoke => {
-                    execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
+                    execute_script(&script, &map).await?;
                 },
                 ExecutionMethod::Search => {
                     execute_script_or_insert(&script, &map).await?;
@@ -663,20 +668,14 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     Ok(())
 }
 
-async fn execute_script(
-    runtime: &Runtime,
-    name: &str,
-    namespace: &str,
-    tree: &[TreeElement],
-    args: &HashMap<String, Value>,
-) -> Result<()> {
+async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Result<()> {
     let start_time = time::OffsetDateTime::now_utc();
 
-    let script = tree.iter().fold(String::new(), |mut acc, branch| {
+    let templated_script = script.tree.iter().fold(String::new(), |mut acc, branch| {
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
             TreeElement::Token { name } => acc.push_str(&match &args[name.as_str()] {
-                Value::String(string) => match runtime {
+                Value::String(string) => match script.runtime {
                     Runtime::Bash => string.clone(),
                     Runtime::Python | Runtime::Node | Runtime::Deno => {
                         serde_json::to_string(string).expect("Failed to serialize string to JSON string")
@@ -686,7 +685,7 @@ async fn execute_script(
                     val,
                     true_value,
                     false_value,
-                } => match (runtime, val) {
+                } => match (&script.runtime, val) {
                     (Runtime::Bash, true) => true_value.clone().unwrap_or_else(|| "true".into()),
                     (Runtime::Bash, false) => false_value.clone().unwrap_or_else(|| "false".into()),
                     (Runtime::Python, true) => "True".into(),
@@ -700,17 +699,17 @@ async fn execute_script(
     });
 
     // determine that runtime exists before validating rules
-    let (mut command, text) = match runtime {
+    let (mut command, text) = match script.runtime {
         Runtime::Bash => {
             let mut command = tokio::process::Command::new("bash");
             command.arg("-c");
-            command.arg(script);
+            command.arg(templated_script);
             (command, None)
         },
         Runtime::Python => {
             let mut command = tokio::process::Command::new("python3");
             command.arg("-c");
-            command.arg(script);
+            command.arg(templated_script);
             (command, None)
         },
         Runtime::Node => {
@@ -718,7 +717,7 @@ async fn execute_script(
             command.arg("--input-type");
             command.arg("module");
             command.arg("-e");
-            command.arg(script);
+            command.arg(templated_script);
             (command, None)
         },
         Runtime::Deno => {
@@ -728,40 +727,96 @@ async fn execute_script(
             command.arg("-");
             command.stdin(Stdio::piped());
 
-            (command, Some(script))
+            (command, Some(templated_script))
         },
     };
 
     command.env("FIG_SCRIPT_EXECUTION", "1");
 
+    command.stdout(Stdio::piped()).stderr(Stdio::piped());
+
     let mut child = command.spawn()?;
+
     if let Some(text) = text {
         let mut stdin = child.stdin.take().unwrap();
         stdin.write_all(text.as_bytes()).await?;
         stdin.flush().await?;
     }
 
+    let mut stdout = child.stdout.take().unwrap();
+    let stdout_join = tokio::spawn(async move {
+        let mut stdout_buffer = BytesMut::new();
+        loop {
+            match stdout.read_buf(&mut stdout_buffer).await {
+                Ok(0) => break,
+                Ok(bytes) => {
+                    let mut stdout = std::io::stdout().lock();
+                    stdout.write_all(&stdout_buffer[stdout_buffer.len() - bytes..]).ok();
+                    stdout.flush().ok();
+                },
+                Err(_) => break,
+            }
+        }
+        stdout_buffer.freeze()
+    });
+
+    let mut stderr = child.stderr.take().unwrap();
+    let stderr_join = tokio::spawn(async move {
+        let mut stderr_buffer = BytesMut::new();
+        loop {
+            match stderr.read_buf(&mut stderr_buffer).await {
+                Ok(0) => break,
+                Ok(bytes) => {
+                    let mut stderr = std::io::stderr().lock();
+                    stderr.write_all(&stderr_buffer[stderr_buffer.len() - bytes..]).ok();
+                    stderr.flush().ok();
+                },
+                Err(_) => break,
+            }
+        }
+        stderr_buffer.freeze()
+    });
+
     let runtime_version = {
-        let runtime = runtime.clone();
+        let runtime = script.runtime.clone();
         tokio::spawn(async move { runtime.version().await })
     };
+
+    let inputs = args
+        .iter()
+        .map(|(k, v)| {
+            (k, match v {
+                Value::String(s) => serde_json::Value::String(s.clone()),
+                Value::Bool { val, .. } => serde_json::Value::Bool(*val),
+            })
+        })
+        .collect::<HashMap<_, _>>();
 
     tokio::select! {
         _res = tokio::signal::ctrl_c() => {
             child.kill().await?;
 
             eprintln!();
-            eprintln!("{} script cancelled", format!("@{namespace}/{name}").magenta().bold());
+            eprintln!("{} script cancelled", format!("@{}/{}", script.namespace, script.name).magenta().bold());
 
             let execution_start_time = start_time.format(&Rfc3339).ok();
             let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
-            Request::post(format!("/workflows/{name}/invocations"))
+
+            let stdout = stdout_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
+            let stderr = stderr_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
+
+
+
+            Request::post(format!("/workflows/{}/invocations", script.name))
                 .body(serde_json::json!({
-                    "namespace": namespace,
+                    "namespace": script.namespace,
                     "executionStartTime": execution_start_time,
                     "executionDuration": execution_duration,
                     "ctrlC": true,
                     "runtimeVersion": runtime_version.await.ok().flatten(),
+                    "inputs": script.invocation_track_inputs.then_some(inputs),
+                    "stdout": script.invocation_track_stdout.then_some(stdout).flatten(),
+                    "stderr": script.invocation_track_stderr.then_some(stderr).flatten(),
                 }))
                 .auth()
                 .send()
@@ -772,15 +827,23 @@ async fn execute_script(
         },
         res = child.wait() => {
             let exit_code = res.ok().and_then(|output| output.code());
+
             let execution_start_time = start_time.format(&Rfc3339).ok();
             let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
-            Request::post(format!("/workflows/{name}/invocations"))
+
+            let stdout = stdout_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
+            let stderr = stderr_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
+
+            Request::post(format!("/workflows/{}/invocations", script.name))
                 .body(serde_json::json!({
-                    "namespace": namespace,
+                    "namespace": script.namespace,
                     "executionStartTime": execution_start_time,
                     "executionDuration": execution_duration,
                     "exitCode": exit_code,
                     "runtimeVersion": runtime_version.await.ok().flatten(),
+                    "inputs": script.invocation_track_inputs.then_some(inputs),
+                    "stdout": script.invocation_track_stdout.then_some(stdout).flatten(),
+                    "stderr": script.invocation_track_stderr.then_some(stderr).flatten(),
                 }))
                 .auth()
                 .send()
@@ -798,10 +861,10 @@ async fn execute_script_or_insert(script: &Script, args: &HashMap<String, Value>
         && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none()
     {
         if send_figterm(map_args_to_command(script, args), true).await.is_err() {
-            execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, args).await?;
+            execute_script(script, args).await?;
         }
     } else {
-        execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, args).await?;
+        execute_script(script, args).await?;
     }
 
     Ok(())

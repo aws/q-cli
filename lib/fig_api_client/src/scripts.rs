@@ -219,6 +219,12 @@ pub struct Script {
     pub last_invoked_at: Option<time::OffsetDateTime>,
     #[serde(with = "time::serde::rfc3339::option", default)]
     pub last_invoked_at_by_user: Option<time::OffsetDateTime>,
+    #[serde(default)]
+    pub invocation_track_stderr: bool,
+    #[serde(default)]
+    pub invocation_track_stdout: bool,
+    #[serde(default)]
+    pub invocation_track_inputs: bool,
 }
 
 pub async fn script(namespace: &str, name: &str, schema_version: u32) -> fig_request::Result<Script> {
