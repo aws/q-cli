@@ -23,7 +23,6 @@ use fig_api_client::scripts::{
     sync_scripts,
     FileType,
     Generator,
-    Parameter,
     ParameterType,
     Predicate,
     Rule,
@@ -277,7 +276,7 @@ impl std::fmt::Display for ExecutionMethod {
     }
 }
 
-pub async fn execute(env_args: Vec<String>) -> Result<()> {
+pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
     let mut scripts = get_scripts().await?;
     let mut join_write_scripts = Some(tokio::spawn(sync_scripts()));
 
@@ -286,7 +285,7 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none();
 
     // Parse args
-    let script_name = env_args.first().map(String::from);
+    let script_name = command_arguments.first().map(String::from);
     let (execution_method, mut script) = match script_name {
         Some(name) => {
             let (namespace, name) = match name.strip_prefix('@') {
@@ -518,43 +517,9 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
         }
     }
 
-    let args: Vec<String> = env_args.into_iter().skip(1).collect();
-    let mut arg_pairs: HashMap<String, String> = HashMap::new();
-
-    for pair in args.chunks(2) {
-        match pair[0].strip_prefix("--") {
-            Some(key) => {
-                if pair.len() == 1 {
-                    bail!("Missing value for argument {key}");
-                }
-                arg_pairs.insert(key.to_string(), pair[1].to_string());
-            },
-            None => bail!("Unexpected value: {}", pair[0]),
-        }
-    }
-
-    // Catch this after so we can try to catch it from the previous command parsing
-    if args.len() % 2 != 0 {
-        bail!("Arguments must be in the form of `--key value`");
-    }
-
-    let map = if script.parameters.is_empty() {
-        Ok(HashMap::new())
-    } else {
-        parse_args(&arg_pairs, &script.parameters)
-    };
-
-    match (map, is_interactive) {
-        (Ok(map), _) => match execution_method {
-            ExecutionMethod::Invoke => {
-                execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
-            },
-            ExecutionMethod::Search => {
-                execute_script_or_insert(&script, &map).await?;
-            },
-        },
-        (Err(_), true) => {
-            let values_by_arg = run_tui(&script, &arg_pairs, &script_name, &execution_method)?;
+    match command_arguments.len() {
+        0 | 1 if is_interactive && !script.parameters.is_empty() => {
+            let values_by_arg = run_tui(&script, &HashMap::new(), &script_name, &execution_method)?;
 
             let mut missing_args = vec![];
             for parameter in &script.parameters {
@@ -589,64 +554,76 @@ pub async fn execute(env_args: Vec<String>) -> Result<()> {
 
             telem_join.await.ok();
         },
-        (Err(err), false) => {
-            eprintln!("{err}");
+        _ => {
+            let mut command = clap::Command::new(&script_name);
 
-            if let Some(write_scripts) = join_write_scripts.take() {
-                write_scripts.await?.ok();
+            if let Some(description) = &script.description {
+                command = command.about(description);
             }
 
-            std::process::exit(1);
+            for param in &script.parameters {
+                let mut arg = clap::Arg::new(&param.name).long(&param.name);
+
+                if param.name.len() == 1 {
+                    arg = arg.short(param.name.chars().next().unwrap());
+                }
+
+                if let Some(description) = &param.description {
+                    arg = arg.help(description);
+                }
+
+                match param.parameter_type {
+                    ParameterType::Selector { .. } => {
+                        command = command.arg(arg.value_parser(clap::value_parser!(String)).required(true));
+                    },
+                    ParameterType::Text { .. } | ParameterType::Path { .. } => {
+                        command = command.arg(arg.value_parser(clap::value_parser!(String)).required(true));
+                    },
+                    ParameterType::Checkbox { .. } => {
+                        command = command.arg(arg.action(clap::ArgAction::SetTrue));
+                    },
+                };
+            }
+
+            let mut matches = command.get_matches_from(command_arguments);
+            let mut map: HashMap<String, Value> = HashMap::new();
+
+            for param in &script.parameters {
+                match &param.parameter_type {
+                    ParameterType::Selector { .. } | ParameterType::Text { .. } | ParameterType::Path { .. } => {
+                        if let Some(value) = matches.remove_one::<String>(&param.name) {
+                            map.insert(param.name.clone(), Value::String(value));
+                        }
+                    },
+                    ParameterType::Checkbox {
+                        false_value_substitution,
+                        true_value_substitution,
+                    } => {
+                        map.insert(param.name.clone(), Value::Bool {
+                            val: matches.get_flag(&param.name),
+                            false_value: Some(false_value_substitution.clone()),
+                            true_value: Some(true_value_substitution.clone()),
+                        });
+                    },
+                };
+            }
+
+            match execution_method {
+                ExecutionMethod::Invoke => {
+                    execute_script(&script.runtime, &script.name, &script.namespace, &script.tree, &map).await?;
+                },
+                ExecutionMethod::Search => {
+                    execute_script_or_insert(&script, &map).await?;
+                },
+            }
         },
-    }
+    };
 
     if let Some(write_scripts) = join_write_scripts.take() {
         write_scripts.await?.ok();
     }
 
     Ok(())
-}
-
-fn parse_args(args: &HashMap<String, String>, parameters: &Vec<Parameter>) -> Result<HashMap<String, Value>> {
-    let mut missing_args: Vec<String> = Vec::new();
-    let mut map = HashMap::new();
-    for parameter in parameters {
-        let value = args.get(&parameter.name);
-        map.insert(parameter.name.clone(), match value {
-            Some(value) => match &parameter.parameter_type {
-                ParameterType::Checkbox {
-                    true_value_substitution,
-                    false_value_substitution,
-                } => match value.as_str() {
-                    "true" => Value::Bool {
-                        val: true,
-                        true_value: Some(true_value_substitution.clone()),
-                        false_value: Some(false_value_substitution.clone()),
-                    },
-                    "false" => Value::Bool {
-                        val: false,
-                        true_value: Some(true_value_substitution.clone()),
-                        false_value: Some(false_value_substitution.clone()),
-                    },
-                    _ => bail!(
-                        "Invalid value for checkbox {}, must be `true` or `false`",
-                        parameter.name
-                    ),
-                },
-                _ => Value::String(value.clone()),
-            },
-            None => {
-                missing_args.push(parameter.name.clone());
-                continue;
-            },
-        });
-    }
-
-    if !missing_args.is_empty() {
-        bail!("Missing required arguments: {}", missing_args.join(", "));
-    }
-
-    Ok(map)
 }
 
 fn map_args_to_command(script: &Script, args: &HashMap<String, Value>) -> String {
@@ -658,8 +635,13 @@ fn map_args_to_command(script: &Script, args: &HashMap<String, Value>) -> String
         use std::fmt::Write;
 
         match val {
-            Value::String(s) => write!(command, " --{arg} {}", escape(s.into())).ok(),
-            Value::Bool { val, .. } => write!(command, " --{arg} {val}").ok(),
+            Value::String(s) => {
+                write!(command, " --{arg} {}", escape(s.into())).ok();
+            },
+            Value::Bool { val: true, .. } => {
+                write!(command, " --{arg}").ok();
+            },
+            Value::Bool { val: false, .. } => {},
         };
     }
 

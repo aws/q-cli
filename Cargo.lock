@@ -723,6 +723,8 @@ dependencies = [
  "strsim",
  "termcolor",
  "terminal_size 0.2.3",
+ "unicase",
+ "unicode-width",
 ]
 
 [[package]]
