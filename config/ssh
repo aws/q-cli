@@ -1,4 +1,0 @@
-ControlPath ~/.ssh/%C
-ControlMaster auto
-PermitLocalCommand yes
-LocalCommand fig hook ssh --prompt "$FIG_PID" "$TTY" '~/.ssh/%C' '%r@%n' 1>&2
