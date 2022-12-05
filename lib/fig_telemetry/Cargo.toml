@@ -16,7 +16,7 @@ fig_util = { path = "../fig_util" }
 macos_utils = { path = "../macos_utils" }
 once_cell = { version = "1.16.0", features = ["parking_lot"] }
 parking_lot = "0.12.1"
-sentry = { version = "0.29.0", default-features = false, features = [
+sentry = { version = "0.29.1", default-features = false, features = [
     "backtrace",
     "contexts",
     "panic",
