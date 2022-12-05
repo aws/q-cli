@@ -477,18 +477,18 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
         .unwrap_or_default()
     {
         // This is always okay to unwrap because we just checked that it's finished
-        let scripts = join_write_scripts.take().unwrap().await??;
-
-        // Find the script again in case it was updated
-        match scripts
-            .into_iter()
-            .find(|new_script| new_script.namespace == script.namespace && new_script.name == script.name)
-        {
-            Some(new_script) => script = new_script,
-            None => {
-                eprintln!("Script is no longer available");
-                return Ok(());
-            },
+        if let Ok(Ok(scripts)) = join_write_scripts.take().unwrap().await {
+            // Find the script again in case it was updated
+            match scripts
+                .into_iter()
+                .find(|new_script| new_script.namespace == script.namespace && new_script.name == script.name)
+            {
+                Some(new_script) => script = new_script,
+                None => {
+                    eprintln!("Script is no longer available");
+                    return Ok(());
+                },
+            }
         }
     }
 
