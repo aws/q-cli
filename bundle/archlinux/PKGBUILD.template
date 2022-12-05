@@ -8,10 +8,13 @@ arch=('x86_64')
 url='https://fig.io'
 license=('custom')
 depends=('gtk3' 'webkit2gtk' 'libappindicator-gtk3' 'ibus' 'xdg-utils')$aur_provides
+makedepends=('jq')
 source=("${pkgname}-${pkgver//_/-}.tar.xz::https://repo.fig.io/generic/$aur_channel/asset/${pkgver//_/-}/x86_64/fig.tar.xz")
 
 sha256sums=('$aur_sha256sum')
 
 package() {
   cp -r "${srcdir}/usr" "${pkgdir}/usr"
+  manifest="${pkgdir}/usr/share/fig/manifest.json"
+  echo "$( jq '.managed_by = "pacman"' $manifest )" > $manifest
 }
