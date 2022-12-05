@@ -1993,6 +1993,16 @@ dependencies = [
 ]
 
 [[package]]
+name = "fig_history"
+version = "2.10.0-dev"
+dependencies = [
+ "fig_util",
+ "rusqlite",
+ "thiserror",
+ "tracing",
+]
+
+[[package]]
 name = "fig_input_method"
 version = "2.10.0-dev"
 dependencies = [
@@ -2303,6 +2313,7 @@ dependencies = [
  "dashmap",
  "fig_api_client",
  "fig_color",
+ "fig_history",
  "fig_ipc",
  "fig_log",
  "fig_proto",
@@ -2322,7 +2333,6 @@ dependencies = [
  "portable-pty",
  "predicates",
  "regex",
- "rusqlite",
  "serde",
  "serde_json",
  "shared_library",

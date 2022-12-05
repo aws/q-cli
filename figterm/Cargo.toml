@@ -23,6 +23,7 @@ crossterm = "0.25.0"
 dashmap = "5.3.4"
 fig_api_client = { path = "../lib/fig_api_client" }
 fig_color = { path = "../lib/fig_color" }
+fig_history = { path = "../lib/fig_history" }
 fig_ipc = { path = "../lib/fig_ipc" }
 fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }
@@ -39,7 +40,6 @@ parking_lot = "0.12.1"
 pin-project = "1.0.12"
 portable-pty = "0.7.0"
 regex = "1.6.0"
-rusqlite = { version = "0.28.0", features = ["bundled"] }
 serde = { version = "1.0.148", features = ["derive"] }
 serde_json = "1.0.89"
 shell-words = "1.1"

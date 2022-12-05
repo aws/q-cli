@@ -1,0 +1,13 @@
+[package]
+name = "fig_history"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+fig_util = { path = "../fig_util" }
+rusqlite = { version = "0.28.0", features = ["bundled"] }
+thiserror = "1.0.37"
+tracing = "0.1.37"
