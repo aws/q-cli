@@ -67,8 +67,6 @@ pub enum Terminal {
     Nova,
     /// Wezterm
     WezTerm,
-    /// Jetbrains Terminal
-    JediTerm(String),
     /// Gnome Console
     GnomeConsole,
     /// Gnome Terminal
@@ -111,7 +109,6 @@ impl fmt::Display for Terminal {
             Terminal::Tabby => write!(f, "Tabby"),
             Terminal::Nova => write!(f, "Nova"),
             Terminal::WezTerm => write!(f, "Wezterm"),
-            Terminal::JediTerm(_) => write!(f, "Jetbrains"),
             Terminal::GnomeConsole => write!(f, "Gnome Console"),
             Terminal::GnomeTerminal => write!(f, "Gnome Terminal"),
             Terminal::Konsole => write!(f, "Konsole"),
@@ -163,10 +160,6 @@ impl Terminal {
             Terminal::Tabby => "tabby".into(),
             Terminal::Nova => "nova".into(),
             Terminal::WezTerm => "wezterm".into(),
-            Terminal::JediTerm(name) => name
-                .trim_start_matches("com.jetbrains.")
-                .trim_start_matches("com.google.")
-                .to_string(),
             Terminal::GnomeTerminal => "gnome-terminal".into(),
             Terminal::GnomeConsole => "gnome-console".into(),
             Terminal::Konsole => "konsole".into(),
@@ -178,7 +171,10 @@ impl Terminal {
             Terminal::Tmux => "tmux".into(),
             Terminal::Nvim => "nvim".into(),
             Terminal::Zellij => "zellij".into(),
-            Terminal::IntelliJ(_) => todo!(),
+            Terminal::IntelliJ(ide) => match ide {
+                Some(variant) => format!("intellij-{}", variant.internal_id()),
+                None => "intellij".into(),
+            },
         }
     }
 
@@ -198,7 +194,7 @@ impl Terminal {
             Terminal::Tabby => String::from("org.tabby"),
             Terminal::Nova => String::from("com.panic.Nova"),
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
-            Terminal::JediTerm(id) => id.to_string(),
+            Terminal::IntelliJ(Some(variant)) => variant.bundle_identifier().into(),
             _ => todo!(),
         }
     }
@@ -218,7 +214,9 @@ impl Terminal {
             "com.panic.Nova" => Terminal::Nova,
             "com.github.wez.wezterm" => Terminal::WezTerm,
             // todo(mschrage): the following line does not account for Android Studio
-            _ if bundle.starts_with("com.jetbrains") => Terminal::JediTerm(bundle.into()),
+            _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
+                Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
+            },
             _ => return None,
         };
 
@@ -228,7 +226,7 @@ impl Terminal {
     pub fn supports_macos_input_method(&self) -> bool {
         matches!(
             self,
-            Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::WezTerm | Terminal::JediTerm(_)
+            Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::WezTerm | Terminal::IntelliJ(_)
         )
     }
 
@@ -321,7 +319,7 @@ impl Terminal {
     pub fn is_input_dependant(&self) -> bool {
         matches!(
             self,
-            Terminal::WezTerm | Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::JediTerm(_)
+            Terminal::WezTerm | Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::IntelliJ(_)
         )
     }
 
@@ -349,7 +347,7 @@ pub enum PositioningKind {
 }
 
 macro_rules! intellij_variants {
-    ($($name:ident { org: $organization:expr, name: $application_name:expr, bundle: $bundle_identifier:expr },)*) => {
+    ($($name:ident { org: $organization:expr, internal_id: $internal_id:expr, name: $application_name:expr, bundle: $bundle_identifier:expr },)*) => {
         #[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
         #[serde(rename_all = "kebab-case")]
         pub enum IntelliJVariant {
@@ -386,24 +384,106 @@ macro_rules! intellij_variants {
                     )*
                 }
             }
+
+            pub fn internal_id(&self) -> &'static str {
+                match self {
+                    $(
+                        IntelliJVariant::$name => $internal_id,
+                    )*
+                }
+            }
+
+            pub fn from_bundle_id(bundle_id: &str) -> Option<IntelliJVariant> {
+                match bundle_id {
+                    $(
+                        $bundle_identifier => Some(IntelliJVariant::$name),
+                    )*
+                    _ => None,
+                }
+            }
         }
     };
 }
 
 intellij_variants! {
-    IdeaUltimate { org: "JetBrains", name: "IDEA Ultimate", bundle: "com.jetbrains.intellij" },
-    IdeaCE { org: "JetBrains", name: "IDEA Community", bundle: "com.jetbrains.intellij.ce" },
-    WebStorm { org: "JetBrains", name: "WebStorm", bundle: "com.jetbrains.WebStorm" },
-    GoLand { org: "JetBrains", name: "GoLand", bundle: "com.jetbrains.goland" },
-    PhpStorm { org: "JetBrains", name: "PhpStorm", bundle: "com.jetbrains.PhpStorm" },
-    PyCharm { org: "JetBrains", name: "PyCharm Professional", bundle: "com.jetbrains.pycharm" },
-    PyCharmCE { org: "JetBrains", name: "PyCharm Community", bundle: "com.jetbrains.pycharm.ce" },
-    AppCode { org: "JetBrains", name: "AppCode", bundle: "com.jetbrains.AppCode" },
-    CLion { org: "JetBrains", name: "CLion", bundle: "com.jetbrains.CLion" },
-    Rider { org: "JetBrains", name: "Rider", bundle: "com.jetbrains.rider" },
-    RubyMine { org: "JetBrains", name: "RubyMine", bundle: "com.jetbrains.rubymine" },
-    DataSpell { org: "JetBrains", name: "DataSpell", bundle: "com.jetbrains.dataspell" },
-    AndroidStudio { org: "Google", name: "Android Studio", bundle: "com.google.android.studio" },
+    IdeaUltimate {
+        org: "JetBrains",
+        internal_id: "idea-ultimate",
+        name: "IDEA Ultimate",
+        bundle: "com.jetbrains.intellij"
+    },
+    IdeaCE {
+        org: "JetBrains",
+        internal_id: "idea-ce",
+        name: "IDEA Community",
+        bundle: "com.jetbrains.intellij.ce"
+    },
+    WebStorm {
+        org: "JetBrains",
+        internal_id: "webstorm",
+        name: "WebStorm",
+        bundle: "com.jetbrains.WebStorm"
+    },
+    GoLand {
+        org: "JetBrains",
+        internal_id: "goland",
+        name: "GoLand",
+        bundle: "com.jetbrains.goland"
+    },
+    PhpStorm {
+        org: "JetBrains",
+        internal_id: "phpstorm",
+        name: "PhpStorm",
+        bundle: "com.jetbrains.PhpStorm"
+    },
+    PyCharm {
+        org: "JetBrains",
+        internal_id: "pycharm",
+        name: "PyCharm Professional",
+        bundle: "com.jetbrains.pycharm"
+    },
+    PyCharmCE {
+        org: "JetBrains",
+        internal_id: "pycharm-ce",
+        name: "PyCharm Community",
+        bundle: "com.jetbrains.pycharm.ce"
+    },
+    AppCode {
+        org: "JetBrains",
+        internal_id: "appcode",
+        name: "AppCode",
+        bundle: "com.jetbrains.AppCode"
+    },
+    CLion {
+        org: "JetBrains",
+        internal_id: "clion",
+        name: "CLion",
+        bundle: "com.jetbrains.CLion"
+    },
+    Rider {
+        org: "JetBrains",
+        internal_id: "rider",
+        name: "Rider",
+        bundle: "com.jetbrains.rider"
+    },
+    RubyMine {
+        org: "JetBrains",
+        internal_id: "rubymine",
+        name: "RubyMine",
+        bundle: "com.jetbrains.rubymine"
+    },
+    DataSpell {
+        org: "JetBrains",
+        internal_id: "dataspell",
+        name: "DataSpell",
+        bundle: "com.jetbrains.dataspell"
+    },
+    AndroidStudio {
+        org: "Google",
+        internal_id: "android-studio",
+        name: "Android Studio",
+        bundle: "com.google.android.studio"
+    },
 }
 
 impl IntelliJVariant {

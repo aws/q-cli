@@ -83,7 +83,7 @@ impl Integration for IntelliJIntegration {
             return Err(Error::Custom("application folder does not exist".into()));
         }
 
-        self.uninstall().await?;
+        let _ = self.uninstall().await;
 
         let plugins_folder = application_folder.join("plugins");
 
