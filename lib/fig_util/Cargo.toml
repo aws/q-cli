@@ -51,4 +51,4 @@ nix = "0.26.1"
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }
-insta = "1.21.1"
+insta = "1.22.0"
