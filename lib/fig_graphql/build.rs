@@ -45,6 +45,7 @@ fn main() {
     schema_path = \"schema/schema.graphql\",
     query_path = \"queries/{query_name}.graphql\",
     response_derives = \"Debug, Clone, PartialEq\",
+    variables_derives = \"Debug, Clone, PartialEq, Default\",
     normalization = \"rust\"
 )]
 pub struct {pascal_case_name};
@@ -60,9 +61,13 @@ pub async fn {snake_case_name}_request(variables: {snake_case_name}::Variables) 
 
 #[macro_export]
 macro_rules! {snake_case_name} {{
-    ($($arg:tt)*) => {{{{
-        let variables = $crate::{snake_case_name}::Variables {{ $($arg)* }};
+    ($( $arg:ident $( : $val:expr )? ),* $(, ..$default:expr )?) => {{{{
+        let variables = $crate::{snake_case_name}::Variables {{ $($arg $(: $val.into())?),* $(, ..$default)? }};
         $crate::{snake_case_name}_request(variables)
+    }}}};
+    // Allow for trailing comma
+    ($( $arg:ident $( : $val:expr )? , )* $( ..$default:expr, )?) => {{{{
+        $crate::{snake_case_name}!($( $arg $(: $val)?),* $(, ..$default)?)
     }}}};
 }}
 

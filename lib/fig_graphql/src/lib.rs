@@ -11,7 +11,7 @@ mod tests {
     #[ignore]
     #[tokio::test]
     async fn plugin() {
-        let plugin = plugin!(name: "ohmyzsh".into()).await;
+        let plugin = plugin!(name: "ohmyzsh").await;
         let authors = plugin.unwrap().plugin.unwrap().authors;
         println!("{:?}", authors);
     }

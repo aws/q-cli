@@ -8,21 +8,32 @@ The `BigInt` scalar type represents non-fractional signed whole numeric values.
 """
 scalar BigInt
 
+input CreateScriptInput {
+  namespace: String
+  script: ScriptFieldsInput
+}
+
+input CreateScriptInvocationInput {
+  commandStderr: String
+  commandStdout: String
+  ctrlC: Boolean
+  executionDuration: UnsignedInt
+  executionStartTime: DateTime
+  exitCode: Int
+  inputs: JSONObject
+
+  """The name of the script"""
+  name: String!
+
+  """The name of the script's namespace"""
+  namespace: String!
+  runtimeVersion: String
+}
+
 """
 The javascript `Date` as string. Type represents date and time as the ISO Date string.
 """
 scalar DateTime
-
-interface IScriptGenerator {
-  type: String!
-}
-
-interface IScriptParameter {
-  description: String
-  displayName: String
-  name: String!
-  type: String!
-}
 
 """
 The `JSON` scalar type represents JSON values as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
@@ -33,6 +44,12 @@ scalar JSON @specifiedBy(url: "http://www.ecma-international.org/publications/fi
 The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf).
 """
 scalar JSONObject @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
+
+type Mutation {
+  createScriptInvocationMutation(input: CreateScriptInvocationInput!): ScriptInvocation!
+  createScriptMutation(input: CreateScriptInput!): Script!
+  updateScriptMutation(input: UpdateScriptInput!): Script!
+}
 
 type Namespace {
   createdAt: DateTime!
@@ -98,32 +115,45 @@ type Query {
 type Script {
   createdAt: DateTime!
   createdBy: OtherUser
-  description: String
-  displayName: String
-  icon: String
+  fields: ScriptFields!
   invocations: [ScriptInvocation!]!
   lastInvokedAt: DateTime
-  name: String!
   namespace: Namespace
-  parameters: [ScriptParameter!]!
-  rules: [[ScriptRule!]!]
-  tags: [String!]!
-  templateRaw: String!
-  templateVersion: Int!
   updatedAt: DateTime!
 }
 
-type ScriptCheckboxParameter implements IScriptParameter {
-  description: String
-  displayName: String
-  name: String!
-  type: String!
-  typeData: ScriptCheckboxTypeData!
+type ScriptCheckboxParameter {
+  falseValueSubstitution: String
+  trueValueSubstitution: String
 }
 
-type ScriptCheckboxTypeData {
-  falseValueSubstitution: String!
-  trueValueSubstitution: String!
+input ScriptCheckboxParameterInput {
+  falseValueSubstitution: String
+  trueValueSubstitution: String
+}
+
+type ScriptFields {
+  description: String
+  displayName: String
+  icon: String
+  name: String!
+  parameters: [ScriptParameter!]
+  rules: [[ScriptRule!]!]
+  tags: [String!]
+  templateRaw: String
+  templateVersion: Int!
+}
+
+input ScriptFieldsInput {
+  description: String
+  displayName: String
+  icon: String
+  name: String!
+  parameters: [ScriptParameterInput!]
+  rules: [[ScriptRuleInput!]!]
+  tags: [String!]
+  templateRaw: String
+  templateVersion: Int!
 }
 
 enum ScriptFileType {
@@ -132,39 +162,93 @@ enum ScriptFileType {
   FolderOnly
 }
 
-union ScriptGenerator = ScriptNamedGenerator | ScriptScriptGenerator
+type ScriptGenerator {
+  named: ScriptNamedGenerator
+  shellScript: ScriptShellScriptGenerator
+  type: ScriptGeneratorType!
+}
+
+input ScriptGeneratorInput {
+  named: ScriptNamedGeneratorInput
+  shellScript: ScriptShellScriptGeneratorInput
+  type: ScriptGeneratorType!
+}
+
+enum ScriptGeneratorType {
+  Named
+  ShellScript
+}
 
 type ScriptInvocation {
+  commandStdout: String
+  ctrlC: Boolean
   executionDuration: BigInt!
   executionStartTime: DateTime!
   exitCode: Float
+  inputs: JSONObject
+  runtimeVersion: String
   script: Script!
   standardError: String
   updatedAt: DateTime!
   user: OtherUser
 }
 
-type ScriptNamedGenerator implements IScriptGenerator {
+type ScriptNamedGenerator {
   name: String!
-  type: String!
 }
 
-union ScriptParameter = ScriptCheckboxParameter | ScriptPathParameter | ScriptSelectorParameter | ScriptTextParameter
+input ScriptNamedGeneratorInput {
+  name: String!
+}
 
-type ScriptPathParameter implements IScriptParameter {
+type ScriptParameter {
+  checkbox: ScriptCheckboxParameter
   description: String
   displayName: String
   name: String!
-  type: String!
-  typeData: ScriptPathTypeData!
+  path: ScriptPathParameter
+  selector: ScriptSelectorParameter
+  text: ScriptTextParameter
+  type: ScriptParameterType!
 }
 
-type ScriptPathTypeData {
+input ScriptParameterInput {
+  checkbox: ScriptCheckboxParameterInput
+  description: String
+  displayName: String
+  name: String!
+  path: ScriptPathParameterInput
+  selector: ScriptSelectorParameterInput
+  text: ScriptTextParameterInput
+  type: ScriptParameterType!
+}
+
+enum ScriptParameterType {
+  Checkbox
+  Path
+  Selector
+  Text
+}
+
+type ScriptPathParameter {
+  extensions: [String!]!
+  fileType: ScriptFileType!
+}
+
+input ScriptPathParameterInput {
   extensions: [String!]!
   fileType: ScriptFileType!
 }
 
 type ScriptRule {
+  inverted: Boolean!
+  key: ScriptRuleKey!
+  predicate: ScriptRulePredicate!
+  specifier: String
+  value: String
+}
+
+input ScriptRuleInput {
   inverted: Boolean!
   key: ScriptRuleKey!
   predicate: ScriptRulePredicate!
@@ -190,34 +274,31 @@ enum ScriptRulePredicate {
   StartsWith
 }
 
-type ScriptScriptGenerator implements IScriptGenerator {
-  script: String!
-  type: String!
-}
-
-type ScriptSelectorParameter implements IScriptParameter {
-  description: String
-  displayName: String
-  name: String!
-  type: String!
-  typeData: ScriptSelectorTypeData!
-}
-
-type ScriptSelectorTypeData {
+type ScriptSelectorParameter {
   generators: [ScriptGenerator!]
   placeholder: String
   suggestions: [String!]
 }
 
-type ScriptTextParameter implements IScriptParameter {
-  description: String
-  displayName: String
-  name: String!
-  type: String!
-  typeData: ScriptTextTypeData!
+input ScriptSelectorParameterInput {
+  generators: [ScriptGeneratorInput!]
+  placeholder: String
+  suggestions: [String!]
 }
 
-type ScriptTextTypeData {
+type ScriptShellScriptGenerator {
+  script: String!
+}
+
+input ScriptShellScriptGeneratorInput {
+  script: String!
+}
+
+type ScriptTextParameter {
+  placeholder: String
+}
+
+input ScriptTextParameterInput {
   placeholder: String
 }
 
@@ -250,7 +331,7 @@ input StringNullableListFilter {
 type Team {
   createdAt: DateTime!
   namespace: Namespace
-  teamMemberships: [TeamMembership!]!
+  teamMemberships: [TeamMembership!]
   updatedAt: DateTime!
 }
 
@@ -260,6 +341,14 @@ type TeamMembership {
   team: Team!
   updatedAt: DateTime!
   user: OtherUser!
+}
+
+"""Integers that will have a value of 0 or more."""
+scalar UnsignedInt
+
+input UpdateScriptInput {
+  namespace: String
+  script: ScriptFieldsInput!
 }
 
 type User {
@@ -272,6 +361,6 @@ type User {
   namespace: Namespace
   primaryEmail: String!
   settings: JSONObject!
-  teamMemberships: [TeamMembership!]!
+  teamMemberships: [TeamMembership!]
   updatedAt: DateTime!
 }

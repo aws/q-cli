@@ -41,7 +41,6 @@ use fig_ipc::{
 };
 #[cfg(unix)]
 use fig_proto::local::UiElement;
-use fig_request::Request;
 use fig_telemetry::{
     TrackEvent,
     TrackEventType,
@@ -51,7 +50,6 @@ use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
 use fig_util::directories;
 #[cfg(unix)]
 use skim::SkimItem;
-use time::format_description::well_known::Rfc3339;
 use time::OffsetDateTime;
 use tokio::io::{
     AsyncReadExt,
@@ -785,12 +783,12 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
     let inputs = args
         .iter()
         .map(|(k, v)| {
-            (k, match v {
+            (k.clone(), match v {
                 Value::String(s) => serde_json::Value::String(s.clone()),
                 Value::Bool { val, .. } => serde_json::Value::Bool(*val),
             })
         })
-        .collect::<HashMap<_, _>>();
+        .collect::<serde_json::Map<_, _>>();
 
     tokio::select! {
         _res = tokio::signal::ctrl_c() => {
@@ -799,56 +797,45 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
             eprintln!();
             eprintln!("{} script cancelled", format!("@{}/{}", script.namespace, script.name).magenta().bold());
 
-            let execution_start_time = start_time.format(&Rfc3339).ok();
-            let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
-
+            let execution_duration = u64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
             let stdout = stdout_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
             let stderr = stderr_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
 
-
-
-            Request::post(format!("/workflows/{}/invocations", script.name))
-                .body(serde_json::json!({
-                    "namespace": script.namespace,
-                    "executionStartTime": execution_start_time,
-                    "executionDuration": execution_duration,
-                    "ctrlC": true,
-                    "runtimeVersion": runtime_version.await.ok().flatten(),
-                    "inputs": script.invocation_track_inputs.then_some(inputs),
-                    "stdout": script.invocation_track_stdout.then_some(stdout).flatten(),
-                    "stderr": script.invocation_track_stderr.then_some(stderr).flatten(),
-                }))
-                .auth()
-                .send()
-                .await
-                .ok();
+            fig_graphql::create_script_invocation!(
+                name: script.name.clone(),
+                namespace: script.namespace.clone(),
+                execution_start_time: Some(start_time.into()),
+                execution_duration: execution_duration,
+                command_stdout: script.invocation_track_stdout.then_some(stdout).flatten(),
+                command_stderr: script.invocation_track_stderr.then_some(stderr).flatten(),
+                runtime_version: runtime_version.await.ok().flatten(),
+                inputs: script.invocation_track_inputs.then_some(inputs),
+                ctrl_c: true,
+                ..Default::default(),
+            ).await.ok();
 
             std::process::exit(130);
         },
         res = child.wait() => {
-            let exit_code = res.ok().and_then(|output| output.code());
+            let exit_code = res.ok().and_then(|output| output.code()).map(|code| code as i64);
 
-            let execution_start_time = start_time.format(&Rfc3339).ok();
-            let execution_duration = i64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
-
+            let execution_duration = u64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
             let stdout = stdout_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
             let stderr = stderr_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
 
-            Request::post(format!("/workflows/{}/invocations", script.name))
-                .body(serde_json::json!({
-                    "namespace": script.namespace,
-                    "executionStartTime": execution_start_time,
-                    "executionDuration": execution_duration,
-                    "exitCode": exit_code,
-                    "runtimeVersion": runtime_version.await.ok().flatten(),
-                    "inputs": script.invocation_track_inputs.then_some(inputs),
-                    "stdout": script.invocation_track_stdout.then_some(stdout).flatten(),
-                    "stderr": script.invocation_track_stderr.then_some(stderr).flatten(),
-                }))
-                .auth()
-                .send()
-                .await
-                .ok();
+            fig_graphql::create_script_invocation!(
+                name: script.name.clone(),
+                namespace: script.namespace.clone(),
+                execution_start_time: Some(start_time.into()),
+                execution_duration: execution_duration,
+                command_stdout: script.invocation_track_stdout.then_some(stdout).flatten(),
+                command_stderr: script.invocation_track_stderr.then_some(stderr).flatten(),
+                runtime_version: runtime_version.await.ok().flatten(),
+                inputs: script.invocation_track_inputs.then_some(inputs),
+                exit_code,
+                ..Default::default(),
+            ).await.ok();
+
             Ok(())
         }
     }

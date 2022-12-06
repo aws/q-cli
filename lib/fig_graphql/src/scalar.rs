@@ -10,5 +10,13 @@ pub type JsonObject = serde_json::Map<String, Json>;
 #[serde(transparent)]
 pub struct DateTime(#[serde(with = "time::serde::iso8601")] time::OffsetDateTime);
 
+impl From<time::OffsetDateTime> for DateTime {
+    fn from(dt: time::OffsetDateTime) -> Self {
+        Self(dt)
+    }
+}
+
 /// Arbitrary precision is enabled for `serde_json` so this will work
 pub type BigInt = serde_json::Number;
+
+pub type UnsignedInt = u64;
