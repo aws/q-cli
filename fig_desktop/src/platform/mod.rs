@@ -3,7 +3,7 @@ use std::sync::Arc;
 
 use wry::application::dpi::Position;
 
-use crate::icons::{
+use crate::protocol::icons::{
     AssetSpecifier,
     ProcessedAsset,
 };

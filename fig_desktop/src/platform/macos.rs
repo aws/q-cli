@@ -91,7 +91,7 @@ use crate::event::{
     WindowEvent,
     WindowPosition,
 };
-use crate::icons::{
+use crate::protocol::icons::{
     AssetKind,
     AssetSpecifier,
     ProcessedAsset,

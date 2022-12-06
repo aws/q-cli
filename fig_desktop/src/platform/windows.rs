@@ -65,13 +65,13 @@ use crate::event::{
     RelativeDirection,
     WindowEvent,
 };
-use crate::icons::{
-    AssetSpecifier,
-    ProcessedAsset,
-};
 use crate::platform::{
     PlatformBoundEvent,
     PlatformWindow,
+};
+use crate::protocol::icons::{
+    AssetSpecifier,
+    ProcessedAsset,
 };
 use crate::utils::Rect;
 use crate::webview::window::WindowId;

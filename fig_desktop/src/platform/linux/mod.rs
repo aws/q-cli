@@ -33,11 +33,11 @@ use wry::application::dpi::{
 
 use self::x11::X11State;
 use super::PlatformBoundEvent;
-use crate::icons::{
+use crate::platform::linux::sway::SwayState;
+use crate::protocol::icons::{
     AssetSpecifier,
     ProcessedAsset,
 };
-use crate::platform::linux::sway::SwayState;
 use crate::webview::window::WindowId;
 use crate::webview::FigIdMap;
 use crate::{

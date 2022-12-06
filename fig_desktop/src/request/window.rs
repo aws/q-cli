@@ -31,19 +31,25 @@ pub async fn position_window(
 ) -> RequestResult {
     debug!(?request, %window_id, "Position Window Request");
 
+    let size = request.size.as_ref().ok_or("PositionWindowRequest must have a size")?;
+    let is_hide = size.width == 1.0 || size.height == 1.0;
+
     if window_id == AUTOCOMPLETE_ID
+        && !is_hide
         && figterm_state
             .most_recent()
             .and_then(|session| session.context.as_ref().map(|context| context.preexec()))
             .unwrap_or(false)
     {
-        return RequestResult::error("Cannot position autocomplete window while preexec is active");
+        return Err("Cannot position autocomplete window while preexec is active".into());
     }
 
     let dry_run = request.dryrun.unwrap_or(false);
-    let anchor = request.anchor.as_ref().expect("missing anchor field");
+    let anchor = request
+        .anchor
+        .as_ref()
+        .ok_or("PositionWindowRequest must have an anchor")?;
     let autocomplete_padding = 5.0;
-    let size = request.size.as_ref().expect("missing size field");
 
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
 
@@ -61,11 +67,7 @@ pub async fn position_window(
     if !dry_run {
         events.push(
             // Workaround to nonapplicably zero sized windows
-            if size.width == 1.0 || size.height == 1.0 {
-                WindowEvent::Hide
-            } else {
-                WindowEvent::Show
-            },
+            if is_hide { WindowEvent::Hide } else { WindowEvent::Show },
         );
     }
 
@@ -83,7 +85,7 @@ pub async fn position_window(
                 is_clipped: Some(is_clipped),
             }),
         )),
-        None => RequestResult::error("unable to determine is_above and is_clipped"),
+        None => Err("unable to determine is_above and is_clipped".into()),
     }
 }
 

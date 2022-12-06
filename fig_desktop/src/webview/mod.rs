@@ -67,6 +67,11 @@ use crate::platform::{
     PlatformBoundEvent,
     PlatformState,
 };
+use crate::protocol::{
+    figapp,
+    figspec,
+    icons,
+};
 use crate::request::api_request;
 use crate::tray::{
     self,
@@ -75,7 +80,6 @@ use crate::tray::{
 };
 use crate::{
     file_watcher,
-    icons,
     local_ipc,
     secure_ipc,
     utils,
@@ -686,8 +690,8 @@ pub fn build_autocomplete(
     let proxy = event_loop.create_proxy();
 
     let webview = WebViewBuilder::new(window)?
-        .with_web_context(web_context)
         .with_url(autocomplete::url().as_str())?
+        .with_web_context(web_context)
         .with_ipc_handler(move |_window, payload| {
             proxy
                 .send_event(Event::WindowEvent {
@@ -699,6 +703,8 @@ pub fn build_autocomplete(
                 .unwrap();
         })
         .with_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
+        .with_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
+        .with_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
         .with_devtools(true)
         .with_transparent(true)
         .with_initialization_script(&javascript_init())
@@ -706,7 +712,7 @@ pub fn build_autocomplete(
             // Main domain
             r"autocomplete\.fig\.io$",
             // Dev domains
-            r"^localhost$",
+            r"localhost$",
             r"^127\.0\.0\.1$",
             r"-withfig\.vercel\.app$",
         ]))
@@ -887,6 +893,19 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
             }
         }
     });
+}
+
+#[cfg(target_os = "macos")]
+pub fn reachable(host: impl Into<Vec<u8>>) -> bool {
+    let Ok(host_cstr) = std::ffi::CString::new(host) else {
+        return false
+    };
+
+    let Some(Ok(flags)) = system_configuration::network_reachability::SCNetworkReachability::from_host(&host_cstr).map(|r| r.reachability()) else {
+        return false
+    };
+
+    flags.contains(system_configuration::network_reachability::ReachabilityFlags::REACHABLE)
 }
 
 #[cfg(target_os = "macos")]

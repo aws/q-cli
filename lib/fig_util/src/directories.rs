@@ -103,6 +103,25 @@ pub fn fig_data_dir() -> Result<PathBuf> {
     }
 }
 
+/// The fig cache directory
+///
+/// - Linux: `$XDG_CACHE_HOME/fig` or `$HOME/.cache/fig`
+/// - MacOS: `$HOME/Library/Caches/fig`
+/// - Windows: `%LOCALAPPDATA%/Fig/cache`
+pub fn cache_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_CACHE_DIR");
+
+    cfg_if::cfg_if! {
+        if #[cfg(unix)] {
+            Ok(dirs::cache_dir()
+                .ok_or(DirectoryError::NoHomeDirectory)?
+                .join("fig"))
+        } else if #[cfg(windows)] {
+            Ok(fig_dir()?.join("cache"))
+        }
+    }
+}
+
 #[cfg(unix)]
 pub fn root_socket_dir() -> &'static Path {
     Path::new("/var/tmp/fig")
@@ -248,7 +267,7 @@ pub fn utc_backup_dir() -> Result<PathBuf> {
 /// The directory where cached scripts are stored
 pub fn scripts_cache_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SCRIPTS_CACHE_DIR");
-    Ok(fig_dir()?.join("cache").join("scripts"))
+    Ok(cache_dir()?.join("scripts"))
 }
 
 /// The desktop app socket path

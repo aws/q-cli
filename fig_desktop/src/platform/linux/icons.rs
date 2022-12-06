@@ -10,7 +10,7 @@ use tracing::{
     warn,
 };
 
-use crate::icons::{
+use crate::protocol::icons::{
     process_asset,
     ProcessedAsset,
 };
