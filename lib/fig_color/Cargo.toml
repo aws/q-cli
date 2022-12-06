@@ -8,7 +8,6 @@ version.workspace = true
 
 [dependencies]
 bitflags = "1"
-heapless = "0.7.16"
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }

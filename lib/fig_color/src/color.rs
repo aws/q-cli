@@ -163,16 +163,13 @@ fn try_parse_rgb(name: &str) -> Option<Color> {
         rgb: [0, 0, 0],
     };
 
-    let mut chars: heapless::Vec<char, 6> = heapless::Vec::new();
-    for c in name.chars() {
-        chars.push(c).ok()?;
-    }
+    let name = name.as_bytes();
 
-    match chars.len() {
+    match name.len() {
         // Format: FA3
         3 => {
-            for i in 0..3 {
-                let val = chars[i].to_digit(16)? as u8;
+            for (i, c) in name.iter().enumerate().take(3) {
+                let val = char::from(*c).to_digit(16)? as u8;
                 color.rgb[i] = val * 16 + val;
             }
             Some(color)
@@ -180,8 +177,8 @@ fn try_parse_rgb(name: &str) -> Option<Color> {
         // Format: F3A035
         6 => {
             for i in 0..3 {
-                let val_hi = chars[i * 2].to_digit(16)? as u8;
-                let val_low = chars[i * 2 + 1].to_digit(16)? as u8;
+                let val_hi = char::from(name[i * 2]).to_digit(16)? as u8;
+                let val_low = char::from(name[i * 2 + 1]).to_digit(16)? as u8;
                 color.rgb[i] = val_hi * 16 + val_low;
             }
             Some(color)
