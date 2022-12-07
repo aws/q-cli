@@ -125,9 +125,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
     let app = match url_parts.authority {
         Some(authority) => match authority.as_str().rsplit_once('.') {
             Some((subdomain, "localhost")) => {
-                // Some(format!("{subdomain}.fig.io").parse().unwrap())
-                // TODO: remove this when branch is merged
-                url_parts.authority = Some("autocomplete-6eickbqei-withfig.vercel.app".parse().unwrap());
+                url_parts.authority = Some(format!("{subdomain}.fig.io").parse().unwrap());
                 subdomain.to_owned()
             },
             _ => {
