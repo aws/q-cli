@@ -29,6 +29,7 @@ mod tweet;
 mod uninstall;
 mod update;
 mod user;
+mod wrapped;
 
 use clap::{
     CommandFactory,
@@ -200,7 +201,8 @@ pub enum CliRootCommands {
     HelpAll,
     /// Open the fig dashboard
     Dashboard,
-
+    /// Show fig wrapped
+    Wrapped(wrapped::WrappedArgs),
     /// (LEGACY) Old hook that was being used somewhere
     #[command(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -360,7 +362,7 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::Dashboard => launch_dashboard().await,
-
+                CliRootCommands::Wrapped(args) => args.execute().await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
                     Ok(())

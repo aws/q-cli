@@ -1729,6 +1729,7 @@ dependencies = [
  "fig_daemon",
  "fig_diagnostic",
  "fig_graphql",
+ "fig_history",
  "fig_install",
  "fig_integrations",
  "fig_ipc",

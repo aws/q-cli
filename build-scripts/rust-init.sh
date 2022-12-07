@@ -3,6 +3,7 @@ set -ex
 
 rustflags=(
   "-C force-frame-pointers=yes"
+  "--cfg unsound_local_offset"
 )
 
 if [[ ! -z "$LINKER" ]]; then

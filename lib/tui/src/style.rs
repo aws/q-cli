@@ -233,6 +233,13 @@ impl Style {
         self.spacing_left() + self.spacing_right()
     }
 
+    pub fn with_border_width(&mut self, width: f64) -> &mut Self {
+        self.with_border_left_width(width)
+            .with_border_right_width(width)
+            .with_border_top_width(width)
+            .with_border_bottom_width(width)
+    }
+
     pub fn with_border_color(&mut self, color: ColorAttribute) -> &mut Self {
         self.with_border_top_color(color)
             .with_border_bottom_color(color)

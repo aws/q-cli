@@ -1,0 +1,4 @@
+[build]
+# We pass unsound local offset since we cannot get utc offset in multithreaded environments otherwise
+# It's VERY IMPORTANT that we don't modify the TZ environment variable
+rustflags = ["--cfg", "unsound_local_offset"]

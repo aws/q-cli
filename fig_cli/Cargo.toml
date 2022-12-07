@@ -38,6 +38,7 @@ fig_api_client = { path = "../lib/fig_api_client" }
 fig_daemon = { path = "../lib/fig_daemon" }
 fig_diagnostic = { path = "../lib/fig_diagnostic" }
 fig_graphql = { path = "../lib/fig_graphql" }
+fig_history = { path = "../lib/fig_history" }
 fig_install = { path = "../lib/fig_install" }
 fig_integrations = { path = "../lib/fig_integrations" }
 fig_ipc = { path = "../lib/fig_ipc" }
