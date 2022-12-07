@@ -44,7 +44,24 @@ pub async fn update(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -
 
 pub async fn delete(key: impl AsRef<str>) -> Result<()> {
     fig_settings::settings::remove_value(key.as_ref()).ok();
-    fig_request::Request::post(format!("/settings/update/{}", key.as_ref()))
+    fig_request::Request::delete(format!("/settings/update/{}", key.as_ref()))
+        .auth()
+        .send()
+        .await?;
+    Ok(())
+}
+
+pub async fn delete_bulk<I, K>(keys: I) -> Result<()>
+where
+    I: IntoIterator<Item = K> + Clone,
+    K: AsRef<str>,
+{
+    for key in keys.clone() {
+        fig_settings::settings::remove_value(key.as_ref()).ok();
+    }
+
+    fig_request::Request::delete("/settings/update")
+        .body(&json!({ "settings": keys.into_iter().map(|key| key.as_ref().to_owned()).collect::<Vec<_>>() }))
         .auth()
         .send()
         .await?;

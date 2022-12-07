@@ -169,23 +169,15 @@ impl SettingsArgs {
                             },
                             1 => {
                                 println!("Removing {:?}", keys_to_remove[0]);
+                                settings::delete(keys_to_remove[0]).await?;
                             },
                             _ => {
                                 println!("Removing:");
                                 for key in &keys_to_remove {
                                     println!("  - {key}");
                                 }
+                                settings::delete_bulk(&keys_to_remove).await?;
                             },
-                        }
-
-                        let futures = keys_to_remove.into_iter().map(settings::delete).collect::<Vec<_>>();
-
-                        let join = futures::future::join_all(futures).await;
-
-                        for result in join {
-                            if let Err(err) = result {
-                                println!("{err}");
-                            }
                         }
 
                         Ok(())
