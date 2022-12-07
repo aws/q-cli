@@ -569,21 +569,33 @@ impl Integration for DotfileShellIntegration {
 
     async fn is_installed(&self) -> Result<()> {
         let dotfile = self.dotfile_path();
+
         let filtered_contents: String = match std::fs::read_to_string(&dotfile) {
             // Remove comments and empty lines.
-            Ok(contents) => Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into(),
+            Ok(contents) => {
+                // Check for existence of ignore flag
+                if Regex::new(r"(?mi)^\s*#\s*fig ignore\s?.*$")
+                    .unwrap()
+                    .is_match(&contents)
+                {
+                    return Ok(());
+                }
+
+                Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into()
+            },
             _ => {
                 return Err(Error::FileDoesNotExist(dotfile.into()));
             },
         };
+        let filtered_contents = filtered_contents.trim();
 
         if self.pre {
-            self.matches_text(&filtered_contents, When::Pre)?;
+            self.matches_text(filtered_contents, When::Pre)?;
             self.script_integration(When::Pre)?.is_installed().await?;
         }
 
         if self.post {
-            self.matches_text(&filtered_contents, When::Post)?;
+            self.matches_text(filtered_contents, When::Post)?;
             self.script_integration(When::Post)?.is_installed().await?;
         }
 
