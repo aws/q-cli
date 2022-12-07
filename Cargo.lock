@@ -858,8 +858,7 @@ dependencies = [
 [[package]]
 name = "console"
 version = "0.15.2"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c050367d967ced717c04b65d8c619d863ef9292ce0c5760028655a2fb298718c"
+source = "git+https://github.com/withfig/console#561b29fb6d11fce5b7035c356c153330649cc1c7"
 dependencies = [
  "encode_unicode",
  "lazy_static",
@@ -2246,8 +2245,10 @@ dependencies = [
  "bytes",
  "cfg-if 1.0.0",
  "clap",
+ "console",
  "crossterm",
  "dashmap",
+ "dialoguer",
  "fig_api_client",
  "fig_color",
  "fig_history",

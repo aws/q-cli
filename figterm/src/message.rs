@@ -46,6 +46,7 @@ use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
     shell_state_to_context,
+    MainLoopEvent,
     EXECUTE_ON_NEW_CMD,
     EXPECTED_BUFFER,
     INSERTION_LOCKED_AT,
@@ -173,6 +174,7 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
 /// Process the inner figterm request enum, shared between local and secure
 pub async fn process_figterm_request(
     figterm_request: FigtermRequest,
+    main_loop_tx: Sender<MainLoopEvent>,
     term: &Term<EventHandler>,
     pty_master: &mut Box<dyn AsyncMasterPty + Send + Sync>,
     key_interceptor: &mut KeyInterceptor,
@@ -294,29 +296,36 @@ pub async fn process_figterm_request(
             }
             Ok(None)
         },
+        FigtermRequest::NotifySshSessionStarted(notification) => {
+            main_loop_tx.send(MainLoopEvent::PromptSSH(notification.uuid)).ok();
+            Ok(None)
+        },
     }
 }
 
 /// Process a figterm request message
 pub async fn process_figterm_message(
     figterm_request_message: FigtermRequestMessage,
+    main_loop_tx: Sender<MainLoopEvent>,
     response_tx: Sender<FigtermResponseMessage>,
     term: &Term<EventHandler>,
     pty_master: &mut Box<dyn AsyncMasterPty + Send + Sync>,
     key_interceptor: &mut KeyInterceptor,
 ) -> Result<()> {
     match figterm_request_message.request {
-        Some(request) => match process_figterm_request(request, term, pty_master, key_interceptor).await {
-            Ok(Some(response)) => {
-                let response_message = FigtermResponseMessage {
-                    response: Some(response),
-                };
-                if let Err(err) = response_tx.send_async(response_message).await {
-                    error!(%err, "Failed sending request response");
-                }
-            },
-            Ok(None) => {},
-            Err(err) => error!(%err, "Failed to process figterm message"),
+        Some(request) => {
+            match process_figterm_request(request, main_loop_tx, term, pty_master, key_interceptor).await {
+                Ok(Some(response)) => {
+                    let response_message = FigtermResponseMessage {
+                        response: Some(response),
+                    };
+                    if let Err(err) = response_tx.send_async(response_message).await {
+                        error!(%err, "Failed sending request response");
+                    }
+                },
+                Ok(None) => {},
+                Err(err) => error!(%err, "Failed to process figterm message"),
+            }
         },
         None => warn!("Figterm message with no request"),
     }
@@ -348,6 +357,7 @@ async fn send_figterm_response_hostbound(
 
 pub async fn process_secure_message(
     clientbound_message: Clientbound,
+    main_loop_tx: Sender<MainLoopEvent>,
     response_tx: Sender<Hostbound>,
     term: &Term<EventHandler>,
     pty_master: &mut Box<dyn AsyncMasterPty + Send + Sync>,
@@ -371,8 +381,14 @@ pub async fn process_secure_message(
             match request.request {
                 Some(Request::InsertText(request)) => {
                     send_figterm_response_hostbound(
-                        process_figterm_request(FigtermRequest::InsertText(request), term, pty_master, key_interceptor)
-                            .await?,
+                        process_figterm_request(
+                            FigtermRequest::InsertText(request),
+                            main_loop_tx,
+                            term,
+                            pty_master,
+                            key_interceptor,
+                        )
+                        .await?,
                         nonce,
                         &response_tx,
                     )
@@ -380,8 +396,14 @@ pub async fn process_secure_message(
                 },
                 Some(Request::Intercept(request)) => {
                     send_figterm_response_hostbound(
-                        process_figterm_request(FigtermRequest::Intercept(request), term, pty_master, key_interceptor)
-                            .await?,
+                        process_figterm_request(
+                            FigtermRequest::Intercept(request),
+                            main_loop_tx,
+                            term,
+                            pty_master,
+                            key_interceptor,
+                        )
+                        .await?,
                         nonce,
                         &response_tx,
                     )
@@ -391,6 +413,7 @@ pub async fn process_secure_message(
                     send_figterm_response_hostbound(
                         process_figterm_request(
                             FigtermRequest::Diagnostics(request),
+                            main_loop_tx,
                             term,
                             pty_master,
                             key_interceptor,
@@ -405,6 +428,7 @@ pub async fn process_secure_message(
                     send_figterm_response_hostbound(
                         process_figterm_request(
                             FigtermRequest::InsertOnNewCmd(request),
+                            main_loop_tx,
                             term,
                             pty_master,
                             key_interceptor,

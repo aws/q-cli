@@ -53,7 +53,7 @@ pub enum Blocking {
     Wait,
 }
 
-type InputEventResult = Vec<Result<(Option<Bytes>, InputEvent)>>;
+pub type InputEventResult = Vec<Result<(Option<Bytes>, InputEvent)>>;
 
 /// `Terminal` abstracts over some basic terminal capabilities.
 /// If the `set_raw_mode` or `set_cooked_mode` functions are used in

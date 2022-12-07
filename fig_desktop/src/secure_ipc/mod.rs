@@ -133,7 +133,7 @@ async fn handle_secure_ipc(
                     trace!(?message, "Received secure message");
                     if let Some(response) = match message.packet {
                         Some(hostbound::Packet::Handshake(handshake)) => {
-                            if session_id.is_some() {
+                            let result = if session_id.is_some() {
                                 // maybe they missed our response, but they should've been listening harder
                                 Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                     success: false,
@@ -194,7 +194,27 @@ async fn handle_secure_ipc(
                                         success: true,
                                     }))
                                 }
+                            };
+
+                            if matches!(result, Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success: true }))) {
+                                if let Some(parent_id) = handshake.parent_id {
+                                    let sessions = figterm_state.linked_sessions.lock();
+                                    for session in sessions.iter() {
+                                        if let Some(ref writer) = session.writer {
+                                            let notification = clientbound::Packet::NotifyChildSessionStarted(
+                                                clientbound::NotifyChildSessionStarted { parent_id: parent_id.clone() }
+                                            );
+                                            writer.send(
+                                                Clientbound {
+                                                    packet: Some(notification)
+                                                }
+                                            ).ok();
+                                        }
+                                    }
+                                }
                             }
+
+                            result
                         },
                         Some(hostbound::Packet::Request(hostbound::Request { request: Some(request), nonce })) => {
                             if matches!(

@@ -1,6 +1,8 @@
 use std::fmt::Display;
 
 use fig_integrations::shell::ShellExt;
+use fig_integrations::ssh::SshIntegration;
+use fig_integrations::Integration;
 use fig_proto::fig::install_response::{
     InstallationStatus,
     Response,
@@ -74,6 +76,21 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     },
                 }
             }
+
+            match SshIntegration::new() {
+                Ok(ssh_integration) => {
+                    if let Err(err) = match action {
+                        InstallAction::Install => ssh_integration.install().await,
+                        InstallAction::Uninstall => ssh_integration.uninstall().await,
+                        InstallAction::Status => ssh_integration.is_installed().await,
+                    } {
+                        errs.push(format!("ssh: {err}"));
+                    }
+                },
+                Err(err) => {
+                    errs.push(format!("ssh: {err}"));
+                },
+            };
 
             match action {
                 InstallAction::Install | InstallAction::Uninstall => integration_result(match &errs[..] {

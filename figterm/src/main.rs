@@ -42,7 +42,12 @@ use bytes::BytesMut;
 use cfg_if::cfg_if;
 use clap::Parser;
 use cli::Cli;
+use console::{
+    Key,
+    Term as ConsoleTerm,
+};
 use crossterm::style::Stylize;
+use dialoguer::theme::ColorfulTheme;
 use fig_api_client::drip_campaign::DripCampaign;
 use fig_proto::local::{
     self,
@@ -64,7 +69,10 @@ use fig_util::process_info::{
     PidExt,
 };
 use fig_util::Terminal as FigTerminal;
-use flume::Sender;
+use flume::{
+    Receiver,
+    Sender,
+};
 #[cfg(unix)]
 use nix::unistd::execvp;
 use once_cell::sync::Lazy;
@@ -123,6 +131,7 @@ use crate::pty::{
     CommandBuilder,
 };
 use crate::term::{
+    InputEventResult,
     SystemTerminal,
     Terminal,
 };
@@ -145,10 +154,18 @@ static USER_ENABLED_SHELLS: Lazy<Vec<String>> = Lazy::new(|| {
         .unwrap_or_default()
 });
 
+pub fn dialoguer_theme() -> ColorfulTheme {
+    ColorfulTheme {
+        prompt_prefix: dialoguer::console::style("?".into()).for_stderr().magenta(),
+        ..ColorfulTheme::default()
+    }
+}
+
 pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
     UnlockInterception,
     SetImmediateMode(bool),
+    PromptSSH(String),
     SetCsiU,
     UnsetCsiU,
 }
@@ -200,6 +217,125 @@ fn get_cursor_coordinates(terminal: &mut dyn Terminal) -> Option<TerminalCursorC
             return None;
         }
     }
+}
+
+async fn should_install_remote_ssh_integration(
+    uuid: String,
+    main_loop_tx: Sender<MainLoopEvent>,
+    secure_receiver: Receiver<fig_proto::secure::Clientbound>,
+    secure_sender: Sender<Hostbound>,
+    term: &Term<EventHandler>,
+    pty_master: &mut Box<dyn crate::pty::AsyncMasterPty + Send + Sync>,
+    key_interceptor: &mut KeyInterceptor,
+) -> Option<bool> {
+    use fig_proto::secure::clientbound;
+
+    // Leaving child shell, begin queueing input.
+    let remote_install_setting = fig_settings::settings::get_string_or("ssh.install-remote-integration", "ask".into());
+
+    if remote_install_setting == "never" {
+        return Some(false);
+    }
+
+    let prompt_timeout: u64 = fig_settings::settings::get_int_or("ssh.remote-prompt-timeout", 2000)
+        .try_into()
+        .unwrap_or(2000);
+
+    // Wait for child ssh session to connect to local desktop instance.
+    let got_child_connection = tokio::time::timeout(tokio::time::Duration::from_millis(prompt_timeout), async {
+        loop {
+            if let Ok(msg) = secure_receiver.recv_async().await {
+                if let Some(clientbound::Packet::NotifyChildSessionStarted(clientbound::NotifyChildSessionStarted {
+                    parent_id,
+                })) = msg.packet
+                {
+                    if parent_id == uuid {
+                        return true;
+                    }
+                } else {
+                    process_secure_message(
+                        msg,
+                        main_loop_tx.clone(),
+                        secure_sender.clone(),
+                        term,
+                        pty_master,
+                        key_interceptor,
+                    )
+                    .await
+                    .ok();
+                }
+            }
+        }
+    })
+    .await
+    .is_ok();
+
+    if got_child_connection {
+        return Some(false);
+    }
+
+    if remote_install_setting == "always" {
+        return Some(true);
+    }
+
+    None
+}
+
+async fn prompt_remote_integration_install(
+    console_term: ConsoleTerm,
+    console_term_key_tx: Sender<Key>,
+    terminal: &mut SystemTerminal,
+    input_rx: Receiver<InputEventResult>,
+) -> Result<bool> {
+    let (stop_tx, stop_rx) = flume::unbounded();
+
+    tokio::spawn(async move {
+        loop {
+            let rx = stop_rx.clone();
+            let term_key_tx = console_term_key_tx.clone();
+            select! {
+                biased;
+                res = input_rx.recv_async() => {
+                    if let Ok(events) = res {
+                        for event in events.into_iter().flatten() {
+                            if let (_, InputEvent::Key(event)) = event {
+                                let key: Key = event.key.into();
+                                term_key_tx.send(key).ok();
+                            }
+                        }
+                    }
+                }
+                _ = rx.recv_async() => {
+                    break;
+            }
+            }
+        }
+    });
+
+    terminal.set_cooked_mode()?;
+    let should_install = dialoguer::Select::with_theme(&dialoguer_theme())
+        .with_prompt("Do you want to install Fig on your remote machine?")
+        .items(&["Always (Don't ask again)", "Yes", "No", "Never (Don't ask again)"])
+        .default(1)
+        .interact_on_opt(&console_term)?;
+
+    stop_tx.send(()).ok();
+    terminal.set_raw_mode()?;
+
+    let result = match should_install {
+        Some(0) => {
+            fig_settings::settings::set_value("ssh.install-remote-integration", "always").ok();
+            true
+        },
+        Some(1) => true,
+        Some(3) => {
+            fig_settings::settings::set_value("ssh.install-remote-integration", "never").ok();
+            false
+        },
+        Some(_) | None => false,
+    };
+
+    Ok(result)
 }
 
 fn can_send_edit_buffer<T>(term: &Term<T>) -> bool
@@ -422,6 +558,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     let session_id = uuid::Uuid::new_v4().to_string();
     std::env::set_var("FIGTERM_SESSION_ID", &session_id);
 
+    let parent_id = std::env::var("FIG_PARENT").ok();
+
     let mut terminal = SystemTerminal::new_from_stdio()?;
     let screen_size = terminal.get_screen_size()?;
 
@@ -507,6 +645,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         // Spawn thread to handle secure ipc
         let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_secure_ipc(
             session_id.clone(),
+            parent_id,
             main_loop_tx.clone()
         ).await?;
 
@@ -515,7 +654,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
-        let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx);
+        let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx.clone());
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1, session_id);
 
         #[cfg(target_os = "windows")]
@@ -569,6 +708,23 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let mut csi_u_set = false;
 
+        let (console_term_key_tx, console_term_key_rx) = flume::unbounded();
+        let console_term = ConsoleTerm::stderr_with_read_key(Box::new(move || {
+            warn!("Waiting for a key on stdin....");
+            let mut terminal_inner = SystemTerminal::new_from_stdio();
+            if let Ok(ref mut terminal_inner) = terminal_inner {
+                terminal_inner.set_raw_mode().ok();
+            }
+            let key = console_term_key_rx.recv()
+                .map_err(|e| {
+                    std::io::Error::new(std::io::ErrorKind::Other, e)
+                });
+            if let Ok(ref mut terminal_inner) = terminal_inner {
+                terminal_inner.set_cooked_mode().ok();
+            }
+            key
+        }));
+
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
                 trace!("Has seen prompt and first time");
@@ -615,6 +771,34 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     stdout.flush().await?;
                                     csi_u_set = false;
                                 },
+                                MainLoopEvent::PromptSSH(uuid) => {
+                                    let should_install = should_install_remote_ssh_integration(
+                                        uuid,
+                                        main_loop_tx.clone(),
+                                        secure_receiver.clone(),
+                                        secure_sender.clone(),
+                                        &term,
+                                        &mut master,
+                                        &mut key_interceptor,
+                                    ).await;
+
+                                    let should_install = match should_install {
+                                        Some(val) => val,
+                                        None => {
+                                            prompt_remote_integration_install(
+                                                console_term.clone(),
+                                                console_term_key_tx.clone(),
+                                                &mut terminal,
+                                                input_rx.clone(),
+                                            ).await.unwrap_or(false)
+                                        }
+                                    };
+
+                                    if should_install {
+                                        let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
+                                        master.write_all(installation_command.as_bytes()).await?;
+                                    }
+                                }
                             }
                         }
                         Err(err) => warn!("Failed to recv: {err}"),
@@ -761,7 +945,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                         Ok(0) => {
                             trace!("EOF from master");
                             break 'select_loop Ok(());
-                        }
+                        },
                         Ok(size) => {
                             trace!("Read {size} bytes from master");
 
@@ -806,6 +990,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                             trace!("Received message from socket: {message:?}");
                             process_secure_message(
                                 message,
+                                main_loop_tx.clone(),
                                 secure_sender.clone(),
                                 &term,
                                 &mut master,
@@ -824,6 +1009,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                             debug!("Received message from figterm listener: {message:?}");
                             process_figterm_message(
                                 message,
+                                main_loop_tx.clone(),
                                 sender.clone(),
                                 &term,
                                 &mut master,

@@ -16,10 +16,15 @@ message Clientbound {
     google.protobuf.Empty ping = 101;
     Request request = 102;
     Response response = 103;
+    NotifyChildSessionStarted notify_child_session_started = 104;
   }
 
   message HandshakeResponse {
     bool success = 1;
+  }
+
+  message NotifyChildSessionStarted {
+    string parent_id = 1;
   }
 
   message Request {
@@ -84,6 +89,8 @@ message Hostbound {
   message Handshake {
     string id = 1;
     string secret = 2;
+
+    optional string parent_id = 3;
   }
 
   message Request {

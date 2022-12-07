@@ -236,6 +236,43 @@ pub enum KeyCode {
     InternalPasteEnd,
 }
 
+impl From<KeyCode> for console::Key {
+    fn from(k: KeyCode) -> Self {
+        use console::Key;
+
+        match k {
+            KeyCode::Char(c) => Key::Char(c),
+
+            KeyCode::Backspace => Key::Backspace,
+            KeyCode::Tab => Key::Tab,
+            KeyCode::Enter => Key::Enter,
+            KeyCode::Shift => Key::Shift,
+            KeyCode::Escape => Key::Escape,
+            KeyCode::LeftShift => Key::Shift,
+            KeyCode::RightShift => Key::Shift,
+            KeyCode::Alt => Key::Alt,
+            KeyCode::LeftAlt => Key::Alt,
+            KeyCode::RightAlt => Key::Alt,
+            KeyCode::PageUp => Key::PageUp,
+            KeyCode::PageDown => Key::PageDown,
+            KeyCode::End => Key::End,
+            KeyCode::Home => Key::Home,
+            KeyCode::LeftArrow => Key::ArrowLeft,
+            KeyCode::RightArrow => Key::ArrowRight,
+            KeyCode::UpArrow => Key::ArrowUp,
+            KeyCode::DownArrow => Key::ArrowDown,
+            KeyCode::ApplicationLeftArrow => Key::ArrowLeft,
+            KeyCode::ApplicationRightArrow => Key::ArrowRight,
+            KeyCode::ApplicationUpArrow => Key::ArrowUp,
+            KeyCode::ApplicationDownArrow => Key::ArrowDown,
+            KeyCode::Insert => Key::Insert,
+            KeyCode::Delete => Key::Del,
+
+            _ => Key::Unknown,
+        }
+    }
+}
+
 impl KeyCode {
     /// if SHIFT is held and we have KeyCode::Char('c') we want to normalize
     /// that keycode to KeyCode::Char('C'); that is what this function does.

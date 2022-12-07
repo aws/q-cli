@@ -234,6 +234,7 @@ pub async fn spawn_figterm_ipc(
 /// Connects to the desktop app and allows for a secure connection from remote hosts
 pub async fn spawn_secure_ipc(
     session_id: String,
+    parent_id: Option<String>,
     main_loop_sender: Sender<MainLoopEvent>,
 ) -> Result<(Sender<Hostbound>, Receiver<Clientbound>, oneshot::Sender<()>)> {
     let (stop_ipc_tx, mut stop_ipc_rx) = oneshot::channel::<()>();
@@ -257,6 +258,7 @@ pub async fn spawn_secure_ipc(
                         if let Err(err) = writer.send_message(Hostbound {
                             packet: Some(hostbound::Packet::Handshake(Handshake {
                                 id: session_id.clone(),
+                                parent_id: parent_id.clone(),
                                 secret: secret.clone(),
                             })),
                         })

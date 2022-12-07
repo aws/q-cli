@@ -1,6 +1,5 @@
 pub mod local_state;
 use std::fmt::Display;
-use std::fs::OpenOptions;
 use std::io::{
     stderr,
     stdout,
@@ -46,6 +45,7 @@ use fig_ipc::{
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
+    NotifySshSessionStartedRequest,
     UpdateShellContextRequest,
 };
 use fig_proto::hooks::{
@@ -284,6 +284,11 @@ pub enum InternalSubcommand {
         verbose: bool,
     },
     /// Displays prompt to install remote shell integrations
+    SshLocalCommand {
+        remote_dest: String,
+        uuid: String,
+    },
+    /// [Deprecated] Displays prompt to install remote shell integrations.
     PromptSsh {
         remote_dest: String,
     },
@@ -806,46 +811,19 @@ impl InternalSubcommand {
                     }
                 }
             },
-            InternalSubcommand::PromptSsh { remote_dest } => {
-                // migrate old hostnames location
-                let old_hosts_file = directories::fig_dir()
-                    .context("Can't get fig data dir")?
-                    .join("ssh_hostnames");
-                let installed_hosts_file = directories::fig_data_dir()
-                    .context("Can't get fig data dir")?
-                    .join("ssh_hostnames");
-
-                if old_hosts_file.exists() {
-                    if installed_hosts_file.exists() {
-                        std::fs::remove_file(old_hosts_file)?;
-                    } else {
-                        std::fs::rename(old_hosts_file, &installed_hosts_file)?;
-                    }
-                }
-
+            InternalSubcommand::PromptSsh { .. } => {},
+            InternalSubcommand::SshLocalCommand { remote_dest, uuid } => {
                 if !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
-                    let mut installed_hosts = OpenOptions::new()
-                        .create(true)
-                        .read(true)
-                        .append(true)
-                        .open(&installed_hosts_file)?;
-                    let mut contents = String::new();
-                    installed_hosts.read_to_string(&mut contents)?;
-                    let hosts = Vec::from_iter(contents.split('\n'));
-
-                    let is_new = !hosts.contains(&remote_dest.as_str());
-                    if remote_dest == "_" || is_new {
-                        let bar = format!("╞{}╡", (0..74).map(|_| '═').collect::<String>());
-                        println!(
-                            "{bar}\n  To install SSH support for {}, run the following on your remote machine\n  {}\n{bar}",
-                            "Fig".magenta(),
-                            "$ curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL"
-                                .white()
-                                .on_black()
-                        );
-                        if is_new {
-                            installed_hosts.write_all(format!("{remote_dest}\n").as_bytes())?;
-                        }
+                    if let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") {
+                        let mut conn =
+                            BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?)
+                                .await?;
+                        conn.send_message(FigtermRequestMessage {
+                            request: Some(FigtermRequest::NotifySshSessionStarted(
+                                NotifySshSessionStartedRequest { uuid },
+                            )),
+                        })
+                        .await?;
                     }
                 }
             },
@@ -947,7 +925,7 @@ impl InternalSubcommand {
                 fig_install::uninstall(components).await.ok();
             },
             InternalSubcommand::GenerateSSH { remote_username } => {
-                let mut should_generate_config = true;
+                let mut should_generate_config = fig_settings::settings::get_bool_or("integrations.ssh.enabled", true);
 
                 for username in ["git", "aur"] {
                     if remote_username == username {
@@ -971,8 +949,8 @@ impl InternalSubcommand {
                         SetEnv LC_FIG_SET_PARENT={uuid} FIG_SET_PARENT={uuid}\n  \
                         StreamLocalBindMask 600\n  \
                         StreamLocalBindUnlink yes\n  \
-                        LocalCommand {exe_path} _ prompt-ssh '%r@%n' 1>&2\n
-                        PermitLocalCommand yes\n"
+                        PermitLocalCommand yes\n  \
+                        LocalCommand {exe_path} _ ssh-local-command '%r@%n' '{uuid}' 1>&2\n"
                     );
 
                     std::fs::write(config_path, config)?;
