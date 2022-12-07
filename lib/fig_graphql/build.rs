@@ -10,14 +10,14 @@ fn queries() -> Vec<String> {
             let path = entry.unwrap().path();
             let name = path.file_name().unwrap().to_str().unwrap();
             let name = name.split('.').next().unwrap();
-            name.to_string()
+            name.to_owned()
         })
         .collect()
 }
 
 fn main() {
+    println!("cargo:rerun-if-changed=build.rs");
     println!("cargo:rerun-if-changed=schema/schema.graphql");
-    println!("cargo:rerun-if-changed=queries");
 
     let ignore_lints = ["clippy::derive_partial_eq_without_eq"];
     let imports = ["super::*", "graphql_client::GraphQLQuery"];
@@ -33,7 +33,7 @@ fn main() {
     }
 
     for query_name in queries() {
-        println!("cargo:rerun-if-changed={query_name}.graphql");
+        println!("cargo:rerun-if-changed=queries/{query_name}.graphql");
 
         let snake_case_name = query_name.to_case(Case::Snake);
         let pascal_case_name = query_name.to_case(Case::Pascal);

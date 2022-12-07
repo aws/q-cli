@@ -98,7 +98,7 @@ fn intended_language_default() -> String {
 fn main() {
     // println!("cargo:warning=Running build.rs");
     // Tell Cargo that if the given file changes, to rerun this build script.
-    println!("cargo:rerun-if-changed=Cargo.toml");
+    println!("cargo:rerun-if-changed=build.rs");
 
     // Read Cargo.toml and load [bundle]
     let config = fs::read("Cargo.toml").unwrap();
