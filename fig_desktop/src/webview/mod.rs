@@ -303,7 +303,7 @@ impl WebviewManager {
         // load drip campaign with initial credentials.
         tokio::spawn(async {
             let res = DripCampaign::load().await;
-            error!(?res, "loaded drip campaign results");
+            debug!(?res, "loaded drip campaign results");
         });
 
         let proxy = self.event_loop.create_proxy();
