@@ -27,6 +27,7 @@ use tui::{
     ControlFlow,
     InputMethod,
     State,
+    StyleSheet,
     Surface,
     SurfaceExt,
 };
@@ -210,12 +211,12 @@ impl Wrapped {
 
 #[derive(Debug)]
 struct Center {
-    container: Container,
+    component: Box<dyn Component>,
     resize_warning: Paragraph,
 }
 
 impl Center {
-    fn new(container: Container) -> Self {
+    fn new(component: impl Component + 'static) -> Self {
         let resize_warning = Paragraph::new("").push_text(
             "
           ▁▁▁▁▁▁▁▁▁▁▁▁
@@ -229,7 +230,7 @@ terminal to see your #FigWrapped!",
         );
 
         Self {
-            container,
+            component: Box::new(component),
             resize_warning,
         }
     }
@@ -237,7 +238,7 @@ terminal to see your #FigWrapped!",
 
 impl Component for Center {
     fn initialize(&mut self, state: &mut State) {
-        self.container.initialize(state);
+        self.component.initialize(state);
         self.resize_warning.initialize(state);
     }
 
@@ -252,15 +253,15 @@ impl Component for Center {
         screen_width: f64,
         screen_height: f64,
     ) {
-        let style = self.container.style(state);
+        let style = self.component.style(state);
 
-        let mut width = style.width().unwrap_or_else(|| self.container.width()) + style.spacing_horizontal();
-        let mut height = style.height().unwrap_or_else(|| self.container.height()) + style.spacing_vertical();
+        let mut width = style.width().unwrap_or_else(|| self.component.width()) + style.spacing_horizontal();
+        let mut height = style.height().unwrap_or_else(|| self.component.height()) + style.spacing_vertical();
 
         match width <= screen_width && height <= screen_height {
             true => {
                 surface.draw_border(&mut x, &mut y, &mut width, &mut height, &style);
-                self.container.draw(
+                self.component.draw(
                     state,
                     surface,
                     screen_width / 2.0 - width / 2.0,
@@ -273,8 +274,8 @@ impl Component for Center {
             },
             false => {
                 let style = self.resize_warning.style(state);
-                width = style.width().unwrap_or_else(|| self.container.width()) + style.spacing_horizontal();
-                height = style.height().unwrap_or_else(|| self.container.height()) + style.spacing_vertical();
+                width = style.width().unwrap_or_else(|| self.component.width()) + style.spacing_horizontal();
+                height = style.height().unwrap_or_else(|| self.component.height()) + style.spacing_vertical();
                 self.resize_warning.draw(
                     state,
                     surface,
@@ -294,11 +295,11 @@ impl Component for Center {
     }
 
     fn inner(&self) -> &tui::component::ComponentData {
-        self.container.inner()
+        self.component.inner()
     }
 
     fn inner_mut(&mut self) -> &mut tui::component::ComponentData {
-        self.container.inner_mut()
+        self.component.inner_mut()
     }
 }
 
@@ -307,8 +308,34 @@ pub struct WrappedArgs;
 
 impl WrappedArgs {
     pub async fn execute(self) -> Result<()> {
+        // We do the following first since it can fail
         let history = History::load()?.all_rows()?;
         let wrapped = Wrapped::new(history);
+
+        tui::EventLoop::new().run(
+            &mut Center::new(Paragraph::new("").push_text(
+                " \"──────────*@@*──────────\"     .--~~~~~~~~~~~~~------.
+                               /--===============------\\
+We're glad you could make it   | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
+   We've had a great year      | | > fig|        |     |
+                               | |               |     |
+    Thanks to you, we're       | |               |     |
+spreading some holiday cheer   | |_______________|     |
+                               |                   ::::|
+      So press any key         '======================='
+     to change the view        //-'-'-'-'-'-'-'-'-'-'-\\\\
+                              //_'_'_'_'_'_'_'_'_'_'_'_\\\\
+ Here's to a bright future    [-------------------------]
+and a happy new year to you!  \\_________________________/",
+            )),
+            InputMethod::ExitAny,
+            StyleSheet::default(),
+            |event, _, control_flow| {
+                if let tui::Event::Quit | tui::Event::Terminate = event {
+                    *control_flow = ControlFlow::Quit;
+                }
+            },
+        )?;
 
         let rand = rand::thread_rng().gen::<u8>();
         let cols = vec![
@@ -690,3 +717,41 @@ fn busiest_day(wrapped: &Wrapped) -> Container {
             None => Paragraph::new(""),
         })
 }
+
+//  what could have been...
+//
+//                   @
+//                  @@@
+//              @@@@@@@@@@@
+//               @@@@@@@@@
+//                 @@@@@@
+//                @@@@@`@b
+//              @@@ @@ @@
+//             @@@  @   @@`
+//          @@@@@@    @@  @@@``
+//           `@@  @   @@@   @@@
+//          @@  @@@    @@b   @@@
+//        `@@  @@@    d@@@@    @@
+//     @@@@   @@@@  @  @ @@@@  @@@@b
+//      @@@@@@@    .@  @`   @@ @
+//          @@    @@@  @   @@  @@@
+//         @@   @@@@@  @@  @@@   @@
+//        @@   @@@@@   @@.     @@@@b.
+//       @@    @@@@   @@@@   @@@  @@@@@
+//    @@@    @  @"      @@   @@b
+//  .@@@@@@@@` "  @@@  @@`".    @@
+//       @@    @@@@@@@ @@@    @  @@@@
+//      @@  .@@@@@@@@   @@@@ @@@    @@
+//   @@@      `@@@       @@@@`  @@@@@@@@b
+// d@@@@@@@` @@`   @  @@@  @@@@@@
+//      @@ @@@@b  @@  @@@    @@@@
+//     @@  @@@@@ @@@  @@@  @    @@@@
+//   @@@  @@@@@@ @@   @@@` @@@      @@@@
+// @@   d@@@          @@@    @@   @     @@@
+//         @@@@    @@@ @@     @@b  @@@     @@@
+// @@@@@@@@" @@ @@@@ @@@@@  @@ "@@@@@@@@@@@@  `
+//           @@@@ @    @@@@@@
+//                @     @ @@
+//                @     @
+//                @@   @@
+//                 @@@@@
