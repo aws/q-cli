@@ -35,6 +35,7 @@ impl InputAction {
                 KeyCode::Escape => vec![InputAction::Terminate],
                 _ => vec![],
             },
+            InputMethod::ExitAny => vec![InputAction::Quit],
             InputMethod::Form | InputMethod::Scripted(_) => match code {
                 KeyCode::Backspace => vec![InputAction::Remove],
                 KeyCode::Enter => match modifiers.contains(Modifiers::SHIFT) {
@@ -70,6 +71,7 @@ impl InputAction {
 #[non_exhaustive]
 pub enum InputMethod {
     None,
+    ExitAny,
     Form,
     Scripted(Vec<InputEvent>),
 }

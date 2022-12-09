@@ -1084,7 +1084,7 @@ fn run_tui(
         }
     }
 
-    view.push(header);
+    view = view.push(header);
 
     let mut form = Container::new("__form", Layout::Vertical);
 
@@ -1096,8 +1096,7 @@ fn run_tui(
             description_map.insert(parameter.name.to_owned(), description.to_owned());
         }
 
-        let mut parameter_div = Container::new("__parameter", Layout::Vertical);
-        parameter_div
+        let mut parameter_div = Container::new("__parameter", Layout::Vertical)
             .push(Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name)));
 
         match &parameter.parameter_type {
@@ -1127,7 +1126,7 @@ fn run_tui(
                     }
                 }
 
-                parameter_div.push(
+                parameter_div = parameter_div.push(
                     Select::new(&parameter.name, options, true)
                         .with_text(parameter_value)
                         .with_hint(placeholder.as_deref().unwrap_or("Search...")),
@@ -1135,7 +1134,7 @@ fn run_tui(
             },
             ParameterType::Text { placeholder } => {
                 let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
-                parameter_div.push(
+                parameter_div = parameter_div.push(
                     TextField::new(&parameter.name)
                         .with_text(parameter_value.to_string())
                         .with_hint(placeholder.to_owned().unwrap_or_default()),
@@ -1165,7 +1164,7 @@ fn run_tui(
                     false_value: Some(false_value_substitution.to_owned()),
                 });
 
-                parameter_div.push(CheckBox::new(
+                parameter_div = parameter_div.push(CheckBox::new(
                     &parameter.name,
                     parameter.description.clone().unwrap_or_else(|| "Toggle".into()),
                     checked,
@@ -1188,7 +1187,7 @@ fn run_tui(
                     FileType::FolderOnly => (false, true),
                 };
 
-                parameter_div.push(FilePicker::new(
+                parameter_div = parameter_div.push(FilePicker::new(
                     &parameter.name,
                     parameter_value,
                     files,
@@ -1198,11 +1197,11 @@ fn run_tui(
             },
         };
 
-        form.push(parameter_div);
+        form = form.push(parameter_div);
     }
 
     #[rustfmt::skip]
-    view.push(form).push(
+    let mut view = view.push(form).push(
         Paragraph::new("__footer")
             .push_styled_text("enter", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" select • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
@@ -1287,13 +1286,15 @@ fn run_tui(
                     }
                 }
 
-                let mut preview = Container::new("__preview", Layout::Vertical);
-                preview
-                    .push(Paragraph::new("__label").push_text("Preview"))
-                    .push(paragraph);
-
                 temp = view.remove("__form");
-                view.insert("__header", Box::new(preview));
+                view.insert(
+                    "__header",
+                    Box::new(
+                        Container::new("__preview", Layout::Vertical)
+                            .push(Paragraph::new("__label").push_text("Preview"))
+                            .push(paragraph),
+                    ),
+                );
             },
             Event::CheckBox(event) => match event {
                 CheckBoxEvent::Checked { id, checked } => {

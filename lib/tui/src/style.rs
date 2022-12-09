@@ -233,6 +233,13 @@ impl Style {
         self.spacing_left() + self.spacing_right()
     }
 
+    pub fn with_padding(&mut self, width: f64) -> &mut Self {
+        self.with_padding_left(width)
+            .with_padding_right(width)
+            .with_padding_top(width)
+            .with_padding_bottom(width)
+    }
+
     pub fn with_border_width(&mut self, width: f64) -> &mut Self {
         self.with_border_left_width(width)
             .with_border_right_width(width)

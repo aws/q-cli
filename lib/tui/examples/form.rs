@@ -54,21 +54,19 @@ fn main() {
         },
     };
 
-    let mut container1 = Container::new("container1", Layout::Vertical);
-    container1.push(CheckBox::new("check_box", "Are you cool?", false));
-
-    let mut container2 = Container::new("container2", Layout::Vertical);
-    container2.push(Select::new(
-        "select",
-        vec!["hello".to_owned(), "world".to_owned()],
-        false,
-    ));
-
     EventLoop::new()
         .run(
-            Container::new("container3", Layout::Horizontal)
-                .push(container1)
-                .push(container2),
+            &mut Container::new("container3", Layout::Horizontal)
+                .push(Container::new("container1", Layout::Vertical).push(CheckBox::new(
+                    "check_box",
+                    "Are you cool?",
+                    false,
+                )))
+                .push(Container::new("container2", Layout::Vertical).push(Select::new(
+                    "select",
+                    vec!["hello".to_owned(), "world".to_owned()],
+                    false,
+                ))),
             InputMethod::Form,
             style_sheet,
             |event, _component, control_flow| match event {

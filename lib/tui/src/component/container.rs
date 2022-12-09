@@ -36,7 +36,7 @@ impl Container {
         }
     }
 
-    pub fn push(&mut self, component: impl Component + 'static) -> &mut Self {
+    pub fn push(mut self, component: impl Component + 'static) -> Self {
         self.components.push(Box::new(component));
         self
     }

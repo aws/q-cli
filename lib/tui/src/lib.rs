@@ -17,6 +17,7 @@ pub use event_loop::{
     ControlFlow,
     Event,
     EventLoop,
+    State,
 };
 pub use input::InputMethod;
 pub use style::{
@@ -25,6 +26,8 @@ pub use style::{
     Style,
 };
 pub use stylesheet::StyleSheet;
+pub use surface_ext::SurfaceExt;
 pub use termwiz::cell::Intensity;
 pub use termwiz::color::ColorAttribute;
+pub use termwiz::surface::Surface;
 pub use termwiz::Error;
