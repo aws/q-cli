@@ -26,6 +26,27 @@ use crate::{
     Integration,
 };
 
+pub mod codex_plugin {
+    pub const ZSH_SCRIPT: &str = concat!("\n", include_str!(concat!(env!("OUT_DIR"), "/codex.zsh")), "\n");
+
+    #[cfg(test)]
+    mod tests {
+        use super::*;
+
+        #[test]
+        fn script_checks() {
+            // Ensure script has license
+            assert!(ZSH_SCRIPT.contains("Copyright"));
+
+            // Ensure script has _fig_autosuggest_strategy_codex()
+            assert!(ZSH_SCRIPT.contains("_fig_autosuggest_strategy_codex()"));
+
+            // Ensure script adds precmd hook
+            assert!(ZSH_SCRIPT.contains("add-zsh-hook precmd _fig_autosuggest_start"));
+        }
+    }
+}
+
 #[derive(Debug, Copy, Clone, PartialEq, Eq, ValueEnum, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum When {

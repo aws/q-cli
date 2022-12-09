@@ -95,6 +95,7 @@ fig_precmd() {
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
   fig_osc "ZshAutosuggestionColor=%s" "${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE}"
+  fig_osc "FigAutosuggestionColor=%s" "${FIG_AUTOSUGGEST_HIGHLIGHT_STYLE}"
   fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
 
   if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then

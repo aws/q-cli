@@ -37,6 +37,7 @@ pub enum TrackEventType {
     PromptedForAXPermission,
     GrantedAXPermission,
     LoggedInWithAuthExchange,
+    CodexInlineSuggustionAccepted,
     /// Prefer not using this directly and instead define an enum value, this is only for
     /// internal use by `fig_telemetry`
     Other(String),
@@ -62,6 +63,7 @@ impl std::fmt::Display for TrackEventType {
             Self::PromptedForAXPermission => "Prompted for AX Permission",
             Self::GrantedAXPermission => "Granted AX Permission",
             Self::LoggedInWithAuthExchange => "Logged In with Auth Exchange",
+            Self::CodexInlineSuggustionAccepted => "Codex Inline Suggestion Accepted",
             Self::Other(s) => s,
         })
     }

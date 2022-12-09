@@ -502,6 +502,9 @@ pub trait Handler {
     /// Fig ZshSuggestionColor Osc
     fn zsh_suggestion_color(&mut self, _: &str) {}
 
+    /// FigSuggestionColor Osc
+    fn fig_suggestion_color(&mut self, _: &str) {}
+
     /// Fig tty Osc
     fn tty(&mut self, _: &str) {}
 
@@ -1230,6 +1233,10 @@ where
                                     b"ZshAutosuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.zsh_suggestion_color(s),
                                         Err(err) => log::error!("Error decoding ZshAutosuggestionColor: {err}"),
+                                    },
+                                    b"FigAutosuggestionColor" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.fig_suggestion_color(s),
+                                        Err(err) => log::error!("Error decoding FigAutosuggestionColor: {err}"),
                                     },
                                     b"TTY" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.tty(s),

@@ -17,6 +17,8 @@ use tracing::{
     trace,
 };
 
+const ALL_COLUMNS: &str = "id, command, shell, pid, session_id, cwd, start_time, duration, hostname, exit_code";
+
 #[derive(Debug, Error)]
 pub enum Error {
     #[error("I/O error: {0}")]
@@ -246,42 +248,96 @@ impl History {
 
     pub fn all_rows(&self) -> Result<Vec<CommandInfo>> {
         let mut stmt = self
-        .connection
-        .prepare(
-            "SELECT command, shell, pid, session_id, cwd, start_time, duration, hostname, exit_code FROM history ORDER BY start_time ASC",
-        )?;
+            .connection
+            .prepare(&format!("SELECT {ALL_COLUMNS} FROM history ORDER BY start_time ASC"))?;
 
         let rows = stmt.query([])?;
 
-        let rows_mapped = rows
-            .mapped(|row| {
-                Ok(CommandInfo {
-                    command: row.get(0)?,
-                    shell: row.get(1)?,
-                    pid: row.get(2)?,
-                    session_id: row.get(3)?,
-                    cwd: row.get(4)?,
-                    start_time: row
-                        .get::<_, Option<i64>>(5)?
-                        .map(|t| std::time::UNIX_EPOCH + std::time::Duration::from_secs(t as u64)),
-                    end_time: row
-                        .get::<_, Option<i64>>(5)?
-                        .map(|start_time| {
-                            Ok::<_, rusqlite::Error>(row.get::<_, Option<i64>>(6)?.map(|duration| {
-                                std::time::UNIX_EPOCH
-                                    + std::time::Duration::from_secs(start_time as u64)
-                                    + std::time::Duration::from_millis(duration as u64)
-                            }))
-                        })
-                        .transpose()?
-                        .flatten(),
-                    hostname: row.get(7)?,
-                    exit_code: row.get(8)?,
-                })
-            })
-            .collect::<rusqlite::Result<Vec<CommandInfo>>>()?;
+        let rows_mapped = rows.mapped(map_row).collect::<rusqlite::Result<Vec<CommandInfo>>>()?;
 
         Ok(rows_mapped)
+    }
+
+    pub fn rows(&self, limit: usize, offset: usize, order_by: HistoryColumn, order: Order) -> Result<Vec<CommandInfo>> {
+        let mut stmt = self.connection.prepare(&format!(
+            "SELECT {ALL_COLUMNS} FROM history ORDER BY {order_by} {order} LIMIT ? OFFSET ?",
+        ))?;
+
+        let rows = stmt.query(params![limit, offset])?;
+
+        let rows_mapped = rows.mapped(map_row).collect::<rusqlite::Result<Vec<CommandInfo>>>()?;
+
+        Ok(rows_mapped)
+    }
+}
+
+fn map_row(row: &rusqlite::Row) -> rusqlite::Result<CommandInfo> {
+    let start_time = row
+        .get::<_, Option<i64>>(6)?
+        .and_then(|t| std::time::UNIX_EPOCH.checked_add(std::time::Duration::from_secs(u64::try_from(t).ok()?)));
+
+    let duration = row
+        .get::<_, Option<i64>>(7)?
+        .and_then(|d| Some(std::time::Duration::from_millis(u64::try_from(d).ok()?)));
+
+    let end_time = start_time
+        .as_ref()
+        .and_then(|start_time| duration.and_then(|duration| start_time.checked_add(duration)));
+
+    Ok(CommandInfo {
+        command: row.get(1)?,
+        shell: row.get(2)?,
+        pid: row.get(3)?,
+        session_id: row.get(4)?,
+        cwd: row.get(5)?,
+        start_time,
+        end_time,
+        hostname: row.get(8)?,
+        exit_code: row.get(9)?,
+    })
+}
+
+pub enum HistoryColumn {
+    Id,
+    Command,
+    Shell,
+    Pid,
+    SessionId,
+    Cwd,
+    StartTime,
+    Duration,
+    Hostname,
+    ExitCode,
+}
+
+impl std::fmt::Display for HistoryColumn {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            HistoryColumn::Id => f.write_str("id"),
+            HistoryColumn::Command => f.write_str("command"),
+            HistoryColumn::Shell => f.write_str("shell"),
+            HistoryColumn::Pid => f.write_str("pid"),
+            HistoryColumn::SessionId => f.write_str("session_id"),
+            HistoryColumn::Cwd => f.write_str("cwd"),
+            HistoryColumn::StartTime => f.write_str("start_time"),
+            HistoryColumn::Duration => f.write_str("duration"),
+            HistoryColumn::Hostname => f.write_str("hostname"),
+            HistoryColumn::ExitCode => f.write_str("exit_code"),
+        }
+    }
+}
+
+pub enum Order {
+    Asc,
+    Desc,
+}
+
+impl std::fmt::Display for Order {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            Order::Asc => f.write_str("ASC"),
+            Order::Desc => f.write_str("DESC"),
+        }
     }
 }
 
@@ -363,5 +419,9 @@ mod tests {
         );
         assert_eq!(rows[1].hostname, Some("laptop".into()));
         assert_eq!(rows[1].exit_code, Some(0));
+
+        let row = history.rows(1, 0, HistoryColumn::Id, Order::Desc).unwrap();
+        assert_eq!(row.len(), 1);
+        assert_eq!(row[0].command, Some("cargo test".into()));
     }
 }

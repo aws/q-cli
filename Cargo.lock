@@ -79,6 +79,7 @@ name = "alacritty_terminal"
 version = "0.15.1-dev"
 dependencies = [
  "bitflags",
+ "camino",
  "fig_color",
  "log",
  "serde",
@@ -2263,6 +2264,7 @@ dependencies = [
  "fnv",
  "lazy_static",
  "memmem",
+ "moka",
  "nix 0.26.1",
  "num-traits",
  "once_cell",
@@ -2276,6 +2278,7 @@ dependencies = [
  "shared_library",
  "shell-words",
  "sysinfo 0.26.8",
+ "time 0.3.17",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -3897,9 +3900,9 @@ checksum = "e4a24736216ec316047a1fc4252e27dabb04218aa4a3f37c6e7ddbf1f9782b54"
 
 [[package]]
 name = "nix"
-version = "0.24.3"
+version = "0.24.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "fa52e972a9a719cecb6864fb88568781eb706bac2cd1d4f04a648542dbf78069"
+checksum = "195cdbc1741b8134346d515b3a56a1c94b0912758009cfd53f99ea0f57b065fc"
 dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
@@ -6397,7 +6400,7 @@ dependencies = [
  "libc",
  "log",
  "memmem",
- "nix 0.24.3",
+ "nix 0.24.2",
  "num-derive",
  "num-traits",
  "ordered-float 3.4.0",
@@ -6901,7 +6904,7 @@ dependencies = [
  "bitflags",
  "lazy_static",
  "log",
- "nix 0.24.3",
+ "nix 0.24.2",
  "term",
  "unicode-width",
 ]
@@ -7282,7 +7285,7 @@ dependencies = [
  "bitflags",
  "downcast-rs",
  "libc",
- "nix 0.24.3",
+ "nix 0.24.2",
  "wayland-commons",
  "wayland-scanner",
  "wayland-sys",
@@ -7294,7 +7297,7 @@ version = "0.29.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8691f134d584a33a6606d9d717b95c4fa20065605f798a3f350d78dced02a902"
 dependencies = [
- "nix 0.24.3",
+ "nix 0.24.2",
  "once_cell",
  "smallvec",
  "wayland-sys",
@@ -7843,7 +7846,7 @@ dependencies = [
  "derive-new",
  "libc",
  "log",
- "nix 0.24.3",
+ "nix 0.24.2",
  "os_pipe",
  "tempfile",
  "thiserror",
@@ -7917,7 +7920,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "592b4883219f345e712b3209c62654ebda0bb50887f330cbd018d0f654bfd507"
 dependencies = [
  "gethostname",
- "nix 0.24.3",
+ "nix 0.24.2",
  "winapi",
  "winapi-wsapoll",
  "x11rb-protocol 0.10.0",
@@ -7942,7 +7945,7 @@ version = "0.10.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "56b245751c0ac9db0e006dc812031482784e434630205a93c73cfefcaabeac67"
 dependencies = [
- "nix 0.24.3",
+ "nix 0.24.2",
 ]
 
 [[package]]

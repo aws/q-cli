@@ -2,10 +2,7 @@ use alacritty_terminal::event::{
     Event,
     EventListener,
 };
-use alacritty_terminal::term::{
-    CommandInfo,
-    ShellState,
-};
+use alacritty_terminal::term::ShellState;
 use fig_proto::secure::Hostbound;
 use fig_proto::secure_hooks::{
     hook_to_message,
@@ -20,6 +17,11 @@ use tracing::{
     error,
 };
 
+use crate::history::{
+    HistoryCommand,
+    HistorySender,
+};
+use crate::message::COMPLETION_CACHE;
 use crate::{
     shell_state_to_context,
     MainLoopEvent,
@@ -29,7 +31,7 @@ use crate::{
 
 pub struct EventHandler {
     socket_sender: Sender<Hostbound>,
-    history_sender: Sender<CommandInfo>,
+    history_sender: HistorySender,
     main_loop_sender: Sender<MainLoopEvent>,
     csi_u_enabled: bool,
 }
@@ -37,7 +39,7 @@ pub struct EventHandler {
 impl EventHandler {
     pub fn new(
         socket_sender: Sender<Hostbound>,
-        history_sender: Sender<CommandInfo>,
+        history_sender: HistorySender,
         main_loop_sender: Sender<MainLoopEvent>,
     ) -> Self {
         Self {
@@ -54,6 +56,8 @@ impl EventListener for EventHandler {
         debug!(?event, ?shell_state, "Handling event");
         match event {
             Event::Prompt => {
+                COMPLETION_CACHE.invalidate_all();
+
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
@@ -117,7 +121,7 @@ impl EventListener for EventHandler {
                 }
             },
             Event::CommandInfo(command_info) => {
-                if let Err(err) = self.history_sender.send(command_info.clone()) {
+                if let Err(err) = self.history_sender.send(HistoryCommand::Insert(command_info.clone())) {
                     error!(%err, "Sender error");
                 }
             },

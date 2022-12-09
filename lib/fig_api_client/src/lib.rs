@@ -1,4 +1,5 @@
 pub mod access;
+pub mod ai;
 pub mod drip_campaign;
 pub mod plugins;
 pub mod scripts;

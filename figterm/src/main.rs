@@ -654,8 +654,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
-        let event_sender = EventHandler::new(secure_sender.clone(), history_sender, main_loop_tx.clone());
-        let mut term = alacritty_terminal::Term::new(size, event_sender, 1, session_id);
+        let event_sender = EventHandler::new(secure_sender.clone(), history_sender.clone(), main_loop_tx.clone());
+        let mut term = alacritty_terminal::Term::new(size, event_sender, 1, session_id.clone());
 
         #[cfg(target_os = "windows")]
         term.set_windows_delay_end_prompt(true);
@@ -1012,8 +1012,10 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                 main_loop_tx.clone(),
                                 sender.clone(),
                                 &term,
+                                &history_sender,
                                 &mut master,
-                                &mut key_interceptor
+                                &mut key_interceptor,
+                                &session_id,
                             ).await?;
                         }
                         Err(err) => {

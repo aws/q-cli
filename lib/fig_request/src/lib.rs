@@ -60,6 +60,15 @@ impl Request<NoAuth> {
         Self::new_with_host(host(), method, endpoint)
     }
 
+    pub fn new_with_url(method: Method, url: reqwest::Url) -> Self {
+        Self {
+            builder: client()
+                .as_ref()
+                .map(|client| client.request(method, url).header("Accept", "application/json")),
+            _auth: NoAuth,
+        }
+    }
+
     pub fn new_with_host(mut host: Url, method: Method, endpoint: impl AsRef<str>) -> Self {
         host.set_path(endpoint.as_ref());
 

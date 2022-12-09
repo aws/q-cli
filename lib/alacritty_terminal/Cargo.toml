@@ -1,7 +1,10 @@
 [package]
 name = "alacritty_terminal"
 version = "0.15.1-dev"
-authors = ["Christian Duerr <contact@christianduerr.com>", "Joe Wilm <joe@jwilm.com>"]
+authors = [
+    "Christian Duerr <contact@christianduerr.com>",
+    "Joe Wilm <joe@jwilm.com>",
+]
 license = "Apache-2.0"
 description = "Library for writing terminal emulators"
 readme = "../README.md"
@@ -10,6 +13,7 @@ edition = "2021"
 
 [dependencies]
 bitflags = "1"
+camino = { version = "1.1.1", features = ["serde1"] }
 fig_color = { path = "../fig_color" }
 log = "0.4"
 serde = { version = "1", features = ["derive"] }

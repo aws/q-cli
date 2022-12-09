@@ -145,7 +145,14 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
                 Some(source.dotfile)
             };
 
-            if let Some(source) = get_dotfile_source() {
+            if let Some(mut source) = get_dotfile_source() {
+                if shell == &Shell::Zsh
+                    && when == &When::Post
+                    && fig_settings::settings::product_gate("ai-autocomplete", Some("fig")).unwrap_or(false)
+                {
+                    source.push_str(fig_integrations::shell::codex_plugin::ZSH_SCRIPT);
+                }
+
                 to_source.push(guard_source(
                     shell,
                     false,

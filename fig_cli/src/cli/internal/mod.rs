@@ -45,6 +45,7 @@ use fig_ipc::{
 use fig_proto::figterm::figterm_request_message::Request as FigtermRequest;
 use fig_proto::figterm::{
     FigtermRequestMessage,
+    FigtermResponseMessage,
     NotifySshSessionStartedRequest,
     UpdateShellContextRequest,
 };
@@ -325,6 +326,16 @@ pub enum InternalSubcommand {
     GenerateSSH {
         remote_username: String,
     },
+    Codex {
+        #[arg(long)]
+        buffer: String,
+    },
+    CodexAccept {
+        #[arg(long)]
+        buffer: String,
+        #[arg(long)]
+        suggestion: String,
+    },
 }
 
 const BUFFER_SIZE: usize = 1024;
@@ -478,11 +489,21 @@ impl InternalSubcommand {
 
                                 let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
-                                if fig_util::system_info::in_ssh() {
-                                    if std::env::var_os("FIG_TERM").is_some() {
-                                        return Some((false, "❌ In SSH and FIG_TERM is set".into()));
+                                let in_wsl = fig_util::system_info::in_wsl();
+                                let in_ssh = fig_util::system_info::in_ssh();
+
+                                if valid_parent && (in_ssh || in_wsl) {
+                                    let grandparent_pid = parent_pid.parent()?;
+                                    let grandparent_path = grandparent_pid.exe()?;
+                                    let grandparent_name = grandparent_path.file_name()?.to_str()?;
+
+                                    // check grandparent does not contain figterm
+                                    if grandparent_name.contains("figterm") || std::env::var_os("FIG_TERM").is_some() {
+                                        return Some((false, "❌ Grandparent contains figterm".into()));
+                                    } else if in_ssh {
+                                        return Some((true, format!("✅ {parent_name} in SSH")));
                                     } else {
-                                        return Some((true, "✅ In SSH and FIG_TERM is not set".into()));
+                                        return Some((true, format!("✅ {parent_name} in WSL")));
                                     }
                                 }
 
@@ -959,6 +980,52 @@ impl InternalSubcommand {
                     std::fs::write(config_path, fig_integrations::ssh::SSH_CONFIG_EMPTY)?;
                     writeln!(stdout(), "cleared inner config").ok();
                 }
+            },
+            InternalSubcommand::Codex { buffer } => {
+                let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") else {
+                    exit(1);
+                };
+
+                let Ok(mut conn) =
+                    BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await else {
+                    exit(1);
+                };
+
+                let Ok(Some(FigtermResponseMessage {
+                    response:
+                        Some(fig_proto::figterm::figterm_response_message::Response::CodexComplete(
+                            fig_proto::figterm::CodexCompleteResponse {
+                                insert_text: Some(insert_text),
+                            },
+                       )),
+                })) = conn
+                    .send_recv_message_timeout(
+                        fig_proto::figterm::FigtermRequestMessage {
+                            request: Some(fig_proto::figterm::figterm_request_message::Request::CodexComplete(
+                                fig_proto::figterm::CodexCompleteRequest { buffer: buffer.clone() },
+                            )),
+                        },
+                        Duration::from_secs(5),
+                    )
+                    .await else {
+                    exit(1);
+                };
+
+                writeln!(stdout(), "{buffer}{insert_text}").ok();
+            },
+            InternalSubcommand::CodexAccept { buffer, suggestion } => {
+                fig_telemetry::dispatch_emit_track(
+                    TrackEvent::new(
+                        TrackEventType::CodexInlineSuggustionAccepted,
+                        TrackSource::Cli,
+                        env!("CARGO_PKG_VERSION").into(),
+                        [("buffer", buffer), ("suggestion", suggestion)],
+                    ),
+                    false,
+                    true,
+                )
+                .await
+                .ok();
             },
         }
 
