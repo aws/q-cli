@@ -258,9 +258,35 @@ impl History {
         Ok(rows_mapped)
     }
 
-    pub fn rows(&self, limit: usize, offset: usize, order_by: HistoryColumn, order: Order) -> Result<Vec<CommandInfo>> {
+    /// The Where expression is not escaped, so be careful!
+    ///
+    /// Ugh i should like use sqlx or something
+    pub fn rows(
+        &self,
+        where_expr: Option<WhereExpression>,
+        order_by: Vec<OrderBy>,
+        limit: usize,
+        offset: usize,
+    ) -> Result<Vec<CommandInfo>> {
+        let where_expr = match where_expr {
+            Some(where_expr) => format!("WHERE {}", where_expr),
+            None => "".to_owned(),
+        };
+
+        let order_by = match order_by.is_empty() {
+            true => "".to_owned(),
+            false => format!(
+                "ORDER BY {}",
+                order_by
+                    .iter()
+                    .map(|o| o.to_string())
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+        };
+
         let mut stmt = self.connection.prepare(&format!(
-            "SELECT {ALL_COLUMNS} FROM history ORDER BY {order_by} {order} LIMIT ? OFFSET ?",
+            "SELECT {ALL_COLUMNS} FROM history {where_expr} {order_by} LIMIT ? OFFSET ?",
         ))?;
 
         let rows = stmt.query(params![limit, offset])?;
@@ -341,6 +367,79 @@ impl std::fmt::Display for Order {
     }
 }
 
+pub struct OrderBy {
+    column: HistoryColumn,
+    order: Order,
+}
+
+impl OrderBy {
+    pub fn new(column: HistoryColumn, order: Order) -> Self {
+        Self { column, order }
+    }
+}
+
+impl std::fmt::Display for OrderBy {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "{} {}", self.column, self.order)
+    }
+}
+
+pub enum WhereExpression {
+    Eq(HistoryColumn, String),
+    Ne(HistoryColumn, String),
+    Gt(HistoryColumn, String),
+    Lt(HistoryColumn, String),
+    Ge(HistoryColumn, String),
+    Le(HistoryColumn, String),
+    Like(HistoryColumn, String),
+    NotLike(HistoryColumn, String),
+    IsNull(HistoryColumn),
+    NotNull(HistoryColumn),
+    In(HistoryColumn, Vec<String>),
+    NotIn(HistoryColumn, Vec<String>),
+    And(Box<WhereExpression>, Box<WhereExpression>),
+    Or(Box<WhereExpression>, Box<WhereExpression>),
+}
+
+impl std::fmt::Display for WhereExpression {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        match self {
+            WhereExpression::Eq(column, value) => write!(f, "{} = '{}'", column, value),
+            WhereExpression::Ne(column, value) => write!(f, "{} != '{}'", column, value),
+            WhereExpression::Gt(column, value) => write!(f, "{} > '{}'", column, value),
+            WhereExpression::Lt(column, value) => write!(f, "{} < '{}'", column, value),
+            WhereExpression::Ge(column, value) => write!(f, "{} >= '{}'", column, value),
+            WhereExpression::Le(column, value) => write!(f, "{} <= '{}'", column, value),
+            WhereExpression::Like(column, value) => write!(f, "{} LIKE '{}'", column, value),
+            WhereExpression::NotLike(column, value) => write!(f, "{} NOT LIKE '{}'", column, value),
+            WhereExpression::IsNull(column) => write!(f, "{} IS NULL", column),
+            WhereExpression::NotNull(column) => write!(f, "{} IS NOT NULL", column),
+            WhereExpression::In(column, values) => write!(
+                f,
+                "{} IN ({})",
+                column,
+                values
+                    .iter()
+                    .map(|v| format!("'{}'", v))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            WhereExpression::NotIn(column, values) => write!(
+                f,
+                "{} NOT IN ({})",
+                column,
+                values
+                    .iter()
+                    .map(|v| format!("'{}'", v))
+                    .collect::<Vec<String>>()
+                    .join(", ")
+            ),
+            WhereExpression::And(left, right) => write!(f, "({} AND {})", left, right),
+            WhereExpression::Or(left, right) => write!(f, "({} OR {})", left, right),
+        }
+    }
+}
+
 #[cfg(test)]
 mod tests {
     use super::*;
@@ -385,8 +484,25 @@ mod tests {
             )
             .unwrap();
 
+        history
+            .insert_command_history(
+                &CommandInfo {
+                    command: Some("cargo run".into()),
+                    shell: Some("zsh".into()),
+                    pid: Some(124),
+                    session_id: Some("session-id".into()),
+                    cwd: Some("/home/grant/".into()),
+                    start_time: Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(126)),
+                    end_time: None,
+                    hostname: Some("laptop".into()),
+                    exit_code: None,
+                },
+                false,
+            )
+            .unwrap();
+
         let rows = history.all_rows().unwrap();
-        assert_eq!(rows.len(), 2);
+        assert_eq!(rows.len(), 3);
 
         assert_eq!(rows[0].command, Some("fig".into()));
         assert_eq!(rows[0].shell, Some("bash".into()));
@@ -420,8 +536,34 @@ mod tests {
         assert_eq!(rows[1].hostname, Some("laptop".into()));
         assert_eq!(rows[1].exit_code, Some(0));
 
-        let row = history.rows(1, 0, HistoryColumn::Id, Order::Desc).unwrap();
+        assert_eq!(rows[2].command, Some("cargo run".into()));
+        assert_eq!(rows[2].shell, Some("zsh".into()));
+        assert_eq!(rows[2].pid, Some(124));
+        assert_eq!(rows[2].session_id, Some("session-id".into()));
+        assert_eq!(rows[2].cwd, Some("/home/grant/".into()));
+        assert_eq!(
+            rows[2].start_time,
+            Some(std::time::UNIX_EPOCH + std::time::Duration::from_secs(126))
+        );
+        assert_eq!(rows[2].end_time, None);
+        assert_eq!(rows[2].hostname, Some("laptop".into()));
+        assert_eq!(rows[2].exit_code, None);
+
+        let row = history
+            .rows(None, vec![OrderBy::new(HistoryColumn::Id, Order::Desc)], 1, 0)
+            .unwrap();
         assert_eq!(row.len(), 1);
-        assert_eq!(row[0].command, Some("cargo test".into()));
+        assert_eq!(row[0].command, Some("cargo run".into()));
+
+        let row = history
+            .rows(
+                Some(WhereExpression::NotNull(HistoryColumn::ExitCode)),
+                vec![OrderBy::new(HistoryColumn::Id, Order::Desc)],
+                10,
+                0,
+            )
+            .unwrap();
+
+        assert_eq!(row.len(), 2);
     }
 }

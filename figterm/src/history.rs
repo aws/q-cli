@@ -1,6 +1,8 @@
 use fig_history::{
     HistoryColumn,
     Order,
+    OrderBy,
+    WhereExpression,
 };
 use flume::Sender;
 use tracing::{
@@ -49,7 +51,12 @@ pub async fn spawn_history_task() -> HistorySender {
                             }
                         },
                         HistoryCommand::Query(query, sender) => {
-                            match history.rows(query.limit, 0, HistoryColumn::Id, Order::Desc) {
+                            match history.rows(
+                                Some(WhereExpression::NotNull(HistoryColumn::ExitCode)),
+                                vec![OrderBy::new(HistoryColumn::Id, Order::Desc)],
+                                query.limit,
+                                0,
+                            ) {
                                 Ok(rows) => {
                                     if let Err(err) = sender.send(Some(rows)) {
                                         error!(%err, "Failed to send history query result");
