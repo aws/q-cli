@@ -201,6 +201,7 @@ impl EventLoop {
                     cols = ncols as f64;
                     rows = nrows as f64;
                 },
+                InputEvent::Paste(clipboard) => component.on_paste(&mut state, &clipboard),
                 _ => (),
             }
 
@@ -268,6 +269,7 @@ impl EventLoop {
                         cols = ncols as f64;
                         rows = nrows as f64;
                     },
+                    InputEvent::Paste(clipboard) => component.on_paste(&mut state, &clipboard),
                     _ => (),
                 }
             }

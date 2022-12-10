@@ -121,6 +121,9 @@ pub trait Component: std::fmt::Debug {
     }
 
     #[allow(unused_variables)]
+    fn on_paste(&mut self, state: &mut State, clipboard: &str) {}
+
+    #[allow(unused_variables)]
     fn interactive(&self, state: &mut State) -> bool {
         self.inner().interactive
     }

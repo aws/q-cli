@@ -368,6 +368,12 @@ impl Component for Container {
         self.resize(state);
     }
 
+    fn on_paste(&mut self, state: &mut State, clipboard: &str) {
+        if let Some(active) = self.active {
+            self.components[active].on_paste(state, clipboard)
+        }
+    }
+
     fn interactive(&self, state: &mut State) -> bool {
         self.components.iter().any(|c| c.interactive(state))
     }

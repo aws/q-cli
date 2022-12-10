@@ -944,12 +944,24 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
                             Err(_) => acc,
                         })
                 },
-                RuleType::GitRootDirectory => String::from_utf8(
-                    Command::new("git")
+                RuleType::GitRootDirectory => {
+                    let dir = Command::new("git")
                         .args(["rev-parse", "--show-toplevel"])
                         .output()?
-                        .stdout,
-                )?,
+                        .stdout;
+
+                    match std::fs::read_dir(String::from_utf8(dir)?) {
+                        Ok(dir) => {
+                            let mut out = String::new();
+                            for file in dir {
+                                out.push_str(&format!("\"{}\" ", &file?.path().to_string_lossy()));
+                            }
+
+                            out
+                        },
+                        Err(_) => return Ok(false),
+                    }
+                },
                 RuleType::CurrentBranch => String::from_utf8(
                     Command::new("git")
                         .args(["rev-parse", "--abbrev-ref", "HEAD"])

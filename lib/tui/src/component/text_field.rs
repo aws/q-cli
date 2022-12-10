@@ -151,6 +151,12 @@ impl Component for TextField {
         true
     }
 
+    fn on_paste(&mut self, _: &mut State, clipboard: &str) {
+        self.text.insert_str(self.cursor, clipboard);
+        self.cursor += clipboard.width();
+        self.resize();
+    }
+
     fn class(&self) -> &'static str {
         "input:text"
     }
