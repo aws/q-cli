@@ -16,6 +16,12 @@ impl From<time::OffsetDateTime> for DateTime {
     }
 }
 
+impl From<DateTime> for time::OffsetDateTime {
+    fn from(dt: DateTime) -> Self {
+        dt.0
+    }
+}
+
 /// Arbitrary precision is enabled for `serde_json` so this will work
 pub type BigInt = serde_json::Number;
 

@@ -18,7 +18,6 @@ use clap::Args;
 use crossterm::style::Stylize;
 use eyre::{
     bail,
-    eyre,
     Result,
 };
 use fig_api_client::scripts::{
@@ -585,6 +584,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                     ParameterType::Checkbox { .. } => {
                         command = command.arg(arg.action(clap::ArgAction::SetTrue));
                     },
+                    ParameterType::Unknown => bail!("Unknown parameter type, you may need to update Fig"),
                 };
             }
 
@@ -608,6 +608,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                             true_value: Some(true_value_substitution.clone()),
                         });
                     },
+                    ParameterType::Unknown => bail!("Unknown parameter type, you may need to update Fig"),
                 };
             }
 
@@ -949,24 +950,30 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
                         .output()?
                         .stdout,
                 )?,
-                RuleType::EnvironmentVariable => todo!(),
                 RuleType::CurrentBranch => String::from_utf8(
                     Command::new("git")
                         .args(["rev-parse", "--abbrev-ref", "HEAD"])
                         .output()?
                         .stdout,
                 )?,
+                RuleType::EnvironmentVariable => bail!("Environment variable rules are not yet supported"),
+                RuleType::Unknown => bail!("Unknown rule, you may need to update fig"),
             };
 
             let query = query.trim();
 
+            let Some(value) = rule.value.as_deref() else {
+                bail!("Rule value is missing");
+            };
+
             let mut rule_met = match rule.predicate {
-                Predicate::Contains => query.contains(&rule.value),
-                Predicate::Equals => query == rule.value,
-                Predicate::Matches => regex::Regex::new(&rule.value)?.is_match(query),
-                Predicate::StartsWith => query.starts_with(&rule.value),
-                Predicate::EndsWith => query.ends_with(&rule.value),
+                Predicate::Contains => query.contains(value),
+                Predicate::Equals => query == value,
+                Predicate::Matches => regex::Regex::new(value)?.is_match(query),
+                Predicate::StartsWith => query.starts_with(value),
+                Predicate::EndsWith => query.ends_with(value),
                 Predicate::Exists => !query.is_empty(),
+                Predicate::Unknown => bail!("Unknown predicate, you may need to update fig"),
             };
 
             if rule.inverted {
@@ -1110,9 +1117,6 @@ fn run_tui(
                 if let Some(generators) = generators {
                     for generator in generators {
                         match generator {
-                            Generator::Named { .. } => {
-                                return Err(eyre!("named generators aren't supported in scripts yet"));
-                            },
                             Generator::Script { script } => {
                                 if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
                                     for suggestion in String::from_utf8_lossy(&output.stdout).split('\n') {
@@ -1122,6 +1126,8 @@ fn run_tui(
                                     }
                                 }
                             },
+                            Generator::Named { .. } => bail!("Named generators aren't supported in scripts yet"),
+                            Generator::Unknown => bail!("Unknown generator type, try updating your Fig version"),
                         }
                     }
                 }
@@ -1182,7 +1188,7 @@ fn run_tui(
                     .unwrap_or_else(|| Path::new("/").to_owned());
 
                 let (files, folders) = match file_type {
-                    FileType::Any => (true, true),
+                    FileType::Any | FileType::Unknown => (true, true),
                     FileType::FileOnly => (true, false),
                     FileType::FolderOnly => (false, true),
                 };
@@ -1195,6 +1201,7 @@ fn run_tui(
                     extensions.clone(),
                 ));
             },
+            ParameterType::Unknown => bail!("Unknown parameter type, try updating your Fig version"),
         };
 
         form = form.push(parameter_div);

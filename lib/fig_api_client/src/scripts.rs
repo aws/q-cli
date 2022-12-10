@@ -15,6 +15,8 @@ pub enum Generator {
     Named { name: String },
     #[serde(rename_all = "camelCase")]
     Script { script: String },
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Copy, Serialize, Deserialize)]
@@ -23,6 +25,8 @@ pub enum FileType {
     Any,
     FileOnly,
     FolderOnly,
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -47,6 +51,8 @@ pub enum ParameterType {
         file_type: FileType,
         extensions: Vec<String>,
     },
+    #[serde(other)]
+    Unknown,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -74,6 +80,8 @@ pub enum RuleType {
     EnvironmentVariable,
     #[serde(rename = "Current-Branch")]
     CurrentBranch,
+    #[serde(other)]
+    Unknown,
 }
 
 impl Display for RuleType {
@@ -85,6 +93,7 @@ impl Display for RuleType {
             RuleType::GitRootDirectory => "Git root directory",
             RuleType::EnvironmentVariable => "Environment",
             RuleType::CurrentBranch => "Current branch",
+            RuleType::Unknown => "Unknown",
         })
     }
 }
@@ -98,6 +107,8 @@ pub enum Predicate {
     StartsWith,
     EndsWith,
     Exists,
+    #[serde(other)]
+    Unknown,
 }
 
 impl Display for Predicate {
@@ -109,6 +120,7 @@ impl Display for Predicate {
             Predicate::StartsWith => "start with",
             Predicate::EndsWith => "end with",
             Predicate::Exists => "exist",
+            Predicate::Unknown => "unknown",
         })
     }
 }
@@ -120,25 +132,28 @@ pub struct Rule {
     pub specifier: Option<String>,
     pub predicate: Predicate,
     pub inverted: bool,
-    pub value: String,
+    pub value: Option<String>,
 }
 
 impl Display for Rule {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         write!(
             f,
-            "{} {} {}{}",
+            "{} {} {}",
             self.key,
             match self.inverted {
                 true => "must not",
                 false => "must",
             },
             self.predicate,
-            match self.value.is_empty() {
-                true => "".to_owned(),
-                false => format!(" \"{}\"", self.value),
-            }
-        )
+        )?;
+        match self.value {
+            Some(ref value) if !value.is_empty() => {
+                write!(f, " \"{value}\"")?;
+            },
+            _ => {},
+        }
+        Ok(())
     }
 }
 
@@ -203,12 +218,11 @@ pub struct Script {
     pub name: String,
     pub display_name: Option<String>,
     pub description: Option<String>,
-    pub template_version: u32,
+    pub template_version: i64,
     pub tags: Option<Vec<String>>,
     pub rules: Option<Vec<Vec<Rule>>>,
     pub namespace: String,
     pub parameters: Vec<Parameter>,
-    pub template: String,
     pub tree: Vec<TreeElement>,
     pub is_owned_by_user: bool,
     #[serde(default)]
@@ -227,23 +241,340 @@ pub struct Script {
     pub invocation_track_inputs: bool,
 }
 
-pub async fn script(namespace: &str, name: &str, schema_version: u32) -> fig_request::Result<Script> {
-    fig_request::Request::get(format!("/workflows/{name}"))
-        .query(&[
-            ("namespace", namespace),
-            ("schema-version", &schema_version.to_string()),
-        ])
-        .auth()
-        .deser_json()
-        .await
+fn map_script(script: fig_graphql::script::ScriptFields, namespace: String, is_owned_by_user: bool) -> Script {
+    use fig_graphql::script::{
+        ScriptFieldsAstTreeOn,
+        ScriptFileType,
+        ScriptGeneratorType,
+        ScriptParameterType,
+        ScriptRuleKey,
+        ScriptRulePredicate,
+        ScriptRuntime,
+    };
+
+    Script {
+        name: script.name,
+        namespace,
+        display_name: script.fields.display_name,
+        description: script.fields.description,
+        template_version: script.fields.template_version.unwrap_or_default(),
+        tags: script.fields.tags,
+        rules: script.fields.rules.map(|r| {
+            r.into_iter()
+                .map(|r| {
+                    r.into_iter()
+                        .map(|rule| Rule {
+                            key: match rule.key {
+                                ScriptRuleKey::ContentsOfDirectory => RuleType::ContentsOfDirectory,
+                                ScriptRuleKey::CurrentBranch => RuleType::CurrentBranch,
+                                ScriptRuleKey::EnvironmentVariable => RuleType::EnvironmentVariable,
+                                ScriptRuleKey::GitRemote => RuleType::GitRemote,
+                                ScriptRuleKey::GitRootDirectory => RuleType::GitRootDirectory,
+                                ScriptRuleKey::WorkingDirectory => RuleType::WorkingDirectory,
+                                ScriptRuleKey::Other(_) => RuleType::Unknown,
+                            },
+                            specifier: rule.specifier,
+                            predicate: match rule.predicate {
+                                ScriptRulePredicate::Contains => Predicate::Contains,
+                                ScriptRulePredicate::EndsWith => Predicate::EndsWith,
+                                ScriptRulePredicate::Equals => Predicate::Equals,
+                                ScriptRulePredicate::Exists => Predicate::Exists,
+                                ScriptRulePredicate::Matches => Predicate::Matches,
+                                ScriptRulePredicate::StartsWith => Predicate::StartsWith,
+                                ScriptRulePredicate::Other(_) => Predicate::Unknown,
+                            },
+                            inverted: rule.inverted,
+                            value: rule.value,
+                        })
+                        .collect()
+                })
+                .collect()
+        }),
+        parameters: script
+            .fields
+            .parameters
+            .unwrap_or_default()
+            .into_iter()
+            .map(|parameter| Parameter {
+                name: parameter.name,
+                display_name: parameter.display_name,
+                description: parameter.description,
+                depends_on: vec![],
+                parameter_type: match parameter.type_ {
+                    ScriptParameterType::Checkbox => match parameter.checkbox {
+                        Some(checkbox) => ParameterType::Checkbox {
+                            true_value_substitution: checkbox
+                                .true_value_substitution
+                                .unwrap_or_else(|| "true".to_string()),
+                            false_value_substitution: checkbox
+                                .false_value_substitution
+                                .unwrap_or_else(|| "false".to_string()),
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Path => match parameter.path {
+                        Some(path) => ParameterType::Path {
+                            file_type: match path.file_type {
+                                ScriptFileType::Any => FileType::Any,
+                                ScriptFileType::FileOnly => FileType::FileOnly,
+                                ScriptFileType::FolderOnly => FileType::FolderOnly,
+                                ScriptFileType::Other(_) => FileType::Unknown,
+                            },
+                            extensions: path.extensions,
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Selector => match parameter.selector {
+                        Some(selector) => ParameterType::Selector {
+                            placeholder: selector.placeholder,
+                            suggestions: selector.suggestions,
+                            generators: selector.generators.map(|generators| {
+                                generators
+                                    .into_iter()
+                                    .map(|generator| match generator.type_ {
+                                        ScriptGeneratorType::Named => match generator.named {
+                                            Some(generator) => Generator::Named { name: generator.name },
+                                            None => Generator::Unknown,
+                                        },
+                                        ScriptGeneratorType::ShellScript => match generator.shell_script {
+                                            Some(generator) => Generator::Script {
+                                                script: generator.script,
+                                            },
+                                            None => Generator::Unknown,
+                                        },
+                                        ScriptGeneratorType::Other(_) => Generator::Unknown,
+                                    })
+                                    .collect()
+                            }),
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Text => match parameter.text {
+                        Some(text) => ParameterType::Text {
+                            placeholder: text.placeholder,
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Other(_) => ParameterType::Unknown,
+                },
+            })
+            .collect(),
+        tree: script
+            .ast_tree
+            .into_iter()
+            .map(|tree| match tree.on {
+                ScriptFieldsAstTreeOn::ScriptAstParameter(param) => TreeElement::Token { name: param.name },
+                ScriptFieldsAstTreeOn::ScriptAstText(text) => TreeElement::String(text.text),
+            })
+            .collect(),
+        runtime: match script.fields.runtime {
+            Some(ScriptRuntime::Bash) => Runtime::Bash,
+            Some(ScriptRuntime::Python) => Runtime::Python,
+            Some(ScriptRuntime::Node) => Runtime::Node,
+            Some(ScriptRuntime::Deno) => Runtime::Deno,
+            Some(ScriptRuntime::Other(_)) | None => Runtime::default(),
+        },
+        relevance: script.relevance_score,
+        is_owned_by_user,
+        last_invoked_at: script.last_invoked_at.map(|t| t.into()),
+        last_invoked_at_by_user: script.last_invoked_at_by_user.map(|t| t.into()),
+        invocation_track_stderr: false,
+        invocation_track_stdout: false,
+        invocation_track_inputs: false,
+    }
 }
 
-pub async fn scripts(schema_version: u32) -> fig_request::Result<Vec<Script>> {
-    fig_request::Request::get("/workflows")
-        .query(&[("schema-version", schema_version)])
-        .auth()
-        .deser_json()
-        .await
+fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String, is_owned_by_user: bool) -> Script {
+    use fig_graphql::scripts::{
+        ScriptFieldsAstTreeOn,
+        ScriptFileType,
+        ScriptGeneratorType,
+        ScriptParameterType,
+        ScriptRuleKey,
+        ScriptRulePredicate,
+        ScriptRuntime,
+    };
+
+    Script {
+        name: script.name,
+        namespace,
+        display_name: script.fields.display_name,
+        description: script.fields.description,
+        template_version: script.fields.template_version.unwrap_or_default(),
+        tags: script.fields.tags,
+        rules: script.fields.rules.map(|r| {
+            r.into_iter()
+                .map(|r| {
+                    r.into_iter()
+                        .map(|rule| Rule {
+                            key: match rule.key {
+                                ScriptRuleKey::ContentsOfDirectory => RuleType::ContentsOfDirectory,
+                                ScriptRuleKey::CurrentBranch => RuleType::CurrentBranch,
+                                ScriptRuleKey::EnvironmentVariable => RuleType::EnvironmentVariable,
+                                ScriptRuleKey::GitRemote => RuleType::GitRemote,
+                                ScriptRuleKey::GitRootDirectory => RuleType::GitRootDirectory,
+                                ScriptRuleKey::WorkingDirectory => RuleType::WorkingDirectory,
+                                ScriptRuleKey::Other(_) => RuleType::Unknown,
+                            },
+                            specifier: rule.specifier,
+                            predicate: match rule.predicate {
+                                ScriptRulePredicate::Contains => Predicate::Contains,
+                                ScriptRulePredicate::EndsWith => Predicate::EndsWith,
+                                ScriptRulePredicate::Equals => Predicate::Equals,
+                                ScriptRulePredicate::Exists => Predicate::Exists,
+                                ScriptRulePredicate::Matches => Predicate::Matches,
+                                ScriptRulePredicate::StartsWith => Predicate::StartsWith,
+                                ScriptRulePredicate::Other(_) => Predicate::Unknown,
+                            },
+                            inverted: rule.inverted,
+                            value: rule.value,
+                        })
+                        .collect()
+                })
+                .collect()
+        }),
+        parameters: script
+            .fields
+            .parameters
+            .unwrap_or_default()
+            .into_iter()
+            .map(|parameter| Parameter {
+                name: parameter.name,
+                display_name: parameter.display_name,
+                description: parameter.description,
+                depends_on: vec![],
+                parameter_type: match parameter.type_ {
+                    ScriptParameterType::Checkbox => match parameter.checkbox {
+                        Some(checkbox) => ParameterType::Checkbox {
+                            true_value_substitution: checkbox
+                                .true_value_substitution
+                                .unwrap_or_else(|| "true".to_string()),
+                            false_value_substitution: checkbox
+                                .false_value_substitution
+                                .unwrap_or_else(|| "false".to_string()),
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Path => match parameter.path {
+                        Some(path) => ParameterType::Path {
+                            file_type: match path.file_type {
+                                ScriptFileType::Any => FileType::Any,
+                                ScriptFileType::FileOnly => FileType::FileOnly,
+                                ScriptFileType::FolderOnly => FileType::FolderOnly,
+                                ScriptFileType::Other(_) => FileType::Unknown,
+                            },
+                            extensions: path.extensions,
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Selector => match parameter.selector {
+                        Some(selector) => ParameterType::Selector {
+                            placeholder: selector.placeholder,
+                            suggestions: selector.suggestions,
+                            generators: selector.generators.map(|generators| {
+                                generators
+                                    .into_iter()
+                                    .map(|generator| match generator.type_ {
+                                        ScriptGeneratorType::Named => match generator.named {
+                                            Some(generator) => Generator::Named { name: generator.name },
+                                            None => Generator::Unknown,
+                                        },
+                                        ScriptGeneratorType::ShellScript => match generator.shell_script {
+                                            Some(generator) => Generator::Script {
+                                                script: generator.script,
+                                            },
+                                            None => Generator::Unknown,
+                                        },
+                                        ScriptGeneratorType::Other(_) => Generator::Unknown,
+                                    })
+                                    .collect()
+                            }),
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Text => match parameter.text {
+                        Some(text) => ParameterType::Text {
+                            placeholder: text.placeholder,
+                        },
+                        None => ParameterType::Unknown,
+                    },
+                    ScriptParameterType::Other(_) => ParameterType::Unknown,
+                },
+            })
+            .collect(),
+        tree: script
+            .ast_tree
+            .into_iter()
+            .map(|tree| match tree.on {
+                ScriptFieldsAstTreeOn::ScriptAstParameter(param) => TreeElement::Token { name: param.name },
+                ScriptFieldsAstTreeOn::ScriptAstText(text) => TreeElement::String(text.text),
+            })
+            .collect(),
+        runtime: match script.fields.runtime {
+            Some(ScriptRuntime::Bash) => Runtime::Bash,
+            Some(ScriptRuntime::Python) => Runtime::Python,
+            Some(ScriptRuntime::Node) => Runtime::Node,
+            Some(ScriptRuntime::Deno) => Runtime::Deno,
+            Some(ScriptRuntime::Other(_)) | None => Runtime::default(),
+        },
+        relevance: script.relevance_score,
+        is_owned_by_user,
+        last_invoked_at: script.last_invoked_at.map(|t| t.into()),
+        last_invoked_at_by_user: script.last_invoked_at_by_user.map(|t| t.into()),
+        invocation_track_stderr: false,
+        invocation_track_stdout: false,
+        invocation_track_inputs: false,
+    }
+}
+
+pub async fn script(
+    namespace: impl Into<String>,
+    name: impl Into<String>,
+    _schema_version: i64,
+) -> fig_request::Result<Option<Script>> {
+    let namespace_str = namespace.into();
+
+    let data = fig_graphql::script!(namespace: namespace_str.clone(), name: name).await?;
+
+    let Some(namespace) = data.namespace else {
+        return Ok(None);
+    };
+
+    let Some(script) = namespace.script else {
+        return Ok(None);
+    };
+
+    Ok(Some(map_script(script, namespace_str, true)))
+}
+
+pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
+    let data = fig_graphql::scripts!().await?;
+    let Some(current_user) = data.current_user else {
+        return Ok(vec![]);
+    };
+
+    let mut scripts = vec![];
+
+    if let Some(user_namespace) = current_user.namespace {
+        for script in user_namespace.scripts {
+            scripts.push((user_namespace.username.clone(), script, true));
+        }
+    }
+
+    if let Some(team_memberships) = current_user.team_memberships {
+        for team_membership in team_memberships {
+            if let Some(namespace) = team_membership.team.namespace {
+                for script in namespace.scripts {
+                    scripts.push((namespace.username.clone(), script, false));
+                }
+            }
+        }
+    }
+
+    Ok(scripts
+        .into_iter()
+        .map(|(namespace, script, is_owned_by_user)| map_scripts(script, namespace, is_owned_by_user))
+        .collect())
 }
 
 /// Caches the scripts and returns them

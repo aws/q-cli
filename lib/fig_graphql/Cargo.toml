@@ -16,3 +16,4 @@ tokio = { version = "1", features = ["full"] }
 
 [build-dependencies]
 convert_case = "0.6.0"
+regex = "1.7.0"

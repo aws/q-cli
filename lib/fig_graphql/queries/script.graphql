@@ -1,0 +1,91 @@
+query Script($namespace: String!, $name: String!) {
+  namespace(username: $namespace) {
+    script(name: $name) {
+      ...ScriptFields
+    }
+  }
+}
+
+query Scripts {
+  currentUser {
+    namespace {
+      ...NamespaceFields
+    }
+    teamMemberships {
+      team {
+        namespace {
+          ...NamespaceFields
+        }
+      }
+    }
+  }
+}
+
+fragment NamespaceFields on Namespace {
+  username
+  scripts {
+    ...ScriptFields
+  }
+}
+
+fragment ScriptFields on Script {
+  name
+  updatedAt
+  fields {
+    displayName
+    description
+    templateVersion
+    tags
+    rules {
+      specifier
+      key
+      value
+      inverted
+      predicate
+    }
+    parameters {
+      type
+      name
+      displayName
+      description
+      text {
+        placeholder
+      }
+      checkbox {
+        trueValueSubstitution
+        falseValueSubstitution
+      }
+      selector {
+        generators {
+          named {
+            name
+          }
+          shellScript {
+            script
+          }
+          type
+        }
+        placeholder
+        suggestions
+      }
+      path {
+        extensions
+        fileType
+      }
+    }
+    runtime
+  }
+  astTree {
+    type
+    ... on ScriptAstParameter {
+      name
+    }
+    ... on ScriptAstText {
+      text
+    }
+    __typename
+  }
+  relevanceScore
+  lastInvokedAt
+  lastInvokedAtByUser
+}

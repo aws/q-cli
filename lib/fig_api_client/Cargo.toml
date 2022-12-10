@@ -16,3 +16,4 @@ serde_json = "1.0.89"
 time = { version = "0.3.17", features = ["serde"] }
 url = { version = "2.3.1", features = ["serde"] }
 tokio = { version = "1", features = ["process"] }
+fig_graphql = { version = "2.10.0-dev", path = "../fig_graphql" }

@@ -11,7 +11,7 @@ pub fn init_global() -> Result<()> {
 }
 
 /// Do not use this if you want to update remote settings, use
-/// [fig_api_client::settings::update]
+/// fig_api_client::settings::update
 pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
     let mut settings = Settings::load()?;
     settings.set(key, value);
@@ -20,7 +20,7 @@ pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) ->
 }
 
 /// Do not use this if you want to update remote settings_path, use
-/// [fig_api_client::settings::delete]
+/// fig_api_client::settings::delete
 pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
     let mut settings = Settings::load()?;
     settings.remove(&key);

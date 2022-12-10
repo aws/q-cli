@@ -1693,6 +1693,7 @@ dependencies = [
 name = "fig_api_client"
 version = "2.10.0-dev"
 dependencies = [
+ "fig_graphql",
  "fig_request",
  "fig_settings",
  "fig_util",
@@ -1923,6 +1924,7 @@ dependencies = [
  "convert_case 0.6.0",
  "fig_request",
  "graphql_client",
+ "regex",
  "serde",
  "serde_json",
  "time 0.3.17",
