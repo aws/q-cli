@@ -9,6 +9,7 @@ use crate::utils::{
     read_channel,
     read_version,
     run_stdout,
+    run_wet,
     Channel,
 };
 
@@ -88,7 +89,7 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
         .post("https://circleci.com/api/v2/project/github/withfig/macos/pipeline")
         .header("Circle-Token", &token)
         .json(&TriggerPipelineRequest {
-            branch: current_branch,
+            branch: current_branch.clone(),
             parameters: TriggerPipelineParameters {
                 build_targets: build_targets
                     .into_iter()
@@ -156,6 +157,25 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
     } else {
         let resp: CircleError = resp.json().await?;
         eyre::bail!("CircleCI Error: {}", resp.message);
+    }
+
+    // Trigger gh action to update the cli spec
+    if channel == Channel::Stable {
+        println!("Triggering gh action to update the cli spec...");
+
+        run_wet(
+            &[
+                "gh",
+                "workflow",
+                "run",
+                "update-fig-cli-spec.yaml",
+                "--repo",
+                "withfig/macos",
+                "--ref",
+                current_branch.as_str(),
+            ],
+            dry,
+        )?;
     }
 
     Ok(())
