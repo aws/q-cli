@@ -219,14 +219,14 @@ impl Center {
     fn new(component: impl Component + 'static) -> Self {
         let resize_warning = Paragraph::new("").push_text(
             "
-          ▁▁▁▁▁▁▁▁▁▁▁▁
-          ▏↖        ↗▕
-          ▏          ▕
-          ▏          ▕
-          ▏↙        ↘▕
-          ▔▔▔▔▔▔▔▔▔▔▔▔
-   You'll need to expand your
-terminal to see your #FigWrapped!",
+            ▁▁▁▁▁▁▁▁▁▁▁▁
+            ▏↖        ↗▕
+            ▏          ▕
+            ▏          ▕
+            ▏↙        ↘▕
+            ▔▔▔▔▔▔▔▔▔▔▔▔
+Expand your terminal or decrease your
+ font size to see your #FigWrapped!",
         );
 
         Self {
