@@ -75,7 +75,8 @@ pub fn release(dry: bool) -> eyre::Result<()> {
     let mut version = read_version();
     version.pre = Prerelease::new("dev")?;
     version.build = BuildMetadata::EMPTY;
-    version.patch += 1;
+    version.patch = 0;
+    version.minor += 1;
     write_version(&version);
     write_channel(&Channel::None); // disable package uploads and ci runs
     update_lockfile()?;
