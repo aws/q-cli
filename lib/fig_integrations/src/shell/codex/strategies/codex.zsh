@@ -6,5 +6,5 @@
 #
 
 _fig_autosuggest_strategy_codex() {
-	typeset -g suggestion="$(fig _ codex --buffer ${BUFFER})"
+	typeset -g suggestion="$(command -v fig >/dev/null && fig _ codex --buffer ${BUFFER})"
 }
