@@ -143,6 +143,7 @@ message UpdateShellContextRequest {
 // Command to notify figterm session that an SSH session has started in the terminal
 message NotifySSHSessionStartedRequest {
   string uuid = 1;
+  string remote_host = 2;
 }
 
 message CodexCompleteRequest {

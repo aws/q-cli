@@ -165,7 +165,7 @@ pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
     UnlockInterception,
     SetImmediateMode(bool),
-    PromptSSH(String),
+    PromptSSH { uuid: String, remote_host: String },
     SetCsiU,
     UnsetCsiU,
 }
@@ -219,8 +219,10 @@ fn get_cursor_coordinates(terminal: &mut dyn Terminal) -> Option<TerminalCursorC
     }
 }
 
+#[allow(clippy::too_many_arguments)]
 async fn should_install_remote_ssh_integration(
     uuid: String,
+    remote_host: String,
     main_loop_tx: Sender<MainLoopEvent>,
     secure_receiver: Receiver<fig_proto::secure::Clientbound>,
     secure_sender: Sender<Hostbound>,
@@ -230,14 +232,18 @@ async fn should_install_remote_ssh_integration(
 ) -> Option<bool> {
     use fig_proto::secure::clientbound;
 
-    // Leaving child shell, begin queueing input.
-    let remote_install_setting = fig_settings::settings::get_string_or("ssh.install-remote-integration", "ask".into());
-
+    let remote_install_setting = fig_settings::settings::get_string_or("ssh.remote-prompt", "ask".into());
     if remote_install_setting == "never" {
         return Some(false);
     }
 
-    let prompt_timeout: u64 = fig_settings::settings::get_int_or("ssh.remote-prompt-timeout", 2000)
+    let key = format!("ssh.remote-prompt.disable-host.{remote_host}");
+    let disable_host = fig_settings::state::get_bool_or(key, false);
+    if disable_host {
+        return Some(false);
+    }
+
+    let prompt_timeout: u64 = fig_settings::settings::get_int_or("ssh.remote-prompt.timeout", 2000)
         .try_into()
         .unwrap_or(2000);
 
@@ -282,6 +288,7 @@ async fn should_install_remote_ssh_integration(
 }
 
 async fn prompt_remote_integration_install(
+    remote_host: String,
     console_term: ConsoleTerm,
     console_term_key_tx: Sender<Key>,
     terminal: &mut SystemTerminal,
@@ -314,8 +321,8 @@ async fn prompt_remote_integration_install(
 
     terminal.set_cooked_mode()?;
     let should_install = dialoguer::Select::with_theme(&dialoguer_theme())
-        .with_prompt("Do you want to install Fig on your remote machine?")
-        .items(&["Always (Don't ask again)", "Yes", "No", "Never (Don't ask again)"])
+        .with_prompt("Up-to-date Fig integration not found on remote. Would you like to install/update?")
+        .items(&["Always", "Yes", "No", "Never for this remote", "Never"])
         .default(1)
         .interact_on_opt(&console_term)?;
 
@@ -324,12 +331,17 @@ async fn prompt_remote_integration_install(
 
     let result = match should_install {
         Some(0) => {
-            fig_settings::settings::set_value("ssh.install-remote-integration", "always").ok();
+            fig_settings::settings::set_value("ssh.remote-prompt", "always").ok();
             true
         },
         Some(1) => true,
         Some(3) => {
-            fig_settings::settings::set_value("ssh.install-remote-integration", "never").ok();
+            let key = format!("ssh.remote-prompt.disable-host.{remote_host}");
+            fig_settings::state::set_value(key, true).ok();
+            false
+        },
+        Some(4) => {
+            fig_settings::settings::set_value("ssh.remote-prompt", "never").ok();
             false
         },
         Some(_) | None => false,
@@ -771,32 +783,36 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     stdout.flush().await?;
                                     csi_u_set = false;
                                 },
-                                MainLoopEvent::PromptSSH(uuid) => {
-                                    let should_install = should_install_remote_ssh_integration(
-                                        uuid,
-                                        main_loop_tx.clone(),
-                                        secure_receiver.clone(),
-                                        secure_sender.clone(),
-                                        &term,
-                                        &mut master,
-                                        &mut key_interceptor,
-                                    ).await;
+                                MainLoopEvent::PromptSSH { uuid, remote_host } => {
+                                    if *fig_pro.lock() {
+                                        let should_install = should_install_remote_ssh_integration(
+                                            uuid,
+                                            remote_host.clone(),
+                                            main_loop_tx.clone(),
+                                            secure_receiver.clone(),
+                                            secure_sender.clone(),
+                                            &term,
+                                            &mut master,
+                                            &mut key_interceptor,
+                                        ).await;
 
-                                    let should_install = match should_install {
-                                        Some(val) => val,
-                                        None => {
-                                            prompt_remote_integration_install(
-                                                console_term.clone(),
-                                                console_term_key_tx.clone(),
-                                                &mut terminal,
-                                                input_rx.clone(),
-                                            ).await.unwrap_or(false)
+                                        let should_install = match should_install {
+                                            Some(val) => val,
+                                            None => {
+                                                prompt_remote_integration_install(
+                                                    remote_host,
+                                                    console_term.clone(),
+                                                    console_term_key_tx.clone(),
+                                                    &mut terminal,
+                                                    input_rx.clone(),
+                                                ).await.unwrap_or(false)
+                                            }
+                                        };
+
+                                        if should_install {
+                                            let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
+                                            master.write_all(installation_command.as_bytes()).await?;
                                         }
-                                    };
-
-                                    if should_install {
-                                        let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
-                                        master.write_all(installation_command.as_bytes()).await?;
                                     }
                                 }
                             }

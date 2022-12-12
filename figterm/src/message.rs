@@ -310,7 +310,12 @@ pub async fn process_figterm_request(
             Ok(None)
         },
         FigtermRequest::NotifySshSessionStarted(notification) => {
-            main_loop_tx.send(MainLoopEvent::PromptSSH(notification.uuid)).ok();
+            main_loop_tx
+                .send(MainLoopEvent::PromptSSH {
+                    uuid: notification.uuid,
+                    remote_host: notification.remote_host,
+                })
+                .ok();
             Ok(None)
         },
         FigtermRequest::CodexComplete(_) => anyhow::bail!("CodexComplete is not supported over secure"),

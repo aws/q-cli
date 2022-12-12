@@ -96,6 +96,8 @@ use tracing::{
 
 use crate::cli::installation::install_cli;
 
+const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
+
 #[derive(Debug, Args, PartialEq, Eq)]
 #[command(group(
         ArgGroup::new("output")
@@ -472,6 +474,10 @@ impl InternalSubcommand {
                 //   - 0 execute figterm
                 //   - 1 dont execute figterm
                 //   - 2 fallback to FIG_TERM env
+                if !fig_settings::state::get_bool_or("figterm.enabled", true) {
+                    exit(1);
+                }
+
                 cfg_if!(
                     if #[cfg(target_os = "linux")] {
                         if fig_util::system_info::in_wsl() {
@@ -834,18 +840,28 @@ impl InternalSubcommand {
             },
             InternalSubcommand::PromptSsh { .. } => {},
             InternalSubcommand::SshLocalCommand { remote_dest, uuid } => {
-                if !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
-                    if let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") {
-                        let mut conn =
-                            BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?)
-                                .await?;
-                        conn.send_message(FigtermRequestMessage {
-                            request: Some(FigtermRequest::NotifySshSessionStarted(
-                                NotifySshSessionStartedRequest { uuid },
-                            )),
-                        })
-                        .await?;
-                    }
+                // Ensure desktop app is running to avoid SSH errors on stdout when local side of
+                // RemoteForward isn't listening
+                launch_fig_desktop(LaunchArgs {
+                    wait_for_socket: true,
+                    open_dashboard: false,
+                    immediate_update: false,
+                    verbose: false,
+                })
+                .ok();
+
+                if let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") {
+                    let mut conn =
+                        BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
+                    conn.send_message(FigtermRequestMessage {
+                        request: Some(FigtermRequest::NotifySshSessionStarted(
+                            NotifySshSessionStartedRequest {
+                                uuid,
+                                remote_host: remote_dest,
+                            },
+                        )),
+                    })
+                    .await?;
                 }
             },
             #[cfg(target_os = "macos")]
@@ -946,11 +962,24 @@ impl InternalSubcommand {
                 fig_install::uninstall(components).await.ok();
             },
             InternalSubcommand::GenerateSSH { remote_username } => {
-                let mut should_generate_config = fig_settings::settings::get_bool_or("integrations.ssh.enabled", true);
+                let is_pro = match fig_settings::state::get_bool(IS_FIG_PRO_KEY).ok().flatten() {
+                    Some(is_pro) => is_pro,
+                    None => {
+                        let is_pro = fig_api_client::user::plans()
+                            .await
+                            .map(|plan| plan.highest_plan())
+                            .unwrap_or_default()
+                            .is_pro();
+                        fig_settings::state::set_value(IS_FIG_PRO_KEY, is_pro).ok();
+                        is_pro
+                    },
+                };
+
+                let mut should_generate_config =
+                    is_pro && fig_settings::settings::get_bool_or("integrations.ssh.enabled", true);
 
                 for username in ["git", "aur"] {
                     if remote_username == username {
-                        writeln!(stdout(), "blacklisted username {username}").ok();
                         should_generate_config = false;
                     }
                 }
