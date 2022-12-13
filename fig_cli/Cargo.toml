@@ -31,7 +31,7 @@ clap_complete = "4.0.6"
 clap_complete_fig = "4.0.2"
 color-eyre = "0.6.2"
 crossterm = "0.25.0"
-ctrlc = "3.2.3"
+ctrlc = "3.2.4"
 dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
 eyre = "0.6.8"
 fig_api_client = { path = "../lib/fig_api_client" }
