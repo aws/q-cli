@@ -239,6 +239,8 @@ pub struct Script {
     pub invocation_track_stdout: bool,
     #[serde(default)]
     pub invocation_track_inputs: bool,
+    #[serde(default)]
+    pub invocation_disable_track: bool,
 }
 
 macro_rules! map_script {
@@ -373,9 +375,30 @@ macro_rules! map_script {
             is_owned_by_user,
             last_invoked_at: script.last_invoked_at.map(|t| t.into()),
             last_invoked_at_by_user: script.last_invoked_at_by_user.map(|t| t.into()),
-            invocation_track_stderr: false,
-            invocation_track_stdout: false,
-            invocation_track_inputs: false,
+            invocation_disable_track: script
+                .fields
+                .invocation_collection
+                .as_ref()
+                .and_then(|s| s.disabled)
+                .unwrap_or_default(),
+            invocation_track_stdout: script
+                .fields
+                .invocation_collection
+                .as_ref()
+                .and_then(|s| s.stdout)
+                .unwrap_or_default(),
+            invocation_track_stderr: script
+                .fields
+                .invocation_collection
+                .as_ref()
+                .and_then(|s| s.stderr)
+                .unwrap_or_default(),
+            invocation_track_inputs: script
+                .fields
+                .invocation_collection
+                .as_ref()
+                .and_then(|s| s.inputs)
+                .unwrap_or_default(),
         }
     }};
 }

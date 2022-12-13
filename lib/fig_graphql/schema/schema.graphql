@@ -236,6 +236,7 @@ type ScriptFields {
   description: String
   displayName: String
   icon: String
+  invocationCollection: ScriptInvocationCollection
   isProtected: Boolean
   name: String
   parameters: [ScriptParameter!]
@@ -250,6 +251,7 @@ input ScriptFieldsInput {
   description: String
   displayName: String
   icon: String
+  invocationCollection: ScriptInvocationCollectionInput
   isProtected: Boolean
   name: String
   parameters: [ScriptParameterInput!]
@@ -295,6 +297,20 @@ type ScriptInvocation {
   standardError: String
   updatedAt: DateTime!
   user: OtherUser
+}
+
+type ScriptInvocationCollection {
+  disabled: Boolean
+  inputs: Boolean
+  stderr: Boolean
+  stdout: Boolean
+}
+
+input ScriptInvocationCollectionInput {
+  disabled: Boolean
+  inputs: Boolean
+  stderr: Boolean
+  stdout: Boolean
 }
 
 type ScriptNamedGenerator {

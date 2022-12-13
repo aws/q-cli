@@ -74,6 +74,12 @@ fragment ScriptFields on Script {
       }
     }
     runtime
+    invocationCollection {
+      disabled
+      inputs
+      stdout
+      stderr
+    }
   }
   astTree {
     type
