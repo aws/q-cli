@@ -14,7 +14,10 @@ use std::process::{
 };
 
 use bytes::BytesMut;
-use clap::Args;
+use clap::{
+    ArgGroup,
+    Args,
+};
 use crossterm::style::Stylize;
 use eyre::{
     bail,
@@ -564,25 +567,61 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
             }
 
             for param in &script.parameters {
-                let mut arg = clap::Arg::new(&param.name).long(&param.name);
-
-                if param.name.len() == 1 {
-                    arg = arg.short(param.name.chars().next().unwrap());
-                }
-
-                if let Some(description) = &param.description {
-                    arg = arg.help(description);
-                }
-
                 match param.parameter_type {
                     ParameterType::Selector { .. } => {
+                        let mut arg = clap::Arg::new(&param.name).long(&param.name);
+
+                        if param.name.len() == 1 {
+                            arg = arg.short(param.name.chars().next().unwrap());
+                        }
+
+                        if let Some(description) = &param.description {
+                            arg = arg.help(description);
+                        }
+
                         command = command.arg(arg.value_parser(clap::value_parser!(String)).required(true));
                     },
                     ParameterType::Text { .. } | ParameterType::Path { .. } => {
+                        let mut arg = clap::Arg::new(&param.name).long(&param.name);
+
+                        if param.name.len() == 1 {
+                            arg = arg.short(param.name.chars().next().unwrap());
+                        }
+
+                        if let Some(description) = &param.description {
+                            arg = arg.help(description);
+                        }
+
                         command = command.arg(arg.value_parser(clap::value_parser!(String)).required(true));
                     },
                     ParameterType::Checkbox { .. } => {
-                        command = command.arg(arg.action(clap::ArgAction::SetTrue));
+                        command = command.group(
+                            ArgGroup::new(format!("_{}_group", param.name))
+                                .arg(&param.name)
+                                .arg(format!("no-{}", &param.name))
+                                .required(true)
+                                .multiple(false),
+                        );
+
+                        let mut true_arg = clap::Arg::new(&param.name)
+                            .long(&param.name)
+                            .action(clap::ArgAction::SetTrue);
+
+                        if let Some(description) = &param.description {
+                            true_arg = true_arg.help(description);
+                        }
+
+                        command = command.arg(true_arg);
+
+                        let mut false_arg = clap::Arg::new(format!("no-{}", &param.name))
+                            .long(format!("no-{}", &param.name))
+                            .action(clap::ArgAction::SetFalse);
+
+                        if let Some(description) = &param.description {
+                            false_arg = false_arg.help(description);
+                        }
+
+                        command = command.arg(false_arg);
                     },
                     ParameterType::Unknown => bail!("Unknown parameter type, you may need to update Fig"),
                 };
@@ -645,7 +684,9 @@ fn map_args_to_command(script: &Script, args: &HashMap<String, Value>) -> String
             Value::Bool { val: true, .. } => {
                 write!(command, " --{arg}").ok();
             },
-            Value::Bool { val: false, .. } => {},
+            Value::Bool { val: false, .. } => {
+                write!(command, " --no-{arg}").ok();
+            },
         };
     }
 
