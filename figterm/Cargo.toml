@@ -29,6 +29,7 @@ fig_history = { path = "../lib/fig_history" }
 fig_ipc = { path = "../lib/fig_ipc" }
 fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }
+fig_request = { path = "../lib/fig_request" }
 fig_settings = { path = "../lib/fig_settings" }
 fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
@@ -50,7 +51,11 @@ sysinfo = { version = "0.27.0", default-features = false }
 time = "0.3.17"
 tokio = { version = "1.20.1", features = ["full"] }
 tracing = { version = "0.1.36", features = ["log"] }
-tracing-subscriber = { version = "0.3.16", features = ["fmt", "time", "parking_lot"] }
+tracing-subscriber = { version = "0.3.16", features = [
+    "fmt",
+    "time",
+    "parking_lot",
+] }
 uuid = { version = "1.2.2", features = ["v4", "fast-rng"] }
 which = "4.3.0"
 
@@ -75,4 +80,3 @@ winreg = "0.10"
 [dev-dependencies]
 assert_cmd = "2.0.7"
 predicates = "2.1.4"
-

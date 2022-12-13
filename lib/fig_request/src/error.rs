@@ -25,6 +25,15 @@ pub enum Error {
     NoToken,
 }
 
+impl Error {
+    pub fn is_status(&self, status: StatusCode) -> bool {
+        match self {
+            Error::Fig { status: s, .. } | Error::Status(s) => *s == status,
+            _ => false,
+        }
+    }
+}
+
 impl std::fmt::Display for Error {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {

@@ -2258,6 +2258,7 @@ dependencies = [
  "fig_ipc",
  "fig_log",
  "fig_proto",
+ "fig_request",
  "fig_settings",
  "fig_telemetry",
  "fig_util",

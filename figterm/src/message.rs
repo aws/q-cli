@@ -38,6 +38,7 @@ use fig_proto::secure::{
     Clientbound,
     Hostbound,
 };
+use fig_request::reqwest::StatusCode;
 use fig_util::directories::home_dir_utf8;
 use flume::Sender;
 use once_cell::sync::Lazy;
@@ -378,116 +379,127 @@ pub async fn process_figterm_message(
                 let now = SystemTime::now();
                 LAST_RECEIVED.lock().await.replace(now);
 
-                tokio::time::sleep(debounce_duration).await;
-                if *LAST_RECEIVED.lock().await == Some(now) {
-                    // TODO: determine behavior here, None or Some(unix timestamp)
-                    *LAST_RECEIVED.lock().await = Some(SystemTime::now());
-                } else {
-                    warn!("Received another codex completion request, aborting");
+                for _ in 0..3 {
+                    tokio::time::sleep(debounce_duration).await;
+                    if *LAST_RECEIVED.lock().await == Some(now) {
+                        // TODO: determine behavior here, None or Some(unix timestamp)
+                        *LAST_RECEIVED.lock().await = Some(SystemTime::now());
+                    } else {
+                        warn!("Received another codex completion request, aborting");
+                        if let Err(err) = response_tx
+                            .send_async(FigtermResponseMessage {
+                                response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse {
+                                    insert_text: None,
+                                })),
+                            })
+                            .await
+                        {
+                            error!(%err, "Failed to send codex completion");
+                        }
+
+                        return;
+                    }
+
+                    info!("Sending codex completion request");
+
+                    let (history_query_tx, history_query_rx) = flume::bounded(1);
+                    if let Err(err) = history_sender
+                        .send_async(history::HistoryCommand::Query(
+                            HistoryQueryParams {
+                                limit: std::env::var("FIG_CODEX_HISTORY_COUNT")
+                                    .ok()
+                                    .and_then(|s| s.parse().ok())
+                                    .unwrap_or(25),
+                            },
+                            history_query_tx,
+                        ))
+                        .await
+                    {
+                        error!(%err, "Failed to send history query");
+                    }
+
+                    let history = match history_query_rx.recv_async().await {
+                        Ok(Some(history)) => history,
+                        err => {
+                            error!(?err, "Failed to get history");
+                            vec![]
+                        },
+                    };
+
+                    let request = fig_api_client::ai::CodexRequest {
+                        history: history
+                            .into_iter()
+                            .map(|entry| fig_api_client::ai::CommandInfo {
+                                command: entry.command,
+                                cwd: entry.cwd,
+                                time: entry.start_time.map(|t| t.into()),
+                                exit_code: entry.exit_code,
+                                hostname: entry.hostname,
+                                pid: entry.pid,
+                                session_id: entry.session_id,
+                                shell: entry.shell,
+                            })
+                            .collect::<Vec<_>>(),
+                        os: std::env::consts::OS.to_string(),
+                        arch: std::env::consts::ARCH.to_string(),
+                        time: Some(time::OffsetDateTime::now_utc()),
+                        cwd: std::env::current_dir()
+                            .ok()
+                            .and_then(|p| p.to_str().map(|s| s.to_string())),
+                        edit_buffer: vec![
+                            EditBufferComponent::String(figterm_request.buffer.clone()),
+                            EditBufferComponent::Other {
+                                r#type: "cursor".to_string(),
+                            },
+                        ],
+                        home_dir: home_dir_utf8().map(|s| s.into()).ok(),
+                        session_id: Some(session_id.clone()),
+                    };
+
+                    let response = match fig_api_client::ai::request(request).await {
+                        Err(err) if err.is_status(StatusCode::TOO_MANY_REQUESTS) => {
+                            warn!("Too many requests, trying again in 1 second");
+                            tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
+                            continue;
+                        },
+                        other => other,
+                    };
+
+                    let insert_text = match response {
+                        Ok(response) => {
+                            if response.accuracy_rating.unwrap_or(1.0)
+                                < std::env::var("FIG_CODEX_ACCURACY_THRESHOLD")
+                                    .ok()
+                                    .and_then(|s| s.parse().ok())
+                                    .unwrap_or(0.5)
+                            {
+                                None
+                            } else {
+                                response.insert_text
+                            }
+                        },
+                        Err(err) => {
+                            error!(%err, "Failed to get codex completion");
+                            None
+                        },
+                    };
+
+                    info!(?insert_text, "Got codex completion");
+
+                    if *CACHE_ENABLED {
+                        COMPLETION_CACHE.insert(figterm_request.buffer, insert_text.clone());
+                    }
+
                     if let Err(err) = response_tx
                         .send_async(FigtermResponseMessage {
-                            response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse {
-                                insert_text: None,
-                            })),
+                            response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse { insert_text })),
                         })
                         .await
                     {
                         error!(%err, "Failed to send codex completion");
                     }
 
-                    return;
-                }
-
-                info!("Sending codex completion request");
-
-                let (history_query_tx, history_query_rx) = flume::bounded(1);
-                if let Err(err) = history_sender
-                    .send_async(history::HistoryCommand::Query(
-                        HistoryQueryParams {
-                            limit: std::env::var("FIG_CODEX_HISTORY_COUNT")
-                                .ok()
-                                .and_then(|s| s.parse().ok())
-                                .unwrap_or(25),
-                        },
-                        history_query_tx,
-                    ))
-                    .await
-                {
-                    error!(%err, "Failed to send history query");
-                }
-
-                let history = match history_query_rx.recv_async().await {
-                    Ok(Some(history)) => history,
-                    err => {
-                        error!(?err, "Failed to get history");
-                        vec![]
-                    },
-                };
-
-                let request = fig_api_client::ai::CodexRequest {
-                    history: history
-                        .into_iter()
-                        .map(|entry| fig_api_client::ai::CommandInfo {
-                            command: entry.command,
-                            cwd: entry.cwd,
-                            time: entry.start_time.map(|t| t.into()),
-                            exit_code: entry.exit_code,
-                            hostname: entry.hostname,
-                            pid: entry.pid,
-                            session_id: entry.session_id,
-                            shell: entry.shell,
-                        })
-                        .collect::<Vec<_>>(),
-                    os: std::env::consts::OS.to_string(),
-                    arch: std::env::consts::ARCH.to_string(),
-                    time: Some(time::OffsetDateTime::now_utc()),
-                    cwd: std::env::current_dir()
-                        .ok()
-                        .and_then(|p| p.to_str().map(|s| s.to_string())),
-                    edit_buffer: vec![
-                        EditBufferComponent::String(figterm_request.buffer.clone()),
-                        EditBufferComponent::Other {
-                            r#type: "cursor".to_string(),
-                        },
-                    ],
-                    home_dir: home_dir_utf8().map(|s| s.into()).ok(),
-                    session_id: Some(session_id),
-                };
-
-                let response = fig_api_client::ai::request(request).await;
-
-                let insert_text = match response {
-                    Ok(response) => {
-                        if response.accuracy_rating.unwrap_or(1.0)
-                            < std::env::var("FIG_CODEX_ACCURACY_THRESHOLD")
-                                .ok()
-                                .and_then(|s| s.parse().ok())
-                                .unwrap_or(0.5)
-                        {
-                            None
-                        } else {
-                            response.insert_text
-                        }
-                    },
-                    Err(err) => {
-                        error!(%err, "Failed to get codex completion");
-                        None
-                    },
-                };
-
-                info!(?insert_text, "Got codex completion");
-
-                if *CACHE_ENABLED {
-                    COMPLETION_CACHE.insert(figterm_request.buffer, insert_text.clone());
-                }
-
-                if let Err(err) = response_tx
-                    .send_async(FigtermResponseMessage {
-                        response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse { insert_text })),
-                    })
-                    .await
-                {
-                    error!(%err, "Failed to send codex completion");
+                    break;
                 }
             });
         },
