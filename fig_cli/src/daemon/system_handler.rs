@@ -1,3 +1,4 @@
+use std::str::FromStr;
 use std::sync::Arc;
 
 use eyre::{
@@ -23,6 +24,7 @@ use fig_proto::daemon::sync_command::SyncType;
 use fig_proto::daemon::{
     DaemonMessage,
     DaemonResponse,
+    DispatchHttpRequestCommand,
     LogLevelCommand,
     OpenBrowserCommand,
 };
@@ -197,6 +199,46 @@ async fn spawn_system_handler(
                                     error!(%err, "Failed to open browser");
                                 }
                                 fig_proto::daemon::new_open_browser_response()
+                            },
+                            Command::DispatchHttpRequest(DispatchHttpRequestCommand {
+                                method,
+                                body,
+                                url,
+                                auth,
+                            }) => {
+                                let method = method.to_owned();
+                                let body = body.to_owned();
+                                let url = url.to_owned();
+                                let auth = *auth;
+
+                                tokio::spawn(async move {
+                                    match fig_request::Method::from_str(&method) {
+                                        Ok(method) => match url::Url::parse(&url) {
+                                            Ok(url) => {
+                                                let response = if auth {
+                                                    fig_request::Request::new_with_url(method, url)
+                                                        .auth()
+                                                        .body(body)
+                                                        .send()
+                                                        .await
+                                                } else {
+                                                    fig_request::Request::new_with_url(method, url)
+                                                        .body(body)
+                                                        .send()
+                                                        .await
+                                                };
+
+                                                if let Err(err) = response {
+                                                    error!(%err, "Request failed");
+                                                }
+                                            },
+                                            Err(err) => error!(%err, %url, "Invalid URL"),
+                                        },
+                                        Err(err) => error!(%err, %method, "Invalid method"),
+                                    };
+                                });
+
+                                continue;
                             },
                         };
 

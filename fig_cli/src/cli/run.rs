@@ -844,7 +844,7 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                 let stdout = stdout_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
                 let stderr = stderr_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
 
-                fig_graphql::create_script_invocation!(
+                let query = fig_graphql::create_script_invocation_query!(
                     name: script.name.clone(),
                     namespace: script.namespace.clone(),
                     execution_start_time: Some(start_time.into()),
@@ -855,7 +855,9 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                     inputs: script.invocation_track_inputs.then_some(inputs),
                     ctrl_c: true,
                     ..Default::default(),
-                ).await.ok();
+                );
+
+                fig_graphql::dispatch::send_to_daemon(query, true).await.ok();
             }
 
             std::process::exit(130);
@@ -868,7 +870,7 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                 let stdout = stdout_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
                 let stderr = stderr_join.await.ok().map(|b| String::from_utf8_lossy(&b).into_owned());
 
-                fig_graphql::create_script_invocation!(
+                let query = fig_graphql::create_script_invocation_query!(
                     name: script.name.clone(),
                     namespace: script.namespace.clone(),
                     execution_start_time: Some(start_time.into()),
@@ -879,7 +881,9 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                     inputs: script.invocation_track_inputs.then_some(inputs),
                     exit_code,
                     ..Default::default(),
-                ).await.ok();
+                );
+
+                fig_graphql::dispatch::send_to_daemon(query, true).await.ok();
             }
 
             if let Some(code) = exit_code {

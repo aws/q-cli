@@ -1,5 +1,8 @@
+#[cfg(feature = "dispatch")]
+pub mod dispatch;
 pub mod scalar;
 
+pub use graphql_client::GraphQLQuery;
 use scalar::*;
 
 include!(concat!(env!("OUT_DIR"), "/queries.rs"));

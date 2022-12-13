@@ -1922,11 +1922,16 @@ name = "fig_graphql"
 version = "2.11.0-dev"
 dependencies = [
  "convert_case 0.6.0",
+ "fig_ipc",
+ "fig_proto",
  "fig_request",
+ "fig_settings",
+ "fig_util",
  "graphql_client",
  "regex",
  "serde",
  "serde_json",
+ "thiserror",
  "time 0.3.17",
  "tokio",
 ]

@@ -30,6 +30,8 @@ message DaemonMessage {
     LogLevelCommand log_level = 107;
     // Open a url in the default browser
     OpenBrowserCommand open_browser = 108;
+    // A request to dispatch an http request, the response is not returned
+    DispatchHttpRequestCommand dispatch_http_request = 109;
   }
 }
 
@@ -178,9 +180,7 @@ message TelemetryEmitTrackCommand {
   optional bool enqueue = 4;
 }
 
-message LogLevelCommand {
-  string level = 1;
-}
+message LogLevelCommand { string level = 1; }
 
 message LogLevelResponse {
   enum Status {
@@ -193,6 +193,11 @@ message LogLevelResponse {
   optional string error = 3;
 }
 
-message OpenBrowserCommand {
-  string url = 1;
+message OpenBrowserCommand { string url = 1; }
+
+message DispatchHttpRequestCommand {
+  string method = 1;
+  string body = 2;
+  string url = 3;
+  bool auth = 4;
 }

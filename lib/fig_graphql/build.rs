@@ -77,6 +77,19 @@ macro_rules! {snake_case_name} {{
     }}}};
 }}
 
+#[macro_export]
+macro_rules! {snake_case_name}_query {{
+    ($( $arg:ident $( : $val:expr )? ),* $(, ..$default:expr )?) => {{{{
+        use $crate::GraphQLQuery;
+        let variables = $crate::{snake_case_name}::Variables {{ $($arg $(: $val.into())?),* $(, ..$default)? }};
+        $crate::{query_name}::build_query(variables)
+    }}}};
+    // Allow for trailing comma
+    ($( $arg:ident $( : $val:expr )? , )* $( ..$default:expr, )?) => {{{{
+        $crate::{snake_case_name}_query!($( $arg $(: $val)?),* $(, ..$default)?)
+    }}}};
+}}
+
 ");
 
         out_str.push_str(&item);
