@@ -35,7 +35,11 @@ use fig_integrations::shell::{
     ShellExt,
     ShellIntegration,
 };
-use fig_integrations::Error as InstallationError;
+use fig_integrations::ssh::SshIntegration;
+use fig_integrations::{
+    Error as InstallationError,
+    Integration,
+};
 use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
@@ -617,28 +621,24 @@ impl DoctorCheck for FigIntegrationsCheck {
         //}
 
         match std::env::var("FIG_TERM").as_deref() {
-            Ok(env!("CARGO_PKG_VERSION")) => {},
-            Ok(_) => {
-                return Err(DoctorError::Error {
-                    reason:
-                        "This terminal is not running with the latest Fig integration, please restart your terminal"
-                            .into(),
-                    info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
-                    fix: None,
-                    error: None,
-                });
-            },
-            Err(_) => {
-                return Err(DoctorError::Error {
-                    reason: "Figterm is not running in this terminal, please try restarting your terminal".into(),
-                    info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
-                    fix: None,
-                    error: None,
-                });
-            },
-        };
-
-        Ok(())
+            Ok(env!("CARGO_PKG_VERSION")) => Ok(()),
+            Ok(ver) if env!("CARGO_PKG_VERSION").ends_with("-dev") || ver.ends_with("-dev") => Err(doctor_warning!(
+                "Figterm is running with a different version than Fig CLI, it looks like you are running a development version of Fig however"
+            )),
+            Ok(_) => Err(DoctorError::Error {
+                reason: "This terminal is not running with the latest Fig integration, please restart your terminal"
+                    .into(),
+                info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
+                fix: None,
+                error: None,
+            }),
+            Err(_) => Err(DoctorError::Error {
+                reason: "Figterm is not running in this terminal, please try restarting your terminal".into(),
+                info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
+                fix: None,
+                error: None,
+            }),
+        }
     }
 }
 
@@ -1205,6 +1205,41 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
             (None, _) => return Err(doctor_error!("Could not get current shell")),
             (_, Err(_)) => Err(doctor_warning!("Could not get default shell")),
             _ => Ok(()),
+        }
+    }
+}
+
+struct SshIntegrationCheck;
+
+#[async_trait]
+impl DoctorCheck<()> for SshIntegrationCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "SSH integration".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        match SshIntegration::new() {
+            Ok(integration) => match integration.is_installed().await {
+                Ok(()) => Ok(()),
+                Err(err) => Err(DoctorError::Error {
+                    reason: err.to_string().into(),
+                    info: vec![],
+                    fix: Some(DoctorFix::Async(
+                        async move {
+                            integration.install().await?;
+                            Ok(())
+                        }
+                        .boxed(),
+                    )),
+                    error: Some(eyre::Report::new(err)),
+                }),
+            },
+            Err(err) => Err(DoctorError::Error {
+                reason: err.to_string().into(),
+                info: vec![],
+                fix: None,
+                error: Some(eyre::Report::new(err)),
+            }),
         }
     }
 }
@@ -2328,6 +2363,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &SettingsCorruptionCheck,
                 &StateCorruptionCheck,
                 &FigIntegrationsCheck,
+                &SshIntegrationCheck,
             ],
             config,
             &mut spinner,

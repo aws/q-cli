@@ -77,21 +77,6 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                 }
             }
 
-            match SshIntegration::new() {
-                Ok(ssh_integration) => {
-                    if let Err(err) = match action {
-                        InstallAction::Install => ssh_integration.install().await,
-                        InstallAction::Uninstall => ssh_integration.uninstall().await,
-                        InstallAction::Status => ssh_integration.is_installed().await,
-                    } {
-                        errs.push(format!("ssh: {err}"));
-                    }
-                },
-                Err(err) => {
-                    errs.push(format!("ssh: {err}"));
-                },
-            };
-
             match action {
                 InstallAction::Install | InstallAction::Uninstall => integration_result(match &errs[..] {
                     [] => Ok(()),
@@ -108,6 +93,14 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                     )),
                 }),
             }
+        },
+        (InstallComponent::Ssh, action) => match SshIntegration::new() {
+            Ok(ssh_integration) => match action {
+                InstallAction::Install => integration_result(ssh_integration.install().await),
+                InstallAction::Uninstall => integration_result(ssh_integration.uninstall().await),
+                InstallAction::Status => integration_status(ssh_integration).await,
+            },
+            Err(err) => integration_result(Err(err)),
         },
         (InstallComponent::Ibus, _) => integration_result(Err("IBus install is legacy")),
         (InstallComponent::Accessibility, InstallAction::Install) => {

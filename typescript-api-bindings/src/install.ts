@@ -10,7 +10,12 @@ import {
 
 import { sendInstallRequest } from "./requests";
 
-export type Component = "dotfiles" | "ibus" | "inputMethod" | "accessibility";
+export type Component =
+  | "dotfiles"
+  | "ibus"
+  | "inputMethod"
+  | "accessibility"
+  | "ssh";
 
 function componentToProto(component: Component) {
   switch (component) {
@@ -22,6 +27,8 @@ function componentToProto(component: Component) {
       return InstallComponent.INSTALL_COMPONENT_ACCESSIBILITY;
     case "inputMethod":
       return InstallComponent.INSTALL_COMPONENT_INPUT_METHOD;
+    case "ssh":
+      return InstallComponent.INSTALL_COMPONENT_SSH;
     default:
       throw Error("Invalid component");
   }
