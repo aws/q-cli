@@ -1,18 +1,11 @@
-use std::collections::BTreeMap;
-
-use clap::{
-    Args,
-    Command,
-};
+use clap::Args;
 use eyre::{
     bail,
     Result,
 };
-use fig_graphql::commandline_tool::{
-    CommandFields,
-    CommandFieldsOn,
-    CommandFieldsOnScriptCommand,
-    CommandFieldsOnScriptCommandScript,
+use fig_api_client::commandline_tool::{
+    cached_commandline_tool,
+    CommandTree,
 };
 
 use super::run;
@@ -35,88 +28,77 @@ impl CliArgs {
                     None => bail!("Malformed CLI specifier, expects @<namespace>/<cli> <args>"),
                 };
 
-                let data = fig_graphql::commandline_tool! {
-                    namespace: namespace.expect("No namespace provided"),
-                    name: name,
-                }
-                .await?;
+                let (mut command_tree, refresh_join) =
+                    match cached_commandline_tool(namespace.expect("No namespace provided"), name).await {
+                        // Ok(Some(_)) is the only case where there could be a refresh_join
+                        (Ok(Some(command_tree)), refresh_join) => (command_tree, refresh_join),
+                        (Ok(None), _) => bail!("No command found"),
+                        (Err(err), _) => bail!(err),
+                    };
 
-                let cli_tool = data
-                    .namespace
-                    .expect("No namespace found")
-                    .commandline_tool
-                    .expect("No CLI tool found");
-
-                let mut commands = cli_tool
-                    .flattened_commands
-                    .into_iter()
-                    .map(|command| (command.uuid.clone(), command))
-                    .collect::<BTreeMap<String, CommandFields>>();
-
-                let root_command = commands.remove(&cli_tool.root.uuid).expect("Root command not found");
-
-                let (_, clap_command, mut command_tree) = create_command_tree(&root_command, &commands)?;
+                let clap_command = create_clap_command(&command_tree);
                 let mut matches = clap_command.get_matches_from(args);
 
-                loop {
+                let res = loop {
                     match &command_tree {
-                        CommandTree::NestedCommand { subcommands } => match matches.remove_subcommand() {
+                        CommandTree::NestedCommand { subcommands, .. } => match matches.remove_subcommand() {
                             Some((name, arg_m)) => {
                                 command_tree = subcommands[&name].clone();
                                 matches = arg_m;
                             },
-                            None => bail!("Unexpected error, no subcommand found"),
+                            None => break Err(eyre::eyre!("Unexpected error, no subcommand found")),
                         },
-                        CommandTree::ScriptCommand { script } => {
-                            let mut args = vec![script.to_owned()];
+                        CommandTree::ScriptCommand {
+                            script_namespace,
+                            script_name,
+                            ..
+                        } => {
+                            let mut args = vec![format!("@{script_namespace}/{script_name}")];
 
                             if let Some(raw_values) = matches.get_raw("args") {
                                 args.extend(raw_values.map(|s| s.to_str().expect("Invalid UTF-8").to_owned()));
                             };
 
-                            run::execute(args).await?;
+                            break run::execute(args).await;
                         },
                     }
+                };
+
+                if let Some(refresh_join) = refresh_join {
+                    refresh_join.await.ok();
                 }
+
+                res
             },
             None => bail!("No command provided, expects @<namespace>/<cli> <args>"),
         }
     }
 }
 
-#[derive(Debug, Clone)]
-enum CommandTree {
-    NestedCommand { subcommands: BTreeMap<String, CommandTree> },
-    ScriptCommand { script: String },
-}
+fn create_clap_command(tree: &CommandTree) -> clap::Command {
+    match tree {
+        CommandTree::NestedCommand {
+            name,
+            description,
+            subcommands,
+            ..
+        } => {
+            let mut command = clap::Command::new(name).arg_required_else_help(true);
 
-fn create_command_tree(
-    root: &CommandFields,
-    map: &BTreeMap<String, CommandFields>,
-) -> Result<(String, Command, CommandTree)> {
-    match &root.on {
-        CommandFieldsOn::NestedCommand(nested) => {
-            let mut subcommands = BTreeMap::new();
-            let mut command = Command::new(&root.name).arg_required_else_help(true);
-
-            if let Some(description) = &root.description {
+            if let Some(description) = description {
                 command = command.about(description);
             }
 
-            for subcommand in &nested.subcommands {
-                let (name, subcommand, subcommand_tree) = create_command_tree(&map[&subcommand.uuid], map)?;
-                command = command.subcommand(subcommand);
-                subcommands.insert(name, subcommand_tree);
+            for subcommand in subcommands.values() {
+                command = command.subcommand(create_clap_command(subcommand));
             }
 
-            Ok((root.name.clone(), command, CommandTree::NestedCommand { subcommands }))
+            command
         },
-        CommandFieldsOn::ScriptCommand(CommandFieldsOnScriptCommand {
-            script: CommandFieldsOnScriptCommandScript { name, namespace },
-        }) => {
-            let mut command = Command::new(&root.name);
+        CommandTree::ScriptCommand { name, description, .. } => {
+            let mut command = clap::Command::new(name);
 
-            if let Some(description) = &root.description {
+            if let Some(description) = description {
                 command = command.about(description);
             }
 
@@ -130,12 +112,7 @@ fn create_command_tree(
                     .num_args(0..),
             );
 
-            Ok((root.name.clone(), command, CommandTree::ScriptCommand {
-                script: match &namespace {
-                    Some(namespace) => format!("@{}/{}", namespace.username, name),
-                    None => name.to_owned(),
-                },
-            }))
+            command
         },
     }
 }

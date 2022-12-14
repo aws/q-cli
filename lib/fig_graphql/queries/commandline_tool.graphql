@@ -12,12 +12,13 @@ query CommandlineTool($namespace: String!, $name: String!) {
   }
 }
 
+
+
 fragment CommandFields on ICLICommand {
   __typename
   uuid
   name
   description
-  icon
   ... on ScriptCommand {
     script {
       name

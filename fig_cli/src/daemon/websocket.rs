@@ -362,6 +362,9 @@ async fn process_message(message: FigWebsocketMessage, scheduler: &mut Scheduler
             Ok(())
         },
         FigWebsocketMessage::UpdateAllCommandlineTools => {
+            fig_api_client::commandline_tool::fetch_and_cache_all_command_line_tools()
+                .await
+                .ok();
             // TODO: refresh cache
             Ok(())
         },
