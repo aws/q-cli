@@ -1,6 +1,7 @@
 #!/usr/bin/env bash
 
-mkdir -p ~/.fig/bin > /dev/null
+mkdir -p "${HOME}/.fig/bin" > /dev/null 2>&1
+mkdir -p "${HOME}/.local/bin" > /dev/null 2>&1
 
 pathadd() {
   if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
@@ -8,8 +9,8 @@ pathadd() {
   fi
 }
 
-pathadd ~/.fig/bin
-pathadd ~/.local/bin
+pathadd "${HOME}/.fig/bin"
+pathadd "${HOME}/.local/bin"
 
 if [[ -n "${FIG_NEW_SESSION}" ]]; then
   unset FIGTERM_SESSION_ID

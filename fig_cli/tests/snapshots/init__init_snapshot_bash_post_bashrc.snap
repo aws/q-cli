@@ -384,8 +384,8 @@ pathadd() {
   fi
 }
 
-pathadd ~/.fig/bin
-pathadd ~/.local/bin
+pathadd "${HOME}/.fig/bin"
+pathadd "${HOME}/.local/bin"
 
 # Open scripts on keyboard shortcut
 if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]

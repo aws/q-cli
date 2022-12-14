@@ -6,8 +6,8 @@ pathadd() {
   fi
 }
 
-pathadd ~/.fig/bin
-pathadd ~/.local/bin
+pathadd "${HOME}/.fig/bin"
+pathadd "${HOME}/.local/bin"
 
 # if [[ $TTY != "not a tty" ]]; then
   # # Open scripts on keyboard shortcut
