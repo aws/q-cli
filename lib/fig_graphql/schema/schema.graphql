@@ -146,6 +146,7 @@ type Plugin {
   githubReadme: String
   githubRef: String
   githubRepo: String
+  hidden: Boolean
   icon: String
   keywords: [String!]!
   license: [String!]!
@@ -193,6 +194,7 @@ type Script {
   createdBy: OtherUser
   fields: ScriptFields!
   invocations: [ScriptInvocation!]!
+  isOwnedByCurrentUser: Boolean!
   lastInvokedAt: DateTime
   lastInvokedAtByUser: DateTime
   name: String!
@@ -402,12 +404,16 @@ enum ScriptRuntime {
 }
 
 type ScriptSelectorParameter {
+  """Allow raw text to be chosen as the selection"""
+  allowRawTextInput: Boolean
   generators: [ScriptGenerator!]
   placeholder: String
   suggestions: [String!]
 }
 
 input ScriptSelectorParameterInput {
+  """Allow raw text to be chosen as the selection"""
+  allowRawTextInput: Boolean
   generators: [ScriptGeneratorInput!]
   placeholder: String
   suggestions: [String!]

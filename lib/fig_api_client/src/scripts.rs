@@ -244,10 +244,9 @@ pub struct Script {
 }
 
 macro_rules! map_script {
-    ($script:expr, $namespace:expr, $is_owned_by_user:expr) => {{
+    ($script:expr, $namespace:expr) => {{
         let script = $script;
         let namespace = $namespace;
-        let is_owned_by_user = $is_owned_by_user;
 
         Script {
             name: script.name,
@@ -372,7 +371,7 @@ macro_rules! map_script {
                 Some(ScriptRuntime::Other(_)) | None => Runtime::default(),
             },
             relevance: script.relevance_score,
-            is_owned_by_user,
+            is_owned_by_user: script.is_owned_by_current_user,
             last_invoked_at: script.last_invoked_at.map(|t| t.into()),
             last_invoked_at_by_user: script.last_invoked_at_by_user.map(|t| t.into()),
             invocation_disable_track: script
@@ -403,7 +402,7 @@ macro_rules! map_script {
     }};
 }
 
-fn map_script(script: fig_graphql::script::ScriptFields, namespace: String, is_owned_by_user: bool) -> Script {
+fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> Script {
     use fig_graphql::script::{
         ScriptFieldsAstTreeOn,
         ScriptFileType,
@@ -414,10 +413,10 @@ fn map_script(script: fig_graphql::script::ScriptFields, namespace: String, is_o
         ScriptRuntime,
     };
 
-    map_script!(script, namespace, is_owned_by_user)
+    map_script!(script, namespace)
 }
 
-fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String, is_owned_by_user: bool) -> Script {
+fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String) -> Script {
     use fig_graphql::scripts::{
         ScriptFieldsAstTreeOn,
         ScriptFileType,
@@ -428,7 +427,7 @@ fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String, is
         ScriptRuntime,
     };
 
-    map_script!(script, namespace, is_owned_by_user)
+    map_script!(script, namespace)
 }
 
 pub async fn script(
@@ -448,7 +447,7 @@ pub async fn script(
         return Ok(None);
     };
 
-    Ok(Some(map_script(script, namespace_str, true)))
+    Ok(Some(map_script(script, namespace_str)))
 }
 
 pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
@@ -461,7 +460,7 @@ pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
 
     if let Some(user_namespace) = current_user.namespace {
         for script in user_namespace.scripts {
-            scripts.push((user_namespace.username.clone(), script, true));
+            scripts.push((user_namespace.username.clone(), script));
         }
     }
 
@@ -469,7 +468,7 @@ pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
         for team_membership in team_memberships {
             if let Some(namespace) = team_membership.team.namespace {
                 for script in namespace.scripts {
-                    scripts.push((namespace.username.clone(), script, false));
+                    scripts.push((namespace.username.clone(), script));
                 }
             }
         }
@@ -477,7 +476,7 @@ pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
 
     Ok(scripts
         .into_iter()
-        .map(|(namespace, script, is_owned_by_user)| map_scripts(script, namespace, is_owned_by_user))
+        .map(|(namespace, script)| map_scripts(script, namespace))
         .collect())
 }
 
