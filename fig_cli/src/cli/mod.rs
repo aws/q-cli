@@ -454,4 +454,52 @@ mod test {
             ))
         );
     }
+
+    #[test]
+    fn test_codex() {
+        use internal::InternalSubcommand;
+
+        assert_eq!(
+            Cli::parse_from(["fig", "_", "codex", "--buffer", ""]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+                buffer: "".to_string()
+            }))
+        );
+
+        assert_eq!(
+            Cli::parse_from(["fig", "_", "codex", "--buffer", "foo"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+                buffer: "foo".to_string()
+            }))
+        );
+
+        assert_eq!(
+            Cli::parse_from(["fig", "_", "codex", "--buffer", "-"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+                buffer: "-".to_string()
+            }))
+        );
+
+        assert_eq!(
+            Cli::parse_from(["fig", "_", "codex", "--buffer", "--"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+                buffer: "--".to_string()
+            }))
+        );
+
+        assert_eq!(
+            Cli::parse_from(["fig", "_", "codex", "--buffer", "--foo bar"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+                buffer: "--foo bar".to_string()
+            }))
+        );
+
+        assert_eq!(
+            Cli::parse_from(["fig", "_", "codex-accept", "--buffer", "abc", "--suggestion", "def"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::CodexAccept {
+                buffer: "abc".to_string(),
+                suggestion: "def".to_string()
+            }))
+        );
+    }
 }

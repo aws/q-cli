@@ -2,6 +2,7 @@ const CODEX_FOLDER: &str = "src/shell/codex";
 
 // The order here is very specific, do no edit without understanding the implications
 const CODEX_FILES: &[&str] = &[
+    "guard_start.zsh",
     "LICENSE",
     "config.zsh",
     "util.zsh",
@@ -15,6 +16,7 @@ const CODEX_FILES: &[&str] = &[
     "fetch.zsh",
     "async.zsh",
     "start.zsh",
+    "guard_end.zsh",
 ];
 
 fn main() {

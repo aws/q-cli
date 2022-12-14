@@ -329,13 +329,13 @@ pub enum InternalSubcommand {
         remote_username: String,
     },
     Codex {
-        #[arg(long)]
+        #[arg(long, allow_hyphen_values = true)]
         buffer: String,
     },
     CodexAccept {
-        #[arg(long)]
+        #[arg(long, allow_hyphen_values = true)]
         buffer: String,
-        #[arg(long)]
+        #[arg(long, allow_hyphen_values = true)]
         suggestion: String,
     },
 }
