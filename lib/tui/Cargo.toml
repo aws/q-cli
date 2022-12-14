@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-paste = "1.0.9"
+paste = "1.0.10"
 termwiz = "0.19.0"
 unicode-segmentation = "1.10.0"
 unicode-width = "0.1.10"

@@ -107,5 +107,5 @@ winapi = { version = "0.3", features = ["consoleapi"] }
 [dev-dependencies]
 assert_cmd = "2.0"
 insta = "1.23.0"
-paste = "1.0.9"
+paste = "1.0.10"
 predicates = "2.1"
