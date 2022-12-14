@@ -64,14 +64,16 @@ pub fn bump_nonnormal(dry: bool, to: BumpTo) -> eyre::Result<()> {
 
     let channel = read_channel();
 
-    match (channel, &to) {
+    match (&channel, &to) {
         (Channel::Nightly, _) => eyre::bail!("Can't cross-channel bump from nightly"),
-        (Channel::Stable, _) => eyre::bail!("Can't cross-channel bump from stable"),
         (Channel::None, _) => eyre::bail!("Can't cross-channel bump without a channel"),
         (Channel::Qa, &BumpTo::Qa) | (Channel::Beta, BumpTo::Beta) => {
             eyre::bail!("Can't cross-channel bump to the current channel")
         },
-        (Channel::Qa, &BumpTo::Beta) | (Channel::Beta, BumpTo::Qa) => {},
+        (Channel::Stable, &BumpTo::Beta)
+        | (Channel::Stable, &BumpTo::Qa)
+        | (Channel::Qa, &BumpTo::Beta)
+        | (Channel::Beta, BumpTo::Qa) => {},
     }
 
     if !dialoguer::Confirm::new()
@@ -84,6 +86,11 @@ pub fn bump_nonnormal(dry: bool, to: BumpTo) -> eyre::Result<()> {
     bump_normal(true)?;
 
     let mut version = read_version();
+
+    if channel == Channel::Stable {
+        version.pre = Prerelease::new("beta.0")?;
+    }
+
     match to {
         BumpTo::Qa => {
             version.build = BuildMetadata::new("qa")?;
@@ -91,7 +98,7 @@ pub fn bump_nonnormal(dry: bool, to: BumpTo) -> eyre::Result<()> {
         },
         BumpTo::Beta => {
             version.build = BuildMetadata::EMPTY;
-            write_channel(&Channel::Qa);
+            write_channel(&Channel::Beta);
         },
     }
     write_version(&version);
