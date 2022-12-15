@@ -19,8 +19,19 @@ use crate::webview::window::WindowId;
 use crate::EventLoopProxy;
 
 #[derive(Debug, Default)]
+pub struct WebviewNotificationWindowState(pub DashMap<NotificationType, i64, FnvBuildHasher>);
+
+impl std::ops::Deref for WebviewNotificationWindowState {
+    type Target = DashMap<NotificationType, i64, FnvBuildHasher>;
+
+    fn deref(&self) -> &Self::Target {
+        &self.0
+    }
+}
+
+#[derive(Debug, Default)]
 pub struct WebviewNotificationsState {
-    pub subscriptions: DashMap<WindowId, DashMap<NotificationType, i64, FnvBuildHasher>, FnvBuildHasher>,
+    pub subscriptions: DashMap<WindowId, WebviewNotificationWindowState, FnvBuildHasher>,
 }
 
 impl WebviewNotificationsState {
@@ -54,5 +65,35 @@ impl WebviewNotificationsState {
         }
 
         Ok(())
+    }
+}
+
+impl serde::Serialize for WebviewNotificationWindowState {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+
+        let mut map = serializer.serialize_map(Some(self.0.len()))?;
+        for subscription in self.0.iter() {
+            map.serialize_entry(subscription.key(), &subscription.value())?;
+        }
+        map.end()
+    }
+}
+
+impl serde::Serialize for WebviewNotificationsState {
+    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
+    where
+        S: serde::Serializer,
+    {
+        use serde::ser::SerializeMap;
+
+        let mut map = serializer.serialize_map(Some(self.subscriptions.len()))?;
+        for subscription in self.subscriptions.iter() {
+            map.serialize_entry(subscription.key(), &subscription.value())?;
+        }
+        map.end()
     }
 }

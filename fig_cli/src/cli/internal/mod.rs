@@ -190,6 +190,7 @@ impl Display for Method {
 #[derive(Debug, Clone, Copy, PartialEq, Eq, ValueEnum)]
 pub enum StateComponent {
     Figterm,
+    WebNotifications,
 }
 
 #[derive(Debug, PartialEq, Eq, Subcommand)]

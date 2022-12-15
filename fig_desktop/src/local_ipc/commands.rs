@@ -29,6 +29,7 @@ use crate::event::{
     WindowPosition,
 };
 use crate::figterm::FigtermState;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
     DASHBOARD_ONBOARDING_SIZE,
     ONBOARDING_PATH,
@@ -217,11 +218,17 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
     Ok(LocalResponse::Success(None))
 }
 
-pub fn dump_state(command: DumpStateCommand, figterm_state: &FigtermState) -> LocalResult {
+pub fn dump_state(
+    command: DumpStateCommand,
+    figterm_state: &FigtermState,
+    webview_notifications_state: &WebviewNotificationsState,
+) -> LocalResult {
     let json = match command.r#type() {
         DumpStateType::DumpStateFigterm => {
             serde_json::to_string_pretty(&figterm_state).unwrap_or_else(|err| format!("unable to dump: {err}"))
         },
+        DumpStateType::DumpStateWebNotifications => serde_json::to_string_pretty(&webview_notifications_state)
+            .unwrap_or_else(|err| format!("unable to dump: {err}")),
     };
 
     LocalResult::Ok(LocalResponse::Message(Box::new(CommandResponseTypes::DumpState(

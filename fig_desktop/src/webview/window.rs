@@ -67,6 +67,12 @@ impl fmt::Display for WindowId {
     }
 }
 
+impl serde::Serialize for WindowId {
+    fn serialize<S: serde::Serializer>(&self, serializer: S) -> Result<S::Ok, S::Error> {
+        serializer.serialize_str(&self.0)
+    }
+}
+
 pub struct WindowGeometryState {
     /// The outer position of the window by positioning scheme
     pub position: WindowPosition,

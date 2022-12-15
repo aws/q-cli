@@ -153,6 +153,7 @@ message LogLevelCommand {
 message DumpStateCommand {
   enum Type {
     TYPE_DUMP_STATE_FIGTERM = 0;
+    TYPE_DUMP_STATE_WEB_NOTIFICATIONS = 1;
   }
 
   Type type = 1;

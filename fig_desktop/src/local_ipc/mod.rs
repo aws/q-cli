@@ -33,6 +33,7 @@ use tracing::{
 use crate::event::Event;
 use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
+use crate::webview::notification::WebviewNotificationsState;
 use crate::{
     EventLoopProxy,
     AUTOCOMPLETE_ID,
@@ -50,6 +51,7 @@ pub type LocalResult = Result<LocalResponse, LocalResponse>;
 pub async fn start_local_ipc(
     platform_state: Arc<PlatformState>,
     figterm_state: Arc<FigtermState>,
+    webview_notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
 ) -> Result<()> {
     let socket_path = directories::fig_socket_path()?;
@@ -73,6 +75,7 @@ pub async fn start_local_ipc(
             BufferedUnixStream::new(stream),
             platform_state.clone(),
             figterm_state.clone(),
+            webview_notifications_state.clone(),
             proxy.clone(),
         ));
     }
@@ -84,6 +87,7 @@ async fn handle_local_ipc(
     mut stream: BufferedUnixStream,
     platform_state: Arc<PlatformState>,
     figterm_state: Arc<FigtermState>,
+    webview_notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
 ) {
     while let Some(message) = stream.recv_message::<LocalMessage>().await.unwrap_or_else(|err| {
@@ -112,7 +116,9 @@ async fn handle_local_ipc(
                             PromptAccessibility(_) => commands::prompt_for_accessibility_permission().await,
                             LogLevel(command) => commands::log_level(command),
                             Logout(_) => commands::logout(&proxy).await,
-                            DumpState(command) => commands::dump_state(command, &figterm_state),
+                            DumpState(command) => {
+                                commands::dump_state(command, &figterm_state, &webview_notifications_state)
+                            },
                             Update(_) => fig_install::update(
                                 Some(Box::new(move |_| {
                                     debug!("Updating from proto");
