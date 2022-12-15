@@ -782,6 +782,7 @@ impl DebugSubcommand {
             DebugSubcommand::ListIntelliJVariants => {
                 for integration in fig_integrations::intellij::variants_installed().await? {
                     println!("{}", integration.variant.application_name());
+                    #[cfg(target_os = "macos")]
                     println!("  - {:?}", integration.application_folder());
                 }
             },
