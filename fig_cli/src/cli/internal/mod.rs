@@ -813,7 +813,7 @@ impl InternalSubcommand {
                 })
             },
             InternalSubcommand::OpenUninstallPage { verbose } => {
-                let url = fig_install::get_uninstall_url();
+                let url = fig_install::get_uninstall_url(false);
                 if let Err(err) = fig_util::open_url(&url) {
                     if verbose {
                         eprintln!("Failed to open uninstall directly, trying daemon proxy: {err}");
@@ -950,7 +950,7 @@ impl InternalSubcommand {
                     // If we're reinstalling, we don't want to uninstall
                     return Ok(());
                 } else {
-                    let url = fig_install::get_uninstall_url();
+                    let url = fig_install::get_uninstall_url(true);
                     fig_util::open_url_async(url).await.ok();
                 }
 

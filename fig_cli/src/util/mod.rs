@@ -330,15 +330,13 @@ pub fn dialoguer_theme() -> ColorfulTheme {
 
 #[cfg(target_os = "macos")]
 pub async fn is_brew_reinstall() -> bool {
-    use bstr::ByteSlice;
+    let regex = regex::bytes::Regex::new(r"brew(\.\w+)?\s+(upgrade|reinstall|install)").unwrap();
 
     tokio::process::Command::new("ps")
         .args(["aux", "-o", "args"])
         .output()
         .await
-        .map_or(false, |output| {
-            output.stdout.contains_str(b"brew upgrade") || output.stdout.contains_str(b"brew reinstall")
-        })
+        .map_or(false, |output| regex.is_match(&output.stdout))
 }
 
 #[cfg(test)]

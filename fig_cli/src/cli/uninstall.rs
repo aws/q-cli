@@ -59,7 +59,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 async fn uninstall() -> Result<()> {
     use fig_install::InstallComponents;
 
-    let url = fig_install::get_uninstall_url();
+    let url = fig_install::get_uninstall_url(false);
     fig_util::open_url(url).ok();
     fig_install::uninstall(InstallComponents::all()).await?;
 

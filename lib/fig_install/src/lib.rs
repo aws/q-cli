@@ -243,10 +243,10 @@ pub async fn update(
     }
 }
 
-pub fn get_uninstall_url() -> String {
+pub fn get_uninstall_url(brew: bool) -> String {
     // Open the uninstallation page
     let os = std::env::consts::OS;
     let email = fig_request::auth::get_email().unwrap_or_default();
     let version = env!("CARGO_PKG_VERSION");
-    format!("https://fig.io/uninstall?email={email}&version={version}&os={os}")
+    format!("https://fig.io/uninstall?email={email}&version={version}&os={os}&brew={brew}")
 }
