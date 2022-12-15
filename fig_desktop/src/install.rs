@@ -142,6 +142,7 @@ pub async fn run_install(_ignore_immediate_update: bool) {
                     return;
                 }
                 let mut interval = tokio::time::interval(std::time::Duration::from_secs(seconds as u64));
+                interval.set_missed_tick_behavior(tokio::time::MissedTickBehavior::Delay);
                 interval.tick().await;
                 loop {
                     interval.tick().await;

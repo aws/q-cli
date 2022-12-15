@@ -45,6 +45,7 @@ use tokio::io::{
 };
 use tokio::select;
 use tokio::signal::unix::SignalKind;
+use tokio::time::MissedTickBehavior;
 use tracing::{
     error,
     trace,
@@ -271,6 +272,7 @@ impl Terminal for UnixTerminal {
             let mut parser = InputParser::new();
             let mut buf = BytesMut::with_capacity(crate::BUFFER_SIZE);
             let mut read_timeout = tokio::time::interval(Duration::from_millis(1));
+            read_timeout.set_missed_tick_behavior(MissedTickBehavior::Delay);
 
             macro_rules! parse_buf {
                 () => {

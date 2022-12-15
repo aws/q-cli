@@ -5,6 +5,7 @@ pub mod websocket;
 
 use eyre::Result;
 use parking_lot::Mutex;
+use tokio::time::MissedTickBehavior;
 
 pub struct DaemonStatus {
     /// The time the daemon was started as a u64 timestamp in seconds since the epoch
@@ -129,6 +130,7 @@ pub async fn daemon() -> Result<()> {
         let daemon_status = daemon_status_clone;
         let mut backoff = Backoff::new(Duration::from_secs_f64(0.25), Duration::from_secs_f64(300.));
         let mut ping_interval = tokio::time::interval(Duration::from_secs_f64(delay));
+        ping_interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
         loop {
             match websocket::connect_to_fig_websocket().await {
                 Ok(mut websocket_stream) => {

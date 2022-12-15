@@ -49,7 +49,10 @@ use tokio::process::{
 };
 use tokio::sync::oneshot;
 use tokio::task::JoinHandle;
-use tokio::time::interval;
+use tokio::time::{
+    interval,
+    MissedTickBehavior,
+};
 use tracing::{
     debug,
     error,
@@ -243,6 +246,7 @@ pub async fn spawn_secure_ipc(
 
     tokio::spawn(async move {
         let mut interval = interval(Duration::from_secs(5));
+        interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
         let secret = gen_hex_string();
 
         loop {

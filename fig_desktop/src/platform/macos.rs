@@ -275,7 +275,7 @@ impl PlatformStateImpl {
         window_target: &EventLoopWindowTarget,
         window_map: &FigIdMap,
     ) -> anyhow::Result<()> {
-        warn!("Handling platform event: {:?}", event);
+        debug!("Handling platform event: {:?}", event);
         match event {
             PlatformBoundEvent::Initialize => {
                 unsafe {

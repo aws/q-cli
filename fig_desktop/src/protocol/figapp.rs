@@ -2,6 +2,7 @@ use std::path::{
     Path,
     PathBuf,
 };
+use std::time::Duration;
 
 use http::header::{
     ACCESS_CONTROL_ALLOW_ORIGIN,
@@ -150,7 +151,13 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
     let handle = tokio::runtime::Handle::current();
     std::thread::spawn(move || {
         handle.block_on(async {
-            let res = match fig_request::client().unwrap().get(&url.to_string()).send().await {
+            let res = match fig_request::client()
+                .unwrap()
+                .get(&url.to_string())
+                .timeout(Duration::from_secs(10))
+                .send()
+                .await
+            {
                 Ok(res) => res,
                 Err(err) => {
                     error!(%err, "Error fetching figapp");

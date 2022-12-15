@@ -12,6 +12,8 @@ use http::{
     Response,
     StatusCode,
 };
+use tracing::error;
+use url::Url;
 
 const CDN_PREFIXS: &[&str] = &[
     "https://cdn.jsdelivr.net/npm/@withfig/autocomplete@2/build",
@@ -73,11 +75,24 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
 
     let file = request.uri().path().trim_start_matches('/').to_owned();
 
+    // TODO: Research if `setURLSchemeHandler` can be async
     let handle = tokio::runtime::Handle::current();
     std::thread::spawn(move || {
         handle.block_on(async {
             for cdn in CDN_PREFIXS {
-                let url = format!("{cdn}/{file}");
+                let url = match Url::parse(&format!("{cdn}/{file}")) {
+                    Ok(url) => url,
+                    Err(err) => {
+                        error!(%err, "Failed to parse url");
+                        continue;
+                    },
+                };
+
+                // check if reachable
+                #[cfg(target_os = "macos")]
+                if !crate::webview::reachable(url.domain().unwrap().to_owned()) {
+                    continue;
+                }
 
                 let body = match fig_request::client().unwrap().get(url).send().await {
                     Ok(res) => {

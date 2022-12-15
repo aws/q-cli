@@ -43,6 +43,7 @@ use tokio::sync::Notify;
 use tokio::time::{
     Duration,
     Instant,
+    MissedTickBehavior,
 };
 use tracing::{
     debug,
@@ -497,6 +498,7 @@ async fn handle_commands(
 
 async fn send_pings(outgoing: flume::Sender<Clientbound>, mut on_close_rx: tokio::sync::broadcast::Receiver<()>) {
     let mut interval = tokio::time::interval(Duration::from_secs(5));
+    interval.set_missed_tick_behavior(MissedTickBehavior::Skip);
 
     loop {
         select! {
