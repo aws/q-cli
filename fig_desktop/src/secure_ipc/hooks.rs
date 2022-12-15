@@ -149,6 +149,8 @@ pub async fn edit_buffer(
         let mut encoded = BytesMut::new();
         message.encode(&mut encoded).unwrap();
 
+        debug!(%message_id, "Sending edit buffer change notification to webview");
+
         proxy
             .send_event(Event::WindowEvent {
                 window_id: sub.key().clone(),

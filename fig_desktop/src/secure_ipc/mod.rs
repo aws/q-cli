@@ -229,7 +229,11 @@ async fn handle_secure_ipc(
                                     success: false,
                                 }))
                             } else {
-                                match match request {
+                                /*
+                                    WARNING, when adding new secure requests you must sanitize the context,
+                                    otherwise the client can forge a message from another session
+                                */
+                                let res = match request {
                                     hostbound::request::Request::EditBuffer(mut edit_buffer) => {
                                         sanitize_fn(&mut edit_buffer.context, &session_id);
                                         hooks::edit_buffer(
@@ -256,7 +260,9 @@ async fn handle_secure_ipc(
                                     hostbound::request::Request::AccountInfo(_) => hooks::account_info(),
                                     hostbound::request::Request::StartExchangeCredentials(_) => hooks::start_exchange_credentials(&mut last_auth_code, &proxy).await,
                                     hostbound::request::Request::ConfirmExchangeCredentials(request) => hooks::confirm_exchange_credentials(request, &mut last_auth_code).await,
-                                } {
+                                } ;
+
+                                match res {
                                     Ok(inner) => inner.map(|inner| clientbound::Packet::Response(clientbound::Response { nonce, response: Some(inner) })),
                                     Err(err) => {
                                         error!(%err, "Failed processing hook");

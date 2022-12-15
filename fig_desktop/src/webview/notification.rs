@@ -9,6 +9,7 @@ use fig_proto::fig::{
 };
 use fig_proto::prost::Message;
 use fnv::FnvBuildHasher;
+use tracing::debug;
 
 use crate::event::{
     EmitEventName,
@@ -41,6 +42,8 @@ impl WebviewNotificationsState {
         notification: Notification,
         proxy: &EventLoopProxy,
     ) -> Result<()> {
+        debug!(?notification_type, "Broadcasting webview notification");
+
         for sub in self.subscriptions.iter() {
             let message_id = match sub.get(notification_type) {
                 Some(id) => *id,
