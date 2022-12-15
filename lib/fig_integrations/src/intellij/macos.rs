@@ -54,14 +54,26 @@ impl IntelliJIntegration {
         Ok(contents.jvm_options.properties)
     }
 
-    fn application_folder(&self) -> Result<PathBuf> {
-        let mut props = self
-            .get_jvm_properties()
-            .map_err(|err| Error::Custom(format!("Couldn't get JVM properties: {err:?}").into()))?;
+    pub fn application_folder(&self) -> Result<PathBuf> {
+        let mut props = self.get_jvm_properties().map_err(|err| {
+            Error::Custom(
+                format!(
+                    "Couldn't get JVM properties for {}: {err:?}",
+                    self.variant.application_name()
+                )
+                .into(),
+            )
+        })?;
 
-        let selector = props
-            .remove("idea.paths.selector")
-            .ok_or_else(|| Error::Custom("Could not read `idea.paths.selector` from jvm options".into()))?;
+        let selector = props.remove("idea.paths.selector").ok_or_else(|| {
+            Error::Custom(
+                format!(
+                    "Could not read `idea.paths.selector` from jvm options for {}",
+                    self.variant.application_name()
+                )
+                .into(),
+            )
+        })?;
 
         Ok(dirs::data_local_dir()
             .ok_or_else(|| Error::Custom("Could not read application support directory".into()))?
@@ -80,7 +92,13 @@ impl Integration for IntelliJIntegration {
         let application_folder = self.application_folder()?;
 
         if !application_folder.exists() {
-            return Err(Error::Custom("application folder does not exist".into()));
+            return Err(Error::Custom(
+                format!(
+                    "Application folder does not exist for {}: {application_folder:?}",
+                    self.variant.application_name()
+                )
+                .into(),
+            ));
         }
 
         let _ = self.uninstall().await;
