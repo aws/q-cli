@@ -17,3 +17,4 @@ time = { version = "0.3.17", features = ["serde"] }
 url = { version = "2.3.1", features = ["serde"] }
 tokio = { version = "1", features = ["process"] }
 fig_graphql = { path = "../fig_graphql" }
+tracing = "0.1.37"

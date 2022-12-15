@@ -1708,6 +1708,7 @@ dependencies = [
  "serde_json",
  "time 0.3.17",
  "tokio",
+ "tracing",
  "url",
 ]
 

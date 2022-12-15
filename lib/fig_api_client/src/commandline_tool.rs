@@ -1,4 +1,6 @@
 use std::collections::BTreeMap;
+use std::io::Write;
+use std::path::PathBuf;
 
 use fig_graphql::commandline_tool::{
     CommandFields,
@@ -13,6 +15,7 @@ use serde::{
     Serialize,
 };
 use tokio::task::JoinHandle;
+use tracing::error;
 
 pub async fn commandline_tool(namespace: impl Into<String>, name: impl Into<String>) -> Result<Option<CommandTree>> {
     let data = fig_graphql::commandline_tool! {
@@ -47,6 +50,8 @@ pub async fn fetch_and_cache_command_line_tool(namespace: &str, name: &str) -> R
 
     if let Some(command_tree) = &command_tree {
         command_tree.save_cache(namespace, name)?;
+    } else {
+        CommandTree::remove_cache(namespace, name)?;
     }
 
     Ok(command_tree)
@@ -58,6 +63,7 @@ pub async fn fetch_and_cache_all_command_line_tools() -> Result<()> {
     for file in std::fs::read_dir(cache_dir)? {
         let file = file?;
         let file_path = file.path();
+        let file_path = file_path.as_path();
 
         // Split the file name into namespace and name
         let Some(file_name) = file_path.file_name().and_then(|file_name| file_name.to_str()) else {
@@ -72,7 +78,9 @@ pub async fn fetch_and_cache_all_command_line_tools() -> Result<()> {
             continue;
         };
 
-        fetch_and_cache_command_line_tool(namespace, name).await?;
+        if let Err(err) = fetch_and_cache_command_line_tool(namespace, name).await {
+            error!(%err, "Failed to fetch command line tool");
+        }
     }
 
     Ok(())
@@ -141,6 +149,33 @@ impl CommandTree {
         }
     }
 
+    pub fn script_path(name: &str) -> Result<PathBuf> {
+        Ok(fig_util::directories::home_dir()?.join(".local").join("bin").join(name))
+    }
+
+    pub fn write_script(&self, namespace: &str, name: &str) -> Result<()> {
+        let script = format!("#!/usr/bin/env bash\nfig cli @{namespace}/{name} \"$@\"\n",);
+        let script_path = Self::script_path(name)?;
+
+        if let Some(parent) = script_path.parent() {
+            std::fs::create_dir_all(parent)?;
+        }
+
+        let mut open_options = std::fs::File::options();
+        open_options.create(true).write(true).truncate(true);
+
+        #[cfg(unix)]
+        {
+            use std::os::unix::prelude::OpenOptionsExt;
+            open_options.mode(0o755);
+        }
+
+        let mut script_file = open_options.open(script_path)?;
+        script_file.write_all(script.as_bytes())?;
+
+        Ok(())
+    }
+
     pub fn cache_path(
         namespace: &str,
         name: &str,
@@ -153,6 +188,10 @@ impl CommandTree {
     pub fn save_cache(&self, namespace: &str, name: &str) -> Result<()> {
         let cache_path = Self::cache_path(namespace, name)?;
 
+        if let Err(err) = self.write_script(namespace, name) {
+            error!(%err, "Failed to write script");
+        }
+
         if let Some(parent) = cache_path.parent() {
             std::fs::create_dir_all(parent)?;
         }
@@ -161,6 +200,24 @@ impl CommandTree {
         let cache_writer = std::io::BufWriter::new(cache_file);
 
         serde_json::to_writer_pretty(cache_writer, self)?;
+
+        Ok(())
+    }
+
+    pub fn remove_cache(namespace: &str, name: &str) -> Result<()> {
+        let cache_path = Self::cache_path(namespace, name)?;
+        if cache_path.exists() {
+            if let Err(err) = std::fs::remove_file(cache_path) {
+                error!(%err, "Failed to remove cache file");
+            }
+        }
+
+        let bin_path = Self::script_path(name)?;
+        if bin_path.exists() {
+            if let Err(err) = std::fs::remove_file(bin_path) {
+                error!(%err, "Failed to remove script file");
+            }
+        }
 
         Ok(())
     }
