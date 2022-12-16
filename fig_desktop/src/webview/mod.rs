@@ -1,4 +1,5 @@
 pub mod autocomplete;
+pub mod dashboard;
 pub mod menu;
 pub mod notification;
 pub mod window;
@@ -91,7 +92,7 @@ use crate::{
 
 pub const FIG_PROTO_MESSAGE_RECEIVED: &str = "FigProtoMessageRecieved";
 
-pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("mission-control"));
+pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("dashboard"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 
 pub const DASHBOARD_ONBOARDING_SIZE: LogicalSize<f64> = LogicalSize::new(590.0, 480.0);
@@ -595,16 +596,13 @@ pub fn build_dashboard(
 
     let proxy = event_loop.create_proxy();
 
-    let base_url = fig_settings::settings::get_string_or("developer.mission-control.host", DASHBOARD_URL.into());
+    let mut url = dashboard::url();
 
-    let url = if show_onboarding {
-        format!("{base_url}{ONBOARDING_PATH}")
-    } else {
-        match page {
-            Some(page) => format!("{base_url}/{page}"),
-            None => base_url,
-        }
-    };
+    if show_onboarding {
+        url.set_path(ONBOARDING_PATH);
+    } else if let Some(page) = page {
+        url.set_path(&page);
+    }
 
     let webview = WebViewBuilder::new(window)?
         .with_web_context(web_context)
@@ -791,15 +789,25 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
 
     watcher!(
         settings,
-        "developer.mission-control.host",
-        |notification: JsonNotification, proxy: &EventLoopProxy| {
-            let url = notification
-                .as_string()
-                .and_then(|s| Url::parse(&s).ok())
-                .unwrap_or_else(|| Url::parse(DASHBOARD_URL).unwrap());
+        "developer.dashboard.host",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = dashboard::url();
+            debug!(%url, "Dashboard host");
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: DASHBOARD_ID,
+                    window_event: WindowEvent::NavigateAbsolute { url },
+                })
+                .unwrap();
+        }
+    );
 
-            debug!(%url, "Mission control host");
-
+    watcher!(
+        settings,
+        "developer.dashboard.build",
+        |_notification: JsonNotification, proxy: &EventLoopProxy| {
+            let url = dashboard::url();
+            debug!(%url, "Dashboard host");
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,

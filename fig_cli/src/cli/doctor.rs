@@ -1983,17 +1983,15 @@ impl DoctorCheck for DashboardHostCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        match fig_settings::settings::get_string("developer.mission-control.host")
+        match fig_settings::settings::get_string("developer.dashboard.host")
             .ok()
             .flatten()
         {
             Some(host) => {
                 if host.contains("localhost") {
                     Err(DoctorError::Warning(
-                        format!(
-                            "developer.mission-control.host = {host}, delete this setting if Dashboard fails to load"
-                        )
-                        .into(),
+                        format!("developer.dashboard.host = {host}, delete this setting if Dashboard fails to load")
+                            .into(),
                     ))
                 } else {
                     Ok(())
