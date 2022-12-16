@@ -21,7 +21,7 @@ impl Paragraph {
     pub fn new(id: impl Into<String>) -> Self {
         Self {
             components: vec![],
-            inner: ComponentData::new(id.into(), false),
+            inner: ComponentData::new("p".to_owned(), id.into(), false),
         }
     }
 
@@ -101,10 +101,6 @@ impl Component for Paragraph {
                 new_line = true;
             });
         }
-    }
-
-    fn class(&self) -> &'static str {
-        "p"
     }
 
     fn inner(&self) -> &super::ComponentData {

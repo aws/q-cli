@@ -53,7 +53,7 @@ impl FilePicker {
             preview: vec![],
             index: 0,
             index_offset: 0,
-            inner: ComponentData::new(id.to_string(), true),
+            inner: ComponentData::new("select".to_owned(), id.to_string(), true),
         }
     }
 
@@ -191,7 +191,7 @@ impl Component for FilePicker {
         }
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
+    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
         match input_action {
             InputAction::Up => {
                 if !self.options.is_empty() {
@@ -238,14 +238,14 @@ impl Component for FilePicker {
                             if let Some(extension) = self.path.extension() {
                                 if let Some(extension) = extension.to_str() {
                                     if self.extensions.contains(&extension.to_owned()) {
-                                        return true;
+                                        return Some(false);
                                     }
                                 }
                             }
                         }
 
                         if self.folders && self.path.is_dir() {
-                            return true;
+                            return Some(false);
                         }
                     }
 
@@ -257,7 +257,7 @@ impl Component for FilePicker {
                         self.inner.height += 1.0;
                     }
 
-                    return false;
+                    return Some(matches!(input_action, InputAction::Submit));
                 }
             },
             InputAction::Remove | InputAction::Left => {
@@ -277,7 +277,7 @@ impl Component for FilePicker {
             _ => (),
         }
 
-        true
+        None
     }
 
     fn on_focus(&mut self, state: &mut State, focus: bool) {
@@ -305,10 +305,6 @@ impl Component for FilePicker {
                     }))
             },
         }
-    }
-
-    fn class(&self) -> &'static str {
-        "select"
     }
 
     fn inner(&self) -> &super::ComponentData {

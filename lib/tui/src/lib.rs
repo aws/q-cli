@@ -7,9 +7,8 @@ pub mod component;
 
 mod event_loop;
 mod input;
-#[macro_use]
-mod stylesheet;
 mod style;
+mod style_sheet_ext;
 mod surface_ext;
 
 pub use component::Component;
@@ -20,12 +19,16 @@ pub use event_loop::{
     State,
 };
 pub use input::InputMethod;
+pub use lightningcss::stylesheet::{
+    ParserOptions,
+    StyleSheet,
+};
 pub use style::{
     BorderStyle,
+    Display,
     Property,
     Style,
 };
-pub use stylesheet::StyleSheet;
 pub use surface_ext::SurfaceExt;
 pub use termwiz::cell::Intensity;
 pub use termwiz::color::ColorAttribute;

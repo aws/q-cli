@@ -71,13 +71,14 @@ use tui::component::{
     TextFieldEvent,
 };
 use tui::{
-    BorderStyle,
     ColorAttribute,
     Component,
     ControlFlow,
     Event,
     EventLoop,
     InputMethod,
+    ParserOptions,
+    StyleSheet,
 };
 use which::which;
 
@@ -1077,55 +1078,6 @@ fn run_tui(
     script_name: &str,
     execution_method: &ExecutionMethod,
 ) -> Result<HashMap<String, Value>> {
-    let style_sheet = tui::style_sheet! {
-        "*" => {
-            caret_color: ColorAttribute::PaletteIndex(3);
-            color: ColorAttribute::PaletteIndex(7);
-        },
-        "div" => {
-            width: Some(100.0);
-        },
-        "input:text", "input:checkbox", "select", "#__preview" => {
-            padding_left: 1.0;
-            padding_right: 1.0;
-        },
-        "#__parameter", "#__preview" => {
-            border_left_width: 1.0;
-            border_top_width: 1.0;
-            border_bottom_width: 1.0;
-            border_right_width: 1.0;
-            border_left_color: ColorAttribute::PaletteIndex(8);
-            border_right_color: ColorAttribute::PaletteIndex(8);
-            border_top_color: ColorAttribute::PaletteIndex(8);
-            border_bottom_color: ColorAttribute::PaletteIndex(8);
-            border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
-            padding_top: -1.0;
-        },
-        "#__parameter:focus" => {
-            border_left_color: ColorAttribute::PaletteIndex(3);
-            border_right_color: ColorAttribute::PaletteIndex(3);
-            border_top_color: ColorAttribute::PaletteIndex(3);
-            border_bottom_color: ColorAttribute::PaletteIndex(3);
-        },
-        "#__view" => {
-            margin_left: 2.0;
-            margin_right: 2.0;
-            margin_top: 1.0;
-            margin_bottom: 1.0;
-        },
-        "#__header" => {
-            margin_bottom: 1.0;
-        },
-        "#__footer" => {
-            margin_top: 1.0;
-        },
-        "#__label" => {
-            padding_left: 1.0;
-            padding_right: 1.0;
-            margin_left: 1.0;
-        }
-    };
-
     let mut view = Container::new("__view", Layout::Vertical);
 
     let mut header = Paragraph::new("__header")
@@ -1269,6 +1221,26 @@ fn run_tui(
             ParameterType::Unknown => bail!("Unknown parameter type, try updating your Fig version"),
         };
 
+        if let Some(description) = &parameter.description {
+            parameter_div = parameter_div.push(
+                Paragraph::new("__description")
+                    .push_styled_text(
+                        "─".repeat(100),
+                        ColorAttribute::PaletteIndex(8),
+                        ColorAttribute::Default,
+                        false,
+                        true,
+                    )
+                    .push_styled_text(
+                        format!("\n{description}"),
+                        ColorAttribute::PaletteIndex(8),
+                        ColorAttribute::Default,
+                        false,
+                        true,
+                    ),
+            );
+        }
+
         form = form.push(parameter_div);
     }
 
@@ -1293,7 +1265,7 @@ fn run_tui(
     EventLoop::new().run(
         &mut view,
         InputMethod::Form,
-        style_sheet,
+        StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
         |event, view, control_flow| match event {
             Event::Quit => *control_flow = ControlFlow::Quit,
             Event::Terminate => {

@@ -30,7 +30,7 @@ impl CheckBox {
         Self {
             label: label.to_string(),
             checked,
-            inner: ComponentData::new(id.to_string(), true),
+            inner: ComponentData::new("input".to_owned(), id.to_string(), true),
         }
     }
 }
@@ -57,7 +57,7 @@ impl Component for CheckBox {
         );
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
+    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
         if let InputAction::Select = input_action {
             self.checked = !self.checked;
             state.event_buffer.push(Event::CheckBox(CheckBoxEvent::Checked {
@@ -66,11 +66,7 @@ impl Component for CheckBox {
             }))
         }
 
-        true
-    }
-
-    fn class(&self) -> &'static str {
-        "input:checkbox"
+        None
     }
 
     fn inner(&self) -> &ComponentData {
@@ -84,6 +80,10 @@ impl Component for CheckBox {
 
 #[cfg(test)]
 mod tests {
+    use lightningcss::stylesheet::{
+        ParserOptions,
+        StyleSheet,
+    };
     use termwiz::input::{
         InputEvent,
         KeyCode,
@@ -96,7 +96,6 @@ mod tests {
         ControlFlow,
         EventLoop,
         InputMethod,
-        StyleSheet,
     };
 
     #[ignore = "does not work on CI"]
@@ -114,7 +113,7 @@ mod tests {
                     key: KeyCode::Char(' '),
                     modifiers: Modifiers::NONE,
                 })]),
-                StyleSheet::default(),
+                StyleSheet::parse("", ParserOptions::default()).unwrap(),
                 |event, _component, control_flow| {
                     if let Event::CheckBox(CheckBoxEvent::Checked { id, checked }) = event {
                         if id == check_box_id {

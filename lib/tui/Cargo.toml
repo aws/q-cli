@@ -7,7 +7,11 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
+indexmap = "1.9.2"
+lightningcss = "1.0.0-alpha.38"
 paste = "1.0.10"
 termwiz = "0.19.0"
+tracing = "0.1.37"
+fig_log = { path = "../fig_log" }
 unicode-segmentation = "1.10.0"
 unicode-width = "0.1.10"

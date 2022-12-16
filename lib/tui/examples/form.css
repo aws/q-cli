@@ -1,0 +1,34 @@
+* #text-field {
+    color: yellow;
+    border-color: ansi(8);
+    border-width: 1.0;
+    border-style: ascii ┏ ━ ┓ ┃ ┃ ┗ ━ ┛;
+}
+
+#text-field:focus {
+    color: cyan;
+}
+
+p {
+    color: blue;
+}
+
+#inner-3 p {
+    color: cyan;
+}
+
+#inner-3 > p {
+    color: orange;
+}
+
+:focus ~ p {
+    color: red;
+}
+
+#select {
+    color: green;
+}
+
+:focus + #select {
+    color: blueviolet;
+}

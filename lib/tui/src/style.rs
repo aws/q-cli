@@ -62,6 +62,12 @@ pub enum BorderStyle {
 }
 
 #[derive(Clone, Copy, Debug)]
+pub enum Display {
+    None,
+    Initial,
+}
+
+#[derive(Clone, Copy, Debug)]
 #[non_exhaustive]
 pub enum Property {
     BackgroundColor(ColorAttribute),
@@ -76,6 +82,7 @@ pub enum Property {
     BorderTopWidth(f64),
     CaretColor(ColorAttribute),
     Color(ColorAttribute),
+    Display(Display),
     FontWeight(Intensity),
     Height(Option<f64>),
     MarginBottom(f64),
@@ -96,89 +103,35 @@ pub enum Property {
 #[derive(Clone, Debug, Default)]
 pub struct Style(HashMap<Discriminant<Property>, Property>);
 
+#[rustfmt::skip]
 impl Style {
-    field!(
-        background_color,
-        Property::BackgroundColor,
-        ColorAttribute,
-        ColorAttribute::Default
-    );
-
-    field!(
-        border_bottom_color,
-        Property::BorderBottomColor,
-        ColorAttribute,
-        ColorAttribute::Default
-    );
-
+    field!(background_color, Property::BackgroundColor, ColorAttribute, ColorAttribute::Default);
+    field!(border_bottom_color, Property::BorderBottomColor, ColorAttribute, ColorAttribute::Default);
     field!(border_bottom_width, Property::BorderBottomWidth, f64, 0.0);
-
-    field!(
-        border_left_color,
-        Property::BorderLeftColor,
-        ColorAttribute,
-        ColorAttribute::Default
-    );
-
+    field!(border_left_color, Property::BorderLeftColor, ColorAttribute, ColorAttribute::Default);
     field!(border_left_width, Property::BorderLeftWidth, f64, 0.0);
-
-    field!(
-        border_right_color,
-        Property::BorderRightColor,
-        ColorAttribute,
-        ColorAttribute::Default
-    );
-
+    field!(border_right_color, Property::BorderRightColor, ColorAttribute, ColorAttribute::Default);
     field!(border_right_width, Property::BorderRightWidth, f64, 0.0);
-
     field!(border_style, Property::BorderStyle, BorderStyle, BorderStyle::None);
-
-    field!(
-        border_top_color,
-        Property::BorderTopColor,
-        ColorAttribute,
-        ColorAttribute::Default
-    );
-
+    field!(border_top_color, Property::BorderTopColor, ColorAttribute, ColorAttribute::Default);
     field!(border_top_width, Property::BorderTopWidth, f64, 0.0);
-
-    field!(
-        caret_color,
-        Property::CaretColor,
-        ColorAttribute,
-        ColorAttribute::PaletteIndex(15)
-    );
-
+    field!(caret_color, Property::CaretColor, ColorAttribute, ColorAttribute::Default);
+    field!(display, Property::Display, Display, Display::Initial);
     field!(color, Property::Color, ColorAttribute, ColorAttribute::Default);
-
     field!(font_weight, Property::FontWeight, Intensity, Intensity::Normal);
-
     field!(margin_bottom, Property::MarginBottom, f64, 0.0);
-
     field!(margin_left, Property::MarginLeft, f64, 0.0);
-
     field!(margin_right, Property::MarginRight, f64, 0.0);
-
     field!(margin_top, Property::MarginTop, f64, 0.0);
-
     field!(max_height, Property::MaxHeight, f64, 2048.0);
-
     field!(max_width, Property::MaxWidth, f64, 2048.0);
-
     field!(min_height, Property::MinHeight, f64, 0.0);
-
     field!(min_width, Property::MinWidth, f64, 0.0);
-
     field!(padding_bottom, Property::PaddingBottom, f64, 0.0);
-
     field!(padding_left, Property::PaddingLeft, f64, 0.0);
-
     field!(padding_right, Property::PaddingRight, f64, 0.0);
-
     field!(padding_top, Property::PaddingTop, f64, 0.0);
-
     field!(height, Property::Height, Option<f64>, None);
-
     field!(width, Property::Width, Option<f64>, None);
 
     pub fn new() -> Self {
@@ -233,13 +186,6 @@ impl Style {
         self.spacing_left() + self.spacing_right()
     }
 
-    pub fn with_padding(&mut self, width: f64) -> &mut Self {
-        self.with_padding_left(width)
-            .with_padding_right(width)
-            .with_padding_top(width)
-            .with_padding_bottom(width)
-    }
-
     pub fn with_border_width(&mut self, width: f64) -> &mut Self {
         self.with_border_left_width(width)
             .with_border_right_width(width)
@@ -254,19 +200,15 @@ impl Style {
             .with_border_right_color(color)
     }
 
-    pub fn apply(&mut self, diff: &Style) -> &mut Self {
-        for (key, value) in &diff.0 {
-            self.0.insert(*key, *value);
-        }
-        self
+    pub fn with_margin(&mut self, width: f64) -> &mut Self {
+        self.with_margin_left(width).with_margin_right(width).with_margin_top(width).with_margin_bottom(width)
     }
 
-    pub fn applied(&self, diff: &Style) -> Self {
-        let mut style = self.clone();
-        for (key, value) in &diff.0 {
-            style.0.insert(*key, *value);
-        }
-        style
+    pub fn with_padding(&mut self, width: f64) -> &mut Self {
+        self.with_padding_left(width)
+            .with_padding_right(width)
+            .with_padding_top(width)
+            .with_padding_bottom(width)
     }
 
     pub fn attributes(&self) -> CellAttributes {

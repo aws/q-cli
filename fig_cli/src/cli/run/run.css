@@ -1,0 +1,51 @@
+* {
+    caret-color: ansi(7);
+    color: ansi(7);
+}
+
+div {
+    width: 100;
+}
+
+input, select, #__preview {
+    padding-left: 1;
+    padding-right: 1;
+}
+
+#__parameter, #__preview {
+    border-color: ansi(8);
+    border-style: ascii ┌ ─ ┐ │ │ └ ─ ┘;
+    border-width: 1;
+}
+
+#__parameter:focus {
+    border-color: ansi(3);
+}
+
+#__description {
+    padding-left: 1;
+    padding-right: 1;
+    display: none;
+}
+
+#__view {
+    padding-bottom: 1;
+    padding-left: 2;
+    padding-right: 2;
+    padding-top: 1;
+}
+
+#__header {
+    margin-bottom: 1;
+}
+
+#__footer {
+    margin-top: 1;
+}
+
+#__label {
+    margin-left: 1;
+    margin-top: -1;
+    padding-left: 1;
+    padding-right: 1;
+}

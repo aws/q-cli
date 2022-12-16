@@ -80,11 +80,6 @@ impl SurfaceExt for Surface {
     }
 
     fn draw_border(&mut self, x: &mut f64, y: &mut f64, width: &mut f64, height: &mut f64, style: &Style) {
-        *x += style.margin_left();
-        *y += style.margin_top();
-        *width -= style.margin_horizontal();
-        *height -= style.margin_vertical();
-
         match style.border_style() {
             BorderStyle::None => (),
             BorderStyle::Filled => {

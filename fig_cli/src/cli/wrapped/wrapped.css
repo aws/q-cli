@@ -1,0 +1,58 @@
+* {
+    border-style: ┌ ─ ┐ │ │ └ ─ ┘
+}
+
+p {
+    padding-left: 1;
+    padding-right: 1;
+}
+
+#top_commands_div {
+    border-color: ansi(1);
+    border-width: 1;
+    height: 17;
+    width: 25;
+}
+
+#fig_logo_div {
+    border-color: ansi(2);
+    border-width: 1;
+    padding-left: 2;
+    padding-top: 1;
+    padding-bottom: 1;
+    width: 33;
+}
+
+#top_directories_div {
+    border-color: ansi(3);
+    border-width: 1;
+    height: 7;
+    width: 35;
+}
+
+#factoid_div {
+    border-color: ansi(4);
+    border-width: 1;
+    width: 30;
+}
+
+#weekly_activity_div {
+    border-color: ansi(5);
+    border-width: 1;
+    width: 30;
+}
+
+#daily_activity_div {
+    border-color: ansi(6);
+    border-width: 1;
+    width: 30;
+}
+
+#label {
+    padding-bottom: 1.0;
+}
+
+#footer {
+    margin-top: 1.0;
+    margin-left: 14.0;
+}

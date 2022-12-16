@@ -8,9 +8,13 @@ use super::{
     Component,
     ComponentData,
 };
-use crate::event_loop::State;
+use crate::event_loop::{
+    State,
+    TreeElement,
+};
 use crate::input::InputAction;
 use crate::surface_ext::SurfaceExt;
+use crate::Display;
 
 #[derive(Debug)]
 pub enum Layout {
@@ -20,32 +24,39 @@ pub enum Layout {
 
 #[derive(Debug)]
 pub struct Container {
-    components: Vec<Box<dyn Component + 'static>>,
     layout: Layout,
-    active: Option<usize>,
     inner: ComponentData,
 }
 
 impl Container {
     pub fn new(id: impl Into<String>, layout: Layout) -> Self {
         Self {
-            components: vec![],
-            active: None,
             layout,
-            inner: ComponentData::new(id.into(), false),
+            inner: ComponentData::new("div".to_owned(), id.into(), false),
         }
     }
 
     pub fn push(mut self, component: impl Component + 'static) -> Self {
-        self.components.push(Box::new(component));
+        self.inner.children.push(Box::new(component));
         self
     }
 
     fn resize(&mut self, state: &mut State) {
-        (self.inner.width, self.inner.height) = self.components.iter().fold((0.0_f64, 0.0_f64), |acc, c| {
+        let mut previous_siblings = std::collections::LinkedList::new();
+        (self.inner.width, self.inner.height) = self.inner.children.iter().fold((0.0_f64, 0.0_f64), |acc, c| {
+            let style_info = c.inner().style_info();
+            state.tree.push(TreeElement {
+                inner: style_info.clone(),
+                siblings: previous_siblings.clone(),
+            });
+            previous_siblings.push_front(style_info);
             let style = c.style(state);
 
-            match self.layout {
+            if let Display::None = style.display() {
+                return acc;
+            }
+
+            let acc = match self.layout {
                 Layout::Vertical => (
                     acc.0
                         .max(style.width().unwrap_or_else(|| c.width()) + style.spacing_horizontal()),
@@ -56,14 +67,17 @@ impl Container {
                     acc.1
                         .max(style.height().unwrap_or_else(|| c.height()) + style.spacing_vertical()),
                 ),
-            }
+            };
+
+            state.tree.pop();
+            acc
         });
     }
 }
 
 impl Component for Container {
     fn initialize(&mut self, state: &mut State) {
-        for component in &mut self.components {
+        for component in &mut self.inner.children {
             component.initialize(state);
         }
 
@@ -81,39 +95,54 @@ impl Component for Container {
         screen_width: f64,
         screen_height: f64,
     ) {
-        for component in &self.components {
-            let style = component.style(state);
-            let mut cx = x;
-            let mut cy = y;
+        let mut previous_siblings = std::collections::LinkedList::new();
+        for child in self.inner.children.iter() {
+            let style_info = child.inner().style_info();
+            state.tree.push(TreeElement {
+                inner: style_info.clone(),
+                siblings: previous_siblings.clone(),
+            });
+            previous_siblings.push_front(style_info);
+            let style = child.style(state);
 
-            let mut width =
-                (style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()).min(width);
+            if let Display::None = style.display() {
+                state.tree.pop();
+                continue;
+            }
+
+            let mut cx = x + style.margin_left();
+            let mut cy = y + style.margin_top();
+
+            let mut width = (style.width().unwrap_or_else(|| child.width())
+                + style.border_horizontal()
+                + style.padding_horizontal())
+            .min(width);
             let mut height =
-                (style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()).min(height);
+                (style.height().unwrap_or_else(|| child.height()) + style.border_vertical() + style.padding_vertical())
+                    .min(height);
 
             surface.draw_border(&mut cx, &mut cy, &mut width, &mut height, &style);
-            component.draw(state, surface, cx, cy, width, height, screen_width, screen_height);
+            child.draw(state, surface, cx, cy, width, height, screen_width, screen_height);
 
             match self.layout {
-                Layout::Vertical => {
-                    y += style.height().unwrap_or_else(|| component.height()) + style.spacing_vertical()
-                },
-                Layout::Horizontal => {
-                    x += style.width().unwrap_or_else(|| component.width()) + style.spacing_horizontal()
-                },
+                Layout::Vertical => y += style.height().unwrap_or_else(|| child.height()) + style.spacing_vertical(),
+                Layout::Horizontal => x += style.width().unwrap_or_else(|| child.width()) + style.spacing_horizontal(),
             }
+
+            state.tree.pop();
         }
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
-        let mut no_consume = true;
-        if let Some(active) = self.active {
-            no_consume &= self.components[active].on_input_action(state, input_action);
-        }
+    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
+        let child_did_consume_enter = self
+            .inner
+            .focused_child()
+            .and_then(|child| child.on_input_action(state, input_action))
+            .unwrap_or(false);
 
         self.resize(state);
 
-        no_consume
+        Some(child_did_consume_enter)
     }
 
     fn on_mouse_event(
@@ -129,15 +158,17 @@ impl Component for Container {
             return;
         }
 
-        for i in 0..self.components.len() {
-            let style = self.components[i].style(state);
+        for i in 0..self.inner.children.len() {
+            let style = self.inner.children[i].style(state);
             let mut cx = x;
             let mut cy = y;
 
-            let mut width =
-                (style.width().unwrap_or_else(|| self.components[i].width()) + style.spacing_horizontal()).min(width);
-            let mut height =
-                (style.height().unwrap_or_else(|| self.components[i].height()) + style.spacing_vertical()).min(height);
+            let mut width = (style.width().unwrap_or_else(|| self.inner.children[i].width())
+                + style.spacing_horizontal())
+            .min(width);
+            let mut height = (style.height().unwrap_or_else(|| self.inner.children[i].height())
+                + style.spacing_vertical())
+            .min(height);
 
             cx += style.margin_left();
             cy += style.margin_top();
@@ -149,166 +180,77 @@ impl Component for Container {
                 && mouse_event.y as f64 >= cy
                 && mouse_event.y as f64 <= cy + height
             {
-                if let Some(active) = self.active {
-                    self.components[active].on_focus(state, false);
-                }
-
-                self.active = Some(i);
-                self.components[i].on_mouse_event(state, mouse_event, x, y, width, height);
+                self.inner.focus_child_at_index(state, Some(i));
+                self.inner.children[i].on_mouse_event(state, mouse_event, x, y, width, height);
             }
 
             match self.layout {
-                Layout::Vertical => {
-                    y += style.height().unwrap_or_else(|| self.components[i].height()) + style.spacing_vertical()
-                },
-                Layout::Horizontal => {
-                    x += style.width().unwrap_or_else(|| self.components[i].width()) + style.spacing_horizontal()
-                },
+                Layout::Vertical => y += height,
+                Layout::Horizontal => x += width,
             }
         }
     }
 
     fn next(&mut self, state: &mut State, wrap: bool) -> Option<String> {
-        let active_old = self.active;
+        let next = self
+            .inner
+            .focused_child()
+            .and_then(|child| child.next(state, false))
+            .or_else(|| {
+                // If currently focused element doesn't have another interactive element with in it
+                // we iterate through the children, wrapping if necessary.
+                let next_child_idx = self.inner.find_next_child(
+                    |c| c.interactive(state),
+                    self.inner.focused_child_index.map(|x| x + 1),
+                    wrap,
+                );
 
-        let next = match self.active {
-            Some(active) => {
-                let component = &mut self.components[active];
-                match component.next(state, false) {
-                    Some(active) => Some(active),
-                    None => {
-                        self.active = self
-                            .components
-                            .iter()
-                            .enumerate()
-                            .skip(active + 1)
-                            .find(|(_, c)| c.interactive(state))
-                            .map(|(i, _)| i);
+                // Traverse tree to get next id before we focus.
+                let next_id = next_child_idx.map(|idx| {
+                    let child = &mut self.inner.children[idx];
+                    child.next(state, false).unwrap_or_else(|| child.id().to_owned())
+                });
+                self.inner.focus_child_at_index(state, next_child_idx);
 
-                        match self.active {
-                            Some(active) => {
-                                let component = &mut self.components[active];
-                                match component.next(state, false) {
-                                    Some(active) => Some(active),
-                                    None => Some(component.id()),
-                                }
-                            },
-                            None => match wrap {
-                                true => return self.next(state, false),
-                                false => None,
-                            },
-                        }
-                    },
-                }
-            },
-            None => {
-                self.active = self
-                    .components
-                    .iter()
-                    .enumerate()
-                    .find(|(_, c)| c.interactive(state))
-                    .map(|(i, _)| i);
-
-                match self.active {
-                    Some(active) => {
-                        let component = &mut self.components[active];
-                        match component.next(state, wrap) {
-                            Some(active) => Some(active),
-                            None => Some(component.id()),
-                        }
-                    },
-                    None => None,
-                }
-            },
-        };
-
-        if active_old != self.active {
-            if let Some(active) = active_old {
-                self.components[active].on_focus(state, false);
-            }
-
-            if let Some(active) = self.active {
-                self.components[active].on_focus(state, true);
-            }
-        }
+                next_id
+            });
 
         self.resize(state);
         next
     }
 
     fn prev(&mut self, state: &mut State, wrap: bool) -> Option<String> {
-        let active_old = self.active;
+        let prev = self
+            .inner
+            .focused_child()
+            .and_then(|child| child.prev(state, false))
+            .or_else(|| {
+                // If currently focused element doesn't have another interactive element with in it
+                // we iterate through the children, wrapping if necessary.
+                let prev_child_idx =
+                    self.inner
+                        .find_prev_child(|c| c.interactive(state), self.inner.focused_child_index, wrap);
 
-        let prev = match self.active {
-            Some(active) => {
-                let component = &mut self.components[active];
-                match component.prev(state, false) {
-                    Some(active) => Some(active),
-                    None => {
-                        self.active = self.components[0..active]
-                            .iter()
-                            .enumerate()
-                            .rev()
-                            .find(|(_, c)| c.interactive(state))
-                            .map(|(i, _)| i);
+                // Traverse tree to get previous id before we focus.
+                let prev_id = prev_child_idx.map(|idx| {
+                    let child = &mut self.inner.children[idx];
+                    child.prev(state, false).unwrap_or_else(|| child.id().to_owned())
+                });
 
-                        match self.active {
-                            Some(active) => {
-                                let component = &mut self.components[active];
-                                match component.prev(state, false) {
-                                    Some(active) => Some(active),
-                                    None => Some(component.id()),
-                                }
-                            },
-                            None => match wrap {
-                                true => return self.prev(state, false),
-                                false => None,
-                            },
-                        }
-                    },
-                }
-            },
-            None => {
-                self.active = self
-                    .components
-                    .iter()
-                    .enumerate()
-                    .rev()
-                    .find(|(_, c)| c.interactive(state))
-                    .map(|(i, _)| i);
+                self.inner.focus_child_at_index(state, prev_child_idx);
 
-                match self.active {
-                    Some(active) => {
-                        let component = &mut self.components[active];
-                        match component.prev(state, wrap) {
-                            Some(active) => Some(active),
-                            None => Some(component.id()),
-                        }
-                    },
-                    None => None,
-                }
-            },
-        };
-
-        if active_old != self.active {
-            if let Some(active) = active_old {
-                self.components[active].on_focus(state, false);
-            }
-
-            if let Some(active) = self.active {
-                self.components[active].on_focus(state, true);
-            }
-        }
+                prev_id
+            });
 
         self.resize(state);
         prev
     }
 
     fn remove(&mut self, id: &str) -> Option<Box<dyn Component>> {
-        for i in 0..self.components.len() {
-            if self.components[i].id() == id {
-                self.active = None;
-                return Some(self.components.remove(i));
+        for i in 0..self.inner.children.len() {
+            if self.inner.children[i].id() == id {
+                self.inner.focused_child_index = None;
+                return Some(self.inner.children.remove(i));
             }
         }
 
@@ -316,10 +258,10 @@ impl Component for Container {
     }
 
     fn insert(&mut self, id: &str, mut component: Box<dyn Component>) -> Option<Box<dyn Component>> {
-        for (i, child) in self.components.iter_mut().enumerate() {
+        for (i, child) in self.inner.children.iter_mut().enumerate() {
             if child.id() == id {
-                self.active = None;
-                self.components.insert(i + 1, component);
+                self.inner.focused_child_index = None;
+                self.inner.children.insert(i + 1, component);
                 return None;
             }
 
@@ -330,16 +272,16 @@ impl Component for Container {
     }
 
     fn replace(&mut self, id: &str, mut component: Box<dyn Component>) -> Option<Box<dyn Component>> {
-        for (i, child) in self.components.iter_mut().enumerate() {
+        for (i, child) in self.inner.children.iter_mut().enumerate() {
             if child.id() == id {
-                if let Some(active) = self.active {
-                    if active == i {
-                        self.active = None;
+                if let Some(focused_child_index) = self.inner.focused_child_index {
+                    if focused_child_index == i {
+                        self.inner.focused_child_index = None;
                     }
                 }
 
-                let removed = self.components.remove(i);
-                self.components.insert(i, component);
+                let removed = self.inner.children.remove(i);
+                self.inner.children.insert(i, component);
                 return Some(removed);
             }
 
@@ -351,35 +293,29 @@ impl Component for Container {
 
     fn on_focus(&mut self, state: &mut State, focus: bool) {
         self.inner.focus = focus;
-
-        if focus && self.active.is_none() {
-            self.active = self
-                .components
-                .iter()
-                .enumerate()
-                .find(|(_, c)| c.interactive(state))
-                .map(|(i, _)| i);
-        }
-
-        if let Some(active) = self.active {
-            self.components[active].on_focus(state, focus);
+        match self.inner.focused_child() {
+            Some(child) => {
+                child.on_focus(state, focus);
+            },
+            None => {
+                if focus {
+                    let focus_index = self.inner.find_next_child(|c| c.interactive(state), None, false);
+                    self.inner.focus_child_at_index(state, focus_index);
+                }
+            },
         }
 
         self.resize(state);
     }
 
     fn on_paste(&mut self, state: &mut State, clipboard: &str) {
-        if let Some(active) = self.active {
-            self.components[active].on_paste(state, clipboard)
+        if let Some(child) = self.inner.focused_child() {
+            child.on_paste(state, clipboard)
         }
     }
 
     fn interactive(&self, state: &mut State) -> bool {
-        self.components.iter().any(|c| c.interactive(state))
-    }
-
-    fn class(&self) -> &'static str {
-        "div"
+        self.inner.interactive(state)
     }
 
     fn inner(&self) -> &super::ComponentData {

@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use lightningcss::stylesheet::StyleSheet;
 use termwiz::caps::Capabilities;
 use termwiz::color::ColorAttribute;
 use termwiz::input::InputEvent;
@@ -21,29 +22,46 @@ use crate::component::{
     Component,
     FilePickerEvent,
     SelectEvent,
+    StyleInfo,
     TextFieldEvent,
 };
 use crate::input::InputAction;
 use crate::{
     Error,
     InputMethod,
-    StyleSheet,
 };
 
-#[derive(Debug)]
-pub struct State {
-    pub style_sheet: StyleSheet,
+#[derive(Debug, Clone)]
+pub struct TreeElement {
+    pub inner: StyleInfo,
+    pub siblings: std::collections::LinkedList<StyleInfo>,
+}
+
+impl TreeElement {
+    pub fn next_sibling(self) -> Option<Self> {
+        let mut siblings = self.siblings;
+        let inner = siblings.pop_front()?;
+        Some(Self { inner, siblings })
+    }
+}
+
+pub struct State<'i, 'o> {
+    pub style_sheet: StyleSheet<'i, 'o>,
     pub event_buffer: Vec<Event>,
+    pub tree: Vec<TreeElement>,
     pub cursor_position: (f64, f64),
+    pub cursor_color: ColorAttribute,
     pub cursor_visibility: bool,
 }
 
-impl State {
-    fn new(style_sheet: StyleSheet) -> Self {
+impl<'i, 'o> State<'i, 'o> {
+    fn new(style_sheet: StyleSheet<'i, 'o>) -> Self {
         Self {
             style_sheet,
             event_buffer: vec![],
+            tree: vec![],
             cursor_position: (0.0, 0.0),
+            cursor_color: ColorAttribute::Default,
             cursor_visibility: false,
         }
     }
@@ -104,6 +122,11 @@ impl EventLoop {
         let mut surface = Surface::new(screen_size.cols, screen_size.rows);
 
         let mut state = State::new(style_sheet);
+        state.tree.push(TreeElement {
+            inner: component.inner().style_info(),
+            siblings: Default::default(),
+        });
+
         component.initialize(&mut state);
         component.on_focus(&mut state, true);
 
@@ -117,8 +140,13 @@ impl EventLoop {
             // todo: seems like there's an issue in termwiz which doesn't
             // account for grapheme width in optimized surface diffs
             for _ in 0..2 {
+                let style = component.style(&state);
+                // todo: this doesn't work, why?
+                // if let Display::None = style.display() {
+                //    continue;
+                //}
+
                 surface.add_change(Change::ClearScreen(ColorAttribute::Default));
-                let style = component.style(&mut state);
                 component.draw(
                     &mut state,
                     &mut surface,
@@ -137,6 +165,7 @@ impl EventLoop {
                         x: Position::Absolute(state.cursor_position.0.round() as usize),
                         y: Position::Absolute(state.cursor_position.1.round() as usize),
                     },
+                    Change::CursorColor(state.cursor_color),
                     Change::CursorVisibility(match state.cursor_visibility {
                         true => CursorVisibility::Visible,
                         false => CursorVisibility::Hidden,
@@ -155,9 +184,10 @@ impl EventLoop {
                     let modifiers = event.modifiers;
 
                     for input_action in InputAction::from_key(&input_method, code, modifiers) {
+                        tracing::error!("Got action {:?}", input_action);
                         match input_action {
                             InputAction::Submit => {
-                                if component.on_input_action(&mut state, input_action)
+                                if component.on_input_action(&mut state, input_action).unwrap_or(false)
                                     && component.next(&mut state, false).is_none()
                                 {
                                     control_flow = ControlFlow::Quit;
@@ -217,9 +247,10 @@ impl EventLoop {
                         let modifiers = event.modifiers;
 
                         for input_action in InputAction::from_key(&input_method, code, modifiers) {
+                            tracing::error!("Got action {:?}", input_action);
                             match input_action {
                                 InputAction::Submit => {
-                                    if component.on_input_action(&mut state, input_action)
+                                    if component.on_input_action(&mut state, input_action).unwrap_or(false)
                                         && component.next(&mut state, false).is_none()
                                     {
                                         control_flow = ControlFlow::Quit;

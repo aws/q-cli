@@ -21,11 +21,11 @@ use tui::component::{
     Paragraph,
 };
 use tui::{
-    BorderStyle,
     ColorAttribute,
     Component,
     ControlFlow,
     InputMethod,
+    ParserOptions,
     State,
     StyleSheet,
     Surface,
@@ -290,7 +290,7 @@ impl Component for Center {
         }
     }
 
-    fn class(&self) -> &'static str {
+    fn type_selector(&self) -> &'static str {
         ""
     }
 
@@ -329,75 +329,13 @@ spreading some holiday cheer   | |_______________|     |
 and a happy new year to you!  \\_________________________/",
             )),
             InputMethod::ExitAny,
-            StyleSheet::default(),
+            StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {
                 if let tui::Event::Quit | tui::Event::Terminate = event {
                     *control_flow = ControlFlow::Quit;
                 }
             },
         )?;
-
-        let rand = rand::thread_rng().gen::<u8>();
-        let cols = vec![
-            rand % 6 + 1,
-            (rand + 1) % 6 + 1,
-            (rand + 2) % 6 + 1,
-            (rand + 3) % 6 + 1,
-            (rand + 4) % 6 + 1,
-            (rand + 5) % 6 + 1,
-        ];
-
-        let style_sheet = tui::style_sheet! {
-            "*" => {
-                border_style: BorderStyle::Ascii { top_left: '┌', top: '─', top_right: '┐', left: '│', right: '│', bottom_left: '└', bottom: '─', bottom_right: '┘' };
-            },
-            "p" => {
-                margin_left: 1.0;
-                margin_right: 1.0;
-            },
-            "#top_commands_div" => {
-                border_color: ColorAttribute::PaletteIndex(cols[0]);
-                border_width: 1.0;
-                height: Some(17.0);
-                width: Some(25.0);
-            },
-            "#fig_logo_div" => {
-                border_color: ColorAttribute::PaletteIndex(cols[1]);
-                border_width: 1.0;
-                padding_left: 2.0;
-                padding_top: 1.0;
-                padding_bottom: 1.0;
-                width: Some(33.0);
-            },
-            "#top_directories_div" => {
-                border_color: ColorAttribute::PaletteIndex(cols[2]);
-                border_width: 1.0;
-                height: Some(7.0);
-                width: Some(35.0);
-            },
-            "#factoid_div" => {
-                border_color: ColorAttribute::PaletteIndex(cols[3]);
-                border_width: 1.0;
-                width: Some(30.0);
-            },
-            "#weekly_activity_div" => {
-                border_color: ColorAttribute::PaletteIndex(cols[4]);
-                border_width: 1.0;
-                width: Some(30.0);
-            },
-            "#daily_activity_div" => {
-                border_color: ColorAttribute::PaletteIndex(cols[5]);
-                border_width: 1.0;
-                width: Some(30.0);
-            },
-            "#label" => {
-                padding_bottom: 1.0;
-            },
-            "#footer" => {
-                margin_top: 1.0;
-                margin_left: 14.0;
-            }
-        };
 
         let mut view = Center::new(
             Container::new("view", Layout::Vertical)
@@ -430,7 +368,7 @@ and a happy new year to you!  \\_________________________/",
         tui::EventLoop::new().run(
             &mut view,
             InputMethod::ExitAny,
-            style_sheet,
+            StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {
                 if let tui::Event::Quit | tui::Event::Terminate = event {
                     *control_flow = ControlFlow::Quit;

@@ -5,6 +5,7 @@ use termwiz::input::{
 };
 
 #[non_exhaustive]
+#[derive(Debug)]
 pub enum InputAction {
     Remove,
     Submit,

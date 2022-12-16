@@ -5,6 +5,7 @@ use termwiz::surface::Surface;
 use unicode_width::UnicodeWidthStr;
 
 use super::ComponentData;
+use crate::component::text_state::TextState;
 use crate::event_loop::{
     Event,
     State,
@@ -23,9 +24,8 @@ pub enum SelectEvent {
 
 #[derive(Debug)]
 pub struct Select {
-    text: String,
+    text: TextState,
     hint: Option<String>,
-    cursor: usize,
     cursor_offset: usize,
     index: Option<usize>,
     index_offset: usize,
@@ -38,22 +38,20 @@ pub struct Select {
 impl Select {
     pub fn new(id: impl ToString, options: Vec<String>, validate: bool) -> Self {
         Self {
-            text: Default::default(),
+            text: TextState::new(""),
             hint: None,
-            cursor: 0,
             cursor_offset: 0,
             index: Default::default(),
             index_offset: 0,
             options,
             sorted_options: vec![],
             validate,
-            inner: ComponentData::new(id.to_string(), true),
+            inner: ComponentData::new("select".to_owned(), id.to_string(), true),
         }
     }
 
     pub fn with_text(mut self, text: impl Display) -> Self {
-        self.text = text.to_string();
-        self.cursor = self.text.width();
+        self.text = TextState::new(text.to_string());
         self
     }
 
@@ -120,7 +118,8 @@ impl Component for Select {
         }
 
         if self.inner.focus {
-            state.cursor_position = (x + 2.0 + self.cursor as f64 - self.cursor_offset as f64, y);
+            state.cursor_position = (x + 2.0 + self.text.cursor as f64 - self.cursor_offset as f64, y);
+            state.cursor_color = style.caret_color();
             state.cursor_visibility = true;
         }
 
@@ -155,10 +154,12 @@ impl Component for Select {
         }
     }
 
-    fn on_input_action(&mut self, _: &mut State, input_action: InputAction) -> bool {
+    fn on_input_action(&mut self, _: &mut State, input_action: InputAction) -> Option<bool> {
+        if self.text.on_input_action(&input_action).is_err() {
+            return None;
+        }
+
         match input_action {
-            InputAction::Left => self.cursor -= 1.min(self.cursor),
-            InputAction::Right => self.cursor += 1.min(self.text.width() - self.cursor),
             InputAction::Up => {
                 if !self.sorted_options.is_empty() {
                     match self.index {
@@ -195,58 +196,31 @@ impl Component for Select {
                     }
                 }
             },
-            InputAction::Insert(c, _) => {
-                self.text.insert(self.cursor, c);
-                self.cursor += 1;
+            InputAction::Insert(_, _) => {
                 self.index = None;
                 self.index_offset = 0;
 
                 self.sorted_options
-                    .retain(|option| self.options[*option].contains(&self.text));
+                    .retain(|option| self.options[*option].contains(&*self.text));
             },
             InputAction::Remove => {
-                match self.cursor == self.text.width() {
-                    true => {
-                        self.text.pop();
-                        self.cursor -= 1.min(self.cursor);
-                    },
-                    false => {
-                        if self.cursor == 0 {
-                            return true;
-                        }
-
-                        self.text.remove(self.cursor - 1);
-                        self.cursor -= 1.min(self.cursor);
-                    },
-                };
-
                 self.index = None;
                 self.index_offset = 0;
 
                 self.sorted_options.clear();
                 for i in 0..self.options.len() {
-                    if self.options[i].contains(&self.text) {
+                    if self.options[i].contains(&*self.text) {
                         self.sorted_options.push(i);
                     }
                 }
             },
             InputAction::Delete => {
-                match self.text.len() {
-                    len if len == self.cursor + 1 => {
-                        self.text.pop();
-                    },
-                    len if len > self.cursor + 1 => {
-                        self.text.remove(self.cursor);
-                    },
-                    _ => (),
-                }
-
                 self.index = None;
                 self.index_offset = 0;
 
                 self.sorted_options.clear();
                 for i in 0..self.options.len() {
-                    if self.options[i].contains(&self.text) {
+                    if self.options[i].contains(&*self.text) {
                         self.sorted_options.push(i);
                     }
                 }
@@ -256,7 +230,7 @@ impl Component for Select {
 
         self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.sorted_options.len()).unwrap()) as f64;
 
-        true
+        None
     }
 
     fn on_focus(&mut self, state: &mut State, focus: bool) {
@@ -271,14 +245,14 @@ impl Component for Select {
                 state.cursor_visibility = false;
 
                 if let Some(index) = self.index {
-                    self.text = self.options[self.sorted_options[index]].to_string();
+                    self.text = TextState::new(self.options[self.sorted_options[index]].clone());
                 }
 
                 if self.validate && !self.options.contains(&self.text) {
-                    self.text = String::new();
+                    self.text = TextState::new("");
                 }
 
-                self.cursor = self.text.len();
+                self.text.cursor = self.text.len();
                 self.index = None;
                 self.index_offset = 0;
 
@@ -293,10 +267,6 @@ impl Component for Select {
                 }
             },
         }
-    }
-
-    fn class(&self) -> &'static str {
-        "select"
     }
 
     fn inner(&self) -> &super::ComponentData {

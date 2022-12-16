@@ -1,74 +1,62 @@
+use fig_log::{
+    set_fig_log_level,
+    Logger,
+};
+use lightningcss::stylesheet::{
+    ParserOptions,
+    StyleSheet,
+};
 use tui::component::{
     CheckBox,
     Container,
     Layout,
+    Paragraph,
     Select,
+    TextField,
 };
 use tui::{
-    BorderStyle,
-    ColorAttribute,
     ControlFlow,
     EventLoop,
     InputMethod,
 };
 
 fn main() {
-    let style_sheet = tui::style_sheet! {
-        "div" => {
-            color: ColorAttribute::PaletteIndex(8);
-            border_left_width: 1.0;
-            border_top_width: 1.0;
-            border_bottom_width: 1.0;
-            border_right_width: 1.0;
-            border_left_color: ColorAttribute::PaletteIndex(8);
-            border_right_color: ColorAttribute::PaletteIndex(8);
-            border_top_color: ColorAttribute::PaletteIndex(8);
-            border_bottom_color: ColorAttribute::PaletteIndex(8);
-            border_style: BorderStyle::Ascii {
-                top_left: '┏',
-                top: '━',
-                top_right: '┓',
-                left: '┃',
-                right: '┃',
-                bottom_left: '┗',
-                bottom: '━',
-                bottom_right: '┛',
-            };
-        },
-        "div:focus" => {
-            color: ColorAttribute::PaletteIndex(3);
-            border_left_color: ColorAttribute::PaletteIndex(3);
-            border_right_color: ColorAttribute::PaletteIndex(3);
-            border_top_color: ColorAttribute::PaletteIndex(3);
-            border_bottom_color: ColorAttribute::PaletteIndex(3);
-            border_style: BorderStyle::Ascii {
-                top_left: '┏',
-                top: '━',
-                top_right: '┓',
-                left: '┃',
-                right: '┃',
-                bottom_left: '┗',
-                bottom: '━',
-                bottom_right: '┛',
-            };
-        },
-    };
+    let logger = Logger::new().with_file("test.log");
+    let _logger_guard = logger.init().expect("Failed to init logger");
+    set_fig_log_level("error".to_string()).ok();
 
     EventLoop::new()
         .run(
-            &mut Container::new("container3", Layout::Horizontal)
-                .push(Container::new("container1", Layout::Vertical).push(CheckBox::new(
-                    "check_box",
-                    "Are you cool?",
-                    false,
-                )))
-                .push(Container::new("container2", Layout::Vertical).push(Select::new(
-                    "select",
-                    vec!["hello".to_owned(), "world".to_owned()],
-                    false,
-                ))),
+            &mut Container::new("parent", Layout::Vertical)
+                .push(
+                    Container::new("inner-1", Layout::Horizontal)
+                        .push(CheckBox::new("check_box", "Are you cool?", false))
+                        .push(TextField::new("text-field").with_text("hi there"))
+                        .push(Paragraph::new("").push_text("hello world!"))
+                        .push(TextField::new("text-field").with_text("hi there 2"))
+                        .push(Select::new(
+                            "select",
+                            vec!["hello".to_owned(), "world".to_owned()],
+                            false,
+                        )),
+                )
+                .push(
+                    Container::new("inner-2", Layout::Horizontal)
+                        .push(TextField::new("text-field").with_text("hi there a"))
+                        .push(TextField::new("text-field").with_text("hi there b"))
+                        .push(Select::new(
+                            "select",
+                            vec!["hello".to_owned(), "world".to_owned()],
+                            false,
+                        )),
+                )
+                .push(
+                    Container::new("inner-3", Layout::Horizontal)
+                        .push(Paragraph::new("").push_text("upper level"))
+                        .push(Container::new("nested", Layout::Horizontal).push(Paragraph::new("").push_text("3rd p"))),
+                ),
             InputMethod::Form,
-            style_sheet,
+            StyleSheet::parse(include_str!("form.css"), ParserOptions::default()).unwrap(),
             |event, _component, control_flow| match event {
                 tui::Event::Quit | tui::Event::Terminate => *control_flow = ControlFlow::Quit,
                 _ => (),

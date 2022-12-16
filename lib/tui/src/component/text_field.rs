@@ -2,6 +2,7 @@ use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
 use unicode_width::UnicodeWidthStr;
 
+use crate::component::text_state::TextState;
 use crate::component::ComponentData;
 use crate::event_loop::{
     Event,
@@ -18,8 +19,7 @@ pub enum TextFieldEvent {
 
 #[derive(Debug)]
 pub struct TextField {
-    text: String,
-    cursor: usize,
+    text: TextState,
     offset: usize,
     hint: Option<String>,
     obfuscated: bool,
@@ -29,18 +29,16 @@ pub struct TextField {
 impl TextField {
     pub fn new(id: impl ToString) -> Self {
         Self {
-            text: String::new(),
-            cursor: 0,
+            text: TextState::new(""),
             offset: 0,
             hint: None,
             obfuscated: false,
-            inner: ComponentData::new(id.to_string(), true),
+            inner: ComponentData::new("input".to_owned(), id.to_string(), true),
         }
     }
 
     pub fn with_text(mut self, text: impl Into<String>) -> Self {
-        self.text = text.into();
-        self.cursor = self.text.width();
+        self.text = TextState::new(text.into());
         self
     }
 
@@ -97,48 +95,15 @@ impl Component for TextField {
         };
 
         if self.inner.focus {
-            state.cursor_position = (x + self.cursor as f64 - self.offset as f64, y);
+            state.cursor_position = (x + self.text.cursor as f64 - self.offset as f64, y);
+            state.cursor_color = style.caret_color();
             state.cursor_visibility = true;
         }
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> bool {
-        match input_action {
-            InputAction::Left => self.cursor -= 1.min(self.cursor),
-            InputAction::Right => self.cursor += 1.min(self.text.len() - self.cursor),
-            InputAction::Insert(c, _) => {
-                self.text.insert(self.cursor, c);
-                self.cursor += 1;
-                self.resize()
-            },
-            InputAction::Remove => match self.cursor == self.text.len() {
-                true => {
-                    self.text.pop();
-                    self.cursor -= 1.min(self.cursor);
-                    self.resize()
-                },
-                false => {
-                    if self.cursor == 0 {
-                        return true;
-                    }
-
-                    self.text.remove(self.cursor - 1);
-                    self.cursor -= 1.min(self.cursor);
-                    self.resize()
-                },
-            },
-            InputAction::Delete => match self.text.len() {
-                len if len == self.cursor + 1 => {
-                    self.text.pop();
-                    self.resize()
-                },
-                len if len > self.cursor + 1 => {
-                    self.text.remove(self.cursor);
-                    self.resize()
-                },
-                _ => (),
-            },
-            _ => (),
+    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
+        if self.text.on_input_action(&input_action).is_err() {
+            return None;
         }
 
         if !self.text.is_empty() {
@@ -148,17 +113,13 @@ impl Component for TextField {
             }))
         }
 
-        true
+        self.resize();
+        None
     }
 
     fn on_paste(&mut self, _: &mut State, clipboard: &str) {
-        self.text.insert_str(self.cursor, clipboard);
-        self.cursor += clipboard.width();
+        self.text.insert_str(clipboard);
         self.resize();
-    }
-
-    fn class(&self) -> &'static str {
-        "input:text"
     }
 
     fn inner(&self) -> &ComponentData {
@@ -172,6 +133,10 @@ impl Component for TextField {
 
 #[cfg(test)]
 mod tests {
+    use lightningcss::stylesheet::{
+        ParserOptions,
+        StyleSheet,
+    };
     use termwiz::input::{
         InputEvent,
         KeyCode,
@@ -184,7 +149,6 @@ mod tests {
         ControlFlow,
         EventLoop,
         InputMethod,
-        StyleSheet,
     };
 
     #[ignore = "does not work on CI"]
@@ -202,7 +166,7 @@ mod tests {
                     key: KeyCode::Char('a'),
                     modifiers: Modifiers::NONE,
                 })]),
-                StyleSheet::default(),
+                StyleSheet::parse("", ParserOptions::default()).unwrap(),
                 |event, _component, control_flow| {
                     if let Event::TextField(TextFieldEvent::TextChanged { id, text }) = event {
                         if id == text_field_id {
