@@ -659,7 +659,7 @@ impl InputMethod {
 
     fn input_method_is_enabled_key(&self) -> String {
         let input_method_bundle_id = self.bundle_id().ok().unwrap_or_else(|| "unknown-bundle-id".into());
-        format!("input-method={}.enabled", input_method_bundle_id)
+        format!("input-method={input_method_bundle_id}.enabled")
     }
 
     pub fn is_enabled(&self) -> Option<bool> {
@@ -742,7 +742,7 @@ mod tests {
                 }
             },
             None => {
-                println!("No input sources found for {}", bundle_id);
+                println!("No input sources found for {bundle_id}");
                 println!("Installing...");
                 match method.install().await {
                     Ok(_) => println!("Installed!"),

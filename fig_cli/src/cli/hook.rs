@@ -141,7 +141,7 @@ impl HookSubcommand {
                             "Bash/zsh:".bold().underlined(),
                             "Fish:".bold().underlined(),
                         );
-                        let new_line = format!("\n{}", remote_dest);
+                        let new_line = format!("\n{remote_dest}");
                         installed_hosts.write_all(&new_line.into_bytes())?;
                     }
                 }

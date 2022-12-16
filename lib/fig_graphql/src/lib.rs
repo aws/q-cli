@@ -16,7 +16,7 @@ mod tests {
     async fn plugin() {
         let plugin = plugin!(name: "ohmyzsh").await;
         let authors = plugin.unwrap().plugin.unwrap().authors;
-        println!("{:?}", authors);
+        println!("{authors:?}");
     }
 
     #[ignore]

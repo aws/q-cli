@@ -304,7 +304,7 @@ impl Cli {
                     if let Err(err) = &res {
                         std::fs::write(
                             directories::fig_dir().unwrap().join("logs").join("daemon-exit.log"),
-                            format!("{:?}", err),
+                            format!("{err:?}"),
                         )
                         .ok();
                     }

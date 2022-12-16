@@ -23,7 +23,7 @@ fn build_assets() {
 }
 
 fn resize_directory(name: &str, var: &str, width: u32, height: u32, filter: FilterType) {
-    println!("cargo:rerun-if-changed={}", name);
+    println!("cargo:rerun-if-changed={name}");
     let source = env::current_dir().unwrap().join(name);
     let target = PathBuf::from(env::var("OUT_DIR").unwrap()).join(name);
     fs::create_dir_all(&target).expect("Failed creating assets folder");

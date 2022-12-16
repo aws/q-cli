@@ -430,7 +430,7 @@ impl KeyCode {
                     // Note: we don't have enough information here to know what the base-layout key
                     // should really be.
                     let base_layout = c;
-                    format!("{}:{}:{}", c, shifted_key, base_layout)
+                    format!("{c}:{shifted_key}:{base_layout}")
                 } else {
                     (c as u32).to_string()
                 };
@@ -657,7 +657,7 @@ impl KeyCode {
                 if mods.contains(Modifiers::ALT) || mods.contains(Modifiers::SHIFT) || mods.contains(Modifiers::CTRL) {
                     write!(buf, "{}1;{}{}", CSI, 1 + encode_modifiers(mods), c)?;
                 } else {
-                    write!(buf, "{}{}", csi_or_ss3, c)?;
+                    write!(buf, "{csi_or_ss3}{c}")?;
                 }
             },
 
@@ -673,7 +673,7 @@ impl KeyCode {
                 if mods.contains(Modifiers::ALT) || mods.contains(Modifiers::SHIFT) || mods.contains(Modifiers::CTRL) {
                     write!(buf, "\x1b[{};{}~", c, 1 + encode_modifiers(mods))?;
                 } else {
-                    write!(buf, "\x1b[{}~", c)?;
+                    write!(buf, "\x1b[{c}~")?;
                 }
             },
 
@@ -709,7 +709,7 @@ impl KeyCode {
                     if encoded_mods == 0 {
                         // If no modifiers are held, don't send the modifier
                         // sequence, as the modifier encoding is a CSI-u extension.
-                        write!(buf, "{}~", intro)?;
+                        write!(buf, "{intro}~")?;
                     } else {
                         write!(buf, "{};{}~", intro, 1 + encoded_mods)?;
                     }
@@ -820,7 +820,7 @@ fn csi_u_encode(buf: &mut String, c: char, mods: Modifiers, encoding: KeyboardEn
         if mods.contains(Modifiers::ALT) {
             buf.push(0x1b as char);
         }
-        write!(buf, "{}", c)?;
+        write!(buf, "{c}")?;
     }
     Ok(())
 }
@@ -1152,7 +1152,7 @@ impl InputParser {
         // see http://www.leonerd.org.uk/hacks/fixterms/
         for c in 0..=0x7fu8 {
             for (suffix, modifiers) in modifier_combos_including_meta() {
-                let key = format!("\x1b[{}{}u", c, suffix);
+                let key = format!("\x1b[{c}{suffix}u");
                 map.insert(
                     key,
                     InputEvent::Key(KeyEvent {

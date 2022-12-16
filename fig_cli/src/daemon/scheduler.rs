@@ -270,7 +270,7 @@ pub trait Task: Send + Sync + Debug {
 
 pub trait TaggedTask: Task {
     fn tag(&self) -> Tag<'static> {
-        format!("{:?}", self).into()
+        format!("{self:?}").into()
     }
 }
 
@@ -477,7 +477,7 @@ impl Task for SendDotfilesLineCountTelemetry {
                 .and_then(|contents| serde_json::from_str(&contents).ok());
             if let Some(data) = dotfile_data {
                 stats.insert(
-                    format!("fig_{}_line_count", shell),
+                    format!("fig_{shell}_line_count"),
                     get_dotfile_line_count(data.dotfile).into(),
                 );
             }

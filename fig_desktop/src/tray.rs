@@ -372,7 +372,7 @@ impl MenuElement {
                 id,
             } => {
                 let text = match (std::env::consts::OS, emoji_icon) {
-                    ("linux", Some(emoji_icon)) => format!("{} {}", emoji_icon, text),
+                    ("linux", Some(emoji_icon)) => format!("{emoji_icon} {text}"),
                     _ => text.to_string(),
                 };
                 let menu_item = MenuItemAttributes::new(&text).with_id(MenuId::new(id));

@@ -600,7 +600,7 @@ impl TokensSubcommand {
                     .json()
                     .await?;
 
-                if let Some(&Value::String(ref username)) = valid.get("username") {
+                if let Some(Value::String(username)) = valid.get("username") {
                     println!("{username}");
                     Ok(())
                 } else {

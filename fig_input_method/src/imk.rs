@@ -147,8 +147,7 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
     let bundle_id = bundle_identifier(client);
     let is_active = unsafe { this.get_ivar::<BOOL>("is_active") };
 
-    // Need to cast for some reason?
-    if (*is_active) as i8 == 1 {
+    if *is_active == YES {
         info!("Instance {bundle_id:?} is active, handling request");
         let mut rect: NSRect = NSRect {
             origin: NSPoint { x: 0.0, y: 0.0 },

@@ -120,7 +120,7 @@ fn main() {
 
     bundle.input_method.input_method_connection_name = Some(connection_name.clone());
 
-    println!("cargo:rustc-env=InputMethodConnectionName={}", connection_name);
+    println!("cargo:rustc-env=InputMethodConnectionName={connection_name}");
 
     let properties = InfoPlist {
         apple: AppleInfoPlist {

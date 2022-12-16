@@ -101,7 +101,7 @@ impl EnvVarDiagnostic {
     fn user_readable(&self) -> Vec<String> {
         let mut lines = vec![];
         for (key, value) in &self.env_vars {
-            lines.push(format!("{}: {}", key, value));
+            lines.push(format!("{key}: {value}"));
         }
 
         lines

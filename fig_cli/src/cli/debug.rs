@@ -238,19 +238,14 @@ impl DebugSubcommand {
                     .ok()
                     .and_then(|app| crate::util::get_running_app_info(app, "name").ok());
                 let terminal_text = match terminal_name {
-                    Some(terminal) => format!(" ({})", terminal),
+                    Some(terminal) => format!(" ({terminal})"),
                     None => "".into(),
                 };
 
-                println!("Running the Fig.app executable directly from {}.", fig_path);
-                println!(
-                    "You will need to grant accessibility permissions to the current terminal{}!",
-                    terminal_text
-                );
+                println!("Running the Fig.app executable directly from {fig_path}.");
+                println!("You will need to grant accessibility permissions to the current terminal{terminal_text}!");
 
-                Command::new(format!("{}/Contents/MacOS/fig", fig_path))
-                    .spawn()?
-                    .wait()?;
+                Command::new(format!("{fig_path}/Contents/MacOS/fig")).spawn()?.wait()?;
             },
             DebugSubcommand::Build { build, app } => match build {
                 Some(build) => {
@@ -362,7 +357,7 @@ impl DebugSubcommand {
                     }
 
                     // Push any remaining files to open
-                    paths.extend(files.iter().map(|file| logs_dir.join(format!("{}.log", file))));
+                    paths.extend(files.iter().map(|file| logs_dir.join(format!("{file}.log"))));
 
                     paths
                 };
@@ -429,7 +424,7 @@ impl DebugSubcommand {
                         )
                     },
                     InputMethodDebugAction::List => match InputMethod::list_all_input_sources(None, true) {
-                        Some(sources) => sources.iter().for_each(|source| println!("{:#?}", source)),
+                        Some(sources) => sources.iter().for_each(|source| println!("{source:#?}")),
                         None => return Err(eyre::eyre!("Could not load input sources")),
                     },
                     InputMethodDebugAction::Status { bundle_path } => {

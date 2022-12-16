@@ -88,7 +88,7 @@ impl ThemeArgs {
                                 }
 
                                 if let Some(github) = github {
-                                    println!("  💻 {}", format!("github.com/{}", github).underlined());
+                                    println!("  💻 {}", format!("github.com/{github}").underlined());
                                 }
                             },
                             None => println!("{theme_line}"),
@@ -117,7 +117,7 @@ impl ThemeArgs {
                     serde_json::to_string_pretty(&theme).unwrap_or_else(|_| DEFAULT_THEME.to_string())
                 });
 
-                println!("{}", theme_str);
+                println!("{theme_str}");
                 Ok(())
             },
         }

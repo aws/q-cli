@@ -124,8 +124,7 @@ impl PluginsSubcommands {
                 }
             },
             PluginsSubcommands::Remove { plugin } => {
-                let mut spinner =
-                    spinners::Spinner::new(spinners::Spinners::Arc, format!("Removing plugin {}", plugin));
+                let mut spinner = spinners::Spinner::new(spinners::Spinners::Arc, format!("Removing plugin {plugin}"));
 
                 let response = Request::post(format!("/dotfiles/plugins/remove/{plugin}"))
                     .auth()

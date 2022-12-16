@@ -84,8 +84,6 @@ impl Shell {
     }
 
     pub fn get_data_path(&self) -> Result<PathBuf, directories::DirectoryError> {
-        Ok(directories::fig_data_dir()?
-            .join("shell")
-            .join(format!("{}.json", self)))
+        Ok(directories::fig_data_dir()?.join("shell").join(format!("{self}.json")))
     }
 }

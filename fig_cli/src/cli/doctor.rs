@@ -277,7 +277,7 @@ pub fn app_version(app: impl AsRef<OsStr>) -> Option<Version> {
     let output = Command::new("defaults")
         .args([
             "read",
-            &format!("{}/Contents/Info.plist", app_path),
+            &format!("{app_path}/Contents/Info.plist"),
             "CFBundleShortVersionString",
         ])
         .output()
@@ -714,8 +714,7 @@ impl DoctorCheck for FigtermSocketCheck {
                 } else {
                     Err(DoctorError::Warning(
                         format!(
-                            "Figterm socket did not read buffer correctly, don't press any keys while the checks are running: {:?}",
-                            buffer
+                            "Figterm socket did not read buffer correctly, don't press any keys while the checks are running: {buffer:?}"
                         )
                         .into(),
                     ))
@@ -863,7 +862,7 @@ impl DoctorCheck for DaemonCheck {
 
             if !launch_agents_path.exists() {
                 return Err(DoctorError::Error {
-                    reason: format!("LaunchAgents directory does not exist at {:?}", launch_agents_path).into(),
+                    reason: format!("LaunchAgents directory does not exist at {launch_agents_path:?}").into(),
                     info: vec![],
                     fix: Some(DoctorFix::Async(
                         async move {
@@ -893,7 +892,7 @@ impl DoctorCheck for DaemonCheck {
                 reason: "LaunchAgents directory is not writable".into(),
                 info: vec![
                     "Make sure you have write permissions for the LaunchAgents directory".into(),
-                    format!("Path: {:?}", launch_agents_path).into(),
+                    format!("Path: {launch_agents_path:?}").into(),
                     format!("Error: {err}").into(),
                 ],
                 fix: Some(DoctorFix::Sync(Box::new(move || Ok(())))),
@@ -1162,7 +1161,7 @@ pub fn dscl_read(value: impl AsRef<OsStr>) -> Result<String> {
     let result = Command::new("dscl")
         .arg(".")
         .arg("-read")
-        .arg(format!("/Users/{}", username))
+        .arg(format!("/Users/{username}"))
         .arg(value)
         .output()
         .context("Could not read value")?;
@@ -1762,7 +1761,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 if let Some(app) = app {
                     if !input_method.enabled_for_terminal_instance(terminal, app.process_identifier) {
                         return Err(DoctorError::Error {
-                            reason: format!("Not enabled for {}", terminal).into(),
+                            reason: format!("Not enabled for {terminal}").into(),
                             info: vec![
                                 format!(
                                     "Restart {} [{}] to enable autocomplete in this terminal.",
@@ -1992,8 +1991,7 @@ impl DoctorCheck for DashboardHostCheck {
                 if host.contains("localhost") {
                     Err(DoctorError::Warning(
                         format!(
-                            "developer.mission-control.host = {}, delete this setting if Dashboard fails to load",
-                            host
+                            "developer.mission-control.host = {host}, delete this setting if Dashboard fails to load"
                         )
                         .into(),
                     ))
@@ -2023,8 +2021,7 @@ impl DoctorCheck for AutocompleteHostCheck {
                 if host.contains("localhost") {
                     Err(DoctorError::Warning(
                         format!(
-                            "developer.autocomplete.host = {}, delete this setting if Autocomplete fails to load",
-                            host
+                            "developer.autocomplete.host = {host}, delete this setting if Autocomplete fails to load"
                         )
                         .into(),
                     ))
@@ -2142,7 +2139,7 @@ where
     let mut context = match get_context().await {
         Ok(c) => c,
         Err(e) => {
-            println!("Failed to get context: {:?}", e);
+            println!("Failed to get context: {e:?}");
             eyre::bail!(e);
         },
     };

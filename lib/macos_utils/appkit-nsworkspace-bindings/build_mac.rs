@@ -28,10 +28,7 @@ pub fn build() {
     let sdk_path: String = match get_sdk_path() {
         Ok(path) => path,
         Err(e) => {
-            println!(
-                "cargo:warning=Failed to get MacOSX SDK Path. Trying to using the default one {:?}",
-                e
-            );
+            println!("cargo:warning=Failed to get MacOSX SDK Path. Trying to using the default one {e:?}",);
             String::from(default_sdk_path)
         },
     };
@@ -48,7 +45,7 @@ pub fn build() {
             #include<AppKit/NSRunningApplication.h>
         ",
         )
-        .clang_arg(format!("--target={}", target))
+        .clang_arg(format!("--target={target}"))
         .clang_args(&["-isysroot", sdk_path.as_ref()])
         .block_extern_crate(true)
         .objc_extern_crate(true)

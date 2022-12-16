@@ -403,7 +403,7 @@ impl InternalSubcommand {
                     },
                     _ => {
                         let file_id = Alphanumeric.sample_string(&mut rand::thread_rng(), 9);
-                        let tmp_filename = format!("fig-callback-{}", file_id);
+                        let tmp_filename = format!("fig-callback-{file_id}");
                         let tmp_path = PathBuf::from("/tmp").join(tmp_filename);
                         let mut tmp_file = std::fs::File::create(&tmp_path)?;
                         let mut buffer = [0u8; BUFFER_SIZE];

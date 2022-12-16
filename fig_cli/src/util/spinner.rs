@@ -102,6 +102,6 @@ impl Spinner {
 
     pub fn stop_with_message(&mut self, msg: String) {
         self.stop();
-        println!("\x1b[2K\r{}", msg);
+        println!("\x1b[2K\r{msg}");
     }
 }

@@ -269,7 +269,7 @@ impl History {
         offset: usize,
     ) -> Result<Vec<CommandInfo>> {
         let where_expr = match where_expr {
-            Some(where_expr) => format!("WHERE {}", where_expr),
+            Some(where_expr) => format!("WHERE {where_expr}"),
             None => "".to_owned(),
         };
 
@@ -404,23 +404,23 @@ pub enum WhereExpression {
 impl std::fmt::Display for WhereExpression {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            WhereExpression::Eq(column, value) => write!(f, "{} = '{}'", column, value),
-            WhereExpression::Ne(column, value) => write!(f, "{} != '{}'", column, value),
-            WhereExpression::Gt(column, value) => write!(f, "{} > '{}'", column, value),
-            WhereExpression::Lt(column, value) => write!(f, "{} < '{}'", column, value),
-            WhereExpression::Ge(column, value) => write!(f, "{} >= '{}'", column, value),
-            WhereExpression::Le(column, value) => write!(f, "{} <= '{}'", column, value),
-            WhereExpression::Like(column, value) => write!(f, "{} LIKE '{}'", column, value),
-            WhereExpression::NotLike(column, value) => write!(f, "{} NOT LIKE '{}'", column, value),
-            WhereExpression::IsNull(column) => write!(f, "{} IS NULL", column),
-            WhereExpression::NotNull(column) => write!(f, "{} IS NOT NULL", column),
+            WhereExpression::Eq(column, value) => write!(f, "{column} = '{value}'"),
+            WhereExpression::Ne(column, value) => write!(f, "{column} != '{value}'"),
+            WhereExpression::Gt(column, value) => write!(f, "{column} > '{value}'"),
+            WhereExpression::Lt(column, value) => write!(f, "{column} < '{value}'"),
+            WhereExpression::Ge(column, value) => write!(f, "{column} >= '{value}'"),
+            WhereExpression::Le(column, value) => write!(f, "{column} <= '{value}'"),
+            WhereExpression::Like(column, value) => write!(f, "{column} LIKE '{value}'"),
+            WhereExpression::NotLike(column, value) => write!(f, "{column} NOT LIKE '{value}'"),
+            WhereExpression::IsNull(column) => write!(f, "{column} IS NULL"),
+            WhereExpression::NotNull(column) => write!(f, "{column} IS NOT NULL"),
             WhereExpression::In(column, values) => write!(
                 f,
                 "{} IN ({})",
                 column,
                 values
                     .iter()
-                    .map(|v| format!("'{}'", v))
+                    .map(|v| format!("'{v}'"))
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
@@ -430,12 +430,12 @@ impl std::fmt::Display for WhereExpression {
                 column,
                 values
                     .iter()
-                    .map(|v| format!("'{}'", v))
+                    .map(|v| format!("'{v}'"))
                     .collect::<Vec<String>>()
                     .join(", ")
             ),
-            WhereExpression::And(left, right) => write!(f, "({} AND {})", left, right),
-            WhereExpression::Or(left, right) => write!(f, "({} OR {})", left, right),
+            WhereExpression::And(left, right) => write!(f, "({left} AND {right})"),
+            WhereExpression::Or(left, right) => write!(f, "({left} OR {right})"),
         }
     }
 }

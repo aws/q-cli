@@ -50,7 +50,7 @@ impl std::fmt::Display for Error {
             Error::Graphql(err) => match err.len() {
                 0 => write!(f, "Empty graphql error"),
                 1 => write!(f, "Graphql error: {}", err[0]),
-                _ => write!(f, "Graphql errors: {:?}", err),
+                _ => write!(f, "Graphql errors: {err:?}"),
             },
             Error::Reqwest(err) => write!(f, "Reqwest error: {err}"),
             Error::Status(err) => write!(f, "Status error: {err}"),

@@ -222,7 +222,7 @@ async fn get_scripts() -> Result<Vec<Script>> {
 
                 match script {
                     Ok(script) => scripts.push(script),
-                    Err(err) => eprintln!("failed to deserialize script: {}", err),
+                    Err(err) => eprintln!("failed to deserialize script: {err}"),
                 }
             }
         }
@@ -244,7 +244,7 @@ enum Value {
 impl std::fmt::Display for Value {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
-            Value::String(val) => write!(f, "{}", val),
+            Value::String(val) => write!(f, "{val}"),
             Value::Bool {
                 val,
                 false_value,

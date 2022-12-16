@@ -212,7 +212,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
         println!("Installed!");
 
         if let Some(status) = status {
-            println!("{}", status);
+            println!("{status}");
         }
     }
 

@@ -608,7 +608,7 @@ fn shortest_commit_message(wrapped: &Wrapped) -> Container {
         ))
         .push(match &wrapped.shortest_commit_message {
             Some((message, date)) => Paragraph::new("")
-                .push_text(format!("'{}' on ", message))
+                .push_text(format!("'{message}' on "))
                 .push_styled_text(date, ColorAttribute::Default, ColorAttribute::Default, false, true),
             None => Paragraph::new(""),
         })

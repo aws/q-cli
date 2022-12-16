@@ -218,12 +218,12 @@ pub fn get_fig_version() -> Result<String> {
 
             let get_plist_field = |field: &str| -> Result<String> {
                 let regex =
-                    Regex::new(&format!("<key>{}</key>\\s*<\\S+>(\\S+)</\\S+>", field)).unwrap();
+                    Regex::new(&format!("<key>{field}</key>\\s*<\\S+>(\\S+)</\\S+>")).unwrap();
                 let value = regex
                     .captures(&plist)
-                    .context(format!("Could not find {} in plist", field))?
+                    .context(format!("Could not find {field} in plist"))?
                     .get(1)
-                    .context(format!("Could not find {} in plist", field))?
+                    .context(format!("Could not find {field} in plist"))?
                     .as_str();
 
                 Ok(value.into())
