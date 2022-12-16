@@ -46,7 +46,9 @@ use crate::util::{
 #[derive(Debug, ValueEnum, Clone, PartialEq, Eq)]
 pub enum Build {
     Production,
-    Staging,
+    #[value(alias = "staging")]
+    Beta,
+    #[value(hide = true, alias = "dev")]
     Develop,
 }
 
@@ -54,7 +56,7 @@ impl std::fmt::Display for Build {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
         match self {
             Build::Production => f.write_str("production"),
-            Build::Staging => f.write_str("staging"),
+            Build::Beta => f.write_str("beta"),
             Build::Develop => f.write_str("develop"),
         }
     }
@@ -251,7 +253,7 @@ impl DebugSubcommand {
                 Some(build) => {
                     fig_api_client::settings::update(format!("developer.{app}.build"), match build {
                         Build::Production => serde_json::Value::Null,
-                        Build::Staging => "staging".into(),
+                        Build::Beta => "beta".into(),
                         Build::Develop => "develop".into(),
                     })
                     .await?;
@@ -260,8 +262,8 @@ impl DebugSubcommand {
                 None => {
                     let current_build = fig_settings::settings::get_string_opt(format!("developer.{app}.build"));
                     let current_build = match current_build.as_deref() {
-                        Some("staging") => Build::Staging,
-                        Some("develop") => Build::Develop,
+                        Some("staging" | "beta") => Build::Beta,
+                        Some("develop" | "dev") => Build::Develop,
                         _ => Build::Production,
                     };
                     println!("{current_build}");

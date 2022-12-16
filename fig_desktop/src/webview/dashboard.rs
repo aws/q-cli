@@ -16,8 +16,8 @@ pub fn url() -> Url {
     };
 
     match fig_settings::settings::get_string_opt("developer.dashboard.build").as_deref() {
-        Some("staging") => Url::parse(DASHBOARD_STAGING_URL).unwrap(),
-        Some("develop") | Some("dev") => Url::parse(DASHBOARD_DEVELOP_URL).unwrap(),
+        Some("staging" | "beta") => Url::parse(DASHBOARD_STAGING_URL).unwrap(),
+        Some("develop" | "dev") => Url::parse(DASHBOARD_DEVELOP_URL).unwrap(),
         _ => Url::parse(DASHBOARD_PRODUCTION_URL).unwrap(),
     }
 }
