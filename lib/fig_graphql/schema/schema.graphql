@@ -73,6 +73,13 @@ input DeleteScriptInput {
   namespace: String!
 }
 
+input DuplicateScriptInput {
+  newName: String
+  newNamespace: String
+  oldName: String!
+  oldNamespace: String!
+}
+
 interface ICLICommand {
   description: String
   displayName: String
@@ -102,6 +109,9 @@ type Mutation {
   createScriptMutation(input: CreateScriptInput!): Script!
   deleteCommandMutation(input: DeleteCommandInput!): ICLICommand!
   deleteScriptMutation(input: DeleteScriptInput!): Script!
+
+  """Duplicate a script within a single namespace or between namespaces"""
+  duplicateScriptMutation(input: DuplicateScriptInput!): Script!
   reorderCommandMutation(input: ReorderCommandInput!): ICLICommand!
   updateCommandMutation(input: UpdateCommandInput!): ICLICommand!
   updateScriptMutation(input: UpdateScriptInput!): Script!
@@ -242,7 +252,10 @@ type ScriptFields {
   isProtected: Boolean
   name: String
   parameters: [ScriptParameter!]
-  rules: [[ScriptRule!]!]
+  rules: [[ScriptRule!]!] @deprecated(reason: "Limited support for nested arrays in InputTypes.(See: https://github.com/MichalLytek/type-graphql/issues/734) Use ruleset instead.")
+
+  """A collection of rulesets that must all be true for execution to occur"""
+  ruleset: [ScriptRuleset!]
   runtime: ScriptRuntime
   tags: [String!]
   templateRaw: String
@@ -258,6 +271,9 @@ input ScriptFieldsInput {
   name: String
   parameters: [ScriptParameterInput!]
   rules: [[ScriptRuleInput!]!]
+
+  """A collection of rulesets that must all be true for execution to occur"""
+  ruleset: [ScriptRulesetInput!]
   runtime: ScriptRuntime
   tags: [String!]
   templateRaw: String
@@ -325,6 +341,7 @@ input ScriptNamedGeneratorInput {
 
 type ScriptParameter {
   checkbox: ScriptCheckboxParameter
+  commandlineInterface: ScriptParameterCommandlineInterface
   description: String
   displayName: String
   name: String!
@@ -332,6 +349,13 @@ type ScriptParameter {
   selector: ScriptSelectorParameter
   text: ScriptTextParameter
   type: ScriptParameterType!
+}
+
+type ScriptParameterCommandlineInterface {
+  long: String
+  requireEquals: Boolean
+  required: Boolean
+  short: String
 }
 
 input ScriptParameterInput {
@@ -353,13 +377,13 @@ enum ScriptParameterType {
 }
 
 type ScriptPathParameter {
-  extensions: [String!]!
-  fileType: ScriptFileType!
+  extensions: [String!]
+  fileType: ScriptFileType
 }
 
 input ScriptPathParameterInput {
-  extensions: [String!]!
-  fileType: ScriptFileType!
+  extensions: [String!]
+  fileType: ScriptFileType
 }
 
 type ScriptRule {
@@ -394,6 +418,16 @@ enum ScriptRulePredicate {
   Exists
   Matches
   StartsWith
+}
+
+type ScriptRuleset {
+  """Collection of rules that are logical or'd together"""
+  or: [ScriptRule!]
+}
+
+input ScriptRulesetInput {
+  """Collection of rules that are logical or'd together"""
+  or: [ScriptRuleInput!]
 }
 
 enum ScriptRuntime {

@@ -12,21 +12,24 @@ use tokio::process::Command;
 #[serde(rename_all = "camelCase")]
 pub enum Generator {
     #[serde(rename_all = "camelCase")]
-    Named { name: String },
+    Named {
+        name: String,
+    },
     #[serde(rename_all = "camelCase")]
-    Script { script: String },
-    #[serde(other)]
-    Unknown,
+    Script {
+        script: String,
+    },
+    Unknown(Option<String>),
 }
 
-#[derive(Debug, Clone, Copy, Serialize, Deserialize)]
+#[derive(Debug, Clone, Default, Serialize, Deserialize)]
 #[serde(rename_all = "kebab-case")]
 pub enum FileType {
+    #[default]
     Any,
     FileOnly,
     FolderOnly,
-    #[serde(other)]
-    Unknown,
+    Unknown(Option<String>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -40,7 +43,9 @@ pub enum ParameterType {
         generators: Option<Vec<Generator>>,
     },
     #[serde(rename_all = "camelCase")]
-    Text { placeholder: Option<String> },
+    Text {
+        placeholder: Option<String>,
+    },
     #[serde(rename_all = "camelCase")]
     Checkbox {
         true_value_substitution: String,
@@ -48,11 +53,12 @@ pub enum ParameterType {
     },
     #[serde(rename_all = "camelCase")]
     Path {
+        #[serde(default)]
         file_type: FileType,
+        #[serde(default)]
         extensions: Vec<String>,
     },
-    #[serde(other)]
-    Unknown,
+    Unknown(Option<String>),
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -80,21 +86,20 @@ pub enum RuleType {
     EnvironmentVariable,
     #[serde(rename = "Current-Branch")]
     CurrentBranch,
-    #[serde(other)]
-    Unknown,
+    Unknown(String),
 }
 
 impl Display for RuleType {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            RuleType::WorkingDirectory => "Working directory",
-            RuleType::GitRemote => "Git remote",
-            RuleType::ContentsOfDirectory => "Contents of directory",
-            RuleType::GitRootDirectory => "Git root directory",
-            RuleType::EnvironmentVariable => "Environment",
-            RuleType::CurrentBranch => "Current branch",
-            RuleType::Unknown => "Unknown",
-        })
+        match self {
+            RuleType::WorkingDirectory => f.write_str("Working directory"),
+            RuleType::GitRemote => f.write_str("Git remote"),
+            RuleType::ContentsOfDirectory => f.write_str("Contents of directory"),
+            RuleType::GitRootDirectory => f.write_str("Git root directory"),
+            RuleType::EnvironmentVariable => f.write_str("Environment"),
+            RuleType::CurrentBranch => f.write_str("Current branch"),
+            RuleType::Unknown(unknown) => write!(f, "Unknown: {unknown}"),
+        }
     }
 }
 
@@ -107,21 +112,20 @@ pub enum Predicate {
     StartsWith,
     EndsWith,
     Exists,
-    #[serde(other)]
-    Unknown,
+    Unknown(String),
 }
 
 impl Display for Predicate {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}", match self {
-            Predicate::Contains => "contain",
-            Predicate::Equals => "equal",
-            Predicate::Matches => "match with",
-            Predicate::StartsWith => "start with",
-            Predicate::EndsWith => "end with",
-            Predicate::Exists => "exist",
-            Predicate::Unknown => "unknown",
-        })
+        match self {
+            Predicate::Contains => f.write_str("contain"),
+            Predicate::Equals => f.write_str("equal"),
+            Predicate::Matches => f.write_str("match with"),
+            Predicate::StartsWith => f.write_str("start with"),
+            Predicate::EndsWith => f.write_str("end with"),
+            Predicate::Exists => f.write_str("exist"),
+            Predicate::Unknown(unknown) => write!(f, "Unknown: {unknown}"),
+        }
     }
 }
 
@@ -255,10 +259,11 @@ macro_rules! map_script {
             description: script.fields.description,
             template_version: script.fields.template_version.unwrap_or_default(),
             tags: script.fields.tags,
-            rules: script.fields.rules.map(|r| {
+            rules: script.fields.ruleset.map(|r| {
                 r.into_iter()
                     .map(|r| {
-                        r.into_iter()
+                        r.or.unwrap_or_default()
+                            .into_iter()
                             .map(|rule| Rule {
                                 key: match rule.key {
                                     ScriptRuleKey::ContentsOfDirectory => RuleType::ContentsOfDirectory,
@@ -267,7 +272,7 @@ macro_rules! map_script {
                                     ScriptRuleKey::GitRemote => RuleType::GitRemote,
                                     ScriptRuleKey::GitRootDirectory => RuleType::GitRootDirectory,
                                     ScriptRuleKey::WorkingDirectory => RuleType::WorkingDirectory,
-                                    ScriptRuleKey::Other(_) => RuleType::Unknown,
+                                    ScriptRuleKey::Other(other) => RuleType::Unknown(other),
                                 },
                                 specifier: rule.specifier,
                                 predicate: match rule.predicate {
@@ -277,7 +282,7 @@ macro_rules! map_script {
                                     ScriptRulePredicate::Exists => Predicate::Exists,
                                     ScriptRulePredicate::Matches => Predicate::Matches,
                                     ScriptRulePredicate::StartsWith => Predicate::StartsWith,
-                                    ScriptRulePredicate::Other(_) => Predicate::Unknown,
+                                    ScriptRulePredicate::Other(other) => Predicate::Unknown(other),
                                 },
                                 inverted: rule.inverted,
                                 value: rule.value,
@@ -306,19 +311,19 @@ macro_rules! map_script {
                                     .false_value_substitution
                                     .unwrap_or_else(|| "false".to_string()),
                             },
-                            None => ParameterType::Unknown,
+                            None => ParameterType::Unknown(None),
                         },
                         ScriptParameterType::Path => match parameter.path {
                             Some(path) => ParameterType::Path {
                                 file_type: match path.file_type {
-                                    ScriptFileType::Any => FileType::Any,
-                                    ScriptFileType::FileOnly => FileType::FileOnly,
-                                    ScriptFileType::FolderOnly => FileType::FolderOnly,
-                                    ScriptFileType::Other(_) => FileType::Unknown,
+                                    Some(ScriptFileType::Any) | None => FileType::Any,
+                                    Some(ScriptFileType::FileOnly) => FileType::FileOnly,
+                                    Some(ScriptFileType::FolderOnly) => FileType::FolderOnly,
+                                    Some(ScriptFileType::Other(other)) => FileType::Unknown(Some(other)),
                                 },
-                                extensions: path.extensions,
+                                extensions: path.extensions.unwrap_or_default(),
                             },
-                            None => ParameterType::Unknown,
+                            None => ParameterType::Unknown(None),
                         },
                         ScriptParameterType::Selector => match parameter.selector {
                             Some(selector) => ParameterType::Selector {
@@ -330,28 +335,28 @@ macro_rules! map_script {
                                         .map(|generator| match generator.type_ {
                                             ScriptGeneratorType::Named => match generator.named {
                                                 Some(generator) => Generator::Named { name: generator.name },
-                                                None => Generator::Unknown,
+                                                None => Generator::Unknown(None),
                                             },
                                             ScriptGeneratorType::ShellScript => match generator.shell_script {
                                                 Some(generator) => Generator::Script {
                                                     script: generator.script,
                                                 },
-                                                None => Generator::Unknown,
+                                                None => Generator::Unknown(None),
                                             },
-                                            ScriptGeneratorType::Other(_) => Generator::Unknown,
+                                            ScriptGeneratorType::Other(other) => Generator::Unknown(Some(other)),
                                         })
                                         .collect()
                                 }),
                             },
-                            None => ParameterType::Unknown,
+                            None => ParameterType::Unknown(None),
                         },
                         ScriptParameterType::Text => match parameter.text {
                             Some(text) => ParameterType::Text {
                                 placeholder: text.placeholder,
                             },
-                            None => ParameterType::Unknown,
+                            None => ParameterType::Unknown(None),
                         },
-                        ScriptParameterType::Other(_) => ParameterType::Unknown,
+                        ScriptParameterType::Other(other) => ParameterType::Unknown(Some(other)),
                     },
                 })
                 .collect(),

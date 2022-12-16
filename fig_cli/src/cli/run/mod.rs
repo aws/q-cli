@@ -207,7 +207,9 @@ impl SkimItem for ScriptAction {
     }
 }
 
-async fn get_scripts() -> Result<Vec<Script>> {
+async fn get_scripts(
+    get_scripts_join: &mut Option<tokio::task::JoinHandle<fig_request::Result<Vec<fig_api_client::scripts::Script>>>>,
+) -> Result<Vec<Script>> {
     let scripts_cache_dir = directories::scripts_cache_dir()?;
     tokio::fs::create_dir_all(&scripts_cache_dir).await?;
 
@@ -223,7 +225,14 @@ async fn get_scripts() -> Result<Vec<Script>> {
 
                 match script {
                     Ok(script) => scripts.push(script),
-                    Err(err) => eprintln!("failed to deserialize script: {err}"),
+                    Err(err) => {
+                        tracing::error!(%err, "Failed to parse script");
+
+                        // If any file fails to parse, we should re-sync the scripts
+                        if let Some(scripts_join) = get_scripts_join.take() {
+                            return Ok(scripts_join.await??);
+                        }
+                    },
                 }
             }
         }
@@ -283,8 +292,8 @@ impl std::fmt::Display for ExecutionMethod {
 }
 
 pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
-    let mut scripts = get_scripts().await?;
     let mut join_write_scripts = Some(tokio::spawn(sync_scripts()));
+    let mut scripts = get_scripts(&mut join_write_scripts).await?;
 
     let is_interactive = atty::is(atty::Stream::Stdin)
         && atty::is(atty::Stream::Stdout)
@@ -315,7 +324,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                 Some(script) => script,
                 None => {
                     join_write_scripts.take().unwrap().await??;
-                    scripts = get_scripts().await?;
+                    scripts = get_scripts(&mut join_write_scripts).await?;
 
                     let script = match namespace {
                         Some(namespace) => scripts
@@ -567,7 +576,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                 command = command.about(description);
             }
 
-            for param in &script.parameters {
+            for param in script.parameters.clone() {
                 match param.parameter_type {
                     ParameterType::Selector { .. } => {
                         let mut arg = clap::Arg::new(&param.name).long(&param.name);
@@ -624,7 +633,9 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 
                         command = command.arg(false_arg);
                     },
-                    ParameterType::Unknown => bail!("Unknown parameter type, you may need to update Fig"),
+                    ParameterType::Unknown(unknown) => {
+                        bail!("Unknown parameter type, you may need to update Fig: {unknown:?}")
+                    },
                 };
             }
 
@@ -648,7 +659,9 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                             true_value: Some(true_value_substitution.clone()),
                         });
                     },
-                    ParameterType::Unknown => bail!("Unknown parameter type, you may need to update Fig"),
+                    ParameterType::Unknown(other) => {
+                        bail!("Unknown parameter type, you may need to update Fig: {other:?}")
+                    },
                 };
             }
 
@@ -982,7 +995,7 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
     for set in ruleset {
         let mut set_met = set.is_empty();
         for rule in set {
-            let query = match rule.key {
+            let query = match &rule.key {
                 RuleType::WorkingDirectory => std::env::current_dir()?.to_string_lossy().to_string(),
                 RuleType::GitRemote => String::from_utf8(
                     Command::new("git")
@@ -1023,7 +1036,7 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
                         .stdout,
                 )?,
                 RuleType::EnvironmentVariable => bail!("Environment variable rules are not yet supported"),
-                RuleType::Unknown => bail!("Unknown rule, you may need to update fig"),
+                RuleType::Unknown(other) => bail!("Unknown rule, you may need to update fig: {other}"),
             };
 
             let query = query.trim();
@@ -1032,14 +1045,14 @@ fn rules_met(ruleset: &Vec<Vec<Rule>>) -> Result<bool> {
                 bail!("Rule value is missing");
             };
 
-            let mut rule_met = match rule.predicate {
+            let mut rule_met = match &rule.predicate {
                 Predicate::Contains => query.contains(value),
                 Predicate::Equals => query == value,
                 Predicate::Matches => regex::Regex::new(value)?.is_match(query),
                 Predicate::StartsWith => query.starts_with(value),
                 Predicate::EndsWith => query.ends_with(value),
                 Predicate::Exists => !query.is_empty(),
-                Predicate::Unknown => bail!("Unknown predicate, you may need to update fig"),
+                Predicate::Unknown(other) => bail!("Unknown predicate, you may need to update fig: {other}"),
             };
 
             if rule.inverted {
@@ -1144,7 +1157,9 @@ fn run_tui(
                                 }
                             },
                             Generator::Named { .. } => bail!("Named generators aren't supported in scripts yet"),
-                            Generator::Unknown => bail!("Unknown generator type, try updating your Fig version"),
+                            Generator::Unknown(unknown) => {
+                                bail!("Unknown generator type, try updating your Fig version: {unknown:?}")
+                            },
                         }
                     }
                 }
@@ -1205,7 +1220,7 @@ fn run_tui(
                     .unwrap_or_else(|| Path::new("/").to_owned());
 
                 let (files, folders) = match file_type {
-                    FileType::Any | FileType::Unknown => (true, true),
+                    FileType::Any | FileType::Unknown(_) => (true, true),
                     FileType::FileOnly => (true, false),
                     FileType::FolderOnly => (false, true),
                 };
@@ -1218,7 +1233,9 @@ fn run_tui(
                     extensions.clone(),
                 ));
             },
-            ParameterType::Unknown => bail!("Unknown parameter type, try updating your Fig version"),
+            ParameterType::Unknown(other) => {
+                bail!("Unknown parameter type, try updating your Fig version: {other:?}")
+            },
         };
 
         if let Some(description) = &parameter.description {

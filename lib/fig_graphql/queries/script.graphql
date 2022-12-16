@@ -36,12 +36,14 @@ fragment ScriptFields on Script {
     description
     templateVersion
     tags
-    rules {
-      specifier
-      key
-      value
-      inverted
-      predicate
+    ruleset {
+      or {
+        specifier
+        key
+        value
+        inverted
+        predicate
+      }
     }
     parameters {
       type
