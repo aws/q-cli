@@ -42,10 +42,10 @@ use webview::{
     autocomplete,
     build_autocomplete,
     build_dashboard,
+    dashboard,
     AutocompleteOptions,
     DashboardOptions,
     WebviewManager,
-    DASHBOARD_URL,
 };
 pub use webview::{
     AUTOCOMPLETE_ID,
@@ -268,7 +268,7 @@ async fn main() {
                 page,
             },
             true,
-            || DASHBOARD_URL.parse().unwrap(),
+            dashboard::url,
         )
         .unwrap();
     webview_manager

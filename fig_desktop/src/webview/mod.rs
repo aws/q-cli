@@ -103,8 +103,6 @@ pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
 pub const ONBOARDING_PATH: &str = "/onboarding/welcome";
 
-pub const DASHBOARD_URL: &str = "https://desktop.fig.io";
-
 fn map_theme(theme: &str) -> Option<Theme> {
     match theme {
         "dark" => Some(Theme::Dark),
@@ -620,7 +618,7 @@ pub fn build_dashboard(
         .with_devtools(true)
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[
             // Main domain
-            r"^desktop\.fig\.io$",
+            r"desktop\.fig\.io$",
             // Dev domains
             r"^localhost$",
             r"^127\.0\.0\.1$",
