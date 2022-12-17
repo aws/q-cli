@@ -237,11 +237,6 @@ Expand your terminal or decrease your
 }
 
 impl Component for Center {
-    fn initialize(&mut self, state: &mut State) {
-        self.component.initialize(state);
-        self.resize_warning.initialize(state);
-    }
-
     fn draw(
         &self,
         state: &mut State,
@@ -255,8 +250,9 @@ impl Component for Center {
     ) {
         let style = self.component.style(state);
 
-        let mut width = style.width().unwrap_or_else(|| self.component.width()) + style.spacing_horizontal();
-        let mut height = style.height().unwrap_or_else(|| self.component.height()) + style.spacing_vertical();
+        let size = self.component.size(state);
+        let mut width = style.width().unwrap_or(size.0) + style.spacing_horizontal();
+        let mut height = style.height().unwrap_or(size.1) + style.spacing_vertical();
 
         match width <= screen_width && height <= screen_height {
             true => {
@@ -274,8 +270,9 @@ impl Component for Center {
             },
             false => {
                 let style = self.resize_warning.style(state);
-                width = style.width().unwrap_or_else(|| self.component.width()) + style.spacing_horizontal();
-                height = style.height().unwrap_or_else(|| self.component.height()) + style.spacing_vertical();
+                let size = self.resize_warning.size(state);
+                width = style.width().unwrap_or(size.0) + style.spacing_horizontal();
+                height = style.height().unwrap_or(size.1) + style.spacing_vertical();
                 self.resize_warning.draw(
                     state,
                     surface,
@@ -300,6 +297,10 @@ impl Component for Center {
 
     fn inner_mut(&mut self) -> &mut tui::component::ComponentData {
         self.component.inner_mut()
+    }
+
+    fn size(&self, _: &mut State) -> (f64, f64) {
+        (10000.0, 10000.0)
     }
 }
 
@@ -328,7 +329,7 @@ spreading some holiday cheer   | |_______________|     |
  Here's to a bright future    [-------------------------]
 and a happy new year to you!  \\_________________________/",
             )),
-            InputMethod::ExitAny,
+            &InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {
                 if let tui::Event::Quit | tui::Event::Terminate = event {
@@ -367,7 +368,7 @@ and a happy new year to you!  \\_________________________/",
 
         tui::EventLoop::new().run(
             &mut view,
-            InputMethod::ExitAny,
+            &InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {
                 if let tui::Event::Quit | tui::Event::Terminate = event {

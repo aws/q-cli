@@ -27,6 +27,7 @@ use crate::component::{
 };
 use crate::input::InputAction;
 use crate::{
+    Display,
     Error,
     InputMethod,
 };
@@ -51,7 +52,6 @@ pub struct State<'i, 'o> {
     pub tree: Vec<TreeElement>,
     pub cursor_position: (f64, f64),
     pub cursor_color: ColorAttribute,
-    pub cursor_visibility: bool,
 }
 
 impl<'i, 'o> State<'i, 'o> {
@@ -62,7 +62,6 @@ impl<'i, 'o> State<'i, 'o> {
             tree: vec![],
             cursor_position: (0.0, 0.0),
             cursor_color: ColorAttribute::Default,
-            cursor_visibility: false,
         }
     }
 }
@@ -101,7 +100,7 @@ impl EventLoop {
     pub fn run<'a, C, F>(
         &self,
         component: &'a mut C,
-        input_method: InputMethod,
+        input_method: &InputMethod,
         style_sheet: StyleSheet,
         mut event_handler: F,
     ) -> Result<(), Error>
@@ -127,13 +126,7 @@ impl EventLoop {
             siblings: Default::default(),
         });
 
-        component.initialize(&mut state);
         component.on_focus(&mut state, true);
-
-        let mut scripted_events = match &input_method {
-            InputMethod::Scripted(input_events) => input_events.iter().cloned().rev().collect(),
-            _ => vec![],
-        };
 
         let mut control_flow = ControlFlow::Wait;
         while let ControlFlow::Wait = control_flow {
@@ -141,12 +134,14 @@ impl EventLoop {
             // account for grapheme width in optimized surface diffs
             for _ in 0..2 {
                 let style = component.style(&state);
-                // todo: this doesn't work, why?
-                // if let Display::None = style.display() {
-                //    continue;
-                //}
+                if let Display::None = style.display() {
+                    continue;
+                }
 
-                surface.add_change(Change::ClearScreen(ColorAttribute::Default));
+                surface.add_changes(vec![
+                    Change::ClearScreen(ColorAttribute::Default),
+                    Change::CursorVisibility(CursorVisibility::Hidden),
+                ]);
                 component.draw(
                     &mut state,
                     &mut surface,
@@ -166,10 +161,7 @@ impl EventLoop {
                         y: Position::Absolute(state.cursor_position.1.round() as usize),
                     },
                     Change::CursorColor(state.cursor_color),
-                    Change::CursorVisibility(match state.cursor_visibility {
-                        true => CursorVisibility::Visible,
-                        false => CursorVisibility::Hidden,
-                    }),
+                    Change::CursorVisibility(surface.cursor_visibility()),
                 ]);
 
                 buf.flush()?;
@@ -177,132 +169,32 @@ impl EventLoop {
                 surface.flush_changes_older_than(surface.current_seqno());
             }
 
-            let event = scripted_events.pop().or(buf.terminal().poll_input(None)?).unwrap();
-            match event {
-                InputEvent::Key(event) => {
-                    let code = event.key;
-                    let modifiers = event.modifiers;
+            self.handle_event(
+                component,
+                input_method,
+                &mut event_handler,
+                buf.terminal().poll_input(None)?.unwrap(),
+                &mut state,
+                &mut control_flow,
+                &mut surface,
+                &mut buf,
+                &mut cols,
+                &mut rows,
+            );
 
-                    for input_action in InputAction::from_key(&input_method, code, modifiers) {
-                        tracing::error!("Got action {:?}", input_action);
-                        match input_action {
-                            InputAction::Submit => {
-                                if component.on_input_action(&mut state, input_action).unwrap_or(false)
-                                    && component.next(&mut state, false).is_none()
-                                {
-                                    control_flow = ControlFlow::Quit;
-                                }
-                            },
-                            InputAction::Next => match component.next(&mut state, true) {
-                                Some(id) => {
-                                    event_handler(Event::FocusChanged { id, focus: true }, component, &mut control_flow)
-                                },
-                                None => control_flow = ControlFlow::Quit,
-                            },
-                            InputAction::Previous => {
-                                if let Some(id) = component.prev(&mut state, true) {
-                                    event_handler(Event::FocusChanged { id, focus: true }, component, &mut control_flow)
-                                }
-                            },
-                            InputAction::Quit => event_handler(Event::Quit, component, &mut control_flow),
-                            InputAction::Terminate => event_handler(Event::Terminate, component, &mut control_flow),
-                            InputAction::ChangeView => {
-                                component.on_focus(&mut state, false);
-                                event_handler(Event::TempChangeView, component, &mut control_flow);
-                                component.initialize(&mut state);
-                                component.on_focus(&mut state, true);
-                            },
-                            _ => {
-                                component.on_input_action(&mut state, input_action);
-                            },
-                        }
-                    }
-                },
-                // todo(chay): add back
-                // InputEvent::Mouse(event) => component.on_mouse_event(&mut state, &event, 0.0, 0.0, cols, rows),
-                InputEvent::Resized {
-                    cols: ncols,
-                    rows: nrows,
-                } => {
-                    surface.resize(ncols, nrows);
-                    buf.add_change(Change::ClearScreen(ColorAttribute::Default));
-                    buf.resize(ncols, nrows);
-
-                    cols = ncols as f64;
-                    rows = nrows as f64;
-                },
-                InputEvent::Paste(clipboard) => component.on_paste(&mut state, &clipboard),
-                _ => (),
-            }
-
-            // todo(chay) this is literally copy pasted from above because writing a function for this takes
-            // forever
-            while let Some(event) = scripted_events
-                .pop()
-                .or(buf.terminal().poll_input(Some(Duration::ZERO))?)
-            {
-                match event {
-                    InputEvent::Key(event) => {
-                        let code = event.key;
-                        let modifiers = event.modifiers;
-
-                        for input_action in InputAction::from_key(&input_method, code, modifiers) {
-                            tracing::error!("Got action {:?}", input_action);
-                            match input_action {
-                                InputAction::Submit => {
-                                    if component.on_input_action(&mut state, input_action).unwrap_or(false)
-                                        && component.next(&mut state, false).is_none()
-                                    {
-                                        control_flow = ControlFlow::Quit;
-                                    }
-                                },
-                                InputAction::Next => match component.next(&mut state, true) {
-                                    Some(id) => event_handler(
-                                        Event::FocusChanged { id, focus: true },
-                                        component,
-                                        &mut control_flow,
-                                    ),
-                                    None => control_flow = ControlFlow::Quit,
-                                },
-                                InputAction::Previous => {
-                                    if let Some(id) = component.prev(&mut state, true) {
-                                        event_handler(
-                                            Event::FocusChanged { id, focus: true },
-                                            component,
-                                            &mut control_flow,
-                                        )
-                                    }
-                                },
-                                InputAction::Quit => event_handler(Event::Quit, component, &mut control_flow),
-                                InputAction::Terminate => event_handler(Event::Terminate, component, &mut control_flow),
-                                InputAction::ChangeView => {
-                                    component.on_focus(&mut state, false);
-                                    event_handler(Event::TempChangeView, component, &mut control_flow);
-                                    component.initialize(&mut state);
-                                    component.on_focus(&mut state, true);
-                                },
-                                _ => {
-                                    component.on_input_action(&mut state, input_action);
-                                },
-                            }
-                        }
-                    },
-                    // todo(chay): add back
-                    // InputEvent::Mouse(event) => component.on_mouse_event(&mut state, &event, 0.0, 0.0, cols, rows),
-                    InputEvent::Resized {
-                        cols: ncols,
-                        rows: nrows,
-                    } => {
-                        surface.resize(ncols, nrows);
-                        buf.add_change(Change::ClearScreen(ColorAttribute::Default));
-                        buf.resize(ncols, nrows);
-
-                        cols = ncols as f64;
-                        rows = nrows as f64;
-                    },
-                    InputEvent::Paste(clipboard) => component.on_paste(&mut state, &clipboard),
-                    _ => (),
-                }
+            while let Some(event) = buf.terminal().poll_input(Some(Duration::ZERO))? {
+                self.handle_event(
+                    component,
+                    input_method,
+                    &mut event_handler,
+                    event,
+                    &mut state,
+                    &mut control_flow,
+                    &mut surface,
+                    &mut buf,
+                    &mut cols,
+                    &mut rows,
+                );
             }
 
             while let Some(event) = state.event_buffer.pop() {
@@ -314,5 +206,70 @@ impl EventLoop {
         buf.terminal().flush()?;
 
         Ok(())
+    }
+
+    pub fn handle_event<'a, C, F>(
+        &self,
+        component: &'a mut C,
+        input_method: &InputMethod,
+        event_handler: &mut F,
+        event: InputEvent,
+        state: &mut State,
+        control_flow: &mut ControlFlow,
+        surface: &mut Surface,
+        buf: &mut BufferedTerminal<impl Terminal>,
+        cols: &mut f64,
+        rows: &mut f64,
+    ) where
+        C: Component,
+        F: 'a + FnMut(Event, &mut C, &mut ControlFlow),
+    {
+        match event {
+            InputEvent::Key(event) => {
+                let input_action = input_method.get_action(event);
+                match input_action {
+                    InputAction::Submit => {
+                        component.on_input_action(state, &input_action);
+                        if component.next(state, false).is_none() {
+                            *control_flow = ControlFlow::Quit;
+                        }
+                    },
+                    InputAction::Next => match component.next(state, true) {
+                        Some(id) => event_handler(Event::FocusChanged { id, focus: true }, component, control_flow),
+                        None => *control_flow = ControlFlow::Quit,
+                    },
+                    InputAction::Previous => {
+                        if let Some(id) = component.prev(state, true) {
+                            event_handler(Event::FocusChanged { id, focus: true }, component, control_flow)
+                        }
+                    },
+                    InputAction::Quit => event_handler(Event::Quit, component, control_flow),
+                    InputAction::Terminate => event_handler(Event::Terminate, component, control_flow),
+                    InputAction::TempChangeView => {
+                        component.on_focus(state, false);
+                        event_handler(Event::TempChangeView, component, control_flow);
+                        component.on_focus(state, true);
+                    },
+                    _ => {
+                        component.on_input_action(state, &input_action);
+                    },
+                }
+            },
+            // todo(chay): add back
+            // InputEvent::Mouse(event) => component.on_mouse_event(&mut state, &event, 0.0, 0.0, cols, rows),
+            InputEvent::Resized {
+                cols: ncols,
+                rows: nrows,
+            } => {
+                surface.resize(ncols, nrows);
+                buf.add_change(Change::ClearScreen(ColorAttribute::Default));
+                buf.resize(ncols, nrows);
+
+                *cols = ncols as f64;
+                *rows = nrows as f64;
+            },
+            InputEvent::Paste(clipboard) => component.on_input_action(state, &InputAction::Paste(clipboard)),
+            _ => (),
+        }
     }
 }

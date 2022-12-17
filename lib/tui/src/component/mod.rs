@@ -47,10 +47,6 @@ pub struct ComponentData {
     ///
     pub id: String,
     ///
-    pub width: f64,
-    ///
-    pub height: f64,
-    ///
     pub interactive: bool,
     ///
     pub hover: bool,
@@ -98,8 +94,8 @@ impl ComponentData {
         }
     }
 
-    pub fn interactive(&self, state: &mut State) -> bool {
-        self.children.iter().any(|c| c.interactive(state))
+    pub fn interactive(&self) -> bool {
+        self.children.iter().any(|c| c.interactive())
     }
 
     pub fn focused_leaf_id(&self) -> Option<&str> {
@@ -189,7 +185,7 @@ pub trait Component: std::fmt::Debug {
     ///
     /// You will likely want to initialize the size of your inner content here, if not possible to
     /// do otherwise.
-    fn initialize(&mut self, state: &mut State);
+    // fn initialize(&mut self, state: &mut State);
 
     /// Draw the component
     ///
@@ -210,9 +206,7 @@ pub trait Component: std::fmt::Debug {
 
     /// How the component handles input actions such as next or prev
     #[allow(unused_variables)]
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
-        None
-    }
+    fn on_input_action(&mut self, state: &mut State, input_action: &InputAction) {}
 
     /// How the component handles mouse related events including scroll, movement, and click
     #[allow(unused_variables)]
@@ -223,10 +217,6 @@ pub trait Component: std::fmt::Debug {
             self.inner_mut().hover = true;
         }
     }
-
-    /// How the component handles paste events from the user clipboard
-    #[allow(unused_variables)]
-    fn on_paste(&mut self, state: &mut State, clipboard: &str) {}
 
     /// Navigate focus to the next interactive element in the tree
     #[allow(unused_variables)]
@@ -270,15 +260,11 @@ pub trait Component: std::fmt::Debug {
     #[allow(unused_variables)]
     fn on_focus(&mut self, state: &mut State, focus: bool) {
         self.inner_mut().focus = focus;
-
-        if !focus {
-            state.cursor_visibility = false;
-        }
     }
 
     /// Whether or not the component is capable of receiving input
     #[allow(unused_variables)]
-    fn interactive(&self, state: &mut State) -> bool {
+    fn interactive(&self) -> bool {
         self.inner().interactive
     }
 
@@ -287,15 +273,8 @@ pub trait Component: std::fmt::Debug {
         state.style_sheet.get_style(state)
     }
 
-    /// The absolute width of the inner content regardless of display
-    fn width(&self) -> f64 {
-        self.inner().width
-    }
-
-    /// The absolute height of the inner content regardless of display
-    fn height(&self) -> f64 {
-        self.inner().height
-    }
+    /// The width of the inner content regardless of border and padding
+    fn size(&self, state: &mut State) -> (f64, f64);
 
     /// The id of the ui element used for event handling and styling
     fn id(&self) -> &str {

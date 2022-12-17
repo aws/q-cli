@@ -28,6 +28,10 @@ input, select, #__preview {
     display: none;
 }
 
+div:focus > #__description {
+    display: block;
+}
+
 #__view {
     padding-bottom: 1;
     padding-left: 2;

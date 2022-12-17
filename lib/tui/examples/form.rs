@@ -55,7 +55,7 @@ fn main() {
                         .push(Paragraph::new("").push_text("upper level"))
                         .push(Container::new("nested", Layout::Horizontal).push(Paragraph::new("").push_text("3rd p"))),
                 ),
-            InputMethod::Form,
+            &InputMethod::new(),
             StyleSheet::parse(include_str!("form.css"), ParserOptions::default()).unwrap(),
             |event, _component, control_flow| match event {
                 tui::Event::Quit | tui::Event::Terminate => *control_flow = ControlFlow::Quit,

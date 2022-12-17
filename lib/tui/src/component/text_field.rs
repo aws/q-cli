@@ -1,5 +1,9 @@
 use termwiz::color::ColorAttribute;
-use termwiz::surface::Surface;
+use termwiz::surface::{
+    Change,
+    CursorVisibility,
+    Surface,
+};
 use unicode_width::UnicodeWidthStr;
 
 use crate::component::text_state::TextState;
@@ -51,29 +55,15 @@ impl TextField {
         self.obfuscated = obfuscated;
         self
     }
-
-    fn resize(&mut self) {
-        self.inner.width = match self.text.is_empty() {
-            true => match &self.hint {
-                Some(hint) => hint.width() as f64,
-                None => 0.0,
-            },
-            false => self.text.width() as f64,
-        };
-
-        self.inner.height = 1.0;
-    }
 }
 
 impl Component for TextField {
-    fn initialize(&mut self, _: &mut State) {
-        self.resize();
-    }
-
     fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
         if width <= 0.0 || height <= 0.0 {
             return;
         }
+
+        tracing::error!("{:?}", state.tree);
 
         let style = self.style(state);
         let width = style.width().unwrap_or(width);
@@ -97,13 +87,13 @@ impl Component for TextField {
         if self.inner.focus {
             state.cursor_position = (x + self.text.cursor as f64 - self.offset as f64, y);
             state.cursor_color = style.caret_color();
-            state.cursor_visibility = true;
+            surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
-        if self.text.on_input_action(&input_action).is_err() {
-            return None;
+    fn on_input_action(&mut self, state: &mut State, input_action: &InputAction) {
+        if self.text.on_input_action(input_action).is_err() {
+            return;
         }
 
         if !self.text.is_empty() {
@@ -112,14 +102,6 @@ impl Component for TextField {
                 text: self.text.to_owned(),
             }))
         }
-
-        self.resize();
-        None
-    }
-
-    fn on_paste(&mut self, _: &mut State, clipboard: &str) {
-        self.text.insert_str(clipboard);
-        self.resize();
     }
 
     fn inner(&self) -> &ComponentData {
@@ -129,55 +111,69 @@ impl Component for TextField {
     fn inner_mut(&mut self) -> &mut ComponentData {
         &mut self.inner
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use lightningcss::stylesheet::{
-        ParserOptions,
-        StyleSheet,
-    };
-    use termwiz::input::{
-        InputEvent,
-        KeyCode,
-        KeyEvent,
-        Modifiers,
-    };
-
-    use super::*;
-    use crate::{
-        ControlFlow,
-        EventLoop,
-        InputMethod,
-    };
-
-    #[ignore = "does not work on CI"]
-    #[test]
-    fn test_text_field() {
-        let mut test = String::new();
-
-        let text_field_id = "test";
-        let mut text_field = TextField::new("test");
-
-        EventLoop::new()
-            .run(
-                &mut text_field,
-                InputMethod::Scripted(vec![InputEvent::Key(KeyEvent {
-                    key: KeyCode::Char('a'),
-                    modifiers: Modifiers::NONE,
-                })]),
-                StyleSheet::parse("", ParserOptions::default()).unwrap(),
-                |event, _component, control_flow| {
-                    if let Event::TextField(TextFieldEvent::TextChanged { id, text }) = event {
-                        if id == text_field_id {
-                            test = text;
-                            *control_flow = ControlFlow::Quit
-                        }
-                    }
+    fn size(&self, _: &mut State) -> (f64, f64) {
+        (
+            match self.text.is_empty() {
+                true => match &self.hint {
+                    Some(hint) => hint.width() as f64,
+                    None => 0.0,
                 },
-            )
-            .unwrap();
-
-        assert_eq!(test, "a");
+                false => self.text.width() as f64,
+            }
+            .min(80.0),
+            1.0,
+        )
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use lightningcss::stylesheet::{
+//         ParserOptions,
+//         StyleSheet,
+//     };
+//     use termwiz::input::{
+//         InputEvent,
+//         KeyCode,
+//         KeyEvent,
+//         Modifiers,
+//     };
+//
+//     use super::*;
+//     use crate::{
+//         ControlFlow,
+//         EventLoop,
+//         InputMethod,
+//     };
+//
+//     #[ignore = "does not work on CI"]
+//     #[test]
+//     fn test_text_field() {
+//         let mut test = String::new();
+//
+//         let text_field_id = "test";
+//         let mut text_field = TextField::new("test");
+//
+//         EventLoop::new()
+//             .run(
+//                 &mut text_field,
+//                 InputMethod::Scripted(vec![InputEvent::Key(KeyEvent {
+//                     key: KeyCode::Char('a'),
+//                     modifiers: Modifiers::NONE,
+//                 })]),
+//                 StyleSheet::parse("", ParserOptions::default()).unwrap(),
+//                 |event, _component, control_flow| {
+//                     if let Event::TextField(TextFieldEvent::TextChanged { id, text }) = event {
+//                         if id == text_field_id {
+//                             test = text;
+//                             *control_flow = ControlFlow::Quit
+//                         }
+//                     }
+//                 },
+//             )
+//             .unwrap();
+//
+//         assert_eq!(test, "a");
+//     }
+// }

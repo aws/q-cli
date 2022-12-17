@@ -36,11 +36,6 @@ impl CheckBox {
 }
 
 impl Component for CheckBox {
-    fn initialize(&mut self, _: &mut State) {
-        self.inner.width = 4.0 + self.label.width() as f64;
-        self.inner.height = 1.0;
-    }
-
     fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
         if width <= 0.0 || height <= 0.0 {
             return;
@@ -57,16 +52,14 @@ impl Component for CheckBox {
         );
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
-        if let InputAction::Select = input_action {
+    fn on_input_action(&mut self, state: &mut State, input_action: &InputAction) {
+        if let InputAction::Insert(' ') = input_action {
             self.checked = !self.checked;
             state.event_buffer.push(Event::CheckBox(CheckBoxEvent::Checked {
                 id: self.inner.id.to_owned(),
                 checked: self.checked,
             }))
         }
-
-        None
     }
 
     fn inner(&self) -> &ComponentData {
@@ -76,55 +69,59 @@ impl Component for CheckBox {
     fn inner_mut(&mut self) -> &mut ComponentData {
         &mut self.inner
     }
-}
 
-#[cfg(test)]
-mod tests {
-    use lightningcss::stylesheet::{
-        ParserOptions,
-        StyleSheet,
-    };
-    use termwiz::input::{
-        InputEvent,
-        KeyCode,
-        KeyEvent,
-        Modifiers,
-    };
-
-    use super::*;
-    use crate::{
-        ControlFlow,
-        EventLoop,
-        InputMethod,
-    };
-
-    #[ignore = "does not work on CI"]
-    #[test]
-    fn test_checkbox() {
-        let mut test = false;
-
-        let check_box_id = "test";
-        let mut check_box = CheckBox::new(check_box_id, "Test", test);
-
-        EventLoop::new()
-            .run(
-                &mut check_box,
-                InputMethod::Scripted(vec![InputEvent::Key(KeyEvent {
-                    key: KeyCode::Char(' '),
-                    modifiers: Modifiers::NONE,
-                })]),
-                StyleSheet::parse("", ParserOptions::default()).unwrap(),
-                |event, _component, control_flow| {
-                    if let Event::CheckBox(CheckBoxEvent::Checked { id, checked }) = event {
-                        if id == check_box_id {
-                            test = checked;
-                            *control_flow = ControlFlow::Quit
-                        }
-                    }
-                },
-            )
-            .unwrap();
-
-        assert!(test);
+    fn size(&self, _: &mut State) -> (f64, f64) {
+        (2.0 + self.label.width() as f64, 1.0)
     }
 }
+
+// #[cfg(test)]
+// mod tests {
+//     use lightningcss::stylesheet::{
+//         ParserOptions,
+//         StyleSheet,
+//     };
+//     use termwiz::input::{
+//         InputEvent,
+//         KeyCode,
+//         KeyEvent,
+//         Modifiers,
+//     };
+//
+//     use super::*;
+//     use crate::{
+//         ControlFlow,
+//         EventLoop,
+//         InputMethod,
+//     };
+//
+//     #[ignore = "does not work on CI"]
+//     #[test]
+//     fn test_checkbox() {
+//         let mut test = false;
+//
+//         let check_box_id = "test";
+//         let mut check_box = CheckBox::new(check_box_id, "Test", test);
+//
+//         EventLoop::new()
+//             .run(
+//                 &mut check_box,
+//                 InputMethod::Scripted(vec![InputEvent::Key(KeyEvent {
+//                     key: KeyCode::Char(' '),
+//                     modifiers: Modifiers::NONE,
+//                 })]),
+//                 StyleSheet::parse("", ParserOptions::default()).unwrap(),
+//                 |event, _component, control_flow| {
+//                     if let Event::CheckBox(CheckBoxEvent::Checked { id, checked }) = event {
+//                         if id == check_box_id {
+//                             test = checked;
+//                             *control_flow = ControlFlow::Quit
+//                         }
+//                     }
+//                 },
+//             )
+//             .unwrap();
+//
+//         assert!(test);
+//     }
+// }

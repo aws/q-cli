@@ -64,7 +64,7 @@ pub enum BorderStyle {
 #[derive(Clone, Copy, Debug)]
 pub enum Display {
     None,
-    Initial,
+    Block,
 }
 
 #[derive(Clone, Copy, Debug)]
@@ -116,7 +116,7 @@ impl Style {
     field!(border_top_color, Property::BorderTopColor, ColorAttribute, ColorAttribute::Default);
     field!(border_top_width, Property::BorderTopWidth, f64, 0.0);
     field!(caret_color, Property::CaretColor, ColorAttribute, ColorAttribute::Default);
-    field!(display, Property::Display, Display, Display::Initial);
+    field!(display, Property::Display, Display, Display::Block);
     field!(color, Property::Color, ColorAttribute, ColorAttribute::Default);
     field!(font_weight, Property::FontWeight, Intensity, Intensity::Normal);
     field!(margin_bottom, Property::MarginBottom, f64, 0.0);

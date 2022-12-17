@@ -24,9 +24,9 @@ pub enum FilePickerEvent {
 #[derive(Debug)]
 pub struct FilePicker {
     path: PathBuf,
-    files: bool,
-    folders: bool,
-    extensions: Vec<String>,
+    _files: bool,
+    _folders: bool,
+    _extensions: Vec<String>,
     options: Vec<OsString>,
     preview: Vec<OsString>,
     index: usize,
@@ -35,26 +35,23 @@ pub struct FilePicker {
 }
 
 impl FilePicker {
-    pub fn new(
-        id: impl ToString,
-        path: impl Into<PathBuf>,
-        files: bool,
-        folders: bool,
-        extensions: Vec<String>,
-    ) -> Self {
-        let path = path.into();
-
+    pub fn new(id: impl ToString, files: bool, folders: bool, extensions: Vec<String>) -> Self {
         Self {
-            path,
-            files,
-            folders,
-            extensions,
+            path: PathBuf::default(),
+            _files: files,
+            _folders: folders,
+            _extensions: extensions,
             options: vec![],
             preview: vec![],
             index: 0,
             index_offset: 0,
             inner: ComponentData::new("select".to_owned(), id.to_string(), true),
         }
+    }
+
+    pub fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.path = path.into();
+        self
     }
 
     fn update_options(&mut self) {
@@ -104,14 +101,6 @@ impl FilePicker {
 }
 
 impl Component for FilePicker {
-    fn initialize(&mut self, _: &mut State) {
-        self.inner.width = 120.0;
-        self.inner.height = 1.0;
-
-        self.update_options();
-        self.update_preview();
-    }
-
     fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
         if height <= 0.0 || width <= 0.0 {
             return;
@@ -191,7 +180,7 @@ impl Component for FilePicker {
         }
     }
 
-    fn on_input_action(&mut self, state: &mut State, input_action: InputAction) -> Option<bool> {
+    fn on_input_action(&mut self, state: &mut State, input_action: &InputAction) {
         match input_action {
             InputAction::Up => {
                 if !self.options.is_empty() {
@@ -233,31 +222,8 @@ impl Component for FilePicker {
                     self.index = 0;
                     self.index_offset = 0;
 
-                    if let InputAction::Submit = input_action {
-                        if self.files {
-                            if let Some(extension) = self.path.extension() {
-                                if let Some(extension) = extension.to_str() {
-                                    if self.extensions.contains(&extension.to_owned()) {
-                                        return Some(false);
-                                    }
-                                }
-                            }
-                        }
-
-                        if self.folders && self.path.is_dir() {
-                            return Some(false);
-                        }
-                    }
-
                     self.update_options();
                     self.update_preview();
-
-                    self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.options.len()).unwrap()) as f64;
-                    if !self.options.is_empty() {
-                        self.inner.height += 1.0;
-                    }
-
-                    return Some(matches!(input_action, InputAction::Submit));
                 }
             },
             InputAction::Remove | InputAction::Left => {
@@ -268,16 +234,9 @@ impl Component for FilePicker {
 
                 self.update_options();
                 self.update_preview();
-
-                self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.options.len()).unwrap()) as f64;
-                if !self.options.is_empty() {
-                    self.inner.height += 1.0;
-                }
             },
             _ => (),
         }
-
-        None
     }
 
     fn on_focus(&mut self, state: &mut State, focus: bool) {
@@ -287,15 +246,12 @@ impl Component for FilePicker {
             true => {
                 self.update_options();
                 self.update_preview();
-
-                self.inner.height = 1.0 + MAX_ROWS.min(i32::try_from(self.options.len()).unwrap()) as f64;
             },
             false => {
                 self.index = 0;
                 self.index_offset = 0;
 
                 self.options.clear();
-                self.inner.height = 1.0;
 
                 state
                     .event_buffer
@@ -313,5 +269,14 @@ impl Component for FilePicker {
 
     fn inner_mut(&mut self) -> &mut super::ComponentData {
         &mut self.inner
+    }
+
+    fn size(&self, _: &mut State) -> (f64, f64) {
+        let height = match self.inner.focus {
+            true => 2.0 + MAX_ROWS as f64,
+            false => 1.0,
+        };
+
+        (120.0, height)
     }
 }

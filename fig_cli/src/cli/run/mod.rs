@@ -1202,11 +1202,7 @@ fn run_tui(
                     false_value: Some(false_value_substitution.to_owned()),
                 });
 
-                parameter_div = parameter_div.push(CheckBox::new(
-                    &parameter.name,
-                    parameter.description.clone().unwrap_or_else(|| "Toggle".into()),
-                    checked,
-                ));
+                parameter_div = parameter_div.push(CheckBox::new(&parameter.name, "Toggle", checked));
             },
             ParameterType::Path { file_type, extensions } => {
                 let parameter_value = arg_pairs
@@ -1225,13 +1221,9 @@ fn run_tui(
                     FileType::FolderOnly => (false, true),
                 };
 
-                parameter_div = parameter_div.push(FilePicker::new(
-                    &parameter.name,
-                    parameter_value,
-                    files,
-                    folders,
-                    extensions.clone(),
-                ));
+                parameter_div = parameter_div.push(
+                    FilePicker::new(&parameter.name, files, folders, extensions.clone()).with_path(parameter_value),
+                );
             },
             ParameterType::Unknown(other) => {
                 bail!("Unknown parameter type, try updating your Fig version: {other:?}")
@@ -1281,7 +1273,7 @@ fn run_tui(
 
     EventLoop::new().run(
         &mut view,
-        InputMethod::Form,
+        &InputMethod::new(),
         StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
         |event, view, control_flow| match event {
             Event::Quit => *control_flow = ControlFlow::Quit,

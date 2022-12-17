@@ -20,19 +20,13 @@ impl TextState {
         Self { text, cursor }
     }
 
-    pub fn insert_str(&mut self, string: &str) {
-        let cursor = self.cursor;
-        self.text.insert_str(cursor, string);
-        self.cursor += string.width();
-    }
-
     pub fn on_input_action(&mut self, input_action: &InputAction) -> Result<(), &'static str> {
         let cursor = self.cursor;
-        match *input_action {
+        match input_action {
             InputAction::Left => self.cursor -= 1.min(cursor),
             InputAction::Right => self.cursor += 1.min(self.width() - cursor),
-            InputAction::Insert(c, _) => {
-                self.insert(cursor, c);
+            InputAction::Insert(c) => {
+                self.insert(cursor, *c);
                 self.cursor += 1;
             },
             InputAction::Remove => match cursor == self.len() {
@@ -57,6 +51,10 @@ impl TextState {
                     self.remove(cursor);
                 },
                 _ => (),
+            },
+            InputAction::Paste(clipboard) => {
+                self.text.insert_str(self.cursor, clipboard);
+                self.cursor += clipboard.width();
             },
             _ => (),
         }

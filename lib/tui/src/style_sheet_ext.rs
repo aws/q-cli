@@ -58,8 +58,13 @@ impl StyleSheetExt for StyleSheet<'_, '_> {
                         for property in &style.declarations.declarations {
                             match property {
                                 Property::Display(display) => {
-                                    if let Display::Keyword(DisplayKeyword::None) = display {
-                                        out.with_display(crate::Display::None);
+                                    if let Display::Keyword(keyword) = display {
+                                        match keyword {
+                                            DisplayKeyword::None => out.with_display(crate::Display::None),
+                                            _ => out.with_display(crate::Display::Block),
+                                        };
+                                    } else {
+                                        out.with_display(crate::Display::Block);
                                     }
                                 },
                                 Property::BackgroundColor(color) => {
@@ -319,17 +324,7 @@ fn selector_matches(selector: &Selector, state: &State) -> bool {
                     // Must clear selector_iter before calling next_sequence.
                     selector_iter.all(|_| true);
                     combinator = selector_iter.next_sequence();
-                    tracing::error!("New combinator: {combinator:?}");
                 }
-
-                let s: Vec<_> = selector_iter
-                    .clone()
-                    .map(|x| match x {
-                        Component::NonTSPseudoClass(PseudoClass::Focus) => "focus".into(),
-                        _ => format!("{x:?}"),
-                    })
-                    .collect();
-                tracing::error!("{:?} matches selectors {:?} {component_matches}", element.inner.id, s);
 
                 match (component_matches, combinator) {
                     (_, None) => {

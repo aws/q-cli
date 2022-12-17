@@ -9,7 +9,10 @@ use unicode_width::UnicodeWidthStr;
 
 use super::ComponentData;
 use crate::surface_ext::SurfaceExt;
-use crate::Component;
+use crate::{
+    Component,
+    State,
+};
 
 #[derive(Debug)]
 pub struct Paragraph {
@@ -51,17 +54,6 @@ impl Paragraph {
 }
 
 impl Component for Paragraph {
-    fn initialize(&mut self, _: &mut crate::event_loop::State) {
-        let (width, height) = self.components.iter().fold((0, 1), |(acc0, acc1), c| {
-            let width = c.0.lines().map(|t| t.width()).max().unwrap_or_default();
-            let height = c.0.graphemes(true).filter(|s| s == &"\n" || s == &"\r\n").count();
-            (acc0 + width, acc1 + height)
-        });
-
-        self.inner.width = width as f64;
-        self.inner.height = height as f64;
-    }
-
     fn draw(
         &self,
         state: &mut crate::event_loop::State,
@@ -109,5 +101,15 @@ impl Component for Paragraph {
 
     fn inner_mut(&mut self) -> &mut super::ComponentData {
         &mut self.inner
+    }
+
+    fn size(&self, _: &mut State) -> (f64, f64) {
+        let (width, height) = self.components.iter().fold((0, 1), |(acc0, acc1), c| {
+            let width = c.0.lines().map(|t| t.width()).max().unwrap_or_default();
+            let height = c.0.graphemes(true).filter(|s| s == &"\n" || s == &"\r\n").count();
+            (acc0 + width, acc1 + height)
+        });
+
+        (width as f64, height as f64)
     }
 }
