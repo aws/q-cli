@@ -36,6 +36,8 @@ pub struct Constants {
     arch: &'static str,
     env: HashMap<String, String>,
     new_uri_format: bool,
+    #[cfg(target_os = "macos")]
+    macos_version: String,
 }
 
 impl Default for Constants {
@@ -81,6 +83,8 @@ impl Default for Constants {
             arch: consts::ARCH,
             env: std::env::vars().collect(),
             new_uri_format: true,
+            #[cfg(target_os = "macos")]
+            macos_version: macos_utils::os::NSOperatingSystemVersion::get().to_string(),
         }
     }
 }
