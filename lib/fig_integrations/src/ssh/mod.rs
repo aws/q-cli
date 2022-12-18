@@ -91,6 +91,11 @@ impl Integration for SshIntegration {
             return Ok(());
         }
 
+        // Create the .ssh directory
+        if let Some(path) = self.path.parent() {
+            std::fs::create_dir_all(path)?;
+        }
+
         let contents = if self.path.exists() {
             backup_file(&self.path, fig_util::directories::utc_backup_dir().ok())?;
             self.uninstall().await?;
