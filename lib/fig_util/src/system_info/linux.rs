@@ -9,13 +9,13 @@ use serde::{
 
 use crate::Error;
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DisplayServer {
     X11,
     Wayland,
 }
 
-#[derive(Debug)]
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub enum DesktopEnvironment {
     Gnome,
     Plasma,
