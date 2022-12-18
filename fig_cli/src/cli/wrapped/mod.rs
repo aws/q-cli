@@ -45,6 +45,9 @@ struct Wrapped {
 
 impl Wrapped {
     fn new(history: Vec<CommandInfo>) -> Self {
+        let current_local_offset = UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC);
+        let current_year = OffsetDateTime::now_utc().to_offset(current_local_offset).year();
+
         let mut commands_by_occurrence = HashMap::new();
         let mut occurrence_by_date = HashMap::new();
         let mut longest_running_command = None;
@@ -54,15 +57,18 @@ impl Wrapped {
         let mut weekly_activity = vec![0_f64; 7];
         let mut times = vec![];
         for row in history {
-            if let Some(command) = row.command {
-                if let Some(start_time) = row.start_time {
-                    let date = OffsetDateTime::from(start_time)
-                        .to_offset(UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC))
-                        .date();
+            if let Some(start_time) = row.start_time {
+                let date = OffsetDateTime::from(start_time).to_offset(current_local_offset).date();
 
-                    *occurrence_by_date.entry(date).or_insert_with(|| 0) += 1;
+                // Ignore commands not from the current year
+                if date.year() != current_year {
+                    continue;
                 }
 
+                *occurrence_by_date.entry(date).or_insert_with(|| 0) += 1;
+            }
+
+            if let Some(command) = row.command {
                 let command = match command.split_once(' ') {
                     Some((command, rest)) => {
                         if let (Some(start_time), Some(end_time)) = (row.start_time, row.end_time) {
@@ -309,6 +315,16 @@ pub struct WrappedArgs;
 
 impl WrappedArgs {
     pub async fn execute(self) -> Result<()> {
+        // Time gate to December
+        let current_time = time::OffsetDateTime::now_utc();
+        if current_time.month() != time::Month::December {
+            println!(
+                "#FigWrapped is over, but you can still use Fig to make your terminal awesome.\n\nCheck back next December for #FigWrapped {}!",
+                current_time.year()
+            );
+            return Ok(());
+        }
+
         // We do the following first since it can fail
         let history = History::load()?.all_rows()?;
         let wrapped = Wrapped::new(history);
@@ -354,9 +370,9 @@ and a happy new year to you!  \\_________________________/",
                         .push(
                             Container::new("", Layout::Vertical)
                                 .push(match rand::thread_rng().gen::<u32>() % 4 {
-                                    f if f == 0 => shortest_commit_message(&wrapped),
-                                    f if f == 1 => most_errors_in_a_day(&wrapped),
-                                    f if f == 2 => longest_running_command(&wrapped),
+                                    0 if wrapped.shortest_commit_message.is_some() => shortest_commit_message(&wrapped),
+                                    1 if wrapped.most_errors_in_a_day.is_some() => most_errors_in_a_day(&wrapped),
+                                    2 if wrapped.longest_running_command.is_some() => longest_running_command(&wrapped),
                                     _ => busiest_day(&wrapped),
                                 })
                                 .push(weekly_activity(&wrapped)),
