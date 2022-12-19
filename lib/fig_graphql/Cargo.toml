@@ -22,7 +22,7 @@ fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings", optional = true }
 fig_util = { path = "../fig_util", optional = true }
 graphql_client = "0.11.0"
-serde = "1.0.150"
+serde = "1.0.151"
 serde_json = { version = "1.0.91", features = ["arbitrary_precision"] }
 thiserror = { version = "1.0.37", optional = true }
 time = { version = "0.3.17", features = ["serde", "formatting", "parsing"] }
