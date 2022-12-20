@@ -500,12 +500,13 @@ impl InternalSubcommand {
                                 let in_ssh = fig_util::system_info::in_ssh();
 
                                 if valid_parent && (in_ssh || in_wsl) {
-                                    let grandparent_pid = parent_pid.parent()?;
-                                    let grandparent_path = grandparent_pid.exe()?;
-                                    let grandparent_name = grandparent_path.file_name()?.to_str()?;
+                                    let grandparent_pid = parent_pid.parent();
+                                    let grandparent_path = grandparent_pid.and_then(|pid| pid.exe());
+                                    let grandparent_name = grandparent_path.and_then(|path| path.file_name().and_then(|name| name.to_str().map(|s| s.to_string())));
 
                                     // check grandparent does not contain figterm
-                                    if grandparent_name.contains("figterm") || std::env::var_os("FIG_TERM").is_some() {
+                                    if grandparent_name.map_or(false, |name| name.contains("figterm"))
+                                        || std::env::var_os("FIG_TERM").is_some() {
                                         return Some((false, "❌ Grandparent contains figterm".into()));
                                     } else if in_ssh {
                                         return Some((true, format!("✅ {parent_name} in SSH")));
