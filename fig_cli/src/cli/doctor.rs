@@ -302,8 +302,11 @@ fn print_status_result(name: impl Display, status: &Result<(), DoctorError>, ver
             reason, info, error, ..
         }) => {
             println!("{} {name}: {reason}", CROSS.red());
-            for infoline in info {
-                println!("  {infoline}");
+            if !info.is_empty() {
+                println!();
+                for infoline in info {
+                    println!("  {infoline}");
+                }
             }
             if let Some(error) = error {
                 if verbose {
@@ -1243,6 +1246,73 @@ impl DoctorCheck<()> for SshIntegrationCheck {
     }
 }
 
+struct SshdConfigCheck;
+
+#[async_trait]
+impl DoctorCheck<()> for SshdConfigCheck {
+    fn name(&self) -> Cow<'static, str> {
+        "SSHD config".into()
+    }
+
+    async fn check(&self, _: &()) -> Result<(), DoctorError> {
+        let info = vec![
+            "The /etc/ssh/sshd_config file needs to have the following line:".into(),
+            "  AcceptEnv LANG LC_* FIG_*".magenta().to_string().into(),
+            "  AllowStreamLocalForwarding yes".magenta().to_string().into(),
+            "".into(),
+            "See https://fig.io/user-manual/autocomplete/ssh for more info".into(),
+        ];
+
+        let sshd_config_path = "/etc/ssh/sshd_config";
+
+        let sshd_config = std::fs::read_to_string(sshd_config_path)
+            .context("Could not read sshd_config")
+            .map_err(|err| {
+                if std::env::var_os("FIG_PARENT").is_some() {
+                    // We will assume the integration is correct if FIG_PARENT is set
+                    doctor_warning!(
+                        "Could not read sshd_config, check https://fig.io/user-manual/autocomplete/ssh for more info"
+                    )
+                } else {
+                    DoctorError::Error {
+                        reason: err.to_string().into(),
+                        info: info.clone(),
+                        fix: None,
+                        error: None,
+                    }
+                }
+            })?;
+
+        let accept_env_regex =
+            Regex::new(r"(?m)^\s*AcceptEnv\s+.*(LC_\*|FIG_\*|LC_FIG_SET_PARENT|FIG_SET_PARENT)([^\S\r\n]+.*$|$)")
+                .unwrap();
+
+        let allow_stream_local_forwarding_regex =
+            Regex::new(r"(?m)^\s*AllowStreamLocalForwarding\s+yes([^\S\r\n]+.*$|$)").unwrap();
+
+        let accept_env_match = accept_env_regex.is_match(&sshd_config);
+        let allow_stream_local_forwarding_match = allow_stream_local_forwarding_regex.is_match(&sshd_config);
+
+        if accept_env_match && allow_stream_local_forwarding_match {
+            Ok(())
+        } else {
+            Err(DoctorError::Error {
+                reason: "SSHD config is not set up correctly".into(),
+                info,
+                fix: None,
+                error: None,
+            })
+        }
+    }
+
+    fn get_type(&self, _: &(), _: Platform) -> DoctorCheckType {
+        if fig_util::system_info::in_ssh() {
+            DoctorCheckType::NormalCheck
+        } else {
+            DoctorCheckType::NoCheck
+        }
+    }
+}
 struct BundlePathCheck;
 
 #[async_trait]
@@ -2359,6 +2429,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &StateCorruptionCheck,
                 &FigIntegrationsCheck,
                 &SshIntegrationCheck,
+                &SshdConfigCheck,
             ],
             config,
             &mut spinner,
