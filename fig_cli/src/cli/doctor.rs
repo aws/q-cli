@@ -1883,13 +1883,16 @@ impl DoctorCheck for IBusEnvCheck {
             })
         };
 
-        let check_env = |var: &str, expect: &str| match std::env::var(var) {
-            Ok(val) if val == expect => Ok(()),
-            Ok(val) => err(var, Some(&val), expect),
-            Err(_) => err(var, None, expect),
+        let check_env = |var: &str, expect: &str| {
+            let regex = Regex::new(expect).unwrap();
+            match std::env::var(var) {
+                Ok(val) if regex.is_match(&val) => Ok(()),
+                Ok(val) => err(var, Some(&val), expect),
+                Err(_) => err(var, None, expect),
+            }
         };
 
-        check_env("GTK_IM_MODULE", "ibus")?;
+        check_env("GTK_IM_MODULE", "ibus(:xim)?")?;
         check_env("QT_IM_MODULE", "ibus")?;
         check_env("XMODIFIERS", "@im=ibus")?;
         // TODO(grant): Add kitty env when fully supported
