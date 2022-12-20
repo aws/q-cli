@@ -18,7 +18,7 @@ fig_util = { path = "../fig_util" }
 regex = "1.6.0"
 serde = { version = "1.0.151", features = ["derive"] }
 serde_json = "1.0.91"
-thiserror = "1.0.36"
+thiserror = "1.0.38"
 tokio = "1"
 tracing = "0.1.36"
 

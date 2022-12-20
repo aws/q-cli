@@ -13,7 +13,7 @@ cfg-if = "1.0.0"
 fig_proto = { path = "../fig_proto" }
 fig_util = { path = "../fig_util" }
 pin-project-lite = "0.2.9"
-thiserror = "1.0.36"
+thiserror = "1.0.38"
 tokio = { version = "1.20.1", features = ["fs", "time", "io-util", "net"] }
 tracing = "0.1.36"
 whoami = "1.2.1"
