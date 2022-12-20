@@ -2485,14 +2485,15 @@ dependencies = [
 
 [[package]]
 name = "freedesktop-icons"
-version = "0.2.1"
+version = "0.2.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "420b2cb0cf0ab0d5f34c068830f3b5c17b378ab3c2acaf7ca4bfde671d70be51"
+checksum = "e31823094643eabe14030d2f1b3f0aa10164f27b1a31e2b938ffe8ea9c9fc91b"
 dependencies = [
  "dirs 4.0.0",
  "once_cell",
  "rust-ini",
  "thiserror",
+ "xdg",
 ]
 
 [[package]]
@@ -8216,6 +8217,15 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d11c3c1f17cc0f3752a60366ea0892716168ab993c064feda43746ffe3128492"
 dependencies = [
  "nix 0.25.1",
+]
+
+[[package]]
+name = "xdg"
+version = "2.4.1"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "0c4583db5cbd4c4c0303df2d15af80f0539db703fa1c68802d4cbbd2dd0f88f6"
+dependencies = [
+ "dirs 4.0.0",
 ]
 
 [[package]]
