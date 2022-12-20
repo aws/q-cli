@@ -1852,7 +1852,7 @@ dependencies = [
  "shlex",
  "skim",
  "spinners",
- "sysinfo 0.27.0",
+ "sysinfo 0.27.1",
  "tempfile",
  "thiserror",
  "time 0.3.17",
@@ -1946,7 +1946,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "sysinfo 0.27.0",
+ "sysinfo 0.27.1",
  "system-configuration",
  "tempfile",
  "time 0.3.17",
@@ -2002,7 +2002,7 @@ dependencies = [
  "fig_util",
  "serde",
  "serde_json",
- "sysinfo 0.27.0",
+ "sysinfo 0.27.1",
  "time 0.3.17",
 ]
 
@@ -2109,7 +2109,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sysinfo 0.27.0",
+ "sysinfo 0.27.1",
  "thiserror",
  "tokio",
  "tracing",
@@ -2320,7 +2320,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.6",
  "strum",
- "sysinfo 0.27.0",
+ "sysinfo 0.27.1",
  "thiserror",
  "time 0.3.17",
  "tokio",
@@ -2374,7 +2374,7 @@ dependencies = [
  "serde_json",
  "shared_library",
  "shell-words",
- "sysinfo 0.27.0",
+ "sysinfo 0.27.1",
  "time 0.3.17",
  "tokio",
  "tracing",
@@ -6418,9 +6418,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.27.0"
+version = "0.27.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "0d08ba83d6dde63d053e42d7230f0dc7f8d8efeb8d30d3681580d158156461ba"
+checksum = "ccb297c0afb439440834b4bcf02c5c9da8ec2e808e70f36b0d8e815ff403bd24"
 dependencies = [
  "cfg-if 1.0.0",
  "core-foundation-sys",
