@@ -29,7 +29,6 @@ set --export FIG_PID $fish_pid
 set --export FIG_SET_PARENT $TERM_SESSION_ID
 set --export LC_FIG_SET_PARENT $TERM_SESSION_ID
 
-set --query FIG_HOSTNAME; or set FIG_HOSTNAME (fig _ hostname; or command hostname -f 2> /dev/null; or command hostname)
 set --query FIG_SHELL_PATH; or set FIG_SHELL_PATH (fig _ get-shell)
 
 function fig_osc
@@ -91,9 +90,9 @@ function fig_precmd --on-event fish_prompt
     fig_osc "FishSuggestionColor=%s" "$fish_color_autosuggestion"
 
     if test -n "$USER"
-        fig_osc "Hostname=%s@%s" "$USER" "$FIG_HOSTNAME"
+        fig_osc "User=%s" "$USER"
     else
-        fig_osc "Hostname=%s@%s" root "$FIG_HOSTNAME"
+        fig_osc "User=%s" root
     end
 
     if test $fig_has_set_prompt = 1

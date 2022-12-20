@@ -43,9 +43,6 @@ export FIG_PID="$$"
 export FIG_SET_PARENT=$FIGTERM_SESSION_ID
 export LC_FIG_SET_PARENT=$FIGTERM_SESSION_ID
 
-if [[ -z "${FIG_HOSTNAME}" ]]; then
-  FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
-fi
 if [[ -z "${FIG_SHELL_PATH}" ]]; then
   FIG_SHELL_PATH=$(fig _ get-shell)
 fi
@@ -100,7 +97,7 @@ fig_precmd() {
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
   fig_osc "ZshAutosuggestionColor=%s" "${ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE}"
   fig_osc "FigAutosuggestionColor=%s" "${FIG_AUTOSUGGEST_HIGHLIGHT_STYLE}"
-  fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
+  fig_osc "User=%s" "${USER:-root}"
 
   if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
     # ^C pressed while entering command, call preexec manually to clear fig prompts.

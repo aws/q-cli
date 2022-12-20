@@ -511,8 +511,8 @@ pub trait Handler {
     /// Fig PID Osc
     fn pid(&mut self, _: i32) {}
 
-    /// Fig Hostname Osc
-    fn hostname(&mut self, _: &str) {}
+    /// Fig Username Osc
+    fn username(&mut self, _: &str) {}
 
     /// Fig Log Osc
     fn log(&mut self, _: &str) {}
@@ -1249,9 +1249,13 @@ where
                                         },
                                         Err(err) => log::error!("Error decoding ExitCode: {err}"),
                                     },
-                                    b"Hostname" => match str::from_utf8(&val[1..]) {
-                                        Ok(s) => self.handler.hostname(s),
-                                        Err(err) => log::error!("Error decoding Hostname: {err}"),
+                                    // b"Hostname" => match str::from_utf8(&val[1..]) {
+                                    //     Ok(s) => self.handler.hostname(s),
+                                    //     Err(err) => log::error!("Error decoding Hostname: {err}"),
+                                    // },
+                                    b"Username" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.username(s),
+                                        Err(err) => log::error!("Error decoding Username: {err}"),
                                     },
                                     b"Log" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.log(s),

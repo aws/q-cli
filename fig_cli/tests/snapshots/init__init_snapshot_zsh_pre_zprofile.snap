@@ -43,13 +43,8 @@ SHOULD_FIGTERM_LAUNCH=$?
 # Only launch figterm if current session is not already inside PTY and command exists.
 # PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
 # It is not necessary in Fish.
-if   [[ ! "${TERM_PROGRAM}" = WarpTerminal ]] \
-  && [[ -z "${__PWSH_LOGIN_CHECKED}" ]] \
-  && [[ -z "${INSIDE_EMACS}" ]] \
-  && [[ "${__CFBundleIdentifier:=}" != "com.vandyke.SecureCRT" ]] \
-  && [[ -t 1 ]] \
+if   [[ -t 1 ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
-  && [[ -z "${FIG_PTY}" ]] \
   && command -v figterm 1>/dev/null 2>&1 \
   && [[ ("${SHOULD_FIGTERM_LAUNCH}" -eq 0) || (("${SHOULD_FIGTERM_LAUNCH}" -eq 2) && (-z "${FIG_TERM}" || (-z "${FIG_TERM_TMUX}" && -n "${TMUX}"))) ]]
 then

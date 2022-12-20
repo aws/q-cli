@@ -10,6 +10,8 @@ use tracing::{
     trace,
 };
 
+use crate::HOSTNAME;
+
 #[derive(Debug)]
 pub struct HistoryQueryParams {
     pub limit: usize,
@@ -42,7 +44,9 @@ pub async fn spawn_history_task() -> HistorySender {
                                 cwd: command.cwd,
                                 start_time: command.start_time,
                                 end_time: command.end_time,
-                                hostname: command.hostname,
+                                hostname: command.username.as_deref().and_then(|username| {
+                                    HOSTNAME.as_deref().map(|hostname| format!("{username}@{hostname}"))
+                                }),
                                 exit_code: command.exit_code,
                             };
 

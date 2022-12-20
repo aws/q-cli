@@ -36,9 +36,6 @@ FIG_LAST_PS1="$PS1"
 FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
 
-if [[ -z "${FIG_HOSTNAME}" ]]; then
-  FIG_HOSTNAME=$(fig _ hostname || hostname -f 2> /dev/null || hostname)
-fi
 if [[ -z "${FIG_SHELL_PATH}" ]]; then
   FIG_SHELL_PATH=$(fig _ get-shell)
 fi
@@ -89,7 +86,7 @@ function __fig_pre_prompt () {
   fig_osc "ExitCode=%s" "$__fig_ret_value"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
-  fig_osc "Hostname=%s@%s" "${USER:-root}" "${FIG_HOSTNAME}"
+  fig_osc "Hostname=%s" "${USER:-root}"
 
   if command -v fig >/dev/null 2>&1; then
     case $(fig _ pre-cmd) in

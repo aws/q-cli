@@ -161,6 +161,8 @@ pub fn dialoguer_theme() -> ColorfulTheme {
     }
 }
 
+static HOSTNAME: Lazy<Option<String>> = Lazy::new(|| sysinfo::System::new().host_name());
+
 pub enum MainLoopEvent {
     Insert { insert: Vec<u8>, unlock: bool },
     UnlockInterception,
@@ -190,7 +192,11 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
             .map(|cwd| cwd.display().to_string()),
         session_id: shell_state.local_context.session_id.clone(),
         terminal,
-        hostname: shell_state.local_context.hostname.clone(),
+        hostname: shell_state
+            .local_context
+            .username
+            .as_deref()
+            .and_then(|username| HOSTNAME.as_deref().map(|hostname| format!("{username}@{hostname}"))),
         environment_variables: SHELL_ENVIRONMENT_VARIABLES.lock().clone(),
         figterm_version: Some(env!("CARGO_PKG_VERSION").into()),
         preexec: Some(shell_state.preexec),
@@ -466,10 +472,6 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
     builder.env("FIG_TERM", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
         builder.env("FIG_TERM_TMUX", env!("CARGO_PKG_VERSION"));
-    }
-
-    if let Some(hostname) = sysinfo::System::new().host_name() {
-        builder.env("FIG_HOSTNAME", hostname);
     }
 
     // Clean up environment and launch shell.

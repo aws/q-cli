@@ -21,15 +21,14 @@ if test -n "$FIG_PARENT"; and test -z "$FIG_SET_PARENT"
     set --export FIG_PARENT $FIG_SET_PARENT
 end
 
-if test "$TERM_PROGRAM" != WarpTerminal
-    and test -z "$INSIDE_EMACS"
-    and test "$__CFBundleIdentifier" != "com.vandyke.SecureCRT"
-    and test -t 1
+# 0 = Yes, 1 = No, 2 = Fallback to FIG_TERM
+fig _ should-figterm-launch 1>/dev/null 2>&1
+set SHOULD_FIGTERM_LAUNCH $status
+
+if test -t 1
     and test -z "$PROCESS_LAUNCHED_BY_FIG"
-    and test -z "$FIG_PTY"
     and command -v figterm 1>/dev/null 2>/dev/null
-    and test -z "$FIG_TERM"
-    or test -z "$FIG_TERM_TMUX" -a -n "$TMUX"
+    and test "$SHOULD_FIGTERM_LAUNCH" -eq 0 -o \( "$SHOULD_FIGTERM_LAUNCH" -eq 2 -a \( -z "$FIG_TERM" -o \( -z "$FIG_TERM_TMUX" -a -n "$TMUX" \) \) \)
 
     set FIG_SHELL (fig _ get-shell)
     set FIG_IS_LOGIN_SHELL 0
@@ -42,7 +41,7 @@ if test "$TERM_PROGRAM" != WarpTerminal
         set FIG_TERM_NAME (command basename "$FIG_SHELL")" (figterm)"
         if test -x "$HOME/.fig/bin/$FIG_TERM_NAME"
             set FIG_TERM_PATH "$HOME/.fig/bin/$FIG_TERM_NAME"
-        else 
+        else
             set FIG_TERM_PATH (command -v figterm || echo "$HOME/.fig/bin/figterm")
         end
 

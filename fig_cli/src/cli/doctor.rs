@@ -590,15 +590,6 @@ impl DoctorCheck for FigIntegrationsCheck {
             });
         }
 
-        if std::env::var_os("FIG_PTY").is_some() {
-            return Err(DoctorError::Error {
-                reason: "Fig can not run in the Fig Pty".into(),
-                info: vec![],
-                fix: None,
-                error: None,
-            });
-        }
-
         if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
             return Err(DoctorError::Error {
                 reason: "Fig can not run in a process launched by Fig".into(),

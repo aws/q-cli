@@ -166,7 +166,7 @@ pub struct CommandInfo {
     pub cwd: Option<String>,
     pub start_time: Option<SystemTime>,
     pub end_time: Option<SystemTime>,
-    pub hostname: Option<String>,
+    pub username: Option<String>,
     pub exit_code: Option<i32>,
 }
 
@@ -186,8 +186,8 @@ pub struct ShellContext {
     pub current_working_directory: Option<PathBuf>,
     /// The current session id
     pub session_id: Option<String>,
-    /// Hostname of the machine where the shell is running
-    pub hostname: Option<String>,
+    /// Username of the user running the shell
+    pub username: Option<String>,
 }
 
 /// State about the current shell
@@ -1805,8 +1805,8 @@ impl<T: EventListener> Handler for Term<T> {
             session_id: context.session_id.clone(),
             cwd: env::current_dir().ok().and_then(|p| p.to_str().map(|s| s.to_owned())),
             start_time: Some(std::time::SystemTime::now()),
+            username: context.username.clone(),
             exit_code: None,
-            hostname: context.hostname.clone(),
             end_time: None,
         });
     }
@@ -1927,13 +1927,10 @@ impl<T: EventListener> Handler for Term<T> {
     }
 
     #[inline]
-    fn hostname(&mut self, hostname: &str) {
-        if self.shell_state.osc_lock {
-            return;
-        }
-        let hostname = hostname.trim().to_owned();
-        trace!("Fig hostname: {hostname:?}");
-        self.shell_state.get_mut_context().hostname = Some(hostname);
+    fn username(&mut self, username: &str) {
+        let username = username.trim().to_owned();
+        trace!("Username: {username:?}");
+        self.shell_state.get_mut_context().username = Some(username);
     }
 
     #[inline]

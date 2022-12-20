@@ -1,4 +1,5 @@
 pub mod local_state;
+mod should_figterm_launch;
 use std::fmt::Display;
 use std::io::{
     stderr,
@@ -18,7 +19,6 @@ use bytes::{
     Buf,
     BytesMut,
 };
-use cfg_if::cfg_if;
 use clap::{
     ArgGroup,
     Args,
@@ -68,8 +68,6 @@ use fig_util::desktop::{
     LaunchArgs,
 };
 use fig_util::directories::figterm_socket_path;
-#[cfg(target_os = "linux")]
-use fig_util::Terminal;
 use fig_util::{
     directories,
     get_parent_process_exe,
@@ -228,6 +226,12 @@ pub enum InternalSubcommand {
     },
     GetShell,
     Hostname,
+    /// Detects if Figterm should be launched
+    ///
+    /// Exit code:
+    /// - 0 execute figterm
+    /// - 1 dont execute figterm
+    /// - 2 fallback to FIG_TERM env
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
@@ -470,100 +474,7 @@ impl InternalSubcommand {
                 }
                 exit(1);
             },
-            InternalSubcommand::ShouldFigtermLaunch => {
-                // Exit code:
-                //   - 0 execute figterm
-                //   - 1 dont execute figterm
-                //   - 2 fallback to FIG_TERM env
-                if !fig_settings::state::get_bool_or("figterm.enabled", true) {
-                    exit(1);
-                }
-
-                cfg_if!(
-                    if #[cfg(target_os = "linux")] {
-                        if fig_util::system_info::in_wsl() {
-                            exit(2)
-                        } else {
-                            use fig_util::process_info::PidExt;
-                            use fig_util::process_info::LinuxExt;
-
-                            match (|| {
-                                let current_pid = fig_util::process_info::Pid::current();
-
-                                let parent_pid = current_pid.parent()?;
-                                let parent_path = parent_pid.exe()?;
-                                let parent_name = parent_path.file_name()?.to_str()?;
-
-                                let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
-
-                                let in_wsl = fig_util::system_info::in_wsl();
-                                let in_ssh = fig_util::system_info::in_ssh();
-
-                                if valid_parent && (in_ssh || in_wsl) {
-                                    let grandparent_pid = parent_pid.parent();
-                                    let grandparent_path = grandparent_pid.and_then(|pid| pid.exe());
-                                    let grandparent_name = grandparent_path.and_then(|path| path.file_name().and_then(|name| name.to_str().map(|s| s.to_string())));
-
-                                    // check grandparent does not contain figterm
-                                    if grandparent_name.map_or(false, |name| name.contains("figterm"))
-                                        || std::env::var_os("FIG_TERM").is_some() {
-                                        return Some((false, "❌ Grandparent contains figterm".into()));
-                                    } else if in_ssh {
-                                        return Some((true, format!("✅ {parent_name} in SSH")));
-                                    } else {
-                                        return Some((true, format!("✅ {parent_name} in WSL")));
-                                    }
-                                }
-
-                                let grandparent_pid = parent_pid.parent()?;
-                                let grandparent_path = grandparent_pid.exe()?;
-                                let grandparent_name = grandparent_path.file_name()?.to_str()?;
-                                let grandparent_cmdline = grandparent_pid.cmdline()?;
-                                let grandparent_exe = grandparent_cmdline.split('/').last()?;
-
-                                if Terminal::is_jetbrains_terminal() && std::env::var_os("FIG_TERM").is_none() {
-                                    return Some((true, "✅ In Jetbrains".into()))
-                                }
-
-                                let valid_grandparent = fig_util::terminal::LINUX_TERMINALS
-                                    .iter().chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
-                                    .any(|terminal| terminal.executable_names().contains(&grandparent_name)
-                                        || terminal.executable_names().contains(&grandparent_exe));
-
-                                let ancestry = format!(
-                                    "{} {} ({grandparent_pid}) <- {} {} ({parent_pid})",
-                                    if valid_grandparent { "✅" } else { "❌" },
-                                    grandparent_path.display(),
-                                    if valid_parent { "✅" } else { "❌" },
-                                    parent_path.display(),
-                                );
-
-                                Some((valid_parent && valid_grandparent, ancestry))
-                            })() {
-                                Some((should_execute, ancestry)) => {
-                                    writeln!(stdout(), "{ancestry}").ok();
-                                    exit(i32::from(!should_execute));
-                                },
-                                None => exit(1),
-                            }
-                        }
-                    } else if #[cfg(target_os = "windows")] {
-                        use winapi::um::consoleapi::GetConsoleMode;
-                        use std::os::windows::io::AsRawHandle;
-
-                        let mut mode = 0;
-                        let stdin_ok = unsafe {
-                            GetConsoleMode(
-                                std::io::stdin().as_raw_handle() as *mut _,
-                                &mut mode
-                            )
-                        };
-                        exit(if stdin_ok == 1 { 2 } else { 1 });
-                    } else {
-                        exit(2);
-                    }
-                );
-            },
+            InternalSubcommand::ShouldFigtermLaunch => should_figterm_launch::should_figterm_launch(),
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;
