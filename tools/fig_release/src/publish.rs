@@ -24,6 +24,7 @@ struct TriggerPipelineParameters {
     build_targets: String,
     checkout: String,
     compat: bool,
+    no_publish: Option<bool>,
 }
 
 #[derive(Deserialize)]
@@ -54,7 +55,7 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
 
     let channel = read_channel();
     if channel == Channel::None {
-        eyre::bail!("This commit isn't configured for publishing releases");
+        eprintln!("No channel specified, this will not be published");
     }
 
     let token = std::env::var("CIRCLECI_TOKEN")
@@ -104,6 +105,7 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
                     .join(","),
                 checkout: commit_hash,
                 compat: false,
+                no_publish: (channel == Channel::None).then_some(true),
             },
         })
         .send()

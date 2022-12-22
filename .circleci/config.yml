@@ -26,9 +26,11 @@ parameters:
   build_targets:
     type: string
     default: "macos"
+  no_publish:
+    type: boolean
+    default: false
 
 workflows:
-  version: 2
   build:
     when:
       equal: [<< pipeline.trigger_source >>, api]
@@ -72,7 +74,14 @@ workflows:
             - github
 
       - publish-packages:
-          requires: [package-tarball, package-deb, package-rpm, windows, macos]
+          when:
+              - not: << pipeline.parameters.no-publish >>
+          requires:
+            - package-tarball
+            - package-deb
+            - package-rpm
+            - windows
+            - macos
           context:
             - fig
             - github
