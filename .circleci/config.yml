@@ -75,7 +75,7 @@ workflows:
 
       - publish-packages:
           when:
-              - not: << pipeline.parameters.no-publish >>
+              - not: << pipeline.parameters.no_publish >>
           requires:
             - package-tarball
             - package-deb
