@@ -86,7 +86,7 @@ function __fig_pre_prompt () {
   fig_osc "ExitCode=%s" "$__fig_ret_value"
   fig_osc "TTY=%s" "${TTY}"
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
-  fig_osc "Hostname=%s" "${USER:-root}"
+  fig_osc "User=%s" "${USER:-root}"
 
   if command -v fig >/dev/null 2>&1; then
     case $(fig _ pre-cmd) in

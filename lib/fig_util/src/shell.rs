@@ -21,15 +21,18 @@ pub enum Shell {
     Zsh,
     /// Fish shell
     Fish,
+    /// Nu shell
+    Nu,
 }
 
 impl Display for Shell {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        match self {
-            Shell::Bash => f.write_str("bash"),
-            Shell::Zsh => f.write_str("zsh"),
-            Shell::Fish => f.write_str("fish"),
-        }
+        f.write_str(match self {
+            Shell::Bash => "bash",
+            Shell::Zsh => "zsh",
+            Shell::Fish => "fish",
+            Shell::Nu => "nu",
+        })
     }
 }
 
@@ -41,6 +44,7 @@ impl FromStr for Shell {
             "bash" => Ok(Shell::Bash),
             "zsh" => Ok(Shell::Zsh),
             "fish" => Ok(Shell::Fish),
+            "nu" => Ok(Shell::Nu),
             _ => Err(()),
         }
     }
@@ -48,7 +52,7 @@ impl FromStr for Shell {
 
 impl Shell {
     pub fn all() -> &'static [Self] {
-        &[Shell::Bash, Shell::Zsh, Shell::Fish]
+        &[Shell::Bash, Shell::Zsh, Shell::Fish, Shell::Nu]
     }
 
     pub fn current_shell() -> Option<Self> {
@@ -60,6 +64,8 @@ impl Shell {
             Some(Shell::Zsh)
         } else if parent_exe_name.contains("fish") {
             Some(Shell::Fish)
+        } else if parent_exe_name == "nu" || parent_exe_name == "nushell" {
+            Some(Shell::Nu)
         } else {
             None
         }
@@ -78,8 +84,9 @@ impl Shell {
             },
             Shell::Fish => match std::env::var_os("__fish_config_dir").map(PathBuf::from) {
                 Some(dir) => Ok(dir),
-                None => Ok(directories::home_dir().map(|home| home.join(".config").join("fish"))?),
+                None => Ok(directories::home_dir()?.join(".config").join("fish")),
             },
+            Shell::Nu => Ok(directories::config_dir()?.join("nushell")),
         }
     }
 

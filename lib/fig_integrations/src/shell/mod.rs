@@ -90,7 +90,7 @@ impl ShellExt for Shell {
         for file in match self {
             Shell::Bash => [".bashrc", ".bash_profile", ".bash_login", ".profile"].iter(),
             Shell::Zsh => [".zshrc", ".zprofile"].iter(),
-            Shell::Fish => [].iter(),
+            Shell::Fish | Shell::Nu => [].iter(),
         } {
             for when in &When::all() {
                 let path = directories::fig_dir()?
@@ -163,6 +163,7 @@ impl ShellExt for Shell {
                     }),
                 ]
             },
+            Shell::Nu => vec![],
         };
 
         Ok(integrations)
@@ -194,6 +195,8 @@ impl ShellExt for Shell {
                     include_str!("scripts/post.bash")
                 )
             },
+            (Shell::Nu, When::Pre) => include_str!("scripts/pre.nu"),
+            (Shell::Nu, When::Post) => include_str!("scripts/post.nu"),
         }
     }
 }
@@ -268,20 +271,23 @@ impl ShellScriptShellIntegration {
             if #[cfg(target_os = "macos")] {
                 return match self.shell {
                     // Check if ~/.local/bin/fig is executable before eval
-                    Shell::Fish => format!("test -x ~/.local/bin/fig; and eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
                     Shell::Bash | Shell::Zsh => format!("[ -x ~/.local/bin/fig ] && eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
+                    Shell::Fish => format!("test -x ~/.local/bin/fig; and eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
+                    Shell::Nu => "".into(),
                 }
             } else {
                 let source_line = match self.shell {
                     Shell::Fish => format!("command -qv fig; and eval (fig init {shell} {when}{rcfile} | string split0)"),
                     Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$(fig init {shell} {when}{rcfile})\""),
-                    _ => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
+                    Shell::Zsh => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
+                    Shell::Nu => "".into(),
                 };
                 let add_to_path_line = match self.shell {
+                    Shell::Bash | Shell::Zsh => "_FIG_LOCAL_BIN=~/.local/bin \n\
+                        [[ \":$PATH:\" != *\":$_FIG_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_FIG_LOCAL_BIN\" \n\
+                        unset _FIG_LOCAL_BIN",
                     Shell::Fish => "contains $HOME/.local/bin $PATH; or set -a PATH $HOME/.local/bin",
-                    _ => "_FIG_LOCAL_BIN=~/.local/bin
-[[ \":$PATH:\" != *\":$_FIG_LOCAL_BIN:\"* ]] && PATH=\"${PATH:+\"$PATH:\"}$_FIG_LOCAL_BIN\"
-unset _FIG_LOCAL_BIN",
+                    Shell::Nu => "",
                 };
 
                 return format!("{add_to_path_line}\n{source_line}");

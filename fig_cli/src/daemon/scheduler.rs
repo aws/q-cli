@@ -461,6 +461,7 @@ impl Task for SendDotfilesLineCountTelemetry {
                 Shell::Bash => (".bashrc", "bashrc_line_count"),
                 Shell::Zsh => (".zshrc", "zshrc_line_count"),
                 Shell::Fish => ("fish.config", "fish_config_line_count"),
+                Shell::Nu => ("config.toml", "nu_config_line_count"),
             };
             let dotfile = shell.get_config_directory().ok().and_then(|dir| {
                 let dotfile_path = dir.join(filename);

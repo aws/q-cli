@@ -11,7 +11,6 @@ use std::ops::{
 };
 use std::str::FromStr;
 
-use log::trace;
 use serde::de::{
     Error as _,
     Visitor,
@@ -22,6 +21,7 @@ use serde::{
     Serialize,
 };
 use serde_yaml::Value;
+use tracing::trace;
 
 use crate::ansi::NamedColor;
 

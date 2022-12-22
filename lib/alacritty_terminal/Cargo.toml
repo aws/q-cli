@@ -1,6 +1,7 @@
 [package]
 name = "alacritty_terminal"
-version = "0.15.1-dev"
+edition.workspace = true
+version.workspace = true
 authors = [
     "Christian Duerr <contact@christianduerr.com>",
     "Joe Wilm <joe@jwilm.com>",
@@ -9,14 +10,13 @@ license = "Apache-2.0"
 description = "Library for writing terminal emulators"
 readme = "../README.md"
 homepage = "https://github.com/alacritty/alacritty"
-edition = "2021"
 
 [dependencies]
 bitflags = "1"
 camino = { version = "1.1.1", features = ["serde1"] }
 fig_color = { path = "../fig_color" }
-log = "0.4"
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
+tracing = "0.1.37"
 unicode-width = "0.1"
 vte = { version = "0.11.0", default-features = false }

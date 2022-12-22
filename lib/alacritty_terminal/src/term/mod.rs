@@ -19,13 +19,13 @@ use std::{
 };
 
 use bitflags::bitflags;
-use log::{
-    debug,
-    trace,
-};
 use serde::{
     Deserialize,
     Serialize,
+};
+use tracing::{
+    debug,
+    trace,
 };
 use unicode_width::UnicodeWidthChar;
 
@@ -208,6 +208,8 @@ pub struct ShellState {
     pub zsh_autosuggestion_color: Option<fig_color::SuggestionColor>,
     /// Fig autosuggestion color
     pub fig_autosuggestion_color: Option<fig_color::SuggestionColor>,
+    /// Nu hint color
+    pub nu_hint_color: Option<fig_color::SuggestionColor>,
     /// Color support
     pub color_support: Option<fig_color::ColorSupport>,
     /// Command info
@@ -1486,9 +1488,11 @@ impl<T: EventListener> Handler for Term<T> {
         let cursor = &mut self.grid.cursor;
 
         let color_match = |color: Color, vtermcolor: fig_color::VTermColor| match (color, vtermcolor) {
-            (Color::Named(name), fig_color::VTermColor::Indexed(j)) => (name as usize % 256) == j as usize,
-            (Color::Indexed(i), fig_color::VTermColor::Indexed(j)) => i == j,
-            (Color::Spec(rgb), fig_color::VTermColor::Rgb(r, g, b)) => rgb.r == r && rgb.g == g && rgb.b == b,
+            (Color::Named(name), fig_color::VTermColor::Indexed { idx }) => (name as usize % 256) == idx as usize,
+            (Color::Indexed(i), fig_color::VTermColor::Indexed { idx }) => i == idx,
+            (Color::Spec(rgb), fig_color::VTermColor::Rgb { red, green, blue }) => {
+                rgb.r == red && rgb.g == green && rgb.b == blue
+            },
             _ => false,
         };
 
@@ -1505,6 +1509,7 @@ impl<T: EventListener> Handler for Term<T> {
                         Some(ref color) => Some(color),
                         None => self.shell_state().zsh_autosuggestion_color.as_ref(),
                     }),
+                    Some("nu") => Some(self.shell_state().nu_hint_color.as_ref()),
                     _ => None,
                 }
                 .flatten()
@@ -1820,7 +1825,7 @@ impl<T: EventListener> Handler for Term<T> {
         self.shell_state.get_mut_context().current_working_directory = Some(directory.to_path_buf());
         match env::set_current_dir(directory) {
             Ok(_) => {},
-            Err(err) => log::error!("Failed to set current dir ({}): {}", directory.display(), err),
+            Err(err) => tracing::error!("Failed to set current dir ({}): {}", directory.display(), err),
         }
     }
 
@@ -1905,6 +1910,15 @@ impl<T: EventListener> Handler for Term<T> {
             self.shell_state.fig_autosuggestion_color =
                 Some(fig_color::parse_suggestion_color_zsh_autosuggest(color, color_support));
         }
+    }
+
+    #[inline]
+    fn nu_hint_color(&mut self, color: &str) {
+        if self.shell_state.osc_lock || color.is_empty() {
+            return;
+        }
+        trace!("Fig nu hint color: {color:?}");
+        self.shell_state.nu_hint_color = Some(fig_color::parse_hint_color_nu(color));
     }
 
     #[inline]

@@ -9,22 +9,10 @@ mod color;
 
 use std::fmt::Debug;
 
-pub use color::ColorSupport;
-
-#[derive(Debug, Clone, Copy, PartialEq, Eq)]
-pub enum VTermColor {
-    Rgb(u8, u8, u8),
-    Indexed(u8),
-}
-
-impl From<color::VTermColor> for VTermColor {
-    fn from(value: color::VTermColor) -> Self {
-        match value {
-            color::VTermColor::Rgb { red, green, blue } => Self::Rgb(red, green, blue),
-            color::VTermColor::Indexed { idx } => Self::Indexed(idx),
-        }
-    }
-}
+pub use color::{
+    ColorSupport,
+    VTermColor,
+};
 
 #[derive(Clone, PartialEq, Eq)]
 pub struct SuggestionColor {
@@ -62,4 +50,14 @@ pub fn parse_suggestion_color_fish(suggestion_str: &str, color_support: ColorSup
 pub fn parse_suggestion_color_zsh_autosuggest(suggestion_str: &str, color_support: ColorSupport) -> SuggestionColor {
     let inner = color::parse_suggestion_color_zsh_autosuggest(suggestion_str, color_support);
     SuggestionColor { inner }
+}
+
+pub fn parse_hint_color_nu(suggestion_str: impl AsRef<str>) -> SuggestionColor {
+    let color = nu_color_config::lookup_ansi_color_style(suggestion_str.as_ref());
+    SuggestionColor {
+        inner: color::SuggestionColor {
+            fg: color.foreground.map(VTermColor::from),
+            bg: color.background.map(VTermColor::from),
+        },
+    }
 }

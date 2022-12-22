@@ -68,17 +68,17 @@ use crate::{
     SHELL_ENVIRONMENT_VARIABLES,
 };
 
-fn shell_args(shell_path: &str) -> &'static [&'static str] {
-    let (_, shell_name) = shell_path
-        .rsplit_once(|c| c == '/' || c == '\\')
-        .unwrap_or(("", shell_path));
+fn shell_args(shell_path: impl AsRef<Path>) -> Option<&'static [&'static str]> {
+    let shell_name = shell_path.as_ref().file_name().and_then(OsStr::to_str)?;
+    let shell_name = shell_name.strip_suffix(".exe").unwrap_or(shell_name);
     match shell_name {
-        "bash" | "bash.exe" => &["--norc", "--noprofile", "-c"],
-        "zsh" => &["--norcs", "-c"],
-        "fish" => &["--no-config", "-c"],
+        "bash" => Some(&["--norc", "--noprofile", "-c"]),
+        "zsh" => Some(&["--norcs", "-c"]),
+        "fish" => Some(&["--no-config", "-c"]),
+        // TODO: add support for Nu, a lot of generators are broken however
         _ => {
             warn!("unknown shell {shell_name}");
-            &[]
+            None
         },
     }
 }
@@ -264,14 +264,14 @@ pub async fn process_figterm_request(
             let map_color = |color: &fig_color::VTermColor| -> figterm::TermColor {
                 figterm::TermColor {
                     color: Some(match color {
-                        fig_color::VTermColor::Rgb(r, g, b) => {
+                        fig_color::VTermColor::Rgb { red, green, blue } => {
                             figterm::term_color::Color::Rgb(figterm::term_color::Rgb {
-                                r: *r as i32,
-                                b: *b as i32,
-                                g: *g as i32,
+                                r: *red as i32,
+                                b: *blue as i32,
+                                g: *green as i32,
                             })
                         },
-                        fig_color::VTermColor::Indexed(i) => figterm::term_color::Color::Indexed(*i as u32),
+                        fig_color::VTermColor::Indexed { idx } => figterm::term_color::Color::Indexed(*idx as u32),
                     }),
                 }
             };
@@ -664,7 +664,7 @@ pub async fn process_secure_message(
                     });
                 },
                 Some(Request::PseudoterminalExecute(request)) => {
-                    let default_command_shell = term
+                    let shell_path = term
                         .shell_state()
                         .local_context
                         .shell_path
@@ -673,12 +673,20 @@ pub async fn process_secure_message(
                         .unwrap_or_else(|| OsStr::new("/bin/bash"))
                         .to_owned();
 
+                    // TODO(sean): better SHELL_ARGs handling here based on shell.
+                    let (executable, args) = match shell_args(&shell_path) {
+                        Some(args) => (shell_path, args),
+                        None => {
+                            warn!(?shell_path, "Unsupported shell");
+                            let default_shell = "bash";
+                            (default_shell.into(), shell_args(default_shell).unwrap())
+                        },
+                    };
+
                     let mut cmd = create_command(
-                        &default_command_shell,
+                        executable,
                         working_directory(request.working_directory.as_deref(), term.shell_state()),
                     );
-                    // TODO(sean): better SHELL_ARGs handling here based on shell.
-                    let args = shell_args(&default_command_shell.to_string_lossy());
                     cmd.args(args);
                     cmd.arg(&request.command);
 

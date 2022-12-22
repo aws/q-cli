@@ -65,6 +65,15 @@ pub fn home_dir() -> Result<PathBuf> {
     dirs::home_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
+/// The config directory
+///
+/// - Linux: `$XDG_CONFIG_HOME` or `$HOME/.config`
+/// - MacOS: `$HOME/Library/Application Support`
+/// - Windows: `{FOLDERID_RoamingAppData}`
+pub fn config_dir() -> Result<PathBuf> {
+    dirs::config_dir().ok_or(DirectoryError::NoHomeDirectory)
+}
+
 /// The fig directory
 ///
 /// - Linux: /home/Alice/.fig

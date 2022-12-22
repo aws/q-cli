@@ -4,12 +4,51 @@ pub enum VTermColor {
     Indexed { idx: u8 },
 }
 
+impl VTermColor {
+    fn idx(idx: u8) -> Self {
+        VTermColor::Indexed { idx }
+    }
+
+    fn rgb(red: u8, green: u8, blue: u8) -> Self {
+        VTermColor::Rgb { red, green, blue }
+    }
+}
+
 pub fn vterm_color_indexed(idx: u8) -> VTermColor {
     VTermColor::Indexed { idx }
 }
 
 pub fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
     VTermColor::Rgb { red, green, blue }
+}
+
+impl From<nu_ansi_term::Color> for VTermColor {
+    fn from(color: nu_ansi_term::Color) -> Self {
+        use nu_ansi_term::Color;
+        match color {
+            Color::Black => VTermColor::idx(0),
+            Color::Red => VTermColor::idx(1),
+            Color::Green => VTermColor::idx(2),
+            Color::Yellow => VTermColor::idx(3),
+            Color::Blue => VTermColor::idx(4),
+            Color::Purple => VTermColor::idx(5),
+            Color::Magenta => VTermColor::idx(5),
+            Color::Cyan => VTermColor::idx(6),
+            Color::White => VTermColor::idx(7),
+            Color::DarkGray => VTermColor::idx(8),
+            Color::LightRed => VTermColor::idx(9),
+            Color::LightGreen => VTermColor::idx(10),
+            Color::LightYellow => VTermColor::idx(11),
+            Color::LightBlue => VTermColor::idx(12),
+            Color::LightPurple => VTermColor::idx(13),
+            Color::LightMagenta => VTermColor::idx(13),
+            Color::LightCyan => VTermColor::idx(14),
+            Color::LightGray => VTermColor::idx(16),
+            Color::Fixed(i) => VTermColor::idx(i),
+            Color::Rgb(r, g, b) => VTermColor::rgb(r, g, b),
+            Color::Default => VTermColor::idx(7),
+        }
+    }
 }
 
 bitflags::bitflags! {

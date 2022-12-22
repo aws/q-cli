@@ -1174,7 +1174,7 @@ impl DoctorCheck<DiagnosticsResponse> for ShellCompatibilityCheck {
     }
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
-        let shell_regex = Regex::new(r"(bash|fish|zsh)").unwrap();
+        let shell_regex = Regex::new(r"(bash|fish|zsh|nu)").unwrap();
 
         let current_shell = fig_util::get_parent_process_exe();
         let current_shell_valid = current_shell

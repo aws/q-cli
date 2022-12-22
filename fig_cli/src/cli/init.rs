@@ -67,6 +67,7 @@ fn assign_shell_variable(shell: &Shell, name: impl Display, exported: bool) -> S
         (Shell::Bash | Shell::Zsh, true) => format!("export {name}=1"),
         (Shell::Fish, false) => format!("set -g {name} 1"),
         (Shell::Fish, true) => format!("set -gx {name} 1"),
+        (Shell::Nu, _) => format!("let-env {name} = 1;"),
     }
 }
 
@@ -82,6 +83,7 @@ fn guard_source(
     output.push(match shell {
         Shell::Bash | Shell::Zsh => format!("if [ -z \"${{{guard_var}}}\" ]; then").into(),
         Shell::Fish => format!("if test -z \"${guard_var}\"").into(),
+        Shell::Nu => format!("if env | any name == '{guard_var}' {{").into(),
     });
 
     let shell_var = assign_shell_variable(shell, guard_var, export);
@@ -105,6 +107,7 @@ fn guard_source(
         match shell {
             Shell::Bash | Shell::Zsh => "fi\n",
             Shell::Fish => "end\n",
+            Shell::Nu => "}",
         }
         .into(),
     );
@@ -204,6 +207,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
                     Shell::Bash => Some(format!("source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",)),
                     Shell::Zsh => Some(format!("source '{bundle}/Contents/plugins/terminal/.zshenv'",)),
                     Shell::Fish => Some(format!("source '{bundle}/Contents/plugins/terminal/fish/config.fish'",)),
+                    Shell::Nu => None,
                 }
             } else {
                 None

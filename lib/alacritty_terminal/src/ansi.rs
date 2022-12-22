@@ -12,13 +12,14 @@ use std::{
     str,
 };
 
-use log::{
-    debug,
-    trace,
-};
 use serde::{
     Deserialize,
     Serialize,
+};
+use tracing::{
+    debug,
+    error,
+    trace,
 };
 use vte::{
     Params,
@@ -504,6 +505,9 @@ pub trait Handler {
 
     /// FigSuggestionColor Osc
     fn fig_suggestion_color(&mut self, _: &str) {}
+
+    /// Fig NuSuggestionColor Osc
+    fn nu_hint_color(&mut self, _: &str) {}
 
     /// Fig tty Osc
     fn tty(&mut self, _: &str) {}
@@ -1205,73 +1209,77 @@ where
                                 match key {
                                     b"Dir" => match str::from_utf8(val[1..].as_ref()) {
                                         Ok(path_str) => self.handler.dir(Path::new(path_str)),
-                                        Err(err) => log::error!("Failed to parse path: {err}"),
+                                        Err(err) => error!("Failed to parse path: {err}"),
                                     },
                                     b"ShellPath" => match str::from_utf8(val[1..].as_ref()) {
                                         Ok(path_str) => self.handler.shell_path(Path::new(path_str)),
-                                        Err(err) => log::error!("Failed to parse path: {err}"),
+                                        Err(err) => error!("Failed to parse path: {err}"),
                                     },
                                     b"WSLDistro" => match str::from_utf8(val[1..].as_ref()) {
                                         Ok(s) => self.handler.wsl_distro(s),
-                                        Err(err) => log::error!("Error decoding WSL Distro: {err}"),
+                                        Err(err) => error!("Error decoding WSL Distro: {err}"),
                                     },
                                     b"ExitCode" => match str::from_utf8(&val[1..]) {
                                         Ok(code) => match code.parse::<i32>() {
                                             Ok(code) => self.handler.exit_code(code),
-                                            Err(err) => log::error!("Error parsing ExitCode: {err}"),
+                                            Err(err) => error!("Error parsing ExitCode: {err}"),
                                         },
-                                        Err(err) => log::error!("Error decoding ExitCode: {err}"),
+                                        Err(err) => error!("Error decoding ExitCode: {err}"),
                                     },
                                     b"Shell" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.shell(s),
-                                        Err(err) => log::error!("Error decoding Shell: {err}"),
+                                        Err(err) => error!("Error decoding Shell: {err}"),
                                     },
                                     b"FishSuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.fish_suggestion_color(s),
-                                        Err(err) => log::error!("Error decoding FishSuggestionColor: {err}"),
+                                        Err(err) => error!("Error decoding FishSuggestionColor: {err}"),
                                     },
                                     b"ZshAutosuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.zsh_suggestion_color(s),
-                                        Err(err) => log::error!("Error decoding ZshAutosuggestionColor: {err}"),
+                                        Err(err) => error!("Error decoding ZshAutosuggestionColor: {err}"),
                                     },
                                     b"FigAutosuggestionColor" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.fig_suggestion_color(s),
-                                        Err(err) => log::error!("Error decoding FigAutosuggestionColor: {err}"),
+                                        Err(err) => error!("Error decoding FigAutosuggestionColor: {err}"),
+                                    },
+                                    b"NuHintColor" => match str::from_utf8(&val[1..]) {
+                                        Ok(s) => self.handler.nu_hint_color(s),
+                                        Err(err) => error!("Error decoding NuHintColor: {err}"),
                                     },
                                     b"TTY" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.tty(s),
-                                        Err(err) => log::error!("Error decoding TTY: {err}"),
+                                        Err(err) => error!("Error decoding TTY: {err}"),
                                     },
                                     b"PID" => match str::from_utf8(&val[1..]) {
                                         Ok(code) => match code.parse::<i32>() {
                                             Ok(pid) => self.handler.pid(pid),
-                                            Err(err) => log::error!("Error parsing ExitCode: {err}"),
+                                            Err(err) => error!("Error parsing ExitCode: {err}"),
                                         },
-                                        Err(err) => log::error!("Error decoding ExitCode: {err}"),
+                                        Err(err) => error!("Error decoding ExitCode: {err}"),
                                     },
                                     // b"Hostname" => match str::from_utf8(&val[1..]) {
                                     //     Ok(s) => self.handler.hostname(s),
-                                    //     Err(err) => log::error!("Error decoding Hostname: {err}"),
+                                    //     Err(err) => tracing::error!("Error decoding Hostname: {err}"),
                                     // },
-                                    b"Username" => match str::from_utf8(&val[1..]) {
+                                    b"User" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.username(s),
-                                        Err(err) => log::error!("Error decoding Username: {err}"),
+                                        Err(err) => error!("Error decoding Username: {err}"),
                                     },
                                     b"Log" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.log(s),
-                                        Err(err) => log::error!("Error decoding Log: {err}"),
+                                        Err(err) => error!("Error decoding Log: {err}"),
                                     },
                                     b"NewCmd" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.new_cmd(s),
-                                        Err(err) => log::error!("Error decoding NewCmd: {err}"),
+                                        Err(err) => error!("Error decoding NewCmd: {err}"),
                                     },
                                     b"OSCLock" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.osc_lock(s),
-                                        Err(err) => log::error!("Error decoding OSCLock: {err}"),
+                                        Err(err) => error!("Error decoding OSCLock: {err}"),
                                     },
                                     b"OSCUnlock" => match str::from_utf8(&val[1..]) {
                                         Ok(s) => self.handler.osc_unlock(s),
-                                        Err(err) => log::error!("Error decoding OSCUnlock: {err}"),
+                                        Err(err) => error!("Error decoding OSCUnlock: {err}"),
                                     },
                                     _ => unhandled!(),
                                 }

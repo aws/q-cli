@@ -96,7 +96,7 @@ function fig_precmd --on-event fish_prompt
     if test -n "$USER"
         fig_osc "User=%s" "$USER"
     else
-        fig_osc "User=%s" root
+        fig_osc "User=root" 
     end
 
     if test $fig_has_set_prompt = 1
