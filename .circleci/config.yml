@@ -26,7 +26,7 @@ parameters:
   build_targets:
     type: string
     default: "macos"
-  no_publish:
+  publish:
     type: boolean
     default: false
 
@@ -74,14 +74,7 @@ workflows:
             - github
 
       - publish-packages:
-          when:
-              - not: << pipeline.parameters.no_publish >>
-          requires:
-            - package-tarball
-            - package-deb
-            - package-rpm
-            - windows
-            - macos
+          requires: [package-tarball, package-deb, package-rpm, windows, macos]
           context:
             - fig
             - github
@@ -653,6 +646,8 @@ jobs:
       - image: cimg/base:edge-22.04
     resource_class: small
     steps:
+      - require:
+          condition: << pipeline.parameters.publish >>
       - checkout-desktop
       - install-fig-release
       - attach_workspace:

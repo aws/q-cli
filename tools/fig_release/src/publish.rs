@@ -24,7 +24,7 @@ struct TriggerPipelineParameters {
     build_targets: String,
     checkout: String,
     compat: bool,
-    no_publish: Option<bool>,
+    publish: bool,
 }
 
 #[derive(Deserialize)]
@@ -54,9 +54,12 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
     }
 
     let channel = read_channel();
-    if channel == Channel::None {
+    let publish = if channel == Channel::None {
         eprintln!("No channel specified, this will not be published");
-    }
+        false
+    } else {
+        true
+    };
 
     let token = std::env::var("CIRCLECI_TOKEN")
         .expect("Make sure you're logged into your company Fig account and have dotfiles enabled");
@@ -105,7 +108,7 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
                     .join(","),
                 checkout: commit_hash,
                 compat: false,
-                no_publish: (channel == Channel::None).then_some(true),
+                publish,
             },
         })
         .send()
