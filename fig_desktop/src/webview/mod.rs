@@ -337,7 +337,6 @@ impl WebviewManager {
                                 }
                             },
                             WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(Some(theme)),
-
                             WryWindowEvent::Focused(focused) => {
                                 if focused && window_state.window_id != AUTOCOMPLETE_ID {
                                     proxy

@@ -347,6 +347,7 @@ impl WindowState {
                         ActivationPolicy,
                         EventLoopWindowTargetExtMacOS,
                     };
+
                     window_target.set_activation_policy_at_runtime(ActivationPolicy::Accessory);
                 }
             },

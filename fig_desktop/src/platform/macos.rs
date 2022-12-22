@@ -121,6 +121,16 @@ static UNMANAGED: Lazy<Unmanaged> = Lazy::new(|| Unmanaged {
 
 static ACCESSIBILITY_ENABLED: Lazy<AtomicBool> = Lazy::new(|| AtomicBool::new(accessibility_is_enabled()));
 
+static MACOS_VERSION: Lazy<semver::Version> = Lazy::new(|| {
+    let version = macos_utils::os::NSOperatingSystemVersion::get();
+    semver::Version::new(version.major as u64, version.minor as u64, version.patch as u64)
+});
+
+#[allow(dead_code)]
+pub fn is_ventura() -> bool {
+    MACOS_VERSION.major >= 13
+}
+
 struct Unmanaged {
     event_sender: RwLock<Option<EventLoopProxy>>,
     window_server: RwLock<Option<Arc<Mutex<WindowServer>>>>,
@@ -338,9 +348,15 @@ impl PlatformStateImpl {
                                 }
                             },
                             WindowServerEvent::ActiveSpaceChanged { is_fullscreen } => {
-                                events.push(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
-                                    fullscreen: is_fullscreen,
-                                }));
+                                events.extend([
+                                    Event::WindowEvent {
+                                        window_id: AUTOCOMPLETE_ID.clone(),
+                                        window_event: WindowEvent::Hide,
+                                    },
+                                    Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
+                                        fullscreen: is_fullscreen,
+                                    }),
+                                ]);
                             },
                             WindowServerEvent::RequestCaretPositionUpdate => {
                                 events.push(Event::PlatformBoundEvent(
@@ -596,12 +612,11 @@ impl PlatformStateImpl {
                 let policy = if fullscreen {
                     ActivationPolicy::Accessory
                 } else {
-                    let mission_control_visible = window_map
+                    let dashboard_visible = window_map
                         .get(&DASHBOARD_ID)
-                        .map(|window| window.webview.window().is_visible())
-                        .unwrap_or(false);
+                        .map_or(false, |window| window.webview.window().is_visible());
 
-                    if mission_control_visible {
+                    if dashboard_visible {
                         ActivationPolicy::Regular
                     } else {
                         ActivationPolicy::Accessory
@@ -650,14 +665,13 @@ impl PlatformStateImpl {
 
                 Ok(())
             },
-
             PlatformBoundEvent::AppWindowFocusChanged {
                 window_id,
-                focused: _,
+                focused,
                 fullscreen,
             } => {
                 // Update activation policy
-                if window_id == DASHBOARD_ID {
+                if window_id == DASHBOARD_ID && focused {
                     self.proxy
                         .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
                             fullscreen,

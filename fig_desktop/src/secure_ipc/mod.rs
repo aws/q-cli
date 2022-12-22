@@ -355,7 +355,11 @@ async fn handle_outgoing(
             },
             message = outgoing.recv_async() => {
                 if let Ok(message) = message {
-                    debug!(?message, "Sending secure message");
+                    if matches!(message, Clientbound { packet: Some(clientbound::Packet::Ping(_)) }) {
+                        trace!(?message, "Sending secure message");
+                    } else {
+                        debug!(?message, "Sending secure message");
+                    }
                     if let Err(err) = writer.send_message(message).await {
                         error!(%err, "Secure outgoing task send error");
                         bad_connection.notify_one();
