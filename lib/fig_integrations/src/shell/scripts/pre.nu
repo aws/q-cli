@@ -1,7 +1,7 @@
 mkdir ~/.fig/bin | ignore
 
 def pathadd [path: string] {
-  if not ($env.PATH | any $it == $path) {
+  if not ($env.PATH | any {|it| $it == $path }) {
     $env.PATH | prepend $path
   } else {
     $env.PATH
@@ -19,11 +19,11 @@ if "FIG_NEW_SESSION" in $env {
 }
 
 if "FIG_SET_PARENT_CHECK" not-in $env {
-  if "FIG_SET_PARENT" not-in $env && "LC_FIG_SET_PARENT" in $env {
+  if "FIG_SET_PARENT" not-in $env and "LC_FIG_SET_PARENT" in $env {
     let-env FIG_SET_PARENT = $env.LC_FIG_SET_PARENT
     let-env LC_FIG_SET_PARENT = $nothing
   }
-  if "FIG_PARENT" not-in $env && "FIG_SET_PARENT" in $env {
+  if "FIG_PARENT" not-in $env and "FIG_SET_PARENT" in $env {
     let-env FIG_PARENT = $env.FIG_SET_PARENT
     let-env FIG_SET_PARENT = $nothing
   }
@@ -35,9 +35,9 @@ let result = (^fig _ should-figterm-launch | complete)
 let-env SHOULD_FIGTERM_LAUNCH = $result.exit_code
 
 let should_launch = (
-    ("PROCESS_LAUNCHED_BY_FIG" not-in $env || ($env.PROCESS_LAUNCHED_BY_FIG | str length) == 0)
-    && ($env.SHOULD_FIGTERM_LAUNCH == 0 ||
-       ($env.SHOULD_FIGTERM_LAUNCH == 2 && "FIG_TERM" not-in $env))
+    ("PROCESS_LAUNCHED_BY_FIG" not-in $env or ($env.PROCESS_LAUNCHED_BY_FIG | str length) == 0)
+    and ($env.SHOULD_FIGTERM_LAUNCH == 0 or
+       ($env.SHOULD_FIGTERM_LAUNCH == 2 and "FIG_TERM" not-in $env))
 )
 
 if $should_launch {

@@ -1,5 +1,5 @@
 def pathadd [path: string] {
-  if not ($env.PATH | any $it == $path) {
+  if not ($env.PATH | any {|it| $it == $path }) {
     $env.PATH | prepend $path
   } else {
     $env.PATH
