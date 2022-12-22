@@ -1053,7 +1053,9 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
             .map(|path| format!("~/{}", path.display()))
             .unwrap_or_else(|| self.integration.path().display().to_string());
 
-        format!("{path} contains valid fig hooks").into()
+        let shell = self.integration.get_shell();
+
+        format!("{shell} {path} integration check").into()
     }
 
     fn analytics_event_name(&self) -> String {
@@ -1082,10 +1084,11 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
         );
         match self.integration.is_installed().await {
             Ok(()) => Ok(()),
-            Err(InstallationError::LegacyInstallation(msg)) => {
-                Err(DoctorError::Warning(format!("{msg} {fix_text}").into()))
-            },
-            Err(InstallationError::NotInstalled(msg) | InstallationError::ImproperInstallation(msg)) => {
+            Err(
+                InstallationError::LegacyInstallation(msg)
+                | InstallationError::NotInstalled(msg)
+                | InstallationError::ImproperInstallation(msg),
+            ) => {
                 // Check permissions of the file
                 #[cfg(unix)]
                 {
@@ -1098,8 +1101,22 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                     if path.exists() {
                         access(&self.integration.path(), AccessFlags::R_OK | AccessFlags::W_OK).map_err(|_| {
                             DoctorError::Error {
-                                reason: format!("{} is not accessible", path.display()).into(),
-                                info: vec![format!("Run `sudo chown $USER {}` to fix", path.display()).into()],
+                                reason: format!("{} is not read or writable", path.display()).into(),
+                                info: vec![
+                                    "To fix run the following commands:".into(),
+                                    format!(
+                                        "    1. {}",
+                                        format!(
+                                            "sudo chown $USER {} && sudo chmod 644 {}",
+                                            path.display(),
+                                            path.display()
+                                        )
+                                        .magenta()
+                                    )
+                                    .into(),
+                                    format!("    2. {}", "fig integrations install dotfiles".magenta()).into(),
+                                    format!("    3. {}", "fig doctor".magenta()).into(),
+                                ],
                                 fix: None,
                                 error: None,
                             }
