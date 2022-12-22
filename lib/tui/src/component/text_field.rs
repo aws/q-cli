@@ -104,6 +104,18 @@ impl Component for TextField {
         }
     }
 
+    fn on_mouse_event(
+        &mut self,
+        _: &mut State,
+        mouse_event: &termwiz::input::MouseEvent,
+        x: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+    ) {
+        self.text.on_mouse_event(mouse_event, x)
+    }
+
     fn inner(&self) -> &ComponentData {
         &self.inner
     }

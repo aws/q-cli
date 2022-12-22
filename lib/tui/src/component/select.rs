@@ -1,6 +1,7 @@
 use std::fmt::Display;
 
 use termwiz::color::ColorAttribute;
+use termwiz::input::MouseButtons;
 use termwiz::surface::{
     Change,
     CursorVisibility,
@@ -226,7 +227,14 @@ impl Component for Select {
         self.inner.focus = focus;
 
         match focus {
-            true => self.sorted_options = (0..self.options.len()).into_iter().collect(),
+            true => {
+                self.sorted_options.clear();
+                for i in 0..self.options.len() {
+                    if self.options[i].contains(&*self.text) {
+                        self.sorted_options.push(i);
+                    }
+                }
+            },
             false => {
                 if self.validate && !self.options.contains(&self.text) {
                     self.text = TextState::new("");
@@ -245,6 +253,27 @@ impl Component for Select {
                     }));
                 }
             },
+        }
+    }
+
+    fn on_mouse_event(
+        &mut self,
+        _: &mut State,
+        mouse_event: &termwiz::input::MouseEvent,
+        _: f64,
+        y: f64,
+        _: f64,
+        _: f64,
+    ) {
+        if self.inner.focus {
+            let index = f64::from(mouse_event.y) - y;
+            if index > 0.0 {
+                self.index = Some(index as usize - 1);
+                if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+                    self.text = TextState::new(self.options[self.sorted_options[index as usize - 1]].clone());
+                    self.sorted_options.clear();
+                }
+            }
         }
     }
 

@@ -3,11 +3,12 @@ use std::ops::{
     DerefMut,
 };
 
+use termwiz::input::MouseButtons;
 use unicode_width::UnicodeWidthStr;
 
 use crate::input::InputAction;
 
-#[derive(Debug)]
+#[derive(Debug, Default)]
 pub struct TextState {
     pub text: String,
     pub cursor: usize,
@@ -60,6 +61,12 @@ impl TextState {
         }
 
         Ok(())
+    }
+
+    pub fn on_mouse_event(&mut self, mouse_event: &termwiz::input::MouseEvent, x: f64) {
+        if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+            self.cursor = ((f64::from(mouse_event.x) - x).max(0.0) as usize).min(self.text.len());
+        }
     }
 }
 

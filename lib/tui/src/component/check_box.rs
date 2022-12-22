@@ -1,5 +1,6 @@
 use std::fmt::Display;
 
+use termwiz::input::MouseButtons;
 use termwiz::surface::Surface;
 use unicode_width::UnicodeWidthStr;
 
@@ -36,11 +37,7 @@ impl CheckBox {
 }
 
 impl Component for CheckBox {
-    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
-        if width <= 0.0 || height <= 0.0 {
-            return;
-        }
-
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, _: f64, _: f64, _: f64, _: f64) {
         let style = self.style(state);
 
         surface.draw_text(
@@ -59,6 +56,20 @@ impl Component for CheckBox {
                 id: self.inner.id.to_owned(),
                 checked: self.checked,
             }))
+        }
+    }
+
+    fn on_mouse_event(
+        &mut self,
+        _: &mut State,
+        mouse_event: &termwiz::input::MouseEvent,
+        _: f64,
+        _: f64,
+        _: f64,
+        _: f64,
+    ) {
+        if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) && self.inner.focus {
+            self.checked = !self.checked;
         }
     }
 

@@ -106,12 +106,10 @@ impl Component for Container {
         width: f64,
         height: f64,
     ) {
-        if !mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
-            return;
-        }
-
         let mut previous_siblings = std::collections::LinkedList::new();
         for i in 0..self.inner.children.len() {
+            self.inner.children[i].inner_mut().hover = false;
+
             let style_info = self.inner.children[i].inner().style_info();
             state.tree.push(TreeElement {
                 inner: style_info.clone(),
@@ -122,30 +120,50 @@ impl Component for Container {
 
             let size = self.inner.children[i].size(state);
 
-            let mut cx = x;
-            let mut cy = y;
+            let cx = x + style.margin_left();
+            let cy = y + style.margin_top();
+            let width =
+                (style.width().unwrap_or(size.0) + style.border_horizontal() + style.padding_horizontal()).min(width);
+            let height =
+                (style.height().unwrap_or(size.1) + style.border_vertical() + style.padding_vertical()).min(height);
 
-            let width = (style.width().unwrap_or(size.0) + style.spacing_horizontal()).min(width);
-            let height = (style.height().unwrap_or(size.1) + style.spacing_vertical()).min(height);
-
-            cx += style.margin_left();
-            cy += style.margin_top();
-
-            if mouse_event.x as f64 >= cx
-                && mouse_event.x as f64 <= cx + width
-                && mouse_event.y as f64 >= cy
-                && mouse_event.y as f64 <= cy + height
+            if f64::from(mouse_event.x) >= cx
+                && f64::from(mouse_event.x) < cx + width
+                && f64::from(mouse_event.y) >= cy
+                && f64::from(mouse_event.y) < cy + height
             {
-                self.inner.focus_child_at_index(state, Some(i));
-                self.inner.children[i].on_mouse_event(state, mouse_event, x, y, width, height);
+                self.inner.children[i].on_mouse_event(
+                    state,
+                    mouse_event,
+                    x + style.spacing_left(),
+                    y + style.spacing_top(),
+                    width,
+                    height,
+                );
+
+                if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) && self.inner.children[i].interactive() {
+                    self.inner.focus_child_at_index(state, Some(i));
+                    state.tree.pop();
+                    return;
+                }
+
+                self.inner.children[i].inner_mut().hover = true;
             }
 
             match self.layout {
-                Layout::Vertical => y += height,
-                Layout::Horizontal => x += width,
+                Layout::Vertical => y += height + style.margin_vertical(),
+                Layout::Horizontal => x += width + style.margin_horizontal(),
             }
 
             state.tree.pop();
+        }
+
+        if mouse_event
+            .mouse_buttons
+            .contains(MouseButtons::LEFT | MouseButtons::RIGHT)
+            && self.interactive()
+        {
+            self.on_focus(state, true);
         }
     }
 

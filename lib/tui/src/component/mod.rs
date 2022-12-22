@@ -23,10 +23,7 @@ pub use select::{
     Select,
     SelectEvent,
 };
-use termwiz::input::{
-    MouseButtons,
-    MouseEvent,
-};
+use termwiz::input::MouseEvent;
 use termwiz::surface::Surface;
 pub use text_field::{
     TextField,
@@ -115,10 +112,6 @@ impl ComponentData {
         let new_focus_index = index.and_then(|i| if i >= self.children.len() { None } else { Some(i) });
 
         if old_focus_index != new_focus_index {
-            tracing::error!(
-                "Calling focus for children of {}. From {old_focus_index:?} to {new_focus_index:?}",
-                self.id
-            );
             if let Some(old_index) = old_focus_index {
                 self.children[old_index].on_focus(state, false);
             }
@@ -211,11 +204,6 @@ pub trait Component: std::fmt::Debug {
     /// How the component handles mouse related events including scroll, movement, and click
     #[allow(unused_variables)]
     fn on_mouse_event(&mut self, state: &mut State, mouse_event: &MouseEvent, x: f64, y: f64, width: f64, height: f64) {
-        if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
-            self.on_focus(state, true);
-        } else if mouse_event.mouse_buttons.is_empty() {
-            self.inner_mut().hover = true;
-        }
     }
 
     /// Navigate focus to the next interactive element in the tree

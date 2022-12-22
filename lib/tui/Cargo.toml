@@ -15,3 +15,4 @@ tracing = "0.1.37"
 fig_log = { path = "../fig_log" }
 unicode-segmentation = "1.10.0"
 unicode-width = "0.1.10"
+camino = "1.1.1"

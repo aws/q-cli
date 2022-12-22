@@ -1,21 +1,25 @@
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::io::{
     stdout,
     Write,
 };
 use std::process::exit;
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 struct ProcessInfo {
     pid: fig_util::process_info::Pid,
     name: String,
     is_valid: bool,
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 enum Status {
     Launch(String),
     DontLaunch(String),
     Process(ProcessInfo),
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 impl Status {
     fn unwrap(self) -> ProcessInfo {
         match self {
@@ -132,6 +136,7 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
     })
 }
 
+#[cfg(any(target_os = "macos", target_os = "linux"))]
 fn should_launch() -> ! {
     use fig_util::process_info::PidExt;
 
@@ -207,7 +212,7 @@ pub fn should_figterm_launch() -> ! {
 }
 
 #[cfg(target_os = "windows")]
-fn should_figterm_launch() {
+pub fn should_figterm_launch() {
     use std::os::windows::io::AsRawHandle;
 
     use winapi::um::consoleapi::GetConsoleMode;
@@ -218,6 +223,6 @@ fn should_figterm_launch() {
 }
 
 #[cfg(not(any(target_os = "macos", target_os = "linux", target_os = "windows")))]
-fn should_figterm_launch() {
+pub fn should_figterm_launch() {
     exit(2);
 }

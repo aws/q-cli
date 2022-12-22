@@ -7,7 +7,6 @@ use std::hash::{
 };
 use std::io::Write;
 use std::iter::empty;
-use std::path::Path;
 use std::process::{
     Command,
     Stdio,
@@ -1207,13 +1206,13 @@ fn run_tui(
             ParameterType::Path { file_type, extensions } => {
                 let parameter_value = arg_pairs
                     .get(&parameter.name)
-                    // TODO(chay): Fix this so it can be any file
-                    .and_then(|val| {
-                        let p = Path::new(val);
-                        if p.is_dir() { Some(p.to_owned()) } else { None }
+                    .map(|inner| inner.to_owned())
+                    .or_else(|| {
+                        std::env::current_dir()
+                            .ok()
+                            .map(|cwd| cwd.to_str().unwrap_or_default().to_owned())
                     })
-                    .or_else(|| std::env::current_dir().ok())
-                    .unwrap_or_else(|| Path::new("/").to_owned());
+                    .unwrap_or_default();
 
                 let (files, folders) = match file_type {
                     FileType::Any | FileType::Unknown(_) => (true, true),

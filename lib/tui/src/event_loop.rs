@@ -30,6 +30,7 @@ use crate::{
     Display,
     Error,
     InputMethod,
+    SurfaceExt,
 };
 
 #[derive(Debug, Clone)]
@@ -125,14 +126,18 @@ impl EventLoop {
             inner: component.inner().style_info(),
             siblings: Default::default(),
         });
-
         component.on_focus(&mut state, true);
+        state.tree.pop();
 
         let mut control_flow = ControlFlow::Wait;
         while let ControlFlow::Wait = control_flow {
             // todo: seems like there's an issue in termwiz which doesn't
             // account for grapheme width in optimized surface diffs
             for _ in 0..2 {
+                state.tree.push(TreeElement {
+                    inner: component.inner().style_info(),
+                    siblings: Default::default(),
+                });
                 let style = component.style(&state);
                 if let Display::None = style.display() {
                     continue;
@@ -142,16 +147,19 @@ impl EventLoop {
                     Change::ClearScreen(ColorAttribute::Default),
                     Change::CursorVisibility(CursorVisibility::Hidden),
                 ]);
-                component.draw(
-                    &mut state,
-                    &mut surface,
-                    style.spacing_left(),
-                    style.spacing_top(),
-                    cols - style.spacing_horizontal(),
-                    rows - style.spacing_vertical(),
-                    cols,
-                    rows,
-                );
+
+                let size = component.size(&mut state);
+                let mut x = style.margin_left();
+                let mut y = style.margin_top();
+
+                let mut width =
+                    (style.width().unwrap_or(size.0) + style.border_horizontal() + style.padding_horizontal())
+                        .min(cols);
+                let mut height =
+                    (style.height().unwrap_or(size.1) + style.border_vertical() + style.padding_vertical()).min(rows);
+
+                surface.draw_border(&mut x, &mut y, &mut width, &mut height, &style);
+                component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
 
                 buf.add_change(Change::CursorVisibility(CursorVisibility::Hidden));
                 buf.draw_from_screen(&surface, 0, 0);
@@ -167,6 +175,8 @@ impl EventLoop {
                 buf.flush()?;
 
                 surface.flush_changes_older_than(surface.current_seqno());
+
+                state.tree.pop();
             }
 
             self.handle_event(
@@ -255,8 +265,21 @@ impl EventLoop {
                     },
                 }
             },
-            // todo(chay): add back
-            // InputEvent::Mouse(event) => component.on_mouse_event(&mut state, &event, 0.0, 0.0, cols, rows),
+            InputEvent::Mouse(event) => {
+                let style = component.style(state);
+                if let Display::None = style.display() {
+                    return;
+                }
+
+                component.on_mouse_event(
+                    state,
+                    &event,
+                    style.spacing_left(),
+                    style.spacing_top(),
+                    *cols - style.spacing_horizontal(),
+                    *rows - style.spacing_vertical(),
+                );
+            },
             InputEvent::Resized {
                 cols: ncols,
                 rows: nrows,

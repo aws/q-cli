@@ -1,9 +1,17 @@
-use std::ffi::OsString;
-use std::path::PathBuf;
+use std::path::{
+    Path,
+    PathBuf,
+};
 
 use termwiz::color::ColorAttribute;
-use termwiz::surface::Surface;
+use termwiz::input::MouseButtons;
+use termwiz::surface::{
+    Change,
+    CursorVisibility,
+    Surface,
+};
 
+use super::text_state::TextState;
 use super::ComponentData;
 use crate::event_loop::{
     Event,
@@ -23,13 +31,13 @@ pub enum FilePickerEvent {
 
 #[derive(Debug)]
 pub struct FilePicker {
-    path: PathBuf,
+    text: TextState,
     _files: bool,
     _folders: bool,
     _extensions: Vec<String>,
-    options: Vec<OsString>,
-    preview: Vec<OsString>,
-    index: usize,
+    options: Vec<String>,
+    preview: Vec<String>,
+    index: Option<usize>,
     index_offset: usize,
     inner: ComponentData,
 }
@@ -37,51 +45,63 @@ pub struct FilePicker {
 impl FilePicker {
     pub fn new(id: impl ToString, files: bool, folders: bool, extensions: Vec<String>) -> Self {
         Self {
-            path: PathBuf::default(),
+            text: TextState::default(),
             _files: files,
             _folders: folders,
             _extensions: extensions,
             options: vec![],
             preview: vec![],
-            index: 0,
+            index: None,
             index_offset: 0,
             inner: ComponentData::new("select".to_owned(), id.to_string(), true),
         }
     }
 
-    pub fn with_path(mut self, path: impl Into<PathBuf>) -> Self {
-        self.path = path.into();
+    pub fn with_path(mut self, path: impl Into<String>) -> Self {
+        *self.text = path.into();
+        self.text.cursor = self.text.len();
         self
     }
 
     fn update_options(&mut self) {
-        self.options.clear();
-        if let Ok(dir) = std::fs::read_dir(&self.path) {
-            for file in dir.flatten() {
-                self.options.push(file.file_name())
+        let path = Path::new(self.text.as_str());
+        if path.exists() {
+            self.options.clear();
+
+            if let Ok(dir) = std::fs::read_dir(path) {
+                for file in dir.flatten() {
+                    if let Some(file_name) = file.file_name().to_str() {
+                        self.options.push(file_name.to_owned())
+                    }
+                }
+
+                self.options.sort_by(|a, b| {
+                    let apath = path.join(a);
+                    let bpath = path.join(b);
+
+                    match (apath.is_dir(), bpath.is_dir()) {
+                        (true, true) => a.cmp(b),
+                        (true, false) => std::cmp::Ordering::Less,
+                        (false, true) => std::cmp::Ordering::Greater,
+                        (false, false) => a.cmp(b),
+                    }
+                })
             }
         }
-
-        self.options.sort_by(|a, b| {
-            let apath = self.path.join(a);
-            let bpath = self.path.join(b);
-
-            match (apath.is_dir(), bpath.is_dir()) {
-                (true, true) => a.cmp(b),
-                (true, false) => std::cmp::Ordering::Less,
-                (false, true) => std::cmp::Ordering::Greater,
-                (false, false) => a.cmp(b),
-            }
-        })
     }
 
     fn update_preview(&mut self) {
         self.preview.clear();
-        if let Some(option) = self.options.get(self.index) {
-            let path = self.path.join(option);
+
+        let index = self.index.unwrap_or(0);
+        let path = Path::new(self.text.as_str());
+        if let Some(option) = self.options.get(index) {
+            let path = path.join(option);
             if let Ok(dir) = std::fs::read_dir(&path) {
                 for file in dir.flatten() {
-                    self.preview.push(file.file_name());
+                    if let Some(file_name) = file.file_name().to_str() {
+                        self.preview.push(file_name.to_owned())
+                    }
                 }
             }
 
@@ -108,8 +128,7 @@ impl Component for FilePicker {
 
         let style = self.style(state);
 
-        let path = self.path.to_string_lossy();
-        surface.draw_text(&path, x, y, width, style.attributes());
+        surface.draw_text(self.text.as_str(), x, y, width, style.attributes());
 
         if height as usize > 1 {
             surface.draw_rect('─', x, y + 1.0, width, 1.0, style.attributes());
@@ -136,129 +155,221 @@ impl Component for FilePicker {
                 break;
             }
 
-            let path = self.path.join(option);
             let mut attributes = style.attributes();
-            if !path.is_dir() {
+            if !Path::new(self.text.as_str()).join(option).is_dir() {
                 attributes
                     .set_foreground(ColorAttribute::PaletteIndex(8))
                     .set_background(ColorAttribute::Default);
             };
 
-            if i == self.index - self.index_offset.min(self.index) {
-                attributes
-                    .set_background(attributes.foreground())
-                    .set_foreground(ColorAttribute::PaletteIndex(0));
+            if let Some(index) = self.index {
+                if i == index - self.index_offset.min(index) {
+                    attributes
+                        .set_background(attributes.foreground())
+                        .set_foreground(ColorAttribute::PaletteIndex(0));
+                }
             }
 
-            let option = option.to_string_lossy();
-            surface.draw_text(&option, x + 1.0, y + i as f64 + 2.0, width * 0.5 - 3.0, attributes);
+            surface.draw_text(option, x + 1.0, y + i as f64 + 2.0, width * 0.5 - 3.0, attributes);
         }
 
-        if let Some(option) = self.options.get(self.index) {
-            for (i, preview) in self.preview.iter().enumerate() {
-                if i + 3 > height as usize {
-                    break;
+        if let Some(index) = self.index {
+            if let Some(option) = self.options.get(index) {
+                let path = Path::new(self.text.as_str()).join(option);
+                for (i, preview) in self.preview.iter().enumerate() {
+                    if i + 3 > height as usize {
+                        break;
+                    }
+
+                    let mut attributes = style.attributes();
+                    if !path.join(preview).is_dir() {
+                        attributes
+                            .set_foreground(ColorAttribute::PaletteIndex(8))
+                            .set_background(ColorAttribute::Default);
+                    };
+
+                    surface.draw_text(
+                        preview,
+                        x + 1.0 + width * 0.5,
+                        y + i as f64 + 2.0,
+                        width * 0.5 - 3.0,
+                        style.attributes(),
+                    );
                 }
-
-                let path = self.path.join(option);
-                let mut attributes = style.attributes();
-                if !path.is_dir() {
-                    attributes
-                        .set_foreground(ColorAttribute::PaletteIndex(8))
-                        .set_background(ColorAttribute::Default);
-                };
-
-                let preview = preview.to_string_lossy();
-                surface.draw_text(
-                    &preview,
-                    x + 1.0 + width * 0.5,
-                    y + i as f64 + 2.0,
-                    width * 0.5 - 3.0,
-                    style.attributes(),
-                );
             }
+        }
+
+        if self.index.is_none() && self.inner.focus {
+            state.cursor_position = (x + self.text.cursor as f64, y);
+            state.cursor_color = style.caret_color();
+            surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
     }
 
     fn on_input_action(&mut self, state: &mut State, input_action: &InputAction) {
+        if self.index.is_none() {
+            self.text.on_input_action(input_action).ok();
+            self.update_options();
+            self.update_preview();
+        }
+
         match input_action {
             InputAction::Up => {
                 if !self.options.is_empty() {
-                    if self.index == 0 {
-                        self.index_offset =
-                            self.options.len() - usize::try_from(MAX_ROWS - 1).unwrap().min(self.options.len());
-                    } else if self.index == self.index_offset {
-                        self.index_offset -= 1;
+                    match self.index {
+                        Some(index) => {
+                            if index == 0 {
+                                self.index = None;
+                            } else if index == self.index_offset {
+                                self.index_offset -= 1;
+                                self.index = Some((index + self.options.len() - 1) % self.options.len());
+                            } else {
+                                self.index = Some((index + self.options.len() - 1) % self.options.len());
+                            }
+                        },
+                        None => {
+                            self.index = Some(self.options.len() - 1);
+                            self.index_offset =
+                                self.options.len() - usize::try_from(MAX_ROWS - 1).unwrap().min(self.options.len());
+                        },
                     }
-
-                    self.index = (self.index + self.options.len() - 1) % self.options.len();
 
                     self.update_preview();
                 }
             },
             InputAction::Down => {
                 if !self.options.is_empty() {
-                    if self.index == self.options.len() - 1 {
-                        self.index_offset = 0;
-                    } else if self.index == self.index_offset + usize::try_from(MAX_ROWS - 2).unwrap() {
-                        self.index_offset += 1;
+                    match self.index {
+                        Some(index) => {
+                            if index == self.options.len() - 1 {
+                                self.index = Some(0);
+                                self.index_offset = 0;
+                            } else if index == self.index_offset + usize::try_from(MAX_ROWS - 2).unwrap() {
+                                self.index = Some((index + 1) % self.options.len());
+                                self.index_offset += 1;
+                            } else {
+                                self.index = Some((index + 1) % self.options.len());
+                            }
+                        },
+                        None => {
+                            self.index = Some(0);
+                            self.index_offset = 0;
+                        },
                     }
-
-                    self.index = (self.index + 1) % self.options.len();
 
                     self.update_preview();
                 }
             },
             InputAction::Submit | InputAction::Right => {
                 if !self.options.is_empty() {
-                    self.path.push(&self.options[self.index]);
-                    state
-                        .event_buffer
-                        .push(Event::FilePicker(FilePickerEvent::FilePathChanged {
-                            id: self.inner.id.to_owned(),
-                            path: self.path.to_owned(),
-                        }));
+                    if let Some(index) = self.index {
+                        let path = Path::new(self.text.as_str()).join(&self.options[index]);
+                        if let Some(path_str) = path.to_str() {
+                            *self.text = path_str.to_owned();
+                            self.text.cursor = self.text.len();
 
-                    self.index = 0;
-                    self.index_offset = 0;
+                            state
+                                .event_buffer
+                                .push(Event::FilePicker(FilePickerEvent::FilePathChanged {
+                                    id: self.inner.id.to_owned(),
+                                    path: path.to_owned(),
+                                }));
 
-                    self.update_options();
-                    self.update_preview();
+                            self.index = Some(0);
+                            self.index_offset = 0;
+
+                            self.update_options();
+                            self.update_preview();
+                        };
+                    }
                 }
             },
-            InputAction::Remove | InputAction::Left => {
-                self.path.pop();
+            InputAction::Left => {
+                if self.index.is_some() {
+                    if let Some(path) = PathBuf::new().join(self.text.as_str()).parent() {
+                        if let Some(path_str) = path.to_str() {
+                            *self.text = path_str.to_owned();
+                            self.text.cursor = self.text.len();
 
-                self.index = 0;
-                self.index_offset = 0;
+                            state
+                                .event_buffer
+                                .push(Event::FilePicker(FilePickerEvent::FilePathChanged {
+                                    id: self.inner.id.to_owned(),
+                                    path: path.to_owned(),
+                                }));
 
-                self.update_options();
-                self.update_preview();
+                            self.index = Some(0);
+                            self.index_offset = 0;
+
+                            self.update_options();
+                            self.update_preview();
+                        }
+                    }
+                }
             },
             _ => (),
         }
     }
 
-    fn on_focus(&mut self, state: &mut State, focus: bool) {
+    fn on_mouse_event(
+        &mut self,
+        state: &mut State,
+        mouse_event: &termwiz::input::MouseEvent,
+        x: f64,
+        y: f64,
+        _: f64,
+        _: f64,
+    ) {
+        if self.inner.focus {
+            let index = f64::from(mouse_event.y) - y;
+            if index == 0.0 && mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+                self.index = None;
+                self.text.on_mouse_event(mouse_event, x);
+            } else if index > 1.0 && (index as usize - 2) < self.options.len() {
+                match mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+                    true => {
+                        let path = Path::new(self.text.as_str()).join(&self.options[index as usize - 2]);
+                        if let Some(path_str) = path.to_str() {
+                            *self.text = path_str.to_owned();
+                            self.text.cursor = self.text.len();
+
+                            state
+                                .event_buffer
+                                .push(Event::FilePicker(FilePickerEvent::FilePathChanged {
+                                    id: self.inner.id.to_owned(),
+                                    path: path.to_owned(),
+                                }));
+
+                            self.index = None;
+                            self.index_offset = 0;
+
+                            self.update_options();
+                            self.update_preview();
+                        }
+                    },
+                    false => {
+                        self.index = Some(index as usize - 2);
+                        self.update_preview();
+                    },
+                }
+            }
+        }
+    }
+
+    fn on_focus(&mut self, _: &mut State, focus: bool) {
         self.inner.focus = focus;
 
         match focus {
             true => {
+                self.index = Some(0);
+                self.index_offset = 0;
+
                 self.update_options();
                 self.update_preview();
             },
             false => {
-                self.index = 0;
-                self.index_offset = 0;
-
                 self.options.clear();
-
-                state
-                    .event_buffer
-                    .push(Event::FilePicker(FilePickerEvent::FilePathChanged {
-                        id: self.inner.id.to_owned(),
-                        path: self.path.to_owned(),
-                    }))
+                self.preview.clear();
             },
         }
     }

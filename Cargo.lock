@@ -7533,6 +7533,7 @@ checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
 name = "tui"
 version = "2.11.0-dev"
 dependencies = [
+ "camino",
  "fig_log",
  "indexmap",
  "lightningcss",
