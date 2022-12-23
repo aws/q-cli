@@ -28,7 +28,7 @@ parameters:
     default: "macos"
   publish:
     type: boolean
-    default: false
+    default: true
 
 workflows:
   build:

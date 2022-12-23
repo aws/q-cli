@@ -54,11 +54,12 @@ pub async fn publish(build_targets: Vec<String>, dry: bool, yes: bool) -> eyre::
     }
 
     let channel = read_channel();
-    let publish = if channel == Channel::None {
-        eprintln!("No channel specified, this will not be published");
-        false
-    } else {
-        true
+    let publish = match channel {
+        Channel::None => {
+            eprintln!("No channel specified, this will not be published");
+            false
+        },
+        _ => true,
     };
 
     let token = std::env::var("CIRCLECI_TOKEN")
