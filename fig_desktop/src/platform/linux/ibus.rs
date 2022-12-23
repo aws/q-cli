@@ -104,6 +104,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                     position: Some(WindowPosition::RelativeToCaret {
                                                         caret_position,
                                                         caret_size,
+                                                        invert_y_axis: false,
                                                     }),
                                                     size: None,
                                                     anchor: None,
@@ -165,6 +166,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                         height: body.3 as f64,
                                                     }
                                                     .into(),
+                                                    invert_y_axis: false,
                                                 }),
                                                 size: None,
                                                 anchor: None,

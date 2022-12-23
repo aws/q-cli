@@ -63,7 +63,11 @@ impl std::fmt::Display for EmitEventName {
 pub enum WindowPosition {
     Absolute(Position),
     Centered,
-    RelativeToCaret { caret_position: Position, caret_size: Size },
+    RelativeToCaret {
+        caret_position: Position,
+        caret_size: Size,
+        invert_y_axis: bool,
+    },
 }
 
 #[derive(Debug, Clone)]

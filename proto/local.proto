@@ -264,6 +264,8 @@ message CaretPositionHook {
   double y = 2;
   double width = 3;
   double height = 4;
+
+  optional bool invert_y_axis = 5;
 }
 
 message FocusChangeHook {}

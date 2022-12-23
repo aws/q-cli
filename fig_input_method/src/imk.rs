@@ -156,29 +156,9 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
                 width: 0.0,
             },
         };
-
         let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };
-        let max_y = unsafe {
-            info!("Getting nsscreen");
-            let screen: id = msg_send![class!(NSScreen), mainScreen];
-            info!("Getting frame");
-            if screen != cocoa::base::nil {
-                let screen_bounds: NSRect = msg_send![screen, frame];
-                Some(screen_bounds.origin.y + screen_bounds.size.height)
-            } else {
-                None
-            }
-        };
-        info!("Got maxy: {max_y:?}");
 
-        let hook = new_caret_position_hook(
-            rect.origin.x,
-            max_y
-                .map(|max_y| max_y - rect.origin.y - rect.size.height)
-                .unwrap_or(0.0),
-            rect.size.width,
-            rect.size.height,
-        );
+        let hook = new_caret_position_hook(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, true);
 
         info!("Sending cursor position for {bundle_id:?}: {hook:?}");
         tokio::spawn(async {

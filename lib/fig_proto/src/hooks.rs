@@ -168,8 +168,20 @@ pub fn new_intercepted_key_hook(
     }))
 }
 
-pub fn new_caret_position_hook(x: f64, y: f64, width: f64, height: f64) -> Hook {
-    hook_enum_to_hook(hook::Hook::CaretPosition(CaretPositionHook { x, y, width, height }))
+pub fn new_caret_position_hook(
+    x: f64,
+    y: f64,
+    width: f64,
+    height: f64,
+    invert_y_axis: impl Into<Option<bool>>,
+) -> Hook {
+    hook_enum_to_hook(hook::Hook::CaretPosition(CaretPositionHook {
+        x,
+        y,
+        width,
+        height,
+        invert_y_axis: invert_y_axis.into(),
+    }))
 }
 
 #[cfg(test)]

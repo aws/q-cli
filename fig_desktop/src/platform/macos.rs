@@ -750,6 +750,7 @@ impl PlatformStateImpl {
                         position: Some(WindowPosition::RelativeToCaret {
                             caret_position: caret.position,
                             caret_size: caret.size,
+                            invert_y_axis: false,
                         }),
                         size: None,
                         anchor: None,

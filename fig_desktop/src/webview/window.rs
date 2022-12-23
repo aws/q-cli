@@ -201,27 +201,39 @@ impl WindowState {
             WindowPosition::RelativeToCaret {
                 caret_position,
                 caret_size,
+                invert_y_axis,
             } => {
                 let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
-                let (caret_position, overflows_monitor_above, overflows_monitor_below, scale_factor) =
+                let (caret_position, caret_size, overflows_monitor_above, overflows_monitor_below, scale_factor) =
                     match &monitor_state {
                         Some((_, monitor_position, monitor_size, scale_factor)) => {
-                            let logical_caret_position = caret_position.to_logical::<f64>(*scale_factor);
+                            let mut logical_caret_position = caret_position.to_logical::<f64>(*scale_factor);
+                            let logical_caret_size = caret_size.to_logical::<f64>(*scale_factor);
+
+                            if invert_y_axis {
+                                logical_caret_position.y = monitor_position.y + monitor_size.height
+                                    - logical_caret_position.y
+                                    - logical_caret_size.height;
+                            }
+
                             (
                                 logical_caret_position,
+                                logical_caret_size,
                                 monitor_position.y >= logical_caret_position.y - max_height,
                                 monitor_position.y + monitor_size.height
-                                    < logical_caret_position.y
-                                        + caret_size.to_logical::<f64>(*scale_factor).height
-                                        + max_height,
+                                    < logical_caret_position.y + logical_caret_size.height + max_height,
                                 *scale_factor,
                             )
                         },
-                        None => (caret_position.to_logical(1.0), false, false, 1.0),
+                        None => (
+                            caret_position.to_logical(1.0),
+                            caret_size.to_logical(1.0),
+                            false,
+                            false,
+                            1.0,
+                        ),
                     };
-
-                let caret_size = caret_size.to_logical::<f64>(scale_factor);
 
                 let overflows_window_below = platform_state
                     .get_active_window()
