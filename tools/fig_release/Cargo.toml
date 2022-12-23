@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-clap = { version = "4.0.30", features = ["derive"] }
+clap = { version = "4.0.32", features = ["derive"] }
 dialoguer = { version = "0.10.2", features = ["fuzzy-select", "editor"] }
 eyre = "0.6.8"
 fig_request = { path = "../../lib/fig_request" }

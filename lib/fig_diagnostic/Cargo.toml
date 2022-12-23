@@ -9,7 +9,7 @@ version.workspace = true
 [dependencies]
 atty = "0.2.14"
 cfg-if = "1.0.0"
-clap = "4.0.30"
+clap = "4.0.32"
 fig_ipc = { path = "../fig_ipc" }
 fig_proto = { path = "../fig_proto" }
 fig_telemetry = { path = "../fig_telemetry" }
