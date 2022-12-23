@@ -24,6 +24,7 @@ use cocoa::base::{
 use core_graphics::display::CGRect;
 use core_graphics::window::CGWindowID;
 use fig_integrations::input_method::InputMethod;
+use fig_proto::local::caret_position_hook::Origin;
 use fig_util::Terminal;
 use macos_utils::accessibility::accessibility_is_enabled;
 use macos_utils::caret_position::{
@@ -750,7 +751,7 @@ impl PlatformStateImpl {
                         position: Some(WindowPosition::RelativeToCaret {
                             caret_position: caret.position,
                             caret_size: caret.size,
-                            invert_y_axis: false,
+                            origin: Origin::TopLeft,
                         }),
                         size: None,
                         anchor: None,

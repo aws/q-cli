@@ -21,12 +21,8 @@ use crate::{
 };
 
 pub async fn caret_position(
-    CaretPositionHook {
-        x,
-        y,
-        width,
-        height,
-        invert_y_axis,
+    hook @ CaretPositionHook {
+        x, y, width, height, ..
     }: CaretPositionHook,
     proxy: &EventLoopProxy,
 ) -> Result<()> {
@@ -37,7 +33,7 @@ pub async fn caret_position(
                 position: Some(WindowPosition::RelativeToCaret {
                     caret_position: LogicalPosition::new(x, y).into(),
                     caret_size: LogicalSize::new(width, height).into(),
-                    invert_y_axis: invert_y_axis.unwrap_or_default(),
+                    origin: hook.origin(),
                 }),
                 size: None,
                 anchor: None,

@@ -14,6 +14,7 @@ use cocoa::foundation::{
 };
 use fig_ipc::local::send_hook_to_socket;
 use fig_proto::hooks::new_caret_position_hook;
+use fig_proto::local::caret_position_hook::Origin;
 use fig_util::Terminal;
 use macos_utils::{
     NSString,
@@ -158,7 +159,13 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
         };
         let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };
 
-        let hook = new_caret_position_hook(rect.origin.x, rect.origin.y, rect.size.width, rect.size.height, true);
+        let hook = new_caret_position_hook(
+            rect.origin.x,
+            rect.origin.y,
+            rect.size.width,
+            rect.size.height,
+            Origin::BottomLeft,
+        );
 
         info!("Sending cursor position for {bundle_id:?}: {hook:?}");
         tokio::spawn(async {

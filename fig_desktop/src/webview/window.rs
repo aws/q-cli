@@ -14,6 +14,7 @@ use fig_proto::fig::{
     NotificationType,
     ServerOriginatedMessage,
 };
+use fig_proto::local::caret_position_hook::Origin;
 use fig_proto::prost::Message;
 use parking_lot::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
@@ -201,7 +202,7 @@ impl WindowState {
             WindowPosition::RelativeToCaret {
                 caret_position,
                 caret_size,
-                invert_y_axis,
+                origin,
             } => {
                 let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
@@ -211,10 +212,15 @@ impl WindowState {
                             let mut logical_caret_position = caret_position.to_logical::<f64>(*scale_factor);
                             let logical_caret_size = caret_size.to_logical::<f64>(*scale_factor);
 
-                            if invert_y_axis {
-                                logical_caret_position.y = monitor_position.y + monitor_size.height
-                                    - logical_caret_position.y
-                                    - logical_caret_size.height;
+                            match origin {
+                                Origin::BottomLeft => {
+                                    logical_caret_position.y = monitor_position.y + monitor_size.height
+                                        - logical_caret_position.y
+                                        - logical_caret_size.height;
+                                },
+                                Origin::TopLeft => {
+                                    // This is the default
+                                },
                             }
 
                             (

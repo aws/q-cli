@@ -1,5 +1,6 @@
 use std::borrow::Cow;
 
+use fig_proto::local::caret_position_hook::Origin;
 use wry::application::dpi::{
     LogicalSize,
     Position,
@@ -66,7 +67,7 @@ pub enum WindowPosition {
     RelativeToCaret {
         caret_position: Position,
         caret_size: Size,
-        invert_y_axis: bool,
+        origin: Origin,
     },
 }
 

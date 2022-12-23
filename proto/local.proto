@@ -259,13 +259,18 @@ message FileChangedHook {
 }
 
 message CaretPositionHook {
+  enum Origin {
+    ORIGIN_TOP_LEFT = 0;
+    ORIGIN_BOTTOM_LEFT = 1;
+  }
+
   // TODO(grant): support physical size
   double x = 1;
   double y = 2;
   double width = 3;
   double height = 4;
 
-  optional bool invert_y_axis = 5;
+  optional Origin origin = 5;
 }
 
 message FocusChangeHook {}

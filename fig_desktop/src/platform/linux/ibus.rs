@@ -2,6 +2,7 @@ use std::sync::Arc;
 
 use anyhow::Result;
 use dbus::ibus_bus_new;
+use fig_proto::local::caret_position_hook::Origin;
 use fig_util::terminal::PositioningKind;
 use hashbrown::HashSet;
 use tracing::{
@@ -104,7 +105,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                     position: Some(WindowPosition::RelativeToCaret {
                                                         caret_position,
                                                         caret_size,
-                                                        invert_y_axis: false,
+                                                        origin: Origin::TopLeft,
                                                     }),
                                                     size: None,
                                                     anchor: None,
@@ -166,7 +167,7 @@ pub(super) async fn init(proxy: EventLoopProxy, platform_state: Arc<PlatformStat
                                                         height: body.3 as f64,
                                                     }
                                                     .into(),
-                                                    invert_y_axis: false,
+                                                    origin: Origin::TopLeft,
                                                 }),
                                                 size: None,
                                                 anchor: None,
