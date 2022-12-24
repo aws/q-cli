@@ -5,15 +5,11 @@ use std::path::{
     PathBuf,
 };
 use std::process::Command;
-use std::time::{
-    Duration,
-    SystemTime,
-};
+use std::time::SystemTime;
 
 use alacritty_terminal::term::ShellState;
 use alacritty_terminal::Term;
 use anyhow::Result;
-use fig_api_client::ai::EditBufferComponent;
 use fig_proto::fig::{
     EnvironmentVariable,
     PseudoterminalExecuteResponse,
@@ -28,7 +24,6 @@ use fig_proto::figterm::intercept_request::{
 };
 use fig_proto::figterm::{
     self,
-    CodexCompleteResponse,
     FigtermRequestMessage,
     FigtermResponseMessage,
 };
@@ -38,27 +33,20 @@ use fig_proto::secure::{
     Clientbound,
     Hostbound,
 };
-use fig_request::reqwest::StatusCode;
-use fig_util::directories::home_dir_utf8;
 use flume::Sender;
-use once_cell::sync::Lazy;
 use tracing::{
     debug,
     error,
-    info,
     trace,
     warn,
 };
 
 use crate::event_handler::EventHandler;
-use crate::history::{
-    HistoryQueryParams,
-    HistorySender,
-};
+use crate::history::HistorySender;
 use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
-    history,
+    codex,
     shell_state_to_context,
     MainLoopEvent,
     EXECUTE_ON_NEW_CMD,
@@ -323,17 +311,6 @@ pub async fn process_figterm_request(
     }
 }
 
-static LAST_RECEIVED: Lazy<tokio::sync::Mutex<Option<SystemTime>>> = Lazy::new(|| tokio::sync::Mutex::new(None));
-
-static CACHE_ENABLED: Lazy<bool> = Lazy::new(|| std::env::var_os("FIG_CODEX_CACHE_DISABLE").is_none());
-pub static COMPLETION_CACHE: Lazy<moka::sync::Cache<String, Option<String>>> = Lazy::new(|| {
-    moka::sync::Cache::builder()
-        .max_capacity(50)
-        .time_to_idle(Duration::from_secs(30))
-        .time_to_live(Duration::from_secs(60 * 5))
-        .build()
-});
-
 /// Process a figterm request message
 #[allow(clippy::too_many_arguments)]
 pub async fn process_figterm_message(
@@ -350,158 +327,8 @@ pub async fn process_figterm_message(
         Some(FigtermRequest::CodexComplete(request)) => {
             let history_sender = history_sender.clone();
             let session_id = session_id.to_owned();
-            tokio::spawn(async move {
-                let figterm_request = request;
 
-                if *CACHE_ENABLED {
-                    // use cached completion if available
-                    if let Some(insert_text) = COMPLETION_CACHE.get(&figterm_request.buffer) {
-                        if let Err(err) = response_tx
-                            .send_async(FigtermResponseMessage {
-                                response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse { insert_text })),
-                            })
-                            .await
-                        {
-                            error!(%err, "Failed to send codex completion");
-                        }
-                        return;
-                    }
-                }
-
-                // debounce requests
-                let debounce_duration = Duration::from_millis(
-                    std::env::var("FIG_CODEX_DEBOUNCE_MS")
-                        .ok()
-                        .and_then(|s| s.parse().ok())
-                        .unwrap_or(300),
-                );
-
-                let now = SystemTime::now();
-                LAST_RECEIVED.lock().await.replace(now);
-
-                for _ in 0..3 {
-                    tokio::time::sleep(debounce_duration).await;
-                    if *LAST_RECEIVED.lock().await == Some(now) {
-                        // TODO: determine behavior here, None or Some(unix timestamp)
-                        *LAST_RECEIVED.lock().await = Some(SystemTime::now());
-                    } else {
-                        warn!("Received another codex completion request, aborting");
-                        if let Err(err) = response_tx
-                            .send_async(FigtermResponseMessage {
-                                response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse {
-                                    insert_text: None,
-                                })),
-                            })
-                            .await
-                        {
-                            error!(%err, "Failed to send codex completion");
-                        }
-
-                        return;
-                    }
-
-                    info!("Sending codex completion request");
-
-                    let (history_query_tx, history_query_rx) = flume::bounded(1);
-                    if let Err(err) = history_sender
-                        .send_async(history::HistoryCommand::Query(
-                            HistoryQueryParams {
-                                limit: std::env::var("FIG_CODEX_HISTORY_COUNT")
-                                    .ok()
-                                    .and_then(|s| s.parse().ok())
-                                    .unwrap_or(25),
-                            },
-                            history_query_tx,
-                        ))
-                        .await
-                    {
-                        error!(%err, "Failed to send history query");
-                    }
-
-                    let history = match history_query_rx.recv_async().await {
-                        Ok(Some(history)) => history,
-                        err => {
-                            error!(?err, "Failed to get history");
-                            vec![]
-                        },
-                    };
-
-                    let request = fig_api_client::ai::CodexRequest {
-                        history: history
-                            .into_iter()
-                            .map(|entry| fig_api_client::ai::CommandInfo {
-                                command: entry.command,
-                                cwd: entry.cwd,
-                                time: entry.start_time.map(|t| t.into()),
-                                exit_code: entry.exit_code,
-                                hostname: entry.hostname,
-                                pid: entry.pid,
-                                session_id: entry.session_id,
-                                shell: entry.shell,
-                            })
-                            .collect::<Vec<_>>(),
-                        os: std::env::consts::OS.to_string(),
-                        arch: std::env::consts::ARCH.to_string(),
-                        time: Some(time::OffsetDateTime::now_utc()),
-                        cwd: std::env::current_dir()
-                            .ok()
-                            .and_then(|p| p.to_str().map(|s| s.to_string())),
-                        edit_buffer: vec![
-                            EditBufferComponent::String(figterm_request.buffer.clone()),
-                            EditBufferComponent::Other {
-                                r#type: "cursor".to_string(),
-                            },
-                        ],
-                        home_dir: home_dir_utf8().map(|s| s.into()).ok(),
-                        session_id: Some(session_id.clone()),
-                    };
-
-                    let response = match fig_api_client::ai::request(request).await {
-                        Err(err) if err.is_status(StatusCode::TOO_MANY_REQUESTS) => {
-                            warn!("Too many requests, trying again in 1 second");
-                            tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
-                            continue;
-                        },
-                        other => other,
-                    };
-
-                    let insert_text = match response {
-                        Ok(response) => {
-                            if response.accuracy_rating.unwrap_or(1.0)
-                                < std::env::var("FIG_CODEX_ACCURACY_THRESHOLD")
-                                    .ok()
-                                    .and_then(|s| s.parse().ok())
-                                    .unwrap_or(0.5)
-                            {
-                                None
-                            } else {
-                                response.insert_text
-                            }
-                        },
-                        Err(err) => {
-                            error!(%err, "Failed to get codex completion");
-                            None
-                        },
-                    };
-
-                    info!(?insert_text, "Got codex completion");
-
-                    if *CACHE_ENABLED {
-                        COMPLETION_CACHE.insert(figterm_request.buffer, insert_text.clone());
-                    }
-
-                    if let Err(err) = response_tx
-                        .send_async(FigtermResponseMessage {
-                            response: Some(FigtermResponse::CodexComplete(CodexCompleteResponse { insert_text })),
-                        })
-                        .await
-                    {
-                        error!(%err, "Failed to send codex completion");
-                    }
-
-                    break;
-                }
-            });
+            tokio::spawn(codex::handle_request(request, session_id, response_tx, history_sender));
         },
         Some(request) => {
             match process_figterm_request(request, main_loop_tx, term, pty_master, key_interceptor).await {

@@ -38,10 +38,22 @@ pub struct CodexRequest {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct CodexChoice {
+    pub text: Option<String>,
+    pub index: Option<i32>,
+    pub finish_reason: Option<String>,
+    pub logprobs: Option<LogProbs>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
+pub struct LogProbs {
+    pub token_logprobs: Option<Vec<f64>>,
+}
+
+#[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct CodexResponse {
-    pub insert_text: Option<String>,
-    pub accuracy_rating: Option<f64>,
+    pub choices: Vec<CodexChoice>,
 }
 
 pub async fn request(request: CodexRequest) -> fig_request::Result<CodexResponse> {

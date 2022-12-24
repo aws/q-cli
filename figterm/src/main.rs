@@ -1,6 +1,7 @@
 #[cfg(target_os = "linux")]
 mod cleanup;
 pub mod cli;
+pub mod codex;
 mod event_handler;
 pub mod history;
 pub mod input;

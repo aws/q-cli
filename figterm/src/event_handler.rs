@@ -17,11 +17,11 @@ use tracing::{
     error,
 };
 
+use crate::codex::COMPLETION_CACHE;
 use crate::history::{
     HistoryCommand,
     HistorySender,
 };
-use crate::message::COMPLETION_CACHE;
 use crate::{
     shell_state_to_context,
     MainLoopEvent,
@@ -56,8 +56,6 @@ impl EventListener for EventHandler {
         debug!(?event, ?shell_state, "Handling event");
         match event {
             Event::Prompt => {
-                COMPLETION_CACHE.invalidate_all();
-
                 let context = shell_state_to_context(shell_state);
                 let hook = new_prompt_hook(Some(context));
                 let message = hook_to_message(hook);
@@ -121,6 +119,8 @@ impl EventListener for EventHandler {
                 }
             },
             Event::CommandInfo(command_info) => {
+                tokio::spawn(async { *COMPLETION_CACHE.lock().await = radix_trie::Trie::new() });
+
                 if let Err(err) = self.history_sender.send(HistoryCommand::Insert(command_info.clone())) {
                     error!(%err, "Sender error");
                 }
