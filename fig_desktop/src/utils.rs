@@ -129,9 +129,9 @@ impl Rect {
         let rect_position = self.position.to_logical::<f64>(scale_factor);
         let rect_size = self.size.to_logical::<f64>(scale_factor);
 
-        point.x >= rect_position.x
-            && point.x <= rect_position.x + rect_size.width
-            && point.y >= rect_position.y
-            && point.y <= rect_position.y + rect_size.height
+        let contains_x = point.x >= rect_position.x && point.x <= rect_position.x + rect_size.width;
+        let contains_y = point.y >= rect_position.y && point.y <= rect_position.y + rect_size.height;
+
+        contains_x && contains_y
     }
 }

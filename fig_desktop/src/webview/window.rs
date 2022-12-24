@@ -159,45 +159,27 @@ impl WindowState {
         };
 
         let window = self.webview.window();
-        let monitor_state = match position {
-            WindowPosition::Absolute(_) | WindowPosition::Centered => {
-                let scale_factor = window.scale_factor();
-                window.current_monitor().map(|monitor| {
-                    let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
-                    let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
-                    (monitor, monitor_position, monitor_size, scale_factor)
-                })
-            },
-            WindowPosition::RelativeToCaret { caret_position, .. } => window
-                .available_monitors()
-                .find(|monitor| {
-                    let scale_factor = monitor.scale_factor();
-                    let monitor_frame = Rect {
-                        position: monitor.position().into(),
-                        size: monitor.size().into(),
-                    };
-                    monitor_frame.contains(caret_position, scale_factor)
-                })
-                .map(|monitor| {
-                    let scale_factor = monitor.scale_factor();
-                    let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
-                    let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
-                    (monitor, monitor_position, monitor_size, scale_factor)
-                }),
-        };
 
         let (position, is_above, is_clipped) = match position {
             WindowPosition::Absolute(position) => (position, false, false),
-            WindowPosition::Centered => match monitor_state {
-                Some((_, monitor_position, monitor_size, _scale_factor)) => (
+            WindowPosition::Centered => {
+                let scale_factor = window.scale_factor();
+
+                let Some(monitor) = window.current_monitor() else {
+                    return (false, false);
+                };
+
+                let monitor_position: LogicalPosition<f64> = monitor.position().to_logical(scale_factor);
+                let monitor_size: LogicalSize<f64> = monitor.size().to_logical(scale_factor);
+
+                (
                     Position::Logical(LogicalPosition::new(
                         monitor_position.x + monitor_size.width * 0.5 - size.width * 0.5,
                         monitor_position.y + monitor_size.height * 0.5 - size.height * 0.5,
                     )),
                     false,
                     false,
-                ),
-                None => return (false, false),
+                )
             },
             WindowPosition::RelativeToCaret {
                 caret_position,
@@ -206,40 +188,77 @@ impl WindowState {
             } => {
                 let max_height = fig_settings::settings::get_int_or("autocomplete.height", 140) as f64;
 
-                let (caret_position, caret_size, overflows_monitor_above, overflows_monitor_below, scale_factor) =
-                    match &monitor_state {
-                        Some((_, monitor_position, monitor_size, scale_factor)) => {
-                            let mut logical_caret_position = caret_position.to_logical::<f64>(*scale_factor);
-                            let logical_caret_size = caret_size.to_logical::<f64>(*scale_factor);
+                let primary_monitor = window.primary_monitor();
+                let primary_scale_factor = primary_monitor.as_ref().map(|monitor| monitor.scale_factor());
+                let primary_monitor_size: Option<LogicalSize<f64>> = primary_monitor
+                    .as_ref()
+                    .and_then(|monitor| Some(monitor.size().to_logical(primary_scale_factor?)));
+                let primary_monitor_position: Option<LogicalPosition<f64>> = primary_monitor
+                    .as_ref()
+                    .and_then(|monitor| Some(monitor.position().to_logical(primary_scale_factor?)));
 
-                            match origin {
-                                Origin::BottomLeft => {
-                                    logical_caret_position.y = monitor_position.y + monitor_size.height
+                let (
+                    caret_position,
+                    caret_size,
+                    overflows_monitor_above,
+                    overflows_monitor_below,
+                    scale_factor,
+                    monitor_frame,
+                ) = window
+                    .available_monitors()
+                    .find_map(|monitor| {
+                        let monitor_scale_factor = monitor.scale_factor();
+                        let monitor_frame = Rect {
+                            position: monitor.position().into(),
+                            size: monitor.size().into(),
+                        };
+
+                        let mut logical_caret_position: LogicalPosition<f64> =
+                            caret_position.to_logical(primary_scale_factor.unwrap_or(monitor_scale_factor));
+                        let logical_caret_size: LogicalSize<f64> =
+                            caret_size.to_logical(primary_scale_factor.unwrap_or(monitor_scale_factor));
+
+                        match origin {
+                            Origin::BottomLeft => {
+                                logical_caret_position.y =
+                                    primary_monitor_position.map(|position| position.y).unwrap_or_default()
+                                        + primary_monitor_size.map(|size| size.height).unwrap_or_default()
                                         - logical_caret_position.y
                                         - logical_caret_size.height;
-                                },
-                                Origin::TopLeft => {
-                                    // This is the default
-                                },
-                            }
+                            },
+                            Origin::TopLeft => {
+                                // This is the default
+                            },
+                        }
 
-                            (
-                                logical_caret_position,
-                                logical_caret_size,
-                                monitor_position.y >= logical_caret_position.y - max_height,
-                                monitor_position.y + monitor_size.height
-                                    < logical_caret_position.y + logical_caret_size.height + max_height,
-                                *scale_factor,
-                            )
-                        },
-                        None => (
+                        monitor_frame
+                            .contains(logical_caret_position.into(), monitor_scale_factor)
+                            .then(|| {
+                                let monitor_position: LogicalPosition<f64> =
+                                    monitor.position().to_logical(monitor_scale_factor);
+                                let monitor_size: LogicalSize<f64> = monitor.size().to_logical(monitor_scale_factor);
+
+                                (
+                                    logical_caret_position,
+                                    logical_caret_size,
+                                    monitor_position.y >= logical_caret_position.y - max_height,
+                                    monitor_position.y + monitor_size.height
+                                        < logical_caret_position.y + logical_caret_size.height + max_height,
+                                    monitor_scale_factor,
+                                    Some((monitor_position, monitor_size)),
+                                )
+                            })
+                    })
+                    .unwrap_or_else(|| {
+                        (
                             caret_position.to_logical(1.0),
                             caret_size.to_logical(1.0),
                             false,
                             false,
                             1.0,
-                        ),
-                    };
+                            None,
+                        )
+                    });
 
                 let overflows_window_below = platform_state
                     .get_active_window()
@@ -255,7 +274,7 @@ impl WindowState {
                 };
 
                 #[allow(clippy::all)]
-                let clipped = if let Some((_, monitor_position, monitor_size, _)) = &monitor_state {
+                let clipped = if let Some((monitor_position, monitor_size)) = &monitor_frame {
                     let clipped = caret_position.x + size.width > monitor_position.x + monitor_size.width;
 
                     x = x
