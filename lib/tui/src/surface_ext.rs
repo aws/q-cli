@@ -17,7 +17,7 @@ pub trait SurfaceExt {
 
     fn draw_rect(&mut self, symbol: char, x: f64, y: f64, width: f64, height: f64, attributes: CellAttributes);
 
-    fn draw_border(&mut self, x: &mut f64, y: &mut f64, width: &mut f64, height: &mut f64, style: &Style);
+    fn draw_border(&mut self, x: f64, y: f64, width: f64, height: f64, style: &Style);
 }
 
 impl SurfaceExt for Surface {
@@ -79,14 +79,14 @@ impl SurfaceExt for Surface {
         }
     }
 
-    fn draw_border(&mut self, x: &mut f64, y: &mut f64, width: &mut f64, height: &mut f64, style: &Style) {
+    fn draw_border(&mut self, mut x: f64, mut y: f64, mut width: f64, mut height: f64, style: &Style) {
         match style.border_style() {
             BorderStyle::None => (),
             BorderStyle::Filled => {
                 let mut attributes = CellAttributes::blank();
                 attributes.set_foreground(style.color());
                 attributes.set_background(style.border_top_color());
-                self.draw_rect(' ', *x, *y, *width, *height, attributes);
+                self.draw_rect(' ', x, y, width, height, attributes);
             },
             BorderStyle::Ascii {
                 top_left,
@@ -102,27 +102,27 @@ impl SurfaceExt for Surface {
                 attributes.set_foreground(style.border_left_color());
                 attributes.set_background(style.background_color());
 
-                self.draw_rect(left, *x, *y, style.border_left_width(), *height, attributes.clone());
+                self.draw_rect(left, x, y, style.border_left_width(), height, attributes.clone());
 
                 attributes.set_foreground(style.border_right_color());
                 self.draw_rect(
                     right,
-                    *x + (*width - style.border_right_width()),
-                    *y,
+                    x + (width - style.border_right_width()),
+                    y,
                     style.border_right_width(),
-                    *height,
+                    height,
                     attributes.clone(),
                 );
 
                 attributes.set_foreground(style.border_top_color());
-                self.draw_rect(top, *x, *y, *width, style.border_top_width(), attributes.clone());
+                self.draw_rect(top, x, y, width, style.border_top_width(), attributes.clone());
 
                 attributes.set_foreground(style.border_bottom_color());
                 self.draw_rect(
                     bottom,
-                    *x,
-                    *y + (*height - style.border_bottom_width()),
-                    *width,
+                    x,
+                    y + (height - style.border_bottom_width()),
+                    width,
                     style.border_bottom_width(),
                     attributes.clone(),
                 );
@@ -130,8 +130,8 @@ impl SurfaceExt for Surface {
                 attributes.set_foreground(style.border_top_color());
                 self.draw_rect(
                     top_left,
-                    *x,
-                    *y,
+                    x,
+                    y,
                     style.border_left_width(),
                     style.border_top_width(),
                     attributes.clone(),
@@ -140,8 +140,8 @@ impl SurfaceExt for Surface {
                 attributes.set_foreground(style.border_top_color());
                 self.draw_rect(
                     top_right,
-                    *x + (*width - style.border_right_width()),
-                    *y,
+                    x + (width - style.border_right_width()),
+                    y,
                     style.border_right_width(),
                     style.border_top_width(),
                     attributes.clone(),
@@ -150,8 +150,8 @@ impl SurfaceExt for Surface {
                 attributes.set_foreground(style.border_bottom_color());
                 self.draw_rect(
                     bottom_left,
-                    *x,
-                    *y + (*height - style.border_bottom_width()),
+                    x,
+                    y + (height - style.border_bottom_width()),
                     style.border_left_width(),
                     style.border_bottom_width(),
                     attributes.clone(),
@@ -160,8 +160,8 @@ impl SurfaceExt for Surface {
                 attributes.set_foreground(style.border_bottom_color());
                 self.draw_rect(
                     bottom_right,
-                    *x + (*width - style.border_right_width()),
-                    *y + (*height - style.border_bottom_width()),
+                    x + (width - style.border_right_width()),
+                    y + (height - style.border_bottom_width()),
                     style.border_right_width(),
                     style.border_bottom_width(),
                     attributes,
@@ -169,16 +169,11 @@ impl SurfaceExt for Surface {
             },
         }
 
-        *x += style.border_left_width();
-        *y += style.border_top_width();
-        *width -= style.border_horizontal();
-        *height -= style.border_vertical();
+        x += style.border_left_width();
+        y += style.border_top_width();
+        width -= style.border_horizontal();
+        height -= style.border_vertical();
 
-        self.draw_rect(' ', *x, *y, *width, *height, style.attributes());
-
-        *x += style.padding_left();
-        *y += style.padding_top();
-        *width -= style.padding_horizontal();
-        *height -= style.padding_vertical();
+        self.draw_rect(' ', x, y, width, height, style.attributes());
     }
 }

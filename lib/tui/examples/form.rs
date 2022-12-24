@@ -27,7 +27,7 @@ fn main() {
 
     EventLoop::new()
         .run(
-            &mut Container::new("parent", Layout::Vertical)
+            Container::new("parent", Layout::Vertical)
                 .push(
                     Container::new("inner-1", Layout::Horizontal)
                         .push(CheckBox::new("check_box", "Are you cool?", false))

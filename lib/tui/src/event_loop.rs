@@ -20,17 +20,17 @@ use termwiz::terminal::{
 use crate::component::{
     CheckBoxEvent,
     Component,
+    Container,
     FilePickerEvent,
+    Layout,
     SelectEvent,
     StyleInfo,
     TextFieldEvent,
 };
 use crate::input::InputAction;
 use crate::{
-    Display,
     Error,
     InputMethod,
-    SurfaceExt,
 };
 
 #[derive(Debug, Clone)]
@@ -100,14 +100,14 @@ impl EventLoop {
     #[inline]
     pub fn run<'a, C, F>(
         &self,
-        component: &'a mut C,
+        component: C,
         input_method: &InputMethod,
         style_sheet: StyleSheet,
         mut event_handler: F,
     ) -> Result<(), Error>
     where
-        C: Component,
-        F: 'a + FnMut(Event, &mut C, &mut ControlFlow),
+        C: Component + 'static,
+        F: 'a + FnMut(Event, &mut dyn Component, &mut ControlFlow),
     {
         let capabilities = Capabilities::new_from_env()?;
         let mut buf = BufferedTerminal::new(new_terminal(capabilities)?)?;
@@ -121,45 +121,21 @@ impl EventLoop {
 
         let mut surface = Surface::new(screen_size.cols, screen_size.rows);
 
+        let mut component = Container::new("", Layout::Vertical).push(component);
+
         let mut state = State::new(style_sheet);
-        state.tree.push(TreeElement {
-            inner: component.inner().style_info(),
-            siblings: Default::default(),
-        });
         component.on_focus(&mut state, true);
-        state.tree.pop();
 
         let mut control_flow = ControlFlow::Wait;
         while let ControlFlow::Wait = control_flow {
             // todo: seems like there's an issue in termwiz which doesn't
             // account for grapheme width in optimized surface diffs
             for _ in 0..2 {
-                state.tree.push(TreeElement {
-                    inner: component.inner().style_info(),
-                    siblings: Default::default(),
-                });
-                let style = component.style(&state);
-                if let Display::None = style.display() {
-                    continue;
-                }
-
                 surface.add_changes(vec![
                     Change::ClearScreen(ColorAttribute::Default),
                     Change::CursorVisibility(CursorVisibility::Hidden),
                 ]);
-
-                let size = component.size(&mut state);
-                let mut x = style.margin_left();
-                let mut y = style.margin_top();
-
-                let mut width =
-                    (style.width().unwrap_or(size.0) + style.border_horizontal() + style.padding_horizontal())
-                        .min(cols);
-                let mut height =
-                    (style.height().unwrap_or(size.1) + style.border_vertical() + style.padding_vertical()).min(rows);
-
-                surface.draw_border(&mut x, &mut y, &mut width, &mut height, &style);
-                component.draw(&mut state, &mut surface, x, y, width, height, cols, rows);
+                component.draw(&mut state, &mut surface, 0.0, 0.0, cols, rows, cols, rows);
 
                 buf.add_change(Change::CursorVisibility(CursorVisibility::Hidden));
                 buf.draw_from_screen(&surface, 0, 0);
@@ -175,12 +151,10 @@ impl EventLoop {
                 buf.flush()?;
 
                 surface.flush_changes_older_than(surface.current_seqno());
-
-                state.tree.pop();
             }
 
             self.handle_event(
-                component,
+                &mut component,
                 input_method,
                 &mut event_handler,
                 buf.terminal().poll_input(None)?.unwrap(),
@@ -194,7 +168,7 @@ impl EventLoop {
 
             while let Some(event) = buf.terminal().poll_input(Some(Duration::ZERO))? {
                 self.handle_event(
-                    component,
+                    &mut component,
                     input_method,
                     &mut event_handler,
                     event,
@@ -208,7 +182,7 @@ impl EventLoop {
             }
 
             while let Some(event) = state.event_buffer.pop() {
-                event_handler(event, component, &mut control_flow);
+                event_handler(event, &mut component, &mut control_flow);
             }
         }
 
@@ -218,9 +192,9 @@ impl EventLoop {
         Ok(())
     }
 
-    pub fn handle_event<'a, C, F>(
+    pub fn handle_event<'a, F>(
         &self,
-        component: &'a mut C,
+        component: &mut Container,
         input_method: &InputMethod,
         event_handler: &mut F,
         event: InputEvent,
@@ -231,8 +205,7 @@ impl EventLoop {
         cols: &mut f64,
         rows: &mut f64,
     ) where
-        C: Component,
-        F: 'a + FnMut(Event, &mut C, &mut ControlFlow),
+        F: 'a + FnMut(Event, &mut dyn Component, &mut ControlFlow),
     {
         match event {
             InputEvent::Key(event) => {
@@ -260,25 +233,13 @@ impl EventLoop {
                         event_handler(Event::TempChangeView, component, control_flow);
                         component.on_focus(state, true);
                     },
-                    _ => {
-                        component.on_input_action(state, &input_action);
-                    },
+                    _ => component.on_input_action(state, &input_action),
                 }
             },
-            InputEvent::Mouse(event) => {
-                let style = component.style(state);
-                if let Display::None = style.display() {
-                    return;
-                }
-
-                component.on_mouse_event(
-                    state,
-                    &event,
-                    style.spacing_left(),
-                    style.spacing_top(),
-                    *cols - style.spacing_horizontal(),
-                    *rows - style.spacing_vertical(),
-                );
+            InputEvent::Mouse(mut event) => {
+                event.x -= 1;
+                event.y -= 1;
+                component.on_mouse_event(state, &event, 0.0, 0.0, *cols, *rows);
             },
             InputEvent::Resized {
                 cols: ncols,

@@ -38,6 +38,8 @@ div:focus > #__description {
 
 #__view {
     padding-bottom: 1;
+    padding-left: 2;
+    padding-right: 2;
 }
 
 #__header {

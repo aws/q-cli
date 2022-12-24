@@ -63,8 +63,6 @@ impl Component for TextField {
             return;
         }
 
-        tracing::error!("{:?}", state.tree);
-
         let style = self.style(state);
         let width = style.width().unwrap_or(width);
 
@@ -133,7 +131,7 @@ impl Component for TextField {
                 },
                 false => self.text.width() as f64,
             }
-            .min(80.0),
+            .max(80.0),
             1.0,
         )
     }

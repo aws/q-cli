@@ -260,14 +260,16 @@ impl Component for Select {
         &mut self,
         _: &mut State,
         mouse_event: &termwiz::input::MouseEvent,
-        _: f64,
+        x: f64,
         y: f64,
         _: f64,
         _: f64,
     ) {
         if self.inner.focus {
             let index = f64::from(mouse_event.y) - y;
-            if index > 0.0 {
+            if index == 0.0 {
+                self.text.on_mouse_event(mouse_event, x + 2.0);
+            } else if index > 0.0 {
                 self.index = Some(index as usize - 1);
                 if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
                     self.text = TextState::new(self.options[self.sorted_options[index as usize - 1]].clone());

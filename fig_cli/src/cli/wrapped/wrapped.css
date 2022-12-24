@@ -10,7 +10,7 @@ p {
 #top_commands_div {
     border-color: ansi(1);
     border-width: 1;
-    height: 17;
+    height: 19;
     width: 25;
 }
 
@@ -20,13 +20,13 @@ p {
     padding-left: 2;
     padding-top: 1;
     padding-bottom: 1;
-    width: 33;
+    width: 35;
 }
 
 #top_directories_div {
     border-color: ansi(3);
     border-width: 1;
-    height: 7;
+    height: 9;
     width: 35;
 }
 

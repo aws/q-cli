@@ -71,7 +71,6 @@ use tui::component::{
 };
 use tui::{
     ColorAttribute,
-    Component,
     ControlFlow,
     Event,
     EventLoop,
@@ -1253,7 +1252,7 @@ fn run_tui(
     }
 
     #[rustfmt::skip]
-    let mut view = view.push(form).push(
+    let view = view.push(form).push(
         Paragraph::new("__footer")
             .push_styled_text("enter", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" select • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
@@ -1271,7 +1270,7 @@ fn run_tui(
     let mut terminated = false;
 
     EventLoop::new().run(
-        &mut view,
+        view,
         &InputMethod::new(),
         StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
         |event, view, control_flow| match event {
@@ -1305,7 +1304,8 @@ fn run_tui(
             },
             Event::TempChangeView => {
                 if let Some(temp) = temp.take() {
-                    view.replace("__preview", temp);
+                    view.remove("__preview");
+                    view.insert("__header", temp);
                     return;
                 }
 

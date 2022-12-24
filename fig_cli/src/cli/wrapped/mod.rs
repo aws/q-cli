@@ -29,7 +29,6 @@ use tui::{
     State,
     StyleSheet,
     Surface,
-    SurfaceExt,
 };
 
 struct Wrapped {
@@ -247,8 +246,8 @@ impl Component for Center {
         &self,
         state: &mut State,
         surface: &mut Surface,
-        mut x: f64,
-        mut y: f64,
+        _: f64,
+        _: f64,
         _width: f64,
         _height: f64,
         screen_width: f64,
@@ -261,19 +260,16 @@ impl Component for Center {
         let mut height = style.height().unwrap_or(size.1) + style.spacing_vertical();
 
         match width <= screen_width && height <= screen_height {
-            true => {
-                surface.draw_border(&mut x, &mut y, &mut width, &mut height, &style);
-                self.component.draw(
-                    state,
-                    surface,
-                    screen_width / 2.0 - width / 2.0,
-                    screen_height / 2.0 - height / 2.0,
-                    width,
-                    height,
-                    screen_width,
-                    screen_height,
-                )
-            },
+            true => self.component.draw(
+                state,
+                surface,
+                screen_width / 2.0 - width / 2.0,
+                screen_height / 2.0 - height / 2.0,
+                width,
+                height,
+                screen_width,
+                screen_height,
+            ),
             false => {
                 let style = self.resize_warning.style(state);
                 let size = self.resize_warning.size(state);
@@ -330,7 +326,7 @@ impl WrappedArgs {
         let wrapped = Wrapped::new(history);
 
         tui::EventLoop::new().run(
-            &mut Center::new(Paragraph::new("").push_text(
+            Center::new(Paragraph::new("").push_text(
                 " \"──────────*@@*──────────\"     .--~~~~~~~~~~~~~------.
                                /--===============------\\
 We're glad you could make it   | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
@@ -354,7 +350,7 @@ and a happy new year to you!  \\_________________________/",
             },
         )?;
 
-        let mut view = Center::new(
+        let view = Center::new(
             Container::new("view", Layout::Vertical)
                 .push(
                     Container::new("", Layout::Horizontal)
@@ -383,7 +379,7 @@ and a happy new year to you!  \\_________________________/",
         );
 
         tui::EventLoop::new().run(
-            &mut view,
+            view,
             &InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {

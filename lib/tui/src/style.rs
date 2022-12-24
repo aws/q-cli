@@ -107,14 +107,10 @@ pub struct Style(HashMap<Discriminant<Property>, Property>);
 impl Style {
     field!(background_color, Property::BackgroundColor, ColorAttribute, ColorAttribute::Default);
     field!(border_bottom_color, Property::BorderBottomColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_bottom_width, Property::BorderBottomWidth, f64, 0.0);
     field!(border_left_color, Property::BorderLeftColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_left_width, Property::BorderLeftWidth, f64, 0.0);
     field!(border_right_color, Property::BorderRightColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_right_width, Property::BorderRightWidth, f64, 0.0);
     field!(border_style, Property::BorderStyle, BorderStyle, BorderStyle::None);
     field!(border_top_color, Property::BorderTopColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_top_width, Property::BorderTopWidth, f64, 0.0);
     field!(caret_color, Property::CaretColor, ColorAttribute, ColorAttribute::Default);
     field!(display, Property::Display, Display, Display::Block);
     field!(color, Property::Color, ColorAttribute, ColorAttribute::Default);
@@ -144,6 +140,82 @@ impl Style {
 
     pub fn margin_vertical(&self) -> f64 {
         self.margin_top() + self.margin_bottom()
+    }
+
+    pub fn with_border_left_width(&mut self, width: f64) -> &mut Self {
+        let property = Property::BorderLeftWidth(width);
+        self.0.insert(std::mem::discriminant(&property), property);
+        self
+    }
+
+    pub fn with_border_right_width(&mut self, width: f64) -> &mut Self {
+        let property = Property::BorderRightWidth(width);
+        self.0.insert(std::mem::discriminant(&property), property);
+        self
+    }
+
+    pub fn with_border_top_width(&mut self, width: f64) -> &mut Self {
+        let property = Property::BorderTopWidth(width);
+        self.0.insert(std::mem::discriminant(&property), property);
+        self
+    }
+
+    pub fn with_border_bottom_width(&mut self, width: f64) -> &mut Self {
+        let property = Property::BorderBottomWidth(width);
+        self.0.insert(std::mem::discriminant(&property), property);
+        self
+    }
+
+    pub fn border_left_width(&self) -> f64 {
+        match self.border_style() {
+            BorderStyle::None => 0.0,
+            _ => {
+                let property = Property::BorderLeftWidth(0.0);
+                match self.0.get(&std::mem::discriminant(&property)).unwrap_or(&property) {
+                    Property::BorderLeftWidth(width) => *width,
+                    _ => unreachable!()
+                }
+            },
+        }
+    }
+
+    pub fn border_right_width(&self) -> f64 {
+        match self.border_style() {
+            BorderStyle::None => 0.0,
+            _ => {
+                let property = Property::BorderRightWidth(0.0);
+                match self.0.get(&std::mem::discriminant(&property)).unwrap_or(&property) {
+                    Property::BorderRightWidth(width) => *width,
+                    _ => unreachable!()
+                }
+            },
+        }
+    }
+
+    pub fn border_top_width(&self) -> f64 {
+        match self.border_style() {
+            BorderStyle::None => 0.0,
+            _ => {
+                let property = Property::BorderTopWidth(0.0);
+                match self.0.get(&std::mem::discriminant(&property)).unwrap_or(&property) {
+                    Property::BorderTopWidth(width) => *width,
+                    _ => unreachable!()
+                }
+            },
+        }
+    }
+
+    pub fn border_bottom_width(&self) -> f64 {
+        match self.border_style() {
+            BorderStyle::None => 0.0,
+            _ => {
+                let property = Property::BorderBottomWidth(0.0);
+                match self.0.get(&std::mem::discriminant(&property)).unwrap_or(&property) {
+                    Property::BorderBottomWidth(width) => *width,
+                    _ => 0.0
+                }
+            },
+        }
     }
 
     pub fn border_horizontal(&self) -> f64 {

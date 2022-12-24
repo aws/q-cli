@@ -71,20 +71,40 @@ impl Component for Container {
 
             let size = child.size(state);
 
-            let mut cx = x + style.margin_left();
-            let mut cy = y + style.margin_top();
+            let content_width = style
+                .width()
+                .map(|width| width - style.padding_horizontal() - style.border_horizontal())
+                .unwrap_or(size.0)
+                .min(width - style.spacing_horizontal());
 
-            let mut width =
-                (style.width().unwrap_or(size.0) + style.border_horizontal() + style.padding_horizontal()).min(width);
-            let mut height =
-                (style.height().unwrap_or(size.1) + style.border_vertical() + style.padding_vertical()).min(height);
+            let content_height = style
+                .height()
+                .map(|height| (height - style.padding_vertical() - style.border_vertical()))
+                .unwrap_or(size.1)
+                .min(height - style.spacing_vertical());
 
-            surface.draw_border(&mut cx, &mut cy, &mut width, &mut height, &style);
-            child.draw(state, surface, cx, cy, width, height, screen_width, screen_height);
+            surface.draw_border(
+                x + style.margin_left(),
+                y + style.margin_top(),
+                style.border_horizontal() + style.padding_horizontal() + content_width,
+                style.border_vertical() + style.padding_vertical() + content_height,
+                &style,
+            );
+
+            child.draw(
+                state,
+                surface,
+                x + style.margin_left() + style.border_left_width() + style.padding_left(),
+                y + style.margin_top() + style.border_top_width() + style.padding_top(),
+                content_width,
+                content_height,
+                screen_width,
+                screen_height,
+            );
 
             match self.layout {
-                Layout::Vertical => y += style.height().unwrap_or(size.1) + style.spacing_vertical(),
-                Layout::Horizontal => x += style.width().unwrap_or(size.0) + style.spacing_horizontal(),
+                Layout::Vertical => y += style.spacing_vertical() + content_height,
+                Layout::Horizontal => x += style.spacing_horizontal() + content_width,
             }
 
             state.tree.pop();
@@ -118,27 +138,39 @@ impl Component for Container {
             previous_siblings.push_front(style_info);
             let style = self.inner.children[i].style(state);
 
+            if let Display::None = style.display() {
+                state.tree.pop();
+                continue;
+            }
+
             let size = self.inner.children[i].size(state);
 
-            let cx = x + style.margin_left();
-            let cy = y + style.margin_top();
-            let width =
-                (style.width().unwrap_or(size.0) + style.border_horizontal() + style.padding_horizontal()).min(width);
-            let height =
-                (style.height().unwrap_or(size.1) + style.border_vertical() + style.padding_vertical()).min(height);
+            let content_width = style
+                .width()
+                .map(|width| width - style.padding_horizontal() - style.border_horizontal())
+                .unwrap_or(size.0)
+                .min(width - style.spacing_horizontal());
 
-            if f64::from(mouse_event.x) >= cx
-                && f64::from(mouse_event.x) < cx + width
-                && f64::from(mouse_event.y) >= cy
-                && f64::from(mouse_event.y) < cy + height
+            let content_height = style
+                .height()
+                .map(|height| (height - style.padding_vertical() - style.border_vertical()))
+                .unwrap_or(size.1)
+                .min(height - style.spacing_vertical());
+
+            if f64::from(mouse_event.x) >= x + style.margin_left()
+                && f64::from(mouse_event.x)
+                    < style.margin_left() + style.border_horizontal() + style.padding_horizontal() + content_width
+                && f64::from(mouse_event.y) >= y + style.margin_top()
+                && f64::from(mouse_event.y)
+                    < y + style.margin_top() + style.border_vertical() + style.padding_vertical() + content_height
             {
                 self.inner.children[i].on_mouse_event(
                     state,
                     mouse_event,
-                    x + style.spacing_left(),
-                    y + style.spacing_top(),
-                    width,
-                    height,
+                    x + style.margin_left() + style.border_left_width() + style.padding_left(),
+                    y + style.margin_top() + style.border_top_width() + style.padding_top(),
+                    content_width,
+                    content_height,
                 );
 
                 if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) && self.inner.children[i].interactive() {
@@ -151,8 +183,8 @@ impl Component for Container {
             }
 
             match self.layout {
-                Layout::Vertical => y += height + style.margin_vertical(),
-                Layout::Horizontal => x += width + style.margin_horizontal(),
+                Layout::Vertical => y += style.spacing_vertical() + content_height,
+                Layout::Horizontal => x += style.spacing_horizontal() + content_width,
             }
 
             state.tree.pop();
@@ -222,7 +254,9 @@ impl Component for Container {
 
     fn remove(&mut self, id: &str) -> Option<Box<dyn Component>> {
         for i in 0..self.inner.children.len() {
-            if self.inner.children[i].id() == id {
+            if let Some(removed) = self.inner.children[i].remove(id) {
+                return Some(removed);
+            } else if self.inner.children[i].id() == id {
                 self.inner.focused_child_index = None;
                 return Some(self.inner.children.remove(i));
             }
@@ -237,26 +271,6 @@ impl Component for Container {
                 self.inner.focused_child_index = None;
                 self.inner.children.insert(i + 1, component);
                 return None;
-            }
-
-            component = child.insert(id, component)?;
-        }
-
-        Some(component)
-    }
-
-    fn replace(&mut self, id: &str, mut component: Box<dyn Component>) -> Option<Box<dyn Component>> {
-        for (i, child) in self.inner.children.iter_mut().enumerate() {
-            if child.id() == id {
-                if let Some(focused_child_index) = self.inner.focused_child_index {
-                    if focused_child_index == i {
-                        self.inner.focused_child_index = None;
-                    }
-                }
-
-                let removed = self.inner.children.remove(i);
-                self.inner.children.insert(i, component);
-                return Some(removed);
             }
 
             component = child.insert(id, component)?;
@@ -293,36 +307,50 @@ impl Component for Container {
     }
 
     fn size(&self, state: &mut State) -> (f64, f64) {
+        let mut width = 0_f64;
+        let mut height = 0_f64;
+
         let mut previous_siblings = std::collections::LinkedList::new();
-        self.inner.children.iter().fold((0.0_f64, 0.0_f64), |acc, c| {
-            let style_info = c.inner().style_info();
+        for child in self.inner.children.iter() {
+            let style_info = child.inner().style_info();
             state.tree.push(TreeElement {
                 inner: style_info.clone(),
                 siblings: previous_siblings.clone(),
             });
             previous_siblings.push_front(style_info);
-            let style = c.style(state);
+            let style = child.style(state);
 
             if let Display::None = style.display() {
-                return acc;
+                state.tree.pop();
+                continue;
             }
 
-            let size = c.size(state);
+            let size = child.size(state);
 
-            let acc = match self.layout {
-                Layout::Vertical => (
-                    acc.0.max(style.width().unwrap_or(size.0) + style.spacing_horizontal()),
-                    acc.1 + style.height().unwrap_or(size.1) + style.spacing_vertical(),
-                ),
-                Layout::Horizontal => (
-                    acc.0 + style.width().unwrap_or(size.0) + style.spacing_horizontal(),
-                    acc.1.max(style.height().unwrap_or(size.1) + style.spacing_vertical()),
-                ),
+            let content_width = style
+                .width()
+                .map(|width| width - style.padding_horizontal() - style.border_horizontal())
+                .unwrap_or(size.0);
+
+            let content_height = style
+                .height()
+                .map(|height| height - style.padding_vertical() - style.border_vertical())
+                .unwrap_or(size.1);
+
+            match self.layout {
+                Layout::Vertical => {
+                    width = width.max(content_width + style.spacing_horizontal());
+                    height += content_height + style.spacing_vertical();
+                },
+                Layout::Horizontal => {
+                    width += content_width + style.spacing_horizontal();
+                    height = height.max(content_height + style.spacing_vertical());
+                },
             };
 
             state.tree.pop();
+        }
 
-            acc
-        })
+        (width, height)
     }
 }

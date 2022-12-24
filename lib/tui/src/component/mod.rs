@@ -182,7 +182,7 @@ pub trait Component: std::fmt::Debug {
 
     /// Draw the component
     ///
-    /// This function assumes that borders, margin, and padding are handled by containing
+    /// This function assumes that borders, margin, and padding are handled by container
     /// components. This makes the implementation of simple interactive components easier, but
     /// container types more difficult.
     fn draw(
