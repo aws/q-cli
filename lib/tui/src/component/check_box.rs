@@ -1,6 +1,5 @@
 use std::fmt::Display;
 
-use termwiz::input::MouseButtons;
 use termwiz::surface::Surface;
 use unicode_width::UnicodeWidthStr;
 
@@ -9,7 +8,10 @@ use crate::event_loop::{
     Event,
     State,
 };
-use crate::input::InputAction;
+use crate::input::{
+    InputAction,
+    MouseAction,
+};
 use crate::surface_ext::SurfaceExt;
 use crate::Component;
 
@@ -59,16 +61,8 @@ impl Component for CheckBox {
         }
     }
 
-    fn on_mouse_event(
-        &mut self,
-        _: &mut State,
-        mouse_event: &termwiz::input::MouseEvent,
-        _: f64,
-        _: f64,
-        _: f64,
-        _: f64,
-    ) {
-        if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) && self.inner.focus {
+    fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, _: f64, _: f64, _: f64, _: f64) {
+        if mouse_action.just_pressed && self.inner.focus {
             self.checked = !self.checked;
         }
     }

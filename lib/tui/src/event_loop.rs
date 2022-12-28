@@ -101,7 +101,7 @@ impl EventLoop {
     pub fn run<'a, C, F>(
         &self,
         component: C,
-        input_method: &InputMethod,
+        mut input_method: InputMethod,
         style_sheet: StyleSheet,
         mut event_handler: F,
     ) -> Result<(), Error>
@@ -155,7 +155,7 @@ impl EventLoop {
 
             self.handle_event(
                 &mut component,
-                input_method,
+                &mut input_method,
                 &mut event_handler,
                 buf.terminal().poll_input(None)?.unwrap(),
                 &mut state,
@@ -169,7 +169,7 @@ impl EventLoop {
             while let Some(event) = buf.terminal().poll_input(Some(Duration::ZERO))? {
                 self.handle_event(
                     &mut component,
-                    input_method,
+                    &mut input_method,
                     &mut event_handler,
                     event,
                     &mut state,
@@ -195,7 +195,7 @@ impl EventLoop {
     pub fn handle_event<'a, F>(
         &self,
         component: &mut Container,
-        input_method: &InputMethod,
+        input_method: &mut InputMethod,
         event_handler: &mut F,
         event: InputEvent,
         state: &mut State,
@@ -236,10 +236,8 @@ impl EventLoop {
                     _ => component.on_input_action(state, &input_action),
                 }
             },
-            InputEvent::Mouse(mut event) => {
-                event.x -= 1;
-                event.y -= 1;
-                component.on_mouse_event(state, &event, 0.0, 0.0, *cols, *rows);
+            InputEvent::Mouse(event) => {
+                component.on_mouse_action(state, &input_method.get_mouse_action(event), 0.0, 0.0, *cols, *rows)
             },
             InputEvent::Resized {
                 cols: ncols,

@@ -17,7 +17,10 @@ use crate::event_loop::{
     Event,
     State,
 };
-use crate::input::InputAction;
+use crate::input::{
+    InputAction,
+    MouseAction,
+};
 use crate::surface_ext::SurfaceExt;
 use crate::Component;
 
@@ -311,22 +314,14 @@ impl Component for FilePicker {
         }
     }
 
-    fn on_mouse_event(
-        &mut self,
-        state: &mut State,
-        mouse_event: &termwiz::input::MouseEvent,
-        x: f64,
-        y: f64,
-        _: f64,
-        _: f64,
-    ) {
+    fn on_mouse_action(&mut self, state: &mut State, mouse_action: &MouseAction, x: f64, y: f64, _: f64, _: f64) {
         if self.inner.focus {
-            let index = f64::from(mouse_event.y) - y;
-            if index == 0.0 && mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+            let index = mouse_action.y - y;
+            if index == 0.0 && mouse_action.buttons.contains(MouseButtons::LEFT) {
                 self.index = None;
-                self.text.on_mouse_event(mouse_event, x);
+                self.text.on_mouse_action(mouse_action, x);
             } else if index > 1.0 && (index as usize - 2) < self.options.len() {
-                match mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+                match mouse_action.just_pressed {
                     true => {
                         let path = Path::new(self.text.as_str()).join(&self.options[index as usize - 2]);
                         if let Some(path_str) = path.to_str() {

@@ -23,7 +23,6 @@ pub use select::{
     Select,
     SelectEvent,
 };
-use termwiz::input::MouseEvent;
 use termwiz::surface::Surface;
 pub use text_field::{
     TextField,
@@ -31,7 +30,10 @@ pub use text_field::{
 };
 
 use crate::event_loop::State;
-use crate::input::InputAction;
+use crate::input::{
+    InputAction,
+    MouseAction,
+};
 use crate::style_sheet_ext::StyleSheetExt;
 use crate::Style;
 
@@ -203,7 +205,15 @@ pub trait Component: std::fmt::Debug {
 
     /// How the component handles mouse related events including scroll, movement, and click
     #[allow(unused_variables)]
-    fn on_mouse_event(&mut self, state: &mut State, mouse_event: &MouseEvent, x: f64, y: f64, width: f64, height: f64) {
+    fn on_mouse_action(
+        &mut self,
+        state: &mut State,
+        mouse_action: &MouseAction,
+        x: f64,
+        y: f64,
+        width: f64,
+        height: f64,
+    ) {
     }
 
     /// Navigate focus to the next interactive element in the tree

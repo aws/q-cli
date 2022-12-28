@@ -1,7 +1,6 @@
 use std::fmt::Display;
 
 use termwiz::color::ColorAttribute;
-use termwiz::input::MouseButtons;
 use termwiz::surface::{
     Change,
     CursorVisibility,
@@ -12,7 +11,10 @@ use unicode_width::UnicodeWidthStr;
 use super::ComponentData;
 use crate::component::text_state::TextState;
 use crate::event_loop::State;
-use crate::input::InputAction;
+use crate::input::{
+    InputAction,
+    MouseAction,
+};
 use crate::surface_ext::SurfaceExt;
 use crate::{
     Component,
@@ -256,22 +258,14 @@ impl Component for Select {
         }
     }
 
-    fn on_mouse_event(
-        &mut self,
-        _: &mut State,
-        mouse_event: &termwiz::input::MouseEvent,
-        x: f64,
-        y: f64,
-        _: f64,
-        _: f64,
-    ) {
+    fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, x: f64, y: f64, _: f64, _: f64) {
         if self.inner.focus {
-            let index = f64::from(mouse_event.y) - y;
+            let index = mouse_action.y - y;
             if index == 0.0 {
-                self.text.on_mouse_event(mouse_event, x + 2.0);
+                self.text.on_mouse_action(mouse_action, x + 2.0);
             } else if index > 0.0 {
                 self.index = Some(index as usize - 1);
-                if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) {
+                if mouse_action.just_pressed {
                     self.text = TextState::new(self.options[self.sorted_options[index as usize - 1]].clone());
                     self.sorted_options.clear();
                 }

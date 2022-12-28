@@ -3,6 +3,8 @@ use termwiz::input::{
     KeyCode,
     KeyEvent,
     Modifiers,
+    MouseButtons,
+    MouseEvent,
 };
 
 #[non_exhaustive]
@@ -29,10 +31,19 @@ pub enum InputAction {
     TempChangeView,
 }
 
+pub struct MouseAction {
+    pub x: f64,
+    pub y: f64,
+    pub buttons: MouseButtons,
+    pub just_pressed: bool,
+    pub just_released: bool,
+}
+
 #[derive(Debug, Default)]
 pub struct InputMethod {
     map: IndexMap<(KeyCode, Modifiers), InputAction>,
     exit_any: bool,
+    mouse_left_down: bool,
 }
 
 impl InputMethod {
@@ -45,7 +56,7 @@ impl InputMethod {
                 ((KeyCode::Char('D'), Modifiers::CTRL), InputAction::Terminate),
                 ((KeyCode::Escape, Modifiers::NONE), InputAction::Terminate),
             ]),
-            exit_any: false,
+            ..Default::default()
         }
     }
 
@@ -53,6 +64,7 @@ impl InputMethod {
         Self {
             map: IndexMap::default(),
             exit_any: true,
+            ..Default::default()
         }
     }
 
@@ -103,5 +115,19 @@ impl InputMethod {
                 InputAction::Unbound(key)
             },
         }
+    }
+
+    pub fn get_mouse_action(&mut self, mouse_event: MouseEvent) -> MouseAction {
+        let mouse_left_down = mouse_event.mouse_buttons.contains(MouseButtons::LEFT);
+        let out = MouseAction {
+            x: f64::from(mouse_event.x) - 1.0,
+            y: f64::from(mouse_event.y) - 1.0,
+            buttons: mouse_event.mouse_buttons,
+            just_pressed: !self.mouse_left_down && mouse_left_down,
+            just_released: self.mouse_left_down && !mouse_left_down,
+        };
+        self.mouse_left_down = mouse_left_down;
+
+        out
     }
 }

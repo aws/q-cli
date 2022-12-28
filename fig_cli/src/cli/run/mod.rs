@@ -1271,7 +1271,7 @@ fn run_tui(
 
     EventLoop::new().run(
         view,
-        &InputMethod::new(),
+        InputMethod::new(),
         StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
         |event, view, control_flow| match event {
             Event::Quit => *control_flow = ControlFlow::Quit,

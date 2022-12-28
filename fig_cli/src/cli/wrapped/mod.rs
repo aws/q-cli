@@ -341,7 +341,7 @@ spreading some holiday cheer   | |_______________|     |
  Here's to a bright future    [-------------------------]
 and a happy new year to you!  \\_________________________/",
             )),
-            &InputMethod::new_exit_any(),
+            InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {
                 if let tui::Event::Quit | tui::Event::Terminate = event {
@@ -380,7 +380,7 @@ and a happy new year to you!  \\_________________________/",
 
         tui::EventLoop::new().run(
             view,
-            &InputMethod::new_exit_any(),
+            InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
             |event, _, control_flow| {
                 if let tui::Event::Quit | tui::Event::Terminate = event {

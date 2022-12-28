@@ -12,7 +12,10 @@ use crate::event_loop::{
     Event,
     State,
 };
-use crate::input::InputAction;
+use crate::input::{
+    InputAction,
+    MouseAction,
+};
 use crate::surface_ext::SurfaceExt;
 use crate::Component;
 
@@ -102,16 +105,8 @@ impl Component for TextField {
         }
     }
 
-    fn on_mouse_event(
-        &mut self,
-        _: &mut State,
-        mouse_event: &termwiz::input::MouseEvent,
-        x: f64,
-        _: f64,
-        _: f64,
-        _: f64,
-    ) {
-        self.text.on_mouse_event(mouse_event, x)
+    fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, x: f64, _: f64, _: f64, _: f64) {
+        self.text.on_mouse_action(mouse_action, x)
     }
 
     fn inner(&self) -> &ComponentData {

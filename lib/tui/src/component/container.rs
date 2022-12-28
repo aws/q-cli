@@ -1,7 +1,3 @@
-use termwiz::input::{
-    MouseButtons,
-    MouseEvent,
-};
 use termwiz::surface::Surface;
 
 use super::{
@@ -12,7 +8,10 @@ use crate::event_loop::{
     State,
     TreeElement,
 };
-use crate::input::InputAction;
+use crate::input::{
+    InputAction,
+    MouseAction,
+};
 use crate::surface_ext::SurfaceExt;
 use crate::Display;
 
@@ -117,10 +116,10 @@ impl Component for Container {
         }
     }
 
-    fn on_mouse_event(
+    fn on_mouse_action(
         &mut self,
         state: &mut State,
-        mouse_event: &MouseEvent,
+        mouse_action: &MouseAction,
         mut x: f64,
         mut y: f64,
         width: f64,
@@ -157,23 +156,23 @@ impl Component for Container {
                 .unwrap_or(size.1)
                 .min(height - style.spacing_vertical());
 
-            if f64::from(mouse_event.x) >= x + style.margin_left()
-                && f64::from(mouse_event.x)
+            if mouse_action.x >= x + style.margin_left()
+                && mouse_action.x
                     < style.margin_left() + style.border_horizontal() + style.padding_horizontal() + content_width
-                && f64::from(mouse_event.y) >= y + style.margin_top()
-                && f64::from(mouse_event.y)
+                && mouse_action.y >= y + style.margin_top()
+                && mouse_action.y
                     < y + style.margin_top() + style.border_vertical() + style.padding_vertical() + content_height
             {
-                self.inner.children[i].on_mouse_event(
+                self.inner.children[i].on_mouse_action(
                     state,
-                    mouse_event,
+                    mouse_action,
                     x + style.margin_left() + style.border_left_width() + style.padding_left(),
                     y + style.margin_top() + style.border_top_width() + style.padding_top(),
                     content_width,
                     content_height,
                 );
 
-                if mouse_event.mouse_buttons.contains(MouseButtons::LEFT) && self.inner.children[i].interactive() {
+                if mouse_action.just_pressed && self.inner.children[i].interactive() {
                     self.inner.focus_child_at_index(state, Some(i));
                     state.tree.pop();
                     return;
@@ -190,11 +189,7 @@ impl Component for Container {
             state.tree.pop();
         }
 
-        if mouse_event
-            .mouse_buttons
-            .contains(MouseButtons::LEFT | MouseButtons::RIGHT)
-            && self.interactive()
-        {
+        if mouse_action.just_pressed && self.interactive() {
             self.on_focus(state, true);
         }
     }
