@@ -69,6 +69,7 @@ fragment ScriptFields on Script {
         }
         placeholder
         suggestions
+        allowRawTextInput
       }
       path {
         extensions

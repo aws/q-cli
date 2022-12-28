@@ -38,12 +38,12 @@ pub struct Select {
     index_offset: usize,
     options: Vec<String>,
     sorted_options: Vec<usize>,
-    validate: bool,
+    allow_any_text: bool,
     inner: ComponentData,
 }
 
 impl Select {
-    pub fn new(id: impl ToString, options: Vec<String>, validate: bool) -> Self {
+    pub fn new(id: impl ToString, options: Vec<String>, allow_any_text: bool) -> Self {
         Self {
             text: TextState::new(""),
             hint: None,
@@ -52,7 +52,7 @@ impl Select {
             index_offset: 0,
             options,
             sorted_options: vec![],
-            validate,
+            allow_any_text,
             inner: ComponentData::new("select".to_owned(), id.to_string(), true),
         }
     }
@@ -238,7 +238,7 @@ impl Component for Select {
                 }
             },
             false => {
-                if self.validate && !self.options.contains(&self.text) {
+                if !self.allow_any_text && !self.options.contains(&self.text) {
                     self.text = TextState::new("");
                 }
 
@@ -260,7 +260,7 @@ impl Component for Select {
 
     fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, x: f64, y: f64, _: f64, _: f64) {
         if self.inner.focus {
-            let index = mouse_action.y - y;
+            let index = mouse_action.y - y + self.index_offset as f64;
             if index == 0.0 {
                 self.text.on_mouse_action(mouse_action, x + 2.0);
             } else if index > 0.0 {

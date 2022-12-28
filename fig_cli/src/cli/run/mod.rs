@@ -1139,6 +1139,7 @@ fn run_tui(
                 placeholder,
                 suggestions,
                 generators,
+                allow_raw_text_input,
             } => {
                 let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
                 let mut options = suggestions.to_owned().unwrap_or_default();
@@ -1163,7 +1164,7 @@ fn run_tui(
                 }
 
                 parameter_div = parameter_div.push(
-                    Select::new(&parameter.name, options, true)
+                    Select::new(&parameter.name, options, allow_raw_text_input.unwrap_or(false))
                         .with_text(parameter_value)
                         .with_hint(placeholder.as_deref().unwrap_or("Search...")),
                 );

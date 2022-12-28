@@ -316,7 +316,7 @@ impl Component for FilePicker {
 
     fn on_mouse_action(&mut self, state: &mut State, mouse_action: &MouseAction, x: f64, y: f64, _: f64, _: f64) {
         if self.inner.focus {
-            let index = mouse_action.y - y;
+            let index = mouse_action.y - y + self.index_offset as f64;
             if index == 0.0 && mouse_action.buttons.contains(MouseButtons::LEFT) {
                 self.index = None;
                 self.text.on_mouse_action(mouse_action, x);

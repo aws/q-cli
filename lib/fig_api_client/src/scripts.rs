@@ -41,6 +41,7 @@ pub enum ParameterType {
         placeholder: Option<String>,
         suggestions: Option<Vec<String>>,
         generators: Option<Vec<Generator>>,
+        allow_raw_text_input: Option<bool>,
     },
     #[serde(rename_all = "camelCase")]
     Text {
@@ -347,6 +348,7 @@ macro_rules! map_script {
                                         })
                                         .collect()
                                 }),
+                                allow_raw_text_input: selector.allow_raw_text_input,
                             },
                             None => ParameterType::Unknown(None),
                         },
