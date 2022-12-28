@@ -14,7 +14,7 @@ fig_request = { path = "../../lib/fig_request" }
 fig_settings = { path = "../../lib/fig_settings" }
 fig_util = { path = "../../lib/fig_util" }
 semver = "1.0.16"
-serde = { version = "1.0.151", features = ["derive"] }
+serde = { version = "1.0.152", features = ["derive"] }
 strum = "0.24.1"
 time = { version = "0.3.17", features = ["macros", "formatting"] }
 tokio = { version = "1", features = ["full"] }
