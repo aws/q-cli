@@ -18,4 +18,4 @@ serde = { version = "1.0.152", features = ["derive"] }
 strum = "0.24.1"
 time = { version = "0.3.17", features = ["macros", "formatting"] }
 tokio = { version = "1", features = ["full"] }
-toml_edit = "0.16.1"
+toml_edit = "0.16.2"
