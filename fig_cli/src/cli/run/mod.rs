@@ -239,6 +239,7 @@ async fn get_scripts(
     Ok(scripts)
 }
 
+#[allow(dead_code)]
 #[derive(Debug, Clone, PartialEq, Eq)]
 enum Value {
     String(String),
@@ -247,6 +248,8 @@ enum Value {
         false_value: Option<String>,
         true_value: Option<String>,
     },
+    Array(Vec<String>),
+    Number(serde_json::Number),
 }
 
 impl std::fmt::Display for Value {
@@ -270,6 +273,11 @@ impl std::fmt::Display for Value {
                     }
                 }
             },
+            Value::Array(arr) => {
+                let arr = arr.join(", ");
+                write!(f, "[{arr}]")
+            },
+            Value::Number(num) => write!(f, "{num}"),
         }
     }
 }
@@ -501,7 +509,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
     }
 
     if std::env::var_os("FIG_SCRIPT_DEBUG").is_some() {
-        dbg!(&script);
+        println!("Script: {script:?}");
     }
 
     if execution_method == ExecutionMethod::Search {
@@ -683,22 +691,48 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 }
 
 fn map_args_to_command(script: &Script, args: &HashMap<String, Value>) -> String {
-    let mut command = format!("fig run {}", match script.is_owned_by_user {
-        true => script.name.clone(),
-        false => format!("@{}/{}", &script.namespace, &script.name),
-    });
+    let fig_cli = if std::env::args().next().as_deref() == Some("fig") {
+        "fig".to_owned()
+    } else {
+        std::env::current_exe()
+            .ok()
+            .and_then(|exe| exe.to_str().map(|s| s.to_owned()))
+            .unwrap_or_else(|| "fig".to_owned())
+    };
+
+    let script_name = if script.is_owned_by_user {
+        script.name.clone()
+    } else {
+        format!("@{}/{}", &script.namespace, &script.name)
+    };
+
+    let mut command = format!("{fig_cli} run {script_name}");
     for (arg, val) in args {
-        use std::fmt::Write;
+        command.push(' ');
 
         match val {
             Value::String(s) => {
-                write!(command, " --{arg} {}", escape(s.into())).ok();
+                command.push_str(&escape(format!("--{arg}").into()));
+                command.push(' ');
+                command.push_str(&escape(s.into()));
             },
             Value::Bool { val: true, .. } => {
-                write!(command, " --{arg}").ok();
+                command.push_str(&escape(format!("--{arg}").into()));
             },
             Value::Bool { val: false, .. } => {
-                write!(command, " --no-{arg}").ok();
+                command.push_str(&escape(format!("--no-{arg}").into()));
+            },
+            Value::Array(arr) => {
+                for val in arr {
+                    command.push_str(&escape(format!("--{arg}").into()));
+                    command.push(' ');
+                    command.push_str(&escape(val.into()));
+                }
+            },
+            Value::Number(num) => {
+                command.push_str(&escape(format!("--{arg}").into()));
+                command.push(' ');
+                command.push_str(&num.to_string());
             },
         };
     }
@@ -746,6 +780,23 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                     (Runtime::Node | Runtime::Deno, true) => "true".into(),
                     (Runtime::Node | Runtime::Deno, false) => "false".into(),
                 },
+                Value::Array(arr) => match &script.runtime {
+                    Runtime::Bash => {
+                        let mut out: String = "(".into();
+                        for (i, s) in arr.iter().enumerate() {
+                            if i != 0 {
+                                out.push(' ');
+                            }
+                            out.push_str(&escape(s.into()));
+                        }
+                        out.push(')');
+                        out
+                    },
+                    Runtime::Python | Runtime::Node | Runtime::Deno => {
+                        serde_json::to_string(arr).expect("Failed to serialize array to JSON string")
+                    },
+                },
+                Value::Number(num) => num.to_string(),
             }),
         }
         acc
@@ -841,6 +892,10 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
             (k.clone(), match v {
                 Value::String(s) => serde_json::Value::String(s.clone()),
                 Value::Bool { val, .. } => serde_json::Value::Bool(*val),
+                Value::Array(arr) => {
+                    serde_json::Value::Array(arr.iter().map(|s| serde_json::Value::String(s.clone())).collect())
+                },
+                Value::Number(n) => n.clone().into(),
             })
         })
         .collect::<serde_json::Map<_, _>>();
@@ -1226,7 +1281,7 @@ fn run_tui(
                 );
             },
             ParameterType::Unknown(other) => {
-                bail!("Unknown parameter type, try updating your Fig version: {other:?}")
+                bail!("Unknown parameter type, you may need to update Fig: {other:?}")
             },
         };
 
