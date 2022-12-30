@@ -73,6 +73,12 @@ input DeleteScriptInput {
   namespace: String!
 }
 
+input DeleteTeamDomainInput {
+  """The domain to delete"""
+  domain: String!
+  teamNamespace: String!
+}
+
 input DuplicateScriptInput {
   newName: String
   newNamespace: String
@@ -103,16 +109,40 @@ The `JSONObject` scalar type represents JSON objects as specified by [ECMA-404](
 """
 scalar JSONObject @specifiedBy(url: "http://www.ecma-international.org/publications/files/ECMA-ST/ECMA-404.pdf")
 
+input JoinTeamInput {
+  """Invite code to join a team"""
+  inviteCode: String
+
+  """The namespace of team to join"""
+  teamNamespace: String
+}
+
+type JoinTeamResponse {
+  """Indicate whether the user was able to join the team"""
+  success: Boolean
+}
+
+type JoinableTeam {
+  namespace: String!
+
+  """Number of people on the team"""
+  numberOfMembers: Int
+}
+
 type Mutation {
   createCommandMutation(input: CreateCommandInput!): ICLICommand!
   createScriptInvocationMutation(input: CreateScriptInvocationInput!): ScriptInvocation!
   createScriptMutation(input: CreateScriptInput!): Script!
   deleteCommandMutation(input: DeleteCommandInput!): ICLICommand!
   deleteScriptMutation(input: DeleteScriptInput!): Script!
+  deleteTeamDomainMutation(input: DeleteTeamDomainInput!): TeamDomainVerificationStatus!
 
   """Duplicate a script within a single namespace or between namespaces"""
   duplicateScriptMutation(input: DuplicateScriptInput!): Script!
+  joinTeamMutation(input: JoinTeamInput!): JoinTeamResponse!
+  renameScriptMutation(input: RenameScriptInput!): Script!
   reorderCommandMutation(input: ReorderCommandInput!): ICLICommand!
+  requestTeamDomainVerificationMutation(input: RequestTeamDomainVerificationInput!): TeamDomainVerificationStatus!
   updateCommandMutation(input: UpdateCommandInput!): ICLICommand!
   updateScriptMutation(input: UpdateScriptInput!): Script!
 }
@@ -192,10 +222,25 @@ type Query {
   plugins(where: PluginWhereInput): [Plugin!]!
 }
 
+input RenameScriptInput {
+  namespace: String!
+  newName: String!
+  oldName: String!
+}
+
 input ReorderCommandInput {
   destinationUUID: ID!
   namespace: String!
   uuid: ID!
+}
+
+input RequestTeamDomainVerificationInput {
+  teamNamespace: String!
+
+  """
+  The email used to verify a domain. Use user's primary email, if undefined 
+  """
+  verificationEmail: String
 }
 
 type Script {
@@ -210,6 +255,7 @@ type Script {
   name: String!
   namespace: Namespace
   relevanceScore: Float!
+  totalInvocations: Int!
   updatedAt: DateTime!
   uuid: ID!
 }
@@ -346,6 +392,9 @@ type ScriptParameter {
   displayName: String
   name: String!
   path: ScriptPathParameter
+
+  """Whether or not this parameter is required to submit the form"""
+  required: Boolean
   selector: ScriptSelectorParameter
   text: ScriptTextParameter
   type: ScriptParameterType!
@@ -364,6 +413,9 @@ input ScriptParameterInput {
   displayName: String
   name: String!
   path: ScriptPathParameterInput
+
+  """Whether or not this parameter is required to submit the form"""
+  required: Boolean
   selector: ScriptSelectorParameterInput
   text: ScriptTextParameterInput
   type: ScriptParameterType!
@@ -441,6 +493,9 @@ type ScriptSelectorParameter {
   """Allow raw text to be chosen as the selection"""
   allowRawTextInput: Boolean
   generators: [ScriptGenerator!]
+
+  """Whether this component can accept multiple selections"""
+  multi: Boolean
   placeholder: String
   suggestions: [String!]
 }
@@ -449,6 +504,9 @@ input ScriptSelectorParameterInput {
   """Allow raw text to be chosen as the selection"""
   allowRawTextInput: Boolean
   generators: [ScriptGeneratorInput!]
+
+  """Whether this component can accept multiple selections"""
+  multi: Boolean
   placeholder: String
   suggestions: [String!]
 }
@@ -496,10 +554,31 @@ input StringNullableListFilter {
 }
 
 type Team {
+  """
+  Domains that are linked to a team. Users with emails that match the domains can sign in automatically
+  """
+  allowedDomains: [TeamAllowedDomain!]
   createdAt: DateTime!
   namespace: Namespace
   teamMemberships: [TeamMembership!]
   updatedAt: DateTime!
+}
+
+type TeamAllowedDomain {
+  domain: String!
+  status: TeamAllowedDomainStatus!
+  verificationEmail: String
+  verifiedAt: DateTime
+}
+
+enum TeamAllowedDomainStatus {
+  PENDING
+  VERIFIED
+}
+
+type TeamDomainVerificationStatus {
+  domain: TeamAllowedDomain
+  namespace: String
 }
 
 type TeamMembership {
@@ -531,6 +610,11 @@ type User {
   firstName: String
   fullName: String
   hasSeenOnboarding: Boolean!
+
+  """
+  Teams that a user can be joined based on the domain of their primary email
+  """
+  joinableTeams: [JoinableTeam!]
   lastName: String
   namespace: Namespace
   primaryEmail: String!

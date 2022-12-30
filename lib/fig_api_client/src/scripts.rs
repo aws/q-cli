@@ -69,6 +69,7 @@ pub struct Parameter {
     pub display_name: Option<String>,
     pub description: Option<String>,
     pub depends_on: Vec<String>,
+    pub required: Option<bool>,
     #[serde(flatten)]
     pub parameter_type: ParameterType,
 }
@@ -302,6 +303,7 @@ macro_rules! map_script {
                     display_name: parameter.display_name,
                     description: parameter.description,
                     depends_on: vec![],
+                    required: parameter.required,
                     parameter_type: match parameter.type_ {
                         ScriptParameterType::Checkbox => match parameter.checkbox {
                             Some(checkbox) => ParameterType::Checkbox {

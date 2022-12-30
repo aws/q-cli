@@ -210,12 +210,9 @@ impl Request<AddAuth> {
     pub async fn graphql<T: DeserializeOwned + ?Sized>(self) -> Result<T> {
         let response = self.send().await?;
         match response.json::<graphql_client::Response<T>>().await {
-            Ok(response) => {
-                if let Some(errors) = response.errors {
-                    Err(Error::Graphql(errors))
-                } else {
-                    Ok(response.data.unwrap())
-                }
+            Ok(response) => match response.errors {
+                Some(errors) => Err(Error::Graphql(errors)),
+                None => response.data.ok_or(Error::GraphqlNoData),
             },
             Err(err) => Err(err.into()),
         }

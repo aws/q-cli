@@ -544,7 +544,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 
             let mut missing_args = vec![];
             for parameter in &script.parameters {
-                if !values_by_arg.contains_key(&parameter.name) {
+                if !values_by_arg.contains_key(&parameter.name) && parameter.required.unwrap_or(true) {
                     missing_args.push(parameter.name.to_owned());
                 }
             }
@@ -761,18 +761,18 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
     let templated_script = script.tree.iter().fold(String::new(), |mut acc, branch| {
         match branch {
             TreeElement::String(string) => acc.push_str(string.as_str()),
-            TreeElement::Token { name } => acc.push_str(&match &args[name.as_str()] {
-                Value::String(string) => match script.runtime {
+            TreeElement::Token { name } => acc.push_str(&match args.get(name.as_str()) {
+                Some(Value::String(string)) => match script.runtime {
                     Runtime::Bash => string.clone(),
                     Runtime::Python | Runtime::Node | Runtime::Deno => {
                         serde_json::to_string(string).expect("Failed to serialize string to JSON string")
                     },
                 },
-                Value::Bool {
+                Some(Value::Bool {
                     val,
                     true_value,
                     false_value,
-                } => match (&script.runtime, val) {
+                }) => match (&script.runtime, val) {
                     (Runtime::Bash, true) => true_value.clone().unwrap_or_else(|| "true".into()),
                     (Runtime::Bash, false) => false_value.clone().unwrap_or_else(|| "false".into()),
                     (Runtime::Python, true) => "True".into(),
@@ -780,7 +780,7 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                     (Runtime::Node | Runtime::Deno, true) => "true".into(),
                     (Runtime::Node | Runtime::Deno, false) => "false".into(),
                 },
-                Value::Array(arr) => match &script.runtime {
+                Some(Value::Array(arr)) => match &script.runtime {
                     Runtime::Bash => {
                         let mut out: String = "(".into();
                         for (i, s) in arr.iter().enumerate() {
@@ -796,9 +796,15 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                         serde_json::to_string(arr).expect("Failed to serialize array to JSON string")
                     },
                 },
-                Value::Number(num) => num.to_string(),
+                Some(Value::Number(num)) => num.to_string(),
+                None => match script.runtime {
+                    Runtime::Bash => "\"\"".into(),
+                    Runtime::Python => "None".into(),
+                    Runtime::Node | Runtime::Deno => "null".into(),
+                },
             }),
         }
+
         acc
     });
 
@@ -1187,8 +1193,20 @@ fn run_tui(
             description_map.insert(parameter.name.to_owned(), description.to_owned());
         }
 
-        let mut parameter_div = Container::new("__parameter", Layout::Vertical)
-            .push(Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name)));
+        let mut parameter_label =
+            Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name));
+
+        if !parameter.required.unwrap_or(true) {
+            parameter_label = parameter_label.push_styled_text(
+                " - Optional",
+                ColorAttribute::PaletteIndex(8),
+                ColorAttribute::Default,
+                false,
+                true,
+            );
+        }
+
+        let mut parameter_div = Container::new("__parameter", Layout::Vertical).push(parameter_label);
 
         match &parameter.parameter_type {
             ParameterType::Selector {

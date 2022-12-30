@@ -50,6 +50,7 @@ fragment ScriptFields on Script {
       name
       displayName
       description
+      required
       text {
         placeholder
       }
