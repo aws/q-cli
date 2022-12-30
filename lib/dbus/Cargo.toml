@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [target.'cfg(target_os = "linux")'.dependencies]
-once_cell = "1.16.0"
+once_cell = "1.17.0"
 thiserror = "1.0"
 tokio = { version = "1", features = ["process", "sync", "parking_lot"] }
 tracing = "0.1.36"

@@ -14,7 +14,7 @@ sentry = ["dep:sentry-tracing"]
 [dependencies]
 console-subscriber = { version = "0.1.8", optional = true, features = ["parking_lot"] }
 fig_util = { path = "../fig_util" }
-once_cell = "1.16.0"
+once_cell = "1.17.0"
 parking_lot = "0.12.1"
 sentry-tracing = { version = "0.29.1", optional = true }
 thiserror = "1.0.38"
