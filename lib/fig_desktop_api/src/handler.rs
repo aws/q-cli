@@ -184,7 +184,6 @@ async fn handle_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
                 GetDefaultsPropertyRequest(request) => defaults::get(request).await,
                 UpdateDefaultsPropertyRequest(request) => defaults::update(request).await,
                 // telemetry
-                TelemetryAliasRequest(request) => telemetry::handle_alias_request(request).await,
                 TelemetryIdentifyRequest(request) => telemetry::handle_identify_request(request).await,
                 TelemetryTrackRequest(request) => telemetry::handle_track_request(request).await,
                 TelemetryPageRequest(request) => telemetry::handle_page_request(request).await,

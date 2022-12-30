@@ -175,6 +175,9 @@ message TelemetryEmitTrackCommand {
   // Version of the source
   optional string source_version = 5;
 
+  optional string namespace = 6;
+  optional int64 namespace_id = 7;
+
   // Queue the event so that it is not dispatched immediately but rather
   // is dispatched at a regularly scheduled interval by the daemon.
   optional bool enqueue = 4;

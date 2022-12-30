@@ -92,6 +92,8 @@ pub struct TrackEvent {
     pub source: TrackSource,
     pub source_version: Option<String>,
     pub properties: Map<String, Value>,
+    pub namespace: Option<String>,
+    pub namespace_id: Option<i64>,
 }
 
 impl TrackEvent {
@@ -106,7 +108,19 @@ impl TrackEvent {
             source,
             source_version: Some(source_version),
             properties: properties.into_iter().map(|(k, v)| (k.into(), v.into())).collect(),
+            namespace: None,
+            namespace_id: None,
         }
+    }
+
+    pub fn with_namespace(mut self, namespace: Option<String>) -> Self {
+        self.namespace = namespace;
+        self
+    }
+
+    pub fn with_namespace_id(mut self, namespace_id: Option<i64>) -> Self {
+        self.namespace_id = namespace_id;
+        self
     }
 
     pub fn to_map(&self, props: &Map<String, Value>) -> Map<String, Value> {
@@ -121,6 +135,14 @@ impl TrackEvent {
 
         res.insert("event".into(), self.event.to_string().into());
         res.insert("properties".into(), props.into());
+
+        if let Some(ref namespace_username) = self.namespace {
+            res.insert("namespace".into(), namespace_username.clone().into());
+        }
+
+        if let Some(ref namespace_id) = self.namespace_id {
+            res.insert("namespaceId".into(), (*namespace_id).into());
+        }
 
         res
     }
@@ -149,6 +171,8 @@ impl From<&TelemetryEmitTrackCommand> for TrackEvent {
             source,
             source_version,
             properties,
+            namespace: command.namespace.clone(),
+            namespace_id: command.namespace_id,
         }
     }
 }

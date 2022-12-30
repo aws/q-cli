@@ -1,11 +1,9 @@
 use fig_proto::fig::{
-    TelemetryAliasRequest,
     TelemetryIdentifyRequest,
     TelemetryPageRequest,
     TelemetryTrackRequest,
 };
 use fig_telemetry::{
-    emit_alias,
     emit_identify,
     emit_page,
     emit_track,
@@ -23,23 +21,8 @@ use super::{
     RequestResultImpl,
 };
 
-pub async fn handle_alias_request(request: TelemetryAliasRequest) -> RequestResult {
-    let user_id = request.user_id.ok_or("Empty user id")?;
-
-    emit_alias(user_id)
-        .await
-        .map_err(|err| format!("Failed to emit alias: {err}"))?;
-
-    RequestResult::success()
-}
-
 pub async fn handle_identify_request(request: TelemetryIdentifyRequest) -> RequestResult {
-    #[allow(deprecated)]
-    let mut traits: Map<String, Value> = request
-        .traits
-        .iter()
-        .map(|t| (t.key.as_str().into(), t.value.as_str().into()))
-        .collect();
+    let mut traits: Map<String, Value> = Default::default();
 
     if let Some(ref json_blob) = request.json_blob {
         match serde_json::from_str::<serde_json::Map<String, Value>>(json_blob) {
@@ -76,14 +59,18 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
         }
     }
 
-    emit_track(TrackEvent::new(
+    let event = TrackEvent::new(
         TrackEventType::Other(event),
         TrackSource::Desktop,
         env!("CARGO_PKG_VERSION").into(),
         properties,
-    ))
-    .await
-    .map_err(|err| format!("Failed to emit track: {err}"))?;
+    )
+    .with_namespace(request.namespace)
+    .with_namespace_id(request.namespace_id);
+
+    emit_track(event)
+        .await
+        .map_err(|err| format!("Failed to emit track: {err}"))?;
 
     RequestResult::success()
 }

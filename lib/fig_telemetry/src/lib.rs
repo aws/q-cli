@@ -1,4 +1,3 @@
-mod alias;
 mod daemon_dispatch;
 mod error;
 pub mod feature_flags;
@@ -9,7 +8,6 @@ pub mod sentry;
 mod track;
 mod util;
 
-pub use alias::emit_alias;
 pub use daemon_dispatch::dispatch_emit_track;
 pub use error::Error;
 pub use identify::emit_identify;
@@ -28,7 +26,6 @@ pub use track::{
 
 pub use crate::sentry::init_sentry;
 
-const ALIAS_SUBDOMAIN: &str = "/telemetry/alias";
 const IDENTIFY_SUBDOMAIN: &str = "/telemetry/identify";
 const TRACK_SUBDOMAIN: &str = "/telemetry/track";
 const PAGE_SUBDOMAIN: &str = "/telemetry/page";

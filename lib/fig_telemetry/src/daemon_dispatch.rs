@@ -43,6 +43,8 @@ pub async fn dispatch_emit_track(event: TrackEvent, enqueue: bool, fallback: boo
                 .into_iter()
                 .map(|(key, value)| (key, value.into()))
                 .collect(),
+            namespace: event.namespace.clone(),
+            namespace_id: event.namespace_id,
             source: Some(
                 match event.source {
                     TrackSource::Desktop => Source::Desktop,

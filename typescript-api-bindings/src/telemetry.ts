@@ -6,8 +6,13 @@ import {
 } from './requests';
 
 type Property = string | boolean | number | null;
+type NamespaceSpecifier = { username: string, id?: number } | { id: number, username?: string };
 
-export function track(event: string, properties: Record<string, Property>) {
+export function track(
+  event: string,
+  properties: Record<string, Property>,
+  namespace?: NamespaceSpecifier
+) {
   // convert to internal type 'TelemetryProperty'
   const props = Object.keys(properties).reduce((array, key) => {
     const entry: TelemetryProperty = 
@@ -16,18 +21,17 @@ export function track(event: string, properties: Record<string, Property>) {
     return array;
   }, ([] as unknown) as [TelemetryProperty]);
 
-  return sendTelemetryTrackRequest({ event, properties: props });
+  return sendTelemetryTrackRequest({
+    event,
+    properties: props,
+    jsonBlob: JSON.stringify(properties),
+    namespace: namespace?.username,
+    namespaceId: namespace?.id
+  });
 }
 
 export function identify(traits: Record<string, Property>) {
-  // convert to internal type 'TelemetryProperty'
-  const props = Object.keys(traits).reduce((array, key) => {
-    const entry: TelemetryProperty = { key, value: JSON.stringify(traits[key]) };
-    array.push(entry);
-    return array;
-  }, ([] as unknown) as [TelemetryProperty]);
-
-  return sendTelemetryIdentifyRequest({ traits: props, jsonBlob: JSON.stringify(traits) });
+  return sendTelemetryIdentifyRequest({ jsonBlob: JSON.stringify(traits) });
 }
 
 export function page(category: string, name: string, properties: Record<string, Property>) {

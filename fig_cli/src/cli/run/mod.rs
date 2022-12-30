@@ -554,7 +554,8 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                         ("workflow", script_name.as_str()),
                         ("execution_method", execution_method.to_string().as_str()),
                     ],
-                ),
+                )
+                .with_namespace(Some(script.namespace.clone())),
                 false,
                 true,
             ));
@@ -1280,6 +1281,7 @@ fn run_tui(
                 let handle = tokio::runtime::Handle::current();
                 let script_name = script_name.to_owned();
                 let execution_method = execution_method.to_owned();
+                let namespace = script.namespace.clone();
                 std::thread::spawn(move || {
                     handle
                         .block_on(fig_telemetry::dispatch_emit_track(
@@ -1291,7 +1293,8 @@ fn run_tui(
                                     ("workflow", script_name),
                                     ("execution_method", execution_method.to_string()),
                                 ],
-                            ),
+                            )
+                            .with_namespace(Some(namespace)),
                             false,
                             false,
                         ))
