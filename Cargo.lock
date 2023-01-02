@@ -76,7 +76,7 @@ dependencies = [
 
 [[package]]
 name = "alacritty_terminal"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "bitflags",
  "camino",
@@ -1451,7 +1451,7 @@ dependencies = [
 
 [[package]]
 name = "dbus"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "once_cell",
  "thiserror",
@@ -1879,7 +1879,7 @@ dependencies = [
 
 [[package]]
 name = "fig-api-mock"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "async-trait",
  "clap",
@@ -1890,7 +1890,7 @@ dependencies = [
 
 [[package]]
 name = "fig_api_client"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "fig_graphql",
  "fig_request",
@@ -1907,7 +1907,7 @@ dependencies = [
 
 [[package]]
 name = "fig_cli"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "arboard",
  "assert_cmd",
@@ -1983,7 +1983,7 @@ dependencies = [
 
 [[package]]
 name = "fig_color"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "bitflags",
  "fig_test",
@@ -1993,7 +1993,7 @@ dependencies = [
 
 [[package]]
 name = "fig_daemon"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "camino",
  "fig_ipc",
@@ -2006,7 +2006,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "accessibility-sys",
  "anyhow",
@@ -2076,7 +2076,7 @@ dependencies = [
 
 [[package]]
 name = "fig_desktop_api"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "async-trait",
  "base64 0.20.0",
@@ -2104,7 +2104,7 @@ dependencies = [
 
 [[package]]
 name = "fig_diagnostic"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "atty",
  "cfg-if 1.0.0",
@@ -2121,7 +2121,7 @@ dependencies = [
 
 [[package]]
 name = "fig_graphql"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "convert_case 0.6.0",
  "fig_ipc",
@@ -2140,7 +2140,7 @@ dependencies = [
 
 [[package]]
 name = "fig_history"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "fig_util",
  "rusqlite",
@@ -2150,7 +2150,7 @@ dependencies = [
 
 [[package]]
 name = "fig_input_method"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "apple-bundle",
  "cocoa",
@@ -2171,7 +2171,7 @@ dependencies = [
 
 [[package]]
 name = "fig_install"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "bitflags",
  "camino",
@@ -2200,11 +2200,11 @@ dependencies = [
 
 [[package]]
 name = "fig_installer"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 
 [[package]]
 name = "fig_integrations"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "accessibility-sys",
  "async-trait",
@@ -2230,7 +2230,7 @@ dependencies = [
 
 [[package]]
 name = "fig_ipc"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "async-trait",
  "bytes",
@@ -2247,7 +2247,7 @@ dependencies = [
 
 [[package]]
 name = "fig_log"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "console-subscriber",
  "fig_util",
@@ -2262,7 +2262,7 @@ dependencies = [
 
 [[package]]
 name = "fig_proto"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "arbitrary",
  "bytes",
@@ -2283,7 +2283,7 @@ dependencies = [
 
 [[package]]
 name = "fig_release"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "clap",
  "dialoguer",
@@ -2301,7 +2301,7 @@ dependencies = [
 
 [[package]]
 name = "fig_request"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "base64 0.20.0",
  "bytes",
@@ -2328,7 +2328,7 @@ dependencies = [
 
 [[package]]
 name = "fig_settings"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "fd-lock",
  "fig_test",
@@ -2346,7 +2346,7 @@ dependencies = [
 
 [[package]]
 name = "fig_sync"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "cfg-if 1.0.0",
  "crossterm 0.25.0",
@@ -2373,7 +2373,7 @@ dependencies = [
 
 [[package]]
 name = "fig_telemetry"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "anyhow",
  "fig_ipc",
@@ -2394,7 +2394,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "fig_test_macro",
  "tokio",
@@ -2402,7 +2402,7 @@ dependencies = [
 
 [[package]]
 name = "fig_test_macro"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "quote",
  "syn",
@@ -2410,7 +2410,7 @@ dependencies = [
 
 [[package]]
 name = "fig_util"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "appkit-nsworkspace-bindings",
  "bstr 1.1.0",
@@ -2445,7 +2445,7 @@ dependencies = [
 
 [[package]]
 name = "figterm"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "alacritty_terminal",
  "anyhow",
@@ -3938,7 +3938,7 @@ dependencies = [
 
 [[package]]
 name = "macos_utils"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "accessibility",
  "accessibility-sys",
@@ -7566,7 +7566,7 @@ checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
 
 [[package]]
 name = "tui"
-version = "2.11.0-dev"
+version = "2.12.0-dev"
 dependencies = [
  "camino",
  "fig_log",
