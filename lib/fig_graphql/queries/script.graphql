@@ -76,6 +76,12 @@ fragment ScriptFields on Script {
         extensions
         fileType
       }
+      commandlineInterface {
+        required
+        short
+        long
+        requireEquals
+      }
     }
     runtime
     invocationCollection {

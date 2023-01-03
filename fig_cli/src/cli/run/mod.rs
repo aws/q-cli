@@ -585,38 +585,55 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 
             for param in script.parameters.clone() {
                 match param.parameter_type {
-                    ParameterType::Selector { .. } => {
-                        let mut arg = clap::Arg::new(&param.name).long(&param.name);
+                    ParameterType::Text { .. } | ParameterType::Path { .. } | ParameterType::Selector { .. } => {
+                        let mut arg = clap::Arg::new(&param.name);
 
-                        if param.name.len() == 1 {
-                            arg = arg.short(param.name.chars().next().unwrap());
-                        }
+                        let required = match &param.cli {
+                            Some(interface) => {
+                                if let Some(short) = &interface.short {
+                                    if let Some(first_char) = short.chars().next() {
+                                        arg = arg.short(first_char);
+                                    }
+                                }
+
+                                if let Some(long) = &interface.long {
+                                    arg = arg.long(long);
+                                }
+
+                                if let Some(require_equals) = &interface.require_equals {
+                                    arg = arg.require_equals(*require_equals);
+                                }
+
+                                interface.required.unwrap_or(true)
+                            },
+                            None => {
+                                arg = arg.long(&param.name);
+
+                                if param.name.len() == 1 {
+                                    arg = arg.short(param.name.chars().next().unwrap());
+                                }
+
+                                true
+                            },
+                        };
 
                         if let Some(description) = &param.description {
                             arg = arg.help(description);
                         }
 
-                        command = command.arg(arg.value_parser(clap::value_parser!(String)).required(true));
-                    },
-                    ParameterType::Text { .. } | ParameterType::Path { .. } => {
-                        let mut arg = clap::Arg::new(&param.name).long(&param.name);
-
-                        if param.name.len() == 1 {
-                            arg = arg.short(param.name.chars().next().unwrap());
-                        }
-
-                        if let Some(description) = &param.description {
-                            arg = arg.help(description);
-                        }
-
-                        command = command.arg(arg.value_parser(clap::value_parser!(String)).required(true));
+                        command = command.arg(arg.value_parser(clap::value_parser!(String)).required(required));
                     },
                     ParameterType::Checkbox { .. } => {
+                        let required = match &param.cli {
+                            Some(interface) => interface.required.unwrap_or(true),
+                            None => true,
+                        };
+
                         command = command.group(
                             ArgGroup::new(format!("_{}_group", param.name))
                                 .arg(&param.name)
                                 .arg(format!("no-{}", &param.name))
-                                .required(true)
+                                .required(required)
                                 .multiple(false),
                         );
 

@@ -63,6 +63,14 @@ pub enum ParameterType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub struct ParameterCommandlineInterface {
+    pub short: Option<String>,
+    pub long: Option<String>,
+    pub required: Option<bool>,
+    pub require_equals: Option<bool>,
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Parameter {
     pub name: String,
@@ -72,6 +80,7 @@ pub struct Parameter {
     pub required: Option<bool>,
     #[serde(flatten)]
     pub parameter_type: ParameterType,
+    pub cli: Option<ParameterCommandlineInterface>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -361,6 +370,15 @@ macro_rules! map_script {
                             None => ParameterType::Unknown(None),
                         },
                         ScriptParameterType::Other(other) => ParameterType::Unknown(Some(other)),
+                    },
+                    cli: match parameter.commandline_interface {
+                        Some(interface) => Some(ParameterCommandlineInterface {
+                            short: interface.short,
+                            long: interface.long,
+                            required: interface.required,
+                            require_equals: interface.require_equals,
+                        }),
+                        None => None,
                     },
                 })
                 .collect(),
