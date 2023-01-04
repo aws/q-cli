@@ -149,31 +149,39 @@ extern "C" fn handle_cursor_position_request(this: &Object, _sel: Sel, _notif: i
     let is_active = unsafe { this.get_ivar::<BOOL>("is_active") };
 
     if *is_active == YES {
-        info!("Instance {bundle_id:?} is active, handling request");
-        let mut rect: NSRect = NSRect {
-            origin: NSPoint { x: 0.0, y: 0.0 },
-            size: NSSize {
-                height: 0.0,
-                width: 0.0,
+        let terminal = Terminal::from_bundle_id(bundle_id.as_deref().unwrap_or_default());
+        match terminal {
+            Some(term) if term.is_input_dependant() => {
+                info!("Instance {bundle_id:?} is active, handling request");
+                let mut rect: NSRect = NSRect {
+                    origin: NSPoint { x: 0.0, y: 0.0 },
+                    size: NSSize {
+                        height: 0.0,
+                        width: 0.0,
+                    },
+                };
+                let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };
+
+                let hook = new_caret_position_hook(
+                    rect.origin.x,
+                    rect.origin.y,
+                    rect.size.width,
+                    rect.size.height,
+                    Origin::BottomLeft,
+                );
+
+                info!("Sending cursor position for {bundle_id:?}: {hook:?}");
+                tokio::spawn(async {
+                    match send_hook_to_socket(hook).await {
+                        Ok(_) => debug!("Sent hook successfully"),
+                        Err(_) => warn!("Failed to send hook"),
+                    }
+                });
             },
-        };
-        let _: () = unsafe { msg_send![client, attributesForCharacterIndex: 0 lineHeightRectangle: &mut rect] };
-
-        let hook = new_caret_position_hook(
-            rect.origin.x,
-            rect.origin.y,
-            rect.size.width,
-            rect.size.height,
-            Origin::BottomLeft,
-        );
-
-        info!("Sending cursor position for {bundle_id:?}: {hook:?}");
-        tokio::spawn(async {
-            match send_hook_to_socket(hook).await {
-                Ok(_) => debug!("Sent hook successfully"),
-                Err(_) => warn!("Failed to send hook"),
-            }
-        });
+            _ => {
+                info!("Instance {bundle_id:?} is not a supported terminal, ignoring request");
+            },
+        }
     }
 }
 
