@@ -385,7 +385,11 @@ impl WindowState {
                         EventLoopWindowTargetExtMacOS,
                     };
 
-                    window_target.set_activation_policy_at_runtime(ActivationPolicy::Accessory);
+                    let mut policy_lock = platform::ACTIVATION_POLICY.lock();
+                    if *policy_lock != ActivationPolicy::Accessory {
+                        *policy_lock = ActivationPolicy::Accessory;
+                        window_target.set_activation_policy_at_runtime(ActivationPolicy::Accessory);
+                    }
                 }
             },
             WindowEvent::Show => {
@@ -416,7 +420,12 @@ impl WindowState {
                             ActivationPolicy,
                             EventLoopWindowTargetExtMacOS,
                         };
-                        window_target.set_activation_policy_at_runtime(ActivationPolicy::Regular);
+
+                        let mut policy_lock = platform::ACTIVATION_POLICY.lock();
+                        if *policy_lock != ActivationPolicy::Regular {
+                            *policy_lock = ActivationPolicy::Regular;
+                            window_target.set_activation_policy_at_runtime(ActivationPolicy::Regular);
+                        }
                     }
 
                     self.webview.window().set_visible(true);

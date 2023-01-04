@@ -127,6 +127,8 @@ static MACOS_VERSION: Lazy<semver::Version> = Lazy::new(|| {
     semver::Version::new(version.major as u64, version.minor as u64, version.patch as u64)
 });
 
+pub static ACTIVATION_POLICY: Mutex<ActivationPolicy> = Mutex::new(ActivationPolicy::Regular);
+
 #[allow(dead_code)]
 pub fn is_ventura() -> bool {
     MACOS_VERSION.major >= 13
@@ -623,7 +625,11 @@ impl PlatformStateImpl {
                         ActivationPolicy::Accessory
                     }
                 };
-                window_target.set_activation_policy_at_runtime(policy);
+                let mut policy_lock = ACTIVATION_POLICY.lock();
+                if *policy_lock != policy {
+                    *policy_lock = policy;
+                    window_target.set_activation_policy_at_runtime(policy);
+                }
                 Ok(())
             },
             PlatformBoundEvent::AccessibilityUpdateRequested => {
