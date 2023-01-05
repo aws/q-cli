@@ -184,7 +184,6 @@ pub enum CliRootCommands {
     #[command(alias("r"))]
     Run(run::ScriptsArgs),
     /// Manage your Fig Scripts
-    #[command(alias("script"))]
     Scripts(scripts::ScriptsArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
