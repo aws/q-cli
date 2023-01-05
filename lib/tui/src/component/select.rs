@@ -110,7 +110,10 @@ impl Component for Select {
         }
 
         if self.inner.focus {
-            state.cursor_position = (x + 2.0 + self.text.cursor as f64 - self.cursor_offset as f64, y);
+            state.cursor_position = (
+                x + 2.0 + (self.text.cursor as f64).min(width) - self.cursor_offset as f64,
+                y,
+            );
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }

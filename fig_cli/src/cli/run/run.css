@@ -26,13 +26,13 @@ input, select, #__preview {
     border-color: ansi(3);
 }
 
-#__description {
+#__description, #__keybindings {
     padding-left: 1;
     padding-right: 1;
     display: none;
 }
 
-div:focus > #__description {
+div:focus > #__description, div:focus > #__keybindings {
     display: block;
 }
 

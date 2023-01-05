@@ -203,7 +203,7 @@ impl Component for FilePicker {
         }
 
         if self.index.is_none() && self.inner.focus {
-            state.cursor_position = (x + self.text.cursor as f64, y);
+            state.cursor_position = (x + (self.text.cursor as f64).min(width), y);
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }

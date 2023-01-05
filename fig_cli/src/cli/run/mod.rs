@@ -1291,7 +1291,7 @@ fn run_tui(
 
         let mut parameter_div = Container::new("__parameter", Layout::Vertical).push(parameter_label);
 
-        match &parameter.parameter_type {
+        let keybindings = match &parameter.parameter_type {
             ParameterType::Selector {
                 placeholder,
                 suggestions,
@@ -1325,6 +1325,24 @@ fn run_tui(
                         .with_text(parameter_value)
                         .with_hint(placeholder.as_deref().unwrap_or("Search...")),
                 );
+
+                Some(
+                    Paragraph::new("__keybindings")
+                        .push_styled_text(
+                            "↑/↓",
+                            ColorAttribute::PaletteIndex(3),
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        )
+                        .push_styled_text(
+                            " up/down",
+                            ColorAttribute::Default,
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        ),
+                )
             },
             ParameterType::Text { placeholder } => {
                 let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
@@ -1333,6 +1351,8 @@ fn run_tui(
                         .with_text(parameter_value.to_string())
                         .with_hint(placeholder.to_owned().unwrap_or_default()),
                 );
+
+                None
             },
             ParameterType::Checkbox {
                 true_value_substitution,
@@ -1359,6 +1379,24 @@ fn run_tui(
                 });
 
                 parameter_div = parameter_div.push(CheckBox::new(&parameter.name, "Toggle", checked));
+
+                Some(
+                    Paragraph::new("__keybindings")
+                        .push_styled_text(
+                            "⎵",
+                            ColorAttribute::PaletteIndex(3),
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        )
+                        .push_styled_text(
+                            " toggle",
+                            ColorAttribute::Default,
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        ),
+                )
             },
             ParameterType::Path { file_type, extensions } => {
                 let parameter_value = arg_pairs
@@ -1380,6 +1418,38 @@ fn run_tui(
                 parameter_div = parameter_div.push(
                     FilePicker::new(&parameter.name, files, folders, extensions.clone()).with_path(parameter_value),
                 );
+
+                Some(
+                    Paragraph::new("__keybindings")
+                        .push_styled_text(
+                            "↑/↓",
+                            ColorAttribute::PaletteIndex(3),
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        )
+                        .push_styled_text(
+                            " up/down • ",
+                            ColorAttribute::Default,
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        )
+                        .push_styled_text(
+                            "←/→",
+                            ColorAttribute::PaletteIndex(3),
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        )
+                        .push_styled_text(
+                            " traverse",
+                            ColorAttribute::Default,
+                            ColorAttribute::Default,
+                            false,
+                            false,
+                        ),
+                )
             },
             ParameterType::Unknown(other) => {
                 bail!("Unknown parameter type, you may need to update Fig: {other:?}")
@@ -1406,6 +1476,10 @@ fn run_tui(
             );
         }
 
+        if let Some(keybindings) = keybindings {
+            parameter_div = parameter_div.push(keybindings);
+        }
+
         form = form.push(parameter_div);
     }
 
@@ -1418,8 +1492,6 @@ fn run_tui(
             .push_styled_text(" next • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
             .push_styled_text("shift+tab", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" previous • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
-            .push_styled_text("⎵", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
-            .push_styled_text(" toggle • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
             .push_styled_text( "⌃o", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text( " preview", ColorAttribute::Default, ColorAttribute::Default, false, false),
     );

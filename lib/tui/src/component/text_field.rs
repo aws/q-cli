@@ -86,7 +86,7 @@ impl Component for TextField {
         };
 
         if self.inner.focus {
-            state.cursor_position = (x + self.text.cursor as f64 - self.offset as f64, y);
+            state.cursor_position = (x + (self.text.cursor as f64).min(width) - self.offset as f64, y);
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
