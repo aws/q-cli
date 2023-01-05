@@ -387,9 +387,18 @@ input ScriptNamedGeneratorInput {
 
 type ScriptParameter {
   checkbox: ScriptCheckboxParameter
+
+  """
+  Use this as reference when parsing arguments on commandline. Mirrors the clap Arg interface. 
+  """
   commandlineInterface: ScriptParameterCommandlineInterface
   description: String
   displayName: String
+
+  """
+  Commandline properties that are directly configurable by end user. Do NOT use these values directly for parsing arguments! Use `commandlineInterface` instead.
+  """
+  editableCommandlineInterface: ScriptParameterEditableCommandlineInterface
   name: String!
   path: ScriptPathParameter
 
@@ -402,8 +411,46 @@ type ScriptParameter {
 
 type ScriptParameterCommandlineInterface {
   long: String
+
+  """
+  Consume all following arguments. Do not be parse them individually, but rather pass them in entirety.
+  """
+  raw: Boolean
   requireEquals: Boolean
   required: Boolean
+  short: String
+  type: ScriptParameterCommandlineInterfaceType
+}
+
+type ScriptParameterCommandlineInterfaceBoolean {
+  default: Boolean
+  type: String!
+}
+
+type ScriptParameterCommandlineInterfaceString {
+  default: String
+  type: String!
+}
+
+union ScriptParameterCommandlineInterfaceType = ScriptParameterCommandlineInterfaceBoolean | ScriptParameterCommandlineInterfaceString
+
+type ScriptParameterEditableCommandlineInterface {
+  """
+  Is this parameter specified implicitly based on position in the command line. eg. git push <remote> <branch>
+  """
+  isPositional: Boolean
+  long: String
+  requireEquals: Boolean
+  short: String
+}
+
+input ScriptParameterEditableCommandlineInterfaceInput {
+  """
+  Is this parameter specified implicitly based on position in the command line. eg. git push <remote> <branch>
+  """
+  isPositional: Boolean
+  long: String
+  requireEquals: Boolean
   short: String
 }
 
@@ -411,6 +458,11 @@ input ScriptParameterInput {
   checkbox: ScriptCheckboxParameterInput
   description: String
   displayName: String
+
+  """
+  Commandline properties that are directly configurable by end user. Do NOT use these values directly for parsing arguments! Use `commandlineInterface` instead.
+  """
+  editableCommandlineInterface: ScriptParameterEditableCommandlineInterfaceInput
   name: String!
   path: ScriptPathParameterInput
 
@@ -573,6 +625,7 @@ type TeamAllowedDomain {
 
 enum TeamAllowedDomainStatus {
   PENDING
+  REMOVED
   VERIFIED
 }
 

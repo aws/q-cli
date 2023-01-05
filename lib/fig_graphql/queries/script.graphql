@@ -81,6 +81,18 @@ fragment ScriptFields on Script {
         short
         long
         requireEquals
+        raw
+        type {
+          __typename
+          ... on ScriptParameterCommandlineInterfaceBoolean {
+            type
+            booleanDefault: default
+          }
+          ... on ScriptParameterCommandlineInterfaceString {
+            type
+            stringDefault: default
+          }
+        }
       }
     }
     runtime

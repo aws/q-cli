@@ -26,6 +26,7 @@ use fig_api_client::scripts::{
     sync_scripts,
     FileType,
     Generator,
+    ParameterCommandlineInterfaceType,
     ParameterType,
     Predicate,
     Rule,
@@ -584,11 +585,11 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
             }
 
             for param in script.parameters.clone() {
-                match param.parameter_type {
-                    ParameterType::Text { .. } | ParameterType::Path { .. } | ParameterType::Selector { .. } => {
+                match param.cli.as_ref().and_then(|cli| cli.r#type.as_ref()) {
+                    Some(param_type) => {
                         let mut arg = clap::Arg::new(&param.name);
 
-                        let required = match &param.cli {
+                        match &param.cli {
                             Some(interface) => {
                                 if let Some(short) = &interface.short {
                                     if let Some(first_char) = short.chars().next() {
@@ -604,7 +605,11 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                                     arg = arg.require_equals(*require_equals);
                                 }
 
-                                interface.required.unwrap_or(true)
+                                if let Some(raw) = &interface.raw {
+                                    arg = arg.raw(*raw);
+                                }
+
+                                arg = arg.required(interface.required.unwrap_or(true));
                             },
                             None => {
                                 arg = arg.long(&param.name);
@@ -613,7 +618,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                                     arg = arg.short(param.name.chars().next().unwrap());
                                 }
 
-                                true
+                                arg = arg.required(true);
                             },
                         };
 
@@ -621,46 +626,107 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                             arg = arg.help(description);
                         }
 
-                        command = command.arg(arg.value_parser(clap::value_parser!(String)).required(required));
+                        match param_type {
+                            ParameterCommandlineInterfaceType::Boolean { .. } => {
+                                arg = arg.value_parser(clap::value_parser!(bool));
+                            },
+                            ParameterCommandlineInterfaceType::String { default } => {
+                                arg = arg.value_parser(clap::value_parser!(String));
+
+                                if let Some(default) = default {
+                                    arg = arg.default_value(default.to_string());
+                                }
+                            },
+                        }
+
+                        command = command.arg(arg);
                     },
-                    ParameterType::Checkbox { .. } => {
-                        let required = match &param.cli {
-                            Some(interface) => interface.required.unwrap_or(true),
-                            None => true,
+                    None => {
+                        match param.parameter_type {
+                            ParameterType::Text { .. }
+                            | ParameterType::Path { .. }
+                            | ParameterType::Selector { .. } => {
+                                let mut arg = clap::Arg::new(&param.name);
+
+                                match &param.cli {
+                                    Some(interface) => {
+                                        if let Some(short) = &interface.short {
+                                            if let Some(first_char) = short.chars().next() {
+                                                arg = arg.short(first_char);
+                                            }
+                                        }
+
+                                        if let Some(long) = &interface.long {
+                                            arg = arg.long(long);
+                                        }
+
+                                        if let Some(require_equals) = &interface.require_equals {
+                                            arg = arg.require_equals(*require_equals);
+                                        }
+
+                                        if let Some(raw) = &interface.raw {
+                                            arg = arg.raw(*raw);
+                                        }
+
+                                        arg = arg.required(interface.required.unwrap_or(true));
+                                    },
+                                    None => {
+                                        arg = arg.long(&param.name);
+
+                                        if param.name.len() == 1 {
+                                            arg = arg.short(param.name.chars().next().unwrap());
+                                        }
+
+                                        arg = arg.required(true);
+                                    },
+                                };
+
+                                if let Some(description) = &param.description {
+                                    arg = arg.help(description);
+                                }
+
+                                command = command.arg(arg.value_parser(clap::value_parser!(String)));
+                            },
+                            ParameterType::Checkbox { .. } => {
+                                let required = match &param.cli {
+                                    Some(interface) => interface.required.unwrap_or(true),
+                                    None => true,
+                                };
+
+                                command = command.group(
+                                    ArgGroup::new(format!("_{}_group", param.name))
+                                        .arg(&param.name)
+                                        .arg(format!("no-{}", &param.name))
+                                        .required(required)
+                                        .multiple(false),
+                                );
+
+                                let mut true_arg = clap::Arg::new(&param.name)
+                                    .long(&param.name)
+                                    .action(clap::ArgAction::SetTrue);
+
+                                if let Some(description) = &param.description {
+                                    true_arg = true_arg.help(description);
+                                }
+
+                                command = command.arg(true_arg);
+
+                                let mut false_arg = clap::Arg::new(format!("no-{}", &param.name))
+                                    .long(format!("no-{}", &param.name))
+                                    .action(clap::ArgAction::SetFalse);
+
+                                if let Some(description) = &param.description {
+                                    false_arg = false_arg.help(description);
+                                }
+
+                                command = command.arg(false_arg);
+                            },
+                            ParameterType::Unknown(unknown) => {
+                                bail!("Unknown parameter type, you may need to update Fig: {unknown:?}")
+                            },
                         };
-
-                        command = command.group(
-                            ArgGroup::new(format!("_{}_group", param.name))
-                                .arg(&param.name)
-                                .arg(format!("no-{}", &param.name))
-                                .required(required)
-                                .multiple(false),
-                        );
-
-                        let mut true_arg = clap::Arg::new(&param.name)
-                            .long(&param.name)
-                            .action(clap::ArgAction::SetTrue);
-
-                        if let Some(description) = &param.description {
-                            true_arg = true_arg.help(description);
-                        }
-
-                        command = command.arg(true_arg);
-
-                        let mut false_arg = clap::Arg::new(format!("no-{}", &param.name))
-                            .long(format!("no-{}", &param.name))
-                            .action(clap::ArgAction::SetFalse);
-
-                        if let Some(description) = &param.description {
-                            false_arg = false_arg.help(description);
-                        }
-
-                        command = command.arg(false_arg);
                     },
-                    ParameterType::Unknown(unknown) => {
-                        bail!("Unknown parameter type, you may need to update Fig: {unknown:?}")
-                    },
-                };
+                }
             }
 
             let mut matches = command.get_matches_from(command_arguments);

@@ -63,11 +63,19 @@ pub enum ParameterType {
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
+pub enum ParameterCommandlineInterfaceType {
+    Boolean { default: Option<bool> },
+    String { default: Option<String> },
+}
+
+#[derive(Debug, Clone, Serialize, Deserialize)]
 pub struct ParameterCommandlineInterface {
     pub short: Option<String>,
     pub long: Option<String>,
     pub required: Option<bool>,
     pub require_equals: Option<bool>,
+    pub r#type: Option<ParameterCommandlineInterfaceType>,
+    pub raw: Option<bool>,
 }
 
 #[derive(Debug, Clone, Serialize, Deserialize)]
@@ -377,6 +385,16 @@ macro_rules! map_script {
                             long: interface.long,
                             required: interface.required,
                             require_equals: interface.require_equals,
+                            raw: interface.raw,
+                            r#type: match interface.type_ {
+                                Some(ScriptCliBooleanType(t)) => Some(ParameterCommandlineInterfaceType::Boolean {
+                                    default: t.boolean_default,
+                                }),
+                                Some(ScriptCliStringType(t)) => Some(ParameterCommandlineInterfaceType::String {
+                                    default: t.string_default,
+                                }),
+                                None => None,
+                            },
                         }),
                         None => None,
                     },
@@ -430,6 +448,10 @@ macro_rules! map_script {
 }
 
 fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> Script {
+    use fig_graphql::script::ScriptFieldsFieldsParametersCommandlineInterfaceType::{
+        ScriptParameterCommandlineInterfaceBoolean as ScriptCliBooleanType,
+        ScriptParameterCommandlineInterfaceString as ScriptCliStringType,
+    };
     use fig_graphql::script::{
         ScriptFieldsAstTreeOn,
         ScriptFileType,
@@ -444,6 +466,10 @@ fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> S
 }
 
 fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String) -> Script {
+    use fig_graphql::scripts::ScriptFieldsFieldsParametersCommandlineInterfaceType::{
+        ScriptParameterCommandlineInterfaceBoolean as ScriptCliBooleanType,
+        ScriptParameterCommandlineInterfaceString as ScriptCliStringType,
+    };
     use fig_graphql::scripts::{
         ScriptFieldsAstTreeOn,
         ScriptFileType,
