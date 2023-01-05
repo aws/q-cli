@@ -238,6 +238,7 @@ impl Runtime {
 #[derive(Clone, Default, Debug, Deserialize, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Script {
+    pub uuid: String,
     pub name: String,
     pub display_name: Option<String>,
     pub description: Option<String>,
@@ -272,6 +273,7 @@ macro_rules! map_script {
         let namespace = $namespace;
 
         Script {
+            uuid: script.uuid,
             name: script.name,
             namespace,
             display_name: script.fields.display_name,

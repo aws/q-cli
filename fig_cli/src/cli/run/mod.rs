@@ -554,6 +554,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                 bail!("Missing required arguments: {}", missing_args.join(", "));
             }
 
+            let script_uuid = script.uuid.clone();
             let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
                 TrackEvent::new(
                     TrackEventType::ScriptExecuted,
@@ -561,6 +562,7 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                     env!("CARGO_PKG_VERSION").into(),
                     [
                         ("workflow", script_name.as_str()),
+                        ("script_uuid", &script_uuid),
                         ("execution_method", execution_method.to_string().as_str()),
                     ],
                 )
@@ -1510,6 +1512,7 @@ fn run_tui(
                 let script_name = script_name.to_owned();
                 let execution_method = execution_method.to_owned();
                 let namespace = script.namespace.clone();
+                let script_uuid = script.uuid.clone();
                 std::thread::spawn(move || {
                     handle
                         .block_on(fig_telemetry::dispatch_emit_track(
@@ -1519,6 +1522,7 @@ fn run_tui(
                                 env!("CARGO_PKG_VERSION").into(),
                                 [
                                     ("workflow", script_name),
+                                    ("script_uuid", script_uuid),
                                     ("execution_method", execution_method.to_string()),
                                 ],
                             )

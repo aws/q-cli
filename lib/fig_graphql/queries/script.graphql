@@ -29,6 +29,7 @@ fragment NamespaceFields on Namespace {
 }
 
 fragment ScriptFields on Script {
+  uuid
   name
   updatedAt
   fields {
