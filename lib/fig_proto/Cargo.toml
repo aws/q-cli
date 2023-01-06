@@ -25,4 +25,4 @@ nix = "0.26.1"
 
 [build-dependencies]
 prost-build = "0.11.5"
-prost-reflect-build = "0.9.0"
+prost-reflect-build = "0.10.0"
