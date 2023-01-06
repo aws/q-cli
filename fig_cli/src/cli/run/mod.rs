@@ -551,30 +551,11 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                 bail!("Missing required arguments: {}", missing_args.join(", "));
             }
 
-            let script_uuid = script.uuid.clone();
-            let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
-                TrackEvent::new(
-                    TrackEventType::ScriptExecuted,
-                    TrackSource::Cli,
-                    env!("CARGO_PKG_VERSION").into(),
-                    [
-                        ("workflow", script_name.as_str()),
-                        ("script_uuid", &script_uuid),
-                        ("execution_method", execution_method.to_string().as_str()),
-                    ],
-                )
-                .with_namespace(Some(script.namespace.clone())),
-                false,
-                true,
-            ));
-
-            execute_script_or_insert(&script, &values_by_arg).await?;
+            execute_script_or_insert(&script, &values_by_arg, &execution_method).await?;
 
             if let Some(write_scripts) = join_write_scripts.take() {
                 write_scripts.await?.ok();
             }
-
-            telem_join.await.ok();
         },
         _ => {
             let mut command = clap::Command::new(&script_name);
@@ -756,10 +737,10 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 
             match execution_method {
                 ExecutionMethod::Invoke => {
-                    execute_script(&script, &map).await?;
+                    execute_script(&script, &map, &execution_method).await?;
                 },
                 ExecutionMethod::Search => {
-                    execute_script_or_insert(&script, &map).await?;
+                    execute_script_or_insert(&script, &map, &execution_method).await?;
                 },
             }
         },
@@ -837,7 +818,11 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     Ok(())
 }
 
-async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Result<()> {
+async fn execute_script(
+    script: &Script,
+    args: &HashMap<String, Value>,
+    execution_method: &ExecutionMethod,
+) -> Result<()> {
     let start_time = time::OffsetDateTime::now_utc();
 
     let templated_script = script.tree.iter().fold(String::new(), |mut acc, branch| {
@@ -988,9 +973,28 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
         })
         .collect::<serde_json::Map<_, _>>();
 
+    let script_uuid = script.uuid.clone();
+    let script_name = format!("@{}/{}", &script.namespace, &script.name);
+    let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
+        TrackEvent::new(
+            TrackEventType::ScriptExecuted,
+            TrackSource::Cli,
+            env!("CARGO_PKG_VERSION").into(),
+            [
+                ("workflow", script_name.as_str()),
+                ("script_uuid", &script_uuid),
+                ("execution_method", execution_method.to_string().as_str()),
+            ],
+        )
+        .with_namespace(Some(script.namespace.clone())),
+        false,
+        true,
+    ));
+
     tokio::select! {
         _res = tokio::signal::ctrl_c() => {
             child.kill().await?;
+            telem_join.await.ok();
 
             eprintln!();
             eprintln!("{} script cancelled", format!("@{}/{}", script.namespace, script.name).magenta().bold());
@@ -1042,6 +1046,8 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
                 fig_graphql::dispatch::send_to_daemon(query, true).await.ok();
             }
 
+            telem_join.await.ok();
+
             if let Some(code) = exit_code {
                 std::process::exit(code as i32);
             } else {
@@ -1053,15 +1059,19 @@ async fn execute_script(script: &Script, args: &HashMap<String, Value>) -> Resul
 
 /// Uses the setting `scripts.insert-into-shell` to determine whether to insert the command into the
 /// shell or execute it directly
-async fn execute_script_or_insert(script: &Script, args: &HashMap<String, Value>) -> Result<()> {
+async fn execute_script_or_insert(
+    script: &Script,
+    args: &HashMap<String, Value>,
+    execution_method: &ExecutionMethod,
+) -> Result<()> {
     if fig_settings::settings::get_bool_or("scripts.insert-into-shell", true)
         && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none()
     {
         if send_figterm(map_args_to_command(script, args), true).await.is_err() {
-            execute_script(script, args).await?;
+            execute_script(script, args, execution_method).await?;
         }
     } else {
-        execute_script(script, args).await?;
+        execute_script(script, args, execution_method).await?;
     }
 
     Ok(())

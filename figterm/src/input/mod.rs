@@ -1540,7 +1540,7 @@ impl InputParser {
                 },
                 InputState::EscapeMaybeAlt | InputState::Normal => {
                     /* Ignore mouse events for now. This requires the full VT Parser from wezterm.
-                     
+
                     if self.state == InputState::Normal && self.buf.as_slice()[0] == b'\x1b' {
                         // This feels a bit gross because we have two different parsers at play
                         // here.  We want to re-use the escape sequence parser to crack the
