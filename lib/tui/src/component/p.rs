@@ -15,17 +15,22 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub struct Paragraph {
+pub struct P {
     components: Vec<(String, Option<CellAttributes>)>,
     inner: ComponentData,
 }
 
-impl Paragraph {
-    pub fn new(id: impl Into<String>) -> Self {
+impl P {
+    pub fn new() -> Self {
         Self {
             components: vec![],
-            inner: ComponentData::new("p".to_owned(), id.into(), false),
+            inner: ComponentData::new("p".to_owned(), false),
         }
+    }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.inner.id = Some(id.into());
+        self
     }
 
     pub fn push_text(mut self, text: impl Into<String>) -> Self {
@@ -53,7 +58,7 @@ impl Paragraph {
     }
 }
 
-impl Component for Paragraph {
+impl Component for P {
     fn draw(
         &self,
         state: &mut crate::event_loop::State,
@@ -62,8 +67,6 @@ impl Component for Paragraph {
         mut y: f64,
         width: f64,
         height: f64,
-        _: f64,
-        _: f64,
     ) {
         let style = self.style(state);
 
@@ -111,5 +114,11 @@ impl Component for Paragraph {
         });
 
         (width as f64, height as f64)
+    }
+}
+
+impl Default for P {
+    fn default() -> Self {
+        Self::new()
     }
 }

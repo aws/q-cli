@@ -21,7 +21,7 @@ use crate::Component;
 
 #[derive(Debug)]
 pub enum TextFieldEvent {
-    TextChanged { id: String, text: String },
+    TextChanged { id: Option<String>, text: String },
 }
 
 #[derive(Debug)]
@@ -34,14 +34,19 @@ pub struct TextField {
 }
 
 impl TextField {
-    pub fn new(id: impl ToString) -> Self {
+    pub fn new() -> Self {
         Self {
             text: TextState::new(""),
             offset: 0,
             hint: None,
             obfuscated: false,
-            inner: ComponentData::new("input".to_owned(), id.to_string(), true),
+            inner: ComponentData::new("input".to_owned(), true),
         }
+    }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.inner.id = Some(id.into());
+        self
     }
 
     pub fn with_text(mut self, text: impl Into<String>) -> Self {
@@ -61,7 +66,7 @@ impl TextField {
 }
 
 impl Component for TextField {
-    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64) {
         if width <= 0.0 || height <= 0.0 {
             return;
         }
@@ -129,6 +134,12 @@ impl Component for TextField {
             .max(80.0),
             1.0,
         )
+    }
+}
+
+impl Default for TextField {
+    fn default() -> Self {
+        Self::new()
     }
 }
 

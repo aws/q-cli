@@ -5,6 +5,7 @@ pub extern crate paste;
 
 pub mod component;
 
+mod buffered_terminal;
 mod event_loop;
 mod input;
 mod style;
@@ -14,6 +15,7 @@ mod surface_ext;
 pub use component::Component;
 pub use event_loop::{
     ControlFlow,
+    DisplayMode,
     Event,
     EventLoop,
     State,

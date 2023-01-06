@@ -1,7 +1,7 @@
 mod check_box;
-mod container;
+mod div;
 mod file_picker;
-mod paragraph;
+mod p;
 mod select;
 mod text_field;
 pub(self) mod text_state;
@@ -10,15 +10,15 @@ pub use check_box::{
     CheckBox,
     CheckBoxEvent,
 };
-pub use container::{
-    Container,
+pub use div::{
+    Div,
     Layout,
 };
 pub use file_picker::{
     FilePicker,
     FilePickerEvent,
 };
-pub use paragraph::Paragraph;
+pub use p::P;
 pub use select::{
     Select,
     SelectEvent,
@@ -44,7 +44,7 @@ pub struct ComponentData {
     ///
     pub type_selector: String,
     ///
-    pub id: String,
+    pub id: Option<String>,
     ///
     pub interactive: bool,
     ///
@@ -64,7 +64,7 @@ pub struct StyleInfo {
     ///
     pub type_selector: String,
     ///
-    pub id: String,
+    pub id: Option<String>,
     ///
     pub hover: bool,
     ///
@@ -74,10 +74,10 @@ pub struct StyleInfo {
 }
 
 impl ComponentData {
-    pub fn new(type_selector: String, id: String, interactive: bool) -> Self {
+    pub fn new(type_selector: String, interactive: bool) -> Self {
         Self {
             type_selector,
-            id,
+            id: None,
             interactive,
             ..Default::default()
         }
@@ -97,11 +97,11 @@ impl ComponentData {
         self.children.iter().any(|c| c.interactive())
     }
 
-    pub fn focused_leaf_id(&self) -> Option<&str> {
+    pub fn focused_leaf_id(&self) -> &Option<String> {
         if let Some(child) = self.focused_child_index.and_then(|idx| self.children.get(idx)) {
             child.inner().focused_leaf_id()
         } else {
-            Some(&self.id)
+            &self.id
         }
     }
 
@@ -187,17 +187,7 @@ pub trait Component: std::fmt::Debug {
     /// This function assumes that borders, margin, and padding are handled by container
     /// components. This makes the implementation of simple interactive components easier, but
     /// container types more difficult.
-    fn draw(
-        &self,
-        state: &mut State,
-        surface: &mut Surface,
-        x: f64,
-        y: f64,
-        width: f64,
-        height: f64,
-        screen_width: f64,
-        screen_height: f64,
-    );
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64);
 
     /// How the component handles input actions such as next or prev
     #[allow(unused_variables)]
@@ -275,7 +265,7 @@ pub trait Component: std::fmt::Debug {
     fn size(&self, state: &mut State) -> (f64, f64);
 
     /// The id of the ui element used for event handling and styling
-    fn id(&self) -> &str {
+    fn id(&self) -> &Option<String> {
         &self.inner().id
     }
 

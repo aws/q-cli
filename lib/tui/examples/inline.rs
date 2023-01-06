@@ -2,7 +2,12 @@ use lightningcss::stylesheet::{
     ParserOptions,
     StyleSheet,
 };
-use tui::component::Div;
+use tui::component::{
+    CheckBox,
+    Div,
+    FilePicker,
+    TextField,
+};
 use tui::{
     ControlFlow,
     DisplayMode,
@@ -12,9 +17,12 @@ use tui::{
 
 fn main() {
     EventLoop::new(
-        Div::new().with_id("parent"),
-        DisplayMode::AlternateScreen,
-        InputMethod::new(),
+        Div::new()
+            .push(FilePicker::new(true, false, vec![]))
+            .push(CheckBox::new("hi", false))
+            .push(TextField::new()),
+        DisplayMode::Inline,
+        InputMethod::default(),
         StyleSheet::parse(include_str!("form.css"), ParserOptions::default()).unwrap(),
     )
     .run(|event, _component, control_flow| match event {

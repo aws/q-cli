@@ -60,19 +60,19 @@ use tokio::io::{
 use tui::component::{
     CheckBox,
     CheckBoxEvent,
-    Container,
+    Div,
     FilePicker,
     FilePickerEvent,
-    Layout,
-    Paragraph,
     Select,
     SelectEvent,
     TextField,
     TextFieldEvent,
+    P,
 };
 use tui::{
     ColorAttribute,
     ControlFlow,
+    DisplayMode,
     Event,
     EventLoop,
     InputMethod,
@@ -406,15 +406,14 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                     }
                     drop(tx);
 
-                    let terminal_size = crossterm::terminal::size();
-                    let cursor_position = crossterm::cursor::position();
+                    let terminal_height = crossterm::terminal::size()?.1;
+                    let mut cursor_position = crossterm::cursor::position().unwrap_or((0, 0));
 
-                    let height = match (terminal_size, cursor_position) {
-                        (Ok((_, term_height)), Ok((_, cursor_row))) => {
-                            (term_height - cursor_row).max(13).to_string()
-                        }
-                        _ => "100%".into()
-                    };
+                    let height = (terminal_height - cursor_position.1).max(13);
+                    let remaining_height = terminal_height.saturating_sub(cursor_position.1);
+                    let needed_height = height.saturating_sub(remaining_height);
+                    cursor_position.1 = cursor_position.1.saturating_sub(needed_height);
+                    let height = height.to_string();
 
                     let output = Skim::run_with(
                         &SkimOptionsBuilder::default()
@@ -429,6 +428,12 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
                             .unwrap(),
                         Some(rx),
                     );
+
+                    crossterm::execute!(
+                        std::io::stdout(),
+                        crossterm::cursor::MoveTo(cursor_position.0, cursor_position.1),
+                        crossterm::terminal::Clear(crossterm::terminal::ClearType::FromCursorDown)
+                    )?;
 
                     match output {
                         Some(out) => {
@@ -511,14 +516,6 @@ pub async fn execute(command_arguments: Vec<String>) -> Result<()> {
 
     if std::env::var_os("FIG_SCRIPT_DEBUG").is_some() {
         println!("Script: {script:?}");
-    }
-
-    if execution_method == ExecutionMethod::Search {
-        crossterm::execute!(
-            std::io::stdout(),
-            crossterm::terminal::Clear(crossterm::terminal::ClearType::All),
-            crossterm::cursor::MoveTo(0, 0)
-        )?;
     }
 
     let script_name = format!("@{}/{}", &script.namespace, &script.name);
@@ -1236,9 +1233,10 @@ fn run_tui(
     script_name: &str,
     execution_method: &ExecutionMethod,
 ) -> Result<HashMap<String, Value>> {
-    let mut view = Container::new("__view", Layout::Vertical);
+    let mut view = Div::new().with_id("__view");
 
-    let mut header = Paragraph::new("__header")
+    let mut header = P::new()
+        .with_id("__header")
         .push_styled_text(
             script.display_name.as_ref().unwrap_or(&script.name),
             ColorAttribute::PaletteIndex(3),
@@ -1268,7 +1266,7 @@ fn run_tui(
 
     view = view.push(header);
 
-    let mut form = Container::new("__form", Layout::Vertical);
+    let mut form = Div::new().with_id("__form");
 
     let mut args: HashMap<String, Value> = HashMap::new();
     let mut description_map = HashMap::new();
@@ -1278,8 +1276,9 @@ fn run_tui(
             description_map.insert(parameter.name.to_owned(), description.to_owned());
         }
 
-        let mut parameter_label =
-            Paragraph::new("__label").push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name));
+        let mut parameter_label = P::new()
+            .with_id("__label")
+            .push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name));
 
         if !parameter.required.unwrap_or(true) {
             parameter_label = parameter_label.push_styled_text(
@@ -1291,7 +1290,7 @@ fn run_tui(
             );
         }
 
-        let mut parameter_div = Container::new("__parameter", Layout::Vertical).push(parameter_label);
+        let mut parameter_div = Div::new().with_id("__parameter").push(parameter_label);
 
         let keybindings = match &parameter.parameter_type {
             ParameterType::Selector {
@@ -1323,13 +1322,15 @@ fn run_tui(
                 }
 
                 parameter_div = parameter_div.push(
-                    Select::new(&parameter.name, options, allow_raw_text_input.unwrap_or(false))
+                    Select::new(options, allow_raw_text_input.unwrap_or(false))
+                        .with_id(&parameter.name)
                         .with_text(parameter_value)
                         .with_hint(placeholder.as_deref().unwrap_or("Search...")),
                 );
 
                 Some(
-                    Paragraph::new("__keybindings")
+                    P::new()
+                        .with_id("__keybindings")
                         .push_styled_text(
                             "↑/↓",
                             ColorAttribute::PaletteIndex(3),
@@ -1349,7 +1350,8 @@ fn run_tui(
             ParameterType::Text { placeholder } => {
                 let parameter_value = arg_pairs.get(&parameter.name).cloned().unwrap_or_default();
                 parameter_div = parameter_div.push(
-                    TextField::new(&parameter.name)
+                    TextField::new()
+                        .with_id(&parameter.name)
                         .with_text(parameter_value.to_string())
                         .with_hint(placeholder.to_owned().unwrap_or_default()),
                 );
@@ -1380,10 +1382,11 @@ fn run_tui(
                     false_value: Some(false_value_substitution.to_owned()),
                 });
 
-                parameter_div = parameter_div.push(CheckBox::new(&parameter.name, "Toggle", checked));
+                parameter_div = parameter_div.push(CheckBox::new("Toggle", checked).with_id(&parameter.name));
 
                 Some(
-                    Paragraph::new("__keybindings")
+                    P::new()
+                        .with_id("__keybindings")
                         .push_styled_text(
                             "⎵",
                             ColorAttribute::PaletteIndex(3),
@@ -1418,11 +1421,14 @@ fn run_tui(
                 };
 
                 parameter_div = parameter_div.push(
-                    FilePicker::new(&parameter.name, files, folders, extensions.clone()).with_path(parameter_value),
+                    FilePicker::new(files, folders, extensions.clone())
+                        .with_id(&parameter.name)
+                        .with_path(parameter_value),
                 );
 
                 Some(
-                    Paragraph::new("__keybindings")
+                    P::new()
+                        .with_id("__keybindings")
                         .push_styled_text(
                             "↑/↓",
                             ColorAttribute::PaletteIndex(3),
@@ -1460,7 +1466,8 @@ fn run_tui(
 
         if let Some(description) = &parameter.description {
             parameter_div = parameter_div.push(
-                Paragraph::new("__description")
+                P::new()
+                    .with_id("__description")
                     .push_styled_text(
                         "─".repeat(100),
                         ColorAttribute::PaletteIndex(8),
@@ -1487,7 +1494,8 @@ fn run_tui(
 
     #[rustfmt::skip]
     let view = view.push(form).push(
-        Paragraph::new("__footer")
+        P::new()
+            .with_id("__footer")
             .push_styled_text("enter", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
             .push_styled_text(" select • ", ColorAttribute::Default, ColorAttribute::Default, false, false)
             .push_styled_text("tab", ColorAttribute::PaletteIndex(3), ColorAttribute::Default, false, false)
@@ -1501,118 +1509,125 @@ fn run_tui(
     let mut temp = None;
     let mut terminated = false;
 
-    EventLoop::new().run(
+    #[allow(clippy::collapsible_match, clippy::single_match)]
+    EventLoop::new(
         view,
+        DisplayMode::Inline,
         InputMethod::new(),
         StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
-        |event, view, control_flow| match event {
-            Event::Quit => *control_flow = ControlFlow::Quit,
-            Event::Terminate => {
-                let handle = tokio::runtime::Handle::current();
-                let script_name = script_name.to_owned();
-                let execution_method = execution_method.to_owned();
-                let namespace = script.namespace.clone();
-                let script_uuid = script.uuid.clone();
-                std::thread::spawn(move || {
-                    handle
-                        .block_on(fig_telemetry::dispatch_emit_track(
-                            TrackEvent::new(
-                                TrackEventType::ScriptCancelled,
-                                TrackSource::Cli,
-                                env!("CARGO_PKG_VERSION").into(),
-                                [
-                                    ("workflow", script_name),
-                                    ("script_uuid", script_uuid),
-                                    ("execution_method", execution_method.to_string()),
-                                ],
-                            )
-                            .with_namespace(Some(namespace)),
+    )
+    .run(|event, view, control_flow| match event {
+        Event::Quit => *control_flow = ControlFlow::Quit,
+        Event::Terminate => {
+            let handle = tokio::runtime::Handle::current();
+            let script_name = script_name.to_owned();
+            let execution_method = execution_method.to_owned();
+            let namespace = script.namespace.clone();
+            let script_uuid = script.uuid.clone();
+            std::thread::spawn(move || {
+                handle
+                    .block_on(fig_telemetry::dispatch_emit_track(
+                        TrackEvent::new(
+                            TrackEventType::ScriptCancelled,
+                            TrackSource::Cli,
+                            env!("CARGO_PKG_VERSION").into(),
+                            [
+                                ("workflow", script_name),
+                                ("script_uuid", script_uuid),
+                                ("execution_method", execution_method.to_string()),
+                            ],
+                        )
+                        .with_namespace(Some(namespace)),
+                        false,
+                        false,
+                    ))
+                    .ok();
+            })
+            .join()
+            .ok();
+
+            terminated = true;
+            *control_flow = ControlFlow::Quit;
+        },
+        Event::TempChangeView => {
+            if let Some(temp) = temp.take() {
+                view.remove("__preview");
+                view.insert("__header", temp);
+                return;
+            }
+
+            let colors = [
+                ColorAttribute::PaletteIndex(13),
+                ColorAttribute::PaletteIndex(12),
+                ColorAttribute::PaletteIndex(14),
+            ];
+
+            let mut paragraph = P::new();
+            for element in &script.tree {
+                match element {
+                    TreeElement::String(s) => paragraph = paragraph.push_text(s),
+                    TreeElement::Token { name } => {
+                        let mut hasher = DefaultHasher::new();
+                        name.hash(&mut hasher);
+                        let hash = hasher.finish() as usize;
+
+                        paragraph = paragraph.push_styled_text(
+                            match args.get(name.as_str()) {
+                                Some(value) => value.to_string(),
+                                None => format!("{{{{{name}}}}}"),
+                            },
+                            colors[hash % colors.len()],
+                            ColorAttribute::Default,
                             false,
                             false,
-                        ))
-                        .ok();
-                })
-                .join()
-                .ok();
-
-                terminated = true;
-                *control_flow = ControlFlow::Quit;
-            },
-            Event::TempChangeView => {
-                if let Some(temp) = temp.take() {
-                    view.remove("__preview");
-                    view.insert("__header", temp);
-                    return;
+                        );
+                    },
                 }
+            }
 
-                let colors = [
-                    ColorAttribute::PaletteIndex(13),
-                    ColorAttribute::PaletteIndex(12),
-                    ColorAttribute::PaletteIndex(14),
-                ];
+            temp = view.remove("__form");
+            view.insert(
+                "__header",
+                Box::new(
+                    Div::new()
+                        .with_id("__preview")
+                        .push(P::new().with_id("__label").push_text("Preview"))
+                        .push(paragraph),
+                ),
+            );
+        },
+        Event::CheckBox(event) => match event {
+            CheckBoxEvent::Checked { id: Some(id), checked } => {
+                let (true_val, false_val) = flag_map.get(&id).unwrap();
 
-                let mut paragraph = Paragraph::new("");
-                for element in &script.tree {
-                    match element {
-                        TreeElement::String(s) => paragraph = paragraph.push_text(s),
-                        TreeElement::Token { name } => {
-                            let mut hasher = DefaultHasher::new();
-                            name.hash(&mut hasher);
-                            let hash = hasher.finish() as usize;
-
-                            paragraph = paragraph.push_styled_text(
-                                match args.get(name.as_str()) {
-                                    Some(value) => value.to_string(),
-                                    None => format!("{{{{{name}}}}}"),
-                                },
-                                colors[hash % colors.len()],
-                                ColorAttribute::Default,
-                                false,
-                                false,
-                            );
-                        },
-                    }
-                }
-
-                temp = view.remove("__form");
-                view.insert(
-                    "__header",
-                    Box::new(
-                        Container::new("__preview", Layout::Vertical)
-                            .push(Paragraph::new("__label").push_text("Preview"))
-                            .push(paragraph),
-                    ),
-                );
-            },
-            Event::CheckBox(event) => match event {
-                CheckBoxEvent::Checked { id, checked } => {
-                    let (true_val, false_val) = flag_map.get(&id).unwrap();
-
-                    args.insert(id, Value::Bool {
-                        val: checked,
-                        false_value: Some(false_val.to_owned()),
-                        true_value: Some(true_val.to_owned()),
-                    });
-                },
-            },
-            Event::FilePicker(event) => match event {
-                FilePickerEvent::FilePathChanged { id, path } => {
-                    args.insert(id, Value::String(path.to_string_lossy().to_string()));
-                },
-            },
-            Event::Select(event) => match event {
-                SelectEvent::OptionSelected { id, option } => {
-                    args.insert(id, Value::String(option));
-                },
-            },
-            Event::TextField(event) => match event {
-                TextFieldEvent::TextChanged { id, text } => {
-                    args.insert(id, Value::String(text));
-                },
+                args.insert(id, Value::Bool {
+                    val: checked,
+                    false_value: Some(false_val.to_owned()),
+                    true_value: Some(true_val.to_owned()),
+                });
             },
             _ => (),
         },
-    )?;
+        Event::FilePicker(event) => match event {
+            FilePickerEvent::FilePathChanged { id: Some(id), path } => {
+                args.insert(id, Value::String(path.to_string_lossy().to_string()));
+            },
+            _ => (),
+        },
+        Event::Select(event) => match event {
+            SelectEvent::OptionSelected { id: Some(id), option } => {
+                args.insert(id, Value::String(option));
+            },
+            _ => (),
+        },
+        Event::TextField(event) => match event {
+            TextFieldEvent::TextChanged { id: Some(id), text } => {
+                args.insert(id, Value::String(text));
+            },
+            _ => (),
+        },
+        _ => (),
+    })?;
 
     if terminated {
         std::process::exit(1);
@@ -1635,6 +1650,7 @@ mod test {
                 "displayName": "Eekum Bokum",
                 "description": "Quick snippet for git push",
                 "templateVersion": 0,
+                "uuid": "test",
                 "tags": [
                     "git"
                 ],

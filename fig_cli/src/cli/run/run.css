@@ -37,6 +37,7 @@ div:focus > #__description, div:focus > #__keybindings {
 }
 
 #__view {
+    padding-top: 1;
     padding-bottom: 1;
     padding-left: 2;
     padding-right: 2;
@@ -48,6 +49,11 @@ div:focus > #__description, div:focus > #__keybindings {
 
 #__footer {
     margin-top: 1;
+    display: none;
+}
+
+div:focus > #__footer {
+    display: block;
 }
 
 #__label {

@@ -9,20 +9,18 @@ use termwiz::surface::{
     CursorShape,
     CursorVisibility,
     Position,
-    Surface,
 };
-use termwiz::terminal::buffered::BufferedTerminal;
 use termwiz::terminal::{
     new_terminal,
     Terminal,
 };
 
+use crate::buffered_terminal::BufferedTerminal;
 use crate::component::{
     CheckBoxEvent,
     Component,
-    Container,
+    Div,
     FilePickerEvent,
-    Layout,
     SelectEvent,
     StyleInfo,
     TextFieldEvent,
@@ -45,6 +43,12 @@ impl TreeElement {
         let inner = siblings.pop_front()?;
         Some(Self { inner, siblings })
     }
+}
+
+#[derive(Debug)]
+pub enum DisplayMode {
+    AlternateScreen,
+    Inline,
 }
 
 pub struct State<'i, 'o> {
@@ -89,169 +93,222 @@ pub enum ControlFlow {
     Quit,
 }
 
-#[derive(Debug, Default)]
-pub struct EventLoop;
+pub struct EventLoop<'a> {
+    component: Div,
+    display_mode: DisplayMode,
+    input_method: InputMethod,
+    state: State<'a, 'a>,
+}
 
-impl EventLoop {
-    pub fn new() -> Self {
-        Self::default()
-    }
-
-    #[inline]
-    pub fn run<'a, C, F>(
-        &self,
+impl<'a> EventLoop<'a> {
+    pub fn new<C>(
         component: C,
-        mut input_method: InputMethod,
-        style_sheet: StyleSheet,
-        mut event_handler: F,
-    ) -> Result<(), Error>
+        display_mode: DisplayMode,
+        input_method: InputMethod,
+        style_sheet: StyleSheet<'a, 'a>,
+    ) -> Self
     where
         C: Component + 'static,
-        F: 'a + FnMut(Event, &mut dyn Component, &mut ControlFlow),
     {
-        let capabilities = Capabilities::new_from_env()?;
-        let mut buf = BufferedTerminal::new(new_terminal(capabilities)?)?;
-        buf.terminal().enter_alternate_screen()?;
-        buf.terminal().set_raw_mode()?;
-        buf.add_change(Change::CursorShape(CursorShape::BlinkingBar));
-
-        let screen_size = buf.terminal().get_screen_size()?;
-        let mut cols = screen_size.cols as f64;
-        let mut rows = screen_size.rows as f64;
-
-        let mut surface = Surface::new(screen_size.cols, screen_size.rows);
-
-        let mut component = Container::new("", Layout::Vertical).push(component);
-
+        let mut component = Div::new().push(component);
         let mut state = State::new(style_sheet);
         component.on_focus(&mut state, true);
 
+        Self {
+            component,
+            display_mode,
+            input_method,
+            state,
+        }
+    }
+
+    #[inline]
+    pub fn run<'b, F>(&mut self, mut event_handler: F) -> Result<(), Error>
+    where
+        F: 'b + FnMut(Event, &mut dyn Component, &mut ControlFlow),
+    {
+        let capabilities = Capabilities::new_from_env()?;
+        let mut buf = BufferedTerminal::new(new_terminal(capabilities)?)?;
+
+        buf.terminal().set_raw_mode()?;
+        buf.add_change(Change::CursorShape(CursorShape::BlinkingBar));
+
+        let mut origin = match self.display_mode {
+            DisplayMode::AlternateScreen => {
+                buf.terminal().enter_alternate_screen()?;
+                (0, 0)
+            },
+            DisplayMode::Inline => {
+                // TODO: create custom error type
+                let (x, y) = crossterm::cursor::position().unwrap();
+                (x.into(), y.into())
+            },
+        };
+
+        let screen_size = buf.terminal().get_screen_size()?;
+        let mut screen_width = screen_size.cols;
+        let mut screen_height = screen_size.rows;
+
         let mut control_flow = ControlFlow::Wait;
-        while let ControlFlow::Wait = control_flow {
+
+        loop {
             // todo: seems like there's an issue in termwiz which doesn't
             // account for grapheme width in optimized surface diffs
             for _ in 0..2 {
-                surface.add_changes(vec![
-                    Change::ClearScreen(ColorAttribute::Default),
-                    Change::CursorVisibility(CursorVisibility::Hidden),
-                ]);
-                component.draw(&mut state, &mut surface, 0.0, 0.0, cols, rows, cols, rows);
+                if let DisplayMode::Inline = self.display_mode {
+                    let component_height = self.component.size(&mut self.state).1.round() as usize;
+                    let remaining_height = screen_height.saturating_sub(origin.1);
+                    let scroll_count = component_height.saturating_sub(remaining_height);
+                    origin.1 = origin.1.saturating_sub(scroll_count);
 
-                buf.add_change(Change::CursorVisibility(CursorVisibility::Hidden));
-                buf.draw_from_screen(&surface, 0, 0);
+                    if component_height < screen_height && scroll_count > 0 {
+                        buf.add_change(Change::ClearScreen(ColorAttribute::Default));
+                        buf.flush()?;
+                        buf.terminal().render(&[Change::ScrollRegionUp {
+                            first_row: 0,
+                            region_size: screen_height,
+                            scroll_count,
+                        }])?;
+                    }
+                }
+
+                buf.add_changes(vec![
+                    Change::CursorVisibility(CursorVisibility::Hidden),
+                    Change::ClearScreen(ColorAttribute::Default),
+                ]);
+                self.component.draw(
+                    &mut self.state,
+                    &mut buf,
+                    0.0,
+                    origin.1 as f64,
+                    screen_width as f64,
+                    screen_height as f64 - origin.1 as f64,
+                );
+
+                let cursor_visibility = buf.cursor_visibility();
                 buf.add_changes(vec![
                     Change::CursorPosition {
-                        x: Position::Absolute(state.cursor_position.0.round() as usize),
-                        y: Position::Absolute(state.cursor_position.1.round() as usize),
+                        x: Position::Absolute(self.state.cursor_position.0.round() as usize),
+                        y: Position::Absolute(self.state.cursor_position.1.round() as usize),
                     },
-                    Change::CursorColor(state.cursor_color),
-                    Change::CursorVisibility(surface.cursor_visibility()),
+                    Change::CursorColor(self.state.cursor_color),
+                    Change::CursorVisibility(cursor_visibility),
                 ]);
-
                 buf.flush()?;
+            }
 
-                surface.flush_changes_older_than(surface.current_seqno());
+            if !matches!(control_flow, ControlFlow::Wait) {
+                break;
             }
 
             self.handle_event(
-                &mut component,
-                &mut input_method,
                 &mut event_handler,
                 buf.terminal().poll_input(None)?.unwrap(),
-                &mut state,
                 &mut control_flow,
-                &mut surface,
                 &mut buf,
-                &mut cols,
-                &mut rows,
-            );
+                &mut screen_width,
+                &mut screen_height,
+                origin.1 as f64,
+            )?;
 
             while let Some(event) = buf.terminal().poll_input(Some(Duration::ZERO))? {
                 self.handle_event(
-                    &mut component,
-                    &mut input_method,
                     &mut event_handler,
                     event,
-                    &mut state,
                     &mut control_flow,
-                    &mut surface,
                     &mut buf,
-                    &mut cols,
-                    &mut rows,
-                );
+                    &mut screen_width,
+                    &mut screen_height,
+                    origin.1 as f64,
+                )?;
             }
 
-            while let Some(event) = state.event_buffer.pop() {
-                event_handler(event, &mut component, &mut control_flow);
+            while let Some(event) = self.state.event_buffer.pop() {
+                event_handler(event, &mut self.component, &mut control_flow);
             }
         }
 
-        buf.terminal().set_cooked_mode()?;
-        buf.terminal().flush()?;
+        if let DisplayMode::Inline = self.display_mode {
+            let component_height = self.component.size(&mut self.state).1;
+            buf.add_change(Change::CursorPosition {
+                x: Position::Absolute(0),
+                y: Position::Absolute(origin.1 + component_height.round() as usize),
+            });
+            buf.flush()?;
+        }
 
         Ok(())
     }
 
-    pub fn handle_event<'a, F>(
-        &self,
-        component: &mut Container,
-        input_method: &mut InputMethod,
+    pub fn handle_event<'b, F>(
+        &mut self,
         event_handler: &mut F,
         event: InputEvent,
-        state: &mut State,
         control_flow: &mut ControlFlow,
-        surface: &mut Surface,
         buf: &mut BufferedTerminal<impl Terminal>,
-        cols: &mut f64,
-        rows: &mut f64,
-    ) where
-        F: 'a + FnMut(Event, &mut dyn Component, &mut ControlFlow),
+        screen_width: &mut usize,
+        screen_height: &mut usize,
+        row_origin: f64,
+    ) -> Result<(), Error>
+    where
+        F: 'b + FnMut(Event, &mut dyn Component, &mut ControlFlow),
     {
         match event {
             InputEvent::Key(event) => {
-                let input_action = input_method.get_action(event);
+                let input_action = self.input_method.get_action(event);
                 match input_action {
                     InputAction::Submit => {
-                        component.on_input_action(state, &input_action);
-                        if component.next(state, false).is_none() {
+                        self.component.on_input_action(&mut self.state, &input_action);
+                        if self.component.next(&mut self.state, false).is_none() {
                             *control_flow = ControlFlow::Quit;
                         }
                     },
-                    InputAction::Next => match component.next(state, true) {
-                        Some(id) => event_handler(Event::FocusChanged { id, focus: true }, component, control_flow),
+                    InputAction::Next => match self.component.next(&mut self.state, true) {
+                        Some(id) => event_handler(
+                            Event::FocusChanged { id, focus: true },
+                            &mut self.component,
+                            control_flow,
+                        ),
                         None => *control_flow = ControlFlow::Quit,
                     },
                     InputAction::Previous => {
-                        if let Some(id) = component.prev(state, true) {
-                            event_handler(Event::FocusChanged { id, focus: true }, component, control_flow)
+                        if let Some(id) = self.component.prev(&mut self.state, true) {
+                            event_handler(
+                                Event::FocusChanged { id, focus: true },
+                                &mut self.component,
+                                control_flow,
+                            )
                         }
                     },
-                    InputAction::Quit => event_handler(Event::Quit, component, control_flow),
-                    InputAction::Terminate => event_handler(Event::Terminate, component, control_flow),
+                    InputAction::Quit => event_handler(Event::Quit, &mut self.component, control_flow),
+                    InputAction::Terminate => event_handler(Event::Terminate, &mut self.component, control_flow),
                     InputAction::TempChangeView => {
-                        component.on_focus(state, false);
-                        event_handler(Event::TempChangeView, component, control_flow);
-                        component.on_focus(state, true);
+                        self.component.on_focus(&mut self.state, false);
+                        event_handler(Event::TempChangeView, &mut self.component, control_flow);
+                        self.component.on_focus(&mut self.state, true);
                     },
-                    _ => component.on_input_action(state, &input_action),
+                    _ => self.component.on_input_action(&mut self.state, &input_action),
                 }
             },
-            InputEvent::Mouse(event) => {
-                component.on_mouse_action(state, &input_method.get_mouse_action(event), 0.0, 0.0, *cols, *rows)
+            InputEvent::Mouse(event) => self.component.on_mouse_action(
+                &mut self.state,
+                &self.input_method.get_mouse_action(event),
+                0.0,
+                row_origin,
+                *screen_width as f64,
+                *screen_height as f64,
+            ),
+            InputEvent::Resized { cols, rows } => {
+                *screen_width = cols;
+                *screen_height = rows;
+                buf.resize(cols, rows)?;
             },
-            InputEvent::Resized {
-                cols: ncols,
-                rows: nrows,
-            } => {
-                surface.resize(ncols, nrows);
-                buf.add_change(Change::ClearScreen(ColorAttribute::Default));
-                buf.resize(ncols, nrows);
-
-                *cols = ncols as f64;
-                *rows = nrows as f64;
-            },
-            InputEvent::Paste(clipboard) => component.on_input_action(state, &InputAction::Paste(clipboard)),
+            InputEvent::Paste(clipboard) => self
+                .component
+                .on_input_action(&mut self.state, &InputAction::Paste(clipboard)),
             _ => (),
         }
+
+        Ok(())
     }
 }

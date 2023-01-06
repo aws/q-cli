@@ -18,7 +18,7 @@ use crate::Component;
 #[derive(Debug)]
 pub enum CheckBoxEvent {
     /// The user has either checked or unchecked the box
-    Checked { id: String, checked: bool },
+    Checked { id: Option<String>, checked: bool },
 }
 
 #[derive(Debug)]
@@ -29,17 +29,22 @@ pub struct CheckBox {
 }
 
 impl CheckBox {
-    pub fn new(id: impl ToString, label: impl Display, checked: bool) -> Self {
+    pub fn new(label: impl Display, checked: bool) -> Self {
         Self {
             label: label.to_string(),
             checked,
-            inner: ComponentData::new("input".to_owned(), id.to_string(), true),
+            inner: ComponentData::new("input".to_owned(), true),
         }
+    }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.inner.id = Some(id.into());
+        self
     }
 }
 
 impl Component for CheckBox {
-    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, _: f64, _: f64, _: f64, _: f64) {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, _: f64, _: f64) {
         let style = self.style(state);
 
         surface.draw_text(

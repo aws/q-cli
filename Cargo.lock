@@ -7566,10 +7566,10 @@ checksum = "7b3e06c9b9d80ed6b745c7159c40b311ad2916abb34a49e9be2653b90db0d8dd"
 
 [[package]]
 name = "tui"
-version = "2.12.0-dev"
+version = "0.20.0"
 dependencies = [
  "camino",
- "fig_log",
+ "crossterm 0.25.0",
  "indexmap",
  "lightningcss",
  "paste",

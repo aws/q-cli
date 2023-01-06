@@ -22,17 +22,27 @@ pub enum Layout {
 }
 
 #[derive(Debug)]
-pub struct Container {
+pub struct Div {
     layout: Layout,
     inner: ComponentData,
 }
 
-impl Container {
-    pub fn new(id: impl Into<String>, layout: Layout) -> Self {
+impl Div {
+    pub fn new() -> Self {
         Self {
-            layout,
-            inner: ComponentData::new("div".to_owned(), id.into(), false),
+            layout: Layout::Vertical,
+            inner: ComponentData::new("div".to_owned(), false),
         }
+    }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.inner.id = Some(id.into());
+        self
+    }
+
+    pub fn with_layout(mut self, layout: Layout) -> Self {
+        self.layout = layout;
+        self
     }
 
     pub fn push(mut self, component: impl Component + 'static) -> Self {
@@ -41,18 +51,11 @@ impl Container {
     }
 }
 
-impl Component for Container {
-    fn draw(
-        &self,
-        state: &mut State,
-        surface: &mut Surface,
-        mut x: f64,
-        mut y: f64,
-        width: f64,
-        height: f64,
-        screen_width: f64,
-        screen_height: f64,
-    ) {
+impl Component for Div {
+    fn draw(&self, state: &mut State, surface: &mut Surface, mut x: f64, mut y: f64, width: f64, height: f64) {
+        let initial_x = x;
+        let initial_y = y;
+
         let mut previous_siblings = std::collections::LinkedList::new();
         for child in self.inner.children.iter() {
             let style_info = child.inner().style_info();
@@ -74,13 +77,13 @@ impl Component for Container {
                 .width()
                 .map(|width| width - style.padding_horizontal() - style.border_horizontal())
                 .unwrap_or(size.0)
-                .min(width - style.spacing_horizontal());
+                .min(width - style.spacing_horizontal() - (x - initial_x));
 
             let content_height = style
                 .height()
                 .map(|height| (height - style.padding_vertical() - style.border_vertical()))
                 .unwrap_or(size.1)
-                .min(height - style.spacing_vertical());
+                .min(height - style.spacing_vertical() - (y - initial_y));
 
             surface.draw_border(
                 x + style.margin_left(),
@@ -97,8 +100,6 @@ impl Component for Container {
                 y + style.margin_top() + style.border_top_width() + style.padding_top(),
                 content_width,
                 content_height,
-                screen_width,
-                screen_height,
             );
 
             match self.layout {
@@ -209,10 +210,11 @@ impl Component for Container {
                 );
 
                 // Traverse tree to get next id before we focus.
-                let next_id = next_child_idx.map(|idx| {
+                let next_id = next_child_idx.and_then(|idx| {
                     let child = &mut self.inner.children[idx];
-                    child.next(state, false).unwrap_or_else(|| child.id().to_owned())
+                    child.next(state, false).or_else(|| child.id().to_owned())
                 });
+
                 self.inner.focus_child_at_index(state, next_child_idx);
 
                 next_id
@@ -234,9 +236,9 @@ impl Component for Container {
                         .find_prev_child(|c| c.interactive(), self.inner.focused_child_index, wrap);
 
                 // Traverse tree to get previous id before we focus.
-                let prev_id = prev_child_idx.map(|idx| {
+                let prev_id = prev_child_idx.and_then(|idx| {
                     let child = &mut self.inner.children[idx];
-                    child.prev(state, false).unwrap_or_else(|| child.id().to_owned())
+                    child.prev(state, false).or_else(|| child.id().to_owned())
                 });
 
                 self.inner.focus_child_at_index(state, prev_child_idx);
@@ -251,9 +253,11 @@ impl Component for Container {
         for i in 0..self.inner.children.len() {
             if let Some(removed) = self.inner.children[i].remove(id) {
                 return Some(removed);
-            } else if self.inner.children[i].id() == id {
-                self.inner.focused_child_index = None;
-                return Some(self.inner.children.remove(i));
+            } else if let Some(child_id) = self.inner.children[i].id() {
+                if child_id == id {
+                    self.inner.focused_child_index = None;
+                    return Some(self.inner.children.remove(i));
+                }
             }
         }
 
@@ -262,10 +266,12 @@ impl Component for Container {
 
     fn insert(&mut self, id: &str, mut component: Box<dyn Component>) -> Option<Box<dyn Component>> {
         for (i, child) in self.inner.children.iter_mut().enumerate() {
-            if child.id() == id {
-                self.inner.focused_child_index = None;
-                self.inner.children.insert(i + 1, component);
-                return None;
+            if let Some(child_id) = child.id() {
+                if child_id == id {
+                    self.inner.focused_child_index = None;
+                    self.inner.children.insert(i + 1, component);
+                    return None;
+                }
             }
 
             component = child.insert(id, component)?;
@@ -347,5 +353,11 @@ impl Component for Container {
         }
 
         (width, height)
+    }
+}
+
+impl Default for Div {
+    fn default() -> Self {
+        Self::new()
     }
 }

@@ -21,12 +21,10 @@ use crate::{
     Event,
 };
 
-const MAX_ROWS: i32 = 6;
-
 #[derive(Debug)]
 pub enum SelectEvent {
     /// The user has selected an option
-    OptionSelected { id: String, option: String },
+    OptionSelected { id: Option<String>, option: String },
 }
 
 #[derive(Debug)]
@@ -39,11 +37,12 @@ pub struct Select {
     options: Vec<String>,
     sorted_options: Vec<usize>,
     allow_any_text: bool,
+    max_rows: usize,
     inner: ComponentData,
 }
 
 impl Select {
-    pub fn new(id: impl ToString, options: Vec<String>, allow_any_text: bool) -> Self {
+    pub fn new(options: Vec<String>, allow_any_text: bool) -> Self {
         Self {
             text: TextState::new(""),
             hint: None,
@@ -53,8 +52,14 @@ impl Select {
             options,
             sorted_options: vec![],
             allow_any_text,
-            inner: ComponentData::new("select".to_owned(), id.to_string(), true),
+            max_rows: 6,
+            inner: ComponentData::new("select".to_owned(), true),
         }
+    }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.inner.id = Some(id.into());
+        self
     }
 
     pub fn with_text(mut self, text: impl Display) -> Self {
@@ -66,10 +71,15 @@ impl Select {
         self.hint = Some(hint.into());
         self
     }
+
+    pub fn with_max_rows(mut self, max_rows: usize) -> Self {
+        self.max_rows = max_rows.max(1);
+        self
+    }
 }
 
 impl Component for Select {
-    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64) {
         if height <= 0.0 || width <= 0.0 {
             return;
         }
@@ -118,11 +128,8 @@ impl Component for Select {
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
 
-        for (i, option) in self.sorted_options[self.index_offset
-            ..self
-                .sorted_options
-                .len()
-                .min(self.index_offset + usize::try_from(MAX_ROWS).unwrap())]
+        for (i, option) in self.sorted_options
+            [self.index_offset..self.sorted_options.len().min(self.index_offset + self.max_rows)]
             .iter()
             .enumerate()
         {
@@ -165,8 +172,8 @@ impl Component for Select {
                     match self.index {
                         Some(ref mut index) => {
                             if *index == 0 {
-                                self.index_offset = self.sorted_options.len()
-                                    - usize::try_from(MAX_ROWS).unwrap().min(self.sorted_options.len());
+                                self.index_offset =
+                                    self.sorted_options.len() - self.max_rows.min(self.sorted_options.len());
                             } else if *index == self.index_offset {
                                 self.index_offset -= 1;
                             }
@@ -175,8 +182,8 @@ impl Component for Select {
                         },
                         None => {
                             self.index = Some(self.sorted_options.len() - 1);
-                            self.index_offset = self.sorted_options.len()
-                                - usize::try_from(MAX_ROWS).unwrap().min(self.sorted_options.len());
+                            self.index_offset =
+                                self.sorted_options.len() - self.max_rows.min(self.sorted_options.len());
                         },
                     }
                 }
@@ -187,7 +194,7 @@ impl Component for Select {
                         Some(ref mut index) => {
                             if *index == self.sorted_options.len() - 1 {
                                 self.index_offset = 0;
-                            } else if *index == self.index_offset + usize::try_from(MAX_ROWS - 1).unwrap() {
+                            } else if *index == self.index_offset + (self.max_rows - 1) {
                                 self.index_offset += 1;
                             }
                             *index = (*index + 1) % self.sorted_options.len();
@@ -296,7 +303,7 @@ impl Component for Select {
         }
 
         let height = match self.inner.focus {
-            true => 1.0 + self.sorted_options.len().min(usize::try_from(MAX_ROWS).unwrap()) as f64,
+            true => 1.0 + self.sorted_options.len().min(self.max_rows) as f64,
             false => 1.0,
         };
 

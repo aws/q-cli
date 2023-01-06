@@ -290,7 +290,10 @@ fn selector_component_matches(component: &Component, element: &TreeElement) -> b
         Component::Combinator(_) => unreachable!("combinator is stored here for improved alignment and padding"),
         Component::ExplicitUniversalType => true,
         Component::LocalName(local_name) => element.inner.type_selector == local_name.name.as_ref(),
-        Component::ID(id) => element.inner.id == id.as_ref(),
+        Component::ID(id) => match &element.inner.id {
+            Some(inner_id) => inner_id == id.as_ref(),
+            None => false,
+        },
         Component::Class(_) => false,
         Component::NonTSPseudoClass(class) => match class {
             PseudoClass::Hover => element.inner.hover,

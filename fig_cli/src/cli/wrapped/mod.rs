@@ -16,9 +16,9 @@ use time::{
     Weekday,
 };
 use tui::component::{
-    Container,
+    Div,
     Layout,
-    Paragraph,
+    P,
 };
 use tui::{
     ColorAttribute,
@@ -217,12 +217,12 @@ impl Wrapped {
 #[derive(Debug)]
 struct Center {
     component: Box<dyn Component>,
-    resize_warning: Paragraph,
+    resize_warning: P,
 }
 
 impl Center {
     fn new(component: impl Component + 'static) -> Self {
-        let resize_warning = Paragraph::new("").push_text(
+        let resize_warning = P::new().push_text(
             "
             ▁▁▁▁▁▁▁▁▁▁▁▁
             ▏↖        ↗▕
@@ -242,33 +242,21 @@ Expand your terminal or decrease your
 }
 
 impl Component for Center {
-    fn draw(
-        &self,
-        state: &mut State,
-        surface: &mut Surface,
-        _: f64,
-        _: f64,
-        _width: f64,
-        _height: f64,
-        screen_width: f64,
-        screen_height: f64,
-    ) {
+    fn draw(&self, state: &mut State, surface: &mut Surface, _: f64, _: f64, given_width: f64, given_height: f64) {
         let style = self.component.style(state);
 
         let size = self.component.size(state);
         let mut width = style.width().unwrap_or(size.0) + style.spacing_horizontal();
         let mut height = style.height().unwrap_or(size.1) + style.spacing_vertical();
 
-        match width <= screen_width && height <= screen_height {
+        match width <= given_width && height <= given_height {
             true => self.component.draw(
                 state,
                 surface,
-                screen_width / 2.0 - width / 2.0,
-                screen_height / 2.0 - height / 2.0,
+                given_width / 2.0 - width / 2.0,
+                given_height / 2.0 - height / 2.0,
                 width,
                 height,
-                screen_width,
-                screen_height,
             ),
             false => {
                 let style = self.resize_warning.style(state);
@@ -278,12 +266,10 @@ impl Component for Center {
                 self.resize_warning.draw(
                     state,
                     surface,
-                    screen_width / 2.0 - 16.0,
-                    screen_height / 2.0 - 5.0,
+                    given_width / 2.0 - 16.0,
+                    given_height / 2.0 - 5.0,
                     width,
                     height,
-                    screen_width,
-                    screen_height,
                 )
             },
         }
@@ -325,46 +311,46 @@ impl WrappedArgs {
         let history = History::load()?.all_rows()?;
         let wrapped = Wrapped::new(history);
 
-        tui::EventLoop::new().run(
-            Center::new(Paragraph::new("").push_text(
+        tui::EventLoop::new(
+            Center::new(P::new().push_text(
                 " \"──────────*@@*──────────\"     .--~~~~~~~~~~~~~------.
-                               /--===============------\\
+                           /--===============------\\
 We're glad you could make it   | |⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺⎺|     |
-   We've had a great year      | | > fig|        |     |
-                               | |               |     |
-    Thanks to you, we're       | |               |     |
+We've had a great year      | | > fig|        |     |
+                           | |               |     |
+Thanks to you, we're       | |               |     |
 spreading some holiday cheer   | |_______________|     |
-                               |                   ::::|
-      So press any key         '======================='
-     to change the view        //-'-'-'-'-'-'-'-'-'-'-\\\\
-                              //_'_'_'_'_'_'_'_'_'_'_'_\\\\
- Here's to a bright future    [-------------------------]
+                           |                   ::::|
+  So press any key         '======================='
+ to change the view        //-'-'-'-'-'-'-'-'-'-'-\\\\
+                          //_'_'_'_'_'_'_'_'_'_'_'_\\\\
+Here's to a bright future    [-------------------------]
 and a happy new year to you!  \\_________________________/",
             )),
+            tui::DisplayMode::AlternateScreen,
             InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
-            |event, _, control_flow| {
-                if let tui::Event::Quit | tui::Event::Terminate = event {
-                    *control_flow = ControlFlow::Quit;
-                }
-            },
-        )?;
+        )
+        .run(|event, _, control_flow| {
+            if let tui::Event::Quit | tui::Event::Terminate = event {
+                *control_flow = ControlFlow::Quit;
+            }
+        })?;
 
         let view = Center::new(
-            Container::new("view", Layout::Vertical)
+            Div::new()
+                .with_id("view")
                 .push(
-                    Container::new("", Layout::Horizontal)
+                    Div::new()
+                        .with_layout(Layout::Horizontal)
                         .push(top_commands(&wrapped))
-                        .push(
-                            Container::new("", Layout::Vertical)
-                                .push(fig_logo())
-                                .push(top_directories(&wrapped)?),
-                        ),
+                        .push(Div::new().push(fig_logo()).push(top_directories(&wrapped)?)),
                 )
                 .push(
-                    Container::new("", Layout::Horizontal)
+                    Div::new()
+                        .with_layout(Layout::Horizontal)
                         .push(
-                            Container::new("", Layout::Vertical)
+                            Div::new()
                                 .push(match rand::thread_rng().gen::<u32>() % 4 {
                                     0 if wrapped.shortest_commit_message.is_some() => shortest_commit_message(&wrapped),
                                     1 if wrapped.most_errors_in_a_day.is_some() => most_errors_in_a_day(&wrapped),
@@ -378,40 +364,44 @@ and a happy new year to you!  \\_________________________/",
                 .push(footer()),
         );
 
-        tui::EventLoop::new().run(
+        tui::EventLoop::new(
             view,
+            tui::DisplayMode::AlternateScreen,
             InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
-            |event, _, control_flow| {
-                if let tui::Event::Quit | tui::Event::Terminate = event {
-                    *control_flow = ControlFlow::Quit;
-                }
-            },
-        )?;
+        )
+        .run(|event, _, control_flow| {
+            if let tui::Event::Quit | tui::Event::Terminate = event {
+                *control_flow = ControlFlow::Quit;
+            }
+        })?;
 
         Ok(())
     }
 }
 
-fn fig_logo() -> Container {
-    Container::new("fig_logo_div", Layout::Vertical).push(Paragraph::new("fig_logo").push_styled_text(
-        "\
+fn fig_logo() -> Div {
+    Div::new()
+        .with_id("fig_logo_div")
+        .push(P::new().with_id("fig_logo").push_styled_text(
+            "\
 ███████╗██╗ ██████╗
 ██╔════╝██║██╔════╝
 █████╗  ██║██║  ███╗
 ██╔══╝  ██║██║   ██║
 ██║     ██║╚██████╔╝ 2022
 ╚═╝     ╚═╝ ╚═════╝  Wrapped",
-        ColorAttribute::Default,
-        ColorAttribute::Default,
-        true,
-        false,
-    ))
+            ColorAttribute::Default,
+            ColorAttribute::Default,
+            true,
+            false,
+        ))
 }
 
-fn top_commands(wrapped: &Wrapped) -> Container {
-    let mut container =
-        Container::new("top_commands_div", Layout::Vertical).push(Paragraph::new("label").push_styled_text(
+fn top_commands(wrapped: &Wrapped) -> Div {
+    let mut container = Div::new()
+        .with_id("top_commands_div")
+        .push(P::new().with_id("label").push_styled_text(
             "🏆 Top Commands",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -420,7 +410,7 @@ fn top_commands(wrapped: &Wrapped) -> Container {
         ));
 
     for command in wrapped.top_commands.iter().take(15) {
-        container = container.push(Paragraph::new("").push_text(format!(
+        container = container.push(P::new().push_text(format!(
             "{}{} {}",
             " ".repeat(5 - command.1.to_string().len().min(5)),
             command.1,
@@ -431,9 +421,10 @@ fn top_commands(wrapped: &Wrapped) -> Container {
     container
 }
 
-fn top_directories(wrapped: &Wrapped) -> Result<Container> {
-    let mut container =
-        Container::new("top_directories_div", Layout::Vertical).push(Paragraph::new("label").push_styled_text(
+fn top_directories(wrapped: &Wrapped) -> Result<Div> {
+    let mut container = Div::new()
+        .with_id("top_directories_div")
+        .push(P::new().with_id("label").push_styled_text(
             "📁 Top Directories",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -450,7 +441,7 @@ fn top_directories(wrapped: &Wrapped) -> Result<Container> {
     });
 
     for directory in top_directories {
-        container = container.push(Paragraph::new("").push_text(format!(
+        container = container.push(P::new().push_text(format!(
             "{}{} {}",
             " ".repeat(5 - directory.1.to_string().len().min(5)),
             directory.1,
@@ -461,9 +452,10 @@ fn top_directories(wrapped: &Wrapped) -> Result<Container> {
     Ok(container)
 }
 
-fn weekly_activity(wrapped: &Wrapped) -> Container {
-    let mut container =
-        Container::new("weekly_activity_div", Layout::Vertical).push(Paragraph::new("label").push_styled_text(
+fn weekly_activity(wrapped: &Wrapped) -> Div {
+    let mut container = Div::new()
+        .with_id("weekly_activity_div")
+        .push(P::new().with_id("label").push_styled_text(
             "📅 Weekly Activity",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -472,7 +464,7 @@ fn weekly_activity(wrapped: &Wrapped) -> Container {
         ));
 
     for activity in &wrapped.weekly_activity {
-        container = container.push(Paragraph::new("").push_text(format!(
+        container = container.push(P::new().push_text(format!(
             "{} {}",
             activity.0,
             // todo: validate the 20.0 here
@@ -483,9 +475,10 @@ fn weekly_activity(wrapped: &Wrapped) -> Container {
     container
 }
 
-fn daily_activity(wrapped: &Wrapped) -> Container {
-    let mut container =
-        Container::new("daily_activity_div", Layout::Vertical).push(Paragraph::new("label").push_styled_text(
+fn daily_activity(wrapped: &Wrapped) -> Div {
+    let mut container = Div::new()
+        .with_id("daily_activity_div")
+        .push(P::new().with_id("label").push_styled_text(
             "🕑 Daily Activity",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -519,7 +512,7 @@ fn daily_activity(wrapped: &Wrapped) -> Container {
         }
 
         container = container.push(
-            Paragraph::new("")
+            P::new()
                 .push_text(match i {
                     i if i == 0 => "12am ",
                     i if i == 3 => " 6am ",
@@ -534,8 +527,9 @@ fn daily_activity(wrapped: &Wrapped) -> Container {
     container
 }
 
-fn footer() -> Paragraph {
-    Paragraph::new("footer")
+fn footer() -> P {
+    P::new()
+        .with_id("footer")
         .push_text("🎁 Share your ")
         .push_styled_text(
             "#FigWrapped",
@@ -548,9 +542,10 @@ fn footer() -> Paragraph {
         .push_styled_text("@fig", ColorAttribute::Default, ColorAttribute::Default, true, false)
 }
 
-fn shortest_commit_message(wrapped: &Wrapped) -> Container {
-    Container::new("factoid_div", Layout::Vertical)
-        .push(Paragraph::new("label").push_styled_text(
+fn shortest_commit_message(wrapped: &Wrapped) -> Div {
+    Div::new()
+        .with_id("factoid_div")
+        .push(P::new().with_id("label").push_styled_text(
             "😬 Shortest Commit Msg",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -558,16 +553,21 @@ fn shortest_commit_message(wrapped: &Wrapped) -> Container {
             false,
         ))
         .push(match &wrapped.shortest_commit_message {
-            Some((message, date)) => Paragraph::new("")
-                .push_text(format!("'{message}' on "))
-                .push_styled_text(date, ColorAttribute::Default, ColorAttribute::Default, false, true),
-            None => Paragraph::new(""),
+            Some((message, date)) => P::new().push_text(format!("'{message}' on ")).push_styled_text(
+                date,
+                ColorAttribute::Default,
+                ColorAttribute::Default,
+                false,
+                true,
+            ),
+            None => P::new(),
         })
 }
 
-fn most_errors_in_a_day(wrapped: &Wrapped) -> Container {
-    Container::new("factoid_div", Layout::Vertical)
-        .push(Paragraph::new("label").push_styled_text(
+fn most_errors_in_a_day(wrapped: &Wrapped) -> Div {
+    Div::new()
+        .with_id("factoid_div")
+        .push(P::new().with_id("label").push_styled_text(
             "❌ Most Errors in a Day",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -579,23 +579,22 @@ fn most_errors_in_a_day(wrapped: &Wrapped) -> Container {
                 let mut month = date.month().to_string();
                 month.truncate(3);
 
-                Paragraph::new("")
-                    .push_text(format!("{cnt} errors on ",))
-                    .push_styled_text(
-                        format!("{month} {}", date.day()),
-                        ColorAttribute::Default,
-                        ColorAttribute::Default,
-                        false,
-                        true,
-                    )
+                P::new().push_text(format!("{cnt} errors on ",)).push_styled_text(
+                    format!("{month} {}", date.day()),
+                    ColorAttribute::Default,
+                    ColorAttribute::Default,
+                    false,
+                    true,
+                )
             },
-            None => Paragraph::new(""),
+            None => P::new(),
         })
 }
 
-fn longest_running_command(wrapped: &Wrapped) -> Container {
-    Container::new("factoid_div", Layout::Vertical)
-        .push(Paragraph::new("label").push_styled_text(
+fn longest_running_command(wrapped: &Wrapped) -> Div {
+    Div::new()
+        .with_id("factoid_div")
+        .push(P::new().with_id("label").push_styled_text(
             "⌛ Longest Running Command",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -627,23 +626,22 @@ fn longest_running_command(wrapped: &Wrapped) -> Container {
                     length /= 30.0;
                 }
 
-                Paragraph::new("")
-                    .push_text(format!("'{command}' took ",))
-                    .push_styled_text(
-                        format!("{length:.2} {time_scale}"),
-                        ColorAttribute::Default,
-                        ColorAttribute::Default,
-                        false,
-                        true,
-                    )
+                P::new().push_text(format!("'{command}' took ",)).push_styled_text(
+                    format!("{length:.2} {time_scale}"),
+                    ColorAttribute::Default,
+                    ColorAttribute::Default,
+                    false,
+                    true,
+                )
             },
-            None => Paragraph::new(""),
+            None => P::new(),
         })
 }
 
-fn busiest_day(wrapped: &Wrapped) -> Container {
-    Container::new("factoid_div", Layout::Vertical)
-        .push(Paragraph::new("label").push_styled_text(
+fn busiest_day(wrapped: &Wrapped) -> Div {
+    Div::new()
+        .with_id("factoid_div")
+        .push(P::new().with_id("label").push_styled_text(
             "🧰 Busiest Day",
             ColorAttribute::Default,
             ColorAttribute::Default,
@@ -655,17 +653,15 @@ fn busiest_day(wrapped: &Wrapped) -> Container {
                 let mut month = date.month().to_string();
                 month.truncate(3);
 
-                Paragraph::new("")
-                    .push_text(format!("{cnt} commands on ",))
-                    .push_styled_text(
-                        format!("{month} {}", date.day()),
-                        ColorAttribute::Default,
-                        ColorAttribute::Default,
-                        false,
-                        true,
-                    )
+                P::new().push_text(format!("{cnt} commands on ",)).push_styled_text(
+                    format!("{month} {}", date.day()),
+                    ColorAttribute::Default,
+                    ColorAttribute::Default,
+                    false,
+                    true,
+                )
             },
-            None => Paragraph::new(""),
+            None => P::new(),
         })
 }
 

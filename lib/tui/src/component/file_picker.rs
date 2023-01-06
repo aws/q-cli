@@ -29,7 +29,7 @@ const MAX_ROWS: i32 = 8;
 #[derive(Debug)]
 pub enum FilePickerEvent {
     /// The user has either typed a valid or invalid path or selected a valid one
-    FilePathChanged { id: String, path: PathBuf },
+    FilePathChanged { id: Option<String>, path: PathBuf },
 }
 
 #[derive(Debug)]
@@ -46,7 +46,7 @@ pub struct FilePicker {
 }
 
 impl FilePicker {
-    pub fn new(id: impl ToString, files: bool, folders: bool, extensions: Vec<String>) -> Self {
+    pub fn new(files: bool, folders: bool, extensions: Vec<String>) -> Self {
         Self {
             text: TextState::default(),
             _files: files,
@@ -56,8 +56,13 @@ impl FilePicker {
             preview: vec![],
             index: None,
             index_offset: 0,
-            inner: ComponentData::new("select".to_owned(), id.to_string(), true),
+            inner: ComponentData::new("select".to_owned(), true),
         }
+    }
+
+    pub fn with_id(mut self, id: impl Into<String>) -> Self {
+        self.inner.id = Some(id.into());
+        self
     }
 
     pub fn with_path(mut self, path: impl Into<String>) -> Self {
@@ -124,7 +129,7 @@ impl FilePicker {
 }
 
 impl Component for FilePicker {
-    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64, _: f64, _: f64) {
+    fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64) {
         if height <= 0.0 || width <= 0.0 {
             return;
         }
