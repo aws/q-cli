@@ -24,3 +24,7 @@ export CARGO_PROFILE_RELEASE_LTO="thin"
 export RUSTFLAGS="${rustflags[*]}"
 export CARGO_NET_GIT_FETCH_WITH_CLI="true"
 EOF
+
+if [[ "$PLATFORM" == "Darwin" ]]; then
+  echo "MACOSX_DEPLOYMENT_TARGET=10.13" >> "${BASH_ENV}"
+fi
