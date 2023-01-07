@@ -27,7 +27,6 @@ pub enum TextFieldEvent {
 #[derive(Debug)]
 pub struct TextField {
     text: TextState,
-    offset: usize,
     hint: Option<String>,
     obfuscated: bool,
     inner: ComponentData,
@@ -37,7 +36,6 @@ impl TextField {
     pub fn new() -> Self {
         Self {
             text: TextState::new(""),
-            offset: 0,
             hint: None,
             obfuscated: false,
             inner: ComponentData::new("input".to_owned(), true),
@@ -72,7 +70,6 @@ impl Component for TextField {
         }
 
         let style = self.style(state);
-        let width = style.width().unwrap_or(width);
 
         match self.text.is_empty() {
             true => {
@@ -85,13 +82,19 @@ impl Component for TextField {
             false => {
                 match self.obfuscated {
                     true => surface.draw_text("*".repeat(self.text.len()), x, y, width, style.attributes()),
-                    false => surface.draw_text(&self.text.as_str()[self.offset..], x, y, width, style.attributes()),
+                    false => surface.draw_text(
+                        &self.text.as_str()[self.text.cursor.saturating_sub((width.round() - 1.0) as usize)..],
+                        x,
+                        y,
+                        width,
+                        style.attributes(),
+                    ),
                 };
             },
         };
 
         if self.inner.focus {
-            state.cursor_position = (x + (self.text.cursor as f64).min(width) - self.offset as f64, y);
+            state.cursor_position = (x + (self.text.cursor as f64).min(width.round() - 1.0), y);
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
@@ -142,54 +145,3 @@ impl Default for TextField {
         Self::new()
     }
 }
-
-// #[cfg(test)]
-// mod tests {
-//     use lightningcss::stylesheet::{
-//         ParserOptions,
-//         StyleSheet,
-//     };
-//     use termwiz::input::{
-//         InputEvent,
-//         KeyCode,
-//         KeyEvent,
-//         Modifiers,
-//     };
-//
-//     use super::*;
-//     use crate::{
-//         ControlFlow,
-//         EventLoop,
-//         InputMethod,
-//     };
-//
-//     #[ignore = "does not work on CI"]
-//     #[test]
-//     fn test_text_field() {
-//         let mut test = String::new();
-//
-//         let text_field_id = "test";
-//         let mut text_field = TextField::new("test");
-//
-//         EventLoop::new()
-//             .run(
-//                 &mut text_field,
-//                 InputMethod::Scripted(vec![InputEvent::Key(KeyEvent {
-//                     key: KeyCode::Char('a'),
-//                     modifiers: Modifiers::NONE,
-//                 })]),
-//                 StyleSheet::parse("", ParserOptions::default()).unwrap(),
-//                 |event, _component, control_flow| {
-//                     if let Event::TextField(TextFieldEvent::TextChanged { id, text }) = event {
-//                         if id == text_field_id {
-//                             test = text;
-//                             *control_flow = ControlFlow::Quit
-//                         }
-//                     }
-//                 },
-//             )
-//             .unwrap();
-//
-//         assert_eq!(test, "a");
-//     }
-// }

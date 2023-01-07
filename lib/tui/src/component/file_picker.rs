@@ -136,7 +136,13 @@ impl Component for FilePicker {
 
         let style = self.style(state);
 
-        surface.draw_text(self.text.as_str(), x, y, width, style.attributes());
+        surface.draw_text(
+            &self.text.as_str()[self.text.cursor.saturating_sub((width.round() - 1.0) as usize)..],
+            x,
+            y,
+            width,
+            style.attributes(),
+        );
 
         if height as usize > 1 {
             surface.draw_rect('─', x, y + 1.0, width, 1.0, style.attributes());
@@ -208,7 +214,7 @@ impl Component for FilePicker {
         }
 
         if self.index.is_none() && self.inner.focus {
-            state.cursor_position = (x + (self.text.cursor as f64).min(width), y);
+            state.cursor_position = (x + (self.text.cursor as f64).min(width.round() - 1.0), y);
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }

@@ -10,6 +10,7 @@ div {
 input, select, #__preview {
     padding-left: 1;
     padding-right: 1;
+    width: 100;
 }
 
 #__parameter, #__preview {

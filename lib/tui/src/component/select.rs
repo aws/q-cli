@@ -31,7 +31,6 @@ pub enum SelectEvent {
 pub struct Select {
     text: TextState,
     hint: Option<String>,
-    cursor_offset: usize,
     index: Option<usize>,
     index_offset: usize,
     options: Vec<String>,
@@ -46,7 +45,6 @@ impl Select {
         Self {
             text: TextState::new(""),
             hint: None,
-            cursor_offset: 0,
             index: Default::default(),
             index_offset: 0,
             options,
@@ -99,18 +97,12 @@ impl Component for Select {
                 attributes.set_foreground(ColorAttribute::PaletteIndex(8));
 
                 if let Some(hint) = &self.hint {
-                    surface.draw_text(
-                        &hint.as_str()[self.cursor_offset..],
-                        x + 2.0,
-                        y,
-                        width - 2.0,
-                        attributes,
-                    );
+                    surface.draw_text(hint, x + 2.0, y, width - 2.0, attributes);
                 }
             },
             false => {
                 surface.draw_text(
-                    &self.text.as_str()[self.cursor_offset..],
+                    &self.text.as_str()[self.text.cursor.saturating_sub((width.round() - 3.0) as usize)..],
                     x + 2.0,
                     y,
                     width - 2.0,
@@ -120,10 +112,7 @@ impl Component for Select {
         }
 
         if self.inner.focus {
-            state.cursor_position = (
-                x + 2.0 + (self.text.cursor as f64).min(width) - self.cursor_offset as f64,
-                y,
-            );
+            state.cursor_position = (x + 2.0 + (self.text.cursor as f64).min(width.round() - 3.0), y);
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
