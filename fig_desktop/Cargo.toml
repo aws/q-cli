@@ -110,7 +110,7 @@ dbus = { path = "../lib/dbus" }
 freedesktop-icons = "0.2.2"
 gtk = { version = "0.15", features = ["v3_22"] }
 x11rb = "0.11.0"
-zbus = "3.6.2"
+zbus = "3.7.0"
 
 [target.'cfg(target_os="macos")'.dependencies]
 accessibility-sys = { path = "../lib/macos_utils/accessibility-master/accessibility-sys", version = "0.1.3" }
