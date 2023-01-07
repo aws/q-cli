@@ -5,6 +5,16 @@
     border-style: ascii ┏ ━ ┓ ┃ ┃ ┗ ━ ┛;
 }
 
+div {
+    border-color: ansi(4);
+    border-width: 1.0;
+    border-style: ascii ┏ ━ ┓ ┃ ┃ ┗ ━ ┛;
+}
+
+input {
+    width: 20;
+}
+
 #text-field:focus {
     color: cyan;
 }

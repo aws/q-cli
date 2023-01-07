@@ -46,6 +46,8 @@ pub struct ComponentData {
     ///
     pub id: Option<String>,
     ///
+    pub classes: Vec<String>,
+    ///
     pub interactive: bool,
     ///
     pub hover: bool,
@@ -65,6 +67,8 @@ pub struct StyleInfo {
     pub type_selector: String,
     ///
     pub id: Option<String>,
+    ///
+    pub classes: Vec<String>,
     ///
     pub hover: bool,
     ///
@@ -86,6 +90,7 @@ impl ComponentData {
     pub fn style_info(&self) -> StyleInfo {
         StyleInfo {
             type_selector: self.type_selector.clone(),
+            classes: self.classes.clone(),
             id: self.id.clone(),
             hover: self.hover,
             focus: self.focus,

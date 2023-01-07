@@ -41,6 +41,11 @@ impl CheckBox {
         self.inner.id = Some(id.into());
         self
     }
+
+    pub fn with_class(mut self, class: impl Into<String>) -> Self {
+        self.inner.classes.push(class.into());
+        self
+    }
 }
 
 impl Component for CheckBox {

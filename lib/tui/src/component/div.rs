@@ -40,6 +40,11 @@ impl Div {
         self
     }
 
+    pub fn with_class(mut self, class: impl Into<String>) -> Self {
+        self.inner.classes.push(class.into());
+        self
+    }
+
     pub fn with_layout(mut self, layout: Layout) -> Self {
         self.layout = layout;
         self
@@ -196,8 +201,7 @@ impl Component for Div {
     }
 
     fn next(&mut self, state: &mut State, wrap: bool) -> Option<String> {
-        let next = self
-            .inner
+        self.inner
             .focused_child()
             .and_then(|child| child.next(state, false))
             .or_else(|| {
@@ -218,14 +222,11 @@ impl Component for Div {
                 self.inner.focus_child_at_index(state, next_child_idx);
 
                 next_id
-            });
-
-        next
+            })
     }
 
     fn prev(&mut self, state: &mut State, wrap: bool) -> Option<String> {
-        let prev = self
-            .inner
+        self.inner
             .focused_child()
             .and_then(|child| child.prev(state, false))
             .or_else(|| {
@@ -244,9 +245,7 @@ impl Component for Div {
                 self.inner.focus_child_at_index(state, prev_child_idx);
 
                 prev_id
-            });
-
-        prev
+            })
     }
 
     fn remove(&mut self, id: &str) -> Option<Box<dyn Component>> {

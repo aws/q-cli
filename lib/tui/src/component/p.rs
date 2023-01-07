@@ -33,6 +33,11 @@ impl P {
         self
     }
 
+    pub fn with_class(mut self, class: impl Into<String>) -> Self {
+        self.inner.classes.push(class.into());
+        self
+    }
+
     pub fn push_text(mut self, text: impl Into<String>) -> Self {
         self.components.push((text.into(), None));
         self

@@ -20,6 +20,7 @@ pub enum InputAction {
     Previous,
     Delete,
     Select,
+    Redraw,
     Quit,
     Terminate,
     Insert(char),
@@ -39,7 +40,7 @@ pub struct MouseAction {
     pub just_released: bool,
 }
 
-#[derive(Debug, Default)]
+#[derive(Debug)]
 pub struct InputMethod {
     map: IndexMap<(KeyCode, Modifiers), InputAction>,
     exit_any: bool,
@@ -47,6 +48,10 @@ pub struct InputMethod {
 }
 
 impl InputMethod {
+    pub fn new() -> Self {
+        Self::default()
+    }
+
     pub fn new_minimal() -> Self {
         Self {
             map: IndexMap::from([
@@ -56,7 +61,8 @@ impl InputMethod {
                 ((KeyCode::Char('D'), Modifiers::CTRL), InputAction::Terminate),
                 ((KeyCode::Escape, Modifiers::NONE), InputAction::Terminate),
             ]),
-            ..Default::default()
+            exit_any: false,
+            mouse_left_down: false,
         }
     }
 
@@ -64,24 +70,8 @@ impl InputMethod {
         Self {
             map: IndexMap::default(),
             exit_any: true,
-            ..Default::default()
+            mouse_left_down: false,
         }
-    }
-
-    pub fn new() -> Self {
-        Self::new_minimal().insert_all([
-            ((KeyCode::Backspace, Modifiers::NONE), InputAction::Remove),
-            ((KeyCode::Enter, Modifiers::NONE), InputAction::Submit),
-            ((KeyCode::LeftArrow, Modifiers::NONE), InputAction::Left),
-            ((KeyCode::RightArrow, Modifiers::NONE), InputAction::Right),
-            ((KeyCode::UpArrow, Modifiers::NONE), InputAction::Up),
-            ((KeyCode::DownArrow, Modifiers::NONE), InputAction::Down),
-            ((KeyCode::Tab, Modifiers::SHIFT), InputAction::Previous),
-            ((KeyCode::Tab, Modifiers::NONE), InputAction::Next),
-            ((KeyCode::Delete, Modifiers::NONE), InputAction::Delete),
-            ((KeyCode::Char('o'), Modifiers::CTRL), InputAction::TempChangeView),
-            ((KeyCode::Char('O'), Modifiers::CTRL), InputAction::TempChangeView),
-        ])
     }
 
     pub fn insert(mut self, mapping: ((KeyCode, Modifiers), InputAction)) -> Self {
@@ -129,5 +119,25 @@ impl InputMethod {
         self.mouse_left_down = mouse_left_down;
 
         out
+    }
+}
+
+impl Default for InputMethod {
+    fn default() -> Self {
+        Self::new_minimal().insert_all([
+            ((KeyCode::Backspace, Modifiers::NONE), InputAction::Remove),
+            ((KeyCode::Enter, Modifiers::NONE), InputAction::Submit),
+            ((KeyCode::LeftArrow, Modifiers::NONE), InputAction::Left),
+            ((KeyCode::RightArrow, Modifiers::NONE), InputAction::Right),
+            ((KeyCode::UpArrow, Modifiers::NONE), InputAction::Up),
+            ((KeyCode::DownArrow, Modifiers::NONE), InputAction::Down),
+            ((KeyCode::Tab, Modifiers::SHIFT), InputAction::Previous),
+            ((KeyCode::Tab, Modifiers::NONE), InputAction::Next),
+            ((KeyCode::Delete, Modifiers::NONE), InputAction::Delete),
+            ((KeyCode::Char('o'), Modifiers::CTRL), InputAction::TempChangeView),
+            ((KeyCode::Char('O'), Modifiers::CTRL), InputAction::TempChangeView),
+            ((KeyCode::Char('l'), Modifiers::CTRL), InputAction::Redraw),
+            ((KeyCode::Char('L'), Modifiers::CTRL), InputAction::Redraw),
+        ])
     }
 }

@@ -47,6 +47,11 @@ impl TextField {
         self
     }
 
+    pub fn with_class(mut self, class: impl Into<String>) -> Self {
+        self.inner.classes.push(class.into());
+        self
+    }
+
     pub fn with_text(mut self, text: impl Into<String>) -> Self {
         self.text = TextState::new(text.into());
         self
@@ -57,6 +62,7 @@ impl TextField {
         self
     }
 
+    /// This function replaces all characters of the visible text with the '*' character
     pub fn obfuscated(mut self, obfuscated: bool) -> Self {
         self.obfuscated = obfuscated;
         self
@@ -113,8 +119,15 @@ impl Component for TextField {
         }
     }
 
-    fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, x: f64, _: f64, _: f64, _: f64) {
-        self.text.on_mouse_action(mouse_action, x)
+    fn on_mouse_action(&mut self, state: &mut State, mouse_action: &MouseAction, x: f64, _: f64, _: f64, _: f64) {
+        self.text.on_mouse_action(mouse_action, x);
+
+        if !self.text.is_empty() {
+            state.event_buffer.push(Event::TextField(TextFieldEvent::TextChanged {
+                id: self.inner.id.to_owned(),
+                text: self.text.to_owned(),
+            }))
+        }
     }
 
     fn inner(&self) -> &ComponentData {

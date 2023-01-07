@@ -1,6 +1,10 @@
+use std::path::PathBuf;
 use std::time::Duration;
 
-use lightningcss::stylesheet::StyleSheet;
+use lightningcss::stylesheet::{
+    ParserOptions,
+    StyleSheet,
+};
 use termwiz::caps::Capabilities;
 use termwiz::color::ColorAttribute;
 use termwiz::input::InputEvent;
@@ -44,6 +48,8 @@ impl TreeElement {
         Some(Self { inner, siblings })
     }
 }
+
+static mut CSS_STRING: String = String::new();
 
 #[derive(Debug)]
 pub enum DisplayMode {
@@ -98,6 +104,8 @@ pub struct EventLoop<'a> {
     display_mode: DisplayMode,
     input_method: InputMethod,
     state: State<'a, 'a>,
+    #[cfg(debug_assertions)]
+    style_sheet_path: Option<PathBuf>,
 }
 
 impl<'a> EventLoop<'a> {
@@ -119,7 +127,14 @@ impl<'a> EventLoop<'a> {
             display_mode,
             input_method,
             state,
+            style_sheet_path: None,
         }
+    }
+
+    #[cfg(debug_assertions)]
+    pub fn with_style_sheet_path(mut self, path: impl Into<PathBuf>) -> Self {
+        self.style_sheet_path = Some(path.into());
+        self
     }
 
     #[inline]
@@ -278,6 +293,18 @@ impl<'a> EventLoop<'a> {
                                 &mut self.component,
                                 control_flow,
                             )
+                        }
+                    },
+                    InputAction::Redraw => {
+                        #[cfg(debug_assertions)]
+                        if let Some(path) = &self.style_sheet_path {
+                            // SAFETY: library must stay single threaded when in debug mode. This is a workaround to
+                            // lightningcss limitations
+                            unsafe {
+                                CSS_STRING = std::fs::read_to_string(path)?;
+                                self.state.style_sheet =
+                                    StyleSheet::parse(&CSS_STRING, ParserOptions::default()).unwrap();
+                            }
                         }
                     },
                     InputAction::Quit => event_handler(Event::Quit, &mut self.component, control_flow),

@@ -60,6 +60,11 @@ impl Select {
         self
     }
 
+    pub fn with_class(mut self, class: impl Into<String>) -> Self {
+        self.inner.classes.push(class.into());
+        self
+    }
+
     pub fn with_text(mut self, text: impl Display) -> Self {
         self.text = TextState::new(text.to_string());
         self
@@ -122,7 +127,7 @@ impl Component for Select {
             .iter()
             .enumerate()
         {
-            if i + 1 > height as usize {
+            if i + 1 >= height as usize {
                 return;
             }
 

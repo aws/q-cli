@@ -294,7 +294,7 @@ fn selector_component_matches(component: &Component, element: &TreeElement) -> b
             Some(inner_id) => inner_id == id.as_ref(),
             None => false,
         },
-        Component::Class(_) => false,
+        Component::Class(class) => element.inner.classes.iter().any(|cmp| cmp == class.as_ref()),
         Component::NonTSPseudoClass(class) => match class {
             PseudoClass::Hover => element.inner.hover,
             PseudoClass::Focus => element.inner.focus,

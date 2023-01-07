@@ -65,6 +65,11 @@ impl FilePicker {
         self
     }
 
+    pub fn with_class(mut self, class: impl Into<String>) -> Self {
+        self.inner.classes.push(class.into());
+        self
+    }
+
     pub fn with_path(mut self, path: impl Into<String>) -> Self {
         *self.text = path.into();
         self.text.cursor = self.text.len();
