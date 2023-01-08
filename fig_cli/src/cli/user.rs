@@ -583,13 +583,16 @@ impl TokensSubcommand {
                 Ok(())
             },
             Self::Revoke { name, team } => {
-                Request::post("/auth/tokens/revoke")
+                let res = Request::post("/auth/tokens/revoke")
                     .auth()
-                    .body(json!({ "team": team }))
-                    .send()
+                    .body(json!({ "team": team, "name": name }))
+                    .json()
                     .await?;
 
-                println!("Revoked token {name} for team {team}");
+                println!(
+                    "Revoked token {} for team {}",
+                    res["name"], res["namespace"]["username"]
+                );
 
                 Ok(())
             },

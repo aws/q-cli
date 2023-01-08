@@ -44,9 +44,9 @@ impl std::fmt::Display for Error {
                 sentry_id,
             } => match sentry_id {
                 Some(sentry_id) => {
-                    write!(f, "Fig error: {error} (status: {status}, error_id: {sentry_id})",)
+                    write!(f, "{error} (status: {status}, error_id: {sentry_id})",)
                 },
-                None => write!(f, "Fig error: {error} (status: {status})"),
+                None => write!(f, "{error} (status: {status})"),
             },
             Error::Graphql(err) => match err.len() {
                 0 => write!(f, "Empty graphql error"),
