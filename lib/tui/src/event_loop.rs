@@ -1,10 +1,6 @@
-use std::path::PathBuf;
 use std::time::Duration;
 
-use lightningcss::stylesheet::{
-    ParserOptions,
-    StyleSheet,
-};
+use lightningcss::stylesheet::StyleSheet;
 use termwiz::caps::Capabilities;
 use termwiz::color::ColorAttribute;
 use termwiz::input::InputEvent;
@@ -49,6 +45,7 @@ impl TreeElement {
     }
 }
 
+#[cfg(debug_assertions)]
 static mut CSS_STRING: String = String::new();
 
 #[derive(Debug)]
@@ -105,7 +102,7 @@ pub struct EventLoop<'a> {
     input_method: InputMethod,
     state: State<'a, 'a>,
     #[cfg(debug_assertions)]
-    style_sheet_path: Option<PathBuf>,
+    style_sheet_path: Option<std::path::PathBuf>,
 }
 
 impl<'a> EventLoop<'a> {
@@ -127,12 +124,13 @@ impl<'a> EventLoop<'a> {
             display_mode,
             input_method,
             state,
+            #[cfg(debug_assertions)]
             style_sheet_path: None,
         }
     }
 
     #[cfg(debug_assertions)]
-    pub fn with_style_sheet_path(mut self, path: impl Into<PathBuf>) -> Self {
+    pub fn with_style_sheet_path(mut self, path: impl Into<std::path::PathBuf>) -> Self {
         self.style_sheet_path = Some(path.into());
         self
     }
@@ -303,7 +301,8 @@ impl<'a> EventLoop<'a> {
                             unsafe {
                                 CSS_STRING = std::fs::read_to_string(path)?;
                                 self.state.style_sheet =
-                                    StyleSheet::parse(&CSS_STRING, ParserOptions::default()).unwrap();
+                                    StyleSheet::parse(&CSS_STRING, lightningcss::stylesheet::ParserOptions::default())
+                                        .unwrap();
                             }
                         }
                     },
