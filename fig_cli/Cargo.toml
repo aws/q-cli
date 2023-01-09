@@ -51,7 +51,7 @@ fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
 flume = "0.10.14"
 futures = "0.3.25"
-globset = "0.4.9"
+globset = "0.4.10"
 humantime = "2.1.0"
 indicatif = "0.17.2"
 once_cell = "1.17.0"
