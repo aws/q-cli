@@ -49,7 +49,6 @@ use crate::{
     codex,
     shell_state_to_context,
     MainLoopEvent,
-    EXECUTE_ON_NEW_CMD,
     EXPECTED_BUFFER,
     INSERTION_LOCKED_AT,
     INSERT_ON_NEW_CMD,
@@ -287,8 +286,7 @@ pub async fn process_figterm_request(
             Ok(Some(response))
         },
         FigtermRequest::InsertOnNewCmd(command) => {
-            *INSERT_ON_NEW_CMD.lock() = Some(command.text);
-            *EXECUTE_ON_NEW_CMD.lock() = command.execute;
+            *INSERT_ON_NEW_CMD.lock() = Some((command.text, command.bracketed, command.execute));
             Ok(None)
         },
         FigtermRequest::SetBuffer(_) => Err(anyhow::anyhow!("SetBuffer is not supported in figterm")),

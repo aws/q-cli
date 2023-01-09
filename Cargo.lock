@@ -2431,6 +2431,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "bitflags",
+ "bstr",
  "bytes",
  "cfg-if 1.0.0",
  "clap",

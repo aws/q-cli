@@ -303,6 +303,8 @@ pub async fn spawn_secure_ipc(
                                                 .send(MainLoopEvent::Insert {
                                                     insert: Vec::new(),
                                                     unlock: true,
+                                                    bracketed: false,
+                                                    execute: false,
                                                 })
                                                 .unwrap();
                                         }
@@ -313,6 +315,8 @@ pub async fn spawn_secure_ipc(
                                             .send(MainLoopEvent::Insert {
                                                 insert: Vec::new(),
                                                 unlock: true,
+                                                bracketed: false,
+                                                execute: false,
                                             })
                                             .unwrap();
                                         let _ = writer.shutdown().await;

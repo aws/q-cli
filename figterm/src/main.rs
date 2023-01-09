@@ -141,8 +141,7 @@ const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
 const BUFFER_SIZE: usize = 16384;
 
-static INSERT_ON_NEW_CMD: Mutex<Option<String>> = Mutex::new(None);
-static EXECUTE_ON_NEW_CMD: Mutex<bool> = Mutex::new(false);
+static INSERT_ON_NEW_CMD: Mutex<Option<(String, bool, bool)>> = Mutex::new(None);
 static INSERTION_LOCKED_AT: RwLock<Option<SystemTime>> = RwLock::new(None);
 static EXPECTED_BUFFER: Lazy<Mutex<String>> = Lazy::new(|| Mutex::new("".to_string()));
 
@@ -165,10 +164,18 @@ pub fn dialoguer_theme() -> ColorfulTheme {
 static HOSTNAME: Lazy<Option<String>> = Lazy::new(|| sysinfo::System::new().host_name());
 
 pub enum MainLoopEvent {
-    Insert { insert: Vec<u8>, unlock: bool },
+    Insert {
+        insert: Vec<u8>,
+        unlock: bool,
+        bracketed: bool,
+        execute: bool,
+    },
     UnlockInterception,
     SetImmediateMode(bool),
-    PromptSSH { uuid: String, remote_host: String },
+    PromptSSH {
+        uuid: String,
+        remote_host: String,
+    },
     SetCsiU,
     UnsetCsiU,
 }
@@ -760,8 +767,24 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                     match res {
                         Ok(event) => {
                             match event {
-                                MainLoopEvent::Insert { insert, unlock } => {
-                                    master.write_all(&insert).await?;
+                                MainLoopEvent::Insert { insert, unlock, bracketed, execute } => {
+                                    use bstr::ByteSlice;
+                                    if bracketed {
+                                        if term.mode().contains(alacritty_terminal::term::TermMode::BRACKETED_PASTE) {
+                                            master.write_all(b"\x1b[200~").await?;
+                                            master.write_all(&insert.replace(b"\x1b", "")).await?;
+                                            master.write_all(b"\x1b[201~").await?;
+                                        } else {
+                                            master.write_all(&insert.replace("\r\n", "\r").replace("\n", "\r")).await?;
+                                        }
+                                    } else {
+                                        master.write_all(&insert).await?;
+                                    }
+
+                                    if execute {
+                                        master.write_all(b"\r").await?; 
+                                    }
+
                                     if unlock {
                                         key_interceptor.reset();
                                     }
@@ -930,9 +953,13 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     }
                                     Ok((None, InputEvent::Paste(string))) => {
                                         // Pass through bracketed pastes.
-                                        write_buffer.extend(b"\x1b[200~");
-                                        write_buffer.extend(string.as_bytes());
-                                        write_buffer.extend(b"\x1b[201~");
+                                        if term.mode().contains(alacritty_terminal::term::TermMode::BRACKETED_PASTE) {
+                                            write_buffer.extend(b"\x1b[200~");
+                                            write_buffer.extend(string.replace('\x1b', "").as_bytes());
+                                            write_buffer.extend(b"\x1b[201~");
+                                        } else {
+                                            write_buffer.extend(string.replace("\r\n", "\r").replace('\n', "\r").as_bytes());
+                                        }
                                     }
                                     Ok((raw, _)) => {
                                         if let Some(raw) = raw {

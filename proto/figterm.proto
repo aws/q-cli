@@ -128,6 +128,8 @@ message InsertOnNewCmdRequest {
   string text = 1;
   // if to execute the command immediately
   bool execute = 2;
+  // if to bracket the text
+  bool bracketed = 3;
 }
 
 // Command to update values in the shell context

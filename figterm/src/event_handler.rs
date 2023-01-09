@@ -25,7 +25,6 @@ use crate::history::{
 use crate::{
     shell_state_to_context,
     MainLoopEvent,
-    EXECUTE_ON_NEW_CMD,
     INSERT_ON_NEW_CMD,
 };
 
@@ -61,12 +60,6 @@ impl EventListener for EventHandler {
                 let message = hook_to_message(hook);
 
                 let insert_on_new_cmd = INSERT_ON_NEW_CMD.lock().take();
-                let execute_on_new_cmd = {
-                    let mut lock = EXECUTE_ON_NEW_CMD.lock();
-                    let lock_val = *lock;
-                    *lock = false;
-                    lock_val
-                };
 
                 if let Some(cwd) = &shell_state.local_context.current_working_directory {
                     if cwd.exists() {
@@ -74,13 +67,14 @@ impl EventListener for EventHandler {
                     }
                 }
 
-                if let Some(text) = insert_on_new_cmd {
-                    let mut insert: Vec<u8> = text.into_bytes();
-                    if execute_on_new_cmd {
-                        insert.extend_from_slice(b"\r");
-                    }
+                if let Some((text, bracketed, execute)) = insert_on_new_cmd {
                     self.main_loop_sender
-                        .send(MainLoopEvent::Insert { insert, unlock: false })
+                        .send(MainLoopEvent::Insert {
+                            insert: text.into_bytes(),
+                            unlock: false,
+                            bracketed,
+                            execute,
+                        })
                         .unwrap();
                 }
 

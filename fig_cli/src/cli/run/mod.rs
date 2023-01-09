@@ -809,8 +809,9 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
     conn.send_message(fig_proto::figterm::FigtermRequestMessage {
         request: Some(fig_proto::figterm::figterm_request_message::Request::InsertOnNewCmd(
             fig_proto::figterm::InsertOnNewCmdRequest {
-                text: format!("\x1b[200~{text}\x1b[201~"),
+                text,
                 execute,
+                bracketed: true,
             },
         )),
     })
