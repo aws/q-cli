@@ -445,6 +445,12 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "0ea22880d78093b0cbe17c89f64a7d457941e65759157ec6cb31a31d652b05e5"
 
 [[package]]
+name = "base64"
+version = "0.21.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "a4a4ddaa51a5bc52a6948f74c06d20aaaddb71924eab79b8c97a8c556e942d6a"
+
+[[package]]
 name = "base64-simd"
 version = "0.7.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1984,7 +1990,7 @@ dependencies = [
  "accessibility-sys",
  "anyhow",
  "async-trait",
- "base64 0.20.0",
+ "base64 0.21.0",
  "bytes",
  "camino",
  "cfg-if 1.0.0",
@@ -2052,7 +2058,7 @@ name = "fig_desktop_api"
 version = "2.12.0-dev"
 dependencies = [
  "async-trait",
- "base64 0.20.0",
+ "base64 0.21.0",
  "camino",
  "cfg-if 1.0.0",
  "dashmap",
@@ -2276,7 +2282,7 @@ dependencies = [
 name = "fig_request"
 version = "2.12.0-dev"
 dependencies = [
- "base64 0.20.0",
+ "base64 0.21.0",
  "bytes",
  "cfg-if 1.0.0",
  "fig_settings",

@@ -5,6 +5,7 @@ use std::fmt::{
 };
 use std::sync::atomic::AtomicBool;
 
+use base64::prelude::*;
 use bytes::BytesMut;
 use fig_proto::fig::notification::Type as NotificationEnum;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -570,7 +571,7 @@ impl WindowState {
                 let mut encoded = BytesMut::new();
 
                 match message.encode(&mut encoded) {
-                    Ok(_) => self.emit(EmitEventName::ProtoMessageReceived, base64::encode(encoded)),
+                    Ok(_) => self.emit(EmitEventName::ProtoMessageReceived, BASE64_STANDARD.encode(encoded)),
                     Err(err) => error!(%err, "Failed to encode notification"),
                 }
             } else {

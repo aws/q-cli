@@ -1,5 +1,6 @@
 use std::time::Duration;
 
+use base64::prelude::*;
 pub use fig_proto::fig::client_originated_message::Submessage as ClientOriginatedSubMessage;
 pub use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -94,12 +95,12 @@ pub trait EventHandler {
 }
 
 pub fn request_from_b64(request_b64: &str) -> Result<ClientOriginatedMessage> {
-    let data = base64::decode(request_b64)?;
+    let data = BASE64_STANDARD.decode(request_b64)?;
     Ok(ClientOriginatedMessage::decode(data.as_slice())?)
 }
 
 pub fn response_to_b64(response_message: ServerOriginatedMessage) -> String {
-    base64::encode(response_message.encode_to_vec())
+    BASE64_STANDARD.encode(response_message.encode_to_vec())
 }
 
 pub async fn api_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(

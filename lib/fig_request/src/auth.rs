@@ -5,6 +5,7 @@ use std::fs::{
 };
 use std::path::PathBuf;
 
+use base64::prelude::*;
 use fig_util::directories;
 use jwt::{
     Header,
@@ -390,7 +391,7 @@ impl Credentials {
 
     /// Encodes the credentials as a base64 string for authentication
     pub fn encode(&self) -> String {
-        base64::encode(
+        BASE64_STANDARD.encode(
             json!({
                 "accessToken": self.access_token,
                 "idToken": self.id_token

@@ -1,4 +1,5 @@
 use anyhow::Result;
+use base64::prelude::*;
 use bytes::BytesMut;
 use dashmap::DashMap;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -62,7 +63,7 @@ impl WebviewNotificationsState {
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
                     event_name: EmitEventName::Notification,
-                    payload: base64::encode(encoded).into(),
+                    payload: BASE64_STANDARD.encode(encoded).into(),
                 },
             })?
         }

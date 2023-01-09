@@ -5,6 +5,7 @@ use std::time::{
 };
 
 use anyhow::Result;
+use base64::prelude::*;
 use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
@@ -155,7 +156,7 @@ pub async fn edit_buffer(
                 window_id: sub.key().clone(),
                 window_event: WindowEvent::Emit {
                     event_name: EmitEventName::Notification,
-                    payload: base64::encode(encoded).into(),
+                    payload: BASE64_STANDARD.encode(encoded).into(),
                 },
             })
             .unwrap();
