@@ -608,7 +608,10 @@ impl Integration for DotfileShellIntegration {
                     return Ok(());
                 }
 
-                Regex::new(r"^\s*(#.*)?\n").unwrap().replace_all(&contents, "").into()
+                Regex::new(r"(?m)^\s*(#.*)?\n")
+                    .unwrap()
+                    .replace_all(&contents, "")
+                    .into()
             },
             _ => {
                 return Err(Error::FileDoesNotExist(dotfile.into()));
