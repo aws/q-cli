@@ -4,7 +4,6 @@ use std::path::{
     Path,
     PathBuf,
 };
-use std::process::Command;
 use std::time::SystemTime;
 
 use alacritty_terminal::term::ShellState;
@@ -34,6 +33,7 @@ use fig_proto::secure::{
     Hostbound,
 };
 use flume::Sender;
+use tokio::process::Command;
 use tracing::{
     debug,
     error,
@@ -134,7 +134,6 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
     #[cfg(unix)]
     {
         use std::io;
-        use std::os::unix::process::CommandExt;
 
         use nix::libc;
 
@@ -469,7 +468,7 @@ pub async fn process_secure_message(
 
                     tokio::spawn(async move {
                         debug!("running command");
-                        match cmd.output() {
+                        match cmd.output().await {
                             Ok(output) => {
                                 debug!("command successfully ran");
                                 let response = make_response(Response::RunProcess(RunProcessResponse {
@@ -524,10 +523,7 @@ pub async fn process_secure_message(
 
                     tokio::spawn(async move {
                         debug!("pseudoterminal executing");
-                        match cmd.output() {
-                            Err(err) => {
-                                warn!(%err, command = request.command, "Failed running command");
-                            },
+                        match cmd.output().await {
                             Ok(output) => {
                                 let response =
                                     make_response(Response::PseudoterminalExecute(PseudoterminalExecuteResponse {
@@ -542,6 +538,9 @@ pub async fn process_secure_message(
                                 if let Err(err) = response_tx.send_async(response).await {
                                     error!(%err, "Failed sending request response");
                                 }
+                            },
+                            Err(err) => {
+                                warn!(%err, command = request.command, "Failed running command");
                             },
                         }
                     });
@@ -568,8 +567,8 @@ pub async fn process_secure_message(
 mod tests {
     use super::*;
 
-    #[test]
-    fn command() {
-        create_command("cargo", "/").output().unwrap();
+    #[tokio::test]
+    async fn command() {
+        create_command("cargo", "/").output().await.unwrap();
     }
 }
