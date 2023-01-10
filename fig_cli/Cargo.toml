@@ -67,7 +67,7 @@ serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
 shlex = "1.1.0"
 spinners = "4.1.0"
-sysinfo = "0.27.2"
+sysinfo = "0.27.4"
 tempfile = "3.3.0"
 thiserror = "1.0.38"
 time = { version = "0.3.17", features = [
