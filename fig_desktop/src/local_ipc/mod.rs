@@ -3,10 +3,7 @@ mod hooks;
 
 use std::sync::Arc;
 
-use anyhow::{
-    anyhow,
-    Result,
-};
+use anyhow::Result;
 use fig_install::UpdateOptions;
 use fig_ipc::{
     BufferedUnixStream,
@@ -193,36 +190,36 @@ async fn handle_local_ipc(
             },
             Some(LocalMessageType::Hook(hook)) => {
                 use fig_proto::local::hook::Hook::*;
-
-                macro_rules! legacy_hook {
-                    ($name:expr) => {{
-                        warn!(
-                            "received legacy figterm hook `{}`, please update your figterm version!",
-                            $name
-                        );
-                        Ok(())
-                    }};
-                }
+                use fig_proto::ReflectMessage;
 
                 if let Err(err) = match hook.hook {
-                    Some(EditBuffer(_)) => legacy_hook!("EditBuffer"),
                     Some(CaretPosition(request)) => hooks::caret_position(request, &proxy).await,
-                    Some(Prompt(_)) => legacy_hook!("Prompt"),
                     Some(FocusChange(_)) => hooks::focus_change(&proxy).await,
-                    Some(PreExec(_)) => legacy_hook!("PreExec"),
-                    Some(InterceptedKey(_)) => legacy_hook!("InterceptedKey"),
                     Some(FileChanged(request)) => hooks::file_changed(request).await,
                     Some(FocusedWindowData(request)) => {
                         hooks::focused_window_data(request, &platform_state, &proxy).await
                     },
                     Some(KeyboardFocusChanged(_)) => hooks::focus_change(&proxy).await,
-                    err => {
-                        match &err {
-                            Some(unknown) => error!("Unknown hook: {unknown:?}"),
-                            None => error!("Hook was none"),
-                        }
-
-                        Err(anyhow!("Failed to process hook {err:?}"))
+                    Some(Event(event)) => hooks::event(event, &proxy).await,
+                    Some(
+                        Init(_)
+                        | PostExec(_)
+                        | TmuxPaneChanged(_)
+                        | OpenedSshConnection(_)
+                        | Callback(_)
+                        | IntegrationReady(_)
+                        | Hide(_)
+                        | PreExec(_)
+                        | InterceptedKey(_)
+                        | EditBuffer(_)
+                        | Prompt(_),
+                    ) => {
+                        warn!("received legacy hook `{}`", hook.descriptor().name());
+                        Ok(())
+                    },
+                    None => {
+                        warn!("Received unknown or empty hook");
+                        Ok(())
                     },
                 } {
                     error!("Error processing hook: {err:?}");

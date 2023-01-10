@@ -18,6 +18,7 @@ use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
 use once_cell::sync::Lazy;
+use parking_lot::Mutex;
 use regex::RegexSet;
 use tracing::{
     debug,
@@ -101,7 +102,7 @@ pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480
 
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 
-pub const ONBOARDING_PATH: &str = "/onboarding/welcome";
+pub const LOGIN_PATH: &str = "/login";
 
 fn map_theme(theme: &str) -> Option<Theme> {
     match theme {
@@ -133,11 +134,14 @@ pub struct WebviewManager {
     notifications_state: Arc<WebviewNotificationsState>,
 }
 
+pub static GLOBAL_PROXY: Mutex<Option<EventLoopProxy>> = Mutex::new(None);
+
 impl WebviewManager {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn new(visible: bool) -> Self {
         let mut event_loop = WryEventLoop::with_user_event();
+        *GLOBAL_PROXY.lock() = Some(event_loop.create_proxy());
 
         #[cfg(target_os = "macos")]
         if !visible {
@@ -600,7 +604,7 @@ pub fn build_dashboard(
     let mut url = dashboard::url();
 
     if show_onboarding {
-        url.set_path(ONBOARDING_PATH);
+        url.set_path(LOGIN_PATH);
     } else if let Some(page) = page {
         url.set_path(&page);
     }
@@ -882,7 +886,7 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                             window_id: DASHBOARD_ID,
                             window_event: WindowEvent::Batch(vec![
                                 WindowEvent::NavigateRelative {
-                                    path: ONBOARDING_PATH.into(),
+                                    path: LOGIN_PATH.into(),
                                 },
                                 WindowEvent::UpdateWindowGeometry {
                                     position: Some(WindowPosition::Centered),

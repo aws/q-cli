@@ -1,6 +1,7 @@
 use anyhow::Result;
 use fig_proto::local::{
     CaretPositionHook,
+    EventHook,
     FileChangedHook,
     FocusedWindowDataHook,
 };
@@ -14,6 +15,7 @@ use crate::event::{
     WindowPosition,
 };
 use crate::platform::PlatformState;
+use crate::webview::window::WindowId;
 use crate::{
     Event,
     EventLoopProxy,
@@ -75,4 +77,26 @@ pub async fn focused_window_data(
         let _proxy = proxy;
         Ok(())
     }
+}
+
+pub async fn event(hook: EventHook, proxy: &EventLoopProxy) -> Result<()> {
+    let window_event = WindowEvent::Event {
+        event_name: hook.event_name.into(),
+        payload: hook.payload.map(|s| s.into()),
+    };
+
+    if hook.apps.is_empty() {
+        proxy.send_event(Event::WindowEventAll { window_event }).unwrap();
+    } else {
+        for app in hook.apps {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: WindowId(app.into()),
+                    window_event: window_event.clone(),
+                })
+                .unwrap();
+        }
+    }
+
+    Ok(())
 }

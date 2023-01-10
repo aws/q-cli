@@ -156,7 +156,7 @@ impl WindowServer {
     pub fn new(sender: Sender<WindowServerEvent>) -> Self {
         let (mut inner, observer) = WindowServerInner::new_with_observer(sender);
 
-        let mut center = NotificationCenter::shared();
+        let mut center = NotificationCenter::workspace_center();
 
         // Previously (in Swift) subscribed to the following as no-ops / log only:
         // - NSWorkspaceDidDeactivateApplicationNotification
@@ -196,7 +196,7 @@ impl WindowServer {
 
 impl Drop for WindowServer {
     fn drop(&mut self) {
-        let center = NotificationCenter::shared();
+        let center = NotificationCenter::workspace_center();
         unsafe {
             center.remove_observer(**self.observer);
         }

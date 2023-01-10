@@ -109,7 +109,7 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let page = cli
+    let page_and_data = cli
         .url_link
         .and_then(|url| match Url::parse(&url) {
             Ok(url) => Some(url),
@@ -125,8 +125,12 @@ async fn main() {
             }
 
             url.host_str().and_then(|s| match s {
-                "dashboard" => Some(url.path().to_owned()),
-                "plugins" => Some(format!("plugins/{}", url.path())),
+                "dashboard" => Some((url.path().to_owned(), None)),
+                "plugins" => Some((format!("plugins/{}", url.path()), None)),
+                "login" => {
+                    let auth = utils::handle_login_deep_link(&url);
+                    Some(("login".into(), auth))
+                },
                 _ => {
                     error!("Invalid deep link");
                     None
@@ -156,7 +160,7 @@ async fn main() {
                             let exe = process.exe().display();
                             eprintln!("Killing instance: {exe} ({pid})");
                         } else {
-                            let page = page.clone();
+                            let page_and_data = page_and_data.clone();
                             let on_match = async {
                                 let exe = process.exe().display();
 
@@ -171,15 +175,35 @@ async fn main() {
                                 }
 
                                 eprintln!("Fig is already running: {exe} ({})", extra.join(" "),);
-                                match page {
-                                    Some(ref page) => eprintln!("Opening /{page}..."),
-                                    None => eprintln!("Opening Fig Window..."),
-                                }
+                                let (page, auth_data) = match page_and_data {
+                                    Some((page, auth_data)) => {
+                                        eprintln!("Opening /{page}...");
+                                        (Some(page), auth_data)
+                                    },
+                                    None => {
+                                        eprintln!("Opening Fig Window...");
+                                        (None, None)
+                                    },
+                                };
+
                                 if let Err(err) =
                                     fig_ipc::local::open_ui_element(fig_proto::local::UiElement::MissionControl, page)
                                         .await
                                 {
                                     eprintln!("Failed to open Fig: {err}");
+                                }
+
+                                if let Some(auth) = auth_data {
+                                    eprintln!("Sending auth: {auth}");
+                                    if let Err(err) = fig_ipc::local::send_hook_to_socket(
+                                        fig_proto::hooks::new_event_hook("dashboard.login", auth.to_string(), [
+                                            "dashboard".to_owned(),
+                                        ]),
+                                    )
+                                    .await
+                                    {
+                                        eprintln!("Failed to send auth: {err}");
+                                    }
                                 }
                                 exit(0);
                             };
@@ -265,7 +289,7 @@ async fn main() {
             DashboardOptions {
                 show_onboarding,
                 visible,
-                page,
+                page: page_and_data.map(|p| p.0),
             },
             true,
             dashboard::url,

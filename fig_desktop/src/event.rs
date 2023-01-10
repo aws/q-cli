@@ -105,6 +105,11 @@ pub enum WindowEvent {
     NavigateForward,
     NavigateBack,
 
+    Event {
+        event_name: Cow<'static, str>,
+        payload: Option<Cow<'static, str>>,
+    },
+
     Reload,
 
     /// Trigger a reload if the page is not already loaded

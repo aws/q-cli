@@ -4,7 +4,6 @@ use appkit_nsworkspace_bindings::{
     INSWorkspace,
     NSNotification,
     NSNotificationCenter,
-    NSOperationQueue,
     NSRunningApplication,
     NSWorkspace,
 };
@@ -27,12 +26,17 @@ impl NotificationCenter {
         Self { inner: center }
     }
 
-    pub fn shared() -> Self {
+    pub fn workspace_center() -> Self {
         let shared = unsafe { NSWorkspace::sharedWorkspace().notificationCenter() };
         Self::new(shared)
     }
 
-    pub fn distributed() -> Self {
+    pub fn default_center() -> Self {
+        let default = unsafe { msg_send![class!(NSNotificationCenter), defaultCenter] };
+        Self::new(default)
+    }
+
+    pub fn distributed_center() -> Self {
         let distributed_default: *mut Object =
             unsafe { msg_send![class!(NSDistributedNotificationCenter), defaultCenter] };
         Self::new(appkit_nsworkspace_bindings::NSNotificationCenter(distributed_default))
@@ -86,16 +90,13 @@ impl NotificationCenter {
     where
         F: Fn(NSNotification),
     {
-        let mut block = block::ConcreteBlock::new(f);
+        let block = block::ConcreteBlock::new(f);
         unsafe {
             let name: NSString = notification_name.into();
+            let center = self.inner;
             // addObserverForName copies block for us.
-            self.inner.addObserverForName_object_queue_usingBlock_(
-                name.to_appkit_nsstring(),
-                NIL,
-                NSOperationQueue(queue.unwrap_or(NIL)),
-                &mut block as *mut _ as *mut std::os::raw::c_void,
-            );
+            let _: () =
+                msg_send![center, addObserverForName: name object: NIL queue: queue.unwrap_or(NIL) usingBlock: block];
         }
     }
 }

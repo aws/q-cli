@@ -456,6 +456,14 @@ impl WindowState {
             WindowEvent::NavigateBack => {
                 self.webview.evaluate_script("window.history.back();").unwrap();
             },
+            WindowEvent::Event { event_name, payload } => {
+                self.notification(notifications_state, &NotificationType::NotifyOnEvent, Notification {
+                    r#type: Some(NotificationEnum::EventNotification(EventNotification {
+                        event_name: Some(event_name.to_string()),
+                        payload: payload.map(|s| s.into_owned()),
+                    })),
+                })
+            },
             WindowEvent::ReloadIfNotLoaded => {
                 info!(%self.window_id, "Reloading window if not loaded");
 

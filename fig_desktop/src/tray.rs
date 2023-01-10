@@ -33,7 +33,7 @@ use crate::event::{
 };
 use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
-use crate::webview::ONBOARDING_PATH;
+use crate::webview::LOGIN_PATH;
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -151,7 +151,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                     window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Batch(vec![
                         WindowEvent::NavigateRelative {
-                            path: ONBOARDING_PATH.into(),
+                            path: LOGIN_PATH.into(),
                         },
                         WindowEvent::Show,
                     ]),

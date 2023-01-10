@@ -32,7 +32,7 @@ use crate::figterm::FigtermState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
     DASHBOARD_ONBOARDING_SIZE,
-    ONBOARDING_PATH,
+    LOGIN_PATH,
 };
 use crate::{
     platform,
@@ -201,7 +201,7 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
             window_id: DASHBOARD_ID,
             window_event: WindowEvent::Batch(vec![
                 WindowEvent::NavigateRelative {
-                    path: ONBOARDING_PATH.into(),
+                    path: LOGIN_PATH.into(),
                 },
                 WindowEvent::UpdateWindowGeometry {
                     position: Some(WindowPosition::Centered),

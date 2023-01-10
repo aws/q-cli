@@ -222,7 +222,7 @@ impl Credentials {
     }
 
     pub fn new(
-        email: impl Into<String>,
+        email: impl Into<Option<String>>,
         access_token: Option<String>,
         id_token: Option<String>,
         refresh_token: Option<String>,
@@ -230,7 +230,7 @@ impl Credentials {
     ) -> Self {
         #[allow(deprecated)]
         Self {
-            email: Some(email.into()),
+            email: email.into(),
             access_token,
             id_token,
             refresh_token,
@@ -406,7 +406,13 @@ mod tests {
     use super::*;
 
     fn mock_credentials() -> Credentials {
-        Credentials::new("test@fig.io", Some("access_token".to_string()), None, None, false)
+        Credentials::new(
+            "test@fig.io".to_owned(),
+            Some("access_token".to_string()),
+            None,
+            None,
+            false,
+        )
     }
 
     #[test]

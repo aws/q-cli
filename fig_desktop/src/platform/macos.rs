@@ -38,7 +38,6 @@ use macos_utils::window_server::{
 use macos_utils::{
     NSArrayRef,
     NSString,
-    NSStringRef,
     NotificationCenter,
     WindowServer,
     WindowServerEvent,
@@ -53,7 +52,6 @@ use objc::runtime::{
     BOOL,
 };
 use objc::{
-    class,
     msg_send,
     sel,
     sel_impl,
@@ -97,9 +95,15 @@ use crate::protocol::icons::{
     AssetSpecifier,
     ProcessedAsset,
 };
-use crate::utils::Rect;
+use crate::utils::{
+    handle_login_deep_link,
+    Rect,
+};
 use crate::webview::window::WindowId;
-use crate::webview::FigIdMap;
+use crate::webview::{
+    FigIdMap,
+    GLOBAL_PROXY,
+};
 use crate::{
     EventLoopProxy,
     EventLoopWindowTarget,
@@ -308,7 +312,7 @@ impl PlatformStateImpl {
                     .replace(Arc::new(Mutex::new(WindowServer::new(tx))));
 
                 let accessibility_proxy = self.proxy.clone();
-                let mut distributed = NotificationCenter::distributed();
+                let mut distributed = NotificationCenter::distributed_center();
                 let ax_notification_name: NSString = "com.apple.accessibility.api".into();
                 let queue: id = unsafe {
                     let queue: id = msg_send![class!(NSOperationQueue), alloc];
@@ -450,8 +454,17 @@ impl PlatformStateImpl {
                     _visible_windows: BOOL,
                 ) -> BOOL {
                     trace!("application_should_handle_reopen");
-                    NotificationCenter::shared()
-                        .post_notification("io.fig.show-dashboard", std::iter::empty::<(&str, &str)>());
+
+                    let proxy = GLOBAL_PROXY.lock();
+                    let proxy = proxy.as_ref().unwrap();
+
+                    if let Err(err) = proxy.send_event(Event::WindowEvent {
+                        window_id: DASHBOARD_ID,
+                        window_event: WindowEvent::Show,
+                    }) {
+                        warn!(%err, "Error sending event");
+                    }
+
                     YES
                 }
 
@@ -459,37 +472,15 @@ impl PlatformStateImpl {
                     use cocoa::foundation::NSURL;
 
                     let urls: NSArrayRef<id> = unsafe { NSArrayRef::new(urls) };
-                    let mut info: Vec<(NSString, NSString)> = vec![];
-
-                    if let Some(url) = urls.iter().next() {
-                        if !url.is_null() {
-                            let ns_string = unsafe { macos_utils::NSString::new(url.as_mut_ptr().absoluteString()) };
-                            info.push(("url".into(), ns_string));
-                        }
-                    }
-
-                    NotificationCenter::shared().post_notification("io.fig.show-dashboard", info);
-
-                    YES
-                }
-
-                let queue: id = unsafe {
-                    let queue: id = msg_send![class!(NSOperationQueue), alloc];
-                    msg_send![queue, init]
-                };
-                let application_observer = self.proxy.clone();
-                NotificationCenter::shared().subscribe("io.fig.show-dashboard", Some(queue), move |notification| {
-                    use cocoa::foundation::NSDictionary;
 
                     let mut events = vec![WindowEvent::Show];
 
-                    if let Some(dict) = unsafe { macos_utils::get_user_info_from_notification(&notification) } {
-                        let key = NSString::from("url");
-                        let maybe_url = unsafe { dict.objectForKey_(***key) };
-                        if !maybe_url.is_null() {
-                            let url = unsafe { NSStringRef::new(maybe_url) };
-                            if let Some(url) = url.as_str() {
-                                let url = url::Url::parse(url);
+                    if let Some(url_id) = urls.iter().next() {
+                        if !url_id.is_null() {
+                            let ns_string =
+                                unsafe { macos_utils::NSStringRef::new(url_id.as_mut_ptr().absoluteString()) };
+                            if let Some(url_str) = ns_string.as_str() {
+                                let url = url::Url::parse(url_str);
                                 match url {
                                     Ok(url) => {
                                         if url.scheme() == "fig" {
@@ -503,6 +494,16 @@ impl PlatformStateImpl {
                                                     events.push(WindowEvent::NavigateRelative {
                                                         path: format!("plugins/{}", url.path()).into(),
                                                     });
+                                                },
+                                                Some("login") => {
+                                                    if let Some(payload) = handle_login_deep_link(&url) {
+                                                        events.push(WindowEvent::Event {
+                                                            event_name: "dashboard.login".into(),
+                                                            payload: serde_json::to_string(&payload)
+                                                                .ok()
+                                                                .map(|s| s.into()),
+                                                        });
+                                                    }
                                                 },
                                                 host => {
                                                     error!(?host, "Invalid deep link");
@@ -520,13 +521,18 @@ impl PlatformStateImpl {
                         }
                     }
 
-                    if let Err(err) = application_observer.send_event(Event::WindowEvent {
+                    let proxy = GLOBAL_PROXY.lock();
+                    let proxy = proxy.as_ref().unwrap();
+
+                    if let Err(err) = proxy.send_event(Event::WindowEvent {
                         window_id: DASHBOARD_ID,
                         window_event: WindowEvent::Batch(events),
                     }) {
                         warn!(%err, "Error sending event");
                     }
-                });
+
+                    YES
+                }
 
                 Self::override_app_delegate_method(
                     sel!(applicationShouldHandleReopen:hasVisibleWindows:),
@@ -723,7 +729,7 @@ impl PlatformStateImpl {
 
         if !is_xterm && supports_ime {
             tracing::debug!("Sending notif io.fig.edit_buffer_updated");
-            NotificationCenter::distributed()
+            NotificationCenter::distributed_center()
                 .post_notification("io.fig.edit_buffer_updated", std::iter::empty::<(&str, &str)>());
         } else {
             let caret = if is_xterm {
