@@ -58,28 +58,23 @@ pub async fn fetch_and_cache_command_line_tool(namespace: &str, name: &str) -> R
 }
 
 pub async fn fetch_and_cache_all_command_line_tools() -> Result<()> {
-    let cache_dir = cache_dir()?.join("commandline_tool");
+    let response = fig_graphql::list_commandline_tools!().await?;
 
-    for file in std::fs::read_dir(cache_dir)? {
-        let file = file?;
-        let file_path = file.path();
-        let file_path = file_path.as_path();
+    if let Some(current_user) = response.current_user {
+        if let Some(namespace) = current_user.namespace {
+            for cli in namespace.commandline_tools {
+                fetch_and_cache_command_line_tool(&namespace.username, &cli.root.name).await?;
+            }
+        }
 
-        // Split the file name into namespace and name
-        let Some(file_name) = file_path.file_name().and_then(|file_name| file_name.to_str()) else {
-            continue;
-        };
-
-        let mut split = file_name.split('.');
-        let Some(namespace) = split.next() else {
-            continue;
-        };
-        let Some(name) = split.next() else {
-            continue;
-        };
-
-        if let Err(err) = fetch_and_cache_command_line_tool(namespace, name).await {
-            error!(%err, "Failed to fetch command line tool");
+        if let Some(team_memberships) = current_user.team_memberships {
+            for team_membership in team_memberships {
+                if let Some(namespace) = team_membership.team.namespace {
+                    for cli in namespace.commandline_tools {
+                        fetch_and_cache_command_line_tool(&namespace.username, &cli.root.name).await?;
+                    }
+                }
+            }
         }
     }
 

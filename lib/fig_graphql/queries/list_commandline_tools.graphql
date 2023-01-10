@@ -1,0 +1,26 @@
+query ListCommandlineTools {
+  currentUser {
+    namespace {
+      username
+      commandlineTools {
+        root {
+          __typename
+          name
+        }
+      }
+    }
+    teamMemberships {
+      team {
+        namespace {
+          username
+          commandlineTools {
+            root {
+              __typename
+              name
+            }
+          }
+        }
+      }
+    }
+  }
+}
