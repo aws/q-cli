@@ -181,7 +181,7 @@ where
     );
 
     let many_plugins: ManyPlugins = Request::post("/graphql")
-        .body(json!({ "query": query }))
+        .body_json(json!({ "query": query }))
         .graphql()
         .await?;
 
@@ -212,7 +212,7 @@ where
     );
 
     let unique_plugin: UniquePlugin = Request::post("/graphql")
-        .body(json!({ "query": query }))
+        .body_json(json!({ "query": query }))
         .graphql()
         .await?;
 

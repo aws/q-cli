@@ -55,7 +55,7 @@ pub async fn package(
             variant,
         })
         .timeout(Duration::from_secs(120)) // fly uses slow responses to smooth over deploys
-        .raw_body(tokio::fs::read(path).await?.into())
+        .body(tokio::fs::read(path).await?)
         .send()
         .await?;
 

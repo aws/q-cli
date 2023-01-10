@@ -18,7 +18,7 @@ pub async fn update_all(settings_map: Map<String, Value>) -> Result<()> {
     }
 
     fig_request::Request::post("/settings/update")
-        .body(&json!({ "settings": settings_map }))
+        .body_json(&json!({ "settings": settings_map }))
         .auth()
         .send()
         .await?;
@@ -28,7 +28,7 @@ pub async fn update_all(settings_map: Map<String, Value>) -> Result<()> {
 async fn update_remote(key: impl AsRef<str>, value: impl Into<serde_json::Value>) -> Result<()> {
     let value = value.into();
     fig_request::Request::post(format!("/settings/update/{}", key.as_ref()))
-        .body(&json!({ "value": value }))
+        .body_json(&json!({ "value": value }))
         .auth()
         .send()
         .await?;
@@ -61,7 +61,7 @@ where
     }
 
     fig_request::Request::delete("/settings/update")
-        .body(&json!({ "settings": keys.into_iter().map(|key| key.as_ref().to_owned()).collect::<Vec<_>>() }))
+        .body_json(&json!({ "settings": keys.into_iter().map(|key| key.as_ref().to_owned()).collect::<Vec<_>>() }))
         .auth()
         .send()
         .await?;

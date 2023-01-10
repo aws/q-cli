@@ -68,7 +68,7 @@ impl TeamCommand {
             if self.args.new {
                 Request::post("/teams")
                     .auth()
-                    .body(json!({ "name": team }))
+                    .body_json(json!({ "name": team }))
                     .send()
                     .await?;
                 println!("Created team {team}");
@@ -158,7 +158,7 @@ impl TeamSubcommand {
             },
             TeamSubcommand::Remove { email } => {
                 Request::delete(format!("/teams/{team}/users"))
-                    .body(json!({ "emailToRemove": email }))
+                    .body_json(json!({ "emailToRemove": email }))
                     .auth()
                     .send()
                     .await?;
@@ -171,7 +171,7 @@ impl TeamSubcommand {
             },
             TeamSubcommand::Add { email, role } => {
                 Request::post(format!("/teams/{team}/users"))
-                    .body(json!({
+                    .body_json(json!({
                         "emailToAdd": email,
                         "role": role.unwrap_or(Role::Member)
                     }))
@@ -199,7 +199,7 @@ impl TeamSubcommand {
             },
             TeamSubcommand::Revoke { email } => {
                 Request::delete(format!("/teams/{team}/invitations"))
-                    .body(json!({ "emailToRevoke": email }))
+                    .body_json(json!({ "emailToRevoke": email }))
                     .auth()
                     .send()
                     .await?;

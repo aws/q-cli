@@ -48,7 +48,7 @@ where
             if fallback {
                 fig_request::Request::post("/graphql")
                     .auth()
-                    .body(body)
+                    .body_json(body)
                     .graphql()
                     .await?;
                 Ok(())

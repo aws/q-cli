@@ -62,7 +62,7 @@ pub async fn request(request: CodexRequest) -> fig_request::Result<CodexResponse
         Err(_) => fig_request::Request::post("/ai/codex"),
     }
     .auth()
-    .body(&request)
+    .body_json(&request)
     .deser_json()
     .await
 }

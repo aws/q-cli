@@ -109,6 +109,10 @@ pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Va
         "anonymousId".into(),
         fig_settings::state::get_or_create_anonymous_id()?.into(),
     );
-    fig_request::Request::post(route).maybe_auth().body(body).send().await?;
+    fig_request::Request::post(route)
+        .maybe_auth()
+        .body_json(body)
+        .send()
+        .await?;
     Ok(())
 }

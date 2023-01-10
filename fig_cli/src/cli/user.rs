@@ -234,7 +234,7 @@ impl RootUserSubcommand {
                                             false,
                                             true,
                                         ),
-                                        Request::post("/user/login").auth().body(login_body).send()
+                                        Request::post("/user/login").auth().body_json(login_body).send()
                                     );
 
                                     telem_join.ok();
@@ -526,7 +526,7 @@ impl TokensSubcommand {
 
                 let json = Request::post("/auth/tokens/new")
                     .auth()
-                    .body(json!({ "name": name, "team": team, "expiresAt": expires_at }))
+                    .body_json(json!({ "name": name, "team": team, "expiresAt": expires_at }))
                     .json()
                     .await?;
 
@@ -544,7 +544,7 @@ impl TokensSubcommand {
             Self::List { format, team } => {
                 let json = Request::get("/auth/tokens/list")
                     .auth()
-                    .body(json!({ "namespace": team }))
+                    .body_json(json!({ "namespace": team }))
                     .json()
                     .await?;
 
@@ -585,7 +585,7 @@ impl TokensSubcommand {
             Self::Revoke { name, team } => {
                 let res = Request::post("/auth/tokens/revoke")
                     .auth()
-                    .body(json!({ "team": team, "name": name }))
+                    .body_json(json!({ "team": team, "name": name }))
                     .json()
                     .await?;
 
@@ -599,7 +599,7 @@ impl TokensSubcommand {
             Self::Validate { token } => {
                 let valid = Request::post("/auth/tokens/validate")
                     .auth()
-                    .body(json!({ "token": token }))
+                    .body_json(json!({ "token": token }))
                     .json()
                     .await?;
 

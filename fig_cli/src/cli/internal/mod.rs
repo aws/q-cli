@@ -499,7 +499,7 @@ impl InternalSubcommand {
                 .auth();
                 if let Some(body) = body {
                     let value: serde_json::Value = serde_json::from_str(&body)?;
-                    request = request.body(value);
+                    request = request.body_json(value);
                 }
                 if release {
                     let _ = writeln!(stdout(), "{}", request.raw_text().await?);

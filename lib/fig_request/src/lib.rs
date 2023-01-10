@@ -6,7 +6,6 @@ pub mod reqwest_client;
 use std::time::Duration;
 
 use auth::get_token;
-use bytes::Bytes;
 pub use error::Error;
 use fig_settings::api::{
     host,
@@ -298,9 +297,16 @@ impl Request<MaybeAuth> {
 }
 
 impl<A: Auth> Request<A> {
-    pub fn body(self, body: impl Serialize) -> Self {
+    pub fn body_json(self, body: impl Serialize) -> Self {
         Self {
             builder: self.builder.map(|builder| builder.json(&body)),
+            ..self
+        }
+    }
+
+    pub fn body<T: Into<reqwest::Body>>(self, body: T) -> Self {
+        Self {
+            builder: self.builder.map(|builder| builder.body(body)),
             ..self
         }
     }
@@ -334,14 +340,6 @@ impl<A: Auth> Request<A> {
             return self.query(&[("namespace", namespace.as_ref())]);
         }
         self
-    }
-
-    /// Add a raw body to the request
-    pub fn raw_body(self, bytes: Bytes) -> Self {
-        Self {
-            builder: self.builder.map(|builder| builder.body(bytes)),
-            ..self
-        }
     }
 
     /// Add a header to the request
@@ -502,7 +500,7 @@ mod test {
         let query = mock_value("query");
 
         let resp: Response = Request::get("/test/fig_request")
-            .body(body.clone())
+            .body_json(body.clone())
             .query(&query)
             .deser_json()
             .await

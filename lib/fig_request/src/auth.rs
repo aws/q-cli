@@ -84,7 +84,10 @@ impl SignInInput {
     }
 
     pub async fn sign_in(&self) -> Result<SignInOutput, crate::Error> {
-        Request::post("/auth/login/init").body(&json!(self)).deser_json().await
+        Request::post("/auth/login/init")
+            .body_json(&json!(self))
+            .deser_json()
+            .await
     }
 }
 
@@ -122,7 +125,7 @@ pub enum SignInConfirmError {
 impl SignInOutput {
     pub async fn confirm(&mut self, code: impl Into<String>) -> Result<Credentials, SignInConfirmError> {
         let resp = Request::post("/auth/login/confirm")
-            .body(&json!({
+            .body_json(&json!({
                 "email": self.email,
                 "loginSessionId": self.login_session_id,
                 "code": code.into(),
@@ -306,7 +309,7 @@ impl Credentials {
         let refresh_token = self.refresh_token.as_ref().ok_or(RefreshError::RefreshTokenNotSet)?;
 
         let resp = Request::post("/auth/refresh")
-            .body(&json!({
+            .body_json(&json!({
                 "refreshToken": refresh_token,
             }))
             .send()

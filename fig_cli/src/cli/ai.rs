@@ -214,7 +214,7 @@ impl AiArgs {
                 ]);
 
                 let response: CompleteResponse = fig_request::Request::post("/ai/translate-bash")
-                    .body(serde_json::json!({
+                    .body_json(serde_json::json!({
                         "question": question,
                         "n": n.unwrap_or(1),
                         "os": std::env::consts::OS

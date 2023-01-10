@@ -60,7 +60,7 @@ pub async fn {snake_case_name}_request(variables: {snake_case_name}::Variables) 
     let request_body = {query_name}::build_query(variables);
     fig_request::Request::post(\"/graphql\")
         .auth()
-        .body(request_body)
+        .body_json(request_body)
         .graphql()
         .await
 }}
