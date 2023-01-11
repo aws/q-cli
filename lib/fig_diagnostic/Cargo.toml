@@ -16,5 +16,5 @@ fig_telemetry = { path = "../fig_telemetry" }
 fig_util = { path = "../fig_util" }
 serde = { version = "1.0.152", features = ["derive"] }
 serde_json = "1.0.91"
-sysinfo = "0.27.4"
+sysinfo = "0.27.5"
 time = "0.3.17"
