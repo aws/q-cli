@@ -90,13 +90,16 @@ impl NotificationCenter {
     where
         F: Fn(NSNotification),
     {
-        let block = block::ConcreteBlock::new(f);
+        let mut block = block::ConcreteBlock::new(f);
         unsafe {
             let name: NSString = notification_name.into();
-            let center = self.inner;
             // addObserverForName copies block for us.
-            let _: () =
-                msg_send![center, addObserverForName: name object: NIL queue: queue.unwrap_or(NIL) usingBlock: block];
+            self.inner.addObserverForName_object_queue_usingBlock_(
+                name.to_appkit_nsstring(),
+                NIL,
+                appkit_nsworkspace_bindings::NSOperationQueue(queue.unwrap_or(NIL)),
+                &mut block as *mut _ as *mut std::os::raw::c_void,
+            );
         }
     }
 }
