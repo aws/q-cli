@@ -9,7 +9,7 @@ version.workspace = true
 [dependencies]
 bitflags = "1"
 nu-ansi-term = "0.46.0"
-nu-color-config = "0.73.0"
+nu-color-config = "0.74.0"
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }
