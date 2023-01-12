@@ -7,13 +7,13 @@ div {
     width: 100;
 }
 
-input, select, #__preview {
+input, select {
     padding-left: 1;
     padding-right: 1;
     width: 100;
 }
 
-#__parameter, #__preview {
+.parameter {
     border-color: ansi(8);
     border-style: ascii ┌ ─ ┐ │ │ └ ─ ┘;
     border-width: 1;
@@ -23,41 +23,41 @@ input, select, #__preview {
     border-color: ansi(4);
 }
 
-#__parameter:focus {
+.parameter:focus {
     border-color: ansi(3);
 }
 
-#__description, #__keybindings {
+.description, .keybindings {
     padding-left: 1;
     padding-right: 1;
     display: none;
 }
 
-div:focus > #__description, div:focus > #__keybindings {
+div:focus > .description, div:focus > .keybindings {
     display: block;
 }
 
-#__view {
+.view {
     padding-top: 1;
     padding-bottom: 1;
     padding-left: 2;
     padding-right: 2;
 }
 
-#__header {
+.header {
     margin-bottom: 1;
 }
 
-#__footer {
+.footer {
     margin-top: 1;
     display: none;
 }
 
-div:focus > #__footer {
+div:focus > .footer {
     display: block;
 }
 
-#__label {
+.label {
     margin-left: 1;
     margin-top: -1;
     padding-left: 1;

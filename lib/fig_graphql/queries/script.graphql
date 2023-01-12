@@ -28,6 +28,85 @@ fragment NamespaceFields on Namespace {
   }
 }
 
+fragment Parameter on ScriptParameter {
+  type
+  name
+  displayName
+  description
+  required
+  text {
+    placeholder
+  }
+  checkbox {
+    trueValueSubstitution
+    falseValueSubstitution
+  }
+  selector {
+    generators {
+      named {
+        name
+      }
+      shellScript {
+        script
+      }
+      type
+    }
+    placeholder
+    suggestions
+    allowRawTextInput
+  }
+  path {
+    extensions
+    fileType
+  }
+  commandlineInterface {
+    required
+    short
+    long
+    requireEquals
+    raw
+    type {
+      __typename
+      ... on ScriptParameterCommandlineInterfaceBoolean {
+        type
+        booleanDefault: default
+      }
+      ... on ScriptParameterCommandlineInterfaceString {
+        type
+        stringDefault: default
+      }
+    }
+  }
+}
+
+fragment Step on IScriptStep {
+  __typename
+  type
+  ... on ScriptCodeBlockStep {
+    name
+    codeBlockData {
+      runtime
+      text
+    }
+    astTree {
+      __typename
+      type
+      ... on ScriptAstParameter {
+        name
+      }
+      ... on ScriptAstText {
+        text
+      }
+    }
+  }
+  ... on ScriptInputsStep {
+    name
+    parameters {
+      ...Parameter
+    }
+  }
+}
+
 fragment ScriptFields on Script {
   uuid
   name
@@ -46,73 +125,15 @@ fragment ScriptFields on Script {
         predicate
       }
     }
-    parameters {
-      type
-      name
-      displayName
-      description
-      required
-      text {
-        placeholder
-      }
-      checkbox {
-        trueValueSubstitution
-        falseValueSubstitution
-      }
-      selector {
-        generators {
-          named {
-            name
-          }
-          shellScript {
-            script
-          }
-          type
-        }
-        placeholder
-        suggestions
-        allowRawTextInput
-      }
-      path {
-        extensions
-        fileType
-      }
-      commandlineInterface {
-        required
-        short
-        long
-        requireEquals
-        raw
-        type {
-          __typename
-          ... on ScriptParameterCommandlineInterfaceBoolean {
-            type
-            booleanDefault: default
-          }
-          ... on ScriptParameterCommandlineInterfaceString {
-            type
-            stringDefault: default
-          }
-        }
-      }
-    }
-    runtime
     invocationCollection {
       disabled
       inputs
       stdout
       stderr
     }
-  }
-  astTree {
-    type
-    ... on ScriptAstParameter {
-      name
+    steps {
+      ...Step
     }
-    ... on ScriptAstText {
-      text
-    }
-    __typename
   }
   relevanceScore
   lastInvokedAt
