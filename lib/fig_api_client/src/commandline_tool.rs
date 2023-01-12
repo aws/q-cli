@@ -60,10 +60,28 @@ pub async fn fetch_and_cache_command_line_tool(namespace: &str, name: &str) -> R
 pub async fn fetch_and_cache_all_command_line_tools() -> Result<()> {
     let response = fig_graphql::list_commandline_tools!().await?;
 
+    // Delete all cached command line tools
+    let cli_cache_dir = cache_dir()?.join("commandline_tool");
+    match tokio::fs::read_dir(&cli_cache_dir).await {
+        Ok(mut read_dir) => {
+            while let Ok(Some(entry)) = read_dir.next_entry().await {
+                if let Err(err) = tokio::fs::remove_file(entry.path()).await {
+                    error!(%err, path =? entry.path(), "Failed to delete cache file");
+                }
+            }
+        },
+        Err(err) => error!(%err, ?cli_cache_dir, "Failed to read cache directory"),
+    }
+
+    let mut commandline_tools: Vec<String> = vec![];
+
     if let Some(current_user) = response.current_user {
         if let Some(namespace) = current_user.namespace {
             for cli in namespace.commandline_tools {
-                fetch_and_cache_command_line_tool(&namespace.username, &cli.root.name).await?;
+                commandline_tools.push(cli.root.name.clone());
+                if let Err(err) = fetch_and_cache_command_line_tool(&namespace.username, &cli.root.name).await {
+                    error!(%err, namespace =% namespace.username, cli_name =% cli.root.name, "Failed to fetch command line tool");
+                }
             }
         }
 
@@ -71,11 +89,38 @@ pub async fn fetch_and_cache_all_command_line_tools() -> Result<()> {
             for team_membership in team_memberships {
                 if let Some(namespace) = team_membership.team.namespace {
                     for cli in namespace.commandline_tools {
-                        fetch_and_cache_command_line_tool(&namespace.username, &cli.root.name).await?;
+                        commandline_tools.push(cli.root.name.clone());
+                        if let Err(err) = fetch_and_cache_command_line_tool(&namespace.username, &cli.root.name).await {
+                            error!(%err, namespace =% namespace.username, cli_name =% cli.root.name, "Failed to fetch command line tool");
+                        }
                     }
                 }
             }
         }
+    }
+
+    // Read the file and diff to see if there are any CLIs that are no longer
+    let cache_index_path = cache_dir()?.join("cli_cache_index.json");
+    if let Ok(read_index) = tokio::fs::read_to_string(&cache_index_path).await {
+        let old_commandline_tools: Vec<String> = serde_json::from_str(&read_index).unwrap_or_default();
+        for old_cli in old_commandline_tools {
+            if !commandline_tools.contains(&old_cli.to_string()) {
+                if let Ok(script_path) = CommandTree::script_path(&old_cli) {
+                    if let Err(err) = tokio::fs::remove_file(&script_path).await {
+                        error!(%err, ?script_path, "Failed to remove old script executable");
+                    }
+                }
+            }
+        }
+    }
+
+    match serde_json::to_string(&commandline_tools) {
+        Ok(contents) => {
+            if let Err(err) = tokio::fs::write(&cache_index_path, contents).await {
+                error!(%err, ?cache_index_path, "Failed to write cache index");
+            }
+        },
+        Err(err) => error!(%err, ?cache_index_path, "Failed to serialize cache index"),
     }
 
     Ok(())
