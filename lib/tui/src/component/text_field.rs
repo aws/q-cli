@@ -151,6 +151,10 @@ impl Component for TextField {
             1.0,
         )
     }
+
+    fn as_dyn_mut(&mut self) -> &mut dyn Component {
+        self
+    }
 }
 
 impl Default for TextField {

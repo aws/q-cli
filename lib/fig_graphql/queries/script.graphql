@@ -28,6 +28,17 @@ fragment NamespaceFields on Namespace {
   }
 }
 
+fragment AstNode on IScriptAstNode {
+  __typename
+  type
+  ... on ScriptAstParameter {
+    name
+  }
+  ... on ScriptAstText {
+    text
+  }
+}
+
 fragment Parameter on ScriptParameter {
   type
   name
@@ -48,6 +59,9 @@ fragment Parameter on ScriptParameter {
       }
       shellScript {
         script
+        astTree {
+          ...AstNode
+        }
       }
       type
     }
@@ -89,14 +103,7 @@ fragment Step on IScriptStep {
       text
     }
     astTree {
-      __typename
-      type
-      ... on ScriptAstParameter {
-        name
-      }
-      ... on ScriptAstText {
-        text
-      }
+      ...AstNode
     }
   }
   ... on ScriptInputsStep {
@@ -116,6 +123,10 @@ fragment ScriptFields on Script {
     description
     templateVersion
     tags
+    runtime
+    parameters {
+      ...Parameter
+    }
     ruleset {
       or {
         specifier
@@ -134,6 +145,9 @@ fragment ScriptFields on Script {
     steps {
       ...Step
     }
+  }
+  astTree {
+    ...AstNode
   }
   relevanceScore
   lastInvokedAt

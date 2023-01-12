@@ -136,7 +136,15 @@ impl<'a> EventLoop<'a> {
     }
 
     #[inline]
-    pub fn run<'b, F>(&mut self, mut event_handler: F) -> Result<(), Error>
+    pub fn run<'b, F>(&mut self, event_handler: F) -> Result<(), Error>
+    where
+        F: 'b + FnMut(Event, &mut dyn Component, &mut ControlFlow),
+    {
+        self.run_with_timeout(None, event_handler)
+    }
+
+    #[inline]
+    pub fn run_with_timeout<'b, F>(&mut self, poll_timeout: Option<Duration>, mut event_handler: F) -> Result<(), Error>
     where
         F: 'b + FnMut(Event, &mut dyn Component, &mut ControlFlow),
     {
@@ -214,15 +222,17 @@ impl<'a> EventLoop<'a> {
                 break;
             }
 
-            self.handle_event(
-                &mut event_handler,
-                buf.terminal().poll_input(None)?.unwrap(),
-                &mut control_flow,
-                &mut buf,
-                &mut screen_width,
-                &mut screen_height,
-                origin.1 as f64,
-            )?;
+            if let Some(event) = buf.terminal().poll_input(poll_timeout)? {
+                self.handle_event(
+                    &mut event_handler,
+                    event,
+                    &mut control_flow,
+                    &mut buf,
+                    &mut screen_width,
+                    &mut screen_height,
+                    origin.1 as f64,
+                )?;
+            }
 
             while let Some(event) = buf.terminal().poll_input(Some(Duration::ZERO))? {
                 self.handle_event(
@@ -239,6 +249,8 @@ impl<'a> EventLoop<'a> {
             while let Some(event) = self.state.event_buffer.pop() {
                 event_handler(event, &mut self.component, &mut control_flow);
             }
+
+            event_handler(Event::MainEventsCleared, &mut self.component, &mut control_flow);
         }
 
         if let DisplayMode::Inline = self.display_mode {

@@ -55,6 +55,10 @@ impl Select {
         }
     }
 
+    pub fn set_options(&mut self, options: Vec<String>) {
+        self.options = options;
+    }
+
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
         self.inner.id = Some(id.into());
         self
@@ -302,5 +306,9 @@ impl Component for Select {
         };
 
         (w as f64, height)
+    }
+
+    fn as_dyn_mut(&mut self) -> &mut dyn Component {
+        self
     }
 }

@@ -290,6 +290,10 @@ impl Component for Center {
     fn size(&self, _: &mut State) -> (f64, f64) {
         (10000.0, 10000.0)
     }
+
+    fn as_dyn_mut(&mut self) -> &mut dyn Component {
+        self
+    }
 }
 
 #[derive(Debug, Args, PartialEq, Eq)]

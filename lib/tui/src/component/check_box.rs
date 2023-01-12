@@ -88,4 +88,8 @@ impl Component for CheckBox {
     fn size(&self, _: &mut State) -> (f64, f64) {
         (2.0 + self.label.width() as f64, 1.0)
     }
+
+    fn as_dyn_mut(&mut self) -> &mut dyn Component {
+        self
+    }
 }

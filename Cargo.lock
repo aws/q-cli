@@ -7555,6 +7555,7 @@ version = "0.20.0"
 dependencies = [
  "camino",
  "crossterm 0.25.0",
+ "downcast-rs",
  "indexmap",
  "lightningcss",
  "paste",

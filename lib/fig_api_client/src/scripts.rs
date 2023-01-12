@@ -18,6 +18,7 @@ pub enum Generator {
     #[serde(rename_all = "camelCase")]
     Script {
         script: String,
+        tree: Vec<TreeElement>,
     },
     Unknown(Option<String>),
 }
@@ -330,6 +331,108 @@ macro_rules! map_script {
         let script = $script;
         let namespace = $namespace;
 
+        let map_ast = |ast: Option<Vec<AstNode>>| -> Vec<TreeElement> {
+            ast.unwrap_or_default()
+                .into_iter()
+                .map(|tree| match tree.on {
+                    AstNodeOn::ScriptAstParameter(param) => TreeElement::Token { name: param.name },
+                    AstNodeOn::ScriptAstText(text) => TreeElement::String(text.text),
+                })
+                .collect()
+        };
+
+        let map_parameter = |parameter: ScriptParameter| Parameter {
+            name: parameter.name,
+            display_name: parameter.display_name,
+            description: parameter.description,
+            depends_on: vec![],
+            required: parameter.required,
+            parameter_type: match parameter.type_ {
+                ScriptParameterType::Checkbox => match parameter.checkbox {
+                    Some(checkbox) => ParameterType::Checkbox {
+                        true_value_substitution: checkbox.true_value_substitution.unwrap_or_else(|| "true".to_string()),
+                        false_value_substitution: checkbox
+                            .false_value_substitution
+                            .unwrap_or_else(|| "false".to_string()),
+                    },
+                    None => ParameterType::Unknown(None),
+                },
+                ScriptParameterType::Path => match parameter.path {
+                    Some(path) => ParameterType::Path {
+                        file_type: match path.file_type {
+                            Some(ScriptFileType::Any) | None => FileType::Any,
+                            Some(ScriptFileType::FileOnly) => FileType::FileOnly,
+                            Some(ScriptFileType::FolderOnly) => FileType::FolderOnly,
+                            Some(ScriptFileType::Other(other)) => FileType::Unknown(Some(other)),
+                        },
+                        extensions: path.extensions.unwrap_or_default(),
+                    },
+                    None => ParameterType::Unknown(None),
+                },
+                ScriptParameterType::Selector => match parameter.selector {
+                    Some(selector) => ParameterType::Selector {
+                        placeholder: selector.placeholder,
+                        suggestions: selector.suggestions,
+                        generators: selector.generators.map(|generators| {
+                            generators
+                                .into_iter()
+                                .map(|generator| match generator.type_ {
+                                    ScriptGeneratorType::Named => match generator.named {
+                                        Some(generator) => Generator::Named { name: generator.name },
+                                        None => Generator::Unknown(None),
+                                    },
+                                    ScriptGeneratorType::ShellScript => match generator.shell_script {
+                                        Some(generator) => Generator::Script {
+                                            script: generator.script,
+                                            tree: map_ast(generator.ast_tree),
+                                        },
+                                        None => Generator::Unknown(None),
+                                    },
+                                    ScriptGeneratorType::Other(other) => Generator::Unknown(Some(other)),
+                                })
+                                .collect()
+                        }),
+                        allow_raw_text_input: selector.allow_raw_text_input,
+                    },
+                    None => ParameterType::Unknown(None),
+                },
+                ScriptParameterType::Text => match parameter.text {
+                    Some(text) => ParameterType::Text {
+                        placeholder: text.placeholder,
+                    },
+                    None => ParameterType::Unknown(None),
+                },
+                ScriptParameterType::Other(other) => ParameterType::Unknown(Some(other)),
+            },
+            cli: match parameter.commandline_interface {
+                Some(interface) => Some(ParameterCommandlineInterface {
+                    short: interface.short,
+                    long: interface.long,
+                    required: interface.required,
+                    require_equals: interface.require_equals,
+                    raw: interface.raw,
+                    r#type: match interface.type_ {
+                        Some(ScriptCliBooleanType(t)) => Some(ParameterCommandlineInterfaceType::Boolean {
+                            default: t.boolean_default,
+                        }),
+                        Some(ScriptCliStringType(t)) => Some(ParameterCommandlineInterfaceType::String {
+                            default: t.string_default,
+                        }),
+                        None => None,
+                    },
+                }),
+                None => None,
+            },
+        };
+
+        let map_runtime = |runtime: Option<ScriptRuntime>| match runtime {
+            Some(ScriptRuntime::Bash) => Runtime::Bash,
+            Some(ScriptRuntime::Python) => Runtime::Python,
+            Some(ScriptRuntime::Node) => Runtime::Node,
+            Some(ScriptRuntime::Deno) => Runtime::Deno,
+            Some(ScriptRuntime::Other(_)) | None => Runtime::default(),
+        };
+
         Script {
             uuid: script.uuid,
             name: script.name,
@@ -380,27 +483,9 @@ macro_rules! map_script {
                         name: code_block.name,
                         runtime: code_block
                             .code_block_data
-                            .map(|data| match data.runtime {
-                                Some(ScriptRuntime::Bash) => Runtime::Bash,
-                                Some(ScriptRuntime::Python) => Runtime::Python,
-                                Some(ScriptRuntime::Node) => Runtime::Node,
-                                Some(ScriptRuntime::Deno) => Runtime::Deno,
-                                Some(ScriptRuntime::Other(_)) | None => Runtime::default(),
-                            })
+                            .map(|data| map_runtime(data.runtime))
                             .unwrap_or_default(),
-                        tree: code_block
-                            .ast_tree
-                            .unwrap_or_default()
-                            .into_iter()
-                            .map(|tree| match tree.on {
-                                StepOnScriptCodeBlockStepAstTreeOn::ScriptAstParameter(param) => {
-                                    TreeElement::Token { name: param.name }
-                                },
-                                StepOnScriptCodeBlockStepAstTreeOn::ScriptAstText(text) => {
-                                    TreeElement::String(text.text)
-                                },
-                            })
-                            .collect(),
+                        tree: map_ast(code_block.ast_tree),
                     },
                     StepOn::ScriptInputsStep(inputs) => ScriptStep::Inputs {
                         name: inputs.name,
@@ -408,100 +493,7 @@ macro_rules! map_script {
                             .parameters
                             .unwrap_or_default()
                             .into_iter()
-                            .map(|parameter| Parameter {
-                                name: parameter.name,
-                                display_name: parameter.display_name,
-                                description: parameter.description,
-                                depends_on: vec![],
-                                required: parameter.required,
-                                parameter_type: match parameter.type_ {
-                                    ScriptParameterType::Checkbox => match parameter.checkbox {
-                                        Some(checkbox) => ParameterType::Checkbox {
-                                            true_value_substitution: checkbox
-                                                .true_value_substitution
-                                                .unwrap_or_else(|| "true".to_string()),
-                                            false_value_substitution: checkbox
-                                                .false_value_substitution
-                                                .unwrap_or_else(|| "false".to_string()),
-                                        },
-                                        None => ParameterType::Unknown(None),
-                                    },
-                                    ScriptParameterType::Path => match parameter.path {
-                                        Some(path) => ParameterType::Path {
-                                            file_type: match path.file_type {
-                                                Some(ScriptFileType::Any) | None => FileType::Any,
-                                                Some(ScriptFileType::FileOnly) => FileType::FileOnly,
-                                                Some(ScriptFileType::FolderOnly) => FileType::FolderOnly,
-                                                Some(ScriptFileType::Other(other)) => FileType::Unknown(Some(other)),
-                                            },
-                                            extensions: path.extensions.unwrap_or_default(),
-                                        },
-                                        None => ParameterType::Unknown(None),
-                                    },
-                                    ScriptParameterType::Selector => match parameter.selector {
-                                        Some(selector) => ParameterType::Selector {
-                                            placeholder: selector.placeholder,
-                                            suggestions: selector.suggestions,
-                                            generators: selector.generators.map(|generators| {
-                                                generators
-                                                    .into_iter()
-                                                    .map(|generator| match generator.type_ {
-                                                        ScriptGeneratorType::Named => match generator.named {
-                                                            Some(generator) => {
-                                                                Generator::Named { name: generator.name }
-                                                            },
-                                                            None => Generator::Unknown(None),
-                                                        },
-                                                        ScriptGeneratorType::ShellScript => {
-                                                            match generator.shell_script {
-                                                                Some(generator) => Generator::Script {
-                                                                    script: generator.script,
-                                                                },
-                                                                None => Generator::Unknown(None),
-                                                            }
-                                                        },
-                                                        ScriptGeneratorType::Other(other) => {
-                                                            Generator::Unknown(Some(other))
-                                                        },
-                                                    })
-                                                    .collect()
-                                            }),
-                                            allow_raw_text_input: selector.allow_raw_text_input,
-                                        },
-                                        None => ParameterType::Unknown(None),
-                                    },
-                                    ScriptParameterType::Text => match parameter.text {
-                                        Some(text) => ParameterType::Text {
-                                            placeholder: text.placeholder,
-                                        },
-                                        None => ParameterType::Unknown(None),
-                                    },
-                                    ScriptParameterType::Other(other) => ParameterType::Unknown(Some(other)),
-                                },
-                                cli: match parameter.commandline_interface {
-                                    Some(interface) => Some(ParameterCommandlineInterface {
-                                        short: interface.short,
-                                        long: interface.long,
-                                        required: interface.required,
-                                        require_equals: interface.require_equals,
-                                        raw: interface.raw,
-                                        r#type: match interface.type_ {
-                                            Some(ScriptCliBooleanType(t)) => {
-                                                Some(ParameterCommandlineInterfaceType::Boolean {
-                                                    default: t.boolean_default,
-                                                })
-                                            },
-                                            Some(ScriptCliStringType(t)) => {
-                                                Some(ParameterCommandlineInterfaceType::String {
-                                                    default: t.string_default,
-                                                })
-                                            },
-                                            None => None,
-                                        },
-                                    }),
-                                    None => None,
-                                },
-                            })
+                            .map(map_parameter)
                             .collect(),
                     },
                 })
@@ -544,6 +536,9 @@ fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> S
         ScriptParameterCommandlineInterfaceString as ScriptCliStringType,
     };
     use fig_graphql::script::{
+        AstNode,
+        AstNodeOn,
+        Parameter as ScriptParameter,
         ScriptFileType,
         ScriptGeneratorType,
         ScriptParameterType,
@@ -551,7 +546,6 @@ fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> S
         ScriptRulePredicate,
         ScriptRuntime,
         StepOn,
-        StepOnScriptCodeBlockStepAstTreeOn,
     };
 
     map_script!(script, namespace)
@@ -563,6 +557,9 @@ fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String) ->
         ScriptParameterCommandlineInterfaceString as ScriptCliStringType,
     };
     use fig_graphql::scripts::{
+        AstNode,
+        AstNodeOn,
+        Parameter as ScriptParameter,
         ScriptFileType,
         ScriptGeneratorType,
         ScriptParameterType,
@@ -570,7 +567,6 @@ fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String) ->
         ScriptRulePredicate,
         ScriptRuntime,
         StepOn,
-        StepOnScriptCodeBlockStepAstTreeOn,
     };
 
     map_script!(script, namespace)

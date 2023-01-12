@@ -120,6 +120,10 @@ impl Component for P {
 
         (width as f64, height as f64)
     }
+
+    fn as_dyn_mut(&mut self) -> &mut dyn Component {
+        self
+    }
 }
 
 impl Default for P {

@@ -2,12 +2,16 @@
 mod script_action;
 
 use std::borrow::Cow;
-use std::collections::HashMap;
+use std::collections::{
+    HashMap,
+    HashSet,
+};
 use std::iter::empty;
 use std::process::{
     Command,
     Stdio,
 };
+use std::time::Duration;
 
 use clap::{
     ArgGroup,
@@ -52,6 +56,7 @@ use tracing::error;
 use tui::component::{
     CheckBox,
     CheckBoxEvent,
+    Component,
     Div,
     FilePicker,
     FilePickerEvent,
@@ -644,6 +649,108 @@ async fn execute_from_cli(script: &Script, script_name: &str, args: Vec<String>)
     execute_script(script, &mut parameters_by_name, ExecutionMethod::Invoke).await
 }
 
+fn interpolate_ast(runtime: Runtime, tree: &[TreeElement], args: &HashMap<String, ParameterValue>) -> String {
+    tree.iter().fold(String::new(), |mut acc, branch| {
+        match branch {
+            TreeElement::String(string) => acc.push_str(string.as_str()),
+            TreeElement::Token { name } => acc.push_str(&match args.get(name.as_str()) {
+                Some(ParameterValue::String(string)) => match runtime {
+                    Runtime::Bash => string.clone(),
+                    Runtime::Python | Runtime::Node | Runtime::Deno => {
+                        serde_json::to_string(string).expect("Failed to serialize string to JSON string")
+                    },
+                },
+                Some(ParameterValue::Bool {
+                    val,
+                    true_value,
+                    false_value,
+                }) => match (&runtime, val) {
+                    (Runtime::Bash, true) => true_value.clone().unwrap_or_else(|| "true".into()),
+                    (Runtime::Bash, false) => false_value.clone().unwrap_or_else(|| "false".into()),
+                    (Runtime::Python, true) => "True".into(),
+                    (Runtime::Python, false) => "False".into(),
+                    (Runtime::Node | Runtime::Deno, true) => "true".into(),
+                    (Runtime::Node | Runtime::Deno, false) => "false".into(),
+                },
+                Some(ParameterValue::Array(arr)) => match &runtime {
+                    Runtime::Bash => {
+                        let mut out: String = "(".into();
+                        for (i, s) in arr.iter().enumerate() {
+                            if i != 0 {
+                                out.push(' ');
+                            }
+                            out.push_str(&escape(s.into()));
+                        }
+                        out.push(')');
+                        out
+                    },
+                    Runtime::Python | Runtime::Node | Runtime::Deno => {
+                        serde_json::to_string(arr).expect("Failed to serialize array to JSON string")
+                    },
+                },
+                Some(ParameterValue::Number(num)) => num.to_string(),
+                None => match runtime {
+                    Runtime::Bash => "\"\"".into(),
+                    Runtime::Python => "None".into(),
+                    Runtime::Node | Runtime::Deno => "null".into(),
+                },
+            }),
+        }
+
+        acc
+    })
+}
+
+#[derive(Debug, Clone)]
+struct ScriptGeneratorState {
+    tree: Vec<TreeElement>,
+    last_execution: Option<String>,
+    results: Option<Vec<String>>,
+    depends_on: HashSet<String>,
+}
+
+impl ScriptGeneratorState {
+    fn from_tree(tree: Vec<TreeElement>) -> Self {
+        Self {
+            tree: tree.clone(),
+            last_execution: None,
+            results: None,
+            depends_on: tree
+                .iter()
+                .filter_map(|branch| match branch {
+                    TreeElement::Token { name } => Some(name.to_owned()),
+                    _ => None,
+                })
+                .collect(),
+        }
+    }
+
+    fn execute(&mut self, args: &HashMap<String, ParameterValue>) -> bool {
+        let script = interpolate_ast(Runtime::Bash, &self.tree, args);
+        let should_run = self
+            .last_execution
+            .as_ref()
+            .map(|prev| prev.as_str() != script)
+            .unwrap_or(true);
+
+        if should_run {
+            if let Ok(output) = Command::new("bash").arg("-c").arg(&script).output() {
+                let mut options = vec![];
+                for suggestion in String::from_utf8_lossy(&output.stdout).split('\n') {
+                    if !suggestion.is_empty() {
+                        options.push(suggestion.to_owned());
+                    }
+                }
+                self.results = Some(options);
+                self.last_execution = Some(script);
+            }
+            true
+        } else {
+            false
+        }
+    }
+}
+
 async fn execute_script(
     script: &Script,
     parameters_by_name: &mut HashMap<String, ParameterValue>,
@@ -745,12 +852,12 @@ fn execute_parameter_block(
         ))
     }
 
-    let mut description_map = HashMap::new();
-    let mut flag_map: HashMap<String, (String, String)> = HashMap::new();
+    let mut parameter_map: HashMap<String, &Parameter> = HashMap::new();
+    let mut generator_map: HashMap<String, Vec<ScriptGeneratorState>> = HashMap::new();
+    let mut parameter_dependencies: HashMap<String, HashSet<String>> = HashMap::new();
+
     for parameter in parameters {
-        if let Some(description) = &parameter.description {
-            description_map.insert(parameter.name.to_owned(), description.to_owned());
-        }
+        parameter_map.insert(parameter.name.to_owned(), parameter);
 
         let mut parameter_label = P::new()
             .with_class("label")
@@ -780,25 +887,20 @@ fn execute_parameter_block(
                     .map(|parameter| parameter.to_string())
                     .unwrap_or_default();
 
-                let mut options = suggestions.to_owned().unwrap_or_default();
+                let options = suggestions.to_owned().unwrap_or_default();
                 if let Some(generators) = generators {
+                    let mut generator_states = vec![];
                     for generator in generators {
-                        match generator {
-                            Generator::Script { script } => {
-                                if let Ok(output) = Command::new("bash").arg("-c").arg(script).output() {
-                                    for suggestion in String::from_utf8_lossy(&output.stdout).split('\n') {
-                                        if !suggestion.is_empty() {
-                                            options.push(suggestion.to_owned());
-                                        }
-                                    }
-                                }
-                            },
+                        let state = match generator {
+                            Generator::Script { tree, .. } => ScriptGeneratorState::from_tree(tree.clone()),
                             Generator::Named { .. } => bail!("Named generators aren't supported in scripts yet"),
                             Generator::Unknown(unknown) => {
                                 bail!("Unknown generator type, try updating your Fig version: {unknown:?}")
                             },
-                        }
+                        };
+                        generator_states.push(state);
                     }
+                    generator_map.insert(parameter.name.to_owned(), generator_states);
                 }
 
                 parameter_div = parameter_div.push(
@@ -846,11 +948,6 @@ fn execute_parameter_block(
                 true_value_substitution,
                 false_value_substitution,
             } => {
-                flag_map.insert(
-                    parameter.name.to_owned(),
-                    (true_value_substitution.to_owned(), false_value_substitution.to_owned()),
-                );
-
                 let checked = parameters_by_name
                     .get(&parameter.name)
                     .map(|val| match val {
@@ -977,6 +1074,48 @@ fn execute_parameter_block(
         view = view.push(parameter_div);
     }
 
+    let initial_generators = generator_map.clone();
+    let mut update_select_options_in_view =
+        |id: &String, view: &mut dyn Component, arg_values: &HashMap<String, ParameterValue>| {
+            let did_execute = match generator_map.get_mut(id) {
+                Some(gens) => gens.iter_mut().any(|gen| gen.execute(arg_values)),
+                None => false,
+            };
+            if did_execute {
+                if let ParameterType::Selector { suggestions, .. } = &parameter_map.get(id).unwrap().parameter_type {
+                    let mut options = suggestions.to_owned().unwrap_or_default();
+                    for gen in generator_map.get(id).unwrap() {
+                        options.extend(gen.results.clone().unwrap_or_default());
+                    }
+                    if let Some(select) = view.find_mut(id).and_then(|e| e.downcast_mut::<Select>()) {
+                        select.set_options(options);
+                    }
+                }
+            }
+        };
+
+    for (key, generator_states) in initial_generators.iter() {
+        update_select_options_in_view(key, &mut view, parameters_by_name);
+        let depends_on = generator_states.iter().fold(HashSet::new(), |mut acc, g| {
+            acc.extend(g.depends_on.clone());
+            acc
+        });
+
+        for name in depends_on {
+            match parameter_dependencies.get_mut(&name) {
+                Some(keys) => {
+                    keys.insert(key.to_owned());
+                },
+                None => {
+                    let keys = HashSet::from_iter(vec![key.to_owned()]);
+                    parameter_dependencies.insert(name, keys);
+                },
+            }
+        }
+    }
+
+    let mut selectors_pending_update = HashSet::new();
+
     #[rustfmt::skip]
     let view = view.push(
         P::new().with_class("footer")
@@ -996,44 +1135,70 @@ fn execute_parameter_block(
         InputMethod::new(),
         StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
     )
-    .run(|event, _, control_flow| match event {
-        Event::Quit => *control_flow = ControlFlow::Quit,
-        Event::Terminate => {
-            terminated = true;
-            *control_flow = ControlFlow::Quit;
-        },
-        Event::CheckBox(event) => match event {
-            CheckBoxEvent::Checked { id: Some(id), checked } => {
-                let (true_val, false_val) = flag_map.get(&id).unwrap();
-
-                parameters_by_name.insert(id, ParameterValue::Bool {
-                    val: checked,
-                    false_value: Some(false_val.to_owned()),
-                    true_value: Some(true_val.to_owned()),
-                });
+    .run_with_timeout(
+        Some(Duration::from_millis(100)),
+        |event, view, control_flow| match event {
+            Event::Quit => *control_flow = ControlFlow::Quit,
+            Event::Terminate => {
+                terminated = true;
+                *control_flow = ControlFlow::Quit;
+            },
+            Event::CheckBox(event) => match event {
+                CheckBoxEvent::Checked { id: Some(id), checked } => {
+                    let param = parameter_map.get(&id).unwrap();
+                    if let ParameterType::Checkbox {
+                        ref true_value_substitution,
+                        ref false_value_substitution,
+                    } = param.parameter_type
+                    {
+                        if let Some(selectors) = parameter_dependencies.get(&id) {
+                            selectors_pending_update.extend(selectors)
+                        }
+                        parameters_by_name.insert(id, ParameterValue::Bool {
+                            val: checked,
+                            false_value: Some(false_value_substitution.to_owned()),
+                            true_value: Some(true_value_substitution.to_owned()),
+                        });
+                    }
+                },
+                _ => (),
+            },
+            Event::FilePicker(event) => match event {
+                FilePickerEvent::FilePathChanged { id: Some(id), path } => {
+                    if let Some(selectors) = parameter_dependencies.get(&id) {
+                        selectors_pending_update.extend(selectors)
+                    }
+                    parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
+                },
+                _ => (),
+            },
+            Event::Select(event) => match event {
+                SelectEvent::OptionSelected { id: Some(id), option } => {
+                    if let Some(selectors) = parameter_dependencies.get(&id) {
+                        selectors_pending_update.extend(selectors)
+                    }
+                    parameters_by_name.insert(id, ParameterValue::String(option));
+                },
+                _ => (),
+            },
+            Event::TextField(event) => match event {
+                TextFieldEvent::TextChanged { id: Some(id), text } => {
+                    if let Some(selectors) = parameter_dependencies.get(&id) {
+                        selectors_pending_update.extend(selectors)
+                    }
+                    parameters_by_name.insert(id, ParameterValue::String(text));
+                },
+                _ => (),
+            },
+            Event::MainEventsCleared => {
+                for selector_id in selectors_pending_update.iter() {
+                    update_select_options_in_view(selector_id.to_owned(), view, parameters_by_name);
+                }
+                selectors_pending_update.clear();
             },
             _ => (),
         },
-        Event::FilePicker(event) => match event {
-            FilePickerEvent::FilePathChanged { id: Some(id), path } => {
-                parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
-            },
-            _ => (),
-        },
-        Event::Select(event) => match event {
-            SelectEvent::OptionSelected { id: Some(id), option } => {
-                parameters_by_name.insert(id, ParameterValue::String(option));
-            },
-            _ => (),
-        },
-        Event::TextField(event) => match event {
-            TextFieldEvent::TextChanged { id: Some(id), text } => {
-                parameters_by_name.insert(id, ParameterValue::String(text));
-            },
-            _ => (),
-        },
-        _ => (),
-    })?;
+    )?;
 
     if terminated {
         std::process::exit(1);
@@ -1047,55 +1212,7 @@ async fn execute_code_block(
     runtime: &Runtime,
     tree: &[TreeElement],
 ) -> Result<i32> {
-    let templated_script = tree.iter().fold(String::new(), |mut acc, branch| {
-        match branch {
-            TreeElement::String(string) => acc.push_str(string.as_str()),
-            TreeElement::Token { name } => acc.push_str(&match parameters_by_name.get(name.as_str()) {
-                Some(ParameterValue::String(string)) => match runtime {
-                    Runtime::Bash => string.clone(),
-                    Runtime::Python | Runtime::Node | Runtime::Deno => {
-                        serde_json::to_string(string).expect("Failed to serialize string to JSON string")
-                    },
-                },
-                Some(ParameterValue::Bool {
-                    val,
-                    true_value,
-                    false_value,
-                }) => match (runtime, val) {
-                    (Runtime::Bash, true) => true_value.clone().unwrap_or_else(|| "true".into()),
-                    (Runtime::Bash, false) => false_value.clone().unwrap_or_else(|| "false".into()),
-                    (Runtime::Python, true) => "True".into(),
-                    (Runtime::Python, false) => "False".into(),
-                    (Runtime::Node | Runtime::Deno, true) => "true".into(),
-                    (Runtime::Node | Runtime::Deno, false) => "false".into(),
-                },
-                Some(ParameterValue::Array(arr)) => match runtime {
-                    Runtime::Bash => {
-                        let mut out: String = "(".into();
-                        for (i, s) in arr.iter().enumerate() {
-                            if i != 0 {
-                                out.push(' ');
-                            }
-                            out.push_str(&escape(s.into()));
-                        }
-                        out.push(')');
-                        out
-                    },
-                    Runtime::Python | Runtime::Node | Runtime::Deno => {
-                        serde_json::to_string(arr).expect("Failed to serialize array to JSON string")
-                    },
-                },
-                Some(ParameterValue::Number(num)) => num.to_string(),
-                None => match runtime {
-                    Runtime::Bash => "\"\"".into(),
-                    Runtime::Python => "None".into(),
-                    Runtime::Node | Runtime::Deno => "null".into(),
-                },
-            }),
-        }
-
-        acc
-    });
+    let templated_script = interpolate_ast(runtime.clone(), tree, parameters_by_name);
 
     let (mut command, text) = match runtime {
         Runtime::Bash => {

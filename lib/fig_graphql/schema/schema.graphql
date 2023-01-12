@@ -261,6 +261,9 @@ type Script {
   isOwnedByCurrentUser: Boolean!
   lastInvokedAt: DateTime
   lastInvokedAtByUser: DateTime
+
+  """CLI tools this Script is included in"""
+  linkedCommandlineTools: [ICLICommand!]!
   name: String!
   namespace: Namespace
   relevanceScore: Float!
@@ -599,6 +602,7 @@ input ScriptSelectorParameterInput {
 }
 
 type ScriptShellScriptGenerator {
+  astTree: [IScriptAstNode!]
   script: String!
 }
 

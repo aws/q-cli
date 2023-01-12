@@ -7,6 +7,7 @@ version = "0.20.0"
 
 [dependencies]
 indexmap = "1.9.2"
+downcast-rs = "1.2.0"
 lightningcss = "1.0.0-alpha.38"
 paste = "1.0.11"
 termwiz = "0.19.0"

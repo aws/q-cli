@@ -1,3 +1,5 @@
+use downcast_rs::Downcast;
+
 mod check_box;
 mod div;
 mod file_picker;
@@ -180,7 +182,7 @@ impl ComponentData {
     }
 }
 
-pub trait Component: std::fmt::Debug {
+pub trait Component: std::fmt::Debug + Downcast {
     /// Initialize the component with information not available at creation
     ///
     /// You will likely want to initialize the size of your inner content here, if not possible to
@@ -248,6 +250,24 @@ pub trait Component: std::fmt::Debug {
         Some(component)
     }
 
+    /// Find an existing component in the current ui element or its children with the given id
+    #[allow(unused_variables)]
+    fn find_mut(&mut self, id: &str) -> Option<&mut dyn Component> {
+        if let Some(self_id) = self.id() {
+            if self_id == id {
+                return Some(self.as_dyn_mut());
+            }
+        }
+
+        for child in self.inner_mut().children.iter_mut() {
+            if let Some(c) = child.find_mut(id) {
+                return Some(c);
+            }
+        }
+
+        None
+    }
+
     /// The logic ran when the user focuses a ui element, or more specifically, when the ui element
     /// receives input
     #[allow(unused_variables)]
@@ -284,4 +304,11 @@ pub trait Component: std::fmt::Debug {
 
     /// Retrieve a mutable reference to the inner component data of the ui element
     fn inner_mut(&mut self) -> &mut ComponentData;
+
+    /// This is gross, basically constrains all impls of Component to be Sized, while still
+    /// allowing use of Component as a trait object.
+    /// https://stackoverflow.com/a/61654763
+    fn as_dyn_mut(&mut self) -> &mut dyn Component;
 }
+
+downcast_rs::impl_downcast!(Component);

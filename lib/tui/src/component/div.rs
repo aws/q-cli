@@ -353,6 +353,10 @@ impl Component for Div {
 
         (width, height)
     }
+
+    fn as_dyn_mut(&mut self) -> &mut dyn Component {
+        self
+    }
 }
 
 impl Default for Div {
