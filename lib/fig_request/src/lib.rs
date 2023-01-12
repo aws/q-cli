@@ -3,6 +3,7 @@ pub mod defaults;
 mod error;
 pub mod reqwest_client;
 
+use std::fmt::Display;
 use std::time::Duration;
 
 use auth::get_token;
@@ -31,6 +32,7 @@ use serde::{
     Serialize,
 };
 use serde_json::Value;
+use tracing::debug;
 
 pub fn client() -> Option<&'static Client> {
     reqwest_client::reqwest_client(true)
@@ -55,7 +57,8 @@ pub struct Request<A: Auth> {
 }
 
 impl Request<NoAuth> {
-    pub fn new(method: Method, endpoint: impl AsRef<str>) -> Self {
+    pub fn new(method: Method, endpoint: impl AsRef<str> + Display) -> Self {
+        debug!(%method, %endpoint);
         Self::new_with_host(host(), method, endpoint)
     }
 
@@ -79,19 +82,19 @@ impl Request<NoAuth> {
         }
     }
 
-    pub fn new_release(method: Method, endpoint: impl AsRef<str>) -> Self {
+    pub fn new_release(method: Method, endpoint: impl AsRef<str> + Display) -> Self {
         Self::new_with_host(release_host(), method, endpoint)
     }
 
-    pub fn get(endpoint: impl AsRef<str>) -> Self {
+    pub fn get(endpoint: impl AsRef<str> + Display) -> Self {
         Self::new(Method::GET, endpoint)
     }
 
-    pub fn post(endpoint: impl AsRef<str>) -> Self {
+    pub fn post(endpoint: impl AsRef<str> + Display) -> Self {
         Self::new(Method::POST, endpoint)
     }
 
-    pub fn delete(endpoint: impl AsRef<str>) -> Self {
+    pub fn delete(endpoint: impl AsRef<str> + Display) -> Self {
         Self::new(Method::DELETE, endpoint)
     }
 
