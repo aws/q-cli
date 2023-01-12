@@ -7,7 +7,8 @@ interface GlobalAPIError {
 }
 
 const FigGlobalErrorOccurred = 'FigGlobalErrorOccurred';
-const FigProtoMessageRecieved = 'FigProtoMessageRecieved';
+const FigProtoMessageReceivedTypo = 'FigProtoMessageRecieved';
+const FigProtoMessageReceived = 'FigProtoMessageReceived';
 
 type shouldKeepListening = boolean;
 
@@ -80,7 +81,14 @@ const setupEventListeners = (): void => {
     console.error(response.error);
   });
 
-  document.addEventListener(FigProtoMessageRecieved, (event: Event) => {
+  document.addEventListener(FigProtoMessageReceivedTypo, (event: Event) => {
+    const raw = (event as CustomEvent).detail as string;
+    const bytes = b64ToBytes(raw);
+    const message = ServerOriginatedMessage.decode(bytes);
+    receivedMessage(message);
+  });
+
+  document.addEventListener(FigProtoMessageReceived, (event: Event) => {
     const raw = (event as CustomEvent).detail as string;
     const bytes = b64ToBytes(raw);
     const message = ServerOriginatedMessage.decode(bytes);

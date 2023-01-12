@@ -24,7 +24,7 @@ window.ipc = {
       { stdio: "pipe" }
     );
     document.dispatchEvent(
-      new CustomEvent("FigProtoMessageRecieved", { detail })
+      new CustomEvent("FigProtoMessageReceived", { detail })
     );
   },
 };
