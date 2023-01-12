@@ -4,8 +4,9 @@ use fig_ipc::SendMessage;
 use fig_proto::daemon::daemon_message::Command;
 use fig_proto::daemon::{
     DaemonMessage,
-    DispatchHttpRequestCommand,
+    DispatchGraphqlRequestCommand,
 };
+use tracing::debug;
 
 #[derive(thiserror::Error, Debug)]
 pub enum Error {
@@ -34,23 +35,25 @@ where
     let message = DaemonMessage {
         id: None,
         no_response: Some(true),
-        command: Some(Command::DispatchHttpRequest(DispatchHttpRequestCommand {
-            method: "POST".to_string(),
+        command: Some(Command::DispatchGraphqlRequest(DispatchGraphqlRequestCommand {
             body: body.clone(),
-            url: url.to_string(),
-            auth: true,
         })),
     };
 
     match send_daemon_message(message).await {
         Ok(()) => Ok(()),
         Err(err) => {
+            tracing::warn!(%err, %fallback, "Failed to dispatch gql to daemon");
             if fallback {
-                fig_request::Request::post("/graphql")
+                let res: serde_json::Value = fig_request::Request::post("/graphql")
                     .auth()
-                    .body_json(body)
+                    .body(body)
+                    .header("Content-Type", "application/json")
                     .graphql()
                     .await?;
+
+                debug!(?res, "Response from gql");
+
                 Ok(())
             } else {
                 Err(err.into())

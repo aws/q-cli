@@ -219,23 +219,52 @@ async fn spawn_system_handler(
                                                     fig_request::Request::new_with_url(method, url)
                                                         .auth()
                                                         .body(body)
-                                                        .send()
+                                                        .text()
                                                         .await
                                                 } else {
                                                     fig_request::Request::new_with_url(method, url)
                                                         .body(body)
-                                                        .send()
+                                                        .text()
                                                         .await
                                                 };
 
-                                                if let Err(err) = response {
-                                                    error!(%err, "Request failed");
+                                                match response {
+                                                    Ok(res) => {
+                                                        debug!(%res, "Received res from gql dispatch");
+                                                    },
+                                                    Err(err) => {
+                                                        error!(%err, "Request failed");
+                                                    },
                                                 }
                                             },
                                             Err(err) => error!(%err, %url, "Invalid URL"),
                                         },
                                         Err(err) => error!(%err, %method, "Invalid method"),
                                     };
+                                });
+
+                                continue;
+                            },
+                            Command::DispatchGraphqlRequest(request) => {
+                                let body = request.body.clone();
+
+                                tokio::spawn(async move {
+                                    let response: fig_request::Result<serde_json::Value> =
+                                        fig_request::Request::post("/graphql")
+                                            .body(body)
+                                            .header("Content-Type", "application/json")
+                                            .auth()
+                                            .graphql()
+                                            .await;
+
+                                    match response {
+                                        Ok(res) => {
+                                            debug!(%res, "Received res from gql dispatch");
+                                        },
+                                        Err(err) => {
+                                            error!(%err, "Request failed");
+                                        },
+                                    }
                                 });
 
                                 continue;

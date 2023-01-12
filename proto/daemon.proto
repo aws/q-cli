@@ -32,6 +32,8 @@ message DaemonMessage {
     OpenBrowserCommand open_browser = 108;
     // A request to dispatch an http request, the response is not returned
     DispatchHttpRequestCommand dispatch_http_request = 109;
+    // A request to dispatch a graphql request, the response is not returned
+    DispatchGraphqlRequestCommand dispatch_graphql_request = 110;
   }
 }
 
@@ -207,4 +209,8 @@ message DispatchHttpRequestCommand {
   string body = 2;
   string url = 3;
   bool auth = 4;
+}
+
+message DispatchGraphqlRequestCommand {
+  string body = 1;
 }

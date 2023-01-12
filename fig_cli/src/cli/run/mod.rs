@@ -57,6 +57,7 @@ use tokio::io::{
     AsyncReadExt,
     AsyncWriteExt,
 };
+use tracing::error;
 use tui::component::{
     CheckBox,
     CheckBoxEvent,
@@ -1018,7 +1019,9 @@ async fn execute_script(
                     ..Default::default(),
                 );
 
-                fig_graphql::dispatch::send_to_daemon(query, true).await.ok();
+                if let Err(err) = fig_graphql::dispatch::send_to_daemon(query, true).await {
+                    error!(%err, "Failed to create script invocation");
+                }
             }
 
             std::process::exit(130);
@@ -1044,7 +1047,9 @@ async fn execute_script(
                     ..Default::default(),
                 );
 
-                fig_graphql::dispatch::send_to_daemon(query, true).await.ok();
+                if let Err(err) = fig_graphql::dispatch::send_to_daemon(query, true).await {
+                    error!(%err, "Failed to create script invocation");
+                }
             }
 
             telem_join.await.ok();
