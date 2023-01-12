@@ -42,7 +42,11 @@ pub fn menu_bar() -> MenuBar {
             .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::BracketRight))
             .with_id(*DASHBOARD_FORWARD),
     );
-    app_submenu.add_native_item(MenuItem::CloseWindow);
+    app_submenu.add_item(
+        MenuItemAttributes::new("Close Window")
+            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyW))
+            .with_id(*DASHBOARD_QUIT),
+    );
     app_submenu.add_item(
         MenuItemAttributes::new("Quit Fig (UI)")
             .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyQ))
