@@ -1199,7 +1199,17 @@ fn execute_parameter_block(
         std::process::exit(1);
     }
 
-    Ok(())
+    let mut missing_parameters = vec![];
+    for parameter in parameters {
+        if !parameters_by_name.contains_key(&parameter.name) {
+            missing_parameters.push(parameter.name.to_owned());
+        }
+    }
+
+    match missing_parameters.is_empty() {
+        true => Ok(()),
+        false => bail!("Missing parameters: {}", missing_parameters.join(", ")),
+    }
 }
 
 async fn execute_code_block(
