@@ -2267,6 +2267,7 @@ name = "fig_release"
 version = "2.13.0-dev"
 dependencies = [
  "clap",
+ "color-eyre",
  "dialoguer",
  "eyre",
  "fig_request",

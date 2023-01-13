@@ -18,6 +18,7 @@ mod utils;
 
 #[tokio::main]
 async fn main() -> eyre::Result<()> {
+    color_eyre::install()?;
     let cli = Cli::parse();
     match cli.subcommand {
         // cli::Sub::Changelog {

@@ -1,6 +1,7 @@
 use std::path::PathBuf;
 use std::time::Duration;
 
+use eyre::bail;
 use fig_request::{
     Method,
     Request,
@@ -38,11 +39,11 @@ pub async fn package(
     let channel = read_channel();
 
     if channel == Channel::None {
-        panic!("Can't publish a package with channel set to none");
+        bail!("Can't publish a package with channel set to none");
     }
 
     if dry {
-        panic!("not sure what you expect me to do here")
+        bail!("not sure what you expect me to do here")
     }
 
     let resp = Request::new_release(Method::POST, "/")
@@ -62,8 +63,7 @@ pub async fn package(
     if resp.status().is_success() {
         println!("{}", resp.text().await?);
     } else {
-        println!("error uploading package: {}: {}", resp.status(), resp.text().await?);
-        return Ok(());
+        bail!("error uploading package: {}: {}", resp.status(), resp.text().await?);
     }
 
     Ok(())
