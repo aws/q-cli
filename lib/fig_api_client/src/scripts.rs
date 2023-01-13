@@ -1,6 +1,8 @@
 use std::fmt::Display;
+use std::path::PathBuf;
 
 use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
+use fig_util::directories::home_dir;
 use serde::{
     Deserialize,
     Serialize,
@@ -204,12 +206,32 @@ impl Runtime {
         vec![Runtime::Bash, Runtime::Python, Runtime::Node, Runtime::Deno]
     }
 
-    pub fn exe(&self) -> &str {
+    pub fn exe(&self) -> PathBuf {
         match self {
-            Runtime::Bash => "bash",
-            Runtime::Python => "python3",
-            Runtime::Node => "node",
-            Runtime::Deno => "deno",
+            Runtime::Bash => "bash".into(),
+            Runtime::Python => "python3".into(),
+            Runtime::Node => "node".into(),
+            Runtime::Deno => {
+                // Try path
+                if let Ok(deno) = which::which("deno") {
+                    return deno;
+                }
+
+                // Try local install location
+                let deno_install = match std::env::var_os("DENO_INSTALL") {
+                    Some(deno_install) => Some(PathBuf::from(deno_install).join("bin").join("deno")),
+                    None => home_dir().map(|home| home.join(".deno").join("bin").join("deno")).ok(),
+                };
+
+                if let Some(path) = deno_install {
+                    if path.exists() {
+                        return path;
+                    }
+                }
+
+                // Fallback to just bin name
+                "deno".into()
+            },
         }
     }
 

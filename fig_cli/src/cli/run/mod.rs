@@ -1216,19 +1216,19 @@ async fn execute_code_block(
 
     let (mut command, text) = match runtime {
         Runtime::Bash => {
-            let mut command = tokio::process::Command::new("bash");
+            let mut command = tokio::process::Command::new(runtime.exe());
             command.arg("-c");
             command.arg(templated_script);
             (command, None)
         },
         Runtime::Python => {
-            let mut command = tokio::process::Command::new("python3");
+            let mut command = tokio::process::Command::new(runtime.exe());
             command.arg("-c");
             command.arg(templated_script);
             (command, None)
         },
         Runtime::Node => {
-            let mut command = tokio::process::Command::new("node");
+            let mut command = tokio::process::Command::new(runtime.exe());
             command.arg("--input-type");
             command.arg("module");
             command.arg("-e");
@@ -1236,7 +1236,7 @@ async fn execute_code_block(
             (command, None)
         },
         Runtime::Deno => {
-            let mut command = tokio::process::Command::new("deno");
+            let mut command = tokio::process::Command::new(runtime.exe());
             command.arg("run");
             command.arg("-A");
             command.arg("-");
@@ -1339,14 +1339,24 @@ async fn runtime_check(runtime: &Runtime) -> Result<()> {
 }
 
 fn try_install(runtime: &Runtime) -> Result<()> {
-    let confirm = |name: &str| {
-        matches!(
+    let mut first_confirm = true;
+    let mut confirm = |name: &str| {
+        let install = matches!(
             choose(
-                &format!("{runtime:?} is not installed. Would you like to install it with {name}?"),
+                &format!(
+                    "{}Would you like to install {runtime:?} with {name}?",
+                    if first_confirm {
+                        format!("{runtime:?} is not installed. ")
+                    } else {
+                        "".into()
+                    }
+                ),
                 &["Yes", "No"],
             ),
             Ok(0)
-        )
+        );
+        first_confirm = false;
+        install
     };
 
     let error = || {
@@ -1383,7 +1393,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
 
     #[cfg(target_os = "linux")]
     if which("pacman").is_ok() && confirm("pacman") {
-        let mut command = Command::new("pacman");
+        let mut command = Command::new("sudo");
+        command.arg("pacman");
         command.arg("-S");
         command.arg(runtime.pacman_package());
 
@@ -1396,7 +1407,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(target_os = "linux")]
     if let Some(dnf_package) = runtime.dnf_package() {
         if which("dnf").is_ok() && confirm("dnf") {
-            let mut command = Command::new("dnf");
+            let mut command = Command::new("sudo");
+            command.arg("dnf");
             command.arg("install");
             command.arg(dnf_package);
 
@@ -1410,7 +1422,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(target_os = "linux")]
     if let Some(apt_package) = runtime.apt_package() {
         if which("apt-get").is_ok() && confirm("apt-get") {
-            let mut command = Command::new("apt-get");
+            let mut command = Command::new("sudo");
+            command.arg("apt-get");
             command.arg("install");
             command.arg(apt_package);
 
