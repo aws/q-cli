@@ -1334,7 +1334,15 @@ pub fn escape(s: Cow<str>) -> Cow<str> {
 async fn runtime_check(runtime: &Runtime) -> Result<()> {
     match which(runtime.exe()) {
         Ok(_) => Ok(()),
-        Err(_) => try_install(runtime),
+        Err(_) => match try_install(runtime) {
+            Ok(()) => {
+                if which(runtime.exe()).is_err() {
+                    bail!("Failed to find {runtime:?} after install");
+                }
+                Ok(())
+            },
+            Err(err) => Err(err),
+        },
     }
 }
 
@@ -1377,6 +1385,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
 
     #[cfg(target_os = "macos")]
     if which("brew").is_ok() && confirm("brew") {
+        eprintln!("\n$ brew install {}", runtime.brew_package());
+
         let mut command = Command::new("brew");
         command.arg("install");
         command.arg("--quiet");
@@ -1393,6 +1403,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
 
     #[cfg(target_os = "linux")]
     if which("pacman").is_ok() && confirm("pacman") {
+        eprintln!("\n$ sudo pacman -S {}", runtime.pacman_package());
+
         let mut command = Command::new("sudo");
         command.arg("pacman");
         command.arg("-S");
@@ -1407,6 +1419,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(target_os = "linux")]
     if let Some(dnf_package) = runtime.dnf_package() {
         if which("dnf").is_ok() && confirm("dnf") {
+            eprintln!("\n$ sudo dnf install {}", dnf_package);
+
             let mut command = Command::new("sudo");
             command.arg("dnf");
             command.arg("install");
@@ -1422,6 +1436,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(target_os = "linux")]
     if let Some(apt_package) = runtime.apt_package() {
         if which("apt-get").is_ok() && confirm("apt-get") {
+            eprintln!("\n$ sudo apt-get install {}", apt_package);
+
             let mut command = Command::new("sudo");
             command.arg("apt-get");
             command.arg("install");
@@ -1437,6 +1453,8 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(unix)]
     if let Some(fallback_install_script) = runtime.fallback_install_script() {
         if which("bash").is_ok() && confirm(&format!("'{fallback_install_script}'")) {
+            eprintln!("\n$ {fallback_install_script}");
+
             let mut command = Command::new("bash");
             command.arg("-c");
             command.arg(fallback_install_script);
