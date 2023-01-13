@@ -24,6 +24,7 @@ fn main() {
         DisplayMode::Inline,
         InputMethod::default(),
         StyleSheet::parse(include_str!("form.css"), ParserOptions::default()).unwrap(),
+        ControlFlow::Wait,
     )
     .run(|event, _component, control_flow| match event {
         tui::Event::Quit | tui::Event::Terminate => *control_flow = ControlFlow::Quit,

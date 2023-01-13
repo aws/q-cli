@@ -3,38 +3,15 @@
     color: ansi(7);
 }
 
-div {
+hr {
     width: 100;
+    color: ansi(8);
 }
 
 input, select {
-    padding-left: 1;
-    padding-right: 1;
     width: 100;
-}
-
-.parameter {
-    border-color: ansi(8);
-    border-style: ascii ┌ ─ ┐ │ │ └ ─ ┘;
-    border-width: 1;
-}
-
-:hover {
-    border-color: ansi(4);
-}
-
-.parameter:focus {
-    border-color: ansi(3);
-}
-
-.description, .keybindings {
-    padding-left: 1;
-    padding-right: 1;
-    display: none;
-}
-
-div:focus > .description, div:focus > .keybindings {
-    display: block;
+    margin-left: 1;
+    margin-right: 1;
 }
 
 .view {
@@ -48,6 +25,56 @@ div:focus > .description, div:focus > .keybindings {
     margin-bottom: 1;
 }
 
+.parameter {
+    border-width: 1;
+    border-color: ansi(8);
+    border-style: ascii ┌ ─ ┐ │ │ └ ─ ┘;
+}
+
+.parameter:hover {
+    border-color: ansi(4);
+}
+
+.parameter:focus {
+    border-color: ansi(3);
+}
+
+.label {
+    padding-left: 1;
+    padding-right: 1;
+    margin-left: 1;
+    margin-top: -1;
+}
+
+hr,
+.description {
+    display: none;
+    margin-left: 1;
+    margin-right: 1;
+}
+
+div:focus > hr,
+div:focus > .description {
+    display: block;
+}
+
+.keybindings-div {
+    width: 100;
+    justify-content: right;
+}
+
+.keybindings {
+    display: none;
+    padding-left: 1;
+    padding-right: 1;
+    margin-top: -1;
+    margin-right: 2;
+}
+
+:focus + div .keybindings {
+    display: block;
+}
+
 .footer {
     margin-top: 1;
     display: none;
@@ -55,11 +82,4 @@ div:focus > .description, div:focus > .keybindings {
 
 div:focus > .footer {
     display: block;
-}
-
-.label {
-    margin-left: 1;
-    margin-top: -1;
-    padding-left: 1;
-    padding-right: 1;
 }

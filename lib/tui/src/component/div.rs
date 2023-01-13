@@ -1,3 +1,7 @@
+use lightningcss::properties::align::{
+    ContentDistribution,
+    JustifyContent,
+};
 use termwiz::surface::Surface;
 
 use super::{
@@ -61,6 +65,59 @@ impl Component for Div {
         let initial_x = x;
         let initial_y = y;
 
+        let mut space = width;
+        let mut previous_siblings = std::collections::LinkedList::new();
+        for child in self.inner.children.iter() {
+            let style_info = child.inner().style_info();
+            state.tree.push(TreeElement {
+                inner: style_info.clone(),
+                siblings: previous_siblings.clone(),
+            });
+            previous_siblings.push_front(style_info);
+            let style = child.style(state);
+
+            if let Display::None = style.display() {
+                state.tree.pop();
+                continue;
+            }
+
+            let size = child.size(state);
+
+            space -= style
+                .width()
+                .unwrap_or(size.0 + style.padding_horizontal() + style.border_horizontal())
+                + style.margin_horizontal();
+
+            state.tree.pop();
+        }
+        space = space.max(0.0);
+
+        let mut space_between = 0.0;
+        #[allow(clippy::single_match)]
+        #[allow(clippy::match_single_binding)]
+        match self.style(state).justify_content() {
+            JustifyContent::Normal | JustifyContent::Left { .. } => (),
+            JustifyContent::ContentDistribution(content_distribution) => match content_distribution {
+                ContentDistribution::SpaceBetween => space_between = space / self.inner.children.len() as f64 - 1.0,
+                _ => (),
+                // ContentDistribution::SpaceAround => todo!(),
+                // ContentDistribution::SpaceEvenly => todo!(),
+                // ContentDistribution::Stretch => todo!(),
+            },
+            JustifyContent::ContentPosition {
+                value: content_position,
+                ..
+            } => match content_position {
+                _ => (),
+                // ContentPosition::Center => todo!(),
+                // ContentPosition::Start => todo!(),
+                // ContentPosition::End => todo!(),
+                // ContentPosition::FlexStart => todo!(),
+                // ContentPosition::FlexEnd => todo!(),
+            },
+            JustifyContent::Right { .. } => x += space,
+        }
+
         let mut previous_siblings = std::collections::LinkedList::new();
         for child in self.inner.children.iter() {
             let style_info = child.inner().style_info();
@@ -109,7 +166,7 @@ impl Component for Div {
 
             match self.layout {
                 Layout::Vertical => y += style.spacing_vertical() + content_height,
-                Layout::Horizontal => x += style.spacing_horizontal() + content_width,
+                Layout::Horizontal => x += style.spacing_horizontal() + content_width + space_between,
             }
 
             state.tree.pop();

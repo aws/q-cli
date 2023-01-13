@@ -93,6 +93,7 @@ pub enum Event {
 #[derive(Clone, Copy, Debug)]
 pub enum ControlFlow {
     Wait,
+    Poll(Duration),
     Quit,
 }
 
@@ -101,6 +102,7 @@ pub struct EventLoop<'a> {
     display_mode: DisplayMode,
     input_method: InputMethod,
     state: State<'a, 'a>,
+    control_flow: ControlFlow,
     #[cfg(debug_assertions)]
     style_sheet_path: Option<std::path::PathBuf>,
 }
@@ -111,6 +113,7 @@ impl<'a> EventLoop<'a> {
         display_mode: DisplayMode,
         input_method: InputMethod,
         style_sheet: StyleSheet<'a, 'a>,
+        control_flow: ControlFlow,
     ) -> Self
     where
         C: Component + 'static,
@@ -124,6 +127,7 @@ impl<'a> EventLoop<'a> {
             display_mode,
             input_method,
             state,
+            control_flow,
             #[cfg(debug_assertions)]
             style_sheet_path: None,
         }
@@ -136,15 +140,7 @@ impl<'a> EventLoop<'a> {
     }
 
     #[inline]
-    pub fn run<'b, F>(&mut self, event_handler: F) -> Result<(), Error>
-    where
-        F: 'b + FnMut(Event, &mut dyn Component, &mut ControlFlow),
-    {
-        self.run_with_timeout(None, event_handler)
-    }
-
-    #[inline]
-    pub fn run_with_timeout<'b, F>(&mut self, poll_timeout: Option<Duration>, mut event_handler: F) -> Result<(), Error>
+    pub fn run<'b, F>(&mut self, mut event_handler: F) -> Result<(), Error>
     where
         F: 'b + FnMut(Event, &mut dyn Component, &mut ControlFlow),
     {
@@ -169,8 +165,6 @@ impl<'a> EventLoop<'a> {
         let screen_size = buf.terminal().get_screen_size()?;
         let mut screen_width = screen_size.cols;
         let mut screen_height = screen_size.rows;
-
-        let mut control_flow = ControlFlow::Wait;
 
         loop {
             // todo: seems like there's an issue in termwiz which doesn't
@@ -218,15 +212,24 @@ impl<'a> EventLoop<'a> {
                 buf.flush()?;
             }
 
-            if !matches!(control_flow, ControlFlow::Wait) {
-                break;
-            }
+            let event = match self.control_flow {
+                ControlFlow::Wait => {
+                    // Event can actually be `None` here despite blocking
+                    let mut event = None;
+                    while event.is_none() {
+                        event = buf.terminal().poll_input(None)?;
+                    }
 
-            if let Some(event) = buf.terminal().poll_input(poll_timeout)? {
+                    event
+                },
+                ControlFlow::Poll(duration) => buf.terminal().poll_input(Some(duration))?,
+                ControlFlow::Quit => break,
+            };
+
+            if let Some(event) = event {
                 self.handle_event(
                     &mut event_handler,
                     event,
-                    &mut control_flow,
                     &mut buf,
                     &mut screen_width,
                     &mut screen_height,
@@ -238,7 +241,6 @@ impl<'a> EventLoop<'a> {
                 self.handle_event(
                     &mut event_handler,
                     event,
-                    &mut control_flow,
                     &mut buf,
                     &mut screen_width,
                     &mut screen_height,
@@ -247,10 +249,10 @@ impl<'a> EventLoop<'a> {
             }
 
             while let Some(event) = self.state.event_buffer.pop() {
-                event_handler(event, &mut self.component, &mut control_flow);
+                event_handler(event, &mut self.component, &mut self.control_flow);
             }
 
-            event_handler(Event::MainEventsCleared, &mut self.component, &mut control_flow);
+            event_handler(Event::MainEventsCleared, &mut self.component, &mut self.control_flow);
         }
 
         if let DisplayMode::Inline = self.display_mode {
@@ -269,7 +271,6 @@ impl<'a> EventLoop<'a> {
         &mut self,
         event_handler: &mut F,
         event: InputEvent,
-        control_flow: &mut ControlFlow,
         buf: &mut BufferedTerminal<impl Terminal>,
         screen_width: &mut usize,
         screen_height: &mut usize,
@@ -285,23 +286,23 @@ impl<'a> EventLoop<'a> {
                     InputAction::Submit => {
                         self.component.on_input_action(&mut self.state, &input_action);
                         if self.component.next(&mut self.state, false).is_none() {
-                            *control_flow = ControlFlow::Quit;
+                            self.control_flow = ControlFlow::Quit;
                         }
                     },
                     InputAction::Next => match self.component.next(&mut self.state, true) {
                         Some(id) => event_handler(
                             Event::FocusChanged { id, focus: true },
                             &mut self.component,
-                            control_flow,
+                            &mut self.control_flow,
                         ),
-                        None => *control_flow = ControlFlow::Quit,
+                        None => self.control_flow = ControlFlow::Quit,
                     },
                     InputAction::Previous => {
                         if let Some(id) = self.component.prev(&mut self.state, true) {
                             event_handler(
                                 Event::FocusChanged { id, focus: true },
                                 &mut self.component,
-                                control_flow,
+                                &mut self.control_flow,
                             )
                         }
                     },
@@ -318,12 +319,9 @@ impl<'a> EventLoop<'a> {
                             }
                         }
                     },
-                    InputAction::Quit => event_handler(Event::Quit, &mut self.component, control_flow),
-                    InputAction::Terminate => event_handler(Event::Terminate, &mut self.component, control_flow),
-                    InputAction::TempChangeView => {
-                        self.component.on_focus(&mut self.state, false);
-                        event_handler(Event::TempChangeView, &mut self.component, control_flow);
-                        self.component.on_focus(&mut self.state, true);
+                    InputAction::Quit => event_handler(Event::Quit, &mut self.component, &mut self.control_flow),
+                    InputAction::Terminate => {
+                        event_handler(Event::Terminate, &mut self.component, &mut self.control_flow)
                     },
                     _ => self.component.on_input_action(&mut self.state, &input_action),
                 }

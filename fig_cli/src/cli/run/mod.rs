@@ -60,6 +60,7 @@ use tui::component::{
     Div,
     FilePicker,
     FilePickerEvent,
+    Hr,
     Select,
     SelectEvent,
     TextField,
@@ -859,6 +860,8 @@ fn execute_parameter_block(
     for parameter in parameters {
         parameter_map.insert(parameter.name.to_owned(), parameter);
 
+        let mut parameter_div = Div::new().with_class("parameter");
+
         let mut parameter_label = P::new()
             .with_class("label")
             .push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name));
@@ -873,7 +876,7 @@ fn execute_parameter_block(
             );
         }
 
-        let mut parameter_div = Div::new().with_class("parameter").push(parameter_label);
+        parameter_div = parameter_div.push(parameter_label);
 
         let keybindings = match &parameter.parameter_type {
             ParameterType::Selector {
@@ -1047,31 +1050,25 @@ fn execute_parameter_block(
         };
 
         if let Some(description) = &parameter.description {
-            parameter_div = parameter_div.push(
-                P::new()
-                    .with_class("description")
-                    .push_styled_text(
-                        "─".repeat(100),
-                        ColorAttribute::PaletteIndex(8),
-                        ColorAttribute::Default,
-                        false,
-                        true,
-                    )
-                    .push_styled_text(
-                        format!("\n{description}"),
-                        ColorAttribute::PaletteIndex(8),
-                        ColorAttribute::Default,
-                        false,
-                        true,
-                    ),
-            );
-        }
-
-        if let Some(keybindings) = keybindings {
-            parameter_div = parameter_div.push(keybindings);
+            if !description.is_empty() {
+                parameter_div =
+                    parameter_div
+                        .push(Hr::new())
+                        .push(P::new().with_class("description").push_styled_text(
+                            description,
+                            ColorAttribute::PaletteIndex(8),
+                            ColorAttribute::Default,
+                            false,
+                            true,
+                        ));
+            }
         }
 
         view = view.push(parameter_div);
+
+        if let Some(keybindings) = keybindings {
+            view = view.push(Div::new().with_class("keybindings-div").push(keybindings));
+        }
     }
 
     let initial_generators = generator_map.clone();
@@ -1134,71 +1131,69 @@ fn execute_parameter_block(
         DisplayMode::Inline,
         InputMethod::new(),
         StyleSheet::parse(include_str!("run.css"), ParserOptions::default())?,
+        ControlFlow::Poll(Duration::from_secs(1)),
     )
-    .run_with_timeout(
-        Some(Duration::from_millis(100)),
-        |event, view, control_flow| match event {
-            Event::Quit => *control_flow = ControlFlow::Quit,
-            Event::Terminate => {
-                terminated = true;
-                *control_flow = ControlFlow::Quit;
-            },
-            Event::CheckBox(event) => match event {
-                CheckBoxEvent::Checked { id: Some(id), checked } => {
-                    let param = parameter_map.get(&id).unwrap();
-                    if let ParameterType::Checkbox {
-                        ref true_value_substitution,
-                        ref false_value_substitution,
-                    } = param.parameter_type
-                    {
-                        if let Some(selectors) = parameter_dependencies.get(&id) {
-                            selectors_pending_update.extend(selectors)
-                        }
-                        parameters_by_name.insert(id, ParameterValue::Bool {
-                            val: checked,
-                            false_value: Some(false_value_substitution.to_owned()),
-                            true_value: Some(true_value_substitution.to_owned()),
-                        });
-                    }
-                },
-                _ => (),
-            },
-            Event::FilePicker(event) => match event {
-                FilePickerEvent::FilePathChanged { id: Some(id), path } => {
+    .run(|event, view, control_flow| match event {
+        Event::Quit => *control_flow = ControlFlow::Quit,
+        Event::Terminate => {
+            terminated = true;
+            *control_flow = ControlFlow::Quit;
+        },
+        Event::CheckBox(event) => match event {
+            CheckBoxEvent::Checked { id: Some(id), checked } => {
+                let param = parameter_map.get(&id).unwrap();
+                if let ParameterType::Checkbox {
+                    ref true_value_substitution,
+                    ref false_value_substitution,
+                } = param.parameter_type
+                {
                     if let Some(selectors) = parameter_dependencies.get(&id) {
                         selectors_pending_update.extend(selectors)
                     }
-                    parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
-                },
-                _ => (),
-            },
-            Event::Select(event) => match event {
-                SelectEvent::OptionSelected { id: Some(id), option } => {
-                    if let Some(selectors) = parameter_dependencies.get(&id) {
-                        selectors_pending_update.extend(selectors)
-                    }
-                    parameters_by_name.insert(id, ParameterValue::String(option));
-                },
-                _ => (),
-            },
-            Event::TextField(event) => match event {
-                TextFieldEvent::TextChanged { id: Some(id), text } => {
-                    if let Some(selectors) = parameter_dependencies.get(&id) {
-                        selectors_pending_update.extend(selectors)
-                    }
-                    parameters_by_name.insert(id, ParameterValue::String(text));
-                },
-                _ => (),
-            },
-            Event::MainEventsCleared => {
-                for selector_id in selectors_pending_update.iter() {
-                    update_select_options_in_view(selector_id.to_owned(), view, parameters_by_name);
+                    parameters_by_name.insert(id, ParameterValue::Bool {
+                        val: checked,
+                        false_value: Some(false_value_substitution.to_owned()),
+                        true_value: Some(true_value_substitution.to_owned()),
+                    });
                 }
-                selectors_pending_update.clear();
             },
             _ => (),
         },
-    )?;
+        Event::FilePicker(event) => match event {
+            FilePickerEvent::FilePathChanged { id: Some(id), path } => {
+                if let Some(selectors) = parameter_dependencies.get(&id) {
+                    selectors_pending_update.extend(selectors)
+                }
+                parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
+            },
+            _ => (),
+        },
+        Event::Select(event) => match event {
+            SelectEvent::OptionSelected { id: Some(id), option } => {
+                if let Some(selectors) = parameter_dependencies.get(&id) {
+                    selectors_pending_update.extend(selectors)
+                }
+                parameters_by_name.insert(id, ParameterValue::String(option));
+            },
+            _ => (),
+        },
+        Event::TextField(event) => match event {
+            TextFieldEvent::TextChanged { id: Some(id), text } => {
+                if let Some(selectors) = parameter_dependencies.get(&id) {
+                    selectors_pending_update.extend(selectors)
+                }
+                parameters_by_name.insert(id, ParameterValue::String(text));
+            },
+            _ => (),
+        },
+        Event::MainEventsCleared => {
+            for selector_id in selectors_pending_update.iter() {
+                update_select_options_in_view(selector_id.to_owned(), view, parameters_by_name);
+            }
+            selectors_pending_update.clear();
+        },
+        _ => (),
+    })?;
 
     if terminated {
         std::process::exit(1);

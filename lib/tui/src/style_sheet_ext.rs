@@ -93,29 +93,14 @@ impl StyleSheetExt for StyleSheet<'_, '_> {
                                         out.with_height(Some((*rows).into()));
                                     }
                                 },
-                                // Property::MinWidth(_) => todo!(),
-                                // Property::MinHeight(_) => todo!(),
-                                // Property::MaxWidth(_) => todo!(),
-                                // Property::MaxHeight(_) => todo!(),
-                                // Property::BorderSpacing(_) => todo!(),
-                                // Property::BorderTopColor(_) => todo!(),
-                                // Property::BorderBottomColor(_) => todo!(),
-                                // Property::BorderLeftColor(_) => todo!(),
-                                // Property::BorderRightColor(_) => todo!(),
-                                // Property::BorderTopStyle(_) => todo!(),
-                                // Property::BorderBottomStyle(_) => todo!(),
-                                // Property::BorderLeftStyle(_) => todo!(),
-                                // Property::BorderRightStyle(_) => todo!(),
-                                // Property::BorderTopWidth(_) => todo!(),
-                                // Property::BorderBottomWidth(_) => todo!(),
-                                // Property::BorderLeftWidth(_) => todo!(),
-                                // Property::BorderRightWidth(_) => todo!(),
+                                Property::JustifyContent(justify_content, _) => {
+                                    out.with_justify_content(justify_content.clone());
+                                },
                                 Property::BorderColor(color) => {
                                     if let Some(color) = color_convert(&color.top) {
                                         out.with_border_color(color);
                                     }
                                 },
-                                // Property::BorderStyle(_) => todo!(),
                                 Property::BorderWidth(width) => {
                                     if let BorderSideWidth::Length(Length::Value(LengthValue::Px(width))) = width.top {
                                         out.with_border_width(width.into());
@@ -208,7 +193,6 @@ impl StyleSheetExt for StyleSheet<'_, '_> {
                                         }
                                     }
                                 },
-                                // Property::CaretShape(_) => todo!(),
                                 // custom properties have an unknown name
                                 // Property::Custom(CustomProperty { name, value }) => {},
                                 // unparsed properties have a known name, but an unknown value

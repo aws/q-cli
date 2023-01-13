@@ -334,6 +334,7 @@ and a happy new year to you!  \\_________________________/",
             tui::DisplayMode::AlternateScreen,
             InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
+            ControlFlow::Wait,
         )
         .run(|event, _, control_flow| {
             if let tui::Event::Quit | tui::Event::Terminate = event {
@@ -373,6 +374,7 @@ and a happy new year to you!  \\_________________________/",
             tui::DisplayMode::AlternateScreen,
             InputMethod::new_exit_any(),
             StyleSheet::parse(include_str!("wrapped.css"), ParserOptions::default())?,
+            ControlFlow::Wait,
         )
         .run(|event, _, control_flow| {
             if let tui::Event::Quit | tui::Event::Terminate = event {

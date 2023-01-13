@@ -144,13 +144,27 @@ impl Component for Select {
                 }
             }
 
-            surface.draw_text(
-                self.options[*option].as_str(),
-                x + 2.0,
-                y + i as f64 + 1.0,
-                width - 2.0,
-                attributes,
-            );
+            let width = width - 2.0;
+            let text_width = self.options[*option].width() as f64;
+            match width < text_width {
+                true => surface.draw_text(
+                    format!(
+                        "{}...",
+                        &self.options[*option].as_str()[..(width - 3.0).max(0.0) as usize].trim_end()
+                    ),
+                    x + 2.0,
+                    y + i as f64 + 1.0,
+                    width,
+                    attributes,
+                ),
+                false => surface.draw_text(
+                    self.options[*option].as_str(),
+                    x + 2.0,
+                    y + i as f64 + 1.0,
+                    text_width,
+                    attributes,
+                ),
+            }
         }
     }
 

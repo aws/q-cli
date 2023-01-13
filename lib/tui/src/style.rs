@@ -1,6 +1,7 @@
 use std::collections::HashMap;
 use std::mem::Discriminant;
 
+use lightningcss::properties::align::JustifyContent;
 use termwiz::cell::{
     CellAttributes,
     Intensity,
@@ -23,12 +24,33 @@ macro_rules! style {
     }};
 }
 
-macro_rules! field {
+macro_rules! field_copy {
     ($i:ident, $k:path, $t:ty, $e:expr) => {
         pub fn $i(&self) -> $t {
             let property = $k(unsafe { std::mem::zeroed() });
             if let $k(val) = self.0.get(&std::mem::discriminant(&property)).unwrap_or(&$k($e)) {
                 *val
+            } else {
+                panic!("style property mismatch");
+            }
+        }
+
+        $crate::paste::paste! {
+            pub fn [<with_ $i>](&mut self, with: $t) -> &mut Self {
+                let property = $k(with);
+                self.0.insert(std::mem::discriminant(&property), property);
+                self
+            }
+        }
+    };
+}
+
+macro_rules! field_clone {
+    ($i:ident, $k:path, $t:ty, $e:expr) => {
+        pub fn $i(&self) -> &$t {
+            let property = $k(unsafe { std::mem::zeroed() });
+            if let $k(val) = self.0.get(&std::mem::discriminant(&property)).unwrap_or(&$k($e)) {
+                val
             } else {
                 panic!("style property mismatch");
             }
@@ -67,7 +89,7 @@ pub enum Display {
     Block,
 }
 
-#[derive(Clone, Copy, Debug)]
+#[derive(Clone, Debug)]
 #[non_exhaustive]
 pub enum Property {
     BackgroundColor(ColorAttribute),
@@ -85,6 +107,7 @@ pub enum Property {
     Display(Display),
     FontWeight(Intensity),
     Height(Option<f64>),
+    JustifyContent(JustifyContent),
     MarginBottom(f64),
     MarginLeft(f64),
     MarginRight(f64),
@@ -105,30 +128,32 @@ pub struct Style(HashMap<Discriminant<Property>, Property>);
 
 #[rustfmt::skip]
 impl Style {
-    field!(background_color, Property::BackgroundColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_bottom_color, Property::BorderBottomColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_left_color, Property::BorderLeftColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_right_color, Property::BorderRightColor, ColorAttribute, ColorAttribute::Default);
-    field!(border_style, Property::BorderStyle, BorderStyle, BorderStyle::None);
-    field!(border_top_color, Property::BorderTopColor, ColorAttribute, ColorAttribute::Default);
-    field!(caret_color, Property::CaretColor, ColorAttribute, ColorAttribute::Default);
-    field!(display, Property::Display, Display, Display::Block);
-    field!(color, Property::Color, ColorAttribute, ColorAttribute::Default);
-    field!(font_weight, Property::FontWeight, Intensity, Intensity::Normal);
-    field!(margin_bottom, Property::MarginBottom, f64, 0.0);
-    field!(margin_left, Property::MarginLeft, f64, 0.0);
-    field!(margin_right, Property::MarginRight, f64, 0.0);
-    field!(margin_top, Property::MarginTop, f64, 0.0);
-    field!(max_height, Property::MaxHeight, f64, 2048.0);
-    field!(max_width, Property::MaxWidth, f64, 2048.0);
-    field!(min_height, Property::MinHeight, f64, 0.0);
-    field!(min_width, Property::MinWidth, f64, 0.0);
-    field!(padding_bottom, Property::PaddingBottom, f64, 0.0);
-    field!(padding_left, Property::PaddingLeft, f64, 0.0);
-    field!(padding_right, Property::PaddingRight, f64, 0.0);
-    field!(padding_top, Property::PaddingTop, f64, 0.0);
-    field!(height, Property::Height, Option<f64>, None);
-    field!(width, Property::Width, Option<f64>, None);
+    field_copy!(background_color, Property::BackgroundColor, ColorAttribute, ColorAttribute::Default);
+    field_copy!(border_bottom_color, Property::BorderBottomColor, ColorAttribute, ColorAttribute::Default);
+    field_copy!(border_left_color, Property::BorderLeftColor, ColorAttribute, ColorAttribute::Default);
+    field_copy!(border_right_color, Property::BorderRightColor, ColorAttribute, ColorAttribute::Default);
+    field_copy!(border_style, Property::BorderStyle, BorderStyle, BorderStyle::None);
+    field_copy!(border_top_color, Property::BorderTopColor, ColorAttribute, ColorAttribute::Default);
+    field_copy!(caret_color, Property::CaretColor, ColorAttribute, ColorAttribute::Default);
+    field_copy!(display, Property::Display, Display, Display::Block);
+    field_copy!(color, Property::Color, ColorAttribute, ColorAttribute::Default);
+    field_copy!(font_weight, Property::FontWeight, Intensity, Intensity::Normal);
+    field_copy!(margin_bottom, Property::MarginBottom, f64, 0.0);
+    field_copy!(margin_left, Property::MarginLeft, f64, 0.0);
+    field_copy!(margin_right, Property::MarginRight, f64, 0.0);
+    field_copy!(margin_top, Property::MarginTop, f64, 0.0);
+    field_copy!(max_height, Property::MaxHeight, f64, 2048.0);
+    field_copy!(max_width, Property::MaxWidth, f64, 2048.0);
+    field_copy!(min_height, Property::MinHeight, f64, 0.0);
+    field_copy!(min_width, Property::MinWidth, f64, 0.0);
+    field_copy!(padding_bottom, Property::PaddingBottom, f64, 0.0);
+    field_copy!(padding_left, Property::PaddingLeft, f64, 0.0);
+    field_copy!(padding_right, Property::PaddingRight, f64, 0.0);
+    field_copy!(padding_top, Property::PaddingTop, f64, 0.0);
+    field_copy!(height, Property::Height, Option<f64>, None);
+    field_copy!(width, Property::Width, Option<f64>, None);
+    
+    field_clone!(justify_content, Property::JustifyContent, JustifyContent, JustifyContent::Normal);
 
     pub fn new() -> Self {
         Self::default()

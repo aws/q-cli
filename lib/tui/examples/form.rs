@@ -22,6 +22,7 @@ fn main() {
         DisplayMode::AlternateScreen,
         InputMethod::new(),
         StyleSheet::parse(include_str!("form.css"), ParserOptions::default()).unwrap(),
+        ControlFlow::Wait,
     )
     .with_style_sheet_path(PathBuf::from_str("examples/form.css").unwrap())
     .run(|event, _component, control_flow| match event {

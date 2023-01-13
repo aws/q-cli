@@ -3,6 +3,7 @@ use downcast_rs::Downcast;
 mod check_box;
 mod div;
 mod file_picker;
+mod hr;
 mod p;
 mod select;
 mod text_field;
@@ -20,6 +21,7 @@ pub use file_picker::{
     FilePicker,
     FilePickerEvent,
 };
+pub use hr::Hr;
 pub use p::P;
 pub use select::{
     Select,

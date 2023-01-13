@@ -28,8 +28,6 @@ pub enum InputAction {
     Unbound(KeyCode),
     // todo(chay): this uses a string but should really be generic
     Custom(String),
-    // todo(chay): remove this workaround
-    TempChangeView,
 }
 
 pub struct MouseAction {
@@ -134,8 +132,6 @@ impl Default for InputMethod {
             ((KeyCode::Tab, Modifiers::SHIFT), InputAction::Previous),
             ((KeyCode::Tab, Modifiers::NONE), InputAction::Next),
             ((KeyCode::Delete, Modifiers::NONE), InputAction::Delete),
-            ((KeyCode::Char('o'), Modifiers::CTRL), InputAction::TempChangeView),
-            ((KeyCode::Char('O'), Modifiers::CTRL), InputAction::TempChangeView),
             ((KeyCode::Char('l'), Modifiers::CTRL), InputAction::Redraw),
             ((KeyCode::Char('L'), Modifiers::CTRL), InputAction::Redraw),
         ])
