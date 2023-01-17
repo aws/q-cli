@@ -23,7 +23,7 @@ clap = { version = "4.1.1", features = ["derive", "deprecated"] }
 console = "0.15.2"
 crossterm = "0.25.0"
 dashmap = "5.3.4"
-dialoguer = { version = "0.10.2", features = ["fuzzy-select"] }
+dialoguer = { version = "0.10.3", features = ["fuzzy-select"] }
 fig_api_client = { path = "../lib/fig_api_client" }
 fig_color = { path = "../lib/fig_color" }
 fig_history = { path = "../lib/fig_history" }

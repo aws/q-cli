@@ -9,7 +9,7 @@ version.workspace = true
 [dependencies]
 clap = { version = "4.1.1", features = ["derive"] }
 color-eyre = "0.6.2"
-dialoguer = { version = "0.10.2", features = ["fuzzy-select", "editor"] }
+dialoguer = { version = "0.10.3", features = ["fuzzy-select", "editor"] }
 eyre = "0.6.8"
 fig_request = { path = "../../lib/fig_request" }
 fig_settings = { path = "../../lib/fig_settings" }
