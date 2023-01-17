@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-clap = { version = "4.0.32", features = ["derive"] }
+clap = { version = "4.1.1", features = ["derive"] }
 color-eyre = "0.6.2"
 dialoguer = { version = "0.10.2", features = ["fuzzy-select", "editor"] }
 eyre = "0.6.8"
