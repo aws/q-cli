@@ -14,7 +14,7 @@ invisible_in_system_ui = true
 input_method_type = "palette"
 
 [build-dependencies]
-plist = "1.3.1"
+plist = "1.4.0"
 serde = { version = "1.0.152", features = ["derive"] }
 toml = "0.5.10"
 apple-bundle = "*"

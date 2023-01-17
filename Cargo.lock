@@ -5118,16 +5118,16 @@ checksum = "6ac9a59f73473f1b8d852421e59e64809f025994837ef743615c6d0c5b305160"
 
 [[package]]
 name = "plist"
-version = "1.3.1"
+version = "1.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "bd39bc6cdc9355ad1dc5eeedefee696bb35c34caf21768741e81826c0bbd7225"
+checksum = "5329b8f106a176ab0dce4aae5da86bfcb139bb74fb00882859e03745011f3635"
 dependencies = [
  "base64 0.13.1",
  "indexmap",
  "line-wrap",
+ "quick-xml 0.26.0",
  "serde",
  "time 0.3.17",
- "xml-rs",
 ]
 
 [[package]]
@@ -5451,6 +5451,15 @@ name = "quick-xml"
 version = "0.22.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "8533f14c8382aaad0d592c812ac3b826162128b65662331e1127b45c3d18536b"
+dependencies = [
+ "memchr",
+]
+
+[[package]]
+name = "quick-xml"
+version = "0.26.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "7f50b1c63b38611e7d4d7f68b82d3ad0cc71a2ad2e7f61fc10f1328d917c93cd"
 dependencies = [
  "memchr",
 ]
@@ -6056,7 +6065,7 @@ dependencies = [
  "hyper",
  "indicatif",
  "log",
- "quick-xml",
+ "quick-xml 0.22.0",
  "regex",
  "reqwest",
  "semver 1.0.16",
