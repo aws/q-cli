@@ -603,11 +603,7 @@ pub async fn script(
 
     let data = fig_graphql::script!(namespace: namespace_str.clone(), name: name).await?;
 
-    let Some(namespace) = data.namespace else {
-        return Ok(None);
-    };
-
-    let Some(script) = namespace.script else {
+    let Some(script) = data.script else {
         return Ok(None);
     };
 

@@ -13,6 +13,9 @@ input CommandFieldsCreateInput {
   displayName: String
   icon: String
   name: String!
+
+  """Create a new script associated with this command"""
+  script: ScriptFieldsInput
   scriptUUID: ID
 }
 
@@ -86,9 +89,28 @@ input DuplicateScriptInput {
   oldNamespace: String!
 }
 
+type GithubOrg {
+  avatarUrl: String!
+  name: String!
+  url: String!
+  users: [GithubUser!]!
+}
+
+"""Publicly available information about a GitHub user"""
+type GithubUser {
+  avatarUrl: String!
+  email: String
+  name: String
+  url: String!
+  username: String!
+}
+
 interface ICLICommand {
   description: String
   displayName: String
+
+  """The 'args' array to invoken this command."""
+  executionPath: [String!]!
   icon: String
   name: String!
   parent: ICLICommand
@@ -171,6 +193,9 @@ type Namespace {
 type NestedCommand implements ICLICommand {
   description: String
   displayName: String
+
+  """The 'args' array to invoken this command."""
+  executionPath: [String!]!
   icon: String
   name: String!
   parent: ICLICommand
@@ -178,7 +203,9 @@ type NestedCommand implements ICLICommand {
   uuid: ID!
 }
 
+"""A user that only has publicly available information"""
 type OtherUser {
+  githubUser: GithubUser
   username: String
 }
 
@@ -229,6 +256,12 @@ type Query {
   namespace(username: String!): Namespace
   plugin(where: PluginWhereUniqueInput!): Plugin
   plugins(where: PluginWhereInput): [Plugin!]!
+
+  """Get public scripts"""
+  publicScripts: [Script!]!
+
+  """Get a script by namespace and name"""
+  script(name: String!, namespace: String!): Script
 }
 
 input RenameScriptInput {
@@ -254,6 +287,7 @@ input RequestTeamDomainVerificationInput {
 
 type Script {
   astTree: [IScriptAstNode!]! @deprecated(reason: "Use steps with codeBlockData instead.")
+  command: ScriptCommand
   createdAt: DateTime!
   createdBy: OtherUser
   fields: ScriptFields!
@@ -266,6 +300,7 @@ type Script {
   linkedCommandlineTools: [ICLICommand!]!
   name: String!
   namespace: Namespace
+  namespaceName: String
   relevanceScore: Float!
   totalInvocations: Int!
   updatedAt: DateTime!
@@ -312,6 +347,9 @@ type ScriptCodeBlockStep implements IScriptStep {
 type ScriptCommand implements ICLICommand {
   description: String
   displayName: String
+
+  """The 'args' array to invoken this command."""
+  executionPath: [String!]!
   icon: String
   name: String!
   parent: ICLICommand
@@ -328,6 +366,7 @@ type ScriptFields {
   isProtected: Boolean
   name: String
   parameters: [ScriptParameter!] @deprecated(reason: "Use steps with parameters instead.")
+  public: Boolean
   rules: [[ScriptRule!]!] @deprecated(reason: "Limited support for nested arrays in InputTypes.(See: https://github.com/MichalLytek/type-graphql/issues/734) Use ruleset instead.")
 
   """A collection of rulesets that must all be true for execution to occur"""
@@ -348,6 +387,7 @@ input ScriptFieldsInput {
   isProtected: Boolean
   name: String
   parameters: [ScriptParameterInput!]
+  public: Boolean = false
   rules: [[ScriptRuleInput!]!]
 
   """A collection of rulesets that must all be true for execution to occur"""
@@ -694,10 +734,23 @@ type TeamDomainVerificationStatus {
 
 type TeamMembership {
   createdAt: DateTime!
-  role: String!
+  role: TeamRole!
   team: Team!
   updatedAt: DateTime!
-  user: OtherUser!
+  user: TeamUser!
+}
+
+enum TeamRole {
+  ADMIN
+  MEMBER
+  OWNER
+}
+
+"""A user that is on a team with the current user"""
+type TeamUser {
+  githubUser: GithubUser
+  primaryEmail: String!
+  username: String
 }
 
 """Integers that will have a value of 0 or more."""
@@ -720,6 +773,8 @@ type User {
   dotfilesEarlyAccess: Boolean!
   firstName: String
   fullName: String
+  githubOrgs: [GithubOrg!]!
+  githubUser: GithubUser
   hasSeenOnboarding: Boolean!
 
   """
@@ -728,6 +783,7 @@ type User {
   joinableTeams: [JoinableTeam!]
   lastName: String
   namespace: Namespace
+  onboardingsViewed: JSON!
   primaryEmail: String!
   settings: JSONObject!
   teamMemberships: [TeamMembership!]

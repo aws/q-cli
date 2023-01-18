@@ -1,8 +1,6 @@
 query Script($namespace: String!, $name: String!) {
-  namespace(username: $namespace) {
-    script(name: $name) {
-      ...ScriptFields
-    }
+  script(namespace: $namespace, name: $name) {
+    ...ScriptFields
   }
 }
 
