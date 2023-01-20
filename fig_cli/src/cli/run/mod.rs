@@ -762,8 +762,10 @@ async fn execute_script(
     let mut exit_code = None;
     for step in &script.steps {
         if let Some(code) = execute_step(step, parameters_by_name).await? {
-            exit_code = Some(code);
-            break;
+            if code != 0 {
+                exit_code = Some(code);
+                break;
+            }
         }
     }
 
