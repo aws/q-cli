@@ -19,7 +19,7 @@ tracing = "0.1.36"
 whoami = "1.3.0"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.26.1"
+nix = "0.26.2"
 
 [dev-dependencies]
 tokio = { version = "*", features = ["full"] }

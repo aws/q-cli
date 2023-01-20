@@ -94,7 +94,7 @@ which = "4.3.0"
 yaque = "0.6.4"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.26.1"
+nix = "0.26.2"
 skim = { version = "0.10.2", default-features = false }
 
 [target.'cfg(target_os = "macos")'.dependencies]

@@ -62,7 +62,7 @@ uuid = { version = "1.2.2", features = ["v4", "fast-rng"] }
 which = "4.3.0"
 
 [target.'cfg(unix)'.dependencies]
-nix = "0.26.1"
+nix = "0.26.2"
 
 [target.'cfg(windows)'.dependencies]
 lazy_static = "1.4"

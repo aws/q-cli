@@ -1305,7 +1305,7 @@ version = "3.2.4"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "1631ca6e3c59112501a9d87fd86f21591ff77acd31331e8a73f8d80a65bbdd71"
 dependencies = [
- "nix 0.26.1",
+ "nix 0.26.2",
  "windows-sys 0.42.0",
 ]
 
@@ -1929,7 +1929,7 @@ dependencies = [
  "indicatif",
  "insta",
  "macos_utils",
- "nix 0.26.1",
+ "nix 0.26.2",
  "once_cell",
  "owo-colors",
  "parking_lot 0.12.1",
@@ -2026,7 +2026,7 @@ dependencies = [
  "libc",
  "macos_utils",
  "moka",
- "nix 0.26.1",
+ "nix 0.26.2",
  "notify",
  "objc",
  "once_cell",
@@ -2219,7 +2219,7 @@ dependencies = [
  "cfg-if 1.0.0",
  "fig_proto",
  "fig_util",
- "nix 0.26.1",
+ "nix 0.26.2",
  "pin-project-lite",
  "thiserror",
  "tokio",
@@ -2250,7 +2250,7 @@ dependencies = [
  "bytes",
  "fig_util",
  "hex",
- "nix 0.26.1",
+ "nix 0.26.2",
  "once_cell",
  "prost",
  "prost-build",
@@ -2406,7 +2406,7 @@ dependencies = [
  "hex",
  "insta",
  "macos_utils",
- "nix 0.26.1",
+ "nix 0.26.2",
  "objc",
  "once_cell",
  "paste",
@@ -2459,7 +2459,7 @@ dependencies = [
  "lazy_static",
  "memmem",
  "moka",
- "nix 0.26.1",
+ "nix 0.26.2",
  "num-traits",
  "once_cell",
  "parking_lot 0.12.1",
@@ -3932,7 +3932,7 @@ dependencies = [
  "dashmap",
  "flume",
  "fnv",
- "nix 0.26.1",
+ "nix 0.26.2",
  "objc",
  "once_cell",
  "parking_lot 0.12.1",
@@ -4221,9 +4221,9 @@ dependencies = [
 
 [[package]]
 name = "nix"
-version = "0.26.1"
+version = "0.26.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "46a58d1d356c6597d08cde02c2f09d785b09e28711837b1ed667dc652c08a694"
+checksum = "bfdda3d196821d6af13126e40375cdf7da646a96114af134d5f417a9a1dc8e1a"
 dependencies = [
  "bitflags",
  "cfg-if 1.0.0",
