@@ -24,8 +24,15 @@ impl ScriptsArgs {
     pub async fn execute(self) -> eyre::Result<()> {
         match self.subcommand {
             Some(ScriptsSubcommands::Refresh) => {
-                tokio::fs::remove_dir_all(scripts_cache_dir()?).await?;
-                fig_api_client::scripts::sync_scripts().await?;
+                tokio::fs::remove_dir_all(scripts_cache_dir()?).await.ok();
+
+                let (script_res, cli_res) = tokio::join!(
+                    fig_api_client::scripts::sync_scripts(),
+                    fig_api_client::commandline_tool::fetch_and_cache_all_command_line_tools()
+                );
+                script_res?;
+                cli_res?;
+
                 Ok(())
             },
             None => {
