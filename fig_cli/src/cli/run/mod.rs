@@ -864,9 +864,14 @@ fn execute_parameter_block(
 
         let mut parameter_div = Div::new().with_class("parameter");
 
-        let mut parameter_label = P::new()
-            .with_class("label")
-            .push_text(parameter.display_name.as_ref().unwrap_or(&parameter.name));
+        let mut parameter_name = &parameter.name;
+        if let Some(display_name) = &parameter.display_name {
+            if !display_name.is_empty() {
+                parameter_name = display_name;
+            }
+        }
+
+        let mut parameter_label = P::new().with_class("label").push_text(parameter_name);
 
         if !parameter.required.unwrap_or(true) {
             parameter_label = parameter_label.push_styled_text(

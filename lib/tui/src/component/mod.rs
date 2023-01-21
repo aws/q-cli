@@ -6,8 +6,8 @@ mod file_picker;
 mod hr;
 mod p;
 mod select;
+mod shared;
 mod text_field;
-pub(self) mod text_state;
 
 pub use check_box::{
     CheckBox,
@@ -185,12 +185,6 @@ impl ComponentData {
 }
 
 pub trait Component: std::fmt::Debug + Downcast {
-    /// Initialize the component with information not available at creation
-    ///
-    /// You will likely want to initialize the size of your inner content here, if not possible to
-    /// do otherwise.
-    // fn initialize(&mut self, state: &mut State);
-
     /// Draw the component
     ///
     /// This function assumes that borders, margin, and padding are handled by container

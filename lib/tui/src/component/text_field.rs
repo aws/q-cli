@@ -6,7 +6,7 @@ use termwiz::surface::{
 };
 use unicode_width::UnicodeWidthStr;
 
-use crate::component::text_state::TextState;
+use super::shared::TextState;
 use crate::component::ComponentData;
 use crate::event_loop::{
     Event,
@@ -26,7 +26,7 @@ pub enum TextFieldEvent {
 
 #[derive(Debug)]
 pub struct TextField {
-    text: TextState,
+    text_state: TextState,
     hint: Option<String>,
     obfuscated: bool,
     inner: ComponentData,
@@ -35,7 +35,7 @@ pub struct TextField {
 impl TextField {
     pub fn new() -> Self {
         Self {
-            text: TextState::new(""),
+            text_state: TextState::new(""),
             hint: None,
             obfuscated: false,
             inner: ComponentData::new("input".to_owned(), true),
@@ -53,7 +53,7 @@ impl TextField {
     }
 
     pub fn with_text(mut self, text: impl Into<String>) -> Self {
-        self.text = TextState::new(text.into());
+        self.text_state.set_text(text);
         self
     }
 
@@ -77,7 +77,7 @@ impl Component for TextField {
 
         let style = self.style(state);
 
-        match self.text.is_empty() {
+        match self.text_state.text().is_empty() {
             true => {
                 if let Some(hint) = &self.hint {
                     let mut attributes = style.attributes();
@@ -87,9 +87,18 @@ impl Component for TextField {
             },
             false => {
                 match self.obfuscated {
-                    true => surface.draw_text("*".repeat(self.text.len()), x, y, width, style.attributes()),
+                    true => surface.draw_text(
+                        "*".repeat(self.text_state.text().width()),
+                        x,
+                        y,
+                        width,
+                        style.attributes(),
+                    ),
                     false => surface.draw_text(
-                        &self.text.as_str()[self.text.cursor.saturating_sub((width.round() - 1.0) as usize)..],
+                        &self.text_state.text()[self
+                            .text_state
+                            .grapheme_index()
+                            .saturating_sub((width.round() - 1.0) as usize)..],
                         x,
                         y,
                         width,
@@ -100,32 +109,41 @@ impl Component for TextField {
         };
 
         if self.inner.focus {
-            state.cursor_position = (x + (self.text.cursor as f64).min(width.round() - 1.0), y);
+            state.cursor_position = (
+                x + (self.text_state.grapheme_index() as f64).min(width.round() - 1.0),
+                y,
+            );
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
     }
 
     fn on_input_action(&mut self, state: &mut State, input_action: &InputAction) {
-        if self.text.on_input_action(input_action).is_err() {
-            return;
+        match input_action {
+            InputAction::Remove => self.text_state.backspace(),
+            InputAction::Left => self.text_state.left(),
+            InputAction::Right => self.text_state.right(),
+            InputAction::Delete => self.text_state.delete(),
+            InputAction::Insert(character) => self.text_state.character(*character),
+            InputAction::Paste(clipboard) => self.text_state.paste(clipboard),
+            _ => (),
         }
 
-        if !self.text.is_empty() {
+        if !self.text_state.text().is_empty() {
             state.event_buffer.push(Event::TextField(TextFieldEvent::TextChanged {
                 id: self.inner.id.to_owned(),
-                text: self.text.to_owned(),
+                text: self.text_state.text().to_owned(),
             }))
         }
     }
 
     fn on_mouse_action(&mut self, state: &mut State, mouse_action: &MouseAction, x: f64, _: f64, _: f64, _: f64) {
-        self.text.on_mouse_action(mouse_action, x);
+        self.text_state.on_mouse_action(mouse_action, x);
 
-        if !self.text.is_empty() {
+        if !self.text_state.text().is_empty() {
             state.event_buffer.push(Event::TextField(TextFieldEvent::TextChanged {
                 id: self.inner.id.to_owned(),
-                text: self.text.to_owned(),
+                text: self.text_state.text().to_owned(),
             }))
         }
     }
@@ -140,12 +158,12 @@ impl Component for TextField {
 
     fn size(&self, _: &mut State) -> (f64, f64) {
         (
-            match self.text.is_empty() {
+            match self.text_state.text().is_empty() {
                 true => match &self.hint {
                     Some(hint) => hint.width() as f64,
                     None => 0.0,
                 },
-                false => self.text.width() as f64,
+                false => self.text_state.text().width() as f64,
             }
             .max(80.0),
             1.0,

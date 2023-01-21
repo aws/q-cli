@@ -251,10 +251,6 @@ impl Component for Div {
 
             state.tree.pop();
         }
-
-        if mouse_action.just_pressed && self.interactive() {
-            self.on_focus(state, true);
-        }
     }
 
     fn next(&mut self, state: &mut State, wrap: bool) -> Option<String> {

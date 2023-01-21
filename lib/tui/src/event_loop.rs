@@ -79,8 +79,6 @@ pub enum Event {
     Quit,
     Terminate,
     MainEventsCleared,
-    // todo(chay): remove
-    TempChangeView,
     FocusChanged { id: String, focus: bool },
     HoverChanged { id: String, hover: bool },
     ActiveChanged { id: String, active: bool },
@@ -319,8 +317,12 @@ impl<'a> EventLoop<'a> {
                             }
                         }
                     },
-                    InputAction::Quit => event_handler(Event::Quit, &mut self.component, &mut self.control_flow),
+                    InputAction::Quit => {
+                        self.component.on_focus(&mut self.state, false);
+                        event_handler(Event::Quit, &mut self.component, &mut self.control_flow)
+                    },
                     InputAction::Terminate => {
+                        self.component.on_focus(&mut self.state, false);
                         event_handler(Event::Terminate, &mut self.component, &mut self.control_flow)
                     },
                     _ => self.component.on_input_action(&mut self.state, &input_action),

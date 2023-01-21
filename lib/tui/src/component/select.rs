@@ -1,5 +1,7 @@
 use std::fmt::Display;
 
+use fuzzy_matcher::skim::SkimMatcherV2;
+use fuzzy_matcher::FuzzyMatcher;
 use termwiz::color::ColorAttribute;
 use termwiz::surface::{
     Change,
@@ -8,8 +10,8 @@ use termwiz::surface::{
 };
 use unicode_width::UnicodeWidthStr;
 
+use super::shared::TextState;
 use super::ComponentData;
-use crate::component::text_state::TextState;
 use crate::event_loop::State;
 use crate::input::{
     InputAction,
@@ -29,7 +31,7 @@ pub enum SelectEvent {
 
 #[derive(Debug)]
 pub struct Select {
-    text: TextState,
+    text_state: TextState,
     hint: Option<String>,
     index: Option<usize>,
     index_offset: usize,
@@ -43,7 +45,7 @@ pub struct Select {
 impl Select {
     pub fn new(options: Vec<String>, allow_any_text: bool) -> Self {
         Self {
-            text: TextState::new(""),
+            text_state: TextState::new(""),
             hint: None,
             index: Default::default(),
             index_offset: 0,
@@ -70,7 +72,7 @@ impl Select {
     }
 
     pub fn with_text(mut self, text: impl Display) -> Self {
-        self.text = TextState::new(text.to_string());
+        self.text_state = TextState::new(text.to_string());
         self
     }
 
@@ -82,6 +84,27 @@ impl Select {
     pub fn with_max_rows(mut self, max_rows: usize) -> Self {
         self.max_rows = max_rows.max(1);
         self
+    }
+
+    fn update_options(&mut self) {
+        self.index = None;
+        self.index_offset = 0;
+
+        let matcher = SkimMatcherV2::default();
+        let mut scores = vec![];
+
+        for i in 0..self.options.len() {
+            if let Some(score) = matcher.fuzzy_match(&self.options[i], self.text_state.text()) {
+                scores.push((i, score));
+            }
+        }
+
+        scores.sort_by(|a, b| b.1.cmp(&a.1));
+
+        self.sorted_options.clear();
+        for (i, _) in scores {
+            self.sorted_options.push(i);
+        }
     }
 }
 
@@ -100,7 +123,7 @@ impl Component for Select {
 
         surface.draw_text(arrow, x, y, 1.0, style.attributes());
 
-        match self.text.is_empty() {
+        match self.text_state.text().is_empty() {
             true => {
                 let mut attributes = style.attributes();
                 attributes.set_foreground(ColorAttribute::PaletteIndex(8));
@@ -111,7 +134,10 @@ impl Component for Select {
             },
             false => {
                 surface.draw_text(
-                    &self.text.as_str()[self.text.cursor.saturating_sub((width.round() - 3.0) as usize)..],
+                    &self.text_state.text()[self
+                        .text_state
+                        .grapheme_index()
+                        .saturating_sub((width.round() - 3.0) as usize)..],
                     x + 2.0,
                     y,
                     width - 2.0,
@@ -121,7 +147,10 @@ impl Component for Select {
         }
 
         if self.inner.focus {
-            state.cursor_position = (x + 2.0 + (self.text.cursor as f64).min(width.round() - 3.0), y);
+            state.cursor_position = (
+                x + 2.0 + (self.text_state.grapheme_index() as f64).min(width.round() - 3.0),
+                y,
+            );
             state.cursor_color = style.caret_color();
             surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
         }
@@ -169,16 +198,18 @@ impl Component for Select {
     }
 
     fn on_input_action(&mut self, _: &mut State, input_action: &InputAction) {
-        if self.text.on_input_action(input_action).is_err() {
-            return;
-        }
-
         match input_action {
+            InputAction::Remove => {
+                self.text_state.backspace();
+                self.update_options();
+            },
             InputAction::Submit => {
                 if let Some(index) = self.index {
-                    self.text = TextState::new(self.options[self.sorted_options[index]].clone());
+                    self.text_state = TextState::new(self.options[self.sorted_options[index]].clone());
                 }
             },
+            InputAction::Left => self.text_state.left(),
+            InputAction::Right => self.text_state.right(),
             InputAction::Up => {
                 if !self.sorted_options.is_empty() {
                     match self.index {
@@ -215,34 +246,15 @@ impl Component for Select {
                     }
                 }
             },
-            InputAction::Insert(_) => {
-                self.index = None;
-                self.index_offset = 0;
-                self.sorted_options
-                    .retain(|option| self.options[*option].contains(&*self.text));
-            },
-            InputAction::Remove => {
-                self.index = None;
-                self.index_offset = 0;
-
-                self.sorted_options.clear();
-                for i in 0..self.options.len() {
-                    if self.options[i].contains(&*self.text) {
-                        self.sorted_options.push(i);
-                    }
-                }
-            },
             InputAction::Delete => {
-                self.index = None;
-                self.index_offset = 0;
-
-                self.sorted_options.clear();
-                for i in 0..self.options.len() {
-                    if self.options[i].contains(&*self.text) {
-                        self.sorted_options.push(i);
-                    }
-                }
+                self.text_state.delete();
+                self.update_options();
             },
+            InputAction::Insert(character) => {
+                self.text_state.character(*character);
+                self.update_options();
+            },
+            InputAction::Paste(clipboard) => self.text_state.paste(clipboard),
             _ => (),
         }
     }
@@ -251,29 +263,20 @@ impl Component for Select {
         self.inner.focus = focus;
 
         match focus {
-            true => {
-                self.sorted_options.clear();
-                for i in 0..self.options.len() {
-                    if self.options[i].contains(&*self.text) {
-                        self.sorted_options.push(i);
-                    }
-                }
-            },
+            true => self.update_options(),
             false => {
-                if !self.allow_any_text && !self.options.contains(&self.text) {
-                    self.text = TextState::new("");
+                if !self.allow_any_text && !self.options.contains(&self.text_state.text().to_owned()) {
+                    self.text_state = TextState::new("");
                 }
 
-                self.text.cursor = self.text.len();
                 self.index = None;
                 self.index_offset = 0;
-
                 self.sorted_options.clear();
 
-                if !self.text.is_empty() {
+                if !self.text_state.text().is_empty() {
                     state.event_buffer.push(Event::Select(SelectEvent::OptionSelected {
                         id: self.inner.id.to_owned(),
-                        option: self.text.clone(),
+                        option: self.text_state.text().to_owned(),
                     }));
                 }
             },
@@ -284,11 +287,14 @@ impl Component for Select {
         if self.inner.focus {
             let index = mouse_action.y - y + self.index_offset as f64;
             if index == 0.0 {
-                self.text.on_mouse_action(mouse_action, x + 2.0);
+                self.text_state.on_mouse_action(mouse_action, x + 2.0);
             } else if index > 0.0 {
                 self.index = Some(index as usize - 1);
                 if mouse_action.just_pressed {
-                    self.text = TextState::new(self.options[self.sorted_options[index as usize - 1]].clone());
+                    self.text_state = TextState::new(self.options[self.sorted_options[index as usize - 1]].clone());
+
+                    self.index = None;
+                    self.index_offset = 0;
                     self.sorted_options.clear();
                 }
             }
@@ -305,7 +311,8 @@ impl Component for Select {
 
     fn size(&self, _: &mut State) -> (f64, f64) {
         let mut w = self
-            .text
+            .text_state
+            .text()
             .width()
             .max(self.options.iter().fold(0, |acc, option| acc.max(option.width())))
             .max(60);
