@@ -17,7 +17,6 @@ use fig_request::reqwest_client::client_config;
 use fig_request::Request;
 use fig_settings::api::ws_host;
 use fig_settings::settings;
-use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
 use fig_util::directories;
 use fig_util::system_info::get_system_id;
 use serde::{
@@ -316,7 +315,7 @@ async fn process_message(message: FigWebsocketMessage, scheduler: &mut Scheduler
             let file_name = scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name));
             tokio::fs::remove_file(&file_name).await.ok();
 
-            match fig_api_client::scripts::script(&script.namespace, &script.name, FIG_SCRIPTS_SCHEMA_VERSION).await {
+            match fig_api_client::scripts::script(Some(script.namespace.clone()), &script.name).await {
                 Ok(script) => {
                     tokio::fs::write(&file_name, serde_json::to_string_pretty(&script)?.as_bytes()).await?;
                 },
@@ -342,9 +341,7 @@ async fn process_message(message: FigWebsocketMessage, scheduler: &mut Scheduler
                 .await
                 .ok();
 
-            if let Ok(script) =
-                fig_api_client::scripts::script(&new.namespace, &new.name, FIG_SCRIPTS_SCHEMA_VERSION).await
-            {
+            if let Ok(script) = fig_api_client::scripts::script(Some(new.namespace.clone()), &new.name).await {
                 tokio::fs::write(
                     scripts_cache_dir.join(format!("{}.{}.json", new.namespace, new.name)),
                     serde_json::to_string_pretty(&script)?.as_bytes(),

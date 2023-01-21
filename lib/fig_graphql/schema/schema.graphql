@@ -261,7 +261,14 @@ type Query {
   publicScripts: [Script!]!
 
   """Get a script by namespace and name"""
-  script(name: String!, namespace: String!): Script
+  script(
+    name: String!
+
+    """
+    If null the current authed namespace is used, if null and no authed namespace null is returned
+    """
+    namespace: String
+  ): Script
 }
 
 input RenameScriptInput {
@@ -300,8 +307,9 @@ type Script {
   linkedCommandlineTools: [ICLICommand!]!
   name: String!
   namespace: Namespace
-  namespaceName: String
+  namespaceName: String!
   relevanceScore: Float!
+  shouldCache: Boolean!
   totalInvocations: Int!
   updatedAt: DateTime!
   uuid: ID!

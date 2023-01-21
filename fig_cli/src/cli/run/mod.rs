@@ -23,7 +23,8 @@ use eyre::{
     Result,
 };
 use fig_api_client::scripts::{
-    sync_scripts,
+    get_cached_script,
+    get_cached_scripts,
     FileType,
     Generator,
     Parameter,
@@ -47,11 +48,9 @@ use fig_telemetry::{
     TrackSource,
 };
 use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
-use fig_util::directories;
 use time::OffsetDateTime;
 use tokio::io::AsyncWriteExt;
 use tokio::join;
-use tokio::task::JoinHandle;
 use tracing::error;
 use tui::component::{
     CheckBox,
@@ -94,40 +93,6 @@ impl ScriptsArgs {
     pub async fn execute(self) -> Result<()> {
         execute(self.args).await
     }
-}
-
-async fn get_scripts(
-    get_scripts_join: &mut Option<tokio::task::JoinHandle<fig_request::Result<Vec<fig_api_client::scripts::Script>>>>,
-) -> Result<Vec<Script>> {
-    let scripts_cache_dir = directories::scripts_cache_dir()?;
-    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
-
-    if scripts_cache_dir.read_dir()?.count() == 0 {
-        sync_scripts().await?;
-    }
-
-    let mut scripts = vec![];
-    for file in directories::scripts_cache_dir()?.read_dir()?.flatten() {
-        if let Some(name) = file.file_name().to_str() {
-            if name.ends_with(".json") {
-                let script = serde_json::from_slice::<Script>(&tokio::fs::read(file.path()).await?);
-
-                match script {
-                    Ok(script) => scripts.push(script),
-                    Err(err) => {
-                        tracing::error!(%err, "Failed to parse script");
-
-                        // If any file fails to parse, we should re-sync the scripts
-                        if let Some(scripts_join) = get_scripts_join.take() {
-                            return Ok(scripts_join.await??);
-                        }
-                    },
-                }
-            }
-        }
-    }
-
-    Ok(scripts)
 }
 
 #[allow(dead_code)]
@@ -189,23 +154,25 @@ impl std::fmt::Display for ExecutionMethod {
 }
 
 pub async fn execute(args: Vec<String>) -> Result<()> {
-    let mut join_write_scripts = Some(tokio::spawn(sync_scripts()));
-    let scripts = get_scripts(&mut join_write_scripts).await?;
-
     let interactive = atty::is(atty::Stream::Stdin)
         && atty::is(atty::Stream::Stdout)
         && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none();
 
-    let (execution_method, script) = match args.first().map(String::from) {
-        Some(script_name) => get_named_script(scripts, &script_name, &mut join_write_scripts).await?,
-        None => match search_over_scripts(scripts, interactive, &mut join_write_scripts).await? {
-            Some(script) => script,
-            None => return Ok(()),
+    let (execution_method, script) = match args.first() {
+        Some(script_name) => (ExecutionMethod::Invoke, get_named_script(script_name).await?),
+        None => {
+            if !interactive {
+                bail!("No script specified");
+            }
+            match search_over_scripts().await? {
+                Some(script) => (ExecutionMethod::Search, script),
+                None => return Ok(()),
+            }
         },
     };
 
     if std::env::var_os("FIG_SCRIPT_DEBUG").is_some() {
-        println!("Script: {script:?}");
+        println!("Script: {script:#?}");
     }
 
     let script_name = format!("@{}/{}", &script.namespace, &script.name);
@@ -245,19 +212,10 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         execute_script(&script, &mut parameters_by_name, execution_method).await?;
     }
 
-    // Update the cache after script execution
-    if let Some(write_scripts) = join_write_scripts.take() {
-        write_scripts.await?.ok();
-    }
-
     Ok(())
 }
 
-async fn get_named_script(
-    mut scripts: Vec<Script>,
-    name: &str,
-    join_write_scripts: &mut Option<JoinHandle<Result<Vec<Script>, fig_request::Error>>>,
-) -> Result<(ExecutionMethod, Script)> {
+async fn get_named_script(name: &str) -> Result<Script> {
     let (namespace, name) = match name.strip_prefix('@') {
         Some(name) => match name.split('/').collect::<Vec<&str>>()[..] {
             [namespace, name] => (Some(namespace), name),
@@ -266,48 +224,14 @@ async fn get_named_script(
         None => (None, name),
     };
 
-    let script = match namespace {
-        Some(namespace) => scripts
-            .into_iter()
-            .find(|script| script.name == name && script.namespace == namespace),
-        None => scripts
-            .into_iter()
-            .find(|script| script.name == name && script.is_owned_by_user),
-    };
-
-    let script = match script {
-        Some(script) => script,
-        None => {
-            join_write_scripts.take().unwrap().await??;
-            scripts = get_scripts(join_write_scripts).await?;
-
-            let script = match namespace {
-                Some(namespace) => scripts
-                    .into_iter()
-                    .find(|script| script.name == name && script.namespace == namespace),
-                None => scripts
-                    .into_iter()
-                    .find(|script| script.name == name && script.is_owned_by_user),
-            };
-
-            match script {
-                Some(script) => script,
-                None => bail!("Script not found"),
-            }
-        },
-    };
-
-    Ok((ExecutionMethod::Invoke, script))
+    match get_cached_script(namespace.map(String::from), name).await? {
+        Some(script) => Ok(script),
+        None => bail!("Script not found"),
+    }
 }
 
-async fn search_over_scripts(
-    mut scripts: Vec<Script>,
-    interactive: bool,
-    join_write_scripts: &mut Option<JoinHandle<Result<Vec<Script>, fig_request::Error>>>,
-) -> Result<Option<(ExecutionMethod, Script)>> {
-    if !interactive {
-        bail!("No script specified");
-    }
+async fn search_over_scripts() -> Result<Option<Script>> {
+    let mut scripts = get_cached_scripts().await?;
 
     fig_telemetry::dispatch_emit_track(
         TrackEvent::new(
@@ -436,30 +360,7 @@ async fn search_over_scripts(
         }
     }
 
-    match script {
-        Some(mut script) => {
-            if join_write_scripts
-                .as_ref()
-                .map(|join| join.is_finished())
-                .unwrap_or_default()
-            {
-                // This is always okay to unwrap because we just checked that it's finished
-                if let Ok(Ok(scripts)) = join_write_scripts.take().unwrap().await {
-                    // Find the script again in case it was updated
-                    match scripts
-                        .into_iter()
-                        .find(|new_script| new_script.namespace == script.namespace && new_script.name == script.name)
-                    {
-                        Some(new_script) => script = new_script,
-                        None => bail!("Script is no longer available"),
-                    }
-                }
-            }
-
-            Ok(Some((ExecutionMethod::Search, script)))
-        },
-        None => Ok(None),
-    }
+    Ok(script)
 }
 
 async fn execute_from_cli(script: &Script, script_name: &str, args: Vec<String>) -> Result<()> {
@@ -789,25 +690,22 @@ async fn execute_script(
         true,
     ));
 
-    match script.invocation_disable_track {
-        true => {
-            telem_join.await.ok();
-        },
-        false => {
-            let query = fig_graphql::create_script_invocation_query!(
-                name: script.name.clone(),
-                namespace: script.namespace.clone(),
-                execution_start_time: Some(start_time.into()),
-                execution_duration: execution_duration,
-                ..Default::default(),
-            );
+    if script.invocation_disable_track {
+        telem_join.await.ok();
+    } else {
+        let query = fig_graphql::create_script_invocation_query!(
+            name: script.name.clone(),
+            namespace: script.namespace.clone(),
+            execution_start_time: Some(start_time.into()),
+            execution_duration: execution_duration,
+            ..Default::default(),
+        );
 
-            let (_, invocation) = join!(telem_join, fig_graphql::dispatch::send_to_daemon(query, true));
+        let (_, invocation) = join!(telem_join, fig_graphql::dispatch::send_to_daemon(query, true));
 
-            if let Err(err) = invocation {
-                error!(%err, "Failed to create script invocation");
-            }
-        },
+        if let Err(err) = invocation {
+            error!(%err, "Failed to create script invocation");
+        }
     }
 
     if let Some(exit_code) = exit_code {

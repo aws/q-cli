@@ -1,8 +1,10 @@
 use std::fmt::Display;
 use std::path::PathBuf;
 
-use fig_util::consts::FIG_SCRIPTS_SCHEMA_VERSION;
-use fig_util::directories::home_dir;
+use fig_util::directories::{
+    home_dir,
+    scripts_cache_dir,
+};
 use serde::{
     Deserialize,
     Serialize,
@@ -332,8 +334,6 @@ pub struct Script {
     pub steps: Vec<ScriptStep>,
     pub namespace: String,
     pub is_owned_by_user: bool,
-    #[serde(default)]
-    pub relevance: f64,
     #[serde(with = "time::serde::rfc3339::option", default)]
     pub last_invoked_at: Option<time::OffsetDateTime>,
     #[serde(with = "time::serde::rfc3339::option", default)]
@@ -346,12 +346,13 @@ pub struct Script {
     pub invocation_track_inputs: bool,
     #[serde(default)]
     pub invocation_disable_track: bool,
+    #[serde(default)]
+    pub should_cache: bool,
 }
 
 macro_rules! map_script {
-    ($script:expr, $namespace:expr) => {{
+    ($script:expr) => {{
         let script = $script;
-        let namespace = $namespace;
 
         let map_ast = |ast: Option<Vec<AstNode>>| -> Vec<TreeElement> {
             ast.unwrap_or_default()
@@ -458,7 +459,7 @@ macro_rules! map_script {
         Script {
             uuid: script.uuid,
             name: script.name,
-            namespace,
+            namespace: script.namespace_name,
             display_name: script.fields.display_name,
             description: script.fields.description,
             template_version: script.fields.template_version.unwrap_or_default(),
@@ -520,7 +521,6 @@ macro_rules! map_script {
                     },
                 })
                 .collect(),
-            relevance: script.relevance_score,
             is_owned_by_user: script.is_owned_by_current_user,
             last_invoked_at: script.last_invoked_at.map(|t| t.into()),
             last_invoked_at_by_user: script.last_invoked_at_by_user.map(|t| t.into()),
@@ -548,11 +548,12 @@ macro_rules! map_script {
                 .as_ref()
                 .and_then(|s| s.inputs)
                 .unwrap_or_default(),
+            should_cache: script.should_cache,
         }
     }};
 }
 
-fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> Script {
+fn map_script(script: fig_graphql::script::ScriptFields) -> Script {
     use fig_graphql::script::ParameterCommandlineInterfaceType::{
         ScriptParameterCommandlineInterfaceBoolean as ScriptCliBooleanType,
         ScriptParameterCommandlineInterfaceString as ScriptCliStringType,
@@ -570,10 +571,10 @@ fn map_script(script: fig_graphql::script::ScriptFields, namespace: String) -> S
         StepOn,
     };
 
-    map_script!(script, namespace)
+    map_script!(script)
 }
 
-fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String) -> Script {
+fn map_scripts(script: fig_graphql::scripts::ScriptFields) -> Script {
     use fig_graphql::scripts::ParameterCommandlineInterfaceType::{
         ScriptParameterCommandlineInterfaceBoolean as ScriptCliBooleanType,
         ScriptParameterCommandlineInterfaceString as ScriptCliStringType,
@@ -591,13 +592,12 @@ fn map_scripts(script: fig_graphql::scripts::ScriptFields, namespace: String) ->
         StepOn,
     };
 
-    map_script!(script, namespace)
+    map_script!(script)
 }
 
 pub async fn script(
-    namespace: impl Into<String>,
+    namespace: impl Into<Option<String>>,
     name: impl Into<String>,
-    _schema_version: i64,
 ) -> fig_request::Result<Option<Script>> {
     let namespace_str = namespace.into();
 
@@ -607,10 +607,10 @@ pub async fn script(
         return Ok(None);
     };
 
-    Ok(Some(map_script(script, namespace_str)))
+    Ok(Some(map_script(script)))
 }
 
-pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
+pub async fn scripts() -> fig_request::Result<Vec<Script>> {
     let data = fig_graphql::scripts!().await?;
     let Some(current_user) = data.current_user else {
         return Ok(vec![]);
@@ -620,7 +620,7 @@ pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
 
     if let Some(user_namespace) = current_user.namespace {
         for script in user_namespace.scripts {
-            scripts.push((user_namespace.username.clone(), script));
+            scripts.push(script);
         }
     }
 
@@ -628,24 +628,21 @@ pub async fn scripts(_schema_version: i64) -> fig_request::Result<Vec<Script>> {
         for team_membership in team_memberships {
             if let Some(namespace) = team_membership.team.namespace {
                 for script in namespace.scripts {
-                    scripts.push((namespace.username.clone(), script));
+                    scripts.push(script);
                 }
             }
         }
     }
 
-    Ok(scripts
-        .into_iter()
-        .map(|(namespace, script)| map_scripts(script, namespace))
-        .collect())
+    Ok(scripts.into_iter().map(map_scripts).collect())
 }
 
 /// Caches the scripts and returns them
 pub async fn sync_scripts() -> fig_request::Result<Vec<Script>> {
-    let scripts_cache_dir = fig_util::directories::scripts_cache_dir()?;
+    let scripts_cache_dir = scripts_cache_dir()?;
     tokio::fs::create_dir_all(&scripts_cache_dir).await?;
 
-    let scripts = scripts(FIG_SCRIPTS_SCHEMA_VERSION).await?;
+    let scripts = scripts().await?;
 
     // Delete old scripts so if one was removed from the server it will be removed locally
     if let Ok(mut read_dir) = tokio::fs::read_dir(&scripts_cache_dir).await {
@@ -656,14 +653,121 @@ pub async fn sync_scripts() -> fig_request::Result<Vec<Script>> {
 
     // Write new scripts
     for script in &scripts {
-        tokio::fs::write(
-            scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name)),
-            serde_json::to_string_pretty(&script)?.as_bytes(),
-        )
-        .await?;
+        if script.should_cache {
+            tokio::fs::write(
+                scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name)),
+                serde_json::to_string_pretty(&script)?.as_bytes(),
+            )
+            .await?;
+
+            if script.is_owned_by_user {
+                tokio::fs::write(
+                    scripts_cache_dir.join(format!("{}.json", script.name)),
+                    serde_json::to_string_pretty(&script)?.as_bytes(),
+                )
+                .await?;
+            }
+        }
     }
 
     Ok(scripts)
+}
+
+// Attempts to get cached scripts, then falls back to synced scripts
+pub async fn get_cached_scripts() -> fig_request::Result<Vec<Script>> {
+    let scripts_cache_dir = scripts_cache_dir()?;
+    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+    if scripts_cache_dir.read_dir()?.count() == 0 {
+        sync_scripts().await?;
+    }
+
+    let mut scripts = vec![];
+    for file in scripts_cache_dir.read_dir()?.flatten() {
+        if let Some(name) = file.file_name().to_str() {
+            if name.ends_with(".json") {
+                let script = serde_json::from_slice::<Script>(&tokio::fs::read(file.path()).await?);
+
+                match script {
+                    Ok(script) => scripts.push(script),
+                    Err(err) => {
+                        tracing::error!(%err, "Failed to parse script");
+
+                        // If any file fails to parse, we should re-sync the scripts
+                        return sync_scripts().await;
+                    },
+                }
+            }
+        }
+    }
+
+    Ok(scripts)
+}
+
+pub async fn sync_script(
+    namespace: impl Into<Option<String>>,
+    name: impl Into<String>,
+) -> fig_request::Result<Option<Script>> {
+    let namespace_str = namespace.into();
+
+    let scripts_cache_dir = scripts_cache_dir()?;
+    tokio::fs::create_dir_all(&scripts_cache_dir).await?;
+
+    let script = script(namespace_str.clone(), name.into()).await?;
+
+    match script {
+        Some(script) => {
+            if script.should_cache {
+                tokio::fs::write(
+                    scripts_cache_dir.join(format!(
+                        "{}.{}.json",
+                        namespace_str.clone().unwrap_or_default(),
+                        script.name
+                    )),
+                    serde_json::to_string_pretty(&script)?.as_bytes(),
+                )
+                .await?;
+
+                if script.is_owned_by_user {
+                    tokio::fs::write(
+                        scripts_cache_dir.join(format!("{}.json", script.name)),
+                        serde_json::to_string_pretty(&script)?.as_bytes(),
+                    )
+                    .await?;
+                }
+            }
+
+            Ok(Some(script))
+        },
+        None => Ok(None),
+    }
+}
+
+pub async fn get_cached_script(
+    namespace: impl Into<Option<String>>,
+    name: impl Into<String>,
+) -> fig_request::Result<Option<Script>> {
+    let namespace = namespace.into();
+    let name = name.into();
+    let file_path = match &namespace {
+        Some(namespace) => scripts_cache_dir()?.join(format!("{namespace}.{name}.json")),
+        None => scripts_cache_dir()?.join(format!("{name}.json")),
+    };
+
+    if file_path.exists() {
+        let script = serde_json::from_slice::<Script>(&tokio::fs::read(file_path).await?);
+
+        match script {
+            Ok(script) => Ok(Some(script)),
+            Err(err) => {
+                tracing::error!(%err, "Failed to parse script");
+                // If any file fails to parse, we should re-sync the scripts
+                sync_script(namespace, name).await
+            },
+        }
+    } else {
+        sync_script(namespace, name).await
+    }
 }
 
 #[cfg(test)]

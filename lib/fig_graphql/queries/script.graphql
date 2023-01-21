@@ -1,4 +1,4 @@
-query Script($namespace: String!, $name: String!) {
+query Script($namespace: String, $name: String!) {
   script(namespace: $namespace, name: $name) {
     ...ScriptFields
   }
@@ -115,16 +115,13 @@ fragment Step on IScriptStep {
 fragment ScriptFields on Script {
   uuid
   name
+  namespaceName
   updatedAt
   fields {
     displayName
     description
     templateVersion
     tags
-    runtime
-    parameters {
-      ...Parameter
-    }
     ruleset {
       or {
         specifier
@@ -144,11 +141,8 @@ fragment ScriptFields on Script {
       ...Step
     }
   }
-  astTree {
-    ...AstNode
-  }
-  relevanceScore
   lastInvokedAt
   lastInvokedAtByUser
   isOwnedByCurrentUser
+  shouldCache
 }
