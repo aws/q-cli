@@ -17,6 +17,9 @@ on:
       pkgrel:
         description: "Package release"
         default: "1"
+      headless:
+        description: "Headless"
+        default: false
 
 jobs:
   aur-publish:
@@ -30,15 +33,24 @@ jobs:
           set -eox pipefail
 
           # pkgname from the channel
-          case "${{ github.event.inputs.channel }}" in
-            stable)
+          case "${{ github.event.inputs.channel }}+${{ github.event.inputs.headless }}" in
+            stable+false)
               export aur_pkgname="fig"
               ;;
-            beta)
+            stable+true)
+              export aur_pkgname="fig-headless-bin"
+              ;;
+            beta+false)
               export aur_pkgname="fig-beta"
               ;;
-            nightly)
+            beta+true)
+              exit 1
+              ;;
+            nightly+false)
               export aur_pkgname="fig-nightly-bin"
+              ;;
+            nightly+true)
+              exit 1
               ;;
           esac
 
@@ -54,10 +66,16 @@ jobs:
             export aur_provides=$(printf "\nprovides=('fig')\nconflicts=('fig')")
           fi
 
+          if [ "${{ github.event.inputs.headless }}" == "true" ]; then
+            export template_file="PKGBUILD.headless.template"
+          else
+            export template_file="PKGBUILD.template"
+          fi
+
           curl -sL -o fig.tar.xz https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz
           export aur_sha256sum=$(sha256sum fig.tar.xz | cut -d ' ' -f 1)
 
-          envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_pkgrel} ${aur_provides} ${aur_sha256sum}' < bundle/archlinux/PKGBUILD.template > PKGBUILD
+          envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_pkgrel} ${aur_provides} ${aur_sha256sum}' < "bundle/archlinux/${template_file}" > PKGBUILD
 
           cat PKGBUILD
 
