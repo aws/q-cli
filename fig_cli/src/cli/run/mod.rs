@@ -172,7 +172,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
     };
 
     if std::env::var_os("FIG_SCRIPT_DEBUG").is_some() {
-        println!("Script: {script:#?}");
+        eprintln!("Script: {script:#?}");
     }
 
     let script_name = format!("@{}/{}", &script.namespace, &script.name);
@@ -674,6 +674,7 @@ async fn execute_script(
 
     let script_uuid = script.uuid.clone();
     let script_name = format!("@{}/{}", &script.namespace, &script.name);
+    let public_script = !script.should_cache;
     let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
         TrackEvent::new(
             TrackEventType::ScriptExecuted,
@@ -685,12 +686,13 @@ async fn execute_script(
                 ("execution_method", execution_method.to_string().as_str()),
             ],
         )
-        .with_namespace(Some(script.namespace.clone())),
+        .with_namespace((!public_script).then(|| script.namespace.clone())),
         false,
         true,
     ));
 
-    if script.invocation_disable_track {
+    if script.invocation_disable_track || public_script {
+        // TODO: add track still for invocation count, we still want that metadata
         telem_join.await.ok();
     } else {
         let query = fig_graphql::create_script_invocation_query!(
@@ -712,6 +714,9 @@ async fn execute_script(
 
     if let Some(exit_code) = exit_code {
         if exit_code != 0 {
+            if exit_code != 130 {
+                eprintln!("Script exited with code {exit_code}")
+            }
             std::process::exit(exit_code);
         }
     }
@@ -1212,7 +1217,7 @@ async fn execute_code_block(
             child.kill().await?;
 
             eprintln!();
-            eprintln!("script cancelled");
+            eprintln!("Script cancelled");
             Ok(130)
         },
         res = child.wait() => Ok(res?.code().unwrap_or(0)),
