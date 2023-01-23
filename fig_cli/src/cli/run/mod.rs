@@ -663,8 +663,8 @@ async fn execute_script(
     let mut exit_code = None;
     for step in &script.steps {
         if let Some(code) = execute_step(step, parameters_by_name).await? {
+            exit_code = Some(code);
             if code != 0 {
-                exit_code = Some(code);
                 break;
             }
         }
@@ -694,14 +694,16 @@ async fn execute_script(
         telem_join.await.ok();
     } else {
         let query = fig_graphql::create_script_invocation_query!(
-            name: script.name.clone(),
             namespace: script.namespace.clone(),
+            name: script.name.clone(),
             execution_start_time: Some(start_time.into()),
             execution_duration: execution_duration,
-            ..Default::default(),
+            exit_code: exit_code.map(|i| i as i64),
         );
 
-        let (_, invocation) = join!(telem_join, fig_graphql::dispatch::send_to_daemon(query, true));
+        let invocation_join = tokio::spawn(fig_graphql::dispatch::send_to_daemon(query, true));
+
+        let (_, invocation) = join!(telem_join, invocation_join);
 
         if let Err(err) = invocation {
             error!(%err, "Failed to create script invocation");
@@ -709,7 +711,9 @@ async fn execute_script(
     }
 
     if let Some(exit_code) = exit_code {
-        std::process::exit(exit_code);
+        if exit_code != 0 {
+            std::process::exit(exit_code);
+        }
     }
 
     Ok(())
@@ -1289,7 +1293,7 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     };
 
     // if not interactive, don't try to install
-    if !atty::is(atty::Stream::Stdout) {
+    if !atty::is(atty::Stream::Stdin) || !atty::is(atty::Stream::Stdout) {
         return Err(error());
     }
 
