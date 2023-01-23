@@ -770,6 +770,29 @@ pub async fn get_cached_script(
     }
 }
 
+pub async fn delete_script(namespace: impl AsRef<str> + Display, name: impl Display) -> fig_request::Result<()> {
+    let script_dir = fig_util::directories::scripts_cache_dir()?;
+
+    tokio::fs::remove_file(script_dir.join(format!("{namespace}.{name}.json")))
+        .await
+        .ok();
+
+    let individual_path = script_dir.join(format!("{name}.json"));
+    if let Ok(script) = tokio::fs::read_to_string(&individual_path).await {
+        match serde_json::from_str::<Script>(&script) {
+            Ok(script) if script.namespace == namespace.as_ref() => {
+                tokio::fs::remove_file(&individual_path).await.ok();
+            },
+            Ok(_) => {},
+            Err(_) => {
+                tokio::fs::remove_file(&individual_path).await.ok();
+            },
+        }
+    }
+
+    Ok(())
+}
+
 #[cfg(test)]
 mod test {
     use super::*;

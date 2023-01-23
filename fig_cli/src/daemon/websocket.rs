@@ -116,6 +116,12 @@ struct ScriptIdentifier {
     name: String,
 }
 
+impl std::fmt::Display for ScriptIdentifier {
+    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
+        write!(f, "@{}/{}", self.namespace, self.name)
+    }
+}
+
 pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream<TcpStream>>> {
     info!("Connecting to websocket");
 
@@ -286,10 +292,14 @@ async fn process_message(message: FigWebsocketMessage, scheduler: &mut Scheduler
             apps,
         } => {
             match payload.as_ref().map(serde_json::to_string).transpose() {
-                Err(err) => error!(%err, "Could not serialize event payload"),
+                Err(err) => error!(%err, "Failed to serialize event payload"),
                 Ok(payload_blob) => {
                     let hook = new_event_hook(event_name, payload_blob, apps.unwrap_or_default());
-                    send_hook_to_socket(hook).await.ok();
+                    tokio::spawn(async {
+                        if let Err(err) = send_hook_to_socket(hook).await {
+                            error!(%err, "Failed to send hook to socket");
+                        }
+                    });
                 },
             };
             Ok(())
@@ -304,65 +314,52 @@ async fn process_message(message: FigWebsocketMessage, scheduler: &mut Scheduler
                 .await
                 .ok();
             }
-
             Ok(())
         },
         FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),
         FigWebsocketMessage::UpdateScript { script } => {
-            let scripts_cache_dir = directories::scripts_cache_dir()?;
-            tokio::fs::create_dir_all(&scripts_cache_dir).await?;
-
-            let file_name = scripts_cache_dir.join(format!("{}.{}.json", script.namespace, script.name));
-            tokio::fs::remove_file(&file_name).await.ok();
-
-            match fig_api_client::scripts::script(Some(script.namespace.clone()), &script.name).await {
-                Ok(script) => {
-                    tokio::fs::write(&file_name, serde_json::to_string_pretty(&script)?.as_bytes()).await?;
-                },
-                Err(err) => error!(%err, "Failed to retrieve script"),
-            }
-
+            tokio::spawn(async move {
+                if let Err(err) =
+                    fig_api_client::scripts::sync_script(script.namespace.clone(), script.name.clone()).await
+                {
+                    error!(%err, %script, "Failed to update script");
+                }
+            });
             Ok(())
         },
         FigWebsocketMessage::DeleteScript { script } => {
-            tokio::fs::remove_file(
-                directories::scripts_cache_dir()?.join(format!("{}.{}.json", script.namespace, script.name)),
-            )
-            .await
-            .ok();
-
+            tokio::spawn(async move {
+                if let Err(err) = fig_api_client::scripts::delete_script(&script.namespace, &script.name).await {
+                    error!(%err, %script, "Failed to delete script");
+                }
+            });
             Ok(())
         },
         FigWebsocketMessage::RenameScript { old, new } => {
-            let scripts_cache_dir = directories::scripts_cache_dir()?;
-            tokio::fs::create_dir_all(&scripts_cache_dir).await?;
-
-            tokio::fs::remove_file(scripts_cache_dir.join(format!("{}.{}.json", old.namespace, old.name)))
-                .await
-                .ok();
-
-            if let Ok(script) = fig_api_client::scripts::script(Some(new.namespace.clone()), &new.name).await {
-                tokio::fs::write(
-                    scripts_cache_dir.join(format!("{}.{}.json", new.namespace, new.name)),
-                    serde_json::to_string_pretty(&script)?.as_bytes(),
-                )
-                .await?;
-            }
-
+            tokio::spawn(async move {
+                if let Err(err) = fig_api_client::scripts::delete_script(&old.namespace, &old.name).await {
+                    error!(%err, script =% old, "Failed to delete script");
+                }
+                if let Err(err) = fig_api_client::scripts::sync_script(new.namespace.clone(), new.name.clone()).await {
+                    error!(%err, script =% new, "Failed to update script");
+                };
+            });
             Ok(())
         },
         FigWebsocketMessage::UpdateAllScripts => {
-            if let Err(err) = fig_api_client::scripts::sync_scripts().await {
-                error!(?err, "Failed to update scripts");
-            }
-
+            tokio::spawn(async {
+                if let Err(err) = fig_api_client::scripts::sync_scripts().await {
+                    error!(?err, "Failed to update scripts");
+                }
+            });
             Ok(())
         },
         FigWebsocketMessage::UpdateAllCommandlineTools => {
-            fig_api_client::commandline_tool::fetch_and_cache_all_command_line_tools()
-                .await
-                .ok();
-            // TODO: refresh cache
+            tokio::spawn(async {
+                if let Err(err) = fig_api_client::commandline_tool::fetch_and_cache_all_command_line_tools().await {
+                    error!(?err, "Failed to update commandline tools");
+                }
+            });
             Ok(())
         },
     }
