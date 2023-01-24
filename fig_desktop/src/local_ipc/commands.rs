@@ -211,6 +211,9 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
                     dry_run: false,
                 },
                 WindowEvent::Show,
+                // We need to reload here because dashboard caches a lot of stuff and we dont delete it
+                // by just navigating to the login path
+                WindowEvent::Reload,
             ]),
         })
         .ok();
