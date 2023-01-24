@@ -12,4 +12,4 @@ pub const FIG_CLI_BINARY_NAME: &str = "fig";
 
 pub const FIGTERM_BINARY_NAME: &str = "figterm";
 
-pub const FIG_SCRIPTS_SCHEMA_VERSION: i64 = 3;
+pub const FIG_SCRIPTS_SCHEMA_VERSION: i64 = 4;
