@@ -5,6 +5,8 @@ use fig_util::directories::{
     home_dir,
     scripts_cache_dir,
 };
+use once_cell::sync::Lazy;
+use regex::Regex;
 use serde::{
     Deserialize,
     Serialize,
@@ -673,6 +675,8 @@ pub async fn sync_scripts() -> fig_request::Result<Vec<Script>> {
     Ok(scripts)
 }
 
+static FILE_NAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r".*\..*\.json").unwrap());
+
 // Attempts to get cached scripts, then falls back to synced scripts
 pub async fn get_cached_scripts() -> fig_request::Result<Vec<Script>> {
     let scripts_cache_dir = scripts_cache_dir()?;
@@ -685,7 +689,7 @@ pub async fn get_cached_scripts() -> fig_request::Result<Vec<Script>> {
     let mut scripts = vec![];
     for file in scripts_cache_dir.read_dir()?.flatten() {
         if let Some(name) = file.file_name().to_str() {
-            if name.ends_with(".json") {
+            if FILE_NAME_REGEX.is_match(name) {
                 let script = serde_json::from_slice::<Script>(&tokio::fs::read(file.path()).await?);
 
                 match script {

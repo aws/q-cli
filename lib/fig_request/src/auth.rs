@@ -38,12 +38,7 @@ pub async fn get_token() -> Result<String> {
         return Ok(token);
     }
 
-    let err = match get_file_token().await {
-        Ok(token) => return Ok(token),
-        Err(err) => err,
-    };
-
-    Err(err)
+    get_file_token().await
 }
 
 pub fn get_email() -> Option<String> {

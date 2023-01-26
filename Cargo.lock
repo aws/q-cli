@@ -1860,6 +1860,7 @@ dependencies = [
  "fig_request",
  "fig_settings",
  "fig_util",
+ "once_cell",
  "regex",
  "serde",
  "serde_json",
