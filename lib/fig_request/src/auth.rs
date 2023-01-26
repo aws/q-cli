@@ -23,19 +23,27 @@ use crate::Request;
 
 type Result<T, E = crate::Error> = std::result::Result<T, E>;
 
-pub async fn get_token() -> Result<String> {
+async fn get_file_token() -> Result<String> {
     let mut creds = Credentials::load_credentials()?;
     if creds.is_expired() {
         creds.refresh_credentials().await?;
         creds.save_credentials()?;
     }
 
-    match (creds.get_access_token(), creds.get_refresh_token()) {
-        (None, _) => Err(crate::Error::NoToken),
-        // TODO: Migrate those with only `access_token`
-        (Some(_), None) => Ok(creds.encode()),
-        (Some(_), Some(_)) => Ok(creds.encode()),
+    creds.encode()
+}
+
+pub async fn get_token() -> Result<String> {
+    if let Ok(token) = std::env::var("FIG_TOKEN") {
+        return Ok(token);
     }
+
+    let err = match get_file_token().await {
+        Ok(token) => return Ok(token),
+        Err(err) => err,
+    };
+
+    Err(err)
 }
 
 pub fn get_email() -> Option<String> {
@@ -393,14 +401,18 @@ impl Credentials {
     }
 
     /// Encodes the credentials as a base64 string for authentication
-    pub fn encode(&self) -> String {
-        BASE64_STANDARD.encode(
+    pub fn encode(&self) -> Result<String> {
+        if self.access_token.is_none() || self.id_token.is_none() {
+            return Err(crate::Error::NoToken);
+        }
+
+        Ok(BASE64_STANDARD.encode(
             json!({
                 "accessToken": self.access_token,
                 "idToken": self.id_token
             })
             .to_string(),
-        )
+        ))
     }
 }
 

@@ -163,10 +163,7 @@ impl Request<AddAuth> {
     pub async fn send(self) -> Result<Response> {
         match self.builder {
             Some(builder) => {
-                let token = match std::env::var("FIG_TOKEN") {
-                    Ok(token) => token,
-                    Err(_) => get_token().await?,
-                };
+                let token = get_token().await?;
                 let builder = builder.bearer_auth(token);
                 Ok(Response {
                     inner: builder.send().await?,
@@ -229,11 +226,7 @@ impl Request<MaybeAuth> {
     pub async fn send(self) -> Result<Response> {
         match self.builder {
             Some(builder) => {
-                let token = match std::env::var("FIG_TOKEN") {
-                    Ok(token) => Some(token),
-                    Err(_) => get_token().await.ok(),
-                };
-
+                let token = get_token().await.ok();
                 let builder = match token {
                     Some(token) => builder.bearer_auth(token),
                     None => builder,
