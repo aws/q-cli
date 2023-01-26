@@ -1,11 +1,13 @@
-use termwiz::cell::CellAttributes;
+use termwiz::cell::{
+    grapheme_column_width,
+    CellAttributes,
+};
 use termwiz::surface::{
     Change,
     Position,
     Surface,
 };
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 use crate::{
     BorderStyle,
@@ -31,7 +33,7 @@ impl SurfaceExt for Surface {
         let mut drawn = String::new();
         let mut drawn_width = 0;
         for grapheme in text.to_string().graphemes(true) {
-            let grapheme_width = grapheme.width();
+            let grapheme_width = grapheme_column_width(grapheme, None);
             if drawn_width + grapheme_width <= width {
                 drawn_width += grapheme_width;
                 drawn.push_str(grapheme);

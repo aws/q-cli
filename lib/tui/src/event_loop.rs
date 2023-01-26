@@ -21,6 +21,7 @@ use crate::component::{
     Component,
     Div,
     FilePickerEvent,
+    SegmentedControlEvent,
     SelectEvent,
     StyleInfo,
     TextFieldEvent,
@@ -84,6 +85,7 @@ pub enum Event {
     ActiveChanged { id: String, active: bool },
     CheckBox(CheckBoxEvent),
     FilePicker(FilePickerEvent),
+    SegmentedControl(SegmentedControlEvent),
     Select(SelectEvent),
     TextField(TextFieldEvent),
 }
@@ -167,7 +169,7 @@ impl<'a> EventLoop<'a> {
         loop {
             // todo: seems like there's an issue in termwiz which doesn't
             // account for grapheme width in optimized surface diffs
-            for _ in 0..2 {
+            for _ in 0..1 {
                 if let DisplayMode::Inline = self.display_mode {
                     let component_height = self.component.size(&mut self.state).1.round() as usize;
                     let remaining_height = screen_height.saturating_sub(origin.1);

@@ -1,11 +1,11 @@
 use termwiz::cell::{
+    unicode_column_width,
     CellAttributes,
     Intensity,
 };
 use termwiz::color::ColorAttribute;
 use termwiz::surface::Surface;
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 use super::ComponentData;
 use crate::surface_ext::SurfaceExt;
@@ -96,7 +96,7 @@ impl Component for P {
                     width - (x - start_x),
                     component.1.clone().unwrap_or_else(|| style.attributes()),
                 );
-                x += line.width() as f64;
+                x += unicode_column_width(line, None) as f64;
 
                 new_line = true;
             });
@@ -113,7 +113,11 @@ impl Component for P {
 
     fn size(&self, _: &mut State) -> (f64, f64) {
         let (width, height) = self.components.iter().fold((0, 1), |(acc0, acc1), c| {
-            let width = c.0.lines().map(|t| t.width()).max().unwrap_or_default();
+            let width =
+                c.0.lines()
+                    .map(|t| unicode_column_width(t, None))
+                    .max()
+                    .unwrap_or_default();
             let height = c.0.graphemes(true).filter(|s| s == &"\n" || s == &"\r\n").count();
             (acc0 + width, acc1 + height)
         });

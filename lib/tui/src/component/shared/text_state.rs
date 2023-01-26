@@ -1,8 +1,8 @@
 use std::fmt::Display;
 
+use termwiz::cell::unicode_column_width;
 use termwiz::input::MouseButtons;
 use unicode_segmentation::UnicodeSegmentation;
-use unicode_width::UnicodeWidthStr;
 
 use crate::input::MouseAction;
 
@@ -17,7 +17,7 @@ impl TextState {
     pub fn new(s: impl Into<String>) -> Self {
         let text: String = s.into();
         let byte_index = text.len();
-        let grapheme_index = text.width();
+        let grapheme_index = unicode_column_width(&text, None);
 
         Self {
             text,
@@ -29,7 +29,7 @@ impl TextState {
     pub fn set_text(&mut self, text: impl Into<String>) {
         self.text = text.into();
         self.byte_index = self.text.len();
-        self.grapheme_index = self.text.width();
+        self.grapheme_index = unicode_column_width(&self.text, None);
     }
 
     pub fn text(&self) -> &str {
@@ -52,7 +52,7 @@ impl TextState {
     }
 
     pub fn right(&mut self) {
-        if self.grapheme_index == self.text.width() {
+        if self.grapheme_index == unicode_column_width(&self.text, None) {
             return;
         }
 
@@ -77,7 +77,7 @@ impl TextState {
     }
 
     pub fn delete(&mut self) {
-        if self.grapheme_index >= self.text.width() {
+        if self.grapheme_index >= unicode_column_width(&self.text, None) {
             return;
         }
 
@@ -90,12 +90,14 @@ impl TextState {
     pub fn paste(&mut self, clipboard: &str) {
         self.text.insert_str(self.byte_index, clipboard);
         self.byte_index = self.byte_index.saturating_add(clipboard.len());
-        self.grapheme_index = self.grapheme_index.saturating_add(clipboard.width());
+        self.grapheme_index = self
+            .grapheme_index
+            .saturating_add(unicode_column_width(clipboard, None));
     }
 
     pub fn on_mouse_action(&mut self, mouse_action: &MouseAction, x: f64) {
         if mouse_action.buttons.contains(MouseButtons::LEFT) && mouse_action.x >= x {
-            self.grapheme_index = ((mouse_action.x - x) as usize).min(self.text.width());
+            self.grapheme_index = ((mouse_action.x - x) as usize).min(unicode_column_width(&self.text, None));
             self.byte_index = self.text.graphemes(true).collect::<Vec<&str>>()[0..self.grapheme_index]
                 .iter()
                 .fold(0, |acc, grapheme| acc + grapheme.len());

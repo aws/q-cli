@@ -5,6 +5,7 @@ mod div;
 mod file_picker;
 mod hr;
 mod p;
+mod segmented_control;
 mod select;
 mod shared;
 mod text_field;
@@ -23,6 +24,10 @@ pub use file_picker::{
 };
 pub use hr::Hr;
 pub use p::P;
+pub use segmented_control::{
+    SegmentedControl,
+    SegmentedControlEvent,
+};
 pub use select::{
     Select,
     SelectEvent,
@@ -42,6 +47,22 @@ use crate::style_sheet_ext::StyleSheetExt;
 use crate::Style;
 
 type Child = Box<dyn Component + 'static>;
+
+#[derive(Clone, Debug, Default)]
+pub struct StyleInfo {
+    ///
+    pub type_selector: String,
+    ///
+    pub id: Option<String>,
+    ///
+    pub classes: Vec<String>,
+    ///
+    pub hover: bool,
+    ///
+    pub focus: bool,
+    ///
+    pub active: bool,
+}
 
 #[derive(Debug, Default)]
 pub struct ComponentData {
@@ -63,22 +84,6 @@ pub struct ComponentData {
     pub focused_child_index: Option<usize>,
     //
     pub children: Vec<Child>,
-}
-
-#[derive(Clone, Debug, Default)]
-pub struct StyleInfo {
-    ///
-    pub type_selector: String,
-    ///
-    pub id: Option<String>,
-    ///
-    pub classes: Vec<String>,
-    ///
-    pub hover: bool,
-    ///
-    pub focus: bool,
-    ///
-    pub active: bool,
 }
 
 impl ComponentData {

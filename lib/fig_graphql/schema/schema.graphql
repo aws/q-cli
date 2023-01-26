@@ -326,12 +326,16 @@ type ScriptAstText implements IScriptAstNode {
 }
 
 type ScriptCheckboxParameter {
+  falseToggleDisplay: String
   falseValueSubstitution: String
+  trueToggleDisplay: String
   trueValueSubstitution: String
 }
 
 input ScriptCheckboxParameterInput {
+  falseToggleDisplay: String
   falseValueSubstitution: String
+  trueToggleDisplay: String
   trueValueSubstitution: String
 }
 

@@ -53,13 +53,13 @@ use tokio::io::AsyncWriteExt;
 use tokio::join;
 use tracing::error;
 use tui::component::{
-    CheckBox,
-    CheckBoxEvent,
     Component,
     Div,
     FilePicker,
     FilePickerEvent,
     Hr,
+    SegmentedControl,
+    SegmentedControlEvent,
     Select,
     SelectEvent,
     TextField,
@@ -533,6 +533,7 @@ async fn execute_from_cli(script: &Script, script_name: &str, args: Vec<String>)
                     ParameterType::Checkbox {
                         false_value_substitution,
                         true_value_substitution,
+                        ..
                     } => {
                         parameters_by_name.insert(parameter.name.clone(), ParameterValue::Bool {
                             val: matches.get_flag(&parameter.name),
@@ -862,8 +863,10 @@ fn execute_parameter_block(
                 None
             },
             ParameterType::Checkbox {
-                true_value_substitution,
+                false_toggle_display,
                 false_value_substitution,
+                true_toggle_display,
+                true_value_substitution,
             } => {
                 let checked = parameters_by_name
                     .get(&parameter.name)
@@ -879,20 +882,26 @@ fn execute_parameter_block(
                     false_value: Some(false_value_substitution.to_owned()),
                 });
 
-                parameter_div = parameter_div.push(CheckBox::new("Toggle", checked).with_id(&parameter.name));
+                parameter_div = parameter_div.push(
+                    SegmentedControl::new(vec![
+                        false_toggle_display.clone().unwrap_or_else(|| "False".into()),
+                        true_toggle_display.clone().unwrap_or_else(|| "True".into()),
+                    ])
+                    .with_id(&parameter.name),
+                );
 
                 Some(
                     P::new()
                         .with_class("keybindings")
                         .push_styled_text(
-                            "⎵",
+                            "←/→",
                             ColorAttribute::PaletteIndex(3),
                             ColorAttribute::Default,
                             false,
                             false,
                         )
                         .push_styled_text(
-                            " toggle",
+                            " navigate",
                             ColorAttribute::Default,
                             ColorAttribute::Default,
                             false,
@@ -1053,19 +1062,24 @@ fn execute_parameter_block(
             terminated = true;
             *control_flow = ControlFlow::Quit;
         },
-        Event::CheckBox(event) => match event {
-            CheckBoxEvent::Checked { id: Some(id), checked } => {
+        Event::SegmentedControl(event) => match event {
+            SegmentedControlEvent::SelectionChanged {
+                id: Some(id),
+                selection,
+            } => {
                 let param = parameter_map.get(&id).unwrap();
                 if let ParameterType::Checkbox {
-                    ref true_value_substitution,
                     ref false_value_substitution,
-                } = param.parameter_type
+                    true_toggle_display,
+                    ref true_value_substitution,
+                    ..
+                } = &param.parameter_type
                 {
                     if let Some(selectors) = parameter_dependencies.get(&id) {
                         selectors_pending_update.extend(selectors)
                     }
                     parameters_by_name.insert(id, ParameterValue::Bool {
-                        val: checked,
+                        val: selection == true_toggle_display.as_deref().unwrap_or("True"),
                         false_value: Some(false_value_substitution.to_owned()),
                         true_value: Some(true_value_substitution.to_owned()),
                     });

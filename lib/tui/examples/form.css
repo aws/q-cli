@@ -1,44 +1,6 @@
-* #text-field {
-    color: yellow;
-    border-color: ansi(8);
-    border-width: 1.0;
-    border-style: ascii ┏ ━ ┓ ┃ ┃ ┗ ━ ┛;
-}
-
-div {
-    border-color: ansi(4);
-    border-width: 1.0;
-    border-style: ascii ┏ ━ ┓ ┃ ┃ ┗ ━ ┛;
-}
-
 input {
-    width: 20;
-}
-
-#text-field:focus {
-    color: cyan;
-}
-
-p {
-    color: blue;
-}
-
-#inner-3 p {
-    color: cyan;
-}
-
-#inner-3 > p {
-    color: orange;
-}
-
-:focus ~ p {
-    color: red;
-}
-
-#select {
-    color: green;
-}
-
-:focus + #select {
-    color: blueviolet;
+  color: ansi(3);
+  border-color: ansi(3);
+  border-width: 1;
+  border-style: ascii ┏ ━ ┓ ┃ ┃ ┗ ━ ┛;
 }

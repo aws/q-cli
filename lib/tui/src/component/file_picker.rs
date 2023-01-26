@@ -3,13 +3,13 @@ use std::path::{
     PathBuf,
 };
 
+use termwiz::cell::unicode_column_width;
 use termwiz::color::ColorAttribute;
 use termwiz::surface::{
     Change,
     CursorVisibility,
     Surface,
 };
-use unicode_width::UnicodeWidthStr;
 
 use super::shared::TextState;
 use super::ComponentData;
@@ -171,7 +171,7 @@ impl Component for FilePicker {
                 width - path_x,
                 attributes,
             );
-            path_x += component.width() as f64;
+            path_x += unicode_column_width(component, None) as f64;
         }
 
         if self.text_state.text().ends_with('/') {
@@ -382,7 +382,7 @@ impl Component for FilePicker {
                         text.push('/');
                     }
 
-                    if index >= x && index < x + slice.width() as f64 {
+                    if index >= x && index < x + unicode_column_width(slice, None) as f64 {
                         self.hovered_component = Some(i);
 
                         if mouse_action.just_pressed {
@@ -399,11 +399,11 @@ impl Component for FilePicker {
                         break;
                     }
 
-                    x += slice.width() as f64;
+                    x += unicode_column_width(slice, None) as f64;
                     text.push_str(slice);
                 }
 
-                if index > self.text_state.text().width() as f64 && mouse_action.just_pressed {
+                if index > unicode_column_width(self.text_state.text(), None) as f64 && mouse_action.just_pressed {
                     self.index = None;
                 }
             } else if index > 1.0 && (index as usize - 2) < self.options.len() {

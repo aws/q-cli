@@ -47,8 +47,10 @@ fragment Parameter on ScriptParameter {
     placeholder
   }
   checkbox {
-    trueValueSubstitution
+    falseToggleDisplay
     falseValueSubstitution
+    trueToggleDisplay
+    trueValueSubstitution
   }
   selector {
     generators {

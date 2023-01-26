@@ -2,13 +2,13 @@ use std::fmt::Display;
 
 use fuzzy_matcher::skim::SkimMatcherV2;
 use fuzzy_matcher::FuzzyMatcher;
+use termwiz::cell::unicode_column_width;
 use termwiz::color::ColorAttribute;
 use termwiz::surface::{
     Change,
     CursorVisibility,
     Surface,
 };
-use unicode_width::UnicodeWidthStr;
 
 use super::shared::TextState;
 use super::ComponentData;
@@ -174,7 +174,7 @@ impl Component for Select {
             }
 
             let width = width - 2.0;
-            let text_width = self.options[*option].width() as f64;
+            let text_width = unicode_column_width(&self.options[*option], None) as f64;
             match width < text_width {
                 true => surface.draw_text(
                     format!(
@@ -310,15 +310,16 @@ impl Component for Select {
     }
 
     fn size(&self, _: &mut State) -> (f64, f64) {
-        let mut w = self
-            .text_state
-            .text()
-            .width()
-            .max(self.options.iter().fold(0, |acc, option| acc.max(option.width())))
+        let mut w = unicode_column_width(self.text_state.text(), None)
+            .max(
+                self.options
+                    .iter()
+                    .fold(0, |acc, option| acc.max(unicode_column_width(option, None))),
+            )
             .max(60);
 
         if let Some(hint) = &self.hint {
-            w = w.max(hint.width());
+            w = w.max(unicode_column_width(hint, None));
         }
 
         let height = match self.inner.focus {

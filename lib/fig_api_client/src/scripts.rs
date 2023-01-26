@@ -56,8 +56,10 @@ pub enum ParameterType {
     },
     #[serde(rename_all = "camelCase")]
     Checkbox {
-        true_value_substitution: String,
+        false_toggle_display: Option<String>,
         false_value_substitution: String,
+        true_toggle_display: Option<String>,
+        true_value_substitution: String,
     },
     #[serde(rename_all = "camelCase")]
     Path {
@@ -375,10 +377,12 @@ macro_rules! map_script {
             parameter_type: match parameter.type_ {
                 ScriptParameterType::Checkbox => match parameter.checkbox {
                     Some(checkbox) => ParameterType::Checkbox {
-                        true_value_substitution: checkbox.true_value_substitution.unwrap_or_else(|| "true".to_string()),
+                        false_toggle_display: checkbox.false_toggle_display,
                         false_value_substitution: checkbox
                             .false_value_substitution
                             .unwrap_or_else(|| "false".to_string()),
+                        true_toggle_display: checkbox.true_toggle_display,
+                        true_value_substitution: checkbox.true_value_substitution.unwrap_or_else(|| "true".to_string()),
                     },
                     None => ParameterType::Unknown(None),
                 },

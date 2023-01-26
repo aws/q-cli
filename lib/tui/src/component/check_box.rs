@@ -1,7 +1,7 @@
 use std::fmt::Display;
 
+use termwiz::cell::unicode_column_width;
 use termwiz::surface::Surface;
-use unicode_width::UnicodeWidthStr;
 
 use crate::component::ComponentData;
 use crate::event_loop::{
@@ -56,7 +56,7 @@ impl Component for CheckBox {
             &format!("{} {}", if self.checked { '☑' } else { '☐' }, self.label),
             x,
             y,
-            2.0 + self.label.width() as f64,
+            2.0 + unicode_column_width(&self.label, None) as f64,
             style.attributes(),
         );
     }
@@ -86,7 +86,7 @@ impl Component for CheckBox {
     }
 
     fn size(&self, _: &mut State) -> (f64, f64) {
-        (2.0 + self.label.width() as f64, 1.0)
+        (2.0 + unicode_column_width(&self.label, None) as f64, 1.0)
     }
 
     fn as_dyn_mut(&mut self) -> &mut dyn Component {

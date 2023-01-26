@@ -1,10 +1,10 @@
+use termwiz::cell::unicode_column_width;
 use termwiz::color::ColorAttribute;
 use termwiz::surface::{
     Change,
     CursorVisibility,
     Surface,
 };
-use unicode_width::UnicodeWidthStr;
 
 use super::shared::TextState;
 use crate::component::ComponentData;
@@ -88,7 +88,7 @@ impl Component for TextField {
             false => {
                 match self.obfuscated {
                     true => surface.draw_text(
-                        "*".repeat(self.text_state.text().width()),
+                        "*".repeat(unicode_column_width(self.text_state.text(), None)),
                         x,
                         y,
                         width,
@@ -160,10 +160,10 @@ impl Component for TextField {
         (
             match self.text_state.text().is_empty() {
                 true => match &self.hint {
-                    Some(hint) => hint.width() as f64,
+                    Some(hint) => unicode_column_width(hint, None) as f64,
                     None => 0.0,
                 },
-                false => self.text_state.text().width() as f64,
+                false => unicode_column_width(self.text_state.text(), None) as f64,
             }
             .max(80.0),
             1.0,

@@ -7568,7 +7568,6 @@ dependencies = [
  "termwiz",
  "tracing",
  "unicode-segmentation",
- "unicode-width",
 ]
 
 [[package]]
