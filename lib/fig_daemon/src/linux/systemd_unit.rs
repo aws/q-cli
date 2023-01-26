@@ -28,23 +28,23 @@ impl SystemdUnit {
         unit.push_str("[Service]\n");
 
         if let Some(exec_start) = &self.service.exec_start {
-            writeln!(unit, "ExecStart={}", exec_start).ok();
+            writeln!(unit, "ExecStart={exec_start}").ok();
         }
 
         if let Some(standard_output) = &self.service.standard_output {
-            writeln!(unit, "StandardOutput={}", standard_output).ok();
+            writeln!(unit, "StandardOutput={standard_output}").ok();
         }
 
         if let Some(standard_error) = &self.service.standard_error {
-            writeln!(unit, "StandardError={}", standard_error).ok();
+            writeln!(unit, "StandardError={standard_error}").ok();
         }
 
         if let Some(restart) = &self.service.restart {
-            writeln!(unit, "Restart={}", restart).ok();
+            writeln!(unit, "Restart={restart}").ok();
         }
 
         if let Some(restart_sec) = &self.service.restart_sec {
-            writeln!(unit, "RestartSec={}", restart_sec).ok();
+            writeln!(unit, "RestartSec={restart_sec}").ok();
         }
 
         unit.push('\n');
@@ -52,7 +52,7 @@ impl SystemdUnit {
         unit.push_str("[Install]\n");
 
         if let Some(wanted_by) = &self.install.wanted_by {
-            writeln!(unit, "WantedBy={}", wanted_by).ok();
+            writeln!(unit, "WantedBy={wanted_by}").ok();
         }
 
         unit

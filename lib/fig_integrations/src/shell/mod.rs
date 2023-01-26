@@ -660,7 +660,7 @@ mod test {
     fn check_script(shell: Shell, when: When) {
         let shell_arg = "--shell=bash";
         let mut child = Command::new("shellcheck")
-            .args(&[shell_arg, "--color=always", "-"])
+            .args([shell_arg, "--color=always", "-"])
             .stdin(Stdio::piped())
             .stdout(Stdio::piped())
             .stderr(Stdio::piped())

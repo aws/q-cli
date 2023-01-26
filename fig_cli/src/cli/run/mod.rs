@@ -1352,7 +1352,7 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(target_os = "linux")]
     if let Some(dnf_package) = runtime.dnf_package() {
         if which("dnf").is_ok() && confirm("dnf") {
-            eprintln!("\n$ sudo dnf install {}", dnf_package);
+            eprintln!("\n$ sudo dnf install {dnf_package}");
 
             let mut command = Command::new("sudo");
             command.arg("dnf");
@@ -1369,7 +1369,7 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     #[cfg(target_os = "linux")]
     if let Some(apt_package) = runtime.apt_package() {
         if which("apt-get").is_ok() && confirm("apt-get") {
-            eprintln!("\n$ sudo apt-get install {}", apt_package);
+            eprintln!("\n$ sudo apt-get install {apt_package}");
 
             let mut command = Command::new("sudo");
             command.arg("apt-get");
