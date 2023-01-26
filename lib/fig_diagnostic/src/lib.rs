@@ -70,7 +70,6 @@ pub struct EnvVarDiagnostic {
 impl EnvVarDiagnostic {
     fn new() -> EnvVarDiagnostic {
         let env_vars = std::env::vars()
-            .into_iter()
             .filter(|(key, val)| {
                 (key.starts_with("FIG_")
                     || key == "SHELL"
