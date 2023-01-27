@@ -20,7 +20,7 @@ impl Hr {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 

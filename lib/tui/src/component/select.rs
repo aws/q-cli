@@ -26,7 +26,7 @@ use crate::{
 #[derive(Debug)]
 pub enum SelectEvent {
     /// The user has selected an option
-    OptionSelected { id: Option<String>, option: String },
+    OptionSelected { id: String, option: String },
 }
 
 #[derive(Debug)]
@@ -62,7 +62,7 @@ impl Select {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 

@@ -18,7 +18,7 @@ use crate::Component;
 #[derive(Debug)]
 pub enum CheckBoxEvent {
     /// The user has either checked or unchecked the box
-    Checked { id: Option<String>, checked: bool },
+    Checked { id: String, checked: bool },
 }
 
 #[derive(Debug)]
@@ -38,7 +38,7 @@ impl CheckBox {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 

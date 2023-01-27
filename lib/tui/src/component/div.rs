@@ -40,7 +40,7 @@ impl Div {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 
@@ -269,7 +269,7 @@ impl Component for Div {
                 // Traverse tree to get next id before we focus.
                 let next_id = next_child_idx.and_then(|idx| {
                     let child = &mut self.inner.children[idx];
-                    child.next(state, false).or_else(|| child.id().to_owned())
+                    child.next(state, false).or_else(|| Some(child.id().to_owned()))
                 });
 
                 self.inner.focus_child_at_index(state, next_child_idx);
@@ -292,7 +292,7 @@ impl Component for Div {
                 // Traverse tree to get previous id before we focus.
                 let prev_id = prev_child_idx.and_then(|idx| {
                     let child = &mut self.inner.children[idx];
-                    child.prev(state, false).or_else(|| child.id().to_owned())
+                    child.prev(state, false).or_else(|| Some(child.id().to_owned()))
                 });
 
                 self.inner.focus_child_at_index(state, prev_child_idx);
@@ -305,11 +305,11 @@ impl Component for Div {
         for i in 0..self.inner.children.len() {
             if let Some(removed) = self.inner.children[i].remove(id) {
                 return Some(removed);
-            } else if let Some(child_id) = self.inner.children[i].id() {
-                if child_id == id {
-                    self.inner.focused_child_index = None;
-                    return Some(self.inner.children.remove(i));
-                }
+            }
+
+            if self.inner.children[i].id() == id {
+                self.inner.focused_child_index = None;
+                return Some(self.inner.children.remove(i));
             }
         }
 
@@ -318,12 +318,10 @@ impl Component for Div {
 
     fn insert(&mut self, id: &str, mut component: Box<dyn Component>) -> Option<Box<dyn Component>> {
         for (i, child) in self.inner.children.iter_mut().enumerate() {
-            if let Some(child_id) = child.id() {
-                if child_id == id {
-                    self.inner.focused_child_index = None;
-                    self.inner.children.insert(i + 1, component);
-                    return None;
-                }
+            if child.id() == id {
+                self.inner.focused_child_index = None;
+                self.inner.children.insert(i + 1, component);
+                return None;
             }
 
             component = child.insert(id, component)?;

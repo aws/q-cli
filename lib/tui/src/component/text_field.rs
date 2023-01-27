@@ -21,7 +21,7 @@ use crate::Component;
 
 #[derive(Debug)]
 pub enum TextFieldEvent {
-    TextChanged { id: Option<String>, text: String },
+    TextChanged { id: String, text: String },
 }
 
 #[derive(Debug)]
@@ -43,7 +43,7 @@ impl TextField {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 

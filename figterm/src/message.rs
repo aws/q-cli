@@ -124,10 +124,7 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
     };
 
     #[cfg(target_os = "windows")]
-    {
-        use std::os::windows::process::CommandExt;
-        cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
-    }
+    cmd.creation_flags(windows::Win32::System::Threading::DETACHED_PROCESS.0);
 
     cmd.current_dir(working_directory);
 

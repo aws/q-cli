@@ -29,7 +29,7 @@ const MAX_ROWS: i32 = 8;
 #[derive(Debug)]
 pub enum FilePickerEvent {
     /// The user has either typed a valid or invalid path or selected a valid one
-    FilePathChanged { id: Option<String>, path: PathBuf },
+    FilePathChanged { id: String, path: PathBuf },
 }
 
 #[derive(Debug)]
@@ -63,7 +63,7 @@ impl FilePicker {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 

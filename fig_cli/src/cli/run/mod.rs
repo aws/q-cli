@@ -80,6 +80,7 @@ use which::which;
 
 #[cfg(unix)]
 use crate::cli::run::script_action::ScriptAction;
+#[cfg(unix)]
 use crate::util::choose;
 
 #[derive(Debug, Args, PartialEq, Eq)]
@@ -356,7 +357,7 @@ async fn search_over_scripts() -> Result<Option<Script>> {
                 .interact()
                 .unwrap();
 
-            let script = scripts.remove(selection);
+            let script = Some(scripts.remove(selection));
         }
     }
 
@@ -1063,56 +1064,57 @@ fn execute_parameter_block(
             *control_flow = ControlFlow::Quit;
         },
         Event::SegmentedControl(event) => match event {
-            SegmentedControlEvent::SelectionChanged {
-                id: Some(id),
-                selection,
-            } => {
-                let param = parameter_map.get(&id).unwrap();
-                if let ParameterType::Checkbox {
-                    ref false_value_substitution,
-                    true_toggle_display,
-                    ref true_value_substitution,
-                    ..
-                } = &param.parameter_type
-                {
+            SegmentedControlEvent::SelectionChanged { id, selection } => {
+                if !id.is_empty() {
+                    let param = parameter_map.get(&id).unwrap();
+                    if let ParameterType::Checkbox {
+                        ref false_value_substitution,
+                        true_toggle_display,
+                        ref true_value_substitution,
+                        ..
+                    } = &param.parameter_type
+                    {
+                        if let Some(selectors) = parameter_dependencies.get(&id) {
+                            selectors_pending_update.extend(selectors)
+                        }
+                        parameters_by_name.insert(id, ParameterValue::Bool {
+                            val: selection == true_toggle_display.as_deref().unwrap_or("True"),
+                            false_value: Some(false_value_substitution.to_owned()),
+                            true_value: Some(true_value_substitution.to_owned()),
+                        });
+                    }
+                }
+            },
+        },
+        Event::FilePicker(event) => match event {
+            FilePickerEvent::FilePathChanged { id, path } => {
+                if !id.is_empty() {
                     if let Some(selectors) = parameter_dependencies.get(&id) {
                         selectors_pending_update.extend(selectors)
                     }
-                    parameters_by_name.insert(id, ParameterValue::Bool {
-                        val: selection == true_toggle_display.as_deref().unwrap_or("True"),
-                        false_value: Some(false_value_substitution.to_owned()),
-                        true_value: Some(true_value_substitution.to_owned()),
-                    });
+                    parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
                 }
             },
-            _ => (),
-        },
-        Event::FilePicker(event) => match event {
-            FilePickerEvent::FilePathChanged { id: Some(id), path } => {
-                if let Some(selectors) = parameter_dependencies.get(&id) {
-                    selectors_pending_update.extend(selectors)
-                }
-                parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
-            },
-            _ => (),
         },
         Event::Select(event) => match event {
-            SelectEvent::OptionSelected { id: Some(id), option } => {
-                if let Some(selectors) = parameter_dependencies.get(&id) {
-                    selectors_pending_update.extend(selectors)
+            SelectEvent::OptionSelected { id, option } => {
+                if !id.is_empty() {
+                    if let Some(selectors) = parameter_dependencies.get(&id) {
+                        selectors_pending_update.extend(selectors)
+                    }
+                    parameters_by_name.insert(id, ParameterValue::String(option));
                 }
-                parameters_by_name.insert(id, ParameterValue::String(option));
             },
-            _ => (),
         },
         Event::TextField(event) => match event {
-            TextFieldEvent::TextChanged { id: Some(id), text } => {
-                if let Some(selectors) = parameter_dependencies.get(&id) {
-                    selectors_pending_update.extend(selectors)
+            TextFieldEvent::TextChanged { id, text } => {
+                if !id.is_empty() {
+                    if let Some(selectors) = parameter_dependencies.get(&id) {
+                        selectors_pending_update.extend(selectors)
+                    }
+                    parameters_by_name.insert(id, ParameterValue::String(text));
                 }
-                parameters_by_name.insert(id, ParameterValue::String(text));
             },
-            _ => (),
         },
         Event::MainEventsCleared => {
             for selector_id in selectors_pending_update.iter() {
@@ -1279,6 +1281,12 @@ async fn runtime_check(runtime: &Runtime) -> Result<()> {
     }
 }
 
+#[cfg(windows)]
+fn try_install(_: &Runtime) -> Result<()> {
+    bail!("Cannot install runtimes on Windows yet");
+}
+
+#[cfg(unix)]
 fn try_install(runtime: &Runtime) -> Result<()> {
     let mut first_confirm = true;
     let mut confirm = |name: &str| {

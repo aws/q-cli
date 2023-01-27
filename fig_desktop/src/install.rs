@@ -20,7 +20,7 @@ const PREVIOUS_VERSION_KEY: &str = "desktop.versionAtPreviousLaunch";
 
 /// Run items at launch
 pub async fn run_install(_ignore_immediate_update: bool) {
-    #[cfg(target_os = "macos")]
+    #[cfg(not(target_os = "linux"))]
     let ignore_immediate_update = _ignore_immediate_update;
 
     tokio::spawn(async {

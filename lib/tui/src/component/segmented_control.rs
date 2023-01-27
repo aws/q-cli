@@ -17,7 +17,7 @@ use crate::Component;
 #[derive(Debug)]
 pub enum SegmentedControlEvent {
     /// The user has either checked or unchecked the box
-    SelectionChanged { id: Option<String>, selection: String },
+    SelectionChanged { id: String, selection: String },
 }
 
 #[derive(Debug)]
@@ -37,7 +37,7 @@ impl SegmentedControl {
     }
 
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
-        self.inner.id = Some(id.into());
+        self.inner.id = id.into();
         self
     }
 

@@ -53,7 +53,7 @@ pub struct StyleInfo {
     ///
     pub type_selector: String,
     ///
-    pub id: Option<String>,
+    pub id: String,
     ///
     pub classes: Vec<String>,
     ///
@@ -69,7 +69,7 @@ pub struct ComponentData {
     ///
     pub type_selector: String,
     ///
-    pub id: Option<String>,
+    pub id: String,
     ///
     pub classes: Vec<String>,
     ///
@@ -90,7 +90,7 @@ impl ComponentData {
     pub fn new(type_selector: String, interactive: bool) -> Self {
         Self {
             type_selector,
-            id: None,
+            id: String::new(),
             interactive,
             ..Default::default()
         }
@@ -111,7 +111,7 @@ impl ComponentData {
         self.children.iter().any(|c| c.interactive())
     }
 
-    pub fn focused_leaf_id(&self) -> &Option<String> {
+    pub fn focused_leaf_id(&self) -> &str {
         if let Some(child) = self.focused_child_index.and_then(|idx| self.children.get(idx)) {
             child.inner().focused_leaf_id()
         } else {
@@ -254,10 +254,8 @@ pub trait Component: std::fmt::Debug + Downcast {
     /// Find an existing component in the current ui element or its children with the given id
     #[allow(unused_variables)]
     fn find_mut(&mut self, id: &str) -> Option<&mut dyn Component> {
-        if let Some(self_id) = self.id() {
-            if self_id == id {
-                return Some(self.as_dyn_mut());
-            }
+        if self.id() == id {
+            return Some(self.as_dyn_mut());
         }
 
         for child in self.inner_mut().children.iter_mut() {
@@ -291,7 +289,7 @@ pub trait Component: std::fmt::Debug + Downcast {
     fn size(&self, state: &mut State) -> (f64, f64);
 
     /// The id of the ui element used for event handling and styling
-    fn id(&self) -> &Option<String> {
+    fn id(&self) -> &str {
         &self.inner().id
     }
 
