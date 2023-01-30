@@ -2264,7 +2264,7 @@ dependencies = [
  "strum",
  "time 0.3.17",
  "tokio",
- "toml_edit 0.18.0",
+ "toml_edit 0.19.0",
 ]
 
 [[package]]
@@ -5234,7 +5234,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "66618389e4ec1c7afe67d51a9bf34ff9236480f8d51e7489b7d5ab0303c13f34"
 dependencies = [
  "once_cell",
- "toml_edit 0.18.0",
+ "toml_edit 0.18.1",
 ]
 
 [[package]]
@@ -7363,9 +7363,9 @@ dependencies = [
 
 [[package]]
 name = "toml_edit"
-version = "0.18.0"
+version = "0.18.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "729bfd096e40da9c001f778f5cdecbd2957929a24e10e5883d9392220a751581"
+checksum = "56c59d8dd7d0dcbc6428bf7aa2f0e823e26e43b3c9aca15bbc9475d23e5fa12b"
 dependencies = [
  "indexmap",
  "nom8",
