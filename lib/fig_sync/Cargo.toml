@@ -8,7 +8,7 @@ version.workspace = true
 
 [dependencies]
 cfg-if = "1.0.0"
-crossterm = "0.25.0"
+crossterm = "0.26.0"
 fig_api_client = { path = "../fig_api_client" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }

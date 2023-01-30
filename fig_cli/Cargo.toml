@@ -30,7 +30,7 @@ clap = { version = "4.1.3", features = [
 clap_complete = "4.1.0"
 clap_complete_fig = "4.1.0"
 color-eyre = "0.6.2"
-crossterm = "0.25.0"
+crossterm = "0.26.0"
 ctrlc = "3.2.4"
 dialoguer = { version = "0.10.3", features = ["fuzzy-select"] }
 eyre = "0.6.8"
