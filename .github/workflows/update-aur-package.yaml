@@ -68,11 +68,13 @@ jobs:
 
           if [ "${{ github.event.inputs.headless }}" == "true" ]; then
             export template_file="PKGBUILD.headless.template"
+            export download_url="https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig_headless.tar.xz"
           else
             export template_file="PKGBUILD.template"
+            export download_url="https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz"
           fi
 
-          curl -sL -o fig.tar.xz https://repo.fig.io/generic/${{ github.event.inputs.channel }}/asset/${{ github.event.inputs.version }}/x86_64/fig.tar.xz
+          curl -sL -o fig.tar.xz $download_url
           export aur_sha256sum=$(sha256sum fig.tar.xz | cut -d ' ' -f 1)
 
           envsubst '${aur_pkgname} ${aur_pkgver} ${aur_channel} ${aur_pkgrel} ${aur_provides} ${aur_sha256sum}' < "bundle/archlinux/${template_file}" > PKGBUILD
