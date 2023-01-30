@@ -921,8 +921,8 @@ fn execute_parameter_block(
                     .map(|inner| inner.to_string())
                     .unwrap_or_else(|| cwd.clone());
 
-                let (files, folders) = match file_type {
-                    FileType::Any | FileType::Unknown(_) => (true, true),
+                let (_, folders_only) = match file_type {
+                    FileType::Any | FileType::Unknown(_) => (false, false),
                     FileType::FileOnly => (true, false),
                     FileType::FolderOnly => (false, true),
                 };
@@ -930,7 +930,7 @@ fn execute_parameter_block(
                 parameters_by_name.insert(parameter.name.to_owned(), ParameterValue::String(cwd));
 
                 parameter_div = parameter_div.push(
-                    FilePicker::new(files, folders, extensions.clone())
+                    FilePicker::new(folders_only, extensions.clone())
                         .with_id(&parameter.name)
                         .with_path(parameter_value),
                 );

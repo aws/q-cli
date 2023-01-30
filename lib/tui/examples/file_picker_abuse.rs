@@ -54,7 +54,7 @@ fn main() {
 
     EventLoop::new(
         Div::new().push(
-            FilePicker::new(true, true, vec![])
+            FilePicker::new(true, vec![])
                 .with_id("picker")
                 .with_path(tempdir.path().to_str().unwrap().to_owned()),
         ),

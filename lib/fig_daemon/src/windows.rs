@@ -19,7 +19,7 @@ impl Daemon {
     pub async fn install(&self, executable: &Utf8Path) -> Result<()> {
         let hkcu = RegKey::predef(HKEY_CURRENT_USER);
         let (settings, _) = hkcu.create_subkey(RUN_PATH)?;
-        settings.set_value(DAEMON_NAME, &format!("\"{}\" daemon", executable))?;
+        settings.set_value(DAEMON_NAME, &format!("\"{executable}\" daemon"))?;
         Ok(())
     }
 
