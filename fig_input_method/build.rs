@@ -101,9 +101,9 @@ fn main() {
     println!("cargo:rerun-if-changed=build.rs");
 
     // Read Cargo.toml and load [bundle]
-    let config = fs::read("Cargo.toml").unwrap();
+    let config = fs::read_to_string("Cargo.toml").unwrap();
 
-    let manifest = toml::from_slice::<CargoToml>(&config).unwrap();
+    let manifest = toml::from_str::<CargoToml>(&config).unwrap();
     let mut bundle = manifest.package.metadata.bundle;
 
     // Set InputMethodServerControllerClass env var which is used by Input Method at compile time
