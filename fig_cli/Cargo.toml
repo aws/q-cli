@@ -50,7 +50,7 @@ fig_sync = { path = "../lib/fig_sync" }
 fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
 flume = "0.10.14"
-futures = "0.3.25"
+futures = "0.3.26"
 globset = "0.4.10"
 humantime = "2.1.0"
 indicatif = "0.17.3"

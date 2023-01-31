@@ -14,7 +14,7 @@ fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
 flume = "0.10.14"
-futures = "0.3.25"
+futures = "0.3.26"
 git2 = { version = "0.16.1", features = [
     "vendored-openssl",
     "vendored-libgit2",
