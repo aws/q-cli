@@ -11,6 +11,7 @@ use termwiz::surface::{
     CursorVisibility,
     Surface,
 };
+use unicode_segmentation::UnicodeSegmentation;
 
 use super::shared::{
     ListState,
@@ -75,13 +76,24 @@ impl FilePicker {
     }
 
     fn update_options(&mut self) {
-        let path = Path::new(self.text_state.text());
+        let mut text = self.text_state.text().to_owned();
+        while text.is_empty() && !text.ends_with('/') {
+            text = text
+                .graphemes(true)
+                .take(unicode_column_width(&text, None).saturating_sub(1))
+                .collect();
+        }
+
+        let path = Path::new(&text);
         if path.exists() {
             if let Ok(dir) = std::fs::read_dir(path) {
                 let mut options = vec![];
                 for file in dir.flatten() {
                     if let Some(file_name) = file.file_name().to_str() {
-                        options.push(file_name.to_owned())
+                        match file.path().is_dir() {
+                            true => options.push(format!("{file_name}/")),
+                            false => options.push(file_name.to_owned()),
+                        }
                     }
                 }
 
@@ -109,15 +121,29 @@ impl FilePicker {
                     let bpath = path.join(b);
 
                     match (apath.is_dir(), bpath.is_dir()) {
-                        (true, true) => a.cmp(b),
                         (true, false) => std::cmp::Ordering::Less,
                         (false, true) => std::cmp::Ordering::Greater,
-                        (false, false) => a.cmp(b),
+                        _ => match (a.starts_with('.'), b.starts_with('.')) {
+                            (true, false) => std::cmp::Ordering::Greater,
+                            (false, true) => std::cmp::Ordering::Less,
+                            _ => a.cmp(b),
+                        },
                     }
                 });
 
                 self.list_state = ListState::new(options);
+
+                let text = self.text_state.text();
+                if !text.ends_with('/') {
+                    if let Some(file_name) = Path::new(text).file_name() {
+                        if let Some(file_name) = file_name.to_str() {
+                            self.list_state.sort(file_name);
+                        }
+                    }
+                }
             }
+        } else {
+            self.list_state = ListState::new(vec![]);
         }
     }
 
@@ -136,7 +162,10 @@ impl FilePicker {
                 let mut options = vec![];
                 for file in dir.flatten() {
                     if let Some(file_name) = file.file_name().to_str() {
-                        options.push(file_name.to_owned())
+                        match file.path().is_dir() {
+                            true => options.push(format!("{file_name}/")),
+                            false => options.push(file_name.to_owned()),
+                        }
                     }
                 }
 
@@ -164,30 +193,19 @@ impl FilePicker {
                     let bpath = path.join(b);
 
                     match (apath.is_dir(), bpath.is_dir()) {
-                        (true, true) => a.cmp(b),
                         (true, false) => std::cmp::Ordering::Less,
                         (false, true) => std::cmp::Ordering::Greater,
-                        (false, false) => a.cmp(b),
+                        _ => match (a.starts_with('.'), b.starts_with('.')) {
+                            (true, false) => std::cmp::Ordering::Greater,
+                            (false, true) => std::cmp::Ordering::Less,
+                            _ => a.cmp(b),
+                        },
                     }
                 });
 
                 self.preview_state = ListState::new(options);
             } else {
                 self.preview_state.clear();
-            }
-        }
-    }
-
-    fn sort_options(&mut self) {
-        let path = Path::new(self.text_state.text());
-        if self.text_state.text().ends_with('/') || self.text_state.text().ends_with('\\') {
-            self.update_options();
-            self.update_preview();
-        } else if let Some(file_name) = path.file_name() {
-            if let Some(file_name) = file_name.to_str() {
-                self.list_state.sort("");
-                self.list_state.sort(file_name);
-                self.update_preview();
             }
         }
     }
@@ -302,7 +320,8 @@ impl Component for FilePicker {
             InputAction::Remove => {
                 self.typing = true;
                 self.text_state.backspace();
-                self.sort_options();
+                self.update_options();
+                self.update_preview();
             },
             InputAction::Submit | InputAction::Right => match self.typing {
                 true => self.text_state.right(),
@@ -319,10 +338,6 @@ impl Component for FilePicker {
 
                         if let Some(path_str) = path.to_str() {
                             self.text_state.set_text(path_str);
-                            if path.is_dir() {
-                                self.text_state.character('/');
-                            }
-
                             self.update_options();
                             self.update_preview();
                         }
@@ -338,7 +353,11 @@ impl Component for FilePicker {
                         .and_then(|path| path.to_str())
                     {
                         self.text_state.set_text(path_str);
-                        self.text_state.character('/');
+
+                        if self.text_state.text() != "/" {
+                            self.text_state.character('/');
+                        }
+
                         self.update_options();
                         self.update_preview();
                     }
@@ -369,35 +388,40 @@ impl Component for FilePicker {
             InputAction::Delete => {
                 self.typing = true;
                 self.text_state.delete();
-                self.sort_options();
+                self.update_options();
+                self.update_preview();
             },
             InputAction::Insert(character) => {
                 self.typing = true;
                 self.text_state.character(*character);
-                self.sort_options();
+                self.update_options();
+                self.update_preview();
             },
             InputAction::Paste(clipboard) => {
                 self.typing = true;
                 self.text_state.paste(clipboard);
-                self.sort_options();
+                self.update_options();
+                self.update_preview();
             },
             _ => (),
         }
     }
 
-    fn on_mouse_action(&mut self, state: &mut State, mouse_action: &MouseAction, x: f64, y: f64, _: f64, _: f64) {
+    fn on_mouse_action(&mut self, state: &mut State, mouse_action: &MouseAction, x: f64, y: f64, width: f64, _: f64) {
         if self.inner.focus {
-            let index = (mouse_action.y - y).round() as usize;
-            if index == 0 {
+            let row = (mouse_action.y - y).round() as usize;
+            let column = mouse_action.x - x;
+
+            if row == 0 {
                 if mouse_action.just_pressed {
                     self.text_state.on_mouse_action(mouse_action, x);
                     self.typing = true;
                 }
-            } else if index > 1 && index.saturating_sub(2) < 6 {
+            } else if row > 1 && row.saturating_sub(2) < 6 && column < width * 0.5 - 1.0 {
                 // workaround, probably should add hover state
                 self.typing = false;
 
-                self.list_state.set_index(index.saturating_sub(2));
+                self.list_state.set_index(row.saturating_sub(2));
 
                 if mouse_action.just_pressed {
                     self.on_input_action(state, &InputAction::Right);
