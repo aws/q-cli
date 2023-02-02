@@ -44,5 +44,6 @@ opt-level = 3
 tokio = { git = "https://github.com/sullivan-sean/tokio" }
 mio = { git = "https://github.com/sullivan-sean/mio" }
 console = { git = "https://github.com/withfig/console" }
+termwiz = { git = "https://github.com/wez/wezterm", rev = "36519f0d90e1875fb4b3f11f6cbf94c7d716ef78" }
 # TODO: remove when we switch away from draft js
 wry = { git = "https://github.com/grant0417/wry", branch = "grant/double-inset-fix" }
