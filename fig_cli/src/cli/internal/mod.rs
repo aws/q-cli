@@ -790,11 +790,15 @@ impl InternalSubcommand {
                     },
                 }
             },
-            InternalSubcommand::DumpState { .. } => {
-                let state =
-                    fig_ipc::local::dump_state_command(fig_proto::local::dump_state_command::Type::DumpStateFigterm)
-                        .await
-                        .context("Failed to send dump state command")?;
+            InternalSubcommand::DumpState { component } => {
+                use fig_proto::local::dump_state_command::Type as StateCommandType;
+
+                let state = fig_ipc::local::dump_state_command(match component {
+                    StateComponent::Figterm => StateCommandType::DumpStateFigterm,
+                    StateComponent::WebNotifications => StateCommandType::DumpStateWebNotifications,
+                })
+                .await
+                .context("Failed to send dump state command")?;
 
                 println!("{}", state.json);
             },

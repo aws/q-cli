@@ -20,6 +20,7 @@ use fig_proto::prost::Message;
 use parking_lot::Mutex;
 use tokio::sync::mpsc::UnboundedSender;
 use tracing::{
+    debug,
     error,
     info,
     warn,
@@ -459,7 +460,7 @@ impl WindowState {
             WindowEvent::Event { event_name, payload } => {
                 self.notification(notifications_state, &NotificationType::NotifyOnEvent, Notification {
                     r#type: Some(NotificationEnum::EventNotification(EventNotification {
-                        event_name: Some(event_name.to_string()),
+                        event_name: Some(event_name.into_owned()),
                         payload: payload.map(|s| s.into_owned()),
                     })),
                 })
@@ -579,7 +580,10 @@ impl WindowState {
                 let mut encoded = BytesMut::new();
 
                 match message.encode(&mut encoded) {
-                    Ok(_) => self.emit(EmitEventName::ProtoMessageReceived, BASE64_STANDARD.encode(encoded)),
+                    Ok(_) => {
+                        debug!(?notification_type, %window_id, "Sending notification");
+                        self.emit(EmitEventName::ProtoMessageReceived, BASE64_STANDARD.encode(encoded))
+                    },
                     Err(err) => error!(%err, "Failed to encode notification"),
                 }
             } else {
