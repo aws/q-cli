@@ -77,7 +77,7 @@ impl FilePicker {
 
     fn update_options(&mut self) {
         let mut text = self.text_state.text().to_owned();
-        while text.is_empty() && !text.ends_with('/') {
+        while !text.is_empty() && !text.ends_with('/') {
             text = text
                 .graphemes(true)
                 .take(unicode_column_width(&text, None).saturating_sub(1))
