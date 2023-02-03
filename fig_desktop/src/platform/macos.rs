@@ -362,6 +362,7 @@ impl PlatformStateImpl {
                                     },
                                     Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
                                         fullscreen: is_fullscreen,
+                                        dashboard_visible: None,
                                     }),
                                 ]);
                             },
@@ -617,13 +618,18 @@ impl PlatformStateImpl {
                 }
                 Ok(())
             },
-            PlatformBoundEvent::FullscreenStateUpdated { fullscreen } => {
+            PlatformBoundEvent::FullscreenStateUpdated {
+                fullscreen,
+                dashboard_visible,
+            } => {
                 let policy = if fullscreen {
                     ActivationPolicy::Accessory
                 } else {
-                    let dashboard_visible = window_map
-                        .get(&DASHBOARD_ID)
-                        .map_or(false, |window| window.webview.window().is_visible());
+                    let dashboard_visible = dashboard_visible.unwrap_or_else(|| {
+                        window_map
+                            .get(&DASHBOARD_ID)
+                            .map_or(false, |window| window.webview.window().is_visible())
+                    });
 
                     if dashboard_visible {
                         ActivationPolicy::Regular
@@ -631,6 +637,7 @@ impl PlatformStateImpl {
                         ActivationPolicy::Accessory
                     }
                 };
+
                 let mut policy_lock = ACTIVATION_POLICY.lock();
                 if *policy_lock != policy {
                     *policy_lock = policy;
@@ -682,12 +689,15 @@ impl PlatformStateImpl {
                 window_id,
                 focused,
                 fullscreen,
+                visible,
             } => {
                 // Update activation policy
                 if window_id == DASHBOARD_ID && focused {
+                    debug!("Sending FullscreenStateUpdated");
                     self.proxy
                         .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::FullscreenStateUpdated {
                             fullscreen,
+                            dashboard_visible: Some(visible),
                         }))
                         .ok();
                 }

@@ -99,6 +99,7 @@ pub enum PlatformBoundEvent {
     EditBufferChanged,
     FullscreenStateUpdated {
         fullscreen: bool,
+        dashboard_visible: Option<bool>,
     },
     AccessibilityUpdated {
         enabled: bool,
@@ -108,6 +109,7 @@ pub enum PlatformBoundEvent {
         window_id: WindowId,
         focused: bool,
         fullscreen: bool,
+        visible: bool,
     },
     CaretPositionUpdateRequested,
     WindowDestroyed {

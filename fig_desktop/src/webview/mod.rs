@@ -325,6 +325,7 @@ impl WebviewManager {
                     if let Some(window_state) = self.window_id_map.get(&window_id) {
                         match event {
                             WryWindowEvent::CloseRequested => {
+                                // This is async so we need to pass 'visible' explicitly
                                 window_state.webview.window().set_visible(false);
 
                                 if window_state.window_id == DASHBOARD_ID {
@@ -334,8 +335,10 @@ impl WebviewManager {
                                                 .send_event(Event::PlatformBoundEvent(
                                                     PlatformBoundEvent::AppWindowFocusChanged {
                                                         window_id: DASHBOARD_ID,
-                                                        focused: false,
+                                                        focused: true, /* set to true, in order to update activation
+                                                                        * policy & remove from dock */
                                                         fullscreen: false,
+                                                        visible: false,
                                                     },
                                                 ))
                                                 .ok();
@@ -360,6 +363,7 @@ impl WebviewManager {
                                         window_id: window_state.window_id.clone(),
                                         focused,
                                         fullscreen: window_state.webview.window().fullscreen().is_some(),
+                                        visible: window_state.webview.window().is_visible(),
                                     }))
                                     .unwrap();
                             },
