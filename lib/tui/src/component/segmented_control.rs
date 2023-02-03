@@ -96,8 +96,10 @@ impl Component for SegmentedControl {
                 self.push_selection_changed_event(state);
             },
             InputAction::Right => {
-                self.index = (self.index + 1) % self.options.len();
-                self.push_selection_changed_event(state);
+                if let Some(index) = self.index.saturating_add(1).checked_rem(self.options.len()) {
+                    self.index = index;
+                    self.push_selection_changed_event(state);
+                }
             },
             _ => (),
         }

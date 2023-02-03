@@ -30,7 +30,9 @@ impl ListState {
             self.index_offset = self.index_offset.saturating_add(1);
         }
 
-        self.index = self.index.saturating_add(1) % self.sorted_options.len();
+        if let Some(index) = self.index.saturating_add(1).checked_rem(self.sorted_options.len()) {
+            self.index = index;
+        }
     }
 
     pub fn prev(&mut self) {
@@ -40,7 +42,13 @@ impl ListState {
             self.index_offset = self.index_offset.saturating_sub(1);
         }
 
-        self.index = self.index.saturating_add(self.sorted_options.len().saturating_sub(1)) % self.sorted_options.len();
+        if let Some(index) = self
+            .index
+            .saturating_add(self.sorted_options.len().saturating_sub(1))
+            .checked_rem(self.sorted_options.len())
+        {
+            self.index = index;
+        }
     }
 
     pub fn sort(&mut self, pattern: &str) {
