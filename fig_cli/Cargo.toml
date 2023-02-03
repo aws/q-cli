@@ -88,7 +88,7 @@ tracing-subscriber = { version = "0.3.16", features = [
 ] }
 tui = { path = "../lib/tui" }
 url = "2.3.1"
-uuid = { version = "1.2.2", features = ["v4", "fast-rng"] }
+uuid = { version = "1.3.0", features = ["v4", "fast-rng"] }
 validator = "0.16.0"
 which = "4.4.0"
 yaque = "0.6.4"
