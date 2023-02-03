@@ -12,6 +12,8 @@ unsafe-tests = []
 [dependencies]
 camino = "1.1.1"
 fig_util = { path = "../fig_util" }
+once_cell = { version = "1.17.0", features = ["parking_lot"] }
+regex = "1.7.1"
 thiserror = "1.0.38"
 
 [target.'cfg(unix)'.dependencies]

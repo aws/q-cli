@@ -1965,6 +1965,8 @@ dependencies = [
  "fig_ipc",
  "fig_proto",
  "fig_util",
+ "once_cell",
+ "regex",
  "thiserror",
  "tokio",
  "winreg",

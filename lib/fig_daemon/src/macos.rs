@@ -4,6 +4,8 @@ use fig_util::launchd_plist::{
     create_launch_agent,
     LaunchdPlist,
 };
+use once_cell::sync::Lazy;
+use regex::Regex;
 use tokio::process::Command;
 
 use crate::{
@@ -12,6 +14,14 @@ use crate::{
 };
 
 static DAEMON_NAME: &str = "io.fig.dotfiles-daemon";
+
+/// Capture the exit status from the output of `launchctl list <daemon_name>`
+///
+/// Capturing the line that looks like this:
+/// ```
+/// "LastExitStatus" = 0;
+/// ```
+static STATUS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#""LastExitStatus"\s*=\s*(\d+);"#).unwrap());
 
 #[derive(Debug, Default)]
 pub struct Daemon;
@@ -81,16 +91,17 @@ impl Daemon {
     }
 
     pub async fn status(&self) -> Result<Option<i32>> {
-        let output = Command::new("launchctl").arg("list").output().await?;
+        let output = Command::new("launchctl").arg("list").arg(DAEMON_NAME).output().await?;
 
-        let stdout = String::from_utf8_lossy(&output.stdout);
+        if !output.status.success() {
+            return Ok(None);
+        }
 
-        let status = stdout
-            .lines()
-            .map(|line| line.split_whitespace().collect::<Vec<_>>())
-            .find(|line| line.get(2) == Some(&DAEMON_NAME))
-            .and_then(|data| data.get(1).and_then(|v| v.parse::<i32>().ok()));
-
-        Ok(status)
+        STATUS_REGEX
+            .captures(&String::from_utf8_lossy(&output.stdout))
+            .and_then(|caps| caps.get(1))
+            .and_then(|m| m.as_str().parse::<i32>().ok())
+            .map(Ok)
+            .transpose()
     }
 }
