@@ -185,30 +185,11 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         );
     }
 
-    // Validate the script before tui, but after cli
-    let validation = || async {
-        // Validate that each runtime is installed
-        for step in &script.steps {
-            if let ScriptStep::CodeBlock { runtime, .. } = step {
-                runtime_check(runtime).await?;
-            }
-        }
-
-        // validate that all of the script rules pass
-        if let Some(ruleset) = &script.rules {
-            rules_check(ruleset)?;
-        }
-
-        Ok::<(), eyre::Error>(())
-    };
-
     if args.len() > 1 {
         // If the user attempts to pass all their args on the cli, we must execute without prompt
         execute_from_cli(&script, &script_name, args).await?;
-        validation().await?;
     } else {
         // Execute the script, which will exit internally on failure
-        validation().await?;
         let mut parameters_by_name = HashMap::new();
         execute_script(&script, &mut parameters_by_name, execution_method).await?;
     }
@@ -660,6 +641,27 @@ async fn execute_script(
     parameters_by_name: &mut HashMap<String, ParameterValue>,
     execution_method: ExecutionMethod,
 ) -> Result<()> {
+    let daemon_join = tokio::spawn(async {
+        match fig_daemon::Daemon::default().status().await {
+            Ok(Some(0)) => {},
+            _ => {
+                fig_daemon::Daemon::default().restart().await.ok();
+            },
+        }
+    });
+
+    // Validate that each runtime is installed
+    for step in &script.steps {
+        if let ScriptStep::CodeBlock { runtime, .. } = step {
+            runtime_check(runtime).await?;
+        }
+    }
+
+    // validate that all of the script rules pass
+    if let Some(ruleset) = &script.rules {
+        rules_check(ruleset)?;
+    }
+
     let start_time = time::OffsetDateTime::now_utc();
 
     let mut exit_code = None;
@@ -673,6 +675,8 @@ async fn execute_script(
     }
 
     let execution_duration = u64::try_from((OffsetDateTime::now_utc() - start_time).whole_nanoseconds()).ok();
+
+    daemon_join.await.ok();
 
     let script_uuid = script.uuid.clone();
     let script_name = format!("@{}/{}", &script.namespace, &script.name);
