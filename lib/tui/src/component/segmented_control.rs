@@ -36,6 +36,11 @@ impl SegmentedControl {
         }
     }
 
+    pub fn with_index(mut self, index: usize) -> Self {
+        self.index = index;
+        self
+    }
+
     pub fn with_id(mut self, id: impl Into<String>) -> Self {
         self.inner.id = id.into();
         self

@@ -192,7 +192,7 @@ pub async fn execute(args: Vec<String>) -> Result<()> {
         execute_from_cli(&script, &script_name, args).await?;
     } else {
         // Execute the script, which will exit internally on failure
-        let mut parameters_by_name = HashMap::new();
+        let mut parameters_by_name = create_default_map(&script);
         execute_script(&script, &mut parameters_by_name, execution_method).await?;
     }
 
@@ -638,6 +638,39 @@ impl ScriptGeneratorState {
     }
 }
 
+fn create_default_map(script: &Script) -> HashMap<String, ParameterValue> {
+    let mut parameters_by_name = HashMap::new();
+    // Grab the default values for the parameters
+    for step in &script.steps {
+        if let ScriptStep::Inputs { parameters, .. } = step {
+            for parameter in parameters {
+                if let Some(cli) = &parameter.cli {
+                    if let Some(param_type) = &cli.r#type {
+                        match param_type {
+                            ParameterCommandlineInterfaceType::Boolean { default } => {
+                                if let Some(default) = default {
+                                    parameters_by_name.insert(parameter.name.clone(), ParameterValue::Bool {
+                                        val: *default,
+                                        false_value: None,
+                                        true_value: None,
+                                    });
+                                }
+                            },
+                            ParameterCommandlineInterfaceType::String { default } => {
+                                if let Some(default) = default {
+                                    parameters_by_name
+                                        .insert(parameter.name.clone(), ParameterValue::String(default.clone()));
+                                }
+                            },
+                        }
+                    }
+                }
+            }
+        }
+    }
+    parameters_by_name
+}
+
 async fn execute_script(
     script: &Script,
     parameters_by_name: &mut HashMap<String, ParameterValue>,
@@ -922,11 +955,11 @@ fn execute_parameter_block(
             } => {
                 let checked = parameters_by_name
                     .get(&parameter.name)
-                    .map(|val| match val {
-                        ParameterValue::Bool { val, .. } => *val,
-                        _ => false,
+                    .and_then(|val| match val {
+                        ParameterValue::Bool { val, .. } => Some(*val),
+                        _ => None,
                     })
-                    .unwrap_or(false);
+                    .unwrap_or_default();
 
                 parameters_by_name.insert(parameter.name.to_owned(), ParameterValue::Bool {
                     val: checked,
@@ -939,6 +972,7 @@ fn execute_parameter_block(
                         false_toggle_display.clone().unwrap_or_else(|| "False".into()),
                         true_toggle_display.clone().unwrap_or_else(|| "True".into()),
                     ])
+                    .with_index(if checked { 1 } else { 0 })
                     .with_id(&parameter.name),
                 );
 
@@ -1192,7 +1226,7 @@ fn execute_parameter_block(
 
     let mut missing_parameters = vec![];
     for parameter in parameters {
-        if !parameters_by_name.contains_key(&parameter.name) {
+        if !parameters_by_name.contains_key(&parameter.name) && parameter.required.unwrap_or(true) {
             missing_parameters.push(parameter.name.to_owned());
         }
     }
@@ -1294,7 +1328,7 @@ async fn execute_code_block(
             child.kill().await?;
 
             eprintln!();
-            eprintln!("Script cancelled");
+            eprintln!("{}", "Script cancelled".red());
             Ok(130)
         },
         res = child.wait() => Ok(res?.code().unwrap_or(0)),
