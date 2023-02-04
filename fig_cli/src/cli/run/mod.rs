@@ -405,7 +405,7 @@ async fn execute_from_cli(script: &Script, script_name: &str, args: Vec<String>)
                                 arg = arg.value_parser(clap::value_parser!(String));
 
                                 if let Some(default) = default {
-                                    arg = arg.default_value(default.to_string());
+                                    arg = arg.default_value(default.to_string()).required(false);
                                 }
                             },
                         }
