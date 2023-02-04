@@ -4,6 +4,7 @@ mod check_box;
 mod div;
 mod file_picker;
 mod hr;
+mod multiselect;
 mod p;
 mod segmented_control;
 mod select;
@@ -23,6 +24,10 @@ pub use file_picker::{
     FilePickerEvent,
 };
 pub use hr::Hr;
+pub use multiselect::{
+    Multiselect,
+    MultiselectEvent,
+};
 pub use p::P;
 pub use segmented_control::{
     SegmentedControl,

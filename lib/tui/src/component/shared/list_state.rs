@@ -83,8 +83,16 @@ impl ListState {
         self.sorted_options.clear();
     }
 
-    /// An index into the sorted options of the list
     pub fn index(&self) -> Option<usize> {
+        if self.sorted_options.is_empty() {
+            return None;
+        }
+
+        Some(self.index)
+    }
+
+    /// An index into the sorted options of the list
+    pub fn visible_index(&self) -> Option<usize> {
         if self.sorted_options.is_empty() {
             return None;
         }
@@ -92,12 +100,16 @@ impl ListState {
         Some(self.index.saturating_sub(self.index_offset))
     }
 
+    pub fn index_offset(&self) -> usize {
+        self.index_offset
+    }
+
     pub fn set_index(&mut self, index: usize) {
         self.index = self.index_offset.saturating_add(index);
     }
 
     pub fn selection(&self) -> Option<&str> {
-        let index = self.index()?;
+        let index = self.visible_index()?;
         Some(
             self.options
                 .get(*self.sorted_options.get(index.saturating_add(self.index_offset))?)?,

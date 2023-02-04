@@ -1,17 +1,8 @@
-use std::fmt::Display;
-
 use termwiz::cell::unicode_column_width;
 use termwiz::color::ColorAttribute;
-use termwiz::surface::{
-    Change,
-    CursorVisibility,
-    Surface,
-};
+use termwiz::surface::Surface;
 
-use super::shared::{
-    ListState,
-    TextState,
-};
+use super::shared::ListState;
 use super::ComponentData;
 use crate::event_loop::State;
 use crate::input::{
@@ -25,27 +16,25 @@ use crate::{
 };
 
 #[derive(Debug)]
-pub enum SelectEvent {
+pub enum MultiselectEvent {
     /// The user has selected an option
-    OptionSelected { id: String, option: String },
+    OptionsSelected { id: String, options: Vec<String> },
 }
 
 #[derive(Debug)]
-pub struct Select {
-    text_state: TextState,
+pub struct Multiselect {
     list_state: ListState,
     hint: Option<String>,
-    allow_any_text: bool,
+    selection: Vec<usize>,
     inner: ComponentData,
 }
 
-impl Select {
-    pub fn new(options: Vec<String>, allow_any_text: bool) -> Self {
+impl Multiselect {
+    pub fn new(options: Vec<String>) -> Self {
         Self {
-            text_state: TextState::new(""),
             list_state: ListState::new(options),
             hint: None,
-            allow_any_text,
+            selection: vec![],
             inner: ComponentData::new("select".to_owned(), true),
         }
     }
@@ -64,18 +53,13 @@ impl Select {
         self
     }
 
-    pub fn with_text(mut self, text: impl Display) -> Self {
-        self.text_state = TextState::new(text.to_string());
-        self
-    }
-
     pub fn with_hint(mut self, hint: impl Into<String>) -> Self {
         self.hint = Some(hint.into());
         self
     }
 }
 
-impl Component for Select {
+impl Component for Multiselect {
     fn draw(&self, state: &mut State, surface: &mut Surface, x: f64, y: f64, width: f64, height: f64) {
         if height <= 0.0 || width <= 0.0 {
             return;
@@ -91,7 +75,7 @@ impl Component for Select {
 
         surface.draw_text(arrow, x, y, 1.0, style.attributes());
 
-        match self.text_state.text().is_empty() {
+        match self.selection.is_empty() {
             true => {
                 let mut attributes = style.attributes();
                 attributes.set_foreground(ColorAttribute::PaletteIndex(8));
@@ -101,32 +85,34 @@ impl Component for Select {
                 }
             },
             false => {
-                surface.draw_text(
-                    &self.text_state.text()[self
-                        .text_state
-                        .grapheme_index()
-                        .saturating_sub((width.round() - 3.0) as usize)..],
-                    x + 2.0,
-                    y,
-                    width - 2.0,
-                    style.attributes(),
-                );
-            },
-        }
+                let mut options = vec![];
+                for selection in &self.selection {
+                    options.push(self.list_state.options()[*selection].to_owned());
+                }
 
-        if self.inner.focus {
-            state.cursor_position = (
-                x + 2.0 + (self.text_state.grapheme_index() as f64).min(width.round() - 3.0),
-                y,
-            );
-            state.cursor_color = style.caret_color();
-            surface.add_change(Change::CursorVisibility(CursorVisibility::Visible));
+                let text = options.join(", ");
+                surface.draw_text(text, x + 2.0, y, width - 2.0, style.attributes());
+            },
         }
 
         for (i, option) in sorted_options.iter().enumerate() {
             if i + 1 >= height as usize {
                 return;
             }
+
+            let mut attributes = style.attributes();
+            attributes.set_foreground(ColorAttribute::PaletteIndex(2));
+
+            surface.draw_text(
+                match self.selection.contains(&(i + self.list_state.index_offset())) {
+                    true => "✔ ",
+                    false => "  ",
+                },
+                x,
+                y + i as f64 + 1.0,
+                2.0,
+                attributes,
+            );
 
             let mut attributes = style.attributes();
             if let Some(index) = self.list_state.visible_index() {
@@ -147,37 +133,24 @@ impl Component for Select {
                     width,
                     attributes,
                 ),
-                false => surface.draw_text(option, x + 2.0, y + i as f64 + 1.0, text_width, attributes),
+                false => surface.draw_text(option, x + 2.0, y + i as f64 + 1.0, width, attributes),
             }
         }
     }
 
     fn on_input_action(&mut self, _: &mut State, input_action: &InputAction) {
         match input_action {
-            InputAction::Remove => {
-                self.text_state.backspace();
-                self.list_state.sort(self.text_state.text());
-            },
-            InputAction::Submit => {
-                if let Some(selection) = self.list_state.selection() {
-                    self.text_state.set_text(selection);
-                }
-            },
-            InputAction::Left => self.text_state.left(),
-            InputAction::Right => self.text_state.right(),
             InputAction::Up => self.list_state.prev(),
             InputAction::Down => self.list_state.next(),
-            InputAction::Delete => {
-                self.text_state.delete();
-                self.list_state.sort(self.text_state.text());
-            },
-            InputAction::Insert(character) => {
-                self.text_state.character(*character);
-                self.list_state.sort(self.text_state.text());
-            },
-            InputAction::Paste(clipboard) => {
-                self.text_state.paste(clipboard);
-                self.list_state.sort(self.text_state.text());
+            InputAction::Insert(' ') => {
+                if let Some(index) = self.list_state.index() {
+                    match self.selection.iter().position(|selection| *selection == index) {
+                        Some(position) => {
+                            self.selection.remove(position);
+                        },
+                        None => self.selection.push(index),
+                    }
+                }
             },
             _ => (),
         }
@@ -189,34 +162,39 @@ impl Component for Select {
         match focus {
             true => self.list_state.sort(""),
             false => {
-                if !self.allow_any_text && !self.list_state.options().contains(&self.text_state.text().to_owned()) {
-                    self.text_state = TextState::new("");
+                let mut options = vec![];
+                for selection in &self.selection {
+                    options.push(self.list_state.options()[*selection].to_owned());
                 }
 
-                self.list_state.clear();
-
-                if !self.text_state.text().is_empty() {
-                    state.event_buffer.push(Event::Select(SelectEvent::OptionSelected {
+                state
+                    .event_buffer
+                    .push(Event::Multiselect(MultiselectEvent::OptionsSelected {
                         id: self.inner.id.to_owned(),
-                        option: self.text_state.text().to_owned(),
+                        options,
                     }));
-                }
             },
         }
     }
 
-    fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, x: f64, y: f64, _: f64, _: f64) {
+    fn on_mouse_action(&mut self, _: &mut State, mouse_action: &MouseAction, _: f64, y: f64, _: f64, _: f64) {
         if self.inner.focus {
             let index = (mouse_action.y - y).round() as usize;
 
-            if index == 0 {
-                self.text_state.on_mouse_action(mouse_action, x + 2.0);
-            } else {
+            if index > 0 {
                 self.list_state.set_index(index.saturating_sub(1));
                 if mouse_action.just_pressed {
-                    if let Some(selection) = self.list_state.selection() {
-                        self.text_state = TextState::new(selection);
-                        self.list_state.clear();
+                    if let Some(index) = self.list_state.visible_index() {
+                        match self
+                            .selection
+                            .iter()
+                            .position(|selection| selection.saturating_add(self.list_state.index_offset()) == index)
+                        {
+                            Some(position) => {
+                                self.selection.remove(position);
+                            },
+                            None => self.selection.push(index),
+                        }
                     }
                 }
             }
@@ -232,14 +210,12 @@ impl Component for Select {
     }
 
     fn size(&self, _: &mut State) -> (f64, f64) {
-        let mut w = unicode_column_width(self.text_state.text(), None)
-            .max(
-                self.list_state
-                    .options()
-                    .iter()
-                    .fold(0, |acc, option| acc.max(unicode_column_width(option, None))),
-            )
-            .max(60);
+        let mut w = 60.max(
+            self.list_state
+                .options()
+                .iter()
+                .fold(0, |acc, option| acc.max(unicode_column_width(option, None))),
+        );
 
         if let Some(hint) = &self.hint {
             w = w.max(unicode_column_width(hint, None));

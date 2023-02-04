@@ -262,7 +262,7 @@ impl Component for FilePicker {
                     .set_background(ColorAttribute::Default);
             };
 
-            if let Some(index) = self.list_state.index() {
+            if let Some(index) = self.list_state.visible_index() {
                 if !self.typing && i == index {
                     attributes
                         .set_background(attributes.foreground())
@@ -369,7 +369,7 @@ impl Component for FilePicker {
                     return;
                 }
 
-                if self.list_state.index().is_some() {
+                if self.list_state.visible_index().is_some() {
                     self.list_state.prev();
                     self.update_preview();
                 }
@@ -380,7 +380,7 @@ impl Component for FilePicker {
                     return;
                 }
 
-                if self.list_state.index().is_some() {
+                if self.list_state.visible_index().is_some() {
                     self.list_state.next();
                     self.update_preview();
                 }

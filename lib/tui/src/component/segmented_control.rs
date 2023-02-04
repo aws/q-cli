@@ -110,13 +110,13 @@ impl Component for SegmentedControl {
             let mouse_x = mouse_action.x - x;
             let mut acc = 0;
             for (i, option) in self.options.iter().enumerate() {
-                if mouse_x < (acc + unicode_column_width(option, None) + 3) as f64 {
+                if mouse_x < (acc + unicode_column_width(option, None).saturating_add(3)) as f64 {
                     self.index = i;
                     self.push_selection_changed_event(state);
                     break;
                 }
 
-                acc += unicode_column_width(option, None) + 3;
+                acc += unicode_column_width(option, None).saturating_add(3);
             }
         }
     }

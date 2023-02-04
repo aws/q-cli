@@ -68,6 +68,7 @@ fragment Parameter on ScriptParameter {
     placeholder
     suggestions
     allowRawTextInput
+    multi
   }
   path {
     extensions

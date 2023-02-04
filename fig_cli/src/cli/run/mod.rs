@@ -58,6 +58,8 @@ use tui::component::{
     FilePicker,
     FilePickerEvent,
     Hr,
+    Multiselect,
+    MultiselectEvent,
     SegmentedControl,
     SegmentedControlEvent,
     Select,
@@ -804,6 +806,7 @@ fn execute_parameter_block(
                 suggestions,
                 generators,
                 allow_raw_text_input,
+                multi,
             } => {
                 let parameter_value = parameters_by_name
                     .get(&parameter.name)
@@ -826,31 +829,75 @@ fn execute_parameter_block(
                     generator_map.insert(parameter.name.to_owned(), generator_states);
                 }
 
-                parameter_div = parameter_div.push(
-                    Select::new(options, allow_raw_text_input.unwrap_or(false))
-                        .with_id(&parameter.name)
-                        .with_text(parameter_value)
-                        .with_hint(placeholder.as_deref().unwrap_or("Search...")),
-                );
+                match multi.unwrap_or_default() {
+                    true => {
+                        parameter_div = parameter_div.push(
+                            Multiselect::new(options)
+                                .with_id(parameter_name)
+                                .with_hint(placeholder.as_deref().unwrap_or("one, two, three")),
+                        );
 
-                Some(
-                    P::new()
-                        .with_class("keybindings")
-                        .push_styled_text(
-                            "↑/↓",
-                            ColorAttribute::PaletteIndex(3),
-                            ColorAttribute::Default,
-                            false,
-                            false,
+                        Some(
+                            P::new()
+                                .with_class("keybindings")
+                                .push_styled_text(
+                                    "↑/↓",
+                                    ColorAttribute::PaletteIndex(3),
+                                    ColorAttribute::Default,
+                                    false,
+                                    false,
+                                )
+                                .push_styled_text(
+                                    " up/down ",
+                                    ColorAttribute::Default,
+                                    ColorAttribute::Default,
+                                    false,
+                                    false,
+                                )
+                                .push_styled_text(
+                                    "⎵",
+                                    ColorAttribute::PaletteIndex(3),
+                                    ColorAttribute::Default,
+                                    false,
+                                    false,
+                                )
+                                .push_styled_text(
+                                    " toggle",
+                                    ColorAttribute::Default,
+                                    ColorAttribute::Default,
+                                    false,
+                                    false,
+                                ),
                         )
-                        .push_styled_text(
-                            " up/down",
-                            ColorAttribute::Default,
-                            ColorAttribute::Default,
-                            false,
-                            false,
-                        ),
-                )
+                    },
+                    false => {
+                        parameter_div = parameter_div.push(
+                            Select::new(options, allow_raw_text_input.unwrap_or(false))
+                                .with_id(&parameter.name)
+                                .with_text(parameter_value)
+                                .with_hint(placeholder.as_deref().unwrap_or("Search...")),
+                        );
+
+                        Some(
+                            P::new()
+                                .with_class("keybindings")
+                                .push_styled_text(
+                                    "↑/↓",
+                                    ColorAttribute::PaletteIndex(3),
+                                    ColorAttribute::Default,
+                                    false,
+                                    false,
+                                )
+                                .push_styled_text(
+                                    " up/down",
+                                    ColorAttribute::Default,
+                                    ColorAttribute::Default,
+                                    false,
+                                    false,
+                                ),
+                        )
+                    },
+                }
             },
             ParameterType::Text { placeholder } => {
                 let parameter_value = parameters_by_name
@@ -1097,6 +1144,16 @@ fn execute_parameter_block(
                         selectors_pending_update.extend(selectors)
                     }
                     parameters_by_name.insert(id, ParameterValue::String(path.to_string_lossy().to_string()));
+                }
+            },
+        },
+        Event::Multiselect(event) => match event {
+            MultiselectEvent::OptionsSelected { id, options } => {
+                if !id.is_empty() {
+                    if let Some(selectors) = parameter_dependencies.get(&id) {
+                        selectors_pending_update.extend(selectors)
+                    }
+                    parameters_by_name.insert(id, ParameterValue::Array(options));
                 }
             },
         },
