@@ -38,7 +38,7 @@ use clap::{
     Subcommand,
     ValueEnum,
 };
-use color_eyre::owo_colors::OwoColorize;
+use crossterm::style::Stylize;
 use eyre::{
     Result,
     WrapErr,
@@ -55,6 +55,9 @@ use fig_util::desktop::{
 use fig_util::{
     directories,
     is_fig_desktop_running,
+    manifest,
+    open_url_async,
+    system_info,
 };
 use tracing::debug;
 use tracing::level_filters::LevelFilter;
@@ -236,7 +239,7 @@ pub enum CliRootCommands {
 
  \x1B[1;95mPopular Subcommands\x1B[0m           \x1B[1;90mUsage:\x1B[0;90m fig [subcommand]\x1B[0m
 ╭────────────────────────────────────────────────────╮
-│ \x1B[1mai\x1B[0m             \x1B[0;90mTranslate English → Bash\x1B[0m            │
+│ \x1B[1mrun\x1B[0m            \x1B[0;90mExecute a Fig Script\x1B[0m                │
 │ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m     │
 │ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                     │
 │ \x1B[1mupdate\x1B[0m         \x1B[0;90mCheck for updates\x1B[0m                   │
@@ -380,6 +383,14 @@ impl Cli {
 }
 
 async fn launch_dashboard() -> Result<()> {
+    if manifest::is_headless() || system_info::is_remote() {
+        match open_url_async("https://app.fig.io").await {
+            Ok(_) => eprintln!("Opening dashboard in browser..."),
+            Err(_) => eprintln!("Go to {} to open the dashboard", "https://app.fig.io".magenta()),
+        }
+        return Ok(());
+    }
+
     launch_fig_desktop(LaunchArgs {
         wait_for_socket: true,
         open_dashboard: true,

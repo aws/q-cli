@@ -1,7 +1,9 @@
+use std::io::Write;
 use std::iter::empty;
 use std::process::exit;
 use std::time::Duration;
 
+use arboard::Clipboard;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::{
@@ -38,6 +40,7 @@ use fig_telemetry::{
     TrackEventType,
     TrackSource,
 };
+use fig_util::open_url;
 use fig_util::system_info::is_remote;
 use serde_json::{
     json,
@@ -105,9 +108,10 @@ impl RootUserSubcommand {
                     }
                 }
 
-                const OPTION_EMAIL: &str = "Log in with email";
+                const OPTION_GITHUB: &str = "Sign in with GitHub";
+                const OPTION_EMAIL: &str = "Sign in with Email";
+                const OPTION_REMOTE: &str = "Sign in with local machine";
                 const OPTION_NOT_NOW: &str = "Not now";
-                const OPTION_REMOTE: &str = "Log in with local machine";
 
                 let mut options = vec![];
                 if is_remote() {
@@ -141,6 +145,7 @@ impl RootUserSubcommand {
                         Err(err) => error!(%err, "failed checking local credentials"),
                     }
                 }
+                options.push(OPTION_GITHUB);
                 options.push(OPTION_EMAIL);
                 if not_now {
                     options.push(OPTION_NOT_NOW);
@@ -162,6 +167,80 @@ impl RootUserSubcommand {
 
                 match chosen {
                     OPTION_NOT_NOW => {},
+                    OPTION_GITHUB => {
+                        // ! First copy your one-time code: 82AD-4E27
+                        // Press Enter to open github.com in your browser...
+
+                        let out = fig_request::Request::post("/auth/github/device-code").json().await?;
+
+                        let device_code = out["deviceCode"].as_str().unwrap();
+                        let user_code = out["userCode"].as_str().unwrap();
+                        let verification_uri = out["verificationUri"].as_str().unwrap();
+                        let _expires_in = out["expiresIn"].as_u64().unwrap();
+                        let interval = out["interval"].as_u64().unwrap();
+
+                        // Try to copy the code to the clipboard
+                        if let Ok(mut clipboard) = Clipboard::new() {
+                            clipboard.set_text(user_code).ok();
+                        }
+
+                        println!();
+                        println!("First copy your one-time code: {}", user_code.bold().magenta());
+                        print!(
+                            "{} to open github.com in your browser... ",
+                            "Press Enter".bold().magenta()
+                        );
+                        std::io::stdout().flush()?;
+
+                        let _ = std::io::stdin().read_line(&mut String::new())?;
+
+                        match open_url(verification_uri) {
+                            Ok(_) => println!("Opened {} in your browser", verification_uri.bold().magenta()),
+                            Err(_) => println!(
+                                "Failed to open browser, please open {} in your browser",
+                                verification_uri.bold().magenta()
+                            ),
+                        }
+
+                        loop {
+                            tokio::time::sleep(Duration::from_secs(interval)).await;
+
+                            let res = fig_request::Request::post("/auth/github/device-poll")
+                                .body_json(json!({
+                                    "deviceCode": device_code,
+                                }))
+                                .json()
+                                .await?;
+
+                            match res["type"].as_str().unwrap() {
+                                "Pending" => continue,
+                                "SlowDown" => {
+                                    tokio::time::sleep(Duration::from_secs(5)).await;
+                                    continue;
+                                },
+                                "Success" => {
+                                    let email = res["email"].as_str().unwrap();
+                                    let access_token = res["accessToken"].as_str().unwrap();
+                                    let id_token = res["idToken"].as_str().unwrap();
+                                    let refresh_token = res["refreshToken"].as_str().unwrap();
+
+                                    let creds = Credentials::new(
+                                        Some(email.to_owned()),
+                                        Some(access_token.to_owned()),
+                                        Some(id_token.to_owned()),
+                                        Some(refresh_token.to_owned()),
+                                        false,
+                                    );
+                                    creds.save_credentials()?;
+
+                                    println!();
+                                    println!("Logged in as {}", email.bold().magenta());
+                                    break;
+                                },
+                                other => eyre::bail!("Unexpected response from github: {other}"),
+                            }
+                        }
+                    },
                     OPTION_EMAIL => {
                         if email.is_none() {
                             println!("{}", "Login to Fig".bold().magenta());
