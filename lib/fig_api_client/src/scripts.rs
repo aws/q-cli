@@ -603,6 +603,7 @@ fn map_scripts(script: fig_graphql::scripts::ScriptFields) -> Script {
     map_script!(script)
 }
 
+/// GraphQL query to get a script by name and maybe namespace
 pub async fn script(
     namespace: impl Into<Option<String>>,
     name: impl Into<String>,
@@ -618,6 +619,7 @@ pub async fn script(
     Ok(Some(map_script(script)))
 }
 
+/// GraphQL query to get all scripts for the current user
 pub async fn scripts() -> fig_request::Result<Vec<Script>> {
     let data = fig_graphql::scripts!().await?;
     let Some(current_user) = data.current_user else {
@@ -643,6 +645,22 @@ pub async fn scripts() -> fig_request::Result<Vec<Script>> {
     }
 
     Ok(scripts.into_iter().map(map_scripts).collect())
+}
+
+/// Determines whether or not the script cache should be used
+///
+/// Disable if `FIG_DISABLE_SCRIPT_CACHE` env var is set, if `script.cache` setting is set to false,
+/// or if we're in WSL
+pub fn use_cache() -> bool {
+    if std::env::var_os("FIG_DISABLE_SCRIPT_CACHE").is_some() {
+        return false;
+    }
+
+    if let Ok(Some(val)) = fig_settings::settings::get_bool("script.cache") {
+        return val;
+    }
+
+    !fig_util::system_info::in_wsl()
 }
 
 /// Caches the scripts and returns them
@@ -685,6 +703,10 @@ static FILE_NAME_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r".*\..*\.json").u
 
 // Attempts to get cached scripts, then falls back to synced scripts
 pub async fn get_cached_scripts() -> fig_request::Result<Vec<Script>> {
+    if !use_cache() {
+        return scripts().await;
+    }
+
     let scripts_cache_dir = scripts_cache_dir()?;
     tokio::fs::create_dir_all(&scripts_cache_dir).await?;
 
@@ -757,6 +779,10 @@ pub async fn get_cached_script(
     namespace: impl Into<Option<String>>,
     name: impl Into<String>,
 ) -> fig_request::Result<Option<Script>> {
+    if !use_cache() {
+        return script(namespace, name).await;
+    }
+
     let namespace = namespace.into();
     let name = name.into();
     let file_path = match &namespace {

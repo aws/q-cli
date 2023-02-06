@@ -385,7 +385,7 @@ impl Cli {
 async fn launch_dashboard() -> Result<()> {
     if manifest::is_headless() || system_info::is_remote() {
         match open_url_async("https://app.fig.io").await {
-            Ok(_) => eprintln!("Opening dashboard in browser..."),
+            Ok(_) => eprintln!("Opening {} in browser...", "https://app.fig.io".magenta()),
             Err(_) => eprintln!("Go to {} to open the dashboard", "https://app.fig.io".magenta()),
         }
         return Ok(());

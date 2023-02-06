@@ -53,9 +53,11 @@ use tracing::{
 };
 
 use super::OutputFormat;
+use crate::util::spinner::SpinnerComponent;
 use crate::util::{
     choose,
     dialoguer_theme,
+    spinner,
 };
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
@@ -235,6 +237,7 @@ impl RootUserSubcommand {
 
                                     println!();
                                     println!("Logged in as {}", email.bold().magenta());
+                                    println!();
                                     break;
                                 },
                                 other => eyre::bail!("Unexpected response from github: {other}"),
@@ -319,8 +322,11 @@ impl RootUserSubcommand {
                                     telem_join.ok();
                                     login_join?;
 
-                                    println!("Login successful!");
-                                    return Ok(());
+                                    println!();
+                                    println!("Logged in as {}", trimmed_email.bold().magenta());
+                                    println!();
+
+                                    break;
                                 },
                                 Err(err) => match err {
                                     SignInConfirmError::InvalidCode => {
@@ -396,6 +402,42 @@ impl RootUserSubcommand {
                     },
                     _ => unreachable!(),
                 }
+
+                let mut spin = spinner::Spinner::new(vec![
+                    SpinnerComponent::Text("Finishing up ".into()),
+                    SpinnerComponent::Spinner,
+                ]);
+
+                if let Err(err) = fig_api_client::settings::sync().await {
+                    error!(%err, "Failed to sync settings");
+                }
+
+                let daemon = fig_daemon::Daemon::default();
+
+                let (dotfiles_res, plugins_res, script_res, daemon_res) = tokio::join!(
+                    fig_sync::dotfiles::download_and_notify(false),
+                    fig_sync::plugins::fetch_installed_plugins(false),
+                    fig_api_client::scripts::sync_scripts(),
+                    daemon.restart()
+                );
+
+                if let Err(err) = dotfiles_res {
+                    error!(%err, "Failed to sync dotfiles");
+                }
+
+                if let Err(err) = plugins_res {
+                    error!(%err, "Failed to sync plugins");
+                }
+
+                if let Err(err) = script_res {
+                    error!(%err, "Failed to sync scripts");
+                }
+
+                if let Err(err) = daemon_res {
+                    error!(%err, "Failed to restart daemon");
+                }
+
+                spin.stop();
 
                 Ok(())
             },

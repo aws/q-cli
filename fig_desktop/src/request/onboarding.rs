@@ -24,6 +24,43 @@ use crate::{
     DASHBOARD_ID,
 };
 
+// Sync all of the user's data from the server and restart the daemon after they log in
+pub async fn post_login(proxy: &EventLoopProxy) {
+    tokio::spawn(async {
+        // Settings has to be synced first because it contains information that might
+        // modify the behavior of other syncs
+        if let Err(err) = fig_api_client::settings::sync().await {
+            error!(%err, "Failed to sync settings");
+        }
+
+        tokio::spawn(async {
+            if let Err(err) = fig_sync::dotfiles::download_and_notify(false).await {
+                error!(%err, "Failed to download dotfiles");
+            }
+        });
+
+        tokio::spawn(async {
+            if let Err(err) = fig_sync::plugins::fetch_installed_plugins(false).await {
+                error!(%err, "Failed to fetch installed plugins");
+            }
+        });
+
+        tokio::spawn(async {
+            if let Err(err) = fig_api_client::scripts::sync_scripts().await {
+                error!(%err, "Failed to sync scripts");
+            }
+        });
+
+        tokio::spawn(async {
+            if let Err(err) = fig_daemon::Daemon::default().restart().await {
+                error!(%err, "Failed to restart daemon");
+            }
+        });
+    });
+
+    proxy.send_event(Event::ReloadTray).ok();
+}
+
 pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> RequestResult {
     match request.action() {
         OnboardingAction::InstallationScript => {
@@ -66,34 +103,7 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
             result
         },
         OnboardingAction::FinishOnboarding => {
-            // Sync all of the user's files when they finish onboarding
-            tokio::spawn(async {
-                // Settings has to be synced first because it contains information that might
-                // modify the behavior of other syncs
-                if let Err(err) = fig_api_client::settings::sync().await {
-                    error!(%err, "Failed to sync settings");
-                }
-
-                tokio::spawn(async {
-                    if let Err(err) = fig_sync::dotfiles::download_and_notify(false).await {
-                        error!(%err, "Failed to download dotfiles");
-                    }
-                });
-
-                tokio::spawn(async {
-                    if let Err(err) = fig_sync::plugins::fetch_installed_plugins(false).await {
-                        error!(%err, "Failed to fetch installed plugins");
-                    }
-                });
-
-                tokio::spawn(async {
-                    if let Err(err) = fig_api_client::scripts::sync_scripts().await {
-                        error!(%err, "Failed to sync scripts");
-                    }
-                });
-            });
-
-            proxy.send_event(Event::ReloadTray).ok();
+            post_login(proxy).await;
 
             proxy
                 .send_event(Event::WindowEvent {
@@ -159,6 +169,10 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
                 } => RequestResult::error(message),
                 _ => RequestResult::error("Failed to prompt for accessibility permissions"),
             }
+        },
+        OnboardingAction::PostLogin => {
+            post_login(proxy).await;
+            RequestResult::success()
         },
         OnboardingAction::CloseAccessibilityPromptWindow
         | OnboardingAction::RequestRestart
