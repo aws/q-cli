@@ -29,7 +29,7 @@ console = ["tokio/tracing", "fig_log/console"]
 custom-protocol = []
 
 [dependencies]
-anyhow = "1.0.68"
+anyhow = "1.0.69"
 async-trait = "0.1.64"
 base64 = "0.21.0"
 bytes = "1.4.0"

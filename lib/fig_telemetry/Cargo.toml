@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-anyhow = "1.0.68"
+anyhow = "1.0.69"
 fig_ipc = { path = "../fig_ipc" }
 fig_proto = { path = "../fig_proto" }
 fig_request = { path = "../fig_request" }
