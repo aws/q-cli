@@ -17,7 +17,7 @@ paste = "1.0.11"
 rand = "0.8.5"
 regex = "1.6.0"
 serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.91"
+serde_json = "1.0.92"
 sha2 = "0.10.6"
 strum = { version = "0.24.1", features = ["derive"] }
 thiserror = "1.0.38"

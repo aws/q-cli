@@ -64,7 +64,7 @@ self_update = { version = "0.34.0", default-features = false, features = [
 ] }
 semver = "1.0.16"
 serde = { version = "1.0.152", features = ["derive"] }
-serde_json = "1.0.91"
+serde_json = "1.0.92"
 shlex = "1.1.0"
 spinners = "4.1.0"
 sysinfo = "0.27.7"
