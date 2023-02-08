@@ -1084,9 +1084,10 @@ fn execute_parameter_block(
     let mut update_select_options_in_view =
         |id: &String, view: &mut dyn Component, arg_values: &HashMap<String, ParameterValue>| {
             let did_execute = match generator_map.get_mut(id) {
-                Some(gens) => gens.iter_mut().any(|gen| gen.execute(arg_values)),
+                Some(gens) => gens.iter_mut().all(|gen| gen.execute(arg_values)),
                 None => false,
             };
+
             if did_execute {
                 if let ParameterType::Selector { suggestions, .. } = &parameter_map.get(id).unwrap().parameter_type {
                     let mut options = suggestions.to_owned().unwrap_or_default();
