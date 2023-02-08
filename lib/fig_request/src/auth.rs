@@ -4,6 +4,7 @@ use std::fs::{
     File,
 };
 use std::path::PathBuf;
+use std::time::Duration;
 
 use base64::prelude::*;
 use fig_util::directories;
@@ -19,9 +20,12 @@ use serde::{
 use serde_json::json;
 use thiserror::Error;
 
-use crate::Request;
+use crate::{
+    Error,
+    Request,
+};
 
-type Result<T, E = crate::Error> = std::result::Result<T, E>;
+type Result<T, E = Error> = std::result::Result<T, E>;
 
 async fn get_file_token() -> Result<String> {
     let mut creds = Credentials::load_credentials()?;
@@ -78,7 +82,7 @@ pub struct SignInInput {
 #[derive(Debug, Error)]
 pub enum SignInError {
     #[error(transparent)]
-    Request(#[from] crate::Error),
+    Request(#[from] Error),
 }
 
 impl SignInInput {
@@ -86,7 +90,7 @@ impl SignInInput {
         Self { email: email.into() }
     }
 
-    pub async fn sign_in(&self) -> Result<SignInOutput, crate::Error> {
+    pub async fn sign_in(&self) -> Result<SignInOutput, Error> {
         Request::post("/auth/login/init")
             .body_json(&json!(self))
             .deser_json()
@@ -122,7 +126,7 @@ pub enum SignInConfirmError {
     #[error("too many attempts")]
     TooManyAttempts,
     #[error(transparent)]
-    Request(#[from] crate::Error),
+    Request(#[from] Error),
 }
 
 impl SignInOutput {
@@ -137,7 +141,7 @@ impl SignInOutput {
             .await?;
 
         let status = resp.status();
-        let text = resp.text().await.map_err(crate::Error::Reqwest)?;
+        let text = resp.text().await.map_err(Error::Reqwest)?;
 
         match serde_json::from_str::<ConfirmOutput>(&text) {
             Ok(ConfirmOutput::Success {
@@ -150,11 +154,13 @@ impl SignInOutput {
                 #[allow(deprecated)]
                 Ok(Credentials {
                     email: Some(email),
-                    access_token: Some(access_token),
-                    id_token: Some(id_token),
-                    refresh_token: Some(refresh_token),
-                    refresh_token_expired: Some(false),
-                    expiration_time: None,
+                    credentials_type: CredentialsType::Jwt {
+                        access_token: Some(access_token),
+                        id_token: Some(id_token),
+                        refresh_token: Some(refresh_token),
+                        refresh_token_expired: Some(false),
+                        expiration_time: None,
+                    },
                 })
             },
             Ok(ConfirmOutput::InvalidCode) => Err(SignInConfirmError::InvalidCode),
@@ -173,21 +179,45 @@ where
     Ok(time::serde::rfc3339::option::deserialize(d).ok().flatten())
 }
 
+#[derive(Debug, Clone, Serialize, Deserialize, PartialEq, Eq)]
+#[serde(untagged)]
+pub enum CredentialsType {
+    Jwt {
+        access_token: Option<String>,
+        id_token: Option<String>,
+        refresh_token: Option<String>,
+        refresh_token_expired: Option<bool>,
+        /// Expiration time was used in past, we keep it here for backward compatibility,
+        /// in the future the JWT will be used to determine expiration time.
+        #[deprecated]
+        #[serde(
+            serialize_with = "time::serde::rfc3339::option::serialize",
+            deserialize_with = "rfc3339_deserialize_ignore_error"
+        )]
+        expiration_time: Option<time::OffsetDateTime>,
+    },
+    FigToken {
+        fig_token: Option<String>,
+    },
+}
+
+impl Default for CredentialsType {
+    fn default() -> Self {
+        Self::Jwt {
+            access_token: None,
+            id_token: None,
+            refresh_token: None,
+            refresh_token_expired: None,
+            expiration_time: None,
+        }
+    }
+}
+
 #[derive(Debug, Clone, Default, Serialize, Deserialize, PartialEq, Eq)]
 pub struct Credentials {
     pub email: Option<String>,
-    pub access_token: Option<String>,
-    pub id_token: Option<String>,
-    pub refresh_token: Option<String>,
-    pub refresh_token_expired: Option<bool>,
-    /// Expiration time was used in past, we keep it here for backward compatibility,
-    /// in the future the JWT will be used to determine expiration time.
-    #[deprecated]
-    #[serde(
-        serialize_with = "time::serde::rfc3339::option::serialize",
-        deserialize_with = "rfc3339_deserialize_ignore_error"
-    )]
-    expiration_time: Option<time::OffsetDateTime>,
+    #[serde(flatten)]
+    pub credentials_type: CredentialsType,
 }
 
 #[derive(Debug, Serialize, Deserialize)]
@@ -209,6 +239,8 @@ pub enum RefreshError {
     RefreshTokenExpired,
     #[error("refresh token not set")]
     RefreshTokenNotSet,
+    #[error("cannot refresh fig token")]
+    CannotRefreshFigToken,
 }
 
 impl Credentials {
@@ -227,7 +259,7 @@ impl Credentials {
         Ok(Credentials::account_credentials_dir()?.join(format!("{email}.json")))
     }
 
-    pub fn new(
+    pub fn new_jwt(
         email: impl Into<Option<String>>,
         access_token: Option<String>,
         id_token: Option<String>,
@@ -237,11 +269,20 @@ impl Credentials {
         #[allow(deprecated)]
         Self {
             email: email.into(),
-            access_token,
-            id_token,
-            refresh_token,
-            refresh_token_expired: Some(refresh_token_expired),
-            expiration_time: None,
+            credentials_type: CredentialsType::Jwt {
+                access_token,
+                id_token,
+                refresh_token,
+                refresh_token_expired: Some(refresh_token_expired),
+                expiration_time: None,
+            },
+        }
+    }
+
+    pub fn new_fig_token(email: Option<String>, fig_token: Option<String>) -> Self {
+        Self {
+            email,
+            credentials_type: CredentialsType::FigToken { fig_token },
         }
     }
 
@@ -266,17 +307,25 @@ impl Credentials {
         {
             use crate::defaults::remove_default;
 
-            if self.id_token.is_none() {
-                remove_default("id_token").ok();
-            }
+            if let CredentialsType::Jwt {
+                access_token,
+                id_token,
+                refresh_token,
+                ..
+            } = &self.credentials_type
+            {
+                if id_token.is_none() {
+                    remove_default("id_token").ok();
+                }
 
-            if self.access_token.is_none() {
-                remove_default("access_token").ok();
-            }
+                if access_token.is_none() {
+                    remove_default("access_token").ok();
+                }
 
-            if self.refresh_token.is_none() {
-                remove_default("refresh_token").ok();
-            }
+                if refresh_token.is_none() {
+                    remove_default("refresh_token").ok();
+                }
+            };
 
             if self.email.is_none() {
                 remove_default("userEmail").ok();
@@ -290,70 +339,81 @@ impl Credentials {
         let creds_path = Credentials::path()?;
 
         if !creds_path.exists() {
-            return Err(crate::Error::NoToken);
+            return Err(Error::NoToken);
         }
 
         Ok(serde_json::from_reader(File::open(creds_path)?)?)
     }
 
-    pub async fn refresh_credentials(&mut self) -> Result<(), crate::Error> {
-        if let Ok(data_dir) = directories::fig_data_dir() {
-            if let Ok(token) = std::fs::read_to_string(data_dir.join("token_is_expired")) {
-                if self.refresh_token.as_deref().unwrap_or_default() == token {
+    pub async fn refresh_credentials(&mut self) -> Result<(), Error> {
+        match &mut self.credentials_type {
+            CredentialsType::Jwt {
+                ref mut access_token,
+                ref mut id_token,
+                ref mut refresh_token,
+                ref mut refresh_token_expired,
+                ..
+            } => {
+                if let Ok(data_dir) = directories::fig_data_dir() {
+                    if let Ok(token) = std::fs::read_to_string(data_dir.join("token_is_expired")) {
+                        if refresh_token.as_deref().unwrap_or_default() == token {
+                            return Err(RefreshError::RefreshTokenExpired.into());
+                        }
+                    }
+                }
+
+                if let Some(true) = refresh_token_expired {
                     return Err(RefreshError::RefreshTokenExpired.into());
                 }
-            }
-        }
 
-        if let Some(true) = self.refresh_token_expired {
-            return Err(RefreshError::RefreshTokenExpired.into());
-        }
+                let refresh_token_str = refresh_token.as_ref().ok_or(RefreshError::RefreshTokenNotSet)?;
 
-        let refresh_token = self.refresh_token.as_ref().ok_or(RefreshError::RefreshTokenNotSet)?;
+                let resp = Request::post("/auth/refresh")
+                    .body_json(&json!({
+                        "refreshToken": refresh_token_str,
+                    }))
+                    .send()
+                    .await?;
 
-        let resp = Request::post("/auth/refresh")
-            .body_json(&json!({
-                "refreshToken": refresh_token,
-            }))
-            .send()
-            .await?;
+                let status = resp.status();
+                let text = resp.text().await.map_err(Error::Reqwest)?;
 
-        let status = resp.status();
-        let text = resp.text().await.map_err(crate::Error::Reqwest)?;
+                match serde_json::from_str::<RefreshResponse>(&text) {
+                    Ok(RefreshResponse::Success {
+                        access_token: new_access_token,
+                        id_token: new_id_token,
+                        refresh_token: new_refresh_token,
+                    }) => {
+                        if let Ok(data_dir) = directories::fig_data_dir() {
+                            std::fs::remove_file(data_dir.join("token_is_expired")).ok();
+                        }
 
-        match serde_json::from_str::<RefreshResponse>(&text) {
-            Ok(RefreshResponse::Success {
-                access_token,
-                id_token,
-                refresh_token,
-            }) => {
-                if let Ok(data_dir) = directories::fig_data_dir() {
-                    std::fs::remove_file(data_dir.join("token_is_expired")).ok();
+                        *refresh_token = new_refresh_token;
+                        *access_token = new_access_token;
+                        *id_token = new_id_token;
+                        *refresh_token_expired = Some(false);
+
+                        Ok(())
+                    },
+                    Ok(RefreshResponse::MissingRefreshToken) => Err(RefreshError::RefreshTokenNotSet.into()),
+                    Ok(RefreshResponse::RefreshTokenExpired) => {
+                        if let Ok(data_dir) = directories::fig_data_dir() {
+                            std::fs::write(
+                                data_dir.join("token_is_expired"),
+                                refresh_token.as_deref().unwrap_or_default(),
+                            )
+                            .ok();
+                        }
+
+                        *refresh_token_expired = Some(true);
+                        self.save_credentials().ok();
+
+                        Err(RefreshError::RefreshTokenExpired.into())
+                    },
+                    Err(_) => Err(crate::parse_fig_error_response(status, text)),
                 }
-
-                self.refresh_token = refresh_token;
-                self.access_token = access_token;
-                self.id_token = id_token;
-                self.refresh_token_expired = Some(false);
-
-                Ok(())
             },
-            Ok(RefreshResponse::MissingRefreshToken) => Err(RefreshError::RefreshTokenNotSet.into()),
-            Ok(RefreshResponse::RefreshTokenExpired) => {
-                if let Ok(data_dir) = directories::fig_data_dir() {
-                    std::fs::write(
-                        data_dir.join("token_is_expired"),
-                        self.refresh_token.as_deref().unwrap_or_default(),
-                    )
-                    .ok();
-                }
-
-                self.refresh_token_expired = Some(true);
-                self.save_credentials().ok();
-
-                Err(RefreshError::RefreshTokenExpired.into())
-            },
-            Err(_) => Err(crate::parse_fig_error_response(status, text)),
+            CredentialsType::FigToken { .. } => Err(RefreshError::CannotRefreshFigToken.into()),
         }
     }
 
@@ -362,52 +422,58 @@ impl Credentials {
         *self = Self::default();
     }
 
-    pub fn get_access_token(&self) -> Option<&str> {
-        self.access_token.as_deref()
-    }
+    pub fn is_expired_epsilon(&self, epsilon: Duration) -> bool {
+        match &self.credentials_type {
+            CredentialsType::Jwt { access_token, .. } => {
+                let Some(access_token) = access_token else {
+                    return true;
+                };
+                let Ok(token) = Token::<Header, RegisteredClaims, _>::parse_unverified(access_token) else {
+                    return true;
+                };
+                let Some(expiration_time) = token.claims().expiration else {
+                    return true;
+                };
+                let expiration_time = std::time::UNIX_EPOCH + Duration::from_secs(expiration_time);
 
-    pub fn get_id_token(&self) -> Option<&str> {
-        self.id_token.as_deref()
-    }
-
-    pub fn get_refresh_token(&self) -> Option<&str> {
-        self.refresh_token.as_deref()
-    }
-
-    pub fn get_expiration_time(&self) -> Option<time::OffsetDateTime> {
-        let access_token = self.access_token.as_ref()?;
-        let token: Token<Header, RegisteredClaims, _> = Token::parse_unverified(access_token).ok()?;
-        time::OffsetDateTime::from_unix_timestamp(token.claims().expiration?.try_into().ok()?).ok()
-    }
-
-    pub fn is_expired_epsilon(&self, epsilon: time::Duration) -> bool {
-        match self.get_expiration_time() {
-            Some(expiration_time) => expiration_time + epsilon < time::OffsetDateTime::now_utc(),
-            None => true,
+                expiration_time + epsilon < std::time::SystemTime::now()
+            },
+            // Currently we are not tracking the expiration of FigTokens
+            CredentialsType::FigToken { .. } => false,
         }
     }
 
     pub fn is_expired(&self) -> bool {
-        self.is_expired_epsilon(time::Duration::seconds(30))
+        self.is_expired_epsilon(Duration::from_secs(30))
     }
 
     pub fn get_email(&self) -> Option<&String> {
         self.email.as_ref()
     }
 
-    /// Encodes the credentials as a base64 string for authentication
+    /// Encodes the credentials encoded for the Bearer header
     pub fn encode(&self) -> Result<String> {
-        if self.access_token.is_none() || self.id_token.is_none() {
-            return Err(crate::Error::NoToken);
-        }
+        match &self.credentials_type {
+            CredentialsType::Jwt {
+                access_token, id_token, ..
+            } => {
+                if access_token.is_none() || id_token.is_none() {
+                    return Err(Error::NoToken);
+                }
 
-        Ok(BASE64_STANDARD.encode(
-            json!({
-                "accessToken": self.access_token,
-                "idToken": self.id_token
-            })
-            .to_string(),
-        ))
+                Ok(BASE64_STANDARD.encode(
+                    json!({
+                        "accessToken": access_token,
+                        "idToken": id_token
+                    })
+                    .to_string(),
+                ))
+            },
+            CredentialsType::FigToken { fig_token } => match fig_token {
+                Some(fig_token) => Ok(fig_token.clone()),
+                None => Err(Error::NoToken),
+            },
+        }
     }
 }
 
@@ -416,7 +482,7 @@ mod tests {
     use super::*;
 
     fn mock_credentials() -> Credentials {
-        Credentials::new(
+        Credentials::new_jwt(
             "test@fig.io".to_owned(),
             Some("access_token".to_string()),
             None,

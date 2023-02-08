@@ -179,7 +179,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         if fig_settings::state::get_bool_or("shell-integrations.immediateLogin", false)
             && fig_settings::state::set_value("shell-integrations.immediateLogin", false).is_ok()
         {
-            to_source.push("fig login --not-now".into());
+            to_source.push("fig login".into());
         }
     }
 

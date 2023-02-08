@@ -42,7 +42,9 @@ pub type Result<T, E = Error> = std::result::Result<T, E>;
 
 pub trait Auth {}
 
-pub struct AddAuth;
+pub struct AddAuth {
+    pub custom_token: Option<String>,
+}
 impl Auth for AddAuth {}
 
 pub struct MaybeAuth;
@@ -53,7 +55,7 @@ impl Auth for NoAuth {}
 
 pub struct Request<A: Auth> {
     builder: Option<RequestBuilder>,
-    _auth: A,
+    auth: A,
 }
 
 impl Request<NoAuth> {
@@ -67,7 +69,7 @@ impl Request<NoAuth> {
             builder: client()
                 .as_ref()
                 .map(|client| client.request(method, url).header("Accept", "application/json")),
-            _auth: NoAuth,
+            auth: NoAuth,
         }
     }
 
@@ -78,7 +80,7 @@ impl Request<NoAuth> {
             builder: client()
                 .as_ref()
                 .map(|client| client.request(method, host).header("Accept", "application/json")),
-            _auth: NoAuth,
+            auth: NoAuth,
         }
     }
 
@@ -163,7 +165,10 @@ impl Request<AddAuth> {
     pub async fn send(self) -> Result<Response> {
         match self.builder {
             Some(builder) => {
-                let token = get_token().await?;
+                let token = match self.auth.custom_token {
+                    Some(token) => token,
+                    None => get_token().await?,
+                };
                 let builder = builder.bearer_auth(token);
                 Ok(Response {
                     inner: builder.send().await?,
@@ -319,14 +324,24 @@ impl<A: Auth> Request<A> {
     pub fn auth(self) -> Request<AddAuth> {
         Request {
             builder: self.builder,
-            _auth: AddAuth,
+            auth: AddAuth { custom_token: None },
+        }
+    }
+
+    /// Add a custom token to the request
+    pub fn custom_token(self, token: String) -> Request<AddAuth> {
+        Request {
+            builder: self.builder,
+            auth: AddAuth {
+                custom_token: Some(token),
+            },
         }
     }
 
     pub fn maybe_auth(self) -> Request<MaybeAuth> {
         Request {
             builder: self.builder,
-            _auth: MaybeAuth,
+            auth: MaybeAuth,
         }
     }
 

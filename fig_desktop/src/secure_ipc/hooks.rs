@@ -284,11 +284,22 @@ pub async fn intercepted_key(
 pub fn account_info() -> Result<Option<clientbound::response::Response>> {
     let mut logged_in = false;
     if let Ok(creds) = Credentials::load_credentials() {
-        logged_in = creds.access_token.is_some()
-            && creds.email.is_some()
-            && creds.id_token.is_some()
-            && creds.refresh_token.is_some()
-            && !creds.refresh_token_expired.unwrap_or_default()
+        match creds.credentials_type {
+            fig_request::auth::CredentialsType::Jwt {
+                access_token,
+                id_token,
+                refresh_token,
+                refresh_token_expired,
+                ..
+            } => {
+                logged_in = access_token.is_some()
+                    && creds.email.is_some()
+                    && id_token.is_some()
+                    && refresh_token.is_some()
+                    && !refresh_token_expired.unwrap_or_default()
+            },
+            fig_request::auth::CredentialsType::FigToken { fig_token } => logged_in = fig_token.is_some(),
+        }
     }
 
     Ok(Some(clientbound::response::Response::AccountInfo(

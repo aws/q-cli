@@ -148,7 +148,7 @@ pub fn handle_login_deep_link(url: &Url) -> Option<serde_json::Value> {
         let refresh_token = hash.get("refreshToken").map(|s| s.clone().into_owned());
         let email = hash.get("email").map(|s| s.clone().into_owned());
 
-        let creds = fig_request::auth::Credentials::new(
+        let creds = fig_request::auth::Credentials::new_jwt(
             email.clone(),
             access_token.clone(),
             id_token.clone(),
