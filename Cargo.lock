@@ -8794,9 +8794,9 @@ dependencies = [
 
 [[package]]
 name = "zbus"
-version = "3.8.0"
+version = "3.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23eaeb1859a3cd5c5f780b101dfe626bf250a5f34873c3c0226d6d9f7a4d107c"
+checksum = "76f1a9e02a5659c712de386c2af5156c51a530fac0668d3ff85fa26a2bc006ba"
 dependencies = [
  "async-broadcast",
  "async-executor",
@@ -8834,9 +8834,9 @@ dependencies = [
 
 [[package]]
 name = "zbus_macros"
-version = "3.8.0"
+version = "3.9.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e83c1c6d669caa4773ebe8cb2ebea2a8d0c6ea27fc6c5c8916c7308cbf1db3b1"
+checksum = "414cd9f07964695e00bfef8e589d1752ea0480b8a619f2064cbaccb8a6c2ed59"
 dependencies = [
  "proc-macro-crate",
  "proc-macro2",
