@@ -225,34 +225,21 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
 }
 
 #[cfg(target_os = "linux")]
-fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
-    let (icon_rgba, icon_width, icon_height) = {
-        let image = image::open(path).expect("Failed to open icon path").into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        (rgba, width, height)
-    };
-    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+fn load_icon(path: impl AsRef<std::path::Path>) -> Option<Icon> {
+    let image = image::open(path).ok()?.into_rgba8();
+    let (width, height) = image.dimensions();
+    let rgba = image.into_raw();
+    Icon::from_rgba(rgba, width, height).ok()
 }
 
-#[cfg(target_os = "windows")]
 fn load_from_memory() -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         // TODO: Use different per platform icons
+        #[cfg(not(target_os = "macos"))]
         let image = image::load_from_memory(include_bytes!("../icons/32x32.png"))
             .expect("Failed to open icon path")
             .into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        (rgba, width, height)
-    };
-    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
-}
-
-#[cfg(target_os = "macos")]
-fn load_from_memory() -> Icon {
-    let (icon_rgba, icon_width, icon_height) = {
-        // TODO: Use different per platform icons
+        #[cfg(target_os = "macos")]
         let image = image::load_from_memory(include_bytes!("../icons/macos-menubar-template-icon@2x-scaled.png"))
             .expect("Failed to open icon path")
             .into_rgba8();
@@ -260,8 +247,6 @@ fn load_from_memory() -> Icon {
         let rgba = image.into_raw();
         (rgba, width, height)
     };
-
-    // TODO: account for retina display (currently image is too large!)
     Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
 }
 
@@ -275,7 +260,7 @@ pub fn build_tray(
     cfg_if!(
         if #[cfg(target_os = "linux")] {
             let icon_path = "/usr/share/icons/hicolor/64x64/apps/fig.png";
-            let icon = load_icon(icon_path);
+            let icon = load_icon(icon_path).unwrap_or_else(load_from_memory);
         } else {
             let icon = load_from_memory();
         }

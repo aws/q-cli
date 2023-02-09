@@ -32,7 +32,8 @@ jobs:
               libayatana-appindicator3-dev \
               librsvg2-dev \
               libdbus-1-dev \
-              libwebkit2gtk-4.0-dev \
+              libwebkit2gtk-4.1-dev \
+              libjavascriptcoregtk-4.1-dev\
               valac \
               libibus-1.0-dev \
               libglib2.0-dev

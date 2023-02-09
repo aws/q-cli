@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::path::{
     Path,
     PathBuf,
@@ -21,21 +22,21 @@ const CDN_PREFIXS: &[&str] = &[
     "https://esm.sh/@withfig/autocomplete@^2.0.0/build",
 ];
 
-fn res_404() -> Response<Vec<u8>> {
+fn res_404() -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .status(StatusCode::NOT_FOUND)
         .header(CONTENT_TYPE, "text/plain")
         .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .body(b"Not Found".to_vec())
+        .body(b"Not Found".as_ref().into())
         .unwrap()
 }
 
-fn res_ok(bytes: Vec<u8>) -> Response<Vec<u8>> {
+fn res_ok(bytes: Vec<u8>) -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_TYPE, "application/javascript")
         .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .body(bytes)
+        .body(bytes.into())
         .unwrap()
 }
 
@@ -54,17 +55,17 @@ fn save_cache(spec: impl AsRef<Path>, contents: impl AsRef<[u8]>) -> anyhow::Res
     Ok(())
 }
 
-fn load_cache(spec: impl AsRef<Path>) -> anyhow::Result<Option<Vec<u8>>> {
+fn load_cache(spec: impl AsRef<Path>) -> anyhow::Result<Option<Cow<'static, [u8]>>> {
     let path = cache_dir().join(spec);
     if path.exists() {
         let content = std::fs::read(path)?;
-        Ok(Some(content))
+        Ok(Some(content.into()))
     } else {
         Ok(None)
     }
 }
 
-pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
+pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let Some((_, ext)) = request.uri().path().rsplit_once('.') else {
         return Ok(res_404());
     };
@@ -110,7 +111,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
 
             // Try to load from cache
             if let Ok(Some(body)) = load_cache(&file) {
-                return Ok(res_ok(body));
+                return Ok(res_ok(body.into()));
             }
 
             Ok(res_404())

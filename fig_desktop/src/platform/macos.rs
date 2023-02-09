@@ -842,7 +842,7 @@ impl PlatformStateImpl {
                 .or_else(|| unsafe { macos_utils::image::png_for_name("file") })?,
         };
 
-        Some((data.into(), AssetKind::Png))
+        Some((Arc::new(data.into()), AssetKind::Png))
     }
 
     pub(super) fn shell() -> Cow<'static, str> {

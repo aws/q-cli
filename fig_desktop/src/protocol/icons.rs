@@ -44,17 +44,16 @@ pub enum AssetSpecifier<'a> {
     PathBased(Cow<'a, Path>),
 }
 
-static ASSETS: Lazy<HashMap<AssetSpecifier<'static>, Arc<Vec<u8>>>> = Lazy::new(|| {
+static ASSETS: Lazy<HashMap<AssetSpecifier<'static>, Arc<Cow<'static, [u8]>>>> = Lazy::new(|| {
     let mut map = HashMap::new();
 
     macro_rules! load_assets {
         ($($name: expr),*) => {
             $(
-                let mut vec = Vec::new();
-                vec.extend_from_slice(include_bytes!(concat!(env!("AUTOCOMPLETE_ICONS_PROCESSED"), "/", $name, ".png")));
+                let bytes = include_bytes!(concat!(env!("AUTOCOMPLETE_ICONS_PROCESSED"), "/", $name, ".png"));
                 map.insert(
                     AssetSpecifier::Named($name.into()),
-                    Arc::new(vec),
+                    Arc::new(bytes.as_ref().into()),
                 );
             )*
         };
@@ -69,7 +68,7 @@ static ASSETS: Lazy<HashMap<AssetSpecifier<'static>, Arc<Vec<u8>>>> = Lazy::new(
     map
 });
 
-pub type ProcessedAsset = (Arc<Vec<u8>>, AssetKind);
+pub type ProcessedAsset = (Arc<Cow<'static, [u8]>>, AssetKind);
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 static ASSET_CACHE: Lazy<Cache<PathBuf, ProcessedAsset>> =
@@ -97,14 +96,14 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
         .unwrap_or(true);
 
     let built = if is_svg {
-        (Arc::new(std::fs::read(&path)?), AssetKind::Svg)
+        (Arc::new(std::fs::read(&path)?.into()), AssetKind::Svg)
     } else {
         let icon = image::open(&path)?;
         let icon = icon.resize(32, 32, FilterType::CatmullRom);
         let mut cursor = Cursor::new(Vec::new());
         icon.write_to(&mut cursor, ImageOutputFormat::Png)?;
         let buffer = cursor.into_inner();
-        (Arc::new(buffer), AssetKind::Png)
+        (Arc::new(buffer.into()), AssetKind::Png)
     };
 
     ASSET_CACHE.insert(path, built.clone());
@@ -112,7 +111,7 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     Ok(built)
 }
 
-fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Vec<u8>>, AssetKind) {
+fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Cow<'static, [u8]>>, AssetKind) {
     match &asset {
         AssetSpecifier::Named(_) => ASSETS
             .get(asset)
@@ -134,7 +133,7 @@ fn resolve_asset(asset: &AssetSpecifier, fallback: Option<&str>) -> (Arc<Vec<u8>
     })
 }
 
-fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response<Vec<u8>> {
+fn build_asset_response(data: Cow<'static, [u8]>, asset_kind: AssetKind) -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .status(StatusCode::OK)
         .header(CONTENT_TYPE, match asset_kind {
@@ -146,13 +145,13 @@ fn build_asset_response(data: Vec<u8>, asset_kind: AssetKind) -> Response<Vec<u8
         .unwrap()
 }
 
-fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response<Vec<u8>> {
+fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response<Cow<'static, [u8]>> {
     trace!("building response for asset {asset:?}");
     let (data, asset_kind) = resolve_asset(asset, fallback);
-    build_asset_response(data.to_vec(), asset_kind)
+    build_asset_response((*data).clone(), asset_kind)
 }
 
-fn build_default() -> Response<Vec<u8>> {
+fn build_default() -> Response<Cow<'static, [u8]>> {
     cached_asset_response(&AssetSpecifier::Named(DEFAULT_ICON.into()), None)
 }
 
@@ -160,7 +159,7 @@ fn scale(a: u8, b: u8) -> u8 {
     (a as f32 * (b as f32 / 256.0)) as u8
 }
 
-pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
+pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     debug!(uri =% request.uri(), "Fig protocol request");
     let url = Url::parse(&request.uri().to_string())?;
     let domain = url.domain();
@@ -190,7 +189,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
 
             let mut png_bytes = std::io::Cursor::new(Vec::new());
             image.write_to(&mut png_bytes, image::ImageFormat::Png).unwrap();
-            Some(build_asset_response(png_bytes.into_inner(), AssetKind::Png))
+            Some(build_asset_response(png_bytes.into_inner().into(), AssetKind::Png))
         },
         Some("icon") | Some("asset") => pairs
             .get("asset")

@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use http::header::CONTENT_TYPE;
 use http::status::StatusCode;
 use http::{
@@ -24,9 +26,9 @@ pub fn is_cargo_debug_build() -> bool {
 }
 
 pub fn wrap_custom_protocol(
-    f: impl Fn(&HttpRequest<Vec<u8>>) -> anyhow::Result<HttpResponse<Vec<u8>>> + 'static,
-) -> impl Fn(&HttpRequest<Vec<u8>>) -> wry::Result<HttpResponse<Vec<u8>>> + 'static {
-    move |req: &HttpRequest<Vec<u8>>| -> wry::Result<HttpResponse<Vec<u8>>> {
+    f: impl Fn(&HttpRequest<Vec<u8>>) -> anyhow::Result<HttpResponse<Cow<'static, [u8]>>> + 'static,
+) -> impl Fn(&HttpRequest<Vec<u8>>) -> wry::Result<HttpResponse<Cow<'static, [u8]>>> + 'static {
+    move |req: &HttpRequest<Vec<u8>>| -> wry::Result<HttpResponse<Cow<[u8]>>> {
         Ok(match f(req) {
             Ok(res) => res,
             Err(err) => {
@@ -38,11 +40,13 @@ pub fn wrap_custom_protocol(
                     .and_then(|accept| accept.split('/').last())
                 {
                     Some("json") => response.header(CONTENT_TYPE, "application/json").body(
-                        serde_json::to_vec(&json!({ "error": err.to_string() })).unwrap_or_else(|_| b"{}".to_vec()),
+                        serde_json::to_vec(&json!({ "error": err.to_string() }))
+                            .map(Into::into)
+                            .unwrap_or_else(|_| b"{}".as_ref().into()),
                     ),
                     _ => response
                         .header(CONTENT_TYPE, "text/plain")
-                        .body(err.to_string().into_bytes()),
+                        .body(err.to_string().into_bytes().into()),
                 }?
             },
         })
@@ -56,7 +60,7 @@ pub static ICON: Lazy<Icon> = Lazy::new(|| {
             return load_icon(
                 fig_util::search_xdg_data_dirs("icons/hicolor/512x512/apps/fig.png")
                     .unwrap_or_else(|| "/usr/share/icons/hicolor/512x512/apps/fig.png".into()),
-            );
+            ).unwrap_or_else(load_from_memory);
         } else {
             return load_from_memory();
         }
@@ -64,17 +68,13 @@ pub static ICON: Lazy<Icon> = Lazy::new(|| {
 });
 
 #[cfg(target_os = "linux")]
-fn load_icon(path: impl AsRef<std::path::Path>) -> Icon {
-    let (icon_rgba, icon_width, icon_height) = {
-        let image = image::open(path).expect("Failed to open icon path").into_rgba8();
-        let (width, height) = image.dimensions();
-        let rgba = image.into_raw();
-        (rgba, width, height)
-    };
-    Icon::from_rgba(icon_rgba, icon_width, icon_height).expect("Failed to open icon")
+fn load_icon(path: impl AsRef<std::path::Path>) -> Option<Icon> {
+    let image = image::open(path).ok()?.into_rgba8();
+    let (width, height) = image.dimensions();
+    let rgba = image.into_raw();
+    Icon::from_rgba(rgba, width, height).ok()
 }
 
-#[cfg(not(target_os = "linux"))]
 fn load_from_memory() -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         // TODO: Use different per platform icons

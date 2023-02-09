@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 use std::path::{
     Path,
     PathBuf,
@@ -25,12 +26,12 @@ struct AssetMetadata {
     headers: Vec<(String, String)>,
 }
 
-fn res_404() -> Response<Vec<u8>> {
+fn res_404() -> Response<Cow<'static, [u8]>> {
     Response::builder()
         .status(StatusCode::NOT_FOUND)
         .header(CONTENT_TYPE, "text/plain")
         .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .body(b"Not Found".to_vec())
+        .body(b"Not Found".as_ref().into())
         .unwrap()
 }
 
@@ -82,7 +83,7 @@ fn save_cache(
     Ok(())
 }
 
-fn load_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> anyhow::Result<(AssetMetadata, Vec<u8>)> {
+fn load_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> anyhow::Result<(AssetMetadata, Cow<'static, [u8]>)> {
     let path = cache_dir(app).join(transform_path(path));
     let content = std::fs::read(&path)?;
 
@@ -98,10 +99,10 @@ fn load_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> anyhow::Result<(
     let meta = std::fs::read_to_string(meta_path)?;
     let meta = serde_json::from_str(&meta)?;
 
-    Ok((meta, content))
+    Ok((meta, content.into()))
 }
 
-fn res_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> Response<Vec<u8>> {
+fn res_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> Response<Cow<'static, [u8]>> {
     match load_cache(&app, path) {
         Ok((meta, content)) => {
             let mut resp_builder = Response::builder().status(meta.status);
@@ -118,7 +119,7 @@ fn res_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> Response<Vec<u8>>
     }
 }
 
-pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
+pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let mut url_parts = request.uri().clone().into_parts();
     url_parts.scheme = Some("https".parse().unwrap());
 
@@ -193,7 +194,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Vec<u8>>> {
             }
 
             // Finish building the response with the contents
-            Ok(resp_builder.body(contents)?)
+            Ok(resp_builder.body(contents.into())?)
         })
     })
     .join()
