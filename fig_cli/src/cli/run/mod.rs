@@ -1094,7 +1094,10 @@ fn execute_parameter_block(
                     for gen in generator_map.get(id).unwrap() {
                         options.extend(gen.results.clone().unwrap_or_default());
                     }
+
                     if let Some(select) = view.find_mut(id).and_then(|e| e.downcast_mut::<Select>()) {
+                        select.set_options(options);
+                    } else if let Some(select) = view.find_mut(id).and_then(|e| e.downcast_mut::<Multiselect>()) {
                         select.set_options(options);
                     }
                 }
