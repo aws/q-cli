@@ -3819,9 +3819,9 @@ dependencies = [
 
 [[package]]
 name = "lightningcss"
-version = "1.0.0-alpha.39"
+version = "1.0.0-alpha.40"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a7c81dddc54b0f70e5b291dfa95b4d756dab6426ac53ccc44a275c92c87f1c8f"
+checksum = "6338806873ab8053fa9aac727f603fdd2fe4d8bec192faab114183f8483c67f8"
 dependencies = [
  "bitflags",
  "const-str",
@@ -4787,9 +4787,9 @@ dependencies = [
 
 [[package]]
 name = "parcel_selectors"
-version = "0.25.0"
+version = "0.25.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f2c9c34c94f61e0f95e7c0b1fe98556be452ebc15ef131ee01f0204696d95956"
+checksum = "a215f11d4e3b505238167f6dbe47e7d809dcf452319506328d904d62c4eb8da5"
 dependencies = [
  "bitflags",
  "cssparser 0.29.6",
