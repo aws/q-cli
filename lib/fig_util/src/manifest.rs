@@ -8,7 +8,10 @@ use serde::{
     Deserializer,
     Serialize,
 };
-use strum::EnumString;
+use strum::{
+    Display,
+    EnumString,
+};
 
 #[derive(Deserialize)]
 pub struct Manifest {
@@ -24,7 +27,7 @@ pub struct Manifest {
     pub packaged_by: String,
 }
 
-#[derive(EnumString)]
+#[derive(EnumString, Display)]
 #[strum(serialize_all = "snake_case")]
 pub enum ManagedBy {
     Apt,
@@ -34,7 +37,7 @@ pub enum ManagedBy {
     Other(String),
 }
 
-#[derive(EnumString, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+#[derive(EnumString, Display, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Variant {
@@ -46,7 +49,7 @@ pub enum Variant {
     Other(String),
 }
 
-#[derive(EnumString, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
+#[derive(EnumString, Display, Deserialize, Serialize, PartialEq, Eq, Clone, Debug)]
 #[serde(rename_all = "snake_case")]
 #[strum(serialize_all = "snake_case")]
 pub enum Kind {

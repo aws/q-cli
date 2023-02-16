@@ -44,6 +44,7 @@ struct Wrapped {
 
 impl Wrapped {
     fn new(history: Vec<CommandInfo>) -> Self {
+        unsafe { time::util::local_offset::set_soundness(time::util::local_offset::Soundness::Unsound) };
         let current_local_offset = UtcOffset::current_local_offset().unwrap_or(UtcOffset::UTC);
         let current_year = OffsetDateTime::now_utc().to_offset(current_local_offset).year();
 

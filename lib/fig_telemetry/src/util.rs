@@ -74,6 +74,9 @@ pub(crate) fn default_properties() -> Map<String, Value> {
         },
     );
 
+    #[cfg(target_os = "linux")]
+    prop.insert("device_linux_wsl".into(), fig_util::system_info::linux::is_wsl().into());
+
     #[cfg(target_os = "windows")]
     if let Some(fig_util::system_info::OSVersion::Windows { name, build }) = fig_util::system_info::os_version() {
         prop.insert("device_windows_name".into(), name.to_owned().into());
@@ -99,7 +102,29 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     prop.insert("device_os".into(), std::env::consts::OS.into());
     prop.insert("device_arch".into(), std::env::consts::ARCH.into());
 
+    // Manifest data
     prop.insert("manifest_version".into(), env!("CARGO_PKG_VERSION").into());
+    prop.insert(
+        "manifest_variant".into(),
+        fig_util::manifest::manifest()
+            .as_ref()
+            .map(|m| m.variant.to_string())
+            .into(),
+    );
+    prop.insert(
+        "manifest_kind".into(),
+        fig_util::manifest::manifest()
+            .as_ref()
+            .map(|m| m.kind.to_string())
+            .into(),
+    );
+    prop.insert(
+        "manifest_managed_by".into(),
+        fig_util::manifest::manifest()
+            .as_ref()
+            .map(|m| m.managed_by.to_string())
+            .into(),
+    );
 
     prop
 }
