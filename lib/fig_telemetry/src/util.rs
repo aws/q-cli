@@ -75,7 +75,10 @@ pub(crate) fn default_properties() -> Map<String, Value> {
     );
 
     #[cfg(target_os = "linux")]
-    prop.insert("device_linux_wsl".into(), fig_util::system_info::linux::is_wsl().into());
+    prop.insert("device_linux_wsl".into(), fig_util::system_info::in_wsl().into());
+
+    #[cfg(unix)]
+    prop.insert("device_ssh".into(), fig_util::system_info::in_ssh().into());
 
     #[cfg(target_os = "windows")]
     if let Some(fig_util::system_info::OSVersion::Windows { name, build }) = fig_util::system_info::os_version() {
