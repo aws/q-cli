@@ -41,7 +41,7 @@ opt-level = 3
 opt-level = 3
 
 [patch.crates-io]
-tokio = { git = "https://github.com/sullivan-sean/tokio" }
-mio = { git = "https://github.com/sullivan-sean/mio" }
+# Commenting these out for now since we are not doing Windows right now and they are just not up to date
+# tokio = { git = "https://github.com/sullivan-sean/tokio" }
+# mio = { git = "https://github.com/sullivan-sean/mio" }
 console = { git = "https://github.com/withfig/console" }
-termwiz = { git = "https://github.com/wez/wezterm", rev = "36519f0d90e1875fb4b3f11f6cbf94c7d716ef78" }

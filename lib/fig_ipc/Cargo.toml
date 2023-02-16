@@ -14,7 +14,7 @@ fig_proto = { path = "../fig_proto" }
 fig_util = { path = "../fig_util" }
 pin-project-lite = "0.2.9"
 thiserror = "1.0.38"
-tokio = { version = "1.20.1", features = ["fs", "time", "io-util", "net"] }
+tokio = { version = "1", features = ["fs", "time", "io-util", "net"] }
 tracing = "0.1.36"
 whoami = "1.3.0"
 
@@ -22,4 +22,4 @@ whoami = "1.3.0"
 nix = "0.26.2"
 
 [dev-dependencies]
-tokio = { version = "*", features = ["full"] }
+tokio = { version = "1", features = ["full"] }

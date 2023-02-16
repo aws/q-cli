@@ -29,5 +29,5 @@ fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }
 fig_util = { path = "../lib/fig_util" }
 macos_utils = { path = "../lib/macos_utils" }
-tokio = { version = "1.20.1", features = ["full"] }
+tokio = { version = "1.25.0", features = ["full"] }
 tracing = "0.1.36"

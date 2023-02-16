@@ -40,4 +40,4 @@ url = "2.3.1"
 webpki-roots = "0.22.6"
 
 [dev-dependencies]
-tokio = { version = "1.20.1", features = ["full"] }
+tokio = { version = "1", features = ["full"] }
