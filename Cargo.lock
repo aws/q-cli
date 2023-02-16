@@ -1018,7 +1018,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e859cd57d0710d9e06c381b550c06e76992472a8c6d527aecd2fc673dcc231fb"
 dependencies = [
  "percent-encoding",
- "time 0.3.17",
+ "time 0.3.18",
  "version_check",
 ]
 
@@ -1034,7 +1034,7 @@ dependencies = [
  "publicsuffix",
  "serde",
  "serde_json",
- "time 0.3.17",
+ "time 0.3.18",
  "url",
 ]
 
@@ -1857,7 +1857,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
  "url",
@@ -1925,7 +1925,7 @@ dependencies = [
  "sysinfo 0.27.7",
  "tempfile",
  "thiserror",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tokio-tungstenite",
  "tracing",
@@ -2023,7 +2023,7 @@ dependencies = [
  "sysinfo 0.27.7",
  "system-configuration",
  "tempfile",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
  "url",
@@ -2077,7 +2077,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo 0.27.7",
- "time 0.3.17",
+ "time 0.3.18",
 ]
 
 [[package]]
@@ -2095,7 +2095,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
 ]
@@ -2257,7 +2257,7 @@ dependencies = [
  "semver 1.0.16",
  "serde",
  "strum",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "toml_edit 0.19.3",
 ]
@@ -2282,7 +2282,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
  "url",
@@ -2328,7 +2328,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
  "url",
@@ -2398,7 +2398,7 @@ dependencies = [
  "strum",
  "sysinfo 0.27.7",
  "thiserror",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
  "whoami",
@@ -2453,7 +2453,7 @@ dependencies = [
  "shared_library",
  "shell-words",
  "sysinfo 0.27.7",
- "time 0.3.17",
+ "time 0.3.18",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -5146,7 +5146,7 @@ dependencies = [
  "line-wrap",
  "quick-xml 0.26.0",
  "serde",
- "time 0.3.17",
+ "time 0.3.18",
 ]
 
 [[package]]
@@ -6218,7 +6218,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.17",
+ "time 0.3.18",
  "url",
  "uuid",
 ]
@@ -6558,7 +6558,7 @@ dependencies = [
  "nix 0.25.1",
  "rayon",
  "regex",
- "time 0.3.17",
+ "time 0.3.18",
  "timer",
  "tuikit",
  "unicode-width",
@@ -7183,9 +7183,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.17"
+version = "0.3.18"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a561bf4617eebd33bca6434b988f39ed798e527f51a1e797d0ee4f61c0a38376"
+checksum = "af0097eaf301d576d0b2aead7a59facab6d53cc636340f0291fab8446a2e8613"
 dependencies = [
  "itoa 1.0.5",
  "libc",
@@ -7501,7 +7501,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
 dependencies = [
  "crossbeam-channel",
- "time 0.3.17",
+ "time 0.3.18",
  "tracing-subscriber",
 ]
 
@@ -7571,7 +7571,7 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local",
- "time 0.3.17",
+ "time 0.3.18",
  "tracing",
  "tracing-core",
  "tracing-log",
