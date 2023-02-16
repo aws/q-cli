@@ -16,7 +16,7 @@ dashmap = "5.3.4"
 flume = "0.10.14"
 fnv = "1.0.7"
 accessibility-sys = { path = "./accessibility-master/accessibility-sys", version = "0.1.3" }
-once_cell = "1.17.0"
+once_cell = "1.17.1"
 parking_lot = "0.12.1"
 accessibility = { path = "./accessibility-master/accessibility", version = "0.1.6" }
 appkit-nsworkspace-bindings = { path = "./appkit-nsworkspace-bindings", version = "0.1.0" }
