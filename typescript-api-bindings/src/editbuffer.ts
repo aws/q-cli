@@ -1,8 +1,8 @@
 import { EditBufferChangedNotification, NotificationType } from './fig.pb';
-import { _subscribe } from './notifications';
+import { _subscribe, NotificationResponse } from './notifications';
 
 export function subscribe(
-  handler: (notification: EditBufferChangedNotification) => boolean | undefined
+  handler: (notification: EditBufferChangedNotification) => NotificationResponse | undefined
 ) {
   return _subscribe(
     { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_EDITBUFFFER_CHANGE },
@@ -14,7 +14,7 @@ export function subscribe(
           break;
       }
 
-      return false;
+      return { unsubscribe: false };
     }
   );
 }

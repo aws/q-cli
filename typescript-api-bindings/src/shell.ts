@@ -6,11 +6,11 @@ import {
   HistoryUpdatedNotification
 } from "./fig.pb";
 import { sendInsertTextRequest } from "./requests";
-import { _subscribe } from "./notifications";
+import { _subscribe, NotificationResponse } from "./notifications";
 
 export const processDidChange = {
   subscribe(
-    handler: (notification: ProcessChangedNotification) => boolean | undefined
+    handler: (notification: ProcessChangedNotification) => NotificationResponse | undefined
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_PROCESS_CHANGED },
@@ -22,7 +22,7 @@ export const processDidChange = {
             break;
         }
 
-        return false;
+        return { unsubscribe: false };
       }
     );
   }
@@ -32,7 +32,7 @@ export const promptDidReturn = {
   subscribe(
     handler: (
       notification: ShellPromptReturnedNotification
-    ) => boolean | undefined
+    ) => NotificationResponse | undefined
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_PROMPT },
@@ -44,7 +44,7 @@ export const promptDidReturn = {
             break;
         }
 
-        return false;
+        return { unsubscribe: false };
       }
     );
   }
@@ -52,7 +52,7 @@ export const promptDidReturn = {
 
 export const historyUpdated = {
   subscribe(
-    handler: (notification: HistoryUpdatedNotification) => boolean | undefined
+    handler: (notification: HistoryUpdatedNotification) => NotificationResponse | undefined
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_HISTORY_UPDATED },
@@ -64,7 +64,7 @@ export const historyUpdated = {
             break;
         }
 
-        return false;
+        return { unsubscribe: false };
       }
     );
   }

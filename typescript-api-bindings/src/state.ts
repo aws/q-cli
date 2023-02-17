@@ -1,5 +1,5 @@
 import { LocalStateChangedNotification, NotificationType } from './fig.pb';
-import { _subscribe } from './notifications';
+import { _subscribe, NotificationResponse } from './notifications';
 
 import {
   sendGetLocalStateRequest,
@@ -8,7 +8,7 @@ import {
 
 export const didChange = {
   subscribe(
-    handler: (notification: LocalStateChangedNotification) => boolean | undefined
+    handler: (notification: LocalStateChangedNotification) => NotificationResponse | undefined
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_LOCAL_STATE_CHANGED },
@@ -20,7 +20,7 @@ export const didChange = {
             break;
         }
 
-        return false;
+        return { unsubscribe: false };
       }
     );
   }

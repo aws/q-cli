@@ -7,9 +7,13 @@ import {
 
 import { sendMessage } from './core';
 
+export type NotificationResponse = {
+  unsubscribe: boolean;
+}
+
 export type NotificationHandler = (
   notification: Notification
-) => boolean | undefined;
+) => NotificationResponse | undefined;
 export interface Subscription {
   unsubscribe(): void;
 }
@@ -58,7 +62,10 @@ export function _subscribe(
 
                 // call handlers and remove any that have unsubscribed (by returning false)
                 handlersToRemove = handlers[type]?.filter(
-                  existingHandler => existingHandler(response.notification) === false
+                  (existingHandler) => {
+                    const res = existingHandler(response.notification);
+                    return Boolean(res?.unsubscribe);
+                  }
                 );
 
                 handlers[type] = handlers[type]?.filter(

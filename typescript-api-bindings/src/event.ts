@@ -1,9 +1,9 @@
 import { NotificationType } from './fig.pb';
-import { _subscribe } from './notifications';
+import { _subscribe, NotificationResponse } from './notifications';
 
 export function subscribe<T>(
   eventName: string,
-  handler: (payload: T) => boolean | undefined
+  handler: (payload: T) => NotificationResponse | undefined
 ) {
   return _subscribe(
     { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_EVENT },
@@ -24,7 +24,7 @@ export function subscribe<T>(
           break;
       }
 
-      return false;
+      return { unsubscribe: false };
     }
   );
 }

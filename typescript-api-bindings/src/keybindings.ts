@@ -4,10 +4,10 @@ import {
   NotificationType
 } from './fig.pb';
 import { sendUpdateApplicationPropertiesRequest } from './requests';
-import { _subscribe } from './notifications';
+import { _subscribe, NotificationResponse } from './notifications';
 
 export function pressed(
-  handler: (notification: KeybindingPressedNotification) => boolean | undefined
+  handler: (notification: KeybindingPressedNotification) => NotificationResponse | undefined
 ) {
   return _subscribe(
     { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_KEYBINDING_PRESSED },
@@ -19,7 +19,7 @@ export function pressed(
           break;
       }
 
-      return false;
+      return { unsubscribe: false };
     }
   );
 }

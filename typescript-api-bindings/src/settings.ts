@@ -1,5 +1,5 @@
 import { SettingsChangedNotification, NotificationType } from './fig.pb';
-import { _subscribe } from './notifications';
+import { _subscribe, NotificationResponse } from './notifications';
 
 import {
   sendGetSettingsPropertyRequest,
@@ -8,7 +8,7 @@ import {
 
 export const didChange = {
   subscribe(
-    handler: (notification: SettingsChangedNotification) => boolean | undefined
+    handler: (notification: SettingsChangedNotification) => NotificationResponse | undefined
   ) {
     return _subscribe(
       { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_SETTINGS_CHANGE },
@@ -20,7 +20,7 @@ export const didChange = {
             break;
         }
 
-        return false;
+        return { unsubscribe: false };
       }
     );
   }
