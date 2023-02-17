@@ -784,13 +784,6 @@ fn execute_parameter_block(
     name: &Option<String>,
     parameters: &Vec<Parameter>,
 ) -> Result<()> {
-    if parameters
-        .iter()
-        .all(|parameter| parameters_by_name.contains_key(&parameter.name))
-    {
-        return Ok(());
-    }
-
     let mut view = Div::new().with_class("view");
 
     if let Some(name) = name {
