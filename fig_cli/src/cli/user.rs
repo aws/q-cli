@@ -119,7 +119,7 @@ impl RootUserSubcommand {
                     return Ok(());
                 }
 
-                if let Some(email) = fig_request::auth::get_email() {
+                if let Some(email) = fig_request::auth::get_email().await {
                     if not_now {
                         return Ok(());
                     } else {
@@ -558,7 +558,7 @@ impl UserSubcommand {
         match self {
             Self::Root(cmd) => cmd.execute().await,
             Self::Tokens(cmd) => cmd.execute().await,
-            Self::Whoami { format, only_email } => match fig_request::auth::get_email() {
+            Self::Whoami { format, only_email } => match fig_request::auth::get_email().await {
                 Some(email) => {
                     if only_email {
                         match format {

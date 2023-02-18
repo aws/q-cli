@@ -15,11 +15,11 @@ pub fn telemetry_is_disabled() -> bool {
             .unwrap_or(false)
 }
 
-pub(crate) fn default_properties() -> Map<String, Value> {
+pub(crate) async fn default_properties() -> Map<String, Value> {
     let mut prop = Map::new();
 
     // legacy, to remove
-    if let Some(email) = fig_request::auth::get_email() {
+    if let Some(email) = fig_request::auth::get_email().await {
         if let Some(domain) = email.split('@').last() {
             prop.insert("domain".into(), domain.into());
         }

@@ -4,7 +4,7 @@ use eyre::Result;
 use fig_request::auth::get_email;
 
 pub async fn invite_cli() -> Result<()> {
-    match get_email() {
+    match get_email().await {
         Some(email) => {
             let link = fig_request::Request::get(format!("/waitlist/get-referral-link-from-email/{email}"))
                 .auth()

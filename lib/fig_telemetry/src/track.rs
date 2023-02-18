@@ -182,7 +182,7 @@ pub async fn emit_track(event: TrackEvent) -> Result<(), Error> {
         return Err(Error::TelemetryDisabled);
     }
 
-    let props = crate::util::default_properties();
+    let props = crate::util::default_properties().await;
     let mut body = event.to_map(&props);
     body.insert("useUnprefixed".into(), true.into());
 
@@ -194,7 +194,7 @@ pub async fn emit_tracks(events: Vec<TrackEvent>) -> Result<(), Error> {
         return Err(Error::TelemetryDisabled);
     }
 
-    let props = crate::util::default_properties();
+    let props = crate::util::default_properties().await;
     let events: Vec<Value> = events.into_iter().map(|e| e.to_map(&props).into()).collect();
 
     let mut body: Map<String, Value> = Map::new();

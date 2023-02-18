@@ -37,6 +37,7 @@ async fn get_file_token() -> Result<String> {
     creds.encode()
 }
 
+/// Gets the auth token from the environment or from the credentials file
 pub async fn get_token() -> Result<String> {
     if let Ok(token) = std::env::var("FIG_TOKEN") {
         return Ok(token);
@@ -45,12 +46,41 @@ pub async fn get_token() -> Result<String> {
     get_file_token().await
 }
 
-pub fn get_email() -> Option<String> {
+static EMAIL: once_cell::sync::OnceCell<Option<String>> = once_cell::sync::OnceCell::new();
+
+/// Tries to get the email from the credentials file, if that fails, it will make a request to the
+/// server to get the email and cache it in memory.
+pub async fn get_email() -> Option<String> {
+    if let Some(email) = EMAIL.get() {
+        return email.clone();
+    }
+
+    if let Some(email) = Credentials::load_credentials().ok().and_then(|creds| creds.email) {
+        return Some(email);
+    }
+
+    let email = if let Ok(val) = Request::get("/user/account").auth().json().await {
+        val.get("email").and_then(|v| v.as_str()).map(|s| s.to_owned())
+    } else {
+        None
+    };
+
+    EMAIL.get_or_init(|| email).clone()
+}
+
+/// Prefer using [get_email] instead, this should only be used in cases where you can't await
+pub fn get_email_sync() -> Option<String> {
+    if let Some(email) = EMAIL.get() {
+        return email.clone();
+    }
+
     Credentials::load_credentials().ok().and_then(|creds| creds.email)
 }
 
+/// Checks if the user is logged in by checking if the FIG_TOKEN environment variable is set or if
+/// the credentials file exists, this does not check if the credentials are valid
 pub fn is_logged_in() -> bool {
-    get_email().is_some()
+    std::env::var("FIG_TOKEN").is_ok() || Credentials::load_credentials().is_ok()
 }
 
 pub fn logout() -> Result<()> {

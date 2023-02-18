@@ -60,7 +60,7 @@ impl DripCampaign {
     }
 
     pub async fn load() -> Result<Option<Self>, fig_request::Error> {
-        let email = match fig_request::auth::get_email() {
+        let email = match fig_request::auth::get_email().await {
             Some(email) => email,
             None => return Ok(None),
         };

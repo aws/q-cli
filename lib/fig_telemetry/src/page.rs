@@ -28,7 +28,7 @@ where
         return Err(Error::TelemetryDisabled);
     }
 
-    let mut props = crate::util::default_properties();
+    let mut props = crate::util::default_properties().await;
     props.insert("source".into(), source.to_string().into());
     props.extend(properties.into_iter().map(|(k, v)| (k.into(), v.into())));
 
