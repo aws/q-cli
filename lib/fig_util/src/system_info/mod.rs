@@ -110,6 +110,11 @@ static IN_SSH: Lazy<bool> = Lazy::new(|| {
 
 static HAS_PARENT: Lazy<bool> = Lazy::new(|| std::env::var_os("FIG_PARENT").is_some());
 
+static IN_CODESPACES: Lazy<bool> =
+    Lazy::new(|| std::env::var_os("CODESPACES").is_some() || std::env::var_os("FIG_CODESPACES").is_some());
+
+static IN_CI: Lazy<bool> = Lazy::new(|| std::env::var_os("CI").is_some() || std::env::var_os("FIG_CI").is_some());
+
 /// The support level for different platforms
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub enum SupportLevel {
@@ -267,6 +272,14 @@ pub fn is_remote() -> bool {
 /// environment
 pub fn has_parent() -> bool {
     *HAS_PARENT
+}
+
+pub fn in_codespaces() -> bool {
+    *IN_CODESPACES
+}
+
+pub fn in_ci() -> bool {
+    *IN_CI
 }
 
 #[cfg(target_os = "macos")]

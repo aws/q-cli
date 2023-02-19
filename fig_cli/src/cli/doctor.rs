@@ -599,6 +599,15 @@ impl DoctorCheck for FigIntegrationsCheck {
             });
         }
 
+        if fig_util::system_info::in_ci() {
+            return Err(DoctorError::Error {
+                reason: "Fig doctor can not run in CI".into(),
+                info: vec![],
+                fix: None,
+                error: None,
+            });
+        }
+
         // Check that ~/.fig/bin/figterm exists
         // TODO(grant): Check figterm exe exists
         // let figterm_path = fig_directories::fig_dir()

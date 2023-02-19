@@ -67,6 +67,13 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
         };
     }
 
+    if fig_util::system_info::in_codespaces() {
+        return match std::env::var_os("FIG_TERM") {
+            Some(_) => Status::DontLaunch("In Codespaces and FIG_TERM is set".into()),
+            None => Status::Launch("In Codespaces and FIG_TERM is not set".into()),
+        };
+    }
+
     Status::Process(ProcessInfo {
         pid: parent_pid,
         name: parent_name.into(),
@@ -196,6 +203,12 @@ pub fn should_figterm_launch() -> ! {
     // PWSH var is set when launched by `pwsh -Login`, in which case we don't want to init.
     if std::env::var_os("__PWSH_LOGIN_CHECKED").is_some() {
         writeln!(stdout(), "❌ __PWSH_LOGIN_CHECKED").ok();
+        exit(1);
+    }
+
+    // Make sure we're not in CI
+    if fig_util::system_info::in_ci() {
+        writeln!(stdout(), "❌ In CI").ok();
         exit(1);
     }
 
