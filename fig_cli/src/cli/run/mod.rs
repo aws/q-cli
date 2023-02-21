@@ -736,12 +736,27 @@ async fn execute_script(
         // TODO: add track still for invocation count, we still want that metadata
         telem_join.await.ok();
     } else {
+        let inputs = parameters_by_name
+            .iter()
+            .map(|(k, v)| {
+                (k.clone(), match v {
+                    ParameterValue::String(s) => serde_json::Value::String(s.clone()),
+                    ParameterValue::Bool { val, .. } => serde_json::Value::Bool(*val),
+                    ParameterValue::Array(arr) => {
+                        serde_json::Value::Array(arr.iter().map(|s| serde_json::Value::String(s.clone())).collect())
+                    },
+                    ParameterValue::Number(n) => n.clone().into(),
+                })
+            })
+            .collect::<serde_json::Map<_, _>>();
+
         let query = fig_graphql::create_script_invocation_query!(
             namespace: script.namespace.clone(),
             name: script.name.clone(),
             execution_start_time: Some(start_time.into()),
             execution_duration: execution_duration,
             exit_code: exit_code.map(|i| i as i64),
+            inputs: script.invocation_track_inputs.then_some(inputs),
         );
 
         let invocation_join = tokio::spawn(fig_graphql::dispatch::send_to_daemon(query, true));

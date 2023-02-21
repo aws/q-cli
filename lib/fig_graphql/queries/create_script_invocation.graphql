@@ -4,11 +4,11 @@ mutation CreateScriptInvocation(
   $executionDuration: UnsignedInt
   $executionStartTime: DateTime
   $exitCode: Int
+  $inputs: JSONObject
   # $runtimeVersion: String
   # $commandStderr: String
   # $commandStdout: String
   # $ctrlC: Boolean
-  # $inputs: JSONObject
 ) {
   createScriptInvocationMutation(
     input: {
@@ -17,11 +17,11 @@ mutation CreateScriptInvocation(
       executionStartTime: $executionStartTime
       executionDuration: $executionDuration
       exitCode: $exitCode
+      inputs: $inputs
       # runtimeVersion: $runtimeVersion
       # commandStderr: $commandStderr
       # commandStdout: $commandStdout
       # ctrlC: $ctrlC
-      # inputs: $inputs
     }
   ) {
     __typename
