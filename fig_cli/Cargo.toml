@@ -59,7 +59,7 @@ owo-colors = "3.5.0"
 parking_lot = "0.12.1"
 rand = "0.8.5"
 regex = "1.6.0"
-self_update = { version = "0.35.0", default-features = false, features = [
+self_update = { version = "0.36.0", default-features = false, features = [
     "rustls",
 ] }
 semver = "1.0.16"
