@@ -1,9 +1,9 @@
 use tracing::error;
 use url::Url;
 
-pub const DASHBOARD_PRODUCTION_URL: &str = "https://desktop.fig.io";
-pub const DASHBOARD_STAGING_URL: &str = "https://staging.desktop.fig.io";
-pub const DASHBOARD_DEVELOP_URL: &str = "https://develop.desktop.fig.io";
+pub const DASHBOARD_PRODUCTION_URL: &str = "https://app.fig.io";
+pub const DASHBOARD_STAGING_URL: &str = "https://staging.app.fig.io";
+pub const DASHBOARD_DEVELOP_URL: &str = "https://develop.app.fig.io";
 
 pub fn url() -> Url {
     if let Some(dev_url) = fig_settings::settings::get_string_opt("developer.dashboard.host") {

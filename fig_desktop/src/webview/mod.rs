@@ -629,6 +629,8 @@ pub fn build_dashboard(
         .with_devtools(true)
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[
             // Main domain
+            r"app\.fig\.io$",
+            // Old domain
             r"desktop\.fig\.io$",
             // Dev domains
             r"^localhost$",
@@ -929,7 +931,7 @@ pub fn reachable(host: impl Into<Vec<u8>>) -> bool {
 #[cfg(target_os = "macos")]
 fn init_network_watcher(proxy: EventLoopProxy) {
     tokio::task::spawn(async move {
-        let host = std::ffi::CStr::from_bytes_with_nul(b"desktop.fig.io\0").unwrap();
+        let host = std::ffi::CStr::from_bytes_with_nul(b"app.fig.io\0").unwrap();
 
         let mut reachable: Option<bool> = None;
 
