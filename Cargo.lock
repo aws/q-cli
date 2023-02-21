@@ -5168,20 +5168,23 @@ checksum = "26f6a7b87c2e435a3241addceeeff740ff8b7e76b74c13bf9acb17fa454ea00b"
 
 [[package]]
 name = "portable-pty"
-version = "0.7.0"
+version = "0.8.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "4e4d17ec050a6b7ea4b15c430183772bce8384072d3f328e0967e72b7eec46b5"
+checksum = "e2b3618fce1e28b21553c7858a53d3fc8779fd6f5bc7404ee2a7472816c67cbb"
 dependencies = [
  "anyhow",
  "bitflags",
+ "downcast-rs",
  "filedescriptor",
  "lazy_static",
  "libc",
  "log",
+ "nix 0.25.1",
  "serial",
  "shared_library",
  "shell-words",
  "winapi",
+ "winreg",
 ]
 
 [[package]]
