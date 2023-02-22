@@ -13,7 +13,7 @@ homepage = "https://github.com/alacritty/alacritty"
 
 [dependencies]
 bitflags = "1"
-camino = { version = "1.1.1", features = ["serde1"] }
+camino = { version = "1.1.3", features = ["serde1"] }
 fig_color = { path = "../fig_color" }
 serde = { version = "1", features = ["derive"] }
 serde_yaml = "0.9"
