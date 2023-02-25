@@ -1012,7 +1012,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "e859cd57d0710d9e06c381b550c06e76992472a8c6d527aecd2fc673dcc231fb"
 dependencies = [
  "percent-encoding",
- "time 0.3.19",
+ "time 0.3.20",
  "version_check",
 ]
 
@@ -1028,7 +1028,7 @@ dependencies = [
  "publicsuffix",
  "serde",
  "serde_json",
- "time 0.3.19",
+ "time 0.3.20",
  "url",
 ]
 
@@ -1851,7 +1851,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
  "url",
@@ -1919,7 +1919,7 @@ dependencies = [
  "sysinfo 0.28.0",
  "tempfile",
  "thiserror",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tokio-tungstenite",
  "tracing",
@@ -2017,7 +2017,7 @@ dependencies = [
  "sysinfo 0.28.0",
  "system-configuration",
  "tempfile",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
  "url",
@@ -2071,7 +2071,7 @@ dependencies = [
  "serde",
  "serde_json",
  "sysinfo 0.28.0",
- "time 0.3.19",
+ "time 0.3.20",
 ]
 
 [[package]]
@@ -2089,7 +2089,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
 ]
@@ -2251,7 +2251,7 @@ dependencies = [
  "semver 1.0.16",
  "serde",
  "strum",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "toml_edit 0.19.4",
 ]
@@ -2276,7 +2276,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
  "url",
@@ -2322,7 +2322,7 @@ dependencies = [
  "serde_json",
  "tempfile",
  "thiserror",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
  "url",
@@ -2392,7 +2392,7 @@ dependencies = [
  "strum",
  "sysinfo 0.28.0",
  "thiserror",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
  "whoami",
@@ -2447,7 +2447,7 @@ dependencies = [
  "shared_library",
  "shell-words",
  "sysinfo 0.28.0",
- "time 0.3.19",
+ "time 0.3.20",
  "tokio",
  "tracing",
  "tracing-subscriber",
@@ -5131,7 +5131,7 @@ dependencies = [
  "line-wrap",
  "quick-xml 0.26.0",
  "serde",
- "time 0.3.19",
+ "time 0.3.20",
 ]
 
 [[package]]
@@ -5290,9 +5290,9 @@ dependencies = [
 
 [[package]]
 name = "prost"
-version = "0.11.7"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "3933d3ac2717077b3d5f42b40f59edfb1fb6a8c14e1c7de0f38075c4bac8e314"
+checksum = "e48e50df39172a3e7eb17e14642445da64996989bc212b583015435d39a58537"
 dependencies = [
  "bytes",
  "prost-derive",
@@ -5300,9 +5300,9 @@ dependencies = [
 
 [[package]]
 name = "prost-build"
-version = "0.11.7"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a24be1d23b4552a012093e1b93697b73d644ae9590e3253d878d0e77d411b614"
+checksum = "2c828f93f5ca4826f97fedcbd3f9a536c16b12cff3dbbb4a007f932bbad95b12"
 dependencies = [
  "bytes",
  "heck",
@@ -5322,9 +5322,9 @@ dependencies = [
 
 [[package]]
 name = "prost-derive"
-version = "0.11.7"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "8e9935362e8369bc3acd874caeeae814295c504c2bdbcde5c024089cf8b4dc12"
+checksum = "4ea9b0f8cbe5e15a8a042d030bd96668db28ecb567ec37d691971ff5731d2b1b"
 dependencies = [
  "anyhow",
  "itertools",
@@ -5371,9 +5371,9 @@ dependencies = [
 
 [[package]]
 name = "prost-types"
-version = "0.11.7"
+version = "0.11.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7de56acd5cc9642cac2a9518d4c8c53818905398fe42d33235859e0d542a7695"
+checksum = "379119666929a1afd7a043aa6cf96fa67a6dce9af60c88095a4686dbce4c9c88"
 dependencies = [
  "prost",
 ]
@@ -6206,7 +6206,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "time 0.3.19",
+ "time 0.3.20",
  "url",
  "uuid",
 ]
@@ -6546,7 +6546,7 @@ dependencies = [
  "nix 0.25.1",
  "rayon",
  "regex",
- "time 0.3.19",
+ "time 0.3.20",
  "timer",
  "tuikit",
  "unicode-width",
@@ -7171,9 +7171,9 @@ dependencies = [
 
 [[package]]
 name = "time"
-version = "0.3.19"
+version = "0.3.20"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "53250a3b3fed8ff8fd988587d8925d26a83ac3845d9e03b220b37f34c2b8d6c2"
+checksum = "cd0cbfecb4d19b5ea75bb31ad904eb5b9fa13f21079c3b92017ebdf4999a5890"
 dependencies = [
  "itoa 1.0.5",
  "libc",
@@ -7191,9 +7191,9 @@ checksum = "2e153e1f1acaef8acc537e68b44906d2db6436e2b35ac2c6b42640fff91f00fd"
 
 [[package]]
 name = "time-macros"
-version = "0.2.7"
+version = "0.2.8"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "a460aeb8de6dcb0f381e1ee05f1cd56fcf5a5f6eb8187ff3d8f0b11078d38b7c"
+checksum = "fd80a657e71da814b8e5d60d3374fc6d35045062245d80224748ae522dd76f36"
 dependencies = [
  "time-core",
 ]
@@ -7491,7 +7491,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "09d48f71a791638519505cefafe162606f706c25592e4bde4d97600c0195312e"
 dependencies = [
  "crossbeam-channel",
- "time 0.3.19",
+ "time 0.3.20",
  "tracing-subscriber",
 ]
 
@@ -7561,7 +7561,7 @@ dependencies = [
  "sharded-slab",
  "smallvec",
  "thread_local",
- "time 0.3.19",
+ "time 0.3.20",
  "tracing",
  "tracing-core",
  "tracing-log",
@@ -8493,9 +8493,9 @@ checksum = "447660ad36a13288b1db4d4248e857b510e8c3a225c822ba4fb748c0aafecffd"
 
 [[package]]
 name = "winnow"
-version = "0.3.1"
+version = "0.3.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "e03edcaf98895c6e811156c6a3d8532deb3fc546964ef11c5c5182d1ca5e47dd"
+checksum = "44c06e7dbfe731192c512aa707249279d720876a868eb08f21ea93eb9de1eca9"
 dependencies = [
  "memchr",
 ]
