@@ -5,7 +5,7 @@ export function subscribe(
   handler: (notification: EditBufferChangedNotification) => NotificationResponse | undefined
 ) {
   return _subscribe(
-    { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_EDITBUFFFER_CHANGE },
+    { type: NotificationType.NOTIFY_ON_EDITBUFFFER_CHANGE },
     notification => {
       switch (notification?.type?.$case) {
         case 'editBufferNotification':

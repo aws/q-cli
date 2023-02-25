@@ -12,9 +12,10 @@ TS_PROTO = $(shell yarn bin)/protoc-gen-ts_proto
 # Flags
 FLAGS       = --experimental_allow_proto3_optional 
 TS_FLAGS    = --plugin=$(TS_PROTO) \
-							--ts_proto_opt=esModuleInterop=true \
-							--ts_proto_opt=oneof=unions \
-							--ts_proto_opt=fileSuffix=.pb
+              --ts_proto_opt=esModuleInterop=true \
+              --ts_proto_opt=oneof=unions \
+              --ts_proto_opt=fileSuffix=.pb \
+              --ts_proto_opt=removeEnumPrefix=true
 
 # Proto files
 LOCAL = "./local.proto" "./fig_common.proto"

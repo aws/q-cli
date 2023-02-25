@@ -10,7 +10,7 @@ export function pressed(
   handler: (notification: KeybindingPressedNotification) => NotificationResponse | undefined
 ) {
   return _subscribe(
-    { type: NotificationType.NOTIFICATION_TYPE_NOTIFY_ON_KEYBINDING_PRESSED },
+    { type: NotificationType.NOTIFY_ON_KEYBINDING_PRESSED },
     notification => {
       switch (notification?.type?.$case) {
         case 'keybindingPressedNotification':

@@ -20,15 +20,15 @@ export type Component =
 function componentToProto(component: Component) {
   switch (component) {
     case "dotfiles":
-      return InstallComponent.INSTALL_COMPONENT_DOTFILES;
+      return InstallComponent.DOTFILES;
     case "ibus":
-      return InstallComponent.INSTALL_COMPONENT_IBUS;
+      return InstallComponent.IBUS;
     case "accessibility":
-      return InstallComponent.INSTALL_COMPONENT_ACCESSIBILITY;
+      return InstallComponent.ACCESSIBILITY;
     case "inputMethod":
-      return InstallComponent.INSTALL_COMPONENT_INPUT_METHOD;
+      return InstallComponent.INPUT_METHOD;
     case "ssh":
-      return InstallComponent.INSTALL_COMPONENT_SSH;
+      return InstallComponent.SSH;
     default:
       throw Error("Invalid component");
   }
@@ -54,7 +54,7 @@ function handleBasicResponse(response: InstallResponse) {
 
 export async function install(component: Component) {
   const response = await sendInstallRequest({
-    action: InstallAction.INSTALL_ACTION_INSTALL,
+    action: InstallAction.INSTALL,
     component: componentToProto(component)
   });
   handleBasicResponse(response);
@@ -62,7 +62,7 @@ export async function install(component: Component) {
 
 export async function uninstall(component: Component) {
   const response = await sendInstallRequest({
-    action: InstallAction.INSTALL_ACTION_UNINSTALL,
+    action: InstallAction.UNINSTALL,
     component: componentToProto(component)
   });
   handleBasicResponse(response);
@@ -70,7 +70,7 @@ export async function uninstall(component: Component) {
 
 export async function isInstalled(component: Component) {
   const response = await sendInstallRequest({
-    action: InstallAction.INSTALL_ACTION_STATUS,
+    action: InstallAction.INSTALL,
     component: componentToProto(component)
   });
   switch (response.response?.$case) {
