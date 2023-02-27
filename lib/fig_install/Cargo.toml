@@ -19,7 +19,7 @@ regex = "1.6.0"
 reqwest = { version = "0.11.14", default-features = false }
 semver = { version = "1.0.16", features = ["serde"] }
 serde = { version = "1.0.152", features = ["derive"] }
-tempfile = "3.3.0"
+tempfile = "3.4.0"
 thiserror = "1.0.38"
 tokio = "1"
 tracing = "0.1.36"
