@@ -83,6 +83,10 @@ workflows:
           requires: [package-tarball, package-deb, package-rpm, windows, macos]
           context:
             - sentry
+
+      - notify:
+          requires: [publish-packages]
+
   noop:
     when:
       not:
@@ -718,6 +722,23 @@ jobs:
             sentry-cli releases set-commits $SENTRY_RELEASE --auto
             sentry-cli releases finalize $SENTRY_RELEASE
             sentry-cli releases deploys $SENTRY_RELEASE new -e $SENTRY_ENVIRONMENT
+
+  notify:
+    docker:
+      - image: cimg/base:edge-22.04
+    resource_class: small
+    steps:
+      - checkout-desktop
+      - rust/install:
+          version: 1.67.0
+      - run:
+          name: Notify
+          command: |
+            cd desktop
+            VERSION=`cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "fig_desktop") | .version'`
+            curl -H "Content-Type: application/json" \
+              -d '{"username": "Release Bot", "content": "Desktop release '"$VERSION"' is going live!"}' \
+              "${DISCORD_WEBHOOK}"
 
   # Does nothing. Prevents build errors. Ask Mia for more info.
   noop:
