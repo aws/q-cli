@@ -737,7 +737,7 @@ jobs:
             cd desktop
             VERSION=`cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "fig_desktop") | .version'`
             curl -H "Content-Type: application/json" \
-              -d '{"username": "Release Bot", "content": "Desktop release '"$VERSION"' is going live!"}' \
+              -d '{"username": "Release Bot", "content": "Desktop release is going live!\n**Version:** '"$VERSION"'\n**Platforms:** << pipeline.parameters.build_targets >>"}' \
               "${DISCORD_WEBHOOK}"
 
   # Does nothing. Prevents build errors. Ask Mia for more info.
