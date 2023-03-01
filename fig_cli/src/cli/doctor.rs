@@ -1738,11 +1738,11 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
     }
 
     fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
-        if !is_installed(Terminal::Vscode.to_bundle_id()) && !is_installed(Terminal::VSCodeInsiders.to_bundle_id()) {
+        if !is_installed(Terminal::VSCode.to_bundle_id()) && !is_installed(Terminal::VSCodeInsiders.to_bundle_id()) {
             return DoctorCheckType::NoCheck;
         }
 
-        if matches!(current_terminal.to_owned(), Some(Terminal::Vscode))
+        if matches!(current_terminal.to_owned(), Some(Terminal::VSCode))
             || matches!(current_terminal.to_owned(), Some(Terminal::VSCodeInsiders))
         {
             DoctorCheckType::NormalCheck

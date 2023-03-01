@@ -14,7 +14,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::Tabby,
     Terminal::TerminalApp,
     Terminal::VSCodeInsiders,
-    Terminal::Vscode,
+    Terminal::VSCode,
     Terminal::VSCodium,
     Terminal::WezTerm,
 ];
@@ -31,7 +31,7 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
     Terminal::WezTerm,
     Terminal::Tilix,
     Terminal::Terminator,
-    Terminal::Vscode,
+    Terminal::VSCode,
     Terminal::VSCodeInsiders,
     Terminal::VSCodium,
     Terminal::IntelliJ(None),
@@ -57,7 +57,7 @@ pub enum Terminal {
     /// Kitty terminal
     Kitty,
     /// VSCode terminal
-    Vscode,
+    VSCode,
     /// VSCode Insiders
     VSCodeInsiders,
     /// VSCodium
@@ -104,7 +104,7 @@ impl fmt::Display for Terminal {
             Terminal::Hyper => write!(f, "Hyper"),
             Terminal::Alacritty => write!(f, "Alacritty"),
             Terminal::Kitty => write!(f, "Kitty"),
-            Terminal::Vscode => write!(f, "VSCode"),
+            Terminal::VSCode => write!(f, "VSCode"),
             Terminal::VSCodeInsiders => write!(f, "VSCode Insiders"),
             Terminal::VSCodium => write!(f, "VSCodium"),
             Terminal::Tabby => write!(f, "Tabby"),
@@ -135,7 +135,7 @@ impl Terminal {
             Some("Hyper") => Some(Terminal::Hyper),
             Some("vscode") => match std::env::var("TERM_PROGRAM_VERSION").ok().as_deref() {
                 Some(v) if v.contains("insiders") => Some(Terminal::VSCodeInsiders),
-                _ => Some(Terminal::Vscode),
+                _ => Some(Terminal::VSCode),
             },
             Some("Tabby") => Some(Terminal::Tabby),
             Some("Nova") => Some(Terminal::Nova),
@@ -155,7 +155,7 @@ impl Terminal {
             Terminal::Hyper => "hyper".into(),
             Terminal::Alacritty => "alacritty".into(),
             Terminal::Kitty => "kitty".into(),
-            Terminal::Vscode => "vscode".into(),
+            Terminal::VSCode => "vscode".into(),
             Terminal::VSCodeInsiders => "vscode-insiders".into(),
             Terminal::VSCodium => "vscodium".into(),
             Terminal::Tabby => "tabby".into(),
@@ -189,7 +189,7 @@ impl Terminal {
             Terminal::Hyper => String::from("co.zeit.hyper"),
             Terminal::Alacritty => String::from("org.alacritty"),
             Terminal::Kitty => String::from("net.kovidgoyal.kitty"),
-            Terminal::Vscode => String::from("com.microsoft.VSCode"),
+            Terminal::VSCode => String::from("com.microsoft.VSCode"),
             Terminal::VSCodeInsiders => String::from("com.microsoft.VSCodeInsiders"),
             Terminal::VSCodium => String::from("com.vscodium"),
             Terminal::Tabby => String::from("org.tabby"),
@@ -208,7 +208,7 @@ impl Terminal {
             "co.zeit.hyper" => Terminal::Hyper,
             "io.alacritty" | "org.alacritty" => Terminal::Alacritty,
             "net.kovidgoyal.kitty" => Terminal::Kitty,
-            "com.microsoft.VSCode" => Terminal::Vscode,
+            "com.microsoft.VSCode" => Terminal::VSCode,
             "com.microsoft.VSCodeInsiders" => Terminal::VSCodeInsiders,
             "com.vscodium" | "com.visualstudio.code.oss" => Terminal::VSCodium,
             "org.tabby" => Terminal::Tabby,
@@ -236,7 +236,7 @@ impl Terminal {
             self,
             Terminal::Iterm
                 | Terminal::TerminalApp
-                | Terminal::Vscode
+                | Terminal::VSCode
                 | Terminal::VSCodeInsiders
                 | Terminal::VSCodium
                 | Terminal::Hyper
@@ -247,13 +247,13 @@ impl Terminal {
     pub fn is_xterm(&self) -> bool {
         matches!(
             self,
-            Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::Hyper | Terminal::Tabby
+            Terminal::VSCode | Terminal::VSCodeInsiders | Terminal::Hyper | Terminal::Tabby
         )
     }
 
     pub fn executable_names(&self) -> &'static [&'static str] {
         match self {
-            Terminal::Vscode => &["code"],
+            Terminal::VSCode => &["code"],
             Terminal::VSCodeInsiders => &["code-insiders"],
             Terminal::Alacritty => &["alacritty"],
             Terminal::Kitty => &["kitty"],
@@ -279,7 +279,7 @@ impl Terminal {
 
     pub fn wm_class(&self) -> Option<&'static str> {
         match self {
-            Terminal::Vscode => Some("Code"),
+            Terminal::VSCode => Some("Code"),
             Terminal::VSCodeInsiders => Some("Vscode-insiders"),
             Terminal::GnomeConsole => Some("Kgx"),
             Terminal::GnomeTerminal => Some("Gnome-terminal"),
@@ -331,7 +331,7 @@ impl Terminal {
     }
 
     pub fn supports_fancy_boxes(&self) -> bool {
-        !matches!(self, Terminal::Vscode | Terminal::VSCodeInsiders | Terminal::VSCodium)
+        !matches!(self, Terminal::VSCode | Terminal::VSCodeInsiders | Terminal::VSCodium)
     }
 
     pub fn positioning_kind(&self) -> PositioningKind {
