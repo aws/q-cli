@@ -1716,6 +1716,7 @@ impl DoctorCheck for SystemVersionCheck {
         let os_version = fig_util::system_info::os_version().wrap_err("Could not get OS Version")?;
         match os_version.support_level() {
             SupportLevel::Supported => Ok(()),
+            SupportLevel::SupportedWithCaveat { info } => Err(DoctorError::Warning(info)),
             SupportLevel::InDevelopment { info } => Err(DoctorError::Warning(
                 format!(
                     "Fig's support for {os_version} is in development. It may not work properly on your system.\n{}",

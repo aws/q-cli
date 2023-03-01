@@ -1,5 +1,7 @@
 pub mod linux;
 
+use std::borrow::Cow;
+
 use cfg_if::cfg_if;
 use once_cell::sync::Lazy;
 use serde::{
@@ -120,8 +122,10 @@ static IN_CI: Lazy<bool> = Lazy::new(|| std::env::var_os("CI").is_some() || std:
 pub enum SupportLevel {
     /// A fully supported platform
     Supported,
+    /// Supported, but with a caveat
+    SupportedWithCaveat { info: Cow<'static, str> },
     /// A platform that is currently in development
-    InDevelopment { info: Option<String> },
+    InDevelopment { info: Option<Cow<'static, str>> },
     /// A platform that is not supported
     Unsupported,
 }
@@ -158,7 +162,21 @@ impl OSVersion {
                     SupportLevel::Unsupported
                 }
             },
-            OSVersion::Linux { .. } => SupportLevel::InDevelopment { info: None },
+            OSVersion::Linux { .. } => {
+                if crate::manifest::is_full() {
+                    SupportLevel::InDevelopment {
+                        info: Some(
+                            "Autocomplete is currently in alpha for Linux, other products should work as expected."
+                                .into(),
+                        ),
+                    }
+                } else {
+                    SupportLevel::SupportedWithCaveat {
+                        info: "Autocomplete is not yet available on Linux, but other products should work as expected."
+                            .into(),
+                    }
+                }
+            },
             OSVersion::Windows { build, .. } => match build {
                 // Only Windows 11 is fully supported at the moment
                 build if *build >= 22000 => SupportLevel::Supported,
@@ -168,7 +186,7 @@ impl OSVersion {
                         "Since support for Windows 10 is still in progress,\
 Autocomplete only works in Git Bash with the default prompt.\
 Please upgrade to Windows 11 or wait for a fix while we work this issue out."
-                            .to_owned(),
+                            .into(),
                     ),
                 },
                 // Earlier versions of Windows are not supported
