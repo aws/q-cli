@@ -1798,7 +1798,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
 
     fn get_type(&self, current_terminal: &Option<Terminal>, _platform: Platform) -> DoctorCheckType {
         match current_terminal {
-            Some(current_terminal) if current_terminal.is_input_dependant() => DoctorCheckType::NormalCheck,
+            Some(current_terminal) if current_terminal.supports_macos_input_method() => DoctorCheckType::NormalCheck,
             _ => DoctorCheckType::NoCheck,
         }
     }
@@ -1841,7 +1841,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
         use macos_utils::applications::running_applications;
 
         match current_terminal {
-            Some(terminal) if terminal.is_input_dependant() => {
+            Some(terminal) if terminal.supports_macos_input_method() => {
                 let app = running_applications()
                     .into_iter()
                     .find(|app| app.bundle_identifier == Some(terminal.to_bundle_id()));

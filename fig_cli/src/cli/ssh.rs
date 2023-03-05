@@ -267,14 +267,16 @@ impl SshSubcommand {
 
         if let Some(identity) = selected_identity {
             if identity.authentication_type == "password" {
-                if which::which("expect").is_err() {
-                    eyre::bail!("You need to install expect to use password input");
-                }
+                let expect_bin = match which::which("expect") {
+                    Ok(expect_bin) => expect_bin,
+                    Err(_) => {
+                        eyre::bail!("You need to install expect to use password input");
+                    },
+                };
                 let password = identity.password.clone().unwrap_or_default();
-                let mut expect_command = Command::new("expect");
-                expect_command
-                .arg("-c")
-                .arg(format!(r#"spawn {ssh_string}; expect "yes/no" {{ send "yes\n"; expect "*?assword:"; send "{password}\n"; }} "*?assword" {{ send "{password}\n"; }}; interact"#));
+                let mut expect_command = Command::new(expect_bin);
+                expect_command.arg("-c");
+                expect_command.arg(format!(r#"spawn {ssh_string}; expect "yes/no" {{ send "yes\n"; expect "*?assword:"; send "{password}\n"; }} "*?assword" {{ send "{password}\n"; }}; interact"#));
                 command = Some(expect_command);
             }
         }

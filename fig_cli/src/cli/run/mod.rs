@@ -614,11 +614,7 @@ impl ScriptGeneratorState {
 
     fn execute(&mut self, args: &HashMap<String, ParameterValue>) -> bool {
         let script = interpolate_ast(Runtime::Bash, &self.tree, args);
-        let should_run = self
-            .last_execution
-            .as_ref()
-            .map(|prev| prev.as_str() != script)
-            .unwrap_or(true);
+        let should_run = self.last_execution.as_ref().map(|prev| prev != &script).unwrap_or(true);
 
         if should_run {
             if let Ok(output) = Command::new("bash").arg("-c").arg(&script).output() {
@@ -685,12 +681,7 @@ async fn execute_script(
         }
     });
 
-    // Validate that each runtime is installed
-    for step in &script.steps {
-        if let ScriptStep::CodeBlock { runtime, .. } = step {
-            runtime_check(runtime).await?;
-        }
-    }
+    script_check_runtimes(script).await?;
 
     // validate that all of the script rules pass
     if let Some(ruleset) = &script.rules {
@@ -1352,7 +1343,7 @@ fn non_whitelisted(ch: char) -> bool {
 }
 
 /// Escape characters that may have special meaning in a shell, including spaces.
-pub fn escape(s: Cow<str>) -> Cow<str> {
+fn escape(s: Cow<str>) -> Cow<str> {
     if !s.is_empty() && !s.contains(non_whitelisted) {
         return s;
     }
@@ -1373,7 +1364,39 @@ pub fn escape(s: Cow<str>) -> Cow<str> {
     es.into()
 }
 
-async fn runtime_check(runtime: &Runtime) -> Result<()> {
+/// Validate that each runtime is installed
+async fn script_check_runtimes(script: &Script) -> Result<()> {
+    // Create a set of all the runtimes used in the script and check that they are installed
+    let mut runtimes = HashSet::new();
+    for step in &script.steps {
+        match step {
+            ScriptStep::CodeBlock { runtime, .. } => {
+                runtimes.insert(runtime);
+            },
+            ScriptStep::Inputs { parameters, .. } => {
+                for parameter in parameters {
+                    if let ParameterType::Selector {
+                        generators: Some(generators),
+                        ..
+                    } = &parameter.parameter_type
+                    {
+                        for generator in generators {
+                            if matches!(generator, Generator::Script { .. }) {
+                                runtimes.insert(&Runtime::Bash);
+                            }
+                        }
+                    }
+                }
+            },
+        }
+    }
+    for runtime in runtimes {
+        check_runtime(runtime).await?;
+    }
+    Ok(())
+}
+
+async fn check_runtime(runtime: &Runtime) -> Result<()> {
     match which(runtime.exe()) {
         Ok(_) => Ok(()),
         Err(_) => match try_install(runtime) {

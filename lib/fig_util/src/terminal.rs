@@ -17,6 +17,7 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::VSCode,
     Terminal::VSCodium,
     Terminal::WezTerm,
+    Terminal::Zed,
 ];
 
 /// Terminals that Linux supports
@@ -84,6 +85,8 @@ pub enum Terminal {
     Terminology,
     /// IntelliJ
     IntelliJ(Option<IntelliJVariant>),
+    // Zed
+    Zed,
 
     // Other pseudoterminal that we want to launch within
     /// SSH
@@ -123,6 +126,7 @@ impl fmt::Display for Terminal {
             Terminal::Zellij => write!(f, "Zellij"),
             Terminal::IntelliJ(Some(variant)) => write!(f, "{}", variant.application_name()),
             Terminal::IntelliJ(None) => write!(f, "IntelliJ"),
+            Terminal::Zed => write!(f, "Zed"),
         }
     }
 }
@@ -172,6 +176,7 @@ impl Terminal {
             Terminal::Tmux => "tmux".into(),
             Terminal::Nvim => "nvim".into(),
             Terminal::Zellij => "zellij".into(),
+            Terminal::Zed => "zed".into(),
             Terminal::IntelliJ(ide) => match ide {
                 Some(variant) => format!("intellij-{}", variant.internal_id()),
                 None => "intellij".into(),
@@ -196,6 +201,7 @@ impl Terminal {
             Terminal::Nova => String::from("com.panic.Nova"),
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
             Terminal::IntelliJ(Some(variant)) => variant.bundle_identifier().into(),
+            Terminal::Zed => String::from("dev.zed.Zed"),
             _ => todo!(),
         }
     }
@@ -214,6 +220,7 @@ impl Terminal {
             "org.tabby" => Terminal::Tabby,
             "com.panic.Nova" => Terminal::Nova,
             "com.github.wez.wezterm" => Terminal::WezTerm,
+            "dev.zed.Zed" => Terminal::Zed,
             // todo(mschrage): the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
                 Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
@@ -227,7 +234,12 @@ impl Terminal {
     pub fn supports_macos_input_method(&self) -> bool {
         matches!(
             self,
-            Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::WezTerm | Terminal::IntelliJ(_)
+            Terminal::Alacritty
+                | Terminal::Kitty
+                | Terminal::Nova
+                | Terminal::WezTerm
+                | Terminal::IntelliJ(_)
+                | Terminal::Zed
         )
     }
 
@@ -267,6 +279,7 @@ impl Terminal {
             Terminal::Hyper => &["hyper"],
             Terminal::Tabby => &["tabby"],
             Terminal::Terminator => &["terminator"],
+            Terminal::Zed => &["zed"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux"],
@@ -315,14 +328,6 @@ impl Terminal {
             // Terminal::Tabby => Some("tabby"),
             _ => None,
         }
-    }
-
-    /// (macos) do we need input method
-    pub fn is_input_dependant(&self) -> bool {
-        matches!(
-            self,
-            Terminal::WezTerm | Terminal::Alacritty | Terminal::Kitty | Terminal::Nova | Terminal::IntelliJ(_)
-        )
     }
 
     pub fn is_jetbrains_terminal() -> bool {

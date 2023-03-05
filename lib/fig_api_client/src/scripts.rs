@@ -198,7 +198,7 @@ pub enum TreeElement {
     Token { name: String },
 }
 
-#[derive(Clone, Default, Debug, Deserialize, Serialize)]
+#[derive(Clone, Default, Debug, PartialEq, Eq, Hash, Deserialize, Serialize)]
 #[serde(rename_all = "UPPERCASE")]
 pub enum Runtime {
     #[default]
