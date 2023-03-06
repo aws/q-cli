@@ -110,7 +110,7 @@ jobs:
             sudo apt install -y curl git jq python3-pip
             python3 -m pip install semver
       - rust/install:
-          version: 1.67.0
+          version: 1.67.1
       - checkout-desktop:
           version_update: true
       - run:
@@ -328,7 +328,7 @@ jobs:
           name: Install Build Dependencies
           command: brew install jq protobuf node gh
       - rust/install:
-          version: 1.67.0
+          version: 1.67.1
       - run:
           name: Configure rust
           command: |
@@ -707,7 +707,7 @@ jobs:
     steps:
       - checkout-desktop
       - rust/install:
-          version: 1.67.0
+          version: 1.67.1
       - run:
           name: Install sentry
           command: |
@@ -730,7 +730,7 @@ jobs:
     steps:
       - checkout-desktop
       - rust/install:
-          version: 1.67.0
+          version: 1.67.1
       - run:
           name: Notify
           command: |
@@ -881,7 +881,7 @@ commands:
           condition: << parameters.install_rust >>
           steps:
             - rust/install:
-                version: 1.67.0
+                version: 1.67.1
       - checkout-desktop
       - run:
           name: Configure rust
@@ -948,7 +948,7 @@ commands:
   prepare-package:
     steps:
       - rust/install:
-          version: 1.67.0
+          version: 1.67.1
 
   require:
     parameters:
