@@ -222,7 +222,9 @@ jobs:
           command: apt install -y musl-dev
       - run:
           name: Install Rust toolchain
-          command: rustup target add x86_64-unknown-linux-musl
+          command: |
+            rm -rf ~/.rustup/toolchains/*
+            rustup target add x86_64-unknown-linux-musl
       - run:
           name: Ignore Rust toolchain
           command: rm desktop/rust-toolchain.toml
@@ -265,7 +267,9 @@ jobs:
           command: rustup toolchain uninstall stable && rustup toolchain install stable
       - run:
           name: Install Rust toolchain
-          command: rustup target add aarch64-unknown-linux-musl
+          command: |
+            rm -rf ~/.rustup/toolchains/*
+            rustup target add x86_64-unknown-linux-musl
       - run:
           name: Ignore Rust toolchain
           command: rm desktop/rust-toolchain.toml
