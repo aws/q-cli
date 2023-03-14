@@ -1966,7 +1966,7 @@ dependencies = [
  "validator",
  "which",
  "winapi",
- "windows",
+ "windows 0.46.0",
  "yaque",
 ]
 
@@ -2059,7 +2059,7 @@ dependencies = [
  "url",
  "which",
  "whoami",
- "windows",
+ "windows 0.46.0",
  "wry",
  "x11rb 0.11.1",
  "zbus",
@@ -2432,7 +2432,7 @@ dependencies = [
  "tokio",
  "tracing",
  "whoami",
- "windows",
+ "windows 0.46.0",
  "winreg 0.11.0",
 ]
 
@@ -2490,7 +2490,7 @@ dependencies = [
  "uuid",
  "which",
  "winapi",
- "windows",
+ "windows 0.46.0",
  "winreg 0.11.0",
 ]
 
@@ -5772,7 +5772,7 @@ dependencies = [
  "wasm-bindgen",
  "wasm-bindgen-futures",
  "web-sys",
- "windows",
+ "windows 0.44.0",
 ]
 
 [[package]]
@@ -6950,8 +6950,8 @@ dependencies = [
  "tao-macros",
  "unicode-segmentation",
  "uuid",
- "windows",
- "windows-implement",
+ "windows 0.44.0",
+ "windows-implement 0.44.0",
  "x11-dl",
 ]
 
@@ -8164,8 +8164,8 @@ checksum = "11296e5daf3a653b79bf47d66c380e4143d5b9c975818871179a3bda79499562"
 dependencies = [
  "webview2-com-macros",
  "webview2-com-sys",
- "windows",
- "windows-implement",
+ "windows 0.44.0",
+ "windows-implement 0.44.0",
 ]
 
 [[package]]
@@ -8189,7 +8189,7 @@ dependencies = [
  "serde",
  "serde_json",
  "thiserror",
- "windows",
+ "windows 0.44.0",
  "windows-bindgen",
  "windows-metadata",
 ]
@@ -8323,8 +8323,19 @@ version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9e745dab35a0c4c77aa3ce42d595e13d2003d6902d6b08c9ef5fc326d08da12b"
 dependencies = [
- "windows-implement",
- "windows-interface",
+ "windows-implement 0.44.0",
+ "windows-interface 0.44.0",
+ "windows-targets",
+]
+
+[[package]]
+name = "windows"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cdacb41e6a96a052c6cb63a144f24900236121c6f63f4f8219fef5977ecb0c25"
+dependencies = [
+ "windows-implement 0.46.0",
+ "windows-interface 0.46.0",
  "windows-targets",
 ]
 
@@ -8350,10 +8361,32 @@ dependencies = [
 ]
 
 [[package]]
+name = "windows-implement"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "c9b4fb59529addad98f7677797a3449b0c79f527e1384a86f74557860d387c26"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
 name = "windows-interface"
 version = "0.44.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "853f69a591ecd4f810d29f17e902d40e349fb05b0b11fff63b08b826bfe39c7f"
+dependencies = [
+ "proc-macro2",
+ "quote",
+ "syn",
+]
+
+[[package]]
+name = "windows-interface"
+version = "0.46.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "ac1f330b1edbef4041defea6c10bbb196add3c94c7e1b77778b6603e60ff0729"
 dependencies = [
  "proc-macro2",
  "quote",
@@ -8533,8 +8566,8 @@ dependencies = [
  "webkit2gtk",
  "webkit2gtk-sys",
  "webview2-com",
- "windows",
- "windows-implement",
+ "windows 0.44.0",
+ "windows-implement 0.44.0",
 ]
 
 [[package]]
