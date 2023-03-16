@@ -50,7 +50,7 @@ export function sendMessage(
     }
     window.webkit.messageHandlers.proto.postMessage(b64);
   } else {
-    console.warn(
+    console.error(
       "Cannot send request. Fig.js is not supported in this browser."
     );
     
