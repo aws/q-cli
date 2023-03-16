@@ -17,7 +17,7 @@ use crate::grid::{
 use crate::index::Column;
 
 bitflags! {
-    #[derive(Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
     pub struct ShellFlags: u16 {
         const INVERSE                   = 0b0000_0000_0000_0001;
         const BOLD                      = 0b0000_0000_0000_0010;
@@ -37,7 +37,7 @@ bitflags! {
 }
 
 bitflags! {
-    #[derive(Serialize, Deserialize)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Serialize, Deserialize)]
     pub struct FigFlags: u8 {
         const IN_PROMPT = 0b0000_0001;
         const IN_SUGGESTION = 0b0000_0010;

@@ -14,7 +14,8 @@ use crate::Error;
 
 bitflags::bitflags! {
     /// The different components that can be installed.
-    pub struct InstallComponents: usize {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct InstallComponents: u64 {
         const DAEMON             = 0b00000001;
         const SHELL_INTEGRATIONS = 0b00000010;
         const BINARY             = 0b00000100;

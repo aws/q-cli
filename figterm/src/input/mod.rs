@@ -22,14 +22,15 @@ pub mod keymap;
 pub mod readbuf;
 
 bitflags::bitflags! {
-pub struct KittyKeyboardFlags: u16 {
-    const NONE = 0;
-    const DISAMBIGUATE_ESCAPE_CODES = 1;
-    const REPORT_EVENT_TYPES = 2;
-    const REPORT_ALTERNATE_KEYS = 4;
-    const REPORT_ALL_KEYS_AS_ESCAPE_CODES = 8;
-    const REPORT_ASSOCIATED_TEXT = 16;
-}
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
+    pub struct KittyKeyboardFlags: u16 {
+        const NONE = 0;
+        const DISAMBIGUATE_ESCAPE_CODES = 1;
+        const REPORT_EVENT_TYPES = 2;
+        const REPORT_ALTERNATE_KEYS = 4;
+        const REPORT_ALL_KEYS_AS_ESCAPE_CODES = 8;
+        const REPORT_ASSOCIATED_TEXT = 16;
+    }
 }
 
 pub const CSI: &str = "\x1b[";
@@ -69,7 +70,7 @@ use winapi::um::wincon::{
 };
 
 bitflags! {
-    #[derive(Default)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
     pub struct Modifiers: u8 {
         const NONE = 0;
         const SHIFT = 1<<1;
@@ -82,7 +83,7 @@ bitflags! {
     }
 }
 bitflags! {
-    #[derive(Default)]
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash, Default)]
     pub struct MouseButtons: u8 {
         const NONE = 0;
         const LEFT = 1<<1;

@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-bitflags = "1"
+bitflags = "2.0.0"
 nu-ansi-term = "0.47.0"
 nu-color-config = "0.77.0"
 

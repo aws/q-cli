@@ -52,6 +52,7 @@ impl From<nu_ansi_term::Color> for VTermColor {
 }
 
 bitflags::bitflags! {
+    #[derive(Debug, Clone, Copy, PartialEq, Eq, PartialOrd, Ord, Hash)]
     pub struct ColorSupport: u32 {
         const TERM256 = 1 << 1;
         const TERM24BIT = 1 << 2;
