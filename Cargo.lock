@@ -78,7 +78,7 @@ dependencies = [
 name = "alacritty_terminal"
 version = "2.15.0-dev"
 dependencies = [
- "bitflags 2.0.0",
+ "bitflags 2.0.1",
  "camino",
  "fig_color",
  "serde",
@@ -118,9 +118,9 @@ dependencies = [
 
 [[package]]
 name = "anstyle"
-version = "0.3.1"
+version = "0.3.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "80c697cc33851b02ab0c26b2e8a211684fbe627ff1cc506131f35026dd7686dd"
+checksum = "23ea9e81bd02e310c216d080f6223c179012256e5151c41db88d12c88a1684d2"
 
 [[package]]
 name = "anyhow"
@@ -207,9 +207,9 @@ checksum = "eab1c04a571841102f5345a8fc0f6bb3d31c315dec879b5c6e42e40ce7ffa34e"
 
 [[package]]
 name = "assert_cmd"
-version = "2.0.9"
+version = "2.0.10"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c0dcbed38184f9219183fcf38beb4cdbf5df7163a6d7cd227c6ac89b7966d6fe"
+checksum = "ec0b2340f55d9661d76793b2bfc2eb0e62689bd79d067a95707ea762afd5e9dd"
 dependencies = [
  "anstyle",
  "bstr",
@@ -544,9 +544,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.0.0"
+version = "2.0.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "f4f6e5df9abedba5099a01a6567c6086a6fbcff57af07c360d356737f9e0c644"
+checksum = "d5dd14596c0e5b954530d0e6f1fd99b89c03e313aa2086e8da4303701a09e1cf"
 dependencies = [
  "serde",
 ]
@@ -796,9 +796,9 @@ dependencies = [
 
 [[package]]
 name = "clap"
-version = "4.1.8"
+version = "4.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c3d7ae14b20b94cb02149ed21a86c423859cbe18dc7ed69845cace50e52b40a5"
+checksum = "9a9d6ada83c1edcce028902ea27dd929069c70df4c7600b131b4d9a1ad2879cc"
 dependencies = [
  "bitflags 1.3.2",
  "clap_derive",
@@ -814,18 +814,18 @@ dependencies = [
 
 [[package]]
 name = "clap_complete"
-version = "4.1.4"
+version = "4.1.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "501ff0a401473ea1d4c3b125ff95506b62c5bc5768d818634195fbb7c4ad5ff4"
+checksum = "37686beaba5ac9f3ab01ee3172f792fc6ffdd685bfb9e63cfef02c0571a4e8e1"
 dependencies = [
  "clap",
 ]
 
 [[package]]
 name = "clap_complete_fig"
-version = "4.1.1"
+version = "4.1.2"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "63a06158a72dbb088f864887b4409fd22600ba379f3cee3040f842234cc5c2d0"
+checksum = "2171bc6242ad7a1801422bff039574449b5bd832b715222e500714ce10f91a54"
 dependencies = [
  "clap",
  "clap_complete",
@@ -833,9 +833,9 @@ dependencies = [
 
 [[package]]
 name = "clap_derive"
-version = "4.1.8"
+version = "4.1.9"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44bec8e5c9d09e439c4335b1af0abaab56dcf3b94999a936e1bb47b9134288f0"
+checksum = "fddf67631444a3a3e3e5ac51c36a5e01335302de677bd78759eaa90ab1f46644"
 dependencies = [
  "heck",
  "proc-macro-error",
@@ -846,9 +846,9 @@ dependencies = [
 
 [[package]]
 name = "clap_lex"
-version = "0.3.2"
+version = "0.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "350b9cf31731f9957399229e9b2adc51eeabdfbe9d71d9a0552275fd12710d09"
+checksum = "033f6b7a4acb1f358c742aaca805c939ee73b4c6209ae4318ec7aca81c42e646"
 dependencies = [
  "os_str_bytes",
 ]
@@ -882,9 +882,9 @@ dependencies = [
 
 [[package]]
 name = "cocoa-foundation"
-version = "0.1.0"
+version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "7ade49b65d560ca58c403a479bb396592b155c0185eada742ee323d1d68d6318"
+checksum = "931d3837c286f56e3c58423ce4eba12d08db2374461a785c86f672b08b5650d6"
 dependencies = [
  "bitflags 1.3.2",
  "block",
@@ -1918,7 +1918,7 @@ dependencies = [
  "assert_cmd",
  "async-trait",
  "atty",
- "bitflags 2.0.0",
+ "bitflags 2.0.1",
  "bstr",
  "bytes",
  "camino",
@@ -1990,7 +1990,7 @@ dependencies = [
 name = "fig_color"
 version = "2.15.0-dev"
 dependencies = [
- "bitflags 2.0.0",
+ "bitflags 2.0.1",
  "fig_test",
  "nu-ansi-term 0.47.0",
  "nu-color-config",
@@ -2181,7 +2181,7 @@ dependencies = [
 name = "fig_install"
 version = "2.15.0-dev"
 dependencies = [
- "bitflags 2.0.0",
+ "bitflags 2.0.1",
  "camino",
  "cfg-if",
  "fig_daemon",
@@ -2460,7 +2460,7 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "async-trait",
- "bitflags 2.0.0",
+ "bitflags 2.0.1",
  "bstr",
  "bytes",
  "cfg-if",
@@ -3553,10 +3553,11 @@ dependencies = [
 
 [[package]]
 name = "io-lifetimes"
-version = "1.0.6"
+version = "1.0.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "cfa919a82ea574332e2de6e74b4c36e74d41982b335080fa59d4ef31be20fdf3"
+checksum = "76e86b86ae312accbf05ade23ce76b625e0e47a255712b7414037385a1c05380"
 dependencies = [
+ "hermit-abi 0.3.1",
  "libc",
  "windows-sys 0.45.0",
 ]
@@ -4368,9 +4369,9 @@ dependencies = [
 
 [[package]]
 name = "nu-color-config"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d6e4cdac90a5a6b4f8b3d2986b3a3053370a0607701e6639607504d59bacc82c"
+checksum = "ec7d6e6f94090922e915a411ccb2ca3da477aa5bc4ce09703509aa6873bfdef7"
 dependencies = [
  "nu-ansi-term 0.47.0",
  "nu-engine",
@@ -4383,9 +4384,9 @@ dependencies = [
 
 [[package]]
 name = "nu-engine"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ddb9b2c3f47573b9e63a88bbcceeb7f4148ed07e698f82437e981743ab7f65a7"
+checksum = "156d78ac9ec155d763297e4e8a1e218ecba3f02a87079618de16997aa4161257"
 dependencies = [
  "chrono",
  "nu-glob",
@@ -4398,15 +4399,15 @@ dependencies = [
 
 [[package]]
 name = "nu-glob"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "5742179ec66bf4130664a2952d26ed8cadaf508cfbfed8a5e0ebac50a5183d81"
+checksum = "8b6f1c8542b1b558b84043c8baf457468bdb0395283ae6da3e84c4aec9b94a33"
 
 [[package]]
 name = "nu-json"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "44abad25ae64a43149fe30f8a7600ecc5f7650e53f2c01140f556e8ca5ba0b38"
+checksum = "3369b20d2ac5aa3269ffbb7183b94e64c21ec145a011ad0ddcac2e3562140f8b"
 dependencies = [
  "linked-hash-map",
  "num-traits",
@@ -4415,9 +4416,9 @@ dependencies = [
 
 [[package]]
 name = "nu-path"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "23661190a29da4e5a2b11171140c3d6e31531c47398208ab34f7f23e26309523"
+checksum = "b924633f57afa426b4e0db4eeabf99d969a6773c028c9f76fd9258359b5fa85c"
 dependencies = [
  "dirs-next",
  "omnipath",
@@ -4426,9 +4427,9 @@ dependencies = [
 
 [[package]]
 name = "nu-protocol"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "d4ad2fcdc44ebda3bbdd0c7fca943230911b60f4c5f686a91c3ef746de9a7a1e"
+checksum = "ccd4d31c1dc86e44b1a41bb5edcd9b1d247d7df545ee43d739360bb00cb5ca2b"
 dependencies = [
  "byte-unit",
  "chrono",
@@ -4450,9 +4451,9 @@ dependencies = [
 
 [[package]]
 name = "nu-utils"
-version = "0.77.0"
+version = "0.77.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ad89137b5d639ca38ae02261e2506f10d3fce975791beeaf7e977b35534d526a"
+checksum = "04f4e2b747a7dd41c053e937ebd2fed6a33739788e4ebeb214e556e80dd34993"
 dependencies = [
  "crossterm_winapi",
  "log",
@@ -7713,9 +7714,9 @@ dependencies = [
 
 [[package]]
 name = "unicode-bidi"
-version = "0.3.11"
+version = "0.3.12"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "524b68aca1d05e03fdf03fcdce2c6c94b6daf6d16861ddaa7e4f2b6638a9052c"
+checksum = "7d502c968c6a838ead8e69b2ee18ec708802f99db92a0d156705ec9ef801993b"
 
 [[package]]
 name = "unicode-ident"
@@ -7946,12 +7947,11 @@ checksum = "9d5b2c62b4012a3e1eca5a7e077d13b3bf498c4073e33ccd58626607748ceeca"
 
 [[package]]
 name = "walkdir"
-version = "2.3.2"
+version = "2.3.3"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "808cf2735cd4b6866113f648b791c6adc5714537bc222d9347bb203386ffda56"
+checksum = "36df944cda56c7d8d8b7496af378e6b16de9284591917d307c9b4d313c44e698"
 dependencies = [
  "same-file",
- "winapi",
  "winapi-util",
 ]
 
