@@ -7,7 +7,7 @@ Group: Applications/System
 URL: https://fig.io
 Conflicts: fig-headless
 
-Requires: webkit2gtk3
+Requires: webkit2gtk4.1
 Requires: gtk3
 Requires: libappindicator-gtk3-devel
 Requires: ibus

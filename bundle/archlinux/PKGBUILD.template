@@ -7,7 +7,7 @@ pkgdesc='Adds IDE-style autocomplete to your existing terminal.'
 arch=('x86_64')
 url='https://fig.io'
 license=('custom')
-depends=('gtk3' 'webkit2gtk' 'libappindicator-gtk3' 'ibus' 'xdg-utils')$aur_provides
+depends=('gtk3' 'webkit2gtk-4.1' 'libappindicator-gtk3' 'ibus' 'xdg-utils')$aur_provides
 makedepends=('jq' 'xz')
 source=("${pkgname}-${pkgver//_/-}.tar.xz::https://repo.fig.io/generic/$aur_channel/asset/${pkgver//_/-}/x86_64/fig.tar.xz")
 

@@ -5,4 +5,4 @@ Homepage: https://fig.io
 Version: $VERSION
 Architecture: $APT_ARCH
 Conflicts: fig-headless
-Depends: libwebkit2gtk-4.1-37, libgtk-3-0, libayatana-appindicator3-1, libayatana-appindicator3-dev, ibus, util-linux
+Depends: libwebkit2gtk-4.1-0, libgtk-3-0, libayatana-appindicator3-1, libayatana-appindicator3-dev, ibus, util-linux
