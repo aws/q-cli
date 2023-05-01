@@ -1,4 +1,5 @@
 use std::io::Result;
+use std::path::PathBuf;
 
 /// Try to find the version of protoc installed on the system.
 fn protoc_version() -> Option<[u32; 3]> {
@@ -50,7 +51,10 @@ fn main() -> Result<()> {
         "#[cfg_attr(feature = \"arbitrary\", derive(arbitrary::Arbitrary))]",
     );
 
-    prost_reflect_build::Builder::new().compile_protos_with_config(config, &proto_files, &["../../proto"])?;
+    prost_reflect_build::Builder::new()
+        .file_descriptor_set_path(PathBuf::from(std::env::var("OUT_DIR").unwrap()).join("file_descriptor_set.bin"))
+        .descriptor_pool("crate::DESCRIPTOR_POOL")
+        .compile_protos_with_config(config, &proto_files, &["../../proto"])?;
 
     Ok(())
 }

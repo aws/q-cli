@@ -12,9 +12,9 @@ use rustls::client::{
     ServerCertVerified,
     ServerCertVerifier,
 };
-use rustls::internal::msgs::handshake::DigitallySignedStruct;
 use rustls::{
     ClientConfig,
+    DigitallySignedStruct,
     Error,
     RootCertStore,
     ServerName,

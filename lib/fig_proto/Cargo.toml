@@ -13,7 +13,7 @@ fig_util = { path = "../fig_util" }
 hex = "0.4.3"
 once_cell = "1.17.1"
 prost = "0.11.6"
-prost-reflect = { version = "0.10.0", features = ["serde", "derive"] }
+prost-reflect = { version = "0.11.3", features = ["serde", "derive"] }
 prost-types = "0.11"
 rmp-serde = "1.1.0"
 serde = { version = "1.0.152", features = ["derive"] }
@@ -25,4 +25,4 @@ nix = "0.26.2"
 
 [build-dependencies]
 prost-build = "0.11.5"
-prost-reflect-build = "0.10.0"
+prost-reflect-build = "0.11.0"
