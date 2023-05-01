@@ -204,9 +204,15 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
                 // The source for JetBrains shell integrations can be found here.
                 // https://github.com/JetBrains/intellij-community/tree/master/plugins/terminal/resources
                 match shell {
-                    Shell::Bash => Some(format!("source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",)),
-                    Shell::Zsh => Some(format!("source '{bundle}/Contents/plugins/terminal/.zshenv'",)),
-                    Shell::Fish => Some(format!("source '{bundle}/Contents/plugins/terminal/fish/config.fish'",)),
+                    Shell::Bash => Some(format!(
+                        "[ -f '{bundle}/Contents/plugins/terminal/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",
+                    )),
+                    Shell::Zsh => Some(format!(
+                        "[ -f '{bundle}/Contents/plugins/terminal/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/.zshenv'",
+                    )),
+                    Shell::Fish => Some(format!(
+                        "[ -f '{bundle}/Contents/plugins/terminal/fish/config.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/config.fish'",
+                    )),
                     Shell::Nu => None,
                 }
             } else {
