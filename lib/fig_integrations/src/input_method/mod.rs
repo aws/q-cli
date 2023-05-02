@@ -68,7 +68,10 @@ use tracing::{
     trace,
 };
 
-use crate::error::Result;
+use crate::error::{
+    ErrorExt,
+    Result,
+};
 use crate::Integration;
 
 pub enum __TISInputSource {}
@@ -149,6 +152,8 @@ pub enum InputMethodError {
     NotRunning,
     #[error("An unknown error occurred")]
     UnknownError,
+    #[error("Not installed")]
+    NotInstalled,
 }
 
 #[macro_export]
@@ -266,7 +271,7 @@ impl std::default::Default for InputMethod {
 
 impl InputMethod {
     pub fn input_method_directory() -> PathBuf {
-        home_dir().ok().unwrap().join("Library").join("Input Methods")
+        home_dir().unwrap().join("Library").join("Input Methods")
     }
 
     pub fn list_all_input_sources(
@@ -357,8 +362,9 @@ impl InputMethod {
                         0 => Err(InputMethodError::NoInputSourcesForBundleIdentifier(
                             bundle_identifier.to_string().into(),
                         )),
-                        1 => Ok(sources.into_iter().next().unwrap()),
-                        _len => Ok(sources.into_iter().next().unwrap()), /* Err(InputMethodError::MultipleInputSourcesForBundleIdentifier(len).into()) */
+                        _ => sources.into_iter().next().ok_or_else(|| {
+                            InputMethodError::NoInputSourcesForBundleIdentifier(bundle_identifier.to_string().into())
+                        }),
                     }
                 },
             }
@@ -450,11 +456,22 @@ impl Integration for InputMethod {
         let destination = self.target_bundle_path()?;
 
         // check that symlink to input method exists in input_methods_directory
-        let symlink = fs::read_link(destination)?;
+        let symlink = fs::read_link(destination);
 
-        // does it point to the correct location
-        if symlink != self.bundle_path {
-            return Err(InputMethodError::InvalidBundle("Symbolic link is incorrect".into()).into());
+        match symlink {
+            Ok(symlink) => {
+                // does it point to the correct location
+                if symlink != self.bundle_path {
+                    return Err(InputMethodError::InvalidBundle("Symbolic link is incorrect".into()).into());
+                }
+            },
+            Err(err) => {
+                if err.kind() == std::io::ErrorKind::NotFound {
+                    return Err(InputMethodError::NotInstalled.into());
+                } else {
+                    return Err(err.into());
+                }
+            },
         }
 
         // check that the input method is running (NSRunning application)
@@ -471,19 +488,20 @@ impl Integration for InputMethod {
             None => return Err(InputMethodError::HelperExecutableNotFound.into()),
         };
 
-        let out = tokio::process::Command::new(fig_cli_path.to_str().expect("Fig CLI can be converted to string"))
+        let out = tokio::process::Command::new(fig_cli_path)
             .args(["_", "attempt-to-finish-input-method-installation"])
             .arg(&self.bundle_path)
             .output()
-            .await?;
+            .await
+            .context("Could not run fig cli")?;
 
         if out.status.code() == Some(0) {
             self.set_is_enabled(true);
             Ok(())
         } else {
             self.set_is_enabled(false);
-            let err = String::from_utf8(out.stdout).unwrap();
-            match serde_json::from_str::<InputMethodError>(err.as_str()).ok() {
+            let err = String::from_utf8_lossy(&out.stdout);
+            match serde_json::from_str::<InputMethodError>(&err).ok() {
                 Some(error) => Err(error.into()),
                 None => Err(InputMethodError::UnknownError.into()),
             }
@@ -497,8 +515,15 @@ impl Integration for InputMethod {
             // Attempt to emove existing symlink
             fs::remove_file(&destination).ok();
 
+            // Create the parent directory if it doesn't exist
+            if let Some(parent) = destination.parent() {
+                fs::create_dir_all(parent)
+                    .with_context(|_| format!("Could not create directory {}", parent.display()))?;
+            }
+
             // Create new symlink
-            symlink(&self.bundle_path, &destination)?;
+            symlink(&self.bundle_path, &destination)
+                .with_context(|_| format!("Could not create symlink {}", destination.display()))?;
 
             // Register input source
             InputMethod::register(&destination)?;
@@ -526,18 +551,19 @@ impl Integration for InputMethod {
         };
 
         loop {
-            let out = tokio::process::Command::new(fig_cli_path.to_str().expect("Fig CLI can be converted to string"))
+            let out = tokio::process::Command::new(&fig_cli_path)
                 .args(["_", "attempt-to-finish-input-method-installation"])
                 .arg(&self.bundle_path)
                 .output()
-                .await?;
+                .await
+                .context("Could not run fig cli")?;
 
             if out.status.code() == Some(0) {
                 info!("Input method installed successfully!");
                 break;
             } else {
-                let err = String::from_utf8(out.stdout).unwrap();
-                match serde_json::from_str::<InputMethodError>(err.as_str()).ok() {
+                let err = String::from_utf8_lossy(&out.stdout);
+                match serde_json::from_str::<InputMethodError>(&err).ok() {
                     Some(error) => debug!("{error}"),
                     None => debug!("Could not parse output as known error: {err}"),
                 }

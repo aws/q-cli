@@ -1806,9 +1806,12 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
     async fn check(&self, current_terminal: &Option<Terminal>) -> Result<(), DoctorError> {
         use fig_integrations::input_method::InputMethod;
         use fig_integrations::Integration;
+        use macos_utils::applications::running_applications;
 
         let input_method = InputMethod::default();
         if let Err(e) = input_method.is_installed().await {
+            fig_settings::state::set_value("input-method.enabled", true).ok();
+
             match e {
                 InstallationError::InputMethod(InputMethodError::NotRunning) => {
                     return Err(doctor_fix!({
@@ -1837,8 +1840,6 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 },
             }
         }
-
-        use macos_utils::applications::running_applications;
 
         match current_terminal {
             Some(terminal) if terminal.supports_macos_input_method() => {

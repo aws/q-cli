@@ -37,4 +37,40 @@ pub enum Error {
     #[cfg(target_os = "macos")]
     #[error(transparent)]
     PList(#[from] plist::Error),
+
+    #[error("{context}: {error}")]
+    Context {
+        #[source]
+        error: Box<Self>,
+        context: Cow<'static, str>,
+    },
+}
+
+pub(crate) trait ErrorExt<T, E> {
+    fn context(self, context: impl Into<Cow<'static, str>>) -> Result<T, Error>;
+    fn with_context(self, context_fn: impl FnOnce(&E) -> String) -> Result<T, Error>;
+}
+
+impl<T, E: Into<Error>> ErrorExt<T, E> for Result<T, E> {
+    fn context(self, context: impl Into<Cow<'static, str>>) -> Result<T, Error> {
+        self.map_err(|err| {
+            let context = context.into();
+            let error = err.into();
+            Error::Context {
+                error: Box::new(error),
+                context,
+            }
+        })
+    }
+
+    fn with_context(self, context_fn: impl FnOnce(&E) -> String) -> Result<T, Error> {
+        self.map_err(|err| {
+            let context = context_fn(&err);
+            let error = err.into();
+            Error::Context {
+                error: Box::new(error),
+                context: context.into(),
+            }
+        })
+    }
 }

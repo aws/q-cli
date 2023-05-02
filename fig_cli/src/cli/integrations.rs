@@ -169,6 +169,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
         Integration::InputMethod => {
             cfg_if::cfg_if! {
                 if #[cfg(target_os = "macos")] {
+                    fig_settings::state::set_value("input-method.enabled", true).ok();
                     fig_integrations::input_method::InputMethod::default().install().await?;
                     installed = true;
                     status = Some("You must restart your terminal to finish installing the input method.");
