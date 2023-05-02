@@ -485,6 +485,12 @@ intellij_variants! {
         name: "DataSpell",
         bundle: "com.jetbrains.dataspell"
     },
+    DataGrip {
+        org: "JetBrains",
+        internal_id: "datagrip",
+        name: "DataGrip",
+        bundle: "com.jetbrains.datagrip"
+    },
     AndroidStudio {
         org: "Google",
         internal_id: "android-studio",
