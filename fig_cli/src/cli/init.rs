@@ -6,7 +6,6 @@ use std::io::{
     stdout,
     Write,
 };
-use std::path::Path;
 
 use clap::Args;
 use crossterm::tty::IsTty;

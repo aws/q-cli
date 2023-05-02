@@ -212,6 +212,12 @@ pub fn should_figterm_launch() -> ! {
         exit(1);
     }
 
+    // If we are in SSH and there is no FIG_PARENT dont launch
+    if fig_util::system_info::in_ssh() && std::env::var_os("FIG_PARENT").is_none() {
+        writeln!(stdout(), "❌ In SSH without FIG_PARENT").ok();
+        exit(1);
+    }
+
     if std::env::consts::OS == "macos" {
         // For now on macOS we want to fallback to the old mechanism as this is still relatively new
         writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
