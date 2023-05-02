@@ -6,6 +6,7 @@ use std::io::{
     stdout,
     Write,
 };
+use std::path::Path;
 
 use clap::Args;
 use crossterm::tty::IsTty;
@@ -203,15 +204,22 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
             if let Some(bundle) = app_path_from_bundle_id(bundle_id) {
                 // The source for JetBrains shell integrations can be found here.
                 // https://github.com/JetBrains/intellij-community/tree/master/plugins/terminal/resources
+
+                // We source both the old and new location of these integrations.
+                // In theory, they shouldn't both exist since they come with the app bundle itself.
+                // As of writing, the bash path change isn't live, but we source it anyway.
                 match shell {
-                    Shell::Bash => Some(format!(
-                        "[ -f '{bundle}/Contents/plugins/terminal/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'",
+                    Shell::Bash => Some(format!("\
+[ -f '{bundle}/Contents/plugins/terminal/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/jediterm-bash.in'
+[ -f '{bundle}/Contents/plugins/terminal/bash/jediterm-bash.in' ] && source '{bundle}/Contents/plugins/terminal/bash/jediterm-bash.in'",
                     )),
-                    Shell::Zsh => Some(format!(
-                        "[ -f '{bundle}/Contents/plugins/terminal/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/.zshenv'",
+                    Shell::Zsh => Some(format!("\
+[ -f '{bundle}/Contents/plugins/terminal/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/.zshenv'
+[ -f '{bundle}/Contents/plugins/terminal/zsh/.zshenv' ] && source '{bundle}/Contents/plugins/terminal/zsh/.zshenv'",
                     )),
-                    Shell::Fish => Some(format!(
-                        "[ -f '{bundle}/Contents/plugins/terminal/fish/config.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/config.fish'",
+                    Shell::Fish => Some(format!("\
+[ -f '{bundle}/Contents/plugins/terminal/fish/config.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/config.fish'
+[ -f '{bundle}/Contents/plugins/terminal/fish/init.fish' ] && source '{bundle}/Contents/plugins/terminal/fish/init.fish'",
                     )),
                     Shell::Nu => None,
                 }
