@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+#[cfg(target_os = "macos")]
 use macos_utils::window_server::ApplicationSpecifier;
 use wry::application::dpi::Position;
 
