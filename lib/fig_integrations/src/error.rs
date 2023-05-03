@@ -1,5 +1,8 @@
 use std::borrow::Cow;
-use std::path::Path;
+use std::path::{
+    Path,
+    PathBuf,
+};
 
 use thiserror::Error;
 
@@ -37,6 +40,8 @@ pub enum Error {
     #[cfg(target_os = "macos")]
     #[error(transparent)]
     PList(#[from] plist::Error),
+    #[error("Permission denied: {}", .path.display())]
+    PermissionDenied { path: PathBuf },
 
     #[error("{context}: {error}")]
     Context {
@@ -44,6 +49,20 @@ pub enum Error {
         error: Box<Self>,
         context: Cow<'static, str>,
     },
+}
+
+impl Error {
+    pub fn verbose_message(&self) -> String {
+        match self {
+            Self::PermissionDenied { path } => {
+                format!(
+                    "Permission denied to write to {path}\nTry running: sudo chown $USER '{path}' && sudo chmod 644 '{path}'",
+                    path = path.display()
+                )
+            },
+            err => err.to_string(),
+        }
+    }
 }
 
 pub(crate) trait ErrorExt<T, E> {

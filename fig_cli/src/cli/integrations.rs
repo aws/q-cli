@@ -133,7 +133,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
                                 Err(_) => {
                                     installed = true;
                                     if let Err(e) = integration.install().await {
-                                        errs.push(format!("{}: {e}", integration.describe()));
+                                        errs.push(format!("{}: {}", integration.describe(), e.verbose_message()));
                                     }
                                 },
                             }
@@ -148,7 +148,7 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             if errs.is_empty() {
                 Ok(())
             } else {
-                Err(eyre::eyre!(errs.join("\n")))
+                Err(eyre::eyre!(errs.join("\n\n")))
             }
         },
         Integration::Daemon => {
@@ -244,7 +244,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
                                 Ok(_) => {
                                     uninstalled = true;
                                     if let Err(e) = integration.uninstall().await {
-                                        errs.push(format!("{}: {e}", integration.describe()));
+                                        errs.push(format!("{}: {}", integration.describe(), e.verbose_message()));
                                     }
                                 },
                                 Err(_) => {
@@ -262,7 +262,7 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             if errs.is_empty() {
                 Ok(())
             } else {
-                Err(eyre::eyre!(errs.join("\n")))
+                Err(eyre::eyre!(errs.join("\n\n")))
             }
         },
         Integration::Daemon => {
@@ -376,7 +376,7 @@ async fn status(integration: Integration) -> Result<()> {
                         }
                     },
                     Err(e) => {
-                        println!("{shell}: {e}");
+                        println!("{shell}: {}", e.verbose_message());
                     },
                 }
             }

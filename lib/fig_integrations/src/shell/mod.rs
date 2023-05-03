@@ -548,8 +548,18 @@ impl Integration for DotfileShellIntegration {
         }
 
         if contents.ne(&original_contents) {
-            let mut file = File::create(&dotfile)?;
-            file.write_all(contents.as_bytes())?;
+            match File::create(&dotfile) {
+                Ok(mut file) => {
+                    file.write_all(contents.as_bytes())?;
+                },
+                Err(e) => {
+                    if e.kind() == std::io::ErrorKind::PermissionDenied {
+                        return Err(Error::PermissionDenied { path: self.path() });
+                    } else {
+                        return Err(e.into());
+                    }
+                },
+            }
         }
 
         Ok(())
@@ -580,7 +590,13 @@ impl Integration for DotfileShellIntegration {
             contents = contents.trim().to_string();
             contents.push('\n');
 
-            std::fs::write(&dotfile, contents.as_bytes())?;
+            if let Err(e) = std::fs::write(&dotfile, contents.as_bytes()) {
+                if e.kind() == std::io::ErrorKind::PermissionDenied {
+                    return Err(Error::PermissionDenied { path: self.path() });
+                } else {
+                    return Err(e.into());
+                }
+            }
         }
 
         if self.pre {

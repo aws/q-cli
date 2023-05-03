@@ -39,14 +39,37 @@ impl Integration for FileIntegration {
             .parent()
             .ok_or_else(|| Error::Custom("Could not get integration file directory".into()))?;
         std::fs::create_dir_all(parent_dir)?;
-        std::fs::write(&self.path, &self.contents)?;
-        Ok(())
+
+        match std::fs::write(&self.path, &self.contents) {
+            Ok(_) => Ok(()),
+            Err(e) => {
+                if e.kind() == std::io::ErrorKind::PermissionDenied {
+                    Err(Error::PermissionDenied {
+                        path: self.path.clone(),
+                    })
+                } else {
+                    Err(e.into())
+                }
+            },
+        }
     }
 
     async fn uninstall(&self) -> Result<()> {
         if self.path.exists() {
-            std::fs::remove_file(&self.path)?;
+            match std::fs::remove_file(&self.path) {
+                Ok(_) => Ok(()),
+                Err(e) => {
+                    if e.kind() == std::io::ErrorKind::PermissionDenied {
+                        Err(Error::PermissionDenied {
+                            path: self.path.clone(),
+                        })
+                    } else {
+                        Err(e.into())
+                    }
+                },
+            }
+        } else {
+            Ok(())
         }
-        Ok(())
     }
 }

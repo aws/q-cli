@@ -67,12 +67,12 @@ pub async fn install(request: InstallRequest) -> RequestResult {
                             };
 
                             if let Err(err) = res {
-                                errs.push(format!("{integration}: {err}"));
+                                errs.push(format!("{integration}: {}", err.verbose_message()));
                             }
                         }
                     },
                     Err(err) => {
-                        errs.push(format!("{shell}: {err}"));
+                        errs.push(format!("{shell}: {}", err.verbose_message()));
                     },
                 }
             }
@@ -80,7 +80,7 @@ pub async fn install(request: InstallRequest) -> RequestResult {
             match action {
                 InstallAction::Install | InstallAction::Uninstall => integration_result(match &errs[..] {
                     [] => Ok(()),
-                    errs => Err(errs.join("\n")),
+                    errs => Err(errs.join("\n\n")),
                 }),
                 InstallAction::Status => ServerOriginatedSubMessage::InstallResponse(InstallResponse {
                     response: Some(Response::InstallationStatus(
