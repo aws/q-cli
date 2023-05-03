@@ -7,6 +7,7 @@ mod completion;
 mod debug;
 mod diagnostics;
 mod doctor;
+mod export;
 mod hook;
 mod init;
 mod installation;
@@ -208,6 +209,8 @@ pub enum CliRootCommands {
     Wrapped(wrapped::WrappedArgs),
     /// Run a Fig CLI
     Cli(commandline_tool::CliArgs),
+    /// Export your fig configs to a folder
+    Export(export::ExportArgs),
     /// (LEGACY) Old hook that was being used somewhere
     #[command(name = "app:running", hide = true)]
     LegacyAppRunning,
@@ -369,6 +372,7 @@ impl Cli {
                 CliRootCommands::Dashboard => launch_dashboard().await,
                 CliRootCommands::Wrapped(args) => args.execute().await,
                 CliRootCommands::Cli(args) => args.execute().await,
+                CliRootCommands::Export(args) => args.execute().await,
                 CliRootCommands::LegacyAppRunning => {
                     println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
                     Ok(())

@@ -95,7 +95,7 @@ fig_precmd() {
   fig_osc "FigAutosuggestionColor=%s" "${FIG_AUTOSUGGEST_HIGHLIGHT_STYLE}"
   fig_osc "User=%s" "${USER:-root}"
 
-  if [ $FIG_HAS_SET_PROMPT -eq 1 ]; then
+  if [ "$FIG_HAS_SET_PROMPT" -eq 1 ]; then
     # ^C pressed while entering command, call preexec manually to clear fig prompts.
     fig_preexec
   fi

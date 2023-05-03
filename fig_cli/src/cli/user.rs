@@ -71,7 +71,7 @@ pub enum RootUserSubcommand {
         // flag-action refers to the fact that it is a flag that is also an action :D
         ArgGroup::new("flag-actions")
             .multiple(false)
-            .conflicts_with_all(["email", "switchable", "not-now"])
+            .conflicts_with_all(["email", "switchable", "not_now"])
     ))]
     Login {
         /// Refresh the auth token if expired

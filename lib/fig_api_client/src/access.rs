@@ -8,7 +8,7 @@ use crate::util::{
     string_as_vec_u64,
 };
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Host {
     pub nick_name: String,
@@ -21,7 +21,7 @@ pub struct Host {
     pub namespace: Option<String>,
 }
 
-#[derive(Deserialize, Debug, Clone)]
+#[derive(Serialize, Deserialize, Debug, Clone)]
 #[serde(rename_all = "camelCase")]
 pub struct Connection {
     pub remote_id: u64,
