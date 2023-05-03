@@ -1,6 +1,7 @@
 use std::borrow::Cow;
 use std::sync::Arc;
 
+use macos_utils::window_server::ApplicationSpecifier;
 use wry::application::dpi::Position;
 
 use crate::protocol::icons::{
@@ -113,7 +114,9 @@ pub enum PlatformBoundEvent {
     },
     CaretPositionUpdateRequested,
     WindowDestroyed {
-        window: PlatformWindowImpl,
+        // TODO: dont use on other platforms than macos
+        #[cfg(target_os = "macos")]
+        app: ApplicationSpecifier,
     },
     ExternalWindowFocusChanged {
         window: PlatformWindowImpl,

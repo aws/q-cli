@@ -346,14 +346,8 @@ impl PlatformStateImpl {
                                     ));
                                 }
                             },
-                            WindowServerEvent::WindowDestroyed { window, app } => {
-                                // TODO(sean) seems like this is failing -- can't get window id for
-                                // the destroyed elements :(
-                                if let Ok(window) = PlatformWindowImpl::new(app.bundle_id, app.pid, window) {
-                                    events.push(Event::PlatformBoundEvent(PlatformBoundEvent::WindowDestroyed {
-                                        window,
-                                    }));
-                                }
+                            WindowServerEvent::WindowDestroyed { app } => {
+                                events.push(Event::PlatformBoundEvent(PlatformBoundEvent::WindowDestroyed { app }));
                             },
                             WindowServerEvent::ActiveSpaceChanged { is_fullscreen } => {
                                 events.extend([
@@ -706,10 +700,10 @@ impl PlatformStateImpl {
                 }
                 Ok(())
             },
-            PlatformBoundEvent::WindowDestroyed { window } => {
+            PlatformBoundEvent::WindowDestroyed { app } => {
                 let mut focused = self.focused_window.lock();
                 if let Some(focused_window) = focused.as_ref() {
-                    if focused_window.get_window_id() == window.get_window_id() {
+                    if focused_window.bundle_id() == app.bundle_id {
                         focused.take();
                         self.proxy
                             .send_event(Event::WindowEvent {

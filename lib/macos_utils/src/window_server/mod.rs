@@ -76,7 +76,7 @@ use super::util::{
 use crate::util::Id;
 use crate::NSStringRef;
 
-static BLOCKED_BUNDLE_IDS: &[&str] = &[
+const BLOCKED_BUNDLE_IDS: &[&str] = &[
     "com.apple.ViewBridgeAuxiliary",
     "com.apple.notificationcenterui",
     "com.apple.WebKit.WebContent",
@@ -86,14 +86,14 @@ static BLOCKED_BUNDLE_IDS: &[&str] = &[
 ];
 
 // TODO(sean) -- should this use fig_util crate Terminal struct?
-pub static XTERM_BUNDLE_IDS: &[&str] = &[
+pub const XTERM_BUNDLE_IDS: &[&str] = &[
     "com.microsoft.VSCodeInsiders",
     "com.microsoft.VSCode",
     "co.zeit.hyper",
     "org.tabby",
 ];
 
-static TRACKED_NOTIFICATIONS: &[&str] = &[
+const TRACKED_NOTIFICATIONS: &[&str] = &[
     kAXWindowCreatedNotification,
     kAXFocusedWindowChangedNotification,
     kAXMainWindowChangedNotification,
@@ -116,7 +116,6 @@ pub enum WindowServerEvent {
         app: ApplicationSpecifier,
     },
     WindowDestroyed {
-        window: UIElement,
         app: ApplicationSpecifier,
     },
     ActiveSpaceChanged {
@@ -514,7 +513,9 @@ unsafe extern "C" fn application_ax_callback(
     let name = CFString::wrap_under_get_rule(notification_name);
     let app = &cb_data.app;
 
-    let event = match name.to_string().as_str() {
+    let event_name = name.to_string();
+
+    let event = match &*event_name {
         kAXFocusedWindowChangedNotification | kAXMainWindowChangedNotification => {
             Some(WindowServerEvent::FocusChanged {
                 window: element,
@@ -533,10 +534,18 @@ unsafe extern "C" fn application_ax_callback(
         kAXWindowResizedNotification | kAXWindowMovedNotification => {
             Some(WindowServerEvent::RequestCaretPositionUpdate)
         },
-        kAXUIElementDestroyedNotification => Some(WindowServerEvent::WindowDestroyed {
-            window: element,
-            app: app.clone(),
-        }),
+        kAXUIElementDestroyedNotification => {
+            // We check to see if there is a valid window for the app, if there is not then we know the final
+            // window has been destroyed. This is done via getting an error when trying to get the focused
+            // window.
+            let ax_app_ref = UIElement::from(AXUIElementCreateApplication(app.pid));
+            if ax_app_ref.focused_window().is_err() {
+                Some(WindowServerEvent::WindowDestroyed { app: app.clone() })
+            } else {
+                None
+            }
+        },
+
         unknown => {
             info!("Unhandled AX event: {unknown}");
             None
