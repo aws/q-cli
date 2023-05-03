@@ -344,9 +344,10 @@ pub fn parse_fish_color_from_string(s: &str, color_support: ColorSupport) -> Opt
         }
     }
 
-    if (first_rgb.is_some() && color_support.contains(ColorSupport::TERM256)) || first_named.is_none() {
+    if (first_rgb.is_some() && color_support.contains(ColorSupport::TERM24BIT)) || first_named.is_none() {
         return first_rgb;
     }
+
     first_named
 }
 
@@ -565,6 +566,22 @@ mod test {
                 kind: ColorType::Named,
                 name_idx: 6,
                 rgb: [0, 0, 0]
+            })
+        );
+        assert_eq!(
+            parse_fish_color_from_string("555 brblack", ColorSupport::TERM256),
+            Some(Color {
+                kind: ColorType::Named,
+                name_idx: 8,
+                rgb: [0, 0, 0]
+            })
+        );
+        assert_eq!(
+            parse_fish_color_from_string("555 brblack", ColorSupport::TERM24BIT),
+            Some(Color {
+                kind: ColorType::Rgb,
+                name_idx: 0,
+                rgb: [0x55, 0x55, 0x55]
             })
         );
         assert_eq!(

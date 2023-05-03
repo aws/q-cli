@@ -39,8 +39,8 @@ impl ExportArgs {
             }
         }
 
-        let acces_dir = export_dir.join("access");
-        std::fs::create_dir(&acces_dir)?;
+        let access_dir = export_dir.join("access");
+        std::fs::create_dir(&access_dir)?;
 
         let mut hosts = vec![];
         let mut identities = vec![];
