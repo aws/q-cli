@@ -679,106 +679,74 @@ impl<T> Term<T> {
         &self.shell_state
     }
 
-    pub fn get_text_region(
-        &self,
-        rect: &Rect,
-        start_col_offset: Column,
-        mask: Option<char>,
-        wrap_lines: bool,
-    ) -> Option<TextBuffer>
+    pub fn get_text_region(&self, rect: &Rect, start_col_offset: Column) -> Option<TextBuffer>
     where
         T: EventListener,
     {
-        let mut buffer = String::with_capacity(rect.size());
-        let mut padding: usize = 0;
-        let cursor = self.grid().cursor.point;
-
-        let mut last_char_width: usize = 0;
-        let mut last_char_was_padding = true;
-
-        #[allow(unused_variables)]
-        let mut cell_idx = 0;
-        let mut cursor_idx = None;
-
-        let mut start = rect.start;
-        start.column += start_col_offset;
-
-        let end = rect.end;
+        let (start, end) = {
+            let mut start = rect.start;
+            start.column += start_col_offset;
+            (start, rect.end)
+        };
 
         if start > end {
             return None;
         }
 
-        for cell in self.grid().iter_from_to(start, end) {
-            if cell.point.column == rect.start.column {
-                last_char_was_padding = true;
-            }
+        let mut padding: u32 = 0;
+        let cursor = self.grid().cursor.point;
+        let mut last_char_width: usize = 0;
 
-            if cell.point == cursor {
-                cursor_idx = Some(buffer.len());
-                while padding > 0 {
-                    buffer.push(' ');
-                    cell_idx += 1;
-                    padding = padding.saturating_sub(1);
-                }
-            }
+        let mut buffer = String::with_capacity(rect.size());
+        let mut cursor_idx = match cursor == start {
+            true => Some(0),
+            false => None,
+        };
 
+        for cell in self.grid().iter_from_to_post_increment(start, end) {
             if last_char_width > 0 {
                 last_char_width = last_char_width.saturating_sub(1);
                 continue;
             }
 
             if cell.c == '\0'
-                || (mask == Some(' ')
-                    && (cell.fig_flags.contains(FigFlags::IN_PROMPT)
-                        || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)))
+                || cell.fig_flags.contains(FigFlags::IN_PROMPT)
+                || cell.fig_flags.contains(FigFlags::IN_SUGGESTION)
             {
                 padding = padding.saturating_add(1);
-                last_char_was_padding = true;
-            } else if cell.c as u32 == u32::MAX {
-            } else {
+            } else if cell.c as u32 != u32::MAX {
                 while padding > 0 {
                     buffer.push(' ');
-                    cell_idx += 1;
                     padding = padding.saturating_sub(1);
                 }
 
-                match mask {
-                    Some(mask)
-                        if cell.fig_flags.contains(FigFlags::IN_PROMPT)
-                            || cell.fig_flags.contains(FigFlags::IN_SUGGESTION) =>
-                    {
-                        buffer.push(mask);
-                        cell_idx += 1;
-                    },
-                    _ => {
-                        match cell.zerowidth() {
-                            Some(zero_width) => {
-                                buffer.push(cell.c);
-                                for c in zero_width {
-                                    buffer.push(*c);
-                                }
-                            },
-                            None => {
-                                buffer.push(cell.c);
-                            },
+                match cell.zerowidth() {
+                    Some(zero_width) => {
+                        buffer.push(cell.c);
+                        for c in zero_width {
+                            buffer.push(*c);
                         }
-
-                        last_char_width = cell.c.width().unwrap_or(1);
-                        last_char_width = last_char_width.saturating_sub(1);
-
-                        cell_idx += 1;
-                        last_char_was_padding = false;
+                    },
+                    None => {
+                        buffer.push(cell.c);
                     },
                 }
+
+                last_char_width = cell.c.width().unwrap_or(1).saturating_sub(1);
             }
 
-            if cell.point.column == rect.end.column.saturating_sub(1) && cell.point.line < rect.end.line {
-                if last_char_was_padding || !wrap_lines {
-                    buffer.push('\n');
-                    cell_idx += 1;
-                }
+            if cell.point.column == rect.end.column {
                 padding = 0;
+            }
+
+            if cell.point.line == cursor.line
+                && (cell.point.column..=cell.point.column + last_char_width).contains(&cursor.column)
+            {
+                cursor_idx = Some(buffer.len());
+                while padding > 0 {
+                    buffer.push(' ');
+                    padding = padding.saturating_sub(1);
+                }
             }
         }
 
@@ -801,8 +769,7 @@ impl<T> Term<T> {
                 if start < end {
                     let rect = Rect { start, end };
 
-                    let mut buffer =
-                        self.get_text_region(&rect, Column(cmd_cursor.column.saturating_sub(1)), Some(' '), true)?;
+                    let mut buffer = self.get_text_region(&rect, Column(*cmd_cursor.column))?;
 
                     if let Some(cursor_idx) = buffer.cursor_idx {
                         buffer.buffer = buffer.buffer.trim_end().to_string();

@@ -429,13 +429,34 @@ impl<T> Grid<T> {
     #[inline]
     pub fn iter_from(&self, point: Point) -> GridIterator<'_, T> {
         let end = Point::new(self.bottommost_line(), self.last_column());
-        GridIterator { grid: self, point, end }
+        GridIterator {
+            grid: self,
+            point,
+            end,
+            post_increment: false,
+        }
     }
 
     /// Iterate over all cells in the grid starting at a specific point.
     #[inline]
     pub fn iter_from_to(&self, point: Point, end: Point) -> GridIterator<'_, T> {
-        GridIterator { grid: self, point, end }
+        GridIterator {
+            grid: self,
+            point,
+            end,
+            post_increment: false,
+        }
+    }
+
+    /// Iterate over all cells in the grid starting at a specific point.
+    #[inline]
+    pub fn iter_from_to_post_increment(&self, point: Point, end: Point) -> GridIterator<'_, T> {
+        GridIterator {
+            grid: self,
+            point,
+            end,
+            post_increment: true,
+        }
     }
 
     /// Iterate over all visible cells.
@@ -453,6 +474,7 @@ impl<T> Grid<T> {
             grid: self,
             point: start,
             end,
+            post_increment: false,
         }
     }
 
@@ -613,6 +635,9 @@ pub struct GridIterator<'a, T> {
 
     /// Last cell included in the iterator.
     end: Point,
+
+    /// Don't increment on the first iteration
+    post_increment: bool,
 }
 
 impl<'a, T> GridIterator<'a, T> {
@@ -636,15 +661,31 @@ impl<'a, T> Iterator for GridIterator<'a, T> {
             return None;
         }
 
-        match self.point {
-            Point { column, .. } if column == self.grid.last_column() => {
-                self.point.column = Column(0);
-                self.point.line += 1;
-            },
-            _ => self.point.column += Column(1),
+        if !self.post_increment {
+            match self.point {
+                Point { column, .. } if column == self.grid.last_column() => {
+                    self.point.column = Column(0);
+                    self.point.line += 1;
+                },
+                _ => {
+                    self.point.column += Column(1);
+                },
+            }
         }
 
         let cell = &self.grid.get_point(self.point)?;
+
+        if self.post_increment {
+            match self.point {
+                Point { column, .. } if column == self.grid.last_column() => {
+                    self.point.column = Column(0);
+                    self.point.line += 1;
+                },
+                _ => {
+                    self.point.column += Column(1);
+                },
+            }
+        }
 
         Some(Indexed {
             cell,
