@@ -189,12 +189,13 @@ impl PlatformWindowImpl {
     }
 
     pub fn get_bounds(&self) -> Option<CGRect> {
-        let info = self.ui_element.window_info()?;
+        let info = self.ui_element.window_info(false)?;
         Some(info.bounds)
     }
 
     pub fn get_level(&self) -> Option<i64> {
-        let info = self.ui_element.window_info()?;
+        // We grab all the windows since we don't want this to fail and are more fine if it's slow
+        let info = self.ui_element.window_info(true)?;
         Some(info.level)
     }
 
@@ -555,47 +556,49 @@ impl PlatformStateImpl {
             },
             PlatformBoundEvent::ExternalWindowFocusChanged { window } => {
                 let current_terminal = Terminal::from_bundle_id(window.bundle_id.clone());
+                let level = window.get_level();
 
-                // Checking if IME is installed is async :(
-                let enabled_proxy = self.proxy.clone();
-                tokio::spawn(async move {
-                    let is_terminal_disabled = current_terminal.as_ref().map_or(false, |terminal| {
-                        fig_settings::settings::get_bool_or(
-                            format!("integrations.{}.disabled", terminal.internal_id()),
-                            false,
-                        )
+                if level == Some(0) {
+                    // Checking if IME is installed is async :(
+                    let enabled_proxy = self.proxy.clone();
+                    tokio::spawn(async move {
+                        let is_terminal_disabled = current_terminal.as_ref().map_or(false, |terminal| {
+                            fig_settings::settings::get_bool_or(
+                                format!("integrations.{}.disabled", terminal.internal_id()),
+                                false,
+                            )
+                        });
+
+                        let terminal_cursor_backing_installed = match current_terminal {
+                            Some(terminal) => {
+                                if terminal.supports_macos_input_method() {
+                                    let input_method: InputMethod = Default::default();
+                                    input_method.is_enabled().unwrap_or(false)
+                                        && input_method.enabled_for_terminal_instance(&terminal, window.pid)
+                                } else {
+                                    true
+                                }
+                            },
+                            None => false,
+                        };
+
+                        let is_enabled = !is_terminal_disabled
+                            && terminal_cursor_backing_installed
+                            && !fig_settings::settings::get_bool_or("autocomplete.disable", false)
+                            && accessibility_is_enabled()
+                            && fig_request::auth::is_logged_in();
+
+                        enabled_proxy
+                            .send_event(Event::WindowEvent {
+                                window_id: AUTOCOMPLETE_ID,
+                                window_event: WindowEvent::SetEnabled(is_enabled),
+                            })
+                            .unwrap();
                     });
 
-                    let terminal_cursor_backing_installed = match current_terminal {
-                        Some(terminal) => {
-                            if terminal.supports_macos_input_method() {
-                                let input_method: InputMethod = Default::default();
-                                input_method.is_enabled().unwrap_or(false)
-                                    && input_method.enabled_for_terminal_instance(&terminal, window.pid)
-                            } else {
-                                true
-                            }
-                        },
-                        None => false,
-                    };
-
-                    let is_enabled = !is_terminal_disabled
-                        && terminal_cursor_backing_installed
-                        && !fig_settings::settings::get_bool_or("autocomplete.disable", false)
-                        && accessibility_is_enabled()
-                        && fig_request::auth::is_logged_in();
-
-                    enabled_proxy
-                        .send_event(Event::WindowEvent {
-                            window_id: AUTOCOMPLETE_ID,
-                            window_event: WindowEvent::SetEnabled(is_enabled),
-                        })
-                        .unwrap();
-                });
-
-                let level = window.get_level();
-                let mut focused = self.focused_window.lock();
-                focused.replace(window);
+                    let mut focused = self.focused_window.lock();
+                    focused.replace(window);
+                }
 
                 if let Some(window) = window_map.get(&AUTOCOMPLETE_ID) {
                     let ns_window = window.webview.window().ns_window() as *mut Object;

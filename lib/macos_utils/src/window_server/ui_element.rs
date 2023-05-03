@@ -299,15 +299,22 @@ impl UIElement {
         Ok(tree)
     }
 
-    pub fn window_info(&self) -> Option<CGWindowInfo> {
+    pub fn window_info(&self, all_windows: bool) -> Option<CGWindowInfo> {
         unsafe {
             let window_id = self.get_window_id().ok()?;
-            let windows = CFArray::<CFDictionary>::wrap_under_get_rule(display::CGWindowListCopyWindowInfo(
-                display::kCGWindowListOptionOnScreenOnly
-                    | display::kCGWindowListExcludeDesktopElements
-                    | display::kCGWindowListOptionIncludingWindow,
-                window_id,
-            ));
+            let windows = if all_windows {
+                CFArray::<CFDictionary>::wrap_under_get_rule(display::CGWindowListCopyWindowInfo(
+                    display::kCGWindowListOptionAll,
+                    display::kCGNullWindowID,
+                ))
+            } else {
+                CFArray::<CFDictionary>::wrap_under_get_rule(display::CGWindowListCopyWindowInfo(
+                    display::kCGWindowListOptionOnScreenOnly
+                        | display::kCGWindowListExcludeDesktopElements
+                        | display::kCGWindowListOptionIncludingWindow,
+                    window_id,
+                ))
+            };
 
             let window = windows.iter().find(|window| {
                 get_num(window, kCGWindowNumber)
