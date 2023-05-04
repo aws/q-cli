@@ -1610,14 +1610,9 @@ impl DoctorCheck<Option<Terminal>> for ItermBashIntegrationCheck {
 
     fn get_type(&self, current_terminal: &Option<Terminal>, platform: Platform) -> DoctorCheckType {
         if platform == Platform::MacOs {
-            match Command::new("ps").args(["-o", "comm=", "$$"]).output() {
-                Ok(output) => {
-                    if !String::from_utf8_lossy(&output.stdout).contains("bash") {
-                        return DoctorCheckType::NoCheck;
-                    }
-                },
-                Err(_) => return DoctorCheckType::NoCheck,
-            };
+            if Shell::current_shell() != Some(Shell::Bash) {
+                return DoctorCheckType::NoCheck;
+            }
 
             match directories::home_dir() {
                 Ok(home) => {
