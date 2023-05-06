@@ -728,6 +728,7 @@ pub fn build_autocomplete(
         ]))
         .with_clipboard(true)
         .with_hotkeys_zoom(true)
+        .with_accept_first_mouse(true)
         .build()?;
 
     Ok(webview)

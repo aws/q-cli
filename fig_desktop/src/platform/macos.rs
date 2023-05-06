@@ -427,21 +427,12 @@ impl PlatformStateImpl {
                     }
                 }
 
-                extern "C" fn accepts_first_mouse(_this: &Object, _cmd: Sel, _event: id) -> BOOL {
-                    debug!("accepts_first_mouse");
-                    YES
-                }
-
                 // Use objc runtime to override WryWebview methods
                 Self::override_webview_method(
                     sel!(shouldDelayWindowOrderingForEvent:),
                     should_delay_window_ordering as extern "C" fn(&Object, Sel, id) -> BOOL,
                 );
                 Self::override_webview_method(sel!(mouseDown:), mouse_down as extern "C" fn(&Object, Sel, id));
-                Self::override_webview_method(
-                    sel!(acceptsFirstMouse:),
-                    accepts_first_mouse as extern "C" fn(&Object, Sel, id) -> BOOL,
-                );
 
                 extern "C" fn application_should_handle_reopen(
                     _this: &Object,
