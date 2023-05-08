@@ -2047,6 +2047,7 @@ dependencies = [
  "shlex",
  "skim",
  "spinners",
+ "supports-color",
  "sysinfo 0.28.4",
  "tempfile",
  "thiserror",

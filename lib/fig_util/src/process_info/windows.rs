@@ -97,10 +97,8 @@ impl PidExt for Pid {
 
             let info = info.assume_init();
 
-            // Reserved3 corresponds to InheritedFromUniqueProcessId here
-            // https://docs.microsoft.com/en-us/windows/win32/api/winternl/nf-winternl-ntqueryinformationprocess
-            if info.Reserved3 as usize != 0 {
-                Some(Pid(info.Reserved3 as u32))
+            if info.InheritedFromUniqueProcessId as usize != 0 {
+                Some(Pid(info.InheritedFromUniqueProcessId as u32))
             } else {
                 None
             }
