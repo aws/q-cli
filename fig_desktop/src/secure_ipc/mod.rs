@@ -254,6 +254,10 @@ async fn handle_secure_ipc(
                                         sanitize_fn(&mut pre_exec.context, &session_id);
                                         hooks::pre_exec(&pre_exec, session_id.as_ref().expect("unreachable"), &figterm_state, &notifications_state, &proxy).await
                                     },
+                                    hostbound::request::Request::PostExec(mut post_exec) => {
+                                        sanitize_fn(&mut post_exec.context, &session_id);
+                                        hooks::post_exec(&post_exec, session_id.as_ref().expect("unreachable"), &figterm_state, &notifications_state, &proxy).await
+                                    },
                                     hostbound::request::Request::InterceptedKey(mut intercepted_key) => {
                                         sanitize_fn(&mut intercepted_key.context, &session_id);
                                         hooks::intercepted_key(intercepted_key, &notifications_state, &proxy).await

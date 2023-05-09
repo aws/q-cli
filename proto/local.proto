@@ -209,8 +209,8 @@ message PreExecHook {
 message PostExecHook {
   fig_common.ShellContext context = 1;
 
-  string command = 2; // the full command that was run in the shell
-  int32 exit_code = 3; // the exit code of the command
+  optional string command = 2; // the full command that was run in the shell
+  optional int32 exit_code = 3; // the exit code of the command
 }
 
 message KeyboardFocusChangedHook {

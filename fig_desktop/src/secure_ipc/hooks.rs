@@ -10,7 +10,9 @@ use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     EditBufferChangedNotification,
+    HistoryUpdatedNotification,
     KeybindingPressedNotification,
+    LocationChangedNotification,
     Notification,
     NotificationType,
     Process,
@@ -21,6 +23,7 @@ use fig_proto::fig::{
 use fig_proto::local::{
     EditBufferHook,
     InterceptedKeyHook,
+    PostExecHook,
     PreExecHook,
     PromptHook,
 };
@@ -188,11 +191,40 @@ pub async fn prompt(
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
 ) -> Result<Option<clientbound::response::Response>> {
+    let mut cwd_changed = false;
+    let mut new_cwd = None;
     figterm_state.with(session_id, |session| {
+        if let (Some(old_context), Some(new_context)) = (&session.context, &hook.context) {
+            cwd_changed = old_context.current_working_directory != new_context.current_working_directory;
+            new_cwd = new_context.current_working_directory.clone();
+        }
+
         session.context = hook.context.clone();
     });
 
-    notifications_state
+    if cwd_changed {
+        if let Err(err) = notifications_state
+            .broadcast_notification_all(
+                &NotificationType::NotifyOnLocationChange,
+                Notification {
+                    r#type: Some(fig_proto::fig::notification::Type::LocationChangedNotification(
+                        LocationChangedNotification {
+                            session_id: Some(session_id.0.clone()),
+                            host_name: hook.context.as_ref().and_then(|ctx| ctx.hostname.clone()),
+                            user_name: None,
+                            directory: new_cwd,
+                        },
+                    )),
+                },
+                proxy,
+            )
+            .await
+        {
+            error!(%err, "Failed to broadcast LocationChangedNotification");
+        }
+    }
+
+    if let Err(err) = notifications_state
         .broadcast_notification_all(
             &NotificationType::NotifyOnPrompt,
             Notification {
@@ -210,7 +242,10 @@ pub async fn prompt(
             },
             proxy,
         )
-        .await?;
+        .await
+    {
+        error!(%err, "Failed to broadcast ShellPromptReturnedNotification");
+    }
 
     Ok(None)
 }
@@ -246,6 +281,42 @@ pub async fn pre_exec(
                         env: vec![],
                     }),
                 },
+                )),
+            },
+            proxy,
+        )
+        .await?;
+
+    Ok(None)
+}
+
+pub async fn post_exec(
+    hook: &PostExecHook,
+    session_id: &FigtermSessionId,
+    figterm_state: &FigtermState,
+    notifications_state: &WebviewNotificationsState,
+    proxy: &EventLoopProxy,
+) -> Result<Option<clientbound::response::Response>> {
+    figterm_state.with_update(session_id.clone(), |session| {
+        session.context = hook.context.clone();
+    });
+
+    notifications_state
+        .broadcast_notification_all(
+            &NotificationType::NotifyOnHistoryUpdated,
+            Notification {
+                r#type: Some(fig_proto::fig::notification::Type::HistoryUpdatedNotification(
+                    HistoryUpdatedNotification {
+                        command: hook.command.clone(),
+                        process_name: hook.context.as_ref().and_then(|ctx| ctx.process_name.clone()),
+                        current_working_directory: hook
+                            .context
+                            .as_ref()
+                            .and_then(|ctx| ctx.current_working_directory.to_owned()),
+                        session_id: Some(session_id.0.clone()),
+                        hostname: hook.context.as_ref().and_then(|ctx| ctx.hostname.clone()),
+                        exit_code: hook.exit_code,
+                    },
                 )),
             },
             proxy,

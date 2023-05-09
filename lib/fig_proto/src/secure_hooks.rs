@@ -2,6 +2,7 @@ use crate::fig::ShellContext;
 use crate::proto::local::{
     EditBufferHook,
     InterceptedKeyHook,
+    PostExecHook,
     PreExecHook,
     PromptHook,
     TerminalCursorCoordinates,
@@ -53,6 +54,18 @@ pub fn new_preexec_hook(context: impl Into<Option<ShellContext>>) -> hostbound::
     hook_enum_to_hook(hostbound::request::Request::PreExec(PreExecHook {
         context: context.into(),
         command: None,
+    }))
+}
+
+pub fn new_postexec_hook(
+    context: impl Into<Option<ShellContext>>,
+    command: Option<String>,
+    exit_code: Option<i32>,
+) -> hostbound::Request {
+    hook_enum_to_hook(hostbound::request::Request::PostExec(PostExecHook {
+        context: context.into(),
+        command,
+        exit_code,
     }))
 }
 

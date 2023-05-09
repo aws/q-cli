@@ -6,6 +6,7 @@ use alacritty_terminal::term::ShellState;
 use fig_proto::secure::Hostbound;
 use fig_proto::secure_hooks::{
     hook_to_message,
+    new_postexec_hook,
     new_preexec_hook,
     new_prompt_hook,
 };
@@ -114,6 +115,13 @@ impl EventListener for EventHandler {
             },
             Event::CommandInfo(command_info) => {
                 tokio::spawn(async { *COMPLETION_CACHE.lock().await = radix_trie::Trie::new() });
+
+                let context = shell_state_to_context(shell_state);
+                let hook = new_postexec_hook(context, command_info.command.to_owned(), command_info.exit_code);
+                let message = hook_to_message(hook);
+                if let Err(err) = self.socket_sender.send(message) {
+                    error!(%err, "Sender error");
+                }
 
                 if let Err(err) = self.history_sender.send(HistoryCommand::Insert(command_info.clone())) {
                     error!(%err, "Sender error");
