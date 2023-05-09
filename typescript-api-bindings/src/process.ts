@@ -9,7 +9,7 @@ export async function run({
 }: {
   executable: string;
   args: string[];
-  environment?: Record<string, string>;
+  environment?: Record<string, string | undefined>;
   workingDirectory?: string;
   terminalSessionId?: string;
 }) {
@@ -18,7 +18,7 @@ export async function run({
     executable,
     arguments: args,
     env: Object.keys(env).map((key) => ({ key, value: env[key] })),
-    workingDirectory: workingDirectory ?? "/",
+    workingDirectory,
     terminalSessionId
   });
 }

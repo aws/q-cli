@@ -10,8 +10,8 @@ message ClientOriginatedMessage {
 
   oneof submessage {
     PositionWindowRequest position_window_request = 101;
-    PseudoterminalExecuteRequest pseudoterminal_execute_request = 102;
-    PseudoterminalWriteRequest pseudoterminal_write_request = 103;
+    PseudoterminalExecuteRequest pseudoterminal_execute_request = 102 [deprecated = true];
+    PseudoterminalWriteRequest pseudoterminal_write_request = 103 [deprecated = true];
     ReadFileRequest read_file_request = 104;
     WriteFileRequest write_file_request = 105;
     ContentsOfDirectoryRequest contents_of_directory_request = 106;
@@ -21,8 +21,8 @@ message ClientOriginatedMessage {
     InsertTextRequest insert_text_request = 110;
     UpdateApplicationPropertiesRequest update_application_properties_request = 111;
     DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
-    GetDefaultsPropertyRequest get_defaults_property_request = 113;
-    UpdateDefaultsPropertyRequest update_defaults_property_request = 114;
+    GetDefaultsPropertyRequest get_defaults_property_request = 113 [deprecated = true]; 
+    UpdateDefaultsPropertyRequest update_defaults_property_request = 114 [deprecated = true];
     TelemetryIdentifyRequest telemetry_identify_request = 116;
     TelemetryTrackRequest telemetry_track_request = 117;
     OnboardingRequest onboarding_request = 118;
@@ -60,7 +60,7 @@ message ServerOriginatedMessage {
     string error = 2;
     bool success = 3;
     PositionWindowResponse position_window_response = 100;
-    PseudoterminalExecuteResponse pseudoterminal_execute_response = 101;
+    PseudoterminalExecuteResponse pseudoterminal_execute_response = 101 [deprecated = true];
     ReadFileResponse read_file_response = 102;
     ContentsOfDirectoryResponse contents_of_directory_response = 103;
     GetSettingsPropertyResponse get_settings_property_response = 104;
@@ -608,11 +608,14 @@ message Notification {
     EditBufferChangedNotification edit_buffer_notification = 1;
     SettingsChangedNotification settings_changed_notification = 2;
     ShellPromptReturnedNotification shell_prompt_returned_notification = 3;
+    // Unimplemented
     LocationChangedNotification location_changed_notification = 4;
     ProcessChangedNotification process_change_notification = 5;
     KeybindingPressedNotification keybinding_pressed_notification = 6;
     WindowFocusChangedNotification window_focus_changed_notification = 7;
+    // Unimplemented
     HistoryUpdatedNotification history_updated_notification = 8;
+    // Unimplemented
     ApplicationUpdateAvailableNotification application_update_available_notification = 9;
     LocalStateChangedNotification local_state_changed_notification = 10;
     EventNotification event_notification = 11;

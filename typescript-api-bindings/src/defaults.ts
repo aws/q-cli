@@ -3,6 +3,9 @@ import {
   sendUpdateDefaultsPropertyRequest
 } from './requests';
 
+/**
+ * @deprecated
+ */
 export async function get(
   key: string
 ): Promise<boolean | string | number | null> {
@@ -23,6 +26,9 @@ export async function get(
   }
 }
 
+/**
+ * @deprecated
+ */
 export async function setString(key: string, value: string): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key,
@@ -30,6 +36,9 @@ export async function setString(key: string, value: string): Promise<void> {
   });
 }
 
+/**
+ * @deprecated
+ */
 export async function setBoolean(key: string, value: boolean): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key,
@@ -37,6 +46,9 @@ export async function setBoolean(key: string, value: boolean): Promise<void> {
   });
 }
 
+/**
+ * @deprecated
+ */
 export async function setNumber(key: string, value: number): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key,
@@ -44,6 +56,9 @@ export async function setNumber(key: string, value: number): Promise<void> {
   });
 }
 
+/**
+ * @deprecated
+ */
 export async function remove(key: string): Promise<void> {
   return sendUpdateDefaultsPropertyRequest({
     key

@@ -3,6 +3,9 @@ import {
   sendPseudoterminalWriteRequest
 } from "./requests";
 
+/**
+ * @deprecated
+ */
 export async function execute(
   command: string,
   options?: {
@@ -23,6 +26,9 @@ export async function execute(
   });
 }
 
+/**
+ * @deprecated
+ */
 export async function write(text: string): Promise<void> {
   return sendPseudoterminalWriteRequest({
     input: {
