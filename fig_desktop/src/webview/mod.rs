@@ -573,6 +573,7 @@ pub fn build_dashboard(
     let mut window = WindowBuilder::new()
         .with_title("Fig Dashboard")
         .with_resizable(true)
+        .with_maximizable(false)
         .with_visible(visible)
         .with_focused(visible)
         .with_always_on_top(false)
