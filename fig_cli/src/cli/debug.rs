@@ -31,9 +31,17 @@ use fig_ipc::local::{
 use fig_sync::dotfiles::download_and_notify;
 use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
-use fig_util::directories;
+use fig_util::{
+    directories,
+    Shell,
+};
 use owo_colors::OwoColorize;
 use serde_json::json;
+use tempfile::{
+    NamedTempFile,
+    TempDir,
+};
+use tracing::error;
 
 use crate::cli::launch_fig_desktop;
 use crate::util::{
@@ -215,6 +223,8 @@ pub enum DebugSubcommand {
     /// Lists installed IntelliJ variants
     #[cfg(any(target_os = "macos", target_os = "linux"))]
     ListIntelliJVariants,
+    /// Disables sourcing of user shell config and instead uses a minimal Fig default
+    Shell,
 }
 
 impl DebugSubcommand {
@@ -781,6 +791,57 @@ impl DebugSubcommand {
                     println!("{}", integration.variant.application_name());
                     #[cfg(target_os = "macos")]
                     println!("  - {:?}", integration.application_folder());
+                }
+            },
+            DebugSubcommand::Shell => {
+                let mut profile = NamedTempFile::new()?;
+
+                let tmp_dir = TempDir::new()?;
+
+                let mut command = Command::new("figterm");
+                command.env("FIG_IN_TEST", "1").arg("--");
+
+                match Shell::current_shell() {
+                    Some(shell) => {
+                        let mut command = match shell {
+                            Shell::Bash => {
+                                writeln!(profile, "eval \"$(fig init bash post --skip-dotfiles)\"")?;
+                                command
+                                    .args(["bash", "--noprofile", "--norc", "--rcfile"])
+                                    .arg(profile.path());
+                                command
+                            },
+                            Shell::Zsh => {
+                                std::fs::write(
+                                    tmp_dir.path().join(".zshrc"),
+                                    "eval \"$(fig init zsh post --skip-dotfiles)\"",
+                                )
+                                .unwrap();
+
+                                command.args(["zsh"]).env("ZDOTDIR", tmp_dir.path());
+                                command
+                            },
+                            Shell::Fish => {
+                                command.args([
+                                    "fish",
+                                    "--no-config",
+                                    "-C",
+                                    "fig init fish post --skip-dotfiles | source",
+                                ]);
+                                command
+                            },
+                            _ => eyre::bail!("Unsupported shell for debug"),
+                        };
+
+                        profile.as_file().sync_all()?;
+                        let mut output = command.spawn()?;
+                        if !output.wait()?.success() {
+                            panic!();
+                        }
+
+                        println!("Ending");
+                    },
+                    None => error!("Could not determine current shell or shell not supported"),
                 }
             },
         }
