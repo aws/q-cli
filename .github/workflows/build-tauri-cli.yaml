@@ -23,7 +23,7 @@ jobs:
           target: x86_64-apple-darwin
 
       - name: Cache Dependencies
-        uses: Swatinem/rust-cache@v2
+        uses: Swatinem/rust-cache@060bda31e0be4f453bb6ed2d7e5427b31734ad01
 
       - name: Build
         run: cd tooling/cli && cargo build --release --package tauri-cli --target x86_64-apple-darwin
