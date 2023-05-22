@@ -23,7 +23,7 @@ jobs:
           target: x86_64-unknown-linux-musl
       
       - name: Cache Dependencies
-        uses: Swatinem/rust-cache@060bda31e0be4f453bb6ed2d7e5427b31734ad01
+        uses: Swatinem/rust-cache@988c164c3d0e93c4dbab36aaf5bbeb77425b2894
 
       - name: Build
         run: cargo build --release --package fig_release --target x86_64-unknown-linux-musl
