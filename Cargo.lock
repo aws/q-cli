@@ -2117,7 +2117,7 @@ dependencies = [
  "macos_utils",
  "moka",
  "nix 0.26.2",
- "notify",
+ "notify 6.0.0",
  "objc",
  "once_cell",
  "parking_lot",
@@ -4404,6 +4404,24 @@ name = "notify"
 version = "5.2.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "729f63e1ca555a43fe3efa4f3efdf4801c479da85b432242a7b726f353c88486"
+dependencies = [
+ "bitflags 1.3.2",
+ "crossbeam-channel",
+ "filetime",
+ "fsevent-sys",
+ "inotify",
+ "kqueue",
+ "libc",
+ "mio",
+ "walkdir",
+ "windows-sys 0.45.0",
+]
+
+[[package]]
+name = "notify"
+version = "6.0.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "4d9ba6c734de18ca27c8cef5cd7058aa4ac9f63596131e4c7e41e579319032a2"
 dependencies = [
  "bitflags 1.3.2",
  "crossbeam-channel",
@@ -8906,7 +8924,7 @@ dependencies = [
  "futures",
  "lazy_static",
  "log",
- "notify",
+ "notify 5.2.0",
  "rand 0.8.5",
  "semver 1.0.17",
  "sysinfo 0.25.3",
