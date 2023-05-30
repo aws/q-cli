@@ -10,72 +10,8 @@ use serde::{
 use serde_json::json;
 use url::Url;
 
+use crate::clients::github::GitHub;
 use crate::util::ElementOrList;
-
-/// A Github repo with the form `"owner/repo"`
-#[derive(Debug, Clone, PartialEq, Eq)]
-pub struct GitHub {
-    pub owner: String,
-    pub repo: String,
-}
-
-impl GitHub {
-    pub fn new(owner: impl Into<String>, repo: impl Into<String>) -> Self {
-        Self {
-            owner: owner.into(),
-            repo: repo.into(),
-        }
-    }
-}
-
-impl Serialize for GitHub {
-    fn serialize<S>(&self, serializer: S) -> Result<S::Ok, S::Error>
-    where
-        S: serde::Serializer,
-    {
-        serializer.serialize_str(&format!("{}/{}", self.owner, self.repo))
-    }
-}
-
-impl<'de> Deserialize<'de> for GitHub {
-    fn deserialize<D>(deserializer: D) -> Result<Self, D::Error>
-    where
-        D: serde::Deserializer<'de>,
-    {
-        let s = String::deserialize(deserializer)?;
-        let mut parts = s.split('/');
-        let owner = parts.next().ok_or_else(|| serde::de::Error::custom("missing owner"))?;
-        let repo = parts.next().ok_or_else(|| serde::de::Error::custom("missing repo"))?;
-        Ok(GitHub {
-            owner: owner.to_owned(),
-            repo: repo.to_owned(),
-        })
-    }
-}
-
-impl std::fmt::Display for GitHub {
-    fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        write!(f, "{}/{}", self.owner, self.repo)
-    }
-}
-
-impl GitHub {
-    pub fn readme_url(&self) -> Url {
-        Url::parse(&format!(
-            "https://raw.githubusercontent.com/{}/{}/HEAD/README.md",
-            self.owner, self.repo
-        ))
-        .unwrap()
-    }
-
-    pub fn repository_url(&self) -> Url {
-        Url::parse(&format!("https://github.com/{}/{}", self.owner, self.repo)).unwrap()
-    }
-
-    pub fn git_url(&self) -> Url {
-        Url::parse(&format!("https://github.com/{}/{}.git", self.owner, self.repo)).unwrap()
-    }
-}
 
 #[derive(Debug, Clone, PartialEq, Eq, Serialize, Deserialize)]
 pub struct Gist(String);

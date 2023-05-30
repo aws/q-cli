@@ -1,5 +1,7 @@
 pub mod access;
 pub mod ai;
+pub mod autocomplete;
+mod clients;
 pub mod commandline_tool;
 pub mod drip_campaign;
 pub mod plugins;

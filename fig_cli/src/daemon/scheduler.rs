@@ -341,6 +341,21 @@ impl Clone for Box<dyn CloneableTask> {
     }
 }
 
+#[derive(Debug, Clone, PartialEq, Eq)]
+pub struct SyncSpecs; // Sync public specs
+
+#[async_trait]
+impl Task for SyncSpecs {
+    async fn run(&self, _sender: Sender<SchedulerMessages>) -> Result<()> {
+        fig_autocomplete::update_spec_store(false)
+            .await
+            .map_err(|e| eyre::eyre!(Box::new(e)))?;
+        Ok(())
+    }
+}
+
+impl TaggedTask for SyncSpecs {}
+
 #[derive(Debug, Clone)]
 pub struct RecurringTask {
     task: Box<dyn CloneableTask>,

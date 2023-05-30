@@ -77,6 +77,13 @@ pub async fn daemon() -> Result<()> {
 
     scheduler.schedule_random_delay(scheduler::SyncScripts, 0., 1260.);
 
+    // TODO: remove this recurring task when backend can send "SpecsUpdated" websocket messages
+    scheduler.schedule_random_delay(
+        scheduler::RecurringTask::new(scheduler::SyncSpecs, Duration::from_secs(60 * 60 * 4), None),
+        0.,
+        60.,
+    );
+
     scheduler.schedule_random_delay(
         scheduler::RecurringTask::new(
             scheduler::SendQueuedTelemetryEvents,

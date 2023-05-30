@@ -2,6 +2,7 @@
 
 mod ai;
 pub mod app;
+mod autocomplete;
 pub mod commandline_tool;
 mod completion;
 mod debug;
@@ -94,6 +95,9 @@ pub enum CliRootCommands {
     /// Interact with the desktop app
     #[command(subcommand)]
     App(app::AppSubcommand),
+    /// Autocomplete commands
+    #[command(subcommand)]
+    Autocomplete(autocomplete::AutocompleteSubcommand),
     /// Hook commands
     #[command(subcommand, hide = true)]
     Hook(hook::HookSubcommand),
@@ -295,6 +299,7 @@ impl Cli {
                     let force = args.force;
                     installation::install_cli(args.into(), no_confirm, force).await
                 },
+                CliRootCommands::Autocomplete(args) => args.execute().await,
                 CliRootCommands::Uninstall { no_confirm } => uninstall::uninstall_command(no_confirm).await,
                 CliRootCommands::Update {
                     non_interactive,

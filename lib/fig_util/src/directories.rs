@@ -211,6 +211,18 @@ pub fn themes_dir() -> Result<PathBuf> {
     Ok(themes_repo_dir()?.join("themes"))
 }
 
+/// The autocomplete directory
+pub fn autocomplete_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_AUTOCOMPLETE_DIR");
+    Ok(fig_data_dir()?.join("autocomplete"))
+}
+
+/// The autocomplete specs directory
+pub fn autocomplete_specs_dir() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_AUTOCOMPLETE_SPECS_DIR");
+    Ok(autocomplete_dir()?.join("specs"))
+}
+
 /// The path to the cloned repo containing the themes
 pub fn themes_repo_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_THEMES_REPO_DIR");

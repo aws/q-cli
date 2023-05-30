@@ -67,6 +67,10 @@ enum FigWebsocketMessage {
         ignore_rollout: bool,
     },
     #[serde(rename_all = "camelCase")]
+    SpecsUpdated {
+        tag: String,
+    },
+    #[serde(rename_all = "camelCase")]
     QuitDaemon {
         status: Option<i32>,
     },
@@ -189,6 +193,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     let (websocket_stream, _) = tokio_tungstenite::connect_async_tls_with_config(
         url,
         None,
+        false,
         Some(tokio_tungstenite::Connector::Rustls(client_config(true))),
     )
     .await
@@ -314,6 +319,14 @@ async fn process_message(message: FigWebsocketMessage, scheduler: &mut Scheduler
                 .await
                 .ok();
             }
+            Ok(())
+        },
+        FigWebsocketMessage::SpecsUpdated { .. } => {
+            tokio::spawn(async move {
+                if let Err(err) = fig_autocomplete::update_spec_store(false).await {
+                    error!(%err, "Failed to update specs");
+                }
+            });
             Ok(())
         },
         FigWebsocketMessage::QuitDaemon { status } => std::process::exit(status.unwrap_or(0)),

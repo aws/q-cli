@@ -37,7 +37,7 @@ DESTINATIONS = $(ARTIFACTS) \
 $(shell mkdir -p $(ARTIFACTS))
 $(shell mkdir -p $(ARTIFACTS_TS))
 
-all: api local figterm secure
+all: api local
 
 check-protoc:
 	command -v protoc 2> /dev/null || echo "protoc is not in PATH"
