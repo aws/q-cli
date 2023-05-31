@@ -296,7 +296,7 @@ pub enum InternalSubcommand {
         remote_dest: String,
         uuid: String,
     },
-    /// [Deprecated] Displays prompt to install remote shell integrations.
+    /// \[Deprecated\] Displays prompt to install remote shell integrations.
     PromptSsh {
         remote_dest: String,
     },

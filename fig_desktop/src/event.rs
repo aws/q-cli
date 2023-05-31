@@ -80,7 +80,7 @@ pub enum WindowEvent {
     SetEnabled(bool),
     /// Sets the theme of the window (light, dark, or system if None)
     ///
-    /// This is currently unimplemented blocked on https://github.com/tauri-apps/tao/issues/582
+    /// This is currently unimplemented blocked on <https://github.com/tauri-apps/tao/issues/582>
     SetTheme(Option<Theme>),
     UpdateWindowGeometry {
         position: Option<WindowPosition>,

@@ -4,7 +4,7 @@ export default {
     "cargo clippy --locked --color always -- -D warnings",
   ],
   "*.proto": () => [
-    "cd proto && buf lint && buf format --error-code > /dev/null",
+    "cd proto && buf lint && buf format --exit-code > /dev/null",
   ],
   "*": "typos",
 };

@@ -7,10 +7,13 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 use fig_util::directories;
+pub use rusqlite;
+use rusqlite::types::ValueRef;
 use rusqlite::{
     params,
     Connection,
 };
+use serde_json::Value;
 use thiserror::Error;
 use tracing::{
     error,
@@ -295,6 +298,35 @@ impl History {
 
         Ok(rows_mapped)
     }
+
+    /// A raw sql query that returns a json array of objects
+    pub fn query<P: rusqlite::Params>(
+        &self,
+        query: &str,
+        params: P,
+    ) -> Result<Vec<serde_json::Map<String, serde_json::Value>>> {
+        let mut stmt = self.connection.prepare(query)?;
+        let rows = stmt.query_map(params, |row| {
+            let row_count = row.as_ref().column_count();
+            let mut map = serde_json::Map::with_capacity(row_count);
+            for i in 0..row_count {
+                let name = row.as_ref().column_name(i)?;
+                let value = match row.get_ref(i)? {
+                    ValueRef::Null => Value::Null,
+                    ValueRef::Integer(i) => Value::from(i),
+                    ValueRef::Real(f) => Value::from(f),
+                    ValueRef::Text(s) => Value::from(String::from_utf8_lossy(s)),
+                    ValueRef::Blob(b) => Value::from(b),
+                };
+                map.insert(name.into(), value);
+            }
+            Ok(map)
+        })?;
+
+        let rows = rows.collect::<rusqlite::Result<Vec<serde_json::Map<String, serde_json::Value>>>>()?;
+
+        Ok(rows)
+    }
 }
 
 fn map_row(row: &rusqlite::Row) -> rusqlite::Result<CommandInfo> {
@@ -565,5 +597,67 @@ mod tests {
             .unwrap();
 
         assert_eq!(row.len(), 2);
+
+        // while we're here, test the `query` method
+        let row = history.query("SELECT * FROM history ORDER BY id ASC", ()).unwrap();
+
+        assert_eq!(row.len(), 3);
+
+        assert_eq!(
+            &row[0],
+            serde_json::json!({
+                "id": 1,
+                "command": "fig",
+                "shell": "bash",
+                "pid": 123,
+                "session_id": "session-id",
+                "cwd": "/home/grant/",
+                "start_time": 123,
+                "end_time": 124,
+                "hostname": "laptop",
+                "exit_code": 0,
+                "duration": 1000,
+            })
+            .as_object()
+            .unwrap()
+        );
+
+        assert_eq!(
+            &row[1],
+            serde_json::json!({
+                "id": 2,
+                "command": "cargo test",
+                "shell": "zsh",
+                "pid": 124,
+                "session_id": "session-id",
+                "cwd": "/home/grant/",
+                "start_time": 124,
+                "end_time": 125,
+                "hostname": "laptop",
+                "exit_code": 0,
+                "duration": 1000,
+            })
+            .as_object()
+            .unwrap()
+        );
+
+        assert_eq!(
+            &row[2],
+            serde_json::json!({
+                "id": 3,
+                "command": "cargo run",
+                "shell": "zsh",
+                "pid": 124,
+                "session_id": "session-id",
+                "cwd": "/home/grant/",
+                "start_time": 126,
+                "end_time": null,
+                "hostname": "laptop",
+                "exit_code": null,
+                "duration": null,
+            })
+            .as_object()
+            .unwrap()
+        );
     }
 }

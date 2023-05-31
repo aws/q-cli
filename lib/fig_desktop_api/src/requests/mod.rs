@@ -4,6 +4,7 @@ use fig_proto::ReflectMessage;
 
 pub mod defaults;
 pub mod fs;
+pub mod history;
 pub mod install;
 pub mod other;
 pub mod settings;

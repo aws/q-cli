@@ -25,6 +25,8 @@ import {
   GetLocalStateResponse,
   GetSettingsPropertyRequest,
   GetSettingsPropertyResponse,
+  HistoryQueryRequest,
+  HistoryQueryResponse,
   InsertTextRequest,
   InstallRequest,
   InstallResponse,
@@ -441,6 +443,32 @@ export async function sendCheckForUpdatesRequest(
             reject(
               Error(
                 `Invalid response '${  response?.$case  }' for 'CheckForUpdatesRequest'`
+              )
+            );
+        }
+      }
+    );
+  });
+}
+
+export async function sendHistoryQueryRequest(
+  request: HistoryQueryRequest
+): Promise<HistoryQueryResponse> {
+  return new Promise((resolve, reject) => {
+    sendMessage(
+      { $case: "historyQueryRequest", historyQueryRequest: request },
+      (response) => {
+        switch (response?.$case) {
+          case "historyQueryResponse":
+            resolve(response.historyQueryResponse);
+            break;
+          case "error":
+            reject(Error(response.error));
+            break;
+          default:
+            reject(
+              Error(
+                `Invalid response '${  response?.$case  }' for 'HistoryQueryRequest'`
               )
             );
         }

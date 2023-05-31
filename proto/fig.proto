@@ -2,6 +2,7 @@ syntax = "proto3";
 package fig;
 
 import "fig_common.proto";
+import "google/protobuf/empty.proto";
 
 option objc_class_prefix = "FIG";
 
@@ -21,7 +22,7 @@ message ClientOriginatedMessage {
     InsertTextRequest insert_text_request = 110;
     UpdateApplicationPropertiesRequest update_application_properties_request = 111;
     DestinationOfSymbolicLinkRequest destination_of_symbolic_link_request = 112;
-    GetDefaultsPropertyRequest get_defaults_property_request = 113 [deprecated = true]; 
+    GetDefaultsPropertyRequest get_defaults_property_request = 113 [deprecated = true];
     UpdateDefaultsPropertyRequest update_defaults_property_request = 114 [deprecated = true];
     TelemetryIdentifyRequest telemetry_identify_request = 116;
     TelemetryTrackRequest telemetry_track_request = 117;
@@ -47,6 +48,7 @@ message ClientOriginatedMessage {
     UserLogoutRequest user_logout_request = 137;
     CheckForUpdatesRequest check_for_updates_request = 138;
     UpdateApplicationRequest update_application_request = 139;
+    HistoryQueryRequest history_query_request = 140;
   }
 
   reserved 115;
@@ -74,6 +76,7 @@ message ServerOriginatedMessage {
     MacosInputMethodResponse macos_input_method_response = 112;
     InstallResponse install_response = 113;
     CheckForUpdatesResponse check_for_updates_response = 114;
+    HistoryQueryResponse history_query_response = 115;
 
     Notification notification = 1000;
   }
@@ -579,6 +582,27 @@ message MacosInputMethodResponse {
   string message = 1;
   int32 code = 2;
   InputMethodState state = 3;
+}
+
+/// History
+
+message HistoryQueryRequest {
+  message Param {
+    oneof type {
+      google.protobuf.Empty null = 1;
+      int64 integer = 2;
+      double float = 3;
+      string string = 4;
+      bytes blob = 5;
+    }
+  }
+
+  string query = 1;
+  repeated Param params = 2;
+}
+
+message HistoryQueryResponse {
+  string json_array = 1;
 }
 
 /// Notifications

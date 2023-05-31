@@ -16,6 +16,7 @@ import * as State from "./state";
 import * as Install from "./install";
 import * as Types from "./types";
 import * as User from "./user";
+import * as History from "./history";
 
 import * as Fig from "./fig.pb";
 import * as Internal from "./requests";
@@ -39,7 +40,8 @@ const lib = {
   fs,
   Install,
   Types,
-  User
+  User,
+  History
 };
 
 export {
@@ -50,6 +52,7 @@ export {
   Event,
   Fig,
   fs,
+  History,
   Install,
   Internal,
   Keybindings,

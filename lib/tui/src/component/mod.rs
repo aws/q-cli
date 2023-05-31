@@ -311,7 +311,7 @@ pub trait Component: std::fmt::Debug + Downcast {
 
     /// This is gross, basically constrains all impls of Component to be Sized, while still
     /// allowing use of Component as a trait object.
-    /// https://stackoverflow.com/a/61654763
+    /// <https://stackoverflow.com/a/61654763>
     fn as_dyn_mut(&mut self) -> &mut dyn Component;
 }
 

@@ -198,6 +198,8 @@ async fn handle_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
                 OnboardingRequest(request) => event_handler.onboarding(request!(request)).await,
                 // install
                 InstallRequest(request) => install::install(request).await,
+                // history
+                HistoryQueryRequest(request) => history::query(request).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
                 // deprecated
