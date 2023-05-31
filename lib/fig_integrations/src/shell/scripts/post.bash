@@ -152,6 +152,7 @@ __fig_reset_hooks() {
   #   __bp_interactive_mode
   # ]"
   local existing_prompt_command
+  # shellcheck disable=SC2128
   existing_prompt_command="${PROMPT_COMMAND}"
   existing_prompt_command="${existing_prompt_command//__fig_post_prompt[;$'\n']}"
   existing_prompt_command="${existing_prompt_command//__fig_post_prompt}"
@@ -159,11 +160,15 @@ __fig_reset_hooks() {
   existing_prompt_command="${existing_prompt_command//__bp_interactive_mode}"
   __bp_sanitize_string existing_prompt_command "$existing_prompt_command"
 
+  # shellcheck disable=SC2178
   PROMPT_COMMAND=""
   if [[ -n "$existing_prompt_command" ]]; then
+        # shellcheck disable=SC2179
       PROMPT_COMMAND+=${existing_prompt_command}$'\n'
   fi;
+  # shellcheck disable=SC2179
   PROMPT_COMMAND+=$'__fig_post_prompt\n'
+  # shellcheck disable=SC2179
   PROMPT_COMMAND+='__bp_interactive_mode'
 
   if [[ ${precmd_functions[0]} != __fig_pre_prompt ]]; then

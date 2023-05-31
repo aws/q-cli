@@ -88,6 +88,7 @@ __bp_require_not_readonly() {
 # Remove ignorespace and or replace ignoreboth from HISTCONTROL
 # so we can accurately invoke preexec with a command from our
 # history even if it starts with a space.
+# shellcheck disable=SC2317
 __bp_adjust_histcontrol() {
     local histcontrol
     histcontrol="${HISTCONTROL:-}"

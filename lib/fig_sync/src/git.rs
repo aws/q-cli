@@ -274,11 +274,11 @@ pub async fn sideband_printer(sideband_rx: Receiver<String>) {
 
 #[cfg(test)]
 mod tests {
-    use fig_api_client::plugins::GitHub;
     use reqwest::Url;
     use tokio::process::Command;
 
     use super::*;
+    use crate::plugins::manifest::GitHub;
 
     #[ignore]
     #[tokio::test]
