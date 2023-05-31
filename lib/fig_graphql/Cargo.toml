@@ -21,7 +21,7 @@ fig_proto = { path = "../fig_proto", optional = true }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings", optional = true }
 fig_util = { path = "../fig_util", optional = true }
-graphql_client = "0.12.0"
+graphql_client = "0.13.0"
 serde = "1.0.152"
 serde_json = { version = "1.0.92", features = ["arbitrary_precision"] }
 thiserror = { version = "1.0.38", optional = true }
