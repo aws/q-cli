@@ -109,7 +109,7 @@ nix = "0.26.2"
 dbus = { path = "../lib/dbus" }
 freedesktop-icons = "0.2.2"
 gtk = "0.16.2"
-x11rb = "0.11.0"
+x11rb = "0.12.0"
 zbus = "3.10.0"
 
 [target.'cfg(target_os="macos")'.dependencies]
