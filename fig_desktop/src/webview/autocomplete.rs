@@ -19,7 +19,7 @@ pub fn url() -> Url {
         }
     };
 
-    let offline_mode = fig_settings::settings::get_bool_or("autocomplete.offline-support", false);
+    let offline_mode = fig_settings::settings::get_bool_or("autocomplete.offline-support", true);
 
     match (
         fig_settings::settings::get_string_opt("developer.autocomplete.build").as_deref(),
