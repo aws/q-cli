@@ -14,23 +14,18 @@ impl AutocompleteSubcommand {
     pub async fn execute(&self) -> eyre::Result<()> {
         match self {
             AutocompleteSubcommand::Update => {
-                fig_autocomplete::update_spec_store(false)
-                    .await
-                    .map_err(eyre::Report::msg)?;
+                fig_autocomplete::update_spec_store(false).await?;
                 println!("Successfully updated spec store!");
                 Ok(())
             },
             AutocompleteSubcommand::Latest => {
-                let release = fig_api_client::autocomplete::AUTOCOMPLETE_REPO
-                    .latest_release()
-                    .await
-                    .map_err(eyre::Report::msg)?;
+                let release = fig_api_client::autocomplete::AUTOCOMPLETE_REPO.latest_release().await?;
                 println!("{}", release.tag_name);
                 Ok(())
             },
             AutocompleteSubcommand::Current => {
                 let tag_name =
-                    fig_settings::settings::get::<String>(fig_autocomplete::SETTINGS_SPEC_VERSION)?.unwrap_or_default();
+                    fig_settings::state::get::<String>(fig_autocomplete::SETTINGS_SPEC_VERSION)?.unwrap_or_default();
                 println!("{}", tag_name);
                 Ok(())
             },

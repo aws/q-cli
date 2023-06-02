@@ -1,18 +1,36 @@
 use std::fs;
 use std::io::Cursor;
 
-use anyhow::Context;
 use fig_api_client::autocomplete::{
     get_zipped_specs_from,
     AUTOCOMPLETE_REPO,
 };
+use thiserror::Error;
 use zip::read::ZipArchive;
+
+#[derive(Debug, Error)]
+pub enum Error {
+    #[error("Zip Error: {0}")]
+    ZipError(#[from] zip::result::ZipError),
+    #[error("IO Error: {0}")]
+    IoError(#[from] std::io::Error),
+    #[error("Request Error: {0}")]
+    Request(#[from] fig_request::Error),
+    #[error("Settings Error: {0}")]
+    Settings(#[from] fig_settings::Error),
+    #[error("Directory Error: {0}")]
+    Directory(#[from] fig_util::directories::DirectoryError),
+    #[error("Fig desktop is not installed so autocomplete specs will not be updated")]
+    DesktopAppNotInstalled,
+    #[error("Could not find the root directory of the zip file")]
+    RootDirNotFound,
+}
 
 pub static SETTINGS_SPEC_VERSION: &str = "autocomplete.last-spec-version";
 
-pub async fn update_spec_store(force: bool) -> anyhow::Result<()> {
+pub async fn update_spec_store(force: bool) -> Result<(), Error> {
     if !fig_util::manifest::is_full() {
-        anyhow::bail!("Fig desktop is not installed so autocomplete specs will not be updated");
+        return Err(Error::DesktopAppNotInstalled);
     }
 
     let temp_dir = std::env::temp_dir().join("fig").join("autocomplete_specs");
@@ -28,7 +46,7 @@ pub async fn update_spec_store(force: bool) -> anyhow::Result<()> {
         // first file of temp dir is for sure the root file of the zip
         let zip_root_dir_name = fs::read_dir(&temp_dir)?
             .next()
-            .context("Could not find the root directory of the zip file")??
+            .ok_or(Error::RootDirNotFound)??
             .file_name();
 
         let spec_dir = fig_util::directories::autocomplete_specs_dir()?;
