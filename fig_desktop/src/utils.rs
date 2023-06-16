@@ -1,6 +1,9 @@
 use std::borrow::Cow;
 
-use http::header::CONTENT_TYPE;
+use http::header::{
+    ACCESS_CONTROL_ALLOW_ORIGIN,
+    CONTENT_TYPE,
+};
 use http::status::StatusCode;
 use http::{
     Request as HttpRequest,
@@ -32,7 +35,9 @@ pub fn wrap_custom_protocol(
         Ok(match f(req) {
             Ok(res) => res,
             Err(err) => {
-                let response = HttpResponse::builder().status(StatusCode::BAD_REQUEST);
+                let response = HttpResponse::builder()
+                    .status(StatusCode::BAD_REQUEST)
+                    .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
                 match req
                     .headers()
                     .get("Accept")

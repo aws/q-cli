@@ -13,7 +13,10 @@ use std::sync::Arc;
 use std::time::Duration;
 
 use anyhow::Result;
-use http::header::CONTENT_TYPE;
+use http::header::{
+    ACCESS_CONTROL_ALLOW_ORIGIN,
+    CONTENT_TYPE,
+};
 use http::{
     Request,
     Response,
@@ -140,7 +143,7 @@ fn build_asset_response(data: Cow<'static, [u8]>, asset_kind: AssetKind) -> Resp
             AssetKind::Png => "image/png",
             AssetKind::Svg => "image/svg+xml",
         })
-        .header("Access-Control-Allow-Origin", "*")
+        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
         .body(data)
         .unwrap()
 }

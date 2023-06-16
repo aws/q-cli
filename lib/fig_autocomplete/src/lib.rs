@@ -1,5 +1,6 @@
 use std::fs;
 use std::io::Cursor;
+use std::path::Path;
 
 use fig_api_client::autocomplete::{
     get_zipped_specs_from,
@@ -28,6 +29,20 @@ pub enum Error {
 
 pub static SETTINGS_SPEC_VERSION: &str = "autocomplete.last-spec-version";
 
+fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> std::io::Result<()> {
+    fs::create_dir_all(&dst)?;
+    for dir_entry in fs::read_dir(src)?.flatten() {
+        if let Ok(file_type) = dir_entry.file_type() {
+            if file_type.is_dir() {
+                copy_dir_all(dir_entry.path(), dst.as_ref().join(dir_entry.file_name()))?;
+            } else {
+                fs::copy(dir_entry.path(), dst.as_ref().join(dir_entry.file_name()))?;
+            }
+        };
+    }
+    Ok(())
+}
+
 pub async fn update_spec_store(force: bool) -> Result<(), Error> {
     if !fig_util::manifest::is_full() {
         return Err(Error::DesktopAppNotInstalled);
@@ -54,9 +69,9 @@ pub async fn update_spec_store(force: bool) -> Result<(), Error> {
         if let Some(parent) = spec_dir.parent() {
             tokio::fs::create_dir_all(parent).await?;
         }
-        tokio::fs::rename(temp_dir.join(zip_root_dir_name), spec_dir)
-            .await
-            .unwrap();
+
+        copy_dir_all(temp_dir.join(&zip_root_dir_name), spec_dir)?;
+        tokio::fs::remove_dir_all(&temp_dir).await?;
 
         fig_settings::state::set_value(SETTINGS_SPEC_VERSION, latest_release.tag_name)?;
     };
