@@ -52,7 +52,7 @@ fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
 flume = "0.10.14"
 fnv = "1.0.7"
-hashbrown = "0.13.1"
+hashbrown = "0.14.0"
 http = "0.2.8"
 image = "0.24.5"
 imageproc = "0.23.0"

@@ -2115,7 +2115,7 @@ dependencies = [
  "fnv",
  "freedesktop-icons",
  "gtk",
- "hashbrown 0.13.2",
+ "hashbrown 0.14.0",
  "http",
  "image",
  "imageproc",
