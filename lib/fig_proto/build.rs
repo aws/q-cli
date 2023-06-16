@@ -5,6 +5,8 @@ use std::path::PathBuf;
 fn protoc_version() -> Option<[u32; 3]> {
     let output = std::process::Command::new("protoc").arg("--version").output().ok()?;
     let version = String::from_utf8(output.stdout).ok()?;
+    eprintln!("protoc version: {version:?}");
+
     let version = version.trim();
     let version = version.split(' ').last().expect("No version");
     let version = version.split('.').collect::<Vec<_>>();
