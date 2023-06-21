@@ -1,23 +1,30 @@
 use std::io::Result;
 use std::path::PathBuf;
 
+enum Version {
+    V1([u32; 3]),
+    V2([u32; 2]),
+}
+
 /// Try to find the version of protoc installed on the system.
-fn protoc_version() -> Option<[u32; 3]> {
+fn protoc_version() -> Option<Version> {
     let output = std::process::Command::new("protoc").arg("--version").output().ok()?;
     let version = String::from_utf8(output.stdout).ok()?;
     eprintln!("protoc version: {version:?}");
 
     let version = version.trim();
+    eprintln!("version: {version:?}");
     let version = version.split(' ').last().expect("No version");
     let version = version.split('.').collect::<Vec<_>>();
-    if version.len() != 3 {
-        return None;
-    }
     let version = version
         .iter()
         .map(|s| s.parse::<u32>().ok())
         .collect::<Option<Vec<_>>>()?;
-    Some([version[0], version[1], version[2]])
+    match version.len() {
+        3 => Some(Version::V1([version[0], version[1], version[2]])),
+        2 => Some(Version::V2([version[0], version[1]])),
+        _ => None,
+    }
 }
 
 fn main() -> Result<()> {
@@ -35,10 +42,12 @@ fn main() -> Result<()> {
     // --experimental_allow_proto3_optional is supported only on version of protoc >= 3.12
     // if the version of the system protoc is too old, we must panic
     match protoc_version() {
-        Some(version @ ([0..=2, _, _] | [3, 0..=11, _])) => {
+        Some(Version::V1(version @ ([0..=2, _, _] | [3, 0..=11, _]))) => {
             let version_str = version.iter().map(|v| v.to_string()).collect::<Vec<_>>().join(".");
             panic!("protoc version {version_str} is too old, please install version 3.12 or newer",)
         },
+
+        Some(Version::V2(_)) => {},
         None => panic!("protoc not found"),
         _ => (),
     }
