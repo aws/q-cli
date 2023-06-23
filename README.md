@@ -51,15 +51,20 @@ flowchart LR
     desktop ===|secure proto| remoteCli
 ```
 
-The Fig monorepo houses most of the core Fig code for the Fig desktop app
-and CLI. Several projects live here:
+The Fig monorepo houses most of the core Fig code for the Fig desktop app and
+CLI. Several projects live here:
 
-- `proto/` - [protocol buffer](https://developers.google.com/protocol-buffers/) message specification for inter-process communication
-- `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the user’s terminal edit buffer.
-- `fig_cli/` - the fig CLI, allows users to interface with Fig from the command line
-- `fig_desktop/` - the Rust desktop app (currently working on Linux, with work being done on MacOS/Windows), uses [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/) for windowing/webviews
+- `proto/` - [protocol buffer](https://developers.google.com/protocol-buffers/)
+  message specification for inter-process communication
+- `figterm/` - figterm, our headless terminal/pseudoterminal that intercepts the
+  user’s terminal edit buffer.
+- `fig_cli/` - the fig CLI, allows users to interface with Fig from the command
+  line
+- `fig_desktop/` - the Rust desktop app, uses
+  [`tao`](https://docs.rs/tao/latest/tao/)/[`wry`](https://docs.rs/wry/latest/wry/)
+  for windowing/webviews
+- `fig_input_method/` - The input method used to get cursor position on macOS
 - `typescript-api-bindings/` - The protocol buffer bindings for typescript
-- `fig/` - Core logic for the legacy macOS desktop app
 
 ## Setup
 
@@ -118,14 +123,16 @@ brew install swiftlint yarn jq cmake
 
 ### 2. Install protobuf compilers.
 
-See [proto/README.md](https://github.com/withfig/macos/blob/develop/proto/README.md)
+See
+[proto/README.md](https://github.com/withfig/macos/blob/develop/proto/README.md)
 
 ### 3. Install Rust toolchain using [Rustup](https://rustup.rs):
 
 ```bash
 curl --proto '=https' --tlsv1.2 -sSf https://sh.rustup.rs | sh
-rustup toolchain install nightly
 rustup toolchain default stable
+# for nightly cargo fmt
+rustup toolchain install nightly
 ```
 
 For MacOS development make sure the right targets are installed:
@@ -147,27 +154,15 @@ yarn
 
 ### 5. XCode (MacOS)
 
-- You MUST be [added](https://appstoreconnect.apple.com/access/users) to Fig's Apple Developer account.
+- You MUST be [added](https://appstoreconnect.apple.com/access/users) to Fig's
+  Apple Developer account.
 - Setup Xcode signing credentials
 
 ## Building and Running Projects
 
 ### MacOS App
 
-Before building you may need to:
-
-1. Install Swift Packages (in XCode: File > Packages > Refresh Package Cache).
-
-2. Make protos:
-   ```bash
-   cd proto && make
-   ```
-
-You can build from the XCode UI directly or from the terminal:
-
-```bash
-xcodebuild -scheme fig build
-```
+Run `cargo run --bin fig_desktop` to run the app.
 
 ### figterm
 
@@ -188,10 +183,6 @@ make install-native
 ```
 
 This will build the project and copy it to the correct place.
-
-## Publish
-
-When publishing a new version (pushing to master) of the app, be sure to bump `figcli` if required because it is needed to automatically generate specs.
 
 ## Git Branching Conventions
 
