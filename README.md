@@ -13,24 +13,24 @@
 flowchart LR
     term[fa:fa-terminal Terminal]
     click term href "https://en.wikipedia.org/wiki/Terminal_emulator"
-      desktop[fa:fa-laptop-code Desktop App]
+      desktop[fa:fa-laptop-code Desktop App *]
     click desktop href "https://github.com/withfig/macos/tree/HEAD/fig_desktop"
     subgraph webview[Web View]
       style webview fill:transparent,stroke-dasharray: 5 5
-      autocomplete[fa:fa-window-restore Autocomplete]
+      autocomplete[fa:fa-window-restore Autocomplete *]
       click autocomplete href "https://www.github.com/withfig/autocomplete-engine"
-      dashboard[fa:fa-window-maximize Dashboard]
+      dashboard[fa:fa-window-maximize Dashboard *]
       click dashboard href "https://www.github.com/withfig/mission-control"
     end
-    localCli[Fig CLI]
+    localCli[Fig CLI *]
     click localCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
     subgraph remote["Remote (SSH/WSL/Docker)"]
       style remote fill:transparent,stroke-dasharray: 5 5
-      figterm[Figterm]
+      figterm[Figterm *]
       click figterm href "https://github.com/withfig/macos/tree/HEAD/figterm"
       shell["Shell (bash)"]
       click shell href "https://en.wikipedia.org/wiki/Unix_shell"
-      remoteCli[Fig CLI]
+      remoteCli[Fig CLI *]
       click remoteCli href "https://github.com/withfig/macos/tree/HEAD/fig_cli"
       subgraph kernel[Kernel]
         style kernel fill:transparent,stroke-dasharray: 5 5
@@ -39,16 +39,16 @@ flowchart LR
       end
     end
 
-    localCli <-->|local proto| desktop
+    localCli <-->|local proto *| desktop
     term <-->|stdin/stdout| figterm
-    webview <-->|Fig.js| desktop
-    desktop <==>|secure proto| figterm
+    webview <-->|Fig.js *| desktop
+    desktop <==>|secure proto *| figterm
     figterm <-->|stdin/stdout| pseudo
     pseudo <-->|stdin/stdout| shell
     shell -.->|"fork()"| figterm
     shell --> remoteCli
-    remoteCli ==>|figterm proto| figterm
-    desktop ===|secure proto| remoteCli
+    remoteCli ==>|figterm proto *| figterm
+    desktop ===|secure proto *| remoteCli
 ```
 
 The Fig monorepo houses most of the core Fig code for the Fig desktop app and
