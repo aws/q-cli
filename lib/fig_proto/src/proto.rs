@@ -32,10 +32,10 @@ pub(crate) mod figterm {
     include!(concat!(env!("OUT_DIR"), "/figterm.rs"));
 }
 
-/// Secure Socket Protocol Buffers
-pub(crate) mod secure {
+/// remote Socket Protocol Buffers
+pub(crate) mod remote {
     pub use crate::fig_common::*;
-    include!(concat!(env!("OUT_DIR"), "/secure.rs"));
+    include!(concat!(env!("OUT_DIR"), "/remote.rs"));
 }
 
 /// Stress Testing Protocol Buffers

@@ -9,7 +9,7 @@ use fig_proto::local::{
     ShellContext,
     TerminalCursorCoordinates,
 };
-use fig_proto::secure::{
+use fig_proto::remote::{
     hostbound,
     Clientbound,
 };

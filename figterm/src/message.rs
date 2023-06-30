@@ -26,7 +26,7 @@ use fig_proto::figterm::{
     FigtermRequestMessage,
     FigtermResponseMessage,
 };
-use fig_proto::secure::{
+use fig_proto::remote::{
     clientbound,
     hostbound,
     Clientbound,
@@ -168,7 +168,7 @@ fn create_command(executable: impl AsRef<Path>, working_directory: impl AsRef<Pa
     cmd
 }
 
-/// Process the inner figterm request enum, shared between local and secure
+/// Process the inner figterm request enum, shared between local and remote
 pub async fn process_figterm_request(
     figterm_request: FigtermRequest,
     main_loop_tx: Sender<MainLoopEvent>,
@@ -301,7 +301,7 @@ pub async fn process_figterm_request(
                 .ok();
             Ok(None)
         },
-        FigtermRequest::CodexComplete(_) => anyhow::bail!("CodexComplete is not supported over secure"),
+        FigtermRequest::CodexComplete(_) => anyhow::bail!("CodexComplete is not supported over remote"),
     }
 }
 
@@ -367,7 +367,7 @@ async fn send_figterm_response_hostbound(
     }
 }
 
-pub async fn process_secure_message(
+pub async fn process_remote_message(
     clientbound_message: Clientbound,
     main_loop_tx: Sender<MainLoopEvent>,
     response_tx: Sender<Hostbound>,

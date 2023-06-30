@@ -7,7 +7,7 @@ pub mod figterm;
 pub mod hooks;
 pub mod local;
 pub(crate) mod proto;
-pub mod secure_hooks;
+pub mod remote_hooks;
 pub mod stress;
 pub mod util;
 use std::fmt::Debug;
@@ -32,8 +32,8 @@ pub use prost_reflect::{
 use serde::Serialize;
 use thiserror::Error;
 
-pub mod secure {
-    pub use crate::proto::secure::*;
+pub mod remote {
+    pub use crate::proto::remote::*;
 }
 
 // This is not used explicitly, but it must be here for the derive

@@ -28,8 +28,8 @@ use fig_proto::local::{
     PromptHook,
 };
 use fig_proto::prost::Message;
-use fig_proto::secure::clientbound;
-use fig_proto::secure::hostbound::ConfirmExchangeCredentialsRequest;
+use fig_proto::remote::clientbound;
+use fig_proto::remote::hostbound::ConfirmExchangeCredentialsRequest;
 use fig_request::auth::Credentials;
 use fig_telemetry::{
     TrackEvent,

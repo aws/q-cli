@@ -21,7 +21,7 @@ TS_FLAGS    = --plugin=$(TS_PROTO) \
 LOCAL = "./local.proto" "./fig_common.proto"
 API   = "./fig.proto" "./local.proto" "./fig_common.proto"
 FIGTERM = "./figterm.proto"
-SECURE = "./secure.proto"
+remote = "./remote.proto"
 
 # Destinations
 ARTIFACTS           = bin

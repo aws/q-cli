@@ -19,14 +19,14 @@ use fig_proto::figterm::{
     SetBufferRequest,
 };
 use fig_proto::local::ShellContext;
-use fig_proto::secure::clientbound::request::Request;
-use fig_proto::secure::clientbound::{
+use fig_proto::remote::clientbound::request::Request;
+use fig_proto::remote::clientbound::{
     self,
     HandshakeResponse,
     PseudoterminalExecuteRequest,
     RunProcessRequest,
 };
-use fig_proto::secure::{
+use fig_proto::remote::{
     hostbound,
     Clientbound,
     Hostbound,
@@ -64,12 +64,12 @@ use crate::figterm::{
 use crate::webview::notification::WebviewNotificationsState;
 use crate::EventLoopProxy;
 
-pub async fn start_secure_ipc(
+pub async fn start_remote_ipc(
     figterm_state: Arc<FigtermState>,
     notifications_state: Arc<WebviewNotificationsState>,
     proxy: EventLoopProxy,
 ) -> Result<()> {
-    let socket_path = directories::secure_socket_path()?;
+    let socket_path = directories::remote_socket_path()?;
     if let Some(parent) = socket_path.parent() {
         if !parent.exists() {
             std::fs::create_dir_all(parent).expect("Failed creating socket path");
@@ -86,7 +86,7 @@ pub async fn start_secure_ipc(
     let listener = UnixListener::bind(socket_path)?;
 
     while let Ok((stream, _)) = listener.accept().await {
-        tokio::spawn(handle_secure_ipc(
+        tokio::spawn(handle_remote_ipc(
             stream,
             figterm_state.clone(),
             notifications_state.clone(),
@@ -97,7 +97,7 @@ pub async fn start_secure_ipc(
     Ok(())
 }
 
-async fn handle_secure_ipc(
+async fn handle_remote_ipc(
     stream: UnixStream,
     figterm_state: Arc<FigtermState>,
     notifications_state: Arc<WebviewNotificationsState>,
@@ -131,7 +131,7 @@ async fn handle_secure_ipc(
             }
             message = reader.recv_message::<Hostbound>() => match message {
                 Ok(Some(message)) => {
-                    trace!(?message, "Received secure message");
+                    trace!(?message, "Received remote message");
                     if let Some(response) = match message.packet {
                         Some(hostbound::Packet::Handshake(handshake)) => {
                             let result = if session_id.is_some() {
@@ -225,13 +225,13 @@ async fn handle_secure_ipc(
                                 | hostbound::request::Request::PreExec(_)
                                 | hostbound::request::Request::InterceptedKey(_)
                             ) && session_id.is_none() {
-                                debug!("Client tried to send secure hook without auth");
+                                debug!("Client tried to send remote hook without auth");
                                 Some(clientbound::Packet::HandshakeResponse(HandshakeResponse {
                                     success: false,
                                 }))
                             } else {
                                 /*
-                                    WARNING, when adding new secure requests you must sanitize the context,
+                                    WARNING, when adding new remote requests you must sanitize the context,
                                     otherwise the client can forge a message from another session
                                 */
                                 let res = match request {
@@ -303,7 +303,7 @@ async fn handle_secure_ipc(
                         Some(hostbound::Packet::Request(hostbound::Request { request: None, .. }))
                             | Some(hostbound::Packet::Response(hostbound::Response { response: None, .. }))
                             | None => {
-                            warn!(?message.packet, "Received unknown secure packet");
+                            warn!(?message.packet, "Received unknown remote packet");
                             None
                         }
                     } {
@@ -316,7 +316,7 @@ async fn handle_secure_ipc(
                 }
                 Err(err) => {
                     if !err.is_disconnect() {
-                        warn!(%err, "Failed receiving secure message");
+                        warn!(%err, "Failed receiving remote message");
                     }
                     break;
                 }
@@ -335,11 +335,11 @@ async fn handle_secure_ipc(
     }
 
     if let Err(err) = ping_task.await {
-        error!(%err, "Secure ping task join error");
+        error!(%err, "remote ping task join error");
     }
 
     if let Err(err) = outgoing_task.await {
-        error!(%err, "Secure outgoing task join error");
+        error!(%err, "remote outgoing task join error");
     }
 
     info!("Disconnect from {session_id:?}");
@@ -354,23 +354,23 @@ async fn handle_outgoing(
     loop {
         tokio::select! {
             _ = on_close_rx.recv() => {
-                debug!("Secure outgoing task exiting");
+                debug!("remote outgoing task exiting");
                 break;
             },
             message = outgoing.recv_async() => {
                 if let Ok(message) = message {
                     if matches!(message, Clientbound { packet: Some(clientbound::Packet::Ping(_)) }) {
-                        trace!(?message, "Sending secure message");
+                        trace!(?message, "Sending remote message");
                     } else {
-                        debug!(?message, "Sending secure message");
+                        debug!(?message, "Sending remote message");
                     }
                     if let Err(err) = writer.send_message(message).await {
-                        error!(%err, "Secure outgoing task send error");
+                        error!(%err, "remote outgoing task send error");
                         bad_connection.notify_one();
                         return;
                     }
                 } else {
-                    debug!("Secure outgoing task exiting");
+                    debug!("remote outgoing task exiting");
                     break;
                 }
             }

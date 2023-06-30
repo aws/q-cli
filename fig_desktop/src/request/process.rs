@@ -9,7 +9,7 @@ use fig_proto::fig::{
     RunProcessRequest,
     RunProcessResponse,
 };
-use fig_proto::secure::hostbound;
+use fig_proto::remote::hostbound;
 use tokio::process::Command;
 use tokio::time::timeout;
 use tracing::{

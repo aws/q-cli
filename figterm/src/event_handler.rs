@@ -3,8 +3,8 @@ use alacritty_terminal::event::{
     EventListener,
 };
 use alacritty_terminal::term::ShellState;
-use fig_proto::secure::Hostbound;
-use fig_proto::secure_hooks::{
+use fig_proto::remote::Hostbound;
+use fig_proto::remote_hooks::{
     hook_to_message,
     new_postexec_hook,
     new_preexec_hook,

@@ -55,8 +55,8 @@ use fig_proto::local::{
     EnvironmentVariable,
     TerminalCursorCoordinates,
 };
-use fig_proto::secure::Hostbound;
-use fig_proto::secure_hooks::{
+use fig_proto::remote::Hostbound;
+use fig_proto::remote_hooks::{
     hook_to_message,
     new_edit_buffer_hook,
 };
@@ -117,11 +117,11 @@ use crate::input::{
 use crate::interceptor::KeyInterceptor;
 use crate::ipc::{
     spawn_figterm_ipc,
-    spawn_secure_ipc,
+    spawn_remote_ipc,
 };
 use crate::message::{
     process_figterm_message,
-    process_secure_message,
+    process_remote_message,
 };
 #[cfg(unix)]
 use crate::pty::unix::open_pty;
@@ -238,13 +238,13 @@ async fn should_install_remote_ssh_integration(
     uuid: String,
     remote_host: String,
     main_loop_tx: Sender<MainLoopEvent>,
-    secure_receiver: Receiver<fig_proto::secure::Clientbound>,
-    secure_sender: Sender<Hostbound>,
+    remote_receiver: Receiver<fig_proto::remote::Clientbound>,
+    remote_sender: Sender<Hostbound>,
     term: &Term<EventHandler>,
     pty_master: &mut Box<dyn crate::pty::AsyncMasterPty + Send + Sync>,
     key_interceptor: &mut KeyInterceptor,
 ) -> Option<bool> {
-    use fig_proto::secure::clientbound;
+    use fig_proto::remote::clientbound;
 
     let remote_install_setting = fig_settings::settings::get_string_or("ssh.remote-prompt", "ask".into());
     if remote_install_setting == "never" {
@@ -264,7 +264,7 @@ async fn should_install_remote_ssh_integration(
     // Wait for child ssh session to connect to local desktop instance.
     let got_child_connection = tokio::time::timeout(tokio::time::Duration::from_millis(prompt_timeout), async {
         loop {
-            if let Ok(msg) = secure_receiver.recv_async().await {
+            if let Ok(msg) = remote_receiver.recv_async().await {
                 if let Some(clientbound::Packet::NotifyChildSessionStarted(clientbound::NotifyChildSessionStarted {
                     parent_id,
                 })) = msg.packet
@@ -273,10 +273,10 @@ async fn should_install_remote_ssh_integration(
                         return true;
                     }
                 } else {
-                    process_secure_message(
+                    process_remote_message(
                         msg,
                         main_loop_tx.clone(),
-                        secure_sender.clone(),
+                        remote_sender.clone(),
                         term,
                         pty_master,
                         key_interceptor,
@@ -664,8 +664,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         // Spawn thread to handle figterm ipc
         let incoming_receiver = spawn_figterm_ipc(&session_id).await?;
 
-        // Spawn thread to handle secure ipc
-        let (secure_sender, secure_receiver, stop_ipc_tx) = spawn_secure_ipc(
+        // Spawn thread to handle remote ipc
+        let (remote_sender, remote_receiver, stop_ipc_tx) = spawn_remote_ipc(
             session_id.clone(),
             parent_id,
             main_loop_tx.clone()
@@ -676,7 +676,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let mut processor = Processor::new();
         let size = SizeInfo::new(pty_size.rows as usize, pty_size.cols as usize);
-        let event_sender = EventHandler::new(secure_sender.clone(), history_sender.clone(), main_loop_tx.clone());
+        let event_sender = EventHandler::new(remote_sender.clone(), history_sender.clone(), main_loop_tx.clone());
         let mut term = alacritty_terminal::Term::new(size, event_sender, 1, session_id.clone());
 
         #[cfg(target_os = "windows")]
@@ -815,8 +815,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                             uuid,
                                             remote_host.clone(),
                                             main_loop_tx.clone(),
-                                            secure_receiver.clone(),
-                                            secure_sender.clone(),
+                                            remote_receiver.clone(),
+                                            remote_sender.clone(),
                                             &term,
                                             &mut master,
                                             &mut key_interceptor,
@@ -911,8 +911,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     .and_then(|b| String::from_utf8(b.to_vec()).ok())
                                                     .unwrap_or_default();
                                                 let context = shell_state_to_context(term.shell_state());
-                                                let hook = fig_proto::secure_hooks::new_intercepted_key_hook(context, action.to_string(), s);
-                                                secure_sender.send(hook_to_message(hook)).unwrap();
+                                                let hook = fig_proto::remote_hooks::new_intercepted_key_hook(context, action.to_string(), s);
+                                                remote_sender.send(hook_to_message(hook)).unwrap();
 
                                                 if event.key == KeyCode::Escape {
                                                     key_interceptor.reset();
@@ -1017,7 +1017,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
                             if can_send_edit_buffer(&term) {
                                 let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                                if let Err(err) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
+                                if let Err(err) = send_edit_buffer(&term, &remote_sender, cursor_coordinates).await {
                                     warn!("Failed to send edit buffer: {err}");
                                 }
                             }
@@ -1030,14 +1030,14 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                         }
                     }
                 }
-                msg = secure_receiver.recv_async() => {
+                msg = remote_receiver.recv_async() => {
                     match msg {
                         Ok(message) => {
                             trace!("Received message from socket: {message:?}");
-                            process_secure_message(
+                            process_remote_message(
                                 message,
                                 main_loop_tx.clone(),
-                                secure_sender.clone(),
+                                remote_sender.clone(),
                                 &term,
                                 &mut master,
                                 &mut key_interceptor
@@ -1075,7 +1075,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                     let send_eb = INSERTION_LOCKED_AT.read().is_some();
                     if send_eb && can_send_edit_buffer(&term) {
                         let cursor_coordinates = get_cursor_coordinates(&mut terminal);
-                        if let Err(err) = send_edit_buffer(&term, &secure_sender, cursor_coordinates).await {
+                        if let Err(err) = send_edit_buffer(&term, &remote_sender, cursor_coordinates).await {
                             warn!(%err, "Failed to send edit buffer");
                         }
                     }

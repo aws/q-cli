@@ -18,8 +18,8 @@ use fig_proto::figterm::{
     FigtermRequestMessage,
     FigtermResponseMessage,
 };
-use fig_proto::secure::hostbound::Handshake;
-use fig_proto::secure::{
+use fig_proto::remote::hostbound::Handshake;
+use fig_proto::remote::{
     clientbound,
     hostbound,
     Clientbound,
@@ -142,7 +142,7 @@ async fn get_forwarded_stream() -> Result<(MessageSource, MessageSink, Option<Jo
         ));
     }
 
-    let socket = directories::secure_socket_path()?;
+    let socket = directories::remote_socket_path()?;
     let stream = fig_ipc::socket_connect_timeout(&socket, Duration::from_secs(5)).await?;
     let (reader, writer) = tokio::io::split(stream);
     Ok((MessageSource::UnixStream(reader), MessageSink::UnixStream(writer), None))
@@ -234,8 +234,8 @@ pub async fn spawn_figterm_ipc(
     Ok(incoming_rx)
 }
 
-/// Connects to the desktop app and allows for a secure connection from remote hosts
-pub async fn spawn_secure_ipc(
+/// Connects to the desktop app and allows for a remote connection from remote hosts
+pub async fn spawn_remote_ipc(
     session_id: String,
     parent_id: Option<String>,
     main_loop_sender: Sender<MainLoopEvent>,
@@ -294,7 +294,7 @@ pub async fn spawn_secure_ipc(
                         let main_loop_sender = main_loop_sender.clone();
                         let outgoing_task = tokio::spawn(async move {
                             while let Ok(message) = outgoing_rx.recv_async().await {
-                                trace!(?message, "Sending secure message");
+                                trace!(?message, "Sending remote message");
                                 match writer.send_message(message).await {
                                     Ok(()) => {
                                         if let Err(err) = writer.flush().await {
@@ -334,7 +334,7 @@ pub async fn spawn_secure_ipc(
                                 error!("failed receiving message from host: {err}");
                                 None
                             }) {
-                                debug!(?message, "Received secure message");
+                                debug!(?message, "Received remote message");
                                 if let Err(err) = incoming_tx.send(message) {
                                     error!("no more listeners for incoming messages: {err}");
                                     break;

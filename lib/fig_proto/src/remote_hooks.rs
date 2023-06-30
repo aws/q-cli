@@ -7,11 +7,11 @@ use crate::proto::local::{
     PromptHook,
     TerminalCursorCoordinates,
 };
-use crate::proto::secure::{
+use crate::proto::remote::{
     hostbound,
     Hostbound,
 };
-use crate::secure::hostbound::ConfirmExchangeCredentialsRequest;
+use crate::remote::hostbound::ConfirmExchangeCredentialsRequest;
 
 fn hook_enum_to_hook(request: hostbound::request::Request) -> hostbound::Request {
     hostbound::Request {

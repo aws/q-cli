@@ -623,7 +623,7 @@ impl InternalSubcommand {
                 let mut stdout_buf = BytesMut::with_capacity(1024);
                 let mut stream_buf = BytesMut::with_capacity(1024);
 
-                let socket = directories::secure_socket_path()?;
+                let socket = directories::remote_socket_path()?;
                 while let Ok(mut stream) = BufferedUnixStream::connect_timeout(&socket, Duration::from_secs(5)).await {
                     loop {
                         select! {

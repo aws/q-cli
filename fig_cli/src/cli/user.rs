@@ -21,13 +21,13 @@ use fig_ipc::{
     SendMessage,
     SendRecvMessage,
 };
-use fig_proto::secure::{
+use fig_proto::remote::{
     clientbound,
     hostbound,
     Clientbound,
     Hostbound,
 };
-use fig_proto::secure_hooks::{
+use fig_proto::remote_hooks::{
     new_account_info_request,
     new_confirm_exchange_credentials_request,
     new_start_exchange_credentials_request,
@@ -151,7 +151,7 @@ impl RootUserSubcommand {
                     if is_remote() {
                         let result = (|| async move {
                             let mut connection =
-                            BufferedUnixStream::connect(fig_util::directories::secure_socket_path()?).await?;
+                            BufferedUnixStream::connect(fig_util::directories::remote_socket_path()?).await?;
                             let response: Option<Clientbound> = connection
                                 .send_recv_message_filtered(
                                     Hostbound {
@@ -383,7 +383,7 @@ impl RootUserSubcommand {
                         },
                         OPTION_REMOTE => {
                             let mut connection =
-                                BufferedUnixStream::connect(fig_util::directories::secure_socket_path()?).await?;
+                                BufferedUnixStream::connect(fig_util::directories::remote_socket_path()?).await?;
                             connection
                                 .send_message(Hostbound {
                                     packet: Some(hostbound::Packet::Request(new_start_exchange_credentials_request())),

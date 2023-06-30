@@ -83,7 +83,7 @@ use crate::tray::{
 use crate::{
     file_watcher,
     local_ipc,
-    secure_ipc,
+    remote_ipc,
     utils,
     DebugState,
     EventLoop,
@@ -210,7 +210,7 @@ impl WebviewManager {
             self.event_loop.create_proxy(),
         ));
 
-        tokio::spawn(secure_ipc::start_secure_ipc(
+        tokio::spawn(remote_ipc::start_remote_ipc(
             self.figterm_state.clone(),
             self.notifications_state.clone(),
             self.event_loop.create_proxy(),

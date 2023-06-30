@@ -42,13 +42,13 @@ flowchart LR
     localCli <-->|local proto *| desktop
     term <-->|stdin/stdout| figterm
     webview <-->|Fig.js *| desktop
-    desktop <==>|secure proto *| figterm
+    desktop <==>|remote proto *| figterm
     figterm <-->|stdin/stdout| pseudo
     pseudo <-->|stdin/stdout| shell
     shell -.->|"fork()"| figterm
     shell --> remoteCli
     remoteCli ==>|figterm proto *| figterm
-    desktop ===|secure proto *| remoteCli
+    desktop ===|remote proto *| remoteCli
 ```
 
 The Fig monorepo houses most of the core Fig code for the Fig desktop app and

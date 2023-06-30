@@ -309,13 +309,13 @@ pub fn daemon_socket_path() -> Result<PathBuf> {
     Ok(sockets_dir()?.join("daemon.socket"))
 }
 
-/// The path to secure socket
+/// The path to remote socket
 ///
 /// - Linux/MacOS on ssh: `/var/tmp/fig-parent-$USER.socket`
 /// - Linux/MacOS not on ssh: `/var/tmp/fig/$USER/secure.socket`
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
-pub fn secure_socket_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_SECURE_SOCKET_PATH");
+pub fn remote_socket_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_REMOTE_SOCKET_PATH");
     if is_remote() {
         if let Ok(parent_id) = std::env::var("FIG_PARENT") {
             if !parent_id.is_empty() {
@@ -323,7 +323,7 @@ pub fn secure_socket_path() -> Result<PathBuf> {
             }
         }
     }
-    local_secure_socket_path()
+    local_remote_socket_path()
 }
 
 /// The path to fig parent socket
@@ -335,12 +335,12 @@ pub fn parent_socket_path(parent_id: &str) -> Result<PathBuf> {
     Ok(Path::new(&format!("/var/tmp/fig-parent-{parent_id}.socket")).to_path_buf())
 }
 
-/// The path to local secure socket
+/// The path to local remote socket
 ///
 /// - Linux/MacOS: `/var/tmp/fig/$USER/secure.socket`
 /// - Windows: `%APPDATA%/Fig/%USER%/secure.sock`
-pub fn local_secure_socket_path() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_LOCAL_SECURE_SOCKET_PATH");
+pub fn local_remote_socket_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_LOCAL_REMOTE_SOCKET_PATH");
     Ok(host_sockets_dir()?.join("secure.socket"))
 }
 
@@ -449,7 +449,7 @@ utf8_dir!(home_dir);
 utf8_dir!(fig_dir);
 utf8_dir!(fig_data_dir);
 utf8_dir!(sockets_dir);
-utf8_dir!(secure_socket_path);
+utf8_dir!(remote_socket_path);
 utf8_dir!(figterm_socket_path, session_id: impl Display);
 utf8_dir!(daemon_socket_path);
 utf8_dir!(manifest_path);
@@ -632,10 +632,10 @@ mod tests {
     }
 
     #[test]
-    fn _snapshot_secure_socket_path() {
-        linux!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        macos!(secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        windows!(secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
+    fn _snapshot_remote_socket_path() {
+        linux!(remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        macos!(remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        windows!(remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
     }
 
     #[test]
@@ -646,10 +646,10 @@ mod tests {
     }
 
     #[test]
-    fn _snapshot_local_secure_socket_path() {
-        linux!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        macos!(local_secure_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
-        windows!(local_secure_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
+    fn _snapshot_local_remote_socket_path() {
+        linux!(local_remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        macos!(local_remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
+        windows!(local_remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
     }
 
     #[test]
