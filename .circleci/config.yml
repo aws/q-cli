@@ -293,7 +293,7 @@ jobs:
 
   linux-desktop-x86_64:
     docker:
-      - image: ubuntu:22.04
+      - image: ubuntu:23.04
     resource_class: large
     steps:
       - require-target:
