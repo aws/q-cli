@@ -148,11 +148,7 @@ impl SshSubcommand {
         let selected_identity = if connection.identity_ids.is_empty() && self.auth.is_none() {
             None
         } else {
-            identities.extend(
-                fig_api_client::access::identities(host.namespace.clone())
-                    .await?
-                    .into_iter(),
-            );
+            identities.extend(fig_api_client::access::identities(host.namespace.clone()).await?);
             if self.auth.is_none() && connection.default_identity_id.is_some() {
                 let default = connection.default_identity_id.unwrap();
                 if identities.iter().any(|iden| iden.remote_id == default) {
@@ -167,7 +163,7 @@ impl SshSubcommand {
                     user = Some(fig_api_client::user::account().await?);
                 }
                 if user.as_ref().unwrap().username != host.namespace {
-                    identities.extend(fig_api_client::access::identities(None).await?.into_iter());
+                    identities.extend(fig_api_client::access::identities(None).await?);
                 }
             }
 

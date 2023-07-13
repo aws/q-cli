@@ -27,8 +27,8 @@ static OS_VERSION: Lazy<Option<OSVersion>> = Lazy::new(|| {
 
             let version_info: String = String::from_utf8_lossy(&version_info.stdout).trim().into();
 
-            let version_regex = Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
-            let build_regex = Regex::new(r#"BuildVersion:\s*(\S+)"#).unwrap();
+            let version_regex = Regex::new(r"ProductVersion:\s*(\S+)").unwrap();
+            let build_regex = Regex::new(r"BuildVersion:\s*(\S+)").unwrap();
 
             let version: String = version_regex
                 .captures(&version_info)

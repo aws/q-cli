@@ -15,7 +15,7 @@ pub static AUTOCOMPLETE_REPO: Lazy<GitHub> = Lazy::new(|| GitHub::new("withfig",
 pub async fn get_zipped_specs_from(release: &GithubRelease) -> Result<Vec<u8>> {
     let asset = release.assets.first().unwrap();
     let Some(client) = reqwest_client::reqwest_client(true) else {
-        return Err(Error::NoClient)
+        return Err(Error::NoClient);
     };
     Ok(client
         .get(asset.browser_download_url.clone())

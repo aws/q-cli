@@ -2253,7 +2253,7 @@ where
             }
         }
 
-        if config.verbose || matches!(result, Err(_)) {
+        if config.verbose || result.is_err() {
             stop_spinner(spinner.take())?;
             print_status_result(&name, &result, config.verbose);
         }

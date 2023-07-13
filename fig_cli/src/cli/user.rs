@@ -149,9 +149,9 @@ impl RootUserSubcommand {
 
                     let mut options = vec![];
                     if is_remote() {
-                        let result = (|| async move {
+                        let result = async move {
                             let mut connection =
-                            BufferedUnixStream::connect(fig_util::directories::remote_socket_path()?).await?;
+                                BufferedUnixStream::connect(fig_util::directories::remote_socket_path()?).await?;
                             let response: Option<Clientbound> = connection
                                 .send_recv_message_filtered(
                                     Hostbound {
@@ -164,15 +164,18 @@ impl RootUserSubcommand {
                                 let Some(clientbound::Packet::Response(response)) = response.packet else {
                                     unreachable!();
                                 };
-                                let Some(clientbound::response::Response::AccountInfo(account_info)) = response.response else {
+                                let Some(clientbound::response::Response::AccountInfo(account_info)) =
+                                    response.response
+                                else {
                                     eyre::bail!("weird packet from desktop");
                                 };
                                 if account_info.logged_in {
-                                    return Ok(true)
+                                    return Ok(true);
                                 }
                             }
                             Ok(false)
-                        })().await;
+                        }
+                        .await;
                         match result {
                             Ok(true) => options.push(OPTION_REMOTE),
                             Ok(false) => info!("local host not logged in"),
@@ -422,7 +425,9 @@ impl RootUserSubcommand {
                                 let Some(clientbound::Packet::Response(response)) = response.packet else {
                                     unreachable!();
                                 };
-                                let Some(clientbound::response::Response::ExchangeCredentials(exchange_credentials)) = response.response else {
+                                let Some(clientbound::response::Response::ExchangeCredentials(exchange_credentials)) =
+                                    response.response
+                                else {
                                     eyre::bail!("weird packet from desktop");
                                 };
                                 if exchange_credentials.approved {

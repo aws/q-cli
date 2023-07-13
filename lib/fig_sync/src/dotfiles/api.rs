@@ -44,7 +44,7 @@ static MACOS_VERSION: Lazy<Option<String>> = Lazy::new(|| {
         .ok()
         .and_then(|output| -> Option<String> {
             let version_info = std::str::from_utf8(&output.stdout).ok().map(|s| s.trim().to_owned())?;
-            let version_regex = regex::Regex::new(r#"ProductVersion:\s*(\S+)"#).unwrap();
+            let version_regex = regex::Regex::new(r"ProductVersion:\s*(\S+)").unwrap();
             let version = version_regex
                 .captures(&version_info)
                 .and_then(|c| c.get(1))

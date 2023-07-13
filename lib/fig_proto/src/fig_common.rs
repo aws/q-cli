@@ -208,21 +208,18 @@ mod tests {
         );
         assert_eq!(
             type_hint_value(
-                Json::from_iter(
-                    [
-                        ("null".to_string(), type_hint_json(None::<bool>.into())),
-                        ("bool".to_string(), type_hint_json(true.into())),
-                        ("i64".to_string(), type_hint_json((-123_i64).into())),
-                        ("u64".to_string(), type_hint_json(123_u64.into())),
-                        ("f64".to_string(), type_hint_json(1.2_f64.into())),
-                        ("string".to_string(), type_hint_json("value".to_string().into())),
-                        (
-                            "array".to_string(),
-                            Json::from_iter(["foo".to_string(), "bar".to_string(), "baz".to_string()].into_iter())
-                        ),
-                    ]
-                    .into_iter()
-                )
+                Json::from_iter([
+                    ("null".to_string(), type_hint_json(None::<bool>.into())),
+                    ("bool".to_string(), type_hint_json(true.into())),
+                    ("i64".to_string(), type_hint_json((-123_i64).into())),
+                    ("u64".to_string(), type_hint_json(123_u64.into())),
+                    ("f64".to_string(), type_hint_json(1.2_f64.into())),
+                    ("string".to_string(), type_hint_json("value".to_string().into())),
+                    (
+                        "array".to_string(),
+                        Json::from_iter(["foo".to_string(), "bar".to_string(), "baz".to_string()])
+                    ),
+                ])
                 .into()
             ),
             json! {{"null": null, "bool": true, "i64": -123, "u64": 123, "f64": 1.2, "string": "value", "array": ["foo", "bar", "baz"]}}

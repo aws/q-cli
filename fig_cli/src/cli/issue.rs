@@ -195,8 +195,8 @@ async fn search_github_issues(query: &str) -> Option<Vec<(String, usize, String,
         .get(&search_url)
         .header("User-Agent", "fig_issue_search")
         .send()
-        .await else
-    {
+        .await
+    else {
         return None;
     };
 

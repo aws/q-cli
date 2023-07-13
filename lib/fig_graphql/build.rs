@@ -13,7 +13,7 @@ fn queries() -> Vec<(String, String)> {
 
             // Read the file and get all the queries
             let contents = std::fs::read_to_string(path).unwrap();
-            regex::Regex::new(r#"(?m)^(query|mutation)\s+(\w+)"#)
+            regex::Regex::new(r"(?m)^(query|mutation)\s+(\w+)")
                 .unwrap()
                 .captures_iter(&contents)
                 .map(|cap| (file_name.clone(), cap[2].to_owned()))

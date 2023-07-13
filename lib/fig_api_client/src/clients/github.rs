@@ -93,7 +93,7 @@ impl GitHub {
         ))
         .unwrap();
         let Some(client) = reqwest_client::reqwest_client(true) else {
-          return Err(Error::NoClient)
+            return Err(Error::NoClient);
         };
         let release = client
             .get(url)

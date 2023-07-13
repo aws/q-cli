@@ -933,7 +933,8 @@ impl InternalSubcommand {
                 };
 
                 let Ok(mut conn) =
-                    BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await else {
+                    BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await
+                else {
                     exit(1);
                 };
 
@@ -943,7 +944,7 @@ impl InternalSubcommand {
                             fig_proto::figterm::CodexCompleteResponse {
                                 insert_text: Some(insert_text),
                             },
-                       )),
+                        )),
                 })) = conn
                     .send_recv_message_timeout(
                         fig_proto::figterm::FigtermRequestMessage {
@@ -953,7 +954,8 @@ impl InternalSubcommand {
                         },
                         Duration::from_secs(5),
                     )
-                    .await else {
+                    .await
+                else {
                     exit(1);
                 };
 

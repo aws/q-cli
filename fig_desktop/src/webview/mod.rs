@@ -6,10 +6,10 @@ pub mod window;
 
 use std::borrow::Cow;
 use std::iter::empty;
+use std::rc::Rc;
 use std::sync::Arc;
 
 use cfg_if::cfg_if;
-use dashmap::DashMap;
 use fig_api_client::drip_campaign::DripCampaign;
 use fig_desktop_api::init_script::javascript_init;
 use fig_proto::fig::client_originated_message::Submessage;
@@ -17,6 +17,7 @@ use fig_proto::fig::ClientOriginatedMessage;
 use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
+use hashbrown::HashMap;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::RegexSet;
@@ -120,12 +121,12 @@ pub static THEME: Lazy<Option<Theme>> = Lazy::new(|| {
         .and_then(map_theme)
 });
 
-pub type FigIdMap = DashMap<WindowId, Arc<WindowState>, FnvBuildHasher>;
-pub type WryIdMap = DashMap<WryWindowId, Arc<WindowState>, FnvBuildHasher>;
+pub type FigIdMap = HashMap<WindowId, Rc<WindowState>, FnvBuildHasher>;
+pub type WryIdMap = HashMap<WryWindowId, Rc<WindowState>, FnvBuildHasher>;
 
 pub struct WebviewManager {
-    fig_id_map: Arc<FigIdMap>,
-    window_id_map: Arc<WryIdMap>,
+    fig_id_map: FigIdMap,
+    window_id_map: WryIdMap,
     event_loop: EventLoop,
     debug_state: Arc<DebugState>,
     figterm_state: Arc<FigtermState>,
@@ -171,7 +172,7 @@ impl WebviewManager {
     }
 
     fn insert_webview(&mut self, window_id: WindowId, webview: WebView, context: WebContext, enabled: bool, url: Url) {
-        let webview_arc = Arc::new(WindowState::new(window_id.clone(), webview, context, enabled, url));
+        let webview_arc = Rc::new(WindowState::new(window_id.clone(), webview, context, enabled, url));
         self.fig_id_map.insert(window_id, webview_arc.clone());
         self.window_id_map
             .insert(webview_arc.webview.window().id(), webview_arc);
@@ -412,7 +413,7 @@ impl WebviewManager {
                             },
                         },
                         Event::WindowEventAll { window_event } => {
-                            for window_state in self.window_id_map.iter() {
+                            for (_window_id, window_state) in self.window_id_map.iter() {
                                 if window_state.enabled() || window_event.is_allowed_while_disabled() {
                                     window_state.handle(
                                         window_event.clone(),
@@ -920,11 +921,13 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
 #[cfg(target_os = "macos")]
 pub fn reachable(host: impl Into<Vec<u8>>) -> bool {
     let Ok(host_cstr) = std::ffi::CString::new(host) else {
-        return false
+        return false;
     };
 
-    let Some(Ok(flags)) = system_configuration::network_reachability::SCNetworkReachability::from_host(&host_cstr).map(|r| r.reachability()) else {
-        return false
+    let Some(Ok(flags)) = system_configuration::network_reachability::SCNetworkReachability::from_host(&host_cstr)
+        .map(|r| r.reachability())
+    else {
+        return false;
     };
 
     flags.contains(system_configuration::network_reachability::ReachabilityFlags::REACHABLE)
