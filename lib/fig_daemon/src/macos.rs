@@ -18,7 +18,7 @@ static DAEMON_NAME: &str = "io.fig.dotfiles-daemon";
 /// Capture the exit status from the output of `launchctl list <daemon_name>`
 ///
 /// Capturing the line that looks like this:
-/// ```
+/// ```text
 /// "LastExitStatus" = 0;
 /// ```
 static STATUS_REGEX: Lazy<Regex> = Lazy::new(|| Regex::new(r#""LastExitStatus"\s*=\s*(\d+);"#).unwrap());

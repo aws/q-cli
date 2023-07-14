@@ -1,3 +1,8 @@
+use std::io::{
+    stdout,
+    IsTerminal,
+};
+
 use clap::Args;
 use color_eyre::Result;
 use crossterm::terminal::{
@@ -50,7 +55,7 @@ impl DiagnosticArgs {
             return Ok(());
         }
 
-        let spinner = if atty::is(atty::Stream::Stdout) {
+        let spinner = if stdout().is_terminal() {
             Some(Spinner::new(Spinners::Dots, "Generating...".into()))
         } else {
             None

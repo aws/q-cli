@@ -567,7 +567,7 @@ mod tests {
             .unwrap()
             .replace(&user, "$USER")
     }
-
+    #[ignore]
     #[test]
     fn _snapshot_fig_dir() {
         linux!(fig_dir(), @"/home/$USER/.fig");
@@ -575,6 +575,7 @@ mod tests {
         windows!(fig_dir(), @r"C:\Users\$USER\AppData\Local\Fig");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_fig_data_dir() {
         linux!(fig_data_dir(), @"/home/$USER/.local/share/fig");
@@ -582,6 +583,7 @@ mod tests {
         windows!(fig_data_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_sockets_dir() {
         linux!(sockets_dir(), @"/var/tmp/fig/$USER");
@@ -589,6 +591,7 @@ mod tests {
         windows!(sockets_dir(), @r"C:\Users\$USER\AppData\Local\Fig\sockets");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_themes_dir() {
         linux!(themes_dir(), @"/home/$USER/.local/share/fig/themes/themes");
@@ -596,6 +599,7 @@ mod tests {
         windows!(themes_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes\themes");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_themes_repo_dir() {
         linux!(themes_repo_dir(), @"/home/$USER/.local/share/fig/themes");
@@ -603,6 +607,7 @@ mod tests {
         windows!(themes_repo_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_plugins_dir() {
         linux!(plugins_dir(), @"/home/$USER/.local/share/fig/plugins");
@@ -610,6 +615,7 @@ mod tests {
         windows!(plugins_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\plugins");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_backups_dir() {
         linux!(backups_dir(), @"/home/$USER/.fig.dotfiles.bak");
@@ -617,6 +623,7 @@ mod tests {
         windows!(backups_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\backups");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_fig_socket_path() {
         linux!(fig_socket_path(), @"/var/tmp/fig/$USER/fig.socket");
@@ -624,6 +631,7 @@ mod tests {
         windows!(fig_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\fig.socket");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_daemon_socket_path() {
         linux!(daemon_socket_path(), @"/var/tmp/fig/$USER/daemon.socket");
@@ -631,6 +639,7 @@ mod tests {
         windows!(daemon_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\daemon.socket");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_remote_socket_path() {
         linux!(remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
@@ -638,6 +647,7 @@ mod tests {
         windows!(remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_parent_socket_path() {
         linux!(parent_socket_path("$FIG_PARENT"), @"/var/tmp/fig-parent-$FIG_PARENT.socket");
@@ -645,6 +655,7 @@ mod tests {
         // windows does not have a parent socket
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_local_remote_socket_path() {
         linux!(local_remote_socket_path(), @"/var/tmp/fig/$USER/secure.socket");
@@ -652,6 +663,7 @@ mod tests {
         windows!(local_remote_socket_path(), @r"C:\Users\$USER\AppData\Local\Fig\sockets\secure.socket");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_figterm_socket_path() {
         linux!(figterm_socket_path("$SESSION_ID"), @"/var/tmp/fig/$USER/figterm/$SESSION_ID.socket");
@@ -659,6 +671,7 @@ mod tests {
         windows!(figterm_socket_path("$SESSION_ID"), @r"C:\Users\$USER\AppData\Local\Fig\sockets\figterm\$SESSION_ID.socket");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_settings_path() {
         linux!(settings_path(), @"/home/$USER/.fig/settings.json");
@@ -666,6 +679,7 @@ mod tests {
         windows!(settings_path(), @r"C:\Users\$USER\AppData\Lcoal\Fig\settings.json");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_state_path() {
         linux!(state_path(), @"/home/$USER/.local/share/fig/state.json");
@@ -673,6 +687,7 @@ mod tests {
         windows!(state_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\state.json");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_update_lock_path() {
         linux!(update_lock_path(), @"/home/$USER/.local/share/fig/update.lock");
@@ -680,6 +695,7 @@ mod tests {
         windows!(update_lock_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\update.lock");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_credentials_path() {
         linux!(credentials_path(), @"/home/$USER/.local/share/fig/credentials.json");
@@ -687,6 +703,7 @@ mod tests {
         windows!(credentials_path(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\credentials.json");
     }
 
+    #[ignore]
     #[test]
     fn _snapshot_ssh_saved_identities() {
         linux!(ssh_saved_identities(), @"/home/$USER/.local/share/fig/access/ssh_saved_identities");

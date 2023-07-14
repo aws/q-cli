@@ -73,7 +73,7 @@ jobs:
   clippy:
     strategy:
       matrix:
-        os: 
+        os:
           - name: ubuntu-latest
             container:
               image: ubuntu:rolling
@@ -107,7 +107,8 @@ jobs:
               fish \
               sudo \
               curl \
-              unzip
+              unzip \
+              shellcheck
 
       - name: Install Protobuf on Ubuntu
         if: startsWith(matrix.os.name,'ubuntu')
@@ -188,7 +189,8 @@ jobs:
               fish \
               sudo \
               curl \
-              unzip
+              unzip \
+              shellcheck
 
       - name: Install Protobuf on Ubuntu
         if: startsWith(matrix.os,'ubuntu')

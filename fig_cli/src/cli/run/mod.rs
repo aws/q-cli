@@ -6,6 +6,11 @@ use std::collections::{
     HashMap,
     HashSet,
 };
+use std::io::{
+    stdin,
+    stdout,
+    IsTerminal,
+};
 use std::iter::empty;
 use std::process::{
     Command,
@@ -157,9 +162,8 @@ impl std::fmt::Display for ExecutionMethod {
 }
 
 pub async fn execute(args: Vec<String>) -> Result<()> {
-    let interactive = atty::is(atty::Stream::Stdin)
-        && atty::is(atty::Stream::Stdout)
-        && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none();
+    let interactive =
+        stdin().is_terminal() && stdout().is_terminal() && std::env::var_os("FIG_SCRIPT_EXECUTION").is_none();
 
     let (execution_method, script) = match args.first() {
         Some(script_name) => (ExecutionMethod::Invoke, get_named_script(script_name).await?),
@@ -1450,7 +1454,7 @@ fn try_install(runtime: &Runtime) -> Result<()> {
     };
 
     // if not interactive, don't try to install
-    if !atty::is(atty::Stream::Stdin) || !atty::is(atty::Stream::Stdout) {
+    if !stdin().is_terminal() || !stdout().is_terminal() {
         return Err(error());
     }
 

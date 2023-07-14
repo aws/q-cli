@@ -347,7 +347,7 @@ fn color_convert(color: &CssColor) -> Option<ColorAttribute> {
         )),
         _ => {
             let color = color.to_rgb();
-            if let CssColor::RGBA(color) = color {
+            if let Ok(CssColor::RGBA(color)) = color {
                 Some(SrgbaTuple(
                     color.red_f32(),
                     color.green_f32(),
@@ -355,7 +355,7 @@ fn color_convert(color: &CssColor) -> Option<ColorAttribute> {
                     color.alpha_f32(),
                 ))
             } else {
-                unreachable!();
+                None
             }
         },
     }?;
