@@ -320,6 +320,8 @@ pub async fn uninstall_terminal_integrations() {
             (".vscode/extensions", "withfig.fig-"),
             (".vscode-insiders/extensions", "withfig.fig-"),
             (".vscode-oss/extensions", "withfig.fig-"),
+            (".cursor/extensions", "withfig.fig-"),
+            (".cursor-nightly/extensions", "withfig.fig-"),
         ] {
             let folder = home.join(folder);
             remove_in_dir_with_prefix_unless(&folder, prefix, |_| false).await;

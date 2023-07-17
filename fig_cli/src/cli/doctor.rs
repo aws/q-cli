@@ -1746,9 +1746,10 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
             return DoctorCheckType::NoCheck;
         }
 
-        if matches!(current_terminal.to_owned(), Some(Terminal::VSCode))
-            || matches!(current_terminal.to_owned(), Some(Terminal::VSCodeInsiders))
-        {
+        if matches!(
+            current_terminal,
+            Some(Terminal::VSCode | Terminal::VSCodeInsiders | Terminal::Cursor | Terminal::CursorNightly)
+        ) {
             DoctorCheckType::NormalCheck
         } else {
             DoctorCheckType::SoftCheck
@@ -1763,7 +1764,7 @@ impl DoctorCheck<Option<Terminal>> for VSCodeIntegrationCheck {
         if integration != "installed!" {
             let mut missing = true;
 
-            for dir in [".vscode", ".vscode-insiders"] {
+            for dir in [".vscode", ".vscode-insiders", ".cursor", ".cursor-nightly"] {
                 // Check if withfig.fig exists
                 let extensions = directories::home_dir()
                     .context("Could not get home dir")?

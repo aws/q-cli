@@ -54,6 +54,20 @@ pub static VARIANTS: &[VSCodeVariant] = &[
         application_name: "VSCodium",
         cli_executable_name: "codium",
     },
+    VSCodeVariant {
+        bundle_identifier: "com.todesktop.230313mzl4w4u92",
+        config_folder_name: ".cursor",
+        application_support_folder_name: "Cursor",
+        application_name: "Cursor",
+        cli_executable_name: "cursor",
+    },
+    VSCodeVariant {
+        bundle_identifier: "com.todesktop.230313mzl4w4u92",
+        config_folder_name: ".cursor-nightly",
+        application_support_folder_name: "Cursor Nightly",
+        application_name: "Cursor Nightly",
+        cli_executable_name: "cursor-nightly",
+    },
 ];
 
 pub fn variants_installed() -> Vec<VSCodeVariant> {

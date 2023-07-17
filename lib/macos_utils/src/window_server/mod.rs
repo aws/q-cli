@@ -89,6 +89,8 @@ const BLOCKED_BUNDLE_IDS: &[&str] = &[
 pub const XTERM_BUNDLE_IDS: &[&str] = &[
     "com.microsoft.VSCodeInsiders",
     "com.microsoft.VSCode",
+    "com.todesktop.230313mzl4w4u92",
+    "com.todesktop.23052492jqa5xjo",
     "co.zeit.hyper",
     "org.tabby",
 ];

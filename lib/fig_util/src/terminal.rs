@@ -18,6 +18,8 @@ pub const MACOS_TERMINALS: &[Terminal] = &[
     Terminal::VSCodium,
     Terminal::WezTerm,
     Terminal::Zed,
+    Terminal::Cursor,
+    Terminal::CursorNightly,
 ];
 
 /// Terminals that Linux supports
@@ -87,6 +89,10 @@ pub enum Terminal {
     IntelliJ(Option<IntelliJVariant>),
     // Zed
     Zed,
+    /// Cursor
+    Cursor,
+    /// Cursor Nightly
+    CursorNightly,
 
     // Other pseudoterminal that we want to launch within
     /// SSH
@@ -127,12 +133,23 @@ impl fmt::Display for Terminal {
             Terminal::IntelliJ(Some(variant)) => write!(f, "{}", variant.application_name()),
             Terminal::IntelliJ(None) => write!(f, "IntelliJ"),
             Terminal::Zed => write!(f, "Zed"),
+            Terminal::Cursor => write!(f, "Cursor"),
+            Terminal::CursorNightly => write!(f, "Cursor Nightly"),
         }
     }
 }
 
 impl Terminal {
     pub fn parent_terminal() -> Option<Self> {
+        #[cfg(target_os = "macos")]
+        {
+            if let Ok(bundle_id) = std::env::var("__CFBundleIdentifier") {
+                if let Some(term) = Self::from_bundle_id(bundle_id) {
+                    return Some(term);
+                }
+            }
+        }
+
         match std::env::var("TERM_PROGRAM").ok().as_deref() {
             Some("iTerm.app") => Some(Terminal::Iterm),
             Some("Apple_Terminal") => Some(Terminal::TerminalApp),
@@ -144,10 +161,7 @@ impl Terminal {
             Some("Tabby") => Some(Terminal::Tabby),
             Some("Nova") => Some(Terminal::Nova),
             Some("WezTerm") => Some(Terminal::WezTerm),
-            _ => match std::env::var("__CFBundleIdentifier").ok().as_deref() {
-                Some(v) => Self::from_bundle_id(v),
-                _ => None,
-            },
+            _ => None,
         }
         // TODO(grant): Improve this for Linux, it currently is not very accurate
     }
@@ -181,6 +195,8 @@ impl Terminal {
                 Some(variant) => format!("intellij-{}", variant.internal_id()),
                 None => "intellij".into(),
             },
+            Terminal::Cursor => "cursor".into(),
+            Terminal::CursorNightly => "cursor-nightly".into(),
         }
     }
 
@@ -202,6 +218,8 @@ impl Terminal {
             Terminal::WezTerm => String::from("com.github.wez.wezterm"),
             Terminal::IntelliJ(Some(variant)) => variant.bundle_identifier().into(),
             Terminal::Zed => String::from("dev.zed.Zed"),
+            Terminal::Cursor => String::from("com.todesktop.230313mzl4w4u92"),
+            Terminal::CursorNightly => String::from("com.todesktop.23052492jqa5xjo"),
             _ => todo!(),
         }
     }
@@ -221,6 +239,8 @@ impl Terminal {
             "com.panic.Nova" => Terminal::Nova,
             "com.github.wez.wezterm" => Terminal::WezTerm,
             "dev.zed.Zed" => Terminal::Zed,
+            "com.todesktop.230313mzl4w4u92" => Terminal::Cursor,
+            "com.todesktop.23052492jqa5xjo" => Terminal::CursorNightly,
             // todo(mschrage): the following line does not account for Android Studio
             _ if bundle.starts_with("com.jetbrains.") | bundle.starts_with("com.google.") => {
                 Terminal::IntelliJ(IntelliJVariant::from_bundle_id(bundle))
@@ -259,7 +279,12 @@ impl Terminal {
     pub fn is_xterm(&self) -> bool {
         matches!(
             self,
-            Terminal::VSCode | Terminal::VSCodeInsiders | Terminal::Hyper | Terminal::Tabby
+            Terminal::VSCode
+                | Terminal::VSCodeInsiders
+                | Terminal::Hyper
+                | Terminal::Tabby
+                | Terminal::Cursor
+                | Terminal::CursorNightly
         )
     }
 
@@ -280,6 +305,8 @@ impl Terminal {
             Terminal::Tabby => &["tabby"],
             Terminal::Terminator => &["terminator"],
             Terminal::Zed => &["zed"],
+            Terminal::Cursor => &["Cursor", "cursor"],
+            Terminal::CursorNightly => &["Cursor Nightly", "cursor-nightly"],
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux"],
@@ -336,7 +363,14 @@ impl Terminal {
     }
 
     pub fn supports_fancy_boxes(&self) -> bool {
-        !matches!(self, Terminal::VSCode | Terminal::VSCodeInsiders | Terminal::VSCodium)
+        !matches!(
+            self,
+            Terminal::VSCode
+                | Terminal::VSCodeInsiders
+                | Terminal::VSCodium
+                | Terminal::Cursor
+                | Terminal::CursorNightly
+        )
     }
 
     pub fn positioning_kind(&self) -> PositioningKind {
