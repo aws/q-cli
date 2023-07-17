@@ -255,9 +255,10 @@ impl SshSubcommand {
             }
         }
 
-        let ssh_string =
-            fig_api_client::access::ssh_string(host.remote_id, selected_identity.as_ref().map(|iden| iden.remote_id))
-                .await?;
+        let ssh_args = dbg!(
+            fig_api_client::access::ssh_args(host.remote_id, selected_identity.as_ref().map(|iden| iden.remote_id))
+                .await?
+        );
 
         let mut command = None;
 
@@ -272,7 +273,11 @@ impl SshSubcommand {
                 let password = identity.password.clone().unwrap_or_default();
                 let mut expect_command = Command::new(expect_bin);
                 expect_command.arg("-c");
-                expect_command.arg(format!(r#"spawn {ssh_string}; expect "yes/no" {{ send "yes\n"; expect "*?assword:"; send "{password}\n"; }} "*?assword" {{ send "{password}\n"; }}; interact"#));
+                expect_command.arg(format!(
+                    r#"spawn ssh {}; expect "yes/no" {{ send "yes\n"; expect
+        "*?assword:"; send "{password}\n"; }} "*?assword" {{ send "{password}\n"; }}; interact"#,
+                    shlex::join(ssh_args.iter().map(|x| x.as_str())),
+                ));
                 command = Some(expect_command);
             }
         }
@@ -280,16 +285,12 @@ impl SshSubcommand {
         let mut command = match command {
             Some(command) => command,
             None => {
-                let mut parts = shlex::split(&ssh_string)
-                    .context("got no built ssh string from api")?
-                    .into_iter();
-
-                let mut command = Command::new(parts.next().context("didn't get root command")?);
-
-                for arg in parts {
-                    command.arg(arg);
+                let mut command = Command::new("ssh");
+                for arg in ssh_args {
+                    if !arg.is_empty() {
+                        command.arg(arg);
+                    }
                 }
-
                 command
             },
         };

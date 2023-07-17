@@ -114,14 +114,15 @@ struct SshStringRequest {
 #[derive(Deserialize)]
 #[serde(rename_all = "camelCase")]
 struct SshStringResponse {
-    ssh_string: String,
+    #[serde(default)]
+    ssh_args: Vec<String>,
 }
 
-pub async fn ssh_string(host_id: u64, identity_id: Option<u64>) -> fig_request::Result<String> {
+pub async fn ssh_args(host_id: u64, identity_id: Option<u64>) -> fig_request::Result<Vec<String>> {
     Ok(fig_request::Request::get("/access/v2/ssh_string")
         .auth()
         .body_json(SshStringRequest { host_id, identity_id })
         .deser_json::<SshStringResponse>()
         .await?
-        .ssh_string)
+        .ssh_args)
 }
