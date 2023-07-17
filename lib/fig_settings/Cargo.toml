@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-fd-lock = "3.0.9"
+fd-lock = "4.0.0"
 fig_util = { path = "../fig_util" }
 parking_lot = "0.12.1"
 serde = { version = "1", features = ["derive"] }
