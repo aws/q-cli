@@ -22,6 +22,7 @@ use event::Event;
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
 use fig_util::consts::FIG_DESKTOP_PROCESS_NAME;
+use jemallocator::Jemalloc;
 use parking_lot::RwLock;
 use platform::PlatformState;
 use sysinfo::{
@@ -58,6 +59,10 @@ use wry::application::event_loop::{
     EventLoopProxy as WryEventLoopProxy,
     EventLoopWindowTarget as WryEventLoopWindowTarget,
 };
+
+#[global_allocator]
+static GLOBAL: Jemalloc = Jemalloc;
+
 #[cfg(target_os = "macos")]
 #[macro_use]
 extern crate objc;
