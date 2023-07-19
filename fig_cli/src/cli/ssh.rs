@@ -255,10 +255,9 @@ impl SshSubcommand {
             }
         }
 
-        let ssh_args = dbg!(
+        let ssh_args =
             fig_api_client::access::ssh_args(host.remote_id, selected_identity.as_ref().map(|iden| iden.remote_id))
-                .await?
-        );
+                .await?;
 
         let mut command = None;
 
