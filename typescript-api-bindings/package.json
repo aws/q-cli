@@ -28,23 +28,23 @@
   "name": "@withfig/api-bindings",
   "author": "The Fig Team",
   "dependencies": {
-    "long": "^5.2.1",
-    "protobufjs": "^7.1.2"
+    "long": "^5.2.3",
+    "protobufjs": "^7.2.4"
   },
   "devDependencies": {
     "@fig/eslint-config-fig": "^1.0.0",
-    "@tsconfig/recommended": "^1.0.1",
-    "@types/node": "^20.2.5",
-    "@typescript-eslint/eslint-plugin": "^5.15.0",
-    "@typescript-eslint/parser": "^5.38.1",
-    "eslint": "^8.11.0",
-    "lint-staged": "^13.0.0",
-    "prettier": "^2.7.1",
-    "ts-morph": "^18.0.0",
+    "@tsconfig/recommended": "^1.0.2",
+    "@types/node": "^20.4.2",
+    "@typescript-eslint/eslint-plugin": "^6.1.0",
+    "@typescript-eslint/parser": "^6.1.0",
+    "eslint": "^8.45.0",
+    "lint-staged": "^13.2.3",
+    "prettier": "^3.0.0",
+    "ts-morph": "^19.0.0",
     "ts-node": "^10.9.1",
-    "ts-proto": "~1.148.1",
-    "tslib": "^2.4.0",
-    "typescript": "^5.0.4"
+    "ts-proto": "~1.156.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.1.6"
   },
   "eslintConfig": {
     "extends": "@fig/eslint-config-fig"
