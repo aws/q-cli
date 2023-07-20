@@ -184,10 +184,6 @@ impl PlatformStateImpl {
                     Position::Physical(PhysicalPosition { x, y }) => (x, y),
                     // TODO(grant): prob do something with logical position here
                     Position::Logical(LogicalPosition { x, y }) => (x as i32, y as i32),
-                    _ => {
-                        error!("Unsupported position type");
-                        return Ok(());
-                    },
                 };
 
                 if let Err(err) = sway.sway_tx.send(sway::SwayCommand::PositionWindow {
