@@ -41,6 +41,10 @@ jobs:
         run: |
           yarn generate-requests
           yarn lint --fix
+      
+      - name: Build
+        working-directory: ./typescript-api-bindings
+        run: yarn build
 
       - name: Automated Version Bump
         uses: "phips28/gh-action-bump-version@master"

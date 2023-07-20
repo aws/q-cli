@@ -6,7 +6,7 @@
   "license": "MIT",
   "dependencies": {
     "husky": "^8.0.3",
-    "lint-staged": "^13.2.3"
+    "lint-staged": "^13.2.3w"
   },
   "workspaces": [
     "typescript-api-bindings",

@@ -7,6 +7,6 @@
     "precommit": "exit 0"
   },
   "devDependencies": {
-    "ts-proto": "~1.148.1"
+    "ts-proto": "~1.156.0"
   }
 }
