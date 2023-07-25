@@ -36,7 +36,6 @@ use macos_utils::window_server::{
     UIElement,
 };
 use macos_utils::{
-    NSArrayRef,
     NSString,
     NotificationCenter,
     WindowServer,
@@ -95,10 +94,7 @@ use crate::protocol::icons::{
     AssetSpecifier,
     ProcessedAsset,
 };
-use crate::utils::{
-    handle_login_deep_link,
-    Rect,
-};
+use crate::utils::Rect;
 use crate::webview::window::WindowId;
 use crate::webview::{
     FigIdMap,
@@ -455,80 +451,9 @@ impl PlatformStateImpl {
                     YES
                 }
 
-                extern "C" fn application_open_urls(_this: &Object, _cmd: Sel, _application: id, urls: id) -> BOOL {
-                    use cocoa::foundation::NSURL;
-
-                    let urls: NSArrayRef<id> = unsafe { NSArrayRef::new(urls) };
-
-                    let mut events = vec![WindowEvent::Show];
-
-                    if let Some(url_id) = urls.iter().next() {
-                        if !url_id.is_null() {
-                            let ns_string =
-                                unsafe { macos_utils::NSStringRef::new(url_id.as_mut_ptr().absoluteString()) };
-                            if let Some(url_str) = ns_string.as_str() {
-                                let url = url::Url::parse(url_str);
-                                match url {
-                                    Ok(url) => {
-                                        if url.scheme() == "fig" {
-                                            match url.host_str() {
-                                                Some("dashboard") => {
-                                                    events.push(WindowEvent::NavigateRelative {
-                                                        path: url.path().to_owned().into(),
-                                                    });
-                                                },
-                                                Some("plugins") => {
-                                                    events.push(WindowEvent::NavigateRelative {
-                                                        path: format!("plugins/{}", url.path()).into(),
-                                                    });
-                                                },
-                                                Some("login") => {
-                                                    if let Some(payload) = handle_login_deep_link(&url) {
-                                                        events.push(WindowEvent::Event {
-                                                            event_name: "dashboard.login".into(),
-                                                            payload: serde_json::to_string(&payload)
-                                                                .ok()
-                                                                .map(|s| s.into()),
-                                                        });
-                                                    }
-                                                },
-                                                host => {
-                                                    error!(?host, "Invalid deep link");
-                                                },
-                                            }
-                                        } else {
-                                            error!(scheme = %url.scheme(), %url, "Invalid scheme");
-                                        }
-                                    },
-                                    Err(err) => {
-                                        error!(%err, "Invalid URL");
-                                    },
-                                };
-                            }
-                        }
-                    }
-
-                    let proxy = GLOBAL_PROXY.lock();
-                    let proxy = proxy.as_ref().unwrap();
-
-                    if let Err(err) = proxy.send_event(Event::WindowEvent {
-                        window_id: DASHBOARD_ID,
-                        window_event: WindowEvent::Batch(events),
-                    }) {
-                        warn!(%err, "Error sending event");
-                    }
-
-                    YES
-                }
-
                 Self::override_app_delegate_method(
                     sel!(applicationShouldHandleReopen:hasVisibleWindows:),
                     application_should_handle_reopen as extern "C" fn(&Object, Sel, id, BOOL) -> BOOL,
-                );
-
-                Self::override_app_delegate_method(
-                    sel!(application:openURLs:),
-                    application_open_urls as extern "C" fn(&Object, Sel, id, id) -> BOOL,
                 );
 
                 Ok(())

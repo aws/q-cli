@@ -81,6 +81,7 @@ use crate::tray::{
     build_tray,
     get_context_menu,
 };
+use crate::utils::handle_login_deep_link;
 use crate::{
     file_watcher,
     local_ipc,
@@ -507,6 +508,45 @@ impl WebviewManager {
 
                             tokio::spawn(dialog.show());
                         },
+                    }
+                },
+                WryEvent::Opened { urls } => {
+                    let mut events = Vec::new();
+                    for url in urls {
+                        if url.scheme() == "fig" {
+                            match url.host_str() {
+                                Some("dashboard") => {
+                                    events.push(WindowEvent::NavigateRelative {
+                                        path: url.path().to_owned().into(),
+                                    });
+                                },
+                                Some("plugins") => {
+                                    events.push(WindowEvent::NavigateRelative {
+                                        path: format!("plugins/{}", url.path()).into(),
+                                    });
+                                },
+                                Some("login") => {
+                                    if let Some(payload) = handle_login_deep_link(&url) {
+                                        events.push(WindowEvent::Event {
+                                            event_name: "dashboard.login".into(),
+                                            payload: serde_json::to_string(&payload).ok().map(|s| s.into()),
+                                        });
+                                    }
+                                },
+                                host => {
+                                    error!(?host, "Invalid deep link");
+                                },
+                            }
+                        } else {
+                            error!(scheme = %url.scheme(), %url, "Invalid scheme");
+                        }
+                    }
+
+                    if let Err(err) = proxy.send_event(Event::WindowEvent {
+                        window_id: DASHBOARD_ID,
+                        window_event: WindowEvent::Batch(events),
+                    }) {
+                        warn!(%err, "Error sending event");
                     }
                 },
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
