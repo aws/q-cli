@@ -304,19 +304,7 @@ impl WindowState {
             }
 
             // Apply the diff to atomic state
-            cfg_if::cfg_if! {
-                if #[cfg(target_os = "linux")] {
-                    if self.window_id == AUTOCOMPLETE_ID {
-                        self.webview
-                            .window()
-                            .set_min_inner_size(Some(size));
-                    } else {
-                        self.webview.window().set_inner_size(size);
-                    }
-                } else {
-                    self.webview.window().set_inner_size(size);
-                }
-            }
+            self.webview.window().set_inner_size(size);
 
             match platform_state.position_window(self.webview.window(), &self.window_id, position) {
                 Ok(_) => {
@@ -367,14 +355,9 @@ impl WindowState {
                             .send(FigtermCommand::InterceptFigJSVisible { visible: false });
                     }
 
+                    // TODO: why are we setting then unsetting resizable?
                     #[cfg(not(target_os = "linux"))]
                     self.webview.window().set_resizable(true);
-
-                    // TODO: move to only happen when size is set to 1x1 by ae
-                    #[cfg(target_os = "linux")]
-                    self.webview
-                        .window()
-                        .set_min_inner_size(Some(PhysicalSize { width: 1, height: 1 }));
 
                     #[cfg(not(target_os = "linux"))]
                     self.webview.window().set_resizable(false);
