@@ -26,8 +26,6 @@ use tracing::{
     warn,
 };
 use url::Url;
-#[cfg(target_os = "linux")]
-use wry::application::dpi::PhysicalSize;
 use wry::application::dpi::{
     LogicalPosition,
     LogicalSize,
