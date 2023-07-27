@@ -23,7 +23,7 @@ fig_settings = { path = "../fig_settings", optional = true }
 fig_util = { path = "../fig_util", optional = true }
 graphql_client = "0.13.0"
 serde = "1.0.152"
-serde_json = { version = "1.0.92", features = ["arbitrary_precision"] }
+serde_json = { version = "1.0.104", features = ["arbitrary_precision"] }
 thiserror = { version = "1.0.38", optional = true }
 time = { version = "0.3.19", features = ["serde", "formatting", "parsing"] }
 tokio = { version = "1", features = ["full"] }
