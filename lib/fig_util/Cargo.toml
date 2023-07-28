@@ -46,7 +46,7 @@ windows = { version = "0.48.0", features = [
 winreg = "0.50.0"
 
 [target.'cfg(unix)'.dependencies]
-sysinfo = "0.29.0"
+sysinfo = "0.29.7"
 nix = "0.26.2"
 
 [dev-dependencies]

@@ -2075,7 +2075,7 @@ dependencies = [
  "skim",
  "spinners",
  "supports-color",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
  "tempfile",
  "thiserror",
  "time 0.3.23",
@@ -2173,7 +2173,7 @@ dependencies = [
  "serde",
  "serde_json",
  "shellexpand",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
  "system-configuration",
  "tempfile",
  "time 0.3.23",
@@ -2229,7 +2229,7 @@ dependencies = [
  "fig_util",
  "serde",
  "serde_json",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
  "time 0.3.23",
 ]
 
@@ -2338,7 +2338,7 @@ dependencies = [
  "regex",
  "serde",
  "serde_json",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
  "thiserror",
  "tokio",
  "tracing",
@@ -2550,7 +2550,7 @@ dependencies = [
  "serde_json",
  "sha2 0.10.7",
  "strum 0.25.0",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
  "thiserror",
  "time 0.3.23",
  "tokio",
@@ -2606,7 +2606,7 @@ dependencies = [
  "serde_json",
  "shared_library",
  "shell-words",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
  "time 0.3.23",
  "tokio",
  "tracing",
@@ -4564,7 +4564,7 @@ dependencies = [
  "nu-path",
  "nu-protocol",
  "nu-utils",
- "sysinfo 0.29.6",
+ "sysinfo 0.29.7",
 ]
 
 [[package]]
@@ -7136,9 +7136,9 @@ dependencies = [
 
 [[package]]
 name = "sysinfo"
-version = "0.29.6"
+version = "0.29.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "c7cb97a5a85a136d84e75d5c3cf89655090602efb1be0d8d5337b7e386af2908"
+checksum = "165d6d8539689e3d3bc8b98ac59541e1f21c7de7c85d60dc80e43ae0ed2113db"
 dependencies = [
  "cfg-if",
  "core-foundation-sys",
