@@ -277,10 +277,11 @@ impl PlatformStateImpl {
 
         let name = CString::new(class).unwrap();
 
-        unsafe {
+        let res = unsafe {
             let cls = objc_getClass(name.as_ptr()) as *mut Class;
-            class_addMethod(cls, sel, func.imp(), types.as_ptr());
-        }
+            class_addMethod(cls, sel, func.imp(), types.as_ptr())
+        };
+        trace!(%class, sel =% sel.name(), %res, "class_addMethod");
     }
 
     pub(super) fn handle(
@@ -372,6 +373,9 @@ impl PlatformStateImpl {
                     }
                 });
 
+                Ok(())
+            },
+            PlatformBoundEvent::InitializePostRun => {
                 fn to_s<'a>(nsstring_obj: *mut Object) -> Option<&'a str> {
                     const UTF8_ENCODING: libc::c_uint = 4;
 

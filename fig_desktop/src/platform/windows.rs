@@ -161,6 +161,10 @@ impl PlatformStateImpl {
 
                 Ok(())
             },
+            PlatformBoundEvent::InitializePostRun => {
+                trace!("Ignoring InitializePostRun event");
+                Ok(())
+            },
             PlatformBoundEvent::EditBufferChanged => unsafe {
                 let console_state = UNMANAGED.lock().console_state;
                 match console_state {

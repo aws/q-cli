@@ -97,7 +97,10 @@ impl PlatformState {
 
 #[derive(Debug)]
 pub enum PlatformBoundEvent {
+    /// Early initialization before the event loop has started
     Initialize,
+    /// Late initialization after the event loop has started
+    InitializePostRun,
     EditBufferChanged,
     FullscreenStateUpdated {
         fullscreen: bool,

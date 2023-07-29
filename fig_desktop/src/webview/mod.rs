@@ -317,6 +317,10 @@ impl WebviewManager {
         });
 
         let proxy = self.event_loop.create_proxy();
+        proxy
+            .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::InitializePostRun))
+            .expect("Failed to send post init event");
+
         self.event_loop.run(move |event, window_target, control_flow| {
             *control_flow = ControlFlow::Wait;
             trace!(?event, "Main loop event");

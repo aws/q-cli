@@ -144,6 +144,9 @@ impl PlatformStateImpl {
                     }
                 });
             },
+            PlatformBoundEvent::InitializePostRun => {
+                trace!("Ignoring initialize post run event");
+            },
             PlatformBoundEvent::EditBufferChanged => {
                 trace!("Ignoring edit buffer changed event");
             },
