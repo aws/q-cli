@@ -70,7 +70,7 @@ export async function uninstall(component: Component) {
 
 export async function isInstalled(component: Component) {
   const response = await sendInstallRequest({
-    action: InstallAction.INSTALL,
+    action: InstallAction.STATUS,
     component: componentToProto(component)
   });
   switch (response.response?.$case) {
