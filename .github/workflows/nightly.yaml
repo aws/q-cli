@@ -2,6 +2,11 @@ name: Nightly release
 
 on:
   workflow_dispatch:
+    inputs:
+      variant:
+        description: 'Variant for the release'
+        required: false
+        default: ''
   schedule:
     - cron: "0 11 * * *"
 
@@ -25,14 +30,24 @@ jobs:
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 
+      - name: Set variant
+        id: variant
+        run: |
+          if [[ "${{github.event_name}}" == "workflow_dispatch" ]]; then
+            echo "::set-output name=variant::-${{ github.event.inputs.variant }}"
+          else
+            echo "::set-output name=variant::"
+          fi
+
       - name: "cut nightly release"
         run: |
           git fetch > /dev/null
           git config user.email ci@fig.io
           git config user.name fig-ci
           git config push.autoSetupRemote true
-          echo '$ fig_release cut nightly'
-          fig_release cut nightly
+          VARIANT=${{ steps.variant.outputs.variant }}
+          echo '$ fig_release cut nightly$VARIANT'
+          fig_release cut nightly$VARIANT
           sleep 10
           fig_release -y publish macos linux
           echo '$ fig_release -y publish macos linux'
