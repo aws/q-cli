@@ -37,7 +37,7 @@ time = { version = "0.3.19", features = [
 ] }
 tracing = "0.1.36"
 url = "2.3.1"
-webpki-roots = "0.24.0"
+webpki-roots = "0.25.1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

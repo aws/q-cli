@@ -255,8 +255,8 @@ impl PlatformStateImpl {
     where
         F: MethodImplementation<Callee = Object>,
     {
-        // https://github.com/tauri-apps/tao/blob/7c7ce8ab2d838a79ecdf83df00124c418a6a51f6/src/platform_impl/macos/app_delegate.rs#L35
-        Self::override_objc_class_method("TaoAppDelegate", sel, func)
+        // https://github.com/tauri-apps/tao/blob/75eb0c1e7e83a766af0e083ce09c761d1974cde4/src/platform_impl/macos/app_delegate.rs#L42
+        Self::override_objc_class_method("TaoAppDelegateParent", sel, func)
     }
 
     fn override_objc_class_method<F>(class: &str, sel: Sel, func: F)
