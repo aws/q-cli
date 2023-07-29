@@ -318,7 +318,7 @@ jobs:
   macos:
     macos:
       xcode: 13.4.1
-    resource_class: macos.x86.medium.gen2
+    resource_class: macos.m1.large.gen1
     environment:
       HOMEBREW_NO_AUTO_UPDATE: 1
     steps:
