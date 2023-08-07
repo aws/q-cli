@@ -4,10 +4,9 @@ on:
   workflow_dispatch:
 
 jobs:
-  deploy:
+  deploy-x86_64-apple-darwin:
     runs-on: macos-12
     steps:
-
       - name: Checkout repository
         uses: actions/checkout@v3
         with:
@@ -34,3 +33,33 @@ jobs:
           automatic_release_tag: "tauri-cli-macos"
           title: "tauri-cli macos release"
           files: tooling/cli/target/x86_64-apple-darwin/release/cargo-tauri
+
+  deploy-aarch64-apple-darwin:
+    runs-on: macos-12
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+        with:
+          repository: tauri-apps/tauri
+          ref: dev
+
+      - name: Install Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          profile: minimal
+          override: true
+          target: aarch64-apple-darwin
+
+      - name: Cache Dependencies
+        uses: Swatinem/rust-cache@dd05243424bd5c0e585e4b55eb2d7615cdd32f1f
+
+      - name: Build
+        run: cd tooling/cli && cargo build --release --package tauri-cli --target aarch64-apple-darwin
+
+      - uses: marvinpinto/action-automatic-releases@latest
+        with:
+          repo_token: "${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}"
+          automatic_release_tag: "tauri-cli-macos"
+          title: "tauri-cli macos release"
+          files: tooling/cli/target/aarch64-apple-darwin/release/cargo-tauri
