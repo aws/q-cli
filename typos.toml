@@ -8,7 +8,7 @@
 [files]
 extend-exclude = [
   "fig/settings/assets/*",
-  "*.html", # Any HTML, CSS, etc. files are legacy.
+  "*.html",                # Any HTML, CSS, etc. files are legacy.
   "*.css",
   "*.svg",
   "*.min.*",
@@ -23,6 +23,7 @@ preedit = "preedit"
 xmodifiers = "xmodifiers"
 zvariant = "zvariant"
 ser = "ser"
+sur = "sur"
 
 [default.extend-identifiers]
 # Originally mistakes, but will be too hard to fix now
@@ -34,5 +35,3 @@ protoMessageRecieved = "protoMessageRecieved"
 [type.rust.extend-identifiers]
 # typos really wanted to correct 2ND -> 2AND
 FROM_LEFT_2ND_BUTTON_PRESSED = "FROM_LEFT_2ND_BUTTON_PRESSED"
-# Flag of `systeminfo`
-FO = "FO"
