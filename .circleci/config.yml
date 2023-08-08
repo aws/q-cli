@@ -343,7 +343,8 @@ jobs:
           name: Install tauri CLI
           command: |
             cd desktop
-            gh release download tauri-cli-macos
+            gh release -R tauri-apps/tauri download -p cargo-tauri-aarch64-apple-darwin.zip
+            unzip cargo-tauri-aarch64-apple-darwin.zip
             chmod +x cargo-tauri
             mv cargo-tauri /usr/local/bin/cargo-tauri
       - run:
