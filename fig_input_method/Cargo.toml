@@ -15,7 +15,7 @@ input_method_type = "palette"
 
 [build-dependencies]
 plist = "1.4.0"
-serde = { version = "1.0.152", features = ["derive"] }
+serde = { version = "1.0.183", features = ["derive"] }
 toml = "0.7.1"
 apple-bundle = "*"
 

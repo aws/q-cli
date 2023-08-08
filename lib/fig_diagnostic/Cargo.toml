@@ -13,7 +13,7 @@ fig_ipc = { path = "../fig_ipc" }
 fig_proto = { path = "../fig_proto" }
 fig_telemetry = { path = "../fig_telemetry" }
 fig_util = { path = "../fig_util" }
-serde = { version = "1.0.152", features = ["derive"] }
+serde = { version = "1.0.183", features = ["derive"] }
 serde_json = "1.0.104"
 sysinfo = "0.29.7"
 time = "0.3.19"
