@@ -344,9 +344,9 @@ jobs:
           command: |
             cd desktop
             gh release -R tauri-apps/tauri download -p cargo-tauri-aarch64-apple-darwin.zip
-            unzip cargo-tauri-aarch64-apple-darwin.zip
-            chmod +x cargo-tauri
-            mv cargo-tauri /usr/local/bin/cargo-tauri
+            unzip cargo-tauri-aarch64-apple-darwin.zip -d /tmp/cargo-tauri-aarch64-apple-darwin
+            chmod +x /tmp/cargo-tauri-aarch64-apple-darwin/cargo-tauri
+            mv /tmp/cargo-tauri-aarch64-apple-darwin/cargo-tauri /usr/local/bin/cargo-tauri
       - run:
           name: Install sentry
           command: |
