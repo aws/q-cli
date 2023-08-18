@@ -14,7 +14,7 @@ arboard = { version = "3.1.1", default-features = false, features = [
     "wayland-data-control",
 ] }
 async-trait = "0.1.64"
-bitflags = "2.0.0"
+bitflags = "2.4.0"
 bstr = "1.1.0"
 bytes = "1.4.0"
 camino = "1.1.3"

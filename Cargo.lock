@@ -89,7 +89,7 @@ dependencies = [
 name = "alacritty_terminal"
 version = "2.18.0-dev"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "camino",
  "fig_color",
  "serde",
@@ -582,9 +582,9 @@ checksum = "bef38d45163c2f1dde094a7dfd33ccf595c92905c8f8f4fdc18d06fb1037718a"
 
 [[package]]
 name = "bitflags"
-version = "2.3.3"
+version = "2.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "630be753d4e58660abd17930c71b647fe46c27ea6b63cc59e1e3851406972e42"
+checksum = "b4682ae6287fcf752ecaabbfcc7b6f9b72aa33933dc23a554d853aea8eea8635"
 dependencies = [
  "serde",
 ]
@@ -1341,7 +1341,7 @@ version = "0.27.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "f476fe445d41c9e991fd07515a6f463074b782242ccf4a5b7b1d1012e70824df"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "crossterm_winapi",
  "libc",
  "mio",
@@ -2032,7 +2032,7 @@ dependencies = [
  "arboard",
  "assert_cmd",
  "async-trait",
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "bstr",
  "bytes",
  "camino",
@@ -2107,7 +2107,7 @@ dependencies = [
 name = "fig_color"
 version = "2.18.0-dev"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "fig_test",
  "nu-ansi-term 0.49.0",
  "nu-color-config",
@@ -2299,7 +2299,7 @@ dependencies = [
 name = "fig_install"
 version = "2.18.0-dev"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "camino",
  "cfg-if",
  "fig_daemon",
@@ -2578,7 +2578,7 @@ dependencies = [
  "anyhow",
  "assert_cmd",
  "async-trait",
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "bstr",
  "bytes",
  "cfg-if",
@@ -4013,7 +4013,7 @@ source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "97cc864b2dc5f078725908d7be7b35ce934e156ff52db40643ba6cb55f813c14"
 dependencies = [
  "ahash 0.7.6",
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "const-str",
  "cssparser 0.29.6",
  "dashmap",
@@ -4985,7 +4985,7 @@ version = "0.26.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "d3e808c7a75aedcc522bd24187de6903adab3265d690a61f8b8181edaa988377"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "cssparser 0.29.6",
  "fxhash",
  "log",
@@ -6085,7 +6085,7 @@ version = "0.29.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "549b9d036d571d42e6e85d1c1425e2ac83491075078ca9a15be021c56b1641f2"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "fallible-iterator",
  "fallible-streaming-iterator",
  "hashlink",
@@ -6144,7 +6144,7 @@ version = "0.38.7"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "172891ebdceb05aa0005f533a6cbfca599ddd7d966f6f5d4d9b2e70478e70399"
 dependencies = [
- "bitflags 2.3.3",
+ "bitflags 2.4.0",
  "errno",
  "libc",
  "linux-raw-sys 0.4.5",
