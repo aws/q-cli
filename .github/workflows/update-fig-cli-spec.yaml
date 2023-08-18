@@ -22,7 +22,7 @@ jobs:
         with:
           profile: minimal
           toolchain: stable
-      - uses: Swatinem/rust-cache@b8a6852b4f997182bdea832df3f9e153038b5191
+      - uses: Swatinem/rust-cache@578b235f6e5f613f7727f1c17bd3305b4d4d4e1f
       - name: Install Protobuf
         run: |
           curl -L -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v21.6/protoc-21.6-linux-x86_64.zip \
