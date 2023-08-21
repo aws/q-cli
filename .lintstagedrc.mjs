@@ -6,5 +6,5 @@ export default {
   "*.proto": () => [
     "cd proto && buf lint && buf format --exit-code > /dev/null",
   ],
-  "*": "typos",
+  "*": () => "typos",
 };

@@ -1,4 +1,7 @@
 #!/bin/sh
 . "$(dirname "$0")/_/husky.sh"
 
-yarn workspaces run precommit && yarn run precommit
+yarn run precommit
+yarn workspace proto run precommit
+yarn workspace fig-api-tests run precommit
+yarn workspace @withfig/api-bindings run precommit

@@ -4,6 +4,7 @@
   "repository": "git@github.com:withfig/macos",
   "author": "Fig Team",
   "license": "MIT",
+  "packageManager": "yarn@3.6.2",
   "dependencies": {
     "husky": "^8.0.3",
     "lint-staged": "^13.2.3"

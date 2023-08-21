@@ -14,6 +14,7 @@ extend-exclude = [
   "*.min.*",
   "*.storyboard",
   "typos.toml",
+  ".yarn/*",
 ]
 
 [default.extend-words]
