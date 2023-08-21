@@ -87,7 +87,7 @@ wry = { version = "0.30.0", default-features = false, features = [
 ] }
 
 [target.'cfg(target_os = "windows")'.dependencies.windows]
-version = "0.48.0"
+version = "0.51.1"
 features = [
     "implement",
     "Win32_Foundation",
