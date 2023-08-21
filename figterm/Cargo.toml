@@ -49,7 +49,7 @@ regex = "1.6.0"
 serde = { version = "1.0.185", features = ["derive"] }
 serde_json = "1.0.104"
 shell-words = "1.1"
-sysinfo = { version = "0.29.7", default-features = false }
+sysinfo = { version = "0.29.8", default-features = false }
 time = "0.3.19"
 tokio = { version = "1.32.0", features = ["full"] }
 tracing = { version = "0.1.36", features = ["log"] }
