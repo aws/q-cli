@@ -7,7 +7,7 @@
   "packageManager": "yarn@3.6.2",
   "dependencies": {
     "husky": "^8.0.3",
-    "lint-staged": "^13.2.3"
+    "lint-staged": "^14.0.1"
   },
   "workspaces": [
     "typescript-api-bindings",
