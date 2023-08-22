@@ -14,7 +14,7 @@ profiling_early_exit = []
 [dependencies]
 alacritty_terminal = { path = "../lib/alacritty_terminal" }
 anyhow = "1.0.69"
-async-trait = "0.1.64"
+async-trait = "0.1.73"
 bitflags = "2.4.0"
 bstr = "1.1.0"
 bytes = "1.4.0"

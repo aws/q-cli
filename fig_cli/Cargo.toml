@@ -13,7 +13,7 @@ default = []
 arboard = { version = "3.1.1", default-features = false, features = [
     "wayland-data-control",
 ] }
-async-trait = "0.1.64"
+async-trait = "0.1.73"
 bitflags = "2.4.0"
 bstr = "1.1.0"
 bytes = "1.4.0"
