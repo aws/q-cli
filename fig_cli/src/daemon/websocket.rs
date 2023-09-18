@@ -190,14 +190,30 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     debug!("Connecting to {url}");
 
-    let (websocket_stream, _) = tokio_tungstenite::connect_async_tls_with_config(
+    let (websocket_stream, res) = match tokio_tungstenite::connect_async_tls_with_config(
         url,
         None,
         false,
         Some(tokio_tungstenite::Connector::Rustls(client_config(true))),
     )
     .await
-    .context("Failed to connect to websocket")?;
+    {
+        Ok(res) => res,
+        Err(tungstenite::Error::Http(http)) => {
+            let body = if let Some(body) = http.body() {
+                Some(String::from_utf8_lossy(body))
+            } else {
+                None
+            };
+
+            error!(headers =? http.headers(), status =? http.status(), ?body, "Http error");
+
+            eyre::bail!("Failed to connect to websocket: http error")
+        },
+        Err(err) => {
+            return Err(err.into());
+        },
+    };
 
     info!("Websocket connected");
 

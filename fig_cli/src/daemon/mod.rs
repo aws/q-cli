@@ -148,7 +148,7 @@ pub async fn daemon() -> Result<()> {
                                 match process_websocket(&next, &mut scheduler).await {
                                     Ok(()) => backoff.reset(),
                                     Err(err) => {
-                                        error!("Error while processing websocket message: {err}");
+                                        error!(%err, "Error while processing websocket message");
                                         daemon_status.write().websocket_status = Err(err);
                                         break;
                                     }
@@ -157,7 +157,7 @@ pub async fn daemon() -> Result<()> {
                             _ = ping_interval.tick() => {
                                 debug!("Sending ping to websocket");
                                 if let Err(err) = websocket_stream.send(tungstenite::Message::Ping(vec![])).await {
-                                    error!("Error while sending ping to websocket: {err}");
+                                    error!(%err, "Error while sending ping to websocket");
                                     daemon_status.write().websocket_status = Err(err.into());
                                     break;
                                 };
@@ -166,7 +166,7 @@ pub async fn daemon() -> Result<()> {
                     }
                 },
                 Err(err) => {
-                    error!("Error while connecting to websocket: {err}");
+                    error!(%err, "Error while connecting to websocket");
                     daemon_status.write().websocket_status = Err(err);
                 },
             }
