@@ -1,5 +1,6 @@
 mod hooks;
 
+use std::collections::HashMap;
 use std::sync::atomic::{
     AtomicU64,
     Ordering,
@@ -32,7 +33,6 @@ use fig_proto::remote::{
     Hostbound,
 };
 use fig_util::directories;
-use hashbrown::HashMap;
 use time::OffsetDateTime;
 use tokio::net::{
     UnixListener,
@@ -140,7 +140,7 @@ async fn handle_remote_ipc(
                                     success: false,
                                 }))
                             } else {
-                                let id = FigtermSessionId(handshake.id.clone());
+                                let id = FigtermSessionId::new(&handshake.id);
 
                                 if let Some(success) = figterm_state.with_update(id.clone(), |session| {
                                     if session.secret == handshake.secret {
@@ -163,7 +163,7 @@ async fn handle_remote_ipc(
                                 }) {
                                     Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success }))
                                 } else {
-                                    let id = FigtermSessionId(handshake.id.clone());
+                                    let id = FigtermSessionId::new(&handshake.id);
                                     session_id = Some(id.clone());
                                     let (command_tx, command_rx) = flume::unbounded();
                                     tokio::spawn(handle_commands(command_rx, figterm_state.clone(), id.clone()));
@@ -199,8 +199,9 @@ async fn handle_remote_ipc(
 
                             if matches!(result, Some(clientbound::Packet::HandshakeResponse(HandshakeResponse { success: true }))) {
                                 if let Some(parent_id) = handshake.parent_id {
-                                    let sessions = figterm_state.linked_sessions.lock();
-                                    for session in sessions.iter() {
+                                    let inner = figterm_state.inner.lock();
+                                    let sessions = inner.linked_sessions.values();
+                                    for session in sessions {
                                         if let Some(ref writer) = session.writer {
                                             let notification = clientbound::Packet::NotifyChildSessionStarted(
                                                 clientbound::NotifyChildSessionStarted { parent_id: parent_id.clone() }
@@ -328,10 +329,11 @@ async fn handle_remote_ipc(
     drop(clientbound_tx);
 
     if let Some(session_id) = &session_id {
-        figterm_state.with_update(session_id.clone(), |session| {
-            session.writer = None;
-            session.dead_since = Some(Instant::now());
-        });
+        // figterm_state.with_update(session_id.clone(), |session| {
+        //     session.writer = None;
+        //     session.dead_since = Some(Instant::now());
+        // });
+        figterm_state.remove_id(session_id);
     }
 
     if let Err(err) = ping_task.await {
@@ -524,6 +526,6 @@ async fn send_pings(outgoing: flume::Sender<Clientbound>, mut on_close_rx: tokio
 // be sanitized before being sent to any consumers
 fn sanitize_fn(context: &mut Option<ShellContext>, session_id: &Option<FigtermSessionId>) {
     if let Some(context) = context {
-        context.session_id = Some(session_id.as_ref().expect("unreachable").0.clone());
+        context.session_id = Some(session_id.as_ref().expect("unreachable").to_string());
     }
 }

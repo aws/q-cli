@@ -1,10 +1,10 @@
+use std::collections::HashSet;
 use std::sync::Arc;
 
 use anyhow::Result;
 use dbus::ibus_bus_new;
 use fig_proto::local::caret_position_hook::Origin;
 use fig_util::terminal::PositioningKind;
-use hashbrown::HashSet;
 use tracing::{
     debug,
     error,

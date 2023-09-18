@@ -1,6 +1,5 @@
-use std::collections::LinkedList;
+use std::collections::HashMap;
 use std::fmt::Display;
-use std::ops::Deref;
 use std::sync::atomic::AtomicU64;
 use std::sync::Arc;
 
@@ -13,7 +12,6 @@ use fig_proto::remote::{
     hostbound,
     Clientbound,
 };
-use hashbrown::HashMap;
 use parking_lot::lock_api::MutexGuard;
 use parking_lot::{
     FairMutex,
@@ -29,33 +27,51 @@ use tokio::sync::{
     broadcast,
     oneshot,
 };
-use tokio::time::{
-    sleep_until,
-    Duration,
-    Instant,
-};
-use tracing::trace;
+use tokio::time::Instant;
+use uuid::Uuid;
 
-#[derive(Debug, Clone, Default, PartialEq, Eq, Hash, Serialize, Deserialize)]
-pub struct FigtermSessionId(pub String);
+#[derive(Debug, Clone, PartialEq, Eq, Hash, Serialize, Deserialize)]
+#[serde(untagged)]
+pub enum FigtermSessionId {
+    Uuid(Uuid),
+    String(String),
+}
 
-impl Deref for FigtermSessionId {
-    type Target = String;
+impl FigtermSessionId {
+    pub fn new(s: impl AsRef<str> + Into<String>) -> Self {
+        if let Ok(uuid) = Uuid::parse_str(s.as_ref()) {
+            FigtermSessionId::Uuid(uuid)
+        } else {
+            FigtermSessionId::String(s.into())
+        }
+    }
 
-    fn deref(&self) -> &Self::Target {
-        &self.0
+    pub fn into_string(self) -> String {
+        match self {
+            FigtermSessionId::Uuid(uuid) => uuid.as_hyphenated().to_string(),
+            FigtermSessionId::String(s) => s,
+        }
     }
 }
 
 impl From<String> for FigtermSessionId {
     fn from(from: String) -> Self {
-        FigtermSessionId(from)
+        FigtermSessionId::String(from)
+    }
+}
+
+impl From<Uuid> for FigtermSessionId {
+    fn from(from: Uuid) -> Self {
+        FigtermSessionId::Uuid(from)
     }
 }
 
 impl Display for FigtermSessionId {
     fn fmt(&self, f: &mut std::fmt::Formatter<'_>) -> std::fmt::Result {
-        self.0.fmt(f)
+        match self {
+            FigtermSessionId::Uuid(uuid) => uuid.as_hyphenated().fmt(f),
+            FigtermSessionId::String(s) => s.fmt(f),
+        }
     }
 }
 
@@ -85,92 +101,73 @@ impl SessionMetrics {
 }
 
 #[derive(Debug, Default, Serialize)]
+pub struct InnerFigtermState {
+    /// All current sessions of `[FigtermSession]`s.
+    pub linked_sessions: HashMap<FigtermSessionId, FigtermSession>,
+    /// The most recent figterm session
+    pub most_recent: Option<FigtermSessionId>,
+}
+
+#[derive(Debug, Default, Serialize)]
 pub struct FigtermState {
-    /// Linked list of `[FigtermSession]`s.
-    pub linked_sessions: FairMutex<LinkedList<FigtermSession>>,
+    #[serde(flatten)]
+    pub inner: FairMutex<InnerFigtermState>,
 }
 
 impl FigtermState {
     /// Inserts a new session id
     pub fn insert(&self, session: FigtermSession) {
-        self.linked_sessions.lock().push_front(session);
-    }
-
-    /// Removes the given session id with a given lock
-    pub fn remove_with_lock(
-        &self,
-        key: FigtermSessionId,
-        guard: &mut MutexGuard<'_, RawFairMutex, LinkedList<FigtermSession>>,
-    ) -> Option<FigtermSession> {
-        self.remove_where_with_lock(|session| session.id == key, guard)
-    }
-
-    /// Removes the given session id with a given lock and closure
-    pub fn remove_where_with_lock(
-        &self,
-        mut f: impl FnMut(&FigtermSession) -> bool,
-        guard: &mut MutexGuard<'_, RawFairMutex, LinkedList<FigtermSession>>,
-    ) -> Option<FigtermSession> {
-        let mut sessions_temp = LinkedList::new();
-        std::mem::swap(&mut **guard, &mut sessions_temp);
-        let mut existing = None;
-        guard.extend(sessions_temp.into_iter().filter_map(|x| {
-            if f(&x) && existing.is_none() {
-                existing = Some(x);
-                None
-            } else {
-                Some(x)
-            }
-        }));
-        existing
-    }
-
-    /// Removes all sessions with a given lock
-    pub fn remove_where_with_lock_all(
-        &self,
-        mut f: impl FnMut(&FigtermSession) -> bool,
-        guard: &mut MutexGuard<'_, RawFairMutex, LinkedList<FigtermSession>>,
-    ) -> Vec<FigtermSession> {
-        let mut sessions_temp = LinkedList::new();
-        std::mem::swap(&mut **guard, &mut sessions_temp);
-        let mut removed = Vec::new();
-        guard.extend(sessions_temp.into_iter().filter_map(|x| {
-            if f(&x) {
-                removed.push(x);
-                None
-            } else {
-                Some(x)
-            }
-        }));
-        removed
+        let mut figterm_state = self.inner.lock();
+        figterm_state.most_recent = Some(session.id.clone());
+        figterm_state.linked_sessions.insert(session.id.clone(), session);
     }
 
     /// Gets mutable reference to the given session id and sets the most recent session id
     pub fn with_update<T>(&self, key: FigtermSessionId, f: impl FnOnce(&mut FigtermSession) -> T) -> Option<T> {
-        let mut guard = self.linked_sessions.lock();
+        let mut guard = self.inner.lock();
+        let res = guard
+            .linked_sessions
+            .get_mut(&key)
+            .and_then(|session| match session.dead_since {
+                Some(_) => None,
+                None => Some(f(session)),
+            });
 
-        self.remove_with_lock(key, &mut guard).map(|mut session| {
-            let result = f(&mut session);
-            guard.push_front(session);
-            result
-        })
+        if res.is_some() {
+            guard.most_recent = Some(key);
+        }
+
+        res
     }
 
     pub fn with_most_recent<T>(&self, f: impl FnOnce(&mut FigtermSession) -> T) -> Option<T> {
-        let mut guard = self.linked_sessions.lock();
-        guard.iter_mut().find(|session| session.dead_since.is_none()).map(f)
+        let mut guard = self.inner.lock();
+        let id = guard.most_recent.clone()?;
+        guard
+            .linked_sessions
+            .get_mut(&id)
+            .and_then(|session| match session.dead_since {
+                Some(_) => None,
+                None => Some(f(session)),
+            })
     }
 
     /// Gets mutable reference to the given session id
     pub fn with<T>(&self, session_id: &FigtermSessionId, f: impl FnOnce(&mut FigtermSession) -> T) -> Option<T> {
-        let mut guard = self.linked_sessions.lock();
-        guard.iter_mut().find(|session| &session.id == session_id).map(f)
+        let mut guard = self.inner.lock();
+        guard.linked_sessions.get_mut(session_id).map(f)
     }
 
     pub fn most_recent(&self) -> Option<MappedFairMutexGuard<'_, FigtermSession>> {
-        MutexGuard::<'_, RawFairMutex, LinkedList<FigtermSession>>::try_map(self.linked_sessions.lock(), |guard| {
-            guard.iter_mut().find(|session| session.dead_since.is_none())
-        })
+        MutexGuard::<'_, RawFairMutex, InnerFigtermState>::try_map(
+            self.inner.lock(),
+            |guard: &mut InnerFigtermState| {
+                guard
+                    .most_recent
+                    .as_mut()
+                    .and_then(|id| guard.linked_sessions.get_mut(id))
+            },
+        )
         .ok()
     }
 
@@ -183,6 +180,14 @@ impl FigtermState {
             Some(session_id) => self.with(session_id, f),
             None => self.with_most_recent(f),
         }
+    }
+
+    pub fn remove_id(&self, session_id: &FigtermSessionId) -> Option<FigtermSession> {
+        let mut guard = self.inner.lock();
+        if guard.most_recent.as_ref() == Some(session_id) {
+            guard.most_recent = None;
+        }
+        guard.linked_sessions.remove(session_id)
     }
 }
 
@@ -322,32 +327,4 @@ impl FigtermCommand {
         is_pipelined: Option<bool>,
         env: Vec<EnvironmentVariable>,
     );
-}
-
-pub async fn clean_figterm_cache(state: Arc<FigtermState>) {
-    loop {
-        trace!("cleaning figterm cache");
-        let mut last_receive = Instant::now();
-        let sessions = {
-            let mut guard = state.linked_sessions.lock();
-            state.remove_where_with_lock_all(
-                |session| {
-                    if session.last_receive.elapsed() > Duration::from_secs(600) {
-                        return true;
-                    } else if last_receive > session.last_receive {
-                        last_receive = session.last_receive;
-                    }
-                    false
-                },
-                &mut guard,
-            )
-        };
-
-        for session in sessions {
-            session.on_close_tx.send(()).ok();
-            drop(session);
-        }
-
-        sleep_until(last_receive + Duration::from_secs(600)).await;
-    }
 }

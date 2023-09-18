@@ -347,7 +347,7 @@ impl WindowState {
                 self.webview.window().set_visible(false);
 
                 if self.window_id == AUTOCOMPLETE_ID {
-                    for session in figterm_state.linked_sessions.lock().iter() {
+                    for session in figterm_state.inner.lock().linked_sessions.values_mut() {
                         let _ = session
                             .sender
                             .send(FigtermCommand::InterceptFigJSVisible { visible: false });
@@ -378,7 +378,7 @@ impl WindowState {
             WindowEvent::Show => {
                 if self.window_id == AUTOCOMPLETE_ID {
                     if platform::autocomplete_active() {
-                        for session in figterm_state.linked_sessions.lock().iter_mut() {
+                        for session in figterm_state.inner.lock().linked_sessions.values_mut() {
                             let _ = session
                                 .sender
                                 .send(FigtermCommand::InterceptFigJSVisible { visible: true });

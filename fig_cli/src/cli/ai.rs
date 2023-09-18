@@ -23,7 +23,6 @@ use crate::util::spinner::{
 const MAX_QUESTION_LEN: usize = 250;
 
 const SEEN_ONBOARDING_KEY: &str = "ai.seen-onboarding";
-const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct AiArgs {
@@ -122,19 +121,8 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
 
 impl AiArgs {
     pub async fn execute(self) -> eyre::Result<()> {
-        // Spawn task to get `fig pro` status
-        tokio::spawn(async {
-            let is_pro = fig_api_client::user::plans()
-                .await
-                .map(|plan| plan.highest_plan())
-                .unwrap_or_default()
-                .is_pro();
-            fig_settings::state::set_value(IS_FIG_PRO_KEY, is_pro).ok();
-        });
-
         // show onboarding if it hasnt been seen, show fig pro to non pro users
         let seen_onboarding = fig_settings::state::get_bool_or(SEEN_ONBOARDING_KEY, false);
-        let is_fig_pro = fig_settings::state::get_bool_or(IS_FIG_PRO_KEY, false);
 
         if !seen_onboarding {
             println!();
@@ -151,16 +139,6 @@ impl AiArgs {
             println!("  You can run the command in any shell.");
 
             fig_settings::state::set_value(SEEN_ONBOARDING_KEY, true).ok();
-        }
-
-        if !seen_onboarding || !is_fig_pro {
-            println!();
-            println!(
-                "  {} is currently in beta for {} users.",
-                "fig ai".bright_magenta().bold(),
-                "Fig Pro".bold()
-            );
-            println!("  Run {} to learn more...", "fig pro".bright_magenta().bold());
         }
 
         println!();

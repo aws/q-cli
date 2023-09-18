@@ -49,7 +49,7 @@ fig_settings = { path = "../lib/fig_settings" }
 fig_sync = { path = "../lib/fig_sync" }
 fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
-flume = "0.10.14"
+flume = "0.11.0"
 futures = "0.3.26"
 globset = "0.4.10"
 http = "0.2.9"

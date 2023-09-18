@@ -19,7 +19,6 @@ use std::ffi::{
     OsStr,
 };
 use std::iter::repeat;
-use std::sync::Arc;
 use std::time::{
     Duration,
     SystemTime,
@@ -93,7 +92,6 @@ use tokio::io::{
     AsyncWriteExt,
 };
 use tokio::sync::oneshot;
-use tokio::task::block_in_place;
 use tokio::{
     runtime,
     select,
@@ -136,8 +134,6 @@ use crate::term::{
     SystemTerminal,
     Terminal,
 };
-
-const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
 
 const BUFFER_SIZE: usize = 16384;
 
@@ -702,19 +698,6 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
             newline_mode: false,
         };
 
-        let fig_pro = Arc::new(Mutex::new(false));
-        let fig_pro_clone = fig_pro.clone();
-        tokio::spawn(async move {
-            *fig_pro_clone.lock() = block_in_place(|| fig_settings::state::get_bool_or(IS_FIG_PRO_KEY, false));
-            let fig_pro = fig_api_client::user::plans()
-                .await
-                .map(|plans| plans.highest_plan())
-                .unwrap_or_default()
-                .is_pro();
-            *fig_pro_clone.lock() = fig_pro;
-            block_in_place(|| fig_settings::state::set_value(IS_FIG_PRO_KEY, fig_pro).ok());
-        });
-
         let ai_enabled = fig_settings::settings::get_bool_or("ai.terminal-hash-sub", true);
 
         if let Ok(shell) = get_parent_shell() {
@@ -810,35 +793,33 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     csi_u_set = false;
                                 },
                                 MainLoopEvent::PromptSSH { uuid, remote_host } => {
-                                    if *fig_pro.lock() {
-                                        let should_install = should_install_remote_ssh_integration(
-                                            uuid,
-                                            remote_host.clone(),
-                                            main_loop_tx.clone(),
-                                            remote_receiver.clone(),
-                                            remote_sender.clone(),
-                                            &term,
-                                            &mut master,
-                                            &mut key_interceptor,
-                                        ).await;
+                                    let should_install = should_install_remote_ssh_integration(
+                                        uuid,
+                                        remote_host.clone(),
+                                        main_loop_tx.clone(),
+                                        remote_receiver.clone(),
+                                        remote_sender.clone(),
+                                        &term,
+                                        &mut master,
+                                        &mut key_interceptor,
+                                    ).await;
 
-                                        let should_install = match should_install {
-                                            Some(val) => val,
-                                            None => {
-                                                prompt_remote_integration_install(
-                                                    remote_host,
-                                                    console_term.clone(),
-                                                    console_term_key_tx.clone(),
-                                                    &mut terminal,
-                                                    input_rx.clone(),
-                                                ).await.unwrap_or(false)
-                                            }
-                                        };
-
-                                        if should_install {
-                                            let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
-                                            master.write_all(installation_command.as_bytes()).await?;
+                                    let should_install = match should_install {
+                                        Some(val) => val,
+                                        None => {
+                                            prompt_remote_integration_install(
+                                                remote_host,
+                                                console_term.clone(),
+                                                console_term_key_tx.clone(),
+                                                &mut terminal,
+                                                input_rx.clone(),
+                                            ).await.unwrap_or(false)
                                         }
+                                    };
+
+                                    if should_install {
+                                        let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
+                                        master.write_all(installation_command.as_bytes()).await?;
                                     }
                                 }
                             }
@@ -860,7 +841,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
                                         debug!(?event, ?raw, %preexec,  "Got key event");
 
-                                        if !preexec && ai_enabled && *fig_pro.lock() && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
+                                        if !preexec && ai_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
                                             if let Some(TextBuffer { buffer, cursor_idx }) = term.get_current_buffer() {
                                                 let buffer = buffer.trim();
                                                 if buffer.len() > 1 && buffer.starts_with('#') && term.columns() > buffer.len() {

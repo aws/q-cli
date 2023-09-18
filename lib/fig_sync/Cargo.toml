@@ -13,7 +13,7 @@ fig_api_client = { path = "../fig_api_client" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-flume = "0.10.14"
+flume = "0.11.0"
 futures = "0.3.26"
 git2 = { version = "0.17.1", features = [
     "vendored-openssl",

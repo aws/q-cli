@@ -72,9 +72,7 @@ pub async fn focused_window_data(
     return crate::platform::integrations::from_hook(hook, platform_state, proxy);
     #[cfg(not(target_os = "linux"))]
     {
-        let _hook = hook;
-        let _platform_state = platform_state;
-        let _proxy = proxy;
+        let (_hook, _platform_state, _proxy) = (hook, platform_state, proxy);
         Ok(())
     }
 }

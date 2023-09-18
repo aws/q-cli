@@ -1,3 +1,4 @@
+use std::borrow::Cow;
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 use std::io::{
     stdout,
@@ -6,16 +7,18 @@ use std::io::{
 use std::process::exit;
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
+#[allow(dead_code)]
 struct ProcessInfo {
     pid: fig_util::process_info::Pid,
     name: String,
     is_valid: bool,
+    is_special: bool,
 }
 
 #[cfg(any(target_os = "macos", target_os = "linux"))]
 enum Status {
-    Launch(String),
-    DontLaunch(String),
+    Launch(Cow<'static, str>),
+    DontLaunch(Cow<'static, str>),
     Process(ProcessInfo),
 }
 
@@ -78,6 +81,7 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
         pid: parent_pid,
         name: parent_name.into(),
         is_valid: valid_parent,
+        is_special: false,
     })
 }
 
@@ -99,7 +103,7 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
     let grandparent_name = match grandparent_path.file_name() {
         Some(name) => match name.to_str() {
             Some(name) => name,
-            None => return Status::DontLaunch("Grandparent name is not valid unicode".into()),
+            None => return Status::DontLaunch("Grandparent name is not a valid utf8 str".into()),
         },
         None => return Status::DontLaunch("No grandparent name".into()),
     };
@@ -134,12 +138,14 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
     let valid_grandparent = terminals
         .iter()
         .chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
-        .any(check_fn);
+        .filter_map(|term| check_fn(term).then_some(term))
+        .next();
 
     Status::Process(ProcessInfo {
         pid: grandparent_pid,
         name: grandparent_name.into(),
-        is_valid: valid_grandparent,
+        is_valid: valid_grandparent.is_some(),
+        is_special: valid_grandparent.map(|term| term.is_special()).unwrap_or(false),
     })
 }
 
@@ -162,6 +168,14 @@ fn should_launch() -> ! {
     );
 
     writeln!(stdout(), "{ancestry}").ok();
+
+    #[cfg(target_os = "macos")]
+    {
+        if !grandparent_info.is_special {
+            writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
+            exit(2);
+        }
+    }
 
     exit(i32::from(!(grandparent_info.is_valid && parent_info.is_valid)));
 }
@@ -218,11 +232,7 @@ pub fn should_figterm_launch() -> ! {
         exit(1);
     }
 
-    if std::env::consts::OS == "macos" {
-        // For now on macOS we want to fallback to the old mechanism as this is still relatively new
-        writeln!(stdout(), "🟡 Falling back to old mechanism since on macOS").ok();
-        exit(2);
-    } else if fig_util::system_info::in_wsl() {
+    if fig_util::system_info::in_wsl() {
         writeln!(stdout(), "🟡 Falling back to old mechanism since in WSL").ok();
         exit(2)
     } else {

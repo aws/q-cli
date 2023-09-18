@@ -13,7 +13,7 @@ core-foundation = "0.9"
 cocoa = "0.25.0"
 objc = "0.2"
 dashmap = "5.3.4"
-flume = "0.10.14"
+flume = "0.11.0"
 fnv = "1.0.7"
 accessibility-sys = { path = "./accessibility-master/accessibility-sys", version = "0.1.3" }
 once_cell = "1.17.1"

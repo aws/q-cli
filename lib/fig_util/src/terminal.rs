@@ -41,7 +41,13 @@ pub const LINUX_TERMINALS: &[Terminal] = &[
 ];
 
 /// Other terminals that figterm should launch within that are not full terminal emulators
-pub const SPECIAL_TERMINALS: &[Terminal] = &[Terminal::Ssh, Terminal::Tmux, Terminal::Nvim];
+pub const SPECIAL_TERMINALS: &[Terminal] = &[
+    Terminal::Ssh,
+    Terminal::Tmux,
+    Terminal::Nvim,
+    Terminal::Vim,
+    Terminal::Zellij,
+];
 
 pub static CURRENT_TERMINAL: Lazy<Option<Terminal>> = Lazy::new(Terminal::parent_terminal);
 
@@ -99,6 +105,8 @@ pub enum Terminal {
     Ssh,
     /// Tmux
     Tmux,
+    /// Vim
+    Vim,
     /// Nvim
     Nvim,
     /// Zellij
@@ -128,6 +136,7 @@ impl fmt::Display for Terminal {
             Terminal::Terminology => write!(f, "Terminology"),
             Terminal::Ssh => write!(f, "SSH"),
             Terminal::Tmux => write!(f, "Tmux"),
+            Terminal::Vim => write!(f, "Vim"),
             Terminal::Nvim => write!(f, "Nvim"),
             Terminal::Zellij => write!(f, "Zellij"),
             Terminal::IntelliJ(Some(variant)) => write!(f, "{}", variant.application_name()),
@@ -188,6 +197,7 @@ impl Terminal {
             Terminal::Terminology => "terminology".into(),
             Terminal::Ssh => "ssh".into(),
             Terminal::Tmux => "tmux".into(),
+            Terminal::Vim => "vim".into(),
             Terminal::Nvim => "nvim".into(),
             Terminal::Zellij => "zellij".into(),
             Terminal::Zed => "zed".into(),
@@ -310,6 +320,7 @@ impl Terminal {
 
             Terminal::Ssh => &["sshd"],
             Terminal::Tmux => &["tmux"],
+            Terminal::Vim => &["vim"],
             Terminal::Nvim => &["nvim"],
             Terminal::Zellij => &["zellij"],
 
@@ -378,6 +389,14 @@ impl Terminal {
             Terminal::Konsole => PositioningKind::Logical,
             _ => PositioningKind::Physical,
         }
+    }
+
+    /// Other pseudoterminal that we want to launch within
+    pub fn is_special(&self) -> bool {
+        matches!(
+            self,
+            Terminal::Ssh | Terminal::Tmux | Terminal::Vim | Terminal::Nvim | Terminal::Zellij
+        )
     }
 }
 

@@ -143,7 +143,7 @@ pub async fn edit_buffer(
                         context: hook.context,
                         buffer: Some(hook.text),
                         cursor: utf16_cursor_position,
-                        session_id: Some(session_id.0),
+                        session_id: Some(session_id.into_string()),
                     },
                 )),
             })),
@@ -209,7 +209,7 @@ pub async fn prompt(
                 Notification {
                     r#type: Some(fig_proto::fig::notification::Type::LocationChangedNotification(
                         LocationChangedNotification {
-                            session_id: Some(session_id.0.clone()),
+                            session_id: Some(session_id.to_string()),
                             host_name: hook.context.as_ref().and_then(|ctx| ctx.hostname.clone()),
                             user_name: None,
                             directory: new_cwd,
@@ -230,7 +230,7 @@ pub async fn prompt(
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::ShellPromptReturnedNotification(
                     ShellPromptReturnedNotification {
-                        session_id: Some(session_id.0.clone()),
+                        session_id: Some(session_id.to_string()),
                         shell: hook.context.as_ref().map(|ctx| Process {
                             pid: ctx.pid,
                             executable: ctx.process_name.clone(),
@@ -272,7 +272,7 @@ pub async fn pre_exec(
             Notification {
                 r#type: Some(fig_proto::fig::notification::Type::ProcessChangeNotification(
                     ProcessChangedNotification {
-                    session_id: Some(session_id.0.clone()),
+                    session_id: Some(session_id.to_string()),
                     new_process: // TODO: determine active application based on tty
                     hook.context.as_ref().map(|ctx| Process {
                         pid: ctx.pid,
@@ -313,7 +313,7 @@ pub async fn post_exec(
                             .context
                             .as_ref()
                             .and_then(|ctx| ctx.current_working_directory.to_owned()),
-                        session_id: Some(session_id.0.clone()),
+                        session_id: Some(session_id.to_string()),
                         hostname: hook.context.as_ref().and_then(|ctx| ctx.hostname.clone()),
                         exit_code: hook.exit_code,
                     },

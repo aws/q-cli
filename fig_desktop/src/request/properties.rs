@@ -55,9 +55,9 @@ pub fn update(
         .chain(key_bindings)
         .collect::<Vec<_>>();
 
-    let request_session_id = request.current_terminal_session_id.map(FigtermSessionId);
+    let request_session_id = request.current_terminal_session_id.map(FigtermSessionId::new);
 
-    for session in figterm_state.linked_sessions.lock().iter_mut() {
+    for session in figterm_state.inner.lock().linked_sessions.values_mut() {
         if request_session_id.as_ref() == Some(&session.id) {
             session.intercept = request.intercept_bound_keystrokes.unwrap_or_default().into();
             session.intercept_global = request.intercept_global_keystrokes.unwrap_or_default().into();

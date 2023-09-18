@@ -1,3 +1,4 @@
+use std::collections::HashMap;
 use std::sync::atomic::Ordering;
 
 use anyhow::{
@@ -6,7 +7,6 @@ use anyhow::{
 };
 use fig_proto::local::FocusedWindowDataHook;
 use fig_util::Terminal;
-use hashbrown::HashMap;
 use once_cell::sync::Lazy;
 use tracing::debug;
 

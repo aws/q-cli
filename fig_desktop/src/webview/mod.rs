@@ -5,6 +5,7 @@ pub mod notification;
 pub mod window;
 
 use std::borrow::Cow;
+use std::collections::HashMap;
 use std::iter::empty;
 use std::rc::Rc;
 use std::sync::Arc;
@@ -17,7 +18,6 @@ use fig_proto::fig::ClientOriginatedMessage;
 use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
-use hashbrown::HashMap;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::RegexSet;
@@ -217,8 +217,6 @@ impl WebviewManager {
             self.notifications_state.clone(),
             self.event_loop.create_proxy(),
         ));
-
-        tokio::spawn(crate::figterm::clean_figterm_cache(self.figterm_state.clone()));
 
         let (api_handler_tx, mut api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(WindowId, String)>();
         let (sync_api_handler_tx, mut sync_api_handler_rx) = tokio::sync::mpsc::unbounded_channel::<(

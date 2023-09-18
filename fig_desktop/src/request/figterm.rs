@@ -33,7 +33,7 @@ pub async fn insert_text(request: InsertTextRequest, state: &FigtermState) -> Re
         None => return RequestResult::error("InsertTextRequest expects a request type"),
     };
 
-    match state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
+    match state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId::new), |session| {
         session.sender.clone()
     }) {
         Some(sender) => {

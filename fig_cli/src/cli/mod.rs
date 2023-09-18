@@ -105,6 +105,7 @@ pub enum CliRootCommands {
     #[command(subcommand)]
     Debug(debug::DebugSubcommand),
     /// Customize appearance & behavior
+    #[command(alias("setting"))]
     Settings(settings::SettingsArgs),
     /// Enable/disable fig tips
     #[command(subcommand)]

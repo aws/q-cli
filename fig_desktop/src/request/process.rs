@@ -67,9 +67,10 @@ pub async fn execute(request: PseudoterminalExecuteRequest, figterm_state: &Figt
         pipelined = request.is_pipelined
     }, "Executing command");
 
-    let session_sender = figterm_state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
-        session.sender.clone()
-    });
+    let session_sender = figterm_state
+        .with_maybe_id(&request.terminal_session_id.map(FigtermSessionId::new), |session| {
+            session.sender.clone()
+        });
 
     if let Some(session_sender) = session_sender {
         let (message, rx) = FigtermCommand::pseudoterminal_execute(
@@ -157,7 +158,7 @@ pub async fn run(request: RunProcessRequest, state: &FigtermState) -> RequestRes
         env =? request.env
     }, "Running command");
 
-    let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId), |session| {
+    let session_sender = state.with_maybe_id(&request.terminal_session_id.map(FigtermSessionId::new), |session| {
         session.sender.clone()
     });
 

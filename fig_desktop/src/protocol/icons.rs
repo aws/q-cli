@@ -74,8 +74,14 @@ static ASSETS: Lazy<HashMap<AssetSpecifier<'static>, Arc<Cow<'static, [u8]>>>> =
 pub type ProcessedAsset = (Arc<Cow<'static, [u8]>>, AssetKind);
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
-static ASSET_CACHE: Lazy<Cache<PathBuf, ProcessedAsset>> =
-    Lazy::new(|| Cache::builder().time_to_live(Duration::from_secs(120)).build());
+static ASSET_CACHE: Lazy<Cache<PathBuf, ProcessedAsset>> = Lazy::new(|| {
+    Cache::builder()
+        .weigher(|k: &PathBuf, v: &(Arc<Cow<'_, [u8]>>, AssetKind)| {
+            (k.as_os_str().len() + v.0.len()).try_into().unwrap_or(u32::MAX)
+        })
+        .time_to_live(Duration::from_secs(120))
+        .build()
+});
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
 #[derive(Debug, Clone)]

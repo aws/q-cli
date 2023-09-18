@@ -35,7 +35,7 @@ fig_settings = { path = "../lib/fig_settings" }
 fig_telemetry = { path = "../lib/fig_telemetry" }
 fig_util = { path = "../lib/fig_util" }
 filedescriptor = "0.8"
-flume = "0.10.14"
+flume = "0.11.0"
 fnv = "1.0.7"
 memmem = "0.1.1"
 moka = "0.11.1"

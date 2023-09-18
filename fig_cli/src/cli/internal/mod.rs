@@ -94,8 +94,6 @@ use tracing::{
 
 use crate::cli::installation::install_cli;
 
-const IS_FIG_PRO_KEY: &str = "user.account.is-fig-pro";
-
 #[derive(Debug, Args, PartialEq, Eq)]
 #[command(group(
         ArgGroup::new("output")
@@ -879,21 +877,7 @@ impl InternalSubcommand {
                 fig_install::uninstall(components).await.ok();
             },
             InternalSubcommand::GenerateSSH { remote_username } => {
-                let is_pro = match fig_settings::state::get_bool(IS_FIG_PRO_KEY).ok().flatten() {
-                    Some(is_pro) => is_pro,
-                    None => {
-                        let is_pro = fig_api_client::user::plans()
-                            .await
-                            .map(|plan| plan.highest_plan())
-                            .unwrap_or_default()
-                            .is_pro();
-                        fig_settings::state::set_value(IS_FIG_PRO_KEY, is_pro).ok();
-                        is_pro
-                    },
-                };
-
-                let mut should_generate_config =
-                    is_pro && fig_settings::settings::get_bool_or("integrations.ssh.enabled", true);
+                let mut should_generate_config = fig_settings::settings::get_bool_or("integrations.ssh.enabled", true);
 
                 for username in ["git", "aur"] {
                     if remote_username == username {
