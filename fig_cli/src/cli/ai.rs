@@ -121,7 +121,7 @@ async fn send_figterm(text: String, execute: bool) -> eyre::Result<()> {
 
 impl AiArgs {
     pub async fn execute(self) -> eyre::Result<()> {
-        // show onboarding if it hasnt been seen, show fig pro to non pro users
+        // show onboarding if it hasnt been seen
         let seen_onboarding = fig_settings::state::get_bool_or(SEEN_ONBOARDING_KEY, false);
 
         if !seen_onboarding {

@@ -18,7 +18,6 @@ mod invite;
 mod issue;
 mod man;
 mod plugins;
-mod pro;
 mod run;
 mod scripts;
 mod settings;
@@ -202,8 +201,6 @@ pub enum CliRootCommands {
     /// Enable/disable telemetry
     #[command(subcommand, hide = true)]
     Telemetry(telemetry::TelemetrySubcommand),
-    /// Fig Pro
-    Pro,
     /// Version
     Version,
     /// Print help for all subcommands
@@ -355,7 +352,6 @@ impl Cli {
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
-                CliRootCommands::Pro => pro::execute().await,
                 CliRootCommands::Version => {
                     print!("{}", Self::command().render_version());
                     Ok(())
