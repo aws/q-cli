@@ -190,7 +190,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
 
     debug!("Connecting to {url}");
 
-    let (websocket_stream, res) = match tokio_tungstenite::connect_async_tls_with_config(
+    let (websocket_stream, _res) = match tokio_tungstenite::connect_async_tls_with_config(
         url,
         None,
         false,
@@ -200,11 +200,7 @@ pub async fn connect_to_fig_websocket() -> Result<WebSocketStream<MaybeTlsStream
     {
         Ok(res) => res,
         Err(tungstenite::Error::Http(http)) => {
-            let body = if let Some(body) = http.body() {
-                Some(String::from_utf8_lossy(body))
-            } else {
-                None
-            };
+            let body = http.body().as_ref().map(|body| String::from_utf8_lossy(body));
 
             error!(headers =? http.headers(), status =? http.status(), ?body, "Http error");
 

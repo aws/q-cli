@@ -521,10 +521,10 @@ fn daily_activity(wrapped: &Wrapped) -> Div {
         container = container.push(
             P::new()
                 .push_text(match i {
-                    i if i == 0 => "12am ",
-                    i if i == 3 => " 6am ",
-                    i if i == 6 => "12pm ",
-                    i if i == 9 => " 6pm ",
+                    0 => "12am ",
+                    3 => " 6am ",
+                    6 => "12pm ",
+                    9 => " 6pm ",
                     _ => "     ",
                 })
                 .push_text(fill),

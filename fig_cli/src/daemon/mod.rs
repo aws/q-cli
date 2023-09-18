@@ -44,7 +44,6 @@ pub async fn daemon() -> Result<()> {
     use rand::distributions::Uniform;
     use rand::prelude::Distribution;
     use tokio::select;
-    use tokio_tungstenite::tungstenite;
     use tracing::{
         debug,
         error,

@@ -1245,7 +1245,7 @@ fn execute_parameter_block(
 }
 
 async fn execute_code_block(
-    parameters_by_name: &mut HashMap<String, ParameterValue>,
+    parameters_by_name: &HashMap<String, ParameterValue>,
     runtime: &Runtime,
     tree: &[TreeElement],
 ) -> Result<i32> {

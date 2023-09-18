@@ -391,7 +391,7 @@ mod tests {
     #[test]
     fn test_get_system_id() {
         let id = get_system_id();
-        assert!(id.is_ok());
+        assert!(id.is_some());
         assert_eq!(id.unwrap().len(), 64);
     }
 }

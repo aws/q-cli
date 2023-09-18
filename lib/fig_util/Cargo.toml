@@ -43,11 +43,11 @@ windows = { version = "0.51.1", features = [
     "Win32_System_ProcessStatus",
     "Win32_System_Threading",
 ] }
-winreg = "0.50.0"
+winreg = "0.51.0"
 
 [target.'cfg(unix)'.dependencies]
 sysinfo = "0.29.8"
-nix = "0.26.2"
+nix = { version = "0.27.1", features = ["signal", "process", "fs"] }
 
 [dev-dependencies]
 fig_test = { path = "../fig_test" }

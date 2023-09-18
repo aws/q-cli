@@ -7,6 +7,7 @@ use std::io::{
     Write,
 };
 use std::mem;
+use std::os::fd::BorrowedFd;
 use std::os::unix::io::AsRawFd;
 use std::sync::atomic::{
     AtomicBool,
@@ -134,6 +135,12 @@ impl Write for TtyWriteHandle {
     }
 }
 
+/// SAFETY: the [FileDescriptor] is already guaranteed to have an owned file descriptor by
+/// its contract, so we just borrow it with a lifetime which make the borrow safe.
+fn borrow_fd(fd: &FileDescriptor) -> BorrowedFd<'_> {
+    unsafe { BorrowedFd::borrow_raw(fd.as_raw_fd()) }
+}
+
 impl UnixTty for TtyWriteHandle {
     fn get_size(&mut self) -> Result<winsize> {
         let mut size: winsize = unsafe { mem::zeroed() };
@@ -152,7 +159,7 @@ impl UnixTty for TtyWriteHandle {
     }
 
     fn get_termios(&mut self) -> Result<Termios> {
-        tcgetattr(self.fd.as_raw_fd()).context("get_termios failed")
+        tcgetattr(borrow_fd(&self.fd)).context("get_termios failed")
     }
 
     fn set_termios(&mut self, termios: &Termios, when: SetAttributeWhen) -> Result<()> {
@@ -161,11 +168,11 @@ impl UnixTty for TtyWriteHandle {
             SetAttributeWhen::AfterDrainOutputQueue => SetArg::TCSADRAIN,
             SetAttributeWhen::AfterDrainOutputQueuePurgeInputQueue => SetArg::TCSAFLUSH,
         };
-        tcsetattr(self.fd.as_raw_fd(), when, termios).context("set_termios failed")
+        tcsetattr(borrow_fd(&self.fd), when, termios).context("set_termios failed")
     }
 
     fn drain(&mut self) -> Result<()> {
-        tcdrain(self.fd.as_raw_fd()).context("tcdrain failed")
+        tcdrain(borrow_fd(&self.fd)).context("tcdrain failed")
     }
 
     fn purge(&mut self, purge: Purge) -> Result<()> {
@@ -174,7 +181,7 @@ impl UnixTty for TtyWriteHandle {
             Purge::OutputQueue => FlushArg::TCOFLUSH,
             Purge::InputAndOutputQueue => FlushArg::TCIOFLUSH,
         };
-        tcflush(self.fd.as_raw_fd(), param).context("tcflush failed")
+        tcflush(borrow_fd(&self.fd), param).context("tcflush failed")
     }
 }
 

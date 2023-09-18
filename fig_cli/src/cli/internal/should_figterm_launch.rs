@@ -138,8 +138,7 @@ fn grandparent_status(parent_pid: fig_util::process_info::Pid) -> Status {
     let valid_grandparent = terminals
         .iter()
         .chain(fig_util::terminal::SPECIAL_TERMINALS.iter())
-        .filter_map(|term| check_fn(term).then_some(term))
-        .next();
+        .find(|term| check_fn(term));
 
     Status::Process(ProcessInfo {
         pid: grandparent_pid,

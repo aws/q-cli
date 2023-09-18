@@ -22,4 +22,4 @@ accessibility = { path = "./accessibility-master/accessibility", version = "0.1.
 appkit-nsworkspace-bindings = { path = "./appkit-nsworkspace-bindings", version = "0.1.0" }
 tracing = "0.1.36"
 tokio = { version = "1", features = ["time", "rt"] }
-nix = "0.26.2"
+nix = { version = "0.27.1", features = ["signal", "process", "fs"] }

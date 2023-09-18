@@ -158,7 +158,7 @@ impl From<&TelemetryEmitTrackCommand> for TrackEvent {
             .map(|(key, value)| (key.clone(), value.clone().into()))
             .collect();
 
-        let source = match Source::from_i32(command.source.unwrap_or_default()).unwrap_or_default() {
+        let source = match Source::try_from(command.source.unwrap_or_default()).unwrap_or_default() {
             Source::Desktop => TrackSource::Desktop,
             Source::Cli => TrackSource::Cli,
             Source::Daemon => TrackSource::Daemon,

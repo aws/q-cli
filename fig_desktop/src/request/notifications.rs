@@ -16,7 +16,7 @@ pub async fn handle_request(
     message_id: i64,
     state: &WebviewNotificationsState,
 ) -> RequestResult {
-    let notification_type = NotificationType::from_i32(request.r#type.unwrap()).unwrap();
+    let notification_type = NotificationType::try_from(request.r#type.unwrap()).unwrap();
 
     if request.subscribe.unwrap_or(true) {
         subscribe(window_id, message_id, notification_type, state)

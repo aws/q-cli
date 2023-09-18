@@ -1,4 +1,5 @@
 use std::collections::HashMap;
+use std::fmt::Write;
 
 use clap::Parser;
 use eyre::{
@@ -332,10 +333,10 @@ fn read_saved_identities() -> eyre::Result<HashMap<u64, Option<u64>>> {
 }
 
 fn write_saved_identities(entries: HashMap<u64, Option<u64>>) -> eyre::Result<()> {
-    let updated = entries
-        .iter()
-        .map(|(host, iden)| format!("{host}={}\n", iden.map(|x| x.to_string()).unwrap_or_default()))
-        .collect::<String>();
+    let updated = entries.iter().fold(String::new(), |mut acc, (host, iden)| {
+        let _ = writeln!(acc, "{host}={}", iden.unwrap_or_default());
+        acc
+    });
     std::fs::write(directories::ssh_saved_identities()?, updated)?;
 
     Ok(())

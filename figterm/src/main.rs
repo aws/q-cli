@@ -209,7 +209,7 @@ fn shell_state_to_context(shell_state: &ShellState) -> local::ShellContext {
 }
 
 #[allow(clippy::needless_return)]
-fn get_cursor_coordinates(terminal: &mut dyn Terminal) -> Option<TerminalCursorCoordinates> {
+fn get_cursor_coordinates(terminal: &dyn Terminal) -> Option<TerminalCursorCoordinates> {
     cfg_if! {
         if #[cfg(target_os = "windows")] {
             use term::cast;
@@ -997,7 +997,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                             }
 
                             if can_send_edit_buffer(&term) {
-                                let cursor_coordinates = get_cursor_coordinates(&mut terminal);
+                                let cursor_coordinates = get_cursor_coordinates(&terminal);
                                 if let Err(err) = send_edit_buffer(&term, &remote_sender, cursor_coordinates).await {
                                     warn!("Failed to send edit buffer: {err}");
                                 }
@@ -1055,7 +1055,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                 _ = edit_buffer_interval.tick() => {
                     let send_eb = INSERTION_LOCKED_AT.read().is_some();
                     if send_eb && can_send_edit_buffer(&term) {
-                        let cursor_coordinates = get_cursor_coordinates(&mut terminal);
+                        let cursor_coordinates = get_cursor_coordinates(&terminal);
                         if let Err(err) = send_edit_buffer(&term, &remote_sender, cursor_coordinates).await {
                             warn!(%err, "Failed to send edit buffer");
                         }

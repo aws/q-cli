@@ -96,7 +96,7 @@ use crate::util::{
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct DoctorArgs {
     /// Run all doctor tests, with no fixes
-    #[arg(long)]
+    #[arg(long, default_value_t = true)]
     verbose: bool,
     /// Error on warnings
     #[arg(long)]

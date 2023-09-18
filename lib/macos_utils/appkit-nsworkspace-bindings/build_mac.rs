@@ -37,7 +37,7 @@ pub fn build() {
     println!("cargo:rustc-link-lib=framework=Foundation");
 
     let builder = bindgen::Builder::default()
-        .rustfmt_bindings(true)
+        .formatter(bindgen::Formatter::Rustfmt)
         .header_contents(
             "NSWorkspace.h",
             "
