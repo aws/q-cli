@@ -573,6 +573,9 @@ async fn fig_lint(current_line: &str) {
 }
 
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
+    fig_settings::settings::init_global().ok();
+    fig_settings::state::init_global().ok();
+
     let session_id = uuid::Uuid::new_v4().to_string();
     std::env::set_var("FIGTERM_SESSION_ID", &session_id);
 
@@ -638,6 +641,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
             format!("figterm-runtime-worker-{id}")
         })
         .build()?;
+
     let runtime_result = runtime.block_on(async {
         let tips_disabled = fig_settings::settings::get_bool_or("cli.tips.disabled", false);
         if !tips_disabled {

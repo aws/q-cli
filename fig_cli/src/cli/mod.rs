@@ -13,7 +13,7 @@ mod hook;
 mod init;
 mod installation;
 mod integrations;
-mod internal;
+pub mod internal;
 mod invite;
 mod issue;
 mod man;

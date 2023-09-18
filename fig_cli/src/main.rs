@@ -24,6 +24,22 @@ const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.i
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
 
+    // Hyper optimized command parsing for commands we need to be **fast**
+    //
+    // I literally couldnt make it any faster than this
+    if args.get(1).map(String::as_str) == Some("_") {
+        match args.get(2).map(String::as_str) {
+            Some("get-shell") => {
+                cli::internal::get_shell();
+                std::process::exit(0);
+            },
+            Some("should-figterm-launch") => cli::internal::should_figterm_launch::should_figterm_launch(),
+            _ => {},
+        }
+    } else {
+        color_eyre::install()?;
+    }
+
     // Whitelist commands do not have sentry or telemetry, telemetry should only run on
     // user facing commands as performance is less important
     let (_guard, track_join, multithread) = match (
@@ -88,8 +104,6 @@ fn main() -> Result<()> {
             }
         },
     };
-
-    color_eyre::install()?;
 
     let parsed = match cli::Cli::try_parse() {
         Ok(cli) => cli,

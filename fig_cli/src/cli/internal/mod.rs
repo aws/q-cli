@@ -1,5 +1,5 @@
 pub mod local_state;
-mod should_figterm_launch;
+pub mod should_figterm_launch;
 use std::fmt::Display;
 use std::io::{
     stderr,
@@ -442,28 +442,7 @@ impl InternalSubcommand {
                     },
                 }
             },
-            InternalSubcommand::GetShell => {
-                if let Some(exe) = get_parent_process_exe() {
-                    #[cfg(windows)]
-                    let exe = if exe.file_name().unwrap() == "bash.exe" {
-                        exe.parent()
-                            .context("No parent")?
-                            .parent()
-                            .context("No parent")?
-                            .parent()
-                            .context("No parent")?
-                            .join("bin")
-                            .join("bash.exe")
-                    } else {
-                        exe
-                    };
-
-                    if write!(stdout(), "{}", exe.display()).is_ok() {
-                        return Ok(());
-                    }
-                }
-                exit(1);
-            },
+            InternalSubcommand::GetShell => {},
             InternalSubcommand::Hostname => {
                 if let Some(hostname) = System::new().host_name() {
                     if write!(stdout(), "{hostname}").is_ok() {
@@ -1191,4 +1170,27 @@ pub async fn pre_cmd() {
     notification.ok();
 
     exit(0);
+}
+
+pub fn get_shell() {
+    if let Some(exe) = get_parent_process_exe() {
+        #[cfg(windows)]
+        let exe = if exe.file_name().unwrap() == "bash.exe" {
+            exe.parent()
+                .context("No parent")?
+                .parent()
+                .context("No parent")?
+                .parent()
+                .context("No parent")?
+                .join("bin")
+                .join("bash.exe")
+        } else {
+            exe
+        };
+
+        if write!(stdout(), "{}", exe.display()).is_ok() {
+            return;
+        }
+    }
+    exit(1);
 }
