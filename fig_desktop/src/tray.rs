@@ -6,7 +6,6 @@ use fig_install::{
     UpdateOptions,
 };
 use fig_integrations::shell::ShellExt;
-use fig_util::directories::relative_cli_path;
 use fig_util::manifest::Channel;
 use tracing::{
     error,
@@ -200,15 +199,6 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 error!(%err, "Failed to open user manual url")
             }
         },
-        id if id == MenuId::new("issue") => match relative_cli_path() {
-            Ok(fig_cli) => {
-                std::process::Command::new(fig_cli)
-                    .args(["issue", "--force", "bug: "])
-                    .output()
-                    .ok();
-            },
-            Err(err) => error!(%err, "Failed to execute `fig issue` from the tray"),
-        },
         id => {
             for channel in Channel::all() {
                 if id == MenuId::new(&format!("channel-{channel}")) {
@@ -384,8 +374,7 @@ impl MenuElement {
 fn menu() -> Vec<MenuElement> {
     let logged_in = fig_request::auth::is_logged_in();
 
-    let not_working = MenuElement::entry(Some("🚨".into()), icon!("alert"), "Fig isn't working?", "not-working");
-    let report = MenuElement::entry(Some("🐞".into()), icon!("github"), "Report an Issue", "issue");
+    let not_working = MenuElement::entry(Some("🚨".into()), icon!("alert"), "Fig not working?", "not-working");
     let manual = MenuElement::entry(Some("📚".into()), icon!("question"), "User Manual", "user-manual");
     let discord = MenuElement::entry(Some("💬".into()), icon!("discord"), "Join Community", "community");
     let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
@@ -403,11 +392,9 @@ fn menu() -> Vec<MenuElement> {
             MenuElement::Info("Fig hasn't been set up yet...".into()),
             MenuElement::entry(None, None, "Get Started", "onboarding"),
             MenuElement::Separator,
+            not_working,
             manual,
             discord,
-            MenuElement::Separator,
-            not_working,
-            report,
             MenuElement::Separator,
             MenuElement::entry(None, None, "Uninstall Fig", "uninstall"),
         ]
@@ -445,11 +432,9 @@ fn menu() -> Vec<MenuElement> {
             dashboard,
             settings,
             MenuElement::Separator,
+            not_working,
             manual,
             discord,
-            MenuElement::Separator,
-            not_working,
-            report,
             MenuElement::Separator,
             developer,
         ]);
