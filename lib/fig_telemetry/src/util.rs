@@ -97,7 +97,7 @@ pub(crate) async fn default_properties() -> Map<String, Value> {
         crate::install_method::get_install_method().to_string().into(),
     );
 
-    if let Ok(device_id) = get_system_id() {
+    if let Some(device_id) = get_system_id() {
         prop.insert("device_id".into(), device_id.into());
     }
 

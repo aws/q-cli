@@ -357,11 +357,15 @@ fn raw_system_id() -> Result<String, Error> {
     Err(Error::HwidNotFound)
 }
 
-pub fn get_system_id() -> Result<String, Error> {
-    let hwid = raw_system_id()?;
+static SYSTEM_ID: Lazy<Option<String>> = Lazy::new(|| {
+    let hwid = raw_system_id().ok()?;
     let mut hasher = Sha256::new();
     hasher.update(hwid);
-    Ok(format!("{:x}", hasher.finalize()))
+    Some(format!("{:x}", hasher.finalize()))
+});
+
+pub fn get_system_id() -> Option<&'static str> {
+    SYSTEM_ID.as_deref()
 }
 
 pub fn get_platform() -> &'static str {

@@ -81,7 +81,7 @@ pub enum UpdateStatus {
 }
 
 pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
-    let device_uniqueid = get_system_id().ok();
+    let device_uniqueid = get_system_id();
     let plugins_directory = directories::plugins_dir().map(|p| p.to_string_lossy().to_string()).ok();
 
     let debug_dotfiles = match fig_settings::state::get_value("developer.dotfiles.debug") {
@@ -94,7 +94,7 @@ pub async fn download_dotfiles() -> Result<UpdateStatus, DotfilesError> {
         .query(&[
             ("os", Some(std::env::consts::OS)),
             ("architecture", Some(std::env::consts::ARCH)),
-            ("device", device_uniqueid.as_deref()),
+            ("device", device_uniqueid),
             ("debug", debug_dotfiles),
             ("pluginsDirectory", plugins_directory.as_deref()),
             #[cfg(target_os = "linux")]

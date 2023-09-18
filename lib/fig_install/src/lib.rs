@@ -83,6 +83,8 @@ pub enum Error {
     UpdateInProgress,
     #[error("could not convert path to cstring")]
     Nul(#[from] std::ffi::NulError),
+    #[error("failed to get system id")]
+    SystemIdNotFound,
 }
 
 impl From<fig_util::directories::DirectoryError> for Error {

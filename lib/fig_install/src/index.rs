@@ -187,7 +187,9 @@ pub async fn query_index(
     valid_versions.sort_unstable_by(|lhs, rhs| lhs.version.cmp(&rhs.version));
     valid_versions.reverse();
 
-    let sys_id = get_system_id()?;
+    let Some(sys_id) = get_system_id() else {
+        return Err(Error::SystemIdNotFound);
+    };
     let system_threshold = threshold_override.unwrap_or_else(|| {
         let mut hasher = DefaultHasher::new();
         // different for each system
