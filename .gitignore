@@ -21,9 +21,12 @@ package-lock.json
 
 target/
 build/
+bin/
+
+# ide folders
 .vscode/
 .fleet/
-bin/
+.idea/
 
 # yarn v2
 .pnp.*

@@ -544,6 +544,12 @@ intellij_variants! {
         name: "DataGrip",
         bundle: "com.jetbrains.datagrip"
     },
+    RustRoverEap {
+        org: "JetBrains",
+        internal_id: "rustrover-EAP",
+        name: "Rust Rover EAP",
+        bundle: "com.jetbrains.rustrover-EAP"
+    },
     AndroidStudio {
         org: "Google",
         internal_id: "android-studio",
