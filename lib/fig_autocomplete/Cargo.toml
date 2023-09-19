@@ -1,0 +1,18 @@
+[package]
+name = "fig_autocomplete"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+fig_settings = { path = "../fig_settings" }
+fig_api_client = { path = "../fig_api_client" }
+fig_request = { path = "../fig_request" }
+fig_util = { path = "../fig_util" }
+serde = { version = "1.0.185", features = ["derive"] }
+serde_json = "1.0.104"
+zip = "0.6.5"
+tokio = { version = "1", features = ["process"] }
+thiserror = "1.0.40"

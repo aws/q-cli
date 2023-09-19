@@ -1,0 +1,20 @@
+# Maintainer: Grant G <grant@fig.io>
+
+pkgname='$aur_pkgname'
+pkgver='$aur_pkgver'
+pkgrel=$aur_pkgrel
+pkgdesc='Adds IDE-style autocomplete to your existing terminal.'
+arch=('x86_64')
+url='https://fig.io'
+license=('custom')
+depends=('gtk3' 'webkit2gtk-4.1' 'libappindicator-gtk3' 'ibus' 'xdg-utils')$aur_provides
+makedepends=('jq' 'xz')
+source=("${pkgname}-${pkgver//_/-}.tar.xz::https://repo.fig.io/generic/$aur_channel/asset/${pkgver//_/-}/x86_64/fig.tar.xz")
+
+sha256sums=('$aur_sha256sum')
+
+package() {
+  cp -r "${srcdir}/usr" "${pkgdir}/usr"
+  manifest="${pkgdir}/usr/share/fig/manifest.json"
+  echo "$( jq '.managed_by = "pacman"' $manifest )" > $manifest
+}

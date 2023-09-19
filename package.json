@@ -1,0 +1,21 @@
+{
+  "name": "root",
+  "private": true,
+  "repository": "git@github.com:withfig/macos",
+  "author": "Fig Team",
+  "license": "MIT",
+  "packageManager": "yarn@3.6.2",
+  "dependencies": {
+    "husky": "^8.0.3",
+    "lint-staged": "^14.0.1"
+  },
+  "workspaces": [
+    "typescript-api-bindings",
+    "proto",
+    "tests/fig-api"
+  ],
+  "scripts": {
+    "prepare": "husky install",
+    "precommit": "lint-staged --config .lintstagedrc.mjs"
+  }
+}

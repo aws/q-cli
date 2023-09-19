@@ -1,0 +1,34 @@
+[package]
+name = "fig_desktop_api"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+async-trait = "0.1.73"
+base64 = "0.21.0"
+camino = { version = "1.1.3", features = ["serde1"] }
+cfg-if = "1.0.0"
+dashmap = "5.4.0"
+fig_api_client = { path = "../fig_api_client" }
+fig_history = { path = "../fig_history" }
+fig_install = { path = "../fig_install" }
+fig_integrations = { path = "../fig_integrations" }
+fig_proto = { path = "../fig_proto" }
+fig_settings = { path = "../fig_settings" }
+fig_telemetry = { path = "../fig_telemetry" }
+fig_util = { path = "../fig_util" }
+fnv = "1.0.7"
+serde = { version = "1.0.185", features = ["derive"] }
+serde_json = "1.0.104"
+shellexpand = "3.0.0"
+thiserror = "1.0.38"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1.36"
+which = "4.4.0"
+whoami = "1.3.0"
+
+[target.'cfg(target_os="macos")'.dependencies]
+macos_utils = { path = "../macos_utils" }

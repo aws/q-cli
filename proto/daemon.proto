@@ -1,0 +1,216 @@
+syntax = "proto3";
+package daemon;
+
+import "fig_common.proto";
+import "google/protobuf/empty.proto";
+
+//
+// Commands
+//
+
+// Message type used to send a command to daemon
+message DaemonMessage {
+  optional int64 id = 1;
+  optional bool no_response = 2;
+
+  oneof command {
+    // A request to get diagnostic information from the daemon
+    DiagnosticCommand diagnostic = 101;
+    // A request to trigger a self-update if possible
+    SelfUpdateCommand self_update = 102;
+    // A request for the daemon to sync data
+    SyncCommand sync = 103;
+    // A request for the daemon to
+    TelemetryEmitTrackCommand telemetry_emit_track = 104;
+    // A request to get a pong
+    google.protobuf.Empty ping = 105;
+    // A request to quit the daemon
+    google.protobuf.Empty quit = 106;
+    // A request to set the daemon's log level
+    LogLevelCommand log_level = 107;
+    // Open a url in the default browser
+    OpenBrowserCommand open_browser = 108;
+    // A request to dispatch an http request, the response is not returned
+    DispatchHttpRequestCommand dispatch_http_request = 109;
+    // A request to dispatch a graphql request, the response is not returned
+    DispatchGraphqlRequestCommand dispatch_graphql_request = 110;
+  }
+}
+
+// Response message type used to send a response to a command
+message DaemonResponse {
+  optional int64 id = 1;
+
+  oneof response {
+    // A response to a diagnostic command
+    DiagnosticResponse diagnostic = 101;
+    // A response to a self-update command
+    SelfUpdateResponse self_update = 102;
+    // A response to a sync command
+    SyncResponse sync = 103;
+    // A response to a ping command
+    google.protobuf.Empty pong = 105;
+    // A response to a quit command
+    google.protobuf.Empty quit = 106;
+    // A response to a log level command
+    LogLevelResponse log_level = 107;
+    // A response to an open browser command
+    google.protobuf.Empty open_browser = 108;
+  }
+}
+
+// Command to get diagnostics
+message DiagnosticCommand {
+  // Parts of the diagnostics to get
+  enum DiagnosticPart {
+    DIAGNOSTIC_PART_TIME_STARTED_EPOCH = 0;
+    DIAGNOSTIC_PART_SETTINGS_WATCHER_STATUS = 1;
+    DIAGNOSTIC_PART_WEBSOCKET_STATUS = 2;
+    DIAGNOSTIC_PART_SYSTEM_SOCKET_STATUS = 3;
+  }
+
+  // If set only get the diagnostic part specified
+  repeated DiagnosticPart parts = 1;
+}
+
+// Response to DiagnosticCommand
+message DiagnosticResponse {
+  // Status of the settings watcher
+  message SettingsWatcherStatus {
+    enum Status {
+      STATUS_OK = 0;
+      STATUS_ERROR = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+  }
+
+  // Status of the websocket
+  message WebsocketStatus {
+    enum Status {
+      STATUS_OK = 0;
+      STATUS_ERROR = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+  }
+
+  // Status of the system socket
+  message SystemSocketStatus {
+    enum Status {
+      STATUS_OK = 0;
+      STATUS_ERROR = 1;
+    }
+
+    Status status = 1;
+    optional string error = 2;
+  }
+
+  // The time that the settings debugwatcher was started in seconds since the
+  // epoch
+  optional uint64 time_started_epoch = 1;
+  // The status of the settings watcher
+  optional SettingsWatcherStatus settings_watcher_status = 2;
+  // The status of the websocket
+  optional WebsocketStatus websocket_status = 3;
+  // The status of the system socket
+  optional SystemSocketStatus system_socket_status = 4;
+}
+
+// Command to trigger the daemon to attempt to self-update Fig if possible
+message SelfUpdateCommand {}
+
+// Response to SelfUpdateCommand
+message SelfUpdateResponse {
+  // Status of the update
+  // This is out of order as Ok may be changed to a different type of
+  // status such as Updated or NotUpdated
+  enum Status {
+    STATUS_ERROR = 0;
+    STATUS_OK = 1;
+  }
+
+  Status status = 1;
+  optional string error = 2;
+}
+
+message SyncCommand {
+  enum SyncType {
+    // This will only clone new repositories
+    SYNC_TYPE_PLUGIN_CLONE = 0;
+    // This will clone and update all repositories
+    SYNC_TYPE_PLUGIN_UPDATE = 1;
+  }
+
+  SyncType type = 1;
+}
+
+message SyncResponse {
+  enum SyncStatus {
+    SYNC_STATUS_OK = 0;
+    SYNC_STATUS_ERROR = 1;
+  }
+
+  SyncStatus status = 1;
+  optional string error = 2;
+}
+
+message TelemetryEmitTrackCommand {
+  // The original source of a telemetry event
+  enum Source {
+    // An event originating in the desktop app
+    SOURCE_DESKTOP = 0;
+    // An event originating in the CLI
+    SOURCE_CLI = 1;
+    // An event originating in the daemon
+    SOURCE_DAEMON = 2;
+  }
+
+  // The name of the track event
+  string event = 1;
+  // Properties of the track event
+  map<string, fig_common.Json> properties = 2;
+  // Originating source of the track event
+  optional Source source = 3;
+  // Version of the source
+  optional string source_version = 5;
+
+  optional string namespace = 6;
+  optional int64 namespace_id = 7;
+
+  // Queue the event so that it is not dispatched immediately but rather
+  // is dispatched at a regularly scheduled interval by the daemon.
+  optional bool enqueue = 4;
+}
+
+message LogLevelCommand {
+  string level = 1;
+}
+
+message LogLevelResponse {
+  enum Status {
+    STATUS_OK = 0;
+    STATUS_ERROR = 1;
+  }
+
+  Status status = 1;
+  optional string old_level = 2;
+  optional string error = 3;
+}
+
+message OpenBrowserCommand {
+  string url = 1;
+}
+
+message DispatchHttpRequestCommand {
+  string method = 1;
+  string body = 2;
+  string url = 3;
+  bool auth = 4;
+}
+
+message DispatchGraphqlRequestCommand {
+  string body = 1;
+}

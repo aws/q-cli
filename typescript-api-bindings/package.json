@@ -1,0 +1,59 @@
+{
+  "version": "0.30.3",
+  "license": "MIT",
+  "main": "./dist/cjs/index.js",
+  "module": "./dist/esm/index.js",
+  "typings": "./dist/cjs/index.d.ts",
+  "exports": {
+    "require": "./dist/cjs/index.js",
+    "import": "./dist/esm/index.js"
+  },
+  "files": [
+    "dist"
+  ],
+  "engines": {
+    "node": ">=16"
+  },
+  "scripts": {
+    "clean": "rm -rf dist/",
+    "build": "yarn clean && yarn build:cjs && yarn build:esm",
+    "build:cjs": "tsc --declaration --outDir dist/cjs",
+    "build:esm": "tsc --declaration --module esnext --outDir dist/esm",
+    "lint": "eslint src",
+    "lint:fix": "yarn lint --fix",
+    "precommit": "lint-staged",
+    "prepublishOnly": "yarn build",
+    "generate-requests": "npx ts-node -O '{\"module\":\"commonjs\"}' codegen/generate-requests.ts"
+  },
+  "name": "@withfig/api-bindings",
+  "author": "The Fig Team",
+  "dependencies": {
+    "long": "^5.2.3",
+    "protobufjs": "^7.2.4"
+  },
+  "devDependencies": {
+    "@fig/eslint-config-fig": "^2.1.0",
+    "@tsconfig/recommended": "^1.0.2",
+    "@types/node": "^20.4.2",
+    "@typescript-eslint/eslint-plugin": "^6.1.0",
+    "@typescript-eslint/parser": "^6.1.0",
+    "eslint": "^8.46.0",
+    "eslint-config-airbnb-base": "^15.0.0",
+    "eslint-config-prettier": "^8.9.0",
+    "eslint-plugin-deprecation": "^1.5.0",
+    "eslint-plugin-import": "^2.28.0",
+    "lint-staged": "^14.0.1",
+    "prettier": "^3.0.0",
+    "ts-morph": "^19.0.0",
+    "ts-node": "^10.9.1",
+    "ts-proto": "~1.156.0",
+    "tslib": "^2.6.0",
+    "typescript": "^5.1.6"
+  },
+  "eslintConfig": {
+    "extends": "@fig/eslint-config-fig"
+  },
+  "lint-staged": {
+    "*.{ts,tsx}": "npx eslint --cache --fix"
+  }
+}

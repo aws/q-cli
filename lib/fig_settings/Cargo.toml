@@ -1,0 +1,23 @@
+[package]
+name = "fig_settings"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+fd-lock = "4.0.0"
+fig_util = { path = "../fig_util" }
+parking_lot = "0.12.1"
+serde = { version = "1", features = ["derive"] }
+serde_json = "1.0.104"
+thiserror = "1.0.38"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1.37"
+url = "2.3.1"
+uuid = { version = "1.3.0", features = ["v4"] }
+
+[dev-dependencies]
+fig_test = { path = "../fig_test" }
+tempfile = "3.4.0"

@@ -1,0 +1,176 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+    <meta charset="utf-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1">
+    <style>
+        @import 'https://rsms.me/inter/inter.css';
+
+        :root {
+            --color-bg: #fff;
+            --color-input-bg: #f7f7f7;
+            --color-input-border: #e1e1e1;
+            --color-fg: #000;
+            --color-fg-muted: #666;
+        }
+
+        @media (prefers-color-scheme: dark) {
+            :root {
+                --color-bg: #000;
+                --color-input-bg: #1f1f1f;
+                --color-input-border: #333;
+                --color-fg: #fff;
+                --color-fg-muted: #d0d0d0;
+            }
+        }
+
+        * {
+            box-sizing: border-box;
+            margin: 0;
+        }
+
+        html {
+            font-family: 'Inter', sans-serif;
+            line-height: 1.5;
+            margin: 0;
+        }
+
+        body {
+            background-color: var(--color-bg);
+            isolation: isolate;
+            color: var(--color-fg-muted);
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            padding: 2rem 0;
+            border: 1px solid var(--color-input-border);
+            overflow: hidden;
+            height: 100vh;
+            width: 100vw;
+        }
+
+        /* Add "demo" class to body to see scale. */
+        body.demo {
+            --size: 250px;
+            width: var(--size);
+            height: var(--size);
+            margin: 25vh auto;
+            box-shadow: 0 0.5rem 1rem rgba(0, 0, 0, 0.15);
+        }
+
+        h1 {
+            color: var(--color-fg);
+            font-weight: 600;
+            letter-spacing: -0.025em;
+            font-size: 1.25rem;
+            margin-top: 0.5rem;
+        }
+
+        #logo {
+            width: 100%;
+            height: 100%;
+            max-width: 2rem;
+            max-height: 2rem;
+        }
+
+        @media (prefers-color-scheme: light) {
+            #logo {
+                filter: invert(1);
+            }
+        }
+
+        .progress-bar-container {
+            margin-top: 1.75rem;
+            border-radius: 99999px;
+            height: 0.5rem;
+            width: 80%;
+            position: relative;
+
+            border: 1px solid var(--color-input-border);
+            background-color: var(--color-input-bg);
+        }
+
+        #progress-bar {
+            background: #007aff;
+            border-radius: 99999px;
+            position: absolute;
+            width: 0%;
+            transition: width 0.5s ease;
+
+            --offset: 1px;
+            top: calc(-1 * var(--offset));
+            left: calc(-1 * var(--offset));
+            bottom: calc(-1 * var(--offset));
+            right: calc(-1 * var(--offset));
+        }
+
+        p {
+            font-size: 0.825rem;
+            margin-top: 1rem;
+            max-width: 30ch;
+            margin-inline: auto;
+            text-align: center;
+        }
+    </style>
+</head>
+
+<!-- === USE THIS TO SEE SCALE <body class="demo"> === -->
+
+<body>
+    <svg width="280" height="280" viewBox="0 0 280 280" fill="none" xmlns="http://www.w3.org/2000/svg" id="logo">
+        <path
+            d="M0 53C0 23.7289 23.7289 0 53 0H227C256.271 0 280 23.7289 280 53V227C280 256.271 256.271 280 227 280H53C23.7289 280 0 256.271 0 227V53Z"
+            fill="white" />
+        <rect x="140" y="30" width="112" height="220" rx="38" fill="black" />
+    </svg>
+    <h1>
+        Fig is updating
+    </h1>
+    <div class="progress-bar-container">
+        <div id="progress-bar">
+
+        </div>
+    </div>
+    <p id="message">
+        Downloading update...
+    </p>
+</body>
+
+<script>
+    function updateProgress(progress) {
+        document.getElementById("progress-bar").style.width = progress + "%";
+    }
+
+    function updateMessage(message) {
+        document.getElementById("message").innerHTML = message;
+    }
+
+    function updateError(message) {
+        document.getElementById("message").innerHTML = message;
+    }
+
+    function retryUpdate() {
+        // TODO: add logic to retry update
+    }
+
+    // Call this fn to see a demo of the progress bar
+    function demo() {
+        let progress = 0;
+        function update() {
+            progress += Math.min(100, 5 * Math.random());
+            updateProgress(progress);
+            updateMessage("Downloading update...");
+            if (progress < 100) {
+                setTimeout(update, 100);
+            } else {
+                updateMessage("Installing update...");
+            }
+        }
+
+        update();
+    }
+</script>
+
+</html>

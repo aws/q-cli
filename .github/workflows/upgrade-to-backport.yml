@@ -1,0 +1,76 @@
+name: 'Upgrade to Appcast to Rust Backport'
+on:
+  workflow_dispatch:
+
+env:
+  # Make sure that this is the correct URL to the DMG that we want to deploy!!!
+  RUST_DMG_URL: https://repo.fig.io/generic/stable/asset/2.7.2/universal/fig.dmg
+
+jobs:    
+  update-appcast:
+    runs-on: macos-latest
+    steps:
+    - name: "SET VERSIONS_BRANCH, APPCAST_PREFIX and BUMP_CASK_PR"
+      env:
+        REF: ${{ github.ref }}
+        ACTIONS_ALLOW_UNSECURE_COMMANDS: true
+      run: |
+        if [[ $REF == 'refs/heads/master' ]]; then
+          echo "::set-env name=VERSIONS_BRANCH::main"
+          echo "::set-env name=APPCAST_PREFIX::versions"
+          echo "::set-env name=BUMP_CASK_PR::1" 
+
+        elif [[ $REF == 'refs/heads/staging' ]]; then
+          echo "::set-env name=VERSIONS_BRANCH::beta"
+          echo "::set-env name=APPCAST_PREFIX::beta"
+
+        else
+          echo "::set-env name=VERSIONS_BRANCH::main"
+          echo "::set-env name=APPCAST_PREFIX::versions"
+
+        fi
+        echo $VERSIONS_BRANCH
+        echo $APPCAST_PREFIX
+        echo BRANCH_NAME=${GITHUB_REF##*/} >> $GITHUB_ENV
+
+    - name: "Download Sparkle CLI"
+      run: |
+        curl -sOL https://github.com/sparkle-project/Sparkle/releases/download/1.24.0/Sparkle-1.24.0.tar.xz
+        mkdir Sparkle
+        cd Sparkle && tar xopf ../Sparkle-1.24.0.tar.xz
+        cd ..
+    # - name: "Fake versions repo"
+    #   run: |
+    #     mkdir versions
+    #     touch ./versions/fig@latest.dmg
+    - name: "Checkout withfig/versions"
+      run: |
+        git clone --depth 1 --branch $VERSIONS_BRANCH https://mattschrage:$(echo $PERSONAL_GITHUB_ACCESS_TOKEN)@github.com/withfig/versions.git
+      env:
+        PERSONAL_GITHUB_ACCESS_TOKEN: ${{ secrets.PERSONAL_GITHUB_ACCESS_TOKEN }}
+    - name: Pull latest Rust DMG from repo.fig.io
+      run: |
+        echo "Downloading DMG from $RUST_DMG_URL"
+        curl $RUST_DMG_URL --output ./versions/fig\ 2.7.2.dmg
+        rm ./versions/fig@latest.dmg
+    - name: "Generate Appcast"
+      run: ./Sparkle/bin/generate_appcast -s $SPARKLE_KEY --download-url-prefix https://$APPCAST_PREFIX.withfig.com versions
+      env:
+        SPARKLE_KEY: ${{ secrets.SPARKLE_SIGNING_KEY }}
+    - name: TODO - Ensure appcast.xml file is correct  - we may need to manually edit values
+      run: cat ./versions/appcast.xml
+        
+    - name: Commit changes
+      run: |
+        cd versions
+        cp "fig 2.7.2.dmg" fig@latest.dmg
+        git add .
+        git commit -m "Deploy Build $BUILD" --no-verify
+        cd ..
+
+    - name: Push Changes to withfig/versions
+      run: |
+        cd versions
+        echo Pushing to $VERSIONS_BRANCH on withfig/versions
+        git push origin $VERSIONS_BRANCH
+        cd ..

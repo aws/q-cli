@@ -1,0 +1,13 @@
+[package]
+name = "stress_client"
+version = "0.1.0"
+edition = "2021"
+publish = false
+
+[dependencies]
+eyre = "0.6.8"
+fig_ipc = { path = "../../../lib/fig_ipc" }
+fig_log = { path = "../../../lib/fig_log" }
+fig_proto = { path = "../../../lib/fig_proto" }
+tokio = { version = "1", features = [ "full" ] }
+tracing = "0.1.36"

@@ -1,0 +1,47 @@
+[workspace]
+resolver = "2"
+members = [
+    "fig_cli",
+    "fig_desktop",
+    "fig_installer",
+    "fig_input_method",
+    "figterm",
+    "tools/fig_release",
+    "lib/*",
+    "lib/macos_utils/accessibility-master/accessibility",
+    "lib/macos_utils/accessibility-master/accessibility-sys",
+    "lib/macos_utils/appkit-nsworkspace-bindings",
+    "tests/fig-api/fig-api-mock",
+    "tests/stress/stress_client",
+    "tests/stress/stress_server",
+]
+
+[workspace.package]
+authors = ["fig developers"]
+edition = "2021"
+homepage = "https://fig.io"
+publish = false
+version = "2.18.0-dev"
+
+[workspace.metadata]
+channel = "none"
+
+[profile.release]
+debug = 1
+incremental = true
+lto = "off"
+
+[profile.dev.package.insta]
+opt-level = 3
+
+[profile.dev.package.similar]
+opt-level = 3
+
+[profile.dev.package.backtrace]
+opt-level = 3
+
+[patch.crates-io]
+# Commenting these out for now since we are not doing Windows right now and they are just not up to date
+# tokio = { git = "https://github.com/sullivan-sean/tokio" }
+# mio = { git = "https://github.com/sullivan-sean/mio" }
+console = { git = "https://github.com/withfig/console" }

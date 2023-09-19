@@ -1,0 +1,50 @@
+{
+	"name": "fig",
+	"displayName": "Fig",
+	"description": "Companion extension for Fig to help integrate with VS Code",
+	"version": "0.0.7",
+	"icon": "images/icon.png",
+	"engines": {
+		"vscode": "^1.51.0"
+	},
+	"categories": [
+		"Other"
+	],
+	"activationEvents": [
+		"onStartupFinished"
+	],
+	"capabilities": {
+		"untrustedWorkspaces": {
+			"supported": true
+		}
+	},
+	"publisher": "withfig",
+	"repository": "https://github.com/withfig/vscode-extension",
+	"main": "./extension.js",
+	"scripts": {
+		"lint": "eslint .",
+		"pretest": "npm run lint",
+		"test": "node ./test/runTest.js",
+		"package": "vsce package",
+		"build": "vsce package && code --install-extension fig-0.0.5.vsix"
+	},
+	"fig": {
+		"build": {
+			"description": "Build extension and install in VSCode"
+		},
+		"package": {
+			"description": "Package extension as .vsix file"
+		}
+	},
+	"devDependencies": {
+		"@types/glob": "^8.1.0",
+		"@types/mocha": "^10.0.1",
+		"@types/node": "^20.4.5",
+		"@types/vscode": "^1.80.0",
+		"eslint": "^8.45.0",
+		"glob": "^10.3.3",
+		"mocha": "^10.2.0",
+		"typescript": "^5.1.6",
+		"vscode-test": "^1.6.1"
+	}
+}

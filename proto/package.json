@@ -1,0 +1,12 @@
+{
+  "name": "proto",
+  "version": "1.0.0",
+  "scripts": {
+    "lint": "buf lint && (buf format --exit-code > /dev/null || (echo 'Run `buf format -w`' && exit 1))",
+    "lint:fix": "buf format -w",
+    "precommit": "exit 0"
+  },
+  "devDependencies": {
+    "ts-proto": "~1.156.1"
+  }
+}

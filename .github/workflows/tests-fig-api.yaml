@@ -1,0 +1,121 @@
+name: Fig API Integration Test
+
+on:
+  workflow_dispatch:
+  pull_request:
+    types:
+      - opened
+      - synchronize
+      - reopened
+      - ready_for_review
+    paths:
+      - "tests/fig-api/**"
+    branches:
+      - develop
+  push:
+    paths:
+      - "tests/fig-api/**"
+    branches:
+      - develop
+
+concurrency:
+  group: tests-fig-api-${{ github.ref }}
+  cancel-in-progress: true
+
+env:
+  CARGO_TERM_COLOR: always
+  RUSTFLAGS: -D warnings
+
+jobs:
+  test-code-cov:
+    strategy:
+      matrix:
+        os: [ubuntu-latest]
+      fail-fast: false
+    name: Fig API Integration Test (${{ matrix.os }})
+    runs-on: ${{ matrix.os }}
+    env:
+      OS: ${{ matrix.os }}
+    if: github.event.pull_request.draft == false
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Install Ubuntu dependencies
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          sudo apt-get update
+          sudo apt-get install -y \
+              build-essential \
+              pkg-config \
+              dpkg \
+              protobuf-compiler
+
+      - name: Install Protobuf on Ubuntu
+        if: startsWith(matrix.os,'ubuntu')
+        run: |
+          curl -L -o /tmp/protoc.zip https://github.com/protocolbuffers/protobuf/releases/download/v21.6/protoc-21.6-linux-x86_64.zip \
+          && unzip /tmp/protoc.zip -d /tmp/protoc \
+          && sudo cp /tmp/protoc/bin/protoc /usr/local/bin/ \
+          && sudo cp -r /tmp/protoc/include/google /usr/local/include/
+
+      - name: Install macOS dependencies
+        if: startsWith(matrix.os,'macos')
+        run: |
+          brew update || brew update
+          brew install protobuf
+
+      - name: Install Windows dependencies
+        if: startsWith(matrix.os,'windows')
+        run: |
+          choco install protoc
+
+      - name: Yarn setup
+        run: yarn install
+
+      - name: proto Build
+        working-directory: ./proto
+        run: |
+          protoc --version
+          make api-ts
+
+      - name: typescript-api-bindings Build
+        working-directory: ./typescript-api-bindings
+        run: yarn build
+
+      - name: Install Stable Rust toolchain
+        uses: actions-rs/toolchain@v1
+        with:
+          toolchain: stable
+          override: true
+          profile: minimal
+          components: llvm-tools-preview
+
+      - name: Rust Cache
+        uses: Swatinem/rust-cache@578b235f6e5f613f7727f1c17bd3305b4d4d4e1f
+
+      - name: Install cargo-llvm-cov
+        uses: taiki-e/install-action@cargo-llvm-cov
+
+      - name: fig-api-mock Build
+        run: cargo build -p fig-api-mock
+
+      - name: Yarn test setup
+        working-directory: ./tests/fig-api
+        run: yarn install
+
+      - name: Run tests
+        working-directory: ./tests/fig-api
+        run: yarn test
+#       - name: Test & Codecov
+#         uses: actions-rs/cargo@v1
+#         with:
+#           command: llvm-cov
+#           args: --workspace --locked --lcov --output-path lcov.info
+
+#       - name: Upload coverage to Codecov
+#         uses: codecov/codecov-action@v3
+#         with:
+#           token: ${{ secrets.CODECOV_TOKEN }}
+#           files: lcov.info
+#           env_vars: OS

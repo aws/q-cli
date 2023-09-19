@@ -1,0 +1,33 @@
+[package]
+name = "fig_input_method"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[package.metadata.bundle]
+bundle_name = "FigInputMethod"
+bundle_identifier = "io.fig.cursor"
+input_source_identifier = "io.fig.cursor"
+invisible_in_system_ui = true
+input_method_type = "palette"
+
+[build-dependencies]
+plist = "1.4.0"
+serde = { version = "1.0.185", features = ["derive"] }
+toml = "0.7.1"
+apple-bundle = "*"
+
+[target.'cfg(target_os = "macos")'.dependencies]
+objc = "0.2.7"
+cocoa = "0.25.0"
+libc = "0.2"
+rand = "0.8.4"
+fig_ipc = { path = "../lib/fig_ipc" }
+fig_log = { path = "../lib/fig_log" }
+fig_proto = { path = "../lib/fig_proto" }
+fig_util = { path = "../lib/fig_util" }
+macos_utils = { path = "../lib/macos_utils" }
+tokio = { version = "1.32.0", features = ["full"] }
+tracing = "0.1.36"

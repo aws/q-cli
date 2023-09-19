@@ -1,0 +1,17 @@
+name: Update Hombrew Cask
+
+on:
+  workflow_dispatch:
+    inputs:
+      version:
+        description: "Version"
+
+jobs:
+  release:
+    runs-on: macos-11
+    steps:
+      - run: brew update
+      - name: "Bump Brew Cask Version"
+        run: brew bump-cask-pr fig --version ${{github.event.inputs.version}} --no-browse --verbose --debug
+        env:
+          HOMEBREW_GITHUB_API_TOKEN: ${{ secrets.HOMEBREW_FORK_GITHUB_TOKEN }}

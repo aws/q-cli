@@ -1,0 +1,3 @@
+#!/bin/bash
+
+fig _ uninstall-for-all-users || true

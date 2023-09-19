@@ -1,0 +1,9 @@
+[package]
+name = "fig_installer"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]

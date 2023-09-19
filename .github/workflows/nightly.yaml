@@ -1,0 +1,41 @@
+name: Nightly release
+
+on:
+  workflow_dispatch:
+  schedule:
+    - cron: "0 11 * * *"
+
+jobs:
+  release:
+    runs-on: "ubuntu-22.04"
+    steps:
+
+      - name: Checkout repository
+        uses: actions/checkout@v2
+
+      - name: "install fig_release"
+        run: |
+          cd /tmp
+          echo Downloading...
+          gh -R withfig/macos release download fig_release --clobber > /dev/null
+          echo Installing...
+          chmod +x fig_release
+          mkdir -p ~/.local/bin
+          mv fig_release ~/.local/bin/fig_release
+        env:
+          GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: "cut nightly release"
+        run: |
+          git fetch > /dev/null
+          git config user.email ci@fig.io
+          git config user.name fig-ci
+          git config push.autoSetupRemote true
+          echo '$ fig_release cut nightly'
+          fig_release cut nightly
+          sleep 10
+          fig_release -y publish macos linux
+          echo '$ fig_release -y publish macos linux'
+        env:
+          FIG_CI_TOKEN: ${{ secrets.FIG_CI_TOKEN }}
+          CIRCLECI_TOKEN: ${{ secrets.CIRCLECI_TOKEN }}

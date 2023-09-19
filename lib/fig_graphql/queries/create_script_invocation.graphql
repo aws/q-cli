@@ -1,0 +1,29 @@
+mutation CreateScriptInvocation(
+  $namespace: String!
+  $name: String!
+  $executionDuration: UnsignedInt
+  $executionStartTime: DateTime
+  $exitCode: Int
+  $inputs: JSONObject
+  # $runtimeVersion: String
+  # $commandStderr: String
+  # $commandStdout: String
+  # $ctrlC: Boolean
+) {
+  createScriptInvocationMutation(
+    input: {
+      namespace: $namespace
+      name: $name
+      executionStartTime: $executionStartTime
+      executionDuration: $executionDuration
+      exitCode: $exitCode
+      inputs: $inputs
+      # runtimeVersion: $runtimeVersion
+      # commandStderr: $commandStderr
+      # commandStdout: $commandStdout
+      # ctrlC: $ctrlC
+    }
+  ) {
+    __typename
+  }
+}
