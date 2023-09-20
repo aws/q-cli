@@ -1,14 +1,12 @@
 use std::path::Path;
 
-use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
-use fig_util::directories::{
-    self,
-    relative_cli_path,
+use fig_util::{
+    directories,
+    Shell,
 };
-use fig_util::Shell;
 
 use crate::Error;
 
@@ -52,12 +50,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
         }
     }
 
-    let daemon_result = if components.contains(InstallComponents::DAEMON) {
-        Daemon::default().uninstall().await?;
-        Ok(())
-    } else {
-        Ok(())
-    };
+    let daemon_result = Ok(());
 
     #[cfg(target_os = "macos")]
     if components.contains(InstallComponents::INPUT_METHOD) {
@@ -117,11 +110,6 @@ pub async fn install(components: InstallComponents) -> Result<(), Error> {
 
     if components.contains(InstallComponents::SSH) {
         SshIntegration::new()?.install().await?;
-    }
-
-    if components.contains(InstallComponents::DAEMON) {
-        let path = relative_cli_path()?;
-        Daemon::default().install(&path).await?;
     }
 
     #[cfg(target_os = "macos")]

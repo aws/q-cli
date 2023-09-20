@@ -1,6 +1,5 @@
 //! Protocol buffer definitions
 
-pub mod daemon;
 pub mod fig;
 pub mod fig_common;
 pub mod figterm;

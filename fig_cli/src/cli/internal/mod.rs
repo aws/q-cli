@@ -32,7 +32,6 @@ use eyre::{
     ContextCompat,
     Result,
 };
-use fig_daemon::Daemon;
 use fig_install::InstallComponents;
 #[cfg(target_os = "macos")]
 use fig_integrations::input_method::InputMethod;
@@ -47,17 +46,14 @@ use fig_proto::figterm::{
     FigtermRequestMessage,
     FigtermResponseMessage,
     NotifySshSessionStartedRequest,
-    UpdateShellContextRequest,
 };
 use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
-use fig_proto::local::EnvironmentVariable;
 use fig_proto::ReflectMessage;
 use fig_request::auth::get_token;
 use fig_request::Request;
-use fig_sync::dotfiles::notify::TerminalNotification;
 use fig_telemetry::{
     TrackEvent,
     TrackEventType,
@@ -67,7 +63,6 @@ use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
-use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
     get_parent_process_exe,
@@ -87,7 +82,6 @@ use tokio::io::{
 use tokio::select;
 use tracing::{
     debug,
-    error,
     info,
     trace,
 };
@@ -192,9 +186,6 @@ pub enum StateComponent {
 #[derive(Debug, PartialEq, Eq, Subcommand)]
 #[command(hide = true, alias = "_")]
 pub enum InternalSubcommand {
-    /// Prompt the user that the dotfiles have changes
-    /// Also use for `fig source` internals
-    PromptDotfilesChanged,
     /// Command that is run during the PreCmd section of
     /// the fig integrations.
     PreCmd,
@@ -384,8 +375,7 @@ impl InternalSubcommand {
                 components.set(InstallComponents::BINARY, false);
                 fig_install::uninstall(components).await?;
             },
-            InternalSubcommand::PromptDotfilesChanged => prompt_dotfiles_changed().await?,
-            InternalSubcommand::PreCmd => pre_cmd().await,
+            InternalSubcommand::PreCmd => (),
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
             InternalSubcommand::Callback(CallbackArgs {
                 handler_id,
@@ -522,8 +512,6 @@ impl InternalSubcommand {
 
                     if app {
                         recv!(fig_proto::local::CommandResponse);
-                    } else if daemon {
-                        recv!(fig_proto::daemon::DaemonResponse);
                     } else if figterm.is_some() {
                         recv!(fig_proto::figterm::FigtermResponseMessage);
                     }
@@ -707,24 +695,16 @@ impl InternalSubcommand {
                     if verbose {
                         eprintln!("Failed to open uninstall directly, trying daemon proxy: {err}");
                     }
-                    if let Err(err) =
-                        fig_ipc::daemon::send_recv_message(fig_proto::daemon::new_open_browser_command(url.clone()))
-                            .await
+
+                    if let Err(err) = fig_ipc::local::send_command_to_socket(
+                        fig_proto::local::command::Command::OpenBrowser(fig_proto::local::OpenBrowserCommand { url }),
+                    )
+                    .await
                     {
                         if verbose {
-                            eprintln!("Failed to open uninstall via daemon, trying desktop: {err}");
+                            eprintln!("Failed to open uninstall via desktop, no more options: {err}");
                         }
-                        if let Err(err) =
-                            fig_ipc::local::send_command_to_socket(fig_proto::local::command::Command::OpenBrowser(
-                                fig_proto::local::OpenBrowserCommand { url },
-                            ))
-                            .await
-                        {
-                            if verbose {
-                                eprintln!("Failed to open uninstall via desktop, no more options: {err}");
-                            }
-                            std::process::exit(1);
-                        }
+                        std::process::exit(1);
                     }
                 }
             },
@@ -794,12 +774,6 @@ impl InternalSubcommand {
                     verbose: false,
                 })
                 .ok();
-
-                Daemon::default()
-                    .restart()
-                    .await
-                    .context("Failed to restart daemon")
-                    .ok();
             },
             #[cfg(target_os = "macos")]
             InternalSubcommand::SwapFiles { from, to } => {
@@ -925,16 +899,12 @@ impl InternalSubcommand {
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
             },
             InternalSubcommand::CodexAccept { buffer, suggestion } => {
-                fig_telemetry::dispatch_emit_track(
-                    TrackEvent::new(
-                        TrackEventType::CodexInlineSuggustionAccepted,
-                        TrackSource::Cli,
-                        env!("CARGO_PKG_VERSION").into(),
-                        [("buffer", buffer), ("suggestion", suggestion)],
-                    ),
-                    false,
-                    true,
-                )
+                fig_telemetry::emit_track(TrackEvent::new(
+                    TrackEventType::CodexInlineSuggustionAccepted,
+                    TrackSource::Cli,
+                    env!("CARGO_PKG_VERSION").into(),
+                    [("buffer", buffer), ("suggestion", suggestion)],
+                ))
                 .await
                 .ok();
             },
@@ -942,234 +912,6 @@ impl InternalSubcommand {
 
         Ok(())
     }
-}
-
-#[derive(Debug, Clone, PartialEq, Eq, PartialOrd, Ord)]
-enum UpdatedVerbosity {
-    None,
-    Minimal,
-    Full,
-}
-
-pub async fn prompt_dotfiles_changed() -> Result<()> {
-    // An exit code of 0 will source the new changes
-    // An exit code of 1 will not source the new changes
-
-    let session_id = match std::env::var_os("FIGTERM_SESSION_ID") {
-        Some(session_id) => session_id,
-        None => exit(1),
-    };
-
-    let file = std::env::temp_dir()
-        .join("fig")
-        .join("dotfiles_updates")
-        .join(session_id);
-
-    let file_clone = file.clone();
-    ctrlc::set_handler(move || {
-        crossterm::execute!(std::io::stdout(), crossterm::cursor::Show).ok();
-        std::fs::write(&file_clone, "").ok();
-        exit(1);
-    })
-    .ok();
-
-    let file_content = match tokio::fs::read_to_string(&file).await {
-        Ok(content) => content,
-        Err(_) => {
-            if let Err(err) = tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir")).await {
-                error!("Unable to create directory: {err}");
-            }
-
-            if let Err(err) = tokio::fs::write(&file, "").await {
-                error!("Unable to write to file: {err}");
-            }
-
-            exit(1);
-        },
-    };
-
-    let exit_code = match TerminalNotification::from_str(&file_content) {
-        Ok(TerminalNotification::Source) => {
-            writeln!(stdout(), "\n{}\n", "✅ Dotfiles sourced!".bold()).ok();
-            0
-        },
-        Ok(TerminalNotification::NewUpdates) => {
-            let verbosity = match fig_settings::settings::get_value("dotfiles.verbosity")
-                .ok()
-                .flatten()
-                .and_then(|v| v.as_str().map(|s| s.to_string()))
-                .as_deref()
-            {
-                Some("none") => UpdatedVerbosity::None,
-                Some("minimal") => UpdatedVerbosity::Minimal,
-                Some("full") => UpdatedVerbosity::Full,
-                _ => UpdatedVerbosity::Minimal,
-            };
-
-            let source_immediately = match fig_settings::settings::get_value("dotfiles.sourceImmediately")
-                .ok()
-                .flatten()
-            {
-                Some(serde_json::Value::String(s)) => Some(s),
-                _ => None,
-            };
-
-            let source_updates = matches!(source_immediately.as_deref(), Some("always"));
-
-            if source_updates {
-                if verbosity >= UpdatedVerbosity::Minimal {
-                    writeln!(
-                        stdout(),
-                        "\nYou just updated your dotfiles in {}!\nAutomatically applying changes in this terminal.\n",
-                        "◧ Fig".bold()
-                    )
-                    .ok();
-                }
-                0
-            } else {
-                if verbosity == UpdatedVerbosity::Full {
-                    writeln!(
-                        stdout(),
-                        "\nYou just updated your dotfiles in {}!\nTo apply changes run {} or open a new terminal",
-                        "◧ Fig".bold(),
-                        "fig source".magenta().bold()
-                    )
-                    .ok();
-                }
-                1
-            }
-        },
-        Err(_) => 1,
-    };
-
-    if let Err(err) = tokio::fs::write(&file, "").await {
-        error!("Unable to write to file: {err}");
-    }
-
-    exit(exit_code);
-}
-
-pub async fn pre_cmd() {
-    let session_id = match std::env::var("FIGTERM_SESSION_ID") {
-        Ok(session_id) => session_id,
-        Err(_) => exit(1),
-    };
-
-    let session_id_clone = session_id.clone();
-    let shell_state_join = tokio::spawn(async move {
-        let session_id = session_id_clone;
-        match figterm_socket_path(&session_id) {
-            Ok(figterm_path) => match fig_ipc::socket_connect(figterm_path).await {
-                Ok(mut figterm_stream) => {
-                    let message = FigtermRequestMessage {
-                        request: Some(FigtermRequest::UpdateShellContext(UpdateShellContextRequest {
-                            update_environment_variables: true,
-                            environment_variables: std::env::vars()
-                                .map(|(key, value)| EnvironmentVariable {
-                                    key,
-                                    value: Some(value),
-                                })
-                                .collect(),
-                        })),
-                    };
-                    if let Err(err) = figterm_stream.send_message(message).await {
-                        error!(%err, %session_id, "Failed to send UpdateShellContext to Figterm");
-                    }
-                },
-                Err(err) => error!(%err, %session_id, "Failed to connect to Figterm socket"),
-            },
-            Err(err) => error!(%err, %session_id, "Failed to get Figterm socket path"),
-        }
-    });
-
-    let notification_join = tokio::spawn(async move {
-        let file = std::env::temp_dir()
-            .join("fig")
-            .join("dotfiles_updates")
-            .join(session_id);
-
-        let file_content = match tokio::fs::read_to_string(&file).await {
-            Ok(content) => content,
-            Err(_) => {
-                if let Err(err) = tokio::fs::create_dir_all(&file.parent().expect("Unable to create parent dir")).await
-                {
-                    error!("Unable to create directory: {err}");
-                }
-
-                if let Err(err) = tokio::fs::write(&file, "").await {
-                    error!("Unable to write to file: {err}");
-                }
-
-                exit(1);
-            },
-        };
-
-        match TerminalNotification::from_str(&file_content) {
-            Ok(TerminalNotification::Source) => {
-                writeln!(stdout(), "EXEC_NEW_SHELL").ok();
-                writeln!(stderr(), "\n{}\n", "✅ Dotfiles sourced!".bold()).ok();
-                0
-            },
-            Ok(TerminalNotification::NewUpdates) => {
-                let verbosity = match fig_settings::settings::get_value("dotfiles.verbosity")
-                    .ok()
-                    .flatten()
-                    .and_then(|v| v.as_str().map(|s| s.to_string()))
-                    .as_deref()
-                {
-                    Some("none") => UpdatedVerbosity::None,
-                    Some("minimal") => UpdatedVerbosity::Minimal,
-                    Some("full") => UpdatedVerbosity::Full,
-                    _ => UpdatedVerbosity::Minimal,
-                };
-
-                let source_immediately = match fig_settings::settings::get_value("dotfiles.sourceImmediately")
-                    .ok()
-                    .flatten()
-                {
-                    Some(serde_json::Value::String(s)) => Some(s),
-                    _ => None,
-                };
-
-                let source_updates = matches!(source_immediately.as_deref(), Some("always"));
-
-                if source_updates {
-                    if verbosity >= UpdatedVerbosity::Minimal {
-                        writeln!(
-                        stderr(),
-                        "\nYou just updated your dotfiles in {}!\nAutomatically applying changes in this terminal.\n",
-                        "◧ Fig".bold()
-                    )
-                        .ok();
-                    }
-                    0
-                } else {
-                    if verbosity == UpdatedVerbosity::Full {
-                        writeln!(
-                            stderr(),
-                            "\nYou just updated your dotfiles in {}!\nTo apply changes run {} or open a new terminal",
-                            "◧ Fig".bold(),
-                            "fig source".magenta().bold()
-                        )
-                        .ok();
-                    }
-                    1
-                }
-            },
-            Err(_) => 1,
-        };
-
-        if let Err(err) = tokio::fs::write(&file, "").await {
-            error!("Unable to write to file: {err}");
-        }
-    });
-
-    let (shell_state, notification) = tokio::join!(shell_state_join, notification_join);
-
-    shell_state.ok();
-    notification.ok();
-
-    exit(0);
 }
 
 pub fn get_shell() {

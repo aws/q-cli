@@ -1,5 +1,4 @@
 pub mod cli;
-pub mod daemon;
 pub mod util;
 
 use std::io::{
@@ -78,24 +77,20 @@ fn main() -> Result<()> {
                 None => (
                     Some(sentry),
                     #[cfg(unix)]
-                    Some(fig_telemetry::dispatch_emit_track(
-                        fig_telemetry::TrackEvent::new(
-                            fig_telemetry::TrackEventType::RanCommand,
-                            fig_telemetry::TrackSource::Cli,
-                            env!("CARGO_PKG_VERSION").into(),
-                            [
-                                ("arguments", serde_json::json!(args_no_exe.join(" "))),
-                                ("arguments_json", serde_json::json!(args_no_exe)),
-                                ("arg0", serde_json::json!(args.get(0))),
-                                ("arg1", serde_json::json!(args.get(1))),
-                                ("shell", serde_json::json!(shell)),
-                                ("terminal", serde_json::json!(terminal)),
-                                ("cli_version", serde_json::json!(cli_version)),
-                            ],
-                        ),
-                        false,
-                        true,
-                    )),
+                    Some(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                        fig_telemetry::TrackEventType::RanCommand,
+                        fig_telemetry::TrackSource::Cli,
+                        env!("CARGO_PKG_VERSION").into(),
+                        [
+                            ("arguments", serde_json::json!(args_no_exe.join(" "))),
+                            ("arguments_json", serde_json::json!(args_no_exe)),
+                            ("arg0", serde_json::json!(args.get(0))),
+                            ("arg1", serde_json::json!(args.get(1))),
+                            ("shell", serde_json::json!(shell)),
+                            ("terminal", serde_json::json!(terminal)),
+                            ("cli_version", serde_json::json!(cli_version)),
+                        ],
+                    ))),
                     #[cfg(windows)]
                     Some(async { Result::<()>::Ok(()) }),
                     true,

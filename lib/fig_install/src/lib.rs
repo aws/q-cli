@@ -51,8 +51,6 @@ pub enum Error {
     #[error(transparent)]
     Integration(#[from] fig_integrations::Error),
     #[error(transparent)]
-    Daemon(#[from] fig_daemon::Error),
-    #[error(transparent)]
     Settings(#[from] fig_settings::Error),
     #[error(transparent)]
     Reqwest(#[from] reqwest::Error),

@@ -1,5 +1,3 @@
-use fig_proto::daemon::telemetry_emit_track_command::Source;
-use fig_proto::daemon::TelemetryEmitTrackCommand;
 use serde::{
     Deserialize,
     Serialize,
@@ -145,35 +143,6 @@ impl TrackEvent {
         }
 
         res
-    }
-}
-
-impl From<&TelemetryEmitTrackCommand> for TrackEvent {
-    fn from(command: &TelemetryEmitTrackCommand) -> Self {
-        let event = TrackEventType::Other(command.event.clone());
-
-        let properties: Map<String, serde_json::Value> = command
-            .properties
-            .iter()
-            .map(|(key, value)| (key.clone(), value.clone().into()))
-            .collect();
-
-        let source = match Source::try_from(command.source.unwrap_or_default()).unwrap_or_default() {
-            Source::Desktop => TrackSource::Desktop,
-            Source::Cli => TrackSource::Cli,
-            Source::Daemon => TrackSource::Daemon,
-        };
-
-        let source_version = command.source_version.clone();
-
-        TrackEvent {
-            event,
-            source,
-            source_version,
-            properties,
-            namespace: command.namespace.clone(),
-            namespace_id: command.namespace_id,
-        }
     }
 }
 

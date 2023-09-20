@@ -1,4 +1,3 @@
-pub mod backoff;
 pub mod spinner;
 pub mod sync;
 
@@ -123,16 +122,12 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
             println!("Quitting Fig");
 
             Some(tokio::spawn(async {
-                fig_telemetry::dispatch_emit_track(
-                    fig_telemetry::TrackEvent::new(
-                        fig_telemetry::TrackEventType::QuitApp,
-                        fig_telemetry::TrackSource::Cli,
-                        env!("CARGO_PKG_VERSION").into(),
-                        empty::<(&str, &str)>(),
-                    ),
-                    false,
-                    true,
-                )
+                fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                    fig_telemetry::TrackEventType::QuitApp,
+                    fig_telemetry::TrackSource::Cli,
+                    env!("CARGO_PKG_VERSION").into(),
+                    empty::<(&str, &str)>(),
+                ))
                 .await
                 .ok();
             }))

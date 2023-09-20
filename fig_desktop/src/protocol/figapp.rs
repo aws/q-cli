@@ -1,14 +1,11 @@
 use std::borrow::Cow;
-use std::path::{
-    Path,
-    PathBuf,
-};
-use std::time::Duration;
+use std::path::Path;
 
 use http::header::{
     ACCESS_CONTROL_ALLOW_ORIGIN,
     CONTENT_TYPE,
 };
+use http::uri::Scheme;
 use http::{
     Request,
     Response,
@@ -35,93 +32,24 @@ fn res_404() -> Response<Cow<'static, [u8]>> {
         .unwrap()
 }
 
-fn transform_path(path: impl AsRef<Path>) -> PathBuf {
+fn transform_path<'a>(path: &'a Path) -> Cow<'a, Path> {
     // strip the leading slash
-    let path = match path.as_ref().strip_prefix("/") {
+    let path = match path.strip_prefix("/") {
         Ok(path) => path,
-        Err(_) => path.as_ref(),
+        Err(_) => path,
     };
 
     // if the path is empty or ends with a slash, it's a directory and we append index.html
     if path.as_os_str().is_empty() || path.ends_with("/") {
-        path.join("index.html")
+        path.join("index.html").into()
     } else {
-        path.to_path_buf()
-    }
-}
-
-fn cache_dir(app: impl AsRef<Path>) -> PathBuf {
-    let cache_folder = fig_util::directories::cache_dir().unwrap().join("app").join(app);
-    std::fs::create_dir_all(&cache_folder).unwrap();
-    cache_folder
-}
-
-fn save_cache(
-    app: impl AsRef<Path>,
-    path: impl AsRef<Path>,
-    meta: &AssetMetadata,
-    contents: impl AsRef<[u8]>,
-) -> anyhow::Result<()> {
-    let path = cache_dir(app).join(transform_path(path));
-    if let Some(parent) = path.parent() {
-        std::fs::create_dir_all(parent)?;
-    }
-    std::fs::write(&path, contents)?;
-
-    let meta_path = match path.extension() {
-        Some(ext) => {
-            let mut ext = ext.to_owned();
-            ext.push(".meta");
-            path.with_extension(ext)
-        },
-        None => path.with_extension("meta"),
-    };
-
-    let meta = serde_json::to_string(meta)?;
-    std::fs::write(meta_path, meta)?;
-
-    Ok(())
-}
-
-fn load_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> anyhow::Result<(AssetMetadata, Cow<'static, [u8]>)> {
-    let path = cache_dir(app).join(transform_path(path));
-    let content = std::fs::read(&path)?;
-
-    let meta_path = match path.extension() {
-        Some(ext) => {
-            let mut ext = ext.to_owned();
-            ext.push(".meta");
-            path.with_extension(ext)
-        },
-        None => path.with_extension("meta"),
-    };
-
-    let meta = std::fs::read_to_string(meta_path)?;
-    let meta = serde_json::from_str(&meta)?;
-
-    Ok((meta, content.into()))
-}
-
-fn res_cache(app: impl AsRef<Path>, path: impl AsRef<Path>) -> Response<Cow<'static, [u8]>> {
-    match load_cache(&app, path) {
-        Ok((meta, content)) => {
-            let mut resp_builder = Response::builder().status(meta.status);
-            for (key, value) in meta.headers {
-                resp_builder = resp_builder.header(key, value);
-            }
-            resp_builder = resp_builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-            resp_builder.body(content).unwrap()
-        },
-        Err(err) => {
-            error!(%err, "Error loading cache");
-            res_404()
-        },
+        path.into()
     }
 }
 
 pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let mut url_parts = request.uri().clone().into_parts();
-    url_parts.scheme = Some("https".parse().unwrap());
+    url_parts.scheme = Some(Scheme::HTTPS);
 
     // The authority schema for figapp:// is <subdomain>.localhost
     let app = match url_parts.authority {
@@ -143,60 +71,41 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static
 
     let url = http::Uri::from_parts(url_parts).unwrap();
 
-    // check if reachable
-    #[cfg(target_os = "macos")]
-    if !crate::webview::reachable(url.authority().unwrap().as_str().to_owned()) {
-        return Ok(res_cache(&app, url.path()));
-    }
+    let mut resp_builder = Response::builder().status(StatusCode::OK);
+    resp_builder = resp_builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
 
-    let handle = tokio::runtime::Handle::current();
-    std::thread::spawn(move || {
-        handle.block_on(async {
-            let res = match fig_request::client()
-                .unwrap()
-                .get(&url.to_string())
-                .timeout(Duration::from_secs(10))
-                .send()
-                .await
-            {
-                Ok(res) => res,
-                Err(err) => {
-                    error!(%err, "Error fetching figapp");
+    let path = Path::new(url.path());
+    let path = transform_path(path);
+    let path = match app.as_str() {
+        _ if app.ends_with("autocomplete") => Path::new("../autocomplete-engine/app/dist").join(path),
+        _ => {
+            return Ok(res_404());
+        },
+    };
 
-                    // Try to load from cache
-                    let path = url.path();
-                    return Ok(res_cache(&app, path));
-                },
-            };
+    let data = std::fs::read(&path)?;
 
-            // Start building the response
-            let mut resp_builder = Response::builder().status(res.status());
-            for (key, value) in res.headers().iter() {
-                resp_builder = resp_builder.header(key.clone(), value.clone());
-            }
-            resp_builder = resp_builder.header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+    let mime = match infer::get(&data) {
+        Some(mime) => dbg!(mime.to_string()),
+        None => match path.extension().and_then(|ext| ext.to_str()) {
+            Some("css") => mime::TEXT_CSS,
+            Some("html") => mime::TEXT_HTML,
+            Some("js") => mime::APPLICATION_JAVASCRIPT,
+            Some("json") => mime::APPLICATION_JSON,
+            Some("svg") => mime::IMAGE_SVG,
+            Some("png") => mime::IMAGE_PNG,
+            Some("jpg" | "jpeg") => mime::IMAGE_JPEG,
+            Some("gif") => mime::IMAGE_GIF,
+            Some("woff") => mime::FONT_WOFF,
+            Some("woff2") => mime::FONT_WOFF2,
+            Some(_) => mime::TEXT_PLAIN,
+            // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types
+            None => mime::APPLICATION_OCTET_STREAM,
+        }
+        .to_string(),
+    };
+    resp_builder = resp_builder.header(CONTENT_TYPE, mime);
 
-            // Save meta and contents to cache
-            let meta = AssetMetadata {
-                status: res.status().as_u16(),
-                headers: res
-                    .headers()
-                    .iter()
-                    .map(|(key, value)| (key.to_string(), value.to_str().unwrap().to_string()))
-                    .collect(),
-            };
-
-            let contents = res.bytes().await.unwrap().to_vec();
-
-            let path = url.path();
-            if let Err(err) = save_cache(&app, path, &meta, contents.clone()) {
-                error!(%err, %app, %path, "Error saving cache");
-            }
-
-            // Finish building the response with the contents
-            Ok(resp_builder.body(contents.into())?)
-        })
-    })
-    .join()
-    .unwrap()
+    // Finish building the response with the contents
+    Ok(resp_builder.body(data.into())?)
 }

@@ -35,9 +35,7 @@ dialoguer = { version = "0.10.3", features = ["fuzzy-select"] }
 eyre = "0.6.8"
 fig_api_client = { path = "../lib/fig_api_client" }
 fig_autocomplete = { path = "../lib/fig_autocomplete" }
-fig_daemon = { path = "../lib/fig_daemon" }
 fig_diagnostic = { path = "../lib/fig_diagnostic" }
-fig_graphql = { path = "../lib/fig_graphql", features = ["dispatch"] }
 fig_history = { path = "../lib/fig_history" }
 fig_install = { path = "../lib/fig_install" }
 fig_integrations = { path = "../lib/fig_integrations" }
@@ -80,9 +78,11 @@ time = { version = "0.3.19", features = [
     "macros",
 ] }
 tokio = { version = "1.32.0", features = ["full"] }
+tokio-stream = { version = "0.1.14", features = ["net"] }
 tokio-tungstenite = { version = "0.20.0", features = [
     "rustls-tls-webpki-roots",
 ] }
+tonic = "0.9.2"
 tracing = "0.1.36"
 tracing-subscriber = { version = "0.3.16", features = [
     "fmt",

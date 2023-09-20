@@ -1,7 +1,6 @@
 use std::time::Duration;
 
-use fig_proto::daemon;
-use fig_util::directories::daemon_socket_path;
+se fig_util::directories::daemon_socket_path;
 
 use crate::{
     BufferedUnixStream,

@@ -1,4 +1,3 @@
-mod daemon_dispatch;
 mod error;
 pub mod feature_flags;
 mod identify;
@@ -8,7 +7,6 @@ pub mod sentry;
 mod track;
 mod util;
 
-pub use daemon_dispatch::dispatch_emit_track;
 pub use error::Error;
 pub use identify::emit_identify;
 pub use install_method::{

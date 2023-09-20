@@ -16,7 +16,5 @@ serde_json = "1.0.104"
 time = { version = "0.3.19", features = ["serde"] }
 url = { version = "2.3.1", features = ["serde"] }
 tokio = { version = "1", features = ["process"] }
-fig_graphql = { path = "../fig_graphql" }
 tracing = "0.1.37"
 which = "4.4.0"
-once_cell = { version = "1.17.1", features = ["parking_lot"] }

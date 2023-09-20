@@ -3,27 +3,18 @@
 mod ai;
 pub mod app;
 mod autocomplete;
-pub mod commandline_tool;
 mod completion;
 mod debug;
 mod diagnostics;
 mod doctor;
-mod export;
 mod hook;
 mod init;
 mod installation;
 mod integrations;
 pub mod internal;
-mod invite;
 mod issue;
 mod man;
-mod plugins;
-mod run;
-mod scripts;
 mod settings;
-mod source;
-mod ssh;
-mod team;
 mod telemetry;
 mod theme;
 mod tips;
@@ -31,7 +22,6 @@ mod tweet;
 mod uninstall;
 mod update;
 mod user;
-mod wrapped;
 
 use clap::{
     CommandFactory,
@@ -44,7 +34,6 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_daemon::Daemon;
 use fig_ipc::local::open_ui_element;
 use fig_log::Logger;
 use fig_proto::local::UiElement;
@@ -54,8 +43,6 @@ use fig_util::desktop::{
     LaunchArgs,
 };
 use fig_util::{
-    directories,
-    is_fig_desktop_running,
     manifest,
     open_url_async,
     system_info,
@@ -65,8 +52,6 @@ use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
-use self::plugins::PluginsSubcommands;
-use crate::daemon::daemon;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
@@ -111,8 +96,6 @@ pub enum CliRootCommands {
     Tips(tips::TipsSubcommand),
     /// Install fig cli components
     Install(internal::InstallArgs),
-    /// Enable/disable fig SSH integration
-    Ssh(ssh::SshSubcommand),
     /// Uninstall fig
     #[command(hide = true)]
     Uninstall {
@@ -136,20 +119,13 @@ pub enum CliRootCommands {
         #[arg(long)]
         rollout: bool,
     },
-    /// Run the daemon
-    #[command(hide = true)]
-    Daemon,
     /// Run diagnostic tests
     #[command(alias("diagnostics"))]
     Diagnostic(diagnostics::DiagnosticArgs),
     /// Generate the dotfiles for the given shell
     Init(init::InitArgs),
-    /// Sync your latest dotfiles
-    Source,
     /// Get or set theme
     Theme(theme::ThemeArgs),
-    /// Invite friends to Fig
-    Invite,
     /// Tweet about Fig
     Tweet,
     /// Create a new Github issue
@@ -160,8 +136,6 @@ pub enum CliRootCommands {
     /// Manage your fig user
     #[command(subcommand)]
     User(user::UserSubcommand),
-    /// Manage your fig team
-    Team(team::TeamCommand),
     /// Check Fig is properly configured
     Doctor(doctor::DoctorArgs),
     /// Generate the completion spec for Fig
@@ -183,16 +157,8 @@ pub enum CliRootCommands {
     /// Run the Fig tutorial
     #[command(hide = true)]
     Onboarding,
-    /// Manage your shell plugins with Fig
-    #[command(subcommand)]
-    Plugins(PluginsSubcommands),
     /// Open manual page
     Man(man::ManArgs),
-    /// Execute a Fig Script
-    #[command(alias("r"))]
-    Run(run::ScriptsArgs),
-    /// Manage your Fig Scripts
-    Scripts(scripts::ScriptsArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
@@ -207,24 +173,6 @@ pub enum CliRootCommands {
     HelpAll,
     /// Open the fig dashboard
     Dashboard,
-    /// Show fig wrapped
-    Wrapped(wrapped::WrappedArgs),
-    /// Run a Fig CLI
-    Cli(commandline_tool::CliArgs),
-    /// Export your fig configs to a folder
-    Export(export::ExportArgs),
-    /// (LEGACY) Old hook that was being used somewhere
-    #[command(name = "app:running", hide = true)]
-    LegacyAppRunning,
-    /// (LEGACY) Old ssh hook that might be in ~/.ssh/config
-    #[command(name = "bg:ssh", hide = true)]
-    LegacyBgSsh,
-    /// (LEGACY) Old tmux hook that might be in ~/.tmux.conf
-    #[command(name = "bg:tmux", hide = true)]
-    LegacyBgTmux {
-        /// Tmux args
-        args: Vec<String>,
-    },
 }
 
 #[derive(Debug, Parser)]
@@ -264,27 +212,11 @@ pub struct Cli {
 impl Cli {
     pub async fn execute(self) -> Result<()> {
         let mut logger = Logger::new();
-        match self.subcommand {
-            Some(CliRootCommands::Daemon) => {
-                // Remove the daemon log file if it is >10Mb
-                let daemon_log_file = fig_util::directories::fig_dir()?.join("logs").join("");
-                if daemon_log_file.exists() {
-                    let metadata = std::fs::metadata(&daemon_log_file)?;
-                    if metadata.len() > 10_000_000 {
-                        std::fs::remove_file(&daemon_log_file)?;
-                    }
-                }
-
-                logger = logger.with_file("daemon.log").with_stdout();
-            },
-            _ => {
-                // All other cli commands print logs to ~/.fig/logs/cli.log
-                if std::env::var_os("FIG_LOG_STDOUT").is_some() {
-                    logger = logger.with_file("cli.log").with_max_file_size(10_000_000).with_stdout();
-                } else if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
-                    logger = logger.with_file("cli.log").with_max_file_size(10_000_000);
-                }
-            },
+        // All other cli commands print logs to ~/.fig/logs/cli.log
+        if std::env::var_os("FIG_LOG_STDOUT").is_some() {
+            logger = logger.with_file("cli.log").with_max_file_size(10_000_000).with_stdout();
+        } else if fig_log::get_max_fig_log_level() >= LevelFilter::DEBUG {
+            logger = logger.with_file("cli.log").with_max_file_size(10_000_000);
         }
 
         let _logger_guard = logger.init().expect("Failed to init logger");
@@ -305,27 +237,12 @@ impl Cli {
                     rollout,
                     ..
                 } => update::update(non_interactive, relaunch_dashboard, rollout).await,
-                CliRootCommands::Ssh(ssh_subcommand) => ssh_subcommand.execute().await,
                 CliRootCommands::Tips(tips_subcommand) => tips_subcommand.execute().await,
-                CliRootCommands::Daemon => {
-                    let res = daemon().await;
-                    if let Err(err) = &res {
-                        std::fs::write(
-                            directories::fig_dir().unwrap().join("logs").join("daemon-exit.log"),
-                            format!("{err:?}"),
-                        )
-                        .ok();
-                    }
-                    res
-                },
                 CliRootCommands::Diagnostic(args) => args.execute().await,
                 CliRootCommands::Init(args) => args.execute().await,
-                CliRootCommands::Source => source::source_cli().await,
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
-                CliRootCommands::Team(team) => team.execute().await,
                 CliRootCommands::Doctor(args) => args.execute().await,
-                CliRootCommands::Invite => invite::invite_cli().await,
                 CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
@@ -342,13 +259,10 @@ impl Cli {
                         app::restart_fig().await?;
                         launch_dashboard().await
                     },
-                    Processes::Daemon => Daemon::default().restart().await.context("Failed to restart daemon"),
+                    Processes::Daemon => Ok(()),
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
-                CliRootCommands::Plugins(plugins_subcommand) => plugins_subcommand.execute().await,
                 CliRootCommands::Man(args) => args.execute(),
-                CliRootCommands::Run(args) => args.execute().await,
-                CliRootCommands::Scripts(args) => args.execute().await,
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
@@ -372,15 +286,6 @@ impl Cli {
                     Ok(())
                 },
                 CliRootCommands::Dashboard => launch_dashboard().await,
-                CliRootCommands::Wrapped(args) => args.execute().await,
-                CliRootCommands::Cli(args) => args.execute().await,
-                CliRootCommands::Export(args) => args.execute().await,
-                CliRootCommands::LegacyAppRunning => {
-                    println!("{}", if is_fig_desktop_running() { "1" } else { "0" });
-                    Ok(())
-                },
-                CliRootCommands::LegacyBgSsh => Ok(()),
-                CliRootCommands::LegacyBgTmux { .. } => Ok(()),
             },
             // Root command
             None => launch_dashboard().await,

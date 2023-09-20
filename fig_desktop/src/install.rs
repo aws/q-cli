@@ -5,7 +5,6 @@ use cfg_if::cfg_if;
 use fig_install::check_for_updates;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration;
-use fig_util::directories;
 #[cfg(target_os = "macos")]
 use macos_utils::bundle::get_bundle_path_for_executable;
 use semver::Version;
@@ -29,18 +28,6 @@ pub async fn run_install(_ignore_immediate_update: bool) {
         }
     });
 
-    tokio::spawn(async {
-        if let Err(err) = fig_sync::plugins::fetch_installed_plugins(false).await {
-            error!(%err, "Failed to fetch installed plugins");
-        }
-    });
-
-    tokio::spawn(async {
-        if let Err(err) = fig_sync::dotfiles::download_and_notify(false).await {
-            error!(%err, "Failed to download installed plugins");
-        }
-    });
-
     #[cfg(target_os = "macos")]
     initialize_fig_dir().await.ok();
 
@@ -55,17 +42,6 @@ pub async fn run_install(_ignore_immediate_update: bool) {
             ))
             .await
             .ok()
-        });
-
-        tokio::spawn(async {
-            match directories::relative_cli_path() {
-                Ok(cli_path) => {
-                    if let Err(err) = fig_daemon::Daemon::default().install(&cli_path).await {
-                        error!(%err, "Failed to install daemon");
-                    };
-                },
-                Err(err) => error!(%err, "Failed to get CLI path"),
-            }
         });
 
         #[cfg(target_os = "macos")]

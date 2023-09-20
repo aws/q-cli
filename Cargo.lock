@@ -815,6 +815,17 @@ dependencies = [
 ]
 
 [[package]]
+name = "cfb"
+version = "0.7.3"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "d38f2da7a0a2c4ccf0065be06397cc26a81f4e528be095826eee9d4adbb8c60f"
+dependencies = [
+ "byteorder",
+ "fnv",
+ "uuid",
+]
+
+[[package]]
 name = "cfg-expr"
 version = "0.15.5"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -1156,15 +1167,6 @@ name = "convert_case"
 version = "0.4.0"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "6245d59a3e82a7fc217c5828a6692dbc6dfb63a0c8c90495621f7b9d79704a0e"
-
-[[package]]
-name = "convert_case"
-version = "0.6.0"
-source = "registry+https://github.com/rust-lang/crates.io-index"
-checksum = "ec182b0ca2f35d8fc196cf3404988fd8b8c739a4d270ff118a398feb0cbec1ca"
-dependencies = [
- "unicode-segmentation",
-]
 
 [[package]]
 name = "cookie"
@@ -1627,7 +1629,7 @@ version = "0.99.17"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "4fb810d30a7c1953f91334de7244731fc3f3c10d7fe163338a35b9f640960321"
 dependencies = [
- "convert_case 0.4.0",
+ "convert_case",
  "proc-macro2",
  "quote",
  "rustc_version",
@@ -1997,11 +1999,9 @@ dependencies = [
 name = "fig_api_client"
 version = "2.18.0-dev"
 dependencies = [
- "fig_graphql",
  "fig_request",
  "fig_settings",
  "fig_util",
- "once_cell",
  "regex",
  "serde",
  "serde_json",
@@ -2049,9 +2049,7 @@ dependencies = [
  "eyre",
  "fig_api_client",
  "fig_autocomplete",
- "fig_daemon",
  "fig_diagnostic",
- "fig_graphql",
  "fig_history",
  "fig_install",
  "fig_integrations",
@@ -2093,7 +2091,9 @@ dependencies = [
  "thiserror",
  "time",
  "tokio",
+ "tokio-stream",
  "tokio-tungstenite",
+ "tonic",
  "tracing",
  "tracing-subscriber",
  "tui",
@@ -2118,21 +2118,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fig_daemon"
-version = "2.18.0-dev"
-dependencies = [
- "camino",
- "fig_ipc",
- "fig_proto",
- "fig_util",
- "once_cell",
- "regex",
- "thiserror",
- "tokio",
- "winreg 0.51.0",
-]
-
-[[package]]
 name = "fig_desktop"
 version = "2.18.0-dev"
 dependencies = [
@@ -2150,7 +2135,6 @@ dependencies = [
  "dashmap",
  "dbus",
  "fig_api_client",
- "fig_daemon",
  "fig_desktop_api",
  "fig_install",
  "fig_integrations",
@@ -2169,8 +2153,10 @@ dependencies = [
  "http",
  "image",
  "imageproc",
+ "infer",
  "libc",
  "macos_utils",
+ "mime",
  "moka",
  "nix 0.27.1",
  "notify 6.1.1",
@@ -2248,26 +2234,6 @@ dependencies = [
 ]
 
 [[package]]
-name = "fig_graphql"
-version = "2.18.0-dev"
-dependencies = [
- "convert_case 0.6.0",
- "fig_ipc",
- "fig_proto",
- "fig_request",
- "fig_settings",
- "fig_util",
- "graphql_client",
- "regex",
- "serde",
- "serde_json",
- "thiserror",
- "time",
- "tokio",
- "tracing",
-]
-
-[[package]]
 name = "fig_history"
 version = "2.18.0-dev"
 dependencies = [
@@ -2306,7 +2272,6 @@ dependencies = [
  "bitflags 2.4.0",
  "camino",
  "cfg-if",
- "fig_daemon",
  "fig_integrations",
  "fig_ipc",
  "fig_request",
@@ -2327,10 +2292,6 @@ dependencies = [
  "tokio",
  "tracing",
 ]
-
-[[package]]
-name = "fig_installer"
-version = "2.18.0-dev"
 
 [[package]]
 name = "fig_integrations"
@@ -2623,6 +2584,7 @@ dependencies = [
  "sysinfo 0.29.10",
  "time",
  "tokio",
+ "tonic",
  "tracing",
  "tracing-subscriber",
  "uuid",
@@ -3663,6 +3625,15 @@ dependencies = [
  "number_prefix",
  "portable-atomic",
  "unicode-width",
+]
+
+[[package]]
+name = "infer"
+version = "0.15.0"
+source = "registry+https://github.com/rust-lang/crates.io-index"
+checksum = "cb33622da908807a06f9513c19b3c1ad50fab3e4137d82a78107d502075aa199"
+dependencies = [
+ "cfb",
 ]
 
 [[package]]

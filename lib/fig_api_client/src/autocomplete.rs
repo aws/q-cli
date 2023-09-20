@@ -1,16 +1,17 @@
+use std::borrow::Cow;
+
 use fig_request::{
     reqwest_client,
     Error,
     Result,
 };
-use once_cell::sync::Lazy;
 
 use crate::clients::github::{
     GitHub,
     GithubRelease,
 };
 
-pub static AUTOCOMPLETE_REPO: Lazy<GitHub> = Lazy::new(|| GitHub::new("withfig", "autocomplete"));
+pub const AUTOCOMPLETE_REPO: GitHub = GitHub::new(Cow::Borrowed("withfig"), Cow::Borrowed("autocomplete"));
 
 pub async fn get_zipped_specs_from(release: &GithubRelease) -> Result<Vec<u8>> {
     let asset = release.assets.first().unwrap();

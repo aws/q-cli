@@ -20,12 +20,6 @@ pub(crate) mod local {
     include!(concat!(env!("OUT_DIR"), "/local.rs"));
 }
 
-/// Daemon Protocol Buffers
-pub(crate) mod daemon {
-    pub use super::fig_common::*;
-    include!(concat!(env!("OUT_DIR"), "/daemon.rs"));
-}
-
 /// Figterm Protocol Buffers
 pub(crate) mod figterm {
     pub use crate::fig_common::*;

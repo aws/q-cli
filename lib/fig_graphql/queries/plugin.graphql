@@ -1,9 +1,0 @@
-query Plugin($name: String!) {
-    plugin(where: {
-        name: $name
-    }) {
-        name
-        description
-        authors
-    }
-}

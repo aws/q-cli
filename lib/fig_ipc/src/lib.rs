@@ -1,4 +1,3 @@
-pub mod daemon;
 pub mod local;
 #[cfg(unix)]
 pub mod util;

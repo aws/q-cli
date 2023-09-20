@@ -347,16 +347,12 @@ impl RootUserSubcommand {
                                         };
 
                                         let (telem_join, login_join) = tokio::join!(
-                                            fig_telemetry::dispatch_emit_track(
-                                                TrackEvent::new(
-                                                    TrackEventType::Login,
-                                                    TrackSource::Cli,
-                                                    env!("CARGO_PKG_VERSION").into(),
-                                                    empty::<(&str, &str)>()
-                                                ),
-                                                false,
-                                                true,
-                                            ),
+                                            fig_telemetry::emit_track(TrackEvent::new(
+                                                TrackEventType::Login,
+                                                TrackSource::Cli,
+                                                env!("CARGO_PKG_VERSION").into(),
+                                                empty::<(&str, &str)>()
+                                            ),),
                                             Request::post("/user/login").auth().body_json(login_body).send()
                                         );
 
@@ -456,31 +452,6 @@ impl RootUserSubcommand {
                     error!(%err, "Failed to sync settings");
                 }
 
-                let daemon = fig_daemon::Daemon::default();
-
-                let (dotfiles_res, plugins_res, script_res, daemon_res) = tokio::join!(
-                    fig_sync::dotfiles::download_and_notify(false),
-                    fig_sync::plugins::fetch_installed_plugins(false),
-                    fig_api_client::scripts::sync_scripts(),
-                    daemon.restart()
-                );
-
-                if let Err(err) = dotfiles_res {
-                    error!(%err, "Failed to sync dotfiles");
-                }
-
-                if let Err(err) = plugins_res {
-                    error!(%err, "Failed to sync plugins");
-                }
-
-                if let Err(err) = script_res {
-                    error!(%err, "Failed to sync scripts");
-                }
-
-                if let Err(err) = daemon_res {
-                    error!(%err, "Failed to restart daemon");
-                }
-
                 spin.stop_with_message("Done setting up Fig".into());
 
                 // We assume that if this is a token login the user is already using the dashboard and we don't need
@@ -494,16 +465,12 @@ impl RootUserSubcommand {
                 Ok(())
             },
             Self::Logout => {
-                let telem_join = tokio::spawn(fig_telemetry::dispatch_emit_track(
-                    TrackEvent::new(
-                        TrackEventType::Logout,
-                        TrackSource::Cli,
-                        env!("CARGO_PKG_VERSION").into(),
-                        empty::<(&str, &str)>(),
-                    ),
-                    false,
-                    true,
-                ));
+                let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
+                    TrackEventType::Logout,
+                    TrackSource::Cli,
+                    env!("CARGO_PKG_VERSION").into(),
+                    empty::<(&str, &str)>(),
+                )));
 
                 let logout_join = logout_command();
 

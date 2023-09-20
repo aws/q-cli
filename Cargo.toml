@@ -3,7 +3,6 @@ resolver = "2"
 members = [
     "fig_cli",
     "fig_desktop",
-    "fig_installer",
     "fig_input_method",
     "figterm",
     "tools/fig_release",

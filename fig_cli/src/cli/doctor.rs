@@ -28,7 +28,6 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_daemon::Daemon;
 #[cfg(target_os = "macos")]
 use fig_integrations::input_method::InputMethodError;
 use fig_integrations::shell::{
@@ -44,10 +43,6 @@ use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
     SendRecvMessage,
-};
-use fig_proto::daemon::diagnostic_response::{
-    settings_watcher_status,
-    websocket_status,
 };
 use fig_proto::local::DiagnosticsResponse;
 use fig_settings::JsonStore;
@@ -159,17 +154,6 @@ impl From<eyre::Report> for DoctorError {
 
 impl From<fig_util::Error> for DoctorError {
     fn from(err: fig_util::Error) -> Self {
-        DoctorError::Error {
-            reason: err.to_string().into(),
-            info: vec![],
-            fix: None,
-            error: Some(eyre::Report::from(err)),
-        }
-    }
-}
-
-impl From<fig_daemon::Error> for DoctorError {
-    fn from(err: fig_daemon::Error) -> Self {
         DoctorError::Error {
             reason: err.to_string().into(),
             info: vec![],
@@ -817,232 +801,6 @@ impl DoctorCheck for InsertionLockCheck {
                 }))),
                 error: None,
             });
-        }
-
-        Ok(())
-    }
-}
-
-macro_rules! daemon_fix {
-    () => {
-        Some(DoctorFix::Async(
-            async move {
-                let path = std::env::current_exe()?;
-                Daemon::default().install(&path).await?;
-                // Sleep for a few seconds to give the daemon time to install and start
-                std::thread::sleep(std::time::Duration::from_secs(5));
-                Ok(())
-            }
-            .boxed(),
-        ))
-    };
-}
-
-struct DaemonCheck;
-
-#[async_trait]
-impl DoctorCheck for DaemonCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Daemon".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        // Make sure the daemon is running
-        Daemon::default().start().await.map_err(|_| DoctorError::Error {
-            reason: "Daemon is not running".into(),
-            info: vec![],
-            fix: daemon_fix!(),
-            error: None,
-        })?;
-
-        #[cfg(target_os = "macos")]
-        {
-            use std::io::Write;
-
-            let launch_agents_path = fig_util::directories::home_dir()
-                .map_err(eyre::Report::from)?
-                .join("Library/LaunchAgents");
-
-            if !launch_agents_path.exists() {
-                return Err(DoctorError::Error {
-                    reason: format!("LaunchAgents directory does not exist at {launch_agents_path:?}").into(),
-                    info: vec![],
-                    fix: Some(DoctorFix::Async(
-                        async move {
-                            std::fs::create_dir_all(&launch_agents_path)?;
-                            let path = std::env::current_exe()?;
-                            fig_daemon::Daemon::default().install(&path).await?;
-                            std::thread::sleep(std::time::Duration::from_secs(5));
-                            Ok(())
-                        }
-                        .boxed(),
-                    )),
-                    error: None,
-                });
-            }
-
-            // Check the directory is writable
-            // I wish `try` was stable :(
-            (|| -> Result<()> {
-                let mut file =
-                    std::fs::File::create(launch_agents_path.join("test.txt")).context("Could not create test file")?;
-                file.write_all(b"test").context("Could not write to test file")?;
-                file.sync_all().context("Could not sync test file")?;
-                std::fs::remove_file(launch_agents_path.join("test.txt")).context("Could not remove test file")?;
-                Ok(())
-            })()
-            .map_err(|err| DoctorError::Error {
-                reason: "LaunchAgents directory is not writable".into(),
-                info: vec![
-                    "Make sure you have write permissions for the LaunchAgents directory".into(),
-                    format!("Path: {launch_agents_path:?}").into(),
-                    format!("Error: {err}").into(),
-                ],
-                fix: Some(DoctorFix::Sync(Box::new(move || Ok(())))),
-                error: None,
-            })?;
-        }
-
-        match Daemon::default().status().await? {
-            Some(0) => Ok(()),
-            Some(n) => {
-                let error_message = tokio::fs::read_to_string(
-                    &directories::fig_dir()
-                        .context("Could not get fig dir")?
-                        .join("logs")
-                        .join("daemon-exit.log"),
-                )
-                .await
-                .ok();
-
-                Err(DoctorError::Error {
-                    reason: "Daemon is not running".into(),
-                    info: vec![
-                        format!("Daemon status: {n}").into(),
-                        format!("Error message: {}", error_message.unwrap_or_default()).into(),
-                    ],
-                    fix: daemon_fix!(),
-                    error: None,
-                })
-            },
-            None => Err(DoctorError::Error {
-                reason: "Daemon is not running".into(),
-                info: vec![],
-                fix: daemon_fix!(),
-                error: None,
-            }),
-        }?;
-
-        Ok(())
-    }
-}
-
-struct DaemonDiagnosticsCheck;
-
-#[async_trait]
-impl DoctorCheck for DaemonDiagnosticsCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Daemon diagnostics".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let socket_path = directories::daemon_socket_path().unwrap();
-
-        cfg_if::cfg_if! {
-            if #[cfg(unix)] {
-                let socket_exists = socket_path.exists();
-            } else if #[cfg(windows)] {
-                let socket_exists = match socket_path.metadata() {
-                    Ok(_) => true,
-                    // Windows can't query socket file existence
-                    // Check against arbitrary error code
-                    Err(err) => matches!(err.raw_os_error(), Some(1920)),
-                };
-            }
-        }
-
-        if !socket_exists {
-            return Err(DoctorError::Error {
-                reason: "Daemon socket does not exist".into(),
-                info: vec![],
-                fix: daemon_fix!(),
-                error: None,
-            });
-        }
-
-        let mut conn = match BufferedUnixStream::connect_timeout(&socket_path, Duration::from_secs(1)).await {
-            Ok(connection) => connection,
-            Err(err) => {
-                return Err(DoctorError::Error {
-                    reason: "Daemon socket exists but could not connect".into(),
-                    info: vec![
-                        format!("Socket path: {}", socket_path.display()).into(),
-                        format!("{err:?}").into(),
-                    ],
-                    fix: daemon_fix!(),
-                    error: None,
-                });
-            },
-        };
-
-        let diagnostic_response_result: Result<Option<fig_proto::daemon::DaemonResponse>> = conn
-            .send_recv_message_timeout(fig_proto::daemon::new_diagnostic_message(), Duration::from_secs(1))
-            .await
-            .context("Failed to send/recv message");
-
-        match diagnostic_response_result {
-            Ok(Some(diagnostic_response)) => match diagnostic_response.response {
-                Some(response_type) => match response_type {
-                    fig_proto::daemon::daemon_response::Response::Diagnostic(diagnostics) => {
-                        if let Some(status) = diagnostics.settings_watcher_status {
-                            if status.status() != settings_watcher_status::Status::Ok {
-                                return Err(DoctorError::Error {
-                                    reason: "Daemon settings watcher error".into(),
-                                    info: status.error.map(|e| vec![e.into()]).unwrap_or_default(),
-                                    fix: daemon_fix!(),
-                                    error: None,
-                                });
-                            }
-                        }
-
-                        if let Some(status) = diagnostics.websocket_status {
-                            if status.status() != websocket_status::Status::Ok {
-                                return Err(DoctorError::Error {
-                                    reason: "Daemon websocket error".into(),
-                                    info: status.error.map(|e| vec![e.into()]).unwrap_or_default(),
-                                    fix: daemon_fix!(),
-                                    error: None,
-                                });
-                            }
-                        }
-                    },
-                    #[allow(unreachable_patterns)]
-                    _ => {
-                        return Err(DoctorError::Error {
-                            reason: "Daemon responded with unexpected response type".into(),
-                            info: vec![],
-                            fix: daemon_fix!(),
-                            error: None,
-                        });
-                    },
-                },
-                None => {
-                    return Err(DoctorError::Error {
-                        reason: "Daemon responded with no response type".into(),
-                        info: vec![],
-                        fix: daemon_fix!(),
-                        error: None,
-                    });
-                },
-            },
-            Ok(None) | Err(_) => {
-                return Err(DoctorError::Error {
-                    reason: "Daemon accepted request but did not respond".into(),
-                    info: vec![format!("Socket path: {}", socket_path.display()).into()],
-                    fix: daemon_fix!(),
-                    error: None,
-                });
-            },
         }
 
         Ok(())
@@ -2466,7 +2224,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         if fig_util::manifest::is_full() {
             run_checks(
                 "Let's make sure Fig is running...".into(),
-                vec![&AppRunningCheck, &FigSocketCheck, &DaemonCheck, &DaemonDiagnosticsCheck],
+                vec![&AppRunningCheck, &FigSocketCheck],
                 config,
                 &mut spinner,
             )

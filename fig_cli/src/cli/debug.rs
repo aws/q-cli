@@ -20,7 +20,6 @@ use crossterm::ExecutableCommand;
 use eyre::{
     ContextCompat,
     Result,
-    WrapErr,
 };
 use fig_ipc::local::{
     devtools_command,
@@ -28,7 +27,6 @@ use fig_ipc::local::{
     set_debug_mode,
     toggle_debug_mode,
 };
-use fig_sync::dotfiles::download_and_notify;
 use fig_util::consts::FIG_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
 use fig_util::{
@@ -144,12 +142,6 @@ pub enum InputMethodDebugAction {
 pub enum DebugSubcommand {
     /// Debug fig app
     App,
-    /// Debug dotfiles
-    Dotfiles {
-        /// Disable debug mode
-        #[arg(long)]
-        disable: bool,
-    },
     /// Switch to another branch of a Fig.js app
     Build {
         #[arg(value_enum)]
@@ -279,16 +271,6 @@ impl DebugSubcommand {
                     println!("{current_build}");
                 },
             },
-            DebugSubcommand::Dotfiles { disable } => {
-                if *disable {
-                    fig_settings::state::remove_value("developer.dotfiles.debug")?;
-                } else {
-                    fig_settings::state::set_value("developer.dotfiles.debug", json!(true))?;
-                }
-                download_and_notify(true)
-                    .await
-                    .context("Could not sync remote dotfiles")?;
-            },
             DebugSubcommand::AutocompleteWindow { mode } => {
                 let result = match mode {
                     Some(AutocompleteWindowDebug::On) => set_debug_mode(true).await,
@@ -306,17 +288,6 @@ impl DebugSubcommand {
 
                 fig_settings::state::set_value("developer.logging", json!(true))?;
 
-                // Communicate with active fig processes to set log level
-                if files.is_empty() || files.iter().any(|f| f == "daemon") {
-                    if let Err(err) = fig_ipc::daemon::send_recv_message(fig_proto::daemon::new_log_level_command(
-                        level.as_ref().clone().unwrap_or_else(|| "DEBUG".into()),
-                    ))
-                    .await
-                    {
-                        println!("Could not set log level for daemon: {err}");
-                    }
-                }
-
                 if files.is_empty() || files.iter().any(|f| f == "fig_desktop") {
                     if let Err(err) =
                         fig_ipc::local::set_log_level(level.as_ref().clone().unwrap_or_else(|| "DEBUG".into())).await
@@ -331,14 +302,6 @@ impl DebugSubcommand {
                         Ok(_) => 0,
                         Err(_) => 1,
                     };
-
-                    // tokio handle to runtime
-                    if let Err(err) =
-                        fig_ipc::daemon::send_recv_message(fig_proto::daemon::new_log_level_command("INFO".into()))
-                            .await
-                    {
-                        println!("Could not restore log level for daemon: {err}");
-                    }
 
                     if let Err(err) = fig_ipc::local::set_log_level("INFO".into()).await {
                         println!("Could not restore log level for fig_desktop: {err}");

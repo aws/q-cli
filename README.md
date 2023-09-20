@@ -118,7 +118,7 @@ For MacOS:
 
 ```bash
 xcode-select --install
-brew install swiftlint yarn jq cmake
+brew install yarn protobuf
 ```
 
 ### 2. Install protobuf compilers.

@@ -32,30 +32,6 @@ pub async fn post_login(proxy: &EventLoopProxy) {
         if let Err(err) = fig_api_client::settings::sync().await {
             error!(%err, "Failed to sync settings");
         }
-
-        tokio::spawn(async {
-            if let Err(err) = fig_sync::dotfiles::download_and_notify(false).await {
-                error!(%err, "Failed to download dotfiles");
-            }
-        });
-
-        tokio::spawn(async {
-            if let Err(err) = fig_sync::plugins::fetch_installed_plugins(false).await {
-                error!(%err, "Failed to fetch installed plugins");
-            }
-        });
-
-        tokio::spawn(async {
-            if let Err(err) = fig_api_client::scripts::sync_scripts().await {
-                error!(%err, "Failed to sync scripts");
-            }
-        });
-
-        tokio::spawn(async {
-            if let Err(err) = fig_daemon::Daemon::default().restart().await {
-                error!(%err, "Failed to restart daemon");
-            }
-        });
     });
 
     proxy.send_event(Event::ReloadTray).ok();

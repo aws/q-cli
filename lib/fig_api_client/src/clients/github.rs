@@ -1,3 +1,5 @@
+use std::borrow::Cow;
+
 use fig_request::{
     reqwest_client,
     Error,
@@ -12,8 +14,8 @@ use url::Url;
 /// A Github repo with the form `"owner/repo"`
 #[derive(Debug, Clone, PartialEq, Eq)]
 pub struct GitHub {
-    pub owner: String,
-    pub repo: String,
+    pub owner: Cow<'static, str>,
+    pub repo: Cow<'static, str>,
 }
 
 #[derive(Debug, Clone, PartialEq, Eq, serde::Serialize, serde::Deserialize)]
@@ -30,11 +32,8 @@ pub struct GithubReleaseAsset {
 }
 
 impl GitHub {
-    pub fn new(owner: impl Into<String>, repo: impl Into<String>) -> Self {
-        Self {
-            owner: owner.into(),
-            repo: repo.into(),
-        }
+    pub const fn new(owner: Cow<'static, str>, repo: Cow<'static, str>) -> Self {
+        Self { owner, repo }
     }
 }
 
@@ -43,7 +42,8 @@ impl Serialize for GitHub {
     where
         S: serde::Serializer,
     {
-        serializer.serialize_str(&format!("{}/{}", self.owner, self.repo))
+        let GitHub { owner, repo } = self;
+        serializer.serialize_str(&format!("{owner}/{repo}"))
     }
 }
 
@@ -57,8 +57,8 @@ impl<'de> Deserialize<'de> for GitHub {
         let owner = parts.next().ok_or_else(|| serde::de::Error::custom("missing owner"))?;
         let repo = parts.next().ok_or_else(|| serde::de::Error::custom("missing repo"))?;
         Ok(GitHub {
-            owner: owner.to_owned(),
-            repo: repo.to_owned(),
+            owner: owner.to_owned().into(),
+            repo: repo.to_owned().into(),
         })
     }
 }

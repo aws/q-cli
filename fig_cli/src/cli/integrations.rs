@@ -1,6 +1,5 @@
 use clap::Subcommand;
 use eyre::Result;
-use fig_daemon::Daemon;
 use fig_integrations::shell::ShellExt;
 use fig_integrations::ssh::SshIntegration;
 use fig_integrations::Integration as _;
@@ -152,8 +151,6 @@ async fn install(integration: Integration, silent: bool) -> Result<()> {
             }
         },
         Integration::Daemon => {
-            let path = std::env::current_exe()?;
-            Daemon::default().install(&path).await?;
             installed = true;
             Ok(())
         },
@@ -266,7 +263,6 @@ async fn uninstall(integration: Integration, silent: bool) -> Result<()> {
             }
         },
         Integration::Daemon => {
-            Daemon::default().uninstall().await?;
             uninstalled = true;
             Ok(())
         },
@@ -348,18 +344,7 @@ async fn status(integration: Integration) -> Result<()> {
             }
             Ok(())
         },
-        Integration::Daemon => {
-            let daemon = Daemon::default();
-            match daemon.status().await {
-                Ok(status) => {
-                    println!("Status: {status:?}");
-                },
-                Err(err) => {
-                    println!("Status Error: {err}");
-                },
-            }
-            Ok(())
-        },
+        Integration::Daemon => Ok(()),
         Integration::Dotfiles { .. } => {
             for shell in &[Shell::Bash, Shell::Zsh, Shell::Fish] {
                 match shell.get_shell_integrations() {

@@ -15,7 +15,6 @@ use fig_integrations::shell::{
     When,
 };
 use fig_request::auth::is_logged_in;
-use fig_sync::dotfiles::api::DotfileData;
 use fig_util::{
     Shell,
     Terminal,
@@ -140,28 +139,16 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
             && !skip_dotfiles
         {
-            // Add dotfiles sourcing
-            let data_path = shell.get_data_path()?;
-            let get_dotfile_source = || {
-                let raw = std::fs::read_to_string(data_path).ok()?;
-                let source: DotfileData = serde_json::from_str(&raw).ok()?;
-                Some(source.dotfile)
-            };
-
-            if let Some(mut source) = get_dotfile_source() {
-                if shell == &Shell::Zsh
-                    && when == &When::Post
-                    && fig_settings::settings::product_gate("ai-autocomplete", Some("fig")).unwrap_or(false)
-                {
-                    source.push_str(fig_integrations::shell::codex_plugin::ZSH_SCRIPT);
-                }
-
+            if shell == &Shell::Zsh
+                && when == &When::Post
+                && fig_settings::settings::product_gate("ai-autocomplete", Some("fig")).unwrap_or(false)
+            {
                 to_source.push(guard_source(
                     shell,
                     false,
                     "FIG_DOTFILES_SOURCED",
                     GuardAssignment::AfterSourcing,
-                    source,
+                    fig_integrations::shell::codex_plugin::ZSH_SCRIPT,
                 ));
             }
         }

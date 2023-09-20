@@ -298,9 +298,6 @@ impl WebviewManager {
 
         init_webview_notification_listeners(self.event_loop.create_proxy()).await;
 
-        #[cfg(target_os = "macos")]
-        init_network_watcher(self.event_loop.create_proxy());
-
         let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
         let mut tray = if tray_enabled {
             Some(build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap())
@@ -556,16 +553,12 @@ impl WebviewManager {
             }
 
             if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
-                tokio::runtime::Handle::current().spawn(fig_telemetry::dispatch_emit_track(
-                    fig_telemetry::TrackEvent::new(
-                        fig_telemetry::TrackEventType::QuitApp,
-                        fig_telemetry::TrackSource::Desktop,
-                        env!("CARGO_PKG_VERSION").into(),
-                        empty::<(&str, &str)>(),
-                    ),
-                    false,
-                    true,
-                ));
+                tokio::runtime::Handle::current().spawn(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                    fig_telemetry::TrackEventType::QuitApp,
+                    fig_telemetry::TrackSource::Desktop,
+                    env!("CARGO_PKG_VERSION").into(),
+                    empty::<(&str, &str)>(),
+                )));
             }
         });
     }
@@ -956,77 +949,6 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                 },
                 Err(tokio::sync::broadcast::error::RecvError::Closed) => break,
             }
-        }
-    });
-}
-
-#[cfg(target_os = "macos")]
-pub fn reachable(host: impl Into<Vec<u8>>) -> bool {
-    let Ok(host_cstr) = std::ffi::CString::new(host) else {
-        return false;
-    };
-
-    let Some(Ok(flags)) = system_configuration::network_reachability::SCNetworkReachability::from_host(&host_cstr)
-        .map(|r| r.reachability())
-    else {
-        return false;
-    };
-
-    flags.contains(system_configuration::network_reachability::ReachabilityFlags::REACHABLE)
-}
-
-#[cfg(target_os = "macos")]
-fn init_network_watcher(proxy: EventLoopProxy) {
-    tokio::task::spawn(async move {
-        let host = std::ffi::CStr::from_bytes_with_nul(b"app.fig.io\0").unwrap();
-
-        let mut reachable: Option<bool> = None;
-
-        loop {
-            let flags = system_configuration::network_reachability::SCNetworkReachability::from_host(host)
-                .unwrap()
-                .reachability()
-                .unwrap();
-
-            debug!(?flags, "Network reachability flags");
-
-            let new_reachable =
-                flags.contains(system_configuration::network_reachability::ReachabilityFlags::REACHABLE);
-
-            // If the page is not reachable, we want to show the offline page
-            // If the page is reachable after being unreachable, we want to reload the page
-            if reachable.is_none() && !new_reachable {
-                info!("Network is unreachable, showing offline page");
-                proxy
-                    .send_event(Event::WindowEvent {
-                        window_id: DASHBOARD_ID,
-                        window_event: WindowEvent::SetHtml {
-                            html: include_str!("../../html/offline.html").into(),
-                        },
-                    })
-                    .ok();
-            } else if let Some(was_reachable) = reachable {
-                if !was_reachable && new_reachable {
-                    info!("Network is now reachable");
-                    proxy
-                        .send_event(Event::WindowEvent {
-                            window_id: DASHBOARD_ID,
-                            window_event: WindowEvent::ReloadIfNotLoaded,
-                        })
-                        .ok();
-
-                    proxy
-                        .send_event(Event::WindowEvent {
-                            window_id: AUTOCOMPLETE_ID,
-                            window_event: WindowEvent::ReloadIfNotLoaded,
-                        })
-                        .ok();
-                }
-            }
-
-            reachable = Some(new_reachable);
-
-            tokio::time::sleep(std::time::Duration::from_secs(5)).await;
         }
     });
 }

@@ -278,7 +278,6 @@ mod tests {
     use tokio::process::Command;
 
     use super::*;
-    use crate::plugins::manifest::GitHub;
 
     #[ignore]
     #[tokio::test]
@@ -328,34 +327,5 @@ mod tests {
         let branch_stdout = String::from_utf8(branch_output.stdout).unwrap();
 
         assert_eq!(branch_stdout.trim(), "main");
-    }
-
-    #[ignore]
-    #[tokio::test]
-    async fn test_download_source_github() {
-        let commit = "d112d75ecc1d867e7f223577c25c56f57f862c7b";
-        let github = GitHub::new("withfig", "fig");
-
-        let directory = tempfile::tempdir().unwrap();
-
-        clone_git_repo_with_reference(
-            github.git_url(),
-            directory.path().join("fig"),
-            Some(&GitReference::Commit(commit.into())),
-        )
-        .await
-        .unwrap();
-
-        // Check that the commit is correct
-        let commit_output = Command::new("git")
-            .args(["rev-parse", "HEAD"])
-            .current_dir(directory.path().join("fig"))
-            .output()
-            .await
-            .unwrap();
-
-        let commit_stdout = String::from_utf8(commit_output.stdout).unwrap();
-
-        assert_eq!(commit_stdout.trim(), commit);
     }
 }
