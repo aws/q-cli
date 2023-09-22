@@ -229,7 +229,7 @@ pub async fn update(
         });
 
         if let Some(on_update) = on_update {
-            info!("Updating Fig...");
+            info!("Updating CodeWhisperer...");
             on_update(rx);
         } else {
             drop(rx);

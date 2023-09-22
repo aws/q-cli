@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eux
+
 export VERSION
 VERSION=$(cargo metadata --format-version 1 --no-deps | jq -r '.packages[] | select(.name == "fig_desktop") | .version')
 echo "Version ${VERSION}"

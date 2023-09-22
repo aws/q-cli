@@ -95,7 +95,7 @@ pub fn logout() -> Result<()> {
     {
         // This is old code and should probably be removed
         std::process::Command::new("defaults")
-            .args(["delete", "com.mschrage.fig.shared"])
+            .args(["delete", "com.amazon.codewhisperer.shared"])
             .output()
             .ok();
     }

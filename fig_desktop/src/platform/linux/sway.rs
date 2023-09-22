@@ -32,7 +32,7 @@ use wry::application::dpi::{
     LogicalSize,
 };
 
-use super::integrations::GSE_WHITELIST;
+use super::integrations::GSE_ALLOWLIST;
 use crate::utils::Rect;
 use crate::EventLoopProxy;
 
@@ -217,7 +217,7 @@ pub async fn handle_incoming(conn: &mut UnixStream, buf: &mut BytesMut, sway_sta
                                 tracing::trace!(?geometey, ?app_id, "Received focus change");
 
                                 if let Some(app_id) = app_id {
-                                    let terminal = GSE_WHITELIST.get(app_id);
+                                    let terminal = GSE_ALLOWLIST.get(app_id);
                                     tracing::debug!(?terminal, "TERMINAL");
 
                                     if let Some(terminal) = terminal {

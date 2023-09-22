@@ -75,7 +75,7 @@ impl HookSubcommand {
     }
 
     pub async fn execute_hook(&self) -> Result<()> {
-        let session_id = std::env::var("FIGTERM_SESSION_ID").ok();
+        let session_id = std::env::var("CWTERM_SESSION_ID").ok();
 
         let hook = match self {
             HookSubcommand::Editbuffer {
@@ -119,7 +119,7 @@ impl HookSubcommand {
                 prompt,
             } => {
                 if *prompt && !remote_dest.starts_with("git@") && !remote_dest.starts_with("aur@") {
-                    let installed_hosts_file = directories::fig_dir()
+                    let installed_hosts_file = directories::fig_data_dir()
                         .context("Can't get fig dir")?
                         .join("ssh_hostnames");
                     let mut installed_hosts = OpenOptions::new()

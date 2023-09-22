@@ -15,6 +15,7 @@ use fig_telemetry::sentry::{
     configure_scope,
     release_name,
 };
+use fig_util::CODEWHISPERER_CLI_BINARY_NAME;
 use owo_colors::OwoColorize;
 use tracing::metadata::LevelFilter;
 
@@ -39,7 +40,7 @@ fn main() -> Result<()> {
         color_eyre::install()?;
     }
 
-    // Whitelist commands do not have sentry or telemetry, telemetry should only run on
+    // Allow commands do not have sentry or telemetry, telemetry should only run on
     // user facing commands as performance is less important
     let (_guard, track_join, multithread) = match (
         args.get(0).map(String::as_str),
@@ -49,7 +50,7 @@ fn main() -> Result<()> {
         (_, Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running"), _) => {
             (None, None, false)
         },
-        (Some("/Applications/Fig.app/Contents/MacOS/fig-darwin-universal"), _, _)
+        (Some("/Applications/CodeWhisperer.app/Contents/MacOS/fig-darwin-universal"), _, _)
         | (_, Some("app"), Some("prompts"))
         | (_, Some("settings"), Some("init")) => (
             Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false)),
@@ -116,8 +117,9 @@ fn main() -> Result<()> {
             err.print()?;
             writeln!(
                 stderr(),
-                "\nThis command may be valid in newer versions of the Fig CLI. Try running {}.",
-                "fig update".magenta()
+                "\nThis command may be valid in newer versions of the CodeWhisperer CLI. Try running {} {}.",
+                CODEWHISPERER_CLI_BINARY_NAME.magenta(),
+                "update".magenta()
             )
             .ok();
             exit(2);

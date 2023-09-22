@@ -1,10 +1,10 @@
 [package]
 name = "fig_desktop"
-authors.workspace = true
+authors = ["Amazon CodeWhisperer Devs"]
 edition.workspace = true
-homepage.workspace = true
+homepage = "https://aws.amazon.com/codewhisperer"
 publish.workspace = true
-version.workspace = true
+version = "2.18.0-dev"
 
 [package.metadata.bundle]
 name = "Fig"
@@ -19,7 +19,7 @@ icon = [
     "./icons/512x512.png",
     "./icons/64x64.png",
 ]
-identifier = "com.mschrage.fig"
+identifier = "com.amazon.codewhisperer"
 resource = "./autocomplete-icons/*"
 
 [features]

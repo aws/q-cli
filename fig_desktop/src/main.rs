@@ -21,8 +21,7 @@ use clap::Parser;
 use event::Event;
 use fig_log::Logger;
 use fig_telemetry::sentry::release_name;
-use fig_util::consts::FIG_DESKTOP_PROCESS_NAME;
-// use jemallocator::Jemalloc;
+use fig_util::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
 use parking_lot::RwLock;
 use platform::PlatformState;
 use sysinfo::{
@@ -124,7 +123,7 @@ async fn main() {
             },
         })
         .and_then(|url| {
-            if url.scheme() != "fig" {
+            if url.scheme() != "codewhisperer" {
                 error!(scheme = %url.scheme(), %url, "Invalid scheme");
                 exit(1)
             }
@@ -147,7 +146,7 @@ async fn main() {
         match get_current_pid() {
             Ok(current_pid) => {
                 let system = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-                let processes = system.processes_by_name(FIG_DESKTOP_PROCESS_NAME);
+                let processes = system.processes_by_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
 
                 cfg_if::cfg_if! {
                     if #[cfg(unix)] {
@@ -179,14 +178,14 @@ async fn main() {
                                     extra.push(format!("gid={}", *group_id));
                                 }
 
-                                eprintln!("Fig is already running: {exe} ({})", extra.join(" "),);
+                                eprintln!("CodeWhisperer is already running: {exe} ({})", extra.join(" "),);
                                 let (page, auth_data) = match page_and_data {
                                     Some((page, auth_data)) => {
                                         eprintln!("Opening /{page}...");
                                         (Some(page), auth_data)
                                     },
                                     None => {
-                                        eprintln!("Opening Fig Window...");
+                                        eprintln!("Opening CodeWhisperer Window...");
                                         (None, None)
                                     },
                                 };
@@ -237,7 +236,7 @@ async fn main() {
                 rfd::MessageDialog::new()
                     .set_title("Error")
                     .set_description(
-                        "Cannot execute Fig from within a readonly volume. Please move Fig to your applications folder and try again.",
+                        "Cannot execute CodeWhisperer from within a readonly volume. Please move CodeWhisperer to your applications folder and try again.",
                     )
                     .show();
 
@@ -304,11 +303,15 @@ async fn main() {
         .build_webview(
             AUTOCOMPLETE_ID,
             build_autocomplete,
-            AutocompleteOptions {},
+            AutocompleteOptions,
             autocomplete_enabled,
             autocomplete::url,
         )
         .unwrap();
+
+    // webview_manager
+    //     .build_webview(COMPANION_ID, build_companion, CompanionOptions, true, companion::url)
+    //     .unwrap();
 
     webview_manager.run().await.unwrap();
 }

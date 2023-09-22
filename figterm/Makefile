@@ -111,14 +111,14 @@ build-native-release:
 	cargo build --release
 
 install-native: build-native
-	mkdir -p $(HOME)/.fig/bin/
-	rm -rf $(HOME)/.fig/bin/*figterm*
-	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
+	mkdir -p $(HOME)/.local/bin/
+	rm -rf $(HOME)/.local/bin/*figterm*
+	install $(TARGET_DIR)/debug/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
 install-native-release: build-native-release
-	mkdir -p $(HOME)/.fig/bin/
-	rm -rf $(HOME)/.fig/bin/*figterm*
-	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.fig/bin/$(BINARY_NAME)
+	mkdir -p $(HOME)/.local/bin/
+	rm -rf $(HOME)/.local/bin/*figterm*
+	install $(TARGET_DIR)/release/$(CRATE_NAME) $(HOME)/.local/bin/$(BINARY_NAME)
 
 install-native-usr: build-native
 	for exe in $(shell ls /usr/bin | grep figterm | xargs -I % printf "'%'\n") figterm; do \

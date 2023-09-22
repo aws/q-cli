@@ -5,7 +5,7 @@ rustflags=(
   "-C force-frame-pointers=yes"
 )
 
-if [[ ! -z "$LINKER" ]]; then
+if [[ -n "$LINKER" ]]; then
   rustflags+=(
     "-C link-arg=-fuse-ld=${LINKER}"
   )

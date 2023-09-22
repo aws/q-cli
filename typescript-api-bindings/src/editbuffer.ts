@@ -1,4 +1,4 @@
-import { EditBufferChangedNotification, NotificationType } from './fig.pb';
+import { EditBufferChangedNotification, NotificationType } from '@fig/fig-api-proto/dist/fig.pb';
 import { _subscribe, NotificationResponse } from './notifications';
 
 export function subscribe(

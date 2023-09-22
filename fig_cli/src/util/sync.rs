@@ -28,7 +28,7 @@ impl Sync for Settings {
     }
 
     fn location(&self) -> Result<PathBuf> {
-        let fig_dir = directories::fig_dir().context("Could not get fig_dir")?;
+        let fig_dir = directories::fig_data_dir().context("Could not get fig_dir")?;
         Ok(fig_dir.join("settings.json"))
     }
 

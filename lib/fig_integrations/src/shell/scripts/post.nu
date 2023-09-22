@@ -6,13 +6,13 @@ def pathadd [path: string] {
   }
 }
 
-let-env PATH = pathadd $"($env.HOME)/.fig/bin"
+let-env PATH = pathadd $"($env.HOME)/.local/bin"
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
 
-let-env FIG_SET_PARENT = $env.FIGTERM_SESSION_ID
-let-env LC_FIG_SET_PARENT = $env.FIGTERM_SESSION_ID
+let-env FIG_SET_PARENT = $env.CWTERM_SESSION_ID
+let-env LC_FIG_SET_PARENT = $env.CWTERM_SESSION_ID
 
-let-env FIG_SHELL_PATH = (^fig _ get-shell)
+let-env FIG_SHELL_PATH = (^cw _ get-shell)
 
 let-env PATH = $env.PATH
 
@@ -38,8 +38,8 @@ def-env fig_reset_hooks [] {
 }
 
 def-env fig_pre_execution_hook [] {
-  if "FIGTERM_SESSION_ID" in $env {
-    print_fig_osc $"OSCLock=($env.FIGTERM_SESSION_ID)"
+  if "CWTERM_SESSION_ID" in $env {
+    print_fig_osc $"OSCLock=($env.CWTERM_SESSION_ID)"
   }
   print_fig_osc "PreExec"
 
@@ -117,7 +117,7 @@ def-env fig_pre_execution_hook [] {
 }
 
 def-env fig_pre_prompt_hook [] {
-    print_fig_osc $"OSCUnlock=($env.FIGTERM_SESSION_ID)"
+    print_fig_osc $"OSCUnlock=($env.CWTERM_SESSION_ID)"
     print_fig_osc $"Dir=($env.PWD)"
     print_fig_osc "Shell=nu"
     if "FIG_SHELL_PATH" in $env {
@@ -148,7 +148,7 @@ def-env fig_pre_prompt_hook [] {
     # }
   
     if (which fig | length) >= 1 {
-      let result = (fig _ pre-cmd | complete)
+      let result = (cw _ pre-cmd | complete)
       if $result.stdout == "EXEC_NEW_SHELL" {
         let-env FIG_DOTFILES_SOURCED = $nothing
         exec nu
@@ -180,21 +180,21 @@ def-env fig_set_prompt [] {
   if "PROMPT_INDICATOR" in $env {
     let-env FIG_PROMPT_INDICATOR = $env.PROMPT_INDICATOR
     let-env PROMPT_INDICATOR = {
-      $"(do $env.FIG_PROMPT_INDICATOR)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.FIGTERM_SESSION_ID)")"
+      $"(do $env.FIG_PROMPT_INDICATOR)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_INDICATOR_VI_INSERT" in $env {
     let-env FIG_PROMPT_INDICATOR_VI_INSERT = $env.PROMPT_INDICATOR_VI_INSERT
     let-env PROMPT_INDICATOR_VI_INSERT = {
-      $"(do $env.FIG_PROMPT_INDICATOR_VI_INSERT)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.FIGTERM_SESSION_ID)")"
+      $"(do $env.FIG_PROMPT_INDICATOR_VI_INSERT)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
     }
   }
 
   if "PROMPT_INDICATOR_VI_NORMAL" in $env {
     let-env FIG_PROMPT_INDICATOR_VI_NORMAL = $env.PROMPT_INDICATOR_VI_NORMAL
     let-env PROMPT_INDICATOR_VI_NORMAL = {
-      $"(do $env.FIG_PROMPT_INDICATOR_VI_NORMAL)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.FIGTERM_SESSION_ID)")"
+      $"(do $env.FIG_PROMPT_INDICATOR_VI_NORMAL)(fig_osc 'EndPrompt')(fig_osc $"NewCmd=($env.CWTERM_SESSION_ID)")"
     }
   }
 
@@ -213,4 +213,4 @@ if "PROCESS_LAUNCHED_BY_FIG" in $env {
   print_fig_osc "DoneSourcing"
 }
 
-(^fig _ pre-cmd | complete | ignore)
+(^cw _ pre-cmd | complete | ignore)

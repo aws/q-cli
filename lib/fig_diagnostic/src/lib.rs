@@ -75,7 +75,7 @@ impl EnvVarDiagnostic {
                     || key == "SHELL"
                     || key == "DISPLAY"
                     || key == "PATH"
-                    || key == "FIGTERM_SESSION_ID"
+                    || key == "CWTERM_SESSION_ID"
                     || key == "TERM"
                     || key == "XDG_CURRENT_DESKTOP"
                     || key == "XDG_SESSION_DESKTOP"

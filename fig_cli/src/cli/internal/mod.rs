@@ -220,7 +220,7 @@ pub enum InternalSubcommand {
     /// Exit code:
     /// - 0 execute figterm
     /// - 1 dont execute figterm
-    /// - 2 fallback to FIG_TERM env
+    /// - 2 fallback to CW_TERM env
     ShouldFigtermLaunch,
     Event {
         /// Name of the event.
@@ -322,11 +322,11 @@ pub enum InternalSubcommand {
     GenerateSSH {
         remote_username: String,
     },
-    Codex {
+    GhostText {
         #[arg(long, allow_hyphen_values = true)]
         buffer: String,
     },
-    CodexAccept {
+    GhostTextAccept {
         #[arg(long, allow_hyphen_values = true)]
         buffer: String,
         #[arg(long, allow_hyphen_values = true)]
@@ -720,7 +720,7 @@ impl InternalSubcommand {
                 })
                 .ok();
 
-                if let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") {
+                if let Ok(session_id) = std::env::var("CWTERM_SESSION_ID") {
                     let mut conn =
                         BufferedUnixStream::connect(fig_util::directories::figterm_socket_path(&session_id)?).await?;
                     conn.send_message(FigtermRequestMessage {
@@ -838,7 +838,7 @@ impl InternalSubcommand {
                     }
                 }
 
-                let config_path = directories::fig_dir()?.join("ssh_inner");
+                let config_path = directories::fig_data_dir()?.join("ssh_inner");
 
                 if should_generate_config {
                     let uuid = uuid::Uuid::new_v4();
@@ -864,8 +864,8 @@ impl InternalSubcommand {
                     writeln!(stdout(), "cleared inner config").ok();
                 }
             },
-            InternalSubcommand::Codex { buffer } => {
-                let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") else {
+            InternalSubcommand::GhostText { buffer } => {
+                let Ok(session_id) = std::env::var("CWTERM_SESSION_ID") else {
                     exit(1);
                 };
 
@@ -877,16 +877,16 @@ impl InternalSubcommand {
 
                 let Ok(Some(FigtermResponseMessage {
                     response:
-                        Some(fig_proto::figterm::figterm_response_message::Response::CodexComplete(
-                            fig_proto::figterm::CodexCompleteResponse {
+                        Some(fig_proto::figterm::figterm_response_message::Response::GhostTextComplete(
+                            fig_proto::figterm::GhostTextCompleteResponse {
                                 insert_text: Some(insert_text),
                             },
                         )),
                 })) = conn
                     .send_recv_message_timeout(
                         fig_proto::figterm::FigtermRequestMessage {
-                            request: Some(fig_proto::figterm::figterm_request_message::Request::CodexComplete(
-                                fig_proto::figterm::CodexCompleteRequest { buffer: buffer.clone() },
+                            request: Some(fig_proto::figterm::figterm_request_message::Request::GhostTextComplete(
+                                fig_proto::figterm::GhostTextCompleteRequest { buffer: buffer.clone() },
                             )),
                         },
                         Duration::from_secs(5),
@@ -898,9 +898,9 @@ impl InternalSubcommand {
 
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
             },
-            InternalSubcommand::CodexAccept { buffer, suggestion } => {
+            InternalSubcommand::GhostTextAccept { buffer, suggestion } => {
                 fig_telemetry::emit_track(TrackEvent::new(
-                    TrackEventType::CodexInlineSuggustionAccepted,
+                    TrackEventType::GhostTextInlineSuggustionAccepted,
                     TrackSource::Cli,
                     env!("CARGO_PKG_VERSION").into(),
                     [("buffer", buffer), ("suggestion", suggestion)],

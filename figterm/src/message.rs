@@ -46,7 +46,7 @@ use crate::history::HistorySender;
 use crate::interceptor::KeyInterceptor;
 use crate::pty::AsyncMasterPty;
 use crate::{
-    codex,
+    ghost_text,
     shell_state_to_context,
     MainLoopEvent,
     EXPECTED_BUFFER,
@@ -301,7 +301,7 @@ pub async fn process_figterm_request(
                 .ok();
             Ok(None)
         },
-        FigtermRequest::CodexComplete(_) => anyhow::bail!("CodexComplete is not supported over remote"),
+        FigtermRequest::GhostTextComplete(_) => anyhow::bail!("GhostTextComplete is not supported over remote"),
     }
 }
 
@@ -318,11 +318,16 @@ pub async fn process_figterm_message(
     session_id: &str,
 ) -> Result<()> {
     match figterm_request_message.request {
-        Some(FigtermRequest::CodexComplete(request)) => {
+        Some(FigtermRequest::GhostTextComplete(request)) => {
             let history_sender = history_sender.clone();
             let session_id = session_id.to_owned();
 
-            tokio::spawn(codex::handle_request(request, session_id, response_tx, history_sender));
+            tokio::spawn(ghost_text::handle_request(
+                request,
+                session_id,
+                response_tx,
+                history_sender,
+            ));
         },
         Some(request) => {
             match process_figterm_request(request, main_loop_tx, term, pty_master, key_interceptor).await {
@@ -356,7 +361,7 @@ async fn send_figterm_response_hostbound(
                 nonce,
                 response: Some(match response {
                     FigtermResponse::Diagnostics(diagnostics) => Response::Diagnostics(diagnostics),
-                    FigtermResponse::CodexComplete(_codex_complete) => unimplemented!(),
+                    FigtermResponse::GhostTextComplete(_ghost_text_complete) => unimplemented!(),
                 }),
             })),
         };

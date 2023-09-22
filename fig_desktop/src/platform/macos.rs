@@ -98,6 +98,7 @@ use crate::utils::Rect;
 use crate::webview::window::WindowId;
 use crate::webview::{
     FigIdMap,
+    COMPANION_ID,
     GLOBAL_PROXY,
 };
 use crate::{
@@ -693,6 +694,33 @@ impl PlatformStateImpl {
                             origin: Origin::TopLeft,
                         }),
                         size: None,
+                        anchor: None,
+                        tx: None,
+                        dry_run: false,
+                    },
+                })
+                .ok();
+
+            let bounds = active_window.get_bounds().unwrap();
+
+            UNMANAGED
+                .event_sender
+                .read()
+                .clone()
+                .unwrap()
+                .send_event(Event::WindowEvent {
+                    window_id: COMPANION_ID,
+                    window_event: WindowEvent::UpdateWindowGeometry {
+                        position: Some(WindowPosition::RelativeToCaret {
+                            caret_position: LogicalPosition::new(
+                                bounds.origin.x + bounds.size.width - 300.0,
+                                bounds.origin.y,
+                            )
+                            .into(),
+                            caret_size: caret.size,
+                            origin: Origin::TopLeft,
+                        }),
+                        size: Some(LogicalSize::new(300.0 - 15.0, bounds.size.height - 30.0)),
                         anchor: None,
                         tx: None,
                         dry_run: false,

@@ -2,14 +2,14 @@ import {
   Notification,
   ServerOriginatedMessage,
   NotificationRequest,
-  NotificationType
-} from './fig.pb';
+  NotificationType,
+} from "@fig/fig-api-proto/dist/fig.pb";
 
-import { sendMessage } from './core';
+import { sendMessage } from "./core";
 
 export type NotificationResponse = {
   unsubscribe: boolean;
-}
+};
 
 export type NotificationHandler = (
   notification: Notification
@@ -26,7 +26,7 @@ export function _unsubscribe(
   handler?: NotificationHandler
 ) {
   if (handler && handlers[type] !== undefined) {
-    handlers[type] = (handlers[type] ?? []).filter(x => x !== handler);
+    handlers[type] = (handlers[type] ?? []).filter((x) => x !== handler);
   }
 }
 
@@ -36,7 +36,7 @@ export function _subscribe(
   handler: NotificationHandler
 ): Promise<Subscription> | undefined {
   return new Promise<Subscription>((resolve, reject) => {
-    const {type} = request;
+    const { type } = request;
 
     if (type) {
       const addHandler = () => {
@@ -52,61 +52,61 @@ export function _subscribe(
 
         let handlersToRemove: NotificationHandler[] | undefined;
         sendMessage(
-          { $case: 'notificationRequest', notificationRequest: request },
-          (response: ServerOriginatedMessage['submessage']) => {
+          { $case: "notificationRequest", notificationRequest: request },
+          (response: ServerOriginatedMessage["submessage"]) => {
             switch (response?.$case) {
-              case 'notification':
+              case "notification":
                 if (!handlers[type]) {
                   return false;
                 }
 
                 // call handlers and remove any that have unsubscribed (by returning false)
-                handlersToRemove = handlers[type]?.filter(
-                  (existingHandler) => {
-                    const res = existingHandler(response.notification);
-                    return Boolean(res?.unsubscribe);
-                  }
-                );
+                handlersToRemove = handlers[type]?.filter((existingHandler) => {
+                  const res = existingHandler(response.notification);
+                  return Boolean(res?.unsubscribe);
+                });
 
                 handlers[type] = handlers[type]?.filter(
-                  existingHandler => !handlersToRemove?.includes(existingHandler)
+                  (existingHandler) =>
+                    !handlersToRemove?.includes(existingHandler)
                 );
 
                 return true;
-              case 'success':
+              case "success":
                 addHandler();
                 return true;
-              case 'error':
+              case "error":
                 reject(new Error(response.error));
                 break;
               default:
-                reject(new Error('Not a notification'));
+                reject(new Error("Not a notification"));
                 break;
             }
 
             return false;
-          });
+          }
+        );
       } else {
         addHandler();
       }
     } else {
-      reject(new Error('NotificationRequest type must be defined.'));
+      reject(new Error("NotificationRequest type must be defined."));
     }
   });
 }
 
 const unsubscribeFromAll = () => {
   sendMessage({
-    $case: 'notificationRequest',
+    $case: "notificationRequest",
     notificationRequest: {
       subscribe: false,
-      type: NotificationType.ALL
-    }
+      type: NotificationType.ALL,
+    },
   });
 };
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
 if (!window?.fig?.quiet) {
-  console.log('[fig] unsubscribing any existing notifications...');
+  console.log("[fig] unsubscribing any existing notifications...");
 }
 unsubscribeFromAll();

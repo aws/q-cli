@@ -72,7 +72,7 @@ pub async fn uninstall(components: InstallComponents) -> Result<(), Error> {
         // Must be last -- this will kill the running desktop process if this is
         // called from the desktop app.
         let quit_res = tokio::process::Command::new("killall")
-            .args([fig_util::consts::FIG_DESKTOP_PROCESS_NAME])
+            .args([fig_util::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME])
             .output()
             .await;
         if let Err(err) = quit_res {

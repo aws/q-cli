@@ -2,7 +2,7 @@ import {
   Action,
   KeybindingPressedNotification,
   NotificationType
-} from './fig.pb';
+} from '@fig/fig-api-proto/dist/fig.pb';
 import { sendUpdateApplicationPropertiesRequest } from './requests';
 import { _subscribe, NotificationResponse } from './notifications';
 

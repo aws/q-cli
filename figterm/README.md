@@ -25,7 +25,7 @@ The shell integrations will then launch figterm on each terminal session.
 You can verify figterm is running by:
 1. Running `pstree -p $$` and checking, e.g. for a `figterm` process
 with a child `zsh` process.
-2. Running `env | grep FIG` and checking the `FIG_TERM` variable is set to
+2. Running `env | grep FIG` and checking the `CW_TERM` variable is set to
 1.
 
 ## How does it work?

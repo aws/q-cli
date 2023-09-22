@@ -32,7 +32,10 @@ use crate::event::{
 };
 use crate::figterm::FigtermState;
 use crate::platform::PlatformState;
-use crate::webview::LOGIN_PATH;
+use crate::webview::{
+    COMPANION_ID,
+    LOGIN_PATH,
+};
 use crate::{
     DebugState,
     EventLoopProxy,
@@ -41,23 +44,23 @@ use crate::{
     DASHBOARD_ID,
 };
 
-macro_rules! icon {
-    ($icon:literal) => {{
-        #[cfg(target_os = "macos")]
-        {
-            Some(include_bytes!(concat!(
-                env!("TRAY_ICONS_PROCESSED"),
-                "/",
-                $icon,
-                ".png"
-            )))
-        }
-        #[cfg(not(target_os = "macos"))]
-        {
-            None
-        }
-    }};
-}
+// macro_rules! icon {
+//     ($icon:literal) => {{
+//         #[cfg(target_os = "macos")]
+//         {
+//             Some(include_bytes!(concat!(
+//                 env!("TRAY_ICONS_PROCESSED"),
+//                 "/",
+//                 $icon,
+//                 ".png"
+//             )))
+//         }
+//         #[cfg(not(target_os = "macos"))]
+//         {
+//             None
+//         }
+//     }};
+// }
 
 fn tray_update(proxy: &EventLoopProxy) {
     let proxy_a = proxy.clone();
@@ -67,8 +70,8 @@ fn tray_update(proxy: &EventLoopProxy) {
             Some(Box::new(move |_| {
                 proxy_a
                     .send_event(Event::ShowMessageNotification {
-                        title: "Fig is updating in the background".into(),
-                        body: "You can continue to use Fig while it updates".into(),
+                        title: "CodeWhisperer is updating in the background".into(),
+                        body: "You can continue to use CodeWhisperer while it updates".into(),
                         parent: None,
                     })
                     .unwrap();
@@ -86,7 +89,7 @@ fn tray_update(proxy: &EventLoopProxy) {
                 // Didn't update, show a notification
                 proxy_b
                     .send_event(Event::ShowMessageNotification {
-                        title: "Fig is already up to date".into(),
+                        title: "CodeWhisperer is already up to date".into(),
                         body: concat!("Version ", env!("CARGO_PKG_VERSION")).into(),
                         parent: None,
                     })
@@ -96,7 +99,7 @@ fn tray_update(proxy: &EventLoopProxy) {
                 // Error updating, show a notification
                 proxy_b
                     .send_event(Event::ShowMessageNotification {
-                        title: "Error Updating Fig".into(),
+                        title: "Error Updating CodeWhisperer".into(),
                         body: err.to_string().into(),
                         parent: None,
                     })
@@ -123,6 +126,14 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID,
+                    window_event: WindowEvent::Devtools,
+                })
+                .unwrap();
+        },
+        id if id == MenuId::new("companion-devtools") => {
+            proxy
+                .send_event(Event::WindowEvent {
+                    window_id: COMPANION_ID,
                     window_event: WindowEvent::Devtools,
                 })
                 .unwrap();
@@ -374,29 +385,29 @@ impl MenuElement {
 fn menu() -> Vec<MenuElement> {
     let logged_in = fig_request::auth::is_logged_in();
 
-    let not_working = MenuElement::entry(Some("🚨".into()), icon!("alert"), "Fig not working?", "not-working");
-    let manual = MenuElement::entry(Some("📚".into()), icon!("question"), "User Manual", "user-manual");
-    let discord = MenuElement::entry(Some("💬".into()), icon!("discord"), "Join Community", "community");
+    let not_working = MenuElement::entry(None, None, "CW not working?", "not-working");
+    let manual = MenuElement::entry(None, None, "User Guide", "user-manual");
     let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
-    let quit = MenuElement::entry(None, None, "Quit Fig", "quit");
-    let dashboard = MenuElement::entry(Some("🎛️".into()), icon!("commandkey"), "Dashboard", "dashboard");
-    let settings = MenuElement::entry(Some("⚙️".into()), icon!("gear"), "Settings", "settings");
+    let quit = MenuElement::entry(None, None, "Quit CodeWhisperer", "quit");
+    let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
+    let settings = MenuElement::entry(None, None, "Settings", "settings");
     let developer = MenuElement::sub_menu("Developer", vec![
         MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
         MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
+        MenuElement::entry(None, None, "Companion Devtools", "companion-devtools"),
     ]);
 
     let mut menu = if !logged_in {
         vec![
-            MenuElement::Info("Fig hasn't been set up yet...".into()),
+            MenuElement::Info("CodeWhisperer hasn't been set up yet...".into()),
             MenuElement::entry(None, None, "Get Started", "onboarding"),
             MenuElement::Separator,
             not_working,
-            manual,
-            discord,
             MenuElement::Separator,
-            MenuElement::entry(None, None, "Uninstall Fig", "uninstall"),
+            manual,
+            MenuElement::Separator,
+            MenuElement::entry(None, None, "Uninstall CodeWhisperer", "uninstall"),
         ]
     } else {
         let mut menu = vec![];
@@ -422,7 +433,7 @@ fn menu() -> Vec<MenuElement> {
 
         if accessibility_not_installed || shell_not_installed {
             menu.extend([
-                MenuElement::Info("Fig hasn't been configured correctly".into()),
+                MenuElement::Info("CodeWhisperer hasn't been configured correctly".into()),
                 MenuElement::entry(None, None, "Fix Configuration Issues", "not-working"),
                 MenuElement::Separator,
             ]);
@@ -432,9 +443,9 @@ fn menu() -> Vec<MenuElement> {
             dashboard,
             settings,
             MenuElement::Separator,
-            not_working,
             manual,
-            discord,
+            MenuElement::Separator,
+            not_working,
             MenuElement::Separator,
             developer,
         ]);
@@ -442,7 +453,7 @@ fn menu() -> Vec<MenuElement> {
         menu
     };
 
-    menu.extend([MenuElement::Separator, version]);
+    menu.push(version);
 
     let max_channel = fig_install::get_max_channel();
     if max_channel != Channel::Stable {

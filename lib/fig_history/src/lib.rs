@@ -66,7 +66,7 @@ impl History {
     pub fn load() -> Result<History> {
         trace!("Loading history");
 
-        let history_path = directories::fig_dir()?.join("fig.history");
+        let history_path = directories::fig_data_dir()?.join("fig.history");
 
         let connection = Connection::open(&history_path)?;
 
@@ -212,7 +212,7 @@ impl History {
             }
 
             let legacy_history_file = legacy_history_file_opts.open(
-                [directories::fig_dir().unwrap(), "history".into()]
+                [directories::fig_data_dir().unwrap(), "history".into()]
                     .into_iter()
                     .collect::<PathBuf>(),
             )?;

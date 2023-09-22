@@ -1,4 +1,4 @@
-import { ServerOriginatedMessage, ClientOriginatedMessage } from './fig.pb';
+import { ServerOriginatedMessage, ClientOriginatedMessage } from '@fig/fig-api-proto/dist/fig.pb';
 
 import { b64ToBytes, bytesToBase64 } from './utils';
 

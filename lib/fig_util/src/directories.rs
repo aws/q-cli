@@ -10,7 +10,7 @@ use thiserror::Error;
 use time::OffsetDateTime;
 
 #[cfg(target_os = "macos")]
-use crate::consts::FIG_CLI_BINARY_NAME;
+use crate::consts::CODEWHISPERER_CLI_BINARY_NAME;
 use crate::system_info::is_remote;
 
 macro_rules! debug_env_binding {
@@ -74,30 +74,10 @@ pub fn config_dir() -> Result<PathBuf> {
     dirs::config_dir().ok_or(DirectoryError::NoHomeDirectory)
 }
 
-/// The fig directory
+/// The codewhisperer data directory
 ///
-/// - Linux: /home/Alice/.fig
-/// - MacOS: /Users/Alice/.fig
-/// - Windows: C:\Users\Alice\AppData\Local\Fig
-pub fn fig_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_FIG_DIR");
-
-    cfg_if::cfg_if! {
-        if #[cfg(unix)] {
-            Ok(home_dir()?.join(".fig"))
-        } else if #[cfg(windows)] {
-            Ok(dirs::data_local_dir()
-                .ok_or(DirectoryError::NoHomeDirectory)?
-                .join("Fig"))
-        }
-    }
-}
-
-/// The fig data directory
-///
-/// - Linux: `$XDG_DATA_HOME/fig` or `$HOME/.local/share/fig`
-/// - MacOS: `$HOME/Library/Application Support/fig`
-/// - Windows: `%LOCALAPPDATA%/Fig/userdata`
+/// - Linux: `$XDG_DATA_HOME/codewhisperer` or `$HOME/.local/share/codewhisperer`
+/// - MacOS: `$HOME/Library/Application Support/codewhisperer`
 pub fn fig_data_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIG_DATA_DIR");
 
@@ -105,18 +85,17 @@ pub fn fig_data_dir() -> Result<PathBuf> {
         if #[cfg(unix)] {
             Ok(dirs::data_local_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
-                .join("fig"))
+                .join("codewhisperer"))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("userdata"))
         }
     }
 }
 
-/// The fig cache directory
+/// The codewhisperer cache directory
 ///
-/// - Linux: `$XDG_CACHE_HOME/fig` or `$HOME/.cache/fig`
-/// - MacOS: `$HOME/Library/Caches/fig`
-/// - Windows: `%LOCALAPPDATA%/Fig/cache`
+/// - Linux: `$XDG_CACHE_HOME/codewhisperer` or `$HOME/.cache/codewhisperer`
+/// - MacOS: `$HOME/Library/Caches/codewhisperer`
 pub fn cache_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_CACHE_DIR");
 
@@ -124,7 +103,7 @@ pub fn cache_dir() -> Result<PathBuf> {
         if #[cfg(unix)] {
             Ok(dirs::cache_dir()
                 .ok_or(DirectoryError::NoHomeDirectory)?
-                .join("fig"))
+                .join("codewhisperer"))
         } else if #[cfg(windows)] {
             Ok(fig_dir()?.join("cache"))
         }
@@ -133,14 +112,13 @@ pub fn cache_dir() -> Result<PathBuf> {
 
 #[cfg(unix)]
 pub fn root_socket_dir() -> &'static Path {
-    Path::new("/var/tmp/fig")
+    Path::new("/var/tmp/codewhisperer")
 }
 
-/// The fig sockets directory of the local fig installation
+/// The codewhisperer sockets directory of the local codewhisperer installation
 ///
-/// - Linux: /var/tmp/fig/Alice
-/// - MacOS: /var/tmp/fig/Alice
-/// - Windows: %LOCALAPPDATA%/Fig/sockets
+/// - Linux: /var/tmp/codewhisperer/Alice
+/// - MacOS: /var/tmp/codewhisperer/Alice
 pub fn sockets_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SOCKETS_DIR");
 
@@ -158,9 +136,8 @@ pub fn sockets_dir() -> Result<PathBuf> {
 /// In WSL, this will correctly return the host machine socket path.
 /// In other remote environments, it returns the same as `sockets_dir`
 ///
-/// - Linux: /var/tmp/fig/Alice
-/// - MacOS: /var/tmp/fig/Alice
-/// - Windows: %LOCALAPPDATA%/Fig/sockets
+/// - Linux: /var/tmp/codewhisperer/Alice
+/// - MacOS: /var/tmp/codewhisperer/Alice
 pub fn host_sockets_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_HOST_SOCKETS_DIR");
 
@@ -229,19 +206,6 @@ pub fn themes_repo_dir() -> Result<PathBuf> {
     Ok(fig_data_dir()?.join("themes"))
 }
 
-/// The path to the fig plugins
-pub fn plugins_dir() -> Result<PathBuf> {
-    debug_env_binding!("FIG_DIRECTORIES_PLUGINS_DIR");
-
-    cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            home_dir().map(|dir| dir.join(".local").join("share").join("fig").join("plugins"))
-        } else {
-            Ok(fig_data_dir()?.join("plugins"))
-        }
-    }
-}
-
 /// The directory to all the fig logs
 /// - Linux: `/tmp/fig/$USER/logs`
 /// - MacOS: `~/.fig/logs`
@@ -249,12 +213,10 @@ pub fn plugins_dir() -> Result<PathBuf> {
 pub fn logs_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_LOGS_DIR");
     cfg_if::cfg_if! {
-        if #[cfg(target_os = "macos")] {
-            deprecated::legacy_logs_dir()
-        } else if #[cfg(unix)] {
-            Ok(std::env::temp_dir().join("fig").join(whoami::username()).join("logs"))
+        if #[cfg(unix)] {
+            Ok(std::env::temp_dir().join("codewhisperer").join(whoami::username()).join("logs"))
         } else if #[cfg(windows)] {
-            Ok(std::env::temp_dir().join("fig").join("logs"))
+            Ok(std::env::temp_dir().join("codewhisperer").join("logs"))
         }
     }
 }
@@ -265,7 +227,7 @@ pub fn backups_dir() -> Result<PathBuf> {
 
     cfg_if::cfg_if! {
         if #[cfg(unix)] {
-            Ok(home_dir()?.join(".fig.dotfiles.bak"))
+            Ok(home_dir()?.join(".codewhisperer.dotfiles.bak"))
         } else if #[cfg(windows)] {
             Ok(fig_data_dir()?.join("backups"))
         }
@@ -350,22 +312,35 @@ pub fn local_remote_socket_path() -> Result<PathBuf> {
 /// - Windows: `%APPDATA%\Fig\$SESSION_ID.socket`
 pub fn figterm_socket_path(session_id: impl Display) -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_FIGTERM_SOCKET_PATH");
-    Ok(sockets_dir()?.join("figterm").join(format!("{session_id}.socket")))
+    Ok(sockets_dir()?.join("cwterm").join(format!("{session_id}.socket")))
+}
+
+/// The path to the resources directory
+///
+/// - MacOS: "/Applications/CodeWhisperer.app/Contents/Resources"
+/// - Linux: "/usr/share/fig"
+pub fn resources_path() -> Result<PathBuf> {
+    debug_env_binding!("FIG_DIRECTORIES_RESOURCES_PATH");
+
+    cfg_if::cfg_if! {
+        if #[cfg(all(unix, not(target_os = "macos")))] {
+            Ok(std::path::Path::new("/usr/share/fig").into())
+        } else if #[cfg(target_os = "macos")] {
+            Ok(std::path::Path::new("/Applications/CodeWhisperer.app/Contents/Resources").into())
+        }
+    }
 }
 
 /// The path to the fig install manifest
 ///
+/// - MacOS: "/Applications/CodeWhisperer.app/Contents/Resources/manifest.json"
 /// - Linux: "/usr/share/fig/manifest.json"
-/// - Windows: "%LOCALAPPDATA%/Fig/bin/manifest.json"
 pub fn manifest_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_MANIFEST_PATH");
 
     cfg_if::cfg_if! {
-        if #[cfg(all(unix, not(target_os = "macos")))] {
-            Ok(std::path::Path::new("/usr/share/fig/manifest.json").into())
-        } else if #[cfg(target_os = "macos")] {
-            // todo: make better (use relative)
-            Ok(std::path::Path::new("/Applications/Fig.app/Contents/Resources/manifest.json").into())
+        if #[cfg(unix)] {
+            Ok(resources_path()?.join("manifest.json"))
         } else if #[cfg(target_os = "windows")] {
             Ok(managed_binaries_dir()?.join("manifest.json"))
         }
@@ -390,14 +365,7 @@ pub fn managed_fig_cli_path() -> Result<PathBuf> {
 /// The path to the fig settings file
 pub fn settings_path() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_SETTINGS_PATH");
-
-    cfg_if::cfg_if! {
-        if #[cfg(unix)] {
-            Ok(fig_dir()?.join("settings.json"))
-        } else if #[cfg(windows)] {
-            Ok(fig_data_dir()?.join("settings.json"))
-        }
-    }
+    Ok(fig_data_dir()?.join("settings.json"))
 }
 
 /// The path to the fig state file
@@ -433,20 +401,19 @@ pub fn ssh_saved_identities() -> Result<PathBuf> {
 pub fn relative_cli_path() -> Result<PathBuf> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
-            let path = crate::current_exe_origin().unwrap().parent().unwrap().join(FIG_CLI_BINARY_NAME);
+            let path = crate::current_exe_origin().unwrap().parent().unwrap().join(CODEWHISPERER_CLI_BINARY_NAME);
             if path.exists() {
                 Ok(path)
             } else {
                 Err(DirectoryError::FileDoesNotExist(path))
             }
         } else {
-            Ok(std::path::Path::new("fig").into())
+            Ok(std::path::Path::new("cw").into())
         }
     }
 }
 
 utf8_dir!(home_dir);
-utf8_dir!(fig_dir);
 utf8_dir!(fig_data_dir);
 utf8_dir!(sockets_dir);
 utf8_dir!(remote_socket_path);
@@ -455,7 +422,6 @@ utf8_dir!(daemon_socket_path);
 utf8_dir!(manifest_path);
 utf8_dir!(managed_binaries_dir);
 utf8_dir!(managed_fig_cli_path);
-utf8_dir!(plugins_dir);
 utf8_dir!(backups_dir);
 utf8_dir!(logs_dir);
 utf8_dir!(ssh_saved_identities);
@@ -467,15 +433,6 @@ fn map_env_dir(path: &std::ffi::OsStr) -> Result<PathBuf> {
     path.is_absolute()
         .then(|| path.to_path_buf())
         .ok_or_else(|| DirectoryError::NonAbsolutePath(path.to_owned()))
-}
-
-#[cfg(target_os = "macos")]
-mod deprecated {
-    use super::*;
-
-    pub fn legacy_logs_dir() -> Result<PathBuf> {
-        Ok(fig_dir()?.join("logs"))
-    }
 }
 
 #[cfg(test)]
@@ -499,14 +456,12 @@ mod test {
         }
 
         test_environment_path!(home_dir, "FIG_DIRECTORIES_HOME_DIR");
-        test_environment_path!(fig_dir, "FIG_DIRECTORIES_FIG_DIR");
         test_environment_path!(fig_data_dir, "FIG_DIRECTORIES_FIG_DATA_DIR");
         test_environment_path!(sockets_dir, "FIG_DIRECTORIES_SOCKETS_DIR");
         test_environment_path!(host_sockets_dir, "FIG_DIRECTORIES_HOST_SOCKETS_DIR");
         test_environment_path!(managed_binaries_dir, "FIG_DIRECTORIES_MANAGED_BINARIES_DIR");
         test_environment_path!(themes_dir, "FIG_DIRECTORIES_THEMES_DIR");
         test_environment_path!(themes_repo_dir, "FIG_DIRECTORIES_THEMES_REPO_DIR");
-        test_environment_path!(plugins_dir, "FIG_DIRECTORIES_PLUGINS_DIR");
         test_environment_path!(logs_dir, "FIG_DIRECTORIES_LOGS_DIR");
         test_environment_path!(backups_dir, "FIG_DIRECTORIES_BACKUPS_DIR");
         test_environment_path!(utc_backup_dir, "FIG_DIRECTORIES_UTC_BACKUP_DIR");
@@ -567,13 +522,6 @@ mod tests {
             .unwrap()
             .replace(&user, "$USER")
     }
-    #[ignore]
-    #[test]
-    fn _snapshot_fig_dir() {
-        linux!(fig_dir(), @"/home/$USER/.fig");
-        macos!(fig_dir(), @"/Users/$USER/.fig");
-        windows!(fig_dir(), @r"C:\Users\$USER\AppData\Local\Fig");
-    }
 
     #[ignore]
     #[test]
@@ -605,14 +553,6 @@ mod tests {
         linux!(themes_repo_dir(), @"/home/$USER/.local/share/fig/themes");
         macos!(themes_repo_dir(), @"/Users/$USER/Library/Application Support/fig/themes");
         windows!(themes_repo_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\themes");
-    }
-
-    #[ignore]
-    #[test]
-    fn _snapshot_plugins_dir() {
-        linux!(plugins_dir(), @"/home/$USER/.local/share/fig/plugins");
-        macos!(plugins_dir(), @"/Users/$USER/.local/share/fig/plugins");
-        windows!(plugins_dir(), @r"C:\Users\$USER\AppData\Local\Fig\userdata\plugins");
     }
 
     #[ignore]

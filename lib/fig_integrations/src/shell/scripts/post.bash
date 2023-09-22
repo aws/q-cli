@@ -1,13 +1,10 @@
 if [[ -n "$BASH" ]]; then
 
-pathadd() {
-  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
-    PATH="${PATH:+"$PATH:"}$1"
-  fi
-}
+# add ~/.local/bin to PATH
+if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+  PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
+fi
 
-pathadd "${HOME}/.fig/bin"
-pathadd "${HOME}/.local/bin"
 
 # Open scripts on keyboard shortcut
 if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]
@@ -20,7 +17,7 @@ fi
 #   bind "\"${FIG_SCRIPTS_KEYBIND}\":\"fig run\n\""
 # fi
 
-# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
+# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$CW_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
 #   unset FIG_DID_NOT_EXEC_FIGTERM
 #   return
 # fi
@@ -37,7 +34,7 @@ FIG_LAST_PS2="$PS2"
 FIG_LAST_PS3="$PS3"
 
 if [[ -z "${FIG_SHELL_PATH}" ]]; then
-  FIG_SHELL_PATH=$(fig _ get-shell)
+  FIG_SHELL_PATH=$(cw _ get-shell)
 fi
 
 # Construct Operating System Command.
@@ -45,7 +42,7 @@ fi
 function fig_osc { printf "\033]697;$1\007" "${@:2}"; }
 
 function __fig_preexec() {
-  fig_osc "OSCLock=%s" "${FIGTERM_SESSION_ID}"
+  fig_osc "OSCLock=%s" "${CWTERM_SESSION_ID}"
   fig_osc PreExec
 
   # Reset user prompts before executing a command, but only if it hasn't
@@ -75,7 +72,7 @@ function __fig_preexec_preserve_status() {
 function __fig_pre_prompt () {
   __fig_ret_value="$?"
 
-  fig_osc "OSCUnlock=%s" "${FIGTERM_SESSION_ID}"
+  fig_osc "OSCUnlock=%s" "${CWTERM_SESSION_ID}"
   fig_osc "Dir=%s" "${PWD}"
   fig_osc "Shell=bash"
   fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"
@@ -88,8 +85,8 @@ function __fig_pre_prompt () {
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
   fig_osc "User=%s" "${USER:-root}"
 
-  if command -v fig >/dev/null 2>&1; then
-    case $(fig _ pre-cmd) in
+  if command -v cw >/dev/null 2>&1; then
+    case $(cw _ pre-cmd) in
       EXEC_NEW_SHELL)
         unset FIG_DOTFILES_SOURCED
         exec bash
@@ -128,7 +125,7 @@ function __fig_post_prompt () {
   END_PROMPT="\[$(fig_osc EndPrompt)\]"
   # shellcheck disable=SC2086
   # it's already double quoted, dummy
-  NEW_CMD="\[$(fig_osc NewCmd=${FIGTERM_SESSION_ID})\]"
+  NEW_CMD="\[$(fig_osc NewCmd=${CWTERM_SESSION_ID})\]"
 
   # Reset $? first in case it's used in $FIG_USER_PSx.
   __bp_set_ret_value "${__fig_ret_value}" "${__bp_last_argument_prev_command}"
@@ -207,4 +204,4 @@ fi
 
 fi
 
-(fig _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1
+(cw _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1

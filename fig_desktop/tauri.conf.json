@@ -3,15 +3,17 @@
     "distDir": []
   },
   "package": {
-    "productName": "fig_desktop"
+    "productName": "codewhisperer_desktop"
   },
   "tauri": {
     "allowlist": {},
     "bundle": {
       "targets": "app",
       "active": true,
-      "identifier": "com.mschrage.fig",
+      "identifier": "com.amazon.codewhisperer",
       "icon": [
+        "icons/icon.icns",
+        "icons/icon.ico",
         "icons/128x128.png",
         "icons/128x128@2x.png",
         "icons/16x16.png",
@@ -24,7 +26,10 @@
         "icons/512x512@2x.png"
       ],
       "resources": [],
-      "category": "DeveloperTool"
+      "category": "DeveloperTool",
+      "macOS": {
+        "entitlements": "entitlements.plist"
+      }
     },
     "security": {},
     "updater": {},

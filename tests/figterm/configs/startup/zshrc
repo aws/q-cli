@@ -1,7 +1,7 @@
-export PATH="$HOME/.fig/bin:$PATH"
+export PATH="$HOME/.local/bin:$PATH"
 TTY=$(tty)
 precmd() {
-  fig hook prompt $$ $TTY
+  cw hook prompt $$ $TTY
 }
 
 add-zsh-hook precmd precmd

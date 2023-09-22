@@ -1,4 +1,4 @@
-mkdir ~/.fig/bin | ignore
+mkdir ~/.local/bin | ignore
 
 def pathadd [path: string] {
   if not ($env.PATH | any {|it| $it == $path }) {
@@ -8,12 +8,12 @@ def pathadd [path: string] {
   }
 }
 
-let-env PATH = pathadd $"($env.HOME)/.fig/bin"
+let-env PATH = pathadd $"($env.HOME)/.local/bin"
 let-env PATH = pathadd $"($env.HOME)/.local/bin"
 
 if "FIG_NEW_SESSION" in $env {
-  let-env FIGTERM_SESSION_ID = $nothing
-  let-env FIG_TERM = $nothing
+  let-env CWTERM_SESSION_ID = $nothing
+  let-env CW_TERM = $nothing
   let-env FIG_ENV_VAR = $nothing
   let-env FIG_NEW_SESSION = $nothing
 }
@@ -31,17 +31,17 @@ if "FIG_SET_PARENT_CHECK" not-in $env {
 }
 
 
-let result = (^fig _ should-figterm-launch | complete)
+let result = (^cw _ should-figterm-launch | complete)
 let-env SHOULD_FIGTERM_LAUNCH = $result.exit_code
 
 let should_launch = (
     ("PROCESS_LAUNCHED_BY_FIG" not-in $env or ($env.PROCESS_LAUNCHED_BY_FIG | str length) == 0)
     and ($env.SHOULD_FIGTERM_LAUNCH == 0 or
-       ($env.SHOULD_FIGTERM_LAUNCH == 2 and "FIG_TERM" not-in $env))
+       ($env.SHOULD_FIGTERM_LAUNCH == 2 and "CW_TERM" not-in $env))
 )
 
 if $should_launch {
-  let fig_shell = (fig _ get-shell | complete).stdout
+  let fig_shell = (cw _ get-shell | complete).stdout
   
   let fig_term_name = "nu (figterm)"
   let figterm_path = if ([$env.HOME ".fig" "bin" $fig_term_name] | path join | path exists) {

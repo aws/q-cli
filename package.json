@@ -4,17 +4,16 @@
   "repository": "git@github.com:withfig/macos",
   "author": "Fig Team",
   "license": "MIT",
-  "packageManager": "yarn@3.6.2",
-  "dependencies": {
+  "packageManager": "pnpm@8.0.0",
+  "devDependencies": {
+    "appdmg": "0.6.6",
     "husky": "^8.0.3",
     "lint-staged": "^14.0.1"
   },
-  "workspaces": [
-    "typescript-api-bindings",
-    "proto",
-    "tests/fig-api"
-  ],
   "scripts": {
+    "build": "pnpm -r build",
+    "lint": "pnpm -r lint",
+    "dev": "pnpm -r dev",
     "prepare": "husky install",
     "precommit": "lint-staged --config .lintstagedrc.mjs"
   }

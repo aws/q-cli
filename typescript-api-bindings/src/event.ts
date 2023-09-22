@@ -1,4 +1,4 @@
-import { NotificationType } from './fig.pb';
+import { NotificationType } from '@fig/fig-api-proto/dist/fig.pb';
 import { _subscribe, NotificationResponse } from './notifications';
 
 export function subscribe<T>(

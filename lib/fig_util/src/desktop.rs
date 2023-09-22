@@ -53,11 +53,11 @@ pub fn is_fig_desktop_running() -> bool {
             };
 
             use crate::consts::{
-                FIG_DESKTOP_PROCESS_NAME,
-                FIG_BUNDLE_ID
+                CODEWHISPERER_DESKTOP_PROCESS_NAME,
+                CODEWHISPERER_BUNDLE_ID
             };
 
-            let bundle_id = NSString::from(FIG_BUNDLE_ID);
+            let bundle_id = NSString::from(CODEWHISPERER_BUNDLE_ID);
             let running_applications: NSArray<NSRunningApplication> = unsafe {
                 msg_send![
                     class!(NSRunningApplication),
@@ -71,10 +71,10 @@ pub fn is_fig_desktop_running() -> bool {
 
             // Fallback to process name check
             let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
-            let mut processes = s.processes_by_exact_name(FIG_DESKTOP_PROCESS_NAME);
+            let mut processes = s.processes_by_exact_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
             processes.next().is_some()
         } else if #[cfg(target_os = "windows")] {
-            use crate::consts::FIG_DESKTOP_PROCESS_NAME;
+            use crate::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
 
             let output = match std::process::Command::new("tasklist.exe")
                 .args(["/NH", "/FI", "IMAGENAME eq fig_desktop.exe"])
@@ -96,7 +96,7 @@ pub fn is_fig_desktop_running() -> bool {
                 SystemExt,
             };
 
-            use crate::consts::FIG_DESKTOP_PROCESS_NAME;
+            use crate::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
 
             let process_name = match crate::system_info::in_wsl() {
                 true => {
@@ -132,7 +132,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
 
     if system_info::is_remote() {
         return Err(Error::LaunchError(
-            "launching Fig from remote installs is not yet supported".to_owned(),
+            "launching CodeWhisperer from remote installs is not yet supported".to_owned(),
         ));
     }
 
@@ -140,7 +140,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
         true => return Ok(()),
         false => {
             if args.verbose {
-                println!("Launching Fig...")
+                println!("Launching CodeWhisperer...")
             }
         },
     }
@@ -158,7 +158,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
     cfg_if::cfg_if! {
         if #[cfg(target_os = "macos")] {
             let output = Command::new("open")
-                .args(["-g", "-b", crate::consts::FIG_BUNDLE_ID, "--args"])
+                .args(["-g", "-b", crate::consts::CODEWHISPERER_BUNDLE_ID, "--args"])
                 .args(common_args)
                 .output()?;
 
@@ -174,7 +174,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
                 .spawn()?;
         } else {
             if system_info::in_wsl() {
-                let output = Command::new(crate::consts::FIG_DESKTOP_PROCESS_NAME)
+                let output = Command::new(crate::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME)
                     .output()?;
 
                 if !output.status.success() {
@@ -182,7 +182,7 @@ pub fn launch_fig_desktop(args: LaunchArgs) -> Result<(), Error> {
                 }
             } else {
                 let output = Command::new("systemctl")
-                    .args(["--user", "start", "fig"])
+                    .args(["--user", "start", "codewhisperer"])
                     .output()?;
 
                 if !output.status.success() {

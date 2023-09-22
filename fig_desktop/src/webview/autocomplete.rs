@@ -10,9 +10,13 @@ pub const AUTOCOMPLETE_STAGING_FIGAPP_URL: &str = "figapp://staging.autocomplete
 pub const AUTOCOMPLETE_DEVELOP_FIGAPP_URL: &str = "figapp://develop.autocomplete.localhost";
 
 pub fn url() -> Url {
+    if let Ok(autocomplete_url) = std::env::var("AUTOCOMPLETE_URL") {
+        return Url::parse(&autocomplete_url).unwrap();
+    }
+
     if let Some(dev_url) = fig_settings::settings::get_string_opt("developer.autocomplete.host") {
         match Url::parse(&dev_url) {
-            Ok(url) => return url,
+            Ok(url) => return dbg!(url),
             Err(err) => {
                 error!(%err, "Failed to parse developer.autocomplete.host");
             },

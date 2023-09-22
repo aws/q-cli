@@ -399,35 +399,31 @@ jobs:
             cd ..
 
             bundle_dir="$(pwd)/target/universal-apple-darwin/release/bundle/macos/"
-            rm -rf "${bundle_dir}/Fig.app"
-            mv "${bundle_dir}/fig_desktop.app" "${bundle_dir}/Fig.app"
-
-            # Add legacy Sparkle ED Public Key - required for migration but can be removed afterwards
-            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" SUPublicEDKey 5Mzvu9ARpu2fmUhnxCH3D7txwJYo7MmLqRv9ddSIbuA=
-            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" LSUIElement -bool TRUE
+            rm -rf "${bundle_dir}/CodeWhisperer.app"
+            mv "${bundle_dir}/fig_desktop.app" "${bundle_dir}/CodeWhisperer.app"
 
             # Change the display name of the app
-            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleDisplayName Fig
-            defaults write "${bundle_dir}/Fig.app/Contents/Info.plist" CFBundleName Fig
+            defaults write "${bundle_dir}/CodeWhisperer.app/Contents/Info.plist" CFBundleDisplayName CodeWhisperer
+            defaults write "${bundle_dir}/CodeWhisperer.app/Contents/Info.plist" CFBundleName CodeWhisperer
 
-            # Add fig:// association to bundle
+            # Add codewhisperer:// association to bundle
             plutil -insert CFBundleURLTypes -xml \
             '<array>
               <dict>
                 <key>CFBundleURLName</key>
-                <string>com.mschrage.fig</string>
+                <string>com.amazon.codewhisperer</string>
                 <key>CFBundleURLSchemes</key>
                 <array>
-                  <string>fig</string>
+                  <string>codewhisperer</string>
                 </array>
               </dict>
             </array>' \
-            "${bundle_dir}/Fig.app/Contents/Info.plist"
+            "${bundle_dir}/CodeWhisperer.app/Contents/Info.plist"
 
-            mkdir -p "${bundle_dir}/Fig.app/Contents/Helpers/"
-            cp -r build/FigInputMethod.app "${bundle_dir}/Fig.app/Contents/Helpers/"
+            mkdir -p "${bundle_dir}/CodeWhisperer.app/Contents/Helpers/"
+            cp -r build/FigInputMethod.app "${bundle_dir}/CodeWhisperer.app/Contents/Helpers/"
 
-            echo "export BUNDLE_PATH=${bundle_dir}/Fig.app" >> $BASH_ENV
+            echo "export BUNDLE_PATH=${bundle_dir}/CodeWhisperer.app" >> $BASH_ENV
           environment:
             PRODUCTS_DIR: build/usr/bin
             TARGET: universal-apple-darwin

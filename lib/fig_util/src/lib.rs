@@ -17,6 +17,7 @@ use std::path::{
     PathBuf,
 };
 
+pub use consts::*;
 pub use open::{
     open_url,
     open_url_async,
@@ -88,7 +89,7 @@ pub fn fig_bundle() -> Option<PathBuf> {
     let mut parts: PathBuf = current_exe.components().rev().skip(1).take(3).collect();
     parts = parts.iter().rev().collect();
 
-    if parts != PathBuf::from("Fig.app/Contents/MacOS") {
+    if parts != PathBuf::from("CodeWhisperer.app/Contents/MacOS") {
         return None;
     }
 

@@ -21,7 +21,7 @@ jobs:
           echo Installing...
           chmod +x fig_release
           mkdir -p ~/.local/bin
-          mv fig_release ~/.local/bin/fig_release
+          mv fig_release ~/.local/bin/cw_release
         env:
           GH_TOKEN: ${{ secrets.GITHUB_TOKEN }}
 

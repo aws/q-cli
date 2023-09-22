@@ -30,7 +30,7 @@ impl SshIntegration {
     }
 
     fn get_integration_path(&self) -> Result<PathBuf> {
-        Ok(directories::fig_dir()?.join("ssh"))
+        Ok(directories::fig_data_dir()?.join("ssh"))
     }
 
     fn get_file_integration(&self) -> Result<FileIntegration> {

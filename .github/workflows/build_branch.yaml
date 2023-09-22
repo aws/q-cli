@@ -260,21 +260,21 @@ jobs:
       - name: "Notarize and Staple"
         if: github.event.inputs.notarizeApp != 'false'
         run: |
-          /usr/bin/ditto -c -k --keepParent Export/Fig.app Fig.zip
+          /usr/bin/ditto -c -k --keepParent Export/CodeWhisperer.app Fig.zip
           xcrun notarytool submit Fig.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
           rm Fig.zip
-          xcrun stapler staple Export/Fig.app
-          # xcrun altool --notarize-app --primary-bundle-id "com.mschrage.fig" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
+          xcrun stapler staple Export/CodeWhisperer.app
+          # xcrun altool --notarize-app --primary-bundle-id "com.amazon.codewhisperer" -u "$NOTARIZE_USERNAME" -p "$NOTARIZE_PASSWORD" --file Fig.zip
         env:
           NOTARIZE_USERNAME: ${{ secrets.FIG__NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.FIG__NOTARIZE_PASSWORD }}
           NOTARIZE_TEAM_ID: ${{ secrets.FIG__NOTARIZE_TEAM_ID }}
       - name: "VERIFY: App is codesigned properly"
         if: github.event.inputs.notarizeApp != 'false'
-        run: codesign --verify --deep --strict --verbose=2 Export/Fig.app
+        run: codesign --verify --deep --strict --verbose=2 Export/CodeWhisperer.app
       - name: "VERIFY: App has notarization ticket"
         if: github.event.inputs.notarizeApp != 'false'
-        run: spctl -a -v Export/Fig.app
+        run: spctl -a -v Export/CodeWhisperer.app
 
 ############################################
 # Create and Notarize DMG
@@ -306,7 +306,7 @@ jobs:
                   "x": 180,
                   "y": 170,
                   "type": "file",
-                  "path": "../Export/Fig.app"
+                  "path": "../Export/CodeWhisperer.app"
                 },
                 {
                   "x": 480,
@@ -328,7 +328,7 @@ jobs:
         if: github.event.inputs.notarizeDMG != 'false'
         run: |
           xcrun notarytool submit "fig $BUILD.dmg" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
-          # xcrun stapler staple Export/Fig.app
+          # xcrun stapler staple Export/CodeWhisperer.app
         env:
           NOTARIZE_USERNAME: ${{ secrets.FIG__NOTARIZE_USERNAME }}
           NOTARIZE_PASSWORD: ${{ secrets.FIG__NOTARIZE_PASSWORD }}
@@ -415,7 +415,7 @@ jobs:
       - name: "Package as .zip"
         if: github.event.inputs.createGithubRelease != 'false'
         run: |
-          ditto -c -k --sequesterRsrc --keepParent Export/Fig.app Fig.zip
+          ditto -c -k --sequesterRsrc --keepParent Export/CodeWhisperer.app Fig.zip
       - name: Create Release
         if: github.event.inputs.createGithubRelease != 'false'
         id: create_release

@@ -83,6 +83,7 @@ const BLOCKED_BUNDLE_IDS: &[&str] = &[
     "com.apple.WebKit.Networking",
     "com.apple.controlcenter",
     "com.mschrage.fig",
+    "com.amazon.codewhisperer",
 ];
 
 // TODO(sean) -- should this use fig_util crate Terminal struct?
@@ -211,7 +212,7 @@ trait WindowServerHandler {
     fn did_launch_application(&mut self, notif: NSNotification);
 }
 
-const OBSERVER_CLASS_NAME: &str = "Fig_WindowServerObserver";
+const OBSERVER_CLASS_NAME: &str = "CodeWhisperer_WindowServerObserver";
 
 impl WindowServerInner {
     pub fn new(sender: Sender<WindowServerEvent>) -> Self {

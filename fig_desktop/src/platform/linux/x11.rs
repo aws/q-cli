@@ -34,7 +34,7 @@ use x11rb::protocol::xproto::{
 use x11rb::protocol::Event as X11Event;
 use x11rb::rust_connection::RustConnection;
 
-use super::integrations::WM_CLASS_WHITELIST;
+use super::integrations::WM_CLASS_ALLOWLIST;
 use super::{
     PlatformStateImpl,
     WM_REVICED_DATA,
@@ -227,7 +227,7 @@ fn process_window(
 
     debug!("Selected window is not Fig");
 
-    if let Some(terminal) = WM_CLASS_WHITELIST.get(&wm_class.as_str()) {
+    if let Some(terminal) = WM_CLASS_ALLOWLIST.get(&wm_class.as_str()) {
         *platform_state.active_terminal.lock() = Some(terminal.clone());
     }
 
@@ -238,7 +238,7 @@ fn process_window(
         }
     }
 
-    if !WM_CLASS_WHITELIST.contains_key(&wm_class.as_str()) {
+    if !WM_CLASS_ALLOWLIST.contains_key(&wm_class.as_str()) {
         hide()?;
         return Ok(());
     }

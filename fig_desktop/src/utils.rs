@@ -83,7 +83,7 @@ fn load_icon(path: impl AsRef<std::path::Path>) -> Option<Icon> {
 fn load_from_memory() -> Icon {
     let (icon_rgba, icon_width, icon_height) = {
         // TODO: Use different per platform icons
-        let image = image::load_from_memory(include_bytes!("../icons/512x512.png"))
+        let image = image::load_from_memory(include_bytes!("../icons/icon.png"))
             .expect("Failed to open icon path")
             .into_rgba8();
         let (width, height) = image.dimensions();

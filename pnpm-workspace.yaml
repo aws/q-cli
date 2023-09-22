@@ -1,0 +1,5 @@
+packages:
+  - typescript-api-bindings
+  - proto
+  - tests/fig-api
+  - apps/*

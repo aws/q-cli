@@ -354,11 +354,11 @@ struct FigBinCheck;
 #[async_trait]
 impl DoctorCheck for FigBinCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig bin exists".into()
+        "Codewhisperer data dir exists".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let path = directories::fig_dir().map_err(eyre::Report::from)?;
+        let path = directories::fig_data_dir().map_err(eyre::Report::from)?;
         Ok(check_file_exists(path)?)
     }
 }
@@ -386,8 +386,6 @@ macro_rules! path_check {
 
 #[cfg(unix)]
 path_check!(LocalBinPathCheck, ".local/bin");
-#[cfg(target_os = "macos")]
-path_check!(FigBinPathCheck, ".fig/bin");
 
 struct AppRunningCheck;
 
@@ -592,7 +590,7 @@ impl DoctorCheck for FigIntegrationsCheck {
             });
         }
 
-        // Check that ~/.fig/bin/figterm exists
+        // Check that ~/.local/bin/cwterm exists
         // TODO(grant): Check figterm exe exists
         // let figterm_path = fig_directories::fig_dir()
         //    .context("Could not find ~/.fig")?
@@ -607,21 +605,21 @@ impl DoctorCheck for FigIntegrationsCheck {
         //    });
         //}
 
-        match std::env::var("FIG_TERM").as_deref() {
+        match std::env::var("CW_TERM").as_deref() {
             Ok(env!("CARGO_PKG_VERSION")) => Ok(()),
             Ok(ver) if env!("CARGO_PKG_VERSION").ends_with("-dev") || ver.ends_with("-dev") => Err(doctor_warning!(
-                "Figterm is running with a different version than Fig CLI, it looks like you are running a development version of Fig however"
+                "Figterm is running with a different version than CodeWhisperer CLI, it looks like you are running a development version of CodeWhisperer however"
             )),
             Ok(_) => Err(DoctorError::Error {
-                reason: "This terminal is not running with the latest Fig integration, please restart your terminal"
+                reason: "This terminal is not running with the latest CodeWhisperer integration, please restart your terminal"
                     .into(),
-                info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
+                info: vec![format!("CW_TERM={}", std::env::var("CW_TERM").unwrap_or_default()).into()],
                 fix: None,
                 error: None,
             }),
             Err(_) => Err(DoctorError::Error {
                 reason: "Figterm is not running in this terminal, please try restarting your terminal".into(),
-                info: vec![format!("FIG_TERM={}", std::env::var("FIG_TERM").unwrap_or_default()).into()],
+                info: vec![format!("CW_TERM={}", std::env::var("CW_TERM").unwrap_or_default()).into()],
                 fix: None,
                 error: None,
             }),
@@ -639,7 +637,7 @@ impl DoctorCheck for FigtermSocketCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // Check that the socket exists
-        let term_session = std::env::var("FIGTERM_SESSION_ID").context("No FIGTERM_SESSION_ID")?;
+        let term_session = std::env::var("CWTERM_SESSION_ID").context("No CWTERM_SESSION_ID")?;
         let socket_path = fig_util::directories::figterm_socket_path(term_session).context("No figterm path")?;
 
         if let Err(err) = check_file_exists(&socket_path) {
@@ -748,7 +746,7 @@ impl DoctorCheck for FigtermSocketCheck {
                             if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
                                 if i == 15 {
                                     return Err(doctor_warning!(
-                                        "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE is set to the same style your text, Fig will not be able to detect what you have typed."
+                                        "ZSH_AUTOSUGGEST_HIGHLIGHT_STYLE is set to the same style your text, CodeWhisperer will not be able to detect what you have typed."
                                     ));
                                 }
                             }
@@ -760,7 +758,7 @@ impl DoctorCheck for FigtermSocketCheck {
                             if let Some(fig_proto::figterm::term_color::Color::Indexed(i)) = fg.color {
                                 if i == 15 {
                                     return Err(doctor_warning!(
-                                        "The Fish suggestion color is set to the same style your text, Fig will not be able to detect what you have typed."
+                                        "The Fish suggestion color is set to the same style your text, CodeWhisperer will not be able to detect what you have typed."
                                     ));
                                 }
                             }
@@ -771,36 +769,6 @@ impl DoctorCheck for FigtermSocketCheck {
             },
             Ok(None) => return Err(doctor_error!("Received EOF when trying to receive figterm diagnostics")),
             Err(err) => return Err(doctor_error!("Failed to receive figterm diagnostics: {err}")),
-        }
-
-        Ok(())
-    }
-}
-
-/// Checks that the insertion lock doesn't exist.
-struct InsertionLockCheck;
-
-#[async_trait]
-impl DoctorCheck for InsertionLockCheck {
-    fn name(&self) -> Cow<'static, str> {
-        "Insertion lock does not exist".into()
-    }
-
-    async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        let insertion_lock_path = directories::fig_dir()
-            .map_err(eyre::Report::from)?
-            .join("insertion-lock");
-
-        if insertion_lock_path.exists() {
-            return Err(DoctorError::Error {
-                reason: "Insertion lock exists".into(),
-                info: vec![],
-                fix: Some(DoctorFix::Sync(Box::new(move || {
-                    std::fs::remove_file(insertion_lock_path)?;
-                    Ok(())
-                }))),
-                error: None,
-            });
         }
 
         Ok(())
@@ -1093,12 +1061,12 @@ struct BundlePathCheck;
 #[async_trait]
 impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig app installed in the right place".into()
+        "CodeWhisperer app installed in the right place".into()
     }
 
     async fn check(&self, diagnostics: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = diagnostics.path_to_bundle.clone();
-        if path.contains("/Applications/Fig.app") {
+        if path.contains("/Applications/CodeWhisperer.app") {
             Ok(())
         } else if path.contains("/Build/Products/Debug/fig.app") {
             Err(DoctorError::Warning(
@@ -1108,9 +1076,9 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
             Err(DoctorError::Error {
                 reason: format!("Fig app is installed in {}", path.bold()).into(),
                 info: vec![
-                    "You need to install Fig in /Applications.".into(),
+                    "You need to install CodeWhisperer in /Applications.".into(),
                     "To fix: uninstall, then reinstall Fig.".into(),
-                    "Remember to drag Fig into the Applications folder.".into(),
+                    "Remember to drag CodeWhisperer into the Applications folder.".into(),
                 ],
                 fix: None,
                 error: None,
@@ -1176,22 +1144,18 @@ struct FigCLIPathCheck;
 #[async_trait]
 impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig CLI path".into()
+        "CodeWhisperer CLI path".into()
     }
 
     async fn check(&self, _: &DiagnosticsResponse) -> Result<(), DoctorError> {
         let path = std::env::current_exe().context("Could not get executable path.")?;
-        let fig_bin_path = directories::fig_dir().unwrap().join("bin").join("fig");
-        let local_bin_path = directories::home_dir().unwrap().join(".local").join("bin").join("fig");
+        let local_bin_path = directories::home_dir().unwrap().join(".local").join("bin").join("cw");
 
-        if path == fig_bin_path
-            || path == local_bin_path
-            || path == Path::new("/usr/local/bin/fig")
-            || path == Path::new("/opt/homebrew/bin/fig")
+        if path == local_bin_path || path == Path::new("/usr/local/bin/cw") || path == Path::new("/opt/homebrew/bin/cw")
         {
             Ok(())
-        } else if path.ends_with("target/debug/fig")
-            || path.ends_with("target/release/fig")
+        } else if path.ends_with("target/debug/cw")
+            || path.ends_with("target/release/cw")
             || path.ends_with("target/debug/fig_cli")
             || path.ends_with("target/release/fig_cli")
         {
@@ -1796,7 +1760,7 @@ impl DoctorCheck for WindowsConsoleCheck {
                             "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
                             "MinTTY and other TTY implementations may not work properly.".into(),
                             "".into(),
-                            "You can try the following fixes to get Fig working with your shell:".into(),
+                            "You can try the following fixes to get CodeWhisperer working with your shell:".into(),
                             "- If using Git for Windows, reinstall and choose \"Use default console window\" instead of MinTTY".into(),
                             "- If using Git for Windows and you really want to use MinTTY, reinstall and check \"Enable experimental support for pseudo consoles\"".into(),
                             "- Use your shell with a different supported terminal emulator like Windows Terminal.".into(),
@@ -1904,16 +1868,16 @@ impl DoctorCheck for SandboxCheck {
 
         match kind {
             SandboxKind::None => Ok(()),
-            SandboxKind::Flatpak => Err(doctor_error!("Running Fig under Flatpak is not supported.")),
-            SandboxKind::Snap => Err(doctor_error!("Running Fig under Snap is not supported.")),
+            SandboxKind::Flatpak => Err(doctor_error!("Running CodeWhisperer under Flatpak is not supported.")),
+            SandboxKind::Snap => Err(doctor_error!("Running CodeWhisperer under Snap is not supported.")),
             SandboxKind::Docker => Err(doctor_warning!(
                 "Fig's support for Docker is in development. It may not work properly on your system."
             )),
             SandboxKind::Container(Some(engine)) => Err(doctor_error!(
-                "Running Fig under `{engine}` containers is not supported."
+                "Running CodeWhisperer under `{engine}` containers is not supported."
             )),
             SandboxKind::Container(None) => Err(doctor_error!(
-                "Running Fig under non-docker containers is not supported."
+                "Running CodeWhisperer under non-docker containers is not supported."
             )),
         }
     }
@@ -2201,13 +2165,11 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         .await?;
 
         run_checks(
-            "Let's make sure Fig is setup correctly...".into(),
+            "Let's make sure CodeWhisperer is setup correctly...".into(),
             vec![
                 &FigBinCheck,
                 #[cfg(unix)]
                 &LocalBinPathCheck,
-                #[cfg(target_os = "macos")]
-                &FigBinPathCheck,
                 #[cfg(target_os = "windows")]
                 &WindowsConsoleCheck,
                 &SettingsCorruptionCheck,
@@ -2223,7 +2185,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
 
         if fig_util::manifest::is_full() {
             run_checks(
-                "Let's make sure Fig is running...".into(),
+                "Let's make sure CodeWhisperer is running...".into(),
                 vec![&AppRunningCheck, &FigSocketCheck],
                 config,
                 &mut spinner,
@@ -2232,11 +2194,10 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         }
 
         run_checks(
-            "Let's see if Fig is in a working state...".into(),
+            "Let's see if CodeWhisperer is in a working state...".into(),
             vec![
                 #[cfg(unix)]
                 &FigtermSocketCheck,
-                &InsertionLockCheck,
                 &AutocompleteDevModeCheck,
                 &PluginDevModeCheck,
                 &DashboardHostCheck,
@@ -2362,7 +2323,10 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             println!("{} Everything looks good!", CHECKMARK.green());
         }
         println!();
-        println!("  Fig still not working? Run {} to let us know!", "fig issue".magenta());
+        println!(
+            "  CodeWhisperer still not working? Run {} to let us know!",
+            "fig issue".magenta()
+        );
         println!("  Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
         println!()
     }

@@ -7,7 +7,7 @@ set -e
 # Force current process to be shell, rather than `env`.
 cd ~
 TTY=$(tty)
-fig hook prompt $$ $TTY 2>&1 1>/dev/null
+cw hook prompt $$ "$TTY" 1>/dev/null 2>&1 
 
 # Colors
 YELLOW=$(tput setaf 3)
@@ -23,7 +23,7 @@ NORMAL=$(tput sgr0)
 TAB='   '
 SEPARATOR="  \n\n  --\n\n\n"
 
-function fig_osc { printf "\033]697;"; printf $@; printf "\007"; }
+function fig_osc { printf "\033]697;"; printf "%s" "$@"; printf "\007"; }
 
 START_PROMPT="$(fig_osc StartPrompt)"
 END_PROMPT="$(fig_osc EndPrompt)"
@@ -40,23 +40,23 @@ function prepare_prompt {
 }
 
 function reset_prompt {
-    (fig hook pre-exec $$ $TTY 2>&1 1>/dev/null)
+    (cw hook pre-exec $$ "$TTY" 1>/dev/null 2>&1 )
 }
 
 print_special() {
-  echo "${START_PROMPT}${TAB}$@${NORMAL}"$'\n'${END_PROMPT}
+  echo "${START_PROMPT}${TAB}" "$@" "${NORMAL}"$'\n'${END_PROMPT}
   reset_prompt
 }
 
 press_enter_to_continue() {
-  echo ${START_PROMPT} # new line
+  echo "${START_PROMPT}" # new line
 
   if [[ "$1" != "" ]]; then
     read -n 1 -s -r -p "${TAB}${HIGHLIGHT} $1 ${NORMAL}" pressed_key 
   else
     read -n 1 -s -r -p "${TAB}${HIGHLIGHT} Press enter to continue ${NORMAL}" pressed_key 
   fi
-  printf ${END_PROMPT}
+  printf "%s" "${END_PROMPT}"
 
   while true; do
     # ie if pressed_key = enter
@@ -98,7 +98,7 @@ trap exit_script_nice SIGINT SIGTERM SIGQUIT
 clear
 
 # Make absolutely sure that settings listener has been launched!
-(fig settings init 2>&1 1>/dev/null)
+(fig settings init 1>/dev/null 2>&1)
 
 # Done using http://patorjk.com/software/taag/#p=testall&f=Graffiti&t=fig
 # Font name = ANSI Shadow
@@ -148,7 +148,7 @@ EOF
 press_enter_to_continue
 clear
 
-(fig hook init $$ $TTY 2>&1 1>/dev/null)
+(cw hook init $$ "$TTY" 1>/dev/null 2>&1)
 cat <<EOF
 
    ${BOLD}Example${NORMAL}
@@ -166,8 +166,8 @@ prepare_prompt
 while true; do
   input=""
 
-  read -e -p "$DEFAULT_PROMPT" input
-  echo $END_CMD # New line after output
+  read -r -e -p "$DEFAULT_PROMPT" input
+  echo "$END_CMD" # New line after output
   reset_prompt
   case "${input}" in
     cd*)
@@ -189,7 +189,7 @@ while true; do
   esac
 done
 
-(fig hook init $$ $TTY 2>&1 1>/dev/null)
+(cw hook init $$ "$TTY" 1>/dev/null 2>&1)
 clear 
 cat <<EOF
 
@@ -208,8 +208,8 @@ EOF
 prepare_prompt
 while true; do
   input=""
-  read -e -p "$DEFAULT_PROMPT" input
-  printf $END_CMD
+  read -r -e -p "$DEFAULT_PROMPT" input
+  printf "%s" "$END_CMD"
   echo # New line after output
   case "${input}" in
     "git commit"*)
@@ -233,7 +233,7 @@ done
 
 clear 
 
-(fig hook init $$ $TTY 2>&1 1>/dev/null)
+(cw hook init $$ "$TTY" 1>/dev/null 2>&1)
 cat <<EOF
    
    ${BOLD}Last Step: The ${MAGENTA}Fig${NORMAL} ${BOLD}CLI${NORMAL}
@@ -255,7 +255,7 @@ echo
 # Font name = Ivrit
 clear
 # Prompt user to restart terminal after running Fig doctor
-fig _ local-state doctor.prompt-restart-terminal true 2>&1 1>/dev/null
+cw _ local-state doctor.prompt-restart-terminal true 1>/dev/null 2>&1
 cat <<EOF
 
    ${BOLD}One last thing...${NORMAL}

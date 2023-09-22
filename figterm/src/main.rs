@@ -1,8 +1,8 @@
 #[cfg(target_os = "linux")]
 mod cleanup;
 pub mod cli;
-pub mod codex;
 mod event_handler;
+pub mod ghost_text;
 pub mod history;
 pub mod input;
 pub mod interceptor;
@@ -64,6 +64,7 @@ use fig_telemetry::sentry::{
     capture_anyhow,
     release_name,
 };
+use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
 use fig_util::process_info::{
     Pid,
     PidExt,
@@ -367,7 +368,16 @@ where
     let shell_enabled = ["bash", "zsh", "fish", "nu", "dash"]
         .into_iter()
         .chain(USER_ENABLED_SHELLS.iter().map(|s| s.as_str()))
-        .any(|s| term.shell_state().get_context().shell.as_deref() == Some(s));
+        .any(|s| {
+            let shell_raw = term.shell_state().get_context().shell.as_deref();
+            // we actually want to work with a nested figterm :)
+            let shell = match shell_raw.and_then(|s| s.strip_suffix(" (figterm)")) {
+                Some(s) => Some(s),
+                None => shell_raw,
+            };
+
+            shell == Some(s)
+        });
     let preexec = term.shell_state().preexec;
 
     let mut handle = INSERTION_LOCKED_AT.write();
@@ -473,9 +483,9 @@ fn build_shell_command(command: Option<&[String]>) -> Result<CommandBuilder> {
         },
     };
 
-    builder.env("FIG_TERM", env!("CARGO_PKG_VERSION"));
+    builder.env("CW_TERM", env!("CARGO_PKG_VERSION"));
     if env::var_os("TMUX").is_some() {
-        builder.env("FIG_TERM_TMUX", env!("CARGO_PKG_VERSION"));
+        builder.env("CW_TERM_TMUX", env!("CARGO_PKG_VERSION"));
     }
 
     // Clean up environment and launch shell.
@@ -577,7 +587,7 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::state::init_global().ok();
 
     let session_id = uuid::Uuid::new_v4().to_string();
-    std::env::set_var("FIGTERM_SESSION_ID", &session_id);
+    std::env::set_var("CWTERM_SESSION_ID", &session_id);
 
     let parent_id = std::env::var("FIG_PARENT").ok();
 
@@ -857,7 +867,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     );
                                                     write_buffer.extend(
                                                         format!(
-                                                            "fig ai '{}'\r",
+                                                            "{} ai '{}'\r",
+                                                            CODEWHISPERER_CLI_BINARY_NAME,
                                                             buffer
                                                                 .trim_start_matches('#')
                                                                 .trim()

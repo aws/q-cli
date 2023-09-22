@@ -25,7 +25,7 @@ use eyre::{
     Result,
 };
 use fig_ipc::local::quit_command;
-use fig_util::consts::FIG_BUNDLE_ID;
+use fig_util::consts::CODEWHISPERER_BUNDLE_ID;
 use fig_util::is_fig_desktop_running;
 use globset::{
     Glob,
@@ -119,7 +119,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
 
     let telem_join = match verbose {
         true => {
-            println!("Quitting Fig");
+            println!("Quitting CodeWhisperer");
 
             Some(tokio::spawn(async {
                 fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
@@ -209,7 +209,7 @@ pub fn get_fig_version() -> Result<String> {
             use eyre::ContextCompat;
             use regex::Regex;
 
-            let plist = std::fs::read_to_string("/Applications/Fig.app/Contents/Info.plist")?;
+            let plist = std::fs::read_to_string("/Applications/CodeWhisperer.app/Contents/Info.plist")?;
 
             let get_plist_field = |field: &str| -> Result<String> {
                 let regex =
@@ -310,7 +310,7 @@ pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) 
 
 pub fn get_app_info() -> Result<String> {
     let output = Command::new("lsappinfo")
-        .args(["info", "-app", FIG_BUNDLE_ID])
+        .args(["info", "-app", CODEWHISPERER_BUNDLE_ID])
         .output()?;
     let result = String::from_utf8(output.stdout)?;
     Ok(result.trim().into())

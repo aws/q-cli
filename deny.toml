@@ -41,14 +41,4 @@ name = "tempdir"
 unknown-registry = "deny"
 unknown-git = "deny"
 allow-registry = ["https://github.com/rust-lang/crates.io-index"]
-allow-git = [
-  "https://github.com/sullivan-sean/tokio",
-  "https://github.com/sullivan-sean/mio",
-  "https://github.com/grant0417/skim",
-  "https://github.com/grant0417/tao",
-  "https://github.com/grant0417/wry",
-  "https://github.com/sullivan-sean/rust-block",
-  "https://github.com/tauri-apps/tao",
-  "https://github.com/withfig/console",
-  "https://github.com/wez/wezterm",
-]
+allow-git = ["https://github.com/withfig/console"]

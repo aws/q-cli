@@ -2,14 +2,14 @@
 source: fig_cli/tests/init.rs
 expression: init
 ---
-builtin contains $HOME/.fig/bin $PATH
-or set --append PATH $HOME/.fig/bin
+builtin contains $HOME/.local/bin $PATH
+or set --append PATH $HOME/.local/bin
 
 builtin contains $HOME/.local/bin $PATH
 or set --append PATH $HOME/.local/bin
 
 # if test "$FIG_DID_NOT_EXEC_FIGTERM" = 1
-#     and test "$FIG_TERM" != 1
+#     and test "$CW_TERM" != 1
 #     or set --query INSIDE_EMACS
 #     set --erase FIG_DID_NOT_EXEC_FIGTERM
 #     exit
@@ -33,7 +33,7 @@ set --export FIG_PID $fish_pid
 set --export FIG_SET_PARENT $TERM_SESSION_ID
 set --export LC_FIG_SET_PARENT $TERM_SESSION_ID
 
-set --query FIG_SHELL_PATH; or set FIG_SHELL_PATH (fig _ get-shell)
+set --query FIG_SHELL_PATH; or set FIG_SHELL_PATH (cw _ get-shell)
 
 function fig_osc
     builtin printf "\033]697;$argv[1]\007" $argv[2..-1]
@@ -61,7 +61,7 @@ function fig_wrap_prompt
 end
 
 function fig_preexec --on-event fish_preexec
-    fig_osc "OSCLock=%s" "$FIGTERM_SESSION_ID"
+    fig_osc "OSCLock=%s" "$CWTERM_SESSION_ID"
     fig_osc PreExec
 
     if fig_fn_defined fig_user_mode_prompt
@@ -80,7 +80,7 @@ end
 function fig_precmd --on-event fish_prompt
     set -l last_status $status
 
-    fig_osc "OSCUnlock=%s" "$FIGTERM_SESSION_ID"
+    fig_osc "OSCUnlock=%s" "$CWTERM_SESSION_ID"
     fig_osc "Dir=%s" "$PWD"
     fig_osc "Shell=fish"
     fig_osc "ShellPath=%s" "$FIG_SHELL_PATH"
@@ -120,13 +120,13 @@ function fig_precmd --on-event fish_prompt
     fig_copy_fn fish_prompt fig_user_prompt
     function fish_prompt
         fig_wrap_prompt (fig_user_prompt)
-        fig_osc NewCmd=$FIGTERM_SESSION_ID
+        fig_osc NewCmd=$CWTERM_SESSION_ID
     end
 
     set fig_has_set_prompt 1
 
     if command -v fig &>/dev/null
-        switch (fig _ pre-cmd)
+        switch (cw _ pre-cmd)
             case EXEC_NEW_SHELL
                 set -ge FIG_DOTFILES_SOURCED
                 exec fish
@@ -140,6 +140,6 @@ if test -n "$PROCESS_LAUNCHED_BY_FIG"
     fig_osc DoneSourcing
 end
 
-begin; fig _ pre-cmd &> /dev/null &; end
+begin; cw _ pre-cmd &> /dev/null &; end
 
 

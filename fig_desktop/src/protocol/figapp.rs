@@ -17,22 +17,15 @@ use serde::{
 };
 use tracing::error;
 
+use crate::protocol::util::res_404;
+
 #[derive(Debug, Clone, Serialize, Deserialize)]
 struct AssetMetadata {
     status: u16,
     headers: Vec<(String, String)>,
 }
 
-fn res_404() -> Response<Cow<'static, [u8]>> {
-    Response::builder()
-        .status(StatusCode::NOT_FOUND)
-        .header(CONTENT_TYPE, "text/plain")
-        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*")
-        .body(b"Not Found".as_ref().into())
-        .unwrap()
-}
-
-fn transform_path<'a>(path: &'a Path) -> Cow<'a, Path> {
+fn transform_path(path: &Path) -> Cow<Path> {
     // strip the leading slash
     let path = match path.strip_prefix("/") {
         Ok(path) => path,
@@ -86,7 +79,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static
     let data = std::fs::read(&path)?;
 
     let mime = match infer::get(&data) {
-        Some(mime) => dbg!(mime.to_string()),
+        Some(mime) => mime.to_string(),
         None => match path.extension().and_then(|ext| ext.to_str()) {
             Some("css") => mime::TEXT_CSS,
             Some("html") => mime::TEXT_HTML,

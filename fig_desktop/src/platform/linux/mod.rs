@@ -282,7 +282,7 @@ pub mod gtk {
             panic!("Attempted to initialize GTK from two different threads.");
         }
         unsafe {
-            let name = ["fig"];
+            let name = ["codewhisperer"];
             if from_glib(ffi::gtk_init_check(&mut 1, &mut name.to_glib_none().0)) {
                 let result: bool = from_glib(glib::ffi::g_main_context_acquire(
                     gtk::glib::ffi::g_main_context_default(),

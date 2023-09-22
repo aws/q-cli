@@ -1,3 +1,4 @@
+import * as Fig from "@fig/fig-api-proto/dist/fig.pb";
 import * as WindowPosition from "./position";
 import * as Settings from "./settings";
 import * as EditBufferNotifications from "./editbuffer";
@@ -18,7 +19,6 @@ import * as Types from "./types";
 import * as User from "./user";
 import * as History from "./history";
 
-import * as Fig from "./fig.pb";
 import * as Internal from "./requests";
 
 const lib = {

@@ -16,9 +16,9 @@ members = [
 ]
 
 [workspace.package]
-authors = ["fig developers"]
+authors = ["Amazon CodeWhisperer Devs"]
 edition = "2021"
-homepage = "https://fig.io"
+homepage = "https://aws.amazon.com/codewhisperer"
 publish = false
 version = "2.18.0-dev"
 

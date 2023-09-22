@@ -26,8 +26,8 @@ use crate::{
     Integration,
 };
 
-pub mod codex_plugin {
-    pub const ZSH_SCRIPT: &str = concat!("\n", include_str!(concat!(env!("OUT_DIR"), "/codex.zsh")), "\n");
+pub mod ghost_text_plugin {
+    pub const ZSH_SCRIPT: &str = concat!("\n", include_str!(concat!(env!("OUT_DIR"), "/ghost_text.zsh")), "\n");
 
     #[cfg(test)]
     mod tests {
@@ -38,8 +38,8 @@ pub mod codex_plugin {
             // Ensure script has license
             assert!(ZSH_SCRIPT.contains("Copyright"));
 
-            // Ensure script has _fig_autosuggest_strategy_codex()
-            assert!(ZSH_SCRIPT.contains("_fig_autosuggest_strategy_codex()"));
+            // Ensure script has _fig_autosuggest_strategy_ghost_text()
+            assert!(ZSH_SCRIPT.contains("_fig_autosuggest_strategy_ghost_text()"));
 
             // Ensure script adds precmd hook
             assert!(ZSH_SCRIPT.contains("add-zsh-hook precmd _fig_autosuggest_start"));
@@ -93,7 +93,7 @@ impl ShellExt for Shell {
             Shell::Fish | Shell::Nu => [].iter(),
         } {
             for when in &When::all() {
-                let path = directories::fig_dir()?
+                let path = directories::fig_data_dir()?
                     .join("shell")
                     .join(integration_file_name(file, when, self));
 
@@ -270,16 +270,16 @@ impl ShellScriptShellIntegration {
         cfg_if!(
             if #[cfg(target_os = "macos")] {
                 return match self.shell {
-                    // Check if ~/.local/bin/fig is executable before eval
-                    Shell::Bash | Shell::Zsh => format!("[ -x ~/.local/bin/fig ] && eval \"$(~/.local/bin/fig init {shell} {when}{rcfile})\""),
-                    Shell::Fish => format!("test -x ~/.local/bin/fig; and eval (~/.local/bin/fig init {shell} {when}{rcfile} | string split0)"),
+                    // Check if ~/.local/bin/cw is executable before eval
+                    Shell::Bash | Shell::Zsh => format!("[ -x ~/.local/bin/cw ] && eval \"$(~/.local/bin/cw init {shell} {when}{rcfile})\""),
+                    Shell::Fish => format!("test -x ~/.local/bin/cw; and eval (~/.local/bin/cw init {shell} {when}{rcfile} | string split0)"),
                     Shell::Nu => "".into(),
                 }
             } else {
                 let source_line = match self.shell {
-                    Shell::Fish => format!("command -qv fig; and eval (fig init {shell} {when}{rcfile} | string split0)"),
-                    Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$(fig init {shell} {when}{rcfile})\""),
-                    Shell::Zsh => format!("eval \"$(fig init {shell} {when}{rcfile})\""),
+                    Shell::Fish => format!("command -qv cw; and eval (cw init {shell} {when}{rcfile} | string split0)"),
+                    Shell::Bash => format!("[ -n $BASH_VERSION ] && eval \"$(cw init {shell} {when}{rcfile})\""),
+                    Shell::Zsh => format!("eval \"$(cw init {shell} {when}{rcfile})\""),
                     Shell::Nu => "".into(),
                 };
                 let add_to_path_line = match self.shell {
@@ -355,7 +355,7 @@ impl DotfileShellIntegration {
         Ok(ShellScriptShellIntegration {
             shell: self.shell,
             when,
-            path: directories::fig_dir()?.join("shell").join(integration_file_name),
+            path: directories::fig_data_dir()?.join("shell").join(integration_file_name),
         })
     }
 
@@ -370,8 +370,8 @@ impl DotfileShellIntegration {
         let shell = self.shell;
 
         let eval_line = match shell {
-            Shell::Fish => format!("eval (fig init {shell} {when} | string split0)"),
-            _ => format!("eval \"$(fig init {shell} {when})\""),
+            Shell::Fish => format!("eval (cw init {shell} {when} | string split0)"),
+            _ => format!("eval \"$(cw init {shell} {when})\""),
         };
 
         let old_eval_source = match when {

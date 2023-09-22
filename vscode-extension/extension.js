@@ -40,7 +40,7 @@ function updateActiveTerminal(terminal) {
 	}
 	activeTerminal.processId.then((processId) => {
 		if (processId) {
-			runCommand(`fig hook keyboard-focus-changed ${vscode.env.uriScheme} ${processId}`)
+			runCommand(`cw hook keyboard-focus-changed ${vscode.env.uriScheme} ${processId}`)
 		}
 	})
 }
@@ -75,7 +75,7 @@ function activate(_) {
 		});
 
 		vscode.window.onDidChangeTextEditorSelection(_ => {
-			runCommand(`fig hook keyboard-focus-changed ${vscode.env.uriScheme} 0`);
+			runCommand(`cw hook keyboard-focus-changed ${vscode.env.uriScheme} 0`);
 		});
 	} catch (e) {
 		logError(e)

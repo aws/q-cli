@@ -18,7 +18,7 @@ use tracing::{
     error,
 };
 
-use crate::codex::COMPLETION_CACHE;
+use crate::ghost_text::COMPLETION_CACHE;
 use crate::history::{
     HistoryCommand,
     HistorySender,

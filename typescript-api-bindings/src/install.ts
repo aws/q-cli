@@ -5,8 +5,8 @@ import {
   // eslint-disable-next-line camelcase
   InstallResponse_InstallationStatus,
   // eslint-disable-next-line camelcase
-  Result_Result
-} from "./fig.pb";
+  Result_Result,
+} from "@fig/fig-api-proto/dist/fig.pb";
 
 import { sendInstallRequest } from "./requests";
 
@@ -38,11 +38,11 @@ function handleBasicResponse(response: InstallResponse) {
   switch (response.response?.$case) {
     case "result":
       // eslint-disable-next-line camelcase
-      if (response.response.result.result === Result_Result.RESULT_OK) {
+      if (response.response.result.result === Result_Result.OK) {
         return;
       }
       // eslint-disable-next-line camelcase
-      if (response.response.result.result === Result_Result.RESULT_ERROR) {
+      if (response.response.result.result === Result_Result.ERROR) {
         throw Error(response.response.result.error);
       } else {
         throw Error(`Unexpected result: ${response.response.result.result}`);
@@ -55,7 +55,7 @@ function handleBasicResponse(response: InstallResponse) {
 export async function install(component: Component) {
   const response = await sendInstallRequest({
     action: InstallAction.INSTALL,
-    component: componentToProto(component)
+    component: componentToProto(component),
   });
   handleBasicResponse(response);
 }
@@ -63,7 +63,7 @@ export async function install(component: Component) {
 export async function uninstall(component: Component) {
   const response = await sendInstallRequest({
     action: InstallAction.UNINSTALL,
-    component: componentToProto(component)
+    component: componentToProto(component),
   });
   handleBasicResponse(response);
 }
@@ -71,21 +71,21 @@ export async function uninstall(component: Component) {
 export async function isInstalled(component: Component) {
   const response = await sendInstallRequest({
     action: InstallAction.STATUS,
-    component: componentToProto(component)
+    component: componentToProto(component),
   });
   switch (response.response?.$case) {
     case "installationStatus":
       if (
         response.response.installationStatus ===
         // eslint-disable-next-line camelcase
-        InstallResponse_InstallationStatus.INSTALLATION_STATUS_INSTALLED
+        InstallResponse_InstallationStatus.INSTALLED
       ) {
         return true;
       }
       if (
         response.response.installationStatus ===
         // eslint-disable-next-line camelcase
-        InstallResponse_InstallationStatus.INSTALLATION_STATUS_NOT_INSTALLED
+        InstallResponse_InstallationStatus.NOT_INSTALLED
       ) {
         return false;
       }

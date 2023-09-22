@@ -17,8 +17,8 @@ use std::process::exit;
 use std::time::Duration;
 
 use fig_util::consts::{
-    FIG_BUNDLE_ID,
-    FIG_CLI_BINARY_NAME,
+    CODEWHISPERER_BUNDLE_ID,
+    CODEWHISPERER_CLI_BINARY_NAME,
 };
 use fig_util::directories;
 use regex::Regex;
@@ -56,7 +56,7 @@ pub(crate) async fn update(
     let temp_dir = tempfile::Builder::new().prefix("fig-download").tempdir()?;
 
     let dmg_path = temp_dir.path().join("Fig.dmg");
-    let temp_bundle_path = temp_dir.path().join("Fig.app");
+    let temp_bundle_path = temp_dir.path().join("CodeWhisperer.app");
 
     let fig_app_cstr = CString::new(fig_app_path.as_os_str().as_bytes())?;
     let temp_bundle_cstr = CString::new(temp_bundle_path.as_os_str().as_bytes())?;
@@ -100,7 +100,7 @@ pub(crate) async fn update(
     );
 
     let ditto_output = tokio::process::Command::new("ditto")
-        .arg(mount_point.join("Fig.app"))
+        .arg(mount_point.join("CodeWhisperer.app"))
         .arg(&temp_bundle_path)
         .output()
         .await?;
@@ -113,11 +113,14 @@ pub(crate) async fn update(
 
     tx.send(UpdateStatus::Message("Installing update...".into())).await.ok();
 
-    let cli_path = fig_app_path.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME);
+    let cli_path = fig_app_path
+        .join("Contents")
+        .join("MacOS")
+        .join(CODEWHISPERER_CLI_BINARY_NAME);
 
     if !cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
-            "the current app bundle is missing the CLI with the correct name {FIG_CLI_BINARY_NAME}"
+            "the current app bundle is missing the CLI with the correct name {CODEWHISPERER_CLI_BINARY_NAME}"
         )));
     }
 
@@ -185,7 +188,7 @@ pub(crate) async fn update(
 
     if !cli_path.exists() {
         return Err(Error::UpdateFailed(format!(
-            "the update succeeded, but the cli did not have the expected name or was missing, expected {FIG_CLI_BINARY_NAME}"
+            "the update succeeded, but the cli did not have the expected name or was missing, expected {CODEWHISPERER_CLI_BINARY_NAME}"
         )));
     }
 
@@ -223,7 +226,7 @@ async fn remove_in_dir_with_prefix_unless(dir: &Path, prefix: &str, unless: impl
 
 pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
     // TODO(sean)
-    // 1. Set title of running ttys "Restart this terminal to finish uninstalling Fig..."
+    // 1. Set title of running ttys "Restart this terminal to finish uninstalling CodeWhisperer..."
     // 2. Delete webview cache
 
     // Remove launch agents
@@ -236,28 +239,18 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
 
     // Delete Fig defaults on macOS
     tokio::process::Command::new("defaults")
-        .args(["delete", FIG_BUNDLE_ID])
+        .args(["delete", CODEWHISPERER_BUNDLE_ID])
         .output()
         .await
         .map_err(|err| warn!("Failed to delete defaults: {err}"))
         .ok();
 
     tokio::process::Command::new("defaults")
-        .args(["delete", "com.mschrage.fig.shared"])
+        .args(["delete", "com.amazon.codewhisperer.shared"])
         .output()
         .await
         .map_err(|err| warn!("Failed to delete defaults: {err}"))
         .ok();
-
-    // Delete the ~/.fig folder
-    if let Ok(fig_dir) = directories::fig_dir() {
-        tokio::fs::remove_dir_all(fig_dir)
-            .await
-            .map_err(|err| warn!("Could not remove ~/.fig folder: {err}"))
-            .ok();
-    } else {
-        warn!("Could not find .fig folder");
-    }
 
     uninstall_terminal_integrations().await;
 
@@ -289,11 +282,11 @@ pub(crate) async fn uninstall_desktop() -> Result<(), Error> {
         }
     }
 
-    let app_path = PathBuf::from("/Applications/Fig.app");
+    let app_path = PathBuf::from("/Applications/CodeWhisperer.app");
     if app_path.exists() {
         tokio::fs::remove_dir_all(&app_path)
             .await
-            .map_err(|err| warn!("Failed to remove Fig.app: {err}"))
+            .map_err(|err| warn!("Failed to remove CodeWhisperer.app: {err}"))
             .ok();
     }
 

@@ -32,6 +32,7 @@ struct LinuxConstants {
 #[derive(Debug, Clone, Serialize)]
 #[serde(rename_all = "camelCase")]
 pub struct Constants {
+    codewhisperer: bool,
     version: &'static str,
     cli: Option<Utf8PathBuf>,
     bundle_path: Option<Utf8PathBuf>,
@@ -39,7 +40,6 @@ pub struct Constants {
     home: Option<Utf8PathBuf>,
     fig_dot_dir: Option<Utf8PathBuf>,
     fig_data_dir: Option<Utf8PathBuf>,
-    plugins_dir: Option<Utf8PathBuf>,
     backups_dir: Option<Utf8PathBuf>,
     logs_dir: Option<Utf8PathBuf>,
     user: String,
@@ -81,14 +81,14 @@ impl Default for Constants {
             .unwrap_or_else(|| DEFAULT_THEMES.iter().map(|s| (*s).to_owned()).collect());
 
         Self {
+            codewhisperer: true,
             version: env!("CARGO_PKG_VERSION"),
-            cli: which("fig").ok().and_then(|exe| Utf8PathBuf::try_from(exe).ok()),
+            cli: which("cw").ok().and_then(|exe| Utf8PathBuf::try_from(exe).ok()),
             bundle_path: None,
             remote: None,
             home: directories::home_dir_utf8().ok(),
-            fig_dot_dir: directories::fig_dir_utf8().ok(),
+            fig_dot_dir: directories::fig_data_dir_utf8().ok(),
             fig_data_dir: directories::fig_data_dir_utf8().ok(),
-            plugins_dir: directories::plugins_dir_utf8().ok(),
             backups_dir: directories::backups_dir_utf8().ok(),
             logs_dir: directories::logs_dir_utf8().ok(),
             user: whoami::username(),

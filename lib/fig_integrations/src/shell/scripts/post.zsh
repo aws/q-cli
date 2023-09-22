@@ -1,13 +1,9 @@
 if [[ -n "$ZSH_NAME" ]]; then
 
-pathadd() {
-  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
-    PATH="${PATH:+"$PATH:"}$1"
-  fi
-}
-
-pathadd "${HOME}/.fig/bin"
-pathadd "${HOME}/.local/bin"
+# add ~/.local/bin to PATH
+if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+  PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
+fi
 
 # if [[ $TTY != "not a tty" ]]; then
   # # Open scripts on keyboard shortcut
@@ -25,7 +21,7 @@ pathadd "${HOME}/.local/bin"
   # bindkey ${FIG_SCRIPTS_KEYBIND} fig-open-scripts
 # fi
 
-# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$FIG_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
+# if [[ "$FIG_DID_NOT_EXEC_FIGTERM" = 1 && "$CW_TERM" != 1 ]] || [[ -n "${INSIDE_EMACS+x}" ]]; then
 #   unset FIG_DID_NOT_EXEC_FIGTERM
 #   return
 # fi
@@ -36,11 +32,11 @@ fi
 export TTY
 
 export FIG_PID="$$"
-export FIG_SET_PARENT=$FIGTERM_SESSION_ID
-export LC_FIG_SET_PARENT=$FIGTERM_SESSION_ID
+export FIG_SET_PARENT=$CWTERM_SESSION_ID
+export LC_FIG_SET_PARENT=$CWTERM_SESSION_ID
 
 if [[ -z "${FIG_SHELL_PATH}" ]]; then
-  FIG_SHELL_PATH=$(fig _ get-shell)
+  FIG_SHELL_PATH=$(cw _ get-shell)
 fi
 
 # shellcheck disable=SC2059
@@ -71,7 +67,7 @@ fig_preexec() {
 
   FIG_HAS_SET_PROMPT=0
 
-  fig_osc "OSCLock=%s" "${FIGTERM_SESSION_ID}"
+  fig_osc "OSCLock=%s" "${CWTERM_SESSION_ID}"
   fig_osc PreExec
 }
 
@@ -80,7 +76,7 @@ fig_precmd() {
 
   fig_reset_hooks
 
-  fig_osc "OSCUnlock=%s" "${FIGTERM_SESSION_ID}"
+  fig_osc "OSCUnlock=%s" "${CWTERM_SESSION_ID}"
   fig_osc "Dir=%s" "$PWD"
   fig_osc "Shell=zsh"
   fig_osc "ShellPath=%s" "${FIG_SHELL_PATH:-$SHELL}"
@@ -102,7 +98,7 @@ fig_precmd() {
 
   START_PROMPT=$'\033]697;StartPrompt\007'
   END_PROMPT=$'\033]697;EndPrompt\007'
-  NEW_CMD=$'\033]697;NewCmd='"${FIGTERM_SESSION_ID}"$'\007'
+  NEW_CMD=$'\033]697;NewCmd='"${CWTERM_SESSION_ID}"$'\007'
 
   # Save user defined prompts.
   FIG_USER_PS1="$PS1"
@@ -167,7 +163,7 @@ fig_precmd() {
   FIG_HAS_SET_PROMPT=1
 
   if command -v fig >/dev/null 2>&1; then
-    case $(fig _ pre-cmd) in
+    case $(cw _ pre-cmd) in
       EXEC_NEW_SHELL)
         unset FIG_DOTFILES_SOURCED
         exec zsh
@@ -198,4 +194,4 @@ fi
 
 fi
 
-(fig _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1
+(cw _ pre-cmd > /dev/null 2>&1 &) >/dev/null 2>&1

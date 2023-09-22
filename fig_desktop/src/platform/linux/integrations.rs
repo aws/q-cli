@@ -24,30 +24,30 @@ use crate::{
     AUTOCOMPLETE_ID,
 };
 
-pub static WM_CLASS_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
-    let mut whitelist = HashMap::new();
+pub static WM_CLASS_ALLOWLIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
+    let mut allowlist = HashMap::new();
     for terminal in fig_util::terminal::LINUX_TERMINALS {
         if let Some(wm_class) = terminal.wm_class() {
-            whitelist.insert(wm_class, terminal.clone());
+            allowlist.insert(wm_class, terminal.clone());
         }
     }
-    whitelist
+    allowlist
 });
 
-pub static GSE_WHITELIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
-    let mut whitelist = HashMap::new();
+pub static GSE_ALLOWLIST: Lazy<HashMap<&'static str, Terminal>> = Lazy::new(|| {
+    let mut allowlist = HashMap::new();
     for terminal in fig_util::terminal::LINUX_TERMINALS {
         if let Some(gnome_id) = terminal.gnome_id() {
-            whitelist.insert(gnome_id, terminal.clone());
+            allowlist.insert(gnome_id, terminal.clone());
         }
     }
-    whitelist
+    allowlist
 });
 
 fn from_source(from: &str) -> Option<&HashMap<&'static str, Terminal>> {
     match from {
-        "wm_class" => Some(&WM_CLASS_WHITELIST),
-        "gse" => Some(&GSE_WHITELIST),
+        "wm_class" => Some(&WM_CLASS_ALLOWLIST),
+        "gse" => Some(&GSE_ALLOWLIST),
         _ => None,
     }
 }

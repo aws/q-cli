@@ -12,7 +12,6 @@ module.exports = {
     "plugin:import/typescript",
     "prettier",
   ],
-
   parserOptions: {
     ecmaVersion: 12,
     parser: "@typescript-eslint/parser",

@@ -4,7 +4,7 @@ import {
   ShellPromptReturnedNotification,
   TextUpdate,
   HistoryUpdatedNotification
-} from "./fig.pb";
+} from "@fig/fig-api-proto/dist/fig.pb";
 import { sendInsertTextRequest } from "./requests";
 import { _subscribe, NotificationResponse } from "./notifications";
 

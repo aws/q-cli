@@ -43,6 +43,11 @@ pub fn menu_bar() -> MenuBar {
             .with_id(*DASHBOARD_FORWARD),
     );
     app_submenu.add_item(
+        MenuItemAttributes::new("Reload")
+            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyR))
+            .with_id(*DASHBOARD_RELOAD),
+    );
+    app_submenu.add_item(
         MenuItemAttributes::new("Close Window")
             .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyW))
             .with_id(*DASHBOARD_QUIT),
@@ -51,11 +56,6 @@ pub fn menu_bar() -> MenuBar {
         MenuItemAttributes::new("Quit Fig (UI)")
             .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyQ))
             .with_id(*DASHBOARD_QUIT),
-    );
-    app_submenu.add_item(
-        MenuItemAttributes::new("Reload")
-            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyR))
-            .with_id(*DASHBOARD_RELOAD),
     );
 
     menu_bar.add_submenu("Fig", true, app_submenu);

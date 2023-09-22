@@ -27,7 +27,7 @@ use fig_ipc::local::{
     set_debug_mode,
     toggle_debug_mode,
 };
-use fig_util::consts::FIG_BUNDLE_ID;
+use fig_util::consts::CODEWHISPERER_BUNDLE_ID;
 use fig_util::desktop::LaunchArgs;
 use fig_util::{
     directories,
@@ -227,7 +227,7 @@ impl DebugSubcommand {
                 if app_info.is_empty() {
                     println!("Fig app is not currently running. Attempting to start...");
                     if Command::new("open")
-                        .args(["-g", "-b", FIG_BUNDLE_ID])
+                        .args(["-g", "-b", CODEWHISPERER_BUNDLE_ID])
                         .spawn()?
                         .wait()
                         .is_err()
@@ -236,7 +236,7 @@ impl DebugSubcommand {
                         return Ok(());
                     }
                 }
-                let fig_path = crate::util::get_running_app_info(FIG_BUNDLE_ID, "bundlepath")?;
+                let fig_path = crate::util::get_running_app_info(CODEWHISPERER_BUNDLE_ID, "bundlepath")?;
                 let front_app = Command::new("lsappinfo").arg("front").output()?;
                 let terminal_name = String::from_utf8(front_app.stdout)
                     .ok()
@@ -246,7 +246,7 @@ impl DebugSubcommand {
                     None => "".into(),
                 };
 
-                println!("Running the Fig.app executable directly from {fig_path}.");
+                println!("Running the CodeWhisperer.app executable directly from {fig_path}.");
                 println!("You will need to grant accessibility permissions to the current terminal{terminal_text}!");
 
                 Command::new(format!("{fig_path}/Contents/MacOS/fig")).spawn()?.wait()?;
@@ -452,7 +452,7 @@ impl DebugSubcommand {
             },
             DebugSubcommand::Sample => {
                 let output = Command::new("lsappinfo")
-                    .args(["info", "-only", "-pid", "-app", FIG_BUNDLE_ID])
+                    .args(["info", "-only", "-pid", "-app", CODEWHISPERER_BUNDLE_ID])
                     .output()?;
                 let pid_str = String::from_utf8(output.stdout)?;
                 let pid = pid_str.split('=').nth(1).context("Could not get Fig app pid")?.trim();
@@ -479,7 +479,7 @@ impl DebugSubcommand {
             },
             DebugSubcommand::VerifyCodesign => {
                 Command::new("codesign")
-                    .args(["-vvvv", "/Applications/Fig.app"])
+                    .args(["-vvvv", "/Applications/CodeWhisperer.app"])
                     .spawn()?
                     .wait()?;
             },
@@ -488,7 +488,7 @@ impl DebugSubcommand {
                     quit_fig(true).await?;
 
                     Command::new("tccutil")
-                        .args(["reset", "Accessibility", FIG_BUNDLE_ID])
+                        .args(["reset", "Accessibility", CODEWHISPERER_BUNDLE_ID])
                         .spawn()?
                         .wait()?;
 
@@ -503,7 +503,7 @@ impl DebugSubcommand {
                     quit_fig(true).await?;
 
                     Command::new("tccutil")
-                        .args(["reset", "Accessibility", FIG_BUNDLE_ID])
+                        .args(["reset", "Accessibility", CODEWHISPERER_BUNDLE_ID])
                         .spawn()?
                         .wait()?;
                 },
@@ -768,7 +768,7 @@ impl DebugSubcommand {
                     Some(shell) => {
                         let mut command = match shell {
                             Shell::Bash => {
-                                writeln!(profile, "eval \"$(fig init bash post --skip-dotfiles)\"")?;
+                                writeln!(profile, "eval \"$(cw init bash post --skip-dotfiles)\"")?;
                                 command
                                     .args(["bash", "--noprofile", "--norc", "--rcfile"])
                                     .arg(profile.path());
@@ -777,7 +777,7 @@ impl DebugSubcommand {
                             Shell::Zsh => {
                                 std::fs::write(
                                     tmp_dir.path().join(".zshrc"),
-                                    "eval \"$(fig init zsh post --skip-dotfiles)\"",
+                                    "eval \"$(cw init zsh post --skip-dotfiles)\"",
                                 )
                                 .unwrap();
 
@@ -789,7 +789,7 @@ impl DebugSubcommand {
                                     "fish",
                                     "--no-config",
                                     "-C",
-                                    "fig init fish post --skip-dotfiles | source",
+                                    "cw init fish post --skip-dotfiles | source",
                                 ]);
                                 command
                             },

@@ -48,7 +48,7 @@ RUN npm install --global ts-proto
 
 WORKDIR /usr/home/app/
 
-RUN mkdir -p /Applications/Fig.app/
+RUN mkdir -p /Applications/CodeWhisperer.app/
 
 # Set up test user
 RUN adduser --disabled-password --home /usr/home test 

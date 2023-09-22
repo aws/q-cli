@@ -18,7 +18,7 @@ mod settings;
 mod telemetry;
 mod theme;
 mod tips;
-mod tweet;
+// mod tweet;
 mod uninstall;
 mod update;
 mod user;
@@ -68,7 +68,7 @@ pub enum OutputFormat {
 pub enum Processes {
     /// Daemon process
     Daemon,
-    /// Fig process
+    /// CodeWhisperer process
     App,
 }
 
@@ -85,7 +85,7 @@ pub enum CliRootCommands {
     /// Hook commands
     #[command(subcommand, hide = true)]
     Hook(hook::HookSubcommand),
-    /// Debug Fig
+    /// Debug CodeWhisperer
     #[command(subcommand)]
     Debug(debug::DebugSubcommand),
     /// Customize appearance & behavior
@@ -126,8 +126,8 @@ pub enum CliRootCommands {
     Init(init::InitArgs),
     /// Get or set theme
     Theme(theme::ThemeArgs),
-    /// Tweet about Fig
-    Tweet,
+    // Tweet about CodeWhisperer
+    // Tweet,
     /// Create a new Github issue
     Issue(issue::IssueArgs),
     /// Root level user subcommands
@@ -136,25 +136,25 @@ pub enum CliRootCommands {
     /// Manage your fig user
     #[command(subcommand)]
     User(user::UserSubcommand),
-    /// Check Fig is properly configured
+    /// Check CodeWhisperer is properly configured
     Doctor(doctor::DoctorArgs),
-    /// Generate the completion spec for Fig
+    /// Generate the completion spec for CodeWhisperer
     #[command(hide = true)]
     Completion(completion::CompletionArgs),
-    /// Internal subcommands used for Fig
+    /// Internal subcommands used for CodeWhisperer
     #[command(subcommand, hide = true)]
     Internal(internal::InternalSubcommand),
-    /// Launch the Fig desktop app
+    /// Launch the CodeWhisperer desktop app
     Launch,
-    /// Quit the Fig desktop app
+    /// Quit the CodeWhisperer desktop app
     Quit,
-    /// Restart the Fig desktop app
+    /// Restart the CodeWhisperer desktop app
     Restart {
         /// The process to restart
         #[arg(value_enum, default_value_t = Processes::App, hide = true)]
         process: Processes,
     },
-    /// Run the Fig tutorial
+    /// Run the CodeWhisperer tutorial
     #[command(hide = true)]
     Onboarding,
     /// Open manual page
@@ -177,31 +177,22 @@ pub enum CliRootCommands {
 
 #[derive(Debug, Parser)]
 #[command(version, about)]
-#[command(help_template = "\x1B[1m
-  ███████╗██╗ ██████╗
-  ██╔════╝██║██╔════╝
-  █████╗  ██║██║  ███╗
-  ██╔══╝  ██║██║   ██║
-  ██║     ██║╚██████╔╝
-  ╚═╝     ╚═╝ ╚═════╝ CLI
-\x1B[0m
-╭────────────────────────────────────────────────────╮
-│ \x1B[1mfig\x1B[0m            \x1B[0;90mOpen the Fig Dashboard\x1B[0m              │ 
-│ \x1B[1mfig doctor\x1B[0m     \x1B[0;90mDebug Fig installation issues\x1B[0m       │ 
-╰────────────────────────────────────────────────────╯
+#[command(help_template = "\x1B[1;95m
+ cw\x1B[0m (Amazon CodeWhisperer CLI)
+╭──────────────────────────────────────────────────────╮
+│ \x1B[1mcw\x1B[0m          \x1B[0;90mOpen the CodeWhisperer Dashboard\x1B[0m         │ 
+│ \x1B[1mcw doctor\x1B[0m   \x1B[0;90mDebug CodeWhisperer installation issues\x1B[0m  │ 
+╰──────────────────────────────────────────────────────╯
 
- \x1B[1;95mPopular Subcommands\x1B[0m           \x1B[1;90mUsage:\x1B[0;90m fig [subcommand]\x1B[0m
-╭────────────────────────────────────────────────────╮
-│ \x1B[1mrun\x1B[0m            \x1B[0;90mExecute a Fig Script\x1B[0m                │
-│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m     │
-│ \x1B[1mtweet\x1B[0m          \x1B[0;90mTweet about Fig\x1B[0m                     │
-│ \x1B[1mupdate\x1B[0m         \x1B[0;90mCheck for updates\x1B[0m                   │
-│ \x1B[1missue\x1B[0m          \x1B[0;90mCreate a new GitHub issue\x1B[0m           │
-│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the Fig app\x1B[0m                    │
-╰────────────────────────────────────────────────────╯
+ \x1B[1;95mPopular Subcommands\x1B[0m           \x1B[1;90mUsage:\x1B[0;90m cw [subcommand]\x1B[0m
+╭──────────────────────────────────────────────────────╮
+│ \x1B[1mai\x1B[0m             \x1B[0;90mAi :D\x1B[0m                                 |
+│ \x1B[1msettings\x1B[0m       \x1B[0;90mCustomize appearance & behavior\x1B[0m       │
+│ \x1B[1mquit\x1B[0m           \x1B[0;90mQuit the CodeWhisperer app\x1B[0m            │
+╰──────────────────────────────────────────────────────╯
 
  \x1B[0;90mTo see all subcommands, use:\x1B[0m
-  > fig help-all
+  > cw help-all
 ㅤ
 ")]
 pub struct Cli {
@@ -243,7 +234,7 @@ impl Cli {
                 CliRootCommands::User(user) => user.execute().await,
                 CliRootCommands::RootUser(root_user) => root_user.execute().await,
                 CliRootCommands::Doctor(args) => args.execute().await,
-                CliRootCommands::Tweet => tweet::tweet_cli(),
+                // CliRootCommands::Tweet => tweet::tweet_cli(),
                 CliRootCommands::App(app_subcommand) => app_subcommand.execute().await,
                 CliRootCommands::Hook(hook_subcommand) => hook_subcommand.execute().await,
                 CliRootCommands::Theme(theme_args) => theme_args.execute().await,
@@ -337,14 +328,14 @@ mod test {
     #[test]
     fn test_restart() {
         assert_eq!(
-            Cli::parse_from(["fig", "restart", "app"]).subcommand,
+            Cli::parse_from(["codewhisperer", "restart", "app"]).subcommand,
             Some(CliRootCommands::Restart {
                 process: Processes::App
             })
         );
 
         assert_eq!(
-            Cli::parse_from(["fig", "restart", "daemon"]).subcommand,
+            Cli::parse_from(["codewhisperer", "restart", "daemon"]).subcommand,
             Some(CliRootCommands::Restart {
                 process: Processes::Daemon
             })
@@ -362,7 +353,7 @@ mod test {
         use internal::InternalSubcommand;
         assert_eq!(
             Cli::parse_from([
-                "fig",
+                "cw",
                 "_",
                 "attempt-to-finish-input-method-installation",
                 "/path/to/bundle.app"
@@ -377,47 +368,47 @@ mod test {
     }
 
     #[test]
-    fn test_codex() {
+    fn test_ghost_text() {
         use internal::InternalSubcommand;
 
         assert_eq!(
-            Cli::parse_from(["fig", "_", "codex", "--buffer", ""]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", ""]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["fig", "_", "codex", "--buffer", "foo"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "foo"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "foo".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["fig", "_", "codex", "--buffer", "-"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "-"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "-".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["fig", "_", "codex", "--buffer", "--"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "--"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "--".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["fig", "_", "codex", "--buffer", "--foo bar"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::Codex {
+            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "--foo bar"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "--foo bar".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["fig", "_", "codex-accept", "--buffer", "abc", "--suggestion", "def"]).subcommand,
-            Some(CliRootCommands::Internal(InternalSubcommand::CodexAccept {
+            Cli::parse_from(["cw", "_", "ghost_text-accept", "--buffer", "abc", "--suggestion", "def"]).subcommand,
+            Some(CliRootCommands::Internal(InternalSubcommand::GhostTextAccept {
                 buffer: "abc".to_string(),
                 suggestion: "def".to_string()
             }))

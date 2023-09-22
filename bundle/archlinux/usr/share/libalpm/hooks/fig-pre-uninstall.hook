@@ -5,4 +5,4 @@ Target = fig
 
 [Action]
 When = PreTransaction
-Exec = fig _ uninstall-for-all-users
+Exec = cw _ uninstall-for-all-users

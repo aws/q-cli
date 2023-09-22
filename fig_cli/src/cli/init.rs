@@ -139,16 +139,14 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
             && !skip_dotfiles
         {
-            if shell == &Shell::Zsh
-                && when == &When::Post
-                && fig_settings::settings::product_gate("ai-autocomplete", Some("fig")).unwrap_or(false)
+            if shell == &Shell::Zsh && when == &When::Post && fig_settings::state::get_bool_or("ghost-text.beta", false)
             {
                 to_source.push(guard_source(
                     shell,
                     false,
                     "FIG_DOTFILES_SOURCED",
                     GuardAssignment::AfterSourcing,
-                    fig_integrations::shell::codex_plugin::ZSH_SCRIPT,
+                    fig_integrations::shell::ghost_text_plugin::ZSH_SCRIPT,
                 ));
             }
         }

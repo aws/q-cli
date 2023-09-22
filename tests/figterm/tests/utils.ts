@@ -20,9 +20,9 @@ export const makeTestsForShell = (ptyOptions: PTYOptions) => {
   test('shell environment setup', async () => {
     const env = await shell.getEnv();
 
-    expect(env.FIG_TERM).toBe('1');
+    expect(env.CW_TERM).toBe('1');
     expect(env.FIG_CHECKED_PROMPTS).toBe('1');
-    expect(env.PATH.includes('/.fig/bin')).toBe(true);
+    expect(env.PATH.includes('/.local/bin')).toBe(true);
     expect(env.TTY).not.toBeNull();
     expect(await shell.execute('tty')).toBe(env.TTY);
   });

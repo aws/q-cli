@@ -1,0 +1,15 @@
+@tailwind base;
+@tailwind components;
+@tailwind utilities;
+
+:root {
+  @apply h-full w-full overflow-hidden bg-transparent;
+}
+
+body {
+  @apply h-full w-full overflow-hidden;
+}
+
+#root {
+  @apply h-full w-full overflow-hidden;
+}

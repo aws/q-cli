@@ -1,4 +1,4 @@
-import { LocalStateChangedNotification, NotificationType } from './fig.pb';
+import { LocalStateChangedNotification, NotificationType } from '@fig/fig-api-proto/dist/fig.pb';
 import { _subscribe, NotificationResponse } from './notifications';
 
 import {

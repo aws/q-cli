@@ -47,7 +47,7 @@ use core_foundation::{
     impl_TCFType,
 };
 use fig_settings::state;
-use fig_util::consts::FIG_CLI_BINARY_NAME;
+use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
 use fig_util::directories::home_dir;
 use fig_util::Terminal;
 use macos_utils::applications;
@@ -262,7 +262,8 @@ impl std::fmt::Debug for TISInputSource {
 
 impl std::default::Default for InputMethod {
     fn default() -> Self {
-        let fig_app_path = fig_util::fig_bundle().unwrap_or_else(|| "/Applications/Fig.app".to_owned().into());
+        let fig_app_path =
+            fig_util::fig_bundle().unwrap_or_else(|| "/Applications/CodeWhisperer.app".to_owned().into());
 
         let bundle_path = fig_app_path.join("Contents").join("Helpers").join("FigInputMethod.app");
         Self { bundle_path }
@@ -484,7 +485,10 @@ impl Integration for InputMethod {
 
         // todo: pull this into a function in fig_directories
         let fig_cli_path = match fig_util::fig_bundle() {
-            Some(bundle) => bundle.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME),
+            Some(bundle) => bundle
+                .join("Contents")
+                .join("MacOS")
+                .join(CODEWHISPERER_CLI_BINARY_NAME),
             None => return Err(InputMethodError::HelperExecutableNotFound.into()),
         };
 
@@ -546,7 +550,10 @@ impl Integration for InputMethod {
 
         // todo: pull this into a function in fig_directories
         let fig_cli_path = match fig_util::fig_bundle() {
-            Some(bundle) => bundle.join("Contents").join("MacOS").join(FIG_CLI_BINARY_NAME),
+            Some(bundle) => bundle
+                .join("Contents")
+                .join("MacOS")
+                .join(CODEWHISPERER_CLI_BINARY_NAME),
             None => return Err(InputMethodError::HelperExecutableNotFound.into()),
         };
 

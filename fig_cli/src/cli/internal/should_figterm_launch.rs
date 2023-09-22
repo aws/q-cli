@@ -64,16 +64,16 @@ fn parent_status(current_pid: fig_util::process_info::Pid) -> Status {
     let valid_parent = ["zsh", "bash", "fish", "nu"].contains(&parent_name);
 
     if fig_util::system_info::in_ssh() {
-        return match std::env::var_os("FIG_TERM") {
-            Some(_) => Status::DontLaunch("In SSH and FIG_TERM is set".into()),
-            None => Status::Launch("In SSH and FIG_TERM is not set".into()),
+        return match std::env::var_os("CW_TERM") {
+            Some(_) => Status::DontLaunch("In SSH and CW_TERM is set".into()),
+            None => Status::Launch("In SSH and CW_TERM is not set".into()),
         };
     }
 
     if fig_util::system_info::in_codespaces() {
-        return match std::env::var_os("FIG_TERM") {
-            Some(_) => Status::DontLaunch("In Codespaces and FIG_TERM is set".into()),
-            None => Status::Launch("In Codespaces and FIG_TERM is not set".into()),
+        return match std::env::var_os("CW_TERM") {
+            Some(_) => Status::DontLaunch("In Codespaces and CW_TERM is set".into()),
+            None => Status::Launch("In Codespaces and CW_TERM is not set".into()),
         };
     }
 

@@ -25,7 +25,7 @@ pub enum EditBufferComponent {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CodexRequest {
+pub struct GhostTextRequest {
     pub history: Vec<CommandInfo>,
     pub os: String,
     pub arch: String,
@@ -38,7 +38,7 @@ pub struct CodexRequest {
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
-pub struct CodexChoice {
+pub struct GhostTextChoice {
     pub text: Option<String>,
     pub index: Option<i32>,
     pub finish_reason: Option<String>,
@@ -52,14 +52,14 @@ pub struct LogProbs {
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 #[serde(rename_all = "camelCase")]
-pub struct CodexResponse {
-    pub choices: Vec<CodexChoice>,
+pub struct GhostTextResponse {
+    pub choices: Vec<GhostTextChoice>,
 }
 
-pub async fn request(request: CodexRequest) -> fig_request::Result<CodexResponse> {
+pub async fn request(request: GhostTextRequest) -> fig_request::Result<GhostTextResponse> {
     match std::env::var("FIG_CODEX_API_URL") {
         Ok(url) => fig_request::Request::new_with_url(Method::POST, Url::parse(&url).unwrap()),
-        Err(_) => fig_request::Request::post("/ai/codex"),
+        Err(_) => fig_request::Request::post("/ai/ghost_text"),
     }
     .auth()
     .body_json(&request)

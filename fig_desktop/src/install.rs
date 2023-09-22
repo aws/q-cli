@@ -197,21 +197,17 @@ fn symlink(origin: impl AsRef<std::path::Path>, link: impl AsRef<std::path::Path
 
 #[cfg(target_os = "macos")]
 pub async fn initialize_fig_dir() -> anyhow::Result<()> {
-    use std::path::Path;
-    use std::{
-        fs,
-        io,
-    };
+    use std::fs;
 
     use fig_integrations::shell::ShellExt;
     use fig_util::consts::{
-        FIGTERM_BINARY_NAME,
-        FIG_BUNDLE_ID,
-        FIG_CLI_BINARY_NAME,
-        FIG_DESKTOP_PROCESS_NAME,
+        CODEWHISPERER_BUNDLE_ID,
+        CODEWHISPERER_CLI_BINARY_NAME,
+        CODEWHISPERER_DESKTOP_PROCESS_NAME,
+        CWTERM_BINARY_NAME,
     };
     use fig_util::directories::{
-        fig_dir,
+        fig_data_dir,
         home_dir,
     };
     use fig_util::launchd_plist::{
@@ -219,49 +215,24 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         LaunchdPlist,
     };
     use fig_util::Shell;
-    use macos_utils::bundle::{
-        get_bundle_path,
-        get_bundle_resource_path,
-    };
+    use macos_utils::bundle::get_bundle_path;
 
-    fn copy_dir_all(src: impl AsRef<Path>, dst: impl AsRef<Path>) -> io::Result<()> {
-        fs::create_dir_all(&dst)?;
-        for entry in fs::read_dir(src)? {
-            let entry = entry?;
-            let ty = entry.file_type()?;
-            if ty.is_dir() {
-                copy_dir_all(entry.path(), dst.as_ref().join(entry.file_name()))?;
-            } else {
-                fs::copy(entry.path(), dst.as_ref().join(entry.file_name()))?;
-            }
-        }
-        Ok(())
-    }
+    let local_bin = fig_util::directories::home_dir()?.join(".local").join("bin");
+    fs::create_dir_all(&local_bin).ok();
 
-    let fig_dir = fig_dir()?;
-    let bin_dir = fig_dir.join("bin");
-    fs::create_dir_all(&bin_dir).ok();
-    fs::create_dir_all(fig_dir.join("apps")).ok();
-
-    if let Some(resources) = get_bundle_resource_path() {
-        let source = resources.join("config");
-        let dest = fig_dir.join("config");
-        copy_dir_all(source, dest).ok();
-    }
-
-    if let Some(figterm_path) = get_bundle_path_for_executable(FIGTERM_BINARY_NAME) {
-        let link = bin_dir.join("figterm");
-        symlink(&figterm_path, link).ok();
+    if let Some(cwterm_path) = get_bundle_path_for_executable(CWTERM_BINARY_NAME) {
+        let link = local_bin.join("cwterm");
+        symlink(&cwterm_path, link).ok();
 
         for shell in Shell::all() {
-            let figterm_shell_cpy = bin_dir.join(format!("{shell} (figterm)"));
-            let figterm_path = figterm_path.clone();
+            let cwterm_shell_cpy = local_bin.join(format!("{shell} (cwterm)"));
+            let cwterm_path = cwterm_path.clone();
 
             tokio::spawn(async move {
                 // Check version if copy already exists, this is because everytime a copy is made the first start is
                 // kinda slow and we want to avoid that
-                if figterm_shell_cpy.exists() {
-                    let output = tokio::process::Command::new(&figterm_shell_cpy)
+                if cwterm_shell_cpy.exists() {
+                    let output = tokio::process::Command::new(&cwterm_shell_cpy)
                         .arg("--version")
                         .output()
                         .await
@@ -271,7 +242,7 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                         .as_ref()
                         .and_then(|output| std::str::from_utf8(&output.stdout).ok())
                         .map(|s| {
-                            match s.strip_prefix("figterm") {
+                            match s.strip_prefix("cwterm") {
                                 Some(s) => s,
                                 None => s,
                             }
@@ -283,36 +254,29 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
                     }
                 }
 
-                if let Err(err) = tokio::fs::remove_file(&figterm_shell_cpy).await {
-                    error!(%err, "Failed to remove figterm shell {shell:?} copy");
+                if let Err(err) = tokio::fs::remove_file(&cwterm_shell_cpy).await {
+                    error!(%err, "Failed to remove cwterm shell {shell:?} copy");
                 }
-                if let Err(err) = tokio::fs::copy(&figterm_path, &figterm_shell_cpy).await {
-                    error!(%err, "Failed to copy figterm to {}", figterm_shell_cpy.display());
+                if let Err(err) = tokio::fs::copy(&cwterm_path, &cwterm_shell_cpy).await {
+                    error!(%err, "Failed to copy cwterm to {}", cwterm_shell_cpy.display());
                 }
             });
         }
     }
 
-    if let Some(fig_cli_path) = get_bundle_path_for_executable(FIG_CLI_BINARY_NAME) {
-        let dest = bin_dir.join("fig");
+    if let Some(fig_cli_path) = get_bundle_path_for_executable(CODEWHISPERER_CLI_BINARY_NAME) {
+        let dest = local_bin.join(CODEWHISPERER_CLI_BINARY_NAME);
         symlink(&fig_cli_path, dest).ok();
-
-        if let Ok(home) = home_dir() {
-            let local_bin = home.join(".local").join("bin");
-            fs::create_dir_all(&local_bin).ok();
-            let dest = local_bin.join("fig");
-            symlink(&fig_cli_path, dest).ok();
-        }
     }
 
     if let Some(bundle_path) = get_bundle_path() {
         let exe = bundle_path
             .join("Contents")
             .join("MacOS")
-            .join(FIG_DESKTOP_PROCESS_NAME);
+            .join(CODEWHISPERER_DESKTOP_PROCESS_NAME);
         let startup_launch_agent = LaunchdPlist::new("io.fig.launcher")
             .program_arguments([&exe.to_string_lossy(), "--is-startup", "--no-dashboard"])
-            .associated_bundle_identifiers([FIG_BUNDLE_ID])
+            .associated_bundle_identifiers([CODEWHISPERER_BUNDLE_ID])
             .run_at_load(true);
 
         create_launch_agent(&startup_launch_agent)?;
@@ -339,8 +303,8 @@ pub async fn initialize_fig_dir() -> anyhow::Result<()> {
         }
     }
 
-    // Init the .fig/shell directory
-    std::fs::create_dir(fig_dir.join("shell")).ok();
+    // Init the shell directory
+    std::fs::create_dir(fig_data_dir()?.join("shell")).ok();
     for integration in fig_util::Shell::all()
         .iter()
         .flat_map(|s| s.get_script_integrations().unwrap_or_else(|_| vec![]))
