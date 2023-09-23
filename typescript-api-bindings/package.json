@@ -17,7 +17,7 @@
   "scripts": {
     "clean": "rm -rf dist/",
     "build": "npm run clean && npm run generate-requests && npm run build:cjs && npm run build:esm",
-    "build:cjs": "tsc --declaration --generateTrace trace --outDir dist/cjs",
+    "build:cjs": "tsc --declaration --outDir dist/cjs",
     "build:esm": "tsc --declaration --module esnext --outDir dist/esm",
     "lint": "eslint src",
     "lint:fix": "npm run lint --fix",

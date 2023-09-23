@@ -6,6 +6,13 @@ use clap::Args;
 use color_eyre::owo_colors::OwoColorize;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
+use fig_api_client::ai::{
+    request_cw,
+    CodewhipererFileContext,
+    CodewhipererRequest,
+    LanguageName,
+    ProgrammingLanguage,
+};
 use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
@@ -193,25 +200,25 @@ impl AiArgs {
                     SpinnerComponent::Spinner,
                 ]);
 
-                let response: CompleteResponse = fig_request::Request::post("/ai/translate-bash")
-                    .body_json(serde_json::json!({
-                        "question": question,
-                        "n": n.unwrap_or(1),
-                        "os": std::env::consts::OS
-                    }))
-                    .auth()
-                    .deser_json()
-                    .await?;
+                let response = request_cw(CodewhipererRequest {
+                    file_context: CodewhipererFileContext {
+                        left_file_content: format!("# {question}\n").into(),
+                        right_file_content: "".into(),
+                        filename: "commands.sh".into(),
+                        programming_language: ProgrammingLanguage {
+                            language_name: LanguageName::Shell,
+                        },
+                    },
+                    max_results: 1,
+                    next_token: None,
+                })
+                .await?;
 
-                let choices: Vec<_> = response
-                    .choices
-                    .iter()
-                    .filter_map(|choice| {
-                        choice
-                            .text
-                            .as_ref()
-                            .map(|text| (text, choice.additional_message.as_ref()))
-                    })
+                let choices: Vec<(String, Option<String>)> = response
+                    .recommendations
+                    .unwrap_or_default()
+                    .into_iter()
+                    .map(|rec| (rec.content.unwrap_or_default(), None))
                     .collect();
 
                 macro_rules! handle_action {

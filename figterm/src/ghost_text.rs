@@ -3,15 +3,17 @@ use std::time::{
     SystemTime,
 };
 
-use fig_api_client::ai::EditBufferComponent;
+use fig_api_client::ai::{
+    CodewhipererFileContext,
+    LanguageName,
+    ProgrammingLanguage,
+};
 use fig_proto::figterm::figterm_response_message::Response as FigtermResponse;
 use fig_proto::figterm::{
     FigtermResponseMessage,
     GhostTextCompleteRequest,
     GhostTextCompleteResponse,
 };
-use fig_request::reqwest::StatusCode;
-use fig_util::directories::home_dir_utf8;
 use flume::Sender;
 use once_cell::sync::Lazy;
 use radix_trie::TrieCommon;
@@ -79,7 +81,7 @@ pub static COMPLETION_CACHE: Lazy<Mutex<radix_trie::Trie<String, f64>>> =
 
 pub async fn handle_request(
     figterm_request: GhostTextCompleteRequest,
-    session_id: String,
+    _session_id: String,
     response_tx: Sender<FigtermResponseMessage>,
     history_sender: HistorySender,
 ) {
@@ -171,58 +173,73 @@ pub async fn handle_request(
             },
         };
 
-        let request = fig_api_client::ai::GhostTextRequest {
-            history: history
-                .into_iter()
-                .map(|entry| fig_api_client::ai::CommandInfo {
-                    command: entry.command,
-                    cwd: entry.cwd,
-                    time: entry.start_time.map(|t| t.into()),
-                    exit_code: entry.exit_code,
-                    hostname: entry.hostname,
-                    pid: entry.pid,
-                    session_id: entry.session_id,
-                    shell: entry.shell,
-                })
-                .collect::<Vec<_>>(),
-            os: std::env::consts::OS.to_string(),
-            arch: std::env::consts::ARCH.to_string(),
-            time: Some(time::OffsetDateTime::now_utc()),
-            cwd: std::env::current_dir()
-                .ok()
-                .and_then(|p| p.to_str().map(|s| s.to_string())),
-            edit_buffer: vec![
-                EditBufferComponent::String(figterm_request.buffer.clone()),
-                EditBufferComponent::Other {
-                    r#type: "cursor".to_string(),
+        let history: Vec<_> = history.iter().rev().filter_map(|c| c.command.clone()).collect();
+        let prompt = format!("{}\n{}", history.join("\n"), figterm_request.buffer);
+
+        let request = fig_api_client::ai::CodewhipererRequest {
+            file_context: CodewhipererFileContext {
+                left_file_content: prompt,
+                right_file_content: "".into(),
+                filename: "history.sh".into(),
+                programming_language: ProgrammingLanguage {
+                    language_name: LanguageName::Shell,
                 },
-            ],
-            home_dir: home_dir_utf8().map(|s| s.into()).ok(),
-            session_id: Some(session_id.clone()),
+            },
+            max_results: 1,
+            next_token: None,
+            // history: history
+            //     .into_iter()
+            //     .map(|entry| fig_api_client::ai::CommandInfo {
+            //         command: entry.command,
+            //         cwd: entry.cwd,
+            //         time: entry.start_time.map(|t| t.into()),
+            //         exit_code: entry.exit_code,
+            //         hostname: entry.hostname,
+            //         pid: entry.pid,
+            //         session_id: entry.session_id,
+            //         shell: entry.shell,
+            //     })
+            //     .collect::<Vec<_>>(),
+            // os: std::env::consts::OS.to_string(),
+            // arch: std::env::consts::ARCH.to_string(),
+            // time: Some(time::OffsetDateTime::now_utc()),
+            // cwd: std::env::current_dir()
+            //     .ok()
+            //     .and_then(|p| p.to_str().map(|s| s.to_string())),
+            // edit_buffer: vec![
+            //     EditBufferComponent::String(figterm_request.buffer.clone()),
+            //     EditBufferComponent::Other {
+            //         r#type: "cursor".to_string(),
+            //     },
+            // ],
+            // home_dir: home_dir_utf8().map(|s| s.into()).ok(),
+            // session_id: Some(session_id.clone()),
         };
 
-        let response = match fig_api_client::ai::request(request).await {
-            Err(err) if err.is_status(StatusCode::TOO_MANY_REQUESTS) => {
-                warn!("Too many requests, trying again in 1 second");
-                tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
-                continue;
-            },
+        let response = match fig_api_client::ai::request_cw(request).await {
+            // Err(err) if err.is_status(StatusCode::TOO_MANY_REQUESTS) => {
+            //     warn!("Too many requests, trying again in 1 second");
+            //     tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
+            //     continue;
+            // },
             other => other,
         };
 
         let insert_text = match response {
             Ok(response) => {
+                let recommendations = response.recommendations.unwrap_or_default();
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
-                for choice in &response.choices {
-                    if let Some(text) = &choice.text {
-                        let logprob = match &choice.logprobs {
-                            Some(logprobs) => match &logprobs.token_logprobs {
-                                Some(token_logprobs) => *token_logprobs.first().unwrap_or(&1.0),
-                                None => 1.0,
-                            },
-                            None => 1.0,
-                        };
+                for choice in &recommendations {
+                    if let Some(text) = &choice.content {
+                        // let logprob = match &choice.logprobs {
+                        //     Some(logprobs) => match &logprobs.token_logprobs {
+                        //         Some(token_logprobs) => *token_logprobs.first().unwrap_or(&1.0),
+                        //         None => 1.0,
+                        //     },
+                        //     None => 1.0,
+                        // };
+                        let logprob = 1.0;
 
                         let full_text = format!("{}{}", figterm_request.buffer, text.trim_end());
 
@@ -230,8 +247,8 @@ pub async fn handle_request(
                     }
                 }
 
-                match response.choices.get(0) {
-                    Some(choice) => choice.text.as_ref().map(|text| text.trim_end().to_owned()),
+                match recommendations.get(0) {
+                    Some(choice) => choice.content.as_ref().map(|text| text.trim_end().to_owned()),
                     None => None,
                 }
             },

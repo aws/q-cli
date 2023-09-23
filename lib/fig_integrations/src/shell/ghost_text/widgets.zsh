@@ -123,7 +123,7 @@ _fig_autosuggest_accept() {
 		return
 	fi
 
-	(cw _ ghost_text-accept --buffer "$BUFFER" --suggestion "$POSTDISPLAY" > /dev/null 2>&1 &)
+	(cw _ ghost-text-accept --buffer "$BUFFER" --suggestion "$POSTDISPLAY" > /dev/null 2>&1 &)
 
 	# Only accept if the cursor is at the end of the buffer
 	# Add the suggestion to the buffer
@@ -150,7 +150,7 @@ _fig_autosuggest_accept() {
 # Accept the entire suggestion and execute it
 _fig_autosuggest_execute() {
 	# background so we don't block the terminal
-	(cw _ ghost_text-accept --buffer "$BUFFER" --suggestion "$POSTDISPLAY" > /dev/null 2>&1 &)
+	(cw _ ghost-text-accept --buffer "$BUFFER" --suggestion "$POSTDISPLAY" > /dev/null 2>&1 &)
 
 	# Add the suggestion to the buffer
 	BUFFER="$BUFFER$POSTDISPLAY"

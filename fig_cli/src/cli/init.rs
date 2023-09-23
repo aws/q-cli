@@ -139,7 +139,9 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
             && !skip_dotfiles
         {
-            if shell == &Shell::Zsh && when == &When::Post && fig_settings::state::get_bool_or("ghost-text.beta", false)
+            if shell == &Shell::Zsh
+                && when == &When::Post
+                && fig_settings::settings::get_bool_or("ghost-text.beta", false)
             {
                 to_source.push(guard_source(
                     shell,

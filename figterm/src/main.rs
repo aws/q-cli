@@ -82,11 +82,6 @@ use parking_lot::{
     RwLock,
 };
 use portable_pty::PtySize;
-use regex::Regex;
-use serde::{
-    Deserialize,
-    Serialize,
-};
 use sysinfo::SystemExt;
 use tokio::io::{
     self,
@@ -525,63 +520,6 @@ fn launch_shell(command: Option<&[String]>) -> Result<()> {
     unreachable!()
 }
 
-#[derive(Debug, Serialize, Deserialize)]
-struct Lint {
-    pub name: String,
-    pub level: Option<String>,
-    pub description: Option<String>,
-    pub regex: String,
-    #[serde(default)]
-    pub confirm: bool,
-}
-
-async fn fig_lint(current_line: &str) {
-    if let Ok(lints) = tokio::fs::read_to_string(".fig/lints.json").await {
-        let lints: Option<Vec<Lint>> = serde_json::from_str(&lints).ok();
-        if let Some(lints) = lints {
-            for lint in lints {
-                if let Ok(regex) = Regex::new(&lint.regex) {
-                    if regex.is_match(current_line) {
-                        let level = match lint.level.as_deref() {
-                            Some("error") => "error",
-                            Some("warning") => "warning",
-                            _ => "info",
-                        };
-
-                        let output = match &lint.description {
-                            Some(description) => format!("{}\n{}", lint.name, description),
-                            None => lint.name,
-                        };
-
-                        let output = match level {
-                            "error" => format!("{}: {}", "ERROR".red(), output),
-                            "warning" => format!("{}: {}", "WARNING".yellow(), output),
-                            _ => output,
-                        };
-
-                        crossterm::queue!(
-                            std::io::stdout(),
-                            crossterm::terminal::ScrollUp(1),
-                            crossterm::cursor::MoveToNextLine(1),
-                        )
-                        .ok();
-
-                        for line in output.lines() {
-                            crossterm::queue!(
-                                std::io::stdout(),
-                                crossterm::style::Print(line),
-                                crossterm::terminal::ScrollUp(1),
-                                crossterm::cursor::MoveToNextLine(1),
-                            )
-                            .ok();
-                        }
-                    }
-                }
-            }
-        }
-    }
-}
-
 fn figterm_main(command: Option<&[String]>) -> Result<()> {
     fig_settings::settings::init_global().ok();
     fig_settings::state::init_global().ok();
@@ -714,6 +652,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let ai_enabled = fig_settings::settings::get_bool_or("ai.terminal-hash-sub", true);
 
+        fig_api_client::ai::init();
+
         if let Ok(shell) = get_parent_shell() {
             let path = std::path::Path::new(&shell);
             let name = path.file_name().and_then(|name| name.to_str()).unwrap_or(shell.as_str());
@@ -722,8 +662,6 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                 error!("Failed to write title osc: {err}");
             }
         }
-
-        let lints_enabled = fig_settings::settings::get_bool_or("product-gate.fig.lints.enabled", false);
 
         let mut csi_u_set = false;
 
@@ -878,12 +816,6 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                                     master.write_all(&write_buffer).await?;
                                                     continue 'select_loop;
                                                 }
-                                            }
-                                        }
-
-                                        if !preexec && lints_enabled && event.key == KeyCode::Enter && event.modifiers == input::Modifiers::NONE {
-                                            if let Some(TextBuffer { buffer, .. }) = term.get_current_buffer() {
-                                                fig_lint(buffer.trim()).await;
                                             }
                                         }
 
