@@ -148,8 +148,8 @@ rustup target add arm_64-apple-darwin
 # Required for spell-checking
 cargo install typos-cli
 
-# Run `yarn` in root directory to add pre-commit hooks
-yarn
+# Run `pnpm` in root directory to add pre-commit hooks
+pnpm install --ignore-scripts
 ```
 
 ### 5. XCode (MacOS)
