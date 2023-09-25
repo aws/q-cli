@@ -10,6 +10,10 @@
     "lint:fix": "buf format -w",
     "precommit": "exit 0"
   },
+  "dependencies": {
+    "long": "^5.2.3",
+    "protobufjs": "^7.2.4"
+  },
   "devDependencies": {
     "ts-proto": "~1.157.1"
   }

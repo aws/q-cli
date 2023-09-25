@@ -6,7 +6,7 @@ import {
   CodeBlockWriter,
   IndentationText,
 } from "ts-morph";
-import { readFileSync } from "fs";
+import { readFileSync } from "node:fs";
 
 /* eslint-enable import/no-extraneous-dependencies */
 const capitalizeFirstLetter = (str: string) =>
@@ -180,7 +180,7 @@ const sourceFile = project.createSourceFile(
         ",\n"
       )}\n } from "@fig/fig-api-proto/dist/fig.pb";`
     );
-    writer.writeLine(`import { sendMessage } from "./core"`).blankLine();
+    writer.writeLine(`import { sendMessage } from "./core";`).blankLine();
 
     requestsWithMatchingResponses.forEach((request) =>
       writeGenericSendRequestWithResponseFunction(writer, normalize(request))
