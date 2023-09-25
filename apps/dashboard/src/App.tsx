@@ -1,7 +1,7 @@
-import { Routes, Route, Outlet, Link, useLocation } from "react-router-dom";
+import { Routes, Route, Outlet } from "react-router-dom";
 import WhatsNew from "./pages/whats-new";
-import { cn } from "@/lib/utils";
 import Account from "./pages/account";
+import SidebarLink from "./components/sidebar/link";
 
 function App() {
   return (
@@ -75,23 +75,23 @@ const NAV_DATA = [
 ] as const;
 
 function Layout() {
-  const location = useLocation();
   return (
     <div className="flex flex-row h-screen w-full overflow-hidden">
       <nav className="w-80 h-full flex flex-col items-center gap-1 p-4">
         {NAV_DATA.map((item) =>
           item.type === "link" ? (
-            <Link
-              key={item.name}
-              to={item.link}
-              className={cn(
-                "px-3 py-1.5 h-10 hover:bg-[#6E3BF1]/70 text-zinc-600 dark:text-zinc-400 hover:text-white dark:hover:text-white transition-colors w-full rounded-lg flex flex-row items-center font-light",
-                item.link === location.pathname &&
-                  "bg-[#6E3BF1] hover:bg-[#6E3BF1]/90 text-white dark:text-white"
-              )}
-            >
-              {item.name}
-            </Link>
+            <SidebarLink key={item.name} path={item.link} name={item.name} />
+            // <Link
+            //   key={item.name}
+            //   to={item.link}
+            //   className={cn(
+            //     "px-3 py-1.5 h-10 hover:bg-[#6E3BF1]/70 text-zinc-600 dark:text-zinc-400 hover:text-white dark:hover:text-white transition-colors w-full rounded-lg flex flex-row items-center font-light",
+            //     item.link === location.pathname &&
+            //       "bg-[#6E3BF1] hover:bg-[#6E3BF1]/90 text-white dark:text-white"
+            //   )}
+            // >
+            //   {item.name}
+            // </Link>
           ) : (
             <div
               key={item.name}
