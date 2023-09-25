@@ -96,7 +96,7 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
         trace!("icon cache hit");
         return Ok(asset);
     }
-    trace!("cache miss processing asset for {path:?}");
+    trace!(?path, "cache miss processing asset");
 
     let is_svg = path
         .extension()
