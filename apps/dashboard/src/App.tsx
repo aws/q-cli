@@ -2,6 +2,7 @@ import { Routes, Route, Outlet } from "react-router-dom";
 import WhatsNew from "./pages/whats-new";
 import Account from "./pages/account";
 import SidebarLink from "./components/sidebar/link";
+import { Apps, Autocomplete, GhostText, Help, Prompt, Settings, Sparkle, User } from "./components/svg/icons";
 
 function App() {
   return (
@@ -74,24 +75,35 @@ const NAV_DATA = [
   },
 ] as const;
 
+function getIconFromName (name: string) {
+  switch (name.toLowerCase()) {
+    case "what's new?":
+    default:
+      return <Sparkle />
+    case "help & support":
+      return <Help />
+    case "autocomplete":
+      return <Autocomplete />
+    case "predict":
+      return <GhostText />
+    case "translate":
+      return <Prompt />
+    case "account":
+      return <User />
+    case "integrations":
+      return <Apps />
+    case "preferences":
+      return <Settings />
+  }
+}
+
 function Layout() {
   return (
     <div className="flex flex-row h-screen w-full overflow-hidden">
-      <nav className="w-80 h-full flex flex-col items-center gap-1 p-4">
-        {NAV_DATA.map((item) =>
+      <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
+        {NAV_DATA.map((item, i) =>
           item.type === "link" ? (
-            <SidebarLink key={item.name} path={item.link} name={item.name} />
-            // <Link
-            //   key={item.name}
-            //   to={item.link}
-            //   className={cn(
-            //     "px-3 py-1.5 h-10 hover:bg-[#6E3BF1]/70 text-zinc-600 dark:text-zinc-400 hover:text-white dark:hover:text-white transition-colors w-full rounded-lg flex flex-row items-center font-light",
-            //     item.link === location.pathname &&
-            //       "bg-[#6E3BF1] hover:bg-[#6E3BF1]/90 text-white dark:text-white"
-            //   )}
-            // >
-            //   {item.name}
-            // </Link>
+            <SidebarLink key={item.name} path={item.link} name={item.name} icon={getIconFromName(item.name)} count={i > 0 ? i+2 : undefined} />
           ) : (
             <div
               key={item.name}

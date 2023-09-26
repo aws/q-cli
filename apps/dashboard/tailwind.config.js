@@ -7,6 +7,13 @@ module.exports = {
     './app/**/*.{ts,tsx}',
     './src/**/*.{ts,tsx}',
 	],
+  fontSize: {
+    sm: '0.75rem',
+    base: '0.875rem',
+    md: '1rem',
+    lg: '1.125rem',
+    xl: '1.25rem'
+  },
   theme: {
     container: {
       center: true,
