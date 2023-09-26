@@ -11,6 +11,10 @@ mod window;
 use std::marker::PhantomData;
 
 use fig_desktop_api::handler::Wrapped;
+use fig_desktop_api::kv::{
+    DashKVStore,
+    KVStore,
+};
 pub use fig_desktop_api::requests::{
     RequestResult,
     RequestResultImpl,
@@ -58,6 +62,17 @@ struct Context<'a> {
     notifications_state: &'a WebviewNotificationsState,
     proxy: &'a EventLoopProxy,
     window_id: &'a WindowId,
+    dash_kv_store: &'a DashKVStore,
+}
+
+impl KVStore for Context<'_> {
+    fn set_raw(&self, key: impl Into<Vec<u8>>, value: impl Into<Vec<u8>>) {
+        self.dash_kv_store.set_raw(key, value);
+    }
+
+    fn get_raw(&self, key: impl AsRef<[u8]>) -> Option<Vec<u8>> {
+        self.dash_kv_store.get_raw(key)
+    }
 }
 
 #[derive(Default)]
@@ -154,6 +169,7 @@ pub async fn api_request(
     intercept_state: &InterceptState,
     notifications_state: &WebviewNotificationsState,
     proxy: &EventLoopProxy,
+    dash_kv_store: &DashKVStore,
 ) {
     let response = match message {
         Ok(request) => {
@@ -168,6 +184,7 @@ pub async fn api_request(
                     notifications_state,
                     proxy,
                     window_id: &window_id,
+                    dash_kv_store,
                 },
                 request,
             )

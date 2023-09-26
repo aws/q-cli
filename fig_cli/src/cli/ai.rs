@@ -202,7 +202,7 @@ impl AiArgs {
 
                 let response = request_cw(CodewhipererRequest {
                     file_context: CodewhipererFileContext {
-                        left_file_content: format!("# {question}\n").into(),
+                        left_file_content: format!("# {question}\n"),
                         right_file_content: "".into(),
                         filename: "commands.sh".into(),
                         programming_language: ProgrammingLanguage {

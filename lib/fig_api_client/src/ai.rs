@@ -1,37 +1,17 @@
-use std::process::Command;
-
 use amzn_codewhisperer_client::operation::generate_recommendations::{
     GenerateRecommendationsError,
     GenerateRecommendationsOutput,
 };
 use amzn_codewhisperer_client::Client;
-use aws_credential_types::provider::ProvideCredentials;
 use aws_smithy_http::body::SdkBody;
 use aws_smithy_http::result::SdkError;
-use fig_request::Method;
-use fig_util::directories::home_dir;
 use http::response::Response;
-use once_cell::sync::Lazy;
-use serde_json::Value;
 use tokio::sync::OnceCell;
-use tracing::info;
-use url::Url;
 
 const DEFAULT_REGION: &str = "us-east-1";
 // "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev"
 const CODEWHISPERER_ENDPOINT: &str = "https://codewhisperer.us-east-1.amazonaws.com";
 const APP_NAME: &str = "figTest";
-
-static INJECT_TOOLBOX_BIN: Lazy<()> = Lazy::new(|| {
-    let toolbox_bin = fig_util::directories::home_dir().unwrap().join(".toolbox/bin");
-    if toolbox_bin.exists() {
-        let mut paths = std::env::split_paths(&std::env::var_os("PATH").unwrap()).collect::<Vec<_>>();
-        if !paths.contains(&toolbox_bin) {
-            paths.insert(0, toolbox_bin);
-        }
-        std::env::set_var("PATH", std::env::join_paths(paths).unwrap());
-    }
-});
 
 fn aws_profile() -> Option<String> {
     fig_settings::state::get_string("aws.profile").ok().flatten()
@@ -42,7 +22,14 @@ static AWS_CLIENT: OnceCell<Client> = OnceCell::const_new();
 async fn cw_client() -> &'static Client {
     AWS_CLIENT
         .get_or_init(|| async {
-            *INJECT_TOOLBOX_BIN;
+            let toolbox_bin = fig_util::directories::home_dir().unwrap().join(".toolbox/bin");
+            if toolbox_bin.exists() {
+                let mut paths = std::env::split_paths(&std::env::var_os("PATH").unwrap()).collect::<Vec<_>>();
+                if !paths.contains(&toolbox_bin) {
+                    paths.insert(0, toolbox_bin);
+                }
+                std::env::set_var("PATH", std::env::join_paths(paths).unwrap());
+            }
 
             let sdk = aws_config::from_env()
                 .region(DEFAULT_REGION)

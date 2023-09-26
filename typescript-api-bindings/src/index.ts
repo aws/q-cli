@@ -18,6 +18,7 @@ import * as Install from "./install";
 import * as Types from "./types";
 import * as User from "./user";
 import * as History from "./history";
+import * as Auth from "./auth";
 
 import * as Internal from "./requests";
 
@@ -41,7 +42,8 @@ const lib = {
   Install,
   Types,
   User,
-  History
+  History,
+  Auth,
 };
 
 export {
@@ -65,7 +67,8 @@ export {
   Telemetry,
   Types,
   User,
-  WindowPosition
+  WindowPosition,
+  Auth,
 };
 
 declare global {

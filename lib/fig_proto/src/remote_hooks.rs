@@ -1,4 +1,3 @@
-use crate::fig::ShellContext;
 use crate::proto::local::{
     EditBufferHook,
     InterceptedKeyHook,
@@ -6,6 +5,7 @@ use crate::proto::local::{
     PreExecHook,
     PromptHook,
     TerminalCursorCoordinates,
+    ShellContext
 };
 use crate::proto::remote::{
     hostbound,

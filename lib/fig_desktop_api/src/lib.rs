@@ -4,3 +4,4 @@ pub mod init_script;
 pub mod notify;
 pub mod requests;
 pub mod util;
+pub mod kv;

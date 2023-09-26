@@ -15,6 +15,7 @@ use std::sync::Arc;
 use cfg_if::cfg_if;
 use fig_api_client::drip_campaign::DripCampaign;
 use fig_desktop_api::init_script::javascript_init;
+use fig_desktop_api::kv::DashKVStore;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
 use fig_request::auth::is_logged_in;
@@ -139,6 +140,7 @@ pub struct WebviewManager {
     intercept_state: Arc<InterceptState>,
     platform_state: Arc<PlatformState>,
     notifications_state: Arc<WebviewNotificationsState>,
+    dash_kv_store: Arc<DashKVStore>,
 }
 
 pub static GLOBAL_PROXY: Mutex<Option<EventLoopProxy>> = Mutex::new(None);
@@ -174,6 +176,7 @@ impl WebviewManager {
             intercept_state: Arc::new(InterceptState::default()),
             platform_state: Arc::new(PlatformState::new(proxy)),
             notifications_state: Arc::new(WebviewNotificationsState::default()),
+            dash_kv_store: Arc::new(DashKVStore::new()),
         }
     }
 
@@ -235,6 +238,7 @@ impl WebviewManager {
             let sync_figterm_state = self.figterm_state.clone();
             let sync_intercept_state = self.intercept_state.clone();
             let sync_notifications_state = self.notifications_state.clone();
+            let dash_kv_store = self.dash_kv_store.clone();
 
             tokio::spawn(async move {
                 while let Some((fig_id, message)) = sync_api_handler_rx.recv().await {
@@ -251,6 +255,7 @@ impl WebviewManager {
                         &intercept_state,
                         &notifications_state,
                         &proxy.clone(),
+                        &dash_kv_store,
                     )
                     .await;
                 }
@@ -261,6 +266,7 @@ impl WebviewManager {
             let figterm_state = self.figterm_state.clone();
             let intercept_state = self.intercept_state.clone();
             let notifications_state = self.notifications_state.clone();
+            let dash_kv_store = self.dash_kv_store.clone();
 
             tokio::spawn(async move {
                 while let Some((fig_id, payload)) = api_handler_rx.recv().await {
@@ -282,6 +288,7 @@ impl WebviewManager {
                         let figterm_state = figterm_state.clone();
                         let intercept_state = intercept_state.clone();
                         let notifications_state = notifications_state.clone();
+                        let dash_kv_store = dash_kv_store.clone();
                         tokio::spawn(async move {
                             api_request(
                                 fig_id,
@@ -291,6 +298,7 @@ impl WebviewManager {
                                 &intercept_state,
                                 &notifications_state,
                                 &proxy.clone(),
+                                &dash_kv_store,
                             )
                             .await;
                         });

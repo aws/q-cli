@@ -3,6 +3,7 @@ use fig_desktop_api::handler::{
     EventHandler,
     Wrapped,
 };
+use fig_desktop_api::kv::DashKVStore;
 use fig_desktop_api::requests::{
     RequestResult,
     RequestResultImpl,
@@ -23,7 +24,7 @@ struct MockHandler;
 
 #[async_trait::async_trait]
 impl EventHandler for MockHandler {
-    type Ctx = ();
+    type Ctx = DashKVStore;
 
     async fn notification(&self, _request: Wrapped<Self::Ctx, NotificationRequest>) -> RequestResult {
         RequestResult::success()
@@ -39,7 +40,7 @@ async fn main() {
             }
 
             let request = fig_desktop_api::handler::request_from_b64(&request_b64).unwrap();
-            let response = fig_desktop_api::handler::api_request(MockHandler, (), request)
+            let response = fig_desktop_api::handler::api_request(MockHandler, DashKVStore::new(), request)
                 .await
                 .unwrap();
             let response_b64 = fig_desktop_api::handler::response_to_b64(response);
