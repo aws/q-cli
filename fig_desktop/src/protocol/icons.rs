@@ -2,7 +2,6 @@ use std::borrow::Cow;
 use std::collections::hash_map::RandomState;
 use std::collections::HashMap;
 use std::ffi::OsStr;
-use std::fs;
 use std::hash::Hash;
 use std::io::Cursor;
 use std::path::{
@@ -91,7 +90,7 @@ pub enum AssetKind {
 }
 
 #[cfg_attr(not(target_os = "linux"), allow(dead_code))]
-pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
+pub async fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
     if let Some(asset) = ASSET_CACHE.get(&path) {
         trace!("icon cache hit");
         return Ok(asset);
@@ -105,14 +104,18 @@ pub fn process_asset(path: PathBuf) -> Result<ProcessedAsset> {
         .unwrap_or(true);
 
     let built = if is_svg {
-        (Arc::new(std::fs::read(&path)?.into()), AssetKind::Svg)
+        (Arc::new(tokio::fs::read(&path).await?.into()), AssetKind::Svg)
     } else {
-        let icon = image::open(&path)?;
-        let icon = icon.resize(32, 32, FilterType::CatmullRom);
-        let mut cursor = Cursor::new(Vec::new());
-        icon.write_to(&mut cursor, ImageOutputFormat::Png)?;
-        let buffer = cursor.into_inner();
-        (Arc::new(buffer.into()), AssetKind::Png)
+        let path = path.clone();
+        tokio::task::spawn_blocking(move || {
+            let icon = image::open(path)?;
+            let icon = icon.resize(32, 32, FilterType::CatmullRom);
+            let mut cursor = Cursor::new(Vec::new());
+            icon.write_to(&mut cursor, ImageOutputFormat::Png)?;
+            let buffer = cursor.into_inner();
+            anyhow::Ok((Arc::new(buffer.into()), AssetKind::Png))
+        })
+        .await??
     };
 
     ASSET_CACHE.insert(path, built.clone());
@@ -155,7 +158,7 @@ fn build_asset_response(data: Cow<'static, [u8]>, asset_kind: AssetKind) -> Resp
 }
 
 fn cached_asset_response(asset: &AssetSpecifier, fallback: Option<&str>) -> Response<Cow<'static, [u8]>> {
-    trace!("building response for asset {asset:?}");
+    trace!(?asset, "building response for asset");
     let (data, asset_kind) = resolve_asset(asset, fallback);
     build_asset_response((*data).clone(), asset_kind)
 }
@@ -168,7 +171,7 @@ fn scale(a: u8, b: u8) -> u8 {
     (a as f32 * (b as f32 / 256.0)) as u8
 }
 
-pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     debug!(uri =% request.uri(), "Fig protocol request");
     let url = Url::parse(&request.uri().to_string())?;
     let domain = url.domain();
@@ -222,7 +225,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static
                 }
             }
 
-            let fallback = match fs::metadata(path) {
+            let fallback = match tokio::fs::metadata(path).await {
                 Ok(meta) => {
                     if meta.is_dir() {
                         Some("folder")

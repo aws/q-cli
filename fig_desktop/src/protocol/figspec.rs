@@ -28,10 +28,10 @@ fn res_ok(bytes: Vec<u8>) -> Response<Cow<'static, [u8]>> {
         .unwrap()
 }
 
-fn load_spec(spec_path: String) -> anyhow::Result<Option<Cow<'static, [u8]>>> {
+async fn load_spec(spec_path: String) -> anyhow::Result<Option<Cow<'static, [u8]>>> {
     let path = fig_util::directories::autocomplete_specs_dir()?.join(spec_path);
     if path.exists() {
-        let content = std::fs::read(path)?;
+        let content = tokio::fs::read(path).await?;
         Ok(Some(content.into()))
     } else {
         Ok(None)
@@ -39,7 +39,7 @@ fn load_spec(spec_path: String) -> anyhow::Result<Option<Cow<'static, [u8]>>> {
 }
 
 // handle `figspec://localhost/spec.js`
-pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let Some((_, ext)) = request.uri().path().rsplit_once('.') else {
         return Ok(res_404());
     };
@@ -50,7 +50,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static
 
     let spec_path = request.uri().path().trim_start_matches('/').to_owned();
 
-    let Ok(Some(spec_content)) = load_spec(spec_path) else {
+    let Ok(Some(spec_content)) = load_spec(spec_path).await else {
         return Ok(res_404());
     };
 

@@ -8,7 +8,6 @@ pub mod window;
 use std::borrow::Cow;
 use std::collections::HashMap;
 use std::iter::empty;
-use std::path::Path;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -21,6 +20,7 @@ use fig_proto::fig::ClientOriginatedMessage;
 use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
+use muda::MenuEvent;
 use once_cell::sync::Lazy;
 use parking_lot::Mutex;
 use regex::RegexSet;
@@ -44,9 +44,9 @@ use wry::application::event::{
 };
 use wry::application::event_loop::{
     ControlFlow,
-    EventLoop as WryEventLoop,
+    EventLoopBuilder,
 };
-use wry::application::menu::MenuType;
+// use wry::application::menu::MenuType;
 use wry::application::window::{
     Theme,
     WindowBuilder,
@@ -58,6 +58,7 @@ use wry::webview::{
     WebViewBuilder,
 };
 
+use self::menu::menu_bar;
 use self::notification::WebviewNotificationsState;
 use crate::event::{
     Event,
@@ -83,7 +84,6 @@ use crate::request::api_request;
 use crate::tray::{
     self,
     build_tray,
-    get_context_menu,
 };
 use crate::utils::handle_login_deep_link;
 use crate::{
@@ -149,7 +149,7 @@ impl WebviewManager {
     #[allow(unused_variables)]
     #[allow(unused_mut)]
     pub fn new(visible: bool) -> Self {
-        let mut event_loop = WryEventLoop::with_user_event();
+        let mut event_loop = EventLoopBuilder::with_user_event().build();
         *GLOBAL_PROXY.lock() = Some(event_loop.create_proxy());
 
         #[cfg(target_os = "macos")]
@@ -311,16 +311,25 @@ impl WebviewManager {
 
         init_webview_notification_listeners(self.event_loop.create_proxy()).await;
 
-        let tray_enabled = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
-        let mut tray = if tray_enabled {
-            Some(build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap())
-        } else {
-            None
-        };
+        let tray_visable = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
+        let tray = build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap();
+        if let Err(err) = tray.set_visible(tray_visable) {
+            error!(%err, "Failed to set tray visable");
+        }
+
+        let menu_bar = menu_bar();
+
+        // TODO: fix these
+        // #[cfg(target_os = "windows")]
+        // menu_bar.init_for_hwnd(window_hwnd);
+        // #[cfg(target_os = "linux")]
+        // menu_bar.init_for_gtk_window(&gtk_window, Some(&vertical_gtk_box));
+        #[cfg(target_os = "macos")]
+        menu_bar.init_for_nsapp();
 
         // load drip campaign with initial credentials.
         tokio::spawn(async {
-            let res = DripCampaign::load().await;
+            let res: Result<Option<DripCampaign>, fig_request::Error> = DripCampaign::load().await;
             debug!(?res, "loaded drip campaign results");
         });
 
@@ -332,6 +341,13 @@ impl WebviewManager {
         self.event_loop.run(move |event, window_target, control_flow| {
             *control_flow = ControlFlow::Wait;
             trace!(?event, "Main loop event");
+
+            if let Ok(menu_event) = MenuEvent::receiver().try_recv() {
+                println!("{:?}", menu_event);
+                menu::handle_event(&menu_event, &proxy);
+                tray::handle_event(&menu_event, &proxy);
+                // tray.set_menu(Some(Box::new(get_context_menu())));
+            }
 
             match event {
                 WryEvent::NewEvents(StartCause::Init) => info!("Fig has started"),
@@ -384,16 +400,6 @@ impl WebviewManager {
                             _ => (),
                         }
                     }
-                },
-                WryEvent::MenuEvent { menu_id, origin, .. } => match origin {
-                    MenuType::MenuBar => menu::handle_event(menu_id, &proxy),
-                    MenuType::ContextMenu => {
-                        if let Some(tray) = tray.as_mut() {
-                            tray.set_menu(&get_context_menu());
-                        }
-                        tray::handle_event(menu_id, &proxy)
-                    },
-                    _ => {},
                 },
                 WryEvent::UserEvent(event) => {
                     match event {
@@ -449,14 +455,10 @@ impl WebviewManager {
                             *control_flow = new_control_flow;
                         },
                         Event::ReloadTray => {
-                            if let Some(tray) = tray.as_mut() {
-                                tray.set_menu(&get_context_menu());
-                            }
+                            // tray.set_menu(Some(Box::new(get_context_menu())));
                         },
                         Event::ReloadCredentials => {
-                            if let Some(tray) = tray.as_mut() {
-                                tray.set_menu(&get_context_menu());
-                            }
+                            // tray.set_menu(Some(Box::new(get_context_menu())));
 
                             // re-load drip campaign whenever credentials change.
                             tokio::spawn(DripCampaign::load());
@@ -474,9 +476,7 @@ impl WebviewManager {
                                 .unwrap();
                         },
                         Event::ReloadAccessibility => {
-                            if let Some(tray) = tray.as_mut() {
-                                tray.set_menu(&get_context_menu());
-                            }
+                            // tray.set_menu(Some(Box::new(get_context_menu())));
 
                             let autocomplete_enabled =
                                 !fig_settings::settings::get_bool_or("autocomplete.disable", false)
@@ -490,15 +490,9 @@ impl WebviewManager {
                                 })
                                 .unwrap();
                         },
-                        Event::SetTrayEnabled(enabled) => {
-                            if enabled {
-                                if tray.is_none() {
-                                    tray = Some(
-                                        build_tray(window_target, &self.debug_state, &self.figterm_state).unwrap(),
-                                    );
-                                }
-                            } else {
-                                tray = None;
+                        Event::SetTrayVisable(visable) => {
+                            if let Err(err) = tray.set_visible(visable) {
+                                error!(%err, "Failed to set tray visable");
                             }
                         },
                         Event::PlatformBoundEvent(native_event) => {
@@ -629,10 +623,10 @@ pub fn build_dashboard(
         .with_window_icon(Some(utils::ICON.clone()))
         .with_theme(*THEME);
 
-    #[cfg(not(target_os = "linux"))]
-    {
-        window = window.with_menu(menu::menu_bar());
-    }
+    // #[cfg(not(target_os = "linux"))]
+    // {
+    //     window = window.with_menu(menu::menu_bar());
+    // }
 
     match show_onboarding {
         true => window = window.with_inner_size(DASHBOARD_ONBOARDING_SIZE),
@@ -677,9 +671,9 @@ pub fn build_dashboard(
                 .unwrap();
         })
         .with_devtools(true)
-        .with_custom_protocol(
+        .with_asynchronous_custom_protocol(
             "resource".into(),
-            utils::wrap_custom_protocol(resource::handle(Path::new("dashboard"))),
+            utils::wrap_custom_protocol(resource::handle::<resource::Dashboard>),
         )
         .with_navigation_handler(navigation_handler(DASHBOARD_ID, &[
             // Main domain
@@ -765,9 +759,9 @@ pub fn build_autocomplete(
                 })
                 .unwrap();
         })
-        .with_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
-        .with_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
-        .with_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
+        .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
+        .with_asynchronous_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
+        .with_asynchronous_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
         // .with_custom_protocol("resource".into(), utils::wrap_custom_protocol(resource::handle))
         .with_devtools(true)
         .with_transparent(true)
@@ -864,9 +858,9 @@ pub fn build_companion(
                 })
                 .unwrap();
         })
-        .with_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
-        .with_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
-        .with_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
+        .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
+        .with_asynchronous_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
+        .with_asynchronous_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
         // .with_custom_protocol("resource".into(), utils::wrap_custom_protocol(resource::handle))
         .with_devtools(true)
         .with_transparent(true)
@@ -947,7 +941,7 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         |notification: JsonNotification, proxy: &EventLoopProxy| {
             let enabled = !notification.as_bool().unwrap_or(false);
             debug!(%enabled, "Tray icon");
-            proxy.send_event(Event::SetTrayEnabled(enabled)).unwrap();
+            proxy.send_event(Event::SetTrayVisable(enabled)).unwrap();
         }
     );
 
