@@ -2,7 +2,7 @@ import { cn } from "@/lib/utils"
 
 function Svg ({children, size = 24, className}: {children: React.ReactNode, size?: number, className?: string}) {
     return(
-        <svg className={cn('fill-current', className)} height={size} width={size} viewBox={`0 0 ${size}px ${size}px`} xmlns="http://www.w3.org/2000/svg">
+        <svg className={cn('fill-current', className)} height={size} width={size} viewBox={`0 0 ${size} ${size}`} xmlns="http://www.w3.org/2000/svg">
             {children}
         </svg>
     )
