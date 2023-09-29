@@ -26,12 +26,12 @@ export default function WhatsNew() {
           onClick={async () => {
             setCode("LOADING");
 
-            const init = await Auth.authBuilderIdInit();
+            const init = await Auth.builderIdStartDeviceAuthorization();
             setCode(init.code);
 
             await Native.open(init.url);
 
-            await Auth.authBuilderIdPoll(init);
+            await Auth.builderIdPollCreateToken(init).catch(console.error);
             setCode("Logged in!");
 
             await Internal.sendWindowFocusRequest({});

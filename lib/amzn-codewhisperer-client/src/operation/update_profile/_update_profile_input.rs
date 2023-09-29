@@ -17,21 +17,27 @@ impl UpdateProfileInput {
     pub fn profile_arn(&self) -> ::std::option::Option<&str> {
         self.profile_arn.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn profile_name(&self) -> ::std::option::Option<&str> {
         self.profile_name.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn reference_tracker_configuration(&self) -> ::std::option::Option<&crate::types::ReferenceTrackerConfiguration> {
+    pub fn reference_tracker_configuration(
+        &self,
+    ) -> ::std::option::Option<&crate::types::ReferenceTrackerConfiguration> {
         self.reference_tracker_configuration.as_ref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn kms_key_arn(&self) -> ::std::option::Option<&str> {
         self.kms_key_arn.as_deref()
     }
 }
 impl UpdateProfileInput {
-    /// Creates a new builder-style object to manufacture [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
+    /// Creates a new builder-style object to manufacture
+    /// [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
     pub fn builder() -> crate::operation::update_profile::builders::UpdateProfileInputBuilder {
         crate::operation::update_profile::builders::UpdateProfileInputBuilder::default()
     }
@@ -52,61 +58,82 @@ impl UpdateProfileInputBuilder {
         self.profile_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.profile_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.profile_arn
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn profile_name(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.profile_name = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_profile_name(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.profile_name = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_profile_name(&self) -> &::std::option::Option<::std::string::String> {
         &self.profile_name
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn reference_tracker_configuration(mut self, input: crate::types::ReferenceTrackerConfiguration) -> Self {
         self.reference_tracker_configuration = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn set_reference_tracker_configuration(mut self, input: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>) -> Self {
+    pub fn set_reference_tracker_configuration(
+        mut self,
+        input: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
+    ) -> Self {
         self.reference_tracker_configuration = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn get_reference_tracker_configuration(&self) -> &::std::option::Option<crate::types::ReferenceTrackerConfiguration> {
+    pub fn get_reference_tracker_configuration(
+        &self,
+    ) -> &::std::option::Option<crate::types::ReferenceTrackerConfiguration> {
         &self.reference_tracker_configuration
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn kms_key_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.kms_key_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_kms_key_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.kms_key_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_kms_key_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.kms_key_arn
     }
-    /// Consumes the builder and constructs a [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
+
+    /// Consumes the builder and constructs a
+    /// [`UpdateProfileInput`](crate::operation::update_profile::UpdateProfileInput).
     pub fn build(
         self,
-    ) -> ::std::result::Result<crate::operation::update_profile::UpdateProfileInput, ::aws_smithy_http::operation::error::BuildError> {
+    ) -> ::std::result::Result<
+        crate::operation::update_profile::UpdateProfileInput,
+        ::aws_smithy_http::operation::error::BuildError,
+    > {
         ::std::result::Result::Ok(crate::operation::update_profile::UpdateProfileInput {
             profile_arn: self.profile_arn,
             profile_name: self.profile_name,

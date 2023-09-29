@@ -1,30 +1,30 @@
 import {
-  AuthBuilderIdInitResponse,
-  AuthBuilderIdPollResponse_PollStatus as PollStatus,
+  AuthBuilderIdStartDeviceAuthorizationResponse,
+  AuthBuilderIdPollCreateTokenResponse_PollStatus as PollStatus,
 } from "@fig/fig-api-proto/dist/fig.pb";
 import {
-  sendAuthBuilderIdInitRequest,
-  sendAuthBuilderIdPollRequest,
+  sendAuthBuilderIdStartDeviceAuthorizationRequest,
+  sendAuthBuilderIdPollCreateTokenRequest,
   sendAuthStatusRequest,
 } from "./requests";
 
-export function authStatus() {
+export function status() {
   return sendAuthStatusRequest({});
 }
 
-export function authBuilderIdInit() {
-  return sendAuthBuilderIdInitRequest({});
+export function builderIdStartDeviceAuthorization() {
+  return sendAuthBuilderIdStartDeviceAuthorizationRequest({});
 }
 
-export async function authBuilderIdPoll({
+export async function builderIdPollCreateToken({
   authRequestId,
   expiresIn,
   interval,
-}: AuthBuilderIdInitResponse) {
+}: AuthBuilderIdStartDeviceAuthorizationResponse) {
   for (let i = 0; i < Math.ceil(expiresIn / interval); i++) {
     await new Promise((resolve) => setTimeout(resolve, interval * 1000));
 
-    let status = await sendAuthBuilderIdPollRequest({
+    let status = await sendAuthBuilderIdPollCreateTokenRequest({
       authRequestId,
     });
 

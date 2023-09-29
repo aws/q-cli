@@ -26,7 +26,6 @@ dashmap = "5.3.4"
 dialoguer = { version = "0.10.3", features = ["fuzzy-select"] }
 fig_api_client = { path = "../lib/fig_api_client" }
 fig_color = { path = "../lib/fig_color" }
-fig_history = { path = "../lib/fig_history" }
 fig_ipc = { path = "../lib/fig_ipc" }
 fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }

@@ -11,13 +11,17 @@ impl ::aws_http::request_id::RequestId for AssociateCustomizationPermissionOutpu
     }
 }
 impl AssociateCustomizationPermissionOutput {
-    /// Creates a new builder-style object to manufacture [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
-    pub fn builder() -> crate::operation::associate_customization_permission::builders::AssociateCustomizationPermissionOutputBuilder {
+    /// Creates a new builder-style object to manufacture
+    /// [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
+    pub fn builder()
+    -> crate::operation::associate_customization_permission::builders::AssociateCustomizationPermissionOutputBuilder
+    {
         crate::operation::associate_customization_permission::builders::AssociateCustomizationPermissionOutputBuilder::default()
     }
 }
 
-/// A builder for [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
+/// A builder for
+/// [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct AssociateCustomizationPermissionOutputBuilder {
@@ -33,7 +37,9 @@ impl AssociateCustomizationPermissionOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`AssociateCustomizationPermissionOutput`](crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput).
     pub fn build(self) -> crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput {
         crate::operation::associate_customization_permission::AssociateCustomizationPermissionOutput {
             _request_id: self._request_id,

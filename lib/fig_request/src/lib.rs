@@ -1,5 +1,4 @@
 pub mod auth;
-pub mod defaults;
 mod error;
 pub mod reqwest_client;
 

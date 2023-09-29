@@ -7,32 +7,21 @@ use std::path::PathBuf;
 use std::time::SystemTime;
 
 use fig_util::directories;
+use r2d2::PooledConnection;
+use r2d2_sqlite::SqliteConnectionManager;
 pub use rusqlite;
+use rusqlite::params;
 use rusqlite::types::ValueRef;
-use rusqlite::{
-    params,
-    Connection,
-};
 use serde_json::Value;
-use thiserror::Error;
-use tracing::{
-    error,
-    trace,
+use tracing::trace;
+
+use crate::sqlite::{
+    database,
+    Db,
 };
+use crate::Result;
 
 const ALL_COLUMNS: &str = "id, command, shell, pid, session_id, cwd, start_time, duration, hostname, exit_code";
-
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error("I/O error: {0}")]
-    Io(#[from] std::io::Error),
-    #[error("SQL error: {0}")]
-    Sqlite(#[from] rusqlite::Error),
-    #[error("Directory error: {0}")]
-    Directory(#[from] fig_util::directories::DirectoryError),
-}
-
-type Result<T, E = Error> = std::result::Result<T, E>;
 
 fn escape_string(s: impl AsRef<str>) -> String {
     s.as_ref()
@@ -58,102 +47,32 @@ pub struct CommandInfo {
     pub exit_code: Option<i32>,
 }
 
-pub struct History {
-    connection: Connection,
+#[derive(Debug, Default)]
+pub enum History {
+    Owned(Db),
+    #[default]
+    Global,
 }
 
 impl History {
-    pub fn load() -> Result<History> {
-        trace!("Loading history");
-
-        let history_path = directories::fig_data_dir()?.join("fig.history");
-
-        let connection = Connection::open(&history_path)?;
-
-        #[cfg(unix)]
-        {
-            use std::os::unix::fs::PermissionsExt;
-            let mut perms = history_path.metadata()?.permissions();
-            perms.set_mode(0o600);
-            std::fs::set_permissions(&history_path, perms)?;
-        }
-
-        let history = History { connection };
-
-        history.migrate()?;
-
-        Ok(history)
+    #[cfg(test)]
+    fn mock() -> Self {
+        Self::Owned(Db::mock())
     }
 
-    fn migrate(&self) -> Result<()> {
-        trace!("Creating migrations table");
-        self.connection.execute_batch(
-            "CREATE TABLE IF NOT EXISTS migrations( \
-                    id INTEGER PRIMARY KEY, \
-                    version INTEGER NOT NULL, \
-                    migration_time INTEGER NOT NULL \
-                );",
-        )?;
+    pub fn new() -> Self {
+        Self::default()
+    }
 
-        trace!("Migrating history database");
+    fn db(&self) -> Result<&Db> {
+        match self {
+            History::Owned(db) => Ok(db),
+            History::Global => Ok(database()?),
+        }
+    }
 
-        let max_migration_version: i64 = self
-            .connection
-            .prepare("SELECT max(version) from migrations;")?
-            .query_row([], |row| row.get(0))
-            .unwrap_or(0);
-
-        let migrate = |n, s| {
-            if max_migration_version < n {
-                trace!("Running migration {n}");
-
-                self.connection.execute_batch(&format!(
-                    "BEGIN; \
-                {s} \
-                INSERT INTO migrations (version, migration_time) VALUES ({n}, strftime('%s', 'now')); \
-                COMMIT;"
-                ))
-            } else {
-                Ok(())
-            }
-        };
-
-        // Create the initial history table
-        migrate(
-            1,
-            "CREATE TABLE IF NOT EXISTS history( \
-                id INTEGER PRIMARY KEY, \
-                command TEXT, \
-                shell TEXT, \
-                pid INTEGER, \
-                session_id TEXT, \
-                cwd TEXT, \
-                time INTEGER, \
-                in_ssh INTEGER, \
-                in_docker INTEGER, \
-                hostname TEXT, \
-                exit_code INTEGER \
-            );",
-        )?;
-
-        // Drop in_ssh and in_docker columns
-        migrate(
-            2,
-            "ALTER TABLE history DROP COLUMN in_ssh; \
-            ALTER TABLE history DROP COLUMN in_docker;",
-        )?;
-
-        // Rename time -> start_time, add end_time and duration
-        migrate(
-            3,
-            "ALTER TABLE history RENAME COLUMN time TO start_time; \
-            ALTER TABLE history ADD COLUMN end_time INTEGER; \
-            ALTER TABLE history ADD COLUMN duration INTEGER;",
-        )?;
-
-        //
-
-        Ok(())
+    fn conn(&self) -> Result<PooledConnection<SqliteConnectionManager>> {
+        Ok(self.db()?.pool.get()?)
     }
 
     pub fn insert_command_history(&self, command_info: &CommandInfo, legacy: bool) -> Result<()> {
@@ -162,7 +81,7 @@ impl History {
         // Ensure that the command is not empty
         if let Some(command) = &command_info.command {
             if !command.is_empty() {
-                self.connection.execute(
+                self.conn()?.execute(
                     "INSERT INTO history 
                         (command, shell, pid, session_id, cwd, start_time, end_time, duration, hostname, exit_code)
                         VALUES (?, ?, ?, ?, ?, ?, ?, ?, ?, ?)",
@@ -250,9 +169,8 @@ impl History {
     }
 
     pub fn all_rows(&self) -> Result<Vec<CommandInfo>> {
-        let mut stmt = self
-            .connection
-            .prepare(&format!("SELECT {ALL_COLUMNS} FROM history ORDER BY start_time ASC"))?;
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare(&format!("SELECT {ALL_COLUMNS} FROM history ORDER BY start_time ASC"))?;
 
         let rows = stmt.query([])?;
 
@@ -288,7 +206,8 @@ impl History {
             ),
         };
 
-        let mut stmt = self.connection.prepare(&format!(
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare(&format!(
             "SELECT {ALL_COLUMNS} FROM history {where_expr} {order_by} LIMIT ? OFFSET ?",
         ))?;
 
@@ -305,7 +224,8 @@ impl History {
         query: &str,
         params: P,
     ) -> Result<Vec<serde_json::Map<String, serde_json::Value>>> {
-        let mut stmt = self.connection.prepare(query)?;
+        let conn = self.conn()?;
+        let mut stmt = conn.prepare(query)?;
         let rows = stmt.query_map(params, |row| {
             let row_count = row.as_ref().column_count();
             let mut map = serde_json::Map::with_capacity(row_count);
@@ -478,9 +398,8 @@ mod tests {
 
     #[test]
     fn migrate_insert_query() {
-        let connection = Connection::open_in_memory().unwrap();
-        let history = History { connection };
-        history.migrate().unwrap();
+        let history = History::mock();
+        history.db().unwrap().migrate().unwrap();
 
         history
             .insert_command_history(

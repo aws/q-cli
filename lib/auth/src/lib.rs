@@ -1,2 +1,6 @@
 pub mod builder_id;
-mod secret_store;
+mod error;
+pub mod secret_store;
+
+pub use error::Error;
+pub(crate) use error::Result;

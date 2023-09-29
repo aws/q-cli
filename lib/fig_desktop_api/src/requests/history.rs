@@ -1,18 +1,17 @@
-use fig_history::rusqlite::params_from_iter;
-use fig_history::rusqlite::types::Value;
-use fig_history::History;
 use fig_proto::fig::history_query_request::param::Type;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
     HistoryQueryRequest,
     HistoryQueryResponse,
 };
+use fig_settings::history::rusqlite::params_from_iter;
+use fig_settings::history::rusqlite::types::Value;
+use fig_settings::history::History;
 
 use super::RequestResult;
 
 pub async fn query(request: HistoryQueryRequest) -> RequestResult {
-    let history = History::load().map_err(|err| format!("Failed loading history: {err}"))?;
-
+    let history = History::new();
     let mut params: Vec<Value> = Vec::with_capacity(request.params.len());
     for (i, param) in request.params.iter().enumerate() {
         let param = match &param.r#type {

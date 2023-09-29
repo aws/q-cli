@@ -203,8 +203,10 @@ async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
                 HistoryQueryRequest(request) => history::query(request).await,
                 // auth
                 AuthStatusRequest(request) => auth::status(request).await,
-                AuthBuilderIdInitRequest(request) => auth::builder_id_init(request, &ctx).await,
-                AuthBuilderIdPollRequest(request) => auth::builder_id_poll(request, &ctx).await,
+                AuthBuilderIdStartDeviceAuthorizationRequest(request) => {
+                    auth::builder_id_start_device_authorization(request, &ctx).await
+                },
+                AuthBuilderIdPollCreateTokenRequest(request) => auth::builder_id_poll_create_token(request, &ctx).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
                 // deprecated

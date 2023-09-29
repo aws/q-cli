@@ -36,7 +36,6 @@ eyre = "0.6.8"
 fig_api_client = { path = "../lib/fig_api_client" }
 fig_autocomplete = { path = "../lib/fig_autocomplete" }
 fig_diagnostic = { path = "../lib/fig_diagnostic" }
-fig_history = { path = "../lib/fig_history" }
 fig_install = { path = "../lib/fig_install" }
 fig_integrations = { path = "../lib/fig_integrations" }
 fig_ipc = { path = "../lib/fig_ipc" }

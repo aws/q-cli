@@ -13,7 +13,8 @@ impl SsoIdentitySource {
     }
 }
 impl SsoIdentitySource {
-    /// Creates a new builder-style object to manufacture [`SsoIdentitySource`](crate::types::SsoIdentitySource).
+    /// Creates a new builder-style object to manufacture
+    /// [`SsoIdentitySource`](crate::types::SsoIdentitySource).
     pub fn builder() -> crate::types::builders::SsoIdentitySourceBuilder {
         crate::types::builders::SsoIdentitySourceBuilder::default()
     }
@@ -31,16 +32,20 @@ impl SsoIdentitySourceBuilder {
         self.instance_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_instance_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.instance_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_instance_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.instance_arn
     }
-    /// Consumes the builder and constructs a [`SsoIdentitySource`](crate::types::SsoIdentitySource).
+
+    /// Consumes the builder and constructs a
+    /// [`SsoIdentitySource`](crate::types::SsoIdentitySource).
     pub fn build(self) -> crate::types::SsoIdentitySource {
         crate::types::SsoIdentitySource {
             instance_arn: self.instance_arn,

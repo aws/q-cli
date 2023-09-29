@@ -1,15 +1,16 @@
 use auth::builder_id::{
-    builder_id_token,
-    BuilderIdInit,
-    BuilderIdPollStatus,
+    BuilderIdToken,
+    PollCreateToken,
+    StartDeviceAuthorizationResponse,
 };
-use fig_proto::fig::auth_builder_id_poll_response::PollStatus;
+use auth::secret_store::SecretStore;
+use fig_proto::fig::auth_builder_id_poll_create_token_response::PollStatus;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
 use fig_proto::fig::{
-    AuthBuilderIdInitRequest,
-    AuthBuilderIdInitResponse,
-    AuthBuilderIdPollRequest,
-    AuthBuilderIdPollResponse,
+    AuthBuilderIdPollCreateTokenRequest,
+    AuthBuilderIdPollCreateTokenResponse,
+    AuthBuilderIdStartDeviceAuthorizationRequest,
+    AuthBuilderIdStartDeviceAuthorizationResponse,
     AuthStatusRequest,
     AuthStatusResponse,
 };
@@ -17,17 +18,24 @@ use fig_proto::fig::{
 use super::RequestResult;
 use crate::kv::KVStore;
 
-const BUILDER_ID_DATA_KEY: &str = "builder_id_data";
+const BUILDER_ID_DATA_KEY: &str = "builder-id-data";
 
 pub async fn status(_request: AuthStatusRequest) -> RequestResult {
+    let secret_store = SecretStore::load().map_err(|err| format!("Failed to load secret store: {err}"))?;
+
     Ok(ServerOriginatedSubMessage::AuthStatusResponse(AuthStatusResponse {
-        builder_id: builder_id_token().await.is_some(),
+        builder_id: matches!(BuilderIdToken::load(&secret_store).await, Ok(Some(_))),
     })
     .into())
 }
 
-pub async fn builder_id_init(_request: AuthBuilderIdInitRequest, ctx: &impl KVStore) -> RequestResult {
-    let builder_init = auth::builder_id::builder_id_init()
+pub async fn builder_id_start_device_authorization(
+    _request: AuthBuilderIdStartDeviceAuthorizationRequest,
+    ctx: &impl KVStore,
+) -> RequestResult {
+    let secret_store = SecretStore::load().map_err(|err| format!("Failed to load secret store: {err}"))?;
+
+    let builder_init: StartDeviceAuthorizationResponse = auth::builder_id::start_device_authorization(&secret_store)
         .await
         .map_err(|err| format!("Failed to init auth: {err}"))?;
 
@@ -35,43 +43,42 @@ pub async fn builder_id_init(_request: AuthBuilderIdInitRequest, ctx: &impl KVSt
 
     ctx.set(&[BUILDER_ID_DATA_KEY, &uuid], &builder_init).unwrap();
 
-    let response = ServerOriginatedSubMessage::AuthBuilderIdInitResponse(AuthBuilderIdInitResponse {
-        auth_request_id: uuid,
-        code: builder_init.code,
-        url: builder_init.url,
-        expires_in: builder_init.expires_in,
-        interval: builder_init.interval,
-    });
+    let response = ServerOriginatedSubMessage::AuthBuilderIdStartDeviceAuthorizationResponse(
+        AuthBuilderIdStartDeviceAuthorizationResponse {
+            auth_request_id: uuid,
+            code: builder_init.user_code,
+            url: builder_init.verification_uri_complete,
+            expires_in: builder_init.expires_in,
+            interval: builder_init.interval,
+        },
+    );
 
     Ok(response.into())
 }
 
-pub async fn builder_id_poll(
-    AuthBuilderIdPollRequest { auth_request_id }: AuthBuilderIdPollRequest,
+pub async fn builder_id_poll_create_token(
+    AuthBuilderIdPollCreateTokenRequest { auth_request_id }: AuthBuilderIdPollCreateTokenRequest,
     ctx: &impl KVStore,
 ) -> RequestResult {
-    let builder_init: BuilderIdInit = ctx.get(&[BUILDER_ID_DATA_KEY, &auth_request_id]).unwrap().unwrap();
+    let secret_store = SecretStore::load().map_err(|err| format!("Failed to load secret store: {err}"))?;
 
-    let response = match auth::builder_id::builder_id_poll(
-        builder_init.device_code,
-        builder_init.dynamic_client_id,
-        builder_init.dynamic_client_secret,
-    )
-    .await
-    {
-        BuilderIdPollStatus::Pending => AuthBuilderIdPollResponse {
+    let builder_init: StartDeviceAuthorizationResponse =
+        ctx.get(&[BUILDER_ID_DATA_KEY, &auth_request_id]).unwrap().unwrap();
+
+    let response = match auth::builder_id::poll_create_token(builder_init.device_code, &secret_store).await {
+        PollCreateToken::Pending => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Pending.into(),
             error: None,
         },
-        BuilderIdPollStatus::Complete => AuthBuilderIdPollResponse {
+        PollCreateToken::Complete(_) => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Complete.into(),
             error: None,
         },
-        BuilderIdPollStatus::Error(err) => AuthBuilderIdPollResponse {
+        PollCreateToken::Error(err) => AuthBuilderIdPollCreateTokenResponse {
             status: PollStatus::Error.into(),
             error: Some(err.to_string()),
         },
     };
 
-    Ok(ServerOriginatedSubMessage::AuthBuilderIdPollResponse(response).into())
+    Ok(ServerOriginatedSubMessage::AuthBuilderIdPollCreateTokenResponse(response).into())
 }

@@ -13,6 +13,7 @@ impl Tag {
     pub fn key(&self) -> ::std::option::Option<&str> {
         self.key.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn value(&self) -> ::std::option::Option<&str> {
         self.value.as_deref()
@@ -38,29 +39,35 @@ impl TagBuilder {
         self.key = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_key(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.key = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_key(&self) -> &::std::option::Option<::std::string::String> {
         &self.key
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn value(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.value = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_value(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.value = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_value(&self) -> &::std::option::Option<::std::string::String> {
         &self.value
     }
+
     /// Consumes the builder and constructs a [`Tag`](crate::types::Tag).
     pub fn build(self) -> crate::types::Tag {
         crate::types::Tag {

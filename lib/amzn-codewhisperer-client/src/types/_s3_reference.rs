@@ -13,7 +13,8 @@ impl S3Reference {
     }
 }
 impl S3Reference {
-    /// Creates a new builder-style object to manufacture [`S3Reference`](crate::types::S3Reference).
+    /// Creates a new builder-style object to manufacture
+    /// [`S3Reference`](crate::types::S3Reference).
     pub fn builder() -> crate::types::builders::S3ReferenceBuilder {
         crate::types::builders::S3ReferenceBuilder::default()
     }
@@ -31,15 +32,18 @@ impl S3ReferenceBuilder {
         self.uri = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_uri(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.uri = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_uri(&self) -> &::std::option::Option<::std::string::String> {
         &self.uri
     }
+
     /// Consumes the builder and constructs a [`S3Reference`](crate::types::S3Reference).
     pub fn build(self) -> crate::types::S3Reference {
         crate::types::S3Reference { uri: self.uri }

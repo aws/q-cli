@@ -50,8 +50,8 @@ message ClientOriginatedMessage {
     UpdateApplicationRequest update_application_request = 139;
     HistoryQueryRequest history_query_request = 140;
     AuthStatusRequest auth_status_request = 141;
-    AuthBuilderIdInitRequest auth_builder_id_init_request = 142;
-    AuthBuilderIdPollRequest auth_builder_id_poll_request = 143;
+    AuthBuilderIdStartDeviceAuthorizationRequest auth_builder_id_start_device_authorization_request = 142;
+    AuthBuilderIdPollCreateTokenRequest auth_builder_id_poll_create_token_request = 143;
   }
 
   reserved 115;
@@ -81,8 +81,8 @@ message ServerOriginatedMessage {
     CheckForUpdatesResponse check_for_updates_response = 114;
     HistoryQueryResponse history_query_response = 115;
     AuthStatusResponse auth_status_response = 116;
-    AuthBuilderIdInitResponse auth_builder_id_init_response = 117;
-    AuthBuilderIdPollResponse auth_builder_id_poll_response = 118;
+    AuthBuilderIdStartDeviceAuthorizationResponse auth_builder_id_start_device_authorization_response = 117;
+    AuthBuilderIdPollCreateTokenResponse auth_builder_id_poll_create_token_response = 118;
 
     Notification notification = 1000;
   }
@@ -614,9 +614,9 @@ message HistoryQueryResponse {
 
 /// Auth
 
-message AuthBuilderIdInitRequest { }
+message AuthBuilderIdStartDeviceAuthorizationRequest {}
 
-message AuthBuilderIdInitResponse {
+message AuthBuilderIdStartDeviceAuthorizationResponse {
   string code = 1;
   string url = 2;
   string auth_request_id = 3;
@@ -624,11 +624,11 @@ message AuthBuilderIdInitResponse {
   int32 interval = 5;
 }
 
-message AuthBuilderIdPollRequest {
+message AuthBuilderIdPollCreateTokenRequest {
   string auth_request_id = 1;
 }
 
-message AuthBuilderIdPollResponse {
+message AuthBuilderIdPollCreateTokenResponse {
   enum PollStatus {
     POLL_STATUS_COMPLETE = 0;
     POLL_STATUS_PENDING = 1;

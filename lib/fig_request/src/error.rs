@@ -1,9 +1,6 @@
 use reqwest::StatusCode;
 
-use crate::{
-    auth,
-    defaults,
-};
+use crate::auth;
 
 #[derive(Debug)]
 pub enum Error {
@@ -17,7 +14,6 @@ pub enum Error {
     Reqwest(reqwest::Error),
     Status(StatusCode),
     Serde(serde_json::Error),
-    Defaults(defaults::DefaultsError),
     Io(std::io::Error),
     Dir(fig_util::directories::DirectoryError),
     RefreshError(auth::RefreshError),
@@ -57,7 +53,6 @@ impl std::fmt::Display for Error {
             Error::Reqwest(err) => write!(f, "Reqwest error: {err}"),
             Error::Status(err) => write!(f, "Status error: {err}"),
             Error::Serde(err) => write!(f, "Serde error: {err}"),
-            Error::Defaults(err) => write!(f, "Defaults error: {err}"),
             Error::Io(err) => write!(f, "Io error: {err}"),
             Error::Dir(err) => write!(f, "Dir error: {err}"),
             Error::RefreshError(err) => write!(f, "Refresh error: {err}"),
@@ -91,12 +86,6 @@ impl From<StatusCode> for Error {
 impl From<serde_json::Error> for Error {
     fn from(e: serde_json::Error) -> Self {
         Error::Serde(e)
-    }
-}
-
-impl From<defaults::DefaultsError> for Error {
-    fn from(e: defaults::DefaultsError) -> Self {
-        Error::Defaults(e)
     }
 }
 

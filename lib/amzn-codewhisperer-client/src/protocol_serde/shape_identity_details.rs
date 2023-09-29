@@ -3,7 +3,12 @@ pub(crate) fn de_identity_details<'a, I>(
     tokens: &mut ::std::iter::Peekable<I>,
 ) -> Result<Option<crate::types::IdentityDetails>, ::aws_smithy_json::deserialize::error::DeserializeError>
 where
-    I: Iterator<Item = Result<::aws_smithy_json::deserialize::Token<'a>, ::aws_smithy_json::deserialize::error::DeserializeError>>,
+    I: Iterator<
+        Item = Result<
+            ::aws_smithy_json::deserialize::Token<'a>,
+            ::aws_smithy_json::deserialize::error::DeserializeError,
+        >,
+    >,
 {
     let mut variant = None;
     match tokens.next().transpose()? {
@@ -19,29 +24,31 @@ where
                     }
                     variant = match key.to_unescaped()?.as_ref() {
                         "ssoIdentityDetails" => Some(crate::types::IdentityDetails::SsoIdentityDetails(
-                            crate::protocol_serde::shape_sso_identity_details::de_sso_identity_details(tokens)?.ok_or_else(|| {
-                                ::aws_smithy_json::deserialize::error::DeserializeError::custom("value for 'ssoIdentityDetails' cannot be null")
-                            })?,
+                            crate::protocol_serde::shape_sso_identity_details::de_sso_identity_details(tokens)?
+                                .ok_or_else(|| {
+                                    ::aws_smithy_json::deserialize::error::DeserializeError::custom(
+                                        "value for 'ssoIdentityDetails' cannot be null",
+                                    )
+                                })?,
                         )),
                         _ => {
                             ::aws_smithy_json::deserialize::token::skip_value(tokens)?;
                             Some(crate::types::IdentityDetails::Unknown)
-                        }
+                        },
                     };
-                }
+                },
                 other => {
-                    return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(format!(
-                        "expected object key or end object, found: {:?}",
-                        other
-                    )))
-                }
+                    return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
+                        format!("expected object key or end object, found: {:?}", other),
+                    ));
+                },
             }
         },
         _ => {
             return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
                 "expected start object or null",
-            ))
-        }
+            ));
+        },
     }
     Ok(variant)
 }

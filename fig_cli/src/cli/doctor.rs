@@ -492,7 +492,7 @@ impl DoctorCheck for StateCorruptionCheck {
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
-        fig_settings::State::load().map_err(|_| DoctorError::Error {
+        fig_settings::state::all().map_err(|_| DoctorError::Error {
             reason: "Fig state file is corrupted".into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {

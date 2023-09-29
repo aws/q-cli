@@ -14,6 +14,7 @@ impl GenerateRecommendationsOutput {
     pub fn recommendations(&self) -> ::std::option::Option<&[crate::types::Recommendation]> {
         self.recommendations.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(&self) -> ::std::option::Option<&str> {
         self.next_token.as_deref()
@@ -25,13 +26,15 @@ impl ::aws_http::request_id::RequestId for GenerateRecommendationsOutput {
     }
 }
 impl GenerateRecommendationsOutput {
-    /// Creates a new builder-style object to manufacture [`GenerateRecommendationsOutput`](crate::operation::generate_recommendations::GenerateRecommendationsOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`GenerateRecommendationsOutput`](crate::operation::generate_recommendations::GenerateRecommendationsOutput).
     pub fn builder() -> crate::operation::generate_recommendations::builders::GenerateRecommendationsOutputBuilder {
         crate::operation::generate_recommendations::builders::GenerateRecommendationsOutputBuilder::default()
     }
 }
 
-/// A builder for [`GenerateRecommendationsOutput`](crate::operation::generate_recommendations::GenerateRecommendationsOutput).
+/// A builder for
+/// [`GenerateRecommendationsOutput`](crate::operation::generate_recommendations::GenerateRecommendationsOutput).
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct GenerateRecommendationsOutputBuilder {
@@ -42,37 +45,46 @@ pub struct GenerateRecommendationsOutputBuilder {
 impl GenerateRecommendationsOutputBuilder {
     /// Appends an item to `recommendations`.
     ///
-    /// To override the contents of this collection use [`set_recommendations`](Self::set_recommendations).
-    ///
+    /// To override the contents of this collection use
+    /// [`set_recommendations`](Self::set_recommendations).
     pub fn recommendations(mut self, input: crate::types::Recommendation) -> Self {
         let mut v = self.recommendations.unwrap_or_default();
         v.push(input);
         self.recommendations = ::std::option::Option::Some(v);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn set_recommendations(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::Recommendation>>) -> Self {
+    pub fn set_recommendations(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::Recommendation>>,
+    ) -> Self {
         self.recommendations = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_recommendations(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::Recommendation>> {
         &self.recommendations
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.next_token = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_next_token(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.next_token = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_next_token(&self) -> &::std::option::Option<::std::string::String> {
         &self.next_token
     }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -82,7 +94,9 @@ impl GenerateRecommendationsOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`GenerateRecommendationsOutput`](crate::operation::generate_recommendations::GenerateRecommendationsOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`GenerateRecommendationsOutput`](crate::operation::generate_recommendations::GenerateRecommendationsOutput).
     pub fn build(self) -> crate::operation::generate_recommendations::GenerateRecommendationsOutput {
         crate::operation::generate_recommendations::GenerateRecommendationsOutput {
             recommendations: self.recommendations,

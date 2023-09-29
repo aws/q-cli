@@ -19,7 +19,8 @@ impl ::aws_http::request_id::RequestId for UpdateProfileOutput {
     }
 }
 impl UpdateProfileOutput {
-    /// Creates a new builder-style object to manufacture [`UpdateProfileOutput`](crate::operation::update_profile::UpdateProfileOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`UpdateProfileOutput`](crate::operation::update_profile::UpdateProfileOutput).
     pub fn builder() -> crate::operation::update_profile::builders::UpdateProfileOutputBuilder {
         crate::operation::update_profile::builders::UpdateProfileOutputBuilder::default()
     }
@@ -38,15 +39,18 @@ impl UpdateProfileOutputBuilder {
         self.profile_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_profile_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.profile_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_profile_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.profile_arn
     }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -56,7 +60,9 @@ impl UpdateProfileOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`UpdateProfileOutput`](crate::operation::update_profile::UpdateProfileOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`UpdateProfileOutput`](crate::operation::update_profile::UpdateProfileOutput).
     pub fn build(self) -> crate::operation::update_profile::UpdateProfileOutput {
         crate::operation::update_profile::UpdateProfileOutput {
             profile_arn: self.profile_arn,

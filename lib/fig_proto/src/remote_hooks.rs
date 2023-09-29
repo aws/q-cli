@@ -4,8 +4,8 @@ use crate::proto::local::{
     PostExecHook,
     PreExecHook,
     PromptHook,
+    ShellContext,
     TerminalCursorCoordinates,
-    ShellContext
 };
 use crate::proto::remote::{
     hostbound,

@@ -9,11 +9,12 @@ use fig_integrations::shell::ShellExt;
 use fig_util::manifest::Channel;
 use muda::{
     Menu,
+    MenuEvent,
     MenuId,
     MenuItem,
     MenuItemBuilder,
     PredefinedMenuItem,
-    Submenu, MenuEvent,
+    Submenu,
 };
 use tracing::{
     error,
@@ -212,7 +213,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         },
         id => {
             for channel in Channel::all() {
-                if id == &format!("channel-{channel}") {
+                if id == format!("channel-{channel}") {
                     fig_settings::state::set_value("updates.channel", channel.to_string()).ok();
                     proxy.send_event(Event::ReloadTray).unwrap();
                     tray_update(proxy);
@@ -275,8 +276,7 @@ pub fn build_tray(
         tray_builder = tray_builder.with_icon_as_template(true);
     }
 
-
-    Ok(tray_builder.build()?)
+    tray_builder.build()
 }
 
 pub fn get_context_menu() -> Menu {
@@ -294,7 +294,7 @@ enum MenuElement {
     Info(Cow<'static, str>),
     Entry {
         emoji_icon: Option<Cow<'static, str>>,
-        image_icon: Option<wry::application::window::Icon>,
+        // image_icon: Option<wry::application::window::Icon>,
         text: Cow<'static, str>,
         id: Cow<'static, str>,
     },
@@ -308,33 +308,33 @@ enum MenuElement {
 impl MenuElement {
     fn entry(
         emoji_icon: Option<Cow<'static, str>>,
-        image: Option<&'static [u8]>,
+        _image: Option<&'static [u8]>,
         text: impl Into<Cow<'static, str>>,
         id: impl Into<Cow<'static, str>>,
     ) -> Self {
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "macos")] {
-                let image_icon = match image {
-                    Some(image) => {
-                        let image = image::load_from_memory(image)
-                            .expect("Failed to open icon path")
-                            .to_rgba8();
+        // cfg_if::cfg_if! {
+        //     if #[cfg(target_os = "macos")] {
+        //         let image_icon = match image {
+        //             Some(image) => {
+        //                 let image = image::load_from_memory(image)
+        //                     .expect("Failed to open icon path")
+        //                     .to_rgba8();
 
-                        let (width, height) = image.dimensions();
+        //                 let (width, height) = image.dimensions();
 
-                        wry::application::window::Icon::from_rgba(image.into_raw(), width, height).ok()
-                    },
-                    None => None,
-                };
-            } else {
-                let _ = image;
-                let image_icon = None;
-            }
-        };
+        //                 wry::application::window::Icon::from_rgba(image.into_raw(), width, height).ok()
+        //             },
+        //             None => None,
+        //         };
+        //     } else {
+        //         let _ = image;
+        //         let image_icon = None;
+        //     }
+        // };
 
         Self::Entry {
             emoji_icon,
-            image_icon,
+            // image_icon,
             text: text.into(),
             id: id.into(),
         }
@@ -361,7 +361,7 @@ impl MenuElement {
                     _ => text.to_string(),
                 };
                 let menu_item = MenuItemBuilder::new()
-                    .text(&text)
+                    .text(text)
                     .id(MenuId::new(id))
                     .enabled(true)
                     .build();
@@ -398,7 +398,7 @@ impl MenuElement {
                     _ => text.to_string(),
                 };
                 let menu_item = MenuItemBuilder::new()
-                    .text(&text)
+                    .text(text)
                     .id(MenuId::new(id))
                     .enabled(true)
                     .build();
@@ -411,9 +411,9 @@ impl MenuElement {
                 submenu.append(&PredefinedMenuItem::separator()).unwrap();
             },
             MenuElement::SubMenu { title, elements } => {
-                let mut sub_menu = Submenu::new(title, true);
+                let sub_menu = Submenu::new(title, true);
                 for element in elements {
-                    element.add_to_submenu(&mut sub_menu);
+                    element.add_to_submenu(&sub_menu);
                 }
 
                 submenu.append(&sub_menu).unwrap();

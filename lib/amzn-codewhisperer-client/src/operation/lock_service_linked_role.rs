@@ -11,6 +11,7 @@ impl LockServiceLinkedRole {
     pub fn new() -> Self {
         Self
     }
+
     pub(crate) async fn orchestrate(
         runtime_plugins: &::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins,
         input: crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput,
@@ -30,9 +31,13 @@ impl LockServiceLinkedRole {
                     .expect("correct error type")
             })
         };
-        let context = Self::orchestrate_with_stop_point(runtime_plugins, input, ::aws_smithy_runtime::client::orchestrator::StopPoint::None)
-            .await
-            .map_err(map_err)?;
+        let context = Self::orchestrate_with_stop_point(
+            runtime_plugins,
+            input,
+            ::aws_smithy_runtime::client::orchestrator::StopPoint::None,
+        )
+        .await
+        .map_err(map_err)?;
         let output = context.finalize().map_err(map_err)?;
         ::std::result::Result::Ok(
             output
@@ -90,15 +95,22 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for LockSer
         cfg.store_put(::aws_smithy_runtime_api::client::ser_de::SharedRequestSerializer::new(
             LockServiceLinkedRoleRequestSerializer,
         ));
-        cfg.store_put(::aws_smithy_runtime_api::client::ser_de::SharedResponseDeserializer::new(
-            LockServiceLinkedRoleResponseDeserializer,
-        ));
+        cfg.store_put(
+            ::aws_smithy_runtime_api::client::ser_de::SharedResponseDeserializer::new(
+                LockServiceLinkedRoleResponseDeserializer,
+            ),
+        );
 
-        cfg.store_put(::aws_smithy_runtime_api::client::auth::AuthSchemeOptionResolverParams::new(
-            ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolverParams::new(),
-        ));
+        cfg.store_put(
+            ::aws_smithy_runtime_api::client::auth::AuthSchemeOptionResolverParams::new(
+                ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolverParams::new(),
+            ),
+        );
 
-        cfg.store_put(::aws_smithy_http::operation::Metadata::new("LockServiceLinkedRole", "codewhisperer"));
+        cfg.store_put(::aws_smithy_http::operation::Metadata::new(
+            "LockServiceLinkedRole",
+            "codewhisperer",
+        ));
         let mut signing_options = ::aws_runtime::auth::sigv4::SigningOptions::default();
         signing_options.double_uri_encode = true;
         signing_options.content_sha256_header = false;
@@ -114,34 +126,43 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for LockSer
         ::std::option::Option::Some(cfg.freeze())
     }
 
-    fn runtime_components(&self) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
-        // Retry classifiers are operation-specific because they need to downcast operation-specific error types.
+    fn runtime_components(
+        &self,
+    ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
+        // Retry classifiers are operation-specific because they need to downcast operation-specific error
+        // types.
         let retry_classifiers = ::aws_smithy_runtime_api::client::retries::RetryClassifiers::new()
-            .with_classifier(::aws_smithy_runtime::client::retries::classifier::SmithyErrorClassifier::<
-                crate::operation::lock_service_linked_role::LockServiceLinkedRoleError,
-            >::new())
+            .with_classifier(
+                ::aws_smithy_runtime::client::retries::classifier::SmithyErrorClassifier::<
+                    crate::operation::lock_service_linked_role::LockServiceLinkedRoleError,
+                >::new(),
+            )
             .with_classifier(::aws_runtime::retries::classifier::AmzRetryAfterHeaderClassifier)
-            .with_classifier(::aws_smithy_runtime::client::retries::classifier::ModeledAsRetryableClassifier::<
-                crate::operation::lock_service_linked_role::LockServiceLinkedRoleError,
-            >::new())
+            .with_classifier(
+                ::aws_smithy_runtime::client::retries::classifier::ModeledAsRetryableClassifier::<
+                    crate::operation::lock_service_linked_role::LockServiceLinkedRoleError,
+                >::new(),
+            )
             .with_classifier(::aws_runtime::retries::classifier::AwsErrorCodeClassifier::<
                 crate::operation::lock_service_linked_role::LockServiceLinkedRoleError,
             >::new())
             .with_classifier(::aws_smithy_runtime::client::retries::classifier::HttpStatusCodeClassifier::default());
 
         ::std::borrow::Cow::Owned(
-            ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new("LockServiceLinkedRole")
-                .with_retry_classifiers(::std::option::Option::Some(retry_classifiers))
-                .with_auth_scheme_option_resolver(::std::option::Option::Some(
-                    ::aws_smithy_runtime_api::client::auth::SharedAuthSchemeOptionResolver::new(
-                        ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolver::new(vec![
-                            ::aws_runtime::auth::sigv4::SCHEME_ID,
-                        ]),
-                    ),
-                ))
-                .with_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(
-                    LockServiceLinkedRoleEndpointParamsInterceptor,
-                ) as _),
+            ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder::new(
+                "LockServiceLinkedRole",
+            )
+            .with_retry_classifiers(::std::option::Option::Some(retry_classifiers))
+            .with_auth_scheme_option_resolver(::std::option::Option::Some(
+                ::aws_smithy_runtime_api::client::auth::SharedAuthSchemeOptionResolver::new(
+                    ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolver::new(vec![
+                        ::aws_runtime::auth::sigv4::SCHEME_ID,
+                    ]),
+                ),
+            ))
+            .with_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(
+                LockServiceLinkedRoleEndpointParamsInterceptor,
+            ) as _),
         )
     }
 }
@@ -158,9 +179,13 @@ impl ::aws_smithy_runtime_api::client::ser_de::ResponseDeserializer for LockServ
         let body = response.body().bytes().expect("body loaded");
         ::tracing::debug!(request_id = ?::aws_http::request_id::RequestId::request_id(response));
         let parse_result = if !success && status != 200 {
-            crate::protocol_serde::shape_lock_service_linked_role::de_lock_service_linked_role_http_error(status, headers, body)
+            crate::protocol_serde::shape_lock_service_linked_role::de_lock_service_linked_role_http_error(
+                status, headers, body,
+            )
         } else {
-            crate::protocol_serde::shape_lock_service_linked_role::de_lock_service_linked_role_http_response(status, headers, body)
+            crate::protocol_serde::shape_lock_service_linked_role::de_lock_service_linked_role_http_response(
+                status, headers, body,
+            )
         };
         crate::protocol_serde::type_erase_result(parse_result)
     }
@@ -168,12 +193,20 @@ impl ::aws_smithy_runtime_api::client::ser_de::ResponseDeserializer for LockServ
 #[derive(Debug)]
 struct LockServiceLinkedRoleRequestSerializer;
 impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for LockServiceLinkedRoleRequestSerializer {
-    #[allow(unused_mut, clippy::let_and_return, clippy::needless_borrow, clippy::useless_conversion)]
+    #[allow(
+        unused_mut,
+        clippy::let_and_return,
+        clippy::needless_borrow,
+        clippy::useless_conversion
+    )]
     fn serialize_input(
         &self,
         input: ::aws_smithy_runtime_api::client::interceptors::context::Input,
         _cfg: &mut ::aws_smithy_types::config_bag::ConfigBag,
-    ) -> ::std::result::Result<::aws_smithy_runtime_api::client::orchestrator::HttpRequest, ::aws_smithy_runtime_api::box_error::BoxError> {
+    ) -> ::std::result::Result<
+        ::aws_smithy_runtime_api::client::orchestrator::HttpRequest,
+        ::aws_smithy_runtime_api::box_error::BoxError,
+    > {
         let input = input
             .downcast::<crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput>()
             .expect("correct type");
@@ -194,13 +227,18 @@ impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for LockService
             fn update_http_builder(
                 input: &crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput,
                 builder: ::http::request::Builder,
-            ) -> ::std::result::Result<::http::request::Builder, ::aws_smithy_http::operation::error::BuildError> {
+            ) -> ::std::result::Result<::http::request::Builder, ::aws_smithy_http::operation::error::BuildError>
+            {
                 let mut uri = ::std::string::String::new();
                 uri_base(input, &mut uri)?;
                 ::std::result::Result::Ok(builder.method("POST").uri(uri))
             }
             let mut builder = update_http_builder(&input, ::http::request::Builder::new())?;
-            builder = _header_serialization_settings.set_default_header(builder, ::http::header::CONTENT_TYPE, "application/x-amz-json-1.0");
+            builder = _header_serialization_settings.set_default_header(
+                builder,
+                ::http::header::CONTENT_TYPE,
+                "application/x-amz-json-1.0",
+            );
             builder = _header_serialization_settings.set_default_header(
                 builder,
                 ::http::header::HeaderName::from_static("x-amz-target"),
@@ -208,12 +246,16 @@ impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for LockService
             );
             builder
         };
-        let body = ::aws_smithy_http::body::SdkBody::from(crate::protocol_serde::shape_lock_service_linked_role::ser_lock_service_linked_role_input(
-            &input,
-        )?);
+        let body = ::aws_smithy_http::body::SdkBody::from(
+            crate::protocol_serde::shape_lock_service_linked_role::ser_lock_service_linked_role_input(&input)?,
+        );
         if let Some(content_length) = body.content_length() {
             let content_length = content_length.to_string();
-            request_builder = _header_serialization_settings.set_default_header(request_builder, ::http::header::CONTENT_LENGTH, &content_length);
+            request_builder = _header_serialization_settings.set_default_header(
+                request_builder,
+                ::http::header::CONTENT_LENGTH,
+                &content_length,
+            );
         }
         ::std::result::Result::Ok(request_builder.body(body).expect("valid request"))
     }
@@ -242,17 +284,24 @@ impl ::aws_smithy_runtime_api::client::interceptors::Interceptor for LockService
             .ok_or("failed to downcast to LockServiceLinkedRoleInput")?;
 
         let params = crate::config::endpoint::Params::builder().build().map_err(|err| {
-            ::aws_smithy_runtime_api::client::interceptors::error::ContextAttachedError::new("endpoint params could not be built", err)
+            ::aws_smithy_runtime_api::client::interceptors::error::ContextAttachedError::new(
+                "endpoint params could not be built",
+                err,
+            )
         })?;
         cfg.interceptor_state()
-            .store_put(::aws_smithy_runtime_api::client::endpoint::EndpointResolverParams::new(params));
+            .store_put(::aws_smithy_runtime_api::client::endpoint::EndpointResolverParams::new(
+                params,
+            ));
         ::std::result::Result::Ok(())
     }
 }
 
 /// Do not use this.
 ///
-/// Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly since it's an enum now).
+/// Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field
+/// on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly
+/// since it's an enum now).
 #[deprecated(
     note = "Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly since it's an enum now)."
 )]
@@ -265,9 +314,11 @@ pub enum LockServiceLinkedRoleError {
     ServiceLinkedRoleLockClientError(crate::types::error::ServiceLinkedRoleLockClientError),
     #[allow(missing_docs)] // documentation missing in model
     ServiceLinkedRoleLockServiceError(crate::types::error::ServiceLinkedRoleLockServiceError),
-    /// This exception is thrown when the user does not have sufficient access to perform this action.
+    /// This exception is thrown when the user does not have sufficient access to perform this
+    /// action.
     AccessDeniedError(crate::types::error::AccessDeniedError),
-    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error code).
+    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error
+    /// code).
     Unhandled(::aws_smithy_types::error::Unhandled),
 }
 impl ::aws_smithy_http::result::CreateUnhandledError for LockServiceLinkedRoleError {
@@ -295,8 +346,12 @@ impl ::std::fmt::Display for LockServiceLinkedRoleError {
 impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for LockServiceLinkedRoleError {
     fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         match self {
-            Self::ServiceLinkedRoleLockClientError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
-            Self::ServiceLinkedRoleLockServiceError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
+            Self::ServiceLinkedRoleLockClientError(_inner) => {
+                ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
+            },
+            Self::ServiceLinkedRoleLockServiceError(_inner) => {
+                ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
+            },
             Self::AccessDeniedError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::Unhandled(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
         }
@@ -311,6 +366,7 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for LockServiceLinkedRoleError 
     fn code(&self) -> ::std::option::Option<&str> {
         ::aws_smithy_types::error::metadata::ProvideErrorMetadata::code(self)
     }
+
     fn retryable_error_kind(&self) -> ::std::option::Option<::aws_smithy_types::retry::ErrorKind> {
         ::std::option::Option::None
     }
@@ -318,19 +374,26 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for LockServiceLinkedRoleError 
 impl LockServiceLinkedRoleError {
     /// Creates the `LockServiceLinkedRoleError::Unhandled` variant from any error type.
     pub fn unhandled(
-        err: impl ::std::convert::Into<::std::boxed::Box<dyn ::std::error::Error + ::std::marker::Send + ::std::marker::Sync + 'static>>,
+        err: impl ::std::convert::Into<
+            ::std::boxed::Box<dyn ::std::error::Error + ::std::marker::Send + ::std::marker::Sync + 'static>,
+        >,
     ) -> Self {
         Self::Unhandled(::aws_smithy_types::error::Unhandled::builder().source(err).build())
     }
 
-    /// Creates the `LockServiceLinkedRoleError::Unhandled` variant from a `::aws_smithy_types::error::ErrorMetadata`.
+    /// Creates the `LockServiceLinkedRoleError::Unhandled` variant from a
+    /// `::aws_smithy_types::error::ErrorMetadata`.
     pub fn generic(err: ::aws_smithy_types::error::ErrorMetadata) -> Self {
-        Self::Unhandled(::aws_smithy_types::error::Unhandled::builder().source(err.clone()).meta(err).build())
+        Self::Unhandled(
+            ::aws_smithy_types::error::Unhandled::builder()
+                .source(err.clone())
+                .meta(err)
+                .build(),
+        )
     }
-    ///
+
     /// Returns error metadata, which includes the error code, message,
     /// request ID, and potentially additional information.
-    ///
     pub fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         use ::aws_smithy_types::error::metadata::ProvideErrorMetadata;
         match self {
@@ -340,14 +403,19 @@ impl LockServiceLinkedRoleError {
             Self::Unhandled(e) => e.meta(),
         }
     }
-    /// Returns `true` if the error kind is `LockServiceLinkedRoleError::ServiceLinkedRoleLockClientError`.
+
+    /// Returns `true` if the error kind is
+    /// `LockServiceLinkedRoleError::ServiceLinkedRoleLockClientError`.
     pub fn is_service_linked_role_lock_client_error(&self) -> bool {
         matches!(self, Self::ServiceLinkedRoleLockClientError(_))
     }
-    /// Returns `true` if the error kind is `LockServiceLinkedRoleError::ServiceLinkedRoleLockServiceError`.
+
+    /// Returns `true` if the error kind is
+    /// `LockServiceLinkedRoleError::ServiceLinkedRoleLockServiceError`.
     pub fn is_service_linked_role_lock_service_error(&self) -> bool {
         matches!(self, Self::ServiceLinkedRoleLockServiceError(_))
     }
+
     /// Returns `true` if the error kind is `LockServiceLinkedRoleError::AccessDeniedError`.
     pub fn is_access_denied_error(&self) -> bool {
         matches!(self, Self::AccessDeniedError(_))
@@ -364,9 +432,8 @@ impl ::std::error::Error for LockServiceLinkedRoleError {
     }
 }
 
-pub use crate::operation::lock_service_linked_role::_lock_service_linked_role_output::LockServiceLinkedRoleOutput;
-
 pub use crate::operation::lock_service_linked_role::_lock_service_linked_role_input::LockServiceLinkedRoleInput;
+pub use crate::operation::lock_service_linked_role::_lock_service_linked_role_output::LockServiceLinkedRoleOutput;
 
 mod _lock_service_linked_role_input;
 

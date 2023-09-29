@@ -2,7 +2,6 @@ use std::sync::Arc;
 
 use fig_proto::fig::notification::Type as NotificationEnum;
 use fig_proto::fig::{
-    LocalStateChangedNotification,
     NotificationType,
     SettingsChangedNotification,
 };
@@ -65,29 +64,6 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
         },
         None => {
             error!("failed to get settings file path");
-            None
-        },
-    };
-
-    let state_path = match directories::state_path().ok() {
-        Some(state_path) => match state_path.parent() {
-            Some(state_dir) => match watcher.watch(state_dir, RecursiveMode::NonRecursive) {
-                Ok(()) => {
-                    trace!("watching state dir at {state_dir:?}");
-                    Some(state_path)
-                },
-                Err(err) => {
-                    error!(%err, "failed to watch state dir");
-                    None
-                },
-            },
-            None => {
-                error!("failed to get state file dir");
-                None
-            },
-        },
-        None => {
-            error!("failed to get state file path");
             None
         },
     };
@@ -162,53 +138,6 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                                 *mem_settings.map_mut() = settings;
                             },
                             Err(err) => error!(%err, "Failed to get settings"),
-                        }
-                    }
-                }
-            }
-
-            if let Some(ref state_path) = state_path {
-                if event.paths.contains(state_path) {
-                    if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) = event.kind {
-                        match fig_settings::State::load_from_file() {
-                            Ok(state) => {
-                                notifications_state
-                                    .broadcast_notification_all(
-                                        &NotificationType::NotifyOnLocalStateChanged,
-                                        fig_proto::fig::Notification {
-                                            r#type: Some(NotificationEnum::LocalStateChangedNotification(
-                                                LocalStateChangedNotification {
-                                                    json_blob: serde_json::to_string(&state).ok(),
-                                                },
-                                            )),
-                                        },
-                                        &proxy,
-                                    )
-                                    .await
-                                    .unwrap();
-
-                                let mut mem_state = fig_settings::State::load().expect("Failed to load state");
-
-                                json_map_diff(
-                                    &mem_state.map(),
-                                    &state,
-                                    |key, value| {
-                                        debug!(%key, %value, "State added");
-                                        NOTIFICATION_BUS.send_state_new(key, value);
-                                    },
-                                    |key, old, new| {
-                                        debug!(%key, %old, %new, "State change");
-                                        NOTIFICATION_BUS.send_state_changed(key, old, new);
-                                    },
-                                    |key, value| {
-                                        debug!(%key, %value, "State removed");
-                                        NOTIFICATION_BUS.send_state_remove(key, value);
-                                    },
-                                );
-
-                                *mem_state.map_mut() = state;
-                            },
-                            Err(err) => error!(%err, "Failed to get state"),
                         }
                     }
                 }

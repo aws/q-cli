@@ -1,6 +1,9 @@
 pub mod api;
+pub mod error;
+pub mod history;
 pub mod keybindings;
 pub mod settings;
+pub mod sqlite;
 pub mod state;
 
 use std::fs::{
@@ -15,6 +18,10 @@ use std::io::{
 };
 use std::path::PathBuf;
 
+pub use error::{
+    Error,
+    Result,
+};
 use fd_lock::RwLock as FileRwLock;
 use fig_util::directories;
 use parking_lot::{
@@ -28,30 +35,10 @@ use serde_json::Value;
 use thiserror::Error;
 use tracing::error;
 
-#[derive(Debug, Error)]
-pub enum Error {
-    #[error(transparent)]
-    IoError(#[from] std::io::Error),
-    #[error(transparent)]
-    JsonError(#[from] serde_json::Error),
-    #[error(transparent)]
-    FigUtilError(#[from] fig_util::Error),
-    #[error("settings file is not a json object")]
-    SettingsNotObject,
-    #[error(transparent)]
-    DirectoryError(#[from] directories::DirectoryError),
-    #[error("memory backend is not used")]
-    MemoryBackendNotUsed,
-}
-
-pub type Result<T, E = Error> = std::result::Result<T, E>;
-
 pub type Map = serde_json::Map<String, Value>;
 
-static STATE_FILE_LOCK: RwLock<()> = RwLock::new(());
 static SETTINGS_FILE_LOCK: RwLock<()> = RwLock::new(());
 
-static STATE_DATA: RwLock<Option<Map>> = RwLock::new(None);
 static SETTINGS_DATA: RwLock<Option<Map>> = RwLock::new(None);
 
 pub enum Backend {
@@ -350,47 +337,6 @@ pub trait JsonStore: Sized {
 
     fn get_int_or(&self, key: impl AsRef<str>, default: i64) -> i64 {
         self.get_int(key).unwrap_or(default)
-    }
-}
-
-pub struct State {
-    inner: Backend,
-}
-
-impl JsonStore for State {
-    fn path() -> Result<PathBuf> {
-        Ok(directories::state_path()?)
-    }
-
-    fn file_lock() -> &'static RwLock<()> {
-        &STATE_FILE_LOCK
-    }
-
-    fn data_lock() -> &'static RwLock<Option<Map>> {
-        &STATE_DATA
-    }
-
-    fn new_from_backend(backend: Backend) -> Self {
-        match backend {
-            Backend::Global => Self { inner: Backend::Global },
-            Backend::Memory(map) => Self {
-                inner: Backend::Memory(map),
-            },
-        }
-    }
-
-    fn map(&self) -> ReadGuard<'_, Map> {
-        match &self.inner {
-            Backend::Global => ReadGuard::Global(Self::data_lock().read()),
-            Backend::Memory(map) => ReadGuard::Memory(map),
-        }
-    }
-
-    fn map_mut(&mut self) -> WriteGuard<'_, Map> {
-        match &mut self.inner {
-            Backend::Global => WriteGuard::Global(Self::data_lock().write()),
-            Backend::Memory(map) => WriteGuard::Memory(map),
-        }
     }
 }
 

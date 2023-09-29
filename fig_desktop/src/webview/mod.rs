@@ -108,7 +108,7 @@ pub const DASHBOARD_INITIAL_SIZE: LogicalSize<f64> = LogicalSize::new(1030.0, 72
 pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480.0);
 
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
-pub const COMPANION_WINDOW_TITLE: &str = "Fig Companion";
+// pub const COMPANION_WINDOW_TITLE: &str = "Fig Companion";
 
 pub const LOGIN_PATH: &str = "/login";
 
@@ -311,10 +311,10 @@ impl WebviewManager {
 
         init_webview_notification_listeners(self.event_loop.create_proxy()).await;
 
-        let tray_visable = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
+        let tray_visible = !fig_settings::settings::get_bool_or("app.hideMenubarIcon", false);
         let tray = build_tray(&self.event_loop, &self.debug_state, &self.figterm_state).unwrap();
-        if let Err(err) = tray.set_visible(tray_visable) {
-            error!(%err, "Failed to set tray visable");
+        if let Err(err) = tray.set_visible(tray_visible) {
+            error!(%err, "Failed to set tray visible");
         }
 
         let menu_bar = menu_bar();
@@ -490,9 +490,9 @@ impl WebviewManager {
                                 })
                                 .unwrap();
                         },
-                        Event::SetTrayVisable(visable) => {
-                            if let Err(err) = tray.set_visible(visable) {
-                                error!(%err, "Failed to set tray visable");
+                        Event::SetTrayVisible(visible) => {
+                            if let Err(err) = tray.set_visible(visible) {
+                                error!(%err, "Failed to set tray visible");
                             }
                         },
                         Event::PlatformBoundEvent(native_event) => {
@@ -791,94 +791,89 @@ pub trait WebviewBuilder {
     ) -> wry::Result<WebView>;
 }
 
-pub struct CompanionOptions;
+// pub struct CompanionOptions;
 
-pub fn build_companion(
-    web_context: &mut WebContext,
-    event_loop: &EventLoop,
-    _companion_options: CompanionOptions,
-) -> wry::Result<WebView> {
-    let mut window_builder = WindowBuilder::new()
-        .with_title(COMPANION_WINDOW_TITLE)
-        .with_transparent(true)
-        .with_decorations(false)
-        .with_always_on_top(true)
-        .with_visible(false)
-        .with_focused(false)
-        .with_window_icon(Some(utils::ICON.clone()))
-        .with_inner_size(LogicalSize::new(1.0, 1.0))
-        .with_theme(*THEME);
+// pub fn build_companion(
+//     web_context: &mut WebContext,
+//     event_loop: &EventLoop,
+//     _companion_options: CompanionOptions,
+// ) -> wry::Result<WebView> { let mut window_builder = WindowBuilder::new()
+//   .with_title(COMPANION_WINDOW_TITLE) .with_transparent(true) .with_decorations(false)
+//   .with_always_on_top(true) .with_visible(false) .with_focused(false)
+//   .with_window_icon(Some(utils::ICON.clone())) .with_inner_size(LogicalSize::new(1.0, 1.0))
+//   .with_theme(*THEME);
 
-    cfg_if!(
-        if #[cfg(target_os = "linux")] {
-            use wry::application::platform::unix::WindowBuilderExtUnix;
-            window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
-        } else if #[cfg(target_os = "macos")] {
-            use wry::application::platform::macos::WindowBuilderExtMacOS;
-            window_builder = window_builder.with_resizable(false).with_has_shadow(false);
-        } else if #[cfg(target_os = "windows")] {
-            use wry::application::platform::windows::WindowBuilderExtWindows;
-            window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
-        }
-    );
+//     cfg_if!(
+//         if #[cfg(target_os = "linux")] {
+//             use wry::application::platform::unix::WindowBuilderExtUnix;
+//             window_builder = window_builder.with_resizable(true).with_skip_taskbar(true);
+//         } else if #[cfg(target_os = "macos")] {
+//             use wry::application::platform::macos::WindowBuilderExtMacOS;
+//             window_builder = window_builder.with_resizable(false).with_has_shadow(false);
+//         } else if #[cfg(target_os = "windows")] {
+//             use wry::application::platform::windows::WindowBuilderExtWindows;
+//             window_builder = window_builder.with_resizable(false).with_skip_taskbar(true);
+//         }
+//     );
 
-    let window = window_builder.build(event_loop)?;
+//     let window = window_builder.build(event_loop)?;
 
-    #[cfg(target_os = "linux")]
-    {
-        use gtk::gdk::WindowTypeHint;
-        use gtk::traits::{
-            GtkWindowExt,
-            WidgetExt,
-        };
-        use wry::application::platform::unix::WindowExtUnix;
+//     #[cfg(target_os = "linux")]
+//     {
+//         use gtk::gdk::WindowTypeHint;
+//         use gtk::traits::{
+//             GtkWindowExt,
+//             WidgetExt,
+//         };
+//         use wry::application::platform::unix::WindowExtUnix;
 
-        let gtk_window = window.gtk_window();
-        gtk_window.set_role("autocomplete");
-        gtk_window.set_type_hint(WindowTypeHint::Utility);
-        gtk_window.set_accept_focus(false);
-        gtk_window.set_decorated(false);
-        if let Some(window) = gtk_window.window() {
-            window.set_override_redirect(true);
-        }
-    }
+//         let gtk_window = window.gtk_window();
+//         gtk_window.set_role("autocomplete");
+//         gtk_window.set_type_hint(WindowTypeHint::Utility);
+//         gtk_window.set_accept_focus(false);
+//         gtk_window.set_decorated(false);
+//         if let Some(window) = gtk_window.window() {
+//             window.set_override_redirect(true);
+//         }
+//     }
 
-    let proxy = event_loop.create_proxy();
+//     let proxy = event_loop.create_proxy();
 
-    let webview = WebViewBuilder::new(window)?
-        .with_url(companion::url().as_str())?
-        .with_web_context(web_context)
-        .with_ipc_handler(move |_window, payload| {
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: COMPANION_ID.clone(),
-                    window_event: WindowEvent::Api {
-                        payload: payload.into(),
-                    },
-                })
-                .unwrap();
-        })
-        .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
-        .with_asynchronous_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
-        .with_asynchronous_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
-        // .with_custom_protocol("resource".into(), utils::wrap_custom_protocol(resource::handle))
-        .with_devtools(true)
-        .with_transparent(true)
-        .with_initialization_script(&javascript_init())
-        .with_navigation_handler(navigation_handler(COMPANION_ID, &[
-            // Main domain
-            r"autocomplete\.fig\.io$",
-            // Dev domains
-            r"localhost$",
-            r"^127\.0\.0\.1$",
-        ]))
-        .with_clipboard(true)
-        .with_hotkeys_zoom(true)
-        .with_accept_first_mouse(true)
-        .build()?;
+//     let webview = WebViewBuilder::new(window)?
+//         .with_url(companion::url().as_str())?
+//         .with_web_context(web_context)
+//         .with_ipc_handler(move |_window, payload| {
+//             proxy
+//                 .send_event(Event::WindowEvent {
+//                     window_id: COMPANION_ID.clone(),
+//                     window_event: WindowEvent::Api {
+//                         payload: payload.into(),
+//                     },
+//                 })
+//                 .unwrap();
+//         })
+//         .with_asynchronous_custom_protocol("fig".into(),
+// utils::wrap_custom_protocol(icons::handle))         .with_asynchronous_custom_protocol("figspec".
+// into(), utils::wrap_custom_protocol(figspec::handle))
+//         .with_asynchronous_custom_protocol("figapp".into(),
+// utils::wrap_custom_protocol(figapp::handle))         // .with_custom_protocol("resource".into(),
+// utils::wrap_custom_protocol(resource::handle))         .with_devtools(true)
+//         .with_transparent(true)
+//         .with_initialization_script(&javascript_init())
+//         .with_navigation_handler(navigation_handler(COMPANION_ID, &[
+//             // Main domain
+//             r"autocomplete\.fig\.io$",
+//             // Dev domains
+//             r"localhost$",
+//             r"^127\.0\.0\.1$",
+//         ]))
+//         .with_clipboard(true)
+//         .with_hotkeys_zoom(true)
+//         .with_accept_first_mouse(true)
+//         .build()?;
 
-    Ok(webview)
-}
+//     Ok(webview)
+// }
 
 async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
     macro_rules! watcher {
@@ -941,7 +936,7 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
         |notification: JsonNotification, proxy: &EventLoopProxy| {
             let enabled = !notification.as_bool().unwrap_or(false);
             debug!(%enabled, "Tray icon");
-            proxy.send_event(Event::SetTrayVisable(enabled)).unwrap();
+            proxy.send_event(Event::SetTrayVisible(enabled)).unwrap();
         }
     );
 

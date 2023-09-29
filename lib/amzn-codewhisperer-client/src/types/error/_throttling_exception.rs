@@ -13,6 +13,7 @@ impl ThrottlingError {
     pub fn retryable_error_kind(&self) -> ::aws_smithy_types::retry::ErrorKind {
         ::aws_smithy_types::retry::ErrorKind::ClientError
     }
+
     /// Returns the error message.
     pub fn message(&self) -> ::std::option::Option<&str> {
         self.message.as_deref()
@@ -42,7 +43,8 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for ThrottlingErr
     }
 }
 impl ThrottlingError {
-    /// Creates a new builder-style object to manufacture [`ThrottlingError`](crate::types::error::ThrottlingError).
+    /// Creates a new builder-style object to manufacture
+    /// [`ThrottlingError`](crate::types::error::ThrottlingError).
     pub fn builder() -> crate::types::error::builders::ThrottlingErrorBuilder {
         crate::types::error::builders::ThrottlingErrorBuilder::default()
     }
@@ -61,15 +63,18 @@ impl ThrottlingErrorBuilder {
         self.message = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_message(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.message = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_message(&self) -> &::std::option::Option<::std::string::String> {
         &self.message
     }
+
     /// Sets error metadata
     pub fn meta(mut self, meta: ::aws_smithy_types::error::ErrorMetadata) -> Self {
         self.meta = Some(meta);
@@ -81,7 +86,9 @@ impl ThrottlingErrorBuilder {
         self.meta = meta;
         self
     }
-    /// Consumes the builder and constructs a [`ThrottlingError`](crate::types::error::ThrottlingError).
+
+    /// Consumes the builder and constructs a
+    /// [`ThrottlingError`](crate::types::error::ThrottlingError).
     pub fn build(self) -> crate::types::error::ThrottlingError {
         crate::types::error::ThrottlingError {
             message: self.message,

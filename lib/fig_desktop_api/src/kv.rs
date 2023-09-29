@@ -41,7 +41,7 @@ pub trait KVStore {
     /// Get a serilizable key/value
     fn get<K: serde::Serialize + ?Sized, V: serde::de::DeserializeOwned>(&self, key: &K) -> Result<Option<V>> {
         let key = serialize(key)?;
-        let Some(value) = self.get_raw(&key) else {
+        let Some(value) = self.get_raw(key) else {
             return Ok(None);
         };
         let value = deserialize(&value)?;
