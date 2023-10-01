@@ -14,9 +14,11 @@ phases:
       # For now assume there is a suitable EC2 instance running. Obviously, we could add a StepFunction here to
       # get a new one, but this is a start
       - INSTANCE_ID=`aws ec2 describe-instances --filters Name="tag:Name",Values="NSCC MacOS x86 Build Server" | jq -r '.Reservations[0].Instances[0].InstanceId'`
+      - echo "ec2 instance id - $INSTANCE_ID"
       # The name of the SSM document has to change every time its deployed, so go look for it
       # We can make this an environment variable passed into CodeBuild.
       - SSM_DOC=`aws ssm list-documents --filters Key="SearchKeyword",Values="fig-io-deskop-remote-macos-build" | jq -r ".DocumentIdentifiers[0].Name"`
+      - echo "ssm doc - $SSM_DOC"
       - EXECUTION=`aws ssm send-command --instance-ids $INSTANCE_ID --document-name $SSM_DOC --parameters CommitId=$CODEBUILD_RESOLVED_SOURCE_VERSION,BuildId=$CODEBUILD_BUILD_ID --cloud-watch-output-config CloudWatchOutputEnabled=true,CloudWatchLogGroupName=fig-io-deskop-build-$AWS_ACCOUNT --timeout-seconds 120 --max-errors 0`
       - COMMAND_ID=`echo $EXECUTION | jq -r '.Command.CommandId'`
       - echo SSM command id is $COMMAND_ID
