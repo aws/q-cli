@@ -1,17 +1,18 @@
 import { Routes, Route, Outlet } from "react-router-dom";
 import WhatsNew from "./pages/whats-new";
 import Account from "./pages/account";
+import Help from "./pages/help"
 import SidebarLink from "./components/sidebar/link";
-import { Apps, Autocomplete, GhostText, Help, Prompt, Settings, Sparkle, User } from "./components/svg/icons";
+import * as Icon from "./components/svg/icons";
+import Autocomplete from "./pages/autocomplete";
 
 function App() {
   return (
     <Routes>
       <Route path="/" element={<Layout />}>
         <Route index element={<WhatsNew />} />
-        <Route path="help" element={<div>Help</div>} />
-        <Route path="autocomplete" element={<div>Autocomplete</div>} />
-        <Route path="autocomplete" element={<div>Autocomplete</div>} />
+        <Route path="help" element={<Help />} />
+        <Route path="autocomplete" element={<Autocomplete />} />
         <Route path="predict" element={<div>Predict</div>} />
         <Route path="translate" element={<div>Translate</div>} />
         <Route path="predict" element={<div>Predict</div>} />
@@ -79,21 +80,21 @@ function getIconFromName (name: string) {
   switch (name.toLowerCase()) {
     case "what's new?":
     default:
-      return <Sparkle />
+      return <Icon.Sparkle />
     case "help & support":
-      return <Help />
+      return <Icon.Help />
     case "autocomplete":
-      return <Autocomplete />
+      return <Icon.Autocomplete />
     case "predict":
-      return <GhostText />
+      return <Icon.GhostText />
     case "translate":
-      return <Prompt />
+      return <Icon.Prompt />
     case "account":
-      return <User />
+      return <Icon.User />
     case "integrations":
-      return <Apps />
+      return <Icon.Apps />
     case "preferences":
-      return <Settings />
+      return <Icon.Settings />
   }
 }
 
@@ -103,7 +104,7 @@ function Layout() {
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
         {NAV_DATA.map((item, i) =>
           item.type === "link" ? (
-            <SidebarLink key={item.name} path={item.link} name={item.name} icon={getIconFromName(item.name)} count={i > 0 ? i+2 : undefined} />
+            <SidebarLink key={item.name} path={item.link} name={item.name} icon={getIconFromName(item.name)} count={i === 0 ? 3 : undefined} />
           ) : (
             <div
               key={item.name}

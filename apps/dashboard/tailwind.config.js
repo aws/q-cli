@@ -12,7 +12,9 @@ module.exports = {
     base: '0.875rem',
     md: '1rem',
     lg: '1.125rem',
-    xl: '1.25rem'
+    xl: '1.25rem',
+    '2xl': '2rem',
+    '3xl': '3rem'
   },
   theme: {
     container: {
