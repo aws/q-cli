@@ -10,6 +10,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "../ui/select";
+import { Input } from "../ui/input";
 
 export function Setting({ data }: { data: Pref }) {
   const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
@@ -67,8 +68,8 @@ export function Setting({ data }: { data: Pref }) {
               </Select>
             )}
             {data.type === "multiselect" && <div />}
-            {data.type === "number" && <div />}
-            {data.type === "text" && <div />}
+            {data.type === "number" && <Input type='number' step={1000} placeholder={typeof data.default === 'string' ? data.default : data.default?.toString()} />}
+            {data.type === "text" && <Input type='text' placeholder={typeof data.default === 'string' ? data.default : data.default?.toString()} />}
             {data.type === "keystrokes" && <div />}
           </div>
         )}
