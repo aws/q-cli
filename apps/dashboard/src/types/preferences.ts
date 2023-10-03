@@ -1,4 +1,4 @@
-export type PrefDefault = boolean | string | number | null | never[]
+export type PrefDefault = boolean | string | string[] | number | null | never[]
 
 export type Pref = {
   id: string,

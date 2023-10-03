@@ -5,6 +5,7 @@ import Help from "./pages/help"
 import SidebarLink from "./components/sidebar/link";
 import * as Icon from "./components/svg/icons";
 import Autocomplete from "./pages/autocomplete";
+import Translate from './pages/translate'
 
 function App() {
   return (
@@ -14,9 +15,7 @@ function App() {
         <Route path="help" element={<Help />} />
         <Route path="autocomplete" element={<Autocomplete />} />
         <Route path="predict" element={<div>Predict</div>} />
-        <Route path="translate" element={<div>Translate</div>} />
-        <Route path="predict" element={<div>Predict</div>} />
-        <Route path="translate" element={<div>Translate</div>} />
+        <Route path="translate" element={<Translate />} />
         <Route path="account" element={<Account />} />
         <Route path="integrations" element={<div>Integrations</div>} />
         <Route path="preferences" element={<div>Preferences</div>} />

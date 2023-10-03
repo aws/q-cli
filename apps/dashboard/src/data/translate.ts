@@ -1,5 +1,6 @@
-const settings = {
-  translate: [
+const settings = [{
+  title: 'Translate',
+  properties: [
     {
       id: "ai.terminal-hash-sub",
       title: "Hashtag Substitution",
@@ -18,6 +19,6 @@ const settings = {
       inverted: true,
     },
   ]
-}
+}]
 
 export default settings

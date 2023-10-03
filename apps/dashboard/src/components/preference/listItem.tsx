@@ -11,10 +11,18 @@ import {
   SelectValue,
 } from "../ui/select";
 import { Input } from "../ui/input";
+import { Button } from "@/components/ui/button";
+import {
+  DropdownMenu,
+  DropdownMenuCheckboxItem,
+  DropdownMenuContent,
+  DropdownMenuTrigger,
+} from "@/components/ui/dropdown-menu";
 
 export function Setting({ data }: { data: Pref }) {
   const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
   const localValue = data.inverted ? !inputValue : inputValue;
+  const multiSelectValue = inputValue as string[]
 
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
@@ -30,6 +38,34 @@ export function Setting({ data }: { data: Pref }) {
   function toggleSwitch() {
     setInputValue(!inputValue);
     State.set(data.id, localValue).catch((e) =>
+      console.error({ stateSetError: e })
+    );
+  }
+
+  function toggleMultiSelect(option: string) {
+    console.log(option, multiSelectValue)
+    if (multiSelectValue.includes(option)) {
+      const index = multiSelectValue.indexOf(option)
+      multiSelectValue.splice(index, 1)
+      const updatedArray = multiSelectValue
+      console.log('new array looks like:', updatedArray)
+      State.set(data.id, updatedArray)
+        .then(() => setInputValue(updatedArray) )
+        .catch((e) =>
+          console.error({ stateSetError: e })
+        );
+      return
+    }
+
+    console.log('adding', option, 'to', multiSelectValue)
+    const updatedArray = [...multiSelectValue, option]
+    State.set(data.id, updatedArray)
+    .then(() => 
+      {
+        setInputValue(updatedArray)
+        console.log('new array:', updatedArray)
+      }
+    ).catch((e) =>
       console.error({ stateSetError: e })
     );
   }
@@ -67,9 +103,51 @@ export function Setting({ data }: { data: Pref }) {
                 </SelectContent>
               </Select>
             )}
-            {data.type === "multiselect" && <div />}
-            {data.type === "number" && <Input type='number' step={1000} placeholder={typeof data.default === 'string' ? data.default : data.default?.toString()} />}
-            {data.type === "text" && <Input type='text' placeholder={typeof data.default === 'string' ? data.default : data.default?.toString()} />}
+            {data.type === "multiselect" && (
+              <div className="relative">
+              <DropdownMenu>
+                <DropdownMenuTrigger asChild>
+                  <Button variant="outline">Select options</Button>
+                </DropdownMenuTrigger>
+                <DropdownMenuContent className="w-60">
+                  {data.options?.map((o, i) => {
+                    const included = multiSelectValue.includes(o) as boolean
+                    console.log(o, included)
+                    return (
+                      <DropdownMenuCheckboxItem 
+                      key={i}
+                      checked={included}
+                      onCheckedChange={() => toggleMultiSelect(o)}
+                    >
+                      {o}
+                    </DropdownMenuCheckboxItem>
+                    )
+                  })}
+                </DropdownMenuContent>
+              </DropdownMenu>
+              </div>
+            )}
+            {data.type === "number" && (
+              <Input
+                type="number"
+                step={1000}
+                placeholder={
+                  typeof data.default === "string"
+                    ? data.default
+                    : data.default?.toString()
+                }
+              />
+            )}
+            {data.type === "text" && (
+              <Input
+                type="text"
+                placeholder={
+                  typeof data.default === "string"
+                    ? data.default
+                    : data.default?.toString()
+                }
+              />
+            )}
             {data.type === "keystrokes" && <div />}
           </div>
         )}
