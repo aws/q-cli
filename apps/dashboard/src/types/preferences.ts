@@ -11,3 +11,12 @@ export type Pref = {
   popular?: boolean
   options?: string[]
 }
+
+export type InstallCheck = {
+  id: string
+  installKey: "dotfiles" | "accessibility" | "inputMethod"
+  title: string
+  description: string[]
+  example?: string
+  action: string
+};
