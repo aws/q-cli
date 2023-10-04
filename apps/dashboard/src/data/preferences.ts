@@ -1,5 +1,6 @@
-const settings = {
-  startup: [
+const settings = [{
+  title: 'Startup',
+  properties: [
     {
       id: "app.launchOnStartup",
       title: "Launch on Start",
@@ -59,8 +60,10 @@ const settings = {
       inverted: true,
       popular: false
     },
-  ],
-  advanced: [
+  ]},
+  {
+  title: 'Advanced',
+  properties: [
     {
       id: "app.beta",
       title: "Beta",
@@ -87,6 +90,6 @@ const settings = {
       popular: false
     },
   ]
-}
+}]
 
 export default settings

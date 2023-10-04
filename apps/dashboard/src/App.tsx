@@ -7,6 +7,8 @@ import * as Icon from "./components/svg/icons";
 import Autocomplete from "./pages/autocomplete";
 import Translate from "./pages/translate";
 import FinishOnboarding from "./pages/onboarding";
+import Predict from './pages/predict'
+import Preferences from './pages/preferences'
 import ModalContext from "./context/modal";
 import { useState } from "react";
 import Modal from "./components/modal";
@@ -21,11 +23,11 @@ function App() {
           <Route index element={<WhatsNew />} />
           <Route path="help" element={<Help />} />
           <Route path="autocomplete" element={<Autocomplete />} />
-          <Route path="predict" element={<div>Predict</div>} />
+          <Route path="predict" element={<Predict />} />
           <Route path="translate" element={<Translate />} />
           <Route path="account" element={<Account />} />
           <Route path="integrations" element={<div>Integrations</div>} />
-          <Route path="preferences" element={<div>Preferences</div>} />
+          <Route path="preferences" element={<Preferences />} />
         </Route>
       </Routes>
       {modal && <Modal>{modal}</Modal>}
