@@ -38,7 +38,7 @@ function App() {
 const NAV_DATA = [
   {
     type: "link",
-    name: "Finish onboarding",
+    name: "Getting started",
     link: "/onboarding",
   },
   {
@@ -110,7 +110,7 @@ function getIconFromName(name: string) {
       return <Icon.Apps />;
     case "preferences":
       return <Icon.Settings />;
-    case "finish onboarding":
+    case "getting started":
       return <Icon.Onboarding />;
   }
 }

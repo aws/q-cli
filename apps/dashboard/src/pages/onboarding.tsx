@@ -16,7 +16,7 @@ export default function Page() {
     <div className="flex flex-col items-start">
       <div className="flex justify-between gap-4 self-stretch">
         <h1 className="text-3xl font-black select-none mb-2">
-          Finish onboarding
+          Getting started
         </h1>
         <Button
           variant="ghost"
