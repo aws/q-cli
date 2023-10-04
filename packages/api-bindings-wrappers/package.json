@@ -1,0 +1,32 @@
+{
+  "name": "@amzn/fig-io-api-bindings-wrappers",
+  "version": "1.0.0",
+  "author": "The Fig team",
+  "type": "module",
+  "main": "./dist/index.js",
+  "types": "./dist/index.d.ts",
+  "files": [
+    "dist/"
+  ],
+  "scripts": {
+    "dev": "tsc --watch",
+    "build": "tsc",
+    "lint": "eslint src && prettier --check src",
+    "lint:fix": "eslint --fix src && prettier --write src",
+    "clean": "rm -rf dist"
+  },
+  "dependencies": {
+    "@withfig/api-bindings": "~0.30.2",
+    "loglevel": "^1.8.1"
+  },
+  "devDependencies": {
+    "@amzn/fig-io-eslint-config": "workspace:^",
+    "@internal/shared": "workspace:^",
+    "@internal/tsconfig": "workspace:^",
+    "@internal/types": "workspace:^",
+    "eslint": "^8.50.0",
+    "eslint-config-prettier": "^9.0.0",
+    "prettier": "^3.0.0",
+    "typescript": "^5.1.6"
+  }
+}

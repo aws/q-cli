@@ -1,0 +1,50 @@
+/** @type {import('eslint').Linter.Config} */
+module.exports = {
+  extends: [
+    "airbnb-base",
+    "eslint:recommended",
+    "plugin:@typescript-eslint/recommended",
+    "prettier",
+  ],
+  parserOptions: {
+    ecmaVersion: 12,
+    parser: "@typescript-eslint/parser",
+    sourceType: "module",
+    project: true,
+  },
+  plugins: ["@typescript-eslint"],
+  ignorePatterns: ["dist", ".eslintrc.cjs", "*.config.js"],
+  rules: {
+    "@typescript-eslint/explicit-module-boundary-types": 0,
+    "@typescript-eslint/no-empty-function": 0,
+    "@typescript-eslint/no-shadow": ["error"],
+    "@typescript-eslint/no-use-before-define": ["error", "nofunc"],
+    "@typescript-eslint/no-unused-vars": [
+      "warn",
+      { argsIgnorePattern: "^_", varsIgnorePattern: "^_" },
+    ],
+    // "comma-dangle": ["error", "never"],
+    "import/extensions": 0,
+    "import/no-unresolved": 0,
+    "import/prefer-default-export": 0,
+    "keyword-spacing": "error",
+    "max-len": [
+      "error",
+      {
+        code: 100,
+        tabWidth: 2,
+        ignoreComments: true,
+        ignoreUrls: true,
+        ignoreStrings: true,
+        ignoreTemplateLiterals: true,
+      },
+    ],
+    "no-bitwise": "off",
+    "no-console": 0,
+    "no-restricted-syntax": 0,
+    "no-shadow": "off",
+    "no-use-before-define": "off",
+    semi: ["error", "always"],
+    "no-underscore-dangle": "off",
+  },
+};

@@ -8,13 +8,14 @@
     "build": "./build-ts.sh",
     "lint": "buf lint && (buf format --exit-code > /dev/null || (echo 'Run `buf format -w`' && exit 1))",
     "lint:fix": "buf format -w",
-    "precommit": "exit 0"
+    "precommit": "exit 0",
+    "clean": "rm -rf dist"
   },
   "dependencies": {
     "long": "^5.2.3",
     "protobufjs": "^7.2.4"
   },
   "devDependencies": {
-    "ts-proto": "~1.157.1"
+    "ts-proto": "~1.159.2"
   }
 }

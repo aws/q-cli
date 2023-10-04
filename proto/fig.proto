@@ -639,7 +639,7 @@ message AuthBuilderIdPollCreateTokenResponse {
   optional string error = 2;
 }
 
-message AuthStatusRequest { }
+message AuthStatusRequest {}
 
 message AuthStatusResponse {
   bool builder_id = 1;

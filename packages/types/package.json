@@ -1,0 +1,6 @@
+{
+  "name": "@internal/types",
+  "private": true,
+  "version": "1.0.0",
+  "types": "global.d.ts"
+}
