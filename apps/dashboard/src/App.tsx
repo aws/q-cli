@@ -1,38 +1,52 @@
 import { Routes, Route, Outlet } from "react-router-dom";
 import WhatsNew from "./pages/whats-new";
 import Account from "./pages/account";
-import Help from "./pages/help"
+import Help from "./pages/help";
 import SidebarLink from "./components/sidebar/link";
 import * as Icon from "./components/svg/icons";
 import Autocomplete from "./pages/autocomplete";
-import Translate from './pages/translate'
+import Translate from "./pages/translate";
+import FinishOnboarding from "./pages/onboarding";
+import ModalContext from "./context/modal";
+import { useState } from "react";
+import Modal from "./components/modal";
 
 function App() {
+  const [modal, setModal] = useState<React.ReactNode | null>(null);
   return (
-    <Routes>
-      <Route path="/" element={<Layout />}>
-        <Route index element={<WhatsNew />} />
-        <Route path="help" element={<Help />} />
-        <Route path="autocomplete" element={<Autocomplete />} />
-        <Route path="predict" element={<div>Predict</div>} />
-        <Route path="translate" element={<Translate />} />
-        <Route path="account" element={<Account />} />
-        <Route path="integrations" element={<div>Integrations</div>} />
-        <Route path="preferences" element={<div>Preferences</div>} />
-      </Route>
-    </Routes>
+    <ModalContext.Provider value={{ modal, setModal }}>
+      <Routes>
+        <Route path="/" element={<Layout />}>
+          <Route path="onboarding" element={<FinishOnboarding />} />
+          <Route index element={<WhatsNew />} />
+          <Route path="help" element={<Help />} />
+          <Route path="autocomplete" element={<Autocomplete />} />
+          <Route path="predict" element={<div>Predict</div>} />
+          <Route path="translate" element={<Translate />} />
+          <Route path="account" element={<Account />} />
+          <Route path="integrations" element={<div>Integrations</div>} />
+          <Route path="preferences" element={<div>Preferences</div>} />
+        </Route>
+      </Routes>
+      {modal && <Modal>{modal}</Modal>}
+    </ModalContext.Provider>
   );
 }
 
 const NAV_DATA = [
   {
     type: "link",
-    name: "What's New?",
+    name: "Finish onboarding",
+    link: "/onboarding",
+  },
+  {
+    type: "link",
+    name: "What's new?",
     link: "/",
   },
   {
     type: "link",
-    name: "Help & Support",
+    name: "Help & support",
     link: "/help",
   },
   {
@@ -75,25 +89,27 @@ const NAV_DATA = [
   },
 ] as const;
 
-function getIconFromName (name: string) {
+function getIconFromName(name: string) {
   switch (name.toLowerCase()) {
     case "what's new?":
     default:
-      return <Icon.Sparkle />
+      return <Icon.Sparkle />;
     case "help & support":
-      return <Icon.Help />
+      return <Icon.Help />;
     case "autocomplete":
-      return <Icon.Autocomplete />
+      return <Icon.Autocomplete />;
     case "predict":
-      return <Icon.GhostText />
+      return <Icon.GhostText />;
     case "translate":
-      return <Icon.Prompt />
+      return <Icon.Prompt />;
     case "account":
-      return <Icon.User />
+      return <Icon.User />;
     case "integrations":
-      return <Icon.Apps />
+      return <Icon.Apps />;
     case "preferences":
-      return <Icon.Settings />
+      return <Icon.Settings />;
+    case "finish onboarding":
+      return <Icon.Onboarding />;
   }
 }
 
@@ -103,11 +119,17 @@ function Layout() {
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
         {NAV_DATA.map((item, i) =>
           item.type === "link" ? (
-            <SidebarLink key={item.name} path={item.link} name={item.name} icon={getIconFromName(item.name)} count={i === 0 ? 3 : undefined} />
+            <SidebarLink
+              key={item.name}
+              path={item.link}
+              name={item.name}
+              icon={getIconFromName(item.name)}
+              count={i === 1 ? 10 : undefined}
+            />
           ) : (
             <div
               key={item.name}
-              className="pt-4 pl-3 text-sm text-zinc-600 dark:text-zinc-400 w-full rounded-lg flex flex-row items-center font-medium"
+              className="pt-4 pl-3 text-sm text-zinc-600 dark:text-zinc-400 w-full rounded-lg flex flex-row items-center font-medium select-none"
             >
               {item.name}
             </div>

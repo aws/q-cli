@@ -20,10 +20,10 @@ export default function SidebarLink({
         <NavLink to={path} className={({isActive}) => isActive ? activeStyles : defaultStyles }>
             <div className="flex flex-row items-center gap-2 fill-current whitespace-nowrap">
                 {icon}
-                <span className="text-base">{name}</span>
+                <span className="text-base select-none">{name}</span>
             </div>
             {count && (
-                <span className="flex items-center justify-center leading-none p-1 px-2 rounded-full font-medium text-sm">
+                <span className="flex items-center justify-center leading-none p-1 px-2 rounded-full font-medium text-sm select-none">
                     {count > 9 ? "9+" : count}
                 </span>
             )}
