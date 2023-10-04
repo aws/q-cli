@@ -1,9 +1,6 @@
-use once_cell::sync::Lazy;
-use wry::application::menu::MenuId;
-#[cfg(not(target_os = "linux"))]
-use wry::application::menu::{
-    MenuBar,
-    MenuItem,
+use muda::{
+    Menu,
+    MenuEvent,
 };
 
 use crate::event::{
@@ -15,62 +12,73 @@ use crate::{
     DASHBOARD_ID,
 };
 
-static DASHBOARD_QUIT: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-quit"));
-static DASHBOARD_RELOAD: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-reload"));
-static DASHBOARD_BACK: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-back"));
-static DASHBOARD_FORWARD: Lazy<MenuId> = Lazy::new(|| MenuId::new("dashboard-forward"));
+const DASHBOARD_QUIT: &str = "dashboard-quit";
+const DASHBOARD_RELOAD: &str = "dashboard-reload";
+const DASHBOARD_BACK: &str = "dashboard-back";
+const DASHBOARD_FORWARD: &str = "dashboard-forward";
 
 #[cfg(target_os = "macos")]
-pub fn menu_bar() -> MenuBar {
-    use wry::application::accelerator::Accelerator;
-    use wry::application::keyboard::{
-        KeyCode,
-        ModifiersState,
+pub fn menu_bar() -> Menu {
+    use muda::{
+        MenuItemBuilder,
+        PredefinedMenuItem,
+        Submenu,
     };
-    use wry::application::menu::MenuItemAttributes;
 
-    let mut menu_bar = MenuBar::new();
+    let menu_bar = Menu::new();
 
-    let mut app_submenu = MenuBar::new();
-    app_submenu.add_item(
-        MenuItemAttributes::new("Backward")
-            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::BracketLeft))
-            .with_id(*DASHBOARD_BACK),
-    );
-    app_submenu.add_item(
-        MenuItemAttributes::new("Forward")
-            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::BracketRight))
-            .with_id(*DASHBOARD_FORWARD),
-    );
-    app_submenu.add_item(
-        MenuItemAttributes::new("Reload")
-            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyR))
-            .with_id(*DASHBOARD_RELOAD),
-    );
-    app_submenu.add_item(
-        MenuItemAttributes::new("Close Window")
-            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyW))
-            .with_id(*DASHBOARD_QUIT),
-    );
-    app_submenu.add_item(
-        MenuItemAttributes::new("Quit Fig (UI)")
-            .with_accelerators(&Accelerator::new(ModifiersState::SUPER, KeyCode::KeyQ))
-            .with_id(*DASHBOARD_QUIT),
-    );
+    let app_submenu = Submenu::new("Fig", true);
+    app_submenu
+        .append_items(&[
+            &MenuItemBuilder::new()
+                .text("Backward")
+                .id(DASHBOARD_BACK.into())
+                .acccelerator(Some("super+["))
+                .unwrap()
+                .build(),
+            &MenuItemBuilder::new()
+                .text("Forward")
+                .id(DASHBOARD_FORWARD.into())
+                .acccelerator(Some("super+]"))
+                .unwrap()
+                .build(),
+            &MenuItemBuilder::new()
+                .text("Reload")
+                .id(DASHBOARD_RELOAD.into())
+                .acccelerator(Some("super+r"))
+                .unwrap()
+                .build(),
+            &MenuItemBuilder::new()
+                .text("Close Window")
+                .id(DASHBOARD_QUIT.into())
+                .acccelerator(Some("super+q"))
+                .unwrap()
+                .build(),
+            &MenuItemBuilder::new()
+                .text("Quit Fig (UI)")
+                .id(DASHBOARD_QUIT.into())
+                .acccelerator(Some("super+q"))
+                .unwrap()
+                .build(),
+        ])
+        .unwrap();
 
-    menu_bar.add_submenu("Fig", true, app_submenu);
+    menu_bar.append(&app_submenu).unwrap();
 
-    let mut edit_submenu = MenuBar::new();
+    let edit_submenu = Submenu::new("Edit", true);
+    edit_submenu
+        .append_items(&[
+            &PredefinedMenuItem::undo(Some("Undo")),
+            &PredefinedMenuItem::redo(Some("Redo")),
+            &PredefinedMenuItem::separator(),
+            &PredefinedMenuItem::copy(Some("Copy")),
+            &PredefinedMenuItem::paste(Some("Paste")),
+            &PredefinedMenuItem::cut(Some("Cut")),
+            &PredefinedMenuItem::select_all(Some("Select All")),
+        ])
+        .unwrap();
 
-    edit_submenu.add_native_item(MenuItem::Undo);
-    edit_submenu.add_native_item(MenuItem::Redo);
-    edit_submenu.add_native_item(MenuItem::Separator);
-    edit_submenu.add_native_item(MenuItem::Copy);
-    edit_submenu.add_native_item(MenuItem::Paste);
-    edit_submenu.add_native_item(MenuItem::Cut);
-    edit_submenu.add_native_item(MenuItem::SelectAll);
-
-    menu_bar.add_submenu("Edit", true, edit_submenu);
+    menu_bar.append(&edit_submenu).unwrap();
 
     menu_bar
 }
@@ -106,27 +114,27 @@ pub fn menu_bar() -> MenuBar {
     menu_bar
 }
 
-pub fn handle_event(menu_id: MenuId, proxy: &EventLoopProxy) {
-    match menu_id {
-        menu_id if menu_id == *DASHBOARD_QUIT => proxy
+pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
+    match &menu_event.id().0 {
+        menu_id if menu_id == DASHBOARD_QUIT => proxy
             .send_event(Event::WindowEvent {
                 window_id: DASHBOARD_ID,
                 window_event: WindowEvent::Hide,
             })
             .unwrap(),
-        menu_id if menu_id == *DASHBOARD_RELOAD => proxy
+        menu_id if menu_id == DASHBOARD_RELOAD => proxy
             .send_event(Event::WindowEvent {
                 window_id: DASHBOARD_ID,
                 window_event: WindowEvent::Reload,
             })
             .unwrap(),
-        menu_id if menu_id == *DASHBOARD_BACK => proxy
+        menu_id if menu_id == DASHBOARD_BACK => proxy
             .send_event(Event::WindowEvent {
                 window_id: DASHBOARD_ID,
                 window_event: WindowEvent::NavigateBack,
             })
             .unwrap(),
-        menu_id if menu_id == *DASHBOARD_FORWARD => proxy
+        menu_id if menu_id == DASHBOARD_FORWARD => proxy
             .send_event(Event::WindowEvent {
                 window_id: DASHBOARD_ID,
                 window_event: WindowEvent::NavigateForward,

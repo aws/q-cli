@@ -43,20 +43,29 @@
 #[allow(missing_docs)] // documentation missing in model
 #[non_exhaustive]
 #[derive(
-    ::std::clone::Clone, ::std::cmp::Eq, ::std::cmp::Ord, ::std::cmp::PartialEq, ::std::cmp::PartialOrd, ::std::fmt::Debug, ::std::hash::Hash,
+    ::std::clone::Clone,
+    ::std::cmp::Eq,
+    ::std::cmp::Ord,
+    ::std::cmp::PartialEq,
+    ::std::cmp::PartialOrd,
+    ::std::fmt::Debug,
+    ::std::hash::Hash,
 )]
 pub enum ProfileStatus {
     /// After successful creation or update, a profile transitions to ACTIVE status.
     Active,
-    /// In the event of a failure during a create operation, a profile will be assigned a status of CREATE_FAILED.
+    /// In the event of a failure during a create operation, a profile will be assigned a status of
+    /// CREATE_FAILED.
     CreateFailed,
     /// After a create request is received, a profile transitions to CREATING status.
     Creating,
-    /// In the event of a failure during a delete operation, a profile will be assigned a status of DELETE_FAILED.
+    /// In the event of a failure during a delete operation, a profile will be assigned a status of
+    /// DELETE_FAILED.
     DeleteFailed,
     /// After a delete request is received, a profile transitions to DELETING status.
     Deleting,
-    /// In the event of a failure during an update operation, a profile will be assigned a status of UPDATE_FAILED.
+    /// In the event of a failure during an update operation, a profile will be assigned a status of
+    /// UPDATE_FAILED.
     UpdateFailed,
     /// After an update request is received, a profile transitions to UPDATING status.
     Updating,
@@ -98,6 +107,7 @@ impl ProfileStatus {
             ProfileStatus::Unknown(value) => value.as_str(),
         }
     }
+
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
         &[

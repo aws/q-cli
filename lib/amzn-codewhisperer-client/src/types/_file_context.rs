@@ -17,14 +17,17 @@ impl FileContext {
     pub fn left_file_content(&self) -> ::std::option::Option<&str> {
         self.left_file_content.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn right_file_content(&self) -> ::std::option::Option<&str> {
         self.right_file_content.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn filename(&self) -> ::std::option::Option<&str> {
         self.filename.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn programming_language(&self) -> ::std::option::Option<&crate::types::ProgrammingLanguage> {
         self.programming_language.as_ref()
@@ -41,7 +44,8 @@ impl ::std::fmt::Debug for FileContext {
     }
 }
 impl FileContext {
-    /// Creates a new builder-style object to manufacture [`FileContext`](crate::types::FileContext).
+    /// Creates a new builder-style object to manufacture
+    /// [`FileContext`](crate::types::FileContext).
     pub fn builder() -> crate::types::builders::FileContextBuilder {
         crate::types::builders::FileContextBuilder::default()
     }
@@ -62,57 +66,69 @@ impl FileContextBuilder {
         self.left_file_content = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_left_file_content(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.left_file_content = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_left_file_content(&self) -> &::std::option::Option<::std::string::String> {
         &self.left_file_content
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn right_file_content(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.right_file_content = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_right_file_content(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.right_file_content = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_right_file_content(&self) -> &::std::option::Option<::std::string::String> {
         &self.right_file_content
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn filename(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.filename = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_filename(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.filename = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_filename(&self) -> &::std::option::Option<::std::string::String> {
         &self.filename
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn programming_language(mut self, input: crate::types::ProgrammingLanguage) -> Self {
         self.programming_language = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_programming_language(mut self, input: ::std::option::Option<crate::types::ProgrammingLanguage>) -> Self {
         self.programming_language = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_programming_language(&self) -> &::std::option::Option<crate::types::ProgrammingLanguage> {
         &self.programming_language
     }
+
     /// Consumes the builder and constructs a [`FileContext`](crate::types::FileContext).
     pub fn build(self) -> crate::types::FileContext {
         crate::types::FileContext {

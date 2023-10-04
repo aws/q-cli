@@ -333,35 +333,6 @@ impl Credentials {
 
         serde_json::to_writer(&mut creds_file, self)?;
 
-        #[cfg(target_os = "macos")]
-        {
-            use crate::defaults::remove_default;
-
-            if let CredentialsType::Jwt {
-                access_token,
-                id_token,
-                refresh_token,
-                ..
-            } = &self.credentials_type
-            {
-                if id_token.is_none() {
-                    remove_default("id_token").ok();
-                }
-
-                if access_token.is_none() {
-                    remove_default("access_token").ok();
-                }
-
-                if refresh_token.is_none() {
-                    remove_default("refresh_token").ok();
-                }
-            };
-
-            if self.email.is_none() {
-                remove_default("userEmail").ok();
-            }
-        }
-
         Ok(())
     }
 

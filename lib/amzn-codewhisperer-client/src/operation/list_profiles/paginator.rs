@@ -29,8 +29,8 @@ impl ListProfilesPaginator {
 
     /// Create a flattened paginator
     ///
-    /// This paginator automatically flattens results using `profiles`. Queries to the underlying service
-    /// are dispatched lazily.
+    /// This paginator automatically flattens results using `profiles`. Queries to the underlying
+    /// service are dispatched lazily.
     pub fn items(self) -> crate::operation::list_profiles::paginator::ListProfilesPaginatorItems {
         crate::operation::list_profiles::paginator::ListProfilesPaginatorItems(self)
     }
@@ -49,7 +49,8 @@ impl ListProfilesPaginator {
 
     /// Create the pagination stream
     ///
-    /// _Note:_ No requests will be dispatched until the stream is used (eg. with [`.next().await`](tokio_stream::StreamExt::next)).
+    /// _Note:_ No requests will be dispatched until the stream is used (eg. with
+    /// [`.next().await`](tokio_stream::StreamExt::next)).
     pub fn send(
         self,
     ) -> impl ::tokio_stream::Stream<
@@ -71,16 +72,22 @@ impl ListProfilesPaginator {
         );
         ::aws_smithy_async::future::fn_stream::FnStream::new(move |tx| {
             ::std::boxed::Box::pin(async move {
-                // Build the input for the first time. If required fields are missing, this is where we'll produce an early error.
-                let mut input = match builder.build().map_err(::aws_smithy_http::result::SdkError::construction_failure) {
+                // Build the input for the first time. If required fields are missing, this is where we'll produce
+                // an early error.
+                let mut input = match builder
+                    .build()
+                    .map_err(::aws_smithy_http::result::SdkError::construction_failure)
+                {
                     ::std::result::Result::Ok(input) => input,
                     ::std::result::Result::Err(e) => {
                         let _ = tx.send(::std::result::Result::Err(e)).await;
                         return;
-                    }
+                    },
                 };
                 loop {
-                    let resp = crate::operation::list_profiles::ListProfiles::orchestrate(&runtime_plugins, input.clone()).await;
+                    let resp =
+                        crate::operation::list_profiles::ListProfiles::orchestrate(&runtime_plugins, input.clone())
+                            .await;
                     // If the input member is None or it was an error
                     let done = match resp {
                         ::std::result::Result::Ok(ref resp) => {
@@ -92,7 +99,7 @@ impl ListProfilesPaginator {
                                 input.next_token = new_token.cloned();
                                 is_empty
                             }
-                        }
+                        },
                         ::std::result::Result::Err(_) => true,
                     };
                     if tx.send(resp).await.is_err() {
@@ -116,9 +123,11 @@ pub struct ListProfilesPaginatorItems(ListProfilesPaginator);
 impl ListProfilesPaginatorItems {
     /// Create the pagination stream
     ///
-    /// _Note: No requests will be dispatched until the stream is used (eg. with [`.next().await`](tokio_stream::StreamExt::next))._
+    /// _Note: No requests will be dispatched until the stream is used (eg. with
+    /// [`.next().await`](tokio_stream::StreamExt::next))._
     ///
-    /// To read the entirety of the paginator, use [`.collect::<Result<Vec<_>, _>()`](tokio_stream::StreamExt::collect).
+    /// To read the entirety of the paginator, use [`.collect::<Result<Vec<_>,
+    /// _>()`](tokio_stream::StreamExt::collect).
     pub fn send(
         self,
     ) -> impl ::tokio_stream::Stream<
@@ -130,7 +139,10 @@ impl ListProfilesPaginatorItems {
             >,
         >,
     > + ::std::marker::Unpin {
-        ::aws_smithy_async::future::fn_stream::TryFlatMap::new(self.0.send())
-            .flat_map(|page| crate::lens::lens_list_profiles_output_profiles(page).unwrap_or_default().into_iter())
+        ::aws_smithy_async::future::fn_stream::TryFlatMap::new(self.0.send()).flat_map(|page| {
+            crate::lens::lens_list_profiles_output_profiles(page)
+                .unwrap_or_default()
+                .into_iter()
+        })
     }
 }

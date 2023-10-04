@@ -1,44 +1,39 @@
 use serde::de::DeserializeOwned;
-
-use crate::{
-    JsonStore,
-    Result,
-    State,
+use serde_json::{
+    Map,
+    Value,
 };
 
-pub fn init_global() -> Result<()> {
-    State::load_into_global()
+use crate::sqlite::database;
+use crate::Result;
+
+pub fn all() -> Result<Map<String, Value>> {
+    database()?.all_state_values()
 }
 
-pub fn set_value(key: impl Into<String>, value: impl Into<serde_json::Value>) -> Result<()> {
-    let mut state = State::load()?;
-    state.set(key, value);
-    state.save_to_file()?;
+pub fn set_value(key: impl AsRef<str>, value: impl Into<Value>) -> Result<()> {
+    database()?.set_state_value(key, value)?;
     Ok(())
 }
 
 pub fn remove_value(key: impl AsRef<str>) -> Result<()> {
-    let mut state = State::load()?;
-    state.remove(key);
-    state.save_to_file()?;
+    database()?.unset_state_value(key)?;
     Ok(())
 }
 
-pub fn get_value(key: impl AsRef<str>) -> Result<Option<serde_json::Value>> {
-    Ok(State::load()?.get(key).map(|v| v.clone()))
+pub fn get_value(key: impl AsRef<str>) -> Result<Option<Value>> {
+    database()?.get_state_value(key)
 }
 
 pub fn get<T: DeserializeOwned>(key: impl AsRef<str>) -> Result<Option<T>> {
-    let state = State::load()?;
-    let v = state.get(key);
-    match v.as_deref() {
-        Some(value) => Ok(Some(serde_json::from_value(value.clone())?)),
-        None => Ok(None),
-    }
+    Ok(database()?
+        .get_state_value(key)?
+        .map(|value| serde_json::from_value(value.clone()))
+        .transpose()?)
 }
 
 pub fn get_bool(key: impl AsRef<str>) -> Result<Option<bool>> {
-    Ok(State::load()?.get_bool(key))
+    Ok(database()?.get_state_value(key)?.and_then(|value| value.as_bool()))
 }
 
 pub fn get_bool_or(key: impl AsRef<str>, default: bool) -> bool {
@@ -46,7 +41,10 @@ pub fn get_bool_or(key: impl AsRef<str>, default: bool) -> bool {
 }
 
 pub fn get_string(key: impl AsRef<str>) -> Result<Option<String>> {
-    Ok(State::load()?.get_string(key))
+    Ok(database()?.get_state_value(key)?.and_then(|value| match value {
+        Value::String(s) => Some(s),
+        _ => None,
+    }))
 }
 
 pub fn get_string_or(key: impl AsRef<str>, default: impl Into<String>) -> String {
@@ -54,7 +52,7 @@ pub fn get_string_or(key: impl AsRef<str>, default: impl Into<String>) -> String
 }
 
 pub fn get_int(key: impl AsRef<str>) -> Result<Option<i64>> {
-    Ok(State::load()?.get_int(key))
+    Ok(database()?.get_state_value(key)?.and_then(|value| value.as_i64()))
 }
 
 pub fn get_int_or(key: impl AsRef<str>, default: i64) -> i64 {

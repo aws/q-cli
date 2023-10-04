@@ -49,6 +49,9 @@ message ClientOriginatedMessage {
     CheckForUpdatesRequest check_for_updates_request = 138;
     UpdateApplicationRequest update_application_request = 139;
     HistoryQueryRequest history_query_request = 140;
+    AuthStatusRequest auth_status_request = 141;
+    AuthBuilderIdStartDeviceAuthorizationRequest auth_builder_id_start_device_authorization_request = 142;
+    AuthBuilderIdPollCreateTokenRequest auth_builder_id_poll_create_token_request = 143;
   }
 
   reserved 115;
@@ -77,6 +80,9 @@ message ServerOriginatedMessage {
     InstallResponse install_response = 113;
     CheckForUpdatesResponse check_for_updates_response = 114;
     HistoryQueryResponse history_query_response = 115;
+    AuthStatusResponse auth_status_response = 116;
+    AuthBuilderIdStartDeviceAuthorizationResponse auth_builder_id_start_device_authorization_response = 117;
+    AuthBuilderIdPollCreateTokenResponse auth_builder_id_poll_create_token_response = 118;
 
     Notification notification = 1000;
   }
@@ -152,6 +158,7 @@ message Window {
   optional Screen current_screen = 5;
 }
 
+// Acts like a rust 'Result<(), String>'
 message Result {
   enum Result {
     RESULT_OK = 0;
@@ -603,6 +610,39 @@ message HistoryQueryRequest {
 
 message HistoryQueryResponse {
   string json_array = 1;
+}
+
+/// Auth
+
+message AuthBuilderIdStartDeviceAuthorizationRequest {}
+
+message AuthBuilderIdStartDeviceAuthorizationResponse {
+  string code = 1;
+  string url = 2;
+  string auth_request_id = 3;
+  int32 expires_in = 4;
+  int32 interval = 5;
+}
+
+message AuthBuilderIdPollCreateTokenRequest {
+  string auth_request_id = 1;
+}
+
+message AuthBuilderIdPollCreateTokenResponse {
+  enum PollStatus {
+    POLL_STATUS_COMPLETE = 0;
+    POLL_STATUS_PENDING = 1;
+    POLL_STATUS_ERROR = 2;
+  }
+
+  PollStatus status = 1;
+  optional string error = 2;
+}
+
+message AuthStatusRequest { }
+
+message AuthStatusResponse {
+  bool builder_id = 1;
 }
 
 /// Notifications

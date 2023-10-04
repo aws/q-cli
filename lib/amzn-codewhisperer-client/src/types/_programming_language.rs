@@ -13,7 +13,8 @@ impl ProgrammingLanguage {
     }
 }
 impl ProgrammingLanguage {
-    /// Creates a new builder-style object to manufacture [`ProgrammingLanguage`](crate::types::ProgrammingLanguage).
+    /// Creates a new builder-style object to manufacture
+    /// [`ProgrammingLanguage`](crate::types::ProgrammingLanguage).
     pub fn builder() -> crate::types::builders::ProgrammingLanguageBuilder {
         crate::types::builders::ProgrammingLanguageBuilder::default()
     }
@@ -31,16 +32,20 @@ impl ProgrammingLanguageBuilder {
         self.language_name = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_language_name(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.language_name = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_language_name(&self) -> &::std::option::Option<::std::string::String> {
         &self.language_name
     }
-    /// Consumes the builder and constructs a [`ProgrammingLanguage`](crate::types::ProgrammingLanguage).
+
+    /// Consumes the builder and constructs a
+    /// [`ProgrammingLanguage`](crate::types::ProgrammingLanguage).
     pub fn build(self) -> crate::types::ProgrammingLanguage {
         crate::types::ProgrammingLanguage {
             language_name: self.language_name,

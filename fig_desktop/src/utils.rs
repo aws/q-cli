@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::future::Future;
 
 use http::header::{
     ACCESS_CONTROL_ALLOW_ORIGIN,
@@ -22,39 +23,50 @@ use wry::application::dpi::{
     Size,
 };
 use wry::application::window::Icon;
+use wry::webview::RequestAsyncResponder;
 
 /// Determines if the build is ran in debug mode
 pub fn is_cargo_debug_build() -> bool {
     cfg!(debug_assertions) && !fig_settings::state::get_bool_or("developer.override-cargo-debug", false)
 }
 
-pub fn wrap_custom_protocol(
-    f: impl Fn(&HttpRequest<Vec<u8>>) -> anyhow::Result<HttpResponse<Cow<'static, [u8]>>> + 'static,
-) -> impl Fn(&HttpRequest<Vec<u8>>) -> wry::Result<HttpResponse<Cow<'static, [u8]>>> + 'static {
-    move |req: &HttpRequest<Vec<u8>>| -> wry::Result<HttpResponse<Cow<[u8]>>> {
-        Ok(match f(req) {
-            Ok(res) => res,
-            Err(err) => {
-                let response = HttpResponse::builder()
-                    .status(StatusCode::BAD_REQUEST)
-                    .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
-                match req
-                    .headers()
-                    .get("Accept")
-                    .and_then(|accept| accept.to_str().ok())
-                    .and_then(|accept| accept.split('/').last())
-                {
-                    Some("json") => response.header(CONTENT_TYPE, "application/json").body(
-                        serde_json::to_vec(&json!({ "error": err.to_string() }))
-                            .map(Into::into)
-                            .unwrap_or_else(|_| b"{}".as_ref().into()),
-                    ),
-                    _ => response
-                        .header(CONTENT_TYPE, "text/plain")
-                        .body(err.to_string().into_bytes().into()),
-                }?
-            },
-        })
+pub fn wrap_custom_protocol<F, Fut>(f: F) -> impl Fn(HttpRequest<Vec<u8>>, RequestAsyncResponder) + 'static
+where
+    F: Fn(HttpRequest<Vec<u8>>) -> Fut + Send + Sync + Copy + 'static,
+    Fut: Future<Output = anyhow::Result<HttpResponse<Cow<'static, [u8]>>>> + Send + Sync + 'static,
+{
+    move |req: HttpRequest<Vec<u8>>, responder: RequestAsyncResponder| {
+        tokio::spawn(async move {
+            let accept_json = req
+                .headers()
+                .get("Accept")
+                .and_then(|accept| accept.to_str().ok())
+                .and_then(|accept| accept.split('/').last())
+                .map_or(false, |accept| accept == "json");
+
+            let response = match f(req).await {
+                Ok(res) => res,
+                Err(err) => {
+                    let response = HttpResponse::builder()
+                        .status(StatusCode::BAD_REQUEST)
+                        .header(ACCESS_CONTROL_ALLOW_ORIGIN, "*");
+                    if accept_json {
+                        response.header(CONTENT_TYPE, "application/json").body(
+                            serde_json::to_vec(&json!({ "error": err.to_string() }))
+                                .map(Into::into)
+                                .unwrap_or_else(|_| b"{}".as_ref().into()),
+                        )
+                    } else {
+                        response
+                            .header(CONTENT_TYPE, "text/plain")
+                            .body(err.to_string().into_bytes().into())
+                    }
+                    .unwrap()
+                },
+            };
+
+            responder.respond(response);
+        });
     }
 }
 

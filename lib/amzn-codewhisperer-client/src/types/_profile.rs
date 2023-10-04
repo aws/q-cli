@@ -23,26 +23,34 @@ impl Profile {
     pub fn arn(&self) -> ::std::option::Option<&str> {
         self.arn.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn identity_details(&self) -> ::std::option::Option<&crate::types::IdentityDetails> {
         self.identity_details.as_ref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn profile_name(&self) -> ::std::option::Option<&str> {
         self.profile_name.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn reference_tracker_configuration(&self) -> ::std::option::Option<&crate::types::ReferenceTrackerConfiguration> {
+    pub fn reference_tracker_configuration(
+        &self,
+    ) -> ::std::option::Option<&crate::types::ReferenceTrackerConfiguration> {
         self.reference_tracker_configuration.as_ref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn kms_key_arn(&self) -> ::std::option::Option<&str> {
         self.kms_key_arn.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn status(&self) -> ::std::option::Option<&crate::types::ProfileStatus> {
         self.status.as_ref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn error_details(&self) -> ::std::option::Option<&str> {
         self.error_details.as_deref()
@@ -73,99 +81,125 @@ impl ProfileBuilder {
         self.arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.arn
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn identity_details(mut self, input: crate::types::IdentityDetails) -> Self {
         self.identity_details = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_identity_details(mut self, input: ::std::option::Option<crate::types::IdentityDetails>) -> Self {
         self.identity_details = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_identity_details(&self) -> &::std::option::Option<crate::types::IdentityDetails> {
         &self.identity_details
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn profile_name(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.profile_name = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_profile_name(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.profile_name = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_profile_name(&self) -> &::std::option::Option<::std::string::String> {
         &self.profile_name
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn reference_tracker_configuration(mut self, input: crate::types::ReferenceTrackerConfiguration) -> Self {
         self.reference_tracker_configuration = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn set_reference_tracker_configuration(mut self, input: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>) -> Self {
+    pub fn set_reference_tracker_configuration(
+        mut self,
+        input: ::std::option::Option<crate::types::ReferenceTrackerConfiguration>,
+    ) -> Self {
         self.reference_tracker_configuration = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn get_reference_tracker_configuration(&self) -> &::std::option::Option<crate::types::ReferenceTrackerConfiguration> {
+    pub fn get_reference_tracker_configuration(
+        &self,
+    ) -> &::std::option::Option<crate::types::ReferenceTrackerConfiguration> {
         &self.reference_tracker_configuration
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn kms_key_arn(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.kms_key_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_kms_key_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.kms_key_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_kms_key_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.kms_key_arn
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn status(mut self, input: crate::types::ProfileStatus) -> Self {
         self.status = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_status(mut self, input: ::std::option::Option<crate::types::ProfileStatus>) -> Self {
         self.status = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_status(&self) -> &::std::option::Option<crate::types::ProfileStatus> {
         &self.status
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn error_details(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.error_details = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_error_details(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.error_details = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_error_details(&self) -> &::std::option::Option<::std::string::String> {
         &self.error_details
     }
+
     /// Consumes the builder and constructs a [`Profile`](crate::types::Profile).
     pub fn build(self) -> crate::types::Profile {
         crate::types::Profile {

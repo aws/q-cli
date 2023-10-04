@@ -28,9 +28,7 @@
   "name": "@withfig/api-bindings",
   "author": "The Fig Team",
   "dependencies": {
-    "@fig/fig-api-proto": "workspace:^",
-    "long": "^5.2.3",
-    "protobufjs": "^7.2.4"
+    "@fig/fig-api-proto": "workspace:^"
   },
   "devDependencies": {
     "@fig/eslint-config-fig": "^2.1.0",

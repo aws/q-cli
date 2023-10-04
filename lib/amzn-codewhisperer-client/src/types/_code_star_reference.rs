@@ -13,7 +13,8 @@ impl CodeStarReference {
     }
 }
 impl CodeStarReference {
-    /// Creates a new builder-style object to manufacture [`CodeStarReference`](crate::types::CodeStarReference).
+    /// Creates a new builder-style object to manufacture
+    /// [`CodeStarReference`](crate::types::CodeStarReference).
     pub fn builder() -> crate::types::builders::CodeStarReferenceBuilder {
         crate::types::builders::CodeStarReferenceBuilder::default()
     }
@@ -31,16 +32,20 @@ impl CodeStarReferenceBuilder {
         self.connection_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_connection_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.connection_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_connection_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.connection_arn
     }
-    /// Consumes the builder and constructs a [`CodeStarReference`](crate::types::CodeStarReference).
+
+    /// Consumes the builder and constructs a
+    /// [`CodeStarReference`](crate::types::CodeStarReference).
     pub fn build(self) -> crate::types::CodeStarReference {
         crate::types::CodeStarReference {
             connection_arn: self.connection_arn,

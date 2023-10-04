@@ -9,8 +9,14 @@ pub fn de_disassociate_customization_permission_http_error(
     crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionError,
 > {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionError::unhandled)?;
+    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(
+        _response_status,
+        _response_headers,
+        _response_body,
+    )
+    .map_err(
+        crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionError::unhandled,
+    )?;
     generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     let error_code = match generic.code() {

@@ -13,7 +13,8 @@ impl EvaluationMetrics {
     }
 }
 impl EvaluationMetrics {
-    /// Creates a new builder-style object to manufacture [`EvaluationMetrics`](crate::types::EvaluationMetrics).
+    /// Creates a new builder-style object to manufacture
+    /// [`EvaluationMetrics`](crate::types::EvaluationMetrics).
     pub fn builder() -> crate::types::builders::EvaluationMetricsBuilder {
         crate::types::builders::EvaluationMetricsBuilder::default()
     }
@@ -31,16 +32,20 @@ impl EvaluationMetricsBuilder {
         self.composite_score = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_composite_score(mut self, input: ::std::option::Option<i32>) -> Self {
         self.composite_score = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_composite_score(&self) -> &::std::option::Option<i32> {
         &self.composite_score
     }
-    /// Consumes the builder and constructs a [`EvaluationMetrics`](crate::types::EvaluationMetrics).
+
+    /// Consumes the builder and constructs a
+    /// [`EvaluationMetrics`](crate::types::EvaluationMetrics).
     pub fn build(self) -> crate::types::EvaluationMetrics {
         crate::types::EvaluationMetrics {
             composite_score: self.composite_score,

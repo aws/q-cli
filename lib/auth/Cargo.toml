@@ -1,0 +1,21 @@
+[package]
+name = "auth"
+authors.workspace = true
+edition.workspace = true
+homepage.workspace = true
+publish.workspace = true
+version.workspace = true
+
+[dependencies]
+aws-sdk-ssooidc = "0.31.2"
+aws-smithy-async = "0.56.1"
+aws-types = "0.56.1"
+fig_util = { path = "../fig_util" }
+once_cell = "1.18.0"
+security-framework = "2.9.2"
+serde = { version = "1.0.188", features = ["derive"] }
+serde_json = "1.0.107"
+thiserror = "1.0.49"
+time = { version = "0.3.29", features = ["serde"] }
+tokio = { version = "1.32.0", features = ["full"] }
+tracing = "0.1.37"

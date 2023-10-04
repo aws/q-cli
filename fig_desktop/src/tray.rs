@@ -7,24 +7,25 @@ use fig_install::{
 };
 use fig_integrations::shell::ShellExt;
 use fig_util::manifest::Channel;
+use muda::{
+    Menu,
+    MenuEvent,
+    MenuId,
+    MenuItem,
+    MenuItemBuilder,
+    PredefinedMenuItem,
+    Submenu,
+};
 use tracing::{
     error,
     trace,
 };
-use wry::application::event_loop::ControlFlow;
-use wry::application::menu::{
-    ContextMenu,
-    MenuId,
-    MenuItem,
-    MenuItemAttributes,
-};
-#[cfg(target_os = "macos")]
-use wry::application::platform::macos::SystemTrayBuilderExtMacOS;
-use wry::application::system_tray::{
+use tray_icon::{
     Icon,
-    SystemTray,
-    SystemTrayBuilder,
+    TrayIcon,
+    TrayIconBuilder,
 };
+use wry::application::event_loop::ControlFlow;
 
 use crate::event::{
     Event,
@@ -109,12 +110,12 @@ fn tray_update(proxy: &EventLoopProxy) {
     });
 }
 
-pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
-    match id {
-        id if id == MenuId::new("debugger-refresh") => {
+pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
+    match &*menu_event.id().0 {
+        "debugger-refresh" => {
             proxy.send_event(Event::ReloadTray).unwrap();
         },
-        id if id == MenuId::new("dashboard-devtools") => {
+        "dashboard-devtools" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID,
@@ -122,7 +123,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("autocomplete-devtools") => {
+        "autocomplete-devtools" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: AUTOCOMPLETE_ID,
@@ -130,7 +131,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("companion-devtools") => {
+        "companion-devtools" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: COMPANION_ID,
@@ -138,13 +139,13 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("update") => {
+        "update" => {
             tray_update(proxy);
         },
-        id if id == MenuId::new("quit") => {
+        "quit" => {
             proxy.send_event(Event::ControlFlow(ControlFlow::Exit)).unwrap();
         },
-        id if id == MenuId::new("dashboard") => {
+        "dashboard" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
@@ -155,7 +156,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("onboarding") => {
+        "onboarding" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
@@ -168,7 +169,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("settings") => {
+        "settings" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
@@ -181,7 +182,7 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("not-working") => {
+        "not-working" => {
             proxy
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
@@ -194,25 +195,25 @@ pub fn handle_event(id: MenuId, proxy: &EventLoopProxy) {
                 })
                 .unwrap();
         },
-        id if id == MenuId::new("uninstall") => {
+        "uninstall" => {
             tokio::runtime::Handle::current().spawn(async {
                 fig_install::uninstall(InstallComponents::all()).await.ok();
                 std::process::exit(0);
             });
         },
-        id if id == MenuId::new("community") => {
+        "community" => {
             if let Err(err) = fig_util::open_url("https://fig.io/community") {
                 error!(%err, "Failed to open community url")
             }
         },
-        id if id == MenuId::new("user-manual") => {
+        "user-manual" => {
             if let Err(err) = fig_util::open_url("https://fig.io/user-manual") {
                 error!(%err, "Failed to open user manual url")
             }
         },
         id => {
             for channel in Channel::all() {
-                if id == MenuId::new(&format!("channel-{channel}")) {
+                if id == format!("channel-{channel}") {
                     fig_settings::state::set_value("updates.channel", channel.to_string()).ok();
                     proxy.send_event(Event::ReloadTray).unwrap();
                     tray_update(proxy);
@@ -252,10 +253,10 @@ fn load_from_memory() -> Icon {
 }
 
 pub fn build_tray(
-    event_loop_window_target: &EventLoopWindowTarget,
+    _event_loop_window_target: &EventLoopWindowTarget,
     _debug_state: &DebugState,
     _figterm_state: &FigtermState,
-) -> wry::Result<SystemTray> {
+) -> tray_icon::Result<TrayIcon> {
     let tray_menu = get_context_menu();
 
     cfg_if!(
@@ -268,18 +269,18 @@ pub fn build_tray(
     );
 
     #[allow(unused_mut)]
-    let mut tray_builder = SystemTrayBuilder::new(icon, Some(tray_menu));
+    let mut tray_builder = TrayIconBuilder::new().with_icon(icon).with_menu(Box::new(tray_menu));
 
     #[cfg(target_os = "macos")]
     {
         tray_builder = tray_builder.with_icon_as_template(true);
     }
 
-    Ok(tray_builder.build(event_loop_window_target)?)
+    tray_builder.build()
 }
 
-pub fn get_context_menu() -> ContextMenu {
-    let mut tray_menu = ContextMenu::new();
+pub fn get_context_menu() -> Menu {
+    let mut tray_menu = Menu::new();
 
     let elements = menu();
     for elem in elements {
@@ -293,7 +294,7 @@ enum MenuElement {
     Info(Cow<'static, str>),
     Entry {
         emoji_icon: Option<Cow<'static, str>>,
-        image_icon: Option<wry::application::window::Icon>,
+        // image_icon: Option<wry::application::window::Icon>,
         text: Cow<'static, str>,
         id: Cow<'static, str>,
     },
@@ -307,33 +308,33 @@ enum MenuElement {
 impl MenuElement {
     fn entry(
         emoji_icon: Option<Cow<'static, str>>,
-        image: Option<&'static [u8]>,
+        _image: Option<&'static [u8]>,
         text: impl Into<Cow<'static, str>>,
         id: impl Into<Cow<'static, str>>,
     ) -> Self {
-        cfg_if::cfg_if! {
-            if #[cfg(target_os = "macos")] {
-                let image_icon = match image {
-                    Some(image) => {
-                        let image = image::load_from_memory(image)
-                            .expect("Failed to open icon path")
-                            .to_rgba8();
+        // cfg_if::cfg_if! {
+        //     if #[cfg(target_os = "macos")] {
+        //         let image_icon = match image {
+        //             Some(image) => {
+        //                 let image = image::load_from_memory(image)
+        //                     .expect("Failed to open icon path")
+        //                     .to_rgba8();
 
-                        let (width, height) = image.dimensions();
+        //                 let (width, height) = image.dimensions();
 
-                        Icon::from_rgba(image.into_raw(), width, height).ok()
-                    },
-                    None => None,
-                };
-            } else {
-                let _ = image;
-                let image_icon = None;
-            }
-        };
+        //                 wry::application::window::Icon::from_rgba(image.into_raw(), width, height).ok()
+        //             },
+        //             None => None,
+        //         };
+        //     } else {
+        //         let _ = image;
+        //         let image_icon = None;
+        //     }
+        // };
 
         Self::Entry {
             emoji_icon,
-            image_icon,
+            // image_icon,
             text: text.into(),
             id: id.into(),
         }
@@ -346,37 +347,76 @@ impl MenuElement {
         }
     }
 
-    fn add_to_menu(&self, menu: &mut ContextMenu) {
+    fn add_to_menu(&self, menu: &mut Menu) {
         match self {
             MenuElement::Info(info) => {
-                menu.add_item(MenuItemAttributes::new(info).with_enabled(false));
+                // menu.append(MenuItemAttributes::new(info).with_enabled(false));
+                menu.append(&MenuItem::new(info, false, None)).unwrap();
             },
             MenuElement::Entry {
-                emoji_icon,
-                image_icon,
-                text,
-                id,
+                emoji_icon, text, id, ..
             } => {
                 let text = match (std::env::consts::OS, emoji_icon) {
                     ("linux", Some(emoji_icon)) => format!("{emoji_icon} {text}"),
                     _ => text.to_string(),
                 };
-                let menu_item = MenuItemAttributes::new(&text).with_id(MenuId::new(id));
-                let mut custom_menu_item = menu.add_item(menu_item);
-                if let Some(image_icon) = &image_icon {
-                    custom_menu_item.set_icon(image_icon.clone());
-                }
+                let menu_item = MenuItemBuilder::new()
+                    .text(text)
+                    .id(MenuId::new(id))
+                    .enabled(true)
+                    .build();
+                menu.append(&menu_item).unwrap();
+                // if let Some(image_icon) = &image_icon {
+                //     custom_menu_item.set_icon(image_icon.clone());
+                // }
             },
             MenuElement::Separator => {
-                menu.add_native_item(MenuItem::Separator);
+                menu.append(&PredefinedMenuItem::separator()).unwrap();
             },
             MenuElement::SubMenu { title, elements } => {
-                let mut sub_menu = ContextMenu::new();
+                let sub_menu = Submenu::new(title, true);
                 for element in elements {
-                    element.add_to_menu(&mut sub_menu);
+                    element.add_to_submenu(&sub_menu);
                 }
 
-                menu.add_submenu(title, true, sub_menu);
+                menu.append(&sub_menu).unwrap();
+            },
+        }
+    }
+
+    fn add_to_submenu(&self, submenu: &Submenu) {
+        match self {
+            MenuElement::Info(info) => {
+                // menu.append(MenuItemAttributes::new(info).with_enabled(false));
+                submenu.append(&MenuItem::new(info, false, None)).unwrap();
+            },
+            MenuElement::Entry {
+                emoji_icon, text, id, ..
+            } => {
+                let text: String = match (std::env::consts::OS, emoji_icon) {
+                    ("linux", Some(emoji_icon)) => format!("{emoji_icon} {text}"),
+                    _ => text.to_string(),
+                };
+                let menu_item = MenuItemBuilder::new()
+                    .text(text)
+                    .id(MenuId::new(id))
+                    .enabled(true)
+                    .build();
+                submenu.append(&menu_item).unwrap();
+                // if let Some(image_icon) = &image_icon {
+                //     custom_menu_item.set_icon(image_icon.clone());
+                // }
+            },
+            MenuElement::Separator => {
+                submenu.append(&PredefinedMenuItem::separator()).unwrap();
+            },
+            MenuElement::SubMenu { title, elements } => {
+                let sub_menu = Submenu::new(title, true);
+                for element in elements {
+                    element.add_to_submenu(&sub_menu);
+                }
+
+                submenu.append(&sub_menu).unwrap();
             },
         }
     }

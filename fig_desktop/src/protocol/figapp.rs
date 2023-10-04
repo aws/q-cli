@@ -40,7 +40,7 @@ fn transform_path(path: &Path) -> Cow<Path> {
     }
 }
 
-pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
+pub async fn handle(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let mut url_parts = request.uri().clone().into_parts();
     url_parts.scheme = Some(Scheme::HTTPS);
 
@@ -76,7 +76,7 @@ pub fn handle(request: &Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static
         },
     };
 
-    let data = std::fs::read(&path)?;
+    let data = tokio::fs::read(&path).await?;
 
     let mime = match infer::get(&data) {
         Some(mime) => mime.to_string(),

@@ -12,7 +12,10 @@ pub fn ser_update_profile_input(
     if let Some(var_3) = &input.reference_tracker_configuration {
         #[allow(unused_mut)]
         let mut object_4 = object.key("referenceTrackerConfiguration").start_object();
-        crate::protocol_serde::shape_reference_tracker_configuration::ser_reference_tracker_configuration(&mut object_4, var_3)?;
+        crate::protocol_serde::shape_reference_tracker_configuration::ser_reference_tracker_configuration(
+            &mut object_4,
+            var_3,
+        )?;
         object_4.finish();
     }
     if let Some(var_5) = &input.kms_key_arn {

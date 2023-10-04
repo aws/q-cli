@@ -46,28 +46,39 @@
 #[allow(missing_docs)] // documentation missing in model
 #[non_exhaustive]
 #[derive(
-    ::std::clone::Clone, ::std::cmp::Eq, ::std::cmp::Ord, ::std::cmp::PartialEq, ::std::cmp::PartialOrd, ::std::fmt::Debug, ::std::hash::Hash,
+    ::std::clone::Clone,
+    ::std::cmp::Eq,
+    ::std::cmp::Ord,
+    ::std::cmp::PartialEq,
+    ::std::cmp::PartialOrd,
+    ::std::fmt::Debug,
+    ::std::hash::Hash,
 )]
 pub enum CustomizationStatus {
     /// After a successful activation, a customization has a status of ACTIVATED.
     Activated,
     /// After an activation request is received, a customization has a status of ACTIVATING.
     Activating,
-    /// In the event of a failure during an activation operation, a customization will be assigned a status of ACTIVATION_FAILED.
+    /// In the event of a failure during an activation operation, a customization will be assigned a
+    /// status of ACTIVATION_FAILED.
     ActivationFailed,
-    /// Upon successful creation or deactivation, or failed activation, a customization has a status of CREATED.
+    /// Upon successful creation or deactivation, or failed activation, a customization has a status
+    /// of CREATED.
     Created,
     /// After a creation request is received, a customization has a status of CREATING.
     Creating,
-    /// In the event of a failure during a creation operation, a customization will be assigned a status of CREATION_FAILED.
+    /// In the event of a failure during a creation operation, a customization will be assigned a
+    /// status of CREATION_FAILED.
     CreationFailed,
     /// After a deactivation request is received, a customization has a status of DEACTIVATING.
     Deactivating,
-    /// In the event of a failure during a deactivation operation, a customization will be assigned a status of DEACTIVATION_FAILED.
+    /// In the event of a failure during a deactivation operation, a customization will be assigned
+    /// a status of DEACTIVATION_FAILED.
     DeactivationFailed,
     /// After an delete request is received, a customization has a status of DELETING.
     Deleting,
-    /// In the event of a failure during a delete operation, a customization will be assigned a status of DELETION_FAILED.
+    /// In the event of a failure during a delete operation, a customization will be assigned a
+    /// status of DELETION_FAILED.
     DeletionFailed,
     /// `Unknown` contains new variants that have been added since this code was generated.
     Unknown(crate::primitives::UnknownVariantValue),
@@ -113,6 +124,7 @@ impl CustomizationStatus {
             CustomizationStatus::Unknown(value) => value.as_str(),
         }
     }
+
     /// Returns all the `&str` representations of the enum members.
     pub const fn values() -> &'static [&'static str] {
         &[

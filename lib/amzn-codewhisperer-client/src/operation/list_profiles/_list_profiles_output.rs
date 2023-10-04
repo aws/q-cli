@@ -14,6 +14,7 @@ impl ListProfilesOutput {
     pub fn profiles(&self) -> ::std::option::Option<&[crate::types::Profile]> {
         self.profiles.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(&self) -> ::std::option::Option<&str> {
         self.next_token.as_deref()
@@ -25,7 +26,8 @@ impl ::aws_http::request_id::RequestId for ListProfilesOutput {
     }
 }
 impl ListProfilesOutput {
-    /// Creates a new builder-style object to manufacture [`ListProfilesOutput`](crate::operation::list_profiles::ListProfilesOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`ListProfilesOutput`](crate::operation::list_profiles::ListProfilesOutput).
     pub fn builder() -> crate::operation::list_profiles::builders::ListProfilesOutputBuilder {
         crate::operation::list_profiles::builders::ListProfilesOutputBuilder::default()
     }
@@ -43,36 +45,41 @@ impl ListProfilesOutputBuilder {
     /// Appends an item to `profiles`.
     ///
     /// To override the contents of this collection use [`set_profiles`](Self::set_profiles).
-    ///
     pub fn profiles(mut self, input: crate::types::Profile) -> Self {
         let mut v = self.profiles.unwrap_or_default();
         v.push(input);
         self.profiles = ::std::option::Option::Some(v);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_profiles(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::Profile>>) -> Self {
         self.profiles = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_profiles(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::Profile>> {
         &self.profiles
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.next_token = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_next_token(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.next_token = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_next_token(&self) -> &::std::option::Option<::std::string::String> {
         &self.next_token
     }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -82,7 +89,9 @@ impl ListProfilesOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`ListProfilesOutput`](crate::operation::list_profiles::ListProfilesOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`ListProfilesOutput`](crate::operation::list_profiles::ListProfilesOutput).
     pub fn build(self) -> crate::operation::list_profiles::ListProfilesOutput {
         crate::operation::list_profiles::ListProfilesOutput {
             profiles: self.profiles,

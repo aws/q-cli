@@ -13,13 +13,15 @@ impl SsoIdentityDetails {
     pub fn instance_arn(&self) -> ::std::option::Option<&str> {
         self.instance_arn.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn oidc_client_id(&self) -> ::std::option::Option<&str> {
         self.oidc_client_id.as_deref()
     }
 }
 impl SsoIdentityDetails {
-    /// Creates a new builder-style object to manufacture [`SsoIdentityDetails`](crate::types::SsoIdentityDetails).
+    /// Creates a new builder-style object to manufacture
+    /// [`SsoIdentityDetails`](crate::types::SsoIdentityDetails).
     pub fn builder() -> crate::types::builders::SsoIdentityDetailsBuilder {
         crate::types::builders::SsoIdentityDetailsBuilder::default()
     }
@@ -38,30 +40,37 @@ impl SsoIdentityDetailsBuilder {
         self.instance_arn = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_instance_arn(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.instance_arn = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_instance_arn(&self) -> &::std::option::Option<::std::string::String> {
         &self.instance_arn
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn oidc_client_id(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.oidc_client_id = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_oidc_client_id(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.oidc_client_id = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_oidc_client_id(&self) -> &::std::option::Option<::std::string::String> {
         &self.oidc_client_id
     }
-    /// Consumes the builder and constructs a [`SsoIdentityDetails`](crate::types::SsoIdentityDetails).
+
+    /// Consumes the builder and constructs a
+    /// [`SsoIdentityDetails`](crate::types::SsoIdentityDetails).
     pub fn build(self) -> crate::types::SsoIdentityDetails {
         crate::types::SsoIdentityDetails {
             instance_arn: self.instance_arn,

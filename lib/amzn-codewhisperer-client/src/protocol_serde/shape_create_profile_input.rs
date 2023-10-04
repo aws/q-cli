@@ -15,7 +15,10 @@ pub fn ser_create_profile_input(
     if let Some(var_4) = &input.reference_tracker_configuration {
         #[allow(unused_mut)]
         let mut object_5 = object.key("referenceTrackerConfiguration").start_object();
-        crate::protocol_serde::shape_reference_tracker_configuration::ser_reference_tracker_configuration(&mut object_5, var_4)?;
+        crate::protocol_serde::shape_reference_tracker_configuration::ser_reference_tracker_configuration(
+            &mut object_5,
+            var_4,
+        )?;
         object_5.finish();
     }
     if let Some(var_6) = &input.client_token {

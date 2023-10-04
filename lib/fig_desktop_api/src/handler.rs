@@ -23,6 +23,7 @@ use fig_proto::prost::Message;
 use tracing::warn;
 
 use crate::error::Result;
+use crate::kv::KVStore;
 use crate::requests::{
     self,
     RequestResult,
@@ -37,7 +38,7 @@ pub struct Wrapped<Ctx, Req> {
 
 #[async_trait::async_trait]
 pub trait EventHandler {
-    type Ctx: Sync + Send;
+    type Ctx: KVStore + Sync + Send;
 
     async fn notification(&self, request: Wrapped<Self::Ctx, NotificationRequest>) -> RequestResult {
         RequestResult::unimplemented(request.request)
@@ -103,7 +104,7 @@ pub fn response_to_b64(response_message: ServerOriginatedMessage) -> String {
     BASE64_STANDARD.encode(response_message.encode_to_vec())
 }
 
-pub async fn api_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
+pub async fn api_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
     event_handler: E,
     ctx: Ctx,
     request: ClientOriginatedMessage,
@@ -132,7 +133,7 @@ pub async fn api_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
     })
 }
 
-async fn handle_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
+async fn handle_request<Ctx: KVStore, E: EventHandler<Ctx = Ctx> + Sync>(
     event_handler: E,
     ctx: Ctx,
     message_id: i64,
@@ -200,6 +201,12 @@ async fn handle_request<Ctx, E: EventHandler<Ctx = Ctx> + Sync>(
                 InstallRequest(request) => install::install(request).await,
                 // history
                 HistoryQueryRequest(request) => history::query(request).await,
+                // auth
+                AuthStatusRequest(request) => auth::status(request).await,
+                AuthBuilderIdStartDeviceAuthorizationRequest(request) => {
+                    auth::builder_id_start_device_authorization(request, &ctx).await
+                },
+                AuthBuilderIdPollCreateTokenRequest(request) => auth::builder_id_poll_create_token(request, &ctx).await,
                 // other
                 OpenInExternalApplicationRequest(request) => other::open_in_external_application(request).await,
                 // deprecated

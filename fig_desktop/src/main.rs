@@ -104,11 +104,6 @@ async fn main() {
         fig_telemetry::sentry::capture_error(&err);
     }
 
-    if let Err(err) = fig_settings::state::init_global() {
-        error!(%err, "failed to init global state");
-        fig_telemetry::sentry::capture_error(&err);
-    }
-
     if cli.is_startup && !fig_settings::settings::get_bool_or("app.launchOnStartup", true) {
         std::process::exit(0);
     }
@@ -343,15 +338,6 @@ async fn migrate() {
         }
     }
 
-    match fig_request::defaults::get_default("userEmail") {
-        Ok(user) if user.is_empty() => {
-            fig_request::defaults::remove_default("userEmail").ok();
-            return;
-        },
-        Err(_) => return,
-        _ => {},
-    }
-
     // Set user as having completed onboarding
     fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
 
@@ -383,6 +369,4 @@ async fn migrate() {
         .for_each(|app| {
             let _: () = unsafe { msg_send![*app as *mut Object, terminate] };
         });
-
-    fig_request::defaults::remove_default("userEmail").ok();
 }

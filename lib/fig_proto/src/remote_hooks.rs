@@ -1,10 +1,10 @@
-use crate::fig::ShellContext;
 use crate::proto::local::{
     EditBufferHook,
     InterceptedKeyHook,
     PostExecHook,
     PreExecHook,
     PromptHook,
+    ShellContext,
     TerminalCursorCoordinates,
 };
 use crate::proto::remote::{

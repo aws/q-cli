@@ -216,12 +216,15 @@ pub async fn handle_request(
             // session_id: Some(session_id.clone()),
         };
 
-        let response = match fig_api_client::ai::request_cw(request).await {
-            // Err(err) if err.is_status(StatusCode::TOO_MANY_REQUESTS) => {
-            //     warn!("Too many requests, trying again in 1 second");
-            //     tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
-            //     continue;
-            // },
+        let response = match fig_api_client::ai::request_cw(request)
+            .await
+            .map_err(|err| err.into_service_error())
+        {
+            Err(err) if err.is_throttling_error() => {
+                warn!(%err, "Too many requests, trying again in 1 second");
+                tokio::time::sleep(Duration::from_secs(1).saturating_sub(debounce_duration)).await;
+                continue;
+            },
             other => other,
         };
 

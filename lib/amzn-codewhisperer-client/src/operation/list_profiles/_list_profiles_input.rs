@@ -13,13 +13,15 @@ impl ListProfilesInput {
     pub fn max_results(&self) -> ::std::option::Option<i32> {
         self.max_results
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(&self) -> ::std::option::Option<&str> {
         self.next_token.as_deref()
     }
 }
 impl ListProfilesInput {
-    /// Creates a new builder-style object to manufacture [`ListProfilesInput`](crate::operation::list_profiles::ListProfilesInput).
+    /// Creates a new builder-style object to manufacture
+    /// [`ListProfilesInput`](crate::operation::list_profiles::ListProfilesInput).
     pub fn builder() -> crate::operation::list_profiles::builders::ListProfilesInputBuilder {
         crate::operation::list_profiles::builders::ListProfilesInputBuilder::default()
     }
@@ -38,31 +40,43 @@ impl ListProfilesInputBuilder {
         self.max_results = ::std::option::Option::Some(input);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_max_results(mut self, input: ::std::option::Option<i32>) -> Self {
         self.max_results = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_max_results(&self) -> &::std::option::Option<i32> {
         &self.max_results
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.next_token = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_next_token(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.next_token = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_next_token(&self) -> &::std::option::Option<::std::string::String> {
         &self.next_token
     }
-    /// Consumes the builder and constructs a [`ListProfilesInput`](crate::operation::list_profiles::ListProfilesInput).
-    pub fn build(self) -> ::std::result::Result<crate::operation::list_profiles::ListProfilesInput, ::aws_smithy_http::operation::error::BuildError> {
+
+    /// Consumes the builder and constructs a
+    /// [`ListProfilesInput`](crate::operation::list_profiles::ListProfilesInput).
+    pub fn build(
+        self,
+    ) -> ::std::result::Result<
+        crate::operation::list_profiles::ListProfilesInput,
+        ::aws_smithy_http::operation::error::BuildError,
+    > {
         ::std::result::Result::Ok(crate::operation::list_profiles::ListProfilesInput {
             max_results: self.max_results,
             next_token: self.next_token,

@@ -303,12 +303,12 @@ impl UIElement {
         unsafe {
             let window_id = self.get_window_id().ok()?;
             let windows = if all_windows {
-                CFArray::<CFDictionary>::wrap_under_get_rule(display::CGWindowListCopyWindowInfo(
+                CFArray::<CFDictionary>::wrap_under_create_rule(display::CGWindowListCopyWindowInfo(
                     display::kCGWindowListOptionAll,
                     display::kCGNullWindowID,
                 ))
             } else {
-                CFArray::<CFDictionary>::wrap_under_get_rule(display::CGWindowListCopyWindowInfo(
+                CFArray::<CFDictionary>::wrap_under_create_rule(display::CGWindowListCopyWindowInfo(
                     display::kCGWindowListOptionOnScreenOnly
                         | display::kCGWindowListExcludeDesktopElements
                         | display::kCGWindowListOptionIncludingWindow,

@@ -3,7 +3,12 @@ pub(crate) fn de_string_list_type<'a, I>(
     tokens: &mut ::std::iter::Peekable<I>,
 ) -> Result<Option<::std::vec::Vec<::std::string::String>>, ::aws_smithy_json::deserialize::error::DeserializeError>
 where
-    I: Iterator<Item = Result<::aws_smithy_json::deserialize::Token<'a>, ::aws_smithy_json::deserialize::error::DeserializeError>>,
+    I: Iterator<
+        Item = Result<
+            ::aws_smithy_json::deserialize::Token<'a>,
+            ::aws_smithy_json::deserialize::error::DeserializeError,
+        >,
+    >,
 {
     match tokens.next().transpose()? {
         Some(::aws_smithy_json::deserialize::Token::ValueNull { .. }) => Ok(None),
@@ -14,7 +19,7 @@ where
                     Some(Ok(::aws_smithy_json::deserialize::Token::EndArray { .. })) => {
                         tokens.next().transpose().unwrap();
                         break;
-                    }
+                    },
                     _ => {
                         let value = ::aws_smithy_json::deserialize::token::expect_string_or_null(tokens.next())?
                             .map(|s| s.to_unescaped().map(|u| u.into_owned()))
@@ -22,11 +27,11 @@ where
                         if let Some(value) = value {
                             items.push(value);
                         }
-                    }
+                    },
                 }
             }
             Ok(Some(items))
-        }
+        },
         _ => Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
             "expected start array or null",
         )),

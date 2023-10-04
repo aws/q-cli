@@ -150,6 +150,13 @@ importers:
         version: 4.4.9
 
   proto:
+    dependencies:
+      long:
+        specifier: ^5.2.3
+        version: 5.2.3
+      protobufjs:
+        specifier: ^7.2.4
+        version: 7.2.5
     devDependencies:
       ts-proto:
         specifier: ~1.157.1
@@ -184,12 +191,6 @@ importers:
       '@fig/fig-api-proto':
         specifier: workspace:^
         version: link:../proto
-      long:
-        specifier: ^5.2.3
-        version: 5.2.3
-      protobufjs:
-        specifier: ^7.2.4
-        version: 7.2.5
     devDependencies:
       '@fig/eslint-config-fig':
         specifier: ^2.1.0

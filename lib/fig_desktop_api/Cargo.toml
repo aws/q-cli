@@ -8,12 +8,13 @@ version.workspace = true
 
 [dependencies]
 async-trait = "0.1.73"
+auth = { path = "../auth" }
 base64 = "0.21.0"
+bincode = "1.3.3"
 camino = { version = "1.1.3", features = ["serde1"] }
 cfg-if = "1.0.0"
 dashmap = "5.4.0"
 fig_api_client = { path = "../fig_api_client" }
-fig_history = { path = "../fig_history" }
 fig_install = { path = "../fig_install" }
 fig_integrations = { path = "../fig_integrations" }
 fig_proto = { path = "../fig_proto" }
@@ -27,6 +28,7 @@ shellexpand = "3.0.0"
 thiserror = "1.0.38"
 tokio = { version = "1", features = ["full"] }
 tracing = "0.1.36"
+uuid = { version = "1.4.1", features = ["v4"] }
 which = "4.4.0"
 whoami = "1.3.0"
 

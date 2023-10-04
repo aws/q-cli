@@ -9,17 +9,16 @@ pub fn de_unlock_service_linked_role_http_error(
     crate::operation::unlock_service_linked_role::UnlockServiceLinkedRoleError,
 > {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::unlock_service_linked_role::UnlockServiceLinkedRoleError::unhandled)?;
+    let mut generic_builder =
+        crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
+            .map_err(crate::operation::unlock_service_linked_role::UnlockServiceLinkedRoleError::unhandled)?;
     generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     let error_code = match generic.code() {
         Some(code) => code,
         None => {
-            return Err(crate::operation::unlock_service_linked_role::UnlockServiceLinkedRoleError::unhandled(
-                generic,
-            ))
-        }
+            return Err(crate::operation::unlock_service_linked_role::UnlockServiceLinkedRoleError::unhandled(generic));
+        },
     };
 
     let _error_message = generic.message().map(|msg| msg.to_owned());
@@ -86,7 +85,8 @@ pub fn de_unlock_service_linked_role_http_response(
 > {
     Ok({
         #[allow(unused_mut)]
-        let mut output = crate::operation::unlock_service_linked_role::builders::UnlockServiceLinkedRoleOutputBuilder::default();
+        let mut output =
+            crate::operation::unlock_service_linked_role::builders::UnlockServiceLinkedRoleOutputBuilder::default();
         output._set_request_id(::aws_http::request_id::RequestId::request_id(_response_headers).map(str::to_string));
         output.build()
     })
@@ -97,7 +97,10 @@ pub fn ser_unlock_service_linked_role_input(
 ) -> Result<::aws_smithy_http::body::SdkBody, ::aws_smithy_http::operation::error::SerializationError> {
     let mut out = String::new();
     let mut object = ::aws_smithy_json::serialize::JsonObjectWriter::new(&mut out);
-    crate::protocol_serde::shape_unlock_service_linked_role_input::ser_unlock_service_linked_role_input(&mut object, input)?;
+    crate::protocol_serde::shape_unlock_service_linked_role_input::ser_unlock_service_linked_role_input(
+        &mut object,
+        input,
+    )?;
     object.finish();
     Ok(::aws_smithy_http::body::SdkBody::from(out))
 }

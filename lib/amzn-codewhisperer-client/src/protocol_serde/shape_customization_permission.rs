@@ -6,15 +6,15 @@ pub fn ser_customization_permission(
     match input {
         crate::types::CustomizationPermission::User(inner) => {
             object_3.key("user").string(inner.as_str());
-        }
+        },
         crate::types::CustomizationPermission::Group(inner) => {
             object_3.key("group").string(inner.as_str());
-        }
+        },
         crate::types::CustomizationPermission::Unknown => {
-            return Err(::aws_smithy_http::operation::error::SerializationError::unknown_variant(
-                "CustomizationPermission",
-            ))
-        }
+            return Err(
+                ::aws_smithy_http::operation::error::SerializationError::unknown_variant("CustomizationPermission"),
+            );
+        },
     }
     Ok(())
 }
@@ -23,7 +23,12 @@ pub(crate) fn de_customization_permission<'a, I>(
     tokens: &mut ::std::iter::Peekable<I>,
 ) -> Result<Option<crate::types::CustomizationPermission>, ::aws_smithy_json::deserialize::error::DeserializeError>
 where
-    I: Iterator<Item = Result<::aws_smithy_json::deserialize::Token<'a>, ::aws_smithy_json::deserialize::error::DeserializeError>>,
+    I: Iterator<
+        Item = Result<
+            ::aws_smithy_json::deserialize::Token<'a>,
+            ::aws_smithy_json::deserialize::error::DeserializeError,
+        >,
+    >,
 {
     let mut variant = None;
     match tokens.next().transpose()? {
@@ -53,22 +58,21 @@ where
                         _ => {
                             ::aws_smithy_json::deserialize::token::skip_value(tokens)?;
                             Some(crate::types::CustomizationPermission::Unknown)
-                        }
+                        },
                     };
-                }
+                },
                 other => {
-                    return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(format!(
-                        "expected object key or end object, found: {:?}",
-                        other
-                    )))
-                }
+                    return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
+                        format!("expected object key or end object, found: {:?}", other),
+                    ));
+                },
             }
         },
         _ => {
             return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
                 "expected start object or null",
-            ))
-        }
+            ));
+        },
     }
     Ok(variant)
 }

@@ -6,10 +6,7 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
     };
     use tokio::sync::mpsc::Receiver;
     use wry::application::dpi::LogicalSize;
-    use wry::application::menu::{
-        MenuBar,
-        MenuItem,
-    };
+    use wry::application::event_loop::EventLoopBuilder;
     use wry::application::platform::macos::WindowBuilderExtMacOS;
 
     use crate::utils::is_cargo_debug_build;
@@ -27,19 +24,18 @@ pub async fn check_for_update(show_webview: bool, relaunch_dashboard: bool) -> b
             use wry::application::window::WindowBuilder;
             use wry::webview::WebViewBuilder;
 
-            let mut menu_bar = MenuBar::new();
-            let mut sub_menu_bar = MenuBar::new();
-            sub_menu_bar.add_native_item(MenuItem::Quit);
-            menu_bar.add_submenu("Fig", true, sub_menu_bar);
+            // let mut menu_bar = MenuBar::new();
+            // let mut sub_menu_bar = MenuBar::new();
+            // sub_menu_bar.add_native_item(MenuItem::Quit);
+            // menu_bar.add_submenu("Fig", true, sub_menu_bar);
 
-            let event_loop: EventLoop<UpdateStatus> = EventLoop::with_user_event();
+            let event_loop: EventLoop<UpdateStatus> = EventLoopBuilder::with_user_event().build();
             let window = WindowBuilder::new()
                 .with_title("Fig")
                 .with_inner_size(LogicalSize::new(350, 350))
                 .with_resizable(false)
                 .with_titlebar_hidden(true)
                 .with_movable_by_window_background(true)
-                .with_menu(menu_bar)
                 .build(&event_loop)
                 .unwrap();
 

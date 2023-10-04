@@ -4,11 +4,7 @@ use fig_proto::fig::{
     GetLocalStateResponse,
     UpdateLocalStateRequest,
 };
-use fig_settings::{
-    state,
-    JsonStore,
-    State,
-};
+use fig_settings::state;
 
 use super::{
     RequestResult,
@@ -22,8 +18,8 @@ pub async fn get(request: GetLocalStateRequest) -> RequestResult {
                 .map_err(|err| format!("Failed getting state value for {key}: {err}"))?
                 .ok_or_else(|| format!("No value for key '{key}'"))?,
         ),
-        None => State::load()
-            .map(|s| serde_json::to_string(&*s.map()))
+        None => state::all()
+            .map(|map| serde_json::to_string(&map))
             .map_err(|err| format!("Failed getting state: {err}"))?,
     };
 

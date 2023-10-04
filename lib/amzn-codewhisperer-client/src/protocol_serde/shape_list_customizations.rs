@@ -9,8 +9,9 @@ pub fn de_list_customizations_http_error(
     crate::operation::list_customizations::ListCustomizationsError,
 > {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
+    let mut generic_builder =
+        crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
+            .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
     generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     let error_code = match generic.code() {
@@ -25,8 +26,11 @@ pub fn de_list_customizations_http_error(
             let mut tmp = {
                 #[allow(unused_mut)]
                 let mut output = crate::types::error::builders::ValidationErrorBuilder::default();
-                output = crate::protocol_serde::shape_validation_exception::de_validation_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
+                output = crate::protocol_serde::shape_validation_exception::de_validation_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
                 let output = output.meta(generic);
                 output.build()
             };
@@ -40,8 +44,11 @@ pub fn de_list_customizations_http_error(
             let mut tmp = {
                 #[allow(unused_mut)]
                 let mut output = crate::types::error::builders::AccessDeniedErrorBuilder::default();
-                output = crate::protocol_serde::shape_access_denied_exception::de_access_denied_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
+                output = crate::protocol_serde::shape_access_denied_exception::de_access_denied_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
                 let output = output.meta(generic);
                 output.build()
             };
@@ -50,28 +57,37 @@ pub fn de_list_customizations_http_error(
             }
             tmp
         }),
-        "InternalServerException" => crate::operation::list_customizations::ListCustomizationsError::InternalServerError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+        "InternalServerException" => {
+            crate::operation::list_customizations::ListCustomizationsError::InternalServerError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::InternalServerErrorBuilder::default();
-                output = crate::protocol_serde::shape_internal_server_exception::de_internal_server_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
-                let output = output.meta(generic);
-                output.build()
-            };
-            if tmp.message.is_none() {
-                tmp.message = _error_message;
-            }
-            tmp
-        }),
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::InternalServerErrorBuilder::default();
+                    output =
+                        crate::protocol_serde::shape_internal_server_exception::de_internal_server_exception_json_err(
+                            _response_body,
+                            output,
+                        )
+                        .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
+                    let output = output.meta(generic);
+                    output.build()
+                };
+                if tmp.message.is_none() {
+                    tmp.message = _error_message;
+                }
+                tmp
+            })
+        },
         "ThrottlingException" => crate::operation::list_customizations::ListCustomizationsError::ThrottlingError({
             #[allow(unused_mut)]
             let mut tmp = {
                 #[allow(unused_mut)]
                 let mut output = crate::types::error::builders::ThrottlingErrorBuilder::default();
-                output = crate::protocol_serde::shape_throttling_exception::de_throttling_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
+                output = crate::protocol_serde::shape_throttling_exception::de_throttling_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::list_customizations::ListCustomizationsError::unhandled)?;
                 let output = output.meta(generic);
                 output.build()
             };
@@ -116,9 +132,12 @@ pub fn ser_list_customizations_input(
 pub(crate) fn de_list_customizations(
     value: &[u8],
     mut builder: crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder,
-) -> Result<crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder, ::aws_smithy_json::deserialize::error::DeserializeError>
-{
-    let mut tokens_owned = ::aws_smithy_json::deserialize::json_token_iter(crate::protocol_serde::or_empty_doc(value)).peekable();
+) -> Result<
+    crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder,
+    ::aws_smithy_json::deserialize::error::DeserializeError,
+> {
+    let mut tokens_owned =
+        ::aws_smithy_json::deserialize::json_token_iter(crate::protocol_serde::or_empty_doc(value)).peekable();
     let tokens = &mut tokens_owned;
     ::aws_smithy_json::deserialize::token::expect_start_object(tokens.next())?;
     loop {
@@ -126,25 +145,24 @@ pub(crate) fn de_list_customizations(
             Some(::aws_smithy_json::deserialize::Token::EndObject { .. }) => break,
             Some(::aws_smithy_json::deserialize::Token::ObjectKey { key, .. }) => match key.to_unescaped()?.as_ref() {
                 "customizations" => {
-                    builder = builder.set_customizations(crate::protocol_serde::shape_customization_summary_list::de_customization_summary_list(
-                        tokens,
-                    )?);
-                }
+                    builder = builder.set_customizations(
+                        crate::protocol_serde::shape_customization_summary_list::de_customization_summary_list(tokens)?,
+                    );
+                },
                 "nextToken" => {
                     builder = builder.set_next_token(
                         ::aws_smithy_json::deserialize::token::expect_string_or_null(tokens.next())?
                             .map(|s| s.to_unescaped().map(|u| u.into_owned()))
                             .transpose()?,
                     );
-                }
+                },
                 _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
             },
             other => {
-                return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(format!(
-                    "expected object key or end object, found: {:?}",
-                    other
-                )))
-            }
+                return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
+                    format!("expected object key or end object, found: {:?}", other),
+                ));
+            },
         }
     }
     if tokens.next().is_some() {

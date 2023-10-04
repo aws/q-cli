@@ -16,7 +16,7 @@ pub fn url() -> Url {
 
     if let Some(dev_url) = fig_settings::settings::get_string_opt("developer.autocomplete.host") {
         match Url::parse(&dev_url) {
-            Ok(url) => return dbg!(url),
+            Ok(url) => return url,
             Err(err) => {
                 error!(%err, "Failed to parse developer.autocomplete.host");
             },

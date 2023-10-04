@@ -14,6 +14,7 @@ impl ListCustomizationsOutput {
     pub fn customizations(&self) -> ::std::option::Option<&[crate::types::CustomizationSummary]> {
         self.customizations.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(&self) -> ::std::option::Option<&str> {
         self.next_token.as_deref()
@@ -25,13 +26,15 @@ impl ::aws_http::request_id::RequestId for ListCustomizationsOutput {
     }
 }
 impl ListCustomizationsOutput {
-    /// Creates a new builder-style object to manufacture [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
+    /// Creates a new builder-style object to manufacture
+    /// [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
     pub fn builder() -> crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder {
         crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder::default()
     }
 }
 
-/// A builder for [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
+/// A builder for
+/// [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct ListCustomizationsOutputBuilder {
@@ -42,37 +45,46 @@ pub struct ListCustomizationsOutputBuilder {
 impl ListCustomizationsOutputBuilder {
     /// Appends an item to `customizations`.
     ///
-    /// To override the contents of this collection use [`set_customizations`](Self::set_customizations).
-    ///
+    /// To override the contents of this collection use
+    /// [`set_customizations`](Self::set_customizations).
     pub fn customizations(mut self, input: crate::types::CustomizationSummary) -> Self {
         let mut v = self.customizations.unwrap_or_default();
         v.push(input);
         self.customizations = ::std::option::Option::Some(v);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn set_customizations(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::CustomizationSummary>>) -> Self {
+    pub fn set_customizations(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::CustomizationSummary>>,
+    ) -> Self {
         self.customizations = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_customizations(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::CustomizationSummary>> {
         &self.customizations
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn next_token(mut self, input: impl ::std::convert::Into<::std::string::String>) -> Self {
         self.next_token = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_next_token(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.next_token = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_next_token(&self) -> &::std::option::Option<::std::string::String> {
         &self.next_token
     }
+
     pub(crate) fn _request_id(mut self, request_id: impl Into<String>) -> Self {
         self._request_id = Some(request_id.into());
         self
@@ -82,7 +94,9 @@ impl ListCustomizationsOutputBuilder {
         self._request_id = request_id;
         self
     }
-    /// Consumes the builder and constructs a [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
+
+    /// Consumes the builder and constructs a
+    /// [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
     pub fn build(self) -> crate::operation::list_customizations::ListCustomizationsOutput {
         crate::operation::list_customizations::ListCustomizationsOutput {
             customizations: self.customizations,

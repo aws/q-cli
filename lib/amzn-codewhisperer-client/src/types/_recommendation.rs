@@ -15,10 +15,12 @@ impl Recommendation {
     pub fn content(&self) -> ::std::option::Option<&str> {
         self.content.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn references(&self) -> ::std::option::Option<&[crate::types::Reference]> {
         self.references.as_deref()
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn most_relevant_missing_imports(&self) -> ::std::option::Option<&[crate::types::Import]> {
         self.most_relevant_missing_imports.as_deref()
@@ -34,7 +36,8 @@ impl ::std::fmt::Debug for Recommendation {
     }
 }
 impl Recommendation {
-    /// Creates a new builder-style object to manufacture [`Recommendation`](crate::types::Recommendation).
+    /// Creates a new builder-style object to manufacture
+    /// [`Recommendation`](crate::types::Recommendation).
     pub fn builder() -> crate::types::builders::RecommendationBuilder {
         crate::types::builders::RecommendationBuilder::default()
     }
@@ -54,53 +57,64 @@ impl RecommendationBuilder {
         self.content = ::std::option::Option::Some(input.into());
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_content(mut self, input: ::std::option::Option<::std::string::String>) -> Self {
         self.content = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_content(&self) -> &::std::option::Option<::std::string::String> {
         &self.content
     }
+
     /// Appends an item to `references`.
     ///
     /// To override the contents of this collection use [`set_references`](Self::set_references).
-    ///
     pub fn references(mut self, input: crate::types::Reference) -> Self {
         let mut v = self.references.unwrap_or_default();
         v.push(input);
         self.references = ::std::option::Option::Some(v);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn set_references(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::Reference>>) -> Self {
         self.references = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_references(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::Reference>> {
         &self.references
     }
+
     /// Appends an item to `most_relevant_missing_imports`.
     ///
-    /// To override the contents of this collection use [`set_most_relevant_missing_imports`](Self::set_most_relevant_missing_imports).
-    ///
+    /// To override the contents of this collection use
+    /// [`set_most_relevant_missing_imports`](Self::set_most_relevant_missing_imports).
     pub fn most_relevant_missing_imports(mut self, input: crate::types::Import) -> Self {
         let mut v = self.most_relevant_missing_imports.unwrap_or_default();
         v.push(input);
         self.most_relevant_missing_imports = ::std::option::Option::Some(v);
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
-    pub fn set_most_relevant_missing_imports(mut self, input: ::std::option::Option<::std::vec::Vec<crate::types::Import>>) -> Self {
+    pub fn set_most_relevant_missing_imports(
+        mut self,
+        input: ::std::option::Option<::std::vec::Vec<crate::types::Import>>,
+    ) -> Self {
         self.most_relevant_missing_imports = input;
         self
     }
+
     #[allow(missing_docs)] // documentation missing in model
     pub fn get_most_relevant_missing_imports(&self) -> &::std::option::Option<::std::vec::Vec<crate::types::Import>> {
         &self.most_relevant_missing_imports
     }
+
     /// Consumes the builder and constructs a [`Recommendation`](crate::types::Recommendation).
     pub fn build(self) -> crate::types::Recommendation {
         crate::types::Recommendation {

@@ -11,6 +11,7 @@ impl ListCustomizations {
     pub fn new() -> Self {
         Self
     }
+
     pub(crate) async fn orchestrate(
         runtime_plugins: &::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugins,
         input: crate::operation::list_customizations::ListCustomizationsInput,
@@ -30,9 +31,13 @@ impl ListCustomizations {
                     .expect("correct error type")
             })
         };
-        let context = Self::orchestrate_with_stop_point(runtime_plugins, input, ::aws_smithy_runtime::client::orchestrator::StopPoint::None)
-            .await
-            .map_err(map_err)?;
+        let context = Self::orchestrate_with_stop_point(
+            runtime_plugins,
+            input,
+            ::aws_smithy_runtime::client::orchestrator::StopPoint::None,
+        )
+        .await
+        .map_err(map_err)?;
         let output = context.finalize().map_err(map_err)?;
         ::std::result::Result::Ok(
             output
@@ -53,8 +58,14 @@ impl ListCustomizations {
         >,
     > {
         let input = ::aws_smithy_runtime_api::client::interceptors::context::Input::erase(input);
-        ::aws_smithy_runtime::client::orchestrator::invoke_with_stop_point("codewhisperer", "ListCustomizations", input, runtime_plugins, stop_point)
-            .await
+        ::aws_smithy_runtime::client::orchestrator::invoke_with_stop_point(
+            "codewhisperer",
+            "ListCustomizations",
+            input,
+            runtime_plugins,
+            stop_point,
+        )
+        .await
     }
 
     pub(crate) fn operation_runtime_plugins(
@@ -84,15 +95,22 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for ListCus
         cfg.store_put(::aws_smithy_runtime_api::client::ser_de::SharedRequestSerializer::new(
             ListCustomizationsRequestSerializer,
         ));
-        cfg.store_put(::aws_smithy_runtime_api::client::ser_de::SharedResponseDeserializer::new(
-            ListCustomizationsResponseDeserializer,
-        ));
+        cfg.store_put(
+            ::aws_smithy_runtime_api::client::ser_de::SharedResponseDeserializer::new(
+                ListCustomizationsResponseDeserializer,
+            ),
+        );
 
-        cfg.store_put(::aws_smithy_runtime_api::client::auth::AuthSchemeOptionResolverParams::new(
-            ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolverParams::new(),
-        ));
+        cfg.store_put(
+            ::aws_smithy_runtime_api::client::auth::AuthSchemeOptionResolverParams::new(
+                ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolverParams::new(),
+            ),
+        );
 
-        cfg.store_put(::aws_smithy_http::operation::Metadata::new("ListCustomizations", "codewhisperer"));
+        cfg.store_put(::aws_smithy_http::operation::Metadata::new(
+            "ListCustomizations",
+            "codewhisperer",
+        ));
         let mut signing_options = ::aws_runtime::auth::sigv4::SigningOptions::default();
         signing_options.double_uri_encode = true;
         signing_options.content_sha256_header = false;
@@ -108,16 +126,23 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for ListCus
         ::std::option::Option::Some(cfg.freeze())
     }
 
-    fn runtime_components(&self) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
-        // Retry classifiers are operation-specific because they need to downcast operation-specific error types.
+    fn runtime_components(
+        &self,
+    ) -> ::std::borrow::Cow<'_, ::aws_smithy_runtime_api::client::runtime_components::RuntimeComponentsBuilder> {
+        // Retry classifiers are operation-specific because they need to downcast operation-specific error
+        // types.
         let retry_classifiers = ::aws_smithy_runtime_api::client::retries::RetryClassifiers::new()
-            .with_classifier(::aws_smithy_runtime::client::retries::classifier::SmithyErrorClassifier::<
-                crate::operation::list_customizations::ListCustomizationsError,
-            >::new())
+            .with_classifier(
+                ::aws_smithy_runtime::client::retries::classifier::SmithyErrorClassifier::<
+                    crate::operation::list_customizations::ListCustomizationsError,
+                >::new(),
+            )
             .with_classifier(::aws_runtime::retries::classifier::AmzRetryAfterHeaderClassifier)
-            .with_classifier(::aws_smithy_runtime::client::retries::classifier::ModeledAsRetryableClassifier::<
-                crate::operation::list_customizations::ListCustomizationsError,
-            >::new())
+            .with_classifier(
+                ::aws_smithy_runtime::client::retries::classifier::ModeledAsRetryableClassifier::<
+                    crate::operation::list_customizations::ListCustomizationsError,
+                >::new(),
+            )
             .with_classifier(::aws_runtime::retries::classifier::AwsErrorCodeClassifier::<
                 crate::operation::list_customizations::ListCustomizationsError,
             >::new())
@@ -128,14 +153,14 @@ impl ::aws_smithy_runtime_api::client::runtime_plugin::RuntimePlugin for ListCus
                 .with_retry_classifiers(::std::option::Option::Some(retry_classifiers))
                 .with_auth_scheme_option_resolver(::std::option::Option::Some(
                     ::aws_smithy_runtime_api::client::auth::SharedAuthSchemeOptionResolver::new(
-                        ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolver::new(vec![
-                            ::aws_runtime::auth::sigv4::SCHEME_ID,
-                        ]),
+                        ::aws_smithy_runtime_api::client::auth::static_resolver::StaticAuthSchemeOptionResolver::new(
+                            vec![::aws_runtime::auth::sigv4::SCHEME_ID],
+                        ),
                     ),
                 ))
-                .with_interceptor(
-                    ::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(ListCustomizationsEndpointParamsInterceptor) as _,
-                ),
+                .with_interceptor(::aws_smithy_runtime_api::client::interceptors::SharedInterceptor::new(
+                    ListCustomizationsEndpointParamsInterceptor,
+                ) as _),
         )
     }
 }
@@ -154,7 +179,9 @@ impl ::aws_smithy_runtime_api::client::ser_de::ResponseDeserializer for ListCust
         let parse_result = if !success && status != 200 {
             crate::protocol_serde::shape_list_customizations::de_list_customizations_http_error(status, headers, body)
         } else {
-            crate::protocol_serde::shape_list_customizations::de_list_customizations_http_response(status, headers, body)
+            crate::protocol_serde::shape_list_customizations::de_list_customizations_http_response(
+                status, headers, body,
+            )
         };
         crate::protocol_serde::type_erase_result(parse_result)
     }
@@ -162,12 +189,20 @@ impl ::aws_smithy_runtime_api::client::ser_de::ResponseDeserializer for ListCust
 #[derive(Debug)]
 struct ListCustomizationsRequestSerializer;
 impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for ListCustomizationsRequestSerializer {
-    #[allow(unused_mut, clippy::let_and_return, clippy::needless_borrow, clippy::useless_conversion)]
+    #[allow(
+        unused_mut,
+        clippy::let_and_return,
+        clippy::needless_borrow,
+        clippy::useless_conversion
+    )]
     fn serialize_input(
         &self,
         input: ::aws_smithy_runtime_api::client::interceptors::context::Input,
         _cfg: &mut ::aws_smithy_types::config_bag::ConfigBag,
-    ) -> ::std::result::Result<::aws_smithy_runtime_api::client::orchestrator::HttpRequest, ::aws_smithy_runtime_api::box_error::BoxError> {
+    ) -> ::std::result::Result<
+        ::aws_smithy_runtime_api::client::orchestrator::HttpRequest,
+        ::aws_smithy_runtime_api::box_error::BoxError,
+    > {
         let input = input
             .downcast::<crate::operation::list_customizations::ListCustomizationsInput>()
             .expect("correct type");
@@ -188,13 +223,18 @@ impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for ListCustomi
             fn update_http_builder(
                 input: &crate::operation::list_customizations::ListCustomizationsInput,
                 builder: ::http::request::Builder,
-            ) -> ::std::result::Result<::http::request::Builder, ::aws_smithy_http::operation::error::BuildError> {
+            ) -> ::std::result::Result<::http::request::Builder, ::aws_smithy_http::operation::error::BuildError>
+            {
                 let mut uri = ::std::string::String::new();
                 uri_base(input, &mut uri)?;
                 ::std::result::Result::Ok(builder.method("POST").uri(uri))
             }
             let mut builder = update_http_builder(&input, ::http::request::Builder::new())?;
-            builder = _header_serialization_settings.set_default_header(builder, ::http::header::CONTENT_TYPE, "application/x-amz-json-1.0");
+            builder = _header_serialization_settings.set_default_header(
+                builder,
+                ::http::header::CONTENT_TYPE,
+                "application/x-amz-json-1.0",
+            );
             builder = _header_serialization_settings.set_default_header(
                 builder,
                 ::http::header::HeaderName::from_static("x-amz-target"),
@@ -202,10 +242,16 @@ impl ::aws_smithy_runtime_api::client::ser_de::RequestSerializer for ListCustomi
             );
             builder
         };
-        let body = ::aws_smithy_http::body::SdkBody::from(crate::protocol_serde::shape_list_customizations::ser_list_customizations_input(&input)?);
+        let body = ::aws_smithy_http::body::SdkBody::from(
+            crate::protocol_serde::shape_list_customizations::ser_list_customizations_input(&input)?,
+        );
         if let Some(content_length) = body.content_length() {
             let content_length = content_length.to_string();
-            request_builder = _header_serialization_settings.set_default_header(request_builder, ::http::header::CONTENT_LENGTH, &content_length);
+            request_builder = _header_serialization_settings.set_default_header(
+                request_builder,
+                ::http::header::CONTENT_LENGTH,
+                &content_length,
+            );
         }
         ::std::result::Result::Ok(request_builder.body(body).expect("valid request"))
     }
@@ -234,17 +280,24 @@ impl ::aws_smithy_runtime_api::client::interceptors::Interceptor for ListCustomi
             .ok_or("failed to downcast to ListCustomizationsInput")?;
 
         let params = crate::config::endpoint::Params::builder().build().map_err(|err| {
-            ::aws_smithy_runtime_api::client::interceptors::error::ContextAttachedError::new("endpoint params could not be built", err)
+            ::aws_smithy_runtime_api::client::interceptors::error::ContextAttachedError::new(
+                "endpoint params could not be built",
+                err,
+            )
         })?;
         cfg.interceptor_state()
-            .store_put(::aws_smithy_runtime_api::client::endpoint::EndpointResolverParams::new(params));
+            .store_put(::aws_smithy_runtime_api::client::endpoint::EndpointResolverParams::new(
+                params,
+            ));
         ::std::result::Result::Ok(())
     }
 }
 
 /// Do not use this.
 ///
-/// Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly since it's an enum now).
+/// Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field
+/// on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly
+/// since it's an enum now).
 #[deprecated(
     note = "Operation `*Error/*ErrorKind` types were combined into a single `*Error` enum. The `.kind` field on `*Error` no longer exists and isn't needed anymore (you can just match on the error directly since it's an enum now)."
 )]
@@ -253,15 +306,19 @@ pub type ListCustomizationsErrorKind = ListCustomizationsError;
 #[non_exhaustive]
 #[derive(::std::fmt::Debug)]
 pub enum ListCustomizationsError {
-    /// This exception is thrown when the input fails to satisfy the constraints specified by the service.
+    /// This exception is thrown when the input fails to satisfy the constraints specified by the
+    /// service.
     ValidationError(crate::types::error::ValidationError),
-    /// This exception is thrown when the user does not have sufficient access to perform this action.
+    /// This exception is thrown when the user does not have sufficient access to perform this
+    /// action.
     AccessDeniedError(crate::types::error::AccessDeniedError),
-    /// This exception is thrown when an unexpected error occurred during the processing of a request.
+    /// This exception is thrown when an unexpected error occurred during the processing of a
+    /// request.
     InternalServerError(crate::types::error::InternalServerError),
     /// This exception is thrown when request was denied due to request throttling.
     ThrottlingError(crate::types::error::ThrottlingError),
-    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error code).
+    /// An unexpected error occurred (e.g., invalid JSON returned by the service or an unknown error
+    /// code).
     Unhandled(::aws_smithy_types::error::Unhandled),
 }
 impl ::aws_smithy_http::result::CreateUnhandledError for ListCustomizationsError {
@@ -292,7 +349,9 @@ impl ::aws_smithy_types::error::metadata::ProvideErrorMetadata for ListCustomiza
         match self {
             Self::ValidationError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::AccessDeniedError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
-            Self::InternalServerError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
+            Self::InternalServerError(_inner) => {
+                ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner)
+            },
             Self::ThrottlingError(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
             Self::Unhandled(_inner) => ::aws_smithy_types::error::metadata::ProvideErrorMetadata::meta(_inner),
         }
@@ -307,6 +366,7 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for ListCustomizationsError {
     fn code(&self) -> ::std::option::Option<&str> {
         ::aws_smithy_types::error::metadata::ProvideErrorMetadata::code(self)
     }
+
     fn retryable_error_kind(&self) -> ::std::option::Option<::aws_smithy_types::retry::ErrorKind> {
         match self {
             Self::InternalServerError(inner) => ::std::option::Option::Some(inner.retryable_error_kind()),
@@ -318,19 +378,26 @@ impl ::aws_smithy_types::retry::ProvideErrorKind for ListCustomizationsError {
 impl ListCustomizationsError {
     /// Creates the `ListCustomizationsError::Unhandled` variant from any error type.
     pub fn unhandled(
-        err: impl ::std::convert::Into<::std::boxed::Box<dyn ::std::error::Error + ::std::marker::Send + ::std::marker::Sync + 'static>>,
+        err: impl ::std::convert::Into<
+            ::std::boxed::Box<dyn ::std::error::Error + ::std::marker::Send + ::std::marker::Sync + 'static>,
+        >,
     ) -> Self {
         Self::Unhandled(::aws_smithy_types::error::Unhandled::builder().source(err).build())
     }
 
-    /// Creates the `ListCustomizationsError::Unhandled` variant from a `::aws_smithy_types::error::ErrorMetadata`.
+    /// Creates the `ListCustomizationsError::Unhandled` variant from a
+    /// `::aws_smithy_types::error::ErrorMetadata`.
     pub fn generic(err: ::aws_smithy_types::error::ErrorMetadata) -> Self {
-        Self::Unhandled(::aws_smithy_types::error::Unhandled::builder().source(err.clone()).meta(err).build())
+        Self::Unhandled(
+            ::aws_smithy_types::error::Unhandled::builder()
+                .source(err.clone())
+                .meta(err)
+                .build(),
+        )
     }
-    ///
+
     /// Returns error metadata, which includes the error code, message,
     /// request ID, and potentially additional information.
-    ///
     pub fn meta(&self) -> &::aws_smithy_types::error::ErrorMetadata {
         use ::aws_smithy_types::error::metadata::ProvideErrorMetadata;
         match self {
@@ -341,18 +408,22 @@ impl ListCustomizationsError {
             Self::Unhandled(e) => e.meta(),
         }
     }
+
     /// Returns `true` if the error kind is `ListCustomizationsError::ValidationError`.
     pub fn is_validation_error(&self) -> bool {
         matches!(self, Self::ValidationError(_))
     }
+
     /// Returns `true` if the error kind is `ListCustomizationsError::AccessDeniedError`.
     pub fn is_access_denied_error(&self) -> bool {
         matches!(self, Self::AccessDeniedError(_))
     }
+
     /// Returns `true` if the error kind is `ListCustomizationsError::InternalServerError`.
     pub fn is_internal_server_error(&self) -> bool {
         matches!(self, Self::InternalServerError(_))
     }
+
     /// Returns `true` if the error kind is `ListCustomizationsError::ThrottlingError`.
     pub fn is_throttling_error(&self) -> bool {
         matches!(self, Self::ThrottlingError(_))
@@ -370,9 +441,8 @@ impl ::std::error::Error for ListCustomizationsError {
     }
 }
 
-pub use crate::operation::list_customizations::_list_customizations_output::ListCustomizationsOutput;
-
 pub use crate::operation::list_customizations::_list_customizations_input::ListCustomizationsInput;
+pub use crate::operation::list_customizations::_list_customizations_output::ListCustomizationsOutput;
 
 mod _list_customizations_input;
 

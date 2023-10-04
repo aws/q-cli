@@ -9,8 +9,9 @@ pub fn de_list_tags_for_resource_http_error(
     crate::operation::list_tags_for_resource::ListTagsForResourceError,
 > {
     #[allow(unused_mut)]
-    let mut generic_builder = crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
-        .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
+    let mut generic_builder =
+        crate::protocol_serde::parse_http_error_metadata(_response_status, _response_headers, _response_body)
+            .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
     generic_builder = ::aws_http::request_id::apply_request_id(generic_builder, _response_headers);
     let generic = generic_builder.build();
     let error_code = match generic.code() {
@@ -25,8 +26,11 @@ pub fn de_list_tags_for_resource_http_error(
             let mut tmp = {
                 #[allow(unused_mut)]
                 let mut output = crate::types::error::builders::ValidationErrorBuilder::default();
-                output = crate::protocol_serde::shape_validation_exception::de_validation_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
+                output = crate::protocol_serde::shape_validation_exception::de_validation_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
                 let output = output.meta(generic);
                 output.build()
             };
@@ -35,28 +39,36 @@ pub fn de_list_tags_for_resource_http_error(
             }
             tmp
         }),
-        "AccessDeniedException" => crate::operation::list_tags_for_resource::ListTagsForResourceError::AccessDeniedError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+        "AccessDeniedException" => {
+            crate::operation::list_tags_for_resource::ListTagsForResourceError::AccessDeniedError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::AccessDeniedErrorBuilder::default();
-                output = crate::protocol_serde::shape_access_denied_exception::de_access_denied_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::AccessDeniedErrorBuilder::default();
+                    output = crate::protocol_serde::shape_access_denied_exception::de_access_denied_exception_json_err(
+                        _response_body,
+                        output,
+                    )
                     .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
-                let output = output.meta(generic);
-                output.build()
-            };
-            if tmp.message.is_none() {
-                tmp.message = _error_message;
-            }
-            tmp
-        }),
+                    let output = output.meta(generic);
+                    output.build()
+                };
+                if tmp.message.is_none() {
+                    tmp.message = _error_message;
+                }
+                tmp
+            })
+        },
         "ThrottlingException" => crate::operation::list_tags_for_resource::ListTagsForResourceError::ThrottlingError({
             #[allow(unused_mut)]
             let mut tmp = {
                 #[allow(unused_mut)]
                 let mut output = crate::types::error::builders::ThrottlingErrorBuilder::default();
-                output = crate::protocol_serde::shape_throttling_exception::de_throttling_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
+                output = crate::protocol_serde::shape_throttling_exception::de_throttling_exception_json_err(
+                    _response_body,
+                    output,
+                )
+                .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
                 let output = output.meta(generic);
                 output.build()
             };
@@ -65,36 +77,44 @@ pub fn de_list_tags_for_resource_http_error(
             }
             tmp
         }),
-        "InternalServerException" => crate::operation::list_tags_for_resource::ListTagsForResourceError::InternalServerError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+        "InternalServerException" => {
+            crate::operation::list_tags_for_resource::ListTagsForResourceError::InternalServerError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::InternalServerErrorBuilder::default();
-                output = crate::protocol_serde::shape_internal_server_exception::de_internal_server_exception_json_err(_response_body, output)
-                    .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
-                let output = output.meta(generic);
-                output.build()
-            };
-            if tmp.message.is_none() {
-                tmp.message = _error_message;
-            }
-            tmp
-        }),
-        "ResourceNotFoundException" => crate::operation::list_tags_for_resource::ListTagsForResourceError::ResourceNotFoundError({
-            #[allow(unused_mut)]
-            let mut tmp = {
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::InternalServerErrorBuilder::default();
+                    output =
+                        crate::protocol_serde::shape_internal_server_exception::de_internal_server_exception_json_err(
+                            _response_body,
+                            output,
+                        )
+                        .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
+                    let output = output.meta(generic);
+                    output.build()
+                };
+                if tmp.message.is_none() {
+                    tmp.message = _error_message;
+                }
+                tmp
+            })
+        },
+        "ResourceNotFoundException" => {
+            crate::operation::list_tags_for_resource::ListTagsForResourceError::ResourceNotFoundError({
                 #[allow(unused_mut)]
-                let mut output = crate::types::error::builders::ResourceNotFoundErrorBuilder::default();
-                output = crate::protocol_serde::shape_resource_not_found_exception::de_resource_not_found_exception_json_err(_response_body, output)
+                let mut tmp = {
+                    #[allow(unused_mut)]
+                    let mut output = crate::types::error::builders::ResourceNotFoundErrorBuilder::default();
+                    output = crate::protocol_serde::shape_resource_not_found_exception::de_resource_not_found_exception_json_err(_response_body, output)
                     .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
-                let output = output.meta(generic);
-                output.build()
-            };
-            if tmp.message.is_none() {
-                tmp.message = _error_message;
-            }
-            tmp
-        }),
+                    let output = output.meta(generic);
+                    output.build()
+                };
+                if tmp.message.is_none() {
+                    tmp.message = _error_message;
+                }
+                tmp
+            })
+        },
         _ => crate::operation::list_tags_for_resource::ListTagsForResourceError::generic(generic),
     })
 }
@@ -110,7 +130,8 @@ pub fn de_list_tags_for_resource_http_response(
 > {
     Ok({
         #[allow(unused_mut)]
-        let mut output = crate::operation::list_tags_for_resource::builders::ListTagsForResourceOutputBuilder::default();
+        let mut output =
+            crate::operation::list_tags_for_resource::builders::ListTagsForResourceOutputBuilder::default();
         output = crate::protocol_serde::shape_list_tags_for_resource::de_list_tags_for_resource(_response_body, output)
             .map_err(crate::operation::list_tags_for_resource::ListTagsForResourceError::unhandled)?;
         output._set_request_id(::aws_http::request_id::RequestId::request_id(_response_headers).map(str::to_string));
@@ -135,7 +156,8 @@ pub(crate) fn de_list_tags_for_resource(
     crate::operation::list_tags_for_resource::builders::ListTagsForResourceOutputBuilder,
     ::aws_smithy_json::deserialize::error::DeserializeError,
 > {
-    let mut tokens_owned = ::aws_smithy_json::deserialize::json_token_iter(crate::protocol_serde::or_empty_doc(value)).peekable();
+    let mut tokens_owned =
+        ::aws_smithy_json::deserialize::json_token_iter(crate::protocol_serde::or_empty_doc(value)).peekable();
     let tokens = &mut tokens_owned;
     ::aws_smithy_json::deserialize::token::expect_start_object(tokens.next())?;
     loop {
@@ -144,15 +166,14 @@ pub(crate) fn de_list_tags_for_resource(
             Some(::aws_smithy_json::deserialize::Token::ObjectKey { key, .. }) => match key.to_unescaped()?.as_ref() {
                 "tags" => {
                     builder = builder.set_tags(crate::protocol_serde::shape_tag_list::de_tag_list(tokens)?);
-                }
+                },
                 _ => ::aws_smithy_json::deserialize::token::skip_value(tokens)?,
             },
             other => {
-                return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(format!(
-                    "expected object key or end object, found: {:?}",
-                    other
-                )))
-            }
+                return Err(::aws_smithy_json::deserialize::error::DeserializeError::custom(
+                    format!("expected object key or end object, found: {:?}", other),
+                ));
+            },
         }
     }
     if tokens.next().is_some() {

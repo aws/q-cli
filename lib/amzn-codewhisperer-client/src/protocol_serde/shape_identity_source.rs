@@ -9,10 +9,10 @@ pub fn ser_identity_source(
             let mut object_1 = object_2.key("ssoIdentitySource").start_object();
             crate::protocol_serde::shape_sso_identity_source::ser_sso_identity_source(&mut object_1, inner)?;
             object_1.finish();
-        }
+        },
         crate::types::IdentitySource::Unknown => {
-            return Err(::aws_smithy_http::operation::error::SerializationError::unknown_variant("IdentitySource"))
-        }
+            return Err(::aws_smithy_http::operation::error::SerializationError::unknown_variant("IdentitySource"));
+        },
     }
     Ok(())
 }
