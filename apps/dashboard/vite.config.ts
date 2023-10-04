@@ -40,14 +40,21 @@ const htmlCspPlugin: Plugin = {
 };
 
 // https://vitejs.dev/config/
-export default defineConfig({
+export default defineConfig(({ command }) => ({
   plugins: [react(), htmlCspPlugin],
   server: {
     port: 3433,
+  },
+  build: {
+    target: command === "build" ? "es2017" : "esnext",
+    sourcemap: command !== "build",
+  },
+  esbuild: {
+    target: command === "build" ? ["es2017", "safari11"] : undefined,
   },
   resolve: {
     alias: {
       "@": path.resolve(__dirname, "./src"),
     },
   },
-});
+}));

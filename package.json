@@ -12,8 +12,11 @@
   },
   "scripts": {
     "build": "pnpm -r build",
+    "b": "pnpm build",
     "lint": "pnpm -r lint",
+    "lint:fix": "pnpm -r lint:fix",
     "dev": "pnpm -r dev",
+    "clean": "pnpm -r clean",
     "prepare": "husky install",
     "precommit": "lint-staged --config .lintstagedrc.mjs"
   }

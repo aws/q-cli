@@ -5,7 +5,7 @@
   "license": "MIT",
   "dependencies": {
     "@types/jest": "^29.5.3",
-    "@withfig/api-bindings": "*",
+    "@withfig/api-bindings": "workspace:^",
     "jest": "^29.6.1",
     "jest-environment-jsdom": "^29.6.1",
     "jsdom": "^22.1.0",
