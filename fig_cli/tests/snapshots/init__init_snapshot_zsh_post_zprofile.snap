@@ -4,14 +4,10 @@ expression: init
 ---
 if [[ -n "$ZSH_NAME" ]]; then
 
-pathadd() {
-  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
-    PATH="${PATH:+"$PATH:"}$1"
-  fi
-}
-
-pathadd "${HOME}/.local/bin"
-pathadd "${HOME}/.local/bin"
+# add ~/.local/bin to PATH
+if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+  PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
+fi
 
 # if [[ $TTY != "not a tty" ]]; then
   # # Open scripts on keyboard shortcut

@@ -15,7 +15,7 @@ input_method_type = "palette"
 
 [build-dependencies]
 plist = "1.4.0"
-serde = { version = "1.0.185", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 toml = "0.7.1"
 apple-bundle = "*"
 
@@ -29,5 +29,5 @@ fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }
 fig_util = { path = "../lib/fig_util" }
 macos_utils = { path = "../lib/macos_utils" }
-tokio = { version = "1.32.0", features = ["full"] }
-tracing = "0.1.36"
+tokio = { version = "1", features = ["full"] }
+tracing = "0.1"

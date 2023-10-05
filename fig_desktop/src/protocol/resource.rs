@@ -34,9 +34,19 @@ impl Scope for Dashboard {
     const PATH: &'static str = "dashboard";
 }
 
-// handle `resource://(dir.)?localhost/`
+pub struct Autocomplete;
+
+impl Scope for Autocomplete {
+    const PATH: &'static str = "autocomplete";
+}
+
+/// handle `resource://localhost/`
 pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
     let resources_path = fig_util::directories::resources_path()?;
+
+    if request.uri().host() != Some("localhost") {
+        return Ok(res_400());
+    }
 
     // If there is a subdomain, prefix the asset path with it
     let mut path = resources_path.clone();
@@ -77,7 +87,7 @@ pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Respo
         Some("jpg" | "jpeg") => mime::IMAGE_JPEG.as_ref(),
         Some("woff2") => mime::FONT_WOFF2.as_ref(),
         Some("woff") => mime::FONT_WOFF.as_ref(),
-        Some("text") => mime::TEXT_PLAIN.as_ref(),
+        Some("txt" | "text") => mime::TEXT_PLAIN.as_ref(),
         _ => match infer::get(&content) {
             Some(mime) => mime.mime_type(),
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types

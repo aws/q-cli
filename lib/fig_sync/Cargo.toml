@@ -26,11 +26,11 @@ reqwest = { version = "0.11.14", default-features = false, features = [
     "json",
     "rustls-tls-webpki-roots",
 ] }
-serde = { version = "1.0.185", features = ["derive"] }
-serde_json = "1.0.104"
+serde = { version = "1.0", features = ["derive"] }
+serde_json = "1.0"
 tempfile = "3.4.0"
-thiserror = "1.0.38"
-time = { version = "0.3.19", features = ["serde", "formatting", "parsing"] }
+thiserror = "1.0"
+time = { version = "0.3", features = ["serde", "formatting", "parsing"] }
 tokio = "1"
-tracing = "0.1.36"
+tracing = "0.1"
 url = { version = "2.3.1", features = ["serde"] }

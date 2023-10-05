@@ -1,6 +1,6 @@
 import path from "node:path";
 import { defineConfig, type HtmlTagDescriptor, type Plugin } from "vite";
-import react from "@vitejs/plugin-react-swc";
+import react from "@vitejs/plugin-react";
 
 const csp: Record<string, string> = {
   "default-src": "'self'",

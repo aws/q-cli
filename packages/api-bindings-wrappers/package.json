@@ -24,7 +24,7 @@
     "@internal/shared": "workspace:^",
     "@internal/tsconfig": "workspace:^",
     "@internal/types": "workspace:^",
-    "eslint": "^8.50.0",
+    "eslint": "^8.49.0",
     "eslint-config-prettier": "^9.0.0",
     "prettier": "^3.0.0",
     "typescript": "^5.1.6"

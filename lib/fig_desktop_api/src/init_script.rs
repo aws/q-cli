@@ -23,6 +23,7 @@ const DEFAULT_THEMES: &[&str] = &["light", "dark", "system"];
 
 #[cfg(target_os = "linux")]
 #[derive(Debug, Clone, Serialize)]
+#[serde(rename_all = "camelCase")]
 struct LinuxConstants {
     display_server: Option<DisplayServer>,
     desktop_environment: Option<DesktopEnvironment>,

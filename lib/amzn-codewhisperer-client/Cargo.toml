@@ -4,6 +4,7 @@ version = "0.1.0"
 authors = ["Grant Gurvis <grangurv@amazon.com>"]
 description = "Rust client bindings for the Codewhisperer service"
 edition = "2021"
+publish = false
 
 [package.metadata.docs.rs]
 all-features = true
