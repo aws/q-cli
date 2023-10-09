@@ -26,7 +26,7 @@ export const makeRequest = async (
   authClient?: AuthClient | undefined,
   body: BodyInit | null = null,
   options: {
-    addionalHeaders?: HeadersInit;
+    additionalHeaders?: HeadersInit;
     requestType: "GET" | "POST";
   } = {
     requestType: "GET",
@@ -43,7 +43,7 @@ export const makeRequest = async (
     method: options.requestType === "POST" ? "POST" : "GET",
     headers: {
       ...(authHeader && { Authorization: authHeader }),
-      ...(options.addionalHeaders && { ...options.addionalHeaders }),
+      ...(options.additionalHeaders && { ...options.additionalHeaders }),
     },
     ...(body && { body }),
   });

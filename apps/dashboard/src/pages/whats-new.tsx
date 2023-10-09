@@ -1,23 +1,25 @@
 import { useState } from "react";
 import { Link } from "react-router-dom";
 import { Auth, Native, Internal } from "@withfig/api-bindings";
+import { Button } from "@/components/ui/button";
 
 export default function WhatsNew() {
   const [code, setCode] = useState("");
 
   return (
     <div className="flex flex-col gap-4">
-      <div className="w-full h-40 gradient-cw-secondary-light rounded-lg flex flex-col items-center justify-center text-white px-4 py-2">
-        <h1 className="text-xl font-bold drop-shadow">
-          Welcome to AWS CodeWhisperer
-        </h1>
-        <p className="drop-shadow">
-          This is an internal beta version, goto{" "}
-          <Link to="/account" className="underline">
-            Account
-          </Link>{" "}
-          to setup your account.
-        </p>
+      <div className="w-full gradient-cw-secondary-light rounded-lg flex flex-col items-start gap-4 text-white p-6">
+        <div className="flex flex-col">
+          <h1 className="text-xl font-bold drop-shadow">
+            CodeWhisperer brings AI to your favorite dev tools
+          </h1>
+          <p className="drop-shadow">
+            We want to be everywhere you work. Not seeing a tool you use?
+          </p>
+        </div>
+        <Link to="/account">
+          <Button variant='glass'>Tell us about it</Button>
+        </Link>
       </div>
 
       <div className="w-full">

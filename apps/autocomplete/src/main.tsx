@@ -10,7 +10,7 @@ import { State } from "@amzn/fig-io-api-bindings-wrappers";
 import App from "./App";
 import { captureError } from "./sentry";
 import { authClient } from "./auth";
-import ErrorBoundary from "./components/ErrorBoundry";
+import ErrorBoundary from "./components/ErrorBoundary";
 
 State.watch();
 

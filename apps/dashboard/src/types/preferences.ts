@@ -14,7 +14,7 @@ export type Pref = {
 
 export type InstallCheck = {
   id: string
-  installKey: "dotfiles" | "accessibility" | "inputMethod"
+  installKey?: "dotfiles" | "accessibility" | "inputMethod"
   title: string
   description: string[]
   example?: string

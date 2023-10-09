@@ -28,6 +28,13 @@ const installChecks: InstallCheck[] = [
       example: '/asdf',
       action: "Enable",
   },
+  {
+    id: "login",
+    title: "Log in with Builder ID",
+    description: [],
+    example: '',
+    action: "Log in"
+  }
 ];
 
 export default installChecks

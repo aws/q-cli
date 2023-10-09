@@ -378,7 +378,7 @@ const getPartialMatch = (
       // since fuzzy search always returns integer negative scores (with 0 as an exact match),
       // we assign to suggestions matching both prefix and fuzzy a score: -1 < s < 0
       // In this way we ensure they are always at the top (as it would be with fuzzy match),
-      // but they are also ordered using the same prefix criterias
+      // but they are also ordered using the same prefix criteria
       score = prefixMatch.score / 10;
     }
     return {

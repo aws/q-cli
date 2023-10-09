@@ -6,18 +6,30 @@ import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "../ui/button";
 
 export default function StatusCheck({ check }: { check: InstallCheck }) {
+  const [needsToBeChecked, setNeedsToBeChecked] = useState(false)
   const [status, setStatus] = useState(false);
   const [expanded, setExpanded] = useState(false);
 
   useEffect(() => {
+    if ((status && !needsToBeChecked) || !check.installKey) return
+
     Install.isInstalled(check.installKey).then((r) => {
-      setStatus(r);
-      if (r === false) setExpanded(true);
+      if (r === false) {
+        setStatus(false)
+        setNeedsToBeChecked(false)
+        setExpanded(true)
+      }
+
+      setStatus(r)
+      setNeedsToBeChecked(!r)
+      setExpanded(!r)
     });
-  }, [check.installKey]);
+
+  }, [check.installKey, needsToBeChecked, status]);
 
   function fixInstall() {
-    Install.install(check.installKey).catch((e) => console.error(e));
+    if (!check.installKey) return
+    Install.install(check.installKey).then(() => setNeedsToBeChecked(true)).catch((e) => console.error(e));
   }
 
   return (

@@ -9,7 +9,7 @@ export const UpdateTerminalNotification = () => {
   const figtermVersion = shellContext?.figtermVersion;
   const desktopVersion = window.fig.constants?.version;
 
-  const misMatchedVersions = figtermVersion !== desktopVersion;
+  const mismatchedVersions = figtermVersion !== desktopVersion;
 
   const isLegacyVersion = parseInt((fig.constants?.version ?? "0")[0], 10) < 2;
 
@@ -21,7 +21,7 @@ export const UpdateTerminalNotification = () => {
       show={
         Boolean(figtermVersion) &&
         Boolean(desktopVersion) &&
-        misMatchedVersions &&
+        mismatchedVersions &&
         !isLegacyVersion
       }
       title={
