@@ -30,10 +30,10 @@ const installChecks: InstallCheck[] = [
   },
   {
     id: "login",
-    title: "Log in with Builder ID",
-    description: [],
+    title: "Signed in with Builder ID",
+    description: ["AI features won't work if you're no longer signed into Builder ID."],
     example: '',
-    action: "Log in"
+    action: "Sign in"
   }
 ];
 

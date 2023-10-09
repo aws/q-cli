@@ -61,7 +61,7 @@ export default function StatusCheck({ check }: { check: InstallCheck }) {
             disabled={status}
             className="disabled:bg-zinc-400 h-auto py-2 px-6 mt-1"
           >
-            {status ? "Enabled" : "Enable"}
+            {status ? "Enabled" : check.action}
           </Button>
         </CollapsibleContent>
       </div>
