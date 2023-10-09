@@ -1,8 +1,6 @@
 import InstallModal from "@/components/installs/modal";
-import StatusCheck from "@/components/installs/statusCheck";
 import { Button } from "@/components/ui/button";
 import ModalContext from "@/context/modal";
-import installChecks from "@/data/install";
 import { useContext } from "react";
 
 export default function Page() {

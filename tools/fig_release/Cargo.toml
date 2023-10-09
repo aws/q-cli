@@ -7,7 +7,7 @@ publish.workspace = true
 version.workspace = true
 
 [dependencies]
-clap = { version = "4.1.3", features = ["derive"] }
+clap = { version = "4.4.0", features = ["derive"] }
 color-eyre = "0.6.2"
 dialoguer = { version = "0.10.3", features = ["fuzzy-select", "editor"] }
 eyre = "0.6.8"
@@ -15,8 +15,8 @@ fig_request = { path = "../../lib/fig_request" }
 fig_settings = { path = "../../lib/fig_settings" }
 fig_util = { path = "../../lib/fig_util" }
 semver = "1.0.16"
-serde = { version = "1.0.185", features = ["derive"] }
+serde = { version = "1.0", features = ["derive"] }
 strum = "0.25.0"
-time = { version = "0.3.19", features = ["macros", "formatting"] }
+time = { version = "0.3", features = ["macros", "formatting"] }
 tokio = { version = "1", features = ["full"] }
 toml_edit = "0.19.1"

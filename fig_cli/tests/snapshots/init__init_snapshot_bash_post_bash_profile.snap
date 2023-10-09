@@ -388,14 +388,11 @@ __fig_source_bash_preexec
 function __bp_adjust_histcontrol() { :; }
 if [[ -n "$BASH" ]]; then
 
-pathadd() {
-  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
-    PATH="${PATH:+"$PATH:"}$1"
-  fi
-}
+# add ~/.local/bin to PATH
+if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+  PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
+fi
 
-pathadd "${HOME}/.local/bin"
-pathadd "${HOME}/.local/bin"
 
 # Open scripts on keyboard shortcut
 if [[ -z "${FIG_SCRIPTS_KEYBIND}" ]]
@@ -476,7 +473,7 @@ function __fig_pre_prompt () {
   fig_osc "Log=%s" "${FIG_LOG_LEVEL}"
   fig_osc "User=%s" "${USER:-root}"
 
-  if command -v fig >/dev/null 2>&1; then
+  if command -v cw >/dev/null 2>&1; then
     case $(cw _ pre-cmd) in
       EXEC_NEW_SHELL)
         unset FIG_DOTFILES_SOURCED

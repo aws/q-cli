@@ -389,16 +389,11 @@ function __bp_adjust_histcontrol() { :; }
 #!/usr/bin/env bash
 
 mkdir -p "${HOME}/.local/bin" > /dev/null 2>&1
-mkdir -p "${HOME}/.local/bin" > /dev/null 2>&1
 
-pathadd() {
-  if [[ -d "$1" ]] && [[ ":$PATH:" != *":$1:"* ]]; then
-    PATH="${PATH:+"$PATH:"}$1"
-  fi
-}
-
-pathadd "${HOME}/.local/bin"
-pathadd "${HOME}/.local/bin"
+# add ~/.local/bin to PATH
+if [[ -d "${HOME}/.local/bin" ]] && [[ ":$PATH:" != *":${HOME}/.local/bin:"* ]]; then
+  PATH="${PATH:+"$PATH:"}${HOME}/.local/bin"
+fi
 
 if [[ -n "${FIG_NEW_SESSION}" ]]; then
   unset CWTERM_SESSION_ID
@@ -429,7 +424,7 @@ SHOULD_FIGTERM_LAUNCH=$?
 # It is not necessary in Fish.
 if   [[ -t 1 ]] \
   && [[ -z "${PROCESS_LAUNCHED_BY_FIG}" ]] \
-  && command -v figterm 1>/dev/null 2>&1 \
+  && command -v cwterm 1>/dev/null 2>&1 \
   && [[ ("${SHOULD_FIGTERM_LAUNCH}" -eq 0) || (("${SHOULD_FIGTERM_LAUNCH}" -eq 2) && (-z "${CW_TERM}" || (-z "${CW_TERM_TMUX}" && -n "${TMUX}"))) ]]
 then
   # Pty module sets CW_TERM or CW_TERM_TMUX to avoid running twice.
@@ -444,11 +439,11 @@ then
 
   # Do not launch figterm in non-interactive shells (like VSCode Tasks)
   if [[ $- == *i* ]]; then
-    CW_TERM_NAME="$(basename "${FIG_SHELL}") (figterm)"
+    CW_TERM_NAME="$(basename "${FIG_SHELL}") (cwterm)"
     if [[ -x "${HOME}/.local/bin/${CW_TERM_NAME}" ]]; then
       CW_TERM_PATH="${HOME}/.local/bin/${CW_TERM_NAME}"
     else
-      CW_TERM_PATH="$(command -v figterm || echo "${HOME}/.local/bin/figterm")"
+      CW_TERM_PATH="$(command -v cwterm || echo "${HOME}/.local/bin/cwterm")"
     fi
 
     FIG_EXECUTION_STRING="${BASH_EXECUTION_STRING:=$ZSH_EXECUTION_STRING}"

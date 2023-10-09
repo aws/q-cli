@@ -20,7 +20,7 @@ package-lock.json
 **/*.pb.ts
 
 target/
-build/
+build
 bin/
 
 # ide folders
@@ -37,4 +37,6 @@ bin/
 !.yarn/sdks
 !.yarn/versions
 
-.env
+.env*
+
+rust-toolchain.toml

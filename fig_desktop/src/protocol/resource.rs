@@ -1,4 +1,5 @@
 use std::borrow::Cow;
+use std::io::ErrorKind;
 use std::path::Path;
 
 use http::header::{
@@ -10,6 +11,7 @@ use http::{
     Response,
     StatusCode,
 };
+use tracing::info;
 
 use super::util::{
     res_400,
@@ -34,35 +36,62 @@ impl Scope for Dashboard {
     const PATH: &'static str = "dashboard";
 }
 
-// handle `resource://(dir.)?localhost/`
+pub struct Autocomplete;
+
+impl Scope for Autocomplete {
+    const PATH: &'static str = "autocomplete";
+}
+
+/// handle `resource://localhost/`
 pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Response<Cow<'static, [u8]>>> {
-    let resources_path = fig_util::directories::resources_path()?;
+    let resources_path = fig_util::directories::resources_path()?.join(S::PATH);
 
-    // If there is a subdomain, prefix the asset path with it
-    let mut path = resources_path.clone();
-    path.push(S::PATH);
-    path.push(relativize(Path::new(request.uri().path())));
-    path = path.canonicalize()?;
-
-    // dont allow escaping the resources dir
-    if !path.starts_with(resources_path) {
+    if request.uri().host() != Some("localhost") {
         return Ok(res_400());
     }
 
-    let metadata = match path.metadata() {
-        Ok(metadata) => metadata,
-        Err(err) if err.kind() == std::io::ErrorKind::NotFound => {
-            return Ok(res_404());
+    let uri_path = Path::new(request.uri().path());
+
+    let mut path = resources_path.join(relativize(&uri_path));
+
+    path = match path.canonicalize() {
+        Ok(path) => path,
+        Err(err) if err.kind() == ErrorKind::NotFound => {
+            if uri_path.extension().is_none() {
+                resources_path.join("index.html")
+            } else {
+                return Ok(res_404());
+            }
         },
         Err(err) => return res_500(err),
     };
 
-    if metadata.is_dir() {
-        path.push("index.html");
+    // dont allow escaping the resources dir
+    if !path.starts_with(&resources_path) {
+        return Ok(res_400());
     }
+
+    match path.metadata() {
+        Ok(metadata) => {
+            if metadata.is_dir() {
+                path.push("index.html");
+            }
+        },
+        Err(err) if err.kind() == ErrorKind::NotFound => {
+            if uri_path.extension().is_none() {
+                path = resources_path.join("index.html");
+            } else {
+                return Ok(res_404());
+            }
+        },
+        Err(err) => return res_500(err),
+    };
+
+    info!("serving resource: {}", path.display());
 
     let content = match std::fs::read(&path) {
         Ok(content) => content,
+        Err(err) if err.kind() == ErrorKind::NotFound => return Ok(res_404()),
         Err(err) => return res_500(err),
     };
 
@@ -77,7 +106,7 @@ pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Respo
         Some("jpg" | "jpeg") => mime::IMAGE_JPEG.as_ref(),
         Some("woff2") => mime::FONT_WOFF2.as_ref(),
         Some("woff") => mime::FONT_WOFF.as_ref(),
-        Some("text") => mime::TEXT_PLAIN.as_ref(),
+        Some("txt" | "text") => mime::TEXT_PLAIN.as_ref(),
         _ => match infer::get(&content) {
             Some(mime) => mime.mime_type(),
             // https://developer.mozilla.org/en-US/docs/Web/HTTP/Basics_of_HTTP/MIME_types/Common_types

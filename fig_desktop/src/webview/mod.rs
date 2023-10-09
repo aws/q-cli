@@ -762,6 +762,10 @@ pub fn build_autocomplete(
         .with_asynchronous_custom_protocol("fig".into(), utils::wrap_custom_protocol(icons::handle))
         .with_asynchronous_custom_protocol("figspec".into(), utils::wrap_custom_protocol(figspec::handle))
         .with_asynchronous_custom_protocol("figapp".into(), utils::wrap_custom_protocol(figapp::handle))
+        .with_asynchronous_custom_protocol(
+            "resource".into(),
+            utils::wrap_custom_protocol(resource::handle::<resource::Autocomplete>),
+        )
         // .with_custom_protocol("resource".into(), utils::wrap_custom_protocol(resource::handle))
         .with_devtools(true)
         .with_transparent(true)

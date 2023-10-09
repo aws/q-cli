@@ -372,42 +372,42 @@ mod test {
         use internal::InternalSubcommand;
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", ""]).subcommand,
+            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", ""]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "foo"]).subcommand,
+            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "foo"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "foo".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "-"]).subcommand,
+            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "-"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "-".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "--"]).subcommand,
+            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "--"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "--".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost_text", "--buffer", "--foo bar"]).subcommand,
+            Cli::parse_from(["cw", "_", "ghost-text", "--buffer", "--foo bar"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::GhostText {
                 buffer: "--foo bar".to_string()
             }))
         );
 
         assert_eq!(
-            Cli::parse_from(["cw", "_", "ghost_text-accept", "--buffer", "abc", "--suggestion", "def"]).subcommand,
+            Cli::parse_from(["cw", "_", "ghost-text-accept", "--buffer", "abc", "--suggestion", "def"]).subcommand,
             Some(CliRootCommands::Internal(InternalSubcommand::GhostTextAccept {
                 buffer: "abc".to_string(),
                 suggestion: "def".to_string()
