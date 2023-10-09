@@ -1,4 +1,5 @@
 import StatusCheck from "@/components/installs/statusCheck";
+import { Code } from "@/components/text/code";
 import support from "@/data/help";
 import installChecks from "@/data/install";
 
@@ -27,9 +28,9 @@ export default function Page() {
                   {stringAsArray.map((substr, i) => {
                     if (i === 1) {
                       return (
-                        <code className="text-[0.9rem] px-1 bg-slate-50 border border-slate-200 rounded-sm text-slate-600">
+                        <Code>
                           {substr}
-                        </code>
+                        </Code>
                       );
                     }
 

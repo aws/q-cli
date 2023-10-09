@@ -12,11 +12,20 @@ export type Pref = {
   options?: string[]
 }
 
+export type RichText = {
+  content: string,
+  tag: string
+}
+
 export type InstallCheck = {
   id: string
   installKey?: "dotfiles" | "accessibility" | "inputMethod"
   title: string
   description: string[]
-  example?: string
+  image?: string
   action: string
+  explainer?: {
+    title: string,
+    steps: RichText[][]
+  }
 };
