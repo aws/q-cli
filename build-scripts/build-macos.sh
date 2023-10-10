@@ -2,4 +2,4 @@
 
 echo "$@"
 
-./macos.sh
+bash build-scripts/macos.sh
