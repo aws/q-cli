@@ -134,7 +134,7 @@ function Layout() {
   return (
     <div className="flex flex-row h-screen w-full overflow-hidden">
       <nav className="w-[240px] flex-none h-full flex flex-col items-center gap-1 p-4">
-        {NAV_DATA.map((item, i) =>
+        {NAV_DATA.map((item) =>
           item.type === "link" ? (
             <SidebarLink
               key={item.name}
