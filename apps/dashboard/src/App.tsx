@@ -1,5 +1,5 @@
 import { Routes, Route, Outlet } from "react-router-dom";
-import WhatsNew from "./pages/whats-new";
+// import WhatsNew from "./pages/whats-new";
 import Account from "./pages/account";
 import Help from "./pages/help";
 import SidebarLink from "./components/sidebar/link";
@@ -10,17 +10,27 @@ import FinishOnboarding from "./pages/onboarding";
 import Predict from './pages/predict'
 import Preferences from './pages/preferences'
 import ModalContext from "./context/modal";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import Modal from "./components/modal";
+import { Auth } from "@withfig/api-bindings";
 
 function App() {
   const [modal, setModal] = useState<React.ReactNode | null>(null);
+  const [loggedIn, setLoggedIn] = useState(false)
+
+  useEffect(() => {
+    Auth.status().then((r) => setLoggedIn(r.builderId))
+  }, [])
+
+  console.log({authStatus: loggedIn})
   return (
     <ModalContext.Provider value={{ modal, setModal }}>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route path="onboarding" element={<FinishOnboarding />} />
-          <Route index element={<WhatsNew />} />
+          <Route index element={<FinishOnboarding />} />
+          {/* TODO make What's New the default view again once it's ready... */}
+          {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
+          {/* <Route index element={<WhatsNew />} /> */}
           <Route path="help" element={<Help />} />
           <Route path="autocomplete" element={<Autocomplete />} />
           <Route path="predict" element={<Predict />} />
@@ -39,13 +49,18 @@ const NAV_DATA = [
   {
     type: "link",
     name: "Getting started",
-    link: "/onboarding",
-  },
-  {
-    type: "link",
-    name: "What's new?",
     link: "/",
   },
+  // {
+  //   type: "link",
+  //   name: "Getting started",
+  //   link: "/onboarding",
+  // },
+  // {
+  //   type: "link",
+  //   name: "What's new?",
+  //   link: "/",
+  // },
   {
     type: "link",
     name: "Help & support",
@@ -74,11 +89,11 @@ const NAV_DATA = [
     type: "header",
     name: "Settings",
   },
-  {
-    type: "link",
-    name: "Account",
-    link: "/account",
-  },
+  // {
+  //   type: "link",
+  //   name: "Account",
+  //   link: "/account",
+  // },
   {
     type: "link",
     name: "Integrations",
@@ -126,7 +141,7 @@ function Layout() {
               path={item.link}
               name={item.name}
               icon={getIconFromName(item.name)}
-              count={i === 1 ? 10 : undefined}
+              count={undefined}
             />
           ) : (
             <div
