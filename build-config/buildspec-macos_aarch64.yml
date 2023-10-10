@@ -10,6 +10,7 @@ env:
 phases:
   build:
     commands:
+      - echo "path - $PATH"
       - AWS_ACCOUNT=`aws sts get-caller-identity | jq -r '.Account'`
       # For now assume there is a suitable EC2 instance running. Obviously, we could add a StepFunction here to
       # get a new one, but this is a start
