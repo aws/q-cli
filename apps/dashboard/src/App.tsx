@@ -9,18 +9,26 @@ import Translate from "./pages/translate";
 import FinishOnboarding from "./pages/onboarding";
 import Predict from './pages/predict'
 import Preferences from './pages/preferences'
+import Integrations from './pages/integrations'
 import ModalContext from "./context/modal";
 import { useEffect, useState } from "react";
 import Modal from "./components/modal";
 import { Auth } from "@withfig/api-bindings";
+import { LoginModal } from "./components/installs/modal";
 
 function App() {
   const [modal, setModal] = useState<React.ReactNode | null>(null);
-  const [loggedIn, setLoggedIn] = useState(false)
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
 
   useEffect(() => {
     Auth.status().then((r) => setLoggedIn(r.builderId))
-  }, [])
+  }, [loggedIn])
+
+  useEffect(() => {
+    if (loggedIn === false) {
+      setModal(<LoginModal next={() => setModal(null)} />)
+    }
+  }, [loggedIn])
 
   console.log({authStatus: loggedIn})
   return (
@@ -36,7 +44,7 @@ function App() {
           <Route path="predict" element={<Predict />} />
           <Route path="translate" element={<Translate />} />
           <Route path="account" element={<Account />} />
-          <Route path="integrations" element={<div>Integrations</div>} />
+          <Route path="integrations" element={<Integrations />} />
           <Route path="preferences" element={<Preferences />} />
         </Route>
       </Routes>
@@ -72,18 +80,18 @@ const NAV_DATA = [
   },
   {
     type: "link",
-    name: "Autocomplete",
+    name: "CLI Completions",
     link: "/autocomplete",
   },
   {
     type: "link",
-    name: "Predict",
-    link: "/predict",
+    name: "Translation",
+    link: "/translate",
   },
   {
     type: "link",
-    name: "Translate",
-    link: "/translate",
+    name: "GhostText",
+    link: "/predict",
   },
   {
     type: "header",
@@ -114,10 +122,13 @@ function getIconFromName(name: string) {
     case "help & support":
       return <Icon.Help />;
     case "autocomplete":
+    case "cli completions":
       return <Icon.Autocomplete />;
     case "predict":
+    case "ghosttext":
       return <Icon.GhostText />;
     case "translate":
+    case "translation":
       return <Icon.Prompt />;
     case "account":
       return <Icon.User />;

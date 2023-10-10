@@ -13,7 +13,7 @@ import {
 } from "../ui/collapsible";
 import { Code } from "../text/code";
 
-function LoginModal({ next }: { next: () => void }) {
+export function LoginModal({ next }: { next: () => void }) {
   const [loginState, setLoginState] = useState<
     "not started" | "loading" | "logged in"
   >("not started");

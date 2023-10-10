@@ -1,5 +1,6 @@
 import { UserPrefSection } from "@/components/preference/list";
-import settings from "@/data/ghostText";
+import settings from "@/data/integrations";
+
 
 export default function Page() {
   return (
