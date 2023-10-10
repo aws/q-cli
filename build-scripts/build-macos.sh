@@ -1,5 +1,7 @@
 #!/bin/bash
 
+set -eux
+
 echo "$@"
 
 brew update
