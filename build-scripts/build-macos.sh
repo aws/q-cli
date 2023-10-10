@@ -4,6 +4,8 @@ set -eux
 
 echo "$@"
 
+whoami
+
 brew update
 brew upgrade
 
