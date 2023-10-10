@@ -484,18 +484,18 @@ export const reloadClis = async (authClient: AuthClient) => {
     const clis: PrivateCliInfo[] = [];
 
     const userNamespace = commandLineTools.currentUser.namespace;
-    for (const comandlineTool of userNamespace.commandlineTools) {
+    for (const commandlineTool of userNamespace.commandlineTools) {
       clis.push({
-        name: comandlineTool.root.name,
+        name: commandlineTool.root.name,
         namespace: userNamespace.username,
       });
     }
 
     for (const { team } of commandLineTools.currentUser.teamMemberships) {
       const teamNamespace = team.namespace;
-      for (const comandlineTool of teamNamespace.commandlineTools) {
+      for (const commandlineTool of teamNamespace.commandlineTools) {
         clis.push({
-          name: comandlineTool.root.name,
+          name: commandlineTool.root.name,
           namespace: teamNamespace.username,
         });
       }
