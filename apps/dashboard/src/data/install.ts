@@ -73,7 +73,7 @@ const installChecks: InstallCheck[] = [
       "Fig uses this permission to position the Autocomplete window and insert text on your behalf.",
       "If enabling it isn't working, try toggling it off and on again or restarting Fig.",
     ],
-    image: "/asdf",
+    image: "/public/images/accessibility_old.jpeg",
     action: "Enable",
   },
   // {
