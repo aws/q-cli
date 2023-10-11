@@ -1,15 +1,16 @@
 import { Routes, Route, Outlet } from "react-router-dom";
 // import WhatsNew from "./pages/whats-new";
-import Account from "./pages/account";
+import Account from "./pages/settings/account";
 import Help from "./pages/help";
 import SidebarLink from "./components/sidebar/link";
 import * as Icon from "./components/svg/icons";
-import Autocomplete from "./pages/autocomplete";
-import Translate from "./pages/translate";
-import FinishOnboarding from "./pages/onboarding";
-import Predict from './pages/predict'
-import Preferences from './pages/preferences'
-import Integrations from './pages/integrations'
+import Autocomplete from "./pages/terminal/autocomplete";
+import Translate from "./pages/terminal/translate";
+import Onboarding from "./pages/onboarding";
+import Predict from './pages/terminal/predict'
+import Preferences from './pages/settings/preferences'
+import Integrations from './pages/settings/integrations'
+import Keybindings from './pages/settings/keybindings'
 import ModalContext from "./context/modal";
 import { useEffect, useState } from "react";
 import Modal from "./components/modal";
@@ -35,7 +36,7 @@ function App() {
     <ModalContext.Provider value={{ modal, setModal }}>
       <Routes>
         <Route path="/" element={<Layout />}>
-          <Route index element={<FinishOnboarding />} />
+          <Route index element={<Onboarding />} />
           {/* TODO make What's New the default view again once it's ready... */}
           {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
           {/* <Route index element={<WhatsNew />} /> */}
@@ -44,6 +45,7 @@ function App() {
           <Route path="predict" element={<Predict />} />
           <Route path="translate" element={<Translate />} />
           <Route path="account" element={<Account />} />
+          <Route path="keybindings" element={<Keybindings />} />
           <Route path="integrations" element={<Integrations />} />
           <Route path="preferences" element={<Preferences />} />
         </Route>
@@ -102,6 +104,11 @@ const NAV_DATA = [
   //   name: "Account",
   //   link: "/account",
   // },
+  {
+    type: "link",
+    name: "Keybindings",
+    link: "/keybindings",
+  },
   {
     type: "link",
     name: "Integrations",

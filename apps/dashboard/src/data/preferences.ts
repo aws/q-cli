@@ -1,4 +1,4 @@
-const settings = [{
+const generalPreferences = [{
   title: 'Startup',
   properties: [
     {
@@ -92,4 +92,4 @@ const settings = [{
   ]
 }]
 
-export default settings
+export default generalPreferences

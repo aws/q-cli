@@ -1,4 +1,4 @@
-const settings = [
+const ghostTextSettings = [
   {
     title: "Ghost Text",
     properties: [
@@ -28,4 +28,4 @@ const settings = [
   },
 ];
 
-export default settings;
+export default ghostTextSettings;

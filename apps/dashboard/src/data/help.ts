@@ -1,4 +1,4 @@
-const support = {
+const supportSteps = {
   steps: [
     'Run `cw doctor` to automatically debug',
     'Run `cw issue` to create an auto-populated issue'
@@ -15,4 +15,4 @@ const support = {
   ]
 }
 
-export default support
+export default supportSteps

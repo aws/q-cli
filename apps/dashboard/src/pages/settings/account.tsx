@@ -1,7 +1,6 @@
 import { State, Process } from "@withfig/api-bindings";
 import { useEffect, useState } from "react";
 import ExternalLink from "@/components/util/external-link";
-import { cn } from "@/lib/utils";
 import {
   Select,
   SelectContent,
@@ -9,25 +8,7 @@ import {
   SelectTrigger,
   SelectValue,
 } from "@/components/ui/select";
-
-function Code({
-  children,
-  className,
-}: {
-  children: string;
-  className?: string;
-}) {
-  return (
-    <code
-      className={cn(
-        "bg-zinc-800 text-zinc-200 px-1 py-0.5 mx-0.25 rounded-md",
-        className
-      )}
-    >
-      {children}
-    </code>
-  );
-}
+import { Code } from "@/components/text/code";
 
 export default function Account() {
   const [profile, setProfile] = useState<string | undefined>(undefined);

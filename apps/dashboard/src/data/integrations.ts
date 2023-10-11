@@ -1,4 +1,4 @@
-const settings = [
+const integrationOptions = [
   {
     title: "Integrations",
     properties: [
@@ -47,4 +47,4 @@ const settings = [
   },
 ];
 
-export default settings;
+export default integrationOptions;

@@ -1,7 +1,7 @@
 import { InstallCheck } from "@/types/preferences";
 import installChecks from "./install";
 
-const onboarding: InstallCheck[] = [
+const onboardingSteps: InstallCheck[] = [
   {
     id: 'welcome',
     title: 'Welcome to CodeWhisperer',
@@ -19,4 +19,4 @@ const onboarding: InstallCheck[] = [
   }
 ]
 
-export default onboarding
+export default onboardingSteps

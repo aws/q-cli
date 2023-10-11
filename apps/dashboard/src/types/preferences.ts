@@ -12,6 +12,16 @@ export type Pref = {
   options?: string[]
 }
 
+export type Action = {
+  id: string,
+  title: string,
+  description?: string,
+  availability: string,
+  type: string,
+  default: string[]
+  popular?: boolean
+}
+
 export type RichText = {
   content: string,
   tag: string

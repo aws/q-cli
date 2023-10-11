@@ -43,12 +43,12 @@ export function Setting({ data }: { data: Pref }) {
   }
 
   function toggleMultiSelect(option: string) {
-    console.log(option, multiSelectValue)
+    // console.log(option, multiSelectValue)
     if (multiSelectValue.includes(option)) {
       const index = multiSelectValue.indexOf(option)
       multiSelectValue.splice(index, 1)
       const updatedArray = multiSelectValue
-      console.log('new array looks like:', updatedArray)
+      // console.log('new array looks like:', updatedArray)
       State.set(data.id, updatedArray)
         .then(() => setInputValue(updatedArray) )
         .catch((e) =>
@@ -57,13 +57,13 @@ export function Setting({ data }: { data: Pref }) {
       return
     }
 
-    console.log('adding', option, 'to', multiSelectValue)
+    // console.log('adding', option, 'to', multiSelectValue)
     const updatedArray = [...multiSelectValue, option]
     State.set(data.id, updatedArray)
     .then(() => 
       {
         setInputValue(updatedArray)
-        console.log('new array:', updatedArray)
+        // console.log('new array:', updatedArray)
       }
     ).catch((e) =>
       console.error({ stateSetError: e })
@@ -71,22 +71,23 @@ export function Setting({ data }: { data: Pref }) {
   }
 
   return (
-    <div className="flex p-4 pl-2 gap-4">
-      <div className="flex-none w-12">
+    <div className={`flex p-4 ${data.type === 'keystrokes' ? "pl-0" : "pl-2"} gap-4`}>
+      {(data.type !== 'keystrokes') && <div className="flex-none w-12">
         {data.type === "boolean" && (
           <Switch onClick={toggleSwitch} checked={localValue as boolean} />
         )}
-      </div>
+      </div>}
       <div className="flex flex-col gap-1">
-        <h2 className="font-medium text-base leading-none">{data.title}</h2>
+        <h2 className="font-medium leading-none">{data.title}</h2>
         {data.description && (
-          <p className="font-light leading-tight">{data.description}</p>
+          <p className="font-light leading-tight text-sm">{data.description}</p>
         )}
         {data.example && (
-          <p className="font-light leading-tight">{data.example}</p>
+          <p className="font-light leading-tight text-sm">{data.example}</p>
         )}
         {data.type !== "boolean" && (
           <div className="pt-1">
+            {/* single value <select> menu */}
             {data.type === "select" && (
               <Select>
                 <SelectTrigger className="w-60">
@@ -103,6 +104,7 @@ export function Setting({ data }: { data: Pref }) {
                 </SelectContent>
               </Select>
             )}
+            {/* multi-value <select> menu */}
             {data.type === "multiselect" && (
               <div className="relative">
               <DropdownMenu>
@@ -112,7 +114,7 @@ export function Setting({ data }: { data: Pref }) {
                 <DropdownMenuContent className="w-60">
                   {data.options?.map((o, i) => {
                     const included = multiSelectValue.includes(o) as boolean
-                    console.log(o, included)
+                    // console.log(o, included)
                     return (
                       <DropdownMenuCheckboxItem 
                       key={i}
@@ -127,6 +129,7 @@ export function Setting({ data }: { data: Pref }) {
               </DropdownMenu>
               </div>
             )}
+            {/* for number values, currently only used for ms, thus the 1000-unit step */}
             {data.type === "number" && (
               <Input
                 type="number"
@@ -138,6 +141,7 @@ export function Setting({ data }: { data: Pref }) {
                 }
               />
             )}
+            {/* generic text input */}
             {data.type === "text" && (
               <Input
                 type="text"

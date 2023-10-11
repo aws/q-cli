@@ -1,4 +1,4 @@
-const settings = [{
+const translateSettings = [{
   title: 'Translate',
   properties: [
     {
@@ -21,4 +21,4 @@ const settings = [{
   ]
 }]
 
-export default settings
+export default translateSettings
