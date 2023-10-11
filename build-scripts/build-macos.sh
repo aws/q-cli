@@ -1,13 +1,46 @@
 #!/bin/bash
 
+# Lightweight bash script to build NSCC on MacOS as part of a CodeBuild project
+# Intended to be remotely invoked via SSM
+
 set -eux
 
 echo "$@"
 
-whoami
+export CI=1
 
-# brew update
-# brew upgrade
+while [[ $# -gt 0 ]]; do
+  case $1 in
+    --allow-dev-functionality)
+      allow_dev_functionality=true
+      ;;
+    --output-bucket)
+      shift
+      output_bucket=$1
+      ;;
+    --tauri-private-key-secret)
+      shift
+      tauri_private_key_secret=$1
+      ;;
+    --tauri-private-key-password-secret)
+      shift
+      tauri_private_key_password_secret=$1
+      ;;
+    --signing-bucket)
+      shift
+      signing_bucket=$1
+      ;;
+     --signing-queue)
+      shift
+      signing_queue=$1
+      ;;   
+    --apple-id-secret)
+      shift
+      apple_id_secret=$1
+      ;;
+  esac
+  shift
+done
 
 export CARGO_HOME=$PWD/../.cargo
 
@@ -17,6 +50,14 @@ rustup target add x86_64-apple-darwin
 rustup target add aarch64-apple-darwin
 rustup component add clippy
 
-cargo install tauri-cli
+cargo install tauri-cli@1.5.2 --locked
 
-bash build-scripts/macos.sh
+bash build-scripts/macos.sh 2>&1
+
+if [[ -n $output_bucket ]]
+then
+    STAGING_LOCATION=s3://$output_bucket/staging/
+    
+    echo build complete, publishing to S3...
+    aws s3 cp build/cw.dmg "${STAGING_LOCATION}"
+fi
