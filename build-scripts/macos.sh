@@ -35,6 +35,7 @@ export TARGET=universal-apple-darwin
 mkdir -p "$BUILD_DIR"
 
 # build dashboard
+pnpm install --frozen-lockfile
 pnpm build
 rm -rf "$BUILD_DIR/dashboard"
 cp -r apps/dashboard/dist "$BUILD_DIR/dashboard"
