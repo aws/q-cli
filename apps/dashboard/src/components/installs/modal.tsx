@@ -12,6 +12,32 @@ import {
   CollapsibleTrigger,
 } from "../ui/collapsible";
 import { Code } from "../text/code";
+import onboarding from "@/data/onboarding";
+
+export function WelcomeModal({ next }: { next: () => void }) {
+  return (
+    <div className="flex flex-col items-center gap-8 gradient-cw-secondary-light -m-10 p-4 pt-10 rounded-lg text-white">
+      <div className="flex flex-col items-center gap-8">
+        <Lockup />
+        <div className="flex flex-col gap-2 items-center text-center">
+        <h2 className="text-2xl text-white font-semibold select-none leading-none font-ember tracking-tight">
+          Welcome!
+        </h2>
+        <p className="text-sm">Let's get your computer configured...</p>
+        </div>
+      </div>
+      <div className="flex flex-col items-center gap-2 text-white text-sm font-bold">
+        <Button
+            variant="glass"
+            onClick={() => next()}
+            className="flex gap-4"
+          >
+            Get started
+          </Button>
+      </div>
+    </div>
+  )
+}
 
 export function LoginModal({ next }: { next: () => void }) {
   const [loginState, setLoginState] = useState<
@@ -67,7 +93,7 @@ export function LoginModal({ next }: { next: () => void }) {
 
 export default function InstallModal() {
   const [step, setStep] = useState(0);
-  const check = installChecks[step] as InstallCheck;
+  const check = onboarding[step] as InstallCheck;
   const { setModal } = useContext(ModalContext);
   const [explainerOpen, setExplainerOpen] = useState(false);
 
@@ -76,7 +102,6 @@ export default function InstallModal() {
 
     Install.install(key)
       .then(() => {
-        console.log(`step ${step + 1} complete`);
         if (step < installChecks.length - 1) {
           setStep(step + 1);
         } else {
@@ -97,11 +122,13 @@ export default function InstallModal() {
     setModal(null);
   }
 
+  if (check.id === 'welcome') {
+    return <WelcomeModal next={() => setStep(step + 1)} />
+  }
+
   if (check.id === "login") {
     return <LoginModal next={() => handleFinish()} />;
   }
-
-  console.log({ check });
 
   return (
     <div className="flex flex-col gap-4">

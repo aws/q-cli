@@ -24,9 +24,6 @@ export default function Page() {
           Open flow
         </Button>
       </div>
-      {/* {installChecks.map((check) => {
-        return <StatusCheck check={check} key={check.id} />;
-      })} */}
     </div>
   );
 }
