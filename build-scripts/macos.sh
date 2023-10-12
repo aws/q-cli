@@ -40,6 +40,8 @@ pnpm build
 rm -rf "$BUILD_DIR/dashboard"
 cp -r apps/dashboard/dist "$BUILD_DIR/dashboard"
 
+. build-scripts/rust-init.sh
+
 # build fig_cli
 cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package fig_cli
 lipo -create -output "$BUILD_DIR/cw-$TARGET" target/{x86_64,aarch64}-apple-darwin/release/fig_cli
@@ -50,8 +52,8 @@ lipo -create -output "$BUILD_DIR/cwterm-$TARGET" target/{x86_64,aarch64}-apple-d
  
 ./build-scripts/ime.sh
 
-# shellcheck source=common.sh
 . build-scripts/common.sh
+
 KIND=dmg gen_manifest dmg
 mv build/usr/share/fig/manifest.json fig_desktop/manifest.json
 
