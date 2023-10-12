@@ -141,6 +141,8 @@ function getIconFromName(name: string) {
       return <Icon.User />;
     case "integrations":
       return <Icon.Apps />;
+    case "keybindings":
+      return <Icon.Keybindings />
     case "preferences":
       return <Icon.Settings />;
     case "getting started":

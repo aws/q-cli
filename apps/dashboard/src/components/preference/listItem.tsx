@@ -18,11 +18,14 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
+import { Plus, X } from "lucide-react";
+import Keystroke from "../ui/keystrokeInput";
 
 export function Setting({ data }: { data: Pref }) {
   const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
   const localValue = data.inverted ? !inputValue : inputValue;
   const multiSelectValue = inputValue as string[]
+  const keystrokeValue = inputValue as string[]
 
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
@@ -152,7 +155,8 @@ export function Setting({ data }: { data: Pref }) {
                 }
               />
             )}
-            {data.type === "keystrokes" && <div />}
+            {/* multi-keystroke value input */}
+            {data.type === "keystrokes" && <Keystroke values={keystrokeValue} setValues={setInputValue}/>}
           </div>
         )}
       </div>
