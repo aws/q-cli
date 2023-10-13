@@ -15,7 +15,7 @@ const installChecks: InstallCheck[] = [
         [
           {
             content:
-              "Fig will add one line to the top and bottom of the following files (if they exist):",
+              "CodeWhisperer will add one line to the top and bottom of the following files (if they exist):",
             tag: "span",
           },
           {
@@ -54,14 +54,7 @@ const installChecks: InstallCheck[] = [
             content: "Uninstalling CodeWhisperer will remove these lines.",
             tag: "span",
           },
-        ],
-        [
-          {
-            content:
-              "We've tested this installation thoroughly with over 100k users... It works just fine with even the most complicated dotfiles set ups!",
-            tag: "span",
-          },
-        ],
+        ]
       ],
     },
   },
@@ -70,8 +63,8 @@ const installChecks: InstallCheck[] = [
     installKey: "accessibility",
     title: "Accessibility settings",
     description: [
-      "Fig uses this permission to position the Autocomplete window and insert text on your behalf.",
-      "If enabling it isn't working, try toggling it off and on again or restarting Fig.",
+      "CodeWhisperer uses this permission to position the Autocomplete window and insert text on your behalf.",
+      "If enabling it isn't working, try toggling it off and on again or restarting CodeWhisperer.",
     ],
     image: "/public/images/accessibility_old.jpeg",
     action: "Enable",

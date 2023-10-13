@@ -9,18 +9,10 @@ const generalPreferences = [{
       default: true,
       popular: false
     },
-    // {
-    //   id: "app.showAllProducts",
-    //   title: "Show All Products",
-    //   description: "Show all products in the Fig app sidebar.",
-    //   type: "boolean",
-    //   default: true,
-    //   popular: false
-    // },
     {
       id: "app.preferredTerminal",
       title: "Preferred Terminal",
-      description: "Choose your preferred terminal for Fig to launch commands in.",
+      description: "Choose your preferred terminal for CodeWhisperer to launch commands in.",
       type: "select",
       "options": [
         "VS Code",

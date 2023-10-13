@@ -5,7 +5,7 @@ const keybindings = [
       {
         id: "autocomplete.toggleHistoryMode",
         title: "Toggle history mode",
-        description: "Toggle between history suggestions and Fig spec suggestions",
+        description: "Toggle between history suggestions and CodeWhisperer spec suggestions",
         availability: "WHEN_FOCUSED",
         type: 'keystrokes',
         default: ["control+r"]

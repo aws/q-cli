@@ -79,7 +79,7 @@ const autocompleteSettings = [
         id: "autocomplete.disableForCommands",
         title: "Disable CLIs",
         description:
-          "A comma separated list of CLI tools that Fig should not autocomplete on ie Fig does not show the autocomplete popup for these CLI tools.",
+          "A comma separated list of CLI tools that CodeWhisperer should not autocomplete on.",
         example: "e.g. `git`, `npm`, `cd`, `docker`...",
         type: "text",
         default: [],
@@ -88,7 +88,7 @@ const autocompleteSettings = [
       {
         id: "autocomplete.sortMethod",
         title: "Sort Suggestions",
-        description: "Specifies how Fig should sort suggestions.",
+        description: "Specifies how CodeWhisperer should sort suggestions.",
         type: "select",
         default: "most recent",
         options: ["most recent", "alphabetical"],
@@ -225,7 +225,7 @@ const autocompleteSettings = [
       {
         id: "autocomplete.devCompletionsFolder",
         title: "Specs Folder",
-        description: "When Developer Mode is enabled, Fig loads completion specs from the specified directory.",
+        description: "When Developer Mode is enabled, CodeWhisperer loads completion specs from the specified directory.",
         type: "text",
         default: null,
         popular: false
