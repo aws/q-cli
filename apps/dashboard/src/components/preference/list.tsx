@@ -12,8 +12,8 @@ export function UserPrefSection ({data, index}: {data: PrefSection, index: numbe
   const list = data.properties ?? data.actions
   
   return(
-    <section className="flex flex-col">
-      <h1 id={`subhead-${index}`} className="font-bold text-2xl leading-none mt-2">{data.title}</h1>
+    <section className="flex flex-col py-4">
+      <h1 id={`subhead-${index}`} className="font-medium text-base text-zinc-500 leading-none mt-2">{data.title}</h1>
       
       {list?.sort(alphaByTitle).map((p, i) => {
         if (p.popular) return

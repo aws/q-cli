@@ -18,7 +18,6 @@ import {
   DropdownMenuContent,
   DropdownMenuTrigger,
 } from "@/components/ui/dropdown-menu";
-import { Plus, X } from "lucide-react";
 import Keystroke from "../ui/keystrokeInput";
 
 export function Setting({ data }: { data: Pref }) {

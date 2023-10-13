@@ -28,17 +28,6 @@ function App() {
   const [modal, setModal] = useState<React.ReactNode | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
-  // const [windowPosition, setWindowPosition] = useState<WindowPos | null>(null)
-
-  // useEffect(() => {
-  //   WindowPosition.isValidFrame()
-  // }, [])
-
-  // useEffect(() => {
-  //   if (!windowPosition) {
-  //     WindowPosition.setFrame({width: 960, height: 720, anchorX: 0, offsetFromBaseline: 0})
-  //   }
-  // }, [windowPosition])
 
   useEffect(() => {
     if (onboardingComplete === null) {

@@ -1,7 +1,7 @@
 import ModalContext from "@/context/modal";
 import installChecks from "@/data/install";
 import { InstallCheck } from "@/types/preferences";
-import { Auth, Install, Internal, Native, State } from "@withfig/api-bindings";
+import { Auth, Fig, Install, Internal, Native, State } from "@withfig/api-bindings";
 import { useContext, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { AwsLogo } from "../svg/icons";
@@ -61,6 +61,10 @@ export function LoginModal({ next }: { next: () => void }) {
 
   useEffect(() => {
     if (loginState !== "logged in") return;
+
+    Internal.sendOnboardingRequest({
+      action: Fig.OnboardingAction.FINISH_ONBOARDING,
+    });
 
     next();
   }, [loginState, next]);

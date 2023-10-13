@@ -66,7 +66,7 @@ const installChecks: InstallCheck[] = [
       "CodeWhisperer uses this permission to position the Autocomplete window and insert text on your behalf.",
       "If enabling it isn't working, try toggling it off and on again or restarting CodeWhisperer.",
     ],
-    image: "/public/images/accessibility_old.jpeg",
+    image: "/public/images/accessibility_fig.png",
     action: "Enable",
   },
   // {

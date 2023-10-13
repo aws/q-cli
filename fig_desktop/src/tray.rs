@@ -430,13 +430,13 @@ fn menu() -> Vec<MenuElement> {
     let version = MenuElement::Info(format!("Version: {}", env!("CARGO_PKG_VERSION")).into());
     let update = MenuElement::entry(None, None, "Check for updates...", "update");
     let quit = MenuElement::entry(None, None, "Quit CodeWhisperer", "quit");
-    let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
+    // let dashboard = MenuElement::entry(None, None, "Dashboard", "dashboard");
     let settings = MenuElement::entry(None, None, "Settings", "settings");
-    let developer = MenuElement::sub_menu("Developer", vec![
-        MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
-        MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
-        MenuElement::entry(None, None, "Companion Devtools", "companion-devtools"),
-    ]);
+    // let developer = MenuElement::sub_menu("Developer", vec![
+    //     MenuElement::entry(None, None, "Dashboard Devtools", "dashboard-devtools"),
+    //     MenuElement::entry(None, None, "Autocomplete Devtools", "autocomplete-devtools"),
+    //     MenuElement::entry(None, None, "Companion Devtools", "companion-devtools"),
+    // ]);
 
     let mut menu = if !logged_in {
         vec![
