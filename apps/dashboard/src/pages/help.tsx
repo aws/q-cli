@@ -28,7 +28,7 @@ export default function Page() {
                   {stringAsArray.map((substr, i) => {
                     if (i === 1) {
                       return (
-                        <Code>
+                        <Code key={i}>
                           {substr}
                         </Code>
                       );

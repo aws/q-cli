@@ -6,7 +6,10 @@
     "productName": "codewhisperer_desktop"
   },
   "tauri": {
-    "allowlist": {},
+    "allowlist": {
+      "setMinSize": true,
+      "setSize": true
+    },
     "bundle": {
       "targets": "app",
       "active": true,

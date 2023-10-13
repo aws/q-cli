@@ -14,12 +14,41 @@ import Keybindings from './pages/settings/keybindings'
 import ModalContext from "./context/modal";
 import { useEffect, useState } from "react";
 import Modal from "./components/modal";
-import { Auth } from "@withfig/api-bindings";
-import { LoginModal } from "./components/installs/modal";
+import { Auth, State } from "@withfig/api-bindings";
+import InstallModal, { LoginModal } from "./components/installs/modal";
+
+// type WindowPos = {
+//   width: number,
+//   height: number,
+//   anchorX: number,
+//   offsetFromBaseline?: number
+// }
 
 function App() {
   const [modal, setModal] = useState<React.ReactNode | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
+  // const [windowPosition, setWindowPosition] = useState<WindowPos | null>(null)
+
+  // useEffect(() => {
+  //   WindowPosition.isValidFrame()
+  // }, [])
+
+  // useEffect(() => {
+  //   if (!windowPosition) {
+  //     WindowPosition.setFrame({width: 960, height: 720, anchorX: 0, offsetFromBaseline: 0})
+  //   }
+  // }, [windowPosition])
+
+  useEffect(() => {
+    if (onboardingComplete === null) {
+      State.get('onboarding.completed').then((r) => setOnboardingComplete(r))
+    }
+
+    if (onboardingComplete === false) {
+      setModal(<InstallModal />)
+    }
+  }, [onboardingComplete])
 
   useEffect(() => {
     Auth.status().then((r) => setLoggedIn(r.builderId))
@@ -104,11 +133,11 @@ const NAV_DATA = [
   //   name: "Account",
   //   link: "/account",
   // },
-  {
-    type: "link",
-    name: "Keybindings",
-    link: "/keybindings",
-  },
+  // {
+  //   type: "link",
+  //   name: "Keybindings",
+  //   link: "/keybindings",
+  // },
   {
     type: "link",
     name: "Integrations",
