@@ -43,10 +43,12 @@ function App() {
   useEffect(() => {
     if (onboardingComplete === null) {
       State.get('onboarding.completed').then((r) => setOnboardingComplete(r))
+      return
     }
 
     if (onboardingComplete === false) {
       setModal(<InstallModal />)
+      return
     }
   }, [onboardingComplete])
 
