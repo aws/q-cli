@@ -441,13 +441,11 @@ fn menu() -> Vec<MenuElement> {
     let mut menu = if !logged_in {
         vec![
             MenuElement::Info("CodeWhisperer hasn't been set up yet...".into()),
-            MenuElement::entry(None, None, "Get Started", "onboarding"),
-            MenuElement::Separator,
-            not_working,
+            MenuElement::entry(None, None, "Get Started", "/"),
             MenuElement::Separator,
             manual,
-            MenuElement::Separator,
-            MenuElement::entry(None, None, "Uninstall CodeWhisperer", "uninstall"),
+            not_working,
+            MenuElement::Separator
         ]
     } else {
         let mut menu = vec![];
@@ -474,20 +472,17 @@ fn menu() -> Vec<MenuElement> {
         if accessibility_not_installed || shell_not_installed {
             menu.extend([
                 MenuElement::Info("CodeWhisperer hasn't been configured correctly".into()),
-                MenuElement::entry(None, None, "Fix Configuration Issues", "not-working"),
+                MenuElement::entry(None, None, "Fix Configuration Issues", "/help"),
                 MenuElement::Separator,
             ]);
         }
 
         menu.extend([
-            dashboard,
             settings,
             MenuElement::Separator,
             manual,
-            MenuElement::Separator,
             not_working,
-            MenuElement::Separator,
-            developer,
+            MenuElement::Separator
         ]);
 
         menu
