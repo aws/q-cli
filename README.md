@@ -193,3 +193,6 @@ This will build the project and copy it to the correct place.
   - should be buildable and pass all lints
 - `staging` branch is auto pushed to beta/staging
 - `master` branch is auto pushed to prod
+
+---
+Team: fig.io
