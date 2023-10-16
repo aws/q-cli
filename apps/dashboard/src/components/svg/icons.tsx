@@ -1,11 +1,11 @@
 import { cn } from "@/lib/utils"
 
-export function Svg ({children, size = 24, className}: {children: React.ReactNode, size?: number | number[], className?: string}) {
+export function Svg ({children, size = 24, className, ratio = [24, 24]}: {children: React.ReactNode, size?: number | number[], className?: string, ratio?: number[]}) {
   const sizeW = typeof size === 'number' ? size : size[0]
   const sizeH = typeof size === 'number' ? size : size[1] ? size[1] : size[0]
     return(
       <div style={{height: `${sizeH}px`, width: `${sizeW}px`}} className="relative">
-        <svg className={cn('fill-current absolute inset-0 h-full w-full', className)} viewBox={`0 0 24 24`} xmlns="http://www.w3.org/2000/svg">
+        <svg className={cn('fill-current absolute inset-0 h-full w-full', className)} viewBox={`0 0 ${ratio[0]} ${ratio[1]}`} xmlns="http://www.w3.org/2000/svg">
             {children}
         </svg>
       </div>

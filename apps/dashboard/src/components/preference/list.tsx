@@ -3,8 +3,8 @@ import { Action, Pref } from "@/types/preferences";
 import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
 import { State } from "@withfig/api-bindings";
-import { Autocomplete } from "../svg/icons";
-import { Switch } from "../ui/switch";
+import { getIconFromName } from "@/lib/icons";
+import { Button } from "../ui/button";
 
 type PrefSection = {
   title: string;
@@ -45,10 +45,11 @@ function FeatureIntro({ intro }: { intro: Intro }) {
   }
 
   return (
-    <section className="flex flex-col p-8 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
-        <div className="flex flex-col">
-          <Autocomplete size={48} />
-          <h1 className="font-bold text-2xl font-ember">{intro.title}</h1>
+    <section className="flex flex-col p-6 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
+        <div className="flex gap-4">
+          <div className="flex flex-col">
+          {getIconFromName(intro.title, 48)}
+          <h1 className="font-bold text-2xl font-ember leading-none">{intro.title}</h1>
           <p className="text-base">
             <span>{intro.description}</span>
             <a
@@ -58,9 +59,11 @@ function FeatureIntro({ intro }: { intro: Intro }) {
               Learn more
             </a>
           </p>
+          </div>
         </div>
         <div className="flex flex-col gap-2">
-          <Switch onClick={toggleSwitch} checked={localValue as boolean} />
+          <Button variant="glass" className={`${localValue && 'text-white/50 border-white/50 hover:text-white'}`} onClick={toggleSwitch}>{localValue ? 'Enabled' : 'Enable'}</Button>
+          {/* <Switch onClick={toggleSwitch} checked={localValue as boolean} /> */}
         </div>
     </section>
   );

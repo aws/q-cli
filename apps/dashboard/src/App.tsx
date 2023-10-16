@@ -3,7 +3,6 @@ import { Routes, Route, Outlet } from "react-router-dom";
 import Account from "./pages/settings/account";
 import Help from "./pages/help";
 import SidebarLink from "./components/sidebar/link";
-import * as Icon from "./components/svg/icons";
 import Autocomplete from "./pages/terminal/autocomplete";
 import Translate from "./pages/terminal/translate";
 import Onboarding from "./pages/onboarding";
@@ -16,13 +15,7 @@ import { useEffect, useState } from "react";
 import Modal from "./components/modal";
 import { Auth, State } from "@withfig/api-bindings";
 import InstallModal, { LoginModal } from "./components/installs/modal";
-
-// type WindowPos = {
-//   width: number,
-//   height: number,
-//   anchorX: number,
-//   offsetFromBaseline?: number
-// }
+import { getIconFromName } from "./lib/icons";
 
 function App() {
   const [modal, setModal] = useState<React.ReactNode | null>(null);
@@ -140,35 +133,6 @@ const NAV_DATA = [
     link: "/preferences",
   },
 ] as const;
-
-function getIconFromName(name: string) {
-  switch (name.toLowerCase()) {
-    case "what's new?":
-    default:
-      return <Icon.Sparkle />;
-    case "help & support":
-      return <Icon.Help />;
-    case "autocomplete":
-    case "cli completions":
-      return <Icon.Autocomplete />;
-    case "predict":
-    case "ghosttext":
-      return <Icon.GhostText />;
-    case "translate":
-    case "translation":
-      return <Icon.Prompt />;
-    case "account":
-      return <Icon.User />;
-    case "integrations":
-      return <Icon.Apps />;
-    case "keybindings":
-      return <Icon.Keybindings />
-    case "preferences":
-      return <Icon.Settings />;
-    case "getting started":
-      return <Icon.Onboarding />;
-  }
-}
 
 function Layout() {
   return (
