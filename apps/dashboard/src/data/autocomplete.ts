@@ -12,15 +12,15 @@ const autocompleteSettings = [
         default: true,
         popular: true,
       },
-      {
-        id: "autocomplete.disable",
-        title: "Enable Autocomplete",
-        description:
-          "CodeWhisperer will provide a list of subcommands and options for you to choose from.",
-        type: "boolean",
-        default: false,
-        inverted: true,
-      },
+      // {
+      //   id: "autocomplete.disable",
+      //   title: "Enable Autocomplete",
+      //   description:
+      //     "CodeWhisperer will provide a list of subcommands and options for you to choose from.",
+      //   type: "boolean",
+      //   default: false,
+      //   inverted: true,
+      // },
       {
         id: "autocomplete.immediatelyExecuteAfterSpace",
         title: "Allow Instant Execute After Space",
@@ -235,3 +235,14 @@ const autocompleteSettings = [
 ];
 
 export default autocompleteSettings;
+
+export const intro = {
+    title: 'CLI Completions',
+    description: 'IDE-style autocomplete for 500+ CLIs.',
+    link: 'https://fig.io/user-manual/autocomplete',
+    enable: {
+      flag: 'autocomplete.disable',
+      inverted: true,
+      default: false
+    }
+}

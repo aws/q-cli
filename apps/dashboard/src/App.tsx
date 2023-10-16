@@ -124,11 +124,11 @@ const NAV_DATA = [
   //   name: "Account",
   //   link: "/account",
   // },
-  // {
-  //   type: "link",
-  //   name: "Keybindings",
-  //   link: "/keybindings",
-  // },
+  {
+    type: "link",
+    name: "Keybindings",
+    link: "/keybindings",
+  },
   {
     type: "link",
     name: "Integrations",

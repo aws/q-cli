@@ -1,17 +1,17 @@
 const ghostTextSettings = [
   {
-    title: "Ghost Text",
+    title: "Settings",
     properties: [
-      {
-        id: "predict.disable",
-        title: "Enable CodeWhisperer predictions",
-        description:
-          "CodeWhisperer will try to complete your current input for you.",
-        type: "boolean",
-        default: false,
-        inverted: true,
-        popular: false,
-      },
+      // {
+      //   id: "predict.disable",
+      //   title: "Enable CodeWhisperer predictions",
+      //   description:
+      //     "CodeWhisperer will try to complete your current input for you.",
+      //   type: "boolean",
+      //   default: false,
+      //   inverted: true,
+      //   popular: false,
+      // },
       {
         id: "predict.telemetry",
         title: "Share CodeWhisperer content with AWS",
@@ -29,3 +29,14 @@ const ghostTextSettings = [
 ];
 
 export default ghostTextSettings;
+
+export const intro = {
+  title: 'GhostText',
+  description: 'AI-generated command suggestions.',
+  link: 'https://aws.amazon.com/codewhisperer/',
+  enable: {
+    flag: 'predict.disable',
+    inverted: true,
+    default: false
+  }
+}

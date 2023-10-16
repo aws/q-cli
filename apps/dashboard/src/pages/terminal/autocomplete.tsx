@@ -1,6 +1,6 @@
-import { UserPrefSection, UserPrefView } from "@/components/preference/list";
+import { SectionHeading, UserPrefView } from "@/components/preference/list";
 import { Setting } from "@/components/preference/listItem";
-import settings from "@/data/autocomplete";
+import settings, { intro } from "@/data/autocomplete";
 import { alphaByTitle } from "@/lib/sort";
 
 
@@ -8,10 +8,11 @@ export default function Page() {
   const popular = (settings).map((s) => {
    return s.properties.filter((p) => p.popular)
   }).flat()
+
   return (
-    <UserPrefView array={settings}>
-      <section className="flex flex-col">
-        <h1 id={`subhead-popular`} className="font-bold text-2xl leading-none mt-2">Popular</h1>
+    <UserPrefView array={settings} intro={intro}>
+      <section className="flex flex-col pt-4">
+        <SectionHeading index={settings.length}>Popular</SectionHeading>
         {popular.sort(alphaByTitle).map((p, i) => <Setting data={p} key={i} />)}
       </section>
     </UserPrefView>

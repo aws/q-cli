@@ -20,7 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Keystroke from "../ui/keystrokeInput";
 
-export function Setting({ data }: { data: Pref }) {
+export function Setting({ data, disabled }: { data: Pref, disabled?: boolean }) {
   const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
   const localValue = data.inverted ? !inputValue : inputValue;
   const multiSelectValue = inputValue as string[]
@@ -76,11 +76,11 @@ export function Setting({ data }: { data: Pref }) {
     <div className={`flex p-4 ${data.type === 'keystrokes' ? "pl-0" : "pl-2"} gap-4`}>
       {(data.type !== 'keystrokes') && <div className="flex-none w-12">
         {data.type === "boolean" && (
-          <Switch onClick={toggleSwitch} checked={localValue as boolean} />
+          <Switch onClick={toggleSwitch} checked={localValue as boolean} disabled={disabled} />
         )}
       </div>}
       <div className="flex flex-col gap-1">
-        <h2 className="font-medium leading-none">{data.title}</h2>
+        <h3 className="font-medium leading-none">{data.title}</h3>
         {data.description && (
           <p className="font-light leading-tight text-sm">{data.description}</p>
         )}
@@ -91,7 +91,7 @@ export function Setting({ data }: { data: Pref }) {
           <div className="pt-1">
             {/* single value <select> menu */}
             {data.type === "select" && (
-              <Select>
+              <Select disabled={disabled}>
                 <SelectTrigger className="w-60">
                   <SelectValue placeholder={data.default} />
                 </SelectTrigger>
@@ -134,6 +134,7 @@ export function Setting({ data }: { data: Pref }) {
             {/* for number values, currently only used for ms, thus the 1000-unit step */}
             {data.type === "number" && (
               <Input
+                disabled={disabled}
                 type="number"
                 step={1000}
                 placeholder={
@@ -146,6 +147,7 @@ export function Setting({ data }: { data: Pref }) {
             {/* generic text input */}
             {data.type === "text" && (
               <Input
+                disabled={disabled}
                 type="text"
                 placeholder={
                   typeof data.default === "string"
@@ -155,7 +157,7 @@ export function Setting({ data }: { data: Pref }) {
               />
             )}
             {/* multi-keystroke value input */}
-            {data.type === "keystrokes" && <Keystroke values={keystrokeValue} setValues={setInputValue}/>}
+            {data.type === "keystrokes" && <Keystroke values={keystrokeValue} setValues={setInputValue} />}
           </div>
         )}
       </div>

@@ -8,10 +8,10 @@ module.exports = {
     './src/**/*.{ts,tsx}',
 	],
   fontSize: {
-    sm: '0.75rem',
-    base: '0.875rem',
-    md: '1rem',
-    lg: '1.125rem',
+    sm: '0.66rem',
+    base: '0.75rem',
+    md: '0.875rem',
+    lg: '1rem',
     xl: '1.25rem',
     '2xl': '2rem',
     '3xl': '3rem'
