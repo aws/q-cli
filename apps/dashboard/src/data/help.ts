@@ -4,13 +4,13 @@ const supportSteps = {
     'Run `cw issue` to create an auto-populated issue'
   ],
   links: [
-    {
-      text: 'Troubleshooting guide',
-      url: ''
-    },
+    // {
+    //   text: 'Troubleshooting guide',
+    //   url: ''
+    // },
     {
       text: 'User manual',
-      url: ''
+      url: 'http://fig.io/user-manual'
     }
   ]
 }

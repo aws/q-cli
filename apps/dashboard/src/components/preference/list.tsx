@@ -2,9 +2,10 @@ import { alphaByTitle } from "@/lib/sort";
 import { Action, Pref } from "@/types/preferences";
 import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
-import { State } from "@withfig/api-bindings";
+import { Native, State } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
 import { Button } from "../ui/button";
+import ExternalLink from "../util/external-link";
 
 type PrefSection = {
   title: string;
@@ -52,12 +53,12 @@ function FeatureIntro({ intro }: { intro: Intro }) {
           <h1 className="font-bold text-2xl font-ember leading-none">{intro.title}</h1>
           <p className="text-base">
             <span>{intro.description}</span>
-            <a
+            <ExternalLink
               href={intro.link}
               className="pl-1 text-white font-medium underline underline-offset-4 "
             >
               Learn more
-            </a>
+            </ExternalLink>
           </p>
           </div>
         </div>

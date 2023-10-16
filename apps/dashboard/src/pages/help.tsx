@@ -1,5 +1,6 @@
 import StatusCheck from "@/components/installs/statusCheck";
 import { Code } from "@/components/text/code";
+import ExternalLink from "@/components/util/external-link";
 import support from "@/data/help";
 import installChecks from "@/data/install";
 
@@ -47,13 +48,13 @@ export default function Page() {
             <div className="flex gap-4">
               {support.links.map((link, i) => {
                 return (
-                  <a
+                  <ExternalLink
                     key={i}
                     href={link.url}
                     className="text-blue-500 font-medium"
                   >
                     {link.text} →
-                  </a>
+                  </ExternalLink>
                 );
               })}
             </div>
