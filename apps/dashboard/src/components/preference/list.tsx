@@ -2,7 +2,7 @@ import { alphaByTitle } from "@/lib/sort";
 import { Action, Pref } from "@/types/preferences";
 import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
-import { Native, State } from "@withfig/api-bindings";
+import { State } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
 import { Button } from "../ui/button";
 import ExternalLink from "../util/external-link";

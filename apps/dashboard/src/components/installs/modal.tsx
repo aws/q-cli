@@ -13,6 +13,7 @@ import {
 } from "../ui/collapsible";
 import { Code } from "../text/code";
 import onboarding from "@/data/onboarding";
+import { ChevronDown } from "lucide-react";
 
 export function WelcomeModal({ next }: { next: () => void }) {
   return (
@@ -158,9 +159,16 @@ export default function InstallModal() {
         {check.explainer && (
           <Collapsible open={explainerOpen} onOpenChange={setExplainerOpen}>
             <CollapsibleTrigger asChild className="text-zinc-400">
-              <span className="text-xs select-none cursor-pointer">
+              <div className="flex items-center">
+              <ChevronDown
+                className={`h-3 w-3 ${
+                  explainerOpen ? "rotate-0" : "-rotate-90"
+                } cursor-pointer text-zinc-400`}
+              />
+              <span className="text-xs text-zinc-400 select-none cursor-pointer">
                 {check.explainer.title}
               </span>
+              </div>
             </CollapsibleTrigger>
             <CollapsibleContent>
               <ul className="flex flex-col gap-4 py-4">
