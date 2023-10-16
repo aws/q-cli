@@ -73,7 +73,7 @@ export function Setting({ data, disabled }: { data: Pref, disabled?: boolean }) 
   }
 
   return (
-    <div className={`flex p-4 ${data.type === 'keystrokes' ? "pl-0" : "pl-2"} gap-4`}>
+    <div className={`flex p-4 pl-0 gap-4`}>
       {(data.type !== 'keystrokes') && <div className="flex-none w-12">
         {data.type === "boolean" && (
           <Switch onClick={toggleSwitch} checked={localValue as boolean} disabled={disabled} />

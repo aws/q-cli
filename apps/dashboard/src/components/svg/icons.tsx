@@ -5,7 +5,7 @@ export function Svg ({children, size = 24, className}: {children: React.ReactNod
   const sizeH = typeof size === 'number' ? size : size[1] ? size[1] : size[0]
     return(
       <div style={{height: `${sizeH}px`, width: `${sizeW}px`}} className="relative">
-        <svg className={cn('fill-current absolute inset-0', className)} height={sizeH} width={sizeW} viewBox={`0 0 ${sizeW} ${sizeH}`} xmlns="http://www.w3.org/2000/svg">
+        <svg className={cn('fill-current absolute inset-0 h-full w-full', className)} viewBox={`0 0 24 24`} xmlns="http://www.w3.org/2000/svg">
             {children}
         </svg>
       </div>
