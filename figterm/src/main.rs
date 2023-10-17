@@ -58,10 +58,6 @@ use fig_proto::remote_hooks::{
     new_edit_buffer_hook,
 };
 use fig_settings::state;
-use fig_telemetry::sentry::{
-    capture_anyhow,
-    release_name,
-};
 use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
 use fig_util::process_info::{
     Pid,
@@ -550,8 +546,8 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         Ok(logger_guard) => Some(logger_guard),
         Err(err) => {
             if !fig_settings::state::get_bool_or("figterm.suppress_log_error", false) {
-                let id = capture_anyhow(&err);
-                eprintln!("Fig failed to init logger ({id}): {err:?}");
+                // let id = capture_anyhow(&err);
+                eprintln!("Fig failed to init logger: {err:?}");
             }
             None
         },
@@ -1036,12 +1032,12 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 }
 
 fn main() {
-    let _guard = fig_telemetry::init_sentry(
-        release_name!(),
-        "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
-        1.0,
-        false,
-    );
+    // let _guard = fig_telemetry::init_sentry(
+    //     release_name!(),
+    //     "https://633267fac776481296eadbcc7093af4a@o436453.ingest.sentry.io/6187825",
+    //     1.0,
+    //     false,
+    // );
 
     let cli = Cli::parse();
     let command = cli.command.as_deref();
@@ -1061,12 +1057,12 @@ fn main() {
         Err(err) => {
             error!("Error in async runtime: {err}");
             println!("Fig had an Error!: {err:?}");
-            capture_anyhow(&err);
+            // capture_anyhow(&err);
 
             // Fallback to normal shell
             #[cfg(unix)]
             if let Err(err) = launch_shell(command) {
-                capture_anyhow(&err);
+                // capture_anyhow(&err);
                 logger::stdio_debug_log(err.to_string());
             }
         },

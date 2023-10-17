@@ -35,7 +35,6 @@ impl ::aws_http::request_id::RequestId for CreateArtifactUploadUrlOutput {
 impl CreateArtifactUploadUrlOutput {
     /// Creates a new builder-style object to manufacture
     /// [`CreateArtifactUploadUrlOutput`](crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlOutput).
-    ///
     pub fn builder() -> crate::operation::create_artifact_upload_url::builders::CreateArtifactUploadUrlOutputBuilder {
         crate::operation::create_artifact_upload_url::builders::CreateArtifactUploadUrlOutputBuilder::default()
     }
@@ -43,7 +42,6 @@ impl CreateArtifactUploadUrlOutput {
 
 /// A builder for
 /// [`CreateArtifactUploadUrlOutput`](crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlOutput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct CreateArtifactUploadUrlOutputBuilder {
@@ -116,7 +114,6 @@ impl CreateArtifactUploadUrlOutputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`CreateArtifactUploadUrlOutput`](crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlOutput).
-    ///
     pub fn build(self) -> crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlOutput {
         crate::operation::create_artifact_upload_url::CreateArtifactUploadUrlOutput {
             upload_id: self.upload_id,

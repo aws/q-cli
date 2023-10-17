@@ -2,6 +2,7 @@ pub mod spinner;
 
 use std::env;
 use std::ffi::OsStr;
+use std::fmt::Display;
 use std::io::stdout;
 use std::iter::empty;
 use std::path::{
@@ -15,6 +16,7 @@ use cfg_if::cfg_if;
 use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
 use dialoguer::{
+    Confirm,
     FuzzySelect,
     Select,
 };
@@ -270,7 +272,7 @@ pub fn choose_fuzzy(prompt: &str, options: &[impl ToString]) -> Result<usize> {
         .ok_or_else(|| eyre::eyre!("Cancelled"))
 }
 
-pub fn choose(prompt: &str, options: &[impl ToString]) -> Result<usize> {
+pub fn choose(prompt: impl Display, options: &[impl ToString]) -> Result<usize> {
     tokio::spawn(async {
         tokio::signal::ctrl_c().await.unwrap();
         crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
@@ -289,9 +291,34 @@ pub fn choose(prompt: &str, options: &[impl ToString]) -> Result<usize> {
     Select::with_theme(&dialoguer_theme())
         .items(options)
         .default(0)
-        .with_prompt(prompt)
+        .with_prompt(prompt.to_string())
         .interact_opt()?
         .ok_or_else(|| eyre::eyre!("Cancelled"))
+}
+
+pub fn confirm(prompt: &str) -> Result<()> {
+    tokio::spawn(async {
+        tokio::signal::ctrl_c().await.unwrap();
+        crossterm::execute!(stdout(), crossterm::cursor::Show).unwrap();
+        std::process::exit(0);
+    });
+
+    if !*IS_TTY {
+        warn!("called confirm without a tty");
+        return Ok(());
+    }
+
+    if !Confirm::with_theme(&dialoguer_theme())
+        .with_prompt(prompt)
+        .default(true)
+        .show_default(false)
+        .interact_opt()?
+        .unwrap_or_default()
+    {
+        bail!("User canceled");
+    }
+
+    Ok(())
 }
 
 pub fn get_running_app_info(bundle_id: impl AsRef<str>, field: impl AsRef<str>) -> Result<String> {

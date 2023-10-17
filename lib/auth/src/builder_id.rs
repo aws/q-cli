@@ -397,11 +397,14 @@ impl IdentityResolver for BearerResolver {
     fn resolve_identity(&self, _config_bag: &ConfigBag) -> Future<Identity> {
         NowOrLater::new(Box::pin(async {
             let secret_store = SecretStore::load().await?;
-            let token = BuilderIdToken::load(&secret_store).await?.unwrap();
-            Ok(Identity::new(
-                Token::new(token.access_token.0, Some(token.expires_at.into())),
-                Some(token.expires_at.into()),
-            ))
+            let token = BuilderIdToken::load(&secret_store).await?;
+            match token {
+                Some(token) => Ok(Identity::new(
+                    Token::new(token.access_token.0, Some(token.expires_at.into())),
+                    Some(token.expires_at.into()),
+                )),
+                None => Err(Error::NoToken.into()),
+            }
         }))
     }
 }

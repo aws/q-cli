@@ -10,7 +10,7 @@ use fig_proto::remote_hooks::{
     new_preexec_hook,
     new_prompt_hook,
 };
-use fig_telemetry::sentry::configure_scope;
+// use fig_telemetry::sentry::configure_scope;
 use flume::Sender;
 use tracing::level_filters::LevelFilter;
 use tracing::{
@@ -128,12 +128,12 @@ impl EventListener for EventHandler {
                 }
             },
             Event::ShellChanged => {
-                let shell = &shell_state.local_context.shell;
-                configure_scope(|scope| {
-                    if let Some(shell) = shell {
-                        scope.set_tag("shell", shell);
-                    }
-                });
+                // let shell = &shell_state.local_context.shell;
+                // configure_scope(|scope| {
+                //     if let Some(shell) = shell {
+                //         scope.set_tag("shell", shell);
+                //     }
+                // });
             },
         }
     }

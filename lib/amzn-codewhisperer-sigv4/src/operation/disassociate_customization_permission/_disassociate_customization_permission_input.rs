@@ -22,7 +22,6 @@ impl DisassociateCustomizationPermissionInput {
 impl DisassociateCustomizationPermissionInput {
     /// Creates a new builder-style object to manufacture
     /// [`DisassociateCustomizationPermissionInput`](crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionInput).
-    ///
     pub fn builder() -> crate::operation::disassociate_customization_permission::builders::DisassociateCustomizationPermissionInputBuilder{
         crate::operation::disassociate_customization_permission::builders::DisassociateCustomizationPermissionInputBuilder::default()
     }
@@ -30,7 +29,6 @@ impl DisassociateCustomizationPermissionInput {
 
 /// A builder for
 /// [`DisassociateCustomizationPermissionInput`](crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionInput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct DisassociateCustomizationPermissionInputBuilder {
@@ -74,7 +72,6 @@ impl DisassociateCustomizationPermissionInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`DisassociateCustomizationPermissionInput`](crate::operation::disassociate_customization_permission::DisassociateCustomizationPermissionInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

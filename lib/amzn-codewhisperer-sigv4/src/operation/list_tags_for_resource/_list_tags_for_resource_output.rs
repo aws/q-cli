@@ -21,7 +21,6 @@ impl ::aws_http::request_id::RequestId for ListTagsForResourceOutput {
 impl ListTagsForResourceOutput {
     /// Creates a new builder-style object to manufacture
     /// [`ListTagsForResourceOutput`](crate::operation::list_tags_for_resource::ListTagsForResourceOutput).
-    ///
     pub fn builder() -> crate::operation::list_tags_for_resource::builders::ListTagsForResourceOutputBuilder {
         crate::operation::list_tags_for_resource::builders::ListTagsForResourceOutputBuilder::default()
     }
@@ -29,7 +28,6 @@ impl ListTagsForResourceOutput {
 
 /// A builder for
 /// [`ListTagsForResourceOutput`](crate::operation::list_tags_for_resource::ListTagsForResourceOutput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct ListTagsForResourceOutputBuilder {
@@ -70,7 +68,6 @@ impl ListTagsForResourceOutputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`ListTagsForResourceOutput`](crate::operation::list_tags_for_resource::ListTagsForResourceOutput).
-    ///
     pub fn build(self) -> crate::operation::list_tags_for_resource::ListTagsForResourceOutput {
         crate::operation::list_tags_for_resource::ListTagsForResourceOutput {
             tags: self.tags,

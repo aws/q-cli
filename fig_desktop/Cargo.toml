@@ -43,7 +43,7 @@ fig_desktop_api = { path = "../lib/fig_desktop_api" }
 fig_install = { path = "../lib/fig_install" }
 fig_integrations = { path = "../lib/fig_integrations", features = ["dispatch"] }
 fig_ipc = { path = "../lib/fig_ipc" }
-fig_log = { path = "../lib/fig_log", features = ["sentry"] }
+fig_log = { path = "../lib/fig_log" }
 fig_proto = { path = "../lib/fig_proto" }
 fig_request = { path = "../lib/fig_request" }
 fig_settings = { path = "../lib/fig_settings" }

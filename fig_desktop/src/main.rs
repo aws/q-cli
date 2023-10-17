@@ -20,7 +20,7 @@ use std::process::exit;
 use clap::Parser;
 use event::Event;
 use fig_log::Logger;
-use fig_telemetry::sentry::release_name;
+// use fig_telemetry::sentry::release_name;
 use fig_util::consts::CODEWHISPERER_DESKTOP_PROCESS_NAME;
 use parking_lot::RwLock;
 use platform::PlatformState;
@@ -92,16 +92,16 @@ async fn main() {
         .init()
         .expect("Failed to init logger");
 
-    let _sentry_guard = fig_telemetry::init_sentry(
-        release_name!(),
-        "https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682",
-        1.0,
-        true,
-    );
+    // let _sentry_guard = fig_telemetry::init_sentry(
+    //     release_name!(),
+    //     "https://4295cb4f204845958717e406b331948d@o436453.ingest.sentry.io/6432682",
+    //     1.0,
+    //     true,
+    // );
 
     if let Err(err) = fig_settings::settings::init_global() {
         error!(%err, "failed to init global settings");
-        fig_telemetry::sentry::capture_error(&err);
+        // fig_telemetry::sentry::capture_error(&err);
     }
 
     if cli.is_startup && !fig_settings::settings::get_bool_or("app.launchOnStartup", true) {

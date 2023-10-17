@@ -63,7 +63,7 @@ fn main() {
 
         out.push_str(&rust_type.to_string());
     }
-    out.push_str("}");
+    out.push('}');
 
     out.push_str("pub mod metrics {");
     for m in data.metrics {
@@ -94,7 +94,7 @@ fn main() {
 
         out.push_str(&rust_type.to_string());
     }
-    out.push_str("}");
+    out.push('}');
 
     // write an empty file to the output directory
     std::fs::write(format!("{}/mod.rs", outdir), out).unwrap();

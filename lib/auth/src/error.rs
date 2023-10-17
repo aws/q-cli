@@ -28,6 +28,8 @@ pub enum Error {
     StringFromUtf8(#[from] std::string::FromUtf8Error),
     #[error(transparent)]
     StrFromUtf8(#[from] std::str::Utf8Error),
+    #[error("No token")]
+    NoToken,
 }
 
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;

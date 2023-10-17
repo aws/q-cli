@@ -11,15 +11,13 @@ use clap::error::ContextKind;
 use clap::Parser;
 use eyre::Result;
 use fig_log::get_max_fig_log_level;
-use fig_telemetry::sentry::{
-    configure_scope,
-    release_name,
-};
+// use fig_telemetry::sentry::{
+//     configure_scope,
+//     release_name,
+// };
 use fig_util::CODEWHISPERER_CLI_BINARY_NAME;
 use owo_colors::OwoColorize;
 use tracing::metadata::LevelFilter;
-
-const SENTRY_CLI_URL: &str = "https://0631fceb9ae540bb874af81820507ebf@o436453.ingest.sentry.io/6187837";
 
 fn main() -> Result<()> {
     let args: Vec<_> = std::env::args().collect();
@@ -40,66 +38,10 @@ fn main() -> Result<()> {
         color_eyre::install()?;
     }
 
-    // Allow commands do not have sentry or telemetry, telemetry should only run on
-    // user facing commands as performance is less important
-    let (_guard, track_join, multithread) = match (
-        args.get(0).map(String::as_str),
+    let multithread = matches!(
         args.get(1).map(String::as_str),
-        args.get(2).map(String::as_str),
-    ) {
-        (_, Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running"), _) => {
-            (None, None, false)
-        },
-        (Some("/Applications/CodeWhisperer.app/Contents/MacOS/fig-darwin-universal"), _, _)
-        | (_, Some("app"), Some("prompts"))
-        | (_, Some("settings"), Some("init")) => (
-            Some(fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false)),
-            None,
-            true,
-        ),
-        _ => {
-            let sentry = fig_telemetry::init_sentry(release_name!(), SENTRY_CLI_URL, 1.0, false);
-
-            let shell = fig_util::get_parent_process_exe()
-                .map_or_else(|| "<unknown>".into(), |path| path.display().to_string());
-            let terminal = fig_util::Terminal::parent_terminal()
-                .map_or_else(|| "<unknown>".into(), |terminal| terminal.internal_id());
-            let cli_version = env!("CARGO_PKG_VERSION");
-            let args_no_exe: Vec<_> = std::env::args().skip(1).collect();
-
-            configure_scope(|scope| {
-                scope.set_tag("arguments", &args_no_exe.join(" "));
-                scope.set_tag("shell", &shell);
-                scope.set_tag("terminal", &terminal);
-                scope.set_tag("cli_version", cli_version);
-            });
-
-            match std::env::var_os("PROCESS_LAUNCHED_BY_FIG") {
-                None => (
-                    Some(sentry),
-                    #[cfg(unix)]
-                    Some(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                        fig_telemetry::TrackEventType::RanCommand,
-                        fig_telemetry::TrackSource::Cli,
-                        env!("CARGO_PKG_VERSION").into(),
-                        [
-                            ("arguments", serde_json::json!(args_no_exe.join(" "))),
-                            ("arguments_json", serde_json::json!(args_no_exe)),
-                            ("arg0", serde_json::json!(args.get(0))),
-                            ("arg1", serde_json::json!(args.get(1))),
-                            ("shell", serde_json::json!(shell)),
-                            ("terminal", serde_json::json!(terminal)),
-                            ("cli_version", serde_json::json!(cli_version)),
-                        ],
-                    ))),
-                    #[cfg(windows)]
-                    Some(async { Result::<()>::Ok(()) }),
-                    true,
-                ),
-                Some(_) => (Some(sentry), None, true),
-            }
-        },
-    };
+        Some("init" | "_" | "internal" | "tips" | "completion" | "hook" | "bg:tmux" | "app:running")
+    );
 
     let parsed = match cli::Cli::try_parse() {
         Ok(cli) => cli,
@@ -137,14 +79,7 @@ fn main() -> Result<()> {
     .enable_all()
     .build()?;
 
-    let result = runtime.block_on(async {
-        let cli_join = parsed.execute();
-
-        match track_join {
-            Some(track_join) => tokio::join!(cli_join, track_join).0,
-            None => cli_join.await,
-        }
-    });
+    let result = runtime.block_on(parsed.execute());
 
     if let Err(err) = result {
         if get_max_fig_log_level() > LevelFilter::INFO {

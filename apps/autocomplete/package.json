@@ -25,8 +25,6 @@
     "@fig/autocomplete-shared": "^1.1.2",
     "@fig/fig-api-proto": "workspace:^",
     "@juggle/resize-observer": "^3.4.0",
-    "@sentry/react": "^7.60.1",
-    "@sentry/tracing": "^7.60.1",
     "@types/js-yaml": "^4.0.5",
     "@vitejs/plugin-react": "^4.0.3",
     "@withfig/api-bindings": "~0.30.2",

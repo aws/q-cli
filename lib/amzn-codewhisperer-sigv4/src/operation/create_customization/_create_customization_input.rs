@@ -50,7 +50,6 @@ impl CreateCustomizationInput {
 impl CreateCustomizationInput {
     /// Creates a new builder-style object to manufacture
     /// [`CreateCustomizationInput`](crate::operation::create_customization::CreateCustomizationInput).
-    ///
     pub fn builder() -> crate::operation::create_customization::builders::CreateCustomizationInputBuilder {
         crate::operation::create_customization::builders::CreateCustomizationInputBuilder::default()
     }
@@ -177,7 +176,6 @@ impl CreateCustomizationInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`CreateCustomizationInput`](crate::operation::create_customization::CreateCustomizationInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

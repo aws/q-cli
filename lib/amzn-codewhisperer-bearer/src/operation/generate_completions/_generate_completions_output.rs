@@ -28,7 +28,6 @@ impl ::aws_http::request_id::RequestId for GenerateCompletionsOutput {
 impl GenerateCompletionsOutput {
     /// Creates a new builder-style object to manufacture
     /// [`GenerateCompletionsOutput`](crate::operation::generate_completions::GenerateCompletionsOutput).
-    ///
     pub fn builder() -> crate::operation::generate_completions::builders::GenerateCompletionsOutputBuilder {
         crate::operation::generate_completions::builders::GenerateCompletionsOutputBuilder::default()
     }
@@ -36,7 +35,6 @@ impl GenerateCompletionsOutput {
 
 /// A builder for
 /// [`GenerateCompletionsOutput`](crate::operation::generate_completions::GenerateCompletionsOutput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct GenerateCompletionsOutputBuilder {
@@ -95,7 +93,6 @@ impl GenerateCompletionsOutputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`GenerateCompletionsOutput`](crate::operation::generate_completions::GenerateCompletionsOutput).
-    ///
     pub fn build(self) -> crate::operation::generate_completions::GenerateCompletionsOutput {
         crate::operation::generate_completions::GenerateCompletionsOutput {
             completions: self.completions,

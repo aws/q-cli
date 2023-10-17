@@ -4,7 +4,6 @@ use std::io::BufReader;
 use std::path::Path;
 use std::sync::Arc;
 
-use fig_util::consts::CODEWHISPERER_CLI_BINARY_NAME;
 use once_cell::sync::Lazy;
 use reqwest::Client;
 use rustls::client::{
@@ -134,22 +133,10 @@ pub fn client_config(native_certs: bool) -> Arc<ClientConfig> {
 }
 
 pub static USER_AGENT: Lazy<String> = Lazy::new(|| {
-    let mut name = current_exe()
+    let name = current_exe()
         .ok()
         .and_then(|exe| exe.file_stem().and_then(|name| name.to_str().map(String::from)))
         .unwrap_or_else(|| "unknown-rust-client".into());
-
-    if name == "fig" || name == CODEWHISPERER_CLI_BINARY_NAME {
-        if let Some(arg1) = std::env::args().nth(1) {
-            if arg1 == "_" {
-                if let Some(arg2) = std::env::args().nth(2) {
-                    name = format!("fig-internal-{arg2}");
-                }
-            } else if !arg1.starts_with('-') {
-                name = format!("fig-{arg1}");
-            }
-        }
-    }
 
     let os = std::env::consts::OS;
     let arch = std::env::consts::ARCH;

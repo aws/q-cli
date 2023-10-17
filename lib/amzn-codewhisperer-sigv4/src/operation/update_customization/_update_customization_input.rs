@@ -36,7 +36,6 @@ impl UpdateCustomizationInput {
 impl UpdateCustomizationInput {
     /// Creates a new builder-style object to manufacture
     /// [`UpdateCustomizationInput`](crate::operation::update_customization::UpdateCustomizationInput).
-    ///
     pub fn builder() -> crate::operation::update_customization::builders::UpdateCustomizationInputBuilder {
         crate::operation::update_customization::builders::UpdateCustomizationInputBuilder::default()
     }
@@ -123,7 +122,6 @@ impl UpdateCustomizationInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`UpdateCustomizationInput`](crate::operation::update_customization::UpdateCustomizationInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

@@ -201,11 +201,11 @@ impl Logger {
         };
         let registry = registry.with(stdout_layer);
 
-        #[cfg(feature = "sentry")]
-        let registry = registry.with(sentry_tracing::layer().event_filter(|md| match md.level() {
-            &tracing::Level::ERROR | &tracing::Level::WARN => sentry_tracing::EventFilter::Breadcrumb,
-            _ => sentry_tracing::EventFilter::Ignore,
-        }));
+        // #[cfg(feature = "sentry")]
+        // let registry = registry.with(sentry_tracing::layer().event_filter(|md| match md.level() {
+        //     &tracing::Level::ERROR | &tracing::Level::WARN => sentry_tracing::EventFilter::Breadcrumb,
+        //     _ => sentry_tracing::EventFilter::Ignore,
+        // }));
 
         registry.init();
 

@@ -21,7 +21,6 @@ impl ::aws_http::request_id::RequestId for CreateCustomizationOutput {
 impl CreateCustomizationOutput {
     /// Creates a new builder-style object to manufacture
     /// [`CreateCustomizationOutput`](crate::operation::create_customization::CreateCustomizationOutput).
-    ///
     pub fn builder() -> crate::operation::create_customization::builders::CreateCustomizationOutputBuilder {
         crate::operation::create_customization::builders::CreateCustomizationOutputBuilder::default()
     }
@@ -29,7 +28,6 @@ impl CreateCustomizationOutput {
 
 /// A builder for
 /// [`CreateCustomizationOutput`](crate::operation::create_customization::CreateCustomizationOutput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct CreateCustomizationOutputBuilder {
@@ -66,7 +64,6 @@ impl CreateCustomizationOutputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`CreateCustomizationOutput`](crate::operation::create_customization::CreateCustomizationOutput).
-    ///
     pub fn build(self) -> crate::operation::create_customization::CreateCustomizationOutput {
         crate::operation::create_customization::CreateCustomizationOutput {
             customization_arn: self.customization_arn,

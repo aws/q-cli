@@ -15,7 +15,6 @@ impl DeleteCustomizationPermissionsInput {
 impl DeleteCustomizationPermissionsInput {
     /// Creates a new builder-style object to manufacture
     /// [`DeleteCustomizationPermissionsInput`](crate::operation::delete_customization_permissions::DeleteCustomizationPermissionsInput).
-    ///
     pub fn builder()
     -> crate::operation::delete_customization_permissions::builders::DeleteCustomizationPermissionsInputBuilder {
         crate::operation::delete_customization_permissions::builders::DeleteCustomizationPermissionsInputBuilder::default()
@@ -24,7 +23,6 @@ impl DeleteCustomizationPermissionsInput {
 
 /// A builder for
 /// [`DeleteCustomizationPermissionsInput`](crate::operation::delete_customization_permissions::DeleteCustomizationPermissionsInput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct DeleteCustomizationPermissionsInputBuilder {
@@ -50,7 +48,6 @@ impl DeleteCustomizationPermissionsInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`DeleteCustomizationPermissionsInput`](crate::operation::delete_customization_permissions::DeleteCustomizationPermissionsInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<
