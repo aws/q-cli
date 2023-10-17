@@ -1,5 +1,5 @@
 const translateSettings = [{
-  title: 'Translate',
+  title: 'Settings',
   properties: [
     {
       id: "ai.terminal-hash-sub",

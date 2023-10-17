@@ -8,7 +8,7 @@ export default function Page() {
   return (
     <div className="flex flex-col items-start gap-8 pb-4">
       <div className="flex flex-col justify-between gap-2 self-stretch">
-        <h1 className="text-3xl font-black select-none">Automated checks</h1>
+        <h1 className="text-xl font-bold select-none">Automated checks</h1>
         <div className="flex flex-col">
           {installChecks.map((check) => {
             return <StatusCheck check={check} key={check.id} />;
@@ -16,7 +16,7 @@ export default function Page() {
         </div>
       </div>
       <div className="flex flex-col justify-between gap-4 self-stretch">
-        <h1 className="text-3xl font-black select-none mb-2">
+        <h1 className="text-xl font-bold select-none mb-2">
           Still having issues?
         </h1>
         <div className="flex flex-col gap-4">
