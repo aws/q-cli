@@ -13,6 +13,7 @@ fig_proto = { path = "../fig_proto" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
+telemetry_client = { path = "../telemetry_client" }
 macos_utils = { path = "../macos_utils" }
 once_cell = { version = "1.17.1", features = ["parking_lot"] }
 parking_lot = "0.12.1"

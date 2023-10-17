@@ -7,13 +7,12 @@ use serde_json::{
 use crate::Error;
 
 pub fn telemetry_is_disabled() -> bool {
-    // std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
-    //     || fig_settings::settings::get_value("telemetry.disabled")
-    //         .ok()
-    //         .flatten()
-    //         .and_then(|v| v.as_bool())
-    //         .unwrap_or(false)
-    true
+    std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
+        || fig_settings::settings::get_value("telemetry.disabled")
+            .ok()
+            .flatten()
+            .and_then(|v| v.as_bool())
+            .unwrap_or(false)
 }
 
 pub(crate) async fn default_properties() -> Map<String, Value> {
@@ -123,13 +122,4 @@ pub(crate) async fn default_properties() -> Map<String, Value> {
     );
 
     prop
-}
-
-pub(crate) async fn make_telemetry_request(_route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
-    body.insert(
-        "anonymousId".into(),
-        fig_settings::state::get_or_create_anonymous_id()?.into(),
-    );
-    // TODO: fix?
-    Ok(())
 }
