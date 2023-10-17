@@ -95,13 +95,13 @@ impl ThemeArgs {
                         }
                         println!();
 
-                        fig_api_client::settings::update("autocomplete.theme", json!(theme_str)).await?;
+                        fig_settings::settings::set_value("autocomplete.theme", theme_str)?;
                         Ok(())
                     },
                     Err(_) => {
                         if BUILT_IN_THEMES.contains(&theme_str) {
                             println!("› Switching to theme '{}'", theme_str.bold());
-                            fig_api_client::settings::update("autocomplete.theme", json!(theme_str)).await?;
+                            fig_settings::settings::set_value("autocomplete.theme", theme_str)?;
                             Ok(())
                         } else {
                             eyre::bail!("'{theme_str}' does not exist in {}", theme_dir.display())

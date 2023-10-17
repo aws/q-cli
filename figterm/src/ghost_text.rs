@@ -187,33 +187,6 @@ pub async fn handle_request(
             },
             max_results: 1,
             next_token: None,
-            // history: history
-            //     .into_iter()
-            //     .map(|entry| fig_api_client::ai::CommandInfo {
-            //         command: entry.command,
-            //         cwd: entry.cwd,
-            //         time: entry.start_time.map(|t| t.into()),
-            //         exit_code: entry.exit_code,
-            //         hostname: entry.hostname,
-            //         pid: entry.pid,
-            //         session_id: entry.session_id,
-            //         shell: entry.shell,
-            //     })
-            //     .collect::<Vec<_>>(),
-            // os: std::env::consts::OS.to_string(),
-            // arch: std::env::consts::ARCH.to_string(),
-            // time: Some(time::OffsetDateTime::now_utc()),
-            // cwd: std::env::current_dir()
-            //     .ok()
-            //     .and_then(|p| p.to_str().map(|s| s.to_string())),
-            // edit_buffer: vec![
-            //     EditBufferComponent::String(figterm_request.buffer.clone()),
-            //     EditBufferComponent::Other {
-            //         r#type: "cursor".to_string(),
-            //     },
-            // ],
-            // home_dir: home_dir_utf8().map(|s| s.into()).ok(),
-            // session_id: Some(session_id.clone()),
         };
 
         let response = match fig_api_client::ai::request_cw(request)
@@ -230,7 +203,7 @@ pub async fn handle_request(
 
         let insert_text = match response {
             Ok(response) => {
-                let recommendations = response.recommendations.unwrap_or_default();
+                let recommendations = response.completions.unwrap_or_default();
                 let mut completion_cache = COMPLETION_CACHE.lock().await;
 
                 for choice in &recommendations {

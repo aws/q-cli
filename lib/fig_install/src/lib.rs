@@ -122,15 +122,8 @@ pub fn get_max_channel() -> Channel {
     } else {
         Channel::Stable
     };
-    let fig_team_channel = fig_request::auth::get_email_sync().map_or(Channel::Stable, |email| {
-        if email.ends_with("@fig.io") {
-            Channel::Nightly
-        } else {
-            Channel::Stable
-        }
-    });
 
-    [state_channel, manifest_channel, settings_channel, fig_team_channel]
+    [state_channel, manifest_channel, settings_channel]
         .into_iter()
         .max()
         .unwrap()
@@ -246,7 +239,7 @@ pub async fn update(
 pub fn get_uninstall_url(brew: bool) -> String {
     // Open the uninstallation page
     let os = std::env::consts::OS;
-    let email = fig_request::auth::get_email_sync().unwrap_or_default();
+    let email = "";
     let version = env!("CARGO_PKG_VERSION");
     format!("https://fig.io/uninstall?email={email}&version={version}&os={os}&brew={brew}")
 }

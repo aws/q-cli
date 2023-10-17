@@ -1994,7 +1994,7 @@
     },
     {
       "name": "rds_createConnectionConfiguration",
-      "description": "Called when creating a new database connection configuration to for a RDS database. In Datagrip we do not get this infromation if it is created directly, so this is only counts actions.",
+      "description": "Called when creating a new database connection configuration to for a RDS database. In Datagrip we do not get this information if it is created directly, so this is only counts actions.",
       "metadata": [
         { "type": "result" },
         { "type": "databaseCredentials" },
@@ -2009,7 +2009,7 @@
     },
     {
       "name": "redshift_createConnectionConfiguration",
-      "description": "Called when creating a new database connection configuration to for a Redshift database. In Datagrip we do not get this infromation if it is created directly, so this only counts actions.",
+      "description": "Called when creating a new database connection configuration to for a Redshift database. In Datagrip we do not get this information if it is created directly, so this only counts actions.",
       "metadata": [{ "type": "result" }, { "type": "databaseCredentials" }]
     },
     {

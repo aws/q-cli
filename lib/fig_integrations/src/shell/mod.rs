@@ -361,8 +361,8 @@ impl DotfileShellIntegration {
 
     fn description(&self, when: When) -> String {
         match when {
-            When::Pre => "# Fig pre block. Keep at the top of this file.".into(),
-            When::Post => "# Fig post block. Keep at the bottom of this file.".into(),
+            When::Pre => "# CodeWhisperer pre block. Keep at the top of this file.".into(),
+            When::Post => "# CodeWhisperer post block. Keep at the bottom of this file.".into(),
         }
     }
 
@@ -431,7 +431,7 @@ impl DotfileShellIntegration {
     fn source_text(&self, when: When) -> Result<String> {
         let home = directories::home_dir()?;
         let integration_path = self.script_integration(when)?.path;
-        let path = format!("\"$HOME/{}\"", integration_path.strip_prefix(home)?.display());
+        let path = format!("\"${{HOME}}/{}\"", integration_path.strip_prefix(home)?.display());
 
         match self.shell {
             Shell::Fish => Ok(format!("test -f {path}; and builtin source {path}")),

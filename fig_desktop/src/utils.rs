@@ -16,8 +16,6 @@ use serde::{
     Serialize,
 };
 use serde_json::json;
-use tracing::error;
-use url::Url;
 use wry::application::dpi::{
     Position,
     Size,
@@ -152,55 +150,5 @@ impl Rect {
         let contains_y = point.y >= rect_position.y && point.y <= rect_position.y + rect_size.height;
 
         contains_x && contains_y
-    }
-}
-
-pub fn handle_login_deep_link(url: &Url) -> Option<serde_json::Value> {
-    if let Some(fragment) = url.fragment() {
-        let parse = url::form_urlencoded::parse(fragment.as_bytes());
-        let hash: std::collections::HashMap<_, _> = parse.collect();
-
-        let access_token = hash.get("accessToken").map(|s| s.clone().into_owned());
-        let id_token = hash.get("idToken").map(|s| s.clone().into_owned());
-        let refresh_token = hash.get("refreshToken").map(|s| s.clone().into_owned());
-        let email = hash.get("email").map(|s| s.clone().into_owned());
-
-        let creds = fig_request::auth::Credentials::new_jwt(
-            email.clone(),
-            access_token.clone(),
-            id_token.clone(),
-            refresh_token.clone(),
-            false,
-        );
-
-        if let Err(err) = creds.save_credentials() {
-            error!(%err, "Failed to save credentials");
-        }
-
-        // Since this can happen before the webview is opened we need to persist the newUser state since all
-        // other state is persisted via the credentials file, the `newUser` local state value will
-        // be unset in the dashboard login page
-        let new_user = if let Some(new_user) = hash.get("newUser") {
-            if new_user == "true" {
-                if let Err(err) = fig_settings::state::set_value("login.newUser", true) {
-                    error!(%err, "Failed to set new user");
-                }
-                true
-            } else {
-                false
-            }
-        } else {
-            false
-        };
-
-        Some(serde_json::json!({
-            "accessToken": access_token,
-            "idToken": id_token,
-            "refreshToken": refresh_token,
-            "email": email,
-            "newUser": new_user
-        }))
-    } else {
-        None
     }
 }

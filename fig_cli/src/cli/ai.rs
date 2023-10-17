@@ -202,7 +202,30 @@ impl AiArgs {
 
                 let response = request_cw(CodewhipererRequest {
                     file_context: CodewhipererFileContext {
-                        left_file_content: format!("# {question}\n"),
+                        left_file_content: format!(
+                            "# List files
+ls -l
+
+# Count files in a directory
+ls -l | wc -l
+
+# Disk space used by home directory
+du ~
+
+# Replace foo with bar in all .py files
+sed 's/foo/bar/g' *.py
+
+# Add all files to git and create a commit with the message \"feat: add new route\"
+git add -A && git commit -m 'feat: add new route'
+
+# Delete the models subdirectory
+rm -rf ./models
+
+# What folder am I in?
+pwd
+
+# {question}\n"
+                        ),
                         right_file_content: "".into(),
                         filename: "commands.sh".into(),
                         programming_language: ProgrammingLanguage {
@@ -215,7 +238,7 @@ impl AiArgs {
                 .await?;
 
                 let choices: Vec<(String, Option<String>)> = response
-                    .recommendations
+                    .completions
                     .unwrap_or_default()
                     .into_iter()
                     .map(|rec| (rec.content.unwrap_or_default(), None))

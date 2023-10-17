@@ -17,7 +17,6 @@ import {
   isInDevMode,
   SETTINGS,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { AuthClient } from "@amzn/fig-io-api-client";
 import { Command, substituteAlias } from "@amzn/fig-io-shell-parser";
 import {
   getSpecPath,
@@ -738,7 +737,7 @@ const getCacheKey = (
 const parseArgumentsCached = async (
   command: Command,
   context: Fig.ShellContext,
-  authClient: AuthClient,
+  // authClient: AuthClient,
   specLocations?: Internal.SpecLocation[],
   isParsingHistory?: boolean,
   startIndex = 0,
@@ -784,7 +783,7 @@ const parseArgumentsCached = async (
     // eslint-disable-next-line no-await-in-loop
     spec = await withTimeout(
       5000,
-      loadSubcommandCached(specPath, authClient, context, localLogger),
+      loadSubcommandCached(specPath, context, localLogger),
     );
 
     if (!spec) {
@@ -832,7 +831,7 @@ const parseArgumentsCached = async (
       state = await parseArgumentsCached(
         currentCommand,
         context,
-        authClient,
+        // authClient,
         loadSpecResult,
         isParsingHistory,
         startIndex + index,
@@ -1054,7 +1053,7 @@ const firstTokenSpec: Internal.Subcommand = {
 export const parseArguments = async (
   command: Command | null,
   context: Fig.ShellContext,
-  authClient: AuthClient,
+  // authClient: AuthClient,
   isParsingHistory = false,
   localLogger: logger.Logger = logger,
 ): Promise<ArgumentParserResult> => {
@@ -1081,7 +1080,6 @@ export const parseArguments = async (
       }
       spec = await loadSubcommandCached(
         specPath,
-        authClient,
         context,
         localLogger,
       );
@@ -1092,7 +1090,7 @@ export const parseArguments = async (
   let state = await parseArgumentsCached(
     command,
     context,
-    authClient,
+    // authClient,
     undefined,
     isParsingHistory,
     0,

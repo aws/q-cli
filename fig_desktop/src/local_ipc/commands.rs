@@ -194,7 +194,7 @@ pub fn log_level(LogLevelCommand { level }: LogLevelCommand) -> LocalResult {
 }
 
 pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
-    fig_request::auth::logout().ok();
+    auth::logout().await.ok();
 
     proxy
         .send_event(Event::WindowEvent {

@@ -1,54 +1,80 @@
-use security_framework::os::macos::keychain::SecKeychain;
+use super::Secret;
+use crate::{
+    Error,
+    Result,
+};
 
-use crate::Result;
+/// Path to the `security` binary
+const SECURITY_BIN: &str = "/usr/bin/security";
 
 /// The account name is not used.
 const ACCOUNT: &str = "";
 
-/// [`errSecItemNotFound`](https://developer.apple.com/documentation/security/1542001-security_framework_result_codes/errsecitemnotfound)
-const ERR_SEC_ITEM_NOT_FOUND: i32 = -25300;
-
 pub struct SecretStoreImpl {
-    keychain: SecKeychain,
+    _private: (),
 }
 
 impl SecretStoreImpl {
-    pub fn load() -> Result<Self> {
-        match SecKeychain::open("login.keychain") {
-            Ok(keychain) => Ok(Self { keychain }),
-            Err(err) => match SecKeychain::default() {
-                Ok(keychain) => Ok(Self { keychain }),
-                Err(_) => Err(err.into()),
-            },
-        }
+    pub async fn load() -> Result<Self> {
+        Ok(Self { _private: () })
     }
 
     /// Sets the `key` to `password` on the keychain, this will override any existing value
-    pub fn set(&self, key: &str, password: &str) -> Result<()> {
-        if let Ok((_, mut item)) = self.keychain.find_generic_password(key, ACCOUNT) {
-            item.set_password(password.as_bytes())?;
-        } else {
-            self.keychain.add_generic_password(key, ACCOUNT, password.as_bytes())?;
+    pub async fn set(key: &str, password: &str) -> Result<()> {
+        let output = tokio::process::Command::new(SECURITY_BIN)
+            .args(&["add-generic-password", "-U", "-s", &key, "-a", ACCOUNT, "-w", password])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            let stderr = std::str::from_utf8(&output.stderr)?;
+            return Err(Error::Security(stderr.into()));
         }
+
         Ok(())
     }
 
     /// Returns the password for the `key`
     ///
     /// If not found the result will be `Ok(None)`, other errors will be returned
-    pub fn get(&self, key: &str) -> Result<Option<String>> {
-        match self.keychain.find_generic_password(key, ACCOUNT) {
-            Ok((password, _)) => Ok(Some(String::from_utf8(password.as_ref().to_vec())?)),
-            Err(err) if err.code() == ERR_SEC_ITEM_NOT_FOUND => Ok(None),
-            Err(err) => Err(err.into()),
+    pub async fn get(key: &str) -> Result<Option<Secret>> {
+        let output = tokio::process::Command::new(SECURITY_BIN)
+            .args(&["find-generic-password", "-s", &key, "-a", ACCOUNT, "-w"])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            let stderr = std::str::from_utf8(&output.stderr)?;
+            if stderr.contains("could not be found") {
+                return Ok(None);
+            } else {
+                return Err(Error::Security(stderr.into()));
+            }
         }
+
+        let stdout = std::str::from_utf8(&output.stdout)?;
+
+        // strip newline
+        let stdout = match stdout.strip_suffix('\n') {
+            Some(stdout) => stdout,
+            None => stdout,
+        };
+
+        Ok(Some(stdout.into()))
     }
 
     /// Deletes the `key` from the keychain
-    pub fn delete(&self, key: &str) -> Result<()> {
-        if let Ok((_, item)) = self.keychain.find_generic_password(key, ACCOUNT) {
-            item.delete();
+    pub async fn delete(key: &str) -> Result<()> {
+        let output = tokio::process::Command::new(SECURITY_BIN)
+            .args(&["delete-generic-password", "-s", &key, "-a", ACCOUNT])
+            .output()
+            .await?;
+
+        if !output.status.success() {
+            let stderr = std::str::from_utf8(&output.stderr)?;
+            return Err(Error::Security(stderr.into()));
         }
+
         Ok(())
     }
 }

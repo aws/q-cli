@@ -41,13 +41,11 @@ pub async fn update(request: UpdateSettingsPropertyRequest) -> RequestResult {
     match (&request.key, request.value) {
         (Some(key), Some(value)) => {
             let value = serde_json::from_str(&value).unwrap_or(serde_json::Value::String(value));
-            fig_api_client::settings::update(key, value)
-                .await
-                .map_err(|err| format!("Failed setting {key}: {err}"))?;
+            fig_settings::settings::set_value(key, value).map_err(|err| format!("Failed setting {key}: {err}"))?;
         },
-        (Some(key), None) => fig_api_client::settings::delete(key)
-            .await
-            .map_err(|err| format!("Failed removing {key}: {err}"))?,
+        (Some(key), None) => {
+            fig_settings::settings::remove_value(key).map_err(|err| format!("Failed removing {key}: {err}"))?
+        },
         (None, _) => {
             return RequestResult::error("No key provided with request");
         },

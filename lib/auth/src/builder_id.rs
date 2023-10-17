@@ -23,23 +23,36 @@
 
 use aws_sdk_ssooidc::client::Client;
 use aws_sdk_ssooidc::config::retry::RetryConfig;
-use aws_sdk_ssooidc::config::SharedAsyncSleep;
+use aws_sdk_ssooidc::config::{
+    ConfigBag,
+    SharedAsyncSleep,
+};
 use aws_sdk_ssooidc::error::SdkError;
 use aws_sdk_ssooidc::operation::create_token::CreateTokenOutput;
+use aws_smithy_async::future::now_or_later::NowOrLater;
 use aws_smithy_async::rt::sleep::TokioSleep;
+use aws_smithy_runtime_api::client::identity::http::Token;
+use aws_smithy_runtime_api::client::identity::{
+    Identity,
+    IdentityResolver,
+};
+use aws_smithy_runtime_api::client::orchestrator::Future;
 use aws_types::app_name::AppName;
 use aws_types::region::Region;
 use once_cell::sync::Lazy;
 use time::OffsetDateTime;
 use tracing::error;
 
-use crate::secret_store::SecretStore;
+use crate::secret_store::{
+    Secret,
+    SecretStore,
+};
 use crate::{
     Error,
     Result,
 };
 
-const CLIENT_NAME: &str = "CodeWhisperer for Terminal";
+const CLIENT_NAME: &str = "CodeWhisperer";
 
 const OIDC_BUILDER_ID_ENDPOINT: &str = "https://oidc.us-east-1.amazonaws.com";
 const OIDC_BUILDER_ID_REGION: Region = Region::from_static("us-east-1");
@@ -51,10 +64,12 @@ const SCOPES: &[&str] = &[
 ];
 const CLIENT_TYPE: &str = "public";
 const START_URL: &str = "https://view.awsapps.com/start";
-const GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
+
+const DEVICE_GRANT_TYPE: &str = "urn:ietf:params:oauth:grant-type:device_code";
+const REFRESH_GRANT_TYPE: &str = "refresh_token";
 
 static APP_NAME: Lazy<AppName> =
-    Lazy::new(|| AppName::new(format!("codewhisperer-terminal-v{}", env!("CARGO_PKG_VERSION"))).unwrap());
+    Lazy::new(|| AppName::new(format!("codewhisperer-desktop-v{}", env!("CARGO_PKG_VERSION"))).unwrap());
 
 /// Indicates if an expiration time has passed, there is a small 1 min window that is removed
 /// so the token will not expire in transit
@@ -78,19 +93,19 @@ static CLIENT: Lazy<Client> = Lazy::new(|| {
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct DeviceRegistration {
     pub client_id: String,
-    pub client_secret: String,
+    pub client_secret: Secret,
     pub client_secret_expires_at: Option<time::OffsetDateTime>,
 }
 
 impl DeviceRegistration {
     const SECRET_KEY: &str = "codewhisper:builder-id:device-registration";
 
-    fn load_from_secret_store(secret_store: &SecretStore) -> Result<Option<Self>> {
-        let device_registration = secret_store.get(Self::SECRET_KEY)?;
+    async fn load_from_secret_store(secret_store: &SecretStore) -> Result<Option<Self>> {
+        let device_registration = secret_store.get(Self::SECRET_KEY).await?;
 
         if let Some(device_registration) = device_registration {
             // check that the data is not expired, assume it is invalid if not present
-            let device_registration: Self = serde_json::from_str(&device_registration)?;
+            let device_registration: Self = serde_json::from_str(&device_registration.0)?;
 
             if let Some(client_secret_expires_at) = device_registration.client_secret_expires_at {
                 if !is_expired(&client_secret_expires_at) {
@@ -99,12 +114,17 @@ impl DeviceRegistration {
             }
         }
 
+        // delete the data if its expired or invalid
+        if let Err(err) = secret_store.delete(Self::SECRET_KEY).await {
+            error!(?err, "Failed to delete device registration from keychain");
+        }
+
         Ok(None)
     }
 
     /// Register the client with OIDC and cache the response for the expiration period
     pub async fn register(secret_store: &SecretStore) -> Result<Self> {
-        match Self::load_from_secret_store(secret_store) {
+        match Self::load_from_secret_store(secret_store).await {
             Ok(Some(device_registration)) => return Ok(device_registration),
             Ok(None) => {},
             Err(err) => {
@@ -119,20 +139,22 @@ impl DeviceRegistration {
         for scope in SCOPES {
             register = register.scopes(*scope);
         }
-        let register_res = register.send().await?;
+        let output = register.send().await?;
 
-        let res = Self {
-            client_id: register_res.client_id.unwrap_or_default(),
-            client_secret: register_res.client_secret.unwrap_or_default(),
-            client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(register_res.client_secret_expires_at)
-                .ok(),
+        let device_registration = Self {
+            client_id: output.client_id.unwrap_or_default(),
+            client_secret: output.client_secret.unwrap_or_default().into(),
+            client_secret_expires_at: time::OffsetDateTime::from_unix_timestamp(output.client_secret_expires_at).ok(),
         };
 
-        if let Err(err) = secret_store.set(Self::SECRET_KEY, &serde_json::to_string(&res)?) {
+        if let Err(err) = secret_store
+            .set(Self::SECRET_KEY, &serde_json::to_string(&device_registration)?)
+            .await
+        {
             error!(?err, "Failed to write device registration to keychain");
         }
 
-        Ok(res)
+        Ok(device_registration)
     }
 }
 
@@ -163,7 +185,7 @@ pub async fn start_device_authorization(secret_store: &SecretStore) -> Result<St
     let output = CLIENT
         .start_device_authorization()
         .client_id(&client_id)
-        .client_secret(&client_secret)
+        .client_secret(&client_secret.0)
         .start_url(START_URL)
         .send()
         .await?;
@@ -180,9 +202,9 @@ pub async fn start_device_authorization(secret_store: &SecretStore) -> Result<St
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
 pub struct BuilderIdToken {
-    pub access_token: String,
+    pub access_token: Secret,
     pub expires_at: time::OffsetDateTime,
-    pub refresh_token: Option<String>,
+    pub refresh_token: Option<Secret>,
 }
 
 impl BuilderIdToken {
@@ -190,14 +212,14 @@ impl BuilderIdToken {
 
     /// Load the token from the keychain, refresh the token if it is expired and return it
     pub async fn load(secret_store: &SecretStore) -> Result<Option<Self>> {
-        match secret_store.get(Self::SECRET_KEY) {
+        match secret_store.get(Self::SECRET_KEY).await {
             Ok(Some(access_token)) => {
-                let token: Option<BuilderIdToken> = serde_json::from_str(&access_token)?;
+                let token: Option<Self> = serde_json::from_str(&access_token.0)?;
                 match token {
                     Some(token) => {
                         // if token is expired try to refresh
                         if token.is_expired() {
-                            Ok(Some(refresh_token(secret_store).await?))
+                            token.refresh_token(secret_store).await
                         } else {
                             Ok(Some(token))
                         }
@@ -213,6 +235,60 @@ impl BuilderIdToken {
         }
     }
 
+    /// Refresh the access token
+    pub async fn refresh_token(&self, secret_store: &SecretStore) -> Result<Option<Self>> {
+        // TODO: add telem on error https://github.com/aws/aws-toolkit-vscode/blob/df9fc7315b37844a09b7f60b49c604fa267a88ab/src/auth/sso/ssoAccessTokenProvider.ts#L135-L143
+
+        let DeviceRegistration {
+            client_id,
+            client_secret,
+            ..
+        } = DeviceRegistration::register(secret_store).await?;
+
+        let Some(refresh_token) = &self.refresh_token else {
+            // if the token is expired and has no refresh token, delete it
+            if let Err(err) = self.delete(secret_store).await {
+                error!(?err, "Failed to delete builder id token");
+            }
+
+            return Ok(None);
+        };
+
+        match CLIENT
+            .create_token()
+            .client_id(client_id)
+            .client_secret(client_secret.0)
+            .refresh_token(&refresh_token.0)
+            .grant_type(REFRESH_GRANT_TYPE)
+            .send()
+            .await
+        {
+            Ok(output) => {
+                let token: BuilderIdToken = output.into();
+
+                if let Err(err) = token.save(secret_store).await {
+                    error!(?err, "Failed to store builder id access token");
+                };
+
+                Ok(Some(token))
+            },
+            Err(err) => {
+                error!(?err, "Failed to refresh builder id access token");
+
+                // if the error is the client's fault, clear the token
+                if let SdkError::ServiceError(service_err) = &err {
+                    if !service_err.err().is_slow_down_exception() {
+                        if let Err(err) = self.delete(secret_store).await {
+                            error!(?err, "Failed to delete builder id token");
+                        }
+                    }
+                }
+
+                Err(err.into())
+            },
+        }
+    }
+
     /// If the time has passed the `expires_at` time
     ///
     /// The token is marked as expired 1 min before it actually does to account for the potential a
@@ -222,14 +298,16 @@ impl BuilderIdToken {
     }
 
     /// Save the token to the keychain
-    pub fn save(&self, secret_store: &SecretStore) -> Result<()> {
-        secret_store.set(Self::SECRET_KEY, &serde_json::to_string(self)?)?;
+    pub async fn save(&self, secret_store: &SecretStore) -> Result<()> {
+        secret_store
+            .set(Self::SECRET_KEY, &serde_json::to_string(self)?)
+            .await?;
         Ok(())
     }
 
     /// Delete the token from the keychain
-    pub fn delete(&self, secret_store: &SecretStore) -> Result<()> {
-        secret_store.delete(Self::SECRET_KEY)?;
+    pub async fn delete(&self, secret_store: &SecretStore) -> Result<()> {
+        secret_store.delete(Self::SECRET_KEY).await?;
         Ok(())
     }
 }
@@ -237,9 +315,9 @@ impl BuilderIdToken {
 impl From<CreateTokenOutput> for BuilderIdToken {
     fn from(output: CreateTokenOutput) -> Self {
         Self {
-            access_token: output.access_token.unwrap_or_default(),
+            access_token: output.access_token.unwrap_or_default().into(),
             expires_at: time::OffsetDateTime::now_utc() + time::Duration::seconds(output.expires_in as i64),
-            refresh_token: output.refresh_token,
+            refresh_token: output.refresh_token.map(|t| t.into()),
         }
     }
 }
@@ -265,17 +343,17 @@ pub async fn poll_create_token(device_code: String, secret_store: &SecretStore) 
 
     match CLIENT
         .create_token()
-        .grant_type(GRANT_TYPE)
+        .grant_type(DEVICE_GRANT_TYPE)
         .device_code(device_code)
         .client_id(client_id)
-        .client_secret(client_secret)
+        .client_secret(client_secret.0)
         .send()
         .await
     {
         Ok(output) => {
             let token: BuilderIdToken = output.into();
 
-            if let Err(err) = token.save(secret_store) {
+            if let Err(err) = token.save(secret_store).await {
                 error!(?err, "Failed to store builder id token");
             };
 
@@ -291,34 +369,40 @@ pub async fn poll_create_token(device_code: String, secret_store: &SecretStore) 
     }
 }
 
-/// Refresh the access token
-pub async fn refresh_token(secret_store: &SecretStore) -> Result<BuilderIdToken> {
-    let DeviceRegistration {
-        client_id,
-        client_secret,
-        ..
-    } = DeviceRegistration::register(secret_store).await?;
+pub async fn is_logged_in() -> bool {
+    let Ok(secret_store) = SecretStore::load().await else {
+        return false;
+    };
 
-    match CLIENT
-        .create_token()
-        .client_id(client_id)
-        .client_secret(client_secret)
-        .send()
-        .await
-    {
-        Ok(output) => {
-            let token: BuilderIdToken = output.into();
+    matches!(BuilderIdToken::load(&secret_store).await, Ok(Some(_)))
+}
 
-            if let Err(err) = token.save(secret_store) {
-                error!(?err, "Failed to store builder id access token");
-            };
+pub async fn logout() -> Result<()> {
+    let Ok(secret_store) = SecretStore::load().await else {
+        return Ok(());
+    };
 
-            Ok(token)
-        },
-        Err(err) => {
-            error!(?err, "Failed to refresh builder id access token");
-            Err(err.into())
-        },
+    tokio::try_join!(
+        secret_store.delete(BuilderIdToken::SECRET_KEY),
+        secret_store.delete(DeviceRegistration::SECRET_KEY),
+    )?;
+
+    Ok(())
+}
+
+#[derive(Debug, Clone)]
+pub struct BearerResolver;
+
+impl IdentityResolver for BearerResolver {
+    fn resolve_identity(&self, _config_bag: &ConfigBag) -> Future<Identity> {
+        NowOrLater::new(Box::pin(async {
+            let secret_store = SecretStore::load().await?;
+            let token = BuilderIdToken::load(&secret_store).await?.unwrap();
+            Ok(Identity::new(
+                Token::new(token.access_token.0, Some(token.expires_at.into())),
+                Some(token.expires_at.into()),
+            ))
+        }))
     }
 }
 
@@ -327,12 +411,31 @@ mod tests {
     use super::*;
 
     #[test]
-    fn app_name() {
+    fn test_app_name() {
         println!("{:?}", *APP_NAME);
     }
 
     #[test]
-    fn client() {
+    fn test_client() {
         println!("{:?}", *CLIENT);
+    }
+
+    #[ignore = "not in ci"]
+    #[tokio::test]
+    async fn test_load() {
+        let secret_store = SecretStore::load().await.unwrap();
+        let token = BuilderIdToken::load(&secret_store).await;
+        println!("{:?}", token);
+        // println!("{:?}", token.unwrap().unwrap().access_token.0);
+    }
+
+    #[ignore = "not in ci"]
+    #[tokio::test]
+    async fn test_refresh() {
+        let secret_store = SecretStore::load().await.unwrap();
+        let token = BuilderIdToken::load(&secret_store).await.unwrap().unwrap();
+        let token = token.refresh_token(&secret_store).await;
+        println!("{:?}", token);
+        // println!("{:?}", token.unwrap().unwrap().access_token.0);
     }
 }

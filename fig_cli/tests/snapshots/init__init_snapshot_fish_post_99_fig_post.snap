@@ -125,7 +125,7 @@ function fig_precmd --on-event fish_prompt
 
     set fig_has_set_prompt 1
 
-    if command -v fig &>/dev/null
+    if command -v cw &>/dev/null
         switch (cw _ pre-cmd)
             case EXEC_NEW_SHELL
                 set -ge FIG_DOTFILES_SOURCED

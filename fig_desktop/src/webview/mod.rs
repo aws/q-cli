@@ -12,12 +12,10 @@ use std::rc::Rc;
 use std::sync::Arc;
 
 use cfg_if::cfg_if;
-use fig_api_client::drip_campaign::DripCampaign;
 use fig_desktop_api::init_script::javascript_init;
 use fig_desktop_api::kv::DashKVStore;
 use fig_proto::fig::client_originated_message::Submessage;
 use fig_proto::fig::ClientOriginatedMessage;
-use fig_request::auth::is_logged_in;
 use fig_util::directories;
 use fnv::FnvBuildHasher;
 use muda::MenuEvent;
@@ -85,7 +83,6 @@ use crate::tray::{
     self,
     build_tray,
 };
-use crate::utils::handle_login_deep_link;
 use crate::{
     file_watcher,
     local_ipc,
@@ -110,7 +107,7 @@ pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
 // pub const COMPANION_WINDOW_TITLE: &str = "Fig Companion";
 
-pub const LOGIN_PATH: &str = "/login";
+pub const LOGIN_PATH: &str = "/";
 
 fn map_theme(theme: &str) -> Option<Theme> {
     match theme {
@@ -327,12 +324,6 @@ impl WebviewManager {
         #[cfg(target_os = "macos")]
         menu_bar.init_for_nsapp();
 
-        // load drip campaign with initial credentials.
-        tokio::spawn(async {
-            let res: Result<Option<DripCampaign>, fig_request::Error> = DripCampaign::load().await;
-            debug!(?res, "loaded drip campaign results");
-        });
-
         let proxy = self.event_loop.create_proxy();
         proxy
             .send_event(Event::PlatformBoundEvent(PlatformBoundEvent::InitializePostRun))
@@ -359,22 +350,17 @@ impl WebviewManager {
                                 window_state.webview.window().set_visible(false);
 
                                 if window_state.window_id == DASHBOARD_ID {
-                                    match is_logged_in() {
-                                        true => {
-                                            proxy
-                                                .send_event(Event::PlatformBoundEvent(
-                                                    PlatformBoundEvent::AppWindowFocusChanged {
-                                                        window_id: DASHBOARD_ID,
-                                                        focused: true, /* set to true, in order to update activation
-                                                                        * policy & remove from dock */
-                                                        fullscreen: false,
-                                                        visible: false,
-                                                    },
-                                                ))
-                                                .ok();
-                                        },
-                                        false => *control_flow = ControlFlow::Exit,
-                                    }
+                                    proxy
+                                        .send_event(Event::PlatformBoundEvent(
+                                            PlatformBoundEvent::AppWindowFocusChanged {
+                                                window_id: DASHBOARD_ID,
+                                                focused: true, /* set to true, in order to update activation
+                                                                * policy & remove from dock */
+                                                fullscreen: false,
+                                                visible: false,
+                                            },
+                                        ))
+                                        .ok();
                                 }
                             },
                             WryWindowEvent::ThemeChanged(theme) => window_state.set_theme(Some(theme)),
@@ -460,13 +446,10 @@ impl WebviewManager {
                         Event::ReloadCredentials => {
                             // tray.set_menu(Some(Box::new(get_context_menu())));
 
-                            // re-load drip campaign whenever credentials change.
-                            tokio::spawn(DripCampaign::load());
-
                             let autocomplete_enabled =
                                 !fig_settings::settings::get_bool_or("autocomplete.disable", false)
-                                    && PlatformState::accessibility_is_enabled().unwrap_or(true)
-                                    && fig_request::auth::is_logged_in();
+                                    && PlatformState::accessibility_is_enabled().unwrap_or(true);
+                            // && fig_request::auth::is_logged_in();
 
                             proxy
                                 .send_event(Event::WindowEvent {
@@ -480,8 +463,8 @@ impl WebviewManager {
 
                             let autocomplete_enabled =
                                 !fig_settings::settings::get_bool_or("autocomplete.disable", false)
-                                    && PlatformState::accessibility_is_enabled().unwrap_or(true)
-                                    && fig_request::auth::is_logged_in();
+                                    && PlatformState::accessibility_is_enabled().unwrap_or(true);
+                            // && fig_request::auth::is_logged_in();
 
                             proxy
                                 .send_event(Event::WindowEvent {
@@ -525,19 +508,6 @@ impl WebviewManager {
                                     events.push(WindowEvent::NavigateRelative {
                                         path: url.path().to_owned().into(),
                                     });
-                                },
-                                Some("plugins") => {
-                                    events.push(WindowEvent::NavigateRelative {
-                                        path: format!("plugins/{}", url.path()).into(),
-                                    });
-                                },
-                                Some("login") => {
-                                    if let Some(payload) = handle_login_deep_link(&url) {
-                                        events.push(WindowEvent::Event {
-                                            event_name: "dashboard.login".into(),
-                                            payload: serde_json::to_string(&payload).ok().map(|s| s.into()),
-                                        });
-                                    }
                                 },
                                 host => {
                                     error!(?host, "Invalid deep link");

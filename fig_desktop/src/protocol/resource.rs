@@ -51,8 +51,7 @@ pub async fn handle<S: Scope>(request: Request<Vec<u8>>) -> anyhow::Result<Respo
     }
 
     let uri_path = Path::new(request.uri().path());
-
-    let mut path = resources_path.join(relativize(&uri_path));
+    let mut path = resources_path.join(relativize(uri_path));
 
     path = match path.canonicalize() {
         Ok(path) => path,

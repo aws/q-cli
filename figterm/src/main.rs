@@ -46,9 +46,7 @@ use console::{
     Key,
     Term as ConsoleTerm,
 };
-use crossterm::style::Stylize;
 use dialoguer::theme::ColorfulTheme;
-use fig_api_client::drip_campaign::DripCampaign;
 use fig_proto::local::{
     self,
     EnvironmentVariable,
@@ -590,17 +588,17 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
         .build()?;
 
     let runtime_result = runtime.block_on(async {
-        let tips_disabled = fig_settings::settings::get_bool_or("cli.tips.disabled", false);
-        if !tips_disabled {
-            if let Some(mut campaign) = DripCampaign::load_local().ok().flatten() {
-                if let Some(message) = campaign.get_current_message() {
-                    println!("\n{}\n\n(Run {} to disable occasional Fig tips)\n", message.text, "fig tips disable".bold().magenta());
-                    tokio::spawn(async move {
-                        campaign.increment_drip().await.ok();
-                    });
-                }
-            }
-        }
+        // let tips_disabled = fig_settings::settings::get_bool_or("cli.tips.disabled", false);
+        // if !tips_disabled {
+        //     if let Some(mut campaign) = DripCampaign::load_local().ok().flatten() {
+        //         if let Some(message) = campaign.get_current_message() {
+        //             println!("\n{}\n\n(Run {} to disable occasional Fig tips)\n", message.text, "fig tips disable".bold().magenta());
+        //             tokio::spawn(async move {
+        //                 campaign.increment_drip().await.ok();
+        //             });
+        //         }
+        //     }
+        // }
 
         terminal.set_raw_mode()?;
 

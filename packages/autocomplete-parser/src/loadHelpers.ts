@@ -8,7 +8,7 @@ import {
   fread,
   isInDevMode,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { AuthClient, CDN, makeRequest, Routes } from "@amzn/fig-io-api-client";
+import { AuthClient, CDN, Routes } from "@amzn/fig-io-api-client";
 import { MOST_USED_SPECS } from "./constants.js";
 import { mixinCache } from "./caches.js";
 import {
@@ -405,114 +405,4 @@ export const preloadMixins = (authClient: AuthClient) => {
     })();
   }
   return preloadPromise;
-};
-
-export interface PrivateCliInfo {
-  name: string;
-  namespace: string;
-}
-
-// All private clis a users has access to
-let privateClis: PrivateCliInfo[] | undefined;
-
-export const reloadClis = async (authClient: AuthClient) => {
-  try {
-    type CommandLineTool = {
-      currentUser: {
-        namespace: {
-          username: string;
-          commandlineTools: {
-            root: {
-              name: string;
-            };
-          }[];
-        };
-        teamMemberships: {
-          team: {
-            namespace: {
-              username: string;
-              commandlineTools: {
-                root: {
-                  name: string;
-                };
-              }[];
-            };
-          };
-        }[];
-      };
-    };
-
-    const query = `query CommandLineTool {
-    currentUser {
-      namespace {
-        username
-        commandlineTools {
-          root {
-            name
-          }
-        }
-      }
-      teamMemberships {
-        team {
-          namespace {
-            username
-            commandlineTools {
-              root {
-                name
-              }            
-            }
-          }
-        }
-      }
-    }
-  }`;
-
-    const gqlResponse = await makeRequest(
-      "graphql",
-      authClient,
-      JSON.stringify({ query }),
-      {
-        additionalHeaders: {
-          "Content-Type": "application/json",
-        },
-        requestType: "POST",
-      }
-    ).then((res) => res.json());
-
-    const commandLineTools: CommandLineTool = gqlResponse.data;
-
-    const clis: PrivateCliInfo[] = [];
-
-    const userNamespace = commandLineTools.currentUser.namespace;
-    for (const commandlineTool of userNamespace.commandlineTools) {
-      clis.push({
-        name: commandlineTool.root.name,
-        namespace: userNamespace.username,
-      });
-    }
-
-    for (const { team } of commandLineTools.currentUser.teamMemberships) {
-      const teamNamespace = team.namespace;
-      for (const commandlineTool of teamNamespace.commandlineTools) {
-        clis.push({
-          name: commandlineTool.root.name,
-          namespace: teamNamespace.username,
-        });
-      }
-    }
-
-    privateClis = clis;
-  } catch (err) {
-    logger.error("Could not preload clis", err);
-    privateClis = [];
-  }
-
-  return privateClis;
-};
-
-export const preloadClis = async (authClient: AuthClient) => {
-  if (!privateClis) {
-    await reloadClis(authClient);
-  }
-  return privateClis;
 };

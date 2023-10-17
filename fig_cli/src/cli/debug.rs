@@ -253,12 +253,11 @@ impl DebugSubcommand {
             },
             DebugSubcommand::Build { build, app } => match build {
                 Some(build) => {
-                    fig_api_client::settings::update(format!("developer.{app}.build"), match build {
+                    fig_settings::settings::set_value(format!("developer.{app}.build"), match build {
                         Build::Production => serde_json::Value::Null,
                         Build::Beta => "beta".into(),
                         Build::Develop => "develop".into(),
-                    })
-                    .await?;
+                    })?;
                     println!("Fig will now use the {} build of {}", build.magenta(), app.magenta());
                 },
                 None => {

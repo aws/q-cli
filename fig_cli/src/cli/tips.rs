@@ -152,11 +152,11 @@ impl TipsSubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TipsSubcommand::Enable => {
-                fig_api_client::settings::update("cli.tips.disabled", json!(false)).await?;
+                fig_settings::settings::set_value("cli.tips.disabled", false)?;
                 println!("\n→ Fig Tips enabled...\n");
             },
             TipsSubcommand::Disable => {
-                fig_api_client::settings::update("cli.tips.disabled", json!(true)).await?;
+                fig_settings::settings::set_value("cli.tips.disabled", true)?;
                 println!("\n→ Fig Tips disabled...\n");
             },
             TipsSubcommand::Reset => {

@@ -45,11 +45,6 @@ pub fn init_sentry(
             }));
 
             sentry::configure_scope(|scope| {
-                scope.set_user(Some(sentry::User {
-                    email: fig_request::auth::get_email_sync(),
-                    ..sentry::User::default()
-                }));
-
                 if let Some(terminal) = Terminal::parent_terminal() {
                     scope.set_tag("terminal", terminal.internal_id());
                 }

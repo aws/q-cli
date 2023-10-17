@@ -13,18 +13,20 @@ if [ -f ".env" ]; then
 fi
 
 # security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME" || echo "already exists"
+# 
+KEYCHAIN_NAME="login.keychain"
 
-# certificate_path="/tmp/certificate.p12"
-# echo "$SIGNING_CERTIFICATE_P12_DATA" | base64 -d > $certificate_path
-# security default-keychain -d user -s "$KEYCHAIN_NAME"
+certificate_path="/tmp/certificate.p12"
+echo "$SIGNING_CERTIFICATE_P12_DATA" | base64 -d > $certificate_path
+security default-keychain -d user -s "$KEYCHAIN_NAME"
 
 # security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-# security import "$certificate_path" -f pkcs12 -k "$KEYCHAIN_NAME" -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -x 
-# rm "$certificate_path"
+security import "$certificate_path" -f pkcs12 -k "$KEYCHAIN_NAME" -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -x 
+rm "$certificate_path"
 # security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
 
-# identity=$(security find-identity -v -p codesigning | grep -o "Developer ID Application.*(${NOTARIZE_TEAM_ID})")
-# export CODESIGNING_IDENTITY="$identity"
+identity=$(security find-identity -v -p codesigning | grep -o "Developer ID Application.*(${NOTARIZE_TEAM_ID})")
+export CODESIGNING_IDENTITY="$identity"
 
 # security set-keychain-settings -lut 1200
 
@@ -39,8 +41,10 @@ pnpm install --frozen-lockfile
 pnpm build
 rm -rf "$BUILD_DIR/dashboard"
 cp -r apps/dashboard/dist "$BUILD_DIR/dashboard"
+rm -rf "$BUILD_DIR/autocomplete"
+cp -r apps/autocomplete/dist "$BUILD_DIR/autocomplete"
 
-. build-scripts/rust-init.sh
+# . build-scripts/rust-init.sh
 
 # build fig_cli
 cargo build --target=x86_64-apple-darwin --target=aarch64-apple-darwin --locked --release --package fig_cli
@@ -100,26 +104,32 @@ plutil -insert CFBundleURLTypes -xml \
 mkdir -p "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Helpers/"
 cp -r "${BUILD_DIR}/FigInputMethod.app" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Helpers/"
 
+rm -rf "${BUILD_DIR}/themes"
+git clone https://github.com/withfig/themes.git "${BUILD_DIR}/themes"
+
 cp -r "${BUILD_DIR}/dashboard" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
+cp -r "${BUILD_DIR}/autocomplete" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
+cp -r "${BUILD_DIR}/themes/themes" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Resources/"
+
 
 BUNDLE_PATH="${BUNDLE_DIR}/CodeWhisperer.app"
 
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
-# codesign --verify --verbose --strict --entitlements entitlements.plist "$BUNDLE_PATH"
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
+codesign --verify --verbose --strict --entitlements entitlements.plist "$BUNDLE_PATH"
 
-# ditto -c -k --keepParent "$BUNDLE_PATH" Cw.zip
-# xcrun notarytool submit Cw.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
-# rm -f Cw.zip
-# xcrun stapler staple "$BUNDLE_PATH"
+ditto -c -k --keepParent "$BUNDLE_PATH" Cw.zip
+xcrun notarytool submit Cw.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+rm -f Cw.zip
+xcrun stapler staple "$BUNDLE_PATH"
 # Verify notarization ticket
-# spctl -a -v "$BUNDLE_PATH"
+spctl -a -v "$BUNDLE_PATH"
 
-  # --arg identity "$CODESIGNING_IDENTITY" \
 
 FILE_CONTENTS=$(jq -n \
+  --arg identity "$CODESIGNING_IDENTITY" \
   --arg bundle "$BUNDLE_PATH" \
   '{
     "title": "CodeWhisperer",
@@ -158,5 +168,5 @@ rm -f "$DMG"
 pnpm appdmg "$SPEC_FILE" "$DMG"
 rm "$SPEC_FILE"
 
-# xcrun notarytool submit "$DMG" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
-# spctl -a -t open --context context:primary-signature -v "$DMG"
+xcrun notarytool submit "$DMG" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+spctl -a -t open --context context:primary-signature -v "$DMG"

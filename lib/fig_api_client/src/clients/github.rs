@@ -3,7 +3,6 @@ use std::borrow::Cow;
 use fig_request::{
     reqwest_client,
     Error,
-    Result,
 };
 use serde::{
     Deserialize,
@@ -86,7 +85,7 @@ impl GitHub {
         Url::parse(&format!("https://github.com/{}/{}.git", self.owner, self.repo)).unwrap()
     }
 
-    pub async fn latest_release(&self) -> Result<GithubRelease> {
+    pub async fn latest_release(&self) -> Result<GithubRelease, Error> {
         let url = Url::parse(&format!(
             "https://api.github.com/repos/{}/{}/releases/latest",
             self.owner, self.repo

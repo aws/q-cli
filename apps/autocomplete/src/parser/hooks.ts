@@ -3,7 +3,6 @@ import { shallow } from "zustand/shallow";
 import { parseArguments } from "@amzn/fig-io-autocomplete-parser";
 import { useAutocompleteStore } from "../state";
 import { shellContextSelector } from "../state/generators";
-import { authClient } from "../auth";
 
 function usePrevious<T>(value: T) {
   const ref = useRef<T>(value);
@@ -52,7 +51,7 @@ export const useParseArgumentsEffect = (
 
     setLoading(true);
     // Only run if we didn't error in bash parser.
-    parseArguments(command, context, authClient)
+    parseArguments(command, context)
       .then((result) => {
         if (!isMostRecentEffect) return;
         setLoading(false);

@@ -156,7 +156,7 @@ impl<'a> fig_desktop_api::handler::EventHandler for EventHandler<'a> {
     }
 
     async fn user_logout(&self, request: Wrapped<Self::Ctx, UserLogoutRequest>) -> RequestResult {
-        user::logout(request.request, request.context.proxy)
+        user::logout(request.request, request.context.proxy).await
     }
 }
 

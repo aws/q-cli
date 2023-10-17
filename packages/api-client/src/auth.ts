@@ -20,52 +20,52 @@ export type Credentials = {
 };
 /* eslint-enable camelcase */
 
-export interface MakeAuthClientOptions {
-  os?: Platform;
-  figDataDir?: string;
-}
+// export interface MakeAuthClientOptions {
+//   os?: Platform;
+//   figDataDir?: string;
+// }
 
-export const makeAuthClient = (options: MakeAuthClientOptions): AuthClient => {
-  const { figDataDir, os } = options;
-  /* eslint-disable no-nested-ternary */
-  const credentialsPath = figDataDir
-    ? `${figDataDir}/credentials.json`
-    : os === "linux"
-    ? "~/.local/share/fig/credentials.json"
-    : os === "windows"
-    ? "~/AppData/Local/fig/credentials.json"
-    : "~/Library/Application Support/fig/credentials.json";
-  /* eslint-enable no-nested-ternary */
+// export const makeAuthClient = (options: MakeAuthClientOptions): AuthClient => {
+//   const { figDataDir, os } = options;
+//   /* eslint-disable no-nested-ternary */
+//   const credentialsPath = figDataDir
+//     ? `${figDataDir}/credentials.json`
+//     : os === "linux"
+//     ? "~/.local/share/fig/credentials.json"
+//     : os === "windows"
+//     ? "~/AppData/Local/fig/credentials.json"
+//     : "~/Library/Application Support/fig/credentials.json";
+//   /* eslint-enable no-nested-ternary */
 
-  const makeAuthHeader = (
-    accessToken: string | undefined,
-    idToken: string | undefined,
-  ) => `Bearer ${btoa(JSON.stringify({ accessToken, idToken }))}`;
+//   const makeAuthHeader = (
+//     accessToken: string | undefined,
+//     idToken: string | undefined,
+//   ) => `Bearer ${btoa(JSON.stringify({ accessToken, idToken }))}`;
 
-  const makeAuthHeaderForCredentials = (creds: Credentials) =>
-    makeAuthHeader(creds.access_token, creds.id_token);
+//   const makeAuthHeaderForCredentials = (creds: Credentials) =>
+//     makeAuthHeader(creds.access_token, creds.id_token);
 
-  const writeCredentialsToFile = async (credentials: Credentials) => {
-    try {
-      await fs.write(credentialsPath, JSON.stringify(credentials));
-    } catch (e) {
-      throw new CredentialsError(`Error reading credentials file ${e}`);
-    }
-  };
+//   const writeCredentialsToFile = async (credentials: Credentials) => {
+//     try {
+//       await fs.write(credentialsPath, JSON.stringify(credentials));
+//     } catch (e) {
+//       throw new CredentialsError(`Error reading credentials file ${e}`);
+//     }
+//   };
 
-  const getCredentialsFromFile = async () => {
-    try {
-      const contents = await fread(credentialsPath);
-      return JSON.parse(contents) as Credentials;
-    } catch (e) {
-      throw new CredentialsError(`Error reading credentials file ${e}`);
-    }
-  };
+//   const getCredentialsFromFile = async () => {
+//     try {
+//       const contents = await fread(credentialsPath);
+//       return JSON.parse(contents) as Credentials;
+//     } catch (e) {
+//       throw new CredentialsError(`Error reading credentials file ${e}`);
+//     }
+//   };
 
-  return {
-    makeAuthHeader,
-    makeAuthHeaderForCredentials,
-    getCredentialsFromFile,
-    writeCredentialsToFile,
-  };
-};
+//   return {
+//     makeAuthHeader,
+//     makeAuthHeaderForCredentials,
+//     getCredentialsFromFile,
+//     writeCredentialsToFile,
+//   };
+// };

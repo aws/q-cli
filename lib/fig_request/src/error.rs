@@ -1,7 +1,5 @@
 use reqwest::StatusCode;
 
-use crate::auth;
-
 #[derive(Debug)]
 pub enum Error {
     Fig {
@@ -16,7 +14,6 @@ pub enum Error {
     Serde(serde_json::Error),
     Io(std::io::Error),
     Dir(fig_util::directories::DirectoryError),
-    RefreshError(auth::RefreshError),
     Settings(fig_settings::Error),
     NoClient,
     NoToken,
@@ -55,7 +52,6 @@ impl std::fmt::Display for Error {
             Error::Serde(err) => write!(f, "Serde error: {err}"),
             Error::Io(err) => write!(f, "Io error: {err}"),
             Error::Dir(err) => write!(f, "Dir error: {err}"),
-            Error::RefreshError(err) => write!(f, "Refresh error: {err}"),
             Error::Settings(err) => write!(f, "Settings error: {err}"),
             Error::NoClient => write!(f, "No client"),
             Error::NoToken => write!(f, "No token"),
@@ -104,11 +100,5 @@ impl From<fig_util::directories::DirectoryError> for Error {
 impl From<fig_settings::Error> for Error {
     fn from(e: fig_settings::Error) -> Self {
         Error::Settings(e)
-    }
-}
-
-impl From<auth::RefreshError> for Error {
-    fn from(e: auth::RefreshError) -> Self {
-        Error::RefreshError(e)
     }
 }
