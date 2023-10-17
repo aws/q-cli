@@ -1,6 +1,6 @@
 import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
-import { State } from "@withfig/api-bindings";
+import { Settings } from "@withfig/api-bindings";
 import { Pref, PrefDefault } from "@/types/preferences";
 import {
   Select,
@@ -28,55 +28,47 @@ export function Setting({ data, disabled }: { data: Pref, disabled?: boolean }) 
 
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
-    State.get(data.id)
+    Settings.get(data.id)
       .then((r) => {
         if (!r) return;
-
-        setInputValue(r);
+        setInputValue(r.jsonBlob);
       })
-      .catch((e) => console.error({ getPref: e }));
+      .catch(() => {
+        // Errors are thrown every time a setting isn't yet configured
+        // so we just swallow those since they'll be set to the default automatically
+        return
+      });
   }, [data.id]);
 
   function toggleSwitch() {
     setInputValue(!inputValue);
-    State.set(data.id, localValue).catch((e) =>
+    Settings.set(data.id, localValue).catch((e) =>
       console.error({ stateSetError: e })
     );
   }
 
   function toggleMultiSelect(option: string) {
-    // console.log(option, multiSelectValue)
     if (multiSelectValue.includes(option)) {
       const index = multiSelectValue.indexOf(option)
       multiSelectValue.splice(index, 1)
       const updatedArray = multiSelectValue
-      // console.log('new array looks like:', updatedArray)
-      State.set(data.id, updatedArray)
-        .then(() => setInputValue(updatedArray) )
-        .catch((e) =>
-          console.error({ stateSetError: e })
-        );
+      Settings.set(data.id, updatedArray)
+        .then(() => setInputValue(updatedArray))
+        .catch((e) => console.error({ stateSetError: e }))
       return
     }
 
-    // console.log('adding', option, 'to', multiSelectValue)
     const updatedArray = [...multiSelectValue, option]
-    State.set(data.id, updatedArray)
-    .then(() => 
-      {
-        setInputValue(updatedArray)
-        // console.log('new array:', updatedArray)
-      }
-    ).catch((e) =>
-      console.error({ stateSetError: e })
-    );
+    Settings.set(data.id, updatedArray)
+      .then(() => setInputValue(updatedArray))
+      .catch((e) => console.error({ stateSetError: e }))
   }
 
   return (
     <div className={`flex p-4 pl-0 gap-4`}>
       {(data.type !== 'keystrokes') && <div className="flex-none w-12">
         {data.type === "boolean" && (
-          <Switch onClick={toggleSwitch} checked={localValue as boolean} disabled={disabled} />
+          <Switch onClick={toggleSwitch} checked={localValue === 'true'} disabled={disabled} />
         )}
       </div>}
       <div className="flex flex-col gap-1">

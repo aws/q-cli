@@ -2,7 +2,7 @@ import { alphaByTitle } from "@/lib/sort";
 import { Action, Pref } from "@/types/preferences";
 import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
-import { State } from "@withfig/api-bindings";
+import { Settings } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
 import { Button } from "../ui/button";
 import ExternalLink from "../util/external-link";
@@ -29,18 +29,21 @@ function FeatureIntro({ intro }: { intro: Intro }) {
   const localValue = intro.enable.inverted ? !inputValue : inputValue;
 
   useEffect(() => {
-    State.get(intro.enable.flag)
+    Settings.get(intro.enable.flag)
       .then((r) => {
         if (!r) return;
-
-        setInputValue(r);
+        setInputValue(r.jsonBlob === 'true');
       })
-      .catch((e) => console.error({ getPref: e }));
+      .catch(() => {
+        // Errors are thrown every time a setting isn't yet configured
+        // so we just swallow those since they'll be set to the default automatically
+        return
+      });
   }, [intro.enable.flag]);
 
   function toggleSwitch() {
     setInputValue(!inputValue);
-    State.set(intro.enable.flag, localValue).catch((e) =>
+    Settings.set(intro.enable.flag, localValue).catch((e) =>
       console.error({ stateSetError: e })
     );
   }
@@ -122,18 +125,23 @@ export function UserPrefView({
   children?: React.ReactNode;
   intro?: Intro;
 }) {
-  const [viewDisabled, setViewDisabled] = useState<boolean | undefined>();
+  const [viewDisabled, setViewDisabled] = useState<string | undefined>();
+  const localDisabled = intro?.enable.inverted ? !viewDisabled : viewDisabled
 
   useEffect(() => {
     if (!intro?.enable) return;
 
-    State.get(intro.enable.flag)
+    Settings.get(intro.enable.flag)
       .then((r) => {
         if (!r) return;
 
-        setViewDisabled(r);
+        setViewDisabled(r.jsonBlob);
       })
-      .catch((e) => console.error({ getPref: e }));
+      .catch(() => {
+        // Errors are thrown every time a setting isn't yet configured
+        // so we just swallow those since they'll be set to the default automatically
+        return
+      });
   }, [intro, intro?.enable.flag]);
 
   return (
@@ -142,7 +150,7 @@ export function UserPrefView({
       {children}
       {array.map((section, i) => (
         <UserPrefSection
-          disabled={viewDisabled}
+          disabled={localDisabled === 'true'}
           data={section}
           index={i}
           key={i}

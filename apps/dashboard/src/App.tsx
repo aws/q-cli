@@ -24,7 +24,7 @@ function App() {
 
   useEffect(() => {
     if (onboardingComplete === null) {
-      State.get('onboarding.completed').then((r) => setOnboardingComplete(r))
+      State.get('desktop.completedOnboarding').then((r) => setOnboardingComplete(r))
       return
     }
 
@@ -44,7 +44,6 @@ function App() {
     }
   }, [loggedIn])
 
-  console.log({authStatus: loggedIn})
   return (
     <ModalContext.Provider value={{ modal, setModal }}>
       <Routes>
