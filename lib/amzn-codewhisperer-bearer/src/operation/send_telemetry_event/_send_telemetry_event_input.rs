@@ -38,7 +38,6 @@ impl ::std::fmt::Debug for SendTelemetryEventInput {
 impl SendTelemetryEventInput {
     /// Creates a new builder-style object to manufacture
     /// [`SendTelemetryEventInput`](crate::operation::send_telemetry_event::SendTelemetryEventInput).
-    ///
     pub fn builder() -> crate::operation::send_telemetry_event::builders::SendTelemetryEventInputBuilder {
         crate::operation::send_telemetry_event::builders::SendTelemetryEventInputBuilder::default()
     }
@@ -107,7 +106,6 @@ impl SendTelemetryEventInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`SendTelemetryEventInput`](crate::operation::send_telemetry_event::SendTelemetryEventInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

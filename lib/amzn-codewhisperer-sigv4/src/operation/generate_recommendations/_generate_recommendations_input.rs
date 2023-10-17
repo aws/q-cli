@@ -45,7 +45,6 @@ impl GenerateRecommendationsInput {
 impl GenerateRecommendationsInput {
     /// Creates a new builder-style object to manufacture
     /// [`GenerateRecommendationsInput`](crate::operation::generate_recommendations::GenerateRecommendationsInput).
-    ///
     pub fn builder() -> crate::operation::generate_recommendations::builders::GenerateRecommendationsInputBuilder {
         crate::operation::generate_recommendations::builders::GenerateRecommendationsInputBuilder::default()
     }
@@ -53,7 +52,6 @@ impl GenerateRecommendationsInput {
 
 /// A builder for
 /// [`GenerateRecommendationsInput`](crate::operation::generate_recommendations::GenerateRecommendationsInput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct GenerateRecommendationsInputBuilder {
@@ -166,7 +164,6 @@ impl GenerateRecommendationsInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`GenerateRecommendationsInput`](crate::operation::generate_recommendations::GenerateRecommendationsInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

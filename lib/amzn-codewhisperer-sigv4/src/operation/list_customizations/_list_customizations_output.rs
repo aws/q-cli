@@ -28,7 +28,6 @@ impl ::aws_http::request_id::RequestId for ListCustomizationsOutput {
 impl ListCustomizationsOutput {
     /// Creates a new builder-style object to manufacture
     /// [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
-    ///
     pub fn builder() -> crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder {
         crate::operation::list_customizations::builders::ListCustomizationsOutputBuilder::default()
     }
@@ -98,7 +97,6 @@ impl ListCustomizationsOutputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`ListCustomizationsOutput`](crate::operation::list_customizations::ListCustomizationsOutput).
-    ///
     pub fn build(self) -> crate::operation::list_customizations::ListCustomizationsOutput {
         crate::operation::list_customizations::ListCustomizationsOutput {
             customizations: self.customizations,

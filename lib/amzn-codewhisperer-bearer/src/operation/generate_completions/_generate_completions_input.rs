@@ -52,7 +52,6 @@ impl GenerateCompletionsInput {
 impl GenerateCompletionsInput {
     /// Creates a new builder-style object to manufacture
     /// [`GenerateCompletionsInput`](crate::operation::generate_completions::GenerateCompletionsInput).
-    ///
     pub fn builder() -> crate::operation::generate_completions::builders::GenerateCompletionsInputBuilder {
         crate::operation::generate_completions::builders::GenerateCompletionsInputBuilder::default()
     }
@@ -190,7 +189,6 @@ impl GenerateCompletionsInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`GenerateCompletionsInput`](crate::operation::generate_completions::GenerateCompletionsInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

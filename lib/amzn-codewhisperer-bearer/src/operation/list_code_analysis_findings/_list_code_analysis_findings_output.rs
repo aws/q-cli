@@ -28,7 +28,6 @@ impl ::aws_http::request_id::RequestId for ListCodeAnalysisFindingsOutput {
 impl ListCodeAnalysisFindingsOutput {
     /// Creates a new builder-style object to manufacture
     /// [`ListCodeAnalysisFindingsOutput`](crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsOutput).
-    ///
     pub fn builder() -> crate::operation::list_code_analysis_findings::builders::ListCodeAnalysisFindingsOutputBuilder {
         crate::operation::list_code_analysis_findings::builders::ListCodeAnalysisFindingsOutputBuilder::default()
     }
@@ -36,7 +35,6 @@ impl ListCodeAnalysisFindingsOutput {
 
 /// A builder for
 /// [`ListCodeAnalysisFindingsOutput`](crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsOutput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct ListCodeAnalysisFindingsOutputBuilder {
@@ -91,7 +89,6 @@ impl ListCodeAnalysisFindingsOutputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`ListCodeAnalysisFindingsOutput`](crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsOutput).
-    ///
     pub fn build(self) -> crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsOutput {
         crate::operation::list_code_analysis_findings::ListCodeAnalysisFindingsOutput {
             next_token: self.next_token,

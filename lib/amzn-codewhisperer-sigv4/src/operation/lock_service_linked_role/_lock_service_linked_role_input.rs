@@ -22,7 +22,6 @@ impl LockServiceLinkedRoleInput {
 impl LockServiceLinkedRoleInput {
     /// Creates a new builder-style object to manufacture
     /// [`LockServiceLinkedRoleInput`](crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput).
-    ///
     pub fn builder() -> crate::operation::lock_service_linked_role::builders::LockServiceLinkedRoleInputBuilder {
         crate::operation::lock_service_linked_role::builders::LockServiceLinkedRoleInputBuilder::default()
     }
@@ -30,7 +29,6 @@ impl LockServiceLinkedRoleInput {
 
 /// A builder for
 /// [`LockServiceLinkedRoleInput`](crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput).
-///
 #[non_exhaustive]
 #[derive(::std::clone::Clone, ::std::cmp::PartialEq, ::std::default::Default, ::std::fmt::Debug)]
 pub struct LockServiceLinkedRoleInputBuilder {
@@ -74,7 +72,6 @@ impl LockServiceLinkedRoleInputBuilder {
 
     /// Consumes the builder and constructs a
     /// [`LockServiceLinkedRoleInput`](crate::operation::lock_service_linked_role::LockServiceLinkedRoleInput).
-    ///
     pub fn build(
         self,
     ) -> ::std::result::Result<

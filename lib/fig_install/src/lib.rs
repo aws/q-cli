@@ -211,9 +211,7 @@ pub async fn update(
 
                 // let err_id = fig_telemetry::sentry::capture_error(&err);
 
-                tx.send(UpdateStatus::Error(format!("{err}")))
-                    .await
-                    .ok();
+                tx.send(UpdateStatus::Error(format!("{err}"))).await.ok();
 
                 return Err(err);
             }
