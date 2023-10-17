@@ -22,7 +22,7 @@ import Keystroke from "../ui/keystrokeInput";
 
 export function Setting({ data, disabled }: { data: Pref, disabled?: boolean }) {
   const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
-  const localValue = data.inverted ? !inputValue : inputValue;
+  const localValue = data.inverted ? inputValue !== 'true' : inputValue === 'true';
   const multiSelectValue = inputValue as string[]
   const keystrokeValue = inputValue as string[]
 
@@ -41,10 +41,17 @@ export function Setting({ data, disabled }: { data: Pref, disabled?: boolean }) 
   }, [data.id]);
 
   function toggleSwitch() {
-    setInputValue(!inputValue);
-    Settings.set(data.id, localValue).catch((e) =>
+    console.log(inputValue, localValue)
+    if (inputValue === 'true') {
+      setInputValue('false')
+      Settings.set(data.id, 'false').catch((e) =>
       console.error({ stateSetError: e })
     );
+    } else {
+      setInputValue('true')
+      Settings.set(data.id, 'true').catch((e) =>
+      console.error({ stateSetError: e }))
+    }
   }
 
   function toggleMultiSelect(option: string) {
@@ -68,7 +75,7 @@ export function Setting({ data, disabled }: { data: Pref, disabled?: boolean }) 
     <div className={`flex p-4 pl-0 gap-4`}>
       {(data.type !== 'keystrokes') && <div className="flex-none w-12">
         {data.type === "boolean" && (
-          <Switch onClick={toggleSwitch} checked={localValue === 'true'} disabled={disabled} />
+          <Switch onClick={toggleSwitch} checked={localValue} disabled={disabled} />
         )}
       </div>}
       <div className="flex flex-col gap-1">
