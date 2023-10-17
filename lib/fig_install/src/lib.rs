@@ -209,9 +209,9 @@ pub async fn update(
                     error!(%err, "Failed to remove lock file");
                 }
 
-                let err_id = fig_telemetry::sentry::capture_error(&err);
+                // let err_id = fig_telemetry::sentry::capture_error(&err);
 
-                tx.send(UpdateStatus::Error(format!("{err}\nError ID: {err_id}")))
+                tx.send(UpdateStatus::Error(format!("{err}")))
                     .await
                     .ok();
 

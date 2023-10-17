@@ -16,14 +16,6 @@ fig_util = { path = "../fig_util" }
 macos_utils = { path = "../macos_utils" }
 once_cell = { version = "1.17.1", features = ["parking_lot"] }
 parking_lot = "0.12.1"
-sentry = { version = "0.31.0", default-features = false, features = [
-    "backtrace",
-    "contexts",
-    "panic",
-    "anyhow",
-    "reqwest",
-    "rustls",
-] }
 serde = "1.0.185"
 serde_json = "1.0"
 thiserror = "1.0"

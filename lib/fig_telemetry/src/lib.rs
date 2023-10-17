@@ -3,7 +3,7 @@ pub mod feature_flags;
 mod identify;
 mod install_method;
 mod page;
-pub mod sentry;
+// pub mod sentry;
 mod track;
 mod util;
 
@@ -22,7 +22,7 @@ pub use track::{
     TrackSource,
 };
 
-pub use crate::sentry::init_sentry;
+// pub use crate::sentry::init_sentry;
 
 const IDENTIFY_SUBDOMAIN: &str = "/telemetry/identify";
 const TRACK_SUBDOMAIN: &str = "/telemetry/track";
