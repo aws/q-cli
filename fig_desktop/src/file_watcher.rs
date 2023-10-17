@@ -5,32 +5,25 @@ use fig_proto::fig::{
     NotificationType,
     SettingsChangedNotification,
 };
-use fig_request::auth::Credentials;
 use fig_settings::JsonStore;
 use fig_util::directories;
 use notify::{
     RecursiveMode,
     Watcher,
 };
-use once_cell::sync::Lazy;
 use serde_json::{
     Map,
     Value,
 };
-use tokio::sync::Mutex;
 use tracing::{
     debug,
     error,
     trace,
 };
 
-use crate::event::Event;
 use crate::notification_bus::NOTIFICATION_BUS;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::EventLoopProxy;
-
-static CREDENTIALS: Lazy<Mutex<Credentials>> =
-    Lazy::new(|| Mutex::new(fig_request::auth::Credentials::load_credentials().unwrap_or_default()));
 
 pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsState>, proxy: EventLoopProxy) {
     let (tx, mut rx) = tokio::sync::mpsc::unbounded_channel();
@@ -64,29 +57,6 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
         },
         None => {
             error!("failed to get settings file path");
-            None
-        },
-    };
-
-    let credentials_path = match directories::credentials_path().ok() {
-        Some(credentials_path) => match credentials_path.parent() {
-            Some(credentials_dir) => match watcher.watch(credentials_dir, RecursiveMode::NonRecursive) {
-                Ok(()) => {
-                    trace!("watching credentials dir at {credentials_dir:?}");
-                    Some(credentials_path)
-                },
-                Err(err) => {
-                    error!(%err, "failed to watch credentials dir");
-                    None
-                },
-            },
-            None => {
-                error!("failed to get credentials file dir");
-                None
-            },
-        },
-        None => {
-            error!("failed to get credentials file path");
             None
         },
     };
@@ -139,21 +109,6 @@ pub async fn user_data_listener(notifications_state: Arc<WebviewNotificationsSta
                             },
                             Err(err) => error!(%err, "Failed to get settings"),
                         }
-                    }
-                }
-            }
-
-            if let Some(ref credentials_path) = credentials_path {
-                if event.paths.contains(credentials_path) {
-                    if let notify::EventKind::Create(_) | notify::EventKind::Modify(_) | notify::EventKind::Remove(_) =
-                        event.kind
-                    {
-                        let creds = fig_request::auth::Credentials::load_credentials().unwrap_or_default();
-                        if creds.email != CREDENTIALS.lock().await.email {
-                            NOTIFICATION_BUS.send_user_email(creds.email.clone());
-                            proxy.send_event(Event::ReloadCredentials).ok();
-                        }
-                        *CREDENTIALS.lock().await = creds;
                     }
                 }
             }

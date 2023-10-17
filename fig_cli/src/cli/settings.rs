@@ -1,3 +1,4 @@
+use auth::is_logged_in;
 use clap::{
     ArgGroup,
     Args,
@@ -7,13 +8,8 @@ use eyre::{
     Result,
     WrapErr,
 };
-use fig_api_client::settings;
-use fig_ipc::local::{
-    open_ui_element,
-    restart_settings_listener,
-};
+use fig_ipc::local::open_ui_element;
 use fig_proto::local::UiElement;
-use fig_request::auth::is_logged_in;
 use fig_settings::JsonStore;
 use fig_util::desktop::{
     launch_fig_desktop,
@@ -28,19 +24,14 @@ use crate::util::app_not_running_message;
 
 #[derive(Debug, Subcommand, PartialEq, Eq)]
 pub enum SettingsSubcommands {
-    /// Reload the settings listener
-    Init,
-    /// Get the settings documentation
-    Docs,
+    // Get the settings documentation
+    // Docs,
     /// Open the settings file
     Open,
-    /// Sync the current settings
-    Sync,
+    // Sync the current settings
+    // Sync,
     /// List all the settings
     All {
-        /// List the remote settings
-        #[arg(long, short)]
-        remote: bool,
         /// Format of the output
         #[arg(long, short, value_enum, default_value_t)]
         format: OutputFormat,
@@ -75,25 +66,11 @@ impl SettingsArgs {
         }
 
         match self.cmd {
-            Some(SettingsSubcommands::Init) => {
-                let res = restart_settings_listener().await;
-
-                match res {
-                    Ok(()) => {
-                        println!("\nSettings listener restarted\n");
-                        Ok(())
-                    },
-                    Err(err) => {
-                        print_connection_error!();
-                        Err(err.into())
-                    },
-                }
-            },
-            Some(SettingsSubcommands::Docs) => {
-                println!("→ Opening Fig docs...");
-                fig_util::open_url("https://fig.io/docs/support/settings/")?;
-                Ok(())
-            },
+            // Some(SettingsSubcommands::Docs) => {
+            //     println!("→ Opening Fig docs...");
+            //     fig_util::open_url("https://fig.io/docs/support/settings/")?;
+            //     Ok(())
+            // },
             Some(SettingsSubcommands::Open) => {
                 let mut url = String::from("file://");
                 url.push_str(
@@ -104,16 +81,8 @@ impl SettingsArgs {
                 fig_util::open_url(url)?;
                 Ok(())
             },
-            Some(SettingsSubcommands::Sync) => {
-                settings::sync().await?;
-                Ok(())
-            },
-            Some(SettingsSubcommands::All { remote, format }) => {
-                let settings = if remote {
-                    settings::get().await?.settings
-                } else {
-                    fig_settings::Settings::load()?.map().clone()
-                };
+            Some(SettingsSubcommands::All { format }) => {
+                let settings = fig_settings::Settings::load()?.map().clone();
 
                 match format {
                     OutputFormat::Plain => {
@@ -153,8 +122,7 @@ impl SettingsArgs {
                     },
                     (Some(value_str), false) => {
                         let value = serde_json::from_str(value_str).unwrap_or_else(|_| json!(value_str));
-                        settings::update(key, value).await?;
-                        println!("Successfully set setting");
+                        fig_settings::settings::set_value(key, value)?;
                         Ok(())
                     },
                     (None, true) => {
@@ -169,14 +137,17 @@ impl SettingsArgs {
                             },
                             1 => {
                                 println!("Removing {:?}", keys_to_remove[0]);
-                                settings::delete(keys_to_remove[0]).await?;
+                                fig_settings::settings::remove_value(keys_to_remove[0])?;
                             },
                             _ => {
                                 println!("Removing:");
                                 for key in &keys_to_remove {
                                     println!("  - {key}");
                                 }
-                                settings::delete_bulk(&keys_to_remove).await?;
+
+                                for key in &keys_to_remove {
+                                    fig_settings::settings::remove_value(key)?;
+                                }
                             },
                         }
 
@@ -192,7 +163,7 @@ impl SettingsArgs {
                         verbose: true,
                     })?;
 
-                    if is_logged_in() {
+                    if is_logged_in().await {
                         match open_ui_element(UiElement::Settings, None).await {
                             Ok(()) => Ok(()),
                             Err(err) => {

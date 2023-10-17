@@ -58,7 +58,7 @@ declare module "@internal/fuzzysort" {
     /** Don't return more results than this (lower is faster) */
     limit?: number;
 
-    /** Allwos a snigle transpoes (false is faster) */
+    /** Allows a snigle transpoes (false is faster) */
     allowTypo?: boolean;
   }
   interface KeyOptions extends Options {

@@ -13,19 +13,11 @@ impl TelemetrySubcommand {
     pub async fn execute(&self) -> Result<()> {
         match self {
             TelemetrySubcommand::Enable => {
-                if fig_request::auth::is_logged_in() {
-                    fig_api_client::settings::update("telemetry.disabled", json!(false)).await?;
-                } else {
-                    fig_settings::settings::set_value("telemetry.disabled", json!(false))?;
-                }
+                fig_settings::settings::set_value("telemetry.disabled", json!(false))?;
                 Ok(())
             },
             TelemetrySubcommand::Disable => {
-                if fig_request::auth::is_logged_in() {
-                    fig_api_client::settings::update("telemetry.disabled", json!(true)).await?;
-                } else {
-                    fig_settings::settings::set_value("telemetry.disabled", json!(true))?;
-                }
+                fig_settings::settings::set_value("telemetry.disabled", json!(true))?;
                 Ok(())
             },
             TelemetrySubcommand::Status => {

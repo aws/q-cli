@@ -108,7 +108,7 @@ async fn main() {
         std::process::exit(0);
     }
 
-    let page_and_data = cli
+    let page = cli
         .url_link
         .and_then(|url| match Url::parse(&url) {
             Ok(url) => Some(url),
@@ -124,12 +124,7 @@ async fn main() {
             }
 
             url.host_str().and_then(|s| match s {
-                "dashboard" => Some((url.path().to_owned(), None)),
-                "plugins" => Some((format!("plugins/{}", url.path()), None)),
-                "login" => {
-                    let auth = utils::handle_login_deep_link(&url);
-                    Some(("login".into(), auth))
-                },
+                "dashboard" => Some(url.path().to_owned()),
                 _ => {
                     error!("Invalid deep link");
                     None
@@ -159,7 +154,7 @@ async fn main() {
                             let exe = process.exe().display();
                             eprintln!("Killing instance: {exe} ({pid})");
                         } else {
-                            let page_and_data = page_and_data.clone();
+                            let page = page.clone();
                             let on_match = async {
                                 let exe = process.exe().display();
 
@@ -174,14 +169,14 @@ async fn main() {
                                 }
 
                                 eprintln!("CodeWhisperer is already running: {exe} ({})", extra.join(" "),);
-                                let (page, auth_data) = match page_and_data {
-                                    Some((page, auth_data)) => {
+                                match &page {
+                                    Some(page) => {
                                         eprintln!("Opening /{page}...");
-                                        (Some(page), auth_data)
+                                        Some(page)
                                     },
                                     None => {
                                         eprintln!("Opening CodeWhisperer Window...");
-                                        (None, None)
+                                        None
                                     },
                                 };
 
@@ -192,18 +187,6 @@ async fn main() {
                                     eprintln!("Failed to open Fig: {err}");
                                 }
 
-                                if let Some(auth) = auth_data {
-                                    eprintln!("Sending auth: {auth}");
-                                    if let Err(err) = fig_ipc::local::send_hook_to_socket(
-                                        fig_proto::hooks::new_event_hook("dashboard.login", auth.to_string(), [
-                                            "dashboard".to_owned(),
-                                        ]),
-                                    )
-                                    .await
-                                    {
-                                        eprintln!("Failed to send auth: {err}");
-                                    }
-                                }
                                 exit(0);
                             };
 
@@ -267,18 +250,17 @@ async fn main() {
         platform::gtk::init().expect("Failed initializing GTK");
     }
 
-    let show_onboarding = !fig_request::auth::is_logged_in();
+    let is_logged_in = !auth::is_logged_in().await;
 
-    if show_onboarding {
+    if !is_logged_in {
         tracing::info!("Showing onboarding");
     }
 
     let accessibility_enabled = PlatformState::accessibility_is_enabled().unwrap_or(true);
     let visible = !cli.no_dashboard;
 
-    let autocomplete_enabled = !fig_settings::settings::get_bool_or("autocomplete.disable", false)
-        && fig_request::auth::is_logged_in()
-        && accessibility_enabled;
+    let autocomplete_enabled =
+        !fig_settings::settings::get_bool_or("autocomplete.disable", false) && is_logged_in && accessibility_enabled;
 
     let mut webview_manager = WebviewManager::new(visible);
     webview_manager
@@ -286,9 +268,9 @@ async fn main() {
             DASHBOARD_ID,
             build_dashboard,
             DashboardOptions {
-                show_onboarding,
+                show_onboarding: !is_logged_in,
                 visible,
-                page: page_and_data.map(|p| p.0),
+                page,
             },
             true,
             dashboard::url,

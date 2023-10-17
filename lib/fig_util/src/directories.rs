@@ -185,7 +185,7 @@ pub fn managed_binaries_dir() -> Result<PathBuf> {
 pub fn themes_dir() -> Result<PathBuf> {
     debug_env_binding!("FIG_DIRECTORIES_THEMES_DIR");
 
-    Ok(themes_repo_dir()?.join("themes"))
+    Ok(resources_path()?.join("themes"))
 }
 
 /// The autocomplete directory

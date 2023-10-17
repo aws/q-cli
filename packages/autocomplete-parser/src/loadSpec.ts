@@ -1,6 +1,5 @@
 import logger, { Logger } from "loglevel";
 import { Settings, Debugger } from "@withfig/api-bindings";
-import { getVersionFromVersionedSpec } from "@fig/autocomplete-helpers";
 import {
   convertSubcommand,
   initializeDefault,
@@ -20,14 +19,12 @@ import {
   executeCommand,
   isInDevMode,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { AuthClient } from "@amzn/fig-io-api-client";
 import {
   importFromPublicCDN,
   publicSpecExists,
   getPrivateSpec,
   importFromPrivateCDN,
   SpecFileImport,
-  getVersionFromFullFile,
   importSpecFromFile,
   getSpecInfo,
   isDiffVersionedSpec,
@@ -35,12 +32,9 @@ import {
   getMixinCacheKey,
   importFromLocalhost,
 } from "./loadHelpers.js";
-import {
-  DisabledSpecError,
-  MissingSpecError,
-  WrongDiffVersionedSpecError,
-} from "./errors.js";
+import { DisabledSpecError, MissingSpecError } from "./errors.js";
 import { mixinCache, specCache } from "./caches.js";
+import { tryResolveSpecToSubcommand } from "./tryResolveSpecToSubcommand.js";
 
 /**
  * This searches for the first directory containing a .fig/ folder in the parent directories
@@ -49,8 +43,8 @@ const searchFigFolder = async (currentDirectory: string) => {
   try {
     return ensureTrailingSlash(
       await executeCommand(
-        `cd ${currentDirectory} && until [[ -f .fig/autocomplete/build/_shortcuts.js ]] || [[ $PWD = $HOME ]] || [[ $PWD = "/" ]]; do cd ..; done; echo $PWD`,
-      ),
+        `cd ${currentDirectory} && until [[ -f .fig/autocomplete/build/_shortcuts.js ]] || [[ $PWD = $HOME ]] || [[ $PWD = "/" ]]; do cd ..; done; echo $PWD`
+      )
     );
   } catch {
     return ensureTrailingSlash(currentDirectory);
@@ -67,7 +61,7 @@ export const serializeSpecLocation = (location: SpecLocation): string => {
 export const getSpecPath = async (
   name: string,
   cwd: string,
-  isScript?: boolean,
+  isScript?: boolean
 ): Promise<SpecLocation> => {
   if (name === "?") {
     // If the user is searching for _shortcuts.js by using "?"
@@ -123,28 +117,27 @@ type ResolvedSpecLocation =
   | { type: "public"; name: string }
   | { type: "private"; namespace: string; name: string };
 
-const loadMixinCached = async (
-  resolvedLocation: ResolvedSpecLocation,
-  authClient: AuthClient,
-): Promise<SpecMixin | undefined> => {
-  if (mixinCache.size === 0) {
-    await withTimeout(5000, preloadMixins(authClient));
-  }
+// const loadMixinCached = async (
+//   resolvedLocation: ResolvedSpecLocation,
+//   authClient: AuthClient,
+// ): Promise<SpecMixin | undefined> => {
+//   if (mixinCache.size === 0) {
+//     await withTimeout(5000, preloadMixins(authClient));
+//   }
 
-  const key = getMixinCacheKey(
-    resolvedLocation.name,
-    "namespace" in resolvedLocation ? resolvedLocation.namespace : undefined,
-  );
-  if (mixinCache.has(key)) {
-    return mixinCache.get(key);
-  }
-  return undefined;
-};
+//   const key = getMixinCacheKey(
+//     resolvedLocation.name,
+//     "namespace" in resolvedLocation ? resolvedLocation.namespace : undefined,
+//   );
+//   if (mixinCache.has(key)) {
+//     return mixinCache.get(key);
+//   }
+//   return undefined;
+// };
 
-const importSpecFromLocation = async (
+export const importSpecFromLocation = async (
   specLocation: SpecLocation,
-  authClient: AuthClient,
-  localLogger: Logger = logger,
+  localLogger: Logger = logger
 ): Promise<{
   specFile: SpecFileImport;
   resolvedLocation?: ResolvedSpecLocation;
@@ -165,7 +158,7 @@ const importSpecFromLocation = async (
     const { diffVersionedFile, name } = specLocation;
     specFile = await importFromLocalhost(
       diffVersionedFile ? `${name}/${diffVersionedFile}` : name,
-      devPort,
+      devPort
     );
   }
 
@@ -175,7 +168,7 @@ const importSpecFromLocation = async (
       const spec = await importSpecFromFile(
         diffVersionedFile ? `${name}/${diffVersionedFile}` : name,
         devPath,
-        localLogger,
+        localLogger
       );
       specFile = spec;
     } catch {
@@ -191,15 +184,15 @@ const importSpecFromLocation = async (
       const privateSpecMatch = await getSpecInfo(
         basename,
         dirname,
-        localLogger,
+        localLogger
       );
       resolvedLocation = { type: "private", ...privateSpecMatch };
-      specFile = await importFromPrivateCDN(privateSpecMatch, authClient);
+      // specFile = await importFromPrivateCDN(privateSpecMatch, authClient);
     } catch (err) {
       specFile = await importSpecFromFile(
         basename,
         `${dirname}.fig/autocomplete/build/`,
-        localLogger,
+        localLogger
       );
     }
   } else if (!specFile) {
@@ -209,12 +202,12 @@ const importSpecFromLocation = async (
     if (privateSpecMatch) {
       logger.info(`Found private spec ${privateSpecMatch}...`);
       resolvedLocation = { type: "private", ...privateSpecMatch };
-      specFile = await importFromPrivateCDN(privateSpecMatch, authClient);
+      // specFile = await importFromPrivateCDN(privateSpecMatch, authClient);
     } else if (await publicSpecExists(name)) {
       // If we're here, importing was successful.
       try {
         const result = await importFromPublicCDN(
-          versionFileName ? `${name}/${versionFileName}` : name,
+          versionFileName ? `${name}/${versionFileName}` : name
         );
         Debugger.resetDebugger();
 
@@ -235,7 +228,7 @@ const importSpecFromLocation = async (
         specFile = await importSpecFromFile(
           name,
           `~/.fig/autocomplete/build/`,
-          localLogger,
+          localLogger
         );
       } catch (err) {
         /* empty */
@@ -250,52 +243,10 @@ const importSpecFromLocation = async (
   return { specFile, resolvedLocation };
 };
 
-const tryResolveSpecToSubcommand = async (
-  spec: SpecFileImport,
-  location: SpecLocation,
-  authClient: AuthClient,
-): Promise<Fig.Subcommand> => {
-  if (typeof spec.default === "function") {
-    // Handle versioned specs, either simple versioned or diff versioned.
-    const cliVersion = await getVersionFromFullFile(spec, location.name);
-    const subcommandOrDiffVersionInfo = await spec.default(cliVersion);
-
-    if ("versionedSpecPath" in subcommandOrDiffVersionInfo) {
-      // Handle diff versioned specs.
-      const { versionedSpecPath, version } = subcommandOrDiffVersionInfo;
-      const [dirname, basename] = splitPath(versionedSpecPath);
-      const { specFile } = await importSpecFromLocation(
-        {
-          ...location,
-          name: dirname.slice(0, -1),
-          diffVersionedFile: basename,
-        },
-        authClient,
-      );
-
-      if ("versions" in specFile) {
-        const result = getVersionFromVersionedSpec(
-          specFile.default,
-          specFile.versions,
-          version,
-        );
-        return result.spec;
-      }
-
-      throw new WrongDiffVersionedSpecError("Invalid versioned specs file");
-    }
-
-    return subcommandOrDiffVersionInfo;
-  }
-
-  return spec.default;
-};
-
 export const loadFigSubcommand = async (
   specLocation: SpecLocation,
-  authClient: AuthClient,
   context?: Fig.ShellContext,
-  localLogger: Logger = logger,
+  localLogger: Logger = logger
 ): Promise<Fig.Subcommand> => {
   const { name } = specLocation;
   const location = (await isDiffVersionedSpec(name))
@@ -303,17 +254,12 @@ export const loadFigSubcommand = async (
     : specLocation;
   const { specFile, resolvedLocation } = await importSpecFromLocation(
     location,
-    authClient,
-    localLogger,
+    localLogger
   );
 
-  const subcommand = await tryResolveSpecToSubcommand(
-    specFile,
-    specLocation,
-    authClient,
-  );
-  const mixin =
-    resolvedLocation && (await loadMixinCached(resolvedLocation, authClient));
+  const subcommand = await tryResolveSpecToSubcommand(specFile, specLocation);
+  // const mixin = resolvedLocation && (await loadMixinCached(resolvedLocation));
+  const mixin = undefined;
   return mixin
     ? applyMixin(
         subcommand,
@@ -323,16 +269,15 @@ export const loadFigSubcommand = async (
           sshPrefix: "",
           environmentVariables: {},
         },
-        mixin,
+        mixin
       )
     : subcommand;
 };
 
 export const loadSubcommandCached = async (
   specLocation: SpecLocation,
-  authClient: AuthClient,
   context?: Fig.ShellContext,
-  localLogger: Logger = logger,
+  localLogger: Logger = logger
 ): Promise<Subcommand> => {
   const { name, type: source } = specLocation;
   const path =
@@ -356,7 +301,7 @@ export const loadSubcommandCached = async (
 
   const subcommand = await withTimeout(
     5000,
-    loadFigSubcommand(specLocation, authClient, context, localLogger),
+    loadFigSubcommand(specLocation, context, localLogger)
   );
   const converted = convertSubcommand(subcommand, initializeDefault);
   specCache.set(key, converted);

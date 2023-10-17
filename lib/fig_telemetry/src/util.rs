@@ -19,14 +19,6 @@ pub fn telemetry_is_disabled() -> bool {
 pub(crate) async fn default_properties() -> Map<String, Value> {
     let mut prop = Map::new();
 
-    // legacy, to remove
-    if let Some(email) = fig_request::auth::get_email().await {
-        if let Some(domain) = email.split('@').last() {
-            prop.insert("domain".into(), domain.into());
-        }
-        prop.insert("email".into(), email.into());
-    }
-
     #[cfg(target_os = "macos")]
     prop.insert("desktop_version".into(), env!("CARGO_PKG_VERSION").into());
 
@@ -133,15 +125,11 @@ pub(crate) async fn default_properties() -> Map<String, Value> {
     prop
 }
 
-pub(crate) async fn make_telemetry_request(route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
+pub(crate) async fn make_telemetry_request(_route: &str, mut body: Map<String, Value>) -> Result<(), Error> {
     body.insert(
         "anonymousId".into(),
         fig_settings::state::get_or_create_anonymous_id()?.into(),
     );
-    fig_request::Request::post(route)
-        .maybe_auth()
-        .body_json(body)
-        .send()
-        .await?;
+    // TODO: fix?
     Ok(())
 }

@@ -1,15 +1,9 @@
 import React from "react";
 import logger from "loglevel";
 import ReactDOM from "react-dom/client";
-import {
-  preloadSpecs,
-  preloadMixins,
-  preloadClis,
-} from "@amzn/fig-io-autocomplete-parser";
 import { State } from "@amzn/fig-io-api-bindings-wrappers";
 import App from "./App";
 import { captureError } from "./sentry";
-import { authClient } from "./auth";
 import ErrorBoundary from "./components/ErrorBoundary";
 
 State.watch();
@@ -19,7 +13,7 @@ setTimeout(
   () => {
     window.location.reload();
   },
-  1000 * 60 * 60 * 24,
+  1000 * 60 * 60 * 24
 );
 
 window.onerror = (message, source, lineno, colno, error) => {
@@ -33,16 +27,16 @@ window.logger = logger;
 
 logger.setDefaultLevel("warn");
 
-setTimeout(() => {
-  preloadMixins(authClient);
-  preloadSpecs(authClient);
-  preloadClis(authClient);
-}, 0);
+// setTimeout(() => {
+//   preloadMixins(authClient);
+//   preloadSpecs(authClient);
+//   preloadClis(authClient);
+// }, 0);
 
 ReactDOM.createRoot(document.getElementById("root") as HTMLElement).render(
   <React.StrictMode>
     <ErrorBoundary>
       <App />
     </ErrorBoundary>
-  </React.StrictMode>,
+  </React.StrictMode>
 );

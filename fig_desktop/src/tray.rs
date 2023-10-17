@@ -340,12 +340,12 @@ impl MenuElement {
         }
     }
 
-    fn sub_menu(title: impl Into<Cow<'static, str>>, elements: Vec<MenuElement>) -> Self {
-        Self::SubMenu {
-            title: title.into(),
-            elements,
-        }
-    }
+    // fn sub_menu(title: impl Into<Cow<'static, str>>, elements: Vec<MenuElement>) -> Self {
+    //     Self::SubMenu {
+    //         title: title.into(),
+    //         elements,
+    //     }
+    // }
 
     fn add_to_menu(&self, menu: &mut Menu) {
         match self {
@@ -423,7 +423,8 @@ impl MenuElement {
 }
 
 fn menu() -> Vec<MenuElement> {
-    let logged_in = fig_request::auth::is_logged_in();
+    // let logged_in = fig_request::auth::is_logged_in();
+    let logged_in = true;
 
     let not_working = MenuElement::entry(None, None, "CW not working?", "not-working");
     let manual = MenuElement::entry(None, None, "User Guide", "user-manual");
@@ -445,7 +446,7 @@ fn menu() -> Vec<MenuElement> {
             MenuElement::Separator,
             manual,
             not_working,
-            MenuElement::Separator
+            MenuElement::Separator,
         ]
     } else {
         let mut menu = vec![];
@@ -482,7 +483,7 @@ fn menu() -> Vec<MenuElement> {
             MenuElement::Separator,
             manual,
             not_working,
-            MenuElement::Separator
+            MenuElement::Separator,
         ]);
 
         menu

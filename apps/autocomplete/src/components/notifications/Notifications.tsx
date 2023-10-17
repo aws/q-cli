@@ -1,5 +1,4 @@
 import { useAutocompleteStore } from "../../state";
-import { LegacyUpgradeNotification } from "./LegacyUpgradeNotification";
 
 export const Notifications = () => {
   const { suggestions } = useAutocompleteStore();
@@ -9,7 +8,6 @@ export const Notifications = () => {
   // TODO: make sure no more than 1 notification is shown at a time
   return (
     <>
-      <LegacyUpgradeNotification />
       {/* <UpdateTerminalNotification /> */}
     </>
   );

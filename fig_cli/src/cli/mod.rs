@@ -23,6 +23,7 @@ mod uninstall;
 mod update;
 mod user;
 
+use auth::is_logged_in;
 use clap::{
     CommandFactory,
     Parser,
@@ -37,7 +38,6 @@ use eyre::{
 use fig_ipc::local::open_ui_element;
 use fig_log::Logger;
 use fig_proto::local::UiElement;
-use fig_request::auth::is_logged_in;
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
@@ -300,7 +300,7 @@ async fn launch_dashboard() -> Result<()> {
         verbose: true,
     })?;
 
-    let route = match is_logged_in() {
+    let route = match is_logged_in().await {
         true => Some("/".into()),
         false => None,
     };

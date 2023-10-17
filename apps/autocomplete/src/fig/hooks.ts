@@ -14,10 +14,8 @@ import {
   SettingsMap,
   updateSettings,
 } from "@amzn/fig-io-api-bindings-wrappers";
-import { preloadClis } from "@amzn/fig-io-autocomplete-parser";
 import { captureError, initSentry } from "../sentry";
 import { updateSelectSuggestionKeybindings } from "../actions";
-import { authClient } from "../auth";
 
 // TODO(sean) expose Subscription type from API binding library
 type Unwrap<T> = T extends Promise<infer U> ? U : T;
@@ -98,24 +96,6 @@ export const useLoadAliasEffect = (
       isStale = true;
     };
   }, [currentProcess]);
-};
-
-export const useLoadClisEffect = (
-  setFigState: React.Dispatch<React.SetStateAction<FigState>>,
-) => {
-  useEffect(() => {
-    preloadClis(authClient).then((clis) => {
-      if (clis) {
-        const map = Object.fromEntries(
-          clis.map((cli) => [
-            cli.name,
-            `fig cli @${cli.namespace}/${cli.name}`,
-          ]),
-        );
-        setFigState((state) => ({ ...state, cliAliases: map }));
-      }
-    });
-  }, []);
 };
 
 export const useFigSubscriptionEffect = (

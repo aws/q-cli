@@ -12,7 +12,6 @@ use std::process::{
     exit,
     Command,
 };
-use std::str::FromStr;
 use std::time::Duration;
 
 use bytes::{
@@ -52,8 +51,6 @@ use fig_proto::hooks::{
     new_event_hook,
 };
 use fig_proto::ReflectMessage;
-use fig_request::auth::get_token;
-use fig_request::Request;
 use fig_telemetry::{
     TrackEvent,
     TrackEventType,
@@ -232,19 +229,6 @@ pub enum InternalSubcommand {
         /// Apps to send the event to.
         #[arg(long)]
         apps: Vec<String>,
-    },
-    AuthToken,
-    Request {
-        #[arg(long)]
-        route: String,
-        #[arg(long, default_value_t = Method::Get)]
-        method: Method,
-        #[arg(long)]
-        body: Option<String>,
-        #[arg(long)]
-        namespace: Option<String>,
-        #[arg(long)]
-        release: bool,
     },
     SocketsDir,
     StreamFromSocket,
@@ -445,35 +429,6 @@ impl InternalSubcommand {
             InternalSubcommand::Event { payload, apps, name } => {
                 let hook = new_event_hook(name, payload, apps);
                 send_hook_to_socket(hook).await?;
-            },
-            InternalSubcommand::AuthToken => {
-                writeln!(stdout(), "{}", get_token().await?).ok();
-            },
-            InternalSubcommand::Request {
-                route,
-                method,
-                body,
-                namespace,
-                release,
-            } => {
-                let method = fig_request::Method::from_str(&method.to_string())?;
-                let mut request = if release {
-                    Request::new_release(method, route)
-                } else {
-                    Request::new(method, route)
-                }
-                .namespace(namespace)
-                .auth();
-                if let Some(body) = body {
-                    let value: serde_json::Value = serde_json::from_str(&body)?;
-                    request = request.body_json(value);
-                }
-                if release {
-                    let _ = writeln!(stdout(), "{}", request.raw_text().await?);
-                } else {
-                    let value = request.json().await?;
-                    writeln!(stdout(), "{value}").ok();
-                }
             },
             InternalSubcommand::Ipc {
                 app,

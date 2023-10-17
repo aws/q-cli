@@ -1,20 +1,16 @@
 use std::borrow::Cow;
-use std::env;
 use std::fmt::Display;
 use std::io::{
-    stdin,
     stdout,
     Write,
 };
 
 use clap::Args;
-use crossterm::tty::IsTty;
 use eyre::Result;
 use fig_integrations::shell::{
     ShellExt,
     When,
 };
-use fig_request::auth::is_logged_in;
 use fig_util::{
     Shell,
     Terminal,
@@ -141,7 +137,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         {
             if shell == &Shell::Zsh
                 && when == &When::Post
-                && fig_settings::settings::get_bool_or("ghost-text.beta", false)
+                && fig_settings::settings::get_bool_or("ghost-text.enabled", true)
             {
                 to_source.push(guard_source(
                     shell,
@@ -153,15 +149,15 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
             }
         }
 
-        if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
-            // if no value, assume that we have seen onboarding already.
-            // this is explicitly set in onboarding in macOS app.
-            let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
+        // if stdin().is_tty() && env::var_os("PROCESS_LAUNCHED_BY_FIG").is_none() {
+        //     // if no value, assume that we have seen onboarding already.
+        //     // this is explicitly set in onboarding in macOS app.
+        //     let has_seen_onboarding: bool = fig_settings::state::get_bool_or("user.onboarding", true);
 
-            if is_logged_in() && !has_seen_onboarding {
-                to_source.push("fig app onboarding".into())
-            }
-        }
+        //     if is_logged_in().await && !has_seen_onboarding {
+        //         to_source.push("fig app onboarding".into())
+        //     }
+        // }
 
         if fig_settings::state::get_bool_or("shell-integrations.immediateLogin", false)
             && fig_settings::state::set_value("shell-integrations.immediateLogin", false).is_ok()

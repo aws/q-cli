@@ -22,10 +22,12 @@ pub enum Error {
     Directories(#[from] fig_util::directories::DirectoryError),
     #[error(transparent)]
     SerdeJson(#[from] serde_json::Error),
+    #[error("Security error: {}", .0)]
+    Security(String),
     #[error(transparent)]
-    SecurityFramework(#[from] security_framework::base::Error),
+    StringFromUtf8(#[from] std::string::FromUtf8Error),
     #[error(transparent)]
-    FromUtf8(#[from] std::string::FromUtf8Error),
+    StrFromUtf8(#[from] std::str::Utf8Error),
 }
 
 pub(crate) type Result<T, E = Error> = std::result::Result<T, E>;

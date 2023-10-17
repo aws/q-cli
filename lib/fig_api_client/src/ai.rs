@@ -1,8 +1,10 @@
-use amzn_codewhisperer_client::operation::generate_recommendations::{
-    GenerateRecommendationsError,
-    GenerateRecommendationsOutput,
+use amzn_codewhisperer_bearer::operation::generate_completions::{
+    GenerateCompletionsError,
+    GenerateCompletionsOutput,
 };
-use amzn_codewhisperer_client::Client;
+use amzn_codewhisperer_bearer::Client;
+use auth::builder_id::BearerResolver;
+use aws_credential_types::Credentials;
 use aws_smithy_http::body::SdkBody;
 use aws_smithy_http::result::SdkError;
 use http::response::Response;
@@ -13,9 +15,9 @@ const DEFAULT_REGION: &str = "us-east-1";
 const CODEWHISPERER_ENDPOINT: &str = "https://codewhisperer.us-east-1.amazonaws.com";
 const APP_NAME: &str = "figTest";
 
-fn aws_profile() -> Option<String> {
-    fig_settings::state::get_string("aws.profile").ok().flatten()
-}
+// fn aws_profile() -> Option<String> {
+//     fig_settings::state::get_string("aws.profile").ok().flatten()
+// }
 
 static AWS_CLIENT: OnceCell<Client> = OnceCell::const_new();
 
@@ -33,12 +35,14 @@ async fn cw_client() -> &'static Client {
 
             let sdk = aws_config::from_env()
                 .region(DEFAULT_REGION)
-                .profile_name(aws_profile().unwrap_or_else(|| "DEFAULT".into()))
+                .credentials_provider(Credentials::new("xxx", "xxx", None, None, "xxx"))
                 .load()
                 .await;
 
-            let conf_builder: amzn_codewhisperer_client::config::Builder = (&sdk).into();
+            let conf_builder: amzn_codewhisperer_bearer::config::Builder = (&sdk).into();
+
             let conf = conf_builder
+                .bearer_token_resolver(BearerResolver)
                 .app_name(aws_config::AppName::new(APP_NAME).unwrap())
                 .endpoint_url(CODEWHISPERER_ENDPOINT)
                 .build();
@@ -145,37 +149,62 @@ pub struct AiRequest {
 // }
 
 pub async fn request_cw(
-    CodewhipererRequest {
-        file_context:
-            CodewhipererFileContext {
-                left_file_content,
-                right_file_content,
-                filename,
-                programming_language,
-            },
-        max_results,
-        next_token,
-    }: CodewhipererRequest,
-) -> Result<GenerateRecommendationsOutput, SdkError<GenerateRecommendationsError, Response<SdkBody>>> {
+    request: CodewhipererRequest,
+) -> Result<GenerateCompletionsOutput, SdkError<GenerateCompletionsError, Response<SdkBody>>> {
     cw_client()
         .await
-        .generate_recommendations()
+        .generate_completions()
         .file_context(
-            amzn_codewhisperer_client::types::FileContext::builder()
-                .left_file_content(left_file_content)
-                .right_file_content(right_file_content)
-                .filename(filename)
+            amzn_codewhisperer_bearer::types::FileContext::builder()
+                .left_file_content(request.file_context.left_file_content)
+                .right_file_content(request.file_context.right_file_content)
+                .filename(request.file_context.filename)
                 .programming_language(
-                    amzn_codewhisperer_client::types::ProgrammingLanguage::builder()
-                        .language_name(programming_language.language_name.as_ref())
+                    amzn_codewhisperer_bearer::types::ProgrammingLanguage::builder()
+                        .language_name(request.file_context.programming_language.language_name.as_ref())
                         .build(),
                 )
                 .build(),
         )
-        .max_results(max_results)
-        .next_token(next_token.unwrap_or_default())
+        .max_results(request.max_results)
+        .set_next_token(request.next_token)
         .send()
         .await
+
+    // curl -k
+    //    -X POST $ENDPOINT_URL
+    //    -H "Authorization: Bearer $BEARER_TK"
+    //    -H "Content-Type:application/x-amz-json-1.0"
+    //    -H "X-Amz-Target:com.amazon.aws.codewhisperer.runtime.AmazonCodeWhispererService.
+    // GenerateCompletions"    -H "Accept: application/json, text/javascript, */*"
+    //    -d '{"fileContext":{"leftFileContent":"def
+    // addTwoNumbers","rightFileContent":"","filename":"calculator.py","programmingLanguage":{"
+    // languageName":"python"}},"maxLinesPerRecommendations":1,"maxRecommendations":3}'
+    //
+    // let txt = r#"{"fileContext":{"leftFileContent":"def
+    // addTwoNumbers","rightFileContent":"","filename":"calculator.py","programmingLanguage":{"
+    // languageName":"python"}},"maxLinesPerRecommendations":1,"maxRecommendations":3}"#; dbg!(
+    //     fig_request::client()
+    //         .unwrap()
+    //         .post(CODEWHISPERER_ENDPOINT)
+    //         .header("Authorization", format!("Bearer {TOKEN}"))
+    //         .header("Content-Type", "application/x-amz-json-1.0")
+    //         .header("Content-Encoding", "amz-1.0")
+    //         .header(
+    //             "X-Amz-Target",
+    //             "AWSCodeWhispererService.GenerateRecommendations"
+    //         )
+    //         .header("Accept", "application/json, text/javascript, */*")
+    //         .body(txt)
+    //         // .json(&request)
+    //         .send()
+    //         .await
+    //         .unwrap()
+    //         .text()
+    //         .await
+    // );
+
+    // todo!()
 }
 
 #[derive(Debug, Clone, serde::Serialize, serde::Deserialize)]
@@ -338,12 +367,49 @@ mod tests {
 
         // Client::from_conf(Config::builder().(&sdk).endpoint());
 
+        let history = "1516  11.10.2023 14:20  cd Documents
+1517  11.10.2023 14:20  gh repo clone neovim/neovim
+1518  11.10.2023 14:20  cd neovim
+1519  11.10.2023 14:20  git log --reverse
+1520  11.10.2023 14:32  git status
+1521  11.10.2023 14:32  git add .
+1522  11.10.2023 14:32  git satus
+1523  11.10.2023 14:32  git status
+1524  11.10.2023 14:32  git diff --staged
+1525  11.10.2023 14:32  git status
+1526  11.10.2023 14:33  git commit -m 'Update build script' -n
+1527  11.10.2023 14:33  git push
+1528  11.10.2023 14:33  git stash
+1529  11.10.2023 14:33  git pull -r
+1530  11.10.2023 14:33  git stash pop
+1531  11.10.2023 14:33  git push
+1532  11.10.2023 14:28  brazil ws sync
+1533  11.10.2023 14:39  git status
+1534  11.10.2023 14:39  git add .
+1535  11.10.2023 14:39  git commit -m 'Set beta account number' -n
+1536  11.10.2023 14:39  cr
+1537  11.10.2023 15:00  git add .
+1538  11.10.2023 15:01  brazil ws sync
+1539  11.10.2023 15:10  cd lib/fig_color
+1540  11.10.2023 15:10  cargo rt
+1541  11.10.2023 15:10  cargo t
+1542  11.10.2023 15:18  git status
+1543  11.10.2023 15:18  git diff --staged
+1544  11.10.2023 15:18  brazil ws sync
+1545  11.10.2023 15:18  git stash
+1546  11.10.2023 15:18  brazil ws sync
+1547  11.10.2023 15:19  git stash pop
+1548  11.10.2023 15:19  git add .
+1549  11.10.2023 15:19  git commit -m 'Add gamma stage' -n
+1550  11.10.2023 15:19  git push
+1551  11.10.2023 15:19  cr
+1552  11.10.2023 15:20  g";
+
         cw_client().await;
 
-        let time = std::time::Instant::now();
-        let res = request_cw(CodewhipererRequest {
+        let mut request = CodewhipererRequest {
             file_context: CodewhipererFileContext {
-                left_file_content: "# List the files in the directory\n".into(),
+                left_file_content: history.into(),
                 right_file_content: "".into(),
                 filename: "history.sh".into(),
                 programming_language: ProgrammingLanguage {
@@ -352,36 +418,52 @@ mod tests {
             },
             max_results: 1,
             next_token: None,
-        })
-        .await
-        .unwrap();
+        };
 
+        let time = std::time::Instant::now();
+        let mut res = request_cw(request.clone()).await.unwrap();
+
+        println!("{res:?}");
         println!("time: {:?}", time.elapsed());
-        for (i, a) in res.recommendations.unwrap_or_default().iter().enumerate() {
+        for (i, a) in res.completions.unwrap_or_default().iter().enumerate() {
             println!("rec {i}: {:?}", a.content)
         }
 
         let time = std::time::Instant::now();
 
-        let res2 = request_cw(CodewhipererRequest {
-            file_context: CodewhipererFileContext {
-                left_file_content: "# List the files in the directory that have a p in them\n".into(),
-                right_file_content: "".into(),
-                filename: "history.sh".into(),
-                programming_language: ProgrammingLanguage {
-                    language_name: LanguageName::Shell,
-                },
-            },
-            max_results: 1,
-            next_token: None,
-        })
-        .await
-        .unwrap();
-
-        println!("time: {:?}", time.elapsed());
-        for (i, a) in res2.recommendations.unwrap_or_default().iter().enumerate() {
-            println!("rec {i}: {:?}", a.content)
+        while let Some(token) = &res.next_token {
+            if token.is_empty() {
+                break;
+            } else {
+                request.next_token = Some(token.clone());
+                res = request_cw(request.clone()).await.unwrap();
+                println!("{res:?}");
+                println!("time: {:?}", time.elapsed());
+                for (i, a) in res.completions.unwrap_or_default().iter().enumerate() {
+                    println!("rec {i}: {:?}", a.content)
+                }
+            }
         }
+
+        // let res2 = request_cw(CodewhipererRequest {
+        //     file_context: CodewhipererFileContext {
+        //         left_file_content: "# List the files in the directory that have a p in
+        // them\n".into(),         right_file_content: "".into(),
+        //         filename: "history.sh".into(),
+        //         programming_language: ProgrammingLanguage {
+        //             language_name: LanguageName::Shell,
+        //         },
+        //     },
+        //     max_results: 1,
+        //     next_token: None,
+        // })
+        // .await
+        // .unwrap();
+
+        // println!("time: {:?}", time.elapsed());
+        // for (i, a) in res2.recommendations.unwrap_or_default().iter().enumerate() {
+        //     println!("rec {i}: {:?}", a.content)
+        // }
 
         // left_file_content: Some("".into()),
         // right_file_content: None,

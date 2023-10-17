@@ -5,7 +5,6 @@ members = [
     "fig_desktop",
     "fig_input_method",
     "figterm",
-    "tools/fig_release",
     "lib/*",
     "lib/macos_utils/accessibility-master/accessibility",
     "lib/macos_utils/accessibility-master/accessibility-sys",

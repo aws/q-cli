@@ -91,7 +91,7 @@ use crate::util::{
 #[derive(Debug, Args, PartialEq, Eq)]
 pub struct DoctorArgs {
     /// Run all doctor tests, with no fixes
-    #[arg(long, default_value_t = true)]
+    #[arg(long)]
     verbose: bool,
     /// Error on warnings
     #[arg(long)]
@@ -392,15 +392,15 @@ struct AppRunningCheck;
 #[async_trait]
 impl DoctorCheck for AppRunningCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig is running".into()
+        "CodeWhisperer is running".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         if !is_fig_desktop_running() {
             Err(DoctorError::Error {
-                reason: "Fig app is not running".into(),
+                reason: "CodeWhisperer app is not running".into(),
                 info: vec![],
-                fix: command_fix(vec!["fig", "launch"], Duration::from_secs(3)),
+                fix: command_fix(vec!["cw", "launch"], Duration::from_secs(3)),
                 error: None,
             })
         } else {
@@ -422,7 +422,7 @@ struct FigSocketCheck;
 #[async_trait]
 impl DoctorCheck for FigSocketCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig socket exists".into()
+        "CodeWhisperer socket exists".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -432,7 +432,7 @@ impl DoctorCheck for FigSocketCheck {
         if let Some(parent) = parent {
             if !parent.exists() {
                 return Err(DoctorError::Error {
-                    reason: "Fig socket parent directory does not exist".into(),
+                    reason: "CodeWhisperer socket parent directory does not exist".into(),
                     info: vec![format!("Path: {}", fig_socket_path.display()).into()],
                     fix: Some(DoctorFix::Sync(Box::new(|| {
                         std::fs::create_dir_all(parent)?;
@@ -445,7 +445,7 @@ impl DoctorCheck for FigSocketCheck {
 
         check_file_exists(directories::fig_socket_path().expect("No home directory")).map_err(|_| {
             doctor_fix_async!({
-                reason: "Fig socket missing",
+                reason: "CodeWhisperer socket missing",
                 fix: restart_fig()
             })
         })
@@ -470,7 +470,7 @@ impl DoctorCheck for SettingsCorruptionCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         fig_settings::Settings::load().map_err(|_| DoctorError::Error {
-            reason: "Fig settings file is corrupted".into(),
+            reason: "CodeWhisperer settings file is corrupted".into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {
                 std::fs::write(settings_path()?, "{}")?;
@@ -493,7 +493,7 @@ impl DoctorCheck for StateCorruptionCheck {
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         fig_settings::state::all().map_err(|_| DoctorError::Error {
-            reason: "Fig state file is corrupted".into(),
+            reason: "CodeWhisperer state file is corrupted".into(),
             info: vec![],
             fix: Some(DoctorFix::Sync(Box::new(|| {
                 std::fs::write(state_path()?, "{}")?;
@@ -511,7 +511,7 @@ struct FigIntegrationsCheck;
 #[async_trait]
 impl DoctorCheck for FigIntegrationsCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig Integration".into()
+        "CodeWhisperer Integration".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -574,7 +574,7 @@ impl DoctorCheck for FigIntegrationsCheck {
 
         if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
             return Err(DoctorError::Error {
-                reason: "Fig can not run in a process launched by Fig".into(),
+                reason: "CodeWhisperer can not run in a process launched by Fig".into(),
                 info: vec![],
                 fix: None,
                 error: None,
@@ -583,7 +583,7 @@ impl DoctorCheck for FigIntegrationsCheck {
 
         if fig_util::system_info::in_ci() {
             return Err(DoctorError::Error {
-                reason: "Fig doctor can not run in CI".into(),
+                reason: "CodeWhisperer doctor can not run in CI".into(),
                 info: vec![],
                 fix: None,
                 error: None,
@@ -644,9 +644,9 @@ impl DoctorCheck for FigtermSocketCheck {
             return Err(DoctorError::Error {
                 reason: "Tried to find the socket file, but it wasn't there.".into(),
                 info: vec![
-                    "Fig uses the /tmp directory for sockets.".into(),
+                    "CodeWhisperer uses the /tmp directory for sockets.".into(),
                     "Did you delete files in /tmp? The OS will clear it automatically.".into(),
-                    "Try making a new tab or window in your terminal, then run `fig doctor` again.".into(),
+                    "Try making a new tab or window in your terminal, then run `cw doctor` again.".into(),
                     format!("No file at path: {socket_path:?}").into(),
                 ],
                 fix: None,
@@ -814,7 +814,7 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
     async fn check(&self, _: &Option<Shell>) -> Result<(), DoctorError> {
         let fix_text = format!(
             "Run {} to reinstall shell integrations for {}",
-            "fig integrations install dotfiles".magenta(),
+            "cw integrations install dotfiles".magenta(),
             self.integration.get_shell()
         );
         match self.integration.is_installed().await {
@@ -849,8 +849,8 @@ impl DoctorCheck<Option<Shell>> for DotfileCheck {
                                         .magenta()
                                     )
                                     .into(),
-                                    format!("    2. {}", "fig integrations install dotfiles".magenta()).into(),
-                                    format!("    3. {}", "fig doctor".magenta()).into(),
+                                    format!("    2. {}", "cw integrations install dotfiles".magenta()).into(),
+                                    format!("    3. {}", "cw doctor".magenta()).into(),
                                 ],
                                 fix: None,
                                 error: None,
@@ -1074,7 +1074,7 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
             ))
         } else {
             Err(DoctorError::Error {
-                reason: format!("Fig app is installed in {}", path.bold()).into(),
+                reason: format!("CodeWhisperer app is installed in {}", path.bold()).into(),
                 info: vec![
                     "You need to install CodeWhisperer in /Applications.".into(),
                     "To fix: uninstall, then reinstall Fig.".into(),
@@ -1101,7 +1101,7 @@ impl DoctorCheck<DiagnosticsResponse> for AutocompleteEnabledCheck {
         } else {
             Err(DoctorError::Error {
                 reason: "Autocomplete disabled.".into(),
-                info: vec![format!("To fix run: {}", "fig settings autocomplete.disable false".magenta()).into()],
+                info: vec![format!("To fix run: {}", "cw settings autocomplete.disable false".magenta()).into()],
                 fix: None,
                 error: None,
             })
@@ -1164,7 +1164,7 @@ impl DoctorCheck<DiagnosticsResponse> for FigCLIPathCheck {
             ))
         } else {
             Err(doctor_error!(
-                "Fig CLI ({}) must be in {}",
+                "CodeWhisperer CLI ({}) must be in {}",
                 path.display(),
                 local_bin_path.display()
             ))
@@ -1270,7 +1270,7 @@ impl DoctorCheck<Option<Terminal>> for SupportedTerminalCheck {
     async fn check(&self, terminal: &Option<Terminal>) -> Result<(), DoctorError> {
         if terminal.is_none() {
             Err(DoctorError::Error {
-                reason: "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run `fig issue`".into(),
+                reason: "Unsupported terminal, if you believe this is a mistake or would like to see support for your terminal, run `cw issue`".into(),
                 info: vec![
                     #[cfg(target_os = "macos")]
                     format!(
@@ -1552,7 +1552,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 InstallationError::InputMethod(_) => {
                     return Err(DoctorError::Error {
                         reason: e.to_string().into(),
-                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                        info: vec!["Run `cw integrations install input-method` to enable it".into()],
                         fix: None,
                         error: Some(e.into()),
                     });
@@ -1560,7 +1560,7 @@ impl DoctorCheck<Option<Terminal>> for ImeStatusCheck {
                 _ => {
                     return Err(DoctorError::Error {
                         reason: "Input Method is not installed".into(),
-                        info: vec!["Run `fig integrations install input-method` to enable it".into()],
+                        info: vec!["Run `cw integrations install input-method` to enable it".into()],
                         fix: None,
                         error: Some(e.into()),
                     });
@@ -1781,15 +1781,16 @@ struct LoginStatusCheck;
 #[async_trait]
 impl DoctorCheck for LoginStatusCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Logged into Fig".into()
+        "CodeWhisperer auth".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // We reload the credentials here because we want to check if the user is logged in
-        match fig_request::auth::get_token().await {
-            Ok(_) => Ok(()),
-            Err(_) => Err(doctor_error!("Not logged in. Run `fig login` to login.")),
+        if !auth::is_logged_in().await {
+            return Err(doctor_error!("No auth"));
         }
+
+        Ok(())
     }
 }
 
@@ -1858,7 +1859,7 @@ struct SandboxCheck;
 #[cfg(target_os = "linux")]
 impl DoctorCheck for SandboxCheck {
     fn name(&self) -> Cow<'static, str> {
-        "Fig is not running in a sandbox".into()
+        "CodeWhisperer is not running in a sandbox".into()
     }
 
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
@@ -2175,8 +2176,8 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
                 &SettingsCorruptionCheck,
                 &StateCorruptionCheck,
                 &FigIntegrationsCheck,
-                &SshIntegrationCheck,
-                &SshdConfigCheck,
+                // &SshIntegrationCheck,
+                // &SshdConfigCheck,
             ],
             config,
             &mut spinner,
@@ -2229,7 +2230,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         #[cfg(target_os = "macos")]
         {
             run_checks_with_context(
-                format!("Let's check {}...", "fig diagnostic".bold()),
+                format!("Let's check {}...", "cw diagnostic".bold()),
                 vec![
                     &ShellCompatibilityCheck,
                     &BundlePathCheck,
@@ -2249,7 +2250,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         {
             if fig_util::manifest::is_full() && !fig_util::system_info::is_remote() {
                 run_checks_with_context(
-                    format!("Let's check {}...", "fig diagnostic".bold()),
+                    format!("Let's check {}...", "cw diagnostic".bold()),
                     vec![&AutocompleteActiveCheck],
                     super::diagnostics::get_diagnostics,
                     config,
@@ -2312,7 +2313,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         println!();
         println!(
             "If you are not sure how to fix it, please open an issue with {} to let us know!",
-            "fig issue".magenta()
+            "cw issue".magenta()
         );
         println!("Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
         println!()
@@ -2325,7 +2326,7 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
         println!();
         println!(
             "  CodeWhisperer still not working? Run {} to let us know!",
-            "fig issue".magenta()
+            "cw issue".magenta()
         );
         println!("  Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
         println!()

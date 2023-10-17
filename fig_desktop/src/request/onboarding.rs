@@ -26,14 +26,6 @@ use crate::{
 
 // Sync all of the user's data from the server and restart the daemon after they log in
 pub async fn post_login(proxy: &EventLoopProxy) {
-    tokio::spawn(async {
-        // Settings has to be synced first because it contains information that might
-        // modify the behavior of other syncs
-        if let Err(err) = fig_api_client::settings::sync().await {
-            error!(%err, "Failed to sync settings");
-        }
-    });
-
     proxy.send_event(Event::ReloadTray).ok();
 }
 

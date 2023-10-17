@@ -162,7 +162,7 @@ fig_precmd() {
 
   FIG_HAS_SET_PROMPT=1
 
-  if command -v fig >/dev/null 2>&1; then
+  if command -v cw >/dev/null 2>&1; then
     case $(cw _ pre-cmd) in
       EXEC_NEW_SHELL)
         unset FIG_DOTFILES_SOURCED

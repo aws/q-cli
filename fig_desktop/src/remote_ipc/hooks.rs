@@ -4,7 +4,10 @@ use std::time::{
     SystemTime,
 };
 
-use anyhow::Result;
+use anyhow::{
+    anyhow,
+    Result,
+};
 use base64::prelude::*;
 use bytes::BytesMut;
 use fig_proto::fig::server_originated_message::Submessage as ServerOriginatedSubMessage;
@@ -30,12 +33,6 @@ use fig_proto::local::{
 use fig_proto::prost::Message;
 use fig_proto::remote::clientbound;
 use fig_proto::remote::hostbound::ConfirmExchangeCredentialsRequest;
-use fig_request::auth::Credentials;
-use fig_telemetry::{
-    TrackEvent,
-    TrackEventType,
-    TrackSource,
-};
 use parking_lot::Mutex;
 use rand::distributions::uniform::SampleRange;
 use time::OffsetDateTime;
@@ -353,29 +350,7 @@ pub async fn intercepted_key(
 }
 
 pub fn account_info() -> Result<Option<clientbound::response::Response>> {
-    let mut logged_in = false;
-    if let Ok(creds) = Credentials::load_credentials() {
-        match creds.credentials_type {
-            fig_request::auth::CredentialsType::Jwt {
-                access_token,
-                id_token,
-                refresh_token,
-                refresh_token_expired,
-                ..
-            } => {
-                logged_in = access_token.is_some()
-                    && creds.email.is_some()
-                    && id_token.is_some()
-                    && refresh_token.is_some()
-                    && !refresh_token_expired.unwrap_or_default()
-            },
-            fig_request::auth::CredentialsType::FigToken { fig_token } => logged_in = fig_token.is_some(),
-        }
-    }
-
-    Ok(Some(clientbound::response::Response::AccountInfo(
-        clientbound::AccountInfoResponse { logged_in },
-    )))
+    Err(anyhow!("account info not implemented"))
 }
 
 static LAST_EXECUTED_TIME: Mutex<SystemTime> = Mutex::new(SystemTime::UNIX_EPOCH);
@@ -411,39 +386,8 @@ pub async fn start_exchange_credentials(
 }
 
 pub async fn confirm_exchange_credentials(
-    request: ConfirmExchangeCredentialsRequest,
-    last_auth_code: &mut Option<(u32, Instant)>,
+    _request: ConfirmExchangeCredentialsRequest,
+    _last_auth_code: &mut Option<(u32, Instant)>,
 ) -> Result<Option<clientbound::response::Response>> {
-    let mut approved = true;
-    if let Some((last_auth_code, timestamp)) = last_auth_code {
-        if timestamp.elapsed() > Duration::from_secs(60 * 5) {
-            anyhow::bail!("client attempted to use expired exchange code");
-        }
-        let remote_code = (request.code as String).parse::<u32>()?;
-        if remote_code != *last_auth_code {
-            approved = false;
-        }
-    } else {
-        anyhow::bail!("client attempted to confirm exchange before starting one");
-    }
-
-    *last_auth_code = None;
-
-    fig_telemetry::emit_track(TrackEvent::new(
-        TrackEventType::LoggedInWithAuthExchange,
-        TrackSource::Desktop,
-        env!("CARGO_PKG_VERSION").into(),
-        std::iter::empty::<(&str, &str)>(),
-    ))
-    .await
-    .ok();
-
-    let credentials = tokio::fs::read_to_string(Credentials::path()?).await?;
-
-    Ok(Some(clientbound::response::Response::ExchangeCredentials(
-        clientbound::ExchangeCredentialsResponse {
-            approved,
-            credentials: Some(credentials),
-        },
-    )))
+    Err(anyhow::anyhow!("confirm_exchange_credentials not implemented"))
 }

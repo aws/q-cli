@@ -35,7 +35,6 @@ import {
 } from "./helpers";
 import { MissingSpecError } from "./errors";
 import { FIG_DIR } from "../utils";
-import { authClient } from "../auth";
 
 const historyLogger = getLogger("history");
 historyLogger.setDefaultLevel("warn");
@@ -183,7 +182,6 @@ export const loadHistorySource = async (
     (name) => () =>
       loadSubcommandCached(
         { name, type: SpecLocationSource.GLOBAL },
-        authClient,
         undefined,
         historyLogger,
       ).catch((e) => e),
@@ -215,7 +213,6 @@ export const loadHistorySource = async (
           command.parserResult = await parseArguments(
             command.command,
             parseContext,
-            authClient,
             true,
             historyLogger,
           );

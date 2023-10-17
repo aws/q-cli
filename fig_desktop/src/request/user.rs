@@ -18,8 +18,8 @@ use crate::{
     DASHBOARD_ID,
 };
 
-pub fn logout(_request: UserLogoutRequest, proxy: &EventLoopProxy) -> RequestResult {
-    fig_request::auth::logout().ok();
+pub async fn logout(_request: UserLogoutRequest, proxy: &EventLoopProxy) -> RequestResult {
+    auth::logout().await.ok();
 
     proxy
         .send_event(Event::WindowEvent {

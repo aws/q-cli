@@ -1,5 +1,4 @@
 pub mod spinner;
-pub mod sync;
 
 use std::env;
 use std::ffi::OsStr;

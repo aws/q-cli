@@ -14,7 +14,6 @@ import { getCWDForFilesAndFolders } from "@internal/shared/utils";
 import {
   loadPrivateSpecs,
   clearFigCaches,
-  reloadClis,
   resetPreloadPromise,
   canLoadFigspec,
 } from "@amzn/fig-io-autocomplete-parser";
@@ -31,10 +30,8 @@ import { captureError } from "./sentry";
 import {
   useFigKeypress,
   useFigAutocomplete,
-  useLoadAliasEffect,
   useFigSubscriptionEffect,
   useFigSettings,
-  useLoadClisEffect,
 } from "./fig/hooks";
 
 import { getCommonSuggestionPrefix } from "./suggestions/helpers";
@@ -62,7 +59,6 @@ import {
   setCustomCSS,
 } from "./fig/themes";
 import { Notifications } from "./components/notifications/Notifications";
-import { authClient } from "./auth";
 import LoadingIcon from "./components/LoadingIcon";
 
 // eslint-disable-next-line @typescript-eslint/ban-ts-comment
@@ -135,67 +131,11 @@ function App() {
     }));
   }, [settingsHeight, settingsWidth]);
 
-  useEffect(() => {
-    loadPrivateSpecs(authClient).catch(captureError);
-  }, []);
+  // useEffect(() => {
+  //   loadPrivateSpecs(authClient).catch(captureError);
+  // }, []);
 
-  useFigSubscriptionEffect(
-    () =>
-      Event.subscribe("autocomplete.privateSpecsUpdated", () => {
-        loadPrivateSpecs(authClient).catch(captureError);
-        return { unsubscribe: false };
-      }),
-    [],
-  );
-
-  useFigSubscriptionEffect(
-    () =>
-      Event.subscribe("autocomplete.mixinsUpdated", () => {
-        window.resetCaches?.();
-        resetPreloadPromise();
-        return { unsubscribe: false };
-      }),
-    [],
-  );
-
-  useFigSubscriptionEffect(
-    () =>
-      Event.subscribe("autocomplete.commandlineToolUpdated", () => {
-        reloadClis(authClient).then((clis) => {
-          if (clis) {
-            const map = Object.fromEntries(
-              clis.map((cli) => [
-                cli.name,
-                `fig cli @${cli.namespace}/${cli.name}`,
-              ]),
-            );
-            setFigState((state) => ({ ...state, cliAliases: map }));
-          }
-        });
-        return { unsubscribe: false };
-      }),
-    [],
-  );
-
-  useFigSubscriptionEffect(
-    () => Event.subscribe("scripts.update", clearFigCaches),
-    [],
-  );
-
-  useFigSubscriptionEffect(
-    () => Event.subscribe("scripts.rename", clearFigCaches),
-    [],
-  );
-
-  useFigSubscriptionEffect(
-    () => Event.subscribe("scripts.delete", clearFigCaches),
-    [],
-  );
-
-  const expirationStatus = useRefreshTokenExpirationStatus(buffer, authClient);
-  const isLoggedIn =
-    !expirationStatus.loading && expirationStatus.expired === false;
-  const isLoading = isLoadingSuggestions || expirationStatus.loading;
+  const isLoading = isLoadingSuggestions;
 
   useEffect(() => {
     // Default font-size is 12.8px (0.8em) and default row size is 20px = 12.8 * 1.5625
@@ -217,12 +157,12 @@ function App() {
   // Info passed down to suggestions to render icons and underline.
   const iconPath = useMemo(
     () => getIconPath(getCWDForFilesAndFolders(cwd, searchTerm)),
-    [cwd, searchTerm],
+    [cwd, searchTerm]
   );
 
   const commonPrefix = useMemo(
     () => getCommonSuggestionPrefix(selectedIndex, suggestions),
-    [selectedIndex, suggestions],
+    [selectedIndex, suggestions]
   );
 
   useEffect(() => {
@@ -267,12 +207,12 @@ function App() {
   const keypressCallback = useAutocompleteKeypressCallback(
     toggleDescriptionPopout,
     shake,
-    changeSize,
+    changeSize
   );
 
   useFigAutocomplete(setFigState);
-  useLoadAliasEffect(setFigState, processUserIsIn ?? shellContext?.processName);
-  useLoadClisEffect(setFigState);
+  // useLoadAliasEffect(setFigState, processUserIsIn ?? shellContext?.processName);
+  // useLoadClisEffect(setFigState);
   useParseArgumentsEffect(setIsLoadingSuggestions);
   useFigSettings(setSettings);
   useFigKeypress(keypressCallback);
@@ -285,6 +225,7 @@ function App() {
 
     Settings.get(SETTINGS.DISABLE_HISTORY_LOADING)
       .catch(() => undefined)
+      // eslint-disable-next-line @typescript-eslint/no-explicit-any
       .then((res) => {
         if (!JSON.parse(res?.jsonBlob ?? "false")) {
           loadHistory({});
@@ -311,7 +252,7 @@ function App() {
   // Make sure fig dimensions align with our desired dimensions.
   const isHidden = visibleState !== Visibility.VISIBLE;
   const interceptKeystrokes =
-    isLoggedIn && Boolean(!isHidden && suggestions.length > 0);
+     Boolean(!isHidden && suggestions.length > 0);
 
   useEffect(() => {
     logger.info("Setting intercept keystrokes", {
@@ -321,7 +262,7 @@ function App() {
     setInterceptKeystrokes(
       interceptKeystrokes,
       suggestions.length > 0,
-      shellContext?.sessionId,
+      shellContext?.sessionId
     );
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [interceptKeystrokes, suggestions.length]);
@@ -377,7 +318,7 @@ function App() {
                       ? DescriptionPosition.LEFT
                       : DescriptionPosition.RIGHT,
                   }
-                : state,
+                : state
             );
           }
         })
@@ -433,7 +374,7 @@ function App() {
                       ? DescriptionPosition.LEFT
                       : DescriptionPosition.RIGHT,
                   }
-                : state,
+                : state
             );
           })
           .catch((err) => {
@@ -447,7 +388,7 @@ function App() {
         isHidden,
         // eslint-disable-next-line react-hooks/exhaustive-deps
         suggestions[selectedIndex]?.previewComponent,
-      ],
+      ]
     );
 
   useEffect(() => {
@@ -533,7 +474,7 @@ function App() {
 
   let contents: React.ReactElement;
 
-  if (isLoggedIn) {
+  if (!isLoading) {
     contents = (
       <>
         {windowState.isAboveCursor && devModeWarning}
@@ -599,7 +540,7 @@ function App() {
         {!windowState.isAboveCursor && devModeWarning}
       </>
     );
-  } else if (expirationStatus.loading) {
+  } else if (isLoading) {
     contents = <LoadingIcon />;
   } else {
     contents = (

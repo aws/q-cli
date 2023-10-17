@@ -5,20 +5,20 @@ pub enum VTermColor {
 }
 
 impl VTermColor {
-    fn idx(idx: u8) -> Self {
+    const fn idx(idx: u8) -> Self {
         VTermColor::Indexed { idx }
     }
 
-    fn rgb(red: u8, green: u8, blue: u8) -> Self {
+    const fn rgb(red: u8, green: u8, blue: u8) -> Self {
         VTermColor::Rgb { red, green, blue }
     }
 }
 
-pub fn vterm_color_indexed(idx: u8) -> VTermColor {
+pub const fn vterm_color_indexed(idx: u8) -> VTermColor {
     VTermColor::Indexed { idx }
 }
 
-pub fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
+pub const fn vterm_color_rgb(red: u8, green: u8, blue: u8) -> VTermColor {
     VTermColor::Rgb { red, green, blue }
 }
 
@@ -161,12 +161,12 @@ pub fn get_color_support() -> ColorSupport {
     support
 }
 
-fn squared_difference(p1: i64, p2: i64) -> u64 {
+const fn squared_difference(p1: i64, p2: i64) -> u64 {
     let diff = (p1 - p2).unsigned_abs();
     diff * diff
 }
 
-fn convert_color(rgb: [u8; 3], colors: &[u32]) -> u8 {
+const fn convert_color(rgb: [u8; 3], colors: &[u32]) -> u8 {
     let r = rgb[0] as i64;
     let g = rgb[1] as i64;
     let b = rgb[2] as i64;
@@ -174,15 +174,18 @@ fn convert_color(rgb: [u8; 3], colors: &[u32]) -> u8 {
     let mut best_distance = u64::MAX;
     let mut best_index = u8::MAX;
 
-    for (idx, color) in colors.iter().enumerate() {
+    let mut i = 0;
+    while i < colors.len() {
+        let color = colors[i];
         let test_r = ((color >> 16) & 0xff) as i64;
         let test_g = ((color >> 8) & 0xff) as i64;
         let test_b = (color & 0xff) as i64;
         let distance = squared_difference(r, test_r) + squared_difference(g, test_g) + squared_difference(b, test_b);
         if distance <= best_distance {
-            best_index = idx as u8;
+            best_index = i as u8;
             best_distance = distance;
         }
+        i += 1;
     }
 
     best_index
@@ -274,7 +277,7 @@ fn try_parse_named(s: &str) -> Option<Color> {
     None
 }
 
-pub fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
+pub const fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
     const K_COLORS: &[u32] = &[
         0x000000, // Black
         0x800000, // Red
@@ -296,7 +299,7 @@ pub fn term16_color_for_rgb(rgb: [u8; 3]) -> u8 {
     convert_color(rgb, K_COLORS)
 }
 
-pub fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
+pub const fn term256_color_for_rgb(rgb: [u8; 3]) -> u8 {
     const K_COLORS: &[u32] = &[
         0x000000, 0x00005f, 0x000087, 0x0000af, 0x0000d7, 0x0000ff, 0x005f00, 0x005f5f, 0x005f87, 0x005faf, 0x005fd7,
         0x005fff, 0x008700, 0x00875f, 0x008787, 0x0087af, 0x0087d7, 0x0087ff, 0x00af00, 0x00af5f, 0x00af87, 0x00afaf,
