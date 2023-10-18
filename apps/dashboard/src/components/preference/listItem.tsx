@@ -59,6 +59,12 @@ export function Setting({
     );
   }
 
+  function setSelection(value: string) {
+    Settings.set(data.id, value)
+    .then(() => setInputValue(value))
+    .catch((e) => console.error({ stateSetError: e }));
+  }
+
   function toggleMultiSelect(option: string) {
     if (multiSelectValue.includes(option)) {
       const index = multiSelectValue.indexOf(option);
@@ -101,7 +107,7 @@ export function Setting({
           <div className="pt-1">
             {/* single value <select> menu */}
             {data.type === "select" && (
-              <Select disabled={disabled}>
+              <Select disabled={disabled} onValueChange={setSelection}>
                 <SelectTrigger className="w-60">
                   <SelectValue placeholder={data.default} />
                 </SelectTrigger>
