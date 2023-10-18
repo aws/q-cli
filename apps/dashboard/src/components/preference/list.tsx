@@ -1,11 +1,12 @@
 import { alphaByTitle } from "@/lib/sort";
-import { Action, Pref } from "@/types/preferences";
+import { Action, Pref, PrefDefault } from "@/types/preferences";
 import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
 import { Settings } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
 import { Button } from "../ui/button";
 import ExternalLink from "../util/external-link";
+import { interpolateSettingBoolean } from "@/lib/utils";
 
 type PrefSection = {
   title: string;
@@ -25,27 +26,28 @@ type Intro = {
 };
 
 function FeatureIntro({ intro }: { intro: Intro }) {
-  const [inputValue, setInputValue] = useState<boolean | undefined>();
-  const localValue = intro.enable.inverted ? !inputValue : inputValue;
-
+  const [inputValue, setInputValue] = useState<PrefDefault>(intro.enable.default);
+  const localValue = interpolateSettingBoolean(inputValue as boolean, intro.enable.inverted)
+  
+  // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
     Settings.get(intro.enable.flag)
       .then((r) => {
         if (!r) return;
-        setInputValue(r.jsonBlob === 'true');
+        setInputValue(r.jsonBlob);
       })
       .catch(() => {
         // Errors are thrown every time a setting isn't yet configured
         // so we just swallow those since they'll be set to the default automatically
-        return
+        return;
       });
   }, [intro.enable.flag]);
 
   function toggleSwitch() {
-    setInputValue(!inputValue);
-    Settings.set(intro.enable.flag, localValue).catch((e) =>
-      console.error({ stateSetError: e })
-    );
+    setInputValue(!inputValue)
+    Settings.set(intro.enable.flag, !inputValue).catch((e) =>
+        console.error({ stateSetError: e })
+      );
   }
 
   return (
