@@ -585,19 +585,19 @@ impl PlatformStateImpl {
                 Ok(())
             },
             PlatformBoundEvent::AccessibilityUpdated { enabled } => {
-                let was_enabled = ACCESSIBILITY_ENABLED.swap(enabled, Ordering::SeqCst);
-                if enabled && !was_enabled {
-                    tokio::runtime::Handle::current().spawn(async move {
-                        fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                            fig_telemetry::TrackEventType::GrantedAXPermission,
-                            fig_telemetry::TrackSource::Desktop,
-                            env!("CARGO_PKG_VERSION").into(),
-                            std::iter::empty::<(&str, &str)>(),
-                        ))
-                        .await
-                        .ok();
-                    });
-                }
+                let _was_enabled = ACCESSIBILITY_ENABLED.swap(enabled, Ordering::SeqCst);
+                // if enabled && !was_enabled {
+                //     tokio::runtime::Handle::current().spawn(async move {
+                //         fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+                //             fig_telemetry::TrackEventType::GrantedAXPermission,
+                //             fig_telemetry::TrackSource::Desktop,
+                //             env!("CARGO_PKG_VERSION").into(),
+                //             std::iter::empty::<(&str, &str)>(),
+                //         ))
+                //         .await
+                //         .ok();
+                //     });
+                // }
 
                 self.proxy.send_event(Event::ReloadAccessibility).ok();
 

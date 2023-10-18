@@ -7,7 +7,6 @@ pub mod window;
 
 use std::borrow::Cow;
 use std::collections::HashMap;
-use std::iter::empty;
 use std::rc::Rc;
 use std::sync::Arc;
 
@@ -527,15 +526,6 @@ impl WebviewManager {
                 },
                 WryEvent::MainEventsCleared | WryEvent::NewEvents(StartCause::WaitCancelled { .. }) => {},
                 event => trace!(?event, "Unhandled event"),
-            }
-
-            if matches!(*control_flow, ControlFlow::Exit | ControlFlow::ExitWithCode(_)) {
-                tokio::runtime::Handle::current().spawn(fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                    fig_telemetry::TrackEventType::QuitApp,
-                    fig_telemetry::TrackSource::Desktop,
-                    env!("CARGO_PKG_VERSION").into(),
-                    empty::<(&str, &str)>(),
-                )));
             }
         });
     }

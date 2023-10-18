@@ -14,7 +14,6 @@ mod update;
 mod utils;
 mod webview;
 
-use std::iter::empty;
 use std::process::exit;
 
 use clap::Parser;
@@ -223,16 +222,16 @@ async fn main() {
         }
     }
 
-    tokio::spawn(async {
-        fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-            fig_telemetry::TrackEventType::LaunchedApp,
-            fig_telemetry::TrackSource::Desktop,
-            env!("CARGO_PKG_VERSION").into(),
-            empty::<(&str, &str)>(),
-        ))
-        .await
-        .ok();
-    });
+    // tokio::spawn(async {
+    //     fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+    //         fig_telemetry::TrackEventType::LaunchedApp,
+    //         fig_telemetry::TrackSource::Desktop,
+    //         env!("CARGO_PKG_VERSION").into(),
+    //         empty::<(&str, &str)>(),
+    //     ))
+    //     .await
+    //     .ok();
+    // });
 
     #[cfg(target_os = "macos")]
     migrate().await;

@@ -46,10 +46,6 @@ use fig_ipc::{
 };
 use fig_proto::local::DiagnosticsResponse;
 use fig_settings::JsonStore;
-use fig_telemetry::{
-    TrackEventType,
-    TrackSource,
-};
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
@@ -1998,14 +1994,14 @@ where
                 },
             }
 
-            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                TrackEventType::DoctorError,
-                TrackSource::Cli,
-                env!("CARGO_PKG_VERSION").into(),
-                properties,
-            ))
-            .await
-            .ok();
+            // fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+            //     TrackEventType::DoctorError,
+            //     TrackSource::Cli,
+            //     env!("CARGO_PKG_VERSION").into(),
+            //     properties,
+            // ))
+            // .await
+            // .ok();
         }
 
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {

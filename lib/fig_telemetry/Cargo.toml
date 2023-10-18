@@ -21,6 +21,9 @@ serde = "1.0.185"
 serde_json = "1.0"
 thiserror = "1.0"
 tracing = "0.1"
+uuid = { version = "1.4.1", features = ["v4"] }
+aws-sdk-cognitoidentityprovider = "0.33.0"
+aws-sdk-cognitoidentity = "0.33.0"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }

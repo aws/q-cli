@@ -24,12 +24,8 @@ use crate::util::app_not_running_message;
 
 #[derive(Debug, Subcommand, PartialEq, Eq)]
 pub enum SettingsSubcommands {
-    // Get the settings documentation
-    // Docs,
     /// Open the settings file
     Open,
-    // Sync the current settings
-    // Sync,
     /// List all the settings
     All {
         /// Format of the output
@@ -66,19 +62,9 @@ impl SettingsArgs {
         }
 
         match self.cmd {
-            // Some(SettingsSubcommands::Docs) => {
-            //     println!("→ Opening Fig docs...");
-            //     fig_util::open_url("https://fig.io/docs/support/settings/")?;
-            //     Ok(())
-            // },
             Some(SettingsSubcommands::Open) => {
-                let mut url = String::from("file://");
-                url.push_str(
-                    &directories::settings_path()
-                        .context("Could not get settings path")?
-                        .to_string_lossy(),
-                );
-                fig_util::open_url(url)?;
+                let file = directories::settings_path().context("Could not get settings path")?;
+                tokio::process::Command::new("open").arg(file).output().await?;
                 Ok(())
             },
             Some(SettingsSubcommands::All { format }) => {

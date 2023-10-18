@@ -279,21 +279,21 @@ impl AppSubcommand {
             AppSubcommand::Uninstall(args) => {
                 cfg_if! {
                     if #[cfg(target_os = "macos")] {
-                        use fig_telemetry::{TrackSource, TrackEvent, TrackEventType};
+                        // use fig_telemetry::{TrackSource, TrackEvent, TrackEventType};
 
-                        let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
-                            TrackEventType::UninstalledApp,
-                            TrackSource::Cli,
-                            env!("CARGO_PKG_VERSION").into(),
-                            [("source", "fig app uninstall")],
-                        )));
+                        // let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
+                        //     TrackEventType::UninstalledApp,
+                        //     TrackSource::Cli,
+                        //     env!("CARGO_PKG_VERSION").into(),
+                        //     [("source", "fig app uninstall")],
+                        // )));
 
                         if !args.no_open && !crate::util::is_brew_reinstall().await {
                             let url = fig_install::get_uninstall_url(false);
                             fig_util::open_url_async(url).await.ok();
                         }
 
-                        telem_join.await.ok();
+                        // telem_join.await.ok();
 
                         if !args.only_open {
                             fig_install::uninstall(args.into()).await?;

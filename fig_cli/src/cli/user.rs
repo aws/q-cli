@@ -1,6 +1,5 @@
 use std::fmt;
 use std::fmt::Display;
-use std::iter::empty;
 use std::process::exit;
 use std::time::Duration;
 
@@ -10,20 +9,11 @@ use auth::builder_id::{
     PollCreateToken,
 };
 use auth::secret_store::SecretStore;
-use clap::{
-    ArgGroup,
-    Subcommand,
-};
+use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
 use fig_ipc::local::logout_command;
-use fig_telemetry::{
-    TrackEvent,
-    TrackEventType,
-    TrackSource,
-};
 use serde_json::json;
-use tracing_subscriber::fmt::format;
 
 use super::OutputFormat;
 use crate::util::spinner::{
@@ -33,8 +23,6 @@ use crate::util::spinner::{
 use crate::util::{
     choose,
     confirm,
-    dialoguer_theme,
-    spinner,
 };
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]
@@ -59,22 +47,12 @@ impl Display for AuthMethod {
 impl RootUserSubcommand {
     pub async fn execute(self) -> Result<()> {
         match self {
-            Self::Login {
-                // email,
-                // refresh,
-                // hard_refresh,
-                // switchable,
-                // not_now,
-                // token,
-                ..
-            } => {
+            Self::Login => {
                 if auth::is_logged_in().await {
                     eyre::bail!("Already logged in, please logout with `cw logout` first");
                 }
 
-                let options = [
-                    AuthMethod::Email
-                ];
+                let options = [AuthMethod::Email];
 
                 match options[choose("Select action", &options)?] {
                     AuthMethod::Email => {
@@ -87,7 +65,10 @@ impl RootUserSubcommand {
                         println!();
                         confirm("Continue?")?;
 
-                        if fig_util::open_url_async(&device_auth.verification_uri_complete).await.is_err() {
+                        if fig_util::open_url_async(&device_auth.verification_uri_complete)
+                            .await
+                            .is_err()
+                        {
                             println!("Open this URL: {}", device_auth.verification_uri_complete);
                         };
                         println!();
@@ -107,7 +88,7 @@ impl RootUserSubcommand {
                                 },
                                 PollCreateToken::Error(err) => {
                                     spinner.stop();
-                                    return Err(err.into())
+                                    return Err(err.into());
                                 },
                             };
                         }
@@ -118,16 +99,16 @@ impl RootUserSubcommand {
                 Ok(())
             },
             Self::Logout => {
-                let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
-                    TrackEventType::Logout,
-                    TrackSource::Cli,
-                    env!("CARGO_PKG_VERSION").into(),
-                    empty::<(&str, &str)>(),
-                )));
+                // let telem_join = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
+                //     TrackEventType::Logout,
+                //     TrackSource::Cli,
+                //     env!("CARGO_PKG_VERSION").into(),
+                //     empty::<(&str, &str)>(),
+                // )));
 
                 let logout_join = logout_command();
 
-                let (_, _, _) = tokio::join!(telem_join, logout_join, auth::logout());
+                let (_, _) = tokio::join!(logout_join, auth::logout());
 
                 println!("You are now logged out");
                 println!("Run {} to log back in to Fig", "fig login".magenta());

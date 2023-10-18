@@ -38,12 +38,12 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
 
     cfg_if! {
         if #[cfg(unix)] {
-            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                fig_telemetry::TrackEventType::UninstalledApp,
-                fig_telemetry::TrackSource::Cli,
-                env!("CARGO_PKG_VERSION").into(),
-                std::iter::empty::<(&str, &str)>(),
-            )).await.ok();
+            // fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+            //     fig_telemetry::TrackEventType::UninstalledApp,
+            //     fig_telemetry::TrackSource::Cli,
+            //     env!("CARGO_PKG_VERSION").into(),
+            //     std::iter::empty::<(&str, &str)>(),
+            // )).await.ok();
             uninstall().await?;
         } else if #[cfg(target_os = "windows")] {
             println!("Please uninstall fig from the `Add or remove programs` menu for now.");

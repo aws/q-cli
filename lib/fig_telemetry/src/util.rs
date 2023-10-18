@@ -4,8 +4,6 @@ use serde_json::{
     Value,
 };
 
-use crate::Error;
-
 pub fn telemetry_is_disabled() -> bool {
     std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
         || fig_settings::settings::get_value("telemetry.disabled")
@@ -122,4 +120,26 @@ pub(crate) async fn default_properties() -> Map<String, Value> {
     );
 
     prop
+}
+
+/// Generates or gets the client id and caches the result
+///
+/// Based on: <https://github.com/aws/aws-toolkit-vscode/blob/7c70b1909050043627e6a1471392e22358a15985/src/shared/telemetry/util.ts#L41C1-L62>
+pub(crate) async fn get_client_id() -> String {
+    if cfg!(test) {
+        return "ffffffff-ffff-ffff-ffff-ffffffffffff".into();
+    }
+
+    if telemetry_is_disabled() {
+        return "11111111-1111-1111-1111-111111111111".into();
+    }
+
+    match fig_settings::state::get_string("telemetryClientId").ok().flatten() {
+        Some(client_id) => client_id,
+        None => {
+            let client_id = uuid::Uuid::new_v4().to_string();
+            fig_settings::state::set_value("telemetryClientId", client_id.clone()).ok();
+            client_id
+        },
+    }
 }

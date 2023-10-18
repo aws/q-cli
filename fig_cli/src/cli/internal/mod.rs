@@ -51,11 +51,6 @@ use fig_proto::hooks::{
     new_event_hook,
 };
 use fig_proto::ReflectMessage;
-use fig_telemetry::{
-    TrackEvent,
-    TrackEventType,
-    TrackSource,
-};
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
@@ -494,12 +489,12 @@ impl InternalSubcommand {
                 let mut uninstall_success = false;
                 let mut open_page_success = false;
 
-                let emit = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
-                    TrackEventType::UninstalledApp,
-                    TrackSource::Cli,
-                    env!("CARGO_PKG_VERSION").into(),
-                    std::iter::empty::<(&str, &str)>(),
-                )));
+                // let emit = tokio::spawn(fig_telemetry::emit_track(TrackEvent::new(
+                //     TrackEventType::UninstalledApp,
+                //     TrackSource::Cli,
+                //     env!("CARGO_PKG_VERSION").into(),
+                //     std::iter::empty::<(&str, &str)>(),
+                // )));
 
                 for user in users
                     .split('\n')
@@ -526,7 +521,7 @@ impl InternalSubcommand {
                     }
                 }
 
-                emit.await.ok();
+                // emit.await.ok();
 
                 if !uninstall_success {
                     bail!("Failed to uninstall properly");
@@ -853,15 +848,15 @@ impl InternalSubcommand {
 
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
             },
-            InternalSubcommand::GhostTextAccept { buffer, suggestion } => {
-                fig_telemetry::emit_track(TrackEvent::new(
-                    TrackEventType::GhostTextInlineSuggustionAccepted,
-                    TrackSource::Cli,
-                    env!("CARGO_PKG_VERSION").into(),
-                    [("buffer", buffer), ("suggestion", suggestion)],
-                ))
-                .await
-                .ok();
+            InternalSubcommand::GhostTextAccept { buffer: _, suggestion: _ } => {
+                // fig_telemetry::emit_track(TrackEvent::new(
+                //     TrackEventType::GhostTextInlineSuggustionAccepted,
+                //     TrackSource::Cli,
+                //     env!("CARGO_PKG_VERSION").into(),
+                //     [("buffer", buffer), ("suggestion", suggestion)],
+                // ))
+                // .await
+                // .ok();
             },
         }
 

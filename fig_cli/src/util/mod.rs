@@ -4,7 +4,6 @@ use std::env;
 use std::ffi::OsStr;
 use std::fmt::Display;
 use std::io::stdout;
-use std::iter::empty;
 use std::path::{
     Path,
     PathBuf,
@@ -118,22 +117,22 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         return Ok(());
     }
 
-    let telem_join = match verbose {
+match verbose {
         true => {
             println!("Quitting CodeWhisperer");
 
-            Some(tokio::spawn(async {
-                fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                    fig_telemetry::TrackEventType::QuitApp,
-                    fig_telemetry::TrackSource::Cli,
-                    env!("CARGO_PKG_VERSION").into(),
-                    empty::<(&str, &str)>(),
-                ))
-                .await
-                .ok();
-            }))
+            // Some(tokio::spawn(async {
+            //     fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+            //         fig_telemetry::TrackEventType::QuitApp,
+            //         fig_telemetry::TrackSource::Cli,
+            //         env!("CARGO_PKG_VERSION").into(),
+            //         empty::<(&str, &str)>(),
+            //     ))
+            //     .await
+            //     .ok();
+            // }))
         },
-        false => None,
+        false => {},
     };
 
     if quit_command().await.is_err() {
@@ -176,7 +175,7 @@ pub async fn quit_fig(verbose: bool) -> Result<()> {
         }
     }
 
-    telem_join.map(|f| async { f.await.ok() });
+    // telem_join.map(|f| async { f.await.ok() });
 
     Ok(())
 }

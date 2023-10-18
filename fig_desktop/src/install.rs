@@ -1,5 +1,3 @@
-use std::iter::empty;
-
 use cfg_if::cfg_if;
 #[cfg(not(target_os = "linux"))]
 use fig_install::check_for_updates;
@@ -33,16 +31,16 @@ pub async fn run_install(_ignore_immediate_update: bool) {
 
     // Add any items that are only once per version
     if should_run_install_script() {
-        tokio::spawn(async {
-            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                fig_telemetry::TrackEventType::UpdatedApp,
-                fig_telemetry::TrackSource::Desktop,
-                env!("CARGO_PKG_VERSION").into(),
-                empty::<(&str, &str)>(),
-            ))
-            .await
-            .ok()
-        });
+        // tokio::spawn(async {
+        //     fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
+        //         fig_telemetry::TrackEventType::UpdatedApp,
+        //         fig_telemetry::TrackSource::Desktop,
+        //         env!("CARGO_PKG_VERSION").into(),
+        //         empty::<(&str, &str)>(),
+        //     ))
+        //     .await
+        //     .ok()
+        // });
 
         #[cfg(target_os = "macos")]
         {

@@ -113,17 +113,6 @@ pub async fn install(request: InstallRequest) -> RequestResult {
 
                     if !accessibility_is_enabled() {
                         open_accessibility();
-
-                        tokio::spawn(async move {
-                            fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-                                fig_telemetry::TrackEventType::PromptedForAXPermission,
-                                fig_telemetry::TrackSource::Desktop,
-                                env!("CARGO_PKG_VERSION").into(),
-                                std::iter::empty::<(&str, &str)>(),
-                            ))
-                            .await
-                            .ok();
-                        });
                     }
 
                     integration_result(Ok::<(), &str>(()))
