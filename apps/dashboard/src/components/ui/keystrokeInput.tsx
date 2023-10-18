@@ -1,6 +1,7 @@
 import { Check, Plus, X } from "lucide-react"
 import { Dispatch, SetStateAction, useCallback, useEffect, useRef, useState } from "react"
 import { PrefDefault } from "@/types/preferences"
+import { getKeyName, getKeySymbol } from "@/lib/keybindings"
 
 export default function Keystroke ({values, setValues}: {values: string[], setValues: Dispatch<SetStateAction<PrefDefault>>}) {
   const [inputOpen, setInputOpen] = useState(false)
@@ -9,15 +10,20 @@ export default function Keystroke ({values, setValues}: {values: string[], setVa
 
   type keypressEvent = {
     key: string,
+    keyCode: number,
     preventDefault: () => void,
     stopPropagation: () => void
   }
 
   const handleKeyPress = useCallback((e: keypressEvent) => {
-    console.log(e)
+    const keystroke = new Set()
+    
     console.log(`Key pressed: ${e.key}`);
+    console.log({ keystroke })
     e.preventDefault()
     e.stopPropagation()
+
+    keystroke.add(getKeySymbol(getKeyName(e.keyCode)))
   }, []);
 
   useEffect(() => {

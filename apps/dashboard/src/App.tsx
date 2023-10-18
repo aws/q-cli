@@ -34,9 +34,7 @@ function App() {
     }
 
     if (onboardingComplete === true && loggedIn === false) {
-      if (loggedIn === false) {
-        setModal(<LoginModal next={() => setModal(null)} />)
-      }
+      setModal(<LoginModal next={() => setModal(null)} />)
     }
   }, [onboardingComplete, loggedIn])
 

@@ -1,7 +1,7 @@
 import ModalContext from "@/context/modal";
 import installChecks from "@/data/install";
 import { InstallCheck } from "@/types/preferences";
-import { Auth, Fig, Install, Internal, Native, State } from "@withfig/api-bindings";
+import { Auth, Fig, Install, Internal, Native } from "@withfig/api-bindings";
 import { useContext, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { AwsLogo } from "../svg/icons";
@@ -124,7 +124,6 @@ export default function InstallModal() {
   }
 
   function handleFinish() {
-    State.set('onboarding.completed', true)
     setModal(null);
   }
 
