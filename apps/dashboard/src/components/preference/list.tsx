@@ -33,8 +33,8 @@ function FeatureIntro({ intro }: { intro: Intro }) {
   useEffect(() => {
     Settings.get(intro.enable.flag)
       .then((r) => {
-        if (!r) return;
-        setInputValue(r.jsonBlob);
+        if (!r || r.jsonBlob === undefined) return;
+        setInputValue(JSON.parse(r.jsonBlob));
       })
       .catch(() => {
         // Errors are thrown every time a setting isn't yet configured
@@ -44,10 +44,10 @@ function FeatureIntro({ intro }: { intro: Intro }) {
   }, [intro.enable.flag]);
 
   function toggleSwitch() {
-    setInputValue(!inputValue)
-    Settings.set(intro.enable.flag, !inputValue).catch((e) =>
-        console.error({ stateSetError: e })
-      );
+    Settings.set(intro.enable.flag, !inputValue)
+      .then(() => setInputValue(!inputValue))
+      .catch((e) => console.error({ stateSetError: e })
+    );
   }
 
   return (
@@ -135,9 +135,9 @@ export function UserPrefView({
 
     Settings.get(intro.enable.flag)
       .then((r) => {
-        if (!r) return;
+        if (!r || r.jsonBlob === undefined) return;
 
-        setViewDisabled(r.jsonBlob);
+        setViewDisabled(JSON.parse(r.jsonBlob));
       })
       .catch(() => {
         // Errors are thrown every time a setting isn't yet configured

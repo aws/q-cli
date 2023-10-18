@@ -32,8 +32,8 @@ export function Setting({
   useEffect(() => {
     Settings.get(data.id)
       .then((r) => {
-        if (!r || !r.jsonBlob) return;
-        setInputValue(r.jsonBlob);
+        if (!r || r.jsonBlob === undefined) return;
+        setInputValue(JSON.parse(r.jsonBlob));
       })
       .catch(() => {
         // Errors are thrown every time a setting isn't yet configured
@@ -52,11 +52,13 @@ export function Setting({
   const keystrokeValue = inputValue as string[];
 
   function toggleSwitch() {
-    setInputValue(!inputValue);
-    Settings.set(data.id, !inputValue).catch((e) =>
-      console.error({ stateSetError: e })
+    Settings.set(data.id, !inputValue)
+      .then(() => setInputValue(!inputValue))
+      .catch((e) => console.error({ stateSetError: e })
     );
   }
+
+  console.log({ pref: data.id, localValue, inputValue })
 
   function setSelection(value: string) {
     Settings.set(data.id, value)
@@ -106,9 +108,9 @@ export function Setting({
           <div className="pt-1">
             {/* single value <select> menu */}
             {data.type === "select" && (
-              <Select disabled={disabled} onValueChange={setSelection}>
+              <Select disabled={disabled} onValueChange={setSelection} defaultValue={inputValue as string}>
                 <SelectTrigger className="w-60">
-                  <SelectValue placeholder={data.default} />
+                  <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
