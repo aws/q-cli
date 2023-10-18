@@ -220,7 +220,7 @@ fn get_cursor_coordinates(terminal: &dyn Terminal) -> Option<TerminalCursorCoord
 }
 
 #[allow(clippy::too_many_arguments)]
-async fn should_install_remote_ssh_integration(
+async fn _should_install_remote_ssh_integration(
     uuid: String,
     remote_host: String,
     main_loop_tx: Sender<MainLoopEvent>,
@@ -287,7 +287,7 @@ async fn should_install_remote_ssh_integration(
     None
 }
 
-async fn prompt_remote_integration_install(
+async fn _prompt_remote_integration_install(
     remote_host: String,
     console_term: ConsoleTerm,
     console_term_key_tx: Sender<Key>,
@@ -658,22 +658,22 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
 
         let mut csi_u_set = false;
 
-        let (console_term_key_tx, console_term_key_rx) = flume::unbounded();
-        let console_term = ConsoleTerm::stderr_with_read_key(Box::new(move || {
-            warn!("Waiting for a key on stdin....");
-            let mut terminal_inner = SystemTerminal::new_from_stdio();
-            if let Ok(ref mut terminal_inner) = terminal_inner {
-                terminal_inner.set_raw_mode().ok();
-            }
-            let key = console_term_key_rx.recv()
-                .map_err(|e| {
-                    std::io::Error::new(std::io::ErrorKind::Other, e)
-                });
-            if let Ok(ref mut terminal_inner) = terminal_inner {
-                terminal_inner.set_cooked_mode().ok();
-            }
-            key
-        }));
+        // let (console_term_key_tx, console_term_key_rx) = flume::unbounded();
+        // let console_term = ConsoleTerm::stderr_with_read_key(Box::new(move || {
+        //     warn!("Waiting for a key on stdin....");
+        //     let mut terminal_inner = SystemTerminal::new_from_stdio();
+        //     if let Ok(ref mut terminal_inner) = terminal_inner {
+        //         terminal_inner.set_raw_mode().ok();
+        //     }
+        //     let key = console_term_key_rx.recv()
+        //         .map_err(|e| {
+        //             std::io::Error::new(std::io::ErrorKind::Other, e)
+        //         });
+        //     if let Ok(ref mut terminal_inner) = terminal_inner {
+        //         terminal_inner.set_cooked_mode().ok();
+        //     }
+        //     key
+        // }));
 
         let result: Result<()> = 'select_loop: loop {
             if first_time && term.shell_state().has_seen_prompt {
@@ -737,35 +737,35 @@ fn figterm_main(command: Option<&[String]>) -> Result<()> {
                                     stdout.flush().await?;
                                     csi_u_set = false;
                                 },
-                                MainLoopEvent::PromptSSH { uuid, remote_host } => {
-                                    let should_install = should_install_remote_ssh_integration(
-                                        uuid,
-                                        remote_host.clone(),
-                                        main_loop_tx.clone(),
-                                        remote_receiver.clone(),
-                                        remote_sender.clone(),
-                                        &term,
-                                        &mut master,
-                                        &mut key_interceptor,
-                                    ).await;
+                                MainLoopEvent::PromptSSH { uuid: _, remote_host: _ } => {
+                                    // let should_install = should_install_remote_ssh_integration(
+                                    //     uuid,
+                                    //     remote_host.clone(),
+                                    //     main_loop_tx.clone(),
+                                    //     remote_receiver.clone(),
+                                    //     remote_sender.clone(),
+                                    //     &term,
+                                    //     &mut master,
+                                    //     &mut key_interceptor,
+                                    // ).await;
 
-                                    let should_install = match should_install {
-                                        Some(val) => val,
-                                        None => {
-                                            prompt_remote_integration_install(
-                                                remote_host,
-                                                console_term.clone(),
-                                                console_term_key_tx.clone(),
-                                                &mut terminal,
-                                                input_rx.clone(),
-                                            ).await.unwrap_or(false)
-                                        }
-                                    };
+                                    // let should_install = match should_install {
+                                    //     Some(val) => val,
+                                    //     None => {
+                                    //         prompt_remote_integration_install(
+                                    //             remote_host,
+                                    //             console_term.clone(),
+                                    //             console_term_key_tx.clone(),
+                                    //             &mut terminal,
+                                    //             input_rx.clone(),
+                                    //         ).await.unwrap_or(false)
+                                    //     }
+                                    // };
 
-                                    if should_install {
-                                        let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
-                                        master.write_all(installation_command.as_bytes()).await?;
-                                    }
+                                    // if should_install {
+                                    //     let installation_command = "curl -fSsL https://fig.io/install-headless.sh | bash; exec $SHELL\n";
+                                    //     master.write_all(installation_command.as_bytes()).await?;
+                                    // }
                                 }
                             }
                         }

@@ -160,8 +160,8 @@ impl AppSubcommand {
    * Fig not working? Run {}
                                 ",
                                 "Fig Autocomplete".bold(),
-                                "fig".bold().magenta(),
-                                "fig doctor".bold().magenta(),
+                                "cw".bold().magenta(),
+                                "cw doctor".bold().magenta(),
                             );
                         }
                     } else if #[cfg(windows)] {
@@ -183,7 +183,7 @@ impl AppSubcommand {
 
 ",
                                 "\"cd \"".bold(),
-                                "fig doctor".bold().magenta()
+                                "cw doctor".bold().magenta()
                             );
                         }
                     }

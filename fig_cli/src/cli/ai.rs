@@ -248,10 +248,12 @@ pwd
                     ($action:expr) => {
                         match $action {
                             Some(DialogActions::Execute { command, .. }) => {
-                                if let Err(err) = send_figterm(command.to_owned(), true).await {
-                                    println!("{} {err}", "Failed to execute command:".bright_red().bold());
-                                    println!();
-                                    println!("Command: {command}");
+                                if send_figterm(command.to_owned(), true).await.is_err() {
+                                    let mut child = tokio::process::Command::new("bash")
+                                        .arg("-c")
+                                        .arg(command)
+                                        .spawn()?;
+                                    child.wait().await?;
                                 }
                                 break 'ask_loop;
                             },

@@ -1783,7 +1783,7 @@ impl DoctorCheck for LoginStatusCheck {
     async fn check(&self, _: &()) -> Result<(), DoctorError> {
         // We reload the credentials here because we want to check if the user is logged in
         if !auth::is_logged_in().await {
-            return Err(doctor_error!("No auth"));
+            return Err(doctor_error!("Not authenticated. Please run `cw login`"));
         }
 
         Ok(())

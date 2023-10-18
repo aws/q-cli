@@ -1,5 +1,3 @@
-use std::time::SystemTime;
-
 use aws_sdk_cognitoidentity::config::Region;
 use aws_sdk_cognitoidentity::primitives::{
     DateTime,
@@ -29,6 +27,8 @@ const EXTERNAL_RROD: CognitoPoolId = CognitoPoolId("us-east-1:820fd6d1-95c0-4ca4
 
 const CREDENTIALS_KEY: &str = "telemetry-cognito-credentials";
 
+const DATE_TIME_FORMAT: DateTimeFormat = DateTimeFormat::DateTime;
+
 #[derive(Debug, serde::Deserialize, serde::Serialize)]
 struct CredentialsJson {
     pub access_key_id: Option<String>,
@@ -51,7 +51,7 @@ async fn get_cognito_credentials() -> Result<Credentials, ()> {
                 .set_access_key_id(access_key_id)
                 .set_secret_key(secret_key)
                 .set_session_token(session_token)
-                .set_expiration(expiration.and_then(|t| DateTime::from_str(&t, DateTimeFormat::DateTime).ok()))
+                .set_expiration(expiration.and_then(|t| DateTime::from_str(&t, DATE_TIME_FORMAT).ok()))
                 .build())
         },
         None => {
@@ -73,7 +73,7 @@ async fn get_cognito_credentials() -> Result<Credentials, ()> {
                     access_key_id: a.access_key_id.clone(),
                     secret_key: a.secret_key.clone(),
                     session_token: a.session_token.clone(),
-                    expiration: a.expiration.and_then(|t| t.fmt(DateTimeFormat::DateTime).ok()),
+                    expiration: a.expiration.and_then(|t| t.fmt(DATE_TIME_FORMAT).ok()),
                 })
                 .unwrap(),
             );

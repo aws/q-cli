@@ -183,7 +183,7 @@ impl TipsSubcommand {
                     if let Some(tip) = unsent {
                         if now - tips.time_last_sent > tip.wait_time {
                             println!(
-                                "\n{}\n\n{} fig tips disable\n{} fig issue\n",
+                                "\n{}\n\n{} cw tips disable\n{} cw issue\n",
                                 tip.text,
                                 "Disable Getting Started Tips:".underlined(),
                                 "Report a bug:".underlined(),
