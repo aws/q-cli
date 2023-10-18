@@ -32,16 +32,16 @@ function App() {
       setModal(<InstallModal />)
       return
     }
-  }, [onboardingComplete])
+
+    if (onboardingComplete === true && loggedIn === false) {
+      if (loggedIn === false) {
+        setModal(<LoginModal next={() => setModal(null)} />)
+      }
+    }
+  }, [onboardingComplete, loggedIn])
 
   useEffect(() => {
     Auth.status().then((r) => setLoggedIn(r.builderId))
-  }, [loggedIn])
-
-  useEffect(() => {
-    if (loggedIn === false) {
-      setModal(<LoginModal next={() => setModal(null)} />)
-    }
   }, [loggedIn])
 
   return (

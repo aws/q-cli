@@ -50,7 +50,6 @@ export function Setting({
 
   const multiSelectValue = inputValue as string[];
   const keystrokeValue = inputValue as string[];
-  console.log({ state: [inputValue, localValue] });
 
   function toggleSwitch() {
     setInputValue(!inputValue);
