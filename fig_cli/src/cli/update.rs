@@ -39,7 +39,7 @@ pub async fn update(non_interactive: bool, relaunch_dashboard: bool, rollout: bo
     .await
     {
         Err(e) => Err(eyre::eyre!(
-            "{e}. If this is unexpected, try running `fig doctor` and then try again."
+            "{e}. If this is unexpected, try running `cw doctor` and then try again."
         )),
         Ok(false) => {
             println!(

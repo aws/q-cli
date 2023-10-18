@@ -26,9 +26,9 @@ impl IssueArgs {
         // Check if fig is running
         if !self.force && !fig_util::is_fig_desktop_running() {
             println!(
-                "\n→ Fig is not running.\n  Please launch Fig with {} or run {} to create the issue anyways",
-                "fig launch".magenta(),
-                "fig issue --force".magenta()
+                "\n→ CodeWhisperer is not running.\n  Please launch CodeWhisperer with {} or run {} to create the issue anyways",
+                "cw launch".magenta(),
+                "cw issue --force".magenta()
             );
             return Ok(());
         }

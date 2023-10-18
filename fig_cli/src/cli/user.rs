@@ -63,7 +63,7 @@ impl RootUserSubcommand {
                         println!("Confirm the following code in the browser");
                         println!("Code: {}", device_auth.user_code.bold());
                         println!();
-                        confirm("Continue?")?;
+                        // confirm("Continue?")?;
 
                         if fig_util::open_url_async(&device_auth.verification_uri_complete)
                             .await
@@ -71,7 +71,7 @@ impl RootUserSubcommand {
                         {
                             println!("Open this URL: {}", device_auth.verification_uri_complete);
                         };
-                        println!();
+                        // println!();
 
                         let mut spinner = Spinner::new(vec![
                             SpinnerComponent::Spinner,

@@ -6,30 +6,30 @@ use crate::util::dialoguer_theme;
 
 pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
     if fig_util::system_info::in_wsl() {
-        println!("Refer to your package manager in order to uninstall Fig from WSL");
-        println!("If you're having issues uninstalling fig, run `fig issue`");
+        println!("Refer to your package manager in order to uninstall CodeWhisperer from WSL");
+        println!("If you're having issues uninstalling fig, run `cw issue`");
         return Ok(());
     }
 
     if !no_confirm {
-        println!("\n* Fig not working? Run {}", "fig doctor".bold().magenta());
-        println!(
-            r#"* Autocomplete doesn't "feel" right? Watch {}"#,
-            "https://fig.io/l/configuring-autocomplete".bold()
-        );
-        println!(
-            "* Keep Fig but disable Autocomplete? Run {}\n",
-            "fig settings autocomplete.disable true".bold().magenta()
-        );
+        println!("\n* CodeWhisperer not working? Run {}", "cw doctor".bold().magenta());
+        // println!(
+        //     r#"* Autocomplete doesn't "feel" right? Watch {}"#,
+        //     "https://fig.io/l/configuring-autocomplete".bold()
+        // );
+        // println!(
+        //     "* Keep Fig but disable Autocomplete? Run {}\n",
+        //     "fig settings autocomplete.disable true".bold().magenta()
+        // );
 
         let should_continue = dialoguer::Select::with_theme(&dialoguer_theme())
-            .with_prompt("Do you want to continue uninstalling Fig?")
+            .with_prompt("Do you want to continue uninstalling CodeWhisperer?")
             .items(&["Yes", "No"])
             .default(0)
             .interact_opt()?;
 
         if should_continue == Some(0) {
-            println!("Uninstalling Fig");
+            println!("Uninstalling CodeWhisperer");
         } else {
             println!("Cancelled");
             return Ok(());
@@ -47,7 +47,7 @@ pub async fn uninstall_command(no_confirm: bool) -> Result<()> {
             uninstall().await?;
         } else if #[cfg(target_os = "windows")] {
             println!("Please uninstall fig from the `Add or remove programs` menu for now.");
-            println!("If you're having issues uninstalling fig, run `fig issue` to let us know, and use the tool at the following link to remove fig:");
+            println!("If you're having issues uninstalling fig, run `cw issue` to let us know, and use the tool at the following link to remove fig:");
             println!("https://support.microsoft.com/en-us/topic/fix-problems-that-block-programs-from-being-installed-or-removed-cca7d1b6-65a9-3d98-426b-e9f927e1eb4d")
         }
     }
