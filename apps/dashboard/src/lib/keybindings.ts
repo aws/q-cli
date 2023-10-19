@@ -129,6 +129,8 @@ export const getKeySymbol = (key: string) => {
       return "⇧";
     case "command":
       return "⌘";
+    case "option":
+      return "⌥";
     default:
       return key;
   }

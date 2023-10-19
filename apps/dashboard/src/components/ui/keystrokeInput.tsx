@@ -10,7 +10,7 @@ import {
 } from "react";
 import { PrefDefault } from "@/types/preferences";
 import {
-  VALID_CONTROL_KEYS
+  VALID_CONTROL_KEYS, getKeyName, getKeySymbol
 } from "@/lib/keybindings";
 import ListenerContext from "@/context/input";
 
@@ -42,12 +42,13 @@ export default function Keystroke({
   };
 
   const handleKeyPress = useCallback((e: keypressEvent) => {
+    console.log(e)
     const keys = new Set<string>();
     if (e.metaKey) keys.add("command");
     if (e.ctrlKey) keys.add("control");
     if (e.shiftKey) keys.add("shift");
     if (e.altKey) keys.add("option");
-    const key = e.key.toLocaleLowerCase();
+    const key = getKeyName(e.keyCode)
 
     const isInvalidCombination =
       keys.has("command") ||
@@ -103,13 +104,20 @@ export default function Keystroke({
     setListening(id);
   }
 
+  function removeKeybinding(index: number) {
+    const workingArray = [...values]
+    workingArray.splice(index, 1)
+
+    setValues(workingArray)
+  }
+
   return (
     <div className="flex flex-col gap-1">
     <div className="flex gap-2 flex-wrap">
       {values.map((k: string, i: number) => {
         return (
           <button
-            onClick={() => setValues(values.slice(i, 1))}
+            onClick={() => removeKeybinding(i)}
             key={i}
             className="text-white/50 italic text-center text-xs flex justify-center gap-[2px] py-1 pl-[2px] group hover:bg-black hover:text-white rounded-md p-1 px-2 items-center pr-0 hover:pr-2 transition-all"
           >
@@ -119,7 +127,7 @@ export default function Keystroke({
                     key={i}
                     className="p-1 py-[2px] not-italic text-black group-hover:text-white border border-black group-hover:border-white rounded-sm shadow-[0_4px_0_black] group-hover:shadow-[0_4px_0_white] relative -top-[2px]"
                   >
-                    {l}
+                    {getKeySymbol(l)}
                   </kbd>
                 ))
               : "press keys"}
