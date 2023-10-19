@@ -19,7 +19,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Keystroke from "../ui/keystrokeInput";
 import { interpolateSettingBoolean } from "@/lib/utils";
-import { useSetting } from "@/hooks/store/useSetting";
+import { useSetting } from "@/hooks/store";
 
 export function Setting({
   data,

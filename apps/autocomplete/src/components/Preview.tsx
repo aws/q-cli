@@ -60,7 +60,7 @@ const useCssUrl = () => {
       return `http://localhost:${devPort}/components/style.css`;
     }
 
-    return "https://dm4ouwm6bn0h6.cloudfront.net/components/style.css";
+    return "https://cdn.jsdelivr.net/npm/@withfig/autocomplete@2/build/components/style.css";
   }, [isDevMode, devServerPort]);
 };
 

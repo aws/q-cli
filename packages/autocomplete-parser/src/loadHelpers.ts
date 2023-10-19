@@ -35,9 +35,10 @@ const makeCdnUrlFactory =
   (specName: string, _forceReload = false) =>
     `${baseUrl}${specName}.js`;
 
-const cdnUrlFactories = ["https://dm4ouwm6bn0h6.cloudfront.net/"].map(
-  makeCdnUrlFactory
-);
+const cdnUrlFactories = [
+  "https://cdn.jsdelivr.net/npm/@withfig/autocomplete@2/build/",
+  "https://unpkg.com/@withfig/autocomplete@^2.0.0/build/",
+].map(makeCdnUrlFactory);
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const stringImportCache = new Map<string, any>();
