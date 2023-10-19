@@ -9,7 +9,7 @@ import react from "@vitejs/plugin-react";
 
 const csp: Record<string, string> = {
   "default-src": "'self'",
-  "script-src": "'self'",
+  "script-src": "'self' https://dm4ouwm6bn0h6.cloudfront.net",
   "img-src": "'self'",
   "style-src": "'self'",
   "connect-src": "'self'",

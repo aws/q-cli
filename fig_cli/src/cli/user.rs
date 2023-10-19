@@ -16,13 +16,10 @@ use fig_ipc::local::logout_command;
 use serde_json::json;
 
 use super::OutputFormat;
+use crate::util::choose;
 use crate::util::spinner::{
     Spinner,
     SpinnerComponent,
-};
-use crate::util::{
-    choose,
-    confirm,
 };
 
 #[derive(Subcommand, Debug, PartialEq, Eq)]

@@ -150,6 +150,26 @@ dependencies = [
 ]
 
 [[package]]
+name = "amzn-toolkit-telemetry"
+version = "0.1.0"
+dependencies = [
+ "aws-credential-types",
+ "aws-http",
+ "aws-runtime",
+ "aws-smithy-async",
+ "aws-smithy-client",
+ "aws-smithy-http",
+ "aws-smithy-json",
+ "aws-smithy-runtime",
+ "aws-smithy-runtime-api",
+ "aws-smithy-types",
+ "aws-types",
+ "bytes",
+ "http",
+ "tracing",
+]
+
+[[package]]
 name = "android-tzdata"
 version = "0.1.1"
 source = "registry+https://github.com/rust-lang/crates.io-index"
@@ -901,16 +921,16 @@ dependencies = [
 ]
 
 [[package]]
-name = "aws-toolkit-def"
+name = "aws-toolkit-telemetry-definitions"
 version = "0.1.0"
 dependencies = [
+ "amzn-toolkit-telemetry",
  "convert_case 0.6.0",
  "prettyplease",
  "quote",
  "serde",
  "serde_json",
  "syn 2.0.38",
- "telemetry_client",
 ]
 
 [[package]]
@@ -2871,9 +2891,13 @@ dependencies = [
 name = "fig_telemetry"
 version = "2.18.0-dev"
 dependencies = [
+ "amzn-toolkit-telemetry",
  "anyhow",
+ "aws-credential-types",
  "aws-sdk-cognitoidentity",
  "aws-sdk-cognitoidentityprovider",
+ "aws-smithy-async",
+ "aws-toolkit-telemetry-definitions",
  "fig_ipc",
  "fig_proto",
  "fig_request",
@@ -2884,7 +2908,6 @@ dependencies = [
  "parking_lot",
  "serde",
  "serde_json",
- "telemetry_client",
  "thiserror",
  "tokio",
  "tracing",
@@ -7330,22 +7353,6 @@ name = "target-lexicon"
 version = "0.12.11"
 source = "registry+https://github.com/rust-lang/crates.io-index"
 checksum = "9d0e916b1148c8e263850e1ebcbd046f333e0683c724876bb0da63ea4373dc8a"
-
-[[package]]
-name = "telemetry_client"
-version = "0.1.0"
-dependencies = [
- "aws-smithy-async",
- "aws-smithy-client",
- "aws-smithy-http",
- "aws-smithy-json",
- "aws-smithy-runtime",
- "aws-smithy-runtime-api",
- "aws-smithy-types",
- "bytes",
- "http",
- "tracing",
-]
 
 [[package]]
 name = "tempfile"

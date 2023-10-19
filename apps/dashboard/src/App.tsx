@@ -6,62 +6,77 @@ import SidebarLink from "./components/sidebar/link";
 import Autocomplete from "./pages/terminal/autocomplete";
 import Translate from "./pages/terminal/translate";
 import Onboarding from "./pages/onboarding";
-import Predict from './pages/terminal/predict'
-import Preferences from './pages/settings/preferences'
-import Integrations from './pages/settings/integrations'
-import Keybindings from './pages/settings/keybindings'
+import Predict from "./pages/terminal/predict";
+import Preferences from "./pages/settings/preferences";
+import Integrations from "./pages/settings/integrations";
+import Keybindings from "./pages/settings/keybindings";
 import ModalContext from "./context/modal";
-import { useEffect, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import Modal from "./components/modal";
 import { Auth, State } from "@withfig/api-bindings";
 import InstallModal, { LoginModal } from "./components/installs/modal";
 import { getIconFromName } from "./lib/icons";
+import { StoreContext } from "./context/zustand";
+import { createStore } from "./lib/store";
 
 function App() {
+  const store = useRef(createStore()).current;
   const [modal, setModal] = useState<React.ReactNode | null>(null);
-  const [loggedIn, setLoggedIn] = useState<boolean | null>(null)
-  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(null)
+  const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
+  const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
+    null
+  );
 
   useEffect(() => {
     if (onboardingComplete === null) {
-      State.get('desktop.completedOnboarding').then((r) => setOnboardingComplete(r))
-      return
+      State.get("desktop.completedOnboarding").then((r) =>
+        setOnboardingComplete(r)
+      );
+      return;
     }
 
     if (onboardingComplete === false) {
-      setModal(<InstallModal />)
-      return
+      setModal(<InstallModal />);
+      return;
     }
 
     if (onboardingComplete === true && loggedIn === false) {
-      setModal(<LoginModal next={() => setModal(null)} />)
+      setModal(<LoginModal next={() => setModal(null)} />);
     }
-  }, [onboardingComplete, loggedIn])
+  }, [onboardingComplete, loggedIn]);
 
   useEffect(() => {
-    Auth.status().then((r) => setLoggedIn(r.builderId))
-  }, [loggedIn])
+    Auth.status().then((r) => setLoggedIn(r.builderId));
+  }, [loggedIn]);
+
+  useEffect(() => {
+    if (loggedIn === false) {
+      setModal(<LoginModal next={() => setModal(null)} />);
+    }
+  }, [loggedIn]);
 
   return (
-    <ModalContext.Provider value={{ modal, setModal }}>
-      <Routes>
-        <Route path="/" element={<Layout />}>
-          <Route index element={<Onboarding />} />
-          {/* TODO make What's New the default view again once it's ready... */}
-          {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
-          {/* <Route index element={<WhatsNew />} /> */}
-          <Route path="help" element={<Help />} />
-          <Route path="autocomplete" element={<Autocomplete />} />
-          <Route path="predict" element={<Predict />} />
-          <Route path="translate" element={<Translate />} />
-          <Route path="account" element={<Account />} />
-          <Route path="keybindings" element={<Keybindings />} />
-          <Route path="integrations" element={<Integrations />} />
-          <Route path="preferences" element={<Preferences />} />
-        </Route>
-      </Routes>
-      {modal && <Modal>{modal}</Modal>}
-    </ModalContext.Provider>
+    <StoreContext.Provider value={store}>
+      <ModalContext.Provider value={{ modal, setModal }}>
+        <Routes>
+          <Route path="/" element={<Layout />}>
+            <Route index element={<Onboarding />} />
+            {/* TODO make What's New the default view again once it's ready... */}
+            {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
+            {/* <Route index element={<WhatsNew />} /> */}
+            <Route path="help" element={<Help />} />
+            <Route path="autocomplete" element={<Autocomplete />} />
+            <Route path="predict" element={<Predict />} />
+            <Route path="translate" element={<Translate />} />
+            <Route path="account" element={<Account />} />
+            <Route path="keybindings" element={<Keybindings />} />
+            <Route path="integrations" element={<Integrations />} />
+            <Route path="preferences" element={<Preferences />} />
+          </Route>
+        </Routes>
+        {modal && <Modal>{modal}</Modal>}
+      </ModalContext.Provider>
+    </StoreContext.Provider>
   );
 }
 

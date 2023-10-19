@@ -1,29 +1,53 @@
+use aws_credential_types::provider::error::CredentialsError;
+use aws_credential_types::{
+    provider,
+    Credentials,
+};
 use aws_sdk_cognitoidentity::config::Region;
+use aws_sdk_cognitoidentity::error::SdkError;
+use aws_sdk_cognitoidentity::operation::get_credentials_for_identity::{
+    GetCredentialsForIdentityError,
+    GetCredentialsForIdentityOutput,
+};
 use aws_sdk_cognitoidentity::primitives::{
     DateTime,
     DateTimeFormat,
 };
-use aws_sdk_cognitoidentity::types::Credentials;
 
-pub(crate) struct CognitoPoolId(pub(crate) &'static str);
+#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
+pub(crate) struct CognitoPoolId {
+    pub(crate) name: &'static str,
+    pub(crate) id: &'static str,
+}
 
 impl CognitoPoolId {
     #[must_use]
     pub(crate) fn region(&self) -> Region {
-        Region::new(self.0.split(':').nth(0).unwrap())
+        Region::new(self.id.split(':').nth(0).unwrap())
     }
 }
 
 impl Into<String> for CognitoPoolId {
     fn into(self) -> String {
-        self.0.to_owned()
+        self.id.to_owned()
     }
 }
 
 // pools from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
-const BETA_POOL: CognitoPoolId = CognitoPoolId("us-east-1:db7bfc9f-8ecd-4fbb-bea7-280c16069a99");
-const INTERNAL_PROD: CognitoPoolId = CognitoPoolId("us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25");
-const EXTERNAL_RROD: CognitoPoolId = CognitoPoolId("us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842");
+pub(crate) const BETA_POOL: CognitoPoolId = CognitoPoolId {
+    name: "beta",
+    id: "us-east-1:db7bfc9f-8ecd-4fbb-bea7-280c16069a99",
+};
+
+pub(crate) const INTERNAL_PROD: CognitoPoolId = CognitoPoolId {
+    name: "internal-prod",
+    id: "us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25",
+};
+
+pub(crate) const EXTERNAL_RROD: CognitoPoolId = CognitoPoolId {
+    name: "prod",
+    id: "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+};
 
 const CREDENTIALS_KEY: &str = "telemetry-cognito-credentials";
 
@@ -37,7 +61,16 @@ struct CredentialsJson {
     pub expiration: Option<String>,
 }
 
-async fn get_cognito_credentials() -> Result<Credentials, ()> {
+pub(crate) async fn get_cognito_credentials_send(
+    pool_id: CognitoPoolId,
+) -> Result<GetCredentialsForIdentityOutput, SdkError<GetCredentialsForIdentityError>> {
+    let region = pool_id.region();
+    let conf = aws_sdk_cognitoidentity::Config::builder().region(region).build();
+    let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
+    client.get_credentials_for_identity().identity_id(pool_id).send().await
+}
+
+pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
     match fig_settings::state::get_string(CREDENTIALS_KEY).ok().flatten() {
         Some(creds) => {
             let CredentialsJson {
@@ -47,39 +80,58 @@ async fn get_cognito_credentials() -> Result<Credentials, ()> {
                 expiration,
             }: CredentialsJson = serde_json::from_str(&creds).unwrap();
 
-            Ok(Credentials::builder()
-                .set_access_key_id(access_key_id)
-                .set_secret_key(secret_key)
-                .set_session_token(session_token)
-                .set_expiration(expiration.and_then(|t| DateTime::from_str(&t, DATE_TIME_FORMAT).ok()))
-                .build())
+            Ok(Credentials::new(
+                access_key_id.unwrap(),
+                secret_key.unwrap(),
+                session_token,
+                expiration
+                    .and_then(|s| DateTime::from_str(&s, DATE_TIME_FORMAT).ok())
+                    .and_then(|dt| dt.try_into().ok()),
+                "",
+            ))
         },
         None => {
-            let region = BETA_POOL.region();
-            let conf = aws_sdk_cognitoidentity::Config::builder().region(region).build();
-            let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
-            let creds = client
-                .get_credentials_for_identity()
-                .identity_id(BETA_POOL)
-                .send()
-                .await
-                .unwrap();
-
-            let a = creds.credentials.unwrap();
+            let credentials = get_cognito_credentials_send(pool_id).await.unwrap().credentials.unwrap();
 
             let _ = fig_settings::state::set_value(
                 CREDENTIALS_KEY,
                 serde_json::to_value(&CredentialsJson {
-                    access_key_id: a.access_key_id.clone(),
-                    secret_key: a.secret_key.clone(),
-                    session_token: a.session_token.clone(),
-                    expiration: a.expiration.and_then(|t| t.fmt(DATE_TIME_FORMAT).ok()),
+                    access_key_id: credentials.access_key_id.clone(),
+                    secret_key: credentials.secret_key.clone(),
+                    session_token: credentials.session_token.clone(),
+                    expiration: credentials.expiration.and_then(|t| t.fmt(DATE_TIME_FORMAT).ok()),
                 })
                 .unwrap(),
             );
 
-            Ok(a)
+            Ok(Credentials::new(
+                credentials.access_key_id.unwrap(),
+                credentials.secret_key.unwrap(),
+                credentials.session_token,
+                credentials.expiration.and_then(|dt| dt.try_into().ok()),
+                "",
+            ))
         },
+    }
+}
+
+#[derive(Debug)]
+pub(crate) struct CognitoProvider {
+    pool_id: CognitoPoolId,
+}
+
+impl CognitoProvider {
+    pub(crate) fn new(pool_id: CognitoPoolId) -> CognitoProvider {
+        CognitoProvider { pool_id }
+    }
+}
+
+impl provider::ProvideCredentials for CognitoProvider {
+    fn provide_credentials<'a>(&'a self) -> provider::future::ProvideCredentials<'a>
+    where
+        Self: 'a,
+    {
+        provider::future::ProvideCredentials::new(get_cognito_credentials(self.pool_id))
     }
 }
 
@@ -90,8 +142,9 @@ mod test {
     #[tokio::test]
     async fn pools() {
         let all_pools = [BETA_POOL, INTERNAL_PROD, EXTERNAL_RROD];
-        for pool in all_pools {
-            let _ = pool.region();
+        for id in all_pools {
+            let _ = id.region();
+            get_cognito_credentials_send(id).await.unwrap();
         }
     }
 }

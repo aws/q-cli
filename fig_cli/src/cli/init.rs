@@ -137,7 +137,7 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         {
             if shell == &Shell::Zsh
                 && when == &When::Post
-                && fig_settings::settings::get_bool_or("ghost-text.enabled", true)
+                && fig_settings::settings::get_bool_or("ghost-text.enabled", false)
             {
                 to_source.push(guard_source(
                     shell,

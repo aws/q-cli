@@ -20,6 +20,7 @@ import {
 } from "@/components/ui/dropdown-menu";
 import Keystroke from "../ui/keystrokeInput";
 import { interpolateSettingBoolean } from "@/lib/utils";
+import { useSetting } from "@/hooks/store/useSetting";
 
 export function Setting({
   data,
@@ -28,19 +29,13 @@ export function Setting({
   data: Pref;
   disabled?: boolean;
 }) {
+  const [setting, setSetting] = useSetting(data.id);
+
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
-    Settings.get(data.id)
-      .then((r) => {
-        if (!r || r.jsonBlob === undefined) return;
-        setInputValue(JSON.parse(r.jsonBlob));
-      })
-      .catch(() => {
-        // Errors are thrown every time a setting isn't yet configured
-        // so we just swallow those since they'll be set to the default automatically
-        return;
-      });
-  }, [data.id]);
+    // eslint-disable-next-line @typescript-eslint/no-explicit-any
+    if (setting !== undefined) setInputValue(setting as any);
+  }, [data.id, setting]);
 
   const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
   const localValue =
@@ -54,16 +49,13 @@ export function Setting({
   function toggleSwitch() {
     Settings.set(data.id, !inputValue)
       .then(() => setInputValue(!inputValue))
-      .catch((e) => console.error({ stateSetError: e })
-    );
+      .catch((e) => console.error({ stateSetError: e }));
   }
 
-  console.log({ pref: data.id, localValue, inputValue })
+  console.log({ pref: data.id, localValue, inputValue });
 
   function setSelection(value: string) {
-    Settings.set(data.id, value)
-    .then(() => setInputValue(value))
-    .catch((e) => console.error({ stateSetError: e }));
+    setSetting(value);
   }
 
   function toggleMultiSelect(option: string) {
@@ -71,16 +63,12 @@ export function Setting({
       const index = multiSelectValue.indexOf(option);
       multiSelectValue.splice(index, 1);
       const updatedArray = multiSelectValue;
-      Settings.set(data.id, updatedArray)
-        .then(() => setInputValue(updatedArray))
-        .catch((e) => console.error({ stateSetError: e }));
+      setSetting(updatedArray);
       return;
     }
 
     const updatedArray = [...multiSelectValue, option];
-    Settings.set(data.id, updatedArray)
-      .then(() => setInputValue(updatedArray))
-      .catch((e) => console.error({ stateSetError: e }));
+    setSetting(updatedArray);
   }
 
   return (
@@ -108,7 +96,11 @@ export function Setting({
           <div className="pt-1">
             {/* single value <select> menu */}
             {data.type === "select" && (
-              <Select disabled={disabled} onValueChange={setSelection} defaultValue={inputValue as string}>
+              <Select
+                disabled={disabled}
+                onValueChange={setSelection}
+                defaultValue={inputValue as string}
+              >
                 <SelectTrigger className="w-60">
                   <SelectValue />
                 </SelectTrigger>

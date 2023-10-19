@@ -13,7 +13,7 @@ fig_proto = { path = "../fig_proto" }
 fig_request = { path = "../fig_request" }
 fig_settings = { path = "../fig_settings" }
 fig_util = { path = "../fig_util" }
-telemetry_client = { path = "../telemetry_client" }
+amzn-toolkit-telemetry = { path = "../amzn-toolkit-telemetry" }
 macos_utils = { path = "../macos_utils" }
 once_cell = { version = "1.17.1", features = ["parking_lot"] }
 parking_lot = "0.12.1"
@@ -24,6 +24,9 @@ tracing = "0.1"
 uuid = { version = "1.4.1", features = ["v4"] }
 aws-sdk-cognitoidentityprovider = "0.33.0"
 aws-sdk-cognitoidentity = "0.33.0"
+aws-toolkit-telemetry-definitions = { path = "../aws-toolkit-telemetry-definitions" }
+aws-credential-types = "0.56.1"
+aws-smithy-async = "0.56.1"
 
 [dev-dependencies]
 tokio = { version = "1", features = ["full"] }
