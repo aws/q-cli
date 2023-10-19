@@ -142,7 +142,7 @@ export function Setting({
                 disabled={disabled}
                 type="number"
                 min={0}
-                step={1000}
+                step={1}
                 placeholder={
                   typeof data.default === "string"
                     ? data.default
