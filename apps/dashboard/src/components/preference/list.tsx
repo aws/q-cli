@@ -7,6 +7,7 @@ import { getIconFromName } from "@/lib/icons";
 import { Button } from "../ui/button";
 import ExternalLink from "../util/external-link";
 import { interpolateSettingBoolean } from "@/lib/utils";
+import { useSetting } from "@/hooks/store/useSetting";
 
 type PrefSection = {
   title: string;
@@ -26,28 +27,17 @@ type Intro = {
 };
 
 function FeatureIntro({ intro }: { intro: Intro }) {
+  const [setting, setSetting] = useSetting(intro.enable.flag);
   const [inputValue, setInputValue] = useState<PrefDefault>(intro.enable.default);
   const localValue = interpolateSettingBoolean(inputValue as boolean, intro.enable.inverted)
   
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
-    Settings.get(intro.enable.flag)
-      .then((r) => {
-        if (!r || r.jsonBlob === undefined) return;
-        setInputValue(JSON.parse(r.jsonBlob));
-      })
-      .catch(() => {
-        // Errors are thrown every time a setting isn't yet configured
-        // so we just swallow those since they'll be set to the default automatically
-        return;
-      });
-  }, [intro.enable.flag]);
+    if (setting !== undefined) setInputValue(setting);
+  }, [setting]);
 
   function toggleSwitch() {
-    Settings.set(intro.enable.flag, !inputValue)
-      .then(() => setInputValue(!inputValue))
-      .catch((e) => console.error({ stateSetError: e })
-    );
+    setSetting(!inputValue)
   }
 
   return (

@@ -1,6 +1,5 @@
 import { useEffect, useState } from "react";
 import { Switch } from "../ui/switch";
-import { Settings } from "@withfig/api-bindings";
 import { Pref, PrefDefault } from "@/types/preferences";
 import {
   Select,
@@ -30,14 +29,13 @@ export function Setting({
   disabled?: boolean;
 }) {
   const [setting, setSetting] = useSetting(data.id);
+  const [inputValue, setInputValue] = useState<PrefDefault>(setting ?? data.default);
 
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
-    // eslint-disable-next-line @typescript-eslint/no-explicit-any
-    if (setting !== undefined) setInputValue(setting as any);
-  }, [data.id, setting]);
+    if (setting !== undefined) setInputValue(setting);
+  }, [setting]);
 
-  const [inputValue, setInputValue] = useState<PrefDefault>(data.default);
   const localValue =
     data.type === "boolean"
       ? interpolateSettingBoolean(inputValue as boolean, data.inverted)
@@ -47,12 +45,8 @@ export function Setting({
   const keystrokeValue = inputValue as string[];
 
   function toggleSwitch() {
-    Settings.set(data.id, !inputValue)
-      .then(() => setInputValue(!inputValue))
-      .catch((e) => console.error({ stateSetError: e }));
+    setSetting(!inputValue)
   }
-
-  console.log({ pref: data.id, localValue, inputValue });
 
   function setSelection(value: string) {
     setSetting(value);
@@ -99,18 +93,20 @@ export function Setting({
               <Select
                 disabled={disabled}
                 onValueChange={setSelection}
-                defaultValue={inputValue as string}
+                value={localValue as string}
               >
                 <SelectTrigger className="w-60">
                   <SelectValue />
                 </SelectTrigger>
                 <SelectContent>
                   <SelectGroup>
-                    {data.options?.map((o, i) => (
+                    {data.options?.map((o, i) => {
+                      console.log({ pref: data.id, localValue, inputValue: o, equal: localValue === o })
+                      return(
                       <SelectItem value={o} key={i}>
                         {o}
                       </SelectItem>
-                    ))}
+                    )})}
                   </SelectGroup>
                 </SelectContent>
               </Select>
