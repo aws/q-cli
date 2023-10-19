@@ -29,9 +29,12 @@ function App() {
 
   useEffect(() => {
     if (onboardingComplete === null) {
-      State.get("desktop.completedOnboarding").then((r) =>
+      State.get("desktop.completedOnboarding").then((r) => {
+        if (!r) {
+          setOnboardingComplete(false)
+        }
         setOnboardingComplete(r)
-      );
+      });
       return;
     }
 

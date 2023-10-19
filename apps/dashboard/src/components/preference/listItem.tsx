@@ -101,7 +101,7 @@ export function Setting({
                 <SelectContent>
                   <SelectGroup>
                     {data.options?.map((o, i) => {
-                      console.log({ pref: data.id, localValue, inputValue: o, equal: localValue === o })
+                      // console.log({ pref: data.id, localValue, inputValue: o, equal: localValue === o })
                       return(
                       <SelectItem value={o} key={i}>
                         {o}

@@ -92,6 +92,27 @@ export default function Keystroke({
 
   return (
     <div className="flex gap-2 flex-wrap">
+      {values.map((k: string, i: number) => {
+        return (
+          <button
+            onClick={() => setValues(values.slice(i, 1))}
+            key={i}
+            className="text-white/50 italic text-center text-xs flex justify-center gap-[2px] py-1 pl-[2px] group hover:bg-black hover:text-white rounded-md p-1 px-2 items-center pr-0 hover:pr-2 transition-all"
+          >
+            {k
+              ? k.split("+").map((l, i) => (
+                  <kbd
+                    key={i}
+                    className="p-1 py-[2px] not-italic text-black group-hover:text-white border border-black group-hover:border-white rounded-sm shadow-[0_4px_0_black] group-hover:shadow-[0_4px_0_white] relative -top-[2px]"
+                  >
+                    {l}
+                  </kbd>
+                ))
+              : "press keys"}
+            <X className="h-3 group-hover:w-3 w-0 ml-1 opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-0 hover:bg-black/5 transition-transform" />
+          </button>
+        );
+      })}
       {inputOpen ? (
         <div className="flex gap-1">
           <button
@@ -134,27 +155,6 @@ export default function Keystroke({
           <Plus className="h-3 w-3" />
         </button>
       )}
-      {values.map((k: string, i: number) => {
-        return (
-          <button
-            onClick={() => setValues(values.slice(i, 1))}
-            key={i}
-            className="text-white/50 italic text-center text-xs flex justify-center gap-[2px] py-1 pl-[2px] group hover:bg-black hover:text-white rounded-md p-1 px-2 items-center pr-0 hover:pr-2 transition-all"
-          >
-            {k
-              ? k.split("+").map((l, i) => (
-                  <kbd
-                    key={i}
-                    className="p-1 py-[2px] not-italic text-black group-hover:text-white border border-black group-hover:border-white rounded-sm shadow-[0_4px_0_black] group-hover:shadow-[0_4px_0_white] relative -top-[2px]"
-                  >
-                    {l}
-                  </kbd>
-                ))
-              : "press keys"}
-            <X className="h-3 group-hover:w-3 w-0 ml-1 opacity-0 group-hover:opacity-100 -translate-x-full group-hover:translate-x-0 hover:bg-black/5 transition-transform" />
-          </button>
-        );
-      })}
     </div>
   );
 }
