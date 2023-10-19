@@ -1,8 +1,7 @@
 import { create } from "zustand";
 import {
   Settings as ApiSettings,
-  State as ApiState,
-  Auth
+  State as ApiState
 } from "@withfig/api-bindings";
 
 type KV = Record<string, unknown>;
