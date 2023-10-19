@@ -164,7 +164,7 @@ export function Setting({
             )}
             {/* multi-keystroke value input */}
             {data.type === "keystrokes" && (
-              <Keystroke id={data.id} values={keystrokeValue} setValues={setInputValue} />
+              <Keystroke id={data.id} values={keystrokeValue} setValues={setSetting} />
             )}
           </div>
         )}

@@ -104,6 +104,7 @@ export default function Keystroke({
   }
 
   return (
+    <div className="flex flex-col gap-1">
     <div className="flex gap-2 flex-wrap">
       {values.map((k: string, i: number) => {
         return (
@@ -135,7 +136,7 @@ export default function Keystroke({
             <X className="w-3 h-3" />
           </button>
           <div
-            className={`flex items-stretch gap-1 p-[2px] py-1 text-xs bg-black rounded-md`}
+            className={`flex items-stretch gap-1 p-[2px] py-1 ${(inputOpen && !inputValue) && "pl-3"} text-xs bg-black rounded-md`}
           >
             <div
               ref={ref}
@@ -168,6 +169,8 @@ export default function Keystroke({
           <Plus className="h-3 w-3" />
         </button>
       )}
+    </div>
+    {isInvalid && <span className="text-xs font-medium text-red-500 pl-8">Sorry, that combination is invalid.</span>}
     </div>
   );
 }
