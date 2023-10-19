@@ -18,9 +18,11 @@ import InstallModal, { LoginModal } from "./components/installs/modal";
 import { getIconFromName } from "./lib/icons";
 import { StoreContext } from "./context/zustand";
 import { createStore } from "./lib/store";
+import ListenerContext from "./context/input";
 
 function App() {
   const store = useRef(createStore()).current;
+  const [listening, setListening] = useState<string | null>(null);
   const [modal, setModal] = useState<React.ReactNode | null>(null);
   const [loggedIn, setLoggedIn] = useState<boolean | null>(null);
   const [onboardingComplete, setOnboardingComplete] = useState<boolean | null>(
@@ -31,9 +33,9 @@ function App() {
     if (onboardingComplete === null) {
       State.get("desktop.completedOnboarding").then((r) => {
         if (!r) {
-          setOnboardingComplete(false)
+          setOnboardingComplete(false);
         }
-        setOnboardingComplete(r)
+        setOnboardingComplete(r);
       });
       return;
     }
@@ -60,25 +62,27 @@ function App() {
 
   return (
     <StoreContext.Provider value={store}>
-      <ModalContext.Provider value={{ modal, setModal }}>
-        <Routes>
-          <Route path="/" element={<Layout />}>
-            <Route index element={<Onboarding />} />
-            {/* TODO make What's New the default view again once it's ready... */}
-            {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
-            {/* <Route index element={<WhatsNew />} /> */}
-            <Route path="help" element={<Help />} />
-            <Route path="autocomplete" element={<Autocomplete />} />
-            <Route path="predict" element={<Predict />} />
-            <Route path="translate" element={<Translate />} />
-            <Route path="account" element={<Account />} />
-            <Route path="keybindings" element={<Keybindings />} />
-            <Route path="integrations" element={<Integrations />} />
-            <Route path="preferences" element={<Preferences />} />
-          </Route>
-        </Routes>
-        {modal && <Modal>{modal}</Modal>}
-      </ModalContext.Provider>
+      <ListenerContext.Provider value={{ listening, setListening }}>
+        <ModalContext.Provider value={{ modal, setModal }}>
+          <Routes>
+            <Route path="/" element={<Layout />}>
+              <Route index element={<Onboarding />} />
+              {/* TODO make What's New the default view again once it's ready... */}
+              {/* <Route path="onboarding" element={<FinishOnboarding />} /> */}
+              {/* <Route index element={<WhatsNew />} /> */}
+              <Route path="help" element={<Help />} />
+              <Route path="autocomplete" element={<Autocomplete />} />
+              <Route path="predict" element={<Predict />} />
+              <Route path="translate" element={<Translate />} />
+              <Route path="account" element={<Account />} />
+              <Route path="keybindings" element={<Keybindings />} />
+              <Route path="integrations" element={<Integrations />} />
+              <Route path="preferences" element={<Preferences />} />
+            </Route>
+          </Routes>
+          {modal && <Modal>{modal}</Modal>}
+        </ModalContext.Provider>
+      </ListenerContext.Provider>
     </StoreContext.Provider>
   );
 }

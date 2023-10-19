@@ -3,6 +3,7 @@ import {
   Dispatch,
   SetStateAction,
   useCallback,
+  useContext,
   useEffect,
   useRef,
   useState,
@@ -11,18 +12,23 @@ import { PrefDefault } from "@/types/preferences";
 import {
   VALID_CONTROL_KEYS
 } from "@/lib/keybindings";
+import ListenerContext from "@/context/input";
 
 export default function Keystroke({
+  id,
   values,
   setValues,
 }: {
-  values: string[];
+  id: string,
+  values: string[],
   setValues: Dispatch<SetStateAction<PrefDefault>>;
 }) {
-  const [inputOpen, setInputOpen] = useState(false);
+  const { listening, setListening } = useContext(ListenerContext)
   const [inputValue, setInputValue] = useState<string[] | null>(null);
   const [isInvalid, setIsInvalid] = useState(false);
   const ref = useRef(null);
+
+  const inputOpen = listening === id
 
   type keypressEvent = {
     key: string;
@@ -57,6 +63,13 @@ export default function Keystroke({
   }, []);
 
   useEffect(() => {
+    if (inputOpen) return
+
+    setIsInvalid(false)
+    setInputValue(null)
+  }, [inputOpen])
+
+  useEffect(() => {
     if (!inputOpen) return;
     if (!ref.current) return;
     // attach the event listener
@@ -70,24 +83,24 @@ export default function Keystroke({
 
   function handleNewKeystroke() {
     if (!inputValue) {
-      setInputOpen(false);
+      setListening(null);
       return;
     }
 
     if (isInvalid) return
 
     setValues([...values, inputValue.join("+")]);
-    setInputOpen(false);
+    setListening(null);
     setInputValue(null);
   }
 
   function cancelKeystroke() {
     setInputValue(null);
-    setInputOpen(false);
+    setListening(null);
   }
 
   function openInput() {
-    setInputOpen(true);
+    setListening(id);
   }
 
   return (
