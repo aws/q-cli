@@ -9,10 +9,13 @@ import react from "@vitejs/plugin-react";
 
 const csp: Record<string, string> = {
   "default-src": "'self'",
-  "script-src": "'self' https://dm4ouwm6bn0h6.cloudfront.net",
-  "img-src": "'self'",
-  "style-src": "'self'",
-  "connect-src": "'self'",
+  "script-src":
+    "'self' figspec: figapp: blob: https://cdn.fig.io https://cdn.jsdelivr.net https://esm.sh https://unpkg.com http://localhost:*",
+  "img-src": "'self' data: fig: figapp: https: http://localhost:*",
+  "style-src":
+    " 'self' 'unsafe-inline' figapp: https://cdn.fig.io https://cdn.jsdelivr.net https://esm.sh https://unpkg.com http://localhost:*",
+  "connect-src":
+    "'self' ws: https://api.fig.io https://sentry.io http://localhost:*",
   "object-src": "'none'",
   "frame-src": "'none'",
 };
@@ -51,6 +54,7 @@ export default defineConfig(({ mode, command }) => {
   return {
     plugins: [
       react(),
+      htmlCspPlugin,
       // legacy({
       //   targets: [
       //     "safari >= 11",
