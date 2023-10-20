@@ -113,7 +113,7 @@ cp -r "${BUILD_DIR}/themes/themes" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Res
 
 
 BUNDLE_PATH="${BUNDLE_DIR}/CodeWhisperer.app"
-cp "$BUNDLE_PATH" "$BUILD_DIR"
+cp -r "$BUNDLE_PATH" "$BUILD_DIR"
 
 # codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
 # codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
