@@ -1,7 +1,11 @@
 import logger, { Logger } from "loglevel";
 import * as semver from "semver";
 import { mergeSubcommands } from "@fig/autocomplete-shared";
-import { ensureTrailingSlash, withTimeout, exponentialBackoff} from "@internal/shared/utils";
+import {
+  ensureTrailingSlash,
+  withTimeout,
+  exponentialBackoff,
+} from "@internal/shared/utils";
 import {
   executeCommand,
   executeShellCommand,
@@ -35,7 +39,9 @@ const makeCdnUrlFactory =
   (specName: string, _forceReload = false) =>
     `${baseUrl}${specName}.js`;
 
-const cdnUrlFactory =  makeCdnUrlFactory("https://d2d0f3rpifth6g.cloudfront.net/");
+const cdnUrlFactory = makeCdnUrlFactory(
+  "https://d2d0f3rpifth6g.cloudfront.net/"
+);
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const stringImportCache = new Map<string, any>();
@@ -159,13 +165,16 @@ export async function importFromPublicCDN<T = SpecFileImport>(
   // Total of retries in the worst case should be close to previous timeout value
   // 500ms * 2^5 + 5 * 1000ms + 5 * 100ms = 21500ms, before the timeout was 20000ms
   try {
-    return await exponentialBackoff({
-      attemptTimeout: 1000,
-      baseDelay: 500,
-      maxRetries: 5,
-      jitter: 100
-    }, import(cdnUrlFactory(name, forceReload)));
-  } catch  {
+    return await exponentialBackoff(
+      {
+        attemptTimeout: 1000,
+        baseDelay: 500,
+        maxRetries: 5,
+        jitter: 100,
+      },
+      () => import(cdnUrlFactory(name, forceReload))
+    );
+  } catch {
     /**/
   }
 

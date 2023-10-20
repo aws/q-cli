@@ -12,23 +12,23 @@ if [ -f ".env" ]; then
   . .env
 fi
 
-# security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME" || echo "already exists"
-# 
-# KEYCHAIN_NAME="login.keychain"
+security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME" || echo "already exists"
 
-# certificate_path="/tmp/certificate.p12"
-# echo "$SIGNING_CERTIFICATE_P12_DATA" | base64 -d > $certificate_path
-# security default-keychain -d user -s "$KEYCHAIN_NAME"
+KEYCHAIN_NAME="login.keychain"
 
-# # security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
-# security import "$certificate_path" -f pkcs12 -k "$KEYCHAIN_NAME" -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -x 
-# rm "$certificate_path"
-# # security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+certificate_path="/tmp/certificate.p12"
+echo "$SIGNING_CERTIFICATE_P12_DATA" | base64 -d > $certificate_path
+security default-keychain -d user -s "$KEYCHAIN_NAME"
 
-# identity=$(security find-identity -v -p codesigning | grep -o "Developer ID Application.*(${NOTARIZE_TEAM_ID})")
-# export CODESIGNING_IDENTITY="$identity"
+# security unlock-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
+security import "$certificate_path" -f pkcs12 -k "$KEYCHAIN_NAME" -P "$SIGNING_CERTIFICATE_PASSWORD" -T /usr/bin/codesign -x 
+rm "$certificate_path"
+# security set-key-partition-list -S apple-tool:,apple: -s -k "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME"
 
-# security set-keychain-settings -lut 1200
+identity=$(security find-identity -v -p codesigning | grep -o "Developer ID Application.*(${NOTARIZE_TEAM_ID})")
+export CODESIGNING_IDENTITY="$identity"
+
+security set-keychain-settings -lut 1200
 
 export BUILD_DIR=build
 export IS_HEADLESS=0
@@ -115,22 +115,22 @@ cp -r "${BUILD_DIR}/themes/themes" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Res
 BUNDLE_PATH="${BUNDLE_DIR}/CodeWhisperer.app"
 cp -r "$BUNDLE_PATH" "$BUILD_DIR"
 
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
-# codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
-# codesign --verify --verbose --strict --entitlements entitlements.plist "$BUNDLE_PATH"
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
+codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" "$BUNDLE_PATH"
+codesign --verify --verbose --strict --entitlements entitlements.plist "$BUNDLE_PATH"
 
-# ditto -c -k --keepParent "$BUNDLE_PATH" Cw.zip
-# xcrun notarytool submit Cw.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
-# rm -f Cw.zip
-# xcrun stapler staple "$BUNDLE_PATH"
+ditto -c -k --keepParent "$BUNDLE_PATH" Cw.zip
+xcrun notarytool submit Cw.zip --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+rm -f Cw.zip
+xcrun stapler staple "$BUNDLE_PATH"
 # Verify notarization ticket
-# spctl -a -v "$BUNDLE_PATH"
+spctl -a -v "$BUNDLE_PATH"
 
-# --arg identity "$CODESIGNING_IDENTITY" \
 
 FILE_CONTENTS=$(jq -n \
+  --arg identity "$CODESIGNING_IDENTITY" \
   --arg bundle "$BUNDLE_PATH" \
   '{
     "title": "CodeWhisperer",
@@ -169,5 +169,5 @@ rm -f "$DMG"
 pnpm appdmg "$SPEC_FILE" "$DMG"
 rm "$SPEC_FILE"
 
-# xcrun notarytool submit "$DMG" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
-# spctl -a -t open --context context:primary-signature -v "$DMG"
+xcrun notarytool submit "$DMG" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
+spctl -a -t open --context context:primary-signature -v "$DMG"

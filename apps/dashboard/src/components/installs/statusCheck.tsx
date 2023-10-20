@@ -1,35 +1,27 @@
-import { InstallCheck } from "@/types/preferences";
+import { InstallCheckWithInstallKey } from "@/types/preferences";
 import { Install } from "@withfig/api-bindings";
-import { useEffect, useState } from "react";
-import { Collapsible, CollapsibleContent, CollapsibleTrigger } from "../ui/collapsible";
+import { useState } from "react";
+import {
+  Collapsible,
+  CollapsibleContent,
+  CollapsibleTrigger,
+} from "../ui/collapsible";
 import { Check, ChevronDown, X } from "lucide-react";
 import { Button } from "../ui/button";
+import { useStatusCheck } from "@/hooks/store";
 
-export default function StatusCheck({ check }: { check: InstallCheck }) {
-  const [needsToBeChecked, setNeedsToBeChecked] = useState(false)
-  const [status, setStatus] = useState(false);
+export default function StatusCheck({
+  check,
+}: {
+  check: InstallCheckWithInstallKey;
+}) {
   const [expanded, setExpanded] = useState(false);
-
-  useEffect(() => {
-    if ((status && !needsToBeChecked) || !check.installKey) return
-
-    Install.isInstalled(check.installKey).then((r) => {
-      if (r === false) {
-        setStatus(false)
-        setNeedsToBeChecked(false)
-        setExpanded(true)
-      }
-
-      setStatus(r)
-      setNeedsToBeChecked(!r)
-      setExpanded(!r)
-    });
-
-  }, [check.installKey, needsToBeChecked, status]);
+  const [status, refreshStatus] = useStatusCheck(check.installKey);
 
   function fixInstall() {
-    if (!check.installKey) return
-    Install.install(check.installKey).then(() => setNeedsToBeChecked(true)).catch((e) => console.error(e));
+    Install.install(check.installKey)
+      .then(() => refreshStatus())
+      .catch((e) => console.error(e));
   }
 
   return (
@@ -55,7 +47,9 @@ export default function StatusCheck({ check }: { check: InstallCheck }) {
           )}
         </div>
         <CollapsibleContent className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
-          {check.description.map((d, i) => <p key={i}>{d}</p>)}
+          {check.description.map((d, i) => (
+            <p key={i}>{d}</p>
+          ))}
           <Button
             onClick={fixInstall}
             disabled={status}

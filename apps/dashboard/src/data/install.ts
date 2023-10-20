@@ -1,6 +1,6 @@
-import { InstallCheck } from "@/types/preferences";
+import { InstallCheckWithInstallKey } from "@/types/preferences";
 
-const installChecks: InstallCheck[] = [
+const installChecks: InstallCheckWithInstallKey[] = [
   {
     id: "shellIntegrations",
     installKey: "dotfiles",
@@ -54,7 +54,7 @@ const installChecks: InstallCheck[] = [
             content: "Uninstalling CodeWhisperer will remove these lines.",
             tag: "span",
           },
-        ]
+        ],
       ],
     },
   },
