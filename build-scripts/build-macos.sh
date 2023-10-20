@@ -54,6 +54,13 @@ cargo install tauri-cli@1.5.2 --locked
 
 bash build-scripts/macos.sh 2>&1
 
+# If signing is requested, hande it
+if [[ -n $signing_bucket && -n $signing_queue && -n $apple_id_secret ]]
+then
+    echo signing and notarizing...
+    bash build-scripts/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" 2>&1
+fi
+
 if [[ -n $output_bucket ]]
 then
     STAGING_LOCATION=s3://$output_bucket/staging/

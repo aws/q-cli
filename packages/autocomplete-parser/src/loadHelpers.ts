@@ -1,7 +1,7 @@
 import logger, { Logger } from "loglevel";
 import * as semver from "semver";
 import { mergeSubcommands } from "@fig/autocomplete-shared";
-import { ensureTrailingSlash, withTimeout } from "@internal/shared/utils";
+import { ensureTrailingSlash, withTimeout, exponentialBackoff} from "@internal/shared/utils";
 import {
   executeCommand,
   executeShellCommand,
@@ -35,10 +35,7 @@ const makeCdnUrlFactory =
   (specName: string, _forceReload = false) =>
     `${baseUrl}${specName}.js`;
 
-const cdnUrlFactories = [
-  "https://cdn.jsdelivr.net/npm/@withfig/autocomplete@2/build/",
-  "https://unpkg.com/@withfig/autocomplete@^2.0.0/build/",
-].map(makeCdnUrlFactory);
+const cdnUrlFactory =  makeCdnUrlFactory("https://d2d0f3rpifth6g.cloudfront.net/");
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */
 const stringImportCache = new Map<string, any>();
@@ -159,25 +156,19 @@ export async function importFromPublicCDN<T = SpecFileImport>(
     );
   }
 
-  for (const [index, urlFactory] of cdnUrlFactories.entries()) {
-    try {
-      // eslint-disable-next-line no-await-in-loop
-      const result: T = await withTimeout(
-        20000,
-        import(
-          /* @vite-ignore */
-          urlFactory(name, forceReload)
-        )
-      );
-
-      return result;
-    } catch (e) {
-      // Remove the factory from its current position in the array,
-      // then push it to the end so it gets tried last.
-      cdnUrlFactories.splice(index, 1);
-      cdnUrlFactories.push(urlFactory);
-    }
+  // Total of retries in the worst case should be close to previous timeout value
+  // 500ms * 2^5 + 5 * 1000ms + 5 * 100ms = 21500ms, before the timeout was 20000ms
+  try {
+    return await exponentialBackoff({
+      attemptTimeout: 1000,
+      baseDelay: 500,
+      maxRetries: 5,
+      jitter: 100
+    }, import(cdnUrlFactory(name, forceReload)));
+  } catch  {
+    /**/
   }
+
   throw new SpecCDNError("Unable to load from a CDN");
 }
 
