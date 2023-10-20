@@ -58,7 +58,7 @@ bash build-scripts/macos.sh 2>&1
 if [[ -n $signing_bucket && -n $signing_queue && -n $apple_id_secret ]]
 then
     echo signing and notarizing...
-    bash bin/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" 2>&1
+    bash build-scripts/sign-and-rebundle-macos.sh "$signing_bucket" "$signing_queue" "$apple_id_secret" 2>&1
 fi
 
 if [[ -n $output_bucket ]]
