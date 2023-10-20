@@ -162,38 +162,31 @@ if ! get_secrets; then
     exit 1
 fi
 
-release_dirs=("release")
-num_releases=${#release_dirs[@]}
+BUILD_DIR="./build"
+app=$(ls -d1 "$BUILD_DIR/CodeWhisperer.app")
+dmg=$(ls -1 "$BUILD_DIR/CodeWhisperer.dmg")
 
-for ((i=0; i<$num_releases; i++))
-do
-    release_dir="${release_dirs[$i]}"
-    dir="./target/$release_dir"
-    app=$(ls -d1 $dir/bundle/macos/*.app)
-    dmg=$(ls -1 $dir/bundle/dmg/*.dmg)
+if [ -z "$app" ] || [ -z "$dmg" ]; then
+  echo "Build artifact(s) not present, bailing on signing"
+  exit 1
+fi
 
-    if [ -z "$app" ] || [ -z "$dmg" ]; then
-      echo "Build artifact(s) not present, bailing on signing"
-      exit 1
-    fi
+echo "Working on $app and $dmg ..."
 
-    echo "Working on $app and $dmg ..."
+# Sign the application
+sign_file "$app"
 
-    # Sign the application
-    sign_file "$app"
+# Notarize the application
+notarize_file "$app"
 
-    # Notarize the application
-    notarize_file "$app"
+# Rebundle the dmg file with the signed and notarized application
+rebundle_dmg "$dmg" "$app"
 
-    # Rebundle the dmg file with the signed and notarized application
-    rebundle_dmg "$dmg" "$app"
+# Sign the dmg
+sign_file "$dmg"
 
-    # Sign the dmg
-    sign_file "$dmg"
+# Notarize the dmg
+notarize_file "$dmg"
 
-    # Notarize the dmg
-    notarize_file "$dmg"
+echo "All good!!"
 
-    echo "All good!!"
-
-done
