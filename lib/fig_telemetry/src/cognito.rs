@@ -27,12 +27,6 @@ impl CognitoPoolId {
     }
 }
 
-impl Into<String> for CognitoPoolId {
-    fn into(self) -> String {
-        self.id.to_owned()
-    }
-}
-
 // pools from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
 pub(crate) const BETA_POOL: CognitoPoolId = CognitoPoolId {
     name: "beta",
@@ -67,7 +61,11 @@ pub(crate) async fn get_cognito_credentials_send(
     let region = pool_id.region();
     let conf = aws_sdk_cognitoidentity::Config::builder().region(region).build();
     let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
-    client.get_credentials_for_identity().identity_id(pool_id).send().await
+    client
+        .get_credentials_for_identity()
+        .identity_id(pool_id.id)
+        .send()
+        .await
 }
 
 pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
@@ -91,11 +89,15 @@ pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Cr
             ))
         },
         None => {
-            let credentials = get_cognito_credentials_send(pool_id).await.unwrap().credentials.unwrap();
+            let credentials = get_cognito_credentials_send(pool_id)
+                .await
+                .unwrap()
+                .credentials
+                .unwrap();
 
             let _ = fig_settings::state::set_value(
                 CREDENTIALS_KEY,
-                serde_json::to_value(&CredentialsJson {
+                serde_json::to_value(CredentialsJson {
                     access_key_id: credentials.access_key_id.clone(),
                     secret_key: credentials.secret_key.clone(),
                     session_token: credentials.session_token.clone(),

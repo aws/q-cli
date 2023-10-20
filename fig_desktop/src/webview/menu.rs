@@ -51,7 +51,7 @@ pub fn menu_bar() -> Menu {
             &MenuItemBuilder::new()
                 .text("Close Window")
                 .id(DASHBOARD_QUIT.into())
-                .acccelerator(Some("super+q"))
+                .acccelerator(Some("super+w"))
                 .unwrap()
                 .build(),
             &MenuItemBuilder::new()

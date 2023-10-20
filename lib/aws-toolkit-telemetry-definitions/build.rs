@@ -191,9 +191,9 @@ fn main() {
             let key = format_ident!("{}", m.r#type.to_case(Case::Snake));
 
             let value = if m.required.unwrap_or_default() {
-                quote!(.value(self.#key.to_string()))
+                quote!(.value(m.#key.to_string()))
             } else {
-                quote!(.value(self.#key.map(|v| v.to_string()).unwrap_or_default()))
+                quote!(.value(m.#key.map(|v| v.to_string()).unwrap_or_default()))
             };
 
             quote!(
@@ -220,15 +220,15 @@ fn main() {
                 const UNIT: ::amzn_toolkit_telemetry::types::Unit = #unit;
             }
 
-            impl Into<::amzn_toolkit_telemetry::types::MetricDatum> for #name {
-               fn into(self) -> ::amzn_toolkit_telemetry::types::MetricDatum {
+            impl From<#name> for ::amzn_toolkit_telemetry::types::MetricDatum {
+                fn from(m: #name) -> Self {
                     let metadata_entries = vec![
                         #(
                             #metadata_entries,
                         )*
                     ];
 
-                    let epoch_timestamp = match self.create_time {
+                    let epoch_timestamp = match m.create_time {
                         Some(t) => t.duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as ::std::primitive::i64,
                         None => ::std::time::SystemTime::now().duration_since(std::time::UNIX_EPOCH).unwrap().as_secs() as ::std::primitive::i64,
                     };
@@ -238,10 +238,9 @@ fn main() {
                         .passive(#name::PASSIVE)
                         .unit(#name::UNIT)
                         .epoch_timestamp(epoch_timestamp)
-                        .value(self.value.unwrap_or(1.0))
+                        .value(m.value.unwrap_or(1.0))
                         .set_metadata(Some(metadata_entries))
                         .build()
-                        // metadata: Option<Vec<MetadataEntry>>,
                }
             }
         );

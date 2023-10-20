@@ -40,7 +40,7 @@ const INTERNAL_PROD_ENDPOINT: &str = "https://1ek5zo40ci.execute-api.us-east-1.a
 const EXTERNAL_PROD_ENDPOINT: &str = "https://client-telemetry.us-east-1.amazonaws.com";
 
 #[derive(Debug, Clone)]
-struct TelemetryClient {
+pub struct TelemetryClient {
     client_id: String,
     aws_client: Client,
 }
