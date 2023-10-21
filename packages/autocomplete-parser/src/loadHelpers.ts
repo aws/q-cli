@@ -40,7 +40,7 @@ const makeCdnUrlFactory =
     `${baseUrl}${specName}.js`;
 
 const cdnUrlFactory = makeCdnUrlFactory(
-  "https://d2d0f3rpifth6g.cloudfront.net/"
+  "https://d3e7ef0le33nq1.cloudfront.net/"
 );
 
 /* eslint-disable-next-line @typescript-eslint/no-explicit-any */

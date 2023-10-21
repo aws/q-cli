@@ -10,10 +10,10 @@ import react from "@vitejs/plugin-react";
 const csp: Record<string, string> = {
   "default-src": "'self'",
   "script-src":
-    "'self' figspec: figapp: blob: https://d2d0f3rpifth6g.cloudfront.net http://localhost:*",
+    "'self' figspec: figapp: blob: https://d3e7ef0le33nq1.cloudfront.net http://localhost:*",
   "img-src": "'self' data: fig: figapp: https: http://localhost:*",
   "style-src":
-    " 'self' 'unsafe-inline' figapp: https://d2d0f3rpifth6g.cloudfront.net http://localhost:*",
+    " 'self' 'unsafe-inline' figapp: https://d3e7ef0le33nq1.cloudfront.net http://localhost:*",
   "connect-src":
     "'self' ws: http://localhost:*",
   "object-src": "'none'",
