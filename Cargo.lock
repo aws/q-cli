@@ -511,6 +511,7 @@ dependencies = [
  "aws-smithy-async",
  "aws-smithy-runtime-api",
  "aws-types",
+ "fig_telemetry",
  "fig_util",
  "once_cell",
  "serde",

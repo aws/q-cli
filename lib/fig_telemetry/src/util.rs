@@ -1,9 +1,4 @@
-use fig_util::system_info::get_system_id;
-use serde_json::{
-    Map,
-    Value,
-};
-
+/// Returns whether or not the user has disabled telemetry through settings or environment
 pub fn telemetry_is_disabled() -> bool {
     std::env::var_os("FIG_DISABLE_TELEMETRY").is_some()
         || fig_settings::settings::get_value("telemetry.disabled")
@@ -13,119 +8,10 @@ pub fn telemetry_is_disabled() -> bool {
             .unwrap_or(false)
 }
 
-pub(crate) async fn default_properties() -> Map<String, Value> {
-    let mut prop = Map::new();
-
-    #[cfg(target_os = "macos")]
-    prop.insert("desktop_version".into(), env!("CARGO_PKG_VERSION").into());
-
-    #[cfg(target_os = "linux")]
-    if let Some(linux_os_release) = fig_util::system_info::linux::get_os_release() {
-        prop.insert("device_linux_release_id".into(), linux_os_release.id.as_deref().into());
-        prop.insert(
-            "device_linux_release_name".into(),
-            linux_os_release.name.as_deref().into(),
-        );
-        prop.insert(
-            "device_linux_release_version".into(),
-            linux_os_release.version.as_deref().into(),
-        );
-        prop.insert(
-            "device_linux_release_version_id".into(),
-            linux_os_release.version_id.as_deref().into(),
-        );
-        prop.insert(
-            "device_linux_release_variant".into(),
-            linux_os_release.variant.as_deref().into(),
-        );
-        prop.insert(
-            "device_linux_release_variant_id".into(),
-            linux_os_release.variant_id.as_deref().into(),
-        );
-        prop.insert(
-            "device_linux_release_build_id".into(),
-            linux_os_release.build_id.as_deref().into(),
-        );
-    }
-
-    #[cfg(target_os = "linux")]
-    if let Ok(desktop) = std::env::var("XDG_SESSION_DESKTOP") {
-        prop.insert("device_linux_environment_desktop".into(), desktop.into());
-    } else if let Ok(desktop) = std::env::var("DESKTOP_SESSION") {
-        prop.insert("device_linux_environment_desktop".into(), desktop.into());
-    }
-
-    #[cfg(target_os = "linux")]
-    prop.insert(
-        "device_linux_environment_display_server".into(),
-        match std::env::var("XDG_SESSION_TYPE") {
-            Ok(desktop) => desktop.into(),
-            Err(_) => "x11".into(),
-        },
-    );
-
-    #[cfg(target_os = "linux")]
-    prop.insert("device_linux_wsl".into(), fig_util::system_info::in_wsl().into());
-
-    #[cfg(unix)]
-    prop.insert("device_ssh".into(), fig_util::system_info::in_ssh().into());
-
-    #[cfg(target_os = "windows")]
-    if let Some(fig_util::system_info::OSVersion::Windows { name, build }) = fig_util::system_info::os_version() {
-        prop.insert("device_windows_name".into(), name.to_owned().into());
-        prop.insert("device_windows_build".into(), build.to_owned().into());
-    }
-
-    #[cfg(target_os = "macos")]
-    {
-        let os_version = macos_utils::os::NSOperatingSystemVersion::get();
-        prop.insert("device_macos_release_version".into(), os_version.to_string().into());
-    }
-
-    prop.insert(
-        "device_install_method".into(),
-        crate::install_method::get_install_method().to_string().into(),
-    );
-
-    if let Some(device_id) = get_system_id() {
-        prop.insert("device_id".into(), device_id.into());
-    }
-
-    prop.insert("device_desktop".into(), true.into());
-    prop.insert("device_os".into(), std::env::consts::OS.into());
-    prop.insert("device_arch".into(), std::env::consts::ARCH.into());
-
-    // Manifest data
-    prop.insert("manifest_version".into(), env!("CARGO_PKG_VERSION").into());
-    prop.insert(
-        "manifest_variant".into(),
-        fig_util::manifest::manifest()
-            .as_ref()
-            .map(|m| m.variant.to_string())
-            .into(),
-    );
-    prop.insert(
-        "manifest_kind".into(),
-        fig_util::manifest::manifest()
-            .as_ref()
-            .map(|m| m.kind.to_string())
-            .into(),
-    );
-    prop.insert(
-        "manifest_managed_by".into(),
-        fig_util::manifest::manifest()
-            .as_ref()
-            .map(|m| m.managed_by.to_string())
-            .into(),
-    );
-
-    prop
-}
-
 /// Generates or gets the client id and caches the result
 ///
 /// Based on: <https://github.com/aws/aws-toolkit-vscode/blob/7c70b1909050043627e6a1471392e22358a15985/src/shared/telemetry/util.ts#L41C1-L62>
-pub(crate) async fn get_client_id() -> String {
+pub(crate) fn get_client_id() -> String {
     if cfg!(test) {
         return "ffffffff-ffff-ffff-ffff-ffffffffffff".into();
     }

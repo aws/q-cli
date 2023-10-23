@@ -33,12 +33,12 @@ pub(crate) const BETA_POOL: CognitoPoolId = CognitoPoolId {
     id: "us-east-1:db7bfc9f-8ecd-4fbb-bea7-280c16069a99",
 };
 
-pub(crate) const INTERNAL_PROD: CognitoPoolId = CognitoPoolId {
+pub(crate) const _INTERNAL_PROD: CognitoPoolId = CognitoPoolId {
     name: "internal-prod",
     id: "us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25",
 };
 
-pub(crate) const EXTERNAL_RROD: CognitoPoolId = CognitoPoolId {
+pub(crate) const _EXTERNAL_RROD: CognitoPoolId = CognitoPoolId {
     name: "prod",
     id: "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
 };
@@ -143,7 +143,7 @@ mod test {
 
     #[tokio::test]
     async fn pools() {
-        let all_pools = [BETA_POOL, INTERNAL_PROD, EXTERNAL_RROD];
+        let all_pools = [BETA_POOL, _INTERNAL_PROD, _EXTERNAL_RROD];
         for id in all_pools {
             let _ = id.region();
             get_cognito_credentials_send(id).await.unwrap();

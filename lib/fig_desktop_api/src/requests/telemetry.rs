@@ -41,7 +41,7 @@ pub async fn handle_identify_request(request: TelemetryIdentifyRequest) -> Reque
 }
 
 pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResult {
-    let _event: String = request.event.ok_or_else(|| "Empty track event".to_string())?;
+    let event: String = request.event.ok_or_else(|| "Empty track event".to_string())?;
 
     #[allow(deprecated)]
     let mut properties: Map<String, Value> = request
@@ -56,6 +56,13 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
                 properties.extend(props);
             },
             Err(err) => return Err(format!("Failed to decode json blob: {err}").into()),
+        }
+    }
+
+    // TODO(chay): send directly from autocomplete
+    if event == "autocomplete-insert" {
+        if let Some(root_command) = properties.get("rootCommand") {
+            fig_telemetry::send_completion_inserted(root_command).await.ok();
         }
     }
 
