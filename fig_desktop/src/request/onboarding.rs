@@ -26,6 +26,7 @@ use crate::{
 
 // Sync all of the user's data from the server and restart the daemon after they log in
 pub async fn post_login(proxy: &EventLoopProxy) {
+    fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
     proxy.send_event(Event::ReloadTray).ok();
 }
 

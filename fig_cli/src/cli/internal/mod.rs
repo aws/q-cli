@@ -45,16 +45,19 @@ use fig_proto::figterm::{
     FigtermRequestMessage,
     FigtermResponseMessage,
     NotifySshSessionStartedRequest,
+    UpdateShellContextRequest,
 };
 use fig_proto::hooks::{
     new_callback_hook,
     new_event_hook,
 };
+use fig_proto::local::EnvironmentVariable;
 use fig_proto::ReflectMessage;
 use fig_util::desktop::{
     launch_fig_desktop,
     LaunchArgs,
 };
+use fig_util::directories::figterm_socket_path;
 use fig_util::{
     directories,
     get_parent_process_exe,
@@ -74,6 +77,7 @@ use tokio::io::{
 use tokio::select;
 use tracing::{
     debug,
+    error,
     info,
     trace,
 };
@@ -354,7 +358,7 @@ impl InternalSubcommand {
                 components.set(InstallComponents::BINARY, false);
                 fig_install::uninstall(components).await?;
             },
-            InternalSubcommand::PreCmd => (),
+            InternalSubcommand::PreCmd => pre_cmd().await,
             InternalSubcommand::LocalState(local_state) => local_state.execute().await?,
             InternalSubcommand::Callback(CallbackArgs {
                 handler_id,
@@ -880,4 +884,33 @@ pub fn get_shell() {
         }
     }
     exit(1);
+}
+
+pub async fn pre_cmd() {
+    let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") else {
+        return;
+    };
+
+    match figterm_socket_path(&session_id) {
+        Ok(figterm_path) => match fig_ipc::socket_connect(figterm_path).await {
+            Ok(mut figterm_stream) => {
+                let message = FigtermRequestMessage {
+                    request: Some(FigtermRequest::UpdateShellContext(UpdateShellContextRequest {
+                        update_environment_variables: true,
+                        environment_variables: std::env::vars()
+                            .map(|(key, value)| EnvironmentVariable {
+                                key,
+                                value: Some(value),
+                            })
+                            .collect(),
+                    })),
+                };
+                if let Err(err) = figterm_stream.send_message(message).await {
+                    error!(%err, %session_id, "Failed to send UpdateShellContext to Figterm");
+                }
+            },
+            Err(err) => error!(%err, %session_id, "Failed to connect to Figterm socket"),
+        },
+        Err(err) => error!(%err, %session_id, "Failed to get Figterm socket path"),
+    }
 }
