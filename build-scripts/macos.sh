@@ -12,7 +12,7 @@ if [ -f ".env" ]; then
   . .env
 fi
 
-if [ -n "$LOCAL_BUILD" ]; then
+if [ -n "${LOCAL_BUILD-}" ]; then
   security create-keychain -p "$KEYCHAIN_PASSWORD" "$KEYCHAIN_NAME" || echo "already exists"
 
   KEYCHAIN_NAME="login.keychain"
@@ -117,7 +117,7 @@ cp -r "${BUILD_DIR}/themes/themes" "${BUNDLE_DIR}/CodeWhisperer.app/Contents/Res
 BUNDLE_PATH="${BUNDLE_DIR}/CodeWhisperer.app"
 cp -r "$BUNDLE_PATH" "$BUILD_DIR"
 
-if [ -n "$LOCAL_BUILD" ]; then
+if [ -n "${LOCAL_BUILD-}" ]; then
   codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.cli "$BUNDLE_PATH/Contents/MacOS/cw"
   codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/MacOS/cwterm" 
   codesign -v --timestamp --force --strict --options=runtime -s "$CODESIGNING_IDENTITY" -i io.fig.figterm "$BUNDLE_PATH/Contents/Helpers/FigInputMethod.app" 
@@ -161,7 +161,7 @@ FILE_JSON='{
   ]
 }'
 
-if [ -n "$LOCAL_BUILD" ]; then
+if [ -n "${LOCAL_BUILD-}" ]; then
   FILE_CONTENTS=$(jq -n \
     --arg identity "$CODESIGNING_IDENTITY" \
     --arg bundle "$BUNDLE_PATH" \
@@ -183,7 +183,7 @@ rm -f "$DMG"
 pnpm appdmg "$SPEC_FILE" "$DMG"
 rm "$SPEC_FILE"
 
-if [ -n "$LOCAL_BUILD" ]; then
+if [ -n "${LOCAL_BUILD-}" ]; then
   xcrun notarytool submit "$DMG" --apple-id "$NOTARIZE_USERNAME" --password "$NOTARIZE_PASSWORD" --team-id "$NOTARIZE_TEAM_ID" --wait
   spctl -a -t open --context context:primary-signature -v "$DMG"
 fi
