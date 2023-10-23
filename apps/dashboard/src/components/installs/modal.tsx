@@ -107,7 +107,7 @@ export default function InstallModal() {
 
     Install.install(key)
       .then(() => {
-        if (step < installChecks.length - 1) {
+        if (step < installChecks.length) {
           setStep(step + 1);
         } else {
           setModal(null);
@@ -115,7 +115,7 @@ export default function InstallModal() {
       })
       .catch((e) => {
         console.error(e);
-        if (step < installChecks.length - 1) {
+        if (step < installChecks.length) {
           setStep(step + 1);
         } else {
           setModal(null);

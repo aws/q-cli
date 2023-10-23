@@ -29,15 +29,30 @@ function App() {
     null
   );
 
+  console.log(0, {onboardingComplete, loggedIn})
+
   useEffect(() => {
+    State.get("desktop.completedOnboarding").then((r) => {
+      console.log(1, {r})
+      if (!r) {
+        setOnboardingComplete(false);
+      }
+      setOnboardingComplete(r);
+    });
+  }, [])
+
+  useEffect(() => {
+    console.log(2, {onboardingComplete, loggedIn})
     if (onboardingComplete === null) {
       State.get("desktop.completedOnboarding").then((r) => {
+        console.log(3, {r})
         if (!r) {
           setOnboardingComplete(false);
         }
         setOnboardingComplete(r);
-      });
-      return;
+      }).catch(() => {
+        setOnboardingComplete(false)
+      })
     }
 
     if (onboardingComplete === false) {
