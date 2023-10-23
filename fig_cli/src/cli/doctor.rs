@@ -524,7 +524,7 @@ impl DoctorCheck for FigIntegrationsCheck {
         if let Some(exe) = fig_util::get_parent_process_exe() {
             if exe.ends_with("cmd.exe") {
                 return Err(DoctorError::Error {
-                    reason: "CMD isn't supported yet, please use Git Bash or WSL in order to use Fig".into(),
+                    reason: "CMD isn't supported yet, please use Git Bash or WSL in order to use CodeWhisperer".into(),
                     info: vec![],
                     fix: None,
                     error: None,
@@ -533,7 +533,8 @@ impl DoctorCheck for FigIntegrationsCheck {
 
             if exe.ends_with("powershell.exe") {
                 return Err(DoctorError::Error {
-                    reason: "Powershell isn't supported yet, please use Git Bash or WSL in order to use Fig".into(),
+                    reason: "Powershell isn't supported yet, please use Git Bash or WSL in order to use CodeWhisperer"
+                        .into(),
                     info: vec![],
                     fix: None,
                     error: None,
@@ -570,7 +571,7 @@ impl DoctorCheck for FigIntegrationsCheck {
 
         if std::env::var_os("PROCESS_LAUNCHED_BY_FIG").is_some() {
             return Err(DoctorError::Error {
-                reason: "CodeWhisperer can not run in a process launched by Fig".into(),
+                reason: "CodeWhisperer can not run in a process it launched".into(),
                 info: vec![],
                 fix: None,
                 error: None,
@@ -1073,7 +1074,7 @@ impl DoctorCheck<DiagnosticsResponse> for BundlePathCheck {
                 reason: format!("CodeWhisperer app is installed in {}", path.bold()).into(),
                 info: vec![
                     "You need to install CodeWhisperer in /Applications.".into(),
-                    "To fix: uninstall, then reinstall Fig.".into(),
+                    "To fix: uninstall, then reinstall CodeWhisperer for the command line.".into(),
                     "Remember to drag CodeWhisperer into the Applications folder.".into(),
                 ],
                 fix: None,
@@ -1310,7 +1311,7 @@ impl DoctorCheck<Option<Terminal>> for ItermIntegrationCheck {
         if let Some(version) = app_version("com.googlecode.iterm2") {
             if version < Version::new(3, 4, 0) {
                 return Err(doctor_error!(
-                    "iTerm version is incompatible with Fig. Please update iTerm to latest version"
+                    "iTerm version is incompatible with Codewhisperer for the command line. Please update iTerm to latest version"
                 ));
             }
         }
@@ -1441,7 +1442,7 @@ impl DoctorCheck for SystemVersionCheck {
             SupportLevel::SupportedWithCaveat { info } => Err(DoctorError::Warning(info)),
             SupportLevel::InDevelopment { info } => Err(DoctorError::Warning(
                 format!(
-                    "Fig's support for {os_version} is in development. It may not work properly on your system.\n{}",
+                    "CodeWhisperer's support for {os_version} is in development. It may not work properly on your system.\n{}",
                     info.unwrap_or_default()
                 )
                 .into(),
@@ -1711,7 +1712,7 @@ impl DoctorCheck for DesktopCompatibilityCheck {
                 Ok(())
             },
             (DisplayServer::Wayland, DesktopEnvironment::Gnome) => Err(doctor_warning!(
-                "Fig's support for GNOME on Wayland is in development. It may not work properly on your system."
+                "CodeWhisperer's support for GNOME on Wayland is in development. It may not work properly on your system."
             )),
             (display_server, desktop_environment) => Err(doctor_warning!(
                 "Unknown desktop configuration {desktop_environment:?} on {display_server:?}"
@@ -1753,7 +1754,7 @@ impl DoctorCheck for WindowsConsoleCheck {
                     DoctorError::Error {
                         reason: "Windows Console APIs are not supported in this terminal".into(),
                         info: vec![
-                            "Fig's PseudoTerminal only supports the new Windows Console API.".into(),
+                            "CodeWhisperer's PseudoTerminal only supports the new Windows Console API.".into(),
                             "MinTTY and other TTY implementations may not work properly.".into(),
                             "".into(),
                             "You can try the following fixes to get CodeWhisperer working with your shell:".into(),
@@ -1868,7 +1869,7 @@ impl DoctorCheck for SandboxCheck {
             SandboxKind::Flatpak => Err(doctor_error!("Running CodeWhisperer under Flatpak is not supported.")),
             SandboxKind::Snap => Err(doctor_error!("Running CodeWhisperer under Snap is not supported.")),
             SandboxKind::Docker => Err(doctor_warning!(
-                "Fig's support for Docker is in development. It may not work properly on your system."
+                "CodeWhisperer's support for Docker is in development. It may not work properly on your system."
             )),
             SandboxKind::Container(Some(engine)) => Err(doctor_error!(
                 "Running CodeWhisperer under `{engine}` containers is not supported."
@@ -1982,26 +1983,9 @@ where
             continue;
         }
 
-        if let Err(err) = &result {
-            let mut properties: Vec<(&str, &str)> = vec![];
+        if result.is_err() {
             let analytics_event_name = check.analytics_event_name();
-            properties.push(("check", &analytics_event_name));
-            properties.push(("cli_version", env!("CARGO_PKG_VERSION")));
-
-            match err {
-                DoctorError::Warning(info) | DoctorError::Error { reason: info, .. } => {
-                    properties.push(("info", &**info));
-                },
-            }
-
-            // fig_telemetry::emit_track(fig_telemetry::TrackEvent::new(
-            //     TrackEventType::DoctorError,
-            //     TrackSource::Cli,
-            //     env!("CARGO_PKG_VERSION").into(),
-            //     properties,
-            // ))
-            // .await
-            // .ok();
+            fig_telemetry::send_doctor_check_failed(analytics_event_name).await.ok();
         }
 
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
@@ -2311,7 +2295,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "If you are not sure how to fix it, please open an issue with {} to let us know!",
             "cw issue".magenta()
         );
-        println!("Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
         println!()
     } else {
         // If early exit is disabled, no errors are thrown
@@ -2324,7 +2307,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
             "  CodeWhisperer still not working? Run {} to let us know!",
             "cw issue".magenta()
         );
-        println!("  Or, email us at {}!", "hello@fig.io".underlined().dark_cyan());
         println!()
     }
 

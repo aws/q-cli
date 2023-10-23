@@ -211,7 +211,12 @@ impl Cli {
         }
 
         let _logger_guard = logger.init().expect("Failed to init logger");
-        debug!("Command ran: {:?}", std::env::args().collect::<Vec<_>>());
+        let command = std::env::args().collect::<Vec<_>>();
+        debug!("Command ran: {:?}", command);
+
+        if let Some(subcommand) = command.get(1) {
+            fig_telemetry::send_cli_subcommand_executed(subcommand).await.ok();
+        }
 
         match self.subcommand {
             Some(subcommand) => match subcommand {

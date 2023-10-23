@@ -848,15 +848,10 @@ impl InternalSubcommand {
 
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
             },
-            InternalSubcommand::GhostTextAccept { buffer: _, suggestion: _ } => {
-                // fig_telemetry::emit_track(TrackEvent::new(
-                //     TrackEventType::GhostTextInlineSuggustionAccepted,
-                //     TrackSource::Cli,
-                //     env!("CARGO_PKG_VERSION").into(),
-                //     [("buffer", buffer), ("suggestion", suggestion)],
-                // ))
-                // .await
-                // .ok();
+            InternalSubcommand::GhostTextAccept { buffer, suggestion } => {
+                fig_telemetry::send_ghost_text_actioned(true, buffer.len(), suggestion.len())
+                    .await
+                    .ok();
             },
         }
 

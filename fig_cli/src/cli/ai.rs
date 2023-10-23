@@ -246,6 +246,11 @@ pwd
 
                 macro_rules! handle_action {
                     ($action:expr) => {
+                        let accepted = matches!(&$action, &Some(DialogActions::Execute { .. }));
+                        fig_telemetry::send_translation_actioned(accepted)
+                            .await
+                            .ok();
+
                         match $action {
                             Some(DialogActions::Execute { command, .. }) => {
                                 if send_figterm(command.to_owned(), true).await.is_err() {

@@ -224,6 +224,10 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
             trace!(?id, "Unhandled tray event");
         },
     }
+
+    tokio::spawn(fig_telemetry::send_menu_bar_actioned(Some(
+        menu_event.id().0.to_owned(),
+    )));
 }
 
 #[cfg(target_os = "linux")]

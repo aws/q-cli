@@ -553,7 +553,7 @@ mod tests {
         while let Some(line) = lines.next_line().await.unwrap() {
             match line.strip_prefix("data: ") {
                 Some(data) => {
-                    let data: Value = serde_json::from_str(&data).unwrap();
+                    let data: Value = serde_json::from_str(data).unwrap();
                     if let Some(text) = data.get("text").and_then(|d| d.as_str()) {
                         print!("{text}");
                     }
