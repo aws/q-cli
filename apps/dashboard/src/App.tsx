@@ -13,14 +13,16 @@ import Keybindings from "./pages/settings/keybindings";
 import ModalContext from "./context/modal";
 import { useEffect, useRef, useState } from "react";
 import Modal from "./components/modal";
-import { Auth, State } from "@withfig/api-bindings";
+import { Auth, State, Telemetry } from "@withfig/api-bindings";
 import InstallModal, { LoginModal } from "./components/installs/modal";
 import { getIconFromName } from "./lib/icons";
 import { StoreContext } from "./context/zustand";
 import { createStore } from "./lib/store";
 import ListenerContext from "./context/input";
+import { useLocation } from 'react-router-dom'
 
 function App() {
+  const location = useLocation()
   const store = useRef(createStore()).current;
   const [listening, setListening] = useState<string | null>(null);
   const [modal, setModal] = useState<React.ReactNode | null>(null);
@@ -29,23 +31,18 @@ function App() {
     null
   );
 
-  console.log(0, {onboardingComplete, loggedIn})
+  useEffect(() => {
+    try {
+      const { search, ...rest } = location
+      Telemetry.page('', location.pathname, { ...rest })
+    } catch (e) {
+      // ignore errors
+    }
+  }, [location])
 
   useEffect(() => {
-    State.get("desktop.completedOnboarding").then((r) => {
-      console.log(1, {r})
-      if (!r) {
-        setOnboardingComplete(false);
-      }
-      setOnboardingComplete(r);
-    });
-  }, [])
-
-  useEffect(() => {
-    console.log(2, {onboardingComplete, loggedIn})
     if (onboardingComplete === null) {
       State.get("desktop.completedOnboarding").then((r) => {
-        console.log(3, {r})
         if (!r) {
           setOnboardingComplete(false);
         }
