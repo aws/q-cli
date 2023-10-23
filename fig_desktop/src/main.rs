@@ -233,9 +233,6 @@ async fn main() {
     //     .ok();
     // });
 
-    #[cfg(target_os = "macos")]
-    migrate().await;
-
     install::run_install(cli.ignore_immediate_update).await;
 
     #[cfg(target_os = "linux")]
@@ -290,64 +287,4 @@ async fn main() {
     //     .unwrap();
 
     webview_manager.run().await.unwrap();
-}
-
-/// Temp function to migrate existing users of Swift macOS app to new Rust app
-#[cfg(target_os = "macos")]
-async fn migrate() {
-    use fig_install::uninstall_terminal_integrations;
-    use fig_util::directories::home_dir;
-    use macos_utils::{
-        NSArrayRef,
-        NSStringRef,
-    };
-    use objc::runtime::Object;
-    use tracing::debug;
-
-    fig_settings::state::remove_value("NEW_VERSION_AVAILABLE").ok();
-
-    if let Ok(home) = home_dir() {
-        for path in &[
-            "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.py",
-            ".config/iterm2/AppSupport/Scripts/AutoLaunch/fig-iterm-integration.py",
-            "Library/Application Support/iTerm2/Scripts/AutoLaunch/fig-iterm-integration.scpt",
-        ] {
-            tokio::fs::remove_file(home.join(path))
-                .await
-                .map_err(|err| warn!("Could not remove iTerm integration {path}: {err}"))
-                .ok();
-        }
-    }
-
-    // Set user as having completed onboarding
-    fig_settings::state::set_value("desktop.completedOnboarding", true).ok();
-
-    // Remove the old LaunchAgents
-    if let Ok(home) = fig_util::directories::home_dir() {
-        for file in ["io.fig.launcher.plist", "io.fig.uninstall.plist"] {
-            let path = home.join("Library").join("LaunchAgents").join(file);
-            if path.exists() {
-                std::fs::remove_file(path).ok();
-            }
-        }
-    }
-
-    // Uninstall terminal integrations
-    uninstall_terminal_integrations().await;
-
-    // Kill the old input method
-    let shared: *mut Object = unsafe { msg_send![class!(NSWorkspace), sharedWorkspace] };
-    let running_app: NSArrayRef<*mut Object> = unsafe { msg_send![shared, runningApplications] };
-
-    debug!("attempting to kill the old input method");
-    running_app
-        .iter()
-        .filter(|app| {
-            let name: NSStringRef = unsafe { msg_send![**app as *mut Object, bundleIdentifier] };
-            tracing::trace!("found {:?} within running apps", name.as_str());
-            name.as_str() == Some("io.fig.cursor")
-        })
-        .for_each(|app| {
-            let _: () = unsafe { msg_send![*app as *mut Object, terminate] };
-        });
 }
