@@ -4,7 +4,7 @@ SIGNING_BUCKET="s3://$1"        # e.g. nscc-ec-signing-833388527378
 SIGNING_REQUEST_QUEUE_NAME=$2   # e.g. nscc-signing-requests
 NOTARIZING_SECRET_ID=$3         # e.g. nscc-notarizing-apple-id
 
-set -e
+set -eux
 
 function signed_package_exists() {
     aws s3 ls "$SIGNING_BUCKET/signed/package.tar.gz" &> /dev/null
