@@ -112,12 +112,12 @@ pub fn app_path_from_bundle_id(bundle_id: impl AsRef<OsStr>) -> Option<String> {
 pub async fn quit_fig(verbose: bool) -> Result<()> {
     if !is_fig_desktop_running() {
         if verbose {
-            println!("Fig is not running");
+            println!("CodeWhisperer is not running");
         }
         return Ok(());
     }
 
-match verbose {
+    match verbose {
         true => {
             println!("Quitting CodeWhisperer");
 
@@ -141,7 +141,7 @@ match verbose {
         if second_try.is_err() {
             cfg_if! {
                 if #[cfg(target_os = "linux")] {
-                    if let Ok(output) = Command::new("killall").arg("fig_desktop").output() {
+                    if let Ok(output) = Command::new("killall").arg(CODEWHISPERER_DESKTOP_PROCESS_NAME).output() {
                         if output.status.success() {
                             return Ok(());
                         }
@@ -168,7 +168,7 @@ match verbose {
                 }
             }
             if verbose {
-                println!("Unable to quit Fig");
+                println!("Unable to quit CodeWhisperer");
             }
 
             second_try?;
@@ -189,17 +189,17 @@ pub fn is_executable_in_path(program: impl AsRef<Path>) -> bool {
 
 pub fn app_not_running_message() -> String {
     format!(
-        "\n{}\nFig might not be running, to launch Fig run: {}\n",
-        "Unable to connect to Fig".bold(),
-        "fig launch".magenta()
+        "\n{}\nCodeWhisperer might not be running, to launch CodeWhisperer run: {}\n",
+        "Unable to connect to CodeWhisperer".bold(),
+        "cw launch".magenta()
     )
 }
 
 pub fn login_message() -> String {
     format!(
-        "{}\nLooks like you aren't logged in to fig, to login run: {}",
+        "{}\nLooks like you aren't logged in to CodeWhisperer, to login run: {}",
         "Not logged in".bold(),
-        "fig login".magenta()
+        "cw login".magenta()
     )
 }
 
@@ -228,8 +228,8 @@ pub fn get_fig_version() -> Result<String> {
            Ok(fig_version)
         } else {
             use std::process::Command;
-            Ok(String::from_utf8_lossy(&Command::new("fig_desktop").arg("--version").output()?.stdout)
-                .replace("fig_desktop", "").trim().into())
+            Ok(String::from_utf8_lossy(&Command::new(CODEWHISPERER_DESKTOP_PROCESS_NAME).arg("--version").output()?.stdout)
+                .replace(CODEWHISPERER_DESKTOP_PROCESS_NAME, "").trim().into())
         }
     }
 }
@@ -361,6 +361,8 @@ pub async fn is_brew_reinstall() -> bool {
 
 #[cfg(test)]
 mod tests {
+    use fig_util::CODEWHISPERER_DESKTOP_PROCESS_NAME;
+
     use super::*;
 
     #[test]
@@ -404,10 +406,10 @@ mod tests {
         let s = System::new_with_specifics(RefreshKind::new().with_processes(ProcessRefreshKind::new()));
         cfg_if! {
             if #[cfg(windows)] {
-                let mut processes = s.processes_by_name("fig_desktop");
+                let mut processes = s.processes_by_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
                 assert!(processes.next().is_some());
             } else {
-                let mut processes = s.processes_by_exact_name("fig_desktop");
+                let mut processes = s.processes_by_exact_name(CODEWHISPERER_DESKTOP_PROCESS_NAME);
                 assert!(processes.next().is_some());
             }
         }

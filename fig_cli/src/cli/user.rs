@@ -108,7 +108,7 @@ impl RootUserSubcommand {
                 let (_, _) = tokio::join!(logout_join, auth::logout());
 
                 println!("You are now logged out");
-                println!("Run {} to log back in to Fig", "fig login".magenta());
+                println!("Run {} to log back in to CodeWhisperer", "cw login".magenta());
                 Ok(())
             },
         }

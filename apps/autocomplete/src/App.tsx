@@ -549,7 +549,7 @@ function App() {
         <div className="text-sm">
           Please run{" "}
           <code className="rounded-sm bg-neutral-700 p-0.5 text-neutral-200">
-            fig login
+            cw login
           </code>{" "}
           to login/signup
         </div>
