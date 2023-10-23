@@ -33,8 +33,7 @@ function App() {
 
   useEffect(() => {
     try {
-      const { search, ...rest } = location
-      Telemetry.page('', location.pathname, { ...rest })
+      Telemetry.page('', location.pathname, { ...location })
     } catch (e) {
       // ignore errors
     }
