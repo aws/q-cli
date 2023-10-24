@@ -42,6 +42,7 @@ pub use install_method::{
     InstallMethod,
 };
 use once_cell::sync::Lazy;
+use tracing::error;
 use util::telemetry_is_disabled;
 
 #[derive(thiserror::Error, Debug)]
@@ -63,6 +64,12 @@ const _EXTERNAL_PROD_ENDPOINT: &str = "https://client-telemetry.us-east-1.amazon
 pub struct TelemetryClient {
     client_id: String,
     aws_client: Client,
+}
+
+impl Default for TelemetryClient {
+    fn default() -> Self {
+        Self::new()
+    }
 }
 
 impl TelemetryClient {
@@ -88,7 +95,8 @@ impl TelemetryClient {
         let os_architecture = std::env::consts::ARCH;
         let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
 
-        self.aws_client
+        if let Err(err) = self
+            .aws_client
             .post_metrics()
             .aws_product(product)
             .aws_product_version(product_version)
@@ -98,7 +106,11 @@ impl TelemetryClient {
             .os_version(os_version)
             .metric_data(inner.into())
             .send()
-            .await?;
+            .await
+        {
+            error!("{}", err);
+            return Err(err);
+        }
 
         Ok(())
     }

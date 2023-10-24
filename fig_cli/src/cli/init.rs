@@ -132,8 +132,12 @@ fn shell_init(shell: &Shell, when: &When, rcfile: &Option<String>, skip_dotfiles
         if !matches!(
             (shell, rcfile.as_deref()),
             (Shell::Zsh, Some("zprofile")) | (Shell::Bash, Some("profile") | Some("bash_profile"))
-        ) && fig_settings::state::get_bool_or("dotfiles.enabled", true) && !skip_dotfiles && shell == &Shell::Zsh
-                && when == &When::Post && fig_settings::settings::get_bool_or("ghost-text.enabled", false) {
+        ) && fig_settings::state::get_bool_or("dotfiles.enabled", true)
+            && !skip_dotfiles
+            && shell == &Shell::Zsh
+            && when == &When::Post
+            && fig_settings::settings::get_bool_or("ghost-text.enabled", false)
+        {
             to_source.push(guard_source(
                 shell,
                 false,
