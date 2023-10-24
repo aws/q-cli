@@ -887,7 +887,7 @@ pub fn get_shell() {
 }
 
 pub async fn pre_cmd() {
-    let Ok(session_id) = std::env::var("FIGTERM_SESSION_ID") else {
+    let Ok(session_id) = std::env::var("CWTERM_SESSION_ID") else {
         return;
     };
 

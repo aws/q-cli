@@ -26,6 +26,7 @@ export const intro = {
   link: 'https://aws.amazon.com/codewhisperer/',
   enable: {
     flag: 'ghost-text.enabled',
-    default: false
+    inverted: false,
+    default: false,
   }
 }
