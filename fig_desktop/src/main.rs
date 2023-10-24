@@ -246,7 +246,7 @@ async fn main() {
         platform::gtk::init().expect("Failed initializing GTK");
     }
 
-    let is_logged_in = !auth::is_logged_in().await;
+    let is_logged_in = auth::is_logged_in().await;
 
     if !is_logged_in {
         tracing::info!("Showing onboarding");
@@ -287,4 +287,5 @@ async fn main() {
     //     .unwrap();
 
     webview_manager.run().await.unwrap();
+    fig_telemetry::finish_telemetry().await;
 }

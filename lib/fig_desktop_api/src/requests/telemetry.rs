@@ -61,8 +61,8 @@ pub async fn handle_track_request(request: TelemetryTrackRequest) -> RequestResu
 
     // TODO(chay): send directly from autocomplete
     if event == "autocomplete-insert" {
-        if let Some(root_command) = properties.get("rootCommand") {
-            fig_telemetry::send_completion_inserted(root_command).await.ok();
+        if let Some(root_command) = properties.get("rootCommand").and_then(|r| r.as_str()) {
+            fig_telemetry::send_completion_inserted(root_command);
         }
     }
 
@@ -92,8 +92,8 @@ pub async fn handle_page_request(request: TelemetryPageRequest) -> RequestResult
         Map::new()
     };
 
-    if let Some(pathname) = properties.get("pathname") {
-        fig_telemetry::send_dashboard_page_viewed(pathname).await.ok();
+    if let Some(pathname) = properties.get("pathname").and_then(|s| s.as_str()) {
+        fig_telemetry::send_dashboard_page_viewed(pathname);
     }
 
     RequestResult::success()

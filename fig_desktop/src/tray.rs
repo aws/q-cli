@@ -225,9 +225,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
         },
     }
 
-    tokio::spawn(fig_telemetry::send_menu_bar_actioned(Some(
-        menu_event.id().0.to_owned(),
-    )));
+    fig_telemetry::send_menu_bar_actioned(Some(menu_event.id().0.to_owned()));
 }
 
 #[cfg(target_os = "linux")]

@@ -175,6 +175,43 @@ pub enum CliRootCommands {
     Dashboard,
 }
 
+impl CliRootCommands {
+    fn name(&self) -> &'static str {
+        match self {
+            CliRootCommands::App(_) => "app",
+            CliRootCommands::Autocomplete(_) => "autocomplete",
+            CliRootCommands::Hook(_) => "hook",
+            CliRootCommands::Debug(_) => "debug",
+            CliRootCommands::Settings(_) => "settings",
+            CliRootCommands::Tips(_) => "tips",
+            CliRootCommands::Install(_) => "install",
+            CliRootCommands::Uninstall { .. } => "uninstall",
+            CliRootCommands::Update { .. } => "update",
+            CliRootCommands::Diagnostic(_) => "diagnostics",
+            CliRootCommands::Init(_) => "init",
+            CliRootCommands::Theme(_) => "theme",
+            // CliRootCommands::Tweet => "tweet",
+            CliRootCommands::Issue(_) => "issue",
+            CliRootCommands::RootUser(_) => "user",
+            CliRootCommands::User(_) => "user",
+            CliRootCommands::Doctor(_) => "doctor",
+            CliRootCommands::Completion(_) => "completion",
+            CliRootCommands::Internal(_) => "internal",
+            CliRootCommands::Launch => "launch",
+            CliRootCommands::Quit => "quit",
+            CliRootCommands::Restart { .. } => "restart",
+            CliRootCommands::Onboarding => "onboarding",
+            CliRootCommands::Man(_) => "man",
+            CliRootCommands::Integrations(_) => "integrations",
+            CliRootCommands::Ai(_) => "ai",
+            CliRootCommands::Telemetry(_) => "telemetry",
+            CliRootCommands::Version => "version",
+            CliRootCommands::HelpAll => "help-all",
+            CliRootCommands::Dashboard => "dashboard",
+        }
+    }
+}
+
 #[derive(Debug, Parser)]
 #[command(version, about)]
 #[command(help_template = "\x1B[1;95m
@@ -214,9 +251,7 @@ impl Cli {
         let command = std::env::args().collect::<Vec<_>>();
         debug!("Command ran: {:?}", command);
 
-        if let Some(subcommand) = command.get(1) {
-            fig_telemetry::send_cli_subcommand_executed(subcommand).await.ok();
-        }
+        self.send_telemetry();
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
@@ -285,6 +320,21 @@ impl Cli {
             },
             // Root command
             None => launch_dashboard().await,
+        }
+    }
+
+    fn send_telemetry(&self) {
+        match &self.subcommand {
+            None
+            | Some(
+                CliRootCommands::Internal(_)
+                | CliRootCommands::Tips(_)
+                | CliRootCommands::Completion(_)
+                | CliRootCommands::Hook(_),
+            ) => {},
+            Some(subcommand) => {
+                fig_telemetry::send_cli_subcommand_executed(subcommand.name());
+            },
         }
     }
 }

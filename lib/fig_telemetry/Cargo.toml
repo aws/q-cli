@@ -27,6 +27,4 @@ aws-sdk-cognitoidentity = "0.33.0"
 aws-toolkit-telemetry-definitions = { path = "../aws-toolkit-telemetry-definitions" }
 aws-credential-types = "0.56.1"
 aws-smithy-async = "0.56.1"
-
-[dev-dependencies]
 tokio = { version = "1", features = ["full"] }
