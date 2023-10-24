@@ -9,6 +9,7 @@ import { useStore } from "zustand";
 export function useSetting(key: string) {
   const store = useContext(StoreContext);
   if (!store) throw new Error("Missing StoreContext.Provider in the tree");
+
   return [
     useStore(store, (state) => state.settings[key]),
     useStore(

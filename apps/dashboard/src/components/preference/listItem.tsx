@@ -42,7 +42,6 @@ export function Setting({
       : inputValue;
 
   const multiSelectValue = inputValue as string[];
-  const keystrokeValue = inputValue as string[];
 
   function toggleSwitch() {
     setSetting(!inputValue)
@@ -164,7 +163,7 @@ export function Setting({
             )}
             {/* multi-keystroke value input */}
             {data.type === "keystrokes" && (
-              <Keystroke id={data.id} values={keystrokeValue} setValues={setSetting} />
+              <Keystroke id={data.id} defaults={data.default as string[]} />
             )}
           </div>
         )}
