@@ -422,7 +422,7 @@ impl WindowState {
                 *self.url.lock() = url;
             },
             WindowEvent::NavigateRelative { path } => {
-                let event_name = "mission-control.navigate";
+                let event_name = "dashboard.navigate";
                 let payload = serde_json::json!({ "path": path });
 
                 self.notification(notifications_state, &NotificationType::NotifyOnEvent, Notification {

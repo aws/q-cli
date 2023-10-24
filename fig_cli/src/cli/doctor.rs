@@ -2299,7 +2299,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     } else {
         // If early exit is disabled, no errors are thrown
         if !config.verbose {
-            println!();
             println!("{} Everything looks good!", CHECKMARK.green());
         }
         println!();

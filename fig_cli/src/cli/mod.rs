@@ -13,7 +13,6 @@ mod installation;
 mod integrations;
 pub mod internal;
 mod issue;
-mod man;
 mod settings;
 mod telemetry;
 mod theme;
@@ -52,6 +51,7 @@ use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
+use self::user::RootUserSubcommand;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
@@ -126,8 +126,6 @@ pub enum CliRootCommands {
     Init(init::InitArgs),
     /// Get or set theme
     Theme(theme::ThemeArgs),
-    // Tweet about CodeWhisperer
-    // Tweet,
     /// Create a new Github issue
     Issue(issue::IssueArgs),
     /// Root level user subcommands
@@ -157,8 +155,6 @@ pub enum CliRootCommands {
     /// Run the CodeWhisperer tutorial
     #[command(hide = true)]
     Onboarding,
-    /// Open manual page
-    Man(man::ManArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
@@ -190,9 +186,9 @@ impl CliRootCommands {
             CliRootCommands::Diagnostic(_) => "diagnostics",
             CliRootCommands::Init(_) => "init",
             CliRootCommands::Theme(_) => "theme",
-            // CliRootCommands::Tweet => "tweet",
             CliRootCommands::Issue(_) => "issue",
-            CliRootCommands::RootUser(_) => "user",
+            CliRootCommands::RootUser(RootUserSubcommand::Login) => "login",
+            CliRootCommands::RootUser(RootUserSubcommand::Logout) => "logout",
             CliRootCommands::User(_) => "user",
             CliRootCommands::Doctor(_) => "doctor",
             CliRootCommands::Completion(_) => "completion",
@@ -201,7 +197,6 @@ impl CliRootCommands {
             CliRootCommands::Quit => "quit",
             CliRootCommands::Restart { .. } => "restart",
             CliRootCommands::Onboarding => "onboarding",
-            CliRootCommands::Man(_) => "man",
             CliRootCommands::Integrations(_) => "integrations",
             CliRootCommands::Ai(_) => "ai",
             CliRootCommands::Telemetry(_) => "telemetry",
@@ -293,7 +288,6 @@ impl Cli {
                     Processes::Daemon => Ok(()),
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
-                CliRootCommands::Man(args) => args.execute(),
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
@@ -327,7 +321,8 @@ impl Cli {
         match &self.subcommand {
             None
             | Some(
-                CliRootCommands::Internal(_)
+                CliRootCommands::Init(_)
+                | CliRootCommands::Internal(_)
                 | CliRootCommands::Tips(_)
                 | CliRootCommands::Completion(_)
                 | CliRootCommands::Hook(_),

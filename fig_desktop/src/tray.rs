@@ -5,7 +5,6 @@ use fig_install::{
     InstallComponents,
     UpdateOptions,
 };
-use fig_integrations::shell::ShellExt;
 use fig_util::manifest::Channel;
 use muda::{
     Menu,
@@ -32,7 +31,6 @@ use crate::event::{
     WindowEvent,
 };
 use crate::figterm::FigtermState;
-use crate::platform::PlatformState;
 use crate::webview::{
     COMPANION_ID,
     LOGIN_PATH,
@@ -187,9 +185,7 @@ pub fn handle_event(menu_event: &MenuEvent, proxy: &EventLoopProxy) {
                 .send_event(Event::WindowEvent {
                     window_id: DASHBOARD_ID.clone(),
                     window_event: WindowEvent::Batch(vec![
-                        WindowEvent::NavigateRelative {
-                            path: "?show_help=true".into(),
-                        },
+                        WindowEvent::NavigateRelative { path: "/help".into() },
                         WindowEvent::Show,
                     ]),
                 })
@@ -457,28 +453,29 @@ fn menu() -> Vec<MenuElement> {
         // or shell integrations are not installed,
         // or input method not enabled AND kitty/alacritty/jetbrains installed
 
-        let handle = tokio::runtime::Handle::current();
-        let shell_not_installed = std::thread::spawn(move || {
-            fig_util::Shell::all()
-                .iter()
-                .filter_map(|s| s.get_shell_integrations().ok())
-                .flatten()
-                .any(|i| handle.block_on(i.is_installed()).is_err())
-        })
-        .join()
-        .unwrap();
+        // let handle = tokio::runtime::Handle::current();
+        // let shell_not_installed = std::thread::spawn(move || {
+        //     fig_util::Shell::all()
+        //         .iter()
+        //         .filter_map(|s| s.get_shell_integrations().ok())
+        //         .flatten()
+        //         .any(|i| handle.block_on(i.is_installed()).is_err())
+        // })
+        // .join()
+        // .unwrap();
 
-        let accessibility_not_installed = !PlatformState::accessibility_is_enabled().unwrap_or(true);
+        // TOOD: renable, the lib is broken rn
+        // let accessibility_not_installed = !PlatformState::accessibility_is_enabled().unwrap_or(true);
 
         // TODO: Add input method check
 
-        if accessibility_not_installed || shell_not_installed {
-            menu.extend([
-                MenuElement::Info("CodeWhisperer hasn't been configured correctly".into()),
-                MenuElement::entry(None, None, "Fix Configuration Issues", "/help"),
-                MenuElement::Separator,
-            ]);
-        }
+        // if accessibility_not_installed || shell_not_installed {
+        //     menu.extend([
+        //         MenuElement::Info("CodeWhisperer hasn't been configured correctly".into()),
+        //         MenuElement::entry(None, None, "Fix Configuration Issues", "/help"),
+        //         MenuElement::Separator,
+        //     ]);
+        // }
 
         menu.extend([
             settings,

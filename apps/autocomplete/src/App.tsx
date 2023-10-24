@@ -251,8 +251,7 @@ function App() {
 
   // Make sure fig dimensions align with our desired dimensions.
   const isHidden = visibleState !== Visibility.VISIBLE;
-  const interceptKeystrokes =
-     Boolean(!isHidden && suggestions.length > 0);
+  const interceptKeystrokes = Boolean(!isHidden && suggestions.length > 0);
 
   useEffect(() => {
     logger.info("Setting intercept keystrokes", {
@@ -425,7 +424,8 @@ function App() {
   );
 
   const selectedItem = suggestions[selectedIndex];
-  const preview = Boolean(selectedItem && !hidePreview) && (
+  // TODO: re-enable preview
+  const preview = false && Boolean(selectedItem && !hidePreview) && (
     <Preview selectedItem={selectedItem} position={previewPosition} />
   );
 

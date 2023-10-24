@@ -22,7 +22,17 @@ pub struct IssueArgs {
 }
 
 impl IssueArgs {
+    #[allow(unreachable_code)]
     pub async fn execute(&self) -> Result<()> {
+        println!(
+            "Please run {} and then share that output + your issue in the {} slack channel",
+            "cw diagnostic".magenta(),
+            "#codewhisperer-command-line-interest".bold()
+        );
+        println!();
+        println!("This is temporary, we will have better issue management resources soon.");
+        return Ok(());
+
         // Check if fig is running
         if !self.force && !fig_util::is_fig_desktop_running() {
             println!(
