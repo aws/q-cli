@@ -59,9 +59,9 @@ export default function Page() {
   //   setCompletionPercentage(tasksCompleted / tasks.length * 100)
   // }, [tasksCompleted])
 
-  function startOnboarding() {
-    State.set("desktop.completedOnboarding", false)
-  }
+  // function startOnboarding() {
+  //   State.set("desktop.completedOnboarding", false)
+  // }
 
   return (
     <div className="flex flex-col items-start gap-4">
@@ -99,12 +99,12 @@ export default function Page() {
           <Task task={t} key={i} updateProgress={() => setTasksCompleted(tasksCompleted + 1)}/>
         ))} */}
       </div>
-      <Button
+      {/* <Button
           onClick={startOnboarding}
           className="disabled:bg-zinc-400 h-auto py-2 px-6 mt-1"
         >
           Open onboarding
-        </Button>
+        </Button> */}
     </div>
   );
 }
