@@ -2,7 +2,7 @@ import { InstallCheckWithInstallKey } from "@/types/preferences";
 
 const installChecks: InstallCheckWithInstallKey[] = [
   {
-    id: "shellIntegrations",
+    id: "dotfiles",
     installKey: "dotfiles",
     title: "Shell integrations",
     description: [

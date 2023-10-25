@@ -14,7 +14,7 @@ import ModalContext from "./context/modal";
 import { useEffect, useRef, useState } from "react";
 import Modal from "./components/modal";
 import { Auth, State, Telemetry, Event } from "@withfig/api-bindings";
-import InstallModal from "./components/installs/modal";
+import InstallModal, { LoginModal } from "./components/installs/modal";
 import { getIconFromName } from "./lib/icons";
 import { StoreContext } from "./context/zustand";
 import { createStore } from "./lib/store";
@@ -58,9 +58,20 @@ function App() {
       setModal(<InstallModal />);
       return;
     }
+
+    function close() {
+      setLoggedIn(true)
+      setModal(null)
+    }
+
+    if (onboardingComplete && loggedIn === false) {
+      setModal(<LoginModal next={close} />)
+    }
   }, [onboardingComplete, loggedIn]);
 
   useEffect(() => {
+    if (loggedIn) return
+
     Auth.status().then((r) => setLoggedIn(r.builderId));
   }, [loggedIn]);
 

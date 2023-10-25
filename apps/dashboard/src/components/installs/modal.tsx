@@ -1,6 +1,6 @@
 import ModalContext from "@/context/modal";
 import { InstallCheck } from "@/types/preferences";
-import { Auth, Fig, Install, Internal, Native, State } from "@withfig/api-bindings";
+import { Auth, Fig, Install, Internal, Native } from "@withfig/api-bindings";
 import { useContext, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { AwsLogo } from "../svg/icons";
@@ -40,7 +40,31 @@ export function WelcomeModal({ next }: { next: () => void }) {
   )
 }
 
-export function LoginModal({ next, loginState, loginCode }: { next: () => void, loginState: string, loginCode: string | null }) {
+export function LoginModal({next}: { next: () => void }) {
+
+  const [loginState, setLoginState] = useState<
+    "not started" | "loading" | "logged in"
+  >("not started");
+  const [loginCode, setLoginCode] = useState<string | null>(null);
+  
+  async function handleLogin() {
+    setLoginState("loading");
+
+    const init = await Auth.builderIdStartDeviceAuthorization();
+    setLoginCode(init.code);
+
+    await Native.open(init.url);
+
+    await Auth.builderIdPollCreateToken(init).catch(console.error);
+    setLoginState("logged in");
+
+    await Internal.sendWindowFocusRequest({});
+    next()
+  }
+
+  useEffect(() => {
+    Auth.status().then((r) => setLoginState(r.builderId ? "logged in" : "not started"))
+  }, [])
 
   useEffect(() => {
     if (loginState !== "logged in") return;
@@ -62,7 +86,7 @@ export function LoginModal({ next, loginState, loginCode }: { next: () => void, 
         ) : (
           <Button
             variant="glass"
-            onClick={() => next()}
+            onClick={() => handleLogin()}
             className="flex gap-4 pl-2"
           >
             <AwsLogo />
@@ -166,70 +190,39 @@ export default function OnboardingModal() {
   const [step, setStep] = useState(0);
   const check = onboarding[step] as InstallCheck;
   const { setModal } = useContext(ModalContext);
-  const [loginState, setLoginState] = useState<
-    "not started" | "loading" | "logged in"
-  >("not started");
-  const [loginCode, setLoginCode] = useState<string | null>(null);
   const [dotfilesCheck] = useStatusCheck('dotfiles')
   const [accessibilityCheck] = useStatusCheck('accessibility')
   
   // these let us skip steps
   const [dotfiles, setDotfiles] = useState(dotfilesCheck)
   const [accessibility, setAccessibility] = useState(accessibilityCheck)
-  const checksComplete = dotfiles && accessibility && loginState === 'logged in'
+  const checksComplete = dotfiles && accessibility
 
-  async function handleLogin() {
-    setLoginState("loading");
-
-    const init = await Auth.builderIdStartDeviceAuthorization();
-    setLoginCode(init.code);
-
-    await Native.open(init.url);
-
-    await Auth.builderIdPollCreateToken(init).catch(console.error);
-    setLoginState("logged in");
-
-    await Internal.sendWindowFocusRequest({});
-  }
-
-  console.log({ loginState, checksComplete, dotfilesCheck, accessibilityCheck })
-
-  useEffect(() => {
-    Auth.status().then((r) => setLoginState(r.builderId ? "logged in" : "not started"))
-  }, [])
-
-  useEffect(() => {
-    if (checksComplete && loginState !== 'logged in') {
-      setStep
-    }
-  }, [checksComplete, loginState, dotfiles, accessibility])
+  // console.log({ id: check.id, checksComplete, dotfiles, accessibility })
 
   useEffect(() => {
     if (!checksComplete) return
-
     Internal.sendOnboardingRequest({
       action: Fig.OnboardingAction.FINISH_ONBOARDING,
     });
-    setModal(null);
+    setModal(null)
   }, [checksComplete, setModal])
 
   function nextStep() {
-      if (check.id === 'login') {
-        if (loginState === 'logged in') {
-          Internal.sendOnboardingRequest({
-            action: Fig.OnboardingAction.FINISH_ONBOARDING,
-          });
-          State.set('desktop.completedOnboarding', true).then(() => {
-            setModal(null)
-          })
-        } else {
-          handleLogin()
-        }
-      }
-      setStep(step + 1)
+    if (step >= onboarding.length - 1) {
+      Internal.sendOnboardingRequest({
+        action: Fig.OnboardingAction.FINISH_ONBOARDING,
+      });
+      setModal(null)
+      return
+    }
+    
+    setStep(step + 1)
   }
 
   function skipInstall() {
+    if (!check.id) return
+
     if (check.id === 'dotfiles') {
       setDotfiles(true)
       setStep(step + 1)
@@ -241,13 +234,17 @@ export default function OnboardingModal() {
     }
   }
 
+  if (check.id === 'dotfiles' || check.id === 'accessibility') {
+    return <InstallModal check={check} skip={skipInstall} next={nextStep} />
+  }
+
   if (check.id === 'welcome') {
     return <WelcomeModal next={nextStep} />
   }
 
   if (check.id === "login") {
-    return <LoginModal next={nextStep} loginState={loginState} loginCode={loginCode} />;
+    return <LoginModal next={nextStep} />;
   }
 
-  return <InstallModal check={check} skip={skipInstall} next={nextStep} />
+  return  null
 }
