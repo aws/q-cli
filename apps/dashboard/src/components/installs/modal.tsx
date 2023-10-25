@@ -102,7 +102,16 @@ type installKey = "dotfiles" | "accessibility" | "inputMethod"
 
 function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => void, next: () => void}) {
   const [explainerOpen, setExplainerOpen] = useState(false);
-  const [isInstalled, refreshInstallStatus] = useStatusCheck(check.installKey as installKey)
+  const [isInstalled] = useStatusCheck(check.installKey as installKey)
+  const [timeElapsed, setTimeElapsed] = useState(false)
+  const [checking, setChecking] = useState(false)
+
+  useEffect(() => {
+    if (timeElapsed) return
+
+    const timer = setTimeout(() => setTimeElapsed(true), 5000);
+    return () => clearTimeout(timer);
+  }, [timeElapsed])
 
   useEffect(() => {
     if (!isInstalled) return
@@ -113,8 +122,13 @@ function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => 
   function handleInstall(key: InstallCheck["installKey"]) {
     if (!key) return;
 
+    if (checking || check.id === 'dotfiles') {
+      next()
+      return
+    }
+
     Install.install(key)
-      .then(() => refreshInstallStatus())
+      .then(() => setChecking(true))
       .catch((e) => console.error(e));
   }
 
@@ -124,9 +138,9 @@ function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => 
         <h2 className="font-medium text-lg select-none leading-none">
           {check.title}
         </h2>
-        <button className={'text-xs text-black/50'} onClick={skip}>
+        {timeElapsed && <button className={'text-xs text-black/50'} onClick={skip}>
           skip
-        </button>
+        </button>}
       </div>
       <div className="flex flex-col gap-2 text-base font-light text-zinc-500 select-none items-start leading-tight">
         {check.description.map((d, i) => (
@@ -141,7 +155,7 @@ function InstallModal({ check, skip, next }: { check: InstallCheck, skip: () => 
       </div>
       <div className="flex flex-col gap-1">
         <Button onClick={() => handleInstall(check.installKey)}>
-          {check.action}
+          {checking ? 'Continue' : check.action}
         </Button>
         {check.explainer && (
           <Collapsible open={explainerOpen} onOpenChange={setExplainerOpen}>
@@ -190,8 +204,8 @@ export default function OnboardingModal() {
   const [step, setStep] = useState(0);
   const check = onboarding[step] as InstallCheck;
   const { setModal } = useContext(ModalContext);
-  const [dotfilesCheck] = useStatusCheck('dotfiles')
-  const [accessibilityCheck] = useStatusCheck('accessibility')
+  const [dotfilesCheck, refreshDotfiles] = useStatusCheck('dotfiles')
+  const [accessibilityCheck, refreshAccessibility] = useStatusCheck('accessibility')
   
   // these let us skip steps
   const [dotfiles, setDotfiles] = useState(dotfilesCheck)
@@ -199,6 +213,11 @@ export default function OnboardingModal() {
   const checksComplete = dotfiles && accessibility
 
   // console.log({ id: check.id, checksComplete, dotfiles, accessibility })
+
+  useEffect(() => {
+    refreshAccessibility()
+    refreshDotfiles()
+  }, [refreshAccessibility, refreshDotfiles])
 
   useEffect(() => {
     if (!checksComplete) return

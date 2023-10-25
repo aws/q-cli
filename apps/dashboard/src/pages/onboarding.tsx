@@ -1,3 +1,5 @@
+import { Button } from "@/components/ui/button";
+import { State } from "@withfig/api-bindings";
 import { Link } from "react-router-dom";
 
 // const tasks = [
@@ -37,6 +39,28 @@ import { Link } from "react-router-dom";
 //   // updateProgress()
 //   // }, [taskComplete, updateProgress])
 
+// function parseToCode(string: string) {
+//   const strArray = string.split('`')
+
+//   if (string.charAt(0) === '`') {
+//     strArray.map((s, i) => {
+//       if (i % 2 !== 0) {
+//         return <Code key={i}>{s}</Code>
+//       } else {
+//         return <span key={i}>{s}</span>
+//       }
+//     })
+//   } else {
+//     strArray.map((s, i) => {
+//       if (i % 2 !== 0) {
+//         return <span key={i}>{s}</span>
+//       } else {
+//         return <Code key={i}>{s}</Code>
+//       }
+//     })
+//   }
+// }
+
 //   return (
 //     <div className="flex p-4 pl-0">
 //       {/* <div className="w-12 flex-none flex flex-col"></div> */}
@@ -57,9 +81,9 @@ export default function Page() {
   //   setCompletionPercentage(tasksCompleted / tasks.length * 100)
   // }, [tasksCompleted])
 
-  // function startOnboarding() {
-  //   State.set("desktop.completedOnboarding", false)
-  // }
+  function startOnboarding() {
+    State.set("desktop.completedOnboarding", false)
+  }
 
   return (
     <div className="flex flex-col items-start gap-4">
@@ -97,12 +121,12 @@ export default function Page() {
           <Task task={t} key={i} updateProgress={() => setTasksCompleted(tasksCompleted + 1)}/>
         ))} */}
       </div>
-      {/* <Button
+      <Button
           onClick={startOnboarding}
           className="disabled:bg-zinc-400 h-auto py-2 px-6 mt-1"
         >
           Open onboarding
-        </Button> */}
+        </Button>
     </div>
   );
 }

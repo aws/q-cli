@@ -47,16 +47,9 @@ function FeatureIntro({ intro }: { intro: Intro }) {
 
   return (
     <section className="flex flex-col p-6 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
-      <div className="flex gap-4">
-        <div className="flex flex-col gap-2">
-          <Switch
-            onClick={toggleSwitch}
-            checked={localValue as boolean}
-            variant={"inverted"}
-          />
-        </div>
+      <div className="flex gap-4 justify-between w-full">
         <div className="flex gap-4">
-        {/* {getIconFromName(intro.title, 48)} */}
+        {getIconFromName(intro.title, 48)}
           <div className="flex flex-col">
             <h1 className="font-bold text-2xl font-ember leading-none">
               {intro.title}
@@ -71,6 +64,14 @@ function FeatureIntro({ intro }: { intro: Intro }) {
               </ExternalLink>
             </p>
           </div>
+        </div>
+        <div className="flex items-center gap-2">
+          <span className="font-bold">{localValue ? 'On' : 'Off'}</span>
+          <Switch
+            onClick={toggleSwitch}
+            checked={localValue as boolean}
+            variant={"inverted"}
+          />
         </div>
       </div>
     </section>
