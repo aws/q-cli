@@ -5,6 +5,7 @@ mod util;
 use std::time::SystemTime;
 
 use amzn_toolkit_telemetry::config::AppName;
+use amzn_toolkit_telemetry::error::DisplayErrorContext;
 use amzn_toolkit_telemetry::types::{
     AwsProduct,
     MetricDatum,
@@ -137,8 +138,9 @@ impl TelemetryClient {
                 .metric_data(inner)
                 .send()
                 .await
+                .map_err(|err| DisplayErrorContext(err))
             {
-                error!(%err, ?metric_name, "Failed to post metric");
+                error!(?metric_name, %err, "Failed to post metric");
             }
         });
     }
