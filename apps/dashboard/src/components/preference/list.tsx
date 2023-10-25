@@ -4,10 +4,10 @@ import { Setting } from "./listItem";
 import { useEffect, useState } from "react";
 import { Settings } from "@withfig/api-bindings";
 import { getIconFromName } from "@/lib/icons";
-import { Button } from "../ui/button";
 import ExternalLink from "../util/external-link";
 import { interpolateSettingBoolean } from "@/lib/utils";
 import { useSetting } from "@/hooks/store/useSetting";
+import { Switch } from "../ui/switch";
 
 type PrefSection = {
   title: string;
@@ -28,39 +28,51 @@ type Intro = {
 
 function FeatureIntro({ intro }: { intro: Intro }) {
   const [setting, setSetting] = useSetting(intro.enable.flag);
-  const [inputValue, setInputValue] = useState<PrefDefault>(intro.enable.default);
-  const localValue = interpolateSettingBoolean(inputValue as boolean, intro.enable.inverted)
-  
+  const [inputValue, setInputValue] = useState<PrefDefault>(
+    intro.enable.default
+  );
+  const localValue = interpolateSettingBoolean(
+    inputValue as boolean,
+    intro.enable.inverted
+  );
+
   // see if this specific setting is set in config file, then synchronize the initial state
   useEffect(() => {
     if (setting !== undefined) setInputValue(setting);
   }, [setting]);
 
   function toggleSwitch() {
-    setSetting(!inputValue)
+    setSetting(!inputValue);
   }
 
   return (
     <section className="flex flex-col p-6 gap-4 w-full gradient-cw-secondary-light rounded-lg items-start text-white">
+      <div className="flex gap-4">
+        <div className="flex flex-col gap-2">
+          <Switch
+            onClick={toggleSwitch}
+            checked={localValue as boolean}
+            variant={"inverted"}
+          />
+        </div>
         <div className="flex gap-4">
+        {/* {getIconFromName(intro.title, 48)} */}
           <div className="flex flex-col">
-          {getIconFromName(intro.title, 48)}
-          <h1 className="font-bold text-2xl font-ember leading-none">{intro.title}</h1>
-          <p className="text-base">
-            <span>{intro.description}</span>
-            <ExternalLink
-              href={intro.link}
-              className="pl-1 text-white font-medium underline underline-offset-4 "
-            >
-              Learn more
-            </ExternalLink>
-          </p>
+            <h1 className="font-bold text-2xl font-ember leading-none">
+              {intro.title}
+            </h1>
+            <p className="text-base">
+              <span>{intro.description}</span>
+              <ExternalLink
+                href={intro.link}
+                className="pl-1 text-white font-medium underline underline-offset-4 "
+              >
+                Learn more
+              </ExternalLink>
+            </p>
           </div>
         </div>
-        <div className="flex flex-col gap-2">
-          <Button variant="glass" className={`${localValue && 'text-white/50 border-white/50 hover:text-white'}`} onClick={toggleSwitch}>{localValue ? 'Enabled' : 'Enable'}</Button>
-          {/* <Switch onClick={toggleSwitch} checked={localValue as boolean} /> */}
-        </div>
+      </div>
     </section>
   );
 }
@@ -118,7 +130,7 @@ export function UserPrefView({
   intro?: Intro;
 }) {
   const [viewDisabled, setViewDisabled] = useState<string | undefined>();
-  const localDisabled = intro?.enable.inverted ? !viewDisabled : viewDisabled
+  const localDisabled = intro?.enable.inverted ? !viewDisabled : viewDisabled;
 
   useEffect(() => {
     if (!intro?.enable) return;
@@ -132,7 +144,7 @@ export function UserPrefView({
       .catch(() => {
         // Errors are thrown every time a setting isn't yet configured
         // so we just swallow those since they'll be set to the default automatically
-        return
+        return;
       });
   }, [intro, intro?.enable.flag]);
 
@@ -142,7 +154,7 @@ export function UserPrefView({
       {children}
       {array.map((section, i) => (
         <UserPrefSection
-          disabled={localDisabled === 'true'}
+          disabled={localDisabled === "true"}
           data={section}
           index={i}
           key={i}
