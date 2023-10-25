@@ -1,4 +1,5 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
+import accessibility_fig from "@assets/images/accessibility_fig.png?url"
 
 const installChecks: InstallCheckWithInstallKey[] = [
   {
@@ -66,7 +67,7 @@ const installChecks: InstallCheckWithInstallKey[] = [
       "CodeWhisperer uses this permission to position the Autocomplete window and insert text on your behalf.",
       "If enabling it isn't working, try toggling it off and on again or restarting CodeWhisperer.",
     ],
-    image: "/public/images/accessibility_fig.png",
+    image: accessibility_fig,
     action: "Enable",
   },
   // {
