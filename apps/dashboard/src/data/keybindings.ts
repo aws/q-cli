@@ -24,7 +24,7 @@ const keybindings = [
     title: 'Appearance',
     actions: [
       {
-        id: "autocomplete.inreaseSize",
+        id: "autocomplete.increaseSize",
         title: "Increase window size",
         availability: "WHEN_FOCUSED",
         type: 'keystrokes',
