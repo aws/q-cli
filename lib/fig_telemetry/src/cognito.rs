@@ -60,14 +60,24 @@ pub(crate) async fn get_cognito_credentials_send(pool_id: CognitoPoolId) -> Resu
         .app_name(AppName::new(APP_NAME).unwrap())
         .build();
     let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
+
+    let identity_id = client
+        .get_id()
+        .identity_pool_id(pool_id.id)
+        .send()
+        .await
+        .map_err(CredentialsError::provider_error)?
+        .identity_id
+        .ok_or(CredentialsError::provider_error("no identity_id from get_id"))?;
+    
     let credentials = client
         .get_credentials_for_identity()
-        .identity_id(pool_id.id)
+        .identity_id(identity_id)
         .send()
         .await
         .map_err(CredentialsError::provider_error)?
         .credentials
-        .ok_or(CredentialsError::provider_error("credentials not found"))?;
+        .ok_or(CredentialsError::provider_error("no credentials from get_credentials_for_identity"))?;
 
     if let Ok(json) = serde_json::to_value(CredentialsJson {
         access_key_id: credentials.access_key_id.clone(),
