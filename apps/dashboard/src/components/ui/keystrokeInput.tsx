@@ -17,7 +17,7 @@ export function Keystroke ({ keybinding }: { keybinding: string }) {
 
   return (
     <button
-      onClick={() => setSetting(null)}
+      onClick={() => setSetting('ignore')}
       className="text-white/50 italic text-center text-xs flex justify-center gap-[2px] py-1 pl-[2px] group hover:bg-black hover:text-white rounded-md p-1 px-2 items-center pr-0 hover:pr-2 transition-all"
     >
       {keybinding
