@@ -31,8 +31,7 @@ use crate::event::{
 use crate::figterm::FigtermState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
-    DASHBOARD_INITIAL_SIZE,
-    DASHBOARD_ONBOARDING_SIZE,
+    DASHBOARD_SIZE,
     LOGIN_PATH,
 };
 use crate::{
@@ -201,7 +200,7 @@ pub async fn login(proxy: &EventLoopProxy) -> LocalResult {
             window_event: WindowEvent::Batch(vec![
                 WindowEvent::NavigateRelative { path: "/".into() },
                 WindowEvent::UpdateWindowGeometry {
-                    size: Some(DASHBOARD_INITIAL_SIZE),
+                    size: Some(DASHBOARD_SIZE),
                     position: None,
                     anchor: None,
                     tx: None,
@@ -227,13 +226,6 @@ pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {
             window_event: WindowEvent::Batch(vec![
                 WindowEvent::NavigateRelative {
                     path: LOGIN_PATH.into(),
-                },
-                WindowEvent::UpdateWindowGeometry {
-                    position: Some(WindowPosition::Centered),
-                    size: Some(DASHBOARD_ONBOARDING_SIZE),
-                    anchor: None,
-                    tx: None,
-                    dry_run: false,
                 },
                 WindowEvent::Show,
                 // We need to reload here because dashboard caches a lot of stuff and we dont delete it

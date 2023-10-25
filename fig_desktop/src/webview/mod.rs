@@ -60,7 +60,6 @@ use self::notification::WebviewNotificationsState;
 use crate::event::{
     Event,
     WindowEvent,
-    WindowPosition,
 };
 use crate::figterm::FigtermState;
 use crate::notification_bus::{
@@ -99,8 +98,7 @@ pub const DASHBOARD_ID: WindowId = WindowId(Cow::Borrowed("dashboard"));
 pub const AUTOCOMPLETE_ID: WindowId = WindowId(Cow::Borrowed("autocomplete"));
 pub const COMPANION_ID: WindowId = WindowId(Cow::Borrowed("companion"));
 
-pub const DASHBOARD_ONBOARDING_SIZE: LogicalSize<f64> = LogicalSize::new(590.0, 480.0);
-pub const DASHBOARD_INITIAL_SIZE: LogicalSize<f64> = LogicalSize::new(1030.0, 720.0);
+pub const DASHBOARD_SIZE: LogicalSize<f64> = LogicalSize::new(960.0, 720.0);
 pub const DASHBOARD_MINIMUM_SIZE: LogicalSize<f64> = LogicalSize::new(700.0, 480.0);
 
 pub const AUTOCOMPLETE_WINDOW_TITLE: &str = "Fig Autocomplete";
@@ -573,31 +571,23 @@ pub fn build_dashboard(
         page,
     }: DashboardOptions,
 ) -> wry::Result<WebView> {
-    let mut window = WindowBuilder::new()
+    let window = WindowBuilder::new()
         .with_title("CodeWhisperer")
+        .with_inner_size(DASHBOARD_SIZE)
+        .with_min_inner_size(DASHBOARD_MINIMUM_SIZE)
         .with_resizable(true)
         .with_maximizable(false)
         .with_visible(visible)
         .with_focused(visible)
         .with_always_on_top(false)
         .with_window_icon(Some(utils::ICON.clone()))
-        .with_theme(*THEME);
+        .with_theme(*THEME)
+        .build(event_loop)?;
 
     // #[cfg(not(target_os = "linux"))]
     // {
     //     window = window.with_menu(menu::menu_bar());
     // }
-
-    match show_onboarding {
-        true => window = window.with_inner_size(DASHBOARD_ONBOARDING_SIZE),
-        false => {
-            window = window
-                .with_inner_size(DASHBOARD_INITIAL_SIZE)
-                .with_min_inner_size(DASHBOARD_MINIMUM_SIZE)
-        },
-    }
-
-    let window = window.build(event_loop)?;
 
     #[cfg(target_os = "linux")]
     {
@@ -999,13 +989,6 @@ async fn init_webview_notification_listeners(proxy: EventLoopProxy) {
                             window_event: WindowEvent::Batch(vec![
                                 WindowEvent::NavigateRelative {
                                     path: LOGIN_PATH.into(),
-                                },
-                                WindowEvent::UpdateWindowGeometry {
-                                    position: Some(WindowPosition::Centered),
-                                    size: Some(DASHBOARD_ONBOARDING_SIZE),
-                                    anchor: None,
-                                    tx: None,
-                                    dry_run: false,
                                 },
                                 WindowEvent::Show,
                             ]),

@@ -13,16 +13,8 @@ use super::{
     RequestResult,
     RequestResultImpl,
 };
-use crate::event::{
-    Event,
-    WindowEvent,
-    WindowPosition,
-};
-use crate::webview::DASHBOARD_INITIAL_SIZE;
-use crate::{
-    EventLoopProxy,
-    DASHBOARD_ID,
-};
+use crate::event::Event;
+use crate::EventLoopProxy;
 
 // Sync all of the user's data from the server and restart the daemon after they log in
 pub async fn post_login(proxy: &EventLoopProxy) {
@@ -73,20 +65,6 @@ pub async fn onboarding(request: OnboardingRequest, proxy: &EventLoopProxy) -> R
         },
         OnboardingAction::FinishOnboarding => {
             post_login(proxy).await;
-
-            proxy
-                .send_event(Event::WindowEvent {
-                    window_id: DASHBOARD_ID,
-                    window_event: WindowEvent::UpdateWindowGeometry {
-                        position: Some(WindowPosition::Centered),
-                        size: Some(DASHBOARD_INITIAL_SIZE),
-                        anchor: None,
-                        tx: None,
-                        dry_run: false,
-                    },
-                })
-                .ok();
-
             RequestResult::success()
         },
         OnboardingAction::LaunchShellOnboarding => {
