@@ -39,10 +39,7 @@ function App() {
     }
   }, [location])
 
-  console.log(0, "new render", {onboardingComplete, loggedIn})
-
   useEffect(() => {
-    console.log(1, "state changed", {onboardingComplete, loggedIn})
     if (onboardingComplete === null) {
       State.get("desktop.completedOnboarding").then((r) => {
         if (!r) {
@@ -55,7 +52,6 @@ function App() {
     }
 
     if (onboardingComplete === false) {
-      console.log(2, "state changed", {onboardingComplete, loggedIn})
       setModal(<InstallModal />);
       return;
     }
@@ -115,7 +111,7 @@ const NAV_DATA = [
   },
   {
     type: "header",
-    name: "Terminal",
+    name: "Features",
   },
   {
     type: "link",
