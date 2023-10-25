@@ -1,13 +1,10 @@
 import { Check, Plus, X } from "lucide-react";
 import {
-  // Dispatch,
-  // SetStateAction,
   useCallback,
   useContext,
   useEffect,
   useState,
 } from "react";
-// import { PrefDefault } from "@/types/preferences";
 import {
   VALID_CONTROL_KEYS, getKeyName, getKeySymbol
 } from "@/lib/keybindings";
@@ -16,7 +13,7 @@ import { useKeybindings } from "@/hooks/store/useKeybindings";
 import { useSetting } from "@/hooks/store";
 
 export function Keystroke ({ keybinding }: { keybinding: string }) {
-  const setSetting = useSetting(`autocomplete.keybinding.${keybinding}`)[1]
+  const setSetting = useSetting(`autocomplete.keybindings.${keybinding}`)[1]
 
   return (
     <button
@@ -39,8 +36,8 @@ export function Keystroke ({ keybinding }: { keybinding: string }) {
 }
 
 export function Input ({ command, value, invalid, cancel }: { command: string, value: string[], invalid: boolean, cancel: () => void }) {
-  const joinedValue = value.join('+')
-  const setSetting = useSetting(joinedValue)[1]
+  const joinedValue = value ? value.join('+') : null
+  const setSetting = useSetting(`autocomplete.keybindings.${joinedValue}` ?? '')[1]
 
   function handleNewKeystroke() {
     if (!value) {
@@ -106,6 +103,8 @@ export default function KeystrokeGroup({
   const [inputValue, setInputValue] = useState<string[] | null>(null);
   const [isInvalid, setIsInvalid] = useState(false);
 
+  console.log({inputValue})
+
   const inputOpen = listening === id
 
   type keypressEvent = {
@@ -167,7 +166,7 @@ export default function KeystrokeGroup({
     setListening(id);
   }
 
-  console.log({command, keybindings})
+  // console.log({command, keybindings})
 
   return (
     <div className="flex flex-col gap-1">
