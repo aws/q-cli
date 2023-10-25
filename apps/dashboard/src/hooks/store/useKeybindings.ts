@@ -22,10 +22,11 @@ export function useKeybindings(command: string, defaults: string[]) {
     // Has the key been assigned to anything?
     const index = Object.keys(settings).indexOf(`autocomplete.keybindings.${d}`)
     const value = Object.values(settings)[index]
-    const keyIsSafe = index === -1 || value === ''
-    const keyCommandMatch = value === command
+    const keyIsSafe = index === -1 || value === 'ignore'
+    // const keyCommandMatch = value === command
 
-    return keyIsSafe || keyCommandMatch
+    // return keyIsSafe || keyCommandMatch
+    return keyIsSafe
   })
 
   return [...keybindingsByCommand, ...unchangedDefaults]
