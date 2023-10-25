@@ -1,3 +1,4 @@
+use amzn_toolkit_telemetry::config::AppName;
 use aws_credential_types::provider::error::CredentialsError;
 use aws_credential_types::{
     provider,
@@ -8,6 +9,8 @@ use aws_sdk_cognitoidentity::primitives::{
     DateTime,
     DateTimeFormat,
 };
+
+use crate::APP_NAME;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub(crate) struct CognitoPoolId {
@@ -52,7 +55,10 @@ struct CredentialsJson {
 
 pub(crate) async fn get_cognito_credentials_send(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
     let region = pool_id.region();
-    let conf = aws_sdk_cognitoidentity::Config::builder().region(region).build();
+    let conf = aws_sdk_cognitoidentity::Config::builder()
+        .region(region)
+        .app_name(AppName::new(APP_NAME).unwrap())
+        .build();
     let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
     let credentials = client
         .get_credentials_for_identity()

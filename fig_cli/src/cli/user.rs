@@ -12,8 +12,12 @@ use auth::secret_store::SecretStore;
 use clap::Subcommand;
 use crossterm::style::Stylize;
 use eyre::Result;
-use fig_ipc::local::logout_command;
+use fig_ipc::local::{
+    login_command,
+    logout_command,
+};
 use serde_json::json;
+use tracing::error;
 
 use super::OutputFormat;
 use crate::util::choose;
@@ -92,6 +96,10 @@ impl RootUserSubcommand {
                     },
                     // Other methods soon!
                 };
+
+                if let Err(err) = login_command().await {
+                    error!(%err, "Failed to send login command");
+                }
 
                 Ok(())
             },

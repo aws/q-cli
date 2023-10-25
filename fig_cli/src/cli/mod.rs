@@ -246,7 +246,7 @@ impl Cli {
         let command = std::env::args().collect::<Vec<_>>();
         debug!("Command ran: {:?}", command);
 
-        self.send_telemetry();
+        self.send_telemetry().await;
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
@@ -317,7 +317,7 @@ impl Cli {
         }
     }
 
-    fn send_telemetry(&self) {
+    async fn send_telemetry(&self) {
         match &self.subcommand {
             None
             | Some(
@@ -328,7 +328,7 @@ impl Cli {
                 | CliRootCommands::Hook(_),
             ) => {},
             Some(subcommand) => {
-                fig_telemetry::send_cli_subcommand_executed(subcommand.name());
+                fig_telemetry::send_cli_subcommand_executed(subcommand.name()).await;
             },
         }
     }

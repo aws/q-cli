@@ -853,7 +853,7 @@ impl InternalSubcommand {
                 writeln!(stdout(), "{buffer}{insert_text}").ok();
             },
             InternalSubcommand::GhostTextAccept { buffer, suggestion } => {
-                fig_telemetry::send_ghost_text_actioned(true, buffer.len(), suggestion.len());
+                fig_telemetry::send_ghost_text_actioned(true, buffer.len(), suggestion.len()).await;
             },
         }
 

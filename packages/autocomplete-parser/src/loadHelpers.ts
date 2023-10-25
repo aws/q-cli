@@ -143,9 +143,10 @@ export async function importSpecFromFile(
 /**
  * Specs can only be loaded from non "secure" contexts, so we can't load from https
  */
-export const canLoadFigspec = () =>
-  window.location.protocol === "figapp:" ||
-  window.location.protocol === "http:";
+export const canLoadFigspec = () => false;
+// TODO: use figspec everywhere
+// window.location.protocol === "figapp:" ||
+// window.location.protocol === "http:";
 
 // TODO: fedeci this is a problem for diff-versioned specs
 export async function importFromPublicCDN<T = SpecFileImport>(

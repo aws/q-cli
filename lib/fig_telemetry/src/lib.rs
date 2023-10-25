@@ -4,6 +4,7 @@ mod util;
 
 use std::time::SystemTime;
 
+use amzn_toolkit_telemetry::config::AppName;
 use amzn_toolkit_telemetry::types::{
     AwsProduct,
     MetricDatum,
@@ -40,7 +41,7 @@ pub use install_method::{
     InstallMethod,
 };
 use once_cell::sync::Lazy;
-use parking_lot::Mutex;
+use tokio::sync::Mutex;
 use tokio::task::JoinSet;
 use tracing::error;
 use util::telemetry_is_disabled;
@@ -53,6 +54,8 @@ pub enum Error {
     ClientError(#[from] amzn_toolkit_telemetry::operation::post_metrics::PostMetricsError),
 }
 
+const APP_NAME: &str = "codewhisperer-terminal";
+
 static CLIENT: Lazy<TelemetryClient> = Lazy::new(TelemetryClient::new);
 
 // endpoints from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
@@ -62,12 +65,21 @@ const _EXTERNAL_PROD_ENDPOINT: &str = "https://client-telemetry.us-east-1.amazon
 
 static JOIN_SET: Lazy<Mutex<JoinSet<()>>> = Lazy::new(|| Mutex::new(JoinSet::new()));
 
+/// Joins all current telemetry events
 pub async fn finish_telemetry() {
-    let mut set = JOIN_SET.lock();
+    let mut set = JOIN_SET.lock().await;
     while let Some(res) = set.join_next().await {
         if let Err(err) = res {
             error!(%err, "Failed to join telemetry event");
         }
+    }
+}
+
+/// Joins all current telemetry events and panics if any fail to join
+pub async fn finish_telemetry_unwrap() {
+    let mut set = JOIN_SET.lock().await;
+    while let Some(res) = set.join_next().await {
+        res.unwrap();
     }
 }
 
@@ -89,13 +101,14 @@ impl TelemetryClient {
         let aws_client = Client::from_conf(
             Config::builder()
                 .endpoint_url(BETA_ENDPOINT)
+                .app_name(AppName::new(APP_NAME).unwrap())
                 .credentials_provider(CognitoProvider::new(BETA_POOL))
                 .build(),
         );
         Self { client_id, aws_client }
     }
 
-    pub fn post_metric(&self, inner: impl Into<MetricDatum>) {
+    pub async fn post_metric(&self, inner: impl Into<MetricDatum>) {
         if telemetry_is_disabled() {
             return;
         }
@@ -104,13 +117,14 @@ impl TelemetryClient {
         let client_id = self.client_id.clone();
         let inner = inner.into();
 
-        let mut set = JOIN_SET.lock();
+        let mut set = JOIN_SET.lock().await;
         set.spawn(async move {
             let product = AwsProduct::Terminal;
             let product_version = env!("CARGO_PKG_VERSION");
             let os = std::env::consts::OS;
             let os_architecture = std::env::consts::ARCH;
             let os_version = os_version().map(|v| v.to_string()).unwrap_or_default();
+            let metric_name = inner.metric_name().unwrap_or_default().to_owned();
 
             if let Err(err) = aws_client
                 .post_metrics()
@@ -124,83 +138,102 @@ impl TelemetryClient {
                 .send()
                 .await
             {
-                error!("{}", err);
+                error!(%err, ?metric_name, "Failed to post metric");
             }
         });
     }
 }
 
-pub fn send_user_logged_in() {
-    CLIENT.post_metric(metrics::CodewhispererterminalUserLoggedIn {
-        create_time: Some(SystemTime::now()),
-        value: None,
-    });
+pub async fn send_user_logged_in() {
+    CLIENT
+        .post_metric(metrics::CodewhispererterminalUserLoggedIn {
+            create_time: Some(SystemTime::now()),
+            value: None,
+        })
+        .await;
 }
 
-pub fn send_completion_inserted(command: impl Into<String>) {
-    CLIENT.post_metric(metrics::CodewhispererterminalCompletionInserted {
-        create_time: None,
-        value: None,
-        codewhispererterminal_command: Some(CodewhispererterminalCommand(command.into())),
-        codewhispererterminal_duration: None,
-    });
+pub async fn send_completion_inserted(command: impl Into<String>) {
+    CLIENT
+        .post_metric(metrics::CodewhispererterminalCompletionInserted {
+            create_time: None,
+            value: None,
+            codewhispererterminal_command: Some(CodewhispererterminalCommand(command.into())),
+            codewhispererterminal_duration: None,
+        })
+        .await;
 }
 
-pub fn send_ghost_text_actioned(accepted: bool, edit_buffer_len: usize, suggested_chars_len: usize) {
-    CLIENT.post_metric(metrics::CodewhispererterminalGhostTextActioned {
-        create_time: None,
-        value: None,
-        codewhispererterminal_duration: None,
-        codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
-        codewhispererterminal_typed_count: Some(CodewhispererterminalTypedCount(edit_buffer_len as i64)),
-        codewhispererterminal_suggested_count: Some(CodewhispererterminalSuggestedCount(suggested_chars_len as i64)),
-    })
+pub async fn send_ghost_text_actioned(accepted: bool, edit_buffer_len: usize, suggested_chars_len: usize) {
+    CLIENT
+        .post_metric(metrics::CodewhispererterminalGhostTextActioned {
+            create_time: None,
+            value: None,
+            codewhispererterminal_duration: None,
+            codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
+            codewhispererterminal_typed_count: Some(CodewhispererterminalTypedCount(edit_buffer_len as i64)),
+            codewhispererterminal_suggested_count: Some(CodewhispererterminalSuggestedCount(
+                suggested_chars_len as i64,
+            )),
+        })
+        .await;
 }
 
-pub fn send_translation_actioned(
+pub async fn send_translation_actioned(
     // time_viewed: i64,
     // time_waited: i64,
     accepted: bool,
 ) {
-    CLIENT.post_metric(CodewhispererterminalTranslationActioned {
-        create_time: None,
-        value: None,
-        codewhispererterminal_duration: None,
-        codewhispererterminal_time_to_suggestion: None,
-        codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
-    });
+    CLIENT
+        .post_metric(CodewhispererterminalTranslationActioned {
+            create_time: None,
+            value: None,
+            codewhispererterminal_duration: None,
+            codewhispererterminal_time_to_suggestion: None,
+            codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(accepted)),
+        })
+        .await;
 }
 
-pub fn send_cli_subcommand_executed(command_name: impl Into<String>) {
-    CLIENT.post_metric(CodewhispererterminalCliSubcommandExecuted {
-        create_time: None,
-        value: None,
-        codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand(command_name.into())),
-    });
+pub async fn send_cli_subcommand_executed(command_name: impl Into<String>) {
+    CLIENT
+        .post_metric(CodewhispererterminalCliSubcommandExecuted {
+            create_time: None,
+            value: None,
+            codewhispererterminal_subcommand: Some(CodewhispererterminalSubcommand(command_name.into())),
+        })
+        .await;
 }
 
-pub fn send_doctor_check_failed(failed_check: impl Into<String>) {
-    CLIENT.post_metric(CodewhispererterminalDoctorCheckFailed {
-        create_time: None,
-        value: None,
-        codewhispererterminal_doctor_check: Some(CodewhispererterminalDoctorCheck(failed_check.into())),
-    });
+pub async fn send_doctor_check_failed(failed_check: impl Into<String>) {
+    CLIENT
+        .post_metric(CodewhispererterminalDoctorCheckFailed {
+            create_time: None,
+            value: None,
+            codewhispererterminal_doctor_check: Some(CodewhispererterminalDoctorCheck(failed_check.into())),
+        })
+        .await;
 }
 
-pub fn send_dashboard_page_viewed(route: impl Into<String>) {
-    CLIENT.post_metric(CodewhispererterminalDashboardPageViewed {
-        create_time: None,
-        value: None,
-        codewhispererterminal_route: Some(CodewhispererterminalRoute(route.into())),
-    });
+pub async fn send_dashboard_page_viewed(route: impl Into<String>) {
+    CLIENT
+        .post_metric(CodewhispererterminalDashboardPageViewed {
+            create_time: None,
+            value: None,
+            codewhispererterminal_route: Some(CodewhispererterminalRoute(route.into())),
+        })
+        .await;
 }
 
-pub fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
-    CLIENT.post_metric(CodewhispererterminalMenuBarActioned {
-        create_time: None,
-        value: None,
-        codewhispererterminal_menu_bar_item: menu_bar_item.map(|item| CodewhispererterminalMenuBarItem(item.into())),
-    });
+pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
+    CLIENT
+        .post_metric(CodewhispererterminalMenuBarActioned {
+            create_time: None,
+            value: None,
+            codewhispererterminal_menu_bar_item: menu_bar_item
+                .map(|item| CodewhispererterminalMenuBarItem(item.into())),
+        })
+        .await;
 }
 
 #[cfg(test)]
@@ -210,10 +243,13 @@ mod test {
     #[tokio::test]
     async fn test_send() {
         let client = TelemetryClient::new();
-        client.post_metric(metrics::UiClick {
-            create_time: None,
-            value: None,
-            element_id: None,
-        });
+        client
+            .post_metric(metrics::UiClick {
+                create_time: None,
+                value: None,
+                element_id: None,
+            })
+            .await;
+        finish_telemetry_unwrap().await;
     }
 }

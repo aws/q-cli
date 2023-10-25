@@ -474,7 +474,9 @@ function App() {
 
   let contents: React.ReactElement;
 
-  if (!isLoading) {
+  if (isLoading) {
+    contents = <LoadingIcon />;
+  } else {
     contents = (
       <>
         {windowState.isAboveCursor && devModeWarning}
@@ -540,22 +542,22 @@ function App() {
         {!windowState.isAboveCursor && devModeWarning}
       </>
     );
-  } else if (isLoading) {
-    contents = <LoadingIcon />;
-  } else {
-    contents = (
-      <div className="small-text m-1 w-auto space-y-1.5 whitespace-nowrap rounded bg-amber-500 px-2.5 py-2 text-black">
-        <div className="font-bold">Not logged in</div>
-        <div className="text-sm">
-          Please run{" "}
-          <code className="rounded-sm bg-neutral-700 p-0.5 text-neutral-200">
-            cw login
-          </code>{" "}
-          to login/signup
-        </div>
-      </div>
-    );
   }
+
+  //                else {
+  //   contents = (
+  //     <div className="small-text m-1 w-auto space-y-1.5 whitespace-nowrap rounded bg-amber-500 px-2.5 py-2 text-black">
+  //       <div className="font-bold">Not logged in</div>
+  //       <div className="text-sm">
+  //         Please run{" "}
+  //         <code className="rounded-sm bg-neutral-700 p-0.5 text-neutral-200">
+  //           cw login
+  //         </code>{" "}
+  //         to login/signup
+  //       </div>
+  //     </div>
+  //   );
+  // }
 
   return (
     <div

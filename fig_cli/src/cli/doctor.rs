@@ -1985,7 +1985,7 @@ where
 
         if result.is_err() {
             let analytics_event_name = check.analytics_event_name();
-            fig_telemetry::send_doctor_check_failed(analytics_event_name);
+            fig_telemetry::send_doctor_check_failed(analytics_event_name).await;
         }
 
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
