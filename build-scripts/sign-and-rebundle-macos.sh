@@ -15,24 +15,9 @@ function signed_package_exists() {
 }
 
 function post_request() {
-    # local message='{"type": "request", "command": "sign"}'
-    # local queue_url=$(aws sqs get-queue-url --queue-name "$SIGNING_REQUEST_QUEUE_NAME" | jq -r '.QueueUrl')
-    # aws sqs send-message --queue-url "$queue_url" --message-body "$message"
-
-    SOURCE_ARN="arn:aws:s3:::$BUCKET_NAME/pre-signed/package.tar.gz"
-    DESTINATION_ARN="arn:aws:s3:::$BUCKET_NAME/signed/package.tar.gz"
-    IAM_ROLE_ARN="arn:aws:iam::230592382359:role/codewhisperer-ec-signing-role"
-     
-    api_url="https://electric-company.integ.amazon.com/api/sign"
-    post_data="{ \"data\": { \"source\": { \"arn\": \"$SOURCE_ARN\" }, \"destination\": { \"arn\": \"$DESTINATION_ARN\" }, \"iam-role\": { \"arn\": \"$IAM_ROLE_ARN\" } } }"
-    echo "Making request with data: $post_data"
-    sign_response=$(curl -X POST --negotiate -u : -H "Content-Type: application/json" -d "$post_data" "$api_url/app")
-    echo "$sign_response"
-    sign_task_id=$(echo "$sign_response" | jq '.data.task_id')
-    sleep 5
-    req_status=$(curl -s -X GET -k --negotiate -u : "$api_url/$sign_task_id/status" | jq -r ".data.status")
-    while [[ "$req_status" =~ ^(idle|in_progress)$ ]]; do req_status=$(curl -s -X GET -k --negotiate -u : "$api_url/$sign_task_id/status" | jq -r ".data.status"); echo "$req_status..."; sleep 1; done
-    echo "FINISHED: $req_status"
+    local message='{"type": "request", "command": "sign"}'
+    local queue_url=$(aws sqs get-queue-url --queue-name "$SIGNING_REQUEST_QUEUE_NAME" | jq -r '.QueueUrl')
+    aws sqs send-message --queue-url "$queue_url" --message-body "$message"
 }
 
 function build_signing_package() {
