@@ -16,6 +16,7 @@ use fig_proto::local::{
     InputMethodCommand,
     LogLevelCommand,
     LogLevelResponse,
+    LoginCommand,
     LogoutCommand,
     OpenUiElementCommand,
     PromptAccessibilityCommand,
@@ -117,6 +118,11 @@ pub async fn restart_command() -> Result<()> {
 
 pub async fn quit_command() -> Result<()> {
     let command = command::Command::Quit(QuitCommand {});
+    send_command_to_socket(command).await
+}
+
+pub async fn login_command() -> Result<()> {
+    let command = command::Command::Login(LoginCommand {});
     send_command_to_socket(command).await
 }
 

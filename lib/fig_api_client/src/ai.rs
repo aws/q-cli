@@ -4,6 +4,7 @@ use amzn_codewhisperer_bearer::operation::generate_completions::{
 };
 use amzn_codewhisperer_bearer::Client;
 use auth::builder_id::BearerResolver;
+use aws_config::AppName;
 use aws_credential_types::Credentials;
 use aws_smithy_http::body::SdkBody;
 use aws_smithy_http::result::SdkError;
@@ -13,7 +14,7 @@ use tokio::sync::OnceCell;
 const DEFAULT_REGION: &str = "us-east-1";
 // "https://rts.alpha-us-west-2.codewhisperer.ai.aws.dev"
 const CODEWHISPERER_ENDPOINT: &str = "https://codewhisperer.us-east-1.amazonaws.com";
-const APP_NAME: &str = "figTest";
+const APP_NAME: &str = "codewhisperer-terminal";
 
 // fn aws_profile() -> Option<String> {
 //     fig_settings::state::get_string("aws.profile").ok().flatten()
@@ -43,7 +44,7 @@ async fn cw_client() -> &'static Client {
 
             let conf = conf_builder
                 .bearer_token_resolver(BearerResolver)
-                .app_name(aws_config::AppName::new(APP_NAME).unwrap())
+                .app_name(AppName::new(APP_NAME).unwrap())
                 .endpoint_url(CODEWHISPERER_ENDPOINT)
                 .build();
 

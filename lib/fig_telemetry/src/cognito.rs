@@ -1,18 +1,16 @@
+use amzn_toolkit_telemetry::config::AppName;
 use aws_credential_types::provider::error::CredentialsError;
 use aws_credential_types::{
     provider,
     Credentials,
 };
 use aws_sdk_cognitoidentity::config::Region;
-use aws_sdk_cognitoidentity::error::SdkError;
-use aws_sdk_cognitoidentity::operation::get_credentials_for_identity::{
-    GetCredentialsForIdentityError,
-    GetCredentialsForIdentityOutput,
-};
 use aws_sdk_cognitoidentity::primitives::{
     DateTime,
     DateTimeFormat,
 };
+
+use crate::APP_NAME;
 
 #[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
 pub(crate) struct CognitoPoolId {
@@ -55,17 +53,56 @@ struct CredentialsJson {
     pub expiration: Option<String>,
 }
 
-pub(crate) async fn get_cognito_credentials_send(
-    pool_id: CognitoPoolId,
-) -> Result<GetCredentialsForIdentityOutput, SdkError<GetCredentialsForIdentityError>> {
+pub(crate) async fn get_cognito_credentials_send(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
     let region = pool_id.region();
-    let conf = aws_sdk_cognitoidentity::Config::builder().region(region).build();
+    let conf = aws_sdk_cognitoidentity::Config::builder()
+        .region(region)
+        .app_name(AppName::new(APP_NAME).unwrap())
+        .build();
     let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
-    client
-        .get_credentials_for_identity()
-        .identity_id(pool_id.id)
+
+    let identity_id = client
+        .get_id()
+        .identity_pool_id(pool_id.id)
         .send()
         .await
+        .map_err(CredentialsError::provider_error)?
+        .identity_id
+        .ok_or(CredentialsError::provider_error("no identity_id from get_id"))?;
+    
+    let credentials = client
+        .get_credentials_for_identity()
+        .identity_id(identity_id)
+        .send()
+        .await
+        .map_err(CredentialsError::provider_error)?
+        .credentials
+        .ok_or(CredentialsError::provider_error("no credentials from get_credentials_for_identity"))?;
+
+    if let Ok(json) = serde_json::to_value(CredentialsJson {
+        access_key_id: credentials.access_key_id.clone(),
+        secret_key: credentials.secret_key.clone(),
+        session_token: credentials.session_token.clone(),
+        expiration: credentials.expiration.and_then(|t| t.fmt(DATE_TIME_FORMAT).ok()),
+    }) {
+        fig_settings::state::set_value(CREDENTIALS_KEY, json).ok();
+    }
+
+    let Some(access_key_id) = credentials.access_key_id else {
+        return Err(CredentialsError::provider_error("access key id not found"));
+    };
+
+    let Some(secret_key) = credentials.secret_key else {
+        return Err(CredentialsError::provider_error("secret access key not found"));
+    };
+
+    Ok(Credentials::new(
+        access_key_id,
+        secret_key,
+        credentials.session_token,
+        credentials.expiration.and_then(|dt| dt.try_into().ok()),
+        "",
+    ))
 }
 
 pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
@@ -76,11 +113,19 @@ pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Cr
                 secret_key,
                 session_token,
                 expiration,
-            }: CredentialsJson = serde_json::from_str(&creds).unwrap();
+            }: CredentialsJson = serde_json::from_str(&creds).map_err(CredentialsError::provider_error)?;
+
+            let Some(access_key_id) = access_key_id else {
+                return get_cognito_credentials_send(pool_id).await;
+            };
+
+            let Some(secret_key) = secret_key else {
+                return get_cognito_credentials_send(pool_id).await;
+            };
 
             Ok(Credentials::new(
-                access_key_id.unwrap(),
-                secret_key.unwrap(),
+                access_key_id,
+                secret_key,
                 session_token,
                 expiration
                     .and_then(|s| DateTime::from_str(&s, DATE_TIME_FORMAT).ok())
@@ -88,32 +133,7 @@ pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Cr
                 "",
             ))
         },
-        None => {
-            let credentials = get_cognito_credentials_send(pool_id)
-                .await
-                .unwrap()
-                .credentials
-                .unwrap();
-
-            let _ = fig_settings::state::set_value(
-                CREDENTIALS_KEY,
-                serde_json::to_value(CredentialsJson {
-                    access_key_id: credentials.access_key_id.clone(),
-                    secret_key: credentials.secret_key.clone(),
-                    session_token: credentials.session_token.clone(),
-                    expiration: credentials.expiration.and_then(|t| t.fmt(DATE_TIME_FORMAT).ok()),
-                })
-                .unwrap(),
-            );
-
-            Ok(Credentials::new(
-                credentials.access_key_id.unwrap(),
-                credentials.secret_key.unwrap(),
-                credentials.session_token,
-                credentials.expiration.and_then(|dt| dt.try_into().ok()),
-                "",
-            ))
-        },
+        None => get_cognito_credentials_send(pool_id).await,
     }
 }
 

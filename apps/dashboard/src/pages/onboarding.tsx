@@ -1,57 +1,56 @@
-import { useState } from "react";
 import { Link } from "react-router-dom";
 
-const tasks = [
-  {
-    title: "Configure your system",
-    description:
-      "Set up accessibility, input methods, and log in with your Builder ID.",
-    check: () => true,
-  },
-  {
-    title: "Choose a theme",
-    description: "Set the CodeWhisperer theme to fit your terminal",
-    check: () => false,
-  },
-  {
-    title: "Customize tab behavior",
-    description: "",
-    check: () => true,
-  },
-  {
-    title: "Run `cw ai`",
-    description: "Convert natural language into Bash commands.",
-    check: () => false,
-  },
-];
+// const tasks = [
+//   {
+//     title: "Configure your system",
+//     description:
+//       "Set up accessibility, input methods, and log in with your Builder ID.",
+//     check: () => true,
+//   },
+//   {
+//     title: "Choose a theme",
+//     description: "Set the CodeWhisperer theme to fit your terminal",
+//     check: () => false,
+//   },
+//   {
+//     title: "Customize tab behavior",
+//     description: "",
+//     check: () => true,
+//   },
+//   {
+//     title: "Run `cw ai`",
+//     description: "Convert natural language into Bash commands.",
+//     check: () => false,
+//   },
+// ];
 
-type Task = {
-  title: string;
-  description?: string;
-  check?: () => boolean;
-};
+// type Task = {
+//   title: string;
+//   description?: string;
+//   check?: () => boolean;
+// };
 
-function Task({ task }: { task: Task; updateProgress: () => void }) {
-  // const taskComplete = task.check() === true
+// function Task({ task }: { task: Task; updateProgress: () => void }) {
+//   // const taskComplete = task.check() === true
 
-  // useEffect(() => {
-  // updateProgress()
-  // }, [taskComplete, updateProgress])
+//   // useEffect(() => {
+//   // updateProgress()
+//   // }, [taskComplete, updateProgress])
 
-  return (
-    <div className="flex p-4 pl-0">
-      {/* <div className="w-12 flex-none flex flex-col"></div> */}
-      <div className="flex flex-col">
-        <h2 className="font-bold">{task.title}</h2>
-        {task.description && <p>{task.description}</p>}
-      </div>
-    </div>
-  );
-}
+//   return (
+//     <div className="flex p-4 pl-0">
+//       {/* <div className="w-12 flex-none flex flex-col"></div> */}
+//       <div className="flex flex-col">
+//         <h2 className="font-bold">{task.title}</h2>
+//         {task.description && <p>{task.description}</p>}
+//       </div>
+//     </div>
+//   );
+// }
 
 export default function Page() {
   // const { setModal } = useContext(ModalContext);
-  const [tasksCompleted, setTasksCompleted] = useState(1);
+  // const [tasksCompleted, setTasksCompleted] = useState(1);
   // const [completionPercentage, setCompletionPercentage] = useState(tasksCompleted / tasks.length * 100);
 
   // useEffect(() => {

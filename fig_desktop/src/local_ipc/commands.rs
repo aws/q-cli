@@ -31,6 +31,7 @@ use crate::event::{
 use crate::figterm::FigtermState;
 use crate::webview::notification::WebviewNotificationsState;
 use crate::webview::{
+    DASHBOARD_INITIAL_SIZE,
     DASHBOARD_ONBOARDING_SIZE,
     LOGIN_PATH,
 };
@@ -191,6 +192,30 @@ pub fn log_level(LogLevelCommand { level }: LogLevelCommand) -> LocalResult {
             old_level: Some(old_level),
         },
     ))))
+}
+
+pub async fn login(proxy: &EventLoopProxy) -> LocalResult {
+    proxy
+        .send_event(Event::WindowEvent {
+            window_id: DASHBOARD_ID,
+            window_event: WindowEvent::Batch(vec![
+                WindowEvent::NavigateRelative { path: "/".into() },
+                WindowEvent::UpdateWindowGeometry {
+                    size: Some(DASHBOARD_INITIAL_SIZE),
+                    position: None,
+                    anchor: None,
+                    tx: None,
+                    dry_run: false,
+                },
+                WindowEvent::Show,
+                // We need to reload here because dashboard caches a lot of stuff and we dont delete it
+                // by just navigating to the login path
+                WindowEvent::Reload,
+            ]),
+        })
+        .ok();
+
+    Ok(LocalResponse::Success(None))
 }
 
 pub async fn logout(proxy: &EventLoopProxy) -> LocalResult {

@@ -1,4 +1,4 @@
-import { Routes, Route, Outlet } from "react-router-dom";
+import { Routes, Route, Outlet, useNavigate } from "react-router-dom";
 // import WhatsNew from "./pages/whats-new";
 import Account from "./pages/settings/account";
 import Help from "./pages/help";
@@ -13,16 +13,17 @@ import Keybindings from "./pages/settings/keybindings";
 import ModalContext from "./context/modal";
 import { useEffect, useRef, useState } from "react";
 import Modal from "./components/modal";
-import { Auth, State, Telemetry } from "@withfig/api-bindings";
+import { Auth, State, Telemetry, Event } from "@withfig/api-bindings";
 import InstallModal from "./components/installs/modal";
 import { getIconFromName } from "./lib/icons";
 import { StoreContext } from "./context/zustand";
 import { createStore } from "./lib/store";
 import ListenerContext from "./context/input";
-import { useLocation } from 'react-router-dom'
+import { useLocation } from "react-router-dom";
 
 function App() {
-  const location = useLocation()
+  const navigate = useNavigate();
+  const location = useLocation();
   const store = useRef(createStore()).current;
   const [listening, setListening] = useState<string | null>(null);
   const [modal, setModal] = useState<React.ReactNode | null>(null);
@@ -33,22 +34,24 @@ function App() {
 
   useEffect(() => {
     try {
-      Telemetry.page('', location.pathname, { ...location })
+      Telemetry.page("", location.pathname, { ...location });
     } catch (e) {
       // ignore errors
     }
-  }, [location])
+  }, [location]);
 
   useEffect(() => {
     if (onboardingComplete === null) {
-      State.get("desktop.completedOnboarding").then((r) => {
-        if (!r) {
+      State.get("desktop.completedOnboarding")
+        .then((r) => {
+          if (!r) {
+            setOnboardingComplete(false);
+          }
+          setOnboardingComplete(r);
+        })
+        .catch(() => {
           setOnboardingComplete(false);
-        }
-        setOnboardingComplete(r);
-      }).catch(() => {
-        setOnboardingComplete(false)
-      })
+        });
     }
 
     if (onboardingComplete === false) {
@@ -60,6 +63,32 @@ function App() {
   useEffect(() => {
     Auth.status().then((r) => setLoggedIn(r.builderId));
   }, [loggedIn]);
+
+useEffect(() => {
+    let unsubscribe: () => void;
+    let isStale = false;
+    Event.subscribe("dashboard.navigate", (request) => {
+      if (
+        typeof request === "object" &&
+        request !== null &&
+        "path" in request &&
+        typeof request.path === "string"
+      ) {
+        navigate(request.path);
+      } else {
+        console.error("Invalid dashboard.navigate request", request);
+      }
+
+      return { unsubscribe: false };
+    })?.then((result) => {
+      unsubscribe = result.unsubscribe;
+      if (isStale) unsubscribe();
+    });
+    return () => {
+      if (unsubscribe) unsubscribe();
+      isStale = true;
+    };
+  }, [navigate]);
 
   return (
     <StoreContext.Provider value={store}>

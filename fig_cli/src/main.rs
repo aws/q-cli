@@ -79,7 +79,11 @@ fn main() -> Result<()> {
     .enable_all()
     .build()?;
 
-    let result = runtime.block_on(parsed.execute());
+    let result = runtime.block_on(async {
+        let result = parsed.execute().await;
+        fig_telemetry::finish_telemetry().await;
+        result
+    });
 
     if let Err(err) = result {
         if get_max_fig_log_level() > LevelFilter::INFO {

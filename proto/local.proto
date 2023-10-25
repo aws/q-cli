@@ -39,6 +39,7 @@ message Command {
     LogLevelCommand log_level = 118;
     DumpStateCommand dump_state = 119;
     DevtoolsCommand devtools = 120;
+    LoginCommand login = 121;
   }
 
   reserved 116;
@@ -79,6 +80,8 @@ message TerminalIntegrationCommand {
 }
 
 message ListTerminalIntegrationsCommand {}
+
+message LoginCommand {}
 
 message LogoutCommand {}
 

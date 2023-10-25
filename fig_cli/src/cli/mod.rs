@@ -13,7 +13,6 @@ mod installation;
 mod integrations;
 pub mod internal;
 mod issue;
-mod man;
 mod settings;
 mod telemetry;
 mod theme;
@@ -52,6 +51,7 @@ use tracing::level_filters::LevelFilter;
 
 use self::app::AppSubcommand;
 use self::integrations::IntegrationsSubcommands;
+use self::user::RootUserSubcommand;
 
 #[derive(Debug, Clone, Copy, Default, PartialEq, Eq, ValueEnum)]
 pub enum OutputFormat {
@@ -126,8 +126,6 @@ pub enum CliRootCommands {
     Init(init::InitArgs),
     /// Get or set theme
     Theme(theme::ThemeArgs),
-    // Tweet about CodeWhisperer
-    // Tweet,
     /// Create a new Github issue
     Issue(issue::IssueArgs),
     /// Root level user subcommands
@@ -157,8 +155,6 @@ pub enum CliRootCommands {
     /// Run the CodeWhisperer tutorial
     #[command(hide = true)]
     Onboarding,
-    /// Open manual page
-    Man(man::ManArgs),
     /// Manage system integrations
     #[command(subcommand, alias("integration"))]
     Integrations(IntegrationsSubcommands),
@@ -173,6 +169,42 @@ pub enum CliRootCommands {
     HelpAll,
     /// Open the fig dashboard
     Dashboard,
+}
+
+impl CliRootCommands {
+    fn name(&self) -> &'static str {
+        match self {
+            CliRootCommands::App(_) => "app",
+            CliRootCommands::Autocomplete(_) => "autocomplete",
+            CliRootCommands::Hook(_) => "hook",
+            CliRootCommands::Debug(_) => "debug",
+            CliRootCommands::Settings(_) => "settings",
+            CliRootCommands::Tips(_) => "tips",
+            CliRootCommands::Install(_) => "install",
+            CliRootCommands::Uninstall { .. } => "uninstall",
+            CliRootCommands::Update { .. } => "update",
+            CliRootCommands::Diagnostic(_) => "diagnostics",
+            CliRootCommands::Init(_) => "init",
+            CliRootCommands::Theme(_) => "theme",
+            CliRootCommands::Issue(_) => "issue",
+            CliRootCommands::RootUser(RootUserSubcommand::Login) => "login",
+            CliRootCommands::RootUser(RootUserSubcommand::Logout) => "logout",
+            CliRootCommands::User(_) => "user",
+            CliRootCommands::Doctor(_) => "doctor",
+            CliRootCommands::Completion(_) => "completion",
+            CliRootCommands::Internal(_) => "internal",
+            CliRootCommands::Launch => "launch",
+            CliRootCommands::Quit => "quit",
+            CliRootCommands::Restart { .. } => "restart",
+            CliRootCommands::Onboarding => "onboarding",
+            CliRootCommands::Integrations(_) => "integrations",
+            CliRootCommands::Ai(_) => "ai",
+            CliRootCommands::Telemetry(_) => "telemetry",
+            CliRootCommands::Version => "version",
+            CliRootCommands::HelpAll => "help-all",
+            CliRootCommands::Dashboard => "dashboard",
+        }
+    }
 }
 
 #[derive(Debug, Parser)]
@@ -214,9 +246,7 @@ impl Cli {
         let command = std::env::args().collect::<Vec<_>>();
         debug!("Command ran: {:?}", command);
 
-        if let Some(subcommand) = command.get(1) {
-            fig_telemetry::send_cli_subcommand_executed(subcommand).await.ok();
-        }
+        self.send_telemetry().await;
 
         match self.subcommand {
             Some(subcommand) => match subcommand {
@@ -258,7 +288,6 @@ impl Cli {
                     Processes::Daemon => Ok(()),
                 },
                 CliRootCommands::Onboarding => AppSubcommand::Onboarding.execute().await,
-                CliRootCommands::Man(args) => args.execute(),
                 CliRootCommands::Integrations(subcommand) => subcommand.execute().await,
                 CliRootCommands::Ai(args) => args.execute().await,
                 CliRootCommands::Telemetry(subcommand) => subcommand.execute().await,
@@ -285,6 +314,22 @@ impl Cli {
             },
             // Root command
             None => launch_dashboard().await,
+        }
+    }
+
+    async fn send_telemetry(&self) {
+        match &self.subcommand {
+            None
+            | Some(
+                CliRootCommands::Init(_)
+                | CliRootCommands::Internal(_)
+                | CliRootCommands::Tips(_)
+                | CliRootCommands::Completion(_)
+                | CliRootCommands::Hook(_),
+            ) => {},
+            Some(subcommand) => {
+                fig_telemetry::send_cli_subcommand_executed(subcommand.name()).await;
+            },
         }
     }
 }

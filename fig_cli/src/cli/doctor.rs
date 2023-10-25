@@ -1985,7 +1985,7 @@ where
 
         if result.is_err() {
             let analytics_event_name = check.analytics_event_name();
-            fig_telemetry::send_doctor_check_failed(analytics_event_name).await.ok();
+            fig_telemetry::send_doctor_check_failed(analytics_event_name).await;
         }
 
         if let Err(DoctorError::Error { reason, fix, error, .. }) = result {
@@ -2299,7 +2299,6 @@ pub async fn doctor_cli(verbose: bool, strict: bool) -> Result<()> {
     } else {
         // If early exit is disabled, no errors are thrown
         if !config.verbose {
-            println!();
             println!("{} Everything looks good!", CHECKMARK.green());
         }
         println!();

@@ -17,7 +17,6 @@ use fig_ipc::{
     BufferedUnixStream,
     SendMessage,
 };
-use fig_util::CODEWHISPERER_CLI_BINARY_NAME;
 use serde::{
     Deserialize,
     Serialize,
@@ -139,14 +138,6 @@ impl AiArgs {
                 "English".bold(),
                 "Bash".bold()
             );
-            println!();
-            println!(
-                "  {} {} translates your English instructions to Bash syntax and commands.",
-                CODEWHISPERER_CLI_BINARY_NAME.bright_magenta().bold(),
-                "ai".bright_magenta().bold(),
-            );
-            println!("  You can run the command in any shell.");
-
             fig_settings::state::set_value(SEEN_ONBOARDING_KEY, true).ok();
         }
 
@@ -247,9 +238,7 @@ pwd
                 macro_rules! handle_action {
                     ($action:expr) => {
                         let accepted = matches!(&$action, &Some(DialogActions::Execute { .. }));
-                        fig_telemetry::send_translation_actioned(accepted)
-                            .await
-                            .ok();
+                        fig_telemetry::send_translation_actioned(accepted).await;
 
                         match $action {
                             Some(DialogActions::Execute { command, .. }) => {
