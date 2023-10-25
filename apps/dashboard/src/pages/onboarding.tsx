@@ -1,5 +1,3 @@
-import { Button } from "@/components/ui/button";
-import { State } from "@withfig/api-bindings";
 import { Link } from "react-router-dom";
 
 // const tasks = [

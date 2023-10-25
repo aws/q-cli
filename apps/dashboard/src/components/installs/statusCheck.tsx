@@ -1,6 +1,6 @@
 import { InstallCheckWithInstallKey } from "@/types/preferences";
 import { Install } from "@withfig/api-bindings";
-import { useState } from "react";
+import { useEffect, useState } from "react";
 import {
   Collapsible,
   CollapsibleContent,
@@ -23,6 +23,10 @@ export default function StatusCheck({
       .then(() => refreshStatus())
       .catch((e) => console.error(e));
   }
+
+  useEffect(() => {
+    refreshStatus()
+  }, [refreshStatus])
 
   return (
     <Collapsible
