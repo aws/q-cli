@@ -191,15 +191,15 @@ const autocompleteSettings = [
         type: "number",
         popular: false,
       },
-      {
-        id: "autocomplete.hidePreviewWindow",
-        title: "Hide Preview window",
-        description:
-          "Hide the Preview window that appears on the side of the Autocomplete window.",
-        type: "boolean",
-        default: false,
-        popular: false,
-      },
+      // {
+      //   id: "autocomplete.hidePreviewWindow",
+      //   title: "Hide Preview window",
+      //   description:
+      //     "Hide the Preview window that appears on the side of the Autocomplete window.",
+      //   type: "boolean",
+      //   default: false,
+      //   popular: false,
+      // },
       // {
       //   id: "autocomplete.iconTheme",
       //   title: "Icon theme",

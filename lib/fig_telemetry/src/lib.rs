@@ -4,7 +4,11 @@ mod util;
 
 use std::time::SystemTime;
 
-use amzn_toolkit_telemetry::config::AppName;
+use amzn_toolkit_telemetry::config::{
+    AppName,
+    Region,
+};
+use amzn_toolkit_telemetry::error::DisplayErrorContext;
 use amzn_toolkit_telemetry::types::{
     AwsProduct,
     MetricDatum,
@@ -31,10 +35,7 @@ use aws_toolkit_telemetry_definitions::types::{
     CodewhispererterminalSuggestedCount,
     CodewhispererterminalTypedCount,
 };
-use cognito::{
-    CognitoProvider,
-    BETA_POOL,
-};
+use cognito::CognitoProvider;
 use fig_util::system_info::os_version;
 pub use install_method::{
     get_install_method,
@@ -56,12 +57,52 @@ pub enum Error {
 
 const APP_NAME: &str = "codewhisperer-terminal";
 
-static CLIENT: Lazy<TelemetryClient> = Lazy::new(TelemetryClient::new);
+static CLIENT: Lazy<TelemetryClient> = Lazy::new(|| TelemetryClient::new(TelemetryStage::BETA));
 
-// endpoints from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
-const BETA_ENDPOINT: &str = "https://7zftft3lj2.execute-api.us-east-1.amazonaws.com/Beta";
-const _INTERNAL_PROD_ENDPOINT: &str = "https://1ek5zo40ci.execute-api.us-east-1.amazonaws.com/InternalProd";
-const _EXTERNAL_PROD_ENDPOINT: &str = "https://client-telemetry.us-east-1.amazonaws.com";
+#[derive(Debug, Clone)]
+#[non_exhaustive]
+pub struct TelemetryStage {
+    pub name: &'static str,
+    pub endpoint: &'static str,
+    pub cognito_pool_id: &'static str,
+    pub region: Region,
+}
+
+impl TelemetryStage {
+    // data from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
+    pub const BETA: Self = Self::new(
+        "beta",
+        "https://7zftft3lj2.execute-api.us-east-1.amazonaws.com/Beta",
+        "us-east-1:db7bfc9f-8ecd-4fbb-bea7-280c16069a99",
+        "us-east-1",
+    );
+    pub const EXTERNAL_PROD: Self = Self::new(
+        "prod",
+        "https://client-telemetry.us-east-1.amazonaws.com",
+        "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+        "us-east-1",
+    );
+    pub const INTERNAL_PROD: Self = Self::new(
+        "internal-prod",
+        "https://1ek5zo40ci.execute-api.us-east-1.amazonaws.com/InternalProd",
+        "us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25",
+        "us-east-1",
+    );
+
+    const fn new(
+        name: &'static str,
+        endpoint: &'static str,
+        cognito_pool_id: &'static str,
+        region: &'static str,
+    ) -> Self {
+        Self {
+            name,
+            endpoint,
+            cognito_pool_id,
+            region: Region::from_static(region),
+        }
+    }
+}
 
 static JOIN_SET: Lazy<Mutex<JoinSet<()>>> = Lazy::new(|| Mutex::new(JoinSet::new()));
 
@@ -89,20 +130,15 @@ pub struct TelemetryClient {
     aws_client: Client,
 }
 
-impl Default for TelemetryClient {
-    fn default() -> Self {
-        Self::new()
-    }
-}
-
 impl TelemetryClient {
-    pub fn new() -> Self {
+    pub fn new(telemetry_stage: TelemetryStage) -> Self {
         let client_id = util::get_client_id();
         let aws_client = Client::from_conf(
             Config::builder()
-                .endpoint_url(BETA_ENDPOINT)
+                .endpoint_url(telemetry_stage.endpoint)
                 .app_name(AppName::new(APP_NAME).unwrap())
-                .credentials_provider(CognitoProvider::new(BETA_POOL))
+                .region(telemetry_stage.region.clone())
+                .credentials_provider(CognitoProvider::new(telemetry_stage))
                 .build(),
         );
         Self { client_id, aws_client }
@@ -137,6 +173,7 @@ impl TelemetryClient {
                 .metric_data(inner)
                 .send()
                 .await
+                .map_err(DisplayErrorContext)
             {
                 error!(%err, ?metric_name, "Failed to post metric");
             }
@@ -238,18 +275,27 @@ pub async fn send_menu_bar_actioned(menu_bar_item: Option<impl Into<String>>) {
 
 #[cfg(test)]
 mod test {
+    use aws_toolkit_telemetry_definitions::types::{
+        CodewhispererterminalDuration,
+        CodewhispererterminalTimeToSuggestion,
+    };
+
     use super::*;
 
+    #[tracing_test::traced_test]
     #[tokio::test]
     async fn test_send() {
-        let client = TelemetryClient::new();
+        let client = TelemetryClient::new(TelemetryStage::BETA);
         client
-            .post_metric(metrics::UiClick {
+            .post_metric(metrics::CodewhispererterminalTranslationActioned {
                 create_time: None,
                 value: None,
-                element_id: None,
+                codewhispererterminal_duration: Some(CodewhispererterminalDuration(100)),
+                codewhispererterminal_time_to_suggestion: Some(CodewhispererterminalTimeToSuggestion(1)),
+                codewhispererterminal_accepted: Some(CodewhispererterminalAccepted(true)),
             })
             .await;
         finish_telemetry_unwrap().await;
+        assert!(!logs_contain("ERROR"))
     }
 }

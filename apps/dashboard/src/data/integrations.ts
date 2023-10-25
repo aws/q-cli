@@ -32,19 +32,19 @@ const integrationOptions = [
       },
     ],
   },
-  {
-    title: "Experimental",
-    properties: [
-      {
-        id: "figterm.csi-u.enabled",
-        title: "CSI u Intercept Mode (experimental)",
-        description:
-          "Enable the experimental CSI u integration. This mode allows you to use more modifier keys for keybindings. It however may modify the behavior of keys you press, if you experience issues, please report them to us.",
-        type: "boolean",
-        default: false,
-      },
-    ],
-  },
+  // {
+  //   title: "Experimental",
+  //   properties: [
+  //     {
+  //       id: "figterm.csi-u.enabled",
+  //       title: "CSI u Intercept Mode (experimental)",
+  //       description:
+  //         "Enable the experimental CSI u integration. This mode allows you to use more modifier keys for keybindings. It however may modify the behavior of keys you press, if you experience issues, please report them to us.",
+  //       type: "boolean",
+  //       default: false,
+  //     },
+  //   ],
+  // },
 ];
 
 export default integrationOptions;

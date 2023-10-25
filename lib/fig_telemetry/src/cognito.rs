@@ -4,41 +4,14 @@ use aws_credential_types::{
     provider,
     Credentials,
 };
-use aws_sdk_cognitoidentity::config::Region;
 use aws_sdk_cognitoidentity::primitives::{
     DateTime,
     DateTimeFormat,
 };
 
-use crate::APP_NAME;
-
-#[derive(Debug, Clone, Copy, PartialEq, PartialOrd)]
-pub(crate) struct CognitoPoolId {
-    pub(crate) name: &'static str,
-    pub(crate) id: &'static str,
-}
-
-impl CognitoPoolId {
-    #[must_use]
-    pub(crate) fn region(&self) -> Region {
-        Region::new(self.id.split(':').nth(0).unwrap())
-    }
-}
-
-// pools from <https://w.amazon.com/bin/view/AWS/DevEx/IDEToolkits/Telemetry/>
-pub(crate) const BETA_POOL: CognitoPoolId = CognitoPoolId {
-    name: "beta",
-    id: "us-east-1:db7bfc9f-8ecd-4fbb-bea7-280c16069a99",
-};
-
-pub(crate) const _INTERNAL_PROD: CognitoPoolId = CognitoPoolId {
-    name: "internal-prod",
-    id: "us-east-1:4037bda8-adbd-4c71-ae5e-88b270261c25",
-};
-
-pub(crate) const _EXTERNAL_RROD: CognitoPoolId = CognitoPoolId {
-    name: "prod",
-    id: "us-east-1:820fd6d1-95c0-4ca4-bffb-3f01d32da842",
+use crate::{
+    TelemetryStage,
+    APP_NAME,
 };
 
 const CREDENTIALS_KEY: &str = "telemetry-cognito-credentials";
@@ -53,23 +26,24 @@ struct CredentialsJson {
     pub expiration: Option<String>,
 }
 
-pub(crate) async fn get_cognito_credentials_send(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
-    let region = pool_id.region();
+pub(crate) async fn get_cognito_credentials_send(
+    telemetry_stage: &TelemetryStage,
+) -> Result<Credentials, CredentialsError> {
     let conf = aws_sdk_cognitoidentity::Config::builder()
-        .region(region)
+        .region(telemetry_stage.region.clone())
         .app_name(AppName::new(APP_NAME).unwrap())
         .build();
     let client = aws_sdk_cognitoidentity::Client::from_conf(conf);
 
     let identity_id = client
         .get_id()
-        .identity_pool_id(pool_id.id)
+        .identity_pool_id(telemetry_stage.cognito_pool_id)
         .send()
         .await
         .map_err(CredentialsError::provider_error)?
         .identity_id
         .ok_or(CredentialsError::provider_error("no identity_id from get_id"))?;
-    
+
     let credentials = client
         .get_credentials_for_identity()
         .identity_id(identity_id)
@@ -77,7 +51,9 @@ pub(crate) async fn get_cognito_credentials_send(pool_id: CognitoPoolId) -> Resu
         .await
         .map_err(CredentialsError::provider_error)?
         .credentials
-        .ok_or(CredentialsError::provider_error("no credentials from get_credentials_for_identity"))?;
+        .ok_or(CredentialsError::provider_error(
+            "no credentials from get_credentials_for_identity",
+        ))?;
 
     if let Ok(json) = serde_json::to_value(CredentialsJson {
         access_key_id: credentials.access_key_id.clone(),
@@ -105,7 +81,7 @@ pub(crate) async fn get_cognito_credentials_send(pool_id: CognitoPoolId) -> Resu
     ))
 }
 
-pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Credentials, CredentialsError> {
+pub(crate) async fn get_cognito_credentials(telemetry_stage: &TelemetryStage) -> Result<Credentials, CredentialsError> {
     match fig_settings::state::get_string(CREDENTIALS_KEY).ok().flatten() {
         Some(creds) => {
             let CredentialsJson {
@@ -116,11 +92,11 @@ pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Cr
             }: CredentialsJson = serde_json::from_str(&creds).map_err(CredentialsError::provider_error)?;
 
             let Some(access_key_id) = access_key_id else {
-                return get_cognito_credentials_send(pool_id).await;
+                return get_cognito_credentials_send(telemetry_stage).await;
             };
 
             let Some(secret_key) = secret_key else {
-                return get_cognito_credentials_send(pool_id).await;
+                return get_cognito_credentials_send(telemetry_stage).await;
             };
 
             Ok(Credentials::new(
@@ -133,18 +109,18 @@ pub(crate) async fn get_cognito_credentials(pool_id: CognitoPoolId) -> Result<Cr
                 "",
             ))
         },
-        None => get_cognito_credentials_send(pool_id).await,
+        None => get_cognito_credentials_send(telemetry_stage).await,
     }
 }
 
 #[derive(Debug)]
 pub(crate) struct CognitoProvider {
-    pool_id: CognitoPoolId,
+    telemetry_stage: TelemetryStage,
 }
 
 impl CognitoProvider {
-    pub(crate) fn new(pool_id: CognitoPoolId) -> CognitoProvider {
-        CognitoProvider { pool_id }
+    pub(crate) fn new(telemetry_stage: TelemetryStage) -> CognitoProvider {
+        CognitoProvider { telemetry_stage }
     }
 }
 
@@ -153,7 +129,7 @@ impl provider::ProvideCredentials for CognitoProvider {
     where
         Self: 'a,
     {
-        provider::future::ProvideCredentials::new(get_cognito_credentials(self.pool_id))
+        provider::future::ProvideCredentials::new(get_cognito_credentials(&self.telemetry_stage))
     }
 }
 
@@ -163,10 +139,12 @@ mod test {
 
     #[tokio::test]
     async fn pools() {
-        let all_pools = [BETA_POOL, _INTERNAL_PROD, _EXTERNAL_RROD];
-        for id in all_pools {
-            let _ = id.region();
-            get_cognito_credentials_send(id).await.unwrap();
+        for telemetry_stage in [
+            TelemetryStage::BETA,
+            TelemetryStage::INTERNAL_PROD,
+            TelemetryStage::EXTERNAL_PROD,
+        ] {
+            get_cognito_credentials_send(&telemetry_stage).await.unwrap();
         }
     }
 }

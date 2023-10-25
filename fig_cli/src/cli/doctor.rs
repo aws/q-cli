@@ -1182,7 +1182,7 @@ impl DoctorCheck<DiagnosticsResponse> for AccessibilityCheck {
             Err(DoctorError::Error {
                 reason: "Accessibility is disabled".into(),
                 info: vec![],
-                fix: command_fix(vec!["fig", "debug", "prompt-accessibility"], Duration::from_secs(1)),
+                fix: command_fix(vec!["cw", "debug", "prompt-accessibility"], Duration::from_secs(1)),
                 error: None,
             })
         } else {
