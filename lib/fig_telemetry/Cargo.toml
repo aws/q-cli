@@ -28,3 +28,6 @@ aws-toolkit-telemetry-definitions = { path = "../aws-toolkit-telemetry-definitio
 aws-credential-types = "0.56.1"
 aws-smithy-async = "0.56.1"
 tokio = { version = "1", features = ["full"] }
+
+[dev-dependencies]
+tracing-test = "0.2.4"
