@@ -4,7 +4,10 @@ mod util;
 
 use std::time::SystemTime;
 
-use amzn_toolkit_telemetry::config::AppName;
+use amzn_toolkit_telemetry::config::{
+    AppName,
+    Region,
+};
 use amzn_toolkit_telemetry::error::DisplayErrorContext;
 use amzn_toolkit_telemetry::types::{
     AwsProduct,
@@ -101,6 +104,7 @@ impl TelemetryClient {
         let client_id = util::get_client_id();
         let aws_client = Client::from_conf(
             Config::builder()
+                .region(Region::new("us-east-1"))
                 .endpoint_url(BETA_ENDPOINT)
                 .app_name(AppName::new(APP_NAME).unwrap())
                 .credentials_provider(CognitoProvider::new(BETA_POOL))
