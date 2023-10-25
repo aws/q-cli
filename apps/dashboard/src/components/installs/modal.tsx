@@ -1,6 +1,6 @@
 import ModalContext from "@/context/modal";
 import { InstallCheck } from "@/types/preferences";
-import { Auth, Fig, Install, Internal, Native } from "@withfig/api-bindings";
+import { Auth, Fig, Install, Internal, Native, State } from "@withfig/api-bindings";
 import { useContext, useEffect, useState } from "react";
 import { Button } from "../ui/button";
 import { AwsLogo } from "../svg/icons";
@@ -172,8 +172,10 @@ export default function OnboardingModal() {
   const [loginCode, setLoginCode] = useState<string | null>(null);
   const [dotfilesCheck] = useStatusCheck('dotfiles')
   const [accessibilityCheck] = useStatusCheck('accessibility')
-  const [dotfiles, setDotfiles] = useState(dotfilesCheck ?? false)
-  const [accessibility, setAccessibility] = useState(accessibilityCheck ?? false)
+  
+  // these let us skip steps
+  const [dotfiles, setDotfiles] = useState(dotfilesCheck)
+  const [accessibility, setAccessibility] = useState(accessibilityCheck)
   const checksComplete = dotfiles && accessibility && loginState === 'logged in'
 
   async function handleLogin() {
@@ -190,7 +192,7 @@ export default function OnboardingModal() {
     await Internal.sendWindowFocusRequest({});
   }
 
-  console.log({ loginState, dotfiles, accessibility })
+  console.log({ loginState, checksComplete, dotfilesCheck, accessibilityCheck })
 
   useEffect(() => {
     Auth.status().then((r) => setLoginState(r.builderId ? "logged in" : "not started"))
@@ -200,7 +202,7 @@ export default function OnboardingModal() {
     if (checksComplete && loginState !== 'logged in') {
       setStep
     }
-  }, [checksComplete, loginState])
+  }, [checksComplete, loginState, dotfiles, accessibility])
 
   useEffect(() => {
     if (!checksComplete) return
@@ -214,7 +216,12 @@ export default function OnboardingModal() {
   function nextStep() {
       if (check.id === 'login') {
         if (loginState === 'logged in') {
-          setModal(null)
+          Internal.sendOnboardingRequest({
+            action: Fig.OnboardingAction.FINISH_ONBOARDING,
+          });
+          State.set('desktop.completedOnboarding', true).then(() => {
+            setModal(null)
+          })
         } else {
           handleLogin()
         }
