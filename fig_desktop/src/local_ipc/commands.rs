@@ -26,7 +26,6 @@ use super::{
 use crate::event::{
     Event,
     WindowEvent,
-    WindowPosition,
 };
 use crate::figterm::FigtermState;
 use crate::webview::notification::WebviewNotificationsState;
