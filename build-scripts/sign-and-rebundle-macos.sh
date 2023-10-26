@@ -135,8 +135,7 @@ function notarize_file() {
     local type="${name##*.}"
     local file_to_notarize="$original_file"
 
-    if [ "$type" = "app" ]
-    then
+    if [ "$type" = "app" ]; then
         # We can submit dmg files as is, but we have to zip up app files in a specific way
         file_to_notarize="CodeWhisperer.zip"
         ditto -c -k --sequesterRsrc --keepParent "$original_file" "$file_to_notarize"
@@ -145,9 +144,14 @@ function notarize_file() {
     xcrun notarytool submit "$file_to_notarize" --team-id "$TEAM_ID" --apple-id "$APPLE_ID" --password "$APPLE_ID_PASSWORD" --wait 
     xcrun stapler staple "$original_file"
 
-    if [ "$type" = "app" ]
-    then
-         rm -rf "$file_to_notarize"
+    if [ "$type" = "app" ]; then
+        # Verify notarization for .app
+        spctl -a -v "$original_file"
+
+        rm -rf "$file_to_notarize"
+    else 
+        # Verify notarization for .dmg
+        spctl -a -t open --context context:primary-signature -v "$original_file"
     fi
 }
 
