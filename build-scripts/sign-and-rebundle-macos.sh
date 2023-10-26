@@ -10,7 +10,8 @@ NOTARIZING_SECRET_ID=$3         # e.g. nscc-notarizing-apple-id
 set -eux
 
 function signed_package_exists() {
-    aws s3 ls "$SIGNING_BUCKET/signed/package.tar.gz" &> /dev/null
+    local name="$1"
+    aws s3 ls "$SIGNING_BUCKET/signed/$name" &> /dev/null
     return $?
 }
 
@@ -71,7 +72,7 @@ function sign_file() {
     end_time=$((SECONDS + max_duration))
 
     while [ $SECONDS -lt $end_time ]; do
-        if signed_package_exists; then
+        if signed_package_exists "$name"; then
             break
         else
             echo "No signed package yet. Waiting..."
@@ -89,10 +90,10 @@ function sign_file() {
 
     # Put the signed file back in its original location
     echo Downloading...
-    aws s3 cp "$SIGNING_BUCKET/signed/package.tar.gz" signed.tar.gz
-    tar -zxf signed.tar.gz
+    aws s3 cp "$SIGNING_BUCKET/signed/$name" "$name"
+    tar -zxf "$name"
     cp -R Payload/* "$full_file_path"
-    rm -rf Payload signed.tar.gz
+    rm -rf Payload "$name"
 
     echo "Signing status of $full_file_path:"
     codesign -dv --deep --strict "$full_file_path"
