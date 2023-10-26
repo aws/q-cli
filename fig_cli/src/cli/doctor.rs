@@ -24,7 +24,6 @@ use crossterm::{
     execute,
 };
 use eyre::{
-    bail,
     ContextCompat,
     Result,
     WrapErr,

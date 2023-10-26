@@ -66,5 +66,5 @@ then
     STAGING_LOCATION=s3://$output_bucket/staging/
     
     echo build complete, publishing to S3...
-    aws s3 cp build/cw.dmg "${STAGING_LOCATION}"
+    aws s3 cp build/CodeWhisperer.dmg "${STAGING_LOCATION}"
 fi
