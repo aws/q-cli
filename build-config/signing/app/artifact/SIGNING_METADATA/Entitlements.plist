@@ -1,0 +1,8 @@
+<dict>
+	<key>com.apple.security.automation.apple-events</key>
+	<true/>
+	<key>com.apple.security.temporary-exception.shared-preference.read-write</key>
+	<true/>
+    <key>com.apple.security.app-sandbox</key>
+    <false/>
+</dict>
