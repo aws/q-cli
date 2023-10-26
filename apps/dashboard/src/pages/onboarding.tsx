@@ -85,10 +85,6 @@ export default function Page() {
   //   setCompletionPercentage(tasksCompleted / tasks.length * 100)
   // }, [tasksCompleted])
 
-  function startOnboarding() {
-    State.set("desktop.completedOnboarding", false)
-  }
-
   const [activeTab, setActiveTab] = useState(0);
 
   const showTerminal = useCallback(() => {
@@ -196,12 +192,6 @@ export default function Page() {
           </div>
         </div>
       </div>
-      <Button
-          onClick={startOnboarding}
-          className="disabled:bg-zinc-400 h-auto py-2 px-6 mt-1"
-        >
-          Open onboarding
-        </Button>
     </div>
   );
 }
